@@ -8,7 +8,7 @@ import type { DevRaceGoal, DevSurface } from '../../utils/tuningMath_dev';
 import { engineDependencyKey } from './engineMeasurementArchive';
 import {
   advanceTuningMeasurement,
-  createTuningMeasurement,
+  createEngineCalculation,
   getTuningMeasurementReadiness,
   retainReadyMeasurementSnapshot,
   type TuningMeasurementState,
@@ -174,7 +174,7 @@ export function TuneSessionProvider({ children }: { children: ReactNode }) {
   const engineRef = useRef(engine);
   engineRef.current = engine;
 
-  const measurementStateRef = useRef<TuningMeasurementState>(createTuningMeasurement(carId));
+  const measurementStateRef = useRef<TuningMeasurementState>(createEngineCalculation(carId));
   const measurementSamplesRef = useRef<TuningCaptureSample[]>([]);
   const measurementReadySnapshotRef = useRef<TuningMeasurementState | undefined>(undefined);
   const measurementPhaseRef = useRef<EngineMeasurementPhase>('idle');
@@ -273,7 +273,7 @@ export function TuneSessionProvider({ children }: { children: ReactNode }) {
 
   const invalidateMeasurement = useCallback(() => {
     measurementStateRef.current = {
-      ...createTuningMeasurement(carIdRef.current),
+      ...createEngineCalculation(carIdRef.current),
       status: 'blocked',
       guidance: 'identity-changed',
     };
@@ -285,7 +285,7 @@ export function TuneSessionProvider({ children }: { children: ReactNode }) {
   }, [publishMeasurement]);
 
   const resetUnstartedMeasurement = useCallback(() => {
-    measurementStateRef.current = createTuningMeasurement(carIdRef.current);
+    measurementStateRef.current = createEngineCalculation(carIdRef.current);
     measurementSamplesRef.current = [];
     measurementReadySnapshotRef.current = undefined;
     measurementAutoFinishRef.current = true;
@@ -386,7 +386,7 @@ export function TuneSessionProvider({ children }: { children: ReactNode }) {
 
   const ensureMeasurementStarted = useCallback((enabled: boolean) => {
     if (!enabled || measurementPhaseRef.current !== 'idle') return;
-    measurementStateRef.current = createTuningMeasurement(carIdRef.current);
+    measurementStateRef.current = createEngineCalculation(carIdRef.current);
     measurementSamplesRef.current = [];
     measurementReadySnapshotRef.current = undefined;
     measurementAutoFinishRef.current = true;
@@ -397,7 +397,7 @@ export function TuneSessionProvider({ children }: { children: ReactNode }) {
   const restartMeasurement = useCallback((enabled: boolean) => {
     if (!enabled) return;
     engineRef.current.invalidate();
-    measurementStateRef.current = createTuningMeasurement(carIdRef.current);
+    measurementStateRef.current = createEngineCalculation(carIdRef.current);
     measurementSamplesRef.current = [];
     measurementReadySnapshotRef.current = undefined;
     measurementAutoFinishRef.current = true;

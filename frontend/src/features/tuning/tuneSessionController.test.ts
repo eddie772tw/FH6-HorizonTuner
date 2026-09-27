@@ -119,4 +119,14 @@ describe('Tune session controller', () => {
     expect(isCurrentEngineObservationSaveToken(save, { ...save, archiveGeneration: 5 })).toBe(false);
     expect(isCurrentEngineObservationSaveToken(save, { ...save, identityGeneration: 3 })).toBe(false);
   });
+  it('rejects a late legacy-capture hydration after another reuse or profile selection', async () => {
+    const request = { archiveGeneration: 4, identityGeneration: 2, dependencyKey: 'engine-key-a' };
+    for (const current of [{ ...request, archiveGeneration: 5 },
+      { ...request, dependencyKey: 'engine-key-b' }, { ...request, identityGeneration: 3 }]) {
+      const hydrated = await Promise.resolve({ observationId: 'old', status: 'ready' });
+      const selected = isCurrentEngineObservationSaveToken(request, current) ? hydrated : null;
+      expect(selected).toBeNull();
+    }
+    expect(isCurrentEngineObservationSaveToken(request, { ...request })).toBe(true);
+  });
 });
