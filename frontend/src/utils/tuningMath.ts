@@ -9,6 +9,7 @@
  * Interface representing vehicle parameters used for tuning calculation.
  */
 export interface TuningCarParams {
+  isElectric?: boolean;
   weight: number; // in kg
   weight_distribution: number; // front weight percentage (0-100)
   drivetrain: 'FWD' | 'RWD' | 'AWD';
@@ -106,7 +107,7 @@ export function roadExplorationStep(setting: { value: number; minimum: number; m
 /** Measured workflow adapter. Existing public formulas retain their contract. */
 export function calculateMeasuredGearing(goal: string, gears: number, params: TuningCarParams | null,
   engine: MeasuredEngineInputs | null): GearingResult | null {
-  if (!params || !engine || !Number.isInteger(gears) || gears < 4 || gears > 10 || !Number.isFinite(params.maxHp) || params.maxHp <= 0 ||
+  if (!params || params.isElectric || !engine || !Number.isInteger(gears) || gears < 4 || gears > 10 || !Number.isFinite(params.maxHp) || params.maxHp <= 0 ||
     ![engine.engineMaxRpm, engine.peakPowerRpm, engine.peakTorqueRpm].every(value => Number.isFinite(value) && value > 0) ||
     engine.peakPowerRpm > engine.engineMaxRpm || engine.peakTorqueRpm > engine.engineMaxRpm) return null;
   const result = calculateAEGOGearing(goal, gears, { ...params, maxHpRpm: engine.peakPowerRpm,
@@ -283,6 +284,8 @@ export function calculateAEGOGearing(
   maxRpm: number,
   secondaryCorrection?: GearingSecondaryCorrection
 ): GearingResult {
+  if (carParams?.isElectric) return { finalDrive: 0, gears: [], unsupported: true,
+    unsupportedReason: 'EV requires the independent measured EV model.' };
   if (raceGoal === 'Road') {
     if (carParams) carParams = normalizeRoadInputs(carParams);
     if (!Number.isFinite(maxRpm) || maxRpm <= 0) maxRpm = 7500;

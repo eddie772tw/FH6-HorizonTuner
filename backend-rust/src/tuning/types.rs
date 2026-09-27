@@ -75,6 +75,8 @@ pub struct GearingSecondaryCorrection {
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct TuningCarParams {
+    #[serde(alias = "isElectric")]
+    pub is_electric: Option<bool>,
     pub weight: Option<f64>,
     #[serde(alias = "weightDistribution")]
     pub weight_distribution: Option<f64>,

@@ -1,5 +1,6 @@
 import React from 'react';
 import { CarParams } from '../../../context/CarParamsContext';
+import { EvModeSwitch } from './EvModeSwitch';
 
 interface BasicCarInfoProps {
   t: (key: string) => string;
@@ -33,6 +34,7 @@ export const BasicCarInfo: React.FC<BasicCarInfoProps> = ({
   return (
     <div className="d-flex flex-column gap-3">
       <h4 className="text-primary fs-6 fw-bold border-bottom pb-2 m-0">{t("Static Info")}</h4>
+      <EvModeSwitch t={t} checked={carParams.isElectric === true} onChange={value => updateParam('isElectric', value)} />
       
       <div className="d-flex justify-content-between align-items-center">
         <label htmlFor="weight" className="form-label mb-0 fs-7">{t("Weight")} ({settings.units.weight})</label>

@@ -32,7 +32,7 @@ export function CompanionHostBridge() {
       const gearing = calculateWizardMeasuredGearing(goal, profile?.adjustability.gears || 6, profile, prepared ? {
         engineMaxRpm: prepared.engineMaxRpm!, peakPowerRpm: prepared.observedPeakPower!.rpm,
         peakTorqueRpm: prepared.observedPeakTorque!.rpm,
-      } : null);
+      } : null, tune.evMeasurement.result);
       return {
         carId: current.carId, carName: current.carName, profile,
         profileKey: companionProfileKey(current.carId, current.carParams, tune.identityGeneration),
@@ -42,7 +42,9 @@ export function CompanionHostBridge() {
           alignment: profile ? calculateStaticTireAlignment(goal, season, profile) : null,
           gearing,
         },
-        engine: { phase: tune.engineMeasurement.phase, sampleCount: tune.engineMeasurement.sampleCount, state: tune.engineMeasurement.state },
+        engine: profile?.isElectric
+          ? { phase: tune.evMeasurement.phase, sampleCount: tune.evMeasurement.sampleCount, state: null }
+          : { phase: tune.engineMeasurement.phase, sampleCount: tune.engineMeasurement.sampleCount, state: tune.engineMeasurement.state },
         readiness: getWorkflowReadiness(Boolean(profile), profile, Boolean(gearing)),
       };
     };

@@ -41,6 +41,8 @@ docs/calibration/
 
 測試前先閱讀 [人工審核與實機測試計畫](human-review-and-telemetry-test-plan.md) 的驗收條件；調校程式入口見 [調校開發導引](../tuning/README.md)。
 
+EV 的獨立量測、單速／多速與鎖定齒比契約、Taycan 回放證據及校準限制，見 [EV 基礎模型](ev-foundation.md)。
+
 1. **閱讀操作手冊**：參考 [in-game-telemetry-collection-guide.md](./in-game-telemetry-collection-guide.md) 設定遊戲 UDP 輸出與駕駛輔助。
 2. **依排程選擇車型與項目**：參考 [in-game-test-schedule-and-matrix.md](./in-game-test-schedule-and-matrix.md) 挑選測試梯隊。
 3. **錄製與匯出**：在開發者調校介面中錄製 `tuning-capture/v1` 檔案並儲存至 `in_game_captures/`。

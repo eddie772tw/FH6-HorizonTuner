@@ -6,6 +6,7 @@ import { telemetryToCaptureSample } from '../../domain/tuning/telemetryCapture';
 import { subscribeToDecodedTelemetry, useTelemetry, type TelemetryData } from '../../hooks/useTelemetry';
 import type { DevRaceGoal, DevSurface } from '../../utils/tuningMath_dev';
 import { engineDependencyKey } from './engineMeasurementArchive';
+import { useEvMeasurementSession } from './useEvMeasurementSession';
 import {
   advanceTuningMeasurement,
   createTuningMeasurement,
@@ -86,6 +87,7 @@ export interface TuneSessionValue {
     setShowCapture: (show: boolean) => void;
   };
   engine: ReturnType<typeof useEngineMeasurementArchive>;
+  evMeasurement: ReturnType<typeof useEvMeasurementSession>;
   engineMeasurement: EngineMeasurementRuntime & {
     ensureStarted: (enabled: boolean) => void;
     pauseOrResume: () => void;
@@ -139,6 +141,9 @@ export function TuneSessionProvider({ children }: { children: ReactNode }) {
   const staticProfileJson = serializeWorkflowProfile(loadedCarId === carId ? carParams : null);
   const profile = useMemo(() => JSON.parse(staticProfileJson) as CarParams | null, [staticProfileJson]);
   const profileKey = engineDependencyKey(carId, profile);
+  const evMeasurement = useEvMeasurementSession(carId, profile, data);
+  const isElectricRef = useRef(false);
+  isElectricRef.current = profile?.isElectric === true;
   const [liveIdentity, setLiveIdentity] = useState<LiveTuneIdentity>({ carId, performanceIndex: null, carClass: null });
   useEffect(() => {
     const next = telemetryIdentityFor(carId, data);
@@ -351,7 +356,7 @@ export function TuneSessionProvider({ children }: { children: ReactNode }) {
       }
     }
 
-    if (measurementPhaseRef.current !== 'collecting') return;
+    if (isElectricRef.current || measurementPhaseRef.current !== 'collecting') return;
     if (measurementSamplesRef.current.length >= MAX_TUNING_CAPTURE_SAMPLES) {
       measurementPhaseRef.current = 'paused';
       publishMeasurement(true);
@@ -385,7 +390,7 @@ export function TuneSessionProvider({ children }: { children: ReactNode }) {
   }, [isConnected, publishMeasurement]);
 
   const ensureMeasurementStarted = useCallback((enabled: boolean) => {
-    if (!enabled || measurementPhaseRef.current !== 'idle') return;
+    if (isElectricRef.current || !enabled || measurementPhaseRef.current !== 'idle') return;
     measurementStateRef.current = createTuningMeasurement(carIdRef.current);
     measurementSamplesRef.current = [];
     measurementReadySnapshotRef.current = undefined;
@@ -395,7 +400,7 @@ export function TuneSessionProvider({ children }: { children: ReactNode }) {
   }, [publishMeasurement]);
 
   const restartMeasurement = useCallback((enabled: boolean) => {
-    if (!enabled) return;
+    if (isElectricRef.current || !enabled) return;
     engineRef.current.invalidate();
     measurementStateRef.current = createTuningMeasurement(carIdRef.current);
     measurementSamplesRef.current = [];
@@ -437,7 +442,7 @@ export function TuneSessionProvider({ children }: { children: ReactNode }) {
   }, [publishMeasurement]);
 
   const completeMeasurement = useCallback(() => {
-    if (measurementPhaseRef.current !== 'complete') return;
+    if (isElectricRef.current || measurementPhaseRef.current !== 'complete') return;
     const state = measurementStateRef.current;
     if (!isMeasurementIdentityCurrent(state, identityTokenRef.current.identity)) return;
     void engineRef.current.complete(state, measurementCaptureSnapshot());
@@ -513,6 +518,7 @@ export function TuneSessionProvider({ children }: { children: ReactNode }) {
       setShowCapture,
     },
     engine,
+    evMeasurement,
     engineMeasurement: {
       ...measurementRuntime,
       ensureStarted: ensureMeasurementStarted,
@@ -543,6 +549,7 @@ export function TuneSessionProvider({ children }: { children: ReactNode }) {
     developerStep,
     developerSurface,
     engine,
+    evMeasurement,
     ensureMeasurementStarted,
     finishAdditionalMeasurement,
     goal,
