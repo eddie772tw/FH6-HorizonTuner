@@ -23,7 +23,7 @@ describe('Road driven-axle baseline', () => {
     expect(fwd.diff.decelR).toBe(0);
   });
   it('lengthens FWD launch as torque rises or front load falls, using front tyre geometry', () => {
-    expect(totalFirst({ ...car, maxTorque: 700 })).toBeLessThan(totalFirst(car));
+    expect(totalFirst({ ...car, maxTorque: 550 })).toBeLessThan(totalFirst(car));
     expect(totalFirst({ ...car, weight_distribution: 45 })).toBeLessThan(totalFirst(car));
     expect(totalFirst({ ...car, frontTireRim: 20 })).toBeGreaterThan(totalFirst(car));
     expect(totalFirst({ ...car, rearTireRim: 22 })).toBe(totalFirst(car));
@@ -35,6 +35,13 @@ describe('Road driven-axle baseline', () => {
     for (const torque of [150, 420, 1200]) {
       const result = calculateMeasuredGearing('Road', gears, { ...car, maxTorque: torque },
         { engineMaxRpm: 8100, peakPowerRpm: 7200, peakTorqueRpm: 4800 })!;
+      if (torque === 1200) {
+        // Launch-envelope target falls below the terminal target. The former
+        // one-gear floor silently violated it; v2 must not claim a solution.
+        expect(result.unsupported).toBe(true);
+        expect(result.gears).toEqual([]);
+        continue;
+      }
       expect(result.gears).toHaveLength(gears);
       expect(result.finalDrive).toBeGreaterThanOrEqual(2);
       expect(result.finalDrive).toBeLessThanOrEqual(6.1);

@@ -52,6 +52,8 @@ fn road_launch_total_ratio(params: &TuningCarParams, torque_nm: f64, radius_m: f
         .unwrap_or(Drivetrain::RWD);
     let rear_share = if dt == Drivetrain::FWD {
         0.0
+    } else if dt == Drivetrain::RWD {
+        1.0
     } else {
         super::chassis::get_road_awd_rear_percent(params) / 100.0
     };
@@ -71,6 +73,147 @@ fn road_launch_total_ratio(params: &TuningCarParams, torque_nm: f64, radius_m: f
     mass * 9.81 * acceleration_g * radius_m / (torque_nm * 0.90)
 }
 
+// Same bounded slider-grid allocation as the UI. Priors are not measured grip.
+fn allocate_road_gearing(first_total: f64, top_total: f64, count: usize) -> GearingResult {
+    let unavailable = GearingResult {
+        final_drive: 0.0, gears: vec![], unsupported: Some(true),
+        unsupported_reason: Some("Road model targets conflict with the available ratio range. This does not mean the vehicle cannot be driven.".into()),
+    };
+    if !(4..=10).contains(&count)
+        || !first_total.is_finite()
+        || !top_total.is_finite()
+        || top_total <= 0.0
+        || first_total <= top_total
+    {
+        return unavailable;
+    }
+    let preferred_fd = top_total / get_target_top_gear_ratio(count);
+    let mut candidates: Vec<f64> = (200..=610).map(|n| n as f64 / 100.0).collect();
+    candidates.sort_by(|a, b| {
+        let distance = (a - preferred_fd).abs() - (b - preferred_fd).abs();
+        if distance.abs() < 1e-12 {
+            a.total_cmp(b)
+        } else {
+            distance.total_cmp(&0.0)
+        }
+    });
+    for final_drive in candidates {
+        let first = (first_total / final_drive * 100.0).round();
+        let top = (top_total / final_drive * 100.0).round();
+        if !(100.0..=600.0).contains(&first)
+            || !(40.0..=600.0).contains(&top)
+            || first - top < (count - 1) as f64
+        {
+            continue;
+        }
+        let steps = count - 1;
+        let mean = (top / first).powf(1.0 / steps as f64);
+        let spread = clamp((1.0 - mean) * 0.6, 0.04, 0.12);
+        let raw: Vec<f64> = (0..steps)
+            .map(|i| {
+                clamp(
+                    mean + spread * (i as f64 / (steps - 1) as f64 - 0.5),
+                    0.55,
+                    0.92,
+                )
+            })
+            .collect();
+        let scale = (top / (first * raw.iter().product::<f64>())).powf(1.0 / steps as f64);
+        let mut grid = vec![first];
+        let mut ideal = first;
+        for i in 1..steps {
+            ideal *= raw[i - 1] * scale;
+            grid.push(
+                ideal
+                    .round()
+                    .min(grid[i - 1] - 1.0)
+                    .max(top + (steps - i) as f64),
+            );
+        }
+        grid.push(top);
+        return GearingResult {
+            final_drive,
+            gears: grid.iter().map(|n| n / 100.0).collect(),
+            unsupported: None,
+            unsupported_reason: None,
+        };
+    }
+    unavailable
+}
+
+#[cfg(test)]
+mod road_grid_tests {
+    use super::*;
+
+    #[test]
+    fn preserves_endpoints_at_fd_and_gear_boundaries() {
+        for (first, top, count, fd, endpoints) in [
+            (12.0, 0.8, 6, 2.0, (6.0, 0.4)),
+            (36.6, 4.392, 6, 6.1, (6.0, 0.72)),
+            (2.06, 2.0, 4, 2.07, (1.0, 0.97)),
+            (8.0, 1.4436, 6, 2.0, (4.0, 0.72)), // anchor 2.005: lower FD wins
+        ] {
+            let result = allocate_road_gearing(first, top, count);
+            assert_ne!(result.unsupported, Some(true));
+            assert_eq!(result.final_drive, fd);
+            assert_eq!((result.gears[0], result.gears[count - 1]), endpoints);
+            assert!(result.gears.windows(2).all(|g| g[0] - g[1] >= 0.01 - 1e-9));
+        }
+    }
+
+    #[test]
+    fn never_repairs_conflicting_targets_by_clamping_each_gear() {
+        for (first, top, count) in [
+            (2.02, 2.0, 4),
+            (40.0, 1.0, 6),
+            (2.0, 3.0, 6),
+            (12.0, 0.1, 6),
+            (f64::NAN, 1.0, 6),
+            (12.0, 1.0, 3),
+        ] {
+            let result = allocate_road_gearing(first, top, count);
+            assert_eq!(result.unsupported, Some(true));
+            assert!(result.gears.is_empty());
+        }
+    }
+}
+
+fn normalize_road_gearing_inputs(params: &TuningCarParams) -> TuningCarParams {
+    let positive = |value: Option<f64>, fallback: f64| {
+        Some(
+            value
+                .filter(|v| v.is_finite() && *v > 0.0)
+                .unwrap_or(fallback),
+        )
+    };
+    let mut p = params.clone();
+    p.weight = positive(p.weight, 1400.0);
+    p.weight_distribution = Some(clamp(
+        p.weight_distribution
+            .filter(|v| v.is_finite())
+            .unwrap_or(50.0),
+        1.0,
+        99.0,
+    ));
+    p.max_hp = positive(p.max_hp, 300.0);
+    p.max_torque = positive(p.max_torque, 0.0);
+    p.max_hp_rpm = positive(p.max_hp_rpm, 0.0);
+    p.max_torque_rpm = positive(p.max_torque_rpm, 0.0);
+    p.aero_efficiency = Some(clamp(
+        p.aero_efficiency.filter(|v| v.is_finite()).unwrap_or(0.5),
+        0.0,
+        1.0,
+    ));
+    p.road_awd_rear_percent = p.road_awd_rear_percent.filter(|v| v.is_finite());
+    p.front_tire_width = positive(p.front_tire_width, 245.0);
+    p.front_tire_aspect = positive(p.front_tire_aspect, 40.0);
+    p.front_tire_rim = positive(p.front_tire_rim, 18.0);
+    p.rear_tire_width = positive(p.rear_tire_width, 245.0);
+    p.rear_tire_aspect = positive(p.rear_tire_aspect, 40.0);
+    p.rear_tire_rim = positive(p.rear_tire_rim, 18.0);
+    p
+}
+
 pub fn calculate_aego_gearing(
     race_goal: RaceGoal,
     mut num_gears: usize,
@@ -78,8 +221,15 @@ pub fn calculate_aego_gearing(
     mut max_rpm: f64,
     secondary_correction: Option<&GearingSecondaryCorrection>,
 ) -> GearingResult {
+    let normalized;
+    let car_params = if race_goal == RaceGoal::Road {
+        normalized = normalize_road_gearing_inputs(car_params);
+        &normalized
+    } else {
+        car_params
+    };
     if race_goal == RaceGoal::Road {
-        if max_rpm <= 0.0 {
+        if !max_rpm.is_finite() || max_rpm <= 0.0 {
             max_rpm = 7500.0;
         }
         if !(1..=10).contains(&num_gears) {
@@ -282,62 +432,24 @@ pub fn calculate_aego_gearing(
             }
         }
         RaceGoal::Road => {
-            let k_track = 0.95;
-            let v_target = max_hp.powf(1.0 / 3.0) * 37.0 * (1.0 + 0.12 * aero_efficiency);
-            let v_circuit = v_target * k_track;
-            let target_top_gear = get_target_top_gear_ratio(num_gears);
-
-            let top_total_ratio = (rpm_hp * c * 60.0) / (v_circuit * 1000.0);
-            let raw_fd = top_total_ratio / target_top_gear;
-            fd = clamp(raw_fd, 2.0, 6.1);
-
-            let g_top = top_total_ratio / fd;
-            let v_base = 90.0;
-            let k_drive = match dt {
-                Drivetrain::AWD => 0.85,
-                Drivetrain::FWD => 1.05,
-                Drivetrain::RWD => 1.15,
-            };
-            let v1 = v_base * k_drive;
-
-            let mut g1 = (rpm_hp * c * 60.0) / (v1 * fd * 1000.0);
-            if dt == Drivetrain::FWD
-                || (dt == Drivetrain::AWD && car_params.road_awd_rear_percent.is_some())
-            {
-                let launch_total = road_launch_total_ratio(car_params, max_torque, c / (2.0 * PI));
-                if launch_total > 0.0 {
-                    g1 = g1.min(launch_total / fd);
+            let first_total = road_launch_total_ratio(car_params, max_torque, c / (2.0 * PI));
+            let mut target_speed =
+                max_hp.powf(1.0 / 3.0) * 37.0 * (1.0 + 0.12 * aero_efficiency) * 0.95;
+            if let Some(sc) = secondary_correction {
+                for speed in [sc.simulated_top_speed, sc.soft_max_speed]
+                    .into_iter()
+                    .flatten()
+                {
+                    if speed.is_finite() && speed > 0.0 {
+                        target_speed = target_speed.min(speed * rpm_hp / max_rpm);
+                    }
                 }
             }
-
-            gears[0] = clamp(g1, 1.0, 6.0).max(g_top + 0.01 * (num_gears - 1) as f64);
-            gears[num_gears - 1] = g_top;
-
-            if num_gears > 1 {
-                let num_steps = num_gears - 1;
-                let r_mean = (g_top / gears[0]).powf(1.0 / num_steps as f64);
-                let r_spread = clamp((1.0 - r_mean) * 0.6, 0.04, 0.12);
-
-                let mut r_raw = Vec::with_capacity(num_steps);
-                let mut prod_raw = 1.0;
-                for i in 1..=num_steps {
-                    let offset_fraction = if num_steps > 1 {
-                        (i as f64 - 1.0) / (num_steps as f64 - 1.0) - 0.5
-                    } else {
-                        0.0
-                    };
-                    let r_val = clamp(r_mean + r_spread * offset_fraction, 0.55, 0.92);
-                    r_raw.push(r_val);
-                    prod_raw *= r_val;
-                }
-
-                let s = (g_top / (gears[0] * prod_raw)).powf(1.0 / num_steps as f64);
-                for i in 1..num_gears {
-                    let r_adj = r_raw[i - 1] * s;
-                    gears[i] = gears[i - 1] * r_adj;
-                }
-                gears[num_gears - 1] = g_top;
-            }
+            return allocate_road_gearing(
+                first_total,
+                rpm_hp * c * 60.0 / (target_speed * 1000.0),
+                num_gears,
+            );
         }
     }
 
@@ -476,18 +588,9 @@ pub fn calculate_aego_gearing(
             0.92
         };
 
-    let road_launch_limited = race_goal == RaceGoal::Road
-        && (dt == Drivetrain::FWD
-            || (dt == Drivetrain::AWD && car_params.road_awd_rear_percent.is_some()));
-    let effective_step_ratio = if road_launch_limited {
-        1.0
-    } else {
-        max_step_ratio_rounded
-    };
-
     for i in 1..monotonic_limit {
         let max_allowed_ratio = (r2(rounded_gears[i - 1] - 0.01))
-            .min((rounded_gears[i - 1] * effective_step_ratio * 100.0).floor() / 100.0);
+            .min((rounded_gears[i - 1] * max_step_ratio_rounded * 100.0).floor() / 100.0);
         if rounded_gears[i] > max_allowed_ratio {
             rounded_gears[i] = (0.40_f64).max(max_allowed_ratio);
         }

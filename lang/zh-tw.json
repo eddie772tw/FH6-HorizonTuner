@@ -1735,5 +1735,14 @@
   "Companion APP: No devices connected. Click to pair.": "Companion 應用程式：未連接裝置。點擊進行配對。",
   "RENDER PAUSED (OVERLAY ACTIVE)": "渲染已暫停 (HUD 懸浮窗啟用中)",
   "RACE DATA LIVE": "比賽數據即時接收中",
-  "GAME IDLE / MENU": "遊戲待機 / 選單"
+  "GAME IDLE / MENU": "遊戲待機 / 選單",
+  "Start a rolling full-throttle run above 5 km/h. Launch transients are excluded from engine analysis.": "車速達 5 km/h 後，在安全直線維持單檔全油門加速。引擎分析會排除低速起步瞬態。",
+  "Hold full throttle in the same gear for 500 ms while the moving sweep settles.": "維持同一檔全油門至少 500 毫秒，等待行進中的量測條件穩定。",
+  "Engine analysis and a feasible gearing result are required before setup verification.": "完成引擎分析並取得可行齒比後，才能進行設定驗證。",
+  "Engine analysis is ready, but the gearing model has no feasible result. Review Step 3.": "引擎分析已完成，但齒比模型沒有可行解。請回到步驟 3 檢查。",
+  "Road model targets conflict with the available ratio range. This does not mean the vehicle cannot be driven.": "公路模型的起步與最高檔目標，無法同時符合目前齒比範圍。這不代表車輛無法行駛；請核對車輛資料，暫時保留已確認可用的設定。",
+  "The saved capture is loading or unavailable. Engine history remains readable; reload it or collect a new rolling sweep before calculating.": "正在載入原始量測，或該資料無法取得。仍可檢視引擎歷史；請重新載入或採集行進中的加速資料後再計算。",
+  "The saved capture does not meet the loaded-sweep requirements. Collect more clean moving data; the original observation is unchanged.": "這份原始量測尚未符合行進加速分析門檻。請補充有效行駛資料；原始觀測不會被改寫。",
+  "Calculation uses supported moving-sweep bin averages, not instantaneous launch peaks.": "計算採用有相鄰樣本支持的行進加速分箱平均值，不使用起步瞬時峰值。",
+  "Recorded instantaneous peaks are historical observations, not the new AEGO calculation inputs.": "以下瞬時峰值屬於歷史觀測，不是新版 AEGO 的計算輸入。"
 }

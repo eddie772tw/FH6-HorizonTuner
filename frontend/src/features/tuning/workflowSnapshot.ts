@@ -20,6 +20,9 @@ function canonicalWorkflowInputSnapshot(inputSnapshot: Record<string, unknown>):
 /** Transport mapping only. All numbers are outputs of the existing pure solver. */
 export function workflowRecommendation(profile: CarParams, chassis: ChassisTuningResult,
   alignment: StaticTireAlignResult, gearing: GearingResult, inputSnapshot: Record<string, unknown>): WorkflowRecommendation {
+  if (gearing.unsupported || !gearing.gears.length || !Number.isFinite(gearing.finalDrive) || gearing.finalDrive <= 0) {
+    throw new Error('A feasible gearing result is required for a recommendation.');
+  }
   const fields: WorkflowRecommendation['fields'] = {};
   const add = (key: string, value: number, unit: string) => { fields[key] = { value, unit }; };
   add('pressure.front', alignment.pcF, 'psi'); add('pressure.rear', alignment.pcR, 'psi');

@@ -10,6 +10,11 @@ const profile: CarParams = {
 };
 const engine = { engineMaxRpm: 8100, peakPowerRpm: 7100, peakTorqueRpm: 5200 };
 describe('measured workflow adapters', () => {
+  it('does not emit an unsupported gearing result even when the result object is truthy', () => {
+    expect(() => workflowRecommendation(profile, calculateChassisTuning('Road', profile),
+      calculateStaticTireAlignment('Road', 'Summer', profile),
+      { finalDrive: 0, gears: [], unsupported: true }, {})).toThrow('feasible gearing');
+  });
   it.each(['Road', 'Rally', 'Drag', 'Drift'])('uses measured RPM with the existing %s formula', goal => {
     const before = JSON.stringify(profile);
     const result = calculateMeasuredGearing(goal, 6, profile, engine);

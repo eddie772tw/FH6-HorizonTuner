@@ -30,6 +30,7 @@ function TuningViewContent({ unitPreference, onUnitPreferenceChange }: {
   const profile = session.profile;
   const engine = session.engine;
   const prepared = selectedEngineObservationMatchesLiveTelemetry(carId, engine.current, data) ? engine.current : null;
+  const calculation = prepared && engine.calculation?.status === 'ready' ? engine.calculation : null;
   const reviewHistory = session.workflow.reviewHistory;
   const setCurrentStep = (next: number | ((previous: number) => number)) => {
     const resolved = typeof next === 'function' ? next(currentStep) : next;
@@ -39,17 +40,20 @@ function TuningViewContent({ unitPreference, onUnitPreferenceChange }: {
   const gears = profile?.adjustability.gears || 6;
   const chassis = useMemo(() => profile ? calculateChassisTuning(goal, profile) : null, [goal, profile]);
   const alignment = useMemo(() => profile ? calculateStaticTireAlignment(goal, season, profile) : null, [goal, season, profile]);
-  const gearing = useMemo(() => calculateWizardMeasuredGearing(goal, gears, profile, prepared ? {
-    engineMaxRpm: prepared.engineMaxRpm!, peakPowerRpm: prepared.observedPeakPower!.rpm,
-    peakTorqueRpm: prepared.observedPeakTorque!.rpm,
-  } : null), [goal, gears, profile, prepared]);
-  const readiness = getWorkflowReadiness(!isLoading && loadedCarId === carId, profile, Boolean(gearing));
+  const gearing = useMemo(() => calculateWizardMeasuredGearing(goal, gears, profile, calculation ? {
+    engineMaxRpm: calculation.engineMaxRpm!, peakPowerRpm: calculation.peakPower!.rpm,
+    peakTorqueRpm: calculation.peakTorque!.rpm, peakTorqueNm: calculation.peakTorque!.value,
+  } : null), [goal, gears, profile, calculation]);
+  const readiness = getWorkflowReadiness(!isLoading && loadedCarId === carId, profile, Boolean(calculation),
+    Boolean(gearing && !gearing.unsupported && gearing.gears.length === gears));
   useEffect(() => {
     const step = resolveTuningStep(currentStep, readiness);
     if (step !== currentStep) setCurrentStep(step);
-  }, [currentStep, readiness.mechanical, readiness.engineInputs, readiness.measuredEngine]);
+  }, [currentStep, readiness.mechanical, readiness.engineInputs, readiness.measuredEngine, readiness.gearingAvailable]);
   const inputSnapshot = useMemo(() => ({ carId, goal, season, profile,
-    engineObservation: engine.observation }), [carId, goal, season, profile, engine.observation]);
+    engineObservation: engine.observation, engineCalculation: calculation,
+    ...(goal === 'Road' ? { gearingModelVersion: 'aego-road-joint/v2' } : {}) }),
+    [carId, goal, season, profile, engine.observation, calculation]);
 
   return <div className="container-fluid h-100 d-flex flex-column gap-3 p-0 overflow-auto">
     <header>
@@ -64,10 +68,10 @@ function TuningViewContent({ unitPreference, onUnitPreferenceChange }: {
       <nav className="nav nav-pills gap-2 flex-wrap" aria-label={t('Tuning workflow steps')}>
         {TUNING_WORKFLOW_STEPS.map(step => <button key={step.id} className={'nav-link ' + (currentStep === step.number ? 'active' : '')}
           aria-current={currentStep === step.number ? 'step' : undefined} disabled={!canOpenTuningStep(step.number, readiness)}
-          title={step.number === 4 && !readiness.measuredEngine ? t('Complete engine measurement before verifying the full setup.') : undefined}
+          title={step.number === 4 && !readiness.gearingAvailable ? t('Engine analysis and a feasible gearing result are required before setup verification.') : undefined}
           onClick={() => { session.workflow.setReviewHistory(false); setCurrentStep(step.number); }}>{step.number}. {t(step.label)}</button>)}
       </nav>
-      <div className="small text-body-secondary mt-2" role="status">{t(!readiness.mechanical ? 'Complete the vehicle weight and distribution first.' : !readiness.measuredEngine ? 'Mechanical estimates are available. Engine data and gearing still require measurement.' : 'Engine measurement is ready. Confirm game settings before recording a validation run.')}</div>
+      <div className="small text-body-secondary mt-2" role="status">{t(!readiness.mechanical ? 'Complete the vehicle weight and distribution first.' : !readiness.measuredEngine ? 'Mechanical estimates are available. Engine data and gearing still require measurement.' : !readiness.gearingAvailable ? 'Engine analysis is ready, but the gearing model has no feasible result. Review Step 3.' : 'Engine measurement is ready. Confirm game settings before recording a validation run.')}</div>
       {!reviewHistory && <WorkflowGuide readiness={readiness} currentStep={currentStep} openStep={step => setCurrentStep(step)} />}
     </header>
     {!reviewHistory && currentStep === 1 && <Step1GoalSetup measuredEngineInputs selectedRaceGoal={goal} setSelectedRaceGoal={session.workflow.setGoal} season={season} setSeason={session.workflow.setSeason}
