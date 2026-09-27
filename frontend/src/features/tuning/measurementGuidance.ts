@@ -25,4 +25,3 @@ export const guidanceText: Record<TuningMeasurementGuidance, string> = {
   'vehicle-not-moving': 'Start a rolling full-throttle run above 5 km/h. Launch transients are excluded from engine analysis.',
   'load-settling': 'Hold full throttle in the same gear for 500 ms while the moving sweep settles.',
 };
-
