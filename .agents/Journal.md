@@ -1,5 +1,13 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-09-28 / AEGO 六項實車驗收完成與 PR 文件同步（Codex as Codex）
+
+- **最新驗收狀態**：使用者明確確認 PR #446「In-Game Confirmation & Remaining Evidence」六項均已完成，包含基準／候選各至少三次可比試車、0–30／0–60 與換檔記錄，以及 v4 補丁後的獨立新實車量測。此狀態取代下方 2026-09-27 歷史紀錄中的待完成項目。
+- **證據歸屬**：六項完成依使用者確認；已保存 capture 與重播仍分開標記。不虛構本輪未附的各次秒數、候選完整齒比、新 observation ID 或性能提升比例；不把定量驗收改成由 fixture 代替。
+- **同步範圍**：更新中英文 README、調校索引、[修正／驗收紀錄](../docs/tuning/aego-low-power-20260927.md) 與 PR 內文，回覆 Reviewer 的驗收缺口及後續整合順序。產品程式、fixtures、原始量測與遊戲設定不變；文件檢查採 `git diff --check`。
+- **Draft 與整合**：程式碼 head `0fc20cf` 的 14 checks 成功、當前無合併衝突。可建議解除 Draft 進入正式審查，但本輪僅評估、未切換；#445 若先合併，須另行 rebase 並核對新 head 的完整驗證。驗收完成不等於全車款校準，也不授權自動合併／發布。
+- **採用技能**：pr-author-maintainer、pr-review-evaluation；維持作者／審查者身分區分、Living Changelog 與精確 head 驗證。輪詢保持暫停。
+
 ## 2026-09-27 / Pajero 首筆切斷掉轉與功率峰值近限轉（Codex as Codex）
 
 - **重現**：ordinal 2652／PI600 的 v3 匯出已有 30.297 秒有效資料與 13 箱，仍卡高轉。7998 RPM 正輸出後首筆負輸出已掉至 7917 RPM，低於 99% 進入門檻約 7919 RPM；取樣影格不是斷油觸發瞬間。保存前 20 秒、1,197 筆必要通道 fixture，原始完整檔不動。
