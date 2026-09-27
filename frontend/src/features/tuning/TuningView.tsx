@@ -47,9 +47,9 @@ function TuningViewContent({ unitPreference, onUnitPreferenceChange }: {
     peakTorqueRpm: calculation.peakTorque!.rpm, peakTorqueNm: calculation.peakTorque!.value,
   } : null, session.evMeasurement.result), [goal, gears, profile, calculation, session.evMeasurement.result]);
   const measuredEngineReady = isEv ? Boolean(session.evMeasurement.result) : Boolean(calculation);
-  const gearingAvailable = isEv
-    ? Boolean(gearing && !gearing.unsupported)
-    : Boolean(gearing && !gearing.unsupported && gearing.gears.length === gears);
+  const gearingAvailable = gearing
+    ? ('model' in gearing ? true : !gearing.unsupported && gearing.gears.length === gears)
+    : false;
   const readiness = getWorkflowReadiness(!isLoading && loadedCarId === carId, profile, measuredEngineReady, gearingAvailable);
   useEffect(() => {
     const step = resolveTuningStep(currentStep, readiness);
