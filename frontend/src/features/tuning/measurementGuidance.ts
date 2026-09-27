@@ -20,7 +20,7 @@ export const guidanceText: Record<TuningMeasurementGuidance, string> = {
   'sampling-gap': 'Data was interrupted. Continue driving; the interruption is not counted.',
   'duration-insufficient': 'More clean acceleration data is needed. Repeat a smooth run if necessary.',
   'rpm-coverage-low': 'Low-engine-speed data is missing. Start the next run lower in the rev range.',
-  'rpm-coverage-high': 'High-engine-speed data is missing. Hold the gear longer, approaching the engine limit.',
+  'rpm-coverage-high': 'Upper-RPM coverage is not confirmed. The displayed powerband alone is not proof. If the limiter is already repeating, export the collected frames instead of extending the run; otherwise complete a loaded sweep toward the engine limit.',
   'bins-insufficient': 'The middle of the rev range is incomplete. Accelerate smoothly through it.',
   'vehicle-not-moving': 'Start a rolling full-throttle run above 5 km/h. Launch transients are excluded from engine analysis.',
   'load-settling': 'Hold full throttle in the same gear for 500 ms while the moving sweep settles.',

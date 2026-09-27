@@ -26,6 +26,8 @@
   "Cutoff detected": "偵測到斷油特徵",
   "Powerband roll-off": "動力衰退",
   "Observed powerband": "觀測動力帶",
+  "The saved capture does not meet the loaded-sweep requirements. Review the collection guidance; the original observation is unchanged.": "保存影格尚未通過行進全油門分析，請依採樣提示確認原因；原始觀測紀錄不會改寫。",
+  "Upper-RPM coverage is not confirmed. The displayed powerband alone is not proof. If the limiter is already repeating, export the collected frames instead of extending the run; otherwise complete a loaded sweep toward the engine limit.": "尚未確認高轉速覆蓋，顯示動力帶不代表驗證完成。若已反覆斷油卻仍未通過，請匯出已收集影格，不必持續延長測試；否則請完成接近引擎上限的行進全油門掃描。",
   "Observed engine output": "觀測引擎輸出",
   "READY": "準備就緒",
   "EXPERIMENTAL": "實驗性",

@@ -46,7 +46,7 @@ describe('versioned loaded-sweep engine analysis', () => {
     expect(analyzed.peakPower!.rpm).toBeLessThan(4050);
     expect(analyzed.peakPower!.value).toBeLessThan(c.originalPeak.value);
     expect(analyzed.peakTorque!.value).toBeGreaterThan(150);
-    expect(analyzed.analysisVersion).toBe('engine-loaded-sweep/v3');
+    expect(analyzed.analysisVersion).toBe('engine-loaded-sweep/v4');
     expect(analyzed.observationId).toBe(c.observationId);
     expect(JSON.stringify(samples)).toBe(original);
     // New filters cannot inherit the old summary's six-second qualification.
@@ -116,6 +116,7 @@ describe('versioned loaded-sweep engine analysis', () => {
     const legacy = { ...createEngineCalculation('1435'), analysisVersion: undefined, observedPeakPower: { rpm: 3365, value: 56000 } };
     expect(engineCalculationSummary(legacy, 'old')).toMatchObject({ status: 'unavailable', reason: 'capture-unavailable' });
     expect(engineCalculationSummary({ ...legacy, analysisVersion: 'engine-loaded-sweep/v2' }, 'v2').status).toBe('unavailable');
+    expect(engineCalculationSummary({ ...legacy, analysisVersion: 'engine-loaded-sweep/v3' }, 'v3').status).toBe('unavailable');
   });
 });
 
@@ -181,7 +182,7 @@ describe('loaded limiter cut/recovery cycles', () => {
     const samples = limiterFixture.samples.map(row => Object.fromEntries(limiterFixture.fields.map((key, i) => [key, row[i]])));
     const original = JSON.stringify(samples);
     const result = analyzeEngineCapture(limiterFixture.sourceObservationId, '1435', capture(samples));
-    expect(result).toMatchObject({ analysisVersion: 'engine-loaded-sweep/v3', status: 'ready', reason: 'ready' });
+    expect(result).toMatchObject({ analysisVersion: 'engine-loaded-sweep/v4', status: 'ready', reason: 'ready' });
     expect(result.acceptedMs).toBeGreaterThanOrEqual(6000);
     expect(result.effectiveRedline).toBeGreaterThan(5200);
     expect(result.effectiveRedline).toBeLessThan(5300);

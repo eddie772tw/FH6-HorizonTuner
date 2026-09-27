@@ -1,5 +1,13 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-09-27 / Pajero 首筆切斷掉轉與功率峰值近限轉（Codex as Codex）
+
+- **重現**：ordinal 2652／PI600 的 v3 匯出已有 30.297 秒有效資料與 13 箱，仍卡高轉。7998 RPM 正輸出後首筆負輸出已掉至 7917 RPM，低於 99% 進入門檻約 7919 RPM；取樣影格不是斷油觸發瞬間。保存前 20 秒、1,197 筆必要通道 fixture，原始完整檔不動。
+- **修補**：v4 以緊鄰前一筆合格正輸出證明接近上緣，再確認有界掉轉及多影格恢復；負輸出／中斷清除該參考，不能沿用歷史最高點。保留 4% 範圍、三循環、6 秒及控制 gate，Pajero 在 17.828 秒重播就緒，Beetle 仍為 19.281 秒。
+- **峰值與上限分離**：切斷／恢復循環不能依賴「功率峰值＋5%」；功率平台或上升曲線可一直延伸到斷油。新增近限轉峰值／平台／持續上升正例，沒有切斷與過期上緣負例；不外推不可達的功率、不等同最佳換檔點。軟限轉及其他輸出切斷辨識仍有工程先驗限制。
+- **提示與技能**：高轉不足提示要求已反覆斷油者匯出資料，而非無限延長試車。採用 physics-tuning-math、ponytail、halfmoon-design-system、pr-author-maintainer；沿用同一分析 reducer、Halfmoon 狀態元件與 Draft PR，不加依賴。詳見 [修正紀錄](../docs/tuning/aego-low-power-20260927.md)。
+- **建置順序**：Rust 的 build.rs 會將 frontend/dist 的雜湊資源路徑寫入 include_bytes!；不能與會清空 dist 的前端 build 並行。此次並行先出現資源路徑不存在，待前端完成後以同一隔離 target-dir 重跑，86 passed／3 existing opt-in ignored；不需停止 dev 服務。
+
 ## 2026-09-27 / AEGO 斷油循環與齒比顯示補強（Codex as Codex）
 
 - **可重現盲點**：VW Beetle 已在約 5250 RPM 斷油，但功率切斷伴隨掉轉超過 50 RPM，v2 的窄平台計時反覆歸零。完整 9,070-frame capture 到 152.172 秒才就緒；不可把包含中斷的總時長寫成連續全油門。

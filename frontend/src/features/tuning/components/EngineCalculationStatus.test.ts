@@ -6,7 +6,7 @@ import type { EngineCalculationSummary } from '../engineCalculation';
 import { createTuningMeasurement } from '../tuningMeasurement';
 import { engineCalculationSummary } from '../engineCalculation';
 
-const ready: EngineCalculationSummary = { analysisVersion: 'engine-loaded-sweep/v3',
+const ready: EngineCalculationSummary = { analysisVersion: 'engine-loaded-sweep/v4',
   observationId: 'test', status: 'ready', reason: 'ready', acceptedMs: 7000,
   peakPower: { rpm: 3984, value: 53600 }, peakTorque: { rpm: 2392, value: 158.8 } };
 const render = (calculation: EngineCalculationSummary | null, unsupported = false) =>
@@ -19,7 +19,9 @@ describe('engine analysis status', () => {
     expect(render(engineCalculationSummary(createTuningMeasurement('1435'), 'old'))).toContain('history remains readable');
   });
   it('shows the actionable reason without hiding the original observation', () => {
-    expect(render({ ...ready, status: 'collecting', reason: 'rpm-coverage-high' })).toContain('Hold the gear longer');
+    const highRpm = render({ ...ready, status: 'collecting', reason: 'rpm-coverage-high' });
+    expect(highRpm).toContain('displayed powerband alone is not proof');
+    expect(highRpm).toContain('export the collected frames instead of extending the run');
     expect(render({ ...ready, status: 'collecting', reason: 'duration-insufficient' })).toContain('More clean acceleration data');
   });
   it('distinguishes analysis-ready from an infeasible solver result', () => {
