@@ -6,7 +6,7 @@ import type { EngineCalculationSummary } from '../engineCalculation';
 import { createTuningMeasurement } from '../tuningMeasurement';
 import { engineCalculationSummary } from '../engineCalculation';
 
-const ready: EngineCalculationSummary = { analysisVersion: 'engine-loaded-sweep/v2',
+const ready: EngineCalculationSummary = { analysisVersion: 'engine-loaded-sweep/v3',
   observationId: 'test', status: 'ready', reason: 'ready', acceptedMs: 7000,
   peakPower: { rpm: 3984, value: 53600 }, peakTorque: { rpm: 2392, value: 158.8 } };
 const render = (calculation: EngineCalculationSummary | null, unsupported = false) =>

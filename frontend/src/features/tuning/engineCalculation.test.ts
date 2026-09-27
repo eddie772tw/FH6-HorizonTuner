@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import fixture from '../../../../tests/fixtures/aego_beetle_engine_captures.json';
+import limiterFixture from '../../../../tests/fixtures/aego_beetle_limiter_capture.json';
 import type { TuningCaptureFile, TuningCaptureSample } from '../../domain/tuning/telemetryCapture';
 import { analyzeEngineCapture, captureToEngineFrame, engineCalculationSummary } from './engineCalculation';
-import { advanceTuningMeasurement, createEngineCalculation, qualifiedEnginePeaks, type EngineMeasurementFrame } from './tuningMeasurement';
+import { advanceTuningMeasurement, createEngineCalculation, qualifiedEnginePeaks, getTuningMeasurementReadiness, type EngineMeasurementFrame } from './tuningMeasurement';
 
 const capture = (samples: Partial<TuningCaptureSample>[]) => ({ samples }) as TuningCaptureFile;
 const frame = (time: number, rpm = 2000, extra: Partial<EngineMeasurementFrame> = {}): EngineMeasurementFrame => ({
@@ -45,7 +46,7 @@ describe('versioned loaded-sweep engine analysis', () => {
     expect(analyzed.peakPower!.rpm).toBeLessThan(4050);
     expect(analyzed.peakPower!.value).toBeLessThan(c.originalPeak.value);
     expect(analyzed.peakTorque!.value).toBeGreaterThan(150);
-    expect(analyzed.analysisVersion).toBe('engine-loaded-sweep/v2');
+    expect(analyzed.analysisVersion).toBe('engine-loaded-sweep/v3');
     expect(analyzed.observationId).toBe(c.observationId);
     expect(JSON.stringify(samples)).toBe(original);
     // New filters cannot inherit the old summary's six-second qualification.
@@ -54,11 +55,11 @@ describe('versioned loaded-sweep engine analysis', () => {
       expect(analyzed.status).toBe('collecting');
       expect(analyzed.reason).toBe('duration-insufficient');
     } else {
-      // The unpolluted reference no longer invents an early 12% power drop:
-      // this capture ends around 5250 RPM, below the 5400 RPM coverage gate.
-      expect(analyzed.status).toBe('collecting');
+      // Real cut/recovery cycles prove the ~5250 RPM limit despite the game's 6000 RPM field.
+      expect(analyzed.status).toBe('ready');
       expect(analyzed.acceptedMs).toBeGreaterThan(6000);
-      expect(analyzed.reason).toBe('rpm-coverage-high');
+      expect(analyzed.effectiveRedline).toBeGreaterThan(5200);
+      expect(analyzed.effectiveRedline).toBeLessThan(5300);
     }
   });
   it('rejects parked launch, missing speed and unconfirmed controls even when clutch reads zero', () => {
@@ -114,5 +115,78 @@ describe('versioned loaded-sweep engine analysis', () => {
     expect(analyzeEngineCapture('old', '1435').status).toBe('unavailable');
     const legacy = { ...createEngineCalculation('1435'), analysisVersion: undefined, observedPeakPower: { rpm: 3365, value: 56000 } };
     expect(engineCalculationSummary(legacy, 'old')).toMatchObject({ status: 'unavailable', reason: 'capture-unavailable' });
+    expect(engineCalculationSummary({ ...legacy, analysisVersion: 'engine-loaded-sweep/v2' }, 'v2').status).toBe('unavailable');
+  });
+});
+
+describe('loaded limiter cut/recovery cycles', () => {
+  const run = (change: (f: EngineMeasurementFrame, index: number) => EngineMeasurementFrame = f => f) => {
+    let state = createEngineCalculation('1435');
+    for (let i = 0; i <= 500; i++) {
+      state = advanceTuningMeasurement(state, frame(i * 20, 1800 + i * 6.8, { PowerWatts: 55000 }), true, i * 20);
+    }
+    const rpms = [5240, 5160, 5100, 5120, 5210, 5240];
+    for (let i = 0; i < 120; i++) {
+      const cut = i % 6 < 3;
+      const f = change(frame(10020 + i * 20, rpms[i % 6], {
+        PowerWatts: cut ? -23000 : 55000, TorqueNewtons: cut ? -43 : 130,
+      }), i);
+      state = advanceTuningMeasurement(state, f, true, f.TimestampMS);
+    }
+    return state;
+  };
+  it('recognizes repeated sawtooth cycles without sampling their negative output as peaks', () => {
+    const state = run();
+    expect(state.cutoffDetected).toBe(true);
+    expect(state.effectiveRedline).toBeGreaterThan(5200);
+    expect(state.effectiveRedline).toBeLessThan(5300);
+    expect(getTuningMeasurementReadiness(state, state.lastProgressedAtMs!).ready).toBe(true);
+    expect(state.rpmEvidenceBins!.every(bin => bin.averagePowerWatts === 55000)).toBe(true);
+    expect(state.acceptedMs).toBeLessThan(11900); // Cut intervals remain excluded from accepted duration.
+  });
+  it.each(['positive plateau', 'sustained cut', 'one cycle', 'sign noise', 'wide RPM drop', 'mixed output signs'])(
+    'does not mistake %s for repeated limiter cycles', mode => {
+      const state = run((f, i) => {
+        if (mode === 'positive plateau' || (mode === 'one cycle' && i >= 6))
+          return { ...f, CurrentEngineRpm: 5240, PowerWatts: 55000, TorqueNewtons: 130 };
+        if (mode === 'sustained cut') return { ...f, PowerWatts: -23000, TorqueNewtons: -43 };
+        if (mode === 'sign noise') return { ...f, CurrentEngineRpm: 5240,
+          PowerWatts: i % 2 ? 55000 : -23000, TorqueNewtons: i % 2 ? 130 : -43 };
+        if (mode === 'wide RPM drop' && i % 6 === 2) return { ...f, CurrentEngineRpm: 4700 };
+        if (mode === 'mixed output signs') return { ...f, TorqueNewtons: 130 };
+        return f;
+      });
+      expect(state.cutoffDetected).toBe(false);
+      expect(getTuningMeasurementReadiness(state, state.lastProgressedAtMs!).highRpmCoverage).toBe(false);
+    });
+  it.each(['throttle', 'brake', 'clutch', 'handbrake', 'gear', 'speed', 'gap', 'missing output'])(
+    'clears pending cycle evidence on %s interruption', interruption => {
+      const state = run((f, i) => {
+        const adjusted = interruption === 'gap' ? { ...f, TimestampMS: f.TimestampMS! + Math.floor(i / 12) * 1200 } : f;
+        if (i % 12 !== 11) return adjusted;
+        return { ...adjusted, ...({ throttle: { AccelInput: 0 }, brake: { BrakeInput: 1 },
+          clutch: { ClutchInput: 1 }, handbrake: { HandBrakeInput: 1 }, gear: { Gear: 3 },
+          speed: { SpeedMetersPerSecond: 0 }, gap: {}, 'missing output': { PowerWatts: NaN } }[interruption]) };
+      });
+      expect(state.cutoffDetected).toBe(false);
+    });
+  it('supersedes a tentative limiter when the loaded sweep continues above it', () => {
+    const state = run();
+    const time = state.lastTimestampMs! + 20;
+    const next = advanceTuningMeasurement(state, frame(time, 5350, { PowerWatts: 55000 }), true, time);
+    expect(next.cutoffDetected).toBe(false);
+    expect(next.effectiveRedline).toBeUndefined();
+  });
+  it('replays the first real Beetle limiter encounter, not the later lucky flat dwell', () => {
+    const samples = limiterFixture.samples.map(row => Object.fromEntries(limiterFixture.fields.map((key, i) => [key, row[i]])));
+    const original = JSON.stringify(samples);
+    const result = analyzeEngineCapture(limiterFixture.sourceObservationId, '1435', capture(samples));
+    expect(result).toMatchObject({ analysisVersion: 'engine-loaded-sweep/v3', status: 'ready', reason: 'ready' });
+    expect(result.acceptedMs).toBeGreaterThanOrEqual(6000);
+    expect(result.effectiveRedline).toBeGreaterThan(5200);
+    expect(result.effectiveRedline).toBeLessThan(5300);
+    expect(result.peakPower!.rpm).toBeGreaterThan(3900);
+    expect(result.peakPower!.rpm).toBeLessThan(4050);
+    expect(JSON.stringify(samples)).toBe(original);
   });
 });
