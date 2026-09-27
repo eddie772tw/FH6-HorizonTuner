@@ -25,6 +25,8 @@
   "Cutoff detected": "Cutoff detected",
   "Powerband roll-off": "Powerband roll-off",
   "Observed powerband": "Observed powerband",
+  "The saved capture does not meet the loaded-sweep requirements. Review the collection guidance; the original observation is unchanged.": "The saved capture does not meet the loaded-sweep requirements. Review the collection guidance; the original observation is unchanged.",
+  "Upper-RPM coverage is not confirmed. The displayed powerband alone is not proof. If the limiter is already repeating, export the collected frames instead of extending the run; otherwise complete a loaded sweep toward the engine limit.": "Upper-RPM coverage is not confirmed. The displayed powerband alone is not proof. If the limiter is already repeating, export the collected frames instead of extending the run; otherwise complete a loaded sweep toward the engine limit.",
   "Observed engine output": "Observed engine output",
   "__language_name__": "English",
   "READY": "READY",

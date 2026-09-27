@@ -3,6 +3,14 @@ import { canOpenTuningStep, getWorkflowReadiness, nextTuningStep, resolveTuningS
 
 const profile = { weight: 1200, weight_distribution: 50, maxHp: 200 };
 describe('recommended workflow and independent data gates', () => {
+  it('keeps engine readiness independent of an infeasible gearing model', () => {
+    const ready = getWorkflowReadiness(true, profile, true, false);
+    expect(ready.measuredEngine).toBe(true);
+    expect(ready.gearingAvailable).toBe(false);
+    expect(canOpenTuningStep(3, ready)).toBe(true);
+    expect(canOpenTuningStep(4, ready)).toBe(false);
+    expect(resolveTuningStep(4, ready)).toBe(3);
+  });
   it('maps explicitly versioned legacy steps without confusing current step numbers', () => {
     expect(restoreWorkflowStep({ schema: 'tuning-workflow/v1', step: 2 })).toBe(3);
     expect(restoreWorkflowStep({ schema: 'tuning-workflow/v2', step: 2 })).toBe(2);

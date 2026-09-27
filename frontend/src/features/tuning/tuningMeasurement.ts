@@ -35,7 +35,15 @@ export type TuningMeasurementGuidance =
   | 'duration-insufficient'
   | 'rpm-coverage-low'
   | 'rpm-coverage-high'
-  | 'bins-insufficient';
+  | 'bins-insufficient'
+  | 'vehicle-not-moving'
+  | 'load-settling';
+
+export const ENGINE_ANALYSIS_VERSION = 'engine-loaded-sweep/v4' as const;
+export const ENGINE_ANALYSIS_MIN_SPEED_MPS = 5 / 3.6;
+export type EngineMeasurementFrame = Pick<TelemetryData, 'TimestampMS' | 'IsRaceOn' | 'CarOrdinal' | 'CarClass' |
+  'CarPerformanceIndex' | 'EngineMaxRpm' | 'CurrentEngineRpm' | 'SpeedMetersPerSecond' | 'PowerWatts' |
+  'TorqueNewtons' | 'Gear' | 'AccelInput' | 'BrakeInput' | 'ClutchInput' | 'HandBrakeInput' | 'TireSlipRatio'>;
 
 export interface TuningMeasurementIdentity {
   ordinal: number;
@@ -60,7 +68,20 @@ export interface TuningMeasurementPeak {
   rpm: number;
 }
 
+interface CutoffCycleEvidence {
+  upperRpm: number;
+  startedMs: number;
+  lastCycleMs: number;
+  cycles: number;
+  phase: 'cut' | 'recovery' | 'armed';
+  cutSamples: number;
+  recoverySamples: number;
+}
+
 export interface TuningMeasurementState {
+  /** Absent/older versions denote archived analysis; calculation replays at the current version. */
+  analysisVersion?: typeof ENGINE_ANALYSIS_VERSION | 'engine-loaded-sweep/v2' | 'engine-loaded-sweep/v3';
+  loadedSinceMs?: number;
   carId: string;
   status: TuningMeasurementStatus;
   guidance: TuningMeasurementGuidance;
@@ -72,6 +93,9 @@ export interface TuningMeasurementState {
   plateauCandidateRpm?: number;
   plateauDurationMs?: number;
   plateauHadOutputCut?: boolean;
+  cutoffCycles?: CutoffCycleEvidence;
+  /** Immediately preceding qualified positive-output frame, cleared on cuts and interruptions. */
+  lastLoadedPositiveRpm?: number;
   lastMorphologyTimestampMs?: number;
   /** Fixed 64-band evidence supports rebucketing without inventing samples. */
   rpmEvidenceBins?: TuningMeasurementBin[];
@@ -112,7 +136,7 @@ const isFiniteNumber = (value: unknown): value is number => typeof value === 'nu
 const asNonNegativeInteger = (value: unknown): number | undefined =>
   isFiniteNumber(value) && Number.isInteger(value) && value >= 0 ? value : undefined;
 
-function identityFromFrame(frame: TelemetryData): TuningMeasurementIdentity | undefined {
+function identityFromFrame(frame: EngineMeasurementFrame): TuningMeasurementIdentity | undefined {
   const ordinal = asNonNegativeInteger(frame.CarOrdinal);
   const carClass = asNonNegativeInteger(frame.CarClass);
   const performanceIndex = asNonNegativeInteger(frame.CarPerformanceIndex);
@@ -162,6 +186,7 @@ function readGuidance(state: TuningMeasurementState, nowMs: number): TuningMeasu
   if (!isHighCoverageMet(state)) return 'rpm-coverage-high';
   const minBins = getTuningMeasurementMinBins(state);
   if (state.bins.length < minBins) return 'bins-insufficient';
+  if (state.analysisVersion && !qualifiedEnginePeaks(state.rpmEvidenceBins ?? []).power) return 'bins-insufficient';
   return 'ready';
 }
 
@@ -173,6 +198,24 @@ export function createTuningMeasurement(carId: string): TuningMeasurementState {
     acceptedMs: 0,
     bins: [],
   };
+}
+
+/** New production measurements opt into loaded-sweep gates; legacy parsing stays unchanged. */
+export function createEngineCalculation(carId: string): TuningMeasurementState {
+  return { ...createTuningMeasurement(carId), analysisVersion: ENGINE_ANALYSIS_VERSION };
+}
+
+/** Fixed evidence bins, not the adaptively rebucketed display bins. */
+export function qualifiedEnginePeaks(bins: TuningMeasurementBin[]): {
+  power?: TuningMeasurementPeak; torque?: TuningMeasurementPeak;
+} {
+  const supported = bins.filter(bin => bin.sampleCount >= 3 && bins.some(neighbor =>
+    Math.abs(neighbor.index - bin.index) === 1 && neighbor.sampleCount >= 3));
+  const peak = (field: 'averagePowerWatts' | 'averageTorqueNewtons') => supported
+    .slice().sort((a, b) => b[field] - a[field] || a.averageRpm - b.averageRpm)[0];
+  const power = peak('averagePowerWatts'), torque = peak('averageTorqueNewtons');
+  return { power: power && { value: power.averagePowerWatts, rpm: power.averageRpm },
+    torque: torque && { value: torque.averageTorqueNewtons, rpm: torque.averageRpm } };
 }
 
 export function getTuningMeasurementReadiness(state: TuningMeasurementState, nowMs: number): TuningMeasurementReadiness {
@@ -197,11 +240,12 @@ export function getTuningMeasurementReadiness(state: TuningMeasurementState, now
 function withGuidance(state: TuningMeasurementState, guidance: TuningMeasurementGuidance): TuningMeasurementState {
   const interrupted = ['telemetry-disconnected', 'waiting-frame', 'car-mismatch', 'identity-incomplete',
     'not-in-race', 'gear-changing', 'gear-not-forward', 'engine-rpm-invalid', 'control-input-active',
-    'input-not-wide-open', 'sampling-gap', 'output-unavailable'].includes(guidance);
+    'input-not-wide-open', 'sampling-gap', 'output-unavailable', 'vehicle-not-moving'].includes(guidance);
   return {
     ...state,
-    ...(interrupted ? { plateauCandidateRpm: undefined, plateauDurationMs: 0,
-      plateauHadOutputCut: false, lastMorphologyTimestampMs: undefined } : {}),
+    ...(interrupted ? { loadedSinceMs: undefined, plateauCandidateRpm: undefined, plateauDurationMs: 0,
+      plateauHadOutputCut: false, lastMorphologyTimestampMs: undefined, cutoffCycles: undefined,
+      lastLoadedPositiveRpm: undefined } : {}),
     status: guidance === 'ready' ? 'ready' : guidance === 'identity-changed' || guidance === 'timestamp-regressed' ? 'blocked' : 'collecting',
     guidance,
   };
@@ -220,7 +264,7 @@ export function retainReadyMeasurementSnapshot(
   return getTuningMeasurementReadiness(current, nowMs).ready ? current : previous;
 }
 
-function observedSlip(frame: TelemetryData): number | undefined {
+function observedSlip(frame: EngineMeasurementFrame): number | undefined {
   const slip = frame.TireSlipRatio;
   if (!Array.isArray(slip) || slip.length < 4 || !slip.slice(0, 4).every(isFiniteNumber)) return undefined;
 
@@ -274,6 +318,50 @@ function observationBins(state: TuningMeasurementState): TuningMeasurementBin[] 
   return [...grouped.values()].sort((a, b) => a.index - b.index);
 }
 
+/** Bounded cut/recovery evidence, not a flat-RPM or positive-power saturation test.
+ * 4% permits limiter hysteresis; 1% requires approach/recovery to the same upper envelope.
+ * Anchor cut entry to the preceding loaded positive frame: the first negative
+ * sample can already contain RPM decay. Do not gate cut evidence on peak-power RPM;
+ * a flat/rising band can reach the limiter without a post-peak power drop.
+ * Three multi-frame cycles over >=350ms, each <=1s, reject isolated sign noise.
+ * These are observation priors, not NA/Turbo constants or a calibrated limiter model.
+ */
+function advanceCutoffCycles(previous: CutoffCycleEvidence | undefined, rpm: number,
+  upperRpm: number, timestamp: number, cut: boolean,
+  previousPositiveRpm: number | undefined): CutoffCycleEvidence | undefined {
+  let cycle = previous && { ...previous };
+  if (cycle && (rpm < cycle.upperRpm * 0.96 || rpm > cycle.upperRpm * 1.01
+    || timestamp - cycle.lastCycleMs > 1000)) cycle = undefined;
+  const upper = cycle?.upperRpm ?? upperRpm;
+  const approachedUpper = previousPositiveRpm !== undefined
+    && previousPositiveRpm >= upper * 0.99 && previousPositiveRpm <= upper * 1.01;
+  if (!cycle) {
+    return cut && approachedUpper && rpm >= upperRpm * 0.96 && rpm <= upperRpm * 1.01
+      ? { upperRpm, startedMs: timestamp, lastCycleMs: timestamp, cycles: 0,
+        phase: 'cut', cutSamples: 1, recoverySamples: 0 } : undefined;
+  }
+  if (cut) {
+    if (cycle.phase === 'recovery') return undefined;
+    if (cycle.phase === 'armed') {
+      if (!approachedUpper) return undefined;
+      cycle.phase = 'cut';
+      cycle.cutSamples = 0;
+    }
+    cycle.cutSamples++;
+  } else if (cycle.phase !== 'armed') {
+    if (cycle.cutSamples < 2) return undefined;
+    cycle.phase = 'recovery';
+    cycle.recoverySamples = rpm >= cycle.upperRpm * 0.99 ? cycle.recoverySamples + 1 : 0;
+    if (cycle.recoverySamples >= 2) {
+      cycle.cycles++;
+      cycle.phase = 'armed';
+      cycle.recoverySamples = 0;
+      cycle.lastCycleMs = timestamp;
+    }
+  }
+  return cycle;
+}
+
 /**
  * Accept a contiguous, WOT, in-race engine-output sweep for the requested car.
  * Slip is retained as context, not a gate: engine P/T does not infer road grip.
@@ -282,7 +370,7 @@ function observationBins(state: TuningMeasurementState): TuningMeasurementBin[] 
  */
 export function advanceTuningMeasurement(
   state: TuningMeasurementState,
-  frame: TelemetryData | null,
+  frame: EngineMeasurementFrame | null,
   connected: boolean,
   nowMs: number,
 ): TuningMeasurementState {
@@ -297,7 +385,11 @@ export function advanceTuningMeasurement(
   if (frame.IsRaceOn !== 1) return withGuidance({ ...state, identity, lastAcceptedTimestampMs: undefined }, 'not-in-race');
 
   const timestamp = frame.TimestampMS;
-  if (!isFiniteNumber(timestamp) || timestamp < 0) return withGuidance({ ...state, identity, lastAcceptedTimestampMs: undefined }, 'timestamp-stalled');
+  if (!isFiniteNumber(timestamp) || timestamp < 0) return withGuidance({ ...state, identity,
+    ...(state.analysisVersion ? { loadedSinceMs: undefined, lastMorphologyTimestampMs: undefined,
+      plateauCandidateRpm: undefined, plateauDurationMs: 0, plateauHadOutputCut: false, cutoffCycles: undefined,
+      lastLoadedPositiveRpm: undefined } : {}),
+    lastAcceptedTimestampMs: undefined }, 'timestamp-stalled');
   if (state.lastTimestampMs !== undefined && timestamp < state.lastTimestampMs) return withGuidance(state, 'timestamp-regressed');
   if (state.lastTimestampMs !== undefined && timestamp === state.lastTimestampMs) {
     // A repeated UI snapshot is not an observation break. Keep the previous
@@ -306,7 +398,7 @@ export function advanceTuningMeasurement(
     return withGuidance(state, 'timestamp-stalled');
   }
 
-  const progressed = { ...state, identity, lastTimestampMs: timestamp, lastProgressedAtMs: nowMs };
+  let progressed: TuningMeasurementState = { ...state, identity, lastTimestampMs: timestamp, lastProgressedAtMs: nowMs };
   const redlineRpm = frame.EngineMaxRpm;
   const rpm = frame.CurrentEngineRpm;
   const powerWatts = frame.PowerWatts;
@@ -325,11 +417,12 @@ export function advanceTuningMeasurement(
       lastAcceptedTimestampMs: undefined }, 'gear-not-forward');
   }
   if (progressed.lastObservedGear !== undefined && frame.Gear !== progressed.lastObservedGear) {
-    return withGuidance({ ...progressed, lastObservedGear: frame.Gear,
+    progressed = withGuidance({ ...progressed, lastObservedGear: frame.Gear,
       gearSettleUntilMs: timestamp + TUNING_MEASUREMENT_GEAR_SETTLE_MS,
       lastAcceptedTimestampMs: undefined }, 'gear-changing');
+    if (!state.analysisVersion) return progressed;
   }
-  if (progressed.gearSettleUntilMs !== undefined && timestamp < progressed.gearSettleUntilMs) {
+  if (!state.analysisVersion && progressed.gearSettleUntilMs !== undefined && timestamp < progressed.gearSettleUntilMs) {
     return withGuidance({ ...progressed, lastAcceptedTimestampMs: undefined }, 'gear-changing');
   }
   if (!isFiniteNumber(frame.AccelInput) || frame.AccelInput < TUNING_MEASUREMENT_WOT_INPUT) {
@@ -341,6 +434,19 @@ export function advanceTuningMeasurement(
   }
   if (!isFiniteNumber(powerWatts) || !isFiniteNumber(torqueNewtons)) {
     return withGuidance({ ...progressed, lastAcceptedTimestampMs: undefined }, 'output-unavailable');
+  }
+  if (state.analysisVersion) {
+    progressed.lastObservedGear = frame.Gear;
+    if (!isFiniteNumber(frame.SpeedMetersPerSecond) || frame.SpeedMetersPerSecond < ENGINE_ANALYSIS_MIN_SPEED_MPS) {
+      return withGuidance({ ...progressed, lastAcceptedTimestampMs: undefined }, 'vehicle-not-moving');
+    }
+    if (state.lastTimestampMs !== undefined && timestamp - state.lastTimestampMs > TUNING_MEASUREMENT_MAX_CONTIGUOUS_GAP_MS) {
+      return withGuidance({ ...progressed, lastAcceptedTimestampMs: undefined }, 'sampling-gap');
+    }
+    progressed.loadedSinceMs ??= timestamp;
+    if (timestamp - progressed.loadedSinceMs < TUNING_MEASUREMENT_GEAR_SETTLE_MS) {
+      return withGuidance({ ...progressed, lastAcceptedTimestampMs: undefined }, 'load-settling');
+    }
   }
   const positiveOutput = powerWatts > 0 && torqueNewtons > 0;
   const normalizedSlip = observedSlip(frame);
@@ -359,6 +465,8 @@ export function advanceTuningMeasurement(
   const evidence = positiveOutput
     ? addBin(progressed.rpmEvidenceBins ?? [], rpm, redlineRpm, powerWatts, torqueNewtons, 64)
     : progressed.rpmEvidenceBins;
+  const calculationPeaks = state.analysisVersion ? qualifiedEnginePeaks(evidence ?? []) : undefined;
+  const referencePower = calculationPeaks ? calculationPeaks.power : observedPeakPower;
 
   let plateauCandidateRpm = progressed.plateauCandidateRpm;
   let plateauDurationMs = progressed.plateauDurationMs ?? 0;
@@ -366,17 +474,20 @@ export function advanceTuningMeasurement(
   let cutoffDetected = progressed.cutoffDetected ?? false;
   let effectiveRedline = progressed.effectiveRedline;
   let powerDropoffDetected = progressed.powerDropoffDetected ?? false;
+  let cutoffCycles = progressed.cutoffCycles;
   // A continued sweep beyond a tentative upper limit supersedes that inference.
   if (effectiveRedline && rpm > effectiveRedline + 50) {
     cutoffDetected = false;
     powerDropoffDetected = false;
     effectiveRedline = undefined;
+    cutoffCycles = undefined;
   }
 
   const atSweepTop = progressed.highestRpm !== undefined && rpm >= progressed.highestRpm - 50
     && progressed.lowestRpm !== undefined && progressed.lowestRpm <= redlineRpm * 0.4
     && (evidence?.length ?? 0) >= 6;
-  if (atSweepTop) {
+  // Preserve the historical reducer contract. Versioned analysis requires actual cycles.
+  if (!state.analysisVersion && atSweepTop) {
     if (plateauCandidateRpm !== undefined && Math.abs(rpm - plateauCandidateRpm) <= 50) {
       plateauDurationMs += Math.max(0, morphologyDeltaMs);
       plateauHadOutputCut ||= !positiveOutput;
@@ -398,8 +509,23 @@ export function advanceTuningMeasurement(
     plateauHadOutputCut = false;
   }
 
-  if (positiveOutput && observedPeakPower && rpm >= observedPeakPower.rpm * 1.05) {
-    if (powerWatts <= observedPeakPower.value * 0.88) {
+  if (state.analysisVersion) {
+    const cycleEligible = (positiveOutput || (powerWatts <= 0 && torqueNewtons <= 0))
+      && referencePower
+      && progressed.highestRpm !== undefined && progressed.lowestRpm !== undefined
+      && progressed.lowestRpm <= redlineRpm * 0.4 && (evidence?.length ?? 0) >= 6;
+    cutoffCycles = cycleEligible
+      ? advanceCutoffCycles(cutoffCycles, rpm, progressed.highestRpm!, timestamp,
+        powerWatts <= 0 && torqueNewtons <= 0, progressed.lastLoadedPositiveRpm) : undefined;
+    if (cutoffCycles && cutoffCycles.cycles >= 3 && timestamp - cutoffCycles.startedMs >= 350
+      && acceptedMs >= TUNING_MEASUREMENT_MIN_ACCEPTED_MS && !cutoffDetected) {
+      cutoffDetected = true;
+      effectiveRedline = Math.min(redlineRpm, Math.round(Math.max(progressed.highestRpm!, cutoffCycles.upperRpm)));
+    }
+  }
+
+  if (positiveOutput && referencePower && rpm >= referencePower.rpm * 1.05) {
+    if (powerWatts <= referencePower.value * 0.88) {
       powerDropoffDetected = true;
       if (!effectiveRedline) {
         effectiveRedline = Math.min(redlineRpm, Math.round(rpm));
@@ -419,10 +545,12 @@ export function advanceTuningMeasurement(
     plateauCandidateRpm,
     plateauDurationMs,
     plateauHadOutputCut,
+    cutoffCycles,
+    ...(state.analysisVersion ? { lastLoadedPositiveRpm: positiveOutput ? rpm : undefined } : {}),
     lastMorphologyTimestampMs: timestamp,
     rpmEvidenceBins: evidence,
-    powerbandStartRpm: observedPeakTorque?.rpm,
-    powerbandEndRpm: observedPeakPower ? Math.max(observedPeakPower.rpm, effectiveRedline ?? 0) : undefined,
+    powerbandStartRpm: (calculationPeaks ? calculationPeaks.torque : observedPeakTorque)?.rpm,
+    powerbandEndRpm: referencePower ? Math.max(referencePower.rpm, effectiveRedline ?? 0) : undefined,
     maxObservedNormalizedSlip: normalizedSlip === undefined ? progressed.maxObservedNormalizedSlip
       : Math.max(progressed.maxObservedNormalizedSlip ?? 0, normalizedSlip),
     acceptedMs,

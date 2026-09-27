@@ -79,7 +79,7 @@ describe('calculateAEGOGearing', () => {
     expect(result.finalDrive).toBeLessThanOrEqual(6.1);
   });
 
-  it('rebalances weak-engine gearing away from high-final-drive and sub-1.0 first-gear extremes', () => {
+  it('reports a weak-engine launch target beyond the joint ratio envelope', () => {
     const weakEngineCar: TuningCarParams = {
       ...sampleCar,
       weight: 2100,
@@ -94,18 +94,19 @@ describe('calculateAEGOGearing', () => {
 
     const result = calculateAEGOGearing('Road', 6, weakEngineCar, 5000);
 
-    expect(result.finalDrive).toBeLessThanOrEqual(6.1);
-    expect(result.gears[0]).toBeGreaterThanOrEqual(1.0);
+    expect(result.unsupported).toBe(true);
+    expect(result.gears).toEqual([]);
+    expect(result.unsupportedReason).toContain('model targets');
   });
 
   it('preserves total drive ratios while moving the editable split toward a neutral final drive', () => {
     const result = calculateAEGOGearing('Road', 6, sampleCar, 7500);
     const tireCircumferenceM = (((245 * 0.40) * 2 + 18 * 25.4) * Math.PI) / 1000;
-    const expectedFirstTotalRatio = (6500 * tireCircumferenceM * 60) / (90 * 1.15 * 1000);
+    const expectedFirstTotalRatio = 1400 * 9.81 * 0.625 * tireCircumferenceM / (2 * Math.PI) / (400 * 0.90);
 
     expect(result.finalDrive).toBeLessThanOrEqual(4.5);
     expect(result.gears[0]).toBeGreaterThanOrEqual(1.0);
-    expect(result.gears[0] * result.finalDrive).toBeCloseTo(expectedFirstTotalRatio, 1);
+    expect(Math.abs(result.gears[0] * result.finalDrive - expectedFirstTotalRatio)).toBeLessThanOrEqual(result.finalDrive * 0.005 + 1e-9);
   });
 
   it('Drift goal should produce different gearing than Road', () => {
@@ -242,7 +243,7 @@ describe('calculateAEGOGearing', () => {
     }
   });
 
-  it('Vehicle 3594 Road gearing should tighten final drive, align shift RPMs to powerband, and correct simulatedTopSpeed at redline', () => {
+  it('Vehicle 3594 Road gearing preserves endpoints and applies simulatedTopSpeed at redline', () => {
     const car3594: TuningCarParams = {
       weight: 1668.77,
       weight_distribution: 50,
@@ -270,11 +271,11 @@ describe('calculateAEGOGearing', () => {
       expect(baseRes.gears[i]).toBeLessThan(baseRes.gears[i - 1]);
     }
 
-    // 3. Verify ALL shift RPMs (from 1->2 up to highest gear) drop into effective powerband <= maxHpRpm
-    for (let i = 1; i < baseRes.gears.length; i++) {
-      const shiftRpm = maxRpm * (baseRes.gears[i] / baseRes.gears[i - 1]);
-      expect(shiftRpm).toBeLessThanOrEqual(car3594.maxHpRpm + 50);
-    }
+    // Peak power is not a hard post-shift RPM ceiling. Keep the top endpoint
+    // intact instead of cascading that obsolete constraint down the ladder.
+    const circumference = ((315 * 0.30 * 2 + 20 * 25.4) / 1000) * Math.PI;
+    const targetTop = 5750 * circumference * 60 / (Math.cbrt(770) * 37 * (1 + 0.12 * 0.685) * 0.95 * 1000);
+    expect(Math.abs(baseRes.finalDrive * baseRes.gears[6] - targetTop)).toBeLessThanOrEqual(baseRes.finalDrive * 0.005 + 1e-9);
 
     // 4. Secondary Correction with simulatedTopSpeed = 290 km/h
     const correctedRes = calculateAEGOGearing('Road', 7, car3594, maxRpm, {
@@ -290,18 +291,17 @@ describe('calculateAEGOGearing', () => {
     expect(redlineSpeedKmh).toBeLessThanOrEqual(290 + 1.0);
   });
 
-  it('drivetrain launch factor should adjust 1st gear target speed (AWD shorter 1st gear than RWD)', () => {
+  it('driven-axle loading changes launch multiplication (this AWD prior exceeds RWD)', () => {
     const awdCar: TuningCarParams = { ...sampleCar, drivetrain: 'AWD' };
     const rwdCar: TuningCarParams = { ...sampleCar, drivetrain: 'RWD' };
 
     const awdRes = calculateAEGOGearing('Road', 6, awdCar, 7500);
     const rwdRes = calculateAEGOGearing('Road', 6, rwdCar, 7500);
 
-    // AWD 1st gear ratio should be larger than RWD for shorter 1st gear launch
-    expect(awdRes.gears[0]).toBeGreaterThan(rwdRes.gears[0]);
+    expect(awdRes.finalDrive * awdRes.gears[0]).toBeGreaterThan(rwdRes.finalDrive * rwdRes.gears[0]);
   });
 
-  it('should prioritize raising Final Drive on secondary correction without over-compressing top gear or making earlier gears dense', () => {
+  it('jointly reallocates secondary correction without changing the launch total target', () => {
     const baseRes = calculateAEGOGearing('Road', 6, sampleCar, 7500);
 
     // Baseline redline speed is around 280 km/h, test secondary correction with simulatedTopSpeed = 220 km/h
@@ -315,22 +315,18 @@ describe('calculateAEGOGearing', () => {
     // 2. Usability: Top gear ratio (Gear 6) must remain near baseline target without being over-compressed
     expect(correctedRes.gears[5]).toBeCloseTo(baseRes.gears[5], 1);
 
-    // 3. Spacing: Earlier gears (1st, 2nd, 3rd) retain their uncompressed spacing
-    expect(correctedRes.gears[0]).toBe(baseRes.gears[0]);
-    expect(correctedRes.gears[1]).toBe(baseRes.gears[1]);
-
-    // 4. Top Gear Usability Guard: Step ratio of the final gear must not exceed 0.90
-    const topStepRatio = correctedRes.gears[5] / correctedRes.gears[4];
-    expect(topStepRatio).toBeLessThanOrEqual(0.90);
-    expect(topStepRatio).toBeGreaterThanOrEqual(0.70);
+    // 3. FD and first gear move together; first total differs only by rounding.
+    expect(Math.abs(correctedRes.gears[0] * correctedRes.finalDrive - baseRes.gears[0] * baseRes.finalDrive))
+      .toBeLessThanOrEqual((correctedRes.finalDrive + baseRes.finalDrive) * 0.005 + 1e-9);
+    correctedRes.gears.slice(1).forEach((g, i) => expect(g).toBeLessThan(correctedRes.gears[i]));
   });
 
-  it('should clamp FD to 6.1 and apply top gear usability guard on extreme low simulatedTopSpeed', () => {
+  it('preserves both rounded endpoints at maximum FD and rejects a conflicting lower target', () => {
     const extremeLowRes = calculateAEGOGearing('Road', 6, sampleCar, 7500, {
       simulatedTopSpeed: 130
     });
 
-    // 1. FD is clamped to maximum in-game limit 6.1
+    // 1. Closest feasible FD is the current model maximum, not a per-car slider claim.
     expect(extremeLowRes.finalDrive).toBe(6.1);
 
     // 2. All gears must remain strictly monotonic
@@ -338,9 +334,11 @@ describe('calculateAEGOGearing', () => {
       expect(extremeLowRes.gears[i]).toBeLessThan(extremeLowRes.gears[i - 1]);
     }
 
-    // 3. Top gear step ratio remains bounded by usability guard <= 0.90
-    const topStepRatio = extremeLowRes.gears[5] / extremeLowRes.gears[4];
-    expect(topStepRatio).toBeLessThanOrEqual(0.90);
+    // No silent 0.90 step clamp may move the requested terminal endpoint.
+    const radius = (245 * 0.40 * 2 + 18 * 25.4) / 2000;
+    const targetTotal = 7500 * 2 * Math.PI * radius * 60 / (130 * 1000);
+    expect(Math.abs(extremeLowRes.gears[5] * extremeLowRes.finalDrive - targetTotal)).toBeLessThanOrEqual(extremeLowRes.finalDrive * 0.005 + 1e-9);
+    expect(calculateAEGOGearing('Road', 6, sampleCar, 7500, { simulatedTopSpeed: 50 })).toMatchObject({ unsupported: true, gears: [] });
   });
 
   it('should generate healthy baseline final drive and gear ratios across gear counts (4 to 10 gears)', () => {

@@ -23,7 +23,11 @@ fn rust_tuning_core_matches_golden_fixtures() {
     let root: Value = serde_json::from_str(&content).expect("parse fixture json");
 
     let cases = root["cases"].as_array().expect("cases array");
-    assert_eq!(cases.len(), 18, "Must contain all 18 test cases");
+    assert_eq!(
+        cases.len(),
+        21,
+        "Must contain the original 18 and three Road regression cases"
+    );
 
     for c in cases {
         let id = c["id"].as_str().unwrap();
@@ -200,6 +204,28 @@ fn rust_tuning_core_matches_golden_fixtures() {
             secondary_correction.as_ref(),
         );
         let exp_fd = expected["gearing"]["finalDrive"].as_f64().unwrap();
+        assert_eq!(
+            actual_gearing.unsupported,
+            expected["gearing"]["unsupported"].as_bool(),
+            "{id}: unsupported"
+        );
+        assert_eq!(
+            actual_gearing.unsupported_reason.as_deref(),
+            expected["gearing"]["unsupportedReason"].as_str(),
+            "{id}: reason"
+        );
+        if race_goal == RaceGoal::Road {
+            assert_eq!(
+                actual_gearing.final_drive, exp_fd,
+                "{id}: exact FD grid parity"
+            );
+            let expected_gears: Vec<f64> =
+                serde_json::from_value(expected["gearing"]["gears"].clone()).unwrap();
+            assert_eq!(
+                actual_gearing.gears, expected_gears,
+                "{id}: exact ratio grid parity"
+            );
+        }
         assert!(
             (actual_gearing.final_drive - exp_fd).abs() <= 0.02,
             "[{}] final_drive actual {} vs exp {}",

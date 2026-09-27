@@ -1,7 +1,195 @@
 {
   "version": "1.0.0",
-  "createdAt": "2026-09-23T00:00:00Z",
+  "createdAt": "2026-09-27T00:00:00Z",
   "cases": [
+    {
+      "id": "road_launch_target_infeasible",
+      "description": "Launch target cannot be represented by the existing model bounds",
+      "raceGoal": "Road",
+      "inputs": {
+        "carParams": {
+          "weight": 801.952,
+          "weight_distribution": 42,
+          "drivetrain": "RWD",
+          "maxHp": 72,
+          "maxTorque": 1,
+          "maxHpRpm": 3983.44,
+          "maxTorqueRpm": 2392,
+          "rearTireWidth": 245,
+          "rearTireAspect": 50,
+          "rearTireRim": 15
+        },
+        "maxRpm": 6000,
+        "numGears": 6
+      },
+      "expected": {
+        "aeroDownforce": {
+          "front": 59.8,
+          "rear": 100.6
+        },
+        "chassis": {
+          "arb": {
+            "front": 27.9,
+            "rear": 38.1
+          },
+          "springs": {
+            "front": 59.2,
+            "rear": 75.8,
+            "heightF": 11.5,
+            "heightR": 11.5
+          },
+          "damping": {
+            "reboundF": 9,
+            "reboundR": 12,
+            "bumpF": 5.4,
+            "bumpR": 7.2
+          },
+          "diff": {
+            "accelF": 0,
+            "decelF": 0,
+            "accelR": 44,
+            "decelR": 20,
+            "centerRear": 50
+          }
+        },
+        "gearing": {
+          "finalDrive": 0,
+          "gears": [],
+          "unsupported": true,
+          "unsupportedReason": "Road model targets conflict with the available ratio range. This does not mean the vehicle cannot be driven."
+        }
+      }
+    },
+    {
+      "id": "road_beetle_race_six_3983",
+      "description": "Low-power RWD Race-six, factory four-speed is not its installed count",
+      "raceGoal": "Road",
+      "inputs": {
+        "carParams": {
+          "weight": 801.952,
+          "weight_distribution": 42,
+          "drivetrain": "RWD",
+          "induction": "NA",
+          "maxHp": 72,
+          "maxTorque": 158.631,
+          "maxTorqueRpm": 2392,
+          "rearTireWidth": 245,
+          "rearTireAspect": 50,
+          "rearTireRim": 15,
+          "aeroEfficiency": 0.855,
+          "maxHpRpm": 3983.44
+        },
+        "maxRpm": 6000,
+        "numGears": 6
+      },
+      "expected": {
+        "aeroDownforce": {
+          "front": 59.8,
+          "rear": 100.6
+        },
+        "chassis": {
+          "arb": {
+            "front": 27.9,
+            "rear": 38.1
+          },
+          "springs": {
+            "front": 59.2,
+            "rear": 75.8,
+            "heightF": 11.5,
+            "heightR": 11.5
+          },
+          "damping": {
+            "reboundF": 9,
+            "reboundR": 12,
+            "bumpF": 5.4,
+            "bumpR": 7.2
+          },
+          "diff": {
+            "accelF": 0,
+            "decelF": 0,
+            "accelR": 44,
+            "decelR": 20,
+            "centerRear": 50
+          }
+        },
+        "gearing": {
+          "finalDrive": 4.05,
+          "gears": [
+            3.09,
+            2.13,
+            1.53,
+            1.14,
+            0.89,
+            0.72
+          ]
+        }
+      }
+    },
+    {
+      "id": "road_beetle_race_six_3365",
+      "description": "Low-power RWD Race-six, factory four-speed is not its installed count",
+      "raceGoal": "Road",
+      "inputs": {
+        "carParams": {
+          "weight": 801.952,
+          "weight_distribution": 42,
+          "drivetrain": "RWD",
+          "induction": "NA",
+          "maxHp": 72,
+          "maxTorque": 158.631,
+          "maxTorqueRpm": 2392,
+          "rearTireWidth": 245,
+          "rearTireAspect": 50,
+          "rearTireRim": 15,
+          "aeroEfficiency": 0.855,
+          "maxHpRpm": 3365.312
+        },
+        "maxRpm": 6000,
+        "numGears": 6
+      },
+      "expected": {
+        "aeroDownforce": {
+          "front": 59.8,
+          "rear": 100.6
+        },
+        "chassis": {
+          "arb": {
+            "front": 27.9,
+            "rear": 38.1
+          },
+          "springs": {
+            "front": 59.2,
+            "rear": 75.8,
+            "heightF": 11.5,
+            "heightR": 11.5
+          },
+          "damping": {
+            "reboundF": 9,
+            "reboundR": 12,
+            "bumpF": 5.4,
+            "bumpR": 7.2
+          },
+          "diff": {
+            "accelF": 0,
+            "decelF": 0,
+            "accelR": 44,
+            "decelR": 20,
+            "centerRear": 50
+          }
+        },
+        "gearing": {
+          "finalDrive": 3.42,
+          "gears": [
+            3.66,
+            2.43,
+            1.68,
+            1.22,
+            0.92,
+            0.72
+          ]
+        }
+      }
+    },
     {
       "id": "road_awd_standard",
       "description": "Road AWD with 1/65 ARB meta and moderate downforce",
@@ -62,11 +250,11 @@
         "gearing": {
           "finalDrive": 4.07,
           "gears": [
-            2.69,
-            1.91,
-            1.41,
-            1.09,
-            0.87,
+            2.54,
+            1.82,
+            1.37,
+            1.06,
+            0.86,
             0.72
           ]
         }
@@ -124,11 +312,11 @@
         "gearing": {
           "finalDrive": 4.44,
           "gears": [
-            1.88,
-            1.45,
-            1.16,
-            0.96,
-            0.82,
+            1.55,
+            1.26,
+            1.06,
+            0.91,
+            0.8,
             0.72
           ]
         }
@@ -783,13 +971,10 @@
           }
         },
         "gearing": {
-          "finalDrive": 3.56,
-          "gears": [
-            1.39,
-            1.14,
-            0.96,
-            0.81
-          ]
+          "finalDrive": 0,
+          "gears": [],
+          "unsupported": true,
+          "unsupportedReason": "Road model targets conflict with the available ratio range. This does not mean the vehicle cannot be driven."
         }
       }
     },
@@ -842,18 +1027,18 @@
           }
         },
         "gearing": {
-          "finalDrive": 4.41,
+          "finalDrive": 3.85,
           "gears": [
-            3.1,
-            2.42,
-            1.92,
-            1.54,
-            1.26,
-            1.05,
-            0.88,
+            1,
+            0.95,
+            0.91,
+            0.87,
+            0.83,
+            0.79,
             0.76,
-            0.66,
-            0.58
+            0.72,
+            0.69,
+            0.66
           ]
         }
       }
@@ -911,11 +1096,11 @@
         "gearing": {
           "finalDrive": 4.28,
           "gears": [
-            2.06,
-            1.55,
-            1.22,
-            0.99,
-            0.83,
+            1.21,
+            1.06,
+            0.94,
+            0.85,
+            0.78,
             0.72
           ]
         }
@@ -974,11 +1159,11 @@
         "gearing": {
           "finalDrive": 4.89,
           "gears": [
-            2.06,
-            1.55,
-            1.22,
-            0.99,
+            1.06,
+            0.97,
+            0.89,
             0.83,
+            0.77,
             0.72
           ]
         }
@@ -1032,12 +1217,12 @@
         "gearing": {
           "finalDrive": 4.37,
           "gears": [
-            1.74,
-            1.37,
-            1.12,
-            0.94,
-            0.8,
-            0.68
+            1.46,
+            1.21,
+            1.03,
+            0.89,
+            0.79,
+            0.72
           ]
         }
       }
@@ -1092,12 +1277,12 @@
         "gearing": {
           "finalDrive": 5.18,
           "gears": [
-            1.38,
-            1.16,
-            1,
-            0.86,
-            0.74,
-            0.63
+            1.79,
+            1.4,
+            1.14,
+            0.95,
+            0.81,
+            0.72
           ]
         }
       }

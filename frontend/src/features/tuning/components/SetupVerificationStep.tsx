@@ -30,9 +30,10 @@ export function SetupVerificationStep({ goal, carId, profile, chassis, alignment
     }).catch(() => { if (active) setStatus('Saved snapshots could not be loaded.'); });
     return () => { active = false; };
   }, [goal, carId]);
-  const recommendation = useMemo(() => profile && chassis && alignment && gearing
-    ? workflowRecommendation(profile, chassis, alignment, gearing, inputSnapshot) : null, [profile, chassis, alignment, gearing, inputSnapshot]);
-  if (!recommendation) return <p>{t('Complete engine measurement before verifying the full setup.')}</p>;
+  const isGearingFeasible = Boolean(gearing && ('model' in gearing ? true : !gearing.unsupported && gearing.gears.length > 0));
+  const recommendation = useMemo(() => profile && chassis && alignment && gearing && isGearingFeasible
+    ? workflowRecommendation(profile, chassis, alignment, gearing, inputSnapshot) : null, [profile, chassis, alignment, gearing, inputSnapshot, isGearingFeasible]);
+  if (!recommendation) return <p>{t('Engine analysis and a feasible gearing result are required before setup verification.')}</p>;
   if (goal === 'Road') return <RoadWorkflowView recommendation={recommendation} carId={carId} />;
   const save = async () => {
     if (busy) return;

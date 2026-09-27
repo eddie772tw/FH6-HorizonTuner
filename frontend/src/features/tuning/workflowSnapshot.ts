@@ -21,8 +21,14 @@ function canonicalWorkflowInputSnapshot(inputSnapshot: Record<string, unknown>):
 /** Transport mapping only. All numbers are outputs of the existing pure solver. */
 export function workflowRecommendation(profile: CarParams, chassis: ChassisTuningResult,
   alignment: StaticTireAlignResult, gearing: WorkflowGearingResult, inputSnapshot: Record<string, unknown>): WorkflowRecommendation {
-  const ev = 'model' in gearing ? gearing : null;
-  if (Boolean(profile.isElectric) !== Boolean(ev)) throw new Error('Powertrain profile and gearing result modes must match');
+  const isEvResult = 'model' in gearing;
+  if (Boolean(profile.isElectric) !== isEvResult) throw new Error('Powertrain profile and gearing result modes must match');
+  if (!isEvResult) {
+    if (gearing.unsupported || !gearing.gears.length || !Number.isFinite(gearing.finalDrive) || gearing.finalDrive <= 0) {
+      throw new Error('A feasible gearing result is required for a recommendation.');
+    }
+  }
+  const ev = isEvResult ? gearing : null;
   const fields: WorkflowRecommendation['fields'] = {};
   const add = (key: string, value: number, unit: string) => { fields[key] = { value, unit }; };
   add('pressure.front', alignment.pcF, 'psi'); add('pressure.rear', alignment.pcR, 'psi');

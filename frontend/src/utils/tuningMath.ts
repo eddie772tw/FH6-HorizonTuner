@@ -1,10 +1,10 @@
 /**
- * Vehicle Physics & Tuning Calculation Engine (Frontend SSOT Implementation)
+ * Vehicle Physics & Tuning Calculation Engine (UI-aligned implementation)
  *
  * Conforms to:
  * - docs/contracts/tuning_responsibilities.md (Tuning & Gearing Responsibilities Contract)
- * - tests/fixtures/tuning_golden_fixtures.json (18 Golden Fixture Scenarios)
- * - .agents/AGENTS.md Core Invariant #2 (Vehicle physics twin SSOT with backend-rust/src/tuning/)
+ * - tests/fixtures/tuning_golden_fixtures.json (cross-end numerical contract)
+ * - .agents/AGENTS.md Core Invariant #2 (formal core: backend-rust/src/tuning/)
  *
  * Interface representing vehicle parameters used for tuning calculation.
  */
@@ -92,6 +92,8 @@ export interface MeasuredEngineInputs {
   engineMaxRpm: number;
   peakPowerRpm: number;
   peakTorqueRpm: number;
+  /** Qualified moving-sweep torque; absent preserves older callers. */
+  peakTorqueNm?: number;
 }
 
 /** One confirmed game step; this is an experiment, not an inferred optimum. */
@@ -110,9 +112,11 @@ export function calculateMeasuredGearing(goal: string, gears: number, params: Tu
   if (!params || params.isElectric || !engine || !Number.isInteger(gears) || gears < 4 || gears > 10 || !Number.isFinite(params.maxHp) || params.maxHp <= 0 ||
     ![engine.engineMaxRpm, engine.peakPowerRpm, engine.peakTorqueRpm].every(value => Number.isFinite(value) && value > 0) ||
     engine.peakPowerRpm > engine.engineMaxRpm || engine.peakTorqueRpm > engine.engineMaxRpm) return null;
-  const result = calculateAEGOGearing(goal, gears, { ...params, maxHpRpm: engine.peakPowerRpm,
+  if (engine.peakTorqueNm !== undefined && (!Number.isFinite(engine.peakTorqueNm) || engine.peakTorqueNm <= 0)) return null;
+  const result = calculateAEGOGearing(goal, gears, { ...params,
+    ...(engine.peakTorqueNm !== undefined ? { maxTorque: engine.peakTorqueNm } : {}), maxHpRpm: engine.peakPowerRpm,
     maxTorqueRpm: engine.peakTorqueRpm }, engine.engineMaxRpm);
-  return result.unsupported ? null : result;
+  return goal !== 'Road' && result.unsupported ? null : result;
 }
 
 export interface ChassisTuningResult {
@@ -235,12 +239,51 @@ export function getRoadAwdRearPercent(params: TuningCarParams | null): number {
 function roadLaunchTotalRatio(params: TuningCarParams, torqueNm: number, radiusM: number): number {
   const front = Number.isFinite(params.weight_distribution)
     ? Math.max(1, Math.min(99, params.weight_distribution)) / 100 : 0.5;
-  const rearShare = params.drivetrain === 'FWD' ? 0 : getRoadAwdRearPercent(params) / 100;
+  const rearShare = params.drivetrain === 'FWD' ? 0 : params.drivetrain === 'RWD' ? 1 : getRoadAwdRearPercent(params) / 100;
   const frontLimitG = rearShare < 1 ? front / (1 - rearShare + 0.20) : Infinity;
   const rearLimitG = rearShare > 0.20 ? (1 - front) / (rearShare - 0.20) : Infinity;
   const accelerationG = Math.min(1, frontLimitG, rearLimitG);
   const mass = Number.isFinite(params.weight) && params.weight > 0 ? params.weight : 1400;
   return mass * 9.81 * accelerationG * radiusM / (torqueNm * 0.90);
+}
+
+/**
+ * Joint allocation on the existing model's slider grid, not an FH6 grip/shift
+ * optimum. Endpoint error is at most FD * 0.005 from gear rounding.
+ * A bounded 411-candidate search avoids silently relaxing either target.
+ */
+function allocateRoadGearing(firstTotal: number, topTotal: number, count: number): GearingResult {
+  const unavailable: GearingResult = { finalDrive: 0, gears: [], unsupported: true,
+    unsupportedReason: 'Road model targets conflict with the available ratio range. This does not mean the vehicle cannot be driven.' };
+  if (!Number.isInteger(count) || count < 4 || count > 10 ||
+    ![firstTotal, topTotal].every(value => Number.isFinite(value) && value > 0) || firstTotal <= topTotal) return unavailable;
+  const preferredFd = topTotal / getTargetTopGearRatio(count);
+  const candidates = Array.from({ length: 411 }, (_, i) => (200 + i) / 100)
+    .sort((a, b) => {
+      const distance = Math.abs(a - preferredFd) - Math.abs(b - preferredFd);
+      return Math.abs(distance) < 1e-12 ? a - b : distance;
+    });
+  for (const finalDrive of candidates) {
+    const first = Math.round(firstTotal / finalDrive * 100);
+    const top = Math.round(topTotal / finalDrive * 100);
+    if (first < 100 || first > 600 || top < 40 || top > 600 || first - top < count - 1) continue;
+    const steps = count - 1;
+    const mean = Math.pow(top / first, 1 / steps);
+    const spread = Math.min(0.12, Math.max(0.04, (1 - mean) * 0.6));
+    const raw = Array.from({ length: steps }, (_, i) =>
+      Math.max(0.55, Math.min(0.92, mean + spread * (i / (steps - 1) - 0.5))));
+    const scale = Math.pow(top / (first * raw.reduce((a, b) => a * b, 1)), 1 / steps);
+    const grid = [first];
+    let ideal = first;
+    for (let i = 1; i < steps; i++) {
+      ideal *= raw[i - 1] * scale;
+      // Reserve one click for every remaining gear; neither endpoint moves.
+      grid.push(Math.max(top + steps - i, Math.min(grid[i - 1] - 1, Math.round(ideal))));
+    }
+    grid.push(top);
+    return { finalDrive, gears: grid.map(value => value / 100) };
+  }
+  return unavailable;
 }
 
 /** Sanitize only Road inputs; copied values never mutate saved profiles. */
@@ -439,59 +482,19 @@ export function calculateAEGOGearing(
     }
 
   } else {
-    // Road / Circuit (Default) - Closed-loop Geometric Step Ratio Smooth Correction Model
-    const kTrack = 0.95;
-    const vTarget = Math.pow(maxHp, 1 / 3) * 37.0 * (1 + 0.12 * aeroEfficiency);
-    const vCircuit = vTarget * kTrack;
-    const targetTopGear = getTargetTopGearRatio(numGears);
-
-    // Final Drive calculation anchored to peak HP RPM and target top gear
-    const topTotalRatio = (rpmHp * C * 60) / (vCircuit * 1000);
-    const rawFd = topTotalRatio / targetTopGear;
-    fd = Math.max(AEGO_FINAL_DRIVE_MIN, Math.min(AEGO_FINAL_DRIVE_MAX, rawFd));
-
-    // Calculate actual top gear based on clamped final drive
-    const gTop = topTotalRatio / fd;
-
-    // 1st Gear target speed with drivetrain launch modifier kDrive
-    const vBase = 90.0;
-    const kDrive = drivetrain === 'AWD' ? 0.85 : (drivetrain === 'FWD' ? 1.05 : 1.15);
-    const v1 = vBase * kDrive;
-
-    let g1 = (rpmHp * C * 60) / (v1 * fd * 1000);
-    if (carParams && (drivetrain === 'FWD' ||
-      (drivetrain === 'AWD' && Number.isFinite(carParams.roadAwdRearPercent)))) {
-      // Lengthen launch gearing when available driven-axle load cannot support
-      // the old fixed-speed first gear. The remaining ratio/powerband guards apply.
-      const launchTotal = roadLaunchTotalRatio(carParams, maxTorque, C / (2 * Math.PI));
-      if (Number.isFinite(launchTotal) && launchTotal > 0) g1 = Math.min(g1, launchTotal / fd);
-    }
-
-    gears = new Array(numGears).fill(0);
-    gears[0] = Math.max(1.0, Math.min(6.0, g1), gTop + 0.01 * (numGears - 1));
-    gears[numGears - 1] = gTop;
-
-    if (numGears > 1) {
-      const numSteps = numGears - 1;
-      const rMean = Math.pow(gTop / gears[0], 1 / numSteps);
-      const rSpread = Math.min(0.12, Math.max(0.04, (1.0 - rMean) * 0.6));
-
-      const rRaw: number[] = [];
-      let prodRaw = 1.0;
-      for (let i = 1; i <= numSteps; i++) {
-        const offsetFraction = numSteps > 1 ? (i - 1) / (numSteps - 1) - 0.5 : 0;
-        const rVal = Math.max(0.55, Math.min(0.92, rMean + rSpread * offsetFraction));
-        rRaw.push(rVal);
-        prodRaw *= rVal;
+    // Road launch and terminal targets are solved together. The launch envelope
+    // uses explicit engineering priors, not inferred tyre grip or a fixed speed.
+    const launchParams = carParams ?? { weight, weight_distribution: 50, drivetrain,
+      maxHp, maxTorque, maxHpRpm: rpmHp, maxTorqueRpm: rpmT };
+    const firstTotal = roadLaunchTotalRatio(launchParams, maxTorque, C / (2 * Math.PI));
+    let targetSpeed = Math.pow(maxHp, 1 / 3) * 37 * (1 + 0.12 * aeroEfficiency) * 0.95;
+    // Preserve explicit legacy preview corrections; never infer a measured speed.
+    for (const speed of [secondaryCorrection?.simulatedTopSpeed, secondaryCorrection?.softMaxSpeed]) {
+      if (speed !== undefined && Number.isFinite(speed) && speed > 0) {
+        targetSpeed = Math.min(targetSpeed, speed * rpmHp / maxRpm);
       }
-
-      const s = Math.pow(gTop / (gears[0] * prodRaw), 1 / numSteps);
-      for (let i = 1; i < numGears; i++) {
-        const rAdj = rRaw[i - 1] * s;
-        gears[i] = gears[i - 1] * rAdj;
-      }
-      gears[numGears - 1] = gTop;
     }
+    return allocateRoadGearing(firstTotal, rpmHp * C * 60 / (targetSpeed * 1000), numGears);
   }
 
   // Secondary Correction Mechanism (FD-First Macro Scaling with Top-Gear Usability Protection)
@@ -604,13 +607,10 @@ export function calculateAEGOGearing(
     ? (rpmHp + 50) / maxRpm
     : 0.92;
 
-  const roadLaunchLimited = raceGoal === 'Road' && (drivetrain === 'FWD' ||
-    (drivetrain === 'AWD' && Number.isFinite(carParams?.roadAwdRearPercent)));
-  const effectiveStepRatio = roadLaunchLimited ? 1 : maxStepRatioRounded;
   for (let i = 1; i < monotonicLimit; i++) {
      const maxAllowedRatio = Math.min(
        Math.round((roundedGears[i - 1] - 0.01) * 100) / 100,
-       Math.floor(roundedGears[i - 1] * effectiveStepRatio * 100) / 100
+       Math.floor(roundedGears[i - 1] * maxStepRatioRounded * 100) / 100
      );
      if (roundedGears[i] > maxAllowedRatio) {
         roundedGears[i] = Math.max(0.40, maxAllowedRatio);

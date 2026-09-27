@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { TuningCarParams } from '../../utils/tuningMath';
 import type { TuningMeasurementState } from './tuningMeasurement';
 import { engineDependencyKey, parseEngineArchive, type EngineObservation } from './engineMeasurementArchive';
 import type { TuningCaptureFile } from '../../domain/tuning/telemetryCapture';
 import { backendFetch } from '../../services/backend';
 import { validateEngineCapture } from './engineCaptureReadback';
+import { analyzeEngineCapture } from './engineCalculation';
 import { isCurrentEngineObservationSaveToken, type EngineObservationSaveToken } from './tuneSessionController';
 
 const STORAGE_KEY = 'tuning-engine-observations/v1';
@@ -50,6 +51,9 @@ export function useEngineMeasurementArchive(carId: string, profile: TuningCarPar
     return () => { active = false; };
   }, []);
   const current = !profile?.isElectric && selected?.dependencyKey === key && selected.carId === carId ? selected.data : null;
+  // Loading/failed capture hydration never exposes the legacy instantaneous peak.
+  const calculation = useMemo(() => current && selected
+    ? analyzeEngineCapture(selected.id, carId, selected.capture, current) : null, [current, selected, carId]);
   const compatible = archive.filter(item => !profile?.isElectric && item.carId === carId && item.dependencyKey === key && savedIds.includes(item.id));
   const complete = async (data: TuningMeasurementState, capture: TuningCaptureFile) => {
     if (profile?.isElectric || saving.current !== null) return false;
@@ -93,7 +97,7 @@ export function useEngineMeasurementArchive(carId: string, profile: TuningCarPar
     setSavedIds(previous => [...previous, item.id]);
     return true;
   };
-  return { key, current, observation: current ? selected : null, complete, invalidate: () => {
+  return { key, current, calculation, observation: current ? selected : null, complete, invalidate: () => {
     generation.current += 1;
     pending.current = null;
     saving.current = null;
@@ -104,15 +108,15 @@ export function useEngineMeasurementArchive(carId: string, profile: TuningCarPar
     reuse: async (id: string) => {
       const item = compatible.find(entry => entry.id === id);
       if (!item) return;
-      const token = ++generation.current;
-      const reuseIdentityGeneration = identityGenerationRef.current;
+      generation.current += 1;
+      const reuseToken = currentSaveToken();
       setSelected(item);
       try {
         const response = await backendFetch('/api/road/engine-observations/' + encodeURIComponent(id) + '/capture');
         const value = response.ok ? validateEngineCapture(await response.json(), item.id, item.carId, item.dependencyKey) : null;
-        if (token !== generation.current || keyRef.current !== key || reuseIdentityGeneration !== identityGenerationRef.current) return;
+        if (!isCurrentEngineObservationSaveToken(reuseToken, currentSaveToken())) return;
         if (value) setSelected({ ...item, capture: value });
-      } catch { /* Engine summary remains reusable; tire evidence is unavailable. */ }
+      } catch { /* History remains readable; calculation requires the capture or a new sweep. */ }
     },
   };
 }

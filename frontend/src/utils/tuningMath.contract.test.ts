@@ -43,6 +43,19 @@ interface TuningGoldenFixtureOutput {
 const FIXTURE_PATH = path.resolve(__dirname, '../../../tests/fixtures/tuning_golden_fixtures.json');
 
 const TEST_CASES: TuningFixtureCase[] = [
+  ...[3365.312, 3983.44].map(rpm => ({
+    id: 'road_beetle_race_six_' + Math.round(rpm), description: 'Low-power RWD Race-six, factory four-speed is not its installed count',
+    raceGoal: 'Road', maxRpm: 6000, numGears: 6,
+    carParams: { weight: 801.952, weight_distribution: 42, drivetrain: 'RWD' as const, induction: 'NA' as const,
+      maxHp: 72, maxTorque: 158.631, maxHpRpm: rpm, maxTorqueRpm: 2392,
+      rearTireWidth: 245, rearTireAspect: 50, rearTireRim: 15, aeroEfficiency: 0.855 },
+  })),
+  {
+    id: 'road_launch_target_infeasible', description: 'Launch target cannot be represented by the existing model bounds',
+    raceGoal: 'Road', maxRpm: 6000, numGears: 6,
+    carParams: { weight: 801.952, weight_distribution: 42, drivetrain: 'RWD', maxHp: 72,
+      maxTorque: 1, maxHpRpm: 3983.44, maxTorqueRpm: 2392, rearTireWidth: 245, rearTireAspect: 50, rearTireRim: 15 },
+  },
   {
     id: 'road_awd_standard',
     description: 'Road AWD with 1/65 ARB meta and moderate downforce',
