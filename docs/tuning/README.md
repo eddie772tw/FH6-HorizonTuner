@@ -10,6 +10,8 @@ PR #330 已將現行工作流整合為四階段 `Goal & Setup → Chassis & Tire
 
 ## 先確認影響哪一條路徑
 
+Road v2 的起步瞬態過濾、共同齒比求解與待完成實車驗收，見 [AEGO 低功率修正紀錄](aego-low-power-20260927.md)。歷史引擎觀測仍可讀，新推薦必須由原始 capture 通過新版分析。
+
 | 範圍 | 程式入口 | 閱讀重點 |
 | --- | --- | --- |
 | 模式選擇 | [App.tsx](../../frontend/src/App.tsx) | `developer_tuning_enabled` 選擇一般或開發者調校介面 |

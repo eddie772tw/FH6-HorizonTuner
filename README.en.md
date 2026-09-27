@@ -23,6 +23,8 @@ The current release provides **real-time telemetry dashboards**, a **customizabl
 
 ## Core Features
 
+AEGO Road now uses qualified moving-sweep bin averages and jointly allocates first gear, final drive and top gear. Historical observations remain readable; insufficient captures or infeasible model targets block recommendations. Engineering priors and pending in-game validation are documented in the [low-power Road fix record](docs/tuning/aego-low-power-20260927.md).
+
 * **Real-time Telemetry & Dynamics (60Hz Live Data)**:
   - High-frequency 60Hz UDP telemetry packet ingestion and high-performance visual rendering.
   - Live charts for vehicle speed, engine RPM, power/torque curves, boost pressure, pedal inputs (Throttle/Brake/Clutch), and steering angle.

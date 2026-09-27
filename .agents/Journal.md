@@ -1,5 +1,13 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-09-27 / AEGO 起步瞬態與低功率 Road 齒比（Codex as Codex）
+
+- **可重現盲點**：低於 1 km/h 且 ClutchInput=0 的瞬態仍會污染功率峰值。兩份本車 capture 的固定分箱峰值約 3984 RPM，不能把約 3365 RPM 的瞬時峰值當成換檔硬上限，也不能歸因為 NA 標籤。
+- **相容性**：保留原始觀測，分析另帶版本與 observation ID。重播使用同一採樣 reducer，缺少 capture 或未通過 6 秒／覆蓋 gate 就阻擋新推薦；修正後兩份舊 capture 均需補測，不為了得到結果放寬門檻。
+- **幾何限制**：共同分配起步與頂檔總減速比，整數百分位網格保留端點與全檔間距；無解是模型衝突，不是汽車無法行駛。重複夾至 0.40 不是合法修復。
+- **證據邊界**：真實 fixture、TS/Rust golden、全量本地測試與隔離 Halfmoon 元件檢查不等於實車起步可用；Race 六速初始設定不能誤寫成原廠四速。詳見 [修正紀錄](../docs/tuning/aego-low-power-20260927.md)。
+- **採用技能**：physics-tuning-math、ponytail、modular-refactoring、halfmoon-design-system、pr-author-maintainer。保留既有依賴與其他賽事公式，沒有完整曲線最佳化器。
+
 ## 2026-09-26 / Rust 原生媒體補強與 Python 後端接替（Codex as Codex）
 
 - **證據**：基準 Rust 並未缺少 WASAPI／GSMTC；使用者啟動 Spotify 後能讀到原生頻譜與專輯資訊。但把選定裝置設為已移除 ID 可重現持續 unavailable，Python 參考會退回預設裝置。Rust 已補 fallback 與預設裝置／重新連接偵測。
