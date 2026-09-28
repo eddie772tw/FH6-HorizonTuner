@@ -438,12 +438,21 @@ impl TelemetryStore {
         c.query_row("SELECT COUNT(*), (SELECT session_id FROM sessions ORDER BY start_time DESC LIMIT 1) FROM sessions", [], |r| Ok((r.get::<_, i64>(0)? as usize, r.get::<_, Option<String>>(1)?))).map_err(|e| e.to_string())
     }
     pub fn delete_session(&self, id: &str) -> Result<bool, String> {
-        let c = self.conn()?;
-        Ok(
-            c.execute("DELETE FROM sessions WHERE session_id=?", params![id])
-                .map_err(|e| e.to_string())?
-                > 0,
+        let mut c = self.conn()?;
+        let tx = c.transaction().map_err(|e| e.to_string())?;
+        tx.execute(
+            "DELETE FROM telemetry_channels WHERE session_id=?",
+            params![id],
         )
+        .map_err(|e| e.to_string())?;
+        tx.execute("DELETE FROM laps WHERE session_id=?", params![id])
+            .map_err(|e| e.to_string())?;
+        let deleted = tx
+            .execute("DELETE FROM sessions WHERE session_id=?", params![id])
+            .map_err(|e| e.to_string())?
+            > 0;
+        tx.commit().map_err(|e| e.to_string())?;
+        Ok(deleted)
     }
 }
 fn row_value(r: &rusqlite::Row<'_>) -> rusqlite::Result<Value> {
