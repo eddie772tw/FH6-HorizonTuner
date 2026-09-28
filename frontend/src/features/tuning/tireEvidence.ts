@@ -18,7 +18,7 @@ export interface TireEvidenceResult {
 const finite = (value: unknown): value is number => typeof value === 'number' && Number.isFinite(value);
 const missing = (sample: TuningCaptureSample, channel: string) => sample.missingChannels !== undefined
   && (!Array.isArray(sample.missingChannels) || sample.missingChannels.some((item) => typeof item !== 'string' || item === channel || item.startsWith(channel + '.')));
-const completeWheels = (values: unknown): values is number[] => Array.isArray(values) && values.length === 4 && values.every(finite);
+const completeWheels = (values: unknown): values is number[] => Array.isArray(values) && values.length === 4 && finite(values[0]) && finite(values[1]) && finite(values[2]) && finite(values[3]);
 
 /**
  * Summarise only observable tyre evidence from a captured, straight-line run.
@@ -81,10 +81,34 @@ export function observeTireEvidence(samples: TuningCaptureSample[], identity: Ti
   }
 
   const acceleration = accCount === 0 ? null : accSum / accCount;
-  const slipComplete = accepted.length > 0 && accepted.every((sample) => !missing(sample, 'TireSlipRatio') && completeWheels(sample.tireSlipRatio));
-  const maxSlip = slipComplete ? accepted.reduce((maximum, sample) => sample.tireSlipRatio.reduce((inner, value) => finite(value) ? Math.max(inner, Math.abs(value)) : inner, maximum), 0) : null;
 
-  const temperatureComplete = accepted.length > 0 && accepted.every((sample) => !missing(sample, 'TireTemp') && completeWheels(sample.tireTemp));
+  let slipComplete = accepted.length > 0;
+  let maxSlip: number | null = slipComplete ? 0 : null;
+  let temperatureComplete = accepted.length > 0;
+
+  for (let i = 0; i < accepted.length; i++) {
+    const sample = accepted[i];
+
+    if (slipComplete) {
+       if (missing(sample, 'TireSlipRatio') || !completeWheels(sample.tireSlipRatio)) {
+         slipComplete = false;
+         maxSlip = null;
+       } else if (maxSlip !== null) {
+         const sr = sample.tireSlipRatio;
+         if (finite(sr[0])) maxSlip = Math.max(maxSlip, Math.abs(sr[0]));
+         if (finite(sr[1])) maxSlip = Math.max(maxSlip, Math.abs(sr[1]));
+         if (finite(sr[2])) maxSlip = Math.max(maxSlip, Math.abs(sr[2]));
+         if (finite(sr[3])) maxSlip = Math.max(maxSlip, Math.abs(sr[3]));
+       }
+    }
+
+    if (temperatureComplete) {
+       if (missing(sample, 'TireTemp') || !completeWheels(sample.tireTemp)) {
+         temperatureComplete = false;
+       }
+    }
+  }
+
   const observedTemperature = temperatureComplete && validTempCount === accepted.length * 4
     ? [
         tempCounts[0] === 0 ? null : tempSums[0] / tempCounts[0],
