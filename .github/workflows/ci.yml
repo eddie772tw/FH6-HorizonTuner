@@ -26,10 +26,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v7
+      uses: actions/checkout@v7.0.1
 
     - name: Set up uv and managed Python 3.13
-      uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+      uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
       with:
         python-version: "3.13"
         activate-environment: true
@@ -65,7 +65,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v7
+      uses: actions/checkout@v7.0.1
 
     - name: Install pnpm
       uses: pnpm/action-setup@v6
@@ -114,10 +114,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v7
+      uses: actions/checkout@v7.0.1
 
     - name: Set up uv and managed Python 3.13
-      uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+      uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
       with:
         python-version: "3.13"
         activate-environment: true
@@ -150,7 +150,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v7
+      uses: actions/checkout@v7.0.1
 
     - name: Install pnpm
       uses: pnpm/action-setup@v6
@@ -182,10 +182,10 @@ jobs:
     timeout-minutes: 20
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v7
+      uses: actions/checkout@v7.0.1
 
     - name: Set up uv and managed Python 3.13
-      uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+      uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
       with:
         python-version: "3.13"
         activate-environment: true
@@ -245,7 +245,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v7
+      uses: actions/checkout@v7.0.1
 
     - name: Download release build metrics
       uses: actions/download-artifact@v8
@@ -273,7 +273,7 @@ jobs:
     timeout-minutes: 20
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v7
+      uses: actions/checkout@v7.0.1
 
     - name: Restore Tauri Rust build cache
       id: tauri-rust-cache
@@ -294,7 +294,7 @@ jobs:
         echo "Tauri Rust cache: **$cache_state**" >> "$GITHUB_STEP_SUMMARY"
 
     - name: Set up uv and managed Python 3.13
-      uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+      uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
       with:
         python-version: "3.13"
         activate-environment: true
