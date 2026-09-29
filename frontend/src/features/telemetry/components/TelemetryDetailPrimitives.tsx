@@ -75,6 +75,7 @@ const getCssVariable = (style: CSSStyleDeclaration, name: string, fallback: stri
 );
 
 const resolveColor = (color: string, style: CSSStyleDeclaration): string => {
+  if (color.startsWith('#') || color.startsWith('rgb')) return color;
   const match = /^var\((--[\w-]+)(?:,\s*(.+))?\)$/.exec(color.trim());
   if (!match) return color;
   return getCssVariable(style, match[1], match[2] ?? 'rgba(255, 255, 255, 0.8)');
@@ -187,6 +188,7 @@ const drawChart = (
   context.lineCap = 'round';
   context.lineJoin = 'round';
   context.lineWidth = 2;
+
   for (let lineIndex = 0; lineIndex < lines.length; lineIndex += 1) {
     const line = lines[lineIndex];
     context.strokeStyle = resolveColor(line.color, style);
