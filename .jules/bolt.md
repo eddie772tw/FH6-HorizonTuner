@@ -100,3 +100,7 @@ Additionally, attempting to optimize 60Hz telemetry data copying in `FrameInterp
 ## 2024-11-26 - Eliminating list allocations in high-frequency binary unpack loop
 **Learning:** In the high-frequency backend telemetry listener loop processing 60Hz UDP data (`pack_telemetry_binary`), dynamically creating lists to pad small arrays (`list(tire_temps) + [0.0] * ...`) and using list comprehensions (`[sa * 57.29578 for sa in slip_angles]`) generates unnecessary intermediate objects and significant Garbage Collection (GC) pressure over thousands of frames.
 **Action:** Unroll fixed-length array unpacking manually and inline mathematical operations into scalar variables (e.g., `t_fl = tire_temps[0] if len(tire_temps) > 0 else 0.0`) when preparing fields for `struct.pack`. This completely eliminates list allocation overhead in the hot loop.
+
+## 2024-11-26 - Eliminating Chained Array Methods and Allocations in Session Debrief Math
+**Learning:** In high-frequency or large-dataset data processing paths (e.g., `calculateFrontendDebrief` processing session telemetry), accumulating temporary array values like `tireTemps` or `suspensionValues`, only to iterate over them again with chained array methods (`.map`, `.reduce`), creates significant object allocation overhead and GC pressure.
+**Action:** Instead of maintaining intermediate arrays, unroll iterations into a single-pass `for` loop, aggregating variables like sums, counts, and maximum values inline. This drastically reduces allocations and improves function execution speed substantially in benchmarks.
