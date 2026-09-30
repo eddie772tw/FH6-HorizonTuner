@@ -1,7 +1,7 @@
 [package]
 name = "fh6-backend"
 default-run = "server-sidecar"
-version = "11.45.19"
+version = "11.45.20"
 edition = "2021"
 description = "Independent HTTP, WebSocket and UDP backend for FH6 HorizonTuner"
 license = "MIT"

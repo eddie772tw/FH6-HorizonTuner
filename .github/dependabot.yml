@@ -49,7 +49,7 @@ updates:
 
   # 3. Frontend Dependencies (pnpm / frontend/package.json)
   - package-ecosystem: "npm"
-    directory: "/"
+    directory: "/frontend"
     schedule:
       interval: "weekly"
       day: "monday"

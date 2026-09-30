@@ -1,5 +1,20 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-09-30 / v1.6.2 Release Chore 發行整備、依賴雙端對齊與多 PR 依序整合（Gemini as Antigravity）
+
+- **來源／狀態**：`local`／`verified`；審查並依序合併 PR #451、#453、#447，關閉重複之 #452，完成 v1.6.2 版本前置整備與雙端版本契約遞增（`11.45.20`）。
+- **Learning**：
+  1. **Dependabot 雙端跨語言生態路徑脫鉤陷阱**：在多語言與 Desktop 架構中，若 `.github/dependabot.yml` 將 cargo 指向 `/frontend/src-tauri` 但 npm 設為根目錄 `/`（而非 `/frontend`），Dependabot 升級 Rust Crate（如 `tauri-plugin-updater` 2.12.0）時無法同步升級前端 `@tauri-apps/plugin-updater`，導致 Tauri 打包檢查拋出 fatal version mismatch。在 PR 中同步升級前端 NPM package 並刷新 `pnpm-lock.yaml` 可解除 blocker，未來應將 npm 配置路徑修正為 `"/frontend"`。
+  2. **多 Agent / Jules 紀錄衝突排解**：當多個 Jules 或 Agent 同時向 `.jules/bolt.md` 末尾追加經驗紀錄時容易引發 Git 內容衝突。Rebase 循序保留各方條目可乾淨恢復 MERGEABLE 狀態且不破壞歷史脈絡。
+  3. **Release 版本單一真理 (SSOT) 驗證契約**：依據 `scripts/validate_version_consistency.py` 規範，Runtime version 以 `frontend/src-tauri/tauri.conf.json` 為 SSOT，並嚴格要求 `backend-rust/Cargo.toml`、`backend-rust/Cargo.lock`、`frontend/src-tauri/Cargo.toml`、`frontend/src-tauri/Cargo.lock` 保持 100% 一致。
+- **Action**：
+  1. 依序合併 PR #451 (`perf: Optimize sessionDebriefMath processing loops`)、PR #453 (`perf: optimize resolveColor in telemetry chart primitives`)、PR #447 (`deps(rust)(deps): bump the rust-dependencies group in /frontend/src-tauri with 2 updates`)。
+  2. 關閉已由 PR #450 覆蓋之重複 PR #452。
+  3. 同步遞增 `backend-rust/Cargo.toml`、`frontend/src-tauri/Cargo.toml`、`frontend/src-tauri/tauri.conf.json` 至 `11.45.20`，並刷新對應 `Cargo.lock`。
+  4. 建立 `docs/releases/v1.6.2.md` 發行說明文件。
+- **Evidence**：`python scripts/validate_version_consistency.py` 驗證 `11.45.20` 通過；前端 149 檔案 1089 tests 通過；Vite build 成功；Rust sidecar & tauri check 通過；`git diff --check` 通過。
+- **Skills**：`portable-release-validation`、`pr-review-evaluation`、`pr-author-maintainer`。
+
 ## 2026-09-28 / AEGO 六項實車驗收完成與 PR 文件同步（Codex as Codex）
 
 - **最新驗收狀態**：使用者明確確認 PR #446「In-Game Confirmation & Remaining Evidence」六項均已完成，包含基準／候選各至少三次可比試車、0–30／0–60 與換檔記錄，以及 v4 補丁後的獨立新實車量測。此狀態取代下方 2026-09-27 歷史紀錄中的待完成項目。
