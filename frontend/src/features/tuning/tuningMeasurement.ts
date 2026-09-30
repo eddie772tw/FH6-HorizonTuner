@@ -266,7 +266,8 @@ export function retainReadyMeasurementSnapshot(
 
 function observedSlip(frame: EngineMeasurementFrame): number | undefined {
   const slip = frame.TireSlipRatio;
-  if (!Array.isArray(slip) || slip.length < 4 || !slip.slice(0, 4).every(isFiniteNumber)) return undefined;
+  // [PERF] Manual unrolling to avoid .slice() intermediate array and .every() closure overhead in high-frequency path
+  if (!Array.isArray(slip) || slip.length < 4 || !isFiniteNumber(slip[0]) || !isFiniteNumber(slip[1]) || !isFiniteNumber(slip[2]) || !isFiniteNumber(slip[3])) return undefined;
 
   let maxAbsSlip = 0;
   for (let i = 0; i < 4; i++) {

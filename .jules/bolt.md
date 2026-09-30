@@ -112,3 +112,6 @@ Additionally, attempting to optimize 60Hz telemetry data copying in `FrameInterp
 **Learning:** In high-frequency frontend canvas rendering loops (e.g., drawing telemetry charts with hundreds of points), performing style lookups or evaluating expensive regular expressions for every data point or chart line severely increases CPU overhead.
 **Action:** Extract and cache resolved styling properties (like colors) outside the per-point data loops. Implement fast-path string checks (e.g., `.startsWith('#')`) to bypass expensive regex and `getComputedStyle` operations when standard hex or rgb values are used.
 
+## 2024-11-26 - Eliminating Array.slice() allocations in High-Frequency Array Validation
+**Learning:** In high-frequency frontend telemetry processing loops (e.g., verifying wheel inputs in `observedSlip`), calling `.slice(0, 4)` to extract elements before validation allocates a temporary array on every invocation. Combined with `.every(fn)`, this generates unnecessary GC pressure and closure overhead on the hot path.
+**Action:** Replace `.slice().every()` calls on fixed-size sub-arrays with unrolled index access and logical validation (e.g., replacing `!slip.slice(0, 4).every(isFiniteNumber)` with `!isFiniteNumber(slip[0]) || !isFiniteNumber(slip[1])...`) to entirely eliminate intermediate array allocations.
