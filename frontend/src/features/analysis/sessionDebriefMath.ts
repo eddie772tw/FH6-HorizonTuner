@@ -59,8 +59,11 @@ export function calculateFrontendDebrief(points: RawTelemetryPoint[]): SessionDe
     };
   }
 
-  const tireTemps: number[][] = [[], [], [], []];
-  const suspensionValues: number[] = [];
+  const tempSums = [0, 0, 0, 0];
+  const tempCounts = [0, 0, 0, 0];
+
+  let suspValuesCount = 0;
+  let peakSuspension = 0;
   let bottomOuts = 0;
 
   let corneringTotal = 0;
@@ -102,23 +105,34 @@ export function calculateFrontendDebrief(points: RawTelemetryPoint[]): SessionDe
     // 1. Thermals (canonical unit is °F, convert to °C)
     const tTemp = p.TireTemp;
     if (tTemp) {
-      for (let j = 0; j < 4; j++) {
-        const temp = tTemp[j];
-        if (isFiniteNumber(temp)) {
-          tireTemps[j].push(((temp - 32) * 5) / 9);
-        }
-      }
+      if (isFiniteNumber(tTemp[0])) { tempSums[0] += ((tTemp[0] - 32) * 5) / 9; tempCounts[0]++; }
+      if (isFiniteNumber(tTemp[1])) { tempSums[1] += ((tTemp[1] - 32) * 5) / 9; tempCounts[1]++; }
+      if (isFiniteNumber(tTemp[2])) { tempSums[2] += ((tTemp[2] - 32) * 5) / 9; tempCounts[2]++; }
+      if (isFiniteNumber(tTemp[3])) { tempSums[3] += ((tTemp[3] - 32) * 5) / 9; tempCounts[3]++; }
     }
 
     // 2. Suspension
     const suspTravel = p.SuspTravel;
     if (suspTravel) {
-      for (let j = 0; j < 4; j++) {
-        const value = suspTravel[j];
-        if (isFiniteNumber(value)) {
-          suspensionValues.push(value);
-          if (value >= 0.95) bottomOuts++;
-        }
+      if (isFiniteNumber(suspTravel[0])) {
+        suspValuesCount++;
+        if (suspTravel[0] > peakSuspension) peakSuspension = suspTravel[0];
+        if (suspTravel[0] >= 0.95) bottomOuts++;
+      }
+      if (isFiniteNumber(suspTravel[1])) {
+        suspValuesCount++;
+        if (suspTravel[1] > peakSuspension) peakSuspension = suspTravel[1];
+        if (suspTravel[1] >= 0.95) bottomOuts++;
+      }
+      if (isFiniteNumber(suspTravel[2])) {
+        suspValuesCount++;
+        if (suspTravel[2] > peakSuspension) peakSuspension = suspTravel[2];
+        if (suspTravel[2] >= 0.95) bottomOuts++;
+      }
+      if (isFiniteNumber(suspTravel[3])) {
+        suspValuesCount++;
+        if (suspTravel[3] > peakSuspension) peakSuspension = suspTravel[3];
+        if (suspTravel[3] >= 0.95) bottomOuts++;
       }
     }
 
@@ -158,20 +172,28 @@ export function calculateFrontendDebrief(points: RawTelemetryPoint[]): SessionDe
     }
   }
 
-  const averages = tireTemps.map((values) =>
-    values.length > 0 ? Math.round((values.reduce((sum, value) => sum + value, 0) / values.length) * 10) / 10 : null,
-  );
+  const averages = [
+    tempCounts[0] > 0 ? Math.round((tempSums[0] / tempCounts[0]) * 10) / 10 : null,
+    tempCounts[1] > 0 ? Math.round((tempSums[1] / tempCounts[1]) * 10) / 10 : null,
+    tempCounts[2] > 0 ? Math.round((tempSums[2] / tempCounts[2]) * 10) / 10 : null,
+    tempCounts[3] > 0 ? Math.round((tempSums[3] / tempCounts[3]) * 10) / 10 : null,
+  ];
   const [flAvg, frAvg, rlAvg, rrAvg] = averages;
 
-  const knownTemps = averages.filter(isFiniteNumber);
+  let maxTemp = -Infinity;
+  for (let i = 0; i < 4; i++) {
+    if (averages[i] !== null && averages[i]! > maxTemp) {
+      maxTemp = averages[i]!;
+    }
+  }
+
   let thermalStatus: TireThermalSummary["status"] = "no_data";
-  if (knownTemps.length > 0) {
-    const maxTemp = knownTemps.reduce((max, value) => Math.max(max, value), -Infinity);
+  if (maxTemp !== -Infinity) {
     thermalStatus = maxTemp > 105.0 ? "Overheating" : maxTemp < 65.0 ? "Cold" : "Optimal";
   }
 
   let suspStatus: SuspensionDebriefSummary["status"] = "no_data";
-  if (suspensionValues.length > 0) {
+  if (suspValuesCount > 0) {
     suspStatus = bottomOuts > 10 ? "Severe Bottoming" : bottomOuts > 0 ? "Occasional Bottoming" : "Optimal";
   }
 
@@ -188,10 +210,6 @@ export function calculateFrontendDebrief(points: RawTelemetryPoint[]): SessionDe
   }
 
   const lapsSet = new Set([...lapStartsSeen].filter((lap) => completedLaps.has(lap)));
-  let peakSuspension = 0;
-  for (const value of suspensionValues) {
-    if (value > peakSuspension) peakSuspension = value;
-  }
   return {
     total_samples: len,
     valid_laps: lapsSet.size,
@@ -203,8 +221,8 @@ export function calculateFrontendDebrief(points: RawTelemetryPoint[]): SessionDe
       status: thermalStatus,
     },
     suspension: {
-      peak_travel_pct: suspensionValues.length > 0 ? Math.round(peakSuspension * 1000) / 10 : null,
-      bottom_out_count: suspensionValues.length > 0 ? bottomOuts : null,
+      peak_travel_pct: suspValuesCount > 0 ? Math.round(peakSuspension * 1000) / 10 : null,
+      bottom_out_count: suspValuesCount > 0 ? bottomOuts : null,
       status: suspStatus,
     },
     handling_balance: {
