@@ -107,3 +107,8 @@ Additionally, attempting to optimize 60Hz telemetry data copying in `FrameInterp
 ## 2024-11-26 - Eliminating Chained Array Methods in Tire Evidence
 **Learning:** In high-frequency telemetry data processing functions (e.g., `observeTireEvidence`), chaining array methods like `.every()` inside loops over samples and `.reduce()` allocates temporary arrays and closures, generating GC pressure and drastically slowing down execution time.
 **Action:** Unroll these higher-order function chains into single-pass, inline `for` loops with manual index access and primitive accumulator variables. This drastically reduces memory allocation overhead and improved loop execution speed significantly in benchmarks.
+
+## 2024-11-26 - Eliminating Redundant Style Lookups in High-Frequency Canvas Rendering
+**Learning:** In high-frequency frontend canvas rendering loops (e.g., drawing telemetry charts with hundreds of points), performing style lookups or evaluating expensive regular expressions for every data point or chart line severely increases CPU overhead.
+**Action:** Extract and cache resolved styling properties (like colors) outside the per-point data loops. Implement fast-path string checks (e.g., `.startsWith('#')`) to bypass expensive regex and `getComputedStyle` operations when standard hex or rgb values are used.
+
