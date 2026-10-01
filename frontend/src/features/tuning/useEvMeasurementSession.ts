@@ -49,7 +49,7 @@ export function useEvMeasurementSession(carId: string, profile: CarParams | null
       publish(true);
       return;
     }
-    const channels = ['TimestampMS', 'IsRaceOn', 'CarOrdinal', 'CarClass', 'CarPerformanceIndex', 'EngineMaxRpm', 'CurrentEngineRpm', 'Gear', 'AccelInput', 'BrakeInput', 'ClutchInput', 'HandBrakeInput', 'PowerWatts', 'TorqueNewtons', 'WheelRotationSpeed', 'TireSlipRatio', 'SpeedMetersPerSecond'] as const;
+    const channels = ['TimestampMS', 'IsRaceOn', 'CarOrdinal', 'CarClass', 'CarPerformanceIndex', 'EngineMaxRpm', 'CurrentEngineRpm', 'Gear', 'AccelInput', 'BrakeInput', 'ClutchInput', 'HandBrakeInput', 'SteerInput', 'PowerWatts', 'TorqueNewtons', 'WheelRotationSpeed', 'TireSlipRatio', 'SpeedMetersPerSecond'] as const;
     frames.current.push(Object.fromEntries(channels.map(key => [key, frame[key]])) as Partial<TelemetryData>);
     publish();
   }), [publish]);

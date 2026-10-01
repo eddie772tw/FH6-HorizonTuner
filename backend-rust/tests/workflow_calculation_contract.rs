@@ -76,6 +76,11 @@ fn saved_request() -> Value {
     r
 }
 fn ev_capture() -> Value {
+    // Frozen actual desktop projection: the React hook test verifies every replay frame.
+    let channels: Vec<String> = serde_json::from_str(include_str!(
+        "../../tests/fixtures/ev_desktop_transport_channels.json"
+    ))
+    .unwrap();
     let replay: Value =
         serde_json::from_str(include_str!("../../tests/fixtures/ev_taycan_replay.json")).unwrap();
     let goldens: Value =
@@ -91,6 +96,11 @@ fn ev_capture() -> Value {
                     .unwrap()
                     .iter()
                     .zip(row.as_array().unwrap())
+                    .filter(|(k, _)| {
+                        channels
+                            .iter()
+                            .any(|channel| Some(channel.as_str()) == k.as_str())
+                    })
                     .map(|(k, v)| (k.as_str().unwrap().into(), v.clone()))
                     .collect(),
             )
@@ -352,4 +362,21 @@ fn mcp_cold_evidence_analysis_does_not_mutate_saved_state() {
             .unwrap(),
         before
     );
+}
+
+#[test]
+fn ev_desktop_projection_requires_observed_steering_for_qualification() {
+    let temp = tempfile::tempdir().unwrap();
+    let app = App::new(temp.path()).unwrap();
+    let raw = ev_capture();
+    let batch = call(&app, "/api/tuning/ev-batch", json!({"schemaVersion":"ev-batch/v1","state":fh6_backend::tuning::ev_measurement::initial("3445"),"frames":raw["frames"]})).unwrap();
+    assert_eq!(batch["readyGears"], json!([1, 2]));
+    assert!(call(&app, "/api/tuning/ev-evidence", raw.clone()).is_ok());
+    let mut missing = raw;
+    for frame in missing["frames"].as_array_mut().unwrap() {
+        frame.as_object_mut().unwrap().remove("SteerInput");
+    }
+    let batch = call(&app, "/api/tuning/ev-batch", json!({"schemaVersion":"ev-batch/v1","state":fh6_backend::tuning::ev_measurement::initial("3445"),"frames":missing["frames"]})).unwrap();
+    assert_eq!(batch["readyGears"], json!([]));
+    assert!(call(&app, "/api/tuning/ev-evidence", missing).is_err());
 }
