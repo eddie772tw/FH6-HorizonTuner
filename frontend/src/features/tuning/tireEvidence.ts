@@ -16,8 +16,15 @@ export interface TireEvidenceResult {
 }
 
 const finite = (value: unknown): value is number => typeof value === 'number' && Number.isFinite(value);
-const missing = (sample: TuningCaptureSample, channel: string) => sample.missingChannels !== undefined
-  && (!Array.isArray(sample.missingChannels) || sample.missingChannels.some((item) => typeof item !== 'string' || item === channel || item.startsWith(channel + '.')));
+const missingFast = (sample: TuningCaptureSample, channel: string) => {
+  if (sample.missingChannels === undefined) return false;
+  if (!Array.isArray(sample.missingChannels)) return true;
+  for (let i = 0; i < sample.missingChannels.length; i++) {
+    const item = sample.missingChannels[i];
+    if (typeof item !== 'string' || item === channel || item.startsWith(channel + '.')) return true;
+  }
+  return false;
+};
 const completeWheels = (values: unknown): values is number[] => Array.isArray(values) && values.length === 4 && finite(values[0]) && finite(values[1]) && finite(values[2]) && finite(values[3]);
 
 /**
@@ -39,16 +46,16 @@ export function observeTireEvidence(samples: TuningCaptureSample[], identity: Ti
     previousTimestamp = sample.timestampMS;
     if (sample.isRaceOn !== 1 || !finite(sample.speedMps) || sample.speedMps <= 1 || !finite(sample.gear) || sample.gear < 1) { reasons.add('motion-or-gear-invalid'); continue; }
     if (!finite(sample.brakeInput) || sample.brakeInput !== 0 || !finite(sample.handBrakeInput) || sample.handBrakeInput !== 0) { reasons.add('brake-active'); continue; }
-    const requiredScalars = ['AccelInput', 'BrakeInput', 'ClutchInput', 'HandBrakeInput', 'SteerInput', 'AccelerationX', 'AccelerationZ', 'Pitch', 'Roll'] as const;
-    if (requiredScalars.some(channel => missing(sample, channel))) { reasons.add('required-scalar-unavailable'); continue; }
+    if (missingFast(sample, 'AccelInput') || missingFast(sample, 'BrakeInput') || missingFast(sample, 'ClutchInput') || missingFast(sample, 'HandBrakeInput') || missingFast(sample, 'SteerInput') || missingFast(sample, 'AccelerationX') || missingFast(sample, 'AccelerationZ') || missingFast(sample, 'Pitch') || missingFast(sample, 'Roll')) { reasons.add('required-scalar-unavailable'); continue; }
     if (!finite(sample.accelInput) || sample.accelInput <= 0 || !finite(sample.clutchInput) || sample.clutchInput !== 0) { reasons.add('throttle-or-clutch-invalid'); continue; }
     // Forza Data Out steer is a signed U8-derived count (-127..127), not a normalized float.
     if (!finite(sample.steerInput) || Math.abs(sample.steerInput) > 3 || !finite(sample.accelerationX) || Math.abs(sample.accelerationX) > 1.5) { reasons.add('not-straight'); continue; }
-    if (![sample.pitch, sample.roll, sample.accelerationZ].every(finite) || Math.abs(sample.pitch!) > 0.15 || Math.abs(sample.roll!) > 0.15) { reasons.add('body-state-invalid'); continue; }
-    if (missing(sample, 'TireSlipRatio') || !completeWheels(sample.tireSlipRatio)) reasons.add('slip-unavailable');
-    if (missing(sample, 'TireTemp') || !completeWheels(sample.tireTemp)) reasons.add('temperature-unavailable');
-    if (missing(sample, 'NormalizedSuspensionTravel') || !Array.isArray(sample.normalizedSuspensionTravel) || sample.normalizedSuspensionTravel.length !== 4 || !sample.normalizedSuspensionTravel.every(finite)
-      || sample.normalizedSuspensionTravel.some((value) => value < 0.02 || value > 0.98)) { reasons.add('airborne-or-suspension-invalid'); continue; }
+    if (!finite(sample.pitch) || !finite(sample.roll) || !finite(sample.accelerationZ) || Math.abs(sample.pitch!) > 0.15 || Math.abs(sample.roll!) > 0.15) { reasons.add('body-state-invalid'); continue; }
+    if (missingFast(sample, 'TireSlipRatio') || !completeWheels(sample.tireSlipRatio)) reasons.add('slip-unavailable');
+    if (missingFast(sample, 'TireTemp') || !completeWheels(sample.tireTemp)) reasons.add('temperature-unavailable');
+    const st = sample.normalizedSuspensionTravel;
+    if (missingFast(sample, 'NormalizedSuspensionTravel') || !Array.isArray(st) || st.length !== 4 || !finite(st[0]) || !finite(st[1]) || !finite(st[2]) || !finite(st[3])
+      || st[0] < 0.02 || st[0] > 0.98 || st[1] < 0.02 || st[1] > 0.98 || st[2] < 0.02 || st[2] > 0.98 || st[3] < 0.02 || st[3] > 0.98) { reasons.add('airborne-or-suspension-invalid'); continue; }
     accepted.push(sample);
   }
 
@@ -90,7 +97,7 @@ export function observeTireEvidence(samples: TuningCaptureSample[], identity: Ti
     const sample = accepted[i];
 
     if (slipComplete) {
-       if (missing(sample, 'TireSlipRatio') || !completeWheels(sample.tireSlipRatio)) {
+       if (missingFast(sample, 'TireSlipRatio') || !completeWheels(sample.tireSlipRatio)) {
          slipComplete = false;
          maxSlip = null;
        } else if (maxSlip !== null) {
@@ -103,7 +110,7 @@ export function observeTireEvidence(samples: TuningCaptureSample[], identity: Ti
     }
 
     if (temperatureComplete) {
-       if (missing(sample, 'TireTemp') || !completeWheels(sample.tireTemp)) {
+       if (missingFast(sample, 'TireTemp') || !completeWheels(sample.tireTemp)) {
          temperatureComplete = false;
        }
     }

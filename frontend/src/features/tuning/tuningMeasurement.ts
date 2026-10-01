@@ -209,13 +209,36 @@ export function createEngineCalculation(carId: string): TuningMeasurementState {
 export function qualifiedEnginePeaks(bins: TuningMeasurementBin[]): {
   power?: TuningMeasurementPeak; torque?: TuningMeasurementPeak;
 } {
-  const supported = bins.filter(bin => bin.sampleCount >= 3 && bins.some(neighbor =>
-    Math.abs(neighbor.index - bin.index) === 1 && neighbor.sampleCount >= 3));
-  const peak = (field: 'averagePowerWatts' | 'averageTorqueNewtons') => supported
-    .slice().sort((a, b) => b[field] - a[field] || a.averageRpm - b.averageRpm)[0];
-  const power = peak('averagePowerWatts'), torque = peak('averageTorqueNewtons');
-  return { power: power && { value: power.averagePowerWatts, rpm: power.averageRpm },
-    torque: torque && { value: torque.averageTorqueNewtons, rpm: torque.averageRpm } };
+  let maxPowerBin: TuningMeasurementBin | undefined = undefined;
+  let maxTorqueBin: TuningMeasurementBin | undefined = undefined;
+  const len = bins.length;
+
+  for (let i = 0; i < len; i++) {
+    const bin = bins[i];
+    if (bin.sampleCount >= 3) {
+      let hasNeighbor = false;
+      for (let j = 0; j < len; j++) {
+        if (Math.abs(bins[j].index - bin.index) === 1 && bins[j].sampleCount >= 3) {
+          hasNeighbor = true;
+          break;
+        }
+      }
+
+      if (hasNeighbor) {
+        if (!maxPowerBin || bin.averagePowerWatts > maxPowerBin.averagePowerWatts || (bin.averagePowerWatts === maxPowerBin.averagePowerWatts && bin.averageRpm < maxPowerBin.averageRpm)) {
+          maxPowerBin = bin;
+        }
+        if (!maxTorqueBin || bin.averageTorqueNewtons > maxTorqueBin.averageTorqueNewtons || (bin.averageTorqueNewtons === maxTorqueBin.averageTorqueNewtons && bin.averageRpm < maxTorqueBin.averageRpm)) {
+          maxTorqueBin = bin;
+        }
+      }
+    }
+  }
+
+  return {
+    power: maxPowerBin ? { value: maxPowerBin.averagePowerWatts, rpm: maxPowerBin.averageRpm } : undefined,
+    torque: maxTorqueBin ? { value: maxTorqueBin.averageTorqueNewtons, rpm: maxTorqueBin.averageRpm } : undefined
+  };
 }
 
 export function getTuningMeasurementReadiness(state: TuningMeasurementState, nowMs: number): TuningMeasurementReadiness {

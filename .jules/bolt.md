@@ -112,3 +112,6 @@ Additionally, attempting to optimize 60Hz telemetry data copying in `FrameInterp
 **Learning:** In high-frequency frontend canvas rendering loops (e.g., drawing telemetry charts with hundreds of points), performing style lookups or evaluating expensive regular expressions for every data point or chart line severely increases CPU overhead.
 **Action:** Extract and cache resolved styling properties (like colors) outside the per-point data loops. Implement fast-path string checks (e.g., `.startsWith('#')`) to bypass expensive regex and `getComputedStyle` operations when standard hex or rgb values are used.
 
+## 2026-10-01 - Eliminating chained array iterations and closures in tuning analysis
+**Learning:** In high-frequency telemetry loops like `observeTireEvidence` and tight calculations like `qualifiedEnginePeaks`, chaining array methods (`.some()`, `.every()`, `.filter()`, `.slice()`, `.sort()`) creates excessive intermediate array allocations and closure executions. This generates GC pressure and slows execution, up to 3.4x slower in isolated benchmarks.
+**Action:** Replace higher-order array iterations with explicitly unrolled manual `for` loops and cache localized variables without recreating closures to drastically reduce garbage collection on hot paths.
