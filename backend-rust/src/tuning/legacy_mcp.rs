@@ -29,3 +29,29 @@ pub fn chassis(c: &Map<String, Value>, purpose: &str) -> Value {
     };
     json!({"schemaVersion":"tuning-dev/v1","purpose":purpose,"calculated_setup":{"tires":{"front_cold_psi":28.5,"rear_cold_psi":28.5,"target_hot_psi":32.0},"alignment":{"camber_front_deg":if purpose=="drag"{-0.5}else{-1.8},"camber_rear_deg":if purpose=="drag"{0.0}else{-1.2},"toe_front_deg":if purpose=="drift"{0.5}else{0.0},"toe_rear_deg":if purpose=="drift"{-0.2}else{0.0},"caster_deg":if purpose=="drift"{7.0}else{6.5}},"anti_roll_bars":{"front":af,"rear":ar},"springs":{"front_lbs_in":round(w*f*0.7,1),"rear_lbs_in":round(w*r*0.7,1)},"dampers":{"rebound_front":rf,"rebound_rear":rr,"bump_front":round(rf*0.6,1),"bump_rear":round(rr*0.6,1)},"differential":diff}})
 }
+
+pub fn diagnosis(t: &[f64], symptom: Option<&str>) -> Value {
+    if t.len() < 4 {
+        return json!({"error":"Requires 4 tire temperatures (FL, FR, RL, RR)"});
+    };
+    let f = (t[0] + t[1]) / 2.;
+    let r = (t[2] + t[3]) / 2.;
+    let d = f - r;
+    let mut a = Vec::new();
+    if d > 5. {
+        a.push(json!("Front axle overheat: Soften Front ARB (-2.0) or increase front cold tire pressure (+0.5 PSI)."))
+    } else if d < -5. {
+        a.push(json!("Rear axle overheat: Soften Rear ARB (-2.0) or increase rear cold tire pressure (+0.5 PSI)."))
+    }
+    if symptom == Some("understeer_entry") {
+        a.push(json!("Entry Understeer: Increase front negative camber (-0.2°) and reduce front bump damping."))
+    } else if symptom == Some("oversteer_exit") {
+        a.push(json!("Exit Oversteer: Soften rear spring (-5%) or reduce rear acceleration differential lock (-10%)."))
+    }
+    if a.is_empty() {
+        a.push(json!(
+            "Tire thermal balance is nominal. No adjustments required."
+        ))
+    }
+    json!({"front_avg_temp_c":round(f,1),"rear_avg_temp_c":round(r,1),"axle_delta_t_c":round(d,1),"convergence_status":if d.abs()<=3.0{"converged"}else{"adjustment_required"},"actionable_directives":a})
+}

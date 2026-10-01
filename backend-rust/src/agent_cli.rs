@@ -247,7 +247,7 @@ fn execute(args: &Options, ctx: &Context) -> Result<Value, String> {
                     "diagnose_telemetry_handling",
                     json!({"tire_temps":temps,"symptom":symptom}),
                 )
-                .unwrap_or_else(|_| offline_diagnosis(&temps, symptom)))
+                .unwrap_or_else(|_| solver::diagnosis(&temps, symptom)))
         }
         ["mcp-call", tool] => {
             let params: Value = serde_json::from_str(args.text("args", "{}"))
@@ -274,28 +274,4 @@ fn solve_gearing(args: &Options) -> Result<Value, String> {
     } else {
         Ok(result)
     }
-}
-fn offline_diagnosis(t: &[f64], symptom: Option<&str>) -> Value {
-    let (f, r) = ((t[0] + t[1]) / 2., (t[2] + t[3]) / 2.);
-    let delta = f - r;
-    let mut actions = Vec::new();
-    if delta > 5. {
-        actions.push("Front axle overheat: Soften Front ARB (-2.0)");
-    } else if delta < -5. {
-        actions.push("Rear axle overheat: Soften Rear ARB (-2.0)");
-    }
-    match symptom {
-        Some("understeer_entry") => {
-            actions.push("Entry Understeer: Increase front negative camber (-0.2°)")
-        }
-        Some("oversteer_exit") => {
-            actions.push("Exit Oversteer: Soften rear spring or reduce rear accel diff lock")
-        }
-        _ => (),
-    }
-    if actions.is_empty() {
-        actions.push("Tire thermal balance is nominal. No adjustments required.");
-    }
-    let rnd = |n: f64| format!("{n:.1}").parse::<f64>().unwrap();
-    json!({"front_avg_temp_c":rnd(f),"rear_avg_temp_c":rnd(r),"axle_delta_t_c":rnd(delta),"convergence_status":if delta.abs()<=3. {"converged"} else {"adjustment_required"},"actionable_directives":actions,"source":"offline_fallback"})
 }

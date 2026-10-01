@@ -181,3 +181,28 @@ pub fn preset(class: &str, chassis: &Value, gearing: &Value) -> Value {
     }
     json!({"schemaVersion":"tuning-preset/v1","createdAt":chrono::Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string(),"gameBuild":"FH6_B1.0","vehicleClass":class.to_uppercase(),"profileUsed":chassis["goal"],"installedParts":{},"parameters":parameters,"solverOutputSnapshot":{"chassis":chassis,"gearing":gearing},"calibrationStatus":"unverified"})
 }
+
+pub fn diagnosis(t: &[f64], symptom: Option<&str>) -> Value {
+    let (f, r) = ((t[0] + t[1]) / 2., (t[2] + t[3]) / 2.);
+    let delta = f - r;
+    let mut actions = Vec::new();
+    if delta > 5. {
+        actions.push("Front axle overheat: Soften Front ARB (-2.0)");
+    } else if delta < -5. {
+        actions.push("Rear axle overheat: Soften Rear ARB (-2.0)");
+    }
+    match symptom {
+        Some("understeer_entry") => {
+            actions.push("Entry Understeer: Increase front negative camber (-0.2°)")
+        }
+        Some("oversteer_exit") => {
+            actions.push("Exit Oversteer: Soften rear spring or reduce rear accel diff lock")
+        }
+        _ => (),
+    }
+    if actions.is_empty() {
+        actions.push("Tire thermal balance is nominal. No adjustments required.");
+    }
+    let rnd = |n: f64| format!("{n:.1}").parse::<f64>().unwrap();
+    json!({"front_avg_temp_c":rnd(f),"rear_avg_temp_c":rnd(r),"axle_delta_t_c":rnd(delta),"convergence_status":if delta.abs()<=3. {"converged"} else {"adjustment_required"},"actionable_directives":actions,"source":"offline_fallback"})
+}

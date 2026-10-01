@@ -484,29 +484,7 @@ impl<'a> McpService<'a> {
         crate::tuning::legacy_cli::gearing(max, peak, top, count, tire)
     }
     pub fn diagnosis(&self, t: &[f64], symptom: Option<&str>) -> Value {
-        if t.len() < 4 {
-            return json!({"error":"Requires 4 tire temperatures (FL, FR, RL, RR)"});
-        };
-        let f = (t[0] + t[1]) / 2.;
-        let r = (t[2] + t[3]) / 2.;
-        let d = f - r;
-        let mut a = Vec::new();
-        if d > 5. {
-            a.push(json!("Front axle overheat: Soften Front ARB (-2.0) or increase front cold tire pressure (+0.5 PSI)."))
-        } else if d < -5. {
-            a.push(json!("Rear axle overheat: Soften Rear ARB (-2.0) or increase rear cold tire pressure (+0.5 PSI)."))
-        }
-        if symptom == Some("understeer_entry") {
-            a.push(json!("Entry Understeer: Increase front negative camber (-0.2°) and reduce front bump damping."))
-        } else if symptom == Some("oversteer_exit") {
-            a.push(json!("Exit Oversteer: Soften rear spring (-5%) or reduce rear acceleration differential lock (-10%)."))
-        }
-        if a.is_empty() {
-            a.push(json!(
-                "Tire thermal balance is nominal. No adjustments required."
-            ))
-        }
-        json!({"front_avg_temp_c":Self::round(f,1),"rear_avg_temp_c":Self::round(r,1),"axle_delta_t_c":Self::round(d,1),"convergence_status":if d.abs()<=3.0{"converged"}else{"adjustment_required"},"actionable_directives":a})
+        crate::tuning::legacy_mcp::diagnosis(t, symptom)
     }
     pub fn settings(&self) -> Value {
         storage::read_json(&self.app.config.root.join("settings.json"))

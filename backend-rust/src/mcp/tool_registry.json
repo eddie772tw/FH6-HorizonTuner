@@ -331,7 +331,7 @@
   },
   {
     "name": "run_dev_tuning_solver",
-    "description": "Execute pure physics tuning calculation for Road, Rally, Drift, or Drag and return recommended baseline setups.",
+    "description": "Execute the frozen legacy-mcp/v1 quick baseline model (wire schema tuning-dev/v1), distinct from legacy-cli/v1. Use calculate_tuning_workflow for authoritative measured recommendations.",
     "inputSchema": {
       "type": "object",
       "properties": {

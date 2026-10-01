@@ -15,7 +15,7 @@ Usage: fh6-agent <command> [options] [--json] [--data-dir PATH] [--backend-url U
   telemetry diagnose [--symptom understeer_entry|oversteer_exit|none] [--tire-temps FL FR RL RR]\n\
   preset list | preset get CAR_ID SAVE_NAME\n\
   mcp-call TOOL [--args JSON]\n\
-Solve commands preserve the legacy tuning-dev/v1 contract; presets remain unverified.\n\
+Chassis/gearing/full use legacy-cli/v1 (wire schema tuning-dev/v1); workflow uses the shared Rust model. Presets remain unverified.\n\
 All results are readable JSON. No command starts the frontend or backend.";
 
 pub struct Options {
