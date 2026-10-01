@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useCarParams } from '../../../context/CarParamsContext';
 import { useSettings } from '../../../context/SettingsContext';
 import { useTelemetry } from '../../../hooks/useTelemetry';
 import { useFileSave } from '../../../hooks/useFileSave';
-import { evGearReady } from '../../../domain/tuning/ev/measurement';
-import { normalizeEvProfile } from '../../../domain/tuning/ev/profile';
-import { calculateEvGearing } from '../../../domain/tuning/ev/solver';
+import { useLocalCalculation } from '../useLocalCalculation';
+import { backendFetch } from '../../../services/backend';
+import type { EvGearingResult } from '../../../domain/tuning/ev/types';
 import { useTuneSession } from '../TuneSessionProvider';
 import { captureSaveRequest } from '../captureDownload';
 import { EvGearboxSetup } from './EvGearboxSetup';
@@ -22,11 +22,19 @@ export function EvPowertrainStep({ enabled }: { enabled: boolean }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   useEffect(() => setCandidate(setup?.finalDrive ?? null), [m.key]);
-  const setupValid = Boolean(normalizeEvProfile({ isElectric: true, evGearbox: setup }).evGearbox?.allForwardGearsConfirmed &&
-    setup?.gearRatios.every((r, i) => i === 0 || r === null || setup.gearRatios[i - 1] === null || r < setup.gearRatios[i - 1]!));
-  const preview = useMemo(() => setup && m.state.status !== 'blocked'
-    ? calculateEvGearing({ setup, candidateFinalDrive: candidate, measurements: m.state.gears }) : null,
-    [setup, candidate, m.state]);
+  const setupValidation = useLocalCalculation<{ ready: boolean }>('/api/tuning/ev-profile', { isElectric: true, evGearbox: setup });
+  const setupValid = setupValidation?.ready === true;
+  const previewKey = JSON.stringify([setup, candidate, m.state, m.pendingSamples]);
+  const [previewResult, setPreviewResult] = useState<{ key: string; result: EvGearingResult | null } | null>(null);
+  useEffect(() => {
+    if (!setup || m.state.status === 'blocked' || m.phase === 'collecting' || m.pendingSamples) return;
+    const controller = new AbortController(); let active = true;
+    void backendFetch('/api/tuning/ev-gearing', { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: controller.signal,
+      body: JSON.stringify({ setup, candidateFinalDrive: candidate, measurements: m.state.gears })
+    }).then(async response => { if (!response.ok) throw new Error(); const result = await response.json() as EvGearingResult | null; if (active) setPreviewResult({ key: previewKey, result }); }).catch(() => {});
+    return () => { active = false; controller.abort(); };
+  }, [previewKey, m.phase]);
+  const preview = previewResult?.key === previewKey ? previewResult.result : null;
   const recording = m.phase === 'collecting';
   const result = m.result;
   const start = async () => {
@@ -60,7 +68,7 @@ export function EvPowertrainStep({ enabled }: { enabled: boolean }) {
             const g = m.state.gears.find(v => v.gear === i + 1);
             return <tr key={i}><th>{i + 1}</th><td>{((g?.acceptedMs ?? 0) / 1000).toFixed(1)} s</td>
               <td>{g ? Math.round(g.lowestRpm) + '–' + Math.round(g.highestRpm) : '—'}</td>
-              <td>{g?.zeroOutputSamples ?? 0}</td><td>{t(g && evGearReady(g) ? 'Collected' : 'Still needed')}</td></tr>;
+              <td>{g?.zeroOutputSamples ?? 0}</td><td>{t(g && m.readyGears?.includes(g.gear) ? 'Collected' : 'Still needed')}</td></tr>;
           })}</tbody>
         </table>
       </div>

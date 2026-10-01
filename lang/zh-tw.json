@@ -1,4 +1,6 @@
 {
+  "Calculating tuning results…": "正在計算調校結果…",
+  "Tuning calculation is unavailable. Retrying…": "調校計算暫時無法使用，正在重試…",
   "Developer": "開發選項",
   "Not checked": "尚未檢查",
   "Check Failed": "檢查失敗",

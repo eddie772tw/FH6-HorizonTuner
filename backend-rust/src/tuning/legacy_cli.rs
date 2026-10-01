@@ -1,5 +1,6 @@
 //! Frozen tuning-dev/v1 CLI compatibility, not the calibrated tuning core.
 //! Numeric and export contracts come from ec7d769 backend/agent_cli.py.
+pub const MODEL_VERSION: &str = "legacy-cli/v1";
 use serde_json::{json, Value};
 
 fn round(n: f64, digits: usize) -> f64 {

@@ -1,9 +1,9 @@
 import React, { useMemo } from 'react';
 import { useCarParams } from '../../context/CarParamsContext';
 import { useSettings } from '../../context/SettingsContext';
-import { createDefaultCapabilityContract } from '../../domain/tuning/contracts';
+import type { TuningCapabilityContract } from '../../domain/tuning/contracts';
+import { useLocalCalculation } from './useLocalCalculation';
 import {
-  calculateDevTuning,
   type DevRaceGoal,
   type DevSurface,
   type DevTuningInput,
@@ -17,10 +17,11 @@ import { useTuneSession } from './TuneSessionProvider';
 import TuningView from './TuningView';
 
 const TuningViewDevContent: React.FC = () => {
-  const { carName, carParams } = useCarParams();
+  const { carName } = useCarParams();
   const { t } = useSettings();
   const session = useTuneSession();
   const developer = session.developer;
+  const carParams = session.profile;
 
   const input = useMemo<DevTuningInput | null>(() => {
     if (!carParams) return null;
@@ -36,8 +37,9 @@ const TuningViewDevContent: React.FC = () => {
     };
   }, [carParams, developer]);
 
-  const output = useMemo<DevTuningOutput | null>(() => (input && !carParams?.isElectric ? calculateDevTuning(input) : null), [input, carParams?.isElectric]);
-  const capabilityContract = useMemo(() => (carParams ? createDefaultCapabilityContract(carParams) : null), [carParams]);
+  const result = useLocalCalculation<{ output: DevTuningOutput; capabilityContract: TuningCapabilityContract }>('/api/tuning/developer', input && !carParams?.isElectric ? input : null);
+  const output = result?.output ?? null;
+  const capabilityContract = result?.capabilityContract ?? null;
 
   const updateRaceGoal = (nextGoal: DevRaceGoal) => {
     developer.setRaceGoal(nextGoal);
@@ -60,7 +62,7 @@ const TuningViewDevContent: React.FC = () => {
             <span className="badge bg-primary-subtle text-primary-emphasis">tuning-dev/v1</span>
         </div>
       </div>
-      <p className="text-body-secondary small mb-0">{t('Explicit typed input/output for the experimental tuningMath_dev.ts calculation layer.')}</p>
+      <p className="text-body-secondary small mb-0">{t('Explicit typed input/output for the versioned experimental calculation model.')}</p>
       <div className="alert alert-warning mb-0 py-2" role="alert">
         {t('This view is for algorithm validation. Tire coefficients and game-slider mappings are calibration priors, not official FH6 values.')}
       </div>

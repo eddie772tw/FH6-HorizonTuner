@@ -1,17 +1,17 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { TuningCarParams } from '../../utils/tuningMath';
 import type { TuningMeasurementState } from './tuningMeasurement';
-import { engineDependencyKey, parseEngineArchive, type EngineObservation } from './engineMeasurementArchive';
+import { engineDependencyKey, type EngineObservation } from './engineObservationIdentity';
 import type { TuningCaptureFile } from '../../domain/tuning/telemetryCapture';
 import { backendFetch } from '../../services/backend';
 import { validateEngineCapture } from './engineCaptureReadback';
-import { analyzeEngineCapture } from './engineCalculation';
+import type { EngineCalculationSummary } from './engineCalculation';
 import { isCurrentEngineObservationSaveToken, type EngineObservationSaveToken } from './tuneSessionController';
 
 const STORAGE_KEY = 'tuning-engine-observations/v1';
-const readArchive = () => { try { return parseEngineArchive(localStorage.getItem(STORAGE_KEY)); } catch { return []; } };
+const readArchive = (): unknown => { try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch { return []; } };
 export function useEngineMeasurementArchive(carId: string, profile: TuningCarParams | null, identityGeneration = 0) {
-  const [archive, setArchive] = useState<EngineObservation[]>(readArchive);
+  const [archive, setArchive] = useState<EngineObservation[]>([]);
   const [selected, setSelected] = useState<EngineObservation | null>(null);
   const [savedIds, setSavedIds] = useState<string[]>([]);
   const [storageError, setStorageError] = useState(false);
@@ -41,10 +41,15 @@ export function useEngineMeasurementArchive(carId: string, profile: TuningCarPar
     let active = true;
     void backendFetch('/api/road/engine-observations').then(async response => {
       if (!response.ok) return;
-      const saved = parseEngineArchive(JSON.stringify(await response.json()));
-      const hydrated = saved;
+      const value = await response.json();
+      const savedResponse = await backendFetch('/api/tuning/engine-archive', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(value) });
+      const localResponse = await backendFetch('/api/tuning/engine-archive', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(readArchive()) });
+      if (!savedResponse.ok || !localResponse.ok) return;
+      const saved = await savedResponse.json() as EngineObservation[];
+      const local = await localResponse.json() as EngineObservation[];
+      const hydrated = [...local, ...saved];
       if (active) {
-        setSavedIds(hydrated.map(item => item.id));
+        setSavedIds(saved.map(item => item.id));
         setArchive(previous => [...new Map([...previous, ...hydrated].map(item => [item.id, item])).values()]);
       }
     }).catch(() => {});
@@ -52,8 +57,25 @@ export function useEngineMeasurementArchive(carId: string, profile: TuningCarPar
   }, []);
   const current = !profile?.isElectric && selected?.dependencyKey === key && selected.carId === carId ? selected.data : null;
   // Loading/failed capture hydration never exposes the legacy instantaneous peak.
-  const calculation = useMemo(() => current && selected
-    ? analyzeEngineCapture(selected.id, carId, selected.capture, current) : null, [current, selected, carId]);
+  const [analyzed, setAnalyzed] = useState<{ selection: EngineObservation; value: EngineCalculationSummary } | null>(null);
+  useEffect(() => {
+    const controller = new AbortController();
+    let stopped = false;
+    let retry: ReturnType<typeof setTimeout>;
+    if (!current || !selected?.capture) return;
+    const run = async () => {
+      try {
+        const response = await backendFetch('/api/tuning/engine-analysis', { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: controller.signal,
+          body: JSON.stringify({ observationId: selected.id, carId, capture: selected.capture, expected: current }) });
+        if (!response.ok) throw new Error('Engine analysis unavailable');
+        const value = await response.json() as EngineCalculationSummary;
+        if (!stopped) setAnalyzed({ selection: selected, value });
+      } catch { if (!stopped) retry = setTimeout(run, 2000); }
+    };
+    void run();
+    return () => { stopped = true; controller.abort(); clearTimeout(retry); };
+  }, [current, selected, carId]);
+  const calculation = current && analyzed?.selection === selected ? analyzed.value : null;
   const compatible = archive.filter(item => !profile?.isElectric && item.carId === carId && item.dependencyKey === key && savedIds.includes(item.id));
   const complete = async (data: TuningMeasurementState, capture: TuningCaptureFile) => {
     if (profile?.isElectric || saving.current !== null) return false;
@@ -90,7 +112,7 @@ export function useEngineMeasurementArchive(carId: string, profile: TuningCarPar
     // The backend save may complete after invalidate/reuse on the same key.
     // It is already durable server-side, but must not overwrite the newer UI selection.
     if (!isCurrentEngineObservationSaveToken(saveToken, currentSaveToken())) return true;
-    const next = [...new Map([...readArchive(), ...archive, item].map(entry => [entry.id, entry])).values()];
+    const next = [...new Map([...archive, item].map(entry => [entry.id, entry])).values()];
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); } catch { /* SQLite remains authoritative. */ }
     setStorageError(false);
     setArchive(next); setSelected({ ...item, capture: JSON.parse(JSON.stringify(savedCapture)) });

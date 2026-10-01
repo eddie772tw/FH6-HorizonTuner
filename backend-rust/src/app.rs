@@ -112,7 +112,7 @@ impl App {
         snapshot
     }
     /// Called exclusively by a bounded processing worker, outside UDP/HTTP I/O.
-    pub fn process(&self, frame: Value) {
+    pub fn process(&self, mut frame: Value) {
         let started = Instant::now();
         let settings = self.config.settings();
         let mut engine = lock(&self.engine);
@@ -130,6 +130,7 @@ impl App {
                 (Value::Null, false)
             }
         };
+        frame["DynoGuidance"] = crate::tuning::dyno_guidance::guidance(&frame, &settings, &params);
         engine.drag.record(&frame);
         let _ = self.persist_commands(&mut engine.race);
         if id != "0" && profile_loaded {
@@ -476,13 +477,8 @@ impl Backend for App {
         lock(&self.metrics).client_delta(channel, delta);
     }
     fn request(&self, request: ApiRequest) -> ApiResult<ApiResponse> {
-        if request.method == "POST" && request.path == "/api/tuning/mechanical" {
-            let input: crate::tuning::calculation::MechanicalRequest =
-                serde_json::from_value(request.json()?)
-                    .map_err(|error| ApiError::invalid(&error.to_string()))?;
-            let result = crate::tuning::calculation::calculate_mechanical(&input)
-                .map_err(ApiError::invalid)?;
-            return Ok(ApiResponse::json(serde_json::to_value(result)?));
+        if let Some(response) = crate::tuning::api::request(&request)? {
+            return Ok(response);
         }
         if request.method == "GET" && request.path == "/api/health" {
             return Ok(ApiResponse::json(

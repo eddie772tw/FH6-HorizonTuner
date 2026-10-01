@@ -6,6 +6,7 @@ Usage: fh6-agent <command> [options] [--json] [--data-dir PATH] [--backend-url U
   mcp-config [--client all|codex|claude|cursor]\n\
   cars search QUERY [--drive AWD|RWD|FWD] [--limit 10]\n\
   cars get CAR_ID\n\
+  solve workflow --args JSON           Shared Rust tuning-workflow-result/v1 (offline)\n\
   solve chassis [--car-id ID] [--weight KG] [--bias PERCENT] [--drive RWD]\n\
        [--goal road|drift|rally|drag] [--aero-f LBS] [--aero-r LBS] [--export-applied-setup]\n\
   solve gearing --max-rpm RPM --peak-hp-rpm RPM --top-speed KMH [--gears 6] [--tire-diameter CM]\n\

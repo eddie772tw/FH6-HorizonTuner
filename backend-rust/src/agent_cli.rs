@@ -42,6 +42,12 @@ pub fn main(arguments: Vec<String>) -> i32 {
 fn execute(args: &Options, ctx: &Context) -> Result<Value, String> {
     let command: Vec<&str> = args.positionals.iter().map(String::as_str).collect();
     match command.as_slice() {
+        ["solve", "workflow"] => {
+            let input = serde_json::from_str(args.get("args").ok_or("--args JSON is required")?)
+                .map_err(|e| format!("Invalid workflow input: {e}"))?;
+            serde_json::to_value(crate::tuning::workflow::calculate_workflow(input)?)
+                .map_err(|e| e.to_string())
+        }
         ["status" | "doctor"] => {
             let status = ctx.get("api/mcp/status");
             let online = status.is_ok();

@@ -1,20 +1,15 @@
-import { useEffect, useMemo, useState } from 'react';
-import type { CarParams } from '../../../context/CarParamsContext';
+import { useEffect, useState } from 'react';
 import { useSettings } from '../../../context/SettingsContext';
-import type { ChassisTuningResult, StaticTireAlignResult } from '../../../utils/tuningMath';
 import { RoadWorkflowView } from '../../road/RoadWorkflowView';
-import { workflowRecommendation } from '../workflowSnapshot';
 import { backendFetch } from '../../../services/backend';
 import { captureSaveRequest } from '../captureDownload';
 import { useFileSave } from '../../../hooks/useFileSave';
 import type { WorkflowRecommendation } from '../workflowSnapshot';
-import type { WorkflowGearingResult } from '../measurementTuningProfile';
 
 interface SavedCompatibility { id: string; discipline: string; createdAt: number; recommendation: WorkflowRecommendation }
 
-export function SetupVerificationStep({ goal, carId, profile, chassis, alignment, gearing, inputSnapshot }: {
-  goal: string; carId: string; profile: CarParams | null; chassis: ChassisTuningResult | null;
-  alignment: StaticTireAlignResult | null; gearing: WorkflowGearingResult | null; inputSnapshot: Record<string, unknown>;
+export function SetupVerificationStep({ goal, carId, recommendation }: {
+  goal: string; carId: string; recommendation: WorkflowRecommendation | null;
 }) {
   const { t } = useSettings();
   const { save: exportFile, isSaving } = useFileSave();
@@ -30,9 +25,6 @@ export function SetupVerificationStep({ goal, carId, profile, chassis, alignment
     }).catch(() => { if (active) setStatus('Saved snapshots could not be loaded.'); });
     return () => { active = false; };
   }, [goal, carId]);
-  const isGearingFeasible = Boolean(gearing && ('model' in gearing ? true : !gearing.unsupported && gearing.gears.length > 0));
-  const recommendation = useMemo(() => profile && chassis && alignment && gearing && isGearingFeasible
-    ? workflowRecommendation(profile, chassis, alignment, gearing, inputSnapshot) : null, [profile, chassis, alignment, gearing, inputSnapshot, isGearingFeasible]);
   if (!recommendation) return <p>{t('Engine analysis and a feasible gearing result are required before setup verification.')}</p>;
   if (goal === 'Road') return <RoadWorkflowView recommendation={recommendation} carId={carId} />;
   const save = async () => {

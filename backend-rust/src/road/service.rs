@@ -177,6 +177,50 @@ impl RoadService {
             .ok_or_else(|| {
                 ApiError::invalid("The recommendation requires a saved engine observation")
             })?;
+        if recommendation["formulaVersion"] == "rust/ev-measured-workflow-v1" {
+            // Only bounded aggregate evidence is validated here. Capture replay stays
+            // in the local calculation endpoint, outside the receiver mutex.
+            let measurement = &snapshot["evMeasurement"];
+            let evidence_identity = &measurement["identity"];
+            let car_id = snapshot.get("carId").and_then(Value::as_str);
+            if car_id.is_none()
+                || evidence_identity["ordinal"]
+                    .as_u64()
+                    .map(|x| x.to_string())
+                    .as_deref()
+                    != car_id
+                || measurement["status"] == "blocked"
+                || measurement["frameCount"]
+                    .as_u64()
+                    .is_none_or(|n| n > 30_000)
+                || measurement["gears"].as_array().is_none_or(|g| g.len() > 10)
+                || identity.is_some_and(|id| {
+                    ["ordinal", "performanceIndex", "carClass"]
+                        .iter()
+                        .any(|key| id[*key] != evidence_identity[*key])
+                })
+            {
+                return Err(ApiError::conflict(
+                    "EV evidence belongs to a different car or configuration",
+                ));
+            }
+            let request = serde_json::from_value(json!({
+                "schemaVersion":"tuning-workflow-result/v1", "goal":snapshot["goal"],
+                "season":snapshot["season"], "profile":snapshot["profile"], "engine":null,
+                "ev":{"setup":snapshot["profile"]["evGearbox"], "measurements":measurement["gears"],
+                    "candidateFinalDrive":snapshot["evResult"]["finalDrive"]},
+                "inputSnapshot":snapshot
+            }))
+            .map_err(|_| ApiError::invalid("Invalid EV recommendation evidence"))?;
+            let expected = crate::tuning::workflow::calculate_workflow(request)
+                .map_err(|_| ApiError::invalid("Invalid EV recommendation evidence"))?;
+            if expected.recommendation.as_ref() != Some(recommendation) {
+                return Err(ApiError::conflict(
+                    "The recommendation does not match its EV evidence",
+                ));
+            }
+            return Ok(());
+        }
         let observation = snapshot
             .get("engineObservation")
             .and_then(Value::as_object)

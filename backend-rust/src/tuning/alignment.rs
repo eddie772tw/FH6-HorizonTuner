@@ -38,6 +38,24 @@ fn r1(v: f64) -> f64 {
     (v * 10.0 + 0.5).floor() / 10.0
 }
 
+// ECMAScript toFixed(1): round the exact binary value, without a rounded
+// intermediate multiplication by ten; exact ties choose the larger magnitude.
+fn fixed1(v: f64) -> f64 {
+    let bits = v.abs().to_bits();
+    let exponent = ((bits >> 52) & 0x7ff) as i32 - 1023 - 52;
+    let significand = ((bits & ((1u64 << 52) - 1)) | (1u64 << 52)) as u128 * 10;
+    if exponent >= 0 {
+        return v;
+    }
+    let shift = (-exponent) as u32;
+    if shift >= 128 {
+        return 0.0;
+    }
+    let divisor = 1u128 << shift;
+    let rounded = significand / divisor + u128::from(significand % divisor >= divisor / 2);
+    (rounded as f64 / 10.0).copysign(v)
+}
+
 pub fn calculate_static_alignment(
     goal: RaceGoal,
     season: Season,
@@ -53,8 +71,8 @@ pub fn calculate_static_alignment(
         .unwrap_or("AWD");
     let fw = nonzero(p.front_tire_width, 245.0);
     let rw = nonzero(p.rear_tire_width, 275.0);
-    let hw_f = r1(fw * nonzero(p.front_tire_aspect, 40.0) / 100.0);
-    let hw_r = r1(rw * nonzero(p.rear_tire_aspect, 35.0) / 100.0);
+    let hw_f = r1(fw * (nonzero(p.front_tire_aspect, 40.0) / 100.0));
+    let hw_r = r1(rw * (nonzero(p.rear_tire_aspect, 35.0) / 100.0));
     let bias = if matches!(season, Season::Spring | Season::Winter) {
         0.5
     } else {
@@ -103,11 +121,11 @@ pub fn calculate_static_alignment(
                 28.5 + 2.5 * (mass * wf / 1000.0 - 0.7) - 0.005 * (fw - 245.0) + df + bias,
                 28.0 + 2.5 * (mass * wr / 1000.0 - 0.7) - 0.005 * (rw - 245.0) + dr + bias,
                 32.5,
-                -r1(1.5 + 0.8 * wf + 0.2),
-                -r1(0.8 + 0.6 * wr + 0.2),
+                -fixed1(1.5 + 0.8 * wf + 0.2),
+                -fixed1(0.8 + 0.6 * wr + 0.2),
                 "+0.1°",
                 "-0.1°",
-                r1(5.0 + 2.0 * wf),
+                fixed1(5.0 + 2.0 * wf),
             )
         }
     };

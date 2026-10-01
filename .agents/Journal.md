@@ -2927,3 +2927,13 @@
 - `/api/tuning/mechanical` 為無狀態計算入口，不使用 engine mutex。provider 使用完整草稿 key，桌面與 Companion 共用結果。engineDependencyKey 只適用量測，不足以識別底盤草稿。
 - 驗證：Rust locked 全套通過；前端 150 files / 1092 tests 通過；tsc + Vite build 與 diff check 通過。Linux 原生 Windows HUD 未驗收。
 - 全量 SSOT 尚未完成：量測資格、齒比、readiness、建議組合與診斷繼續遷移；PR 保持 draft。
+
+
+## 2026-10-01 / v1.7.1 Rust 調校唯一 owner（Bagley as Dot）
+
+- 使用者授權取代 #430 Twin SSOT；專用分支與 draft PR #460，未合併／發行。#458、#459 未合併；loaded-sweep/v4 以 main 的完整 capture summaries 鎖定。
+- Rust 擁有機械／定位、ICE/EV 量測、readiness、能力過濾、推薦、輪胎證據、profile 預設、實驗模型與 dyno 數值 guidance。桌面／Companion 使用同一 provider result；offline CLI／MCP 新 workflow 入口直接重用 library。
+- CLI、MCP quick 與 desktop experimental 為三個明確 legacy model，保留既有 wire output；新推薦明確 Rust version，歷史持久化不變。
+- 發現並補上 toFixed binary rounding 與 width*(aspect/100) 運算順序邊界；不可重寫既有 21 tuning／10 EV golden，也不可缺檔自動生成。
+- 新增 React hook 真實非同步順序／失敗重試測試；build boundary 拒絕 TS legacy solver 進入產品。capture replay 在 receiver mutex 外；LAN allowlist 不變。
+- 驗證結果見 PR 精確 commit；Windows 平台驗證交由 CI，未聲稱 Linux 已跑 Windows 原生 UI 或遊戲實測。

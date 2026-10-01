@@ -12,12 +12,26 @@
 經使用者明確授權，此方向取代 #430 的 Twin SSOT 與 #428 的 WASM 討論。所有會影響產品建議的公式、資格、預設、限制、readiness 與數值診斷必須有 Rust owner；UI 保留草稿、流程、格式、顯示單位轉換與版面。
 
 目前已落地：
-- 純函式 `tuning::calculation` 與桌面本機 `POST /api/tuning/mechanical`；typed request 包含 schemaVersion、goal、season、完整未儲存 profile。
-- TuneSessionProvider 發出一次計算，桌面與 Companion 轉送同一份 chassis / alignment；完整輸入 key、abort、sequence 與 render-time gate 避免過期結果；失敗每兩秒重試，不以 TS fallback。
-- 計算不持有遙測 engine mutex，不改變 LAN allowlist；共享 library 可供離線 CLI 使用。
-- Road/Rally 正值 spring/height minima 保留小於 1 的數值；零值使用既有桌面預設，反向範圍把 max 提升到 min。這修正未接線 Rust 與桌面的差異，不修改歷史文件或基準。
+- `tuning::workflow` 是一般模式的推薦、能力過濾與 readiness owner；本機 `POST /api/tuning/workflow`、離線 `fh6-agent solve workflow --args JSON` 與 MCP `calculate_tuning_workflow` 呼叫相同 Rust library。
+- TuneSessionProvider 只送完整草稿／goal／season／量測證據；桌面與 Companion 消費同一結果。完整輸入 key、abort、sequence、render-time invalidation 防止切車／改稿／A→B→A 舊回覆；pending、error 與 ready 分開，失敗每兩秒重試，不使用 TS fallback。
+- `measurement` 擁有 loaded-sweep/v4、archive 資格與 capture replay；`ev_measurement`／`ev` 擁有 EV 觀測與求解；250ms 有界增量批次處理，非每一 telemetry frame 或 Companion 400ms exchange 重算。capture replay 在 receiver mutex 外執行。
+- `alignment`／`chassis`／`gearing` 擁有機械模型；`tire_evidence` 擁有輪胎證據診斷；`profile` 擁有既有桌面預設與 EV profile 資格；`capabilities` 擁有實驗模式能力契約。Road 量化診斷維持 `backend-rust/src/road/` owner。
+- `dyno_guidance` 擁有舊 dyno wizard 的數值門檻、建議測試檔位與峰值匯入；guidance 隨既有 telemetry 推送，實際 dyno 採樣仍由 Rust `telemetry/dyno.rs` 的獨立品質契約控制。
+- 新推薦使用 `rust/ice-measured-workflow-v1`／`rust/ev-measured-workflow-v1`；EV 保存驗證有界聚合證據與推薦一致性，未知／鎖定齒比不套用。歷史版本唯讀，不重寫。
+- 計算 API 不擴大 LAN allowlist；純函式共享 library 保留離線 CLI。Vite build 拒絕將凍結 TS tuning solver／readiness／diagnosis 參考模組帶入產品 bundle。
+- Road/Rally 正值 spring/height minima 保留小於 1 的數值；零值使用既有桌面預設，反向範圍把 max 提升到 min。靜態定位保留 JS 原運算順序與 toFixed 精確 binary rounding，不能以縮放 round 取代。
 
-尚未完成（PR 維持 draft）：量測與 tire evidence 資格、ICE/EV 齒比、完整推薦與能力過濾、readiness、診斷，以及 API/CLI/MCP owner 整合與前端重複公式移除。
+模型版本與相容入口：
+| 模型 | 入口／用途 |
+| --- | --- |
+| `rust/ice-measured-workflow-v1`、`rust/ev-measured-workflow-v1` | 桌面、Companion、workflow API、CLI、MCP 共用 |
+| `legacy-cli/v1` | 舊 `solve chassis/gearing/full`；保留歷史數值與 wire schema `tuning-dev/v1` |
+| `legacy-mcp/v1` | 舊 MCP quick chassis；Drift 公式不同於 CLI，獨立凍結 |
+| `legacy-desktop-experimental/v1` | 實驗 UI 呼叫 Rust developer model；保留既有 48 組 fixture 與 `tuning-dev/v1` output schema |
+
+TypeScript 舊純模型僅作凍結測試參考；未掛載的 Step5TelemetryCalibration 舊診斷不是產品路徑，不可重新掛載而繞過 Rust owner。圖表 RPM／速度軸幾何與真正顯示單位轉換屬顯示用途，不產生設定建議。
+
+PR 在全部驗證與精確 SHA CI 完成前維持 draft；不合併、不發行。
 
 相容性：原 21 組 tuning 與 10 組 EV golden fixtures 不可重寫，缺少 fixture 必須測試失敗。
 新增 `mechanical_desktop_v162.json` 鎖定 66 組 main ca195c7 桌面行為；正常測試不得產生它。

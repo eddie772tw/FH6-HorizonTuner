@@ -43,6 +43,23 @@ pub fn call(
     args: &Map<String, Value>,
 ) -> Result<Value, ToolError> {
     let out = match name {
+        "calculate_tuning_workflow" => {
+            let input =
+                serde_json::from_value(Value::Object(args.clone())).map_err(|e| ToolError {
+                    code: -32602,
+                    message: format!("Invalid tuning input: {e}"),
+                })?;
+            serde_json::to_value(crate::tuning::workflow::calculate_workflow(input).map_err(
+                |e| ToolError {
+                    code: -32602,
+                    message: e,
+                },
+            )?)
+            .map_err(|e| ToolError {
+                code: -32603,
+                message: e.to_string(),
+            })?
+        }
         "get_live_telemetry_snapshot" => service.get_live_telemetry_snapshot(),
         "get_driver_cockpit_telemetry" => service.get_driver_cockpit_telemetry(),
         "get_vehicle_dynamics_telemetry" => service.get_vehicle_dynamics_telemetry(),

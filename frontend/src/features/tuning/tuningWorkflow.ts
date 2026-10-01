@@ -53,16 +53,6 @@ export function updateWorkflowProfile<T extends object, K extends keyof T>(profi
   return profile ? { ...profile, [field]: value } : null;
 }
 
-export function getWorkflowReadiness(profileReady: boolean,
-  params: Pick<TuningCarParams, 'weight' | 'weight_distribution' | 'maxHp' | 'isElectric'> | null,
-  measuredEngine: boolean, gearingAvailable = measuredEngine): WorkflowReadiness {
-  const mechanical = Boolean(profileReady && params && Number.isFinite(params.weight) && params.weight > 0 &&
-    Number.isFinite(params.weight_distribution) && params.weight_distribution > 0 && params.weight_distribution < 100);
-  const engineInputs = mechanical && Boolean(params && (params.isElectric || (Number.isFinite(params.maxHp) && params.maxHp > 0)));
-  return { mechanical, engineInputs, measuredEngine: engineInputs && measuredEngine,
-    gearingAvailable: engineInputs && measuredEngine && gearingAvailable };
-}
-
 export function canOpenTuningStep(step: number, readiness: WorkflowReadiness): boolean {
   if (step === 1) return true;
   if ((step === 2 || step === 3) && Number.isInteger(step)) return readiness.mechanical;

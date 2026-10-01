@@ -386,7 +386,7 @@
         "tire_diameter_cm": {
           "type": "number",
           "description": "Driven tire diameter in cm (default 65.0)",
-          "default": 65.0
+          "default": 65
         }
       },
       "required": [
@@ -459,6 +459,72 @@
           "default": 50
         }
       }
+    }
+  },
+  {
+    "name": "calculate_tuning_workflow",
+    "description": "Calculate authoritative tuning-workflow-result/v1 using the same Rust owner as desktop. Supply confirmed profile and qualified measurement evidence. No mutation.",
+    "inputSchema": {
+      "type": "object",
+      "required": [
+        "schemaVersion",
+        "goal",
+        "season",
+        "profile",
+        "inputSnapshot"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "type": "string",
+          "enum": [
+            "tuning-workflow-result/v1"
+          ]
+        },
+        "goal": {
+          "type": "string",
+          "enum": [
+            "Road",
+            "Rally",
+            "Drag",
+            "Drift",
+            "DangerSign"
+          ]
+        },
+        "season": {
+          "type": "string",
+          "enum": [
+            "Summer",
+            "Autumn",
+            "Winter",
+            "Spring"
+          ]
+        },
+        "profile": {
+          "type": "object"
+        },
+        "engine": {
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "ev": {
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "inputSnapshot": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
     }
   }
 ]

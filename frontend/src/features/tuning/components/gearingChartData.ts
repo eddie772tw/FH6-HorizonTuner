@@ -1,4 +1,4 @@
-import { calcGearRpm, calcGearSpeed } from '../../../utils/tuningMath';
+import { calcGearRpm, calcGearSpeed } from './gearDisplayGeometry';
 
 export interface GearingChartDataParams {
   numGears: number;

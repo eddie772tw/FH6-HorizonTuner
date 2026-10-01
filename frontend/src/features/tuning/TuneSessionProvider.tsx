@@ -1,4 +1,5 @@
-import { useMechanicalCalculation } from './useMechanicalCalculation';
+import { requestEngineBatch, type EngineBatchResult } from './engineBatch';
+import { useWorkflowCalculation } from './useWorkflowCalculation';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { CarParams } from '../../context/CarParamsContext';
 import { useCarParams } from '../../context/CarParamsContext';
@@ -6,15 +7,10 @@ import type { TuningCaptureFile, TuningCaptureMetadata, TuningCaptureSample } fr
 import { telemetryToCaptureSample } from '../../domain/tuning/telemetryCapture';
 import { subscribeToDecodedTelemetry, useTelemetry, type TelemetryData } from '../../hooks/useTelemetry';
 import type { DevRaceGoal, DevSurface } from '../../utils/tuningMath_dev';
-import { engineDependencyKey } from './engineMeasurementArchive';
+import { engineDependencyKey } from './engineObservationIdentity';
 import { useEvMeasurementSession } from './useEvMeasurementSession';
-import {
-  advanceTuningMeasurement,
-  createEngineCalculation,
-  getTuningMeasurementReadiness,
-  retainReadyMeasurementSnapshot,
-  type TuningMeasurementState,
-} from './tuningMeasurement';
+import type { TuningMeasurementState } from './tuningMeasurement';
+import { createEngineCalculation } from './measurementInitialState';
 import { restoreWorkflowStep, serializeWorkflowProfile } from './tuningWorkflow';
 import { useEngineMeasurementArchive } from './useEngineMeasurementArchive';
 import {
@@ -25,7 +21,6 @@ import {
   MAX_TUNING_CAPTURE_SAMPLES,
   nextTuneAsyncToken,
   selectedEngineObservationMatchesLiveTelemetry,
-  shouldForceMeasurementPublish,
   shouldInvalidateMeasurementAttempt,
   shouldPreserveIdleIdentityHydration,
   type CaptureFrameIdentity,
@@ -37,6 +32,7 @@ import {
 type TuneCaptureStatus = 'idle' | 'capturing' | 'complete' | 'invalidated';
 
 interface EngineMeasurementRuntime {
+  readiness?: EngineBatchResult["readiness"];
   state: TuningMeasurementState;
   phase: EngineMeasurementPhase;
   autoFinish: boolean;
@@ -54,7 +50,8 @@ interface RawCaptureRuntime {
 }
 
 export interface TuneSessionValue {
-  mechanical: ReturnType<typeof useMechanicalCalculation>;
+  result: ReturnType<typeof useWorkflowCalculation>['result'];
+  calculationStatus: ReturnType<typeof useWorkflowCalculation>['status'];
   identity: TuneSessionIdentity;
   identityGeneration: number;
   profile: CarParams | null;
@@ -163,7 +160,7 @@ export function TuneSessionProvider({ children }: { children: ReactNode }) {
   const [workflowStep, setWorkflowStep] = useState(initialWorkflowStep);
   const [goal, setGoal] = useState('Road');
   const [season, setSeason] = useState<'Summer' | 'Autumn' | 'Winter' | 'Spring'>('Summer');
-  const mechanical = useMechanicalCalculation(carId, goal, season, profile);
+
   const [reviewHistory, setReviewHistory] = useState(false);
   const [identityGeneration, setIdentityGeneration] = useState(0);
   const identityTokenRef = useRef<TuneAsyncToken>({ generation: 0, identity });
@@ -218,6 +215,7 @@ export function TuneSessionProvider({ children }: { children: ReactNode }) {
     if (!force && now - measurementLastUiUpdateRef.current < 200) return;
     measurementLastUiUpdateRef.current = now;
     setMeasurementRuntime(previous => ({
+      readiness: measurementReadinessRef.current,
       state: measurementStateRef.current,
       phase: measurementPhaseRef.current,
       autoFinish: measurementAutoFinishRef.current,
@@ -279,6 +277,12 @@ export function TuneSessionProvider({ children }: { children: ReactNode }) {
     publishCapture(true);
   }, [publishCapture]);
 
+  const measurementReadinessRef = useRef<EngineBatchResult['readiness'] | undefined>(undefined);
+  const measurementCursorRef = useRef(0);
+  const measurementGenerationRef = useRef(0);
+  const measurementConnectedRef = useRef(isConnected);
+  measurementConnectedRef.current = isConnected;
+
   const invalidateMeasurement = useCallback(() => {
     measurementStateRef.current = {
       ...createEngineCalculation(carIdRef.current),
@@ -286,6 +290,9 @@ export function TuneSessionProvider({ children }: { children: ReactNode }) {
       guidance: 'identity-changed',
     };
     measurementSamplesRef.current = [];
+    measurementCursorRef.current = 0;
+    measurementGenerationRef.current++;
+    measurementReadinessRef.current = undefined;
     measurementReadySnapshotRef.current = undefined;
     measurementAutoFinishRef.current = true;
     measurementPhaseRef.current = 'invalidated';
@@ -295,6 +302,9 @@ export function TuneSessionProvider({ children }: { children: ReactNode }) {
   const resetUnstartedMeasurement = useCallback(() => {
     measurementStateRef.current = createEngineCalculation(carIdRef.current);
     measurementSamplesRef.current = [];
+    measurementCursorRef.current = 0;
+    measurementGenerationRef.current++;
+    measurementReadinessRef.current = undefined;
     measurementReadySnapshotRef.current = undefined;
     measurementAutoFinishRef.current = true;
     measurementPhaseRef.current = 'idle';
@@ -366,36 +376,50 @@ export function TuneSessionProvider({ children }: { children: ReactNode }) {
       return;
     }
     measurementSamplesRef.current.push(telemetryToCaptureSample(frame));
-    const previousPhase = measurementPhaseRef.current;
-    const now = performance.now();
-    const next = advanceTuningMeasurement(measurementStateRef.current, frame, true, now);
-    measurementStateRef.current = next;
-    if (next.status === 'blocked') {
-      measurementPhaseRef.current = 'invalidated';
-      engineRef.current.invalidate();
-    } else {
-      measurementReadySnapshotRef.current = retainReadyMeasurementSnapshot(measurementReadySnapshotRef.current, next, now);
-      if (measurementAutoFinishRef.current && getTuningMeasurementReadiness(next, now).ready) {
-        measurementPhaseRef.current = 'complete';
-      }
-    }
-    publishMeasurement(shouldForceMeasurementPublish(
-      previousPhase,
-      measurementPhaseRef.current,
-      next.status,
-    ));
+    publishMeasurement();
   }), [publishCapture, publishMeasurement, stopCapture]);
 
   useEffect(() => {
-    if (isConnected || measurementPhaseRef.current !== 'collecting') return;
-    measurementStateRef.current = advanceTuningMeasurement(measurementStateRef.current, null, false, performance.now());
-    publishMeasurement(true);
-  }, [isConnected, publishMeasurement]);
+    let stopped = false;
+    let timer: ReturnType<typeof setTimeout>;
+    const controller = new AbortController();
+    const tick = async () => {
+      if (measurementPhaseRef.current === 'collecting' || measurementPhaseRef.current === 'paused') {
+        const generation = measurementGenerationRef.current;
+        const end = measurementSamplesRef.current.length;
+        const start = measurementCursorRef.current;
+        try {
+          const result = await requestEngineBatch(carIdRef.current, measurementStateRef.current,
+            measurementSamplesRef.current.slice(start, end), measurementConnectedRef.current, performance.now(), controller.signal);
+          if (!stopped && generation === measurementGenerationRef.current) {
+            measurementCursorRef.current = end;
+            measurementStateRef.current = result.state;
+            measurementReadinessRef.current = result.readiness;
+            if (result.state.status === 'blocked') {
+              measurementReadySnapshotRef.current = undefined;
+              measurementPhaseRef.current = 'invalidated';
+              engineRef.current.invalidate();
+            } else {
+              if (result.readySnapshot) measurementReadySnapshotRef.current = result.readySnapshot;
+              if (measurementAutoFinishRef.current && result.readiness.ready) measurementPhaseRef.current = 'complete';
+            }
+            publishMeasurement(true);
+          }
+        } catch { /* Keep unprocessed samples for recovery; no local qualification fallback. */ }
+      }
+      if (!stopped) timer = setTimeout(tick, 250);
+    };
+    void tick();
+    return () => { stopped = true; controller.abort(); clearTimeout(timer); };
+  }, [publishMeasurement]);
 
   const ensureMeasurementStarted = useCallback((enabled: boolean) => {
     if (isElectricRef.current || !enabled || measurementPhaseRef.current !== 'idle') return;
     measurementStateRef.current = createEngineCalculation(carIdRef.current);
     measurementSamplesRef.current = [];
+    measurementCursorRef.current = 0;
+    measurementGenerationRef.current++;
+    measurementReadinessRef.current = undefined;
     measurementReadySnapshotRef.current = undefined;
     measurementAutoFinishRef.current = true;
     measurementPhaseRef.current = 'collecting';
@@ -407,6 +431,9 @@ export function TuneSessionProvider({ children }: { children: ReactNode }) {
     engineRef.current.invalidate();
     measurementStateRef.current = createEngineCalculation(carIdRef.current);
     measurementSamplesRef.current = [];
+    measurementCursorRef.current = 0;
+    measurementGenerationRef.current++;
+    measurementReadinessRef.current = undefined;
     measurementReadySnapshotRef.current = undefined;
     measurementAutoFinishRef.current = true;
     measurementPhaseRef.current = 'collecting';
@@ -414,6 +441,7 @@ export function TuneSessionProvider({ children }: { children: ReactNode }) {
   }, [publishMeasurement]);
 
   const pauseOrResumeMeasurement = useCallback(() => {
+    measurementGenerationRef.current++;
     if (measurementPhaseRef.current === 'collecting') {
       measurementStateRef.current = { ...measurementStateRef.current, lastAcceptedTimestampMs: undefined };
       measurementPhaseRef.current = 'paused';
@@ -425,6 +453,7 @@ export function TuneSessionProvider({ children }: { children: ReactNode }) {
   }, [publishMeasurement]);
 
   const collectMoreMeasurement = useCallback(() => {
+    measurementGenerationRef.current++;
     if (measurementPhaseRef.current !== 'complete') return;
     measurementReadySnapshotRef.current = measurementStateRef.current;
     measurementStateRef.current = { ...measurementStateRef.current, lastAcceptedTimestampMs: undefined };
@@ -434,6 +463,7 @@ export function TuneSessionProvider({ children }: { children: ReactNode }) {
   }, [publishMeasurement]);
 
   const finishAdditionalMeasurement = useCallback(() => {
+    measurementGenerationRef.current++;
     const snapshot = measurementReadySnapshotRef.current;
     if (!snapshot) return;
     if (!canFinishAdditionalMeasurement(measurementPhaseRef.current, measurementAutoFinishRef.current,
@@ -486,8 +516,24 @@ export function TuneSessionProvider({ children }: { children: ReactNode }) {
       : null
   );
 
+  const prepared = selectedEngineObservationMatchesLiveTelemetry(carId, engine.current, data) ? engine.current : null;
+  const calculation = prepared && engine.calculation?.status === 'ready' ? engine.calculation : null;
+  const inputSnapshot = useMemo(() => ({ carId, goal, season, profile,
+    ...(profile?.isElectric
+      ? { powertrainModel: 'ev/v1', evMeasurement: evMeasurement.state, evResult: evMeasurement.result }
+      : { powertrainModel: 'ice', engineObservation: engine.observation ? { ...engine.observation, capture: undefined } : null, engineCalculation: calculation }),
+    ...(goal === 'Road' && !profile?.isElectric ? { gearingModelVersion: 'aego-road-joint/v2' } : {}),
+  }), [carId, goal, season, profile, engine.observation, calculation, evMeasurement.result]);
+  const { result, status: calculationStatus } = useWorkflowCalculation(carId, goal, season, profile, calculation ? {
+    engineMaxRpm: calculation.engineMaxRpm!, peakPowerRpm: calculation.peakPower!.rpm,
+    peakTorqueRpm: calculation.peakTorque!.rpm, peakTorqueNm: calculation.peakTorque!.value,
+  } : null, evMeasurement.result && profile?.evGearbox ? {
+    setup: profile.evGearbox, measurements: evMeasurement.state.gears, candidateFinalDrive: evMeasurement.result.finalDrive,
+  } : null, inputSnapshot);
+
   const value = useMemo<TuneSessionValue>(() => ({
-    mechanical,
+    result,
+    calculationStatus,
     identity,
     identityGeneration,
     profile,
@@ -542,7 +588,8 @@ export function TuneSessionProvider({ children }: { children: ReactNode }) {
       clear: clearCapture,
     },
   }), [
-    mechanical,
+    result,
+    calculationStatus,
     activeCapture,
     captureRuntime,
     clearCapture,

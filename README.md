@@ -1,6 +1,6 @@
 # FH6-HorizonTuner 🏎️
 
-v1.7.1 開發中：桌面與 Companion 的底盤及靜態定位共用 Rust `/api/tuning/mechanical` 結果；完整後端 SSOT 遷移尚未完成，量測、齒比與診斷仍在遷移。詳見 [責任契約](docs/contracts/tuning_responsibilities.md)。
+v1.7.1 開發中：桌面與 Companion 共用 Rust 完整調校結果；ICE/EV 量測、齒比、readiness、能力過濾與推薦均由後端計算，CLI/MCP workflow 共用同一 library。PR 尚待完整驗證，維持 draft。詳見 [責任契約](docs/contracts/tuning_responsibilities.md)。
 > **Forza Horizon 6 Real-Time Telemetry Analyzer, Vehicle Tuning Workbench & Custom Racing Dashboard Overlay**
 > **《極限競速：地平線 6》即時遙測分析、車輛調校工作台與賽車客製化儀表覆蓋層**
 
@@ -59,7 +59,7 @@ v1.7.1 開發中：桌面與 Companion 的底盤及靜態定位共用 Rust `/api
   - 後端 SQLite 遙測歷程資料庫自動記錄。
   - 支援一鍵匯出專業賽車數據分析軟體 **MoTeC i2** 標準 `.ld` 格式檔案。
 * **Localhost 唯讀 MCP Server (Model Context Protocol)**:
-  - 由執行中的 Rust backend 提供 Streamable HTTP MCP endpoint（`/mcp`），提供 26 個專屬唯讀工具與 5 類 Resource URI；MCP 與 telemetry 共用同一個 backend process。
+  - 由執行中的 Rust backend 提供 Streamable HTTP MCP endpoint（`/mcp`），提供 27 個專屬唯讀工具與 5 類 Resource URI；MCP 與 telemetry 共用同一個 backend process。
   - 支援 AI Agent（Claude Desktop、Cursor、Cline 等）結構化查詢即時遙測（對齊 `TelemetryView`）、歷史單圈、A/B 跑圈差異比對、車輛規格與調校求解器。
   - MCP 標準 `initialize` 回應會自動提供 Agent-facing 配置與使用說明；Settings 僅顯示目前 endpoint 與連線狀態，不再要求複製 JSON/CLI 設定。首次連線仍須由客戶端完成一次性 endpoint bootstrap。
 * **OTA 自動更新與版本管理 (Over-The-Air Update & Release Management)**:

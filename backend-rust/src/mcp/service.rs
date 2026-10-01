@@ -33,7 +33,15 @@ impl<'a> McpService<'a> {
             .and_then(Value::as_bool)
             .unwrap_or(true)
         {
-            self.app.live().map(|v| (*v).clone())
+            self.app.live().map(|v| {
+                // Preserve the frozen MCP telemetry wire contract; desktop-only
+                // derived guidance travels on the existing WebSocket stream.
+                let mut value = (*v).clone();
+                if let Some(object) = value.as_object_mut() {
+                    object.remove("DynoGuidance");
+                }
+                value
+            })
         } else {
             None
         }
@@ -466,29 +474,11 @@ impl<'a> McpService<'a> {
             .map(str::to_owned)
             .or_else(|| c["ordinal"].as_i64().map(|x| x.to_string()))
             .unwrap_or_else(|| "0".into());
-        let w = c["weight_kg"].as_f64().unwrap_or(1400.) * 2.20462;
-        let f0 = c["front_weight_bias"].as_f64().unwrap_or(0.52);
-        let f = if f0 > 1. { f0 / 100. } else { f0 };
-        let r = 1. - f;
-        let dt = c["drivetrain"].as_str().unwrap_or("RWD").to_uppercase();
-        let (af, ar) = match purpose {
-            "drag" => (1., 65.),
-            "drift" => (Self::round(f * 45. + 1., 1), Self::round(r * 45. + 1., 1)),
-            _ => (Self::round(f * 64. + 1., 1), Self::round(r * 64. + 1., 1)),
-        };
-        let rf = Self::round(f * 12. + 3., 1);
-        let rr = Self::round(r * 12. + 3., 1);
-        let diff = if dt == "FWD" {
-            json!({"front_accel":45,"front_decel":0,"rear_accel":0,"rear_decel":0,"center_balance":0})
-        } else if dt == "AWD" {
-            json!({"front_accel":30,"front_decel":0,"rear_accel":65,"rear_decel":15,"center_balance":65})
-        } else if purpose == "drift" {
-            json!({"front_accel":0,"front_decel":0,"rear_accel":100,"rear_decel":100,"center_balance":0})
-        } else {
-            json!({"front_accel":0,"front_decel":0,"rear_accel":60,"rear_decel":20,"center_balance":0})
-        };
-        json!({"schemaVersion":"tuning-dev/v1","purpose":purpose,"calculated_setup":{"tires":{"front_cold_psi":28.5,"rear_cold_psi":28.5,"target_hot_psi":32.0},"alignment":{"camber_front_deg":if purpose=="drag"{-0.5}else{-1.8},"camber_rear_deg":if purpose=="drag"{0.0}else{-1.2},"toe_front_deg":if purpose=="drift"{0.5}else{0.0},"toe_rear_deg":if purpose=="drift"{-0.2}else{0.0},"caster_deg":if purpose=="drift"{7.0}else{6.5}},"anti_roll_bars":{"front":af,"rear":ar},"springs":{"front_lbs_in":Self::round(w*f*0.7,1),"rear_lbs_in":Self::round(w*r*0.7,1)},"dampers":{"rebound_front":rf,"rebound_rear":rr,"bump_front":Self::round(rf*0.6,1),"bump_rear":Self::round(rr*0.6,1)},"differential":diff},"capabilities":self.capabilities(&ordinal,parts)})
+        let mut result = crate::tuning::legacy_mcp::chassis(c, purpose);
+        result["capabilities"] = self.capabilities(&ordinal, parts);
+        result
     }
+
     /// Legacy quick gearing solver (tuning-dev/v1).
     pub fn gearing(&self, max: f64, peak: f64, top: f64, count: i64, tire: f64) -> Value {
         crate::tuning::legacy_cli::gearing(max, peak, top, count, tire)

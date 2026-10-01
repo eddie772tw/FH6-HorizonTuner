@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { CarParams } from '../../context/CarParamsContext';
 import { subscribeToDecodedTelemetry, type TelemetryData } from '../../hooks/useTelemetry';
-import { advanceEvMeasurement, createEvMeasurement, EV_MAX_FRAMES } from '../../domain/tuning/ev/measurement';
-import { calculateEvGearing } from '../../domain/tuning/ev/solver';
+import { createEvMeasurement, EV_MAX_FRAMES } from '../../domain/tuning/ev/sessionIdentity';
+import { backendFetch } from '../../services/backend';
 import { evDependencyKey, evMeasurementMatchesLive } from './evSession';
 import type { EvGearingResult, EvMeasurement } from '../../domain/tuning/ev/types';
 
 type Phase = 'idle' | 'collecting' | 'paused' | 'complete' | 'invalidated';
-interface Runtime { key: string; phase: Phase; state: EvMeasurement; result: EvGearingResult | null }
+interface Runtime { readyGears?: number[]; key: string; phase: Phase; state: EvMeasurement; result: EvGearingResult | null }
 
 /** Mounted at TuneSession scope: navigating between steps never unmounts a recording. */
 export function useEvMeasurementSession(carId: string, profile: CarParams | null, live: TelemetryData | null) {
@@ -16,6 +16,8 @@ export function useEvMeasurementSession(carId: string, profile: CarParams | null
   const ref = useRef<Runtime>(initial());
   const [runtime, setRuntime] = useState(ref.current);
   const frames = useRef<TelemetryData[]>([]);
+  const cursor = useRef(0);
+  const calculationSequence = useRef(0);
   const keyRef = useRef(key); keyRef.current = key;
   const enabled = useRef(false); enabled.current = profile?.isElectric === true;
   const lastPublish = useRef(0);
@@ -27,8 +29,10 @@ export function useEvMeasurementSession(carId: string, profile: CarParams | null
     }
   }, []);
   useEffect(() => {
+    calculationSequence.current++;
     ref.current = initial();
     frames.current = [];
+    cursor.current = 0;
     publish(true);
   }, [key, publish]);
   useEffect(() => {
@@ -46,24 +50,58 @@ export function useEvMeasurementSession(carId: string, profile: CarParams | null
       return;
     }
     frames.current.push(frame);
-    const state = advanceEvMeasurement(ref.current.state, frame);
-    ref.current = { ...ref.current, state, phase: state.status === 'blocked' ? 'invalidated' : 'collecting' };
-    publish(state.status === 'blocked');
+    publish();
   }), [publish]);
+
+  useEffect(() => {
+    let stopped = false; let timer: ReturnType<typeof setTimeout>;
+    const controller = new AbortController();
+    const tick = async () => {
+      const r = ref.current; const end = frames.current.length;
+      if ((r.phase === 'collecting' || r.phase === 'paused') && cursor.current < end) {
+        try {
+          const response = await backendFetch('/api/tuning/ev-batch', { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: controller.signal,
+            body: JSON.stringify({ schemaVersion: 'ev-batch/v1', state: r.state, frames: frames.current.slice(cursor.current, end) }) });
+          if (!response.ok) throw new Error();
+          const result = await response.json() as { state: EvMeasurement; readyGears: number[] };
+          if (!stopped && ref.current === r && r.key === keyRef.current) {
+            cursor.current = end;
+            ref.current = { ...r, ...result, phase: result.state.status === 'blocked' ? 'invalidated' : r.phase };
+            publish(true);
+          }
+        } catch { /* Retain pending frames for backend recovery. */ }
+      }
+      if (!stopped) timer = setTimeout(tick, 250);
+    };
+    void tick(); return () => { stopped = true; controller.abort(); clearTimeout(timer); };
+  }, [publish]);
 
   const restart = () => {
     if (key !== keyRef.current || !profile?.isElectric || !profile.evGearbox?.allForwardGearsConfirmed) return;
+    calculationSequence.current++;
     ref.current = { key, phase: 'collecting', state: createEvMeasurement(carId), result: null };
     frames.current = [];
+    cursor.current = 0;
     publish(true);
   };
-  const calculate = (candidateFinalDrive: number | null = profile?.evGearbox?.finalDrive ?? null) => {
+  const calculate = async (candidateFinalDrive: number | null = profile?.evGearbox?.finalDrive ?? null) => {
     const r = ref.current;
     if (!profile?.isElectric || !profile.evGearbox || r.key !== key || r.phase === 'collecting' ||
-      r.phase === 'invalidated' || r.state.status === 'blocked' || !evMeasurementMatchesLive(r.state, live)) return;
-    const result = calculateEvGearing({ setup: profile.evGearbox, measurements: r.state.gears, candidateFinalDrive });
-    ref.current = { ...r, result, phase: result ? 'complete' : r.phase };
-    publish(true);
+      r.phase === 'invalidated' || cursor.current !== frames.current.length || r.state.status === 'blocked' || !evMeasurementMatchesLive(r.state, live)) return;
+    const token = ++calculationSequence.current;
+    try {
+      const response = await backendFetch('/api/tuning/ev-gearing', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ setup: profile.evGearbox, measurements: r.state.gears, candidateFinalDrive }) });
+      if (!response.ok) throw new Error('EV calculation unavailable');
+      const result = await response.json() as EvGearingResult | null;
+      if (token !== calculationSequence.current || key !== keyRef.current || ref.current !== r) return;
+      ref.current = { ...r, result, phase: result ? 'complete' : r.phase };
+      publish(true);
+    } catch {
+      if (token === calculationSequence.current && key === keyRef.current && ref.current === r) {
+        ref.current = { ...r, result: null }; publish(true);
+      }
+    }
   };
   // Synchronous gate prevents a stale result rendering before reset effects run.
   const current = runtime.key === key && profile?.isElectric && evMeasurementMatchesLive(runtime.state, live)
@@ -71,6 +109,7 @@ export function useEvMeasurementSession(carId: string, profile: CarParams | null
   return {
     ...current,
     sampleCount: frames.current.length,
+    pendingSamples: frames.current.length - cursor.current,
     restart, calculate,
     pauseOrResume: () => {
       if (ref.current.phase !== 'collecting' && ref.current.phase !== 'paused') return;

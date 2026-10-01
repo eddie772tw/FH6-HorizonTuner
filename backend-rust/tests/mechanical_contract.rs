@@ -57,3 +57,16 @@ fn local_transport_validates_schema_and_preserves_null_defaults() {
     body.as_object_mut().unwrap().remove("profile");
     assert!(call(body).is_err());
 }
+
+#[test]
+fn desktop_decimal_rounding_boundaries_are_immutable() {
+    // Captured from Number(value.toFixed(1)) and the original JS expression order.
+    for (distribution, caster, rear) in [(25.0, 5.5, -1.4), (52.5, 6.0, -1.3), (42.5, 5.8, -1.3)] {
+        let request: MechanicalRequest = serde_json::from_value(json!({"schemaVersion":"tuning-mechanical/v1","goal":"Road","season":"Summer","profile":{"weight_distribution":distribution,"front_tire_width":335,"front_tire_aspect":35}})).unwrap();
+        let result = calculate_mechanical(&request).unwrap();
+        let value = serde_json::to_value(result).unwrap();
+        assert_eq!(value["alignment"]["caster"].as_f64(), Some(caster));
+        assert_eq!(value["alignment"]["camber"]["rear"].as_f64(), Some(rear));
+        assert_eq!(value["alignment"]["hwF"].as_f64(), Some(117.2));
+    }
+}

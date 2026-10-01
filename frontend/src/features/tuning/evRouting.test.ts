@@ -1,7 +1,8 @@
+import { getWorkflowReadiness } from './legacyWorkflowReadiness';
 import { describe, expect, it } from 'vitest';
 import { calculateAEGOGearing, calculateMeasuredGearing, type TuningCarParams } from '../../utils/tuningMath';
 import { calculateWizardMeasuredGearing } from './measurementTuningProfile';
-import { getWorkflowReadiness, resolveTuningStep } from './tuningWorkflow';
+import { resolveTuningStep } from './tuningWorkflow';
 import { engineDependencyKey } from './engineMeasurementArchive';
 import { evDependencyKey } from './evSession';
 import type { CarParams } from '../../context/CarParamsContext';
