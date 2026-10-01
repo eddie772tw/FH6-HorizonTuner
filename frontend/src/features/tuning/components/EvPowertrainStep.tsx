@@ -3,8 +3,7 @@ import { useCarParams } from '../../../context/CarParamsContext';
 import { useSettings } from '../../../context/SettingsContext';
 import { useTelemetry } from '../../../hooks/useTelemetry';
 import { useFileSave } from '../../../hooks/useFileSave';
-import { useLocalCalculation } from '../useLocalCalculation';
-import { backendFetch } from '../../../services/backend';
+import { useLocalCalculationState } from '../useLocalCalculation';
 import type { EvGearingResult } from '../../../domain/tuning/ev/types';
 import { useTuneSession } from '../TuneSessionProvider';
 import { captureSaveRequest } from '../captureDownload';
@@ -22,19 +21,11 @@ export function EvPowertrainStep({ enabled }: { enabled: boolean }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   useEffect(() => setCandidate(setup?.finalDrive ?? null), [m.key]);
-  const setupValidation = useLocalCalculation<{ ready: boolean }>('/api/tuning/ev-profile', { isElectric: true, evGearbox: setup });
-  const setupValid = setupValidation?.ready === true;
-  const previewKey = JSON.stringify([setup, candidate, m.state, m.pendingSamples]);
-  const [previewResult, setPreviewResult] = useState<{ key: string; result: EvGearingResult | null } | null>(null);
-  useEffect(() => {
-    if (!setup || m.state.status === 'blocked' || m.phase === 'collecting' || m.pendingSamples) return;
-    const controller = new AbortController(); let active = true;
-    void backendFetch('/api/tuning/ev-gearing', { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: controller.signal,
-      body: JSON.stringify({ setup, candidateFinalDrive: candidate, measurements: m.state.gears })
-    }).then(async response => { if (!response.ok) throw new Error(); const result = await response.json() as EvGearingResult | null; if (active) setPreviewResult({ key: previewKey, result }); }).catch(() => {});
-    return () => { active = false; controller.abort(); };
-  }, [previewKey, m.phase]);
-  const preview = previewResult?.key === previewKey ? previewResult.result : null;
+  const setupValidation = useLocalCalculationState<{ ready: boolean }>('/api/tuning/ev-profile', { isElectric: true, evGearbox: setup });
+  const setupValid = setupValidation.value?.ready === true;
+  const previewRequest = useLocalCalculationState<{ evidenceStatus: 'unverified-preview'; result: EvGearingResult | null }>('/api/tuning/ev-preview', setup && m.state.status !== 'blocked' && m.phase !== 'collecting' && !m.pendingSamples
+    ? { setup, candidateFinalDrive: candidate, measurements: m.state.gears } : null);
+  const preview = previewRequest.value?.result ?? null;
   const recording = m.phase === 'collecting';
   const result = m.result;
   const start = async () => {
@@ -55,8 +46,10 @@ export function EvPowertrainStep({ enabled }: { enabled: boolean }) {
     </div>
     <div className="glass-panel p-3">
       <div role="status" aria-live="polite" style={{ minHeight: '3rem' }}>
-        {error ? t(error) : m.phase === 'invalidated' ? t('The vehicle, build or driving session changed. Restart EV collection.') :
+        {error || m.calculationError ? t(error || m.calculationError!) : m.phase === 'invalidated' ? t('The vehicle, build or driving session changed. Restart EV collection.') :
           !isConnected ? t('Connect the game and enable Data Out to start receiving driving data.') :
+          setupValidation.status === 'error' ? t('Tuning calculation is unavailable. Retrying…') :
+          setupValidation.status === 'pending' ? t('Calculating tuning results…') :
           !setupValid ? t('Confirm the current EV gearbox before recording.') :
           t(recording ? 'EV collection is active. You can switch to the game now.' : result ? 'EV calculation is ready.' : 'Pause collection after all gear runs, then calculate the EV baseline.')}
         <div className="small text-body-secondary">{t('Collected frames')}: {m.sampleCount} / 30000 · {t(m.phase)}</div>
@@ -92,7 +85,9 @@ export function EvPowertrainStep({ enabled }: { enabled: boolean }) {
       <p className="small text-body-secondary">{t('Keep the measured final drive for a baseline, or enter a candidate to preview the same RPM envelope at a different ratio. Confirm slider limits in game.')}</p>
       <button className="btn btn-primary" disabled={!enabled || recording || m.phase === 'invalidated' || !preview}
         onClick={() => m.calculate(candidate)}>{t('Calculate EV model')}</button>
-      {!preview && <p className="small text-body-secondary mt-2">{t('Calculation needs every confirmed gear, enough RPM coverage and a stable speed relationship consistent with the entered ratios.')}</p>}
+      {previewRequest.status === 'pending' && <p role="status">{t('Calculating tuning results…')}</p>}
+      {previewRequest.status === 'error' && <p role="status">{t('Tuning calculation is unavailable. Retrying…')}</p>}
+      {previewRequest.status === 'ready' && !preview && <p className="small text-body-secondary mt-2">{t('Calculation needs every confirmed gear, enough RPM coverage and a stable speed relationship consistent with the entered ratios.')}</p>}
     </div>
     {result && <div className="glass-panel p-3">
       <h4 className="fs-6">{t(result.basis === 'measured-baseline' ? 'Measured EV baseline' : 'EV ratio preview')}</h4>

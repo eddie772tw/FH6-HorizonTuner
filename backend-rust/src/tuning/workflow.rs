@@ -8,7 +8,7 @@ use super::{
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Map, Value};
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct MeasuredEngine {
     pub engine_max_rpm: f64,
@@ -26,6 +26,8 @@ pub struct WorkflowRequest {
     pub engine: Option<MeasuredEngine>,
     pub ev: Option<EvGearingInput>,
     pub input_snapshot: Value,
+    #[serde(default)]
+    pub evidence: Option<super::evidence::EvidenceRequest>,
 }
 #[derive(Debug, Serialize)]
 #[serde(untagged)]
@@ -91,6 +93,22 @@ pub fn measured_gearing(
     }
 }
 pub fn calculate_workflow(input: WorkflowRequest) -> Result<WorkflowResult, String> {
+    let proof = input
+        .evidence
+        .as_ref()
+        .map(super::evidence::qualify)
+        .transpose()?;
+    calculate_qualified(input, proof.as_ref())
+}
+pub(crate) fn calculate_qualified(
+    input: WorkflowRequest,
+    proof: Option<&super::evidence::QualifiedEvidence>,
+) -> Result<WorkflowResult, String> {
+    if let Some(proof) = proof {
+        proof.validate(&input)?;
+    }
+    let qualified_ev = proof.map(|p| p.ev_input(&input)).transpose()?.flatten();
+    let qualified_engine = proof.and_then(|p| p.engine());
     if input.schema_version != "tuning-workflow-result/v1" {
         return Err("Unsupported tuning calculation schema".into());
     }
@@ -117,33 +135,19 @@ pub fn calculate_workflow(input: WorkflowRequest) -> Result<WorkflowResult, Stri
     let chassis = calculate_chassis_tuning(input.goal, &profile);
     let alignment = calculate_static_alignment(input.goal, input.season, &profile);
     let gearing = if electric {
-        input
-            .ev
+        qualified_ev
             .as_ref()
             .and_then(calculate_ev_gearing)
             .map(WorkflowGearing::Ev)
     } else {
-        measured_gearing(input.goal, count, &profile, input.engine.as_ref())
-            .map(WorkflowGearing::Ice)
+        measured_gearing(input.goal, count, &profile, qualified_engine).map(WorkflowGearing::Ice)
     };
     let mechanical = profile.weight.is_some_and(positive)
         && profile
             .weight_distribution
             .is_some_and(|v| positive(v) && v < 100.0);
     let engine_inputs = mechanical && (electric || profile.max_hp.is_some_and(positive));
-    let measured_engine = engine_inputs
-        && if electric {
-            gearing.is_some()
-        } else {
-            input.engine.as_ref().is_some_and(|e| {
-                [e.engine_max_rpm, e.peak_power_rpm, e.peak_torque_rpm]
-                    .into_iter()
-                    .all(positive)
-                    && e.peak_power_rpm <= e.engine_max_rpm
-                    && e.peak_torque_rpm <= e.engine_max_rpm
-                    && e.peak_torque_nm.is_none_or(positive)
-            })
-        };
+    let measured_engine = engine_inputs && proof.is_some();
     let gearing_available = measured_engine
         && match &gearing {
             Some(WorkflowGearing::Ice(g)) => g.unsupported != Some(true) && g.gears.len() == count,
@@ -151,6 +155,9 @@ pub fn calculate_workflow(input: WorkflowRequest) -> Result<WorkflowResult, Stri
             None => false,
         };
     let mut snapshot = input.input_snapshot;
+    if let Some(proof) = proof {
+        proof.snapshot(&mut snapshot);
+    }
     snapshot["profile"] = input.profile.clone();
     snapshot["goal"] = serde_json::to_value(input.goal).map_err(|e| e.to_string())?;
     snapshot["season"] = serde_json::to_value(input.season).map_err(|e| e.to_string())?;

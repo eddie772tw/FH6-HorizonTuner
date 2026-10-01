@@ -7,7 +7,7 @@ import { evDependencyKey, evMeasurementMatchesLive } from './evSession';
 import type { EvGearingResult, EvMeasurement } from '../../domain/tuning/ev/types';
 
 type Phase = 'idle' | 'collecting' | 'paused' | 'complete' | 'invalidated';
-interface Runtime { readyGears?: number[]; key: string; phase: Phase; state: EvMeasurement; result: EvGearingResult | null }
+interface Runtime { calculationError?: string; evidenceId?: string; readyGears?: number[]; key: string; phase: Phase; state: EvMeasurement; result: EvGearingResult | null }
 
 /** Mounted at TuneSession scope: navigating between steps never unmounts a recording. */
 export function useEvMeasurementSession(carId: string, profile: CarParams | null, live: TelemetryData | null) {
@@ -15,7 +15,7 @@ export function useEvMeasurementSession(carId: string, profile: CarParams | null
   const initial = (): Runtime => ({ key, phase: 'idle', state: createEvMeasurement(carId), result: null });
   const ref = useRef<Runtime>(initial());
   const [runtime, setRuntime] = useState(ref.current);
-  const frames = useRef<TelemetryData[]>([]);
+  const frames = useRef<Partial<TelemetryData>[]>([]);
   const cursor = useRef(0);
   const calculationSequence = useRef(0);
   const keyRef = useRef(key); keyRef.current = key;
@@ -49,7 +49,8 @@ export function useEvMeasurementSession(carId: string, profile: CarParams | null
       publish(true);
       return;
     }
-    frames.current.push(frame);
+    const channels = ['TimestampMS', 'IsRaceOn', 'CarOrdinal', 'CarClass', 'CarPerformanceIndex', 'EngineMaxRpm', 'CurrentEngineRpm', 'Gear', 'AccelInput', 'BrakeInput', 'ClutchInput', 'HandBrakeInput', 'PowerWatts', 'TorqueNewtons', 'WheelRotationSpeed', 'TireSlipRatio', 'SpeedMetersPerSecond'] as const;
+    frames.current.push(Object.fromEntries(channels.map(key => [key, frame[key]])) as Partial<TelemetryData>);
     publish();
   }), [publish]);
 
@@ -90,16 +91,25 @@ export function useEvMeasurementSession(carId: string, profile: CarParams | null
       r.phase === 'invalidated' || cursor.current !== frames.current.length || r.state.status === 'blocked' || !evMeasurementMatchesLive(r.state, live)) return;
     const token = ++calculationSequence.current;
     try {
+      let evidenceId = r.evidenceId;
+      let measuredState = r.state;
+      if (!evidenceId) {
+        const evidenceResponse = await backendFetch('/api/tuning/ev-evidence', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ kind: 'ev-capture', carId, setup: profile.evGearbox, frames: frames.current }) });
+        if (!evidenceResponse.ok) throw new Error('EV evidence could not be qualified');
+        const evidence = await evidenceResponse.json() as { evidenceId: string; state: EvMeasurement };
+        evidenceId = evidence.evidenceId; measuredState = evidence.state;
+      }
       const response = await backendFetch('/api/tuning/ev-gearing', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ setup: profile.evGearbox, measurements: r.state.gears, candidateFinalDrive }) });
+        body: JSON.stringify({ evidenceId, setup: profile.evGearbox, candidateFinalDrive }) });
       if (!response.ok) throw new Error('EV calculation unavailable');
       const result = await response.json() as EvGearingResult | null;
       if (token !== calculationSequence.current || key !== keyRef.current || ref.current !== r) return;
-      ref.current = { ...r, result, phase: result ? 'complete' : r.phase };
+      ref.current = { ...r, calculationError: undefined, evidenceId, state: measuredState, result, phase: result ? 'complete' : r.phase };
       publish(true);
     } catch {
       if (token === calculationSequence.current && key === keyRef.current && ref.current === r) {
-        ref.current = { ...r, result: null }; publish(true);
+        ref.current = { ...r, result: null, calculationError: 'EV calculation is unavailable or the captured evidence did not qualify. Try again.' }; publish(true);
       }
     }
   };
@@ -114,7 +124,7 @@ export function useEvMeasurementSession(carId: string, profile: CarParams | null
     pauseOrResume: () => {
       if (ref.current.phase !== 'collecting' && ref.current.phase !== 'paused') return;
       ref.current = { ...ref.current, phase: ref.current.phase === 'collecting' ? 'paused' : 'collecting',
-        result: null, state: { ...ref.current.state, lastAcceptedTimestamp: undefined } };
+        result: null, evidenceId: undefined, state: { ...ref.current.state, lastAcceptedTimestamp: undefined } };
       publish(true);
     },
     snapshot: () => ({

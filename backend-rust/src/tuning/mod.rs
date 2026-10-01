@@ -7,6 +7,7 @@ pub mod developer;
 pub mod dyno_guidance;
 pub mod ev;
 pub mod ev_measurement;
+pub mod evidence;
 pub mod gearing;
 pub mod legacy_cli;
 pub mod measurement;

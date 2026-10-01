@@ -15,7 +15,7 @@ import { canOpenTuningStep, resolveTuningStep, TUNING_WORKFLOW_STEPS, updateWork
 import { useTuneSession } from './TuneSessionProvider';
 import { unavailableReadiness } from './useWorkflowCalculation';
 
-function TuningViewContent({ unitPreference, onUnitPreferenceChange }: {
+export function TuningViewContent({ unitPreference, onUnitPreferenceChange }: {
     unitPreference: UnitPreferenceOverride; onUnitPreferenceChange: (value: UnitPreferenceOverride) => void;
   }) {
   const { carId, carName, carParams: liveCarParams, setCarParams, saveCarParams } = useCarParams();
@@ -68,12 +68,13 @@ function TuningViewContent({ unitPreference, onUnitPreferenceChange }: {
       }}
       hasCoreParams={readiness.mechanical} onOpenUnitSettings={() => setShowUnits(true)}
       onProceed={async () => { await saveCarParams(); setCurrentStep(2); }} />}
-    {!reviewHistory && currentStep === 2 && <Step2ChassisTuner selectedRaceGoal={goal} season={season} carParams={profile}
+    {!reviewHistory && [2, 4].includes(currentStep) && session.calculationStatus !== 'ready' && <div className="alert alert-info" role="status">{t(session.calculationStatus === 'error' ? 'Tuning calculation is unavailable. Retrying…' : 'Calculating tuning results…')}</div>}
+    {!reviewHistory && currentStep === 2 && session.calculationStatus === 'ready' && <Step2ChassisTuner selectedRaceGoal={goal} season={season} carParams={profile}
       chassis={chassis} alignment={alignment} saveCarParams={saveCarParams} />}
     {!reviewHistory && currentStep === 3 && (profile?.isElectric
       ? <EvPowertrainStep enabled={readiness.engineInputs} />
       : <EngineDataStep carId={carId} profile={profile} engine={engine} gearing={gearing && !('model' in gearing) ? gearing : null} enabled={readiness.engineInputs} />)}
-    {!reviewHistory && currentStep === 4 && <SetupVerificationStep goal={goal} carId={carId} recommendation={session.result?.recommendation ?? null} />}
+    {!reviewHistory && currentStep === 4 && session.calculationStatus === 'ready' && <SetupVerificationStep goal={goal} carId={carId} recommendation={session.result?.recommendation ?? null} />}
     {reviewHistory && <RoadWorkflowView recommendation={null} carId={carId} />}
     <UnitSettingsSidebar idPrefix="tuning-units" show={showUnits} title={t('Tuning Workflow Unit Settings')}
       preference={unitPreference} onChange={onUnitPreferenceChange} onClose={() => setShowUnits(false)} />

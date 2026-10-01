@@ -49,12 +49,12 @@ pub fn call(
                     code: -32602,
                     message: format!("Invalid tuning input: {e}"),
                 })?;
-            serde_json::to_value(crate::tuning::workflow::calculate_workflow(input).map_err(
-                |e| ToolError {
+            serde_json::to_value(service.app.tuning_evidence.calculate(input).map_err(|e| {
+                ToolError {
                     code: -32602,
-                    message: e,
-                },
-            )?)
+                    message: e.to_string(),
+                }
+            })?)
             .map_err(|e| ToolError {
                 code: -32603,
                 message: e.to_string(),

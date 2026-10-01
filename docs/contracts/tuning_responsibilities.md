@@ -17,7 +17,9 @@
 - `measurement` 擁有 loaded-sweep/v4、archive 資格與 capture replay；`ev_measurement`／`ev` 擁有 EV 觀測與求解；250ms 有界增量批次處理，非每一 telemetry frame 或 Companion 400ms exchange 重算。capture replay 在 receiver mutex 外執行。
 - `alignment`／`chassis`／`gearing` 擁有機械模型；`tire_evidence` 擁有輪胎證據診斷；`profile` 擁有既有桌面預設與 EV profile 資格；`capabilities` 擁有實驗模式能力契約。Road 量化診斷維持 `backend-rust/src/road/` owner。
 - `dyno_guidance` 擁有舊 dyno wizard 的數值門檻、建議測試檔位與峰值匯入；guidance 隨既有 telemetry 推送，實際 dyno 採樣仍由 Rust `telemetry/dyno.rs` 的獨立品質契約控制。
-- 新推薦使用 `rust/ice-measured-workflow-v1`／`rust/ev-measured-workflow-v1`；EV 保存驗證有界聚合證據與推薦一致性，未知／鎖定齒比不套用。歷史版本唯讀，不重寫。
+- 量測來源不接受客戶端峰值／聚合 moments 自行宣稱 measured。`evidence` 使用 `saved-engine` observationId 或 `saved-ev` evidenceId；Rust 從不可變原始 capture 重播、檢查車輛／PI／class／profile dependency，再產生有版本的 backend-only qualification cache。離線 CLI 可讀本機保存證據，或用 `--args-file PATH` 提供完整 capture 由同一 library 重播；裸峰值不會產生 measured readiness／推薦。外部 capture 明確標記 `imported-capture`，不等同硬體來源認證；正式保存仍必須有 backend-issued evidenceId。
+- EV 原始 frames 與 backend-qualified evidence 都不可變保存；`ev-preview` 回傳明確 `unverified-preview`，正式 `ev-gearing` 必須提供 evidenceId。保存推薦時從 backend-owned qualification metadata 重新組合並比對欄位與來源；不相信 snapshot 的峰值／moments，也不在 receiver mutex 內 replay capture。
+- 新推薦使用 `rust/ice-measured-workflow-v1`／`rust/ev-measured-workflow-v1`；EV 保存驗證後端資格來源與推薦一致性，未知／鎖定齒比不套用。歷史版本唯讀，不重寫。
 - 計算 API 不擴大 LAN allowlist；純函式共享 library 保留離線 CLI。Vite build 拒絕將凍結 TS tuning solver／readiness／diagnosis 參考模組帶入產品 bundle。
 - Road/Rally 正值 spring/height minima 保留小於 1 的數值；零值使用既有桌面預設，反向範圍把 max 提升到 min。靜態定位保留 JS 原運算順序與 toFixed 精確 binary rounding，不能以縮放 round 取代。
 

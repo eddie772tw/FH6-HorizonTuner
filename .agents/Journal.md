@@ -2937,3 +2937,10 @@
 - 發現並補上 toFixed binary rounding 與 width*(aspect/100) 運算順序邊界；不可重寫既有 21 tuning／10 EV golden，也不可缺檔自動生成。
 - 新增 React hook 真實非同步順序／失敗重試測試；build boundary 拒絕 TS legacy solver 進入產品。capture replay 在 receiver mutex 外；LAN allowlist 不變。
 - 驗證結果見 PR 精確 commit；Windows 平台驗證交由 CI，未聲稱 Linux 已跑 Windows 原生 UI 或遊戲實測。
+
+
+### 2026-10-01 / PR #460 獨立審查後的來源邊界修補
+
+- 審查指出「把公式搬到 Rust」不等於「客戶端 supplied peaks 是後端合格證據」。撤回完成宣稱；workflow 改用 Rust 重播不可變 capture 後的 opaque qualification，裸 ICE peaks／EV moments 不得建立 measured recommendation。
+- 保存時載入 backend-only、明確版本的 evidence metadata，重組推薦並比較；ICE 必須匹配保存觀測與 engine dependency，EV 同時保存原始 frames 及資格紀錄。重播只在接收器鎖外，離線 CLI 仍共用 library。
+- EV preview 503 會顯示 error 並自動重試；Step 2／4 不再把 pending/error 顯示成缺少車輛或引擎輸入。新增實際 React 元件重試／訊息回歸及真實 capture persistence/restart/篡改負例。

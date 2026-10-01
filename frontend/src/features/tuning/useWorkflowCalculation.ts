@@ -19,7 +19,8 @@ export interface AuthoritativeWorkflow {
 export const unavailableReadiness: WorkflowReadiness = { mechanical: false, engineInputs: false, measuredEngine: false, gearingAvailable: false };
 export function useWorkflowCalculation(carId: string, goal: string, season: Season, profile: CarParams | null,
   engine: MeasuredEngineInputs | null, ev: EvGearingInput | null, inputSnapshot: Record<string, unknown>) {
-  const key = JSON.stringify({ carId, schemaVersion: 'tuning-workflow-result/v1', goal, season, profile, engine, ev, inputSnapshot });
+  const evidence = profile?.isElectric ? inputSnapshot.evEvidence ?? null : engine && inputSnapshot.engineObservation ? { kind: 'saved-engine', observationId: (inputSnapshot.engineObservation as { id: string }).id } : null;
+  const key = JSON.stringify({ carId, evidence, schemaVersion: 'tuning-workflow-result/v1', goal, season, profile, engine, ev, inputSnapshot });
   const sequence = useRef(new CalculationSequence());
   const [state, setState] = useState<{ key: string; result: AuthoritativeWorkflow } | null>(null);
   const [status, setStatus] = useState<'pending' | 'ready' | 'error'>('pending');

@@ -1,4 +1,5 @@
 {
+  "EV calculation is unavailable or the captured evidence did not qualify. Try again.": "EV 計算暫時無法使用，或擷取的證據尚未合格，請重試。",
   "Calculating tuning results…": "正在計算調校結果…",
   "Tuning calculation is unavailable. Retrying…": "調校計算暫時無法使用，正在重試…",
   "Developer": "開發選項",

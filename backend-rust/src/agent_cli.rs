@@ -43,10 +43,41 @@ fn execute(args: &Options, ctx: &Context) -> Result<Value, String> {
     let command: Vec<&str> = args.positionals.iter().map(String::as_str).collect();
     match command.as_slice() {
         ["solve", "workflow"] => {
-            let input = serde_json::from_str(args.get("args").ok_or("--args JSON is required")?)
+            let encoded = if let Some(path) = args.get("args-file") {
+                if std::fs::metadata(path).map_err(|e| e.to_string())?.len() > 64 * 1024 * 1024 {
+                    return Err("Workflow input exceeds 64 MiB".into());
+                }
+                std::fs::read_to_string(path).map_err(|e| e.to_string())?
+            } else {
+                args.get("args")
+                    .ok_or("--args JSON or --args-file PATH is required")?
+                    .to_owned()
+            };
+            let input: crate::tuning::workflow::WorkflowRequest = serde_json::from_str(&encoded)
                 .map_err(|e| format!("Invalid workflow input: {e}"))?;
-            serde_json::to_value(crate::tuning::workflow::calculate_workflow(input)?)
-                .map_err(|e| e.to_string())
+            let saved = matches!(
+                input.evidence,
+                Some(
+                    crate::tuning::evidence::EvidenceRequest::SavedEngine { .. }
+                        | crate::tuning::evidence::EvidenceRequest::SavedEv { .. }
+                )
+            );
+            let result = if saved {
+                crate::tuning::evidence::EvidenceService {
+                    store: crate::road::RoadStore {
+                        db_path: ctx
+                            .root
+                            .join("telemetry_sessions.db")
+                            .to_string_lossy()
+                            .into_owned(),
+                    },
+                }
+                .calculate(input)
+                .map_err(|e| e.to_string())?
+            } else {
+                crate::tuning::workflow::calculate_workflow(input)?
+            };
+            serde_json::to_value(result).map_err(|e| e.to_string())
         }
         ["status" | "doctor"] => {
             let status = ctx.get("api/mcp/status");

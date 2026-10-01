@@ -4,7 +4,10 @@ use crate::{
     network::{ApiRequest, ApiResponse},
 };
 use serde_json::json;
-pub fn request(request: &ApiRequest) -> ApiResult<Option<ApiResponse>> {
+pub fn request(
+    request: &ApiRequest,
+    evidence: &super::evidence::EvidenceService,
+) -> ApiResult<Option<ApiResponse>> {
     if request.method == "POST" && request.path == "/api/tuning/engine-archive" {
         return Ok(Some(ApiResponse::json(
             crate::tuning::measurement::parse_archive(&request.json()?),
@@ -62,16 +65,20 @@ pub fn request(request: &ApiRequest) -> ApiResult<Option<ApiResponse>> {
         let input: crate::tuning::workflow::WorkflowRequest =
             serde_json::from_value(request.json()?)
                 .map_err(|error| ApiError::invalid(&error.to_string()))?;
-        let result = crate::tuning::workflow::calculate_workflow(input)
-            .map_err(|error| ApiError::invalid(&error))?;
+        let result = evidence.calculate(input)?;
         return Ok(Some(ApiResponse::json(serde_json::to_value(result)?)));
     }
     if request.method == "POST" && request.path == "/api/tuning/ev-gearing" {
+        return Ok(Some(ApiResponse::json(
+            evidence.ev_gearing(&request.json()?)?,
+        )));
+    }
+    if request.method == "POST" && request.path == "/api/tuning/ev-preview" {
         let input: crate::tuning::ev::EvGearingInput = serde_json::from_value(request.json()?)
-            .map_err(|error| ApiError::invalid(&error.to_string()))?;
-        return Ok(Some(ApiResponse::json(serde_json::to_value(
-            crate::tuning::ev::calculate_ev_gearing(&input),
-        )?)));
+            .map_err(|e| ApiError::invalid(&e.to_string()))?;
+        return Ok(Some(ApiResponse::json(
+            json!({"evidenceStatus":"unverified-preview","result":crate::tuning::ev::calculate_ev_gearing(&input)}),
+        )));
     }
     if request.method == "POST" && request.path == "/api/tuning/mechanical" {
         let input: crate::tuning::calculation::MechanicalRequest =
@@ -90,6 +97,9 @@ pub fn request(request: &ApiRequest) -> ApiResult<Option<ApiResponse>> {
         return Ok(Some(ApiResponse::json(
             super::dyno_guidance::recommended_gear(&request.json()?),
         )));
+    }
+    if request.method == "POST" && request.path == "/api/tuning/ev-evidence" {
+        return Ok(Some(ApiResponse::json(evidence.save_ev(&request.json()?)?)));
     }
     Ok(None)
 }
