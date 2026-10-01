@@ -293,6 +293,20 @@ impl EvidenceService {
         ))?)
     }
     pub fn resolve(&self, raw: &EvidenceRequest) -> ApiResult<QualifiedEvidence> {
+        self.resolve_with_cache(raw, true)
+    }
+    fn resolve_with_cache(
+        &self,
+        raw: &EvidenceRequest,
+        persist_cache: bool,
+    ) -> ApiResult<QualifiedEvidence> {
+        if matches!(
+            raw,
+            EvidenceRequest::SavedEngine { .. } | EvidenceRequest::SavedEv { .. }
+        ) && !std::path::Path::new(&self.store.db_path).exists()
+        {
+            return Err(ApiError::new(404, "Saved evidence database is unavailable"));
+        }
         match raw {
             EvidenceRequest::SavedEngine { observation_id } => {
                 let key = format!("qualified-engine-v4:{observation_id}");
@@ -307,7 +321,11 @@ impl EvidenceService {
                     capture: saved["capture"].clone(),
                 })
                 .map_err(|e| ApiError::invalid(&e))?;
-                self.save(proof, Some(&key))
+                if persist_cache {
+                    self.save(proof, Some(&key))
+                } else {
+                    Ok(proof)
+                }
             }
             EvidenceRequest::SavedEv { evidence_id } => {
                 let proof = self.load(evidence_id)?;
@@ -320,13 +338,24 @@ impl EvidenceService {
         }
     }
     pub fn calculate(&self, input: WorkflowRequest) -> ApiResult<WorkflowResult> {
+        self.calculate_with_cache(input, true)
+    }
+    /// MCP and offline CLI retain read-only semantics, including a cold cache.
+    pub fn calculate_read_only(&self, input: WorkflowRequest) -> ApiResult<WorkflowResult> {
+        self.calculate_with_cache(input, false)
+    }
+    fn calculate_with_cache(
+        &self,
+        input: WorkflowRequest,
+        persist_cache: bool,
+    ) -> ApiResult<WorkflowResult> {
         if input.schema_version != "tuning-workflow-result/v1" {
             return Err(ApiError::invalid("Unsupported tuning calculation schema"));
         }
         let proof = input
             .evidence
             .as_ref()
-            .map(|e| self.resolve(e))
+            .map(|e| self.resolve_with_cache(e, persist_cache))
             .transpose()?;
         calculate_qualified(input, proof.as_ref()).map_err(|e| ApiError::invalid(&e))
     }

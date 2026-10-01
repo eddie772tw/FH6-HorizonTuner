@@ -463,7 +463,7 @@
   },
   {
     "name": "calculate_tuning_workflow",
-    "description": "Calculate tuning-workflow-result/v1 with backend-qualified evidence. Saved observations are replayed and qualification cached; no user configuration changes. Bare peaks/moments never produce measured recommendations.",
+    "description": "Calculate tuning-workflow-result/v1 with backend-qualified evidence. Saved observations are replayed read-only; existing qualified evidence is reused without writing a cache or changing configuration. Bare peaks/moments never produce measured recommendations.",
     "inputSchema": {
       "type": "object",
       "required": [

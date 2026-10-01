@@ -328,3 +328,28 @@ fn offline_capture_file_needs_no_backend_or_existing_database() {
     );
     assert!(!absent.exists());
 }
+
+#[test]
+fn mcp_cold_evidence_analysis_does_not_mutate_saved_state() {
+    let temp = tempfile::tempdir().unwrap();
+    let app = App::new(temp.path()).unwrap();
+    save_engine(&app);
+    let before = app
+        .tuning_evidence
+        .store
+        .list(None, Some("tuning-evidence/v1"), false)
+        .unwrap();
+    assert!(before.is_empty());
+    let response=fh6_backend::mcp::McpServer::default().handle(&app,&json!({"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"calculate_tuning_workflow","arguments":saved_request()}})).unwrap().unwrap();
+    let result: Value =
+        serde_json::from_str(response["result"]["content"][0]["text"].as_str().unwrap()).unwrap();
+    assert_eq!(result["readiness"]["measuredEngine"], true);
+    assert!(result["recommendation"]["inputSnapshot"]["evidenceId"].is_null());
+    assert_eq!(
+        app.tuning_evidence
+            .store
+            .list(None, Some("tuning-evidence/v1"), false)
+            .unwrap(),
+        before
+    );
+}

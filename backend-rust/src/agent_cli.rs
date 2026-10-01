@@ -72,7 +72,7 @@ fn execute(args: &Options, ctx: &Context) -> Result<Value, String> {
                             .into_owned(),
                     },
                 }
-                .calculate(input)
+                .calculate_read_only(input)
                 .map_err(|e| e.to_string())?
             } else {
                 crate::tuning::workflow::calculate_workflow(input)?

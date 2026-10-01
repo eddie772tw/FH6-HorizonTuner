@@ -2944,3 +2944,4 @@
 - 審查指出「把公式搬到 Rust」不等於「客戶端 supplied peaks 是後端合格證據」。撤回完成宣稱；workflow 改用 Rust 重播不可變 capture 後的 opaque qualification，裸 ICE peaks／EV moments 不得建立 measured recommendation。
 - 保存時載入 backend-only、明確版本的 evidence metadata，重組推薦並比較；ICE 必須匹配保存觀測與 engine dependency，EV 同時保存原始 frames 及資格紀錄。重播只在接收器鎖外，離線 CLI 仍共用 library。
 - EV preview 503 會顯示 error 並自動重試；Step 2／4 不再把 pending/error 顯示成缺少車輛或引擎輸入。新增實際 React 元件重試／訊息回歸及真實 capture persistence/restart/篡改負例。
+- MCP／離線 CLI 保持唯讀：cold-cache 只重播、不新增 qualification；已保存資格可重用。新增 cache 不變回歸，完整 Rust 預設／no-default-features suites 通過。
