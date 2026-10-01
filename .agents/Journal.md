@@ -2954,3 +2954,11 @@
 - Road正式推薦升v2；歷史v1依凍結gearing v2驗證。舊goldens不改，新基線分檔；歷史與新模型都須經相同資格及保存檢查。
 - 實車資料仍未補齊；因果、矩陣、候選輸出及界限見docs/tuning/aego-road-launch-v3.md。沒有合併／發行或關閉462。
 - 獨立審查重現歷史v1驗證曾照抄caller的v3標籤／roadLaunch；改為檢查版本專屬保留metadata，保留真正無標籤的v1相容，並拒絕非Road偽造診斷。
+
+### 2026-10-01 / Road v3 理論覆核與有效上限診斷（Codex as Codex）
+
+- 採用 `ponytail` full、`physics-tuning-math`、`pr-review-evaluation`、`pr-author-maintainer`；依使用者要求委派 `gpt-6-luna` 只讀研究 Rspeed。完整推導與研究路線見 [Road v3 文件](../docs/tuning/aego-road-launch-v3.md)。
+- `Rfirst=max(Rspeed,A/T)` 等價於功率峰值一檔速度 `min(Vbaseline,KT/A)`，可限制高扭力長一檔退化並保留低扭力縮短。Rload仍是特定抓地先驗上限，max並非無滑移保證；#462合成例要求輪上力約3.86g，同一μ=1先驗下可傳遞扭力約峰值25.9%。固定速度、動力帶及最適換檔尚未校準。
+- 正式workflow的診斷曾把名義engineMaxRpm當有效上限；原Beetle capture辨識5248但診斷輸出5999.9966，新qualification/workflow回歸先失敗。最小修正讀取proof已覆蓋的engineCalculation.effectiveRedline，缺省回退名義值；不重寫引擎身份、起步／頂檔目標或歷史v1。
+- 兩組Beetle／Pajero limiter capture的正式診斷回歸通過，並檢查偽造snapshot不能決定有效上限。完整Rust locked suite為119 passed／3 ignored（兩個選用效能probe及一個需要真實Windows音訊／GSMTC的測試）；前端154 files／1099 tests passed，1既有skipped；Cargo fmt及git diff --check通過。獨立Node核對14個新基線的目標／取整誤差與扭力分段性質通過。
+- Luna建議先做固定環境、同車齒比掃描與重複0–100 A/B，再補T(n)、起步控制、抓地／滑移及阻力資料建模。現有moving loaded sweep不能唯一辨認launch target，故不換另一組未校準Rspeed常數。未做新遊戲試車；#462保持開放。

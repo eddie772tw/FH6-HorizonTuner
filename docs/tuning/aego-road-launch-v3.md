@@ -54,3 +54,89 @@ v1.6 已對 FWD／**顯式** AWD split 套用 traction cap；照抄這兩個分�
 - Beetle兩個既有齒比goldens、弱引擎與不可行案例不變。Beetle/Pajero原始limiter captures的v4資格／上限不變；Beetle合格峰值帶入既有比較profile後齒比同v2。Pajero沒有完整profile，不補造其實車齒比或宣稱不變。
 - 保存／重啟／篡改測試區分新舊model；正式HTTP、Companion relay、CLI、MCP均共用同一workflow。版本不可由前端snapshot指定。歷史Road v1僅允許缺省或v2模型標籤，不得夾帶v3的roadLaunch診斷；非Road/EV會移除不適用的Road保留metadata，保存時拒絕偽造的診斷。
 - #446已確認的實車驗收仍屬該次舊候選，不自動涵蓋本修正。#462仍缺實際車款、檔數、profile、合格capture／snapshot、`09.4`是否為.94的確認，以及起步／加速記錄。未提供新實車性能改善百分比。
+
+## 07b4492 理論覆核（Codex as Codex；Luna as Codex）
+
+覆核對象為 `07b4492c05c4882f014e64238e58fb68e461f6cf`，其中公式修正來自前一提交 `3993f95`，07b4492 本身補歷史 metadata 驗證。以下推導先驗證既有準則的性質；不能從符合 golden 推論公式已經過物理校準。
+
+### 運動學與抓地先驗
+
+令總減速比 `R=FD×G`、輪胎周長 `C=2πr`（m）、轉速 `n`（RPM）、車速 `V`（km/h）。在輪胎純滾動、傳動鎖合的假設下：
+
+```text
+V(n,R) = n C 60 / (1000 R)
+Rspeed = nPower C 60 / (1000 Vbaseline)
+```
+
+`n×C×60` 是 m/h，分母的 `V×1000` 也是 m/h，故總減速比無因次。它只把「功率峰值時的一檔車速」設為歷史目標，沒有推導起步轉速或最佳換檔點。
+
+令前軸靜態配重比例 `f`、後軸驅動力比例 `s`、`x=a/g`、`κ=h/L=.20`。忽略阻力、下壓力與旋轉慣量，假設兩軸保持接地、共同有效輪徑、輪胎 `μ=1`：
+
+```text
+Nfront/(mg) = f − κx          Nrear/(mg) = 1 − f + κx
+Ffront/(mg) = (1−s)x         Frear/(mg) = sx
+(1−s)x ≤ f−κx               sx ≤ 1−f+κx
+x ≤ f/(1−s+κ)               x ≤ (1−f)/(s−κ)  [s>κ]
+aG = min(1, front bound, rear bound)
+```
+
+不驅動的前軸／不產生正上限的後軸分支使用無限大；仍需以上接地等假設，極端配重矩陣並非完整俯仰／抬頭模型。以傳動效率 `η=.90`、引擎扭力 `T`，輪上力 `F=ηTR/r`；令它等於先驗牽引力 `mg aG` 即得：
+
+```text
+Rload = mg aG r / (η Tpeak)
+```
+
+分子與分母皆為 N·m，量綱正確。但在「全峰值扭力、上述抓地先驗、無滑移」假設下，不等式方向是 `R ≤ Rload`。把它選為較短齒比的目標不是證明新的抓地限制；換成 `min` 也會重新引入高扭力長一檔問題。
+
+### max 規則能證明的範圍
+
+設 `K=nPower C 60/1000`、`A=mg aG r/η`。固定其他輸入、只改峰值扭力 `T>0`：
+
+```text
+Rfirst(T) = max(Rspeed, A/T)
+Vfirst(nPower) = K/Rfirst = min(Vbaseline, K T/A)
+Tcrit = A/Rspeed = mg aG Vbaseline×1000 / (η×120π×nPower)
+```
+
+因此未取整的目標有明確保證：功率峰值一檔車速不高於歷史 baseline；低扭力區保持 #446 的 `A/T` 縮短；高扭力區在 `Tcrit` 之後固定為 `Rspeed`，不再無限拉長。這是連續、分段可微的工程準則。輪徑在 `Tcrit` 抵消，不代表抓地與輪胎特性無關，只表示兩個先驗均對有效輪徑線性縮放。FD／齒比取整後仍可能有小幅跳變，不能外推連續目標的性質為每個顯示齒比均嚴格單調。
+
+| 案例（皆為已保存 profile／合成基線） | Rspeed | Rload | Tcrit（Nm） | v3 選擇 | 功率峰值一檔速度（取整前） |
+| --- | ---: | ---: | ---: | --- | ---: |
+| #462 七速、9023.778 RPM | 14.5236 | 3.7660 | 343.16 | speed | 76.50 km/h |
+| 十速 hypercar | 13.6806 | 3.8338 | 364.31 | speed | 76.50 km/h |
+| Beetle、3983.44 RPM | 4.5414 | 12.5046 | 436.78 | load | 37.59 km/h |
+| Beetle、3365.312 RPM | 3.8367 | 12.5046 | 517.01 | load | 31.76 km/h |
+| 弱動力四速基線 | 4.9528 | 38.5971 | 935.16 | load、網格無解 | 13.28 km/h（目標，無配置） |
+
+在 #462 合成條件下，`Rfirst/Rload=3.8565`。若把全峰值扭力代入無阻力模型，要求的牽引力等價於 `3.8565g`；維持同一 `aG=1` 先驗時，可傳遞引擎扭力上限為 `Tpeak×Rload/Rfirst≈343.16 Nm`，即峰值的 25.93%。這不是油門踏板百分比、實際起步扭力或預測加速度。它指出起步控制／滑移驗證不可由齒比範圍檢查取代。
+
+### 網格端點與換檔
+
+固定某個 FD，配置器將端點以百分之一取整，故 `|Rallocated−Rtarget|≤.005×FD=ε`。相應車速誤差滿足 `|Vallocated−Vtarget|≤Vtarget×ε/(Rtarget−ε)`（`Rtarget>ε`）。最高檔時速上限因此也只有網格誤差內的吻合，並非絕對不超出指定值。
+
+令整數端點 `F=round(100Rfirst/FD)`、`L=round(100Rtop/FD)`。在 `F−L≥N−1` 時，中間第 i 檔的區間為 `[L+(N−1−i), previous−1]`。由前一檔保留的剩餘格數可歸納得下界不高於上界，故每檔至少下降一格、端點不動；411 個 FD 全部不滿足條件時才回傳模型無解。弱動力基線的 Rload≈38.60 超過既有最大端點36.60及其取整容差；這證明固定目標不可配置，不證明車輛不能行駛。
+
+忽略換檔時間、離合器滑移及速度變化，在 `nShift` 換檔時落點為 `nAfter=nShift×Gnext/Gcurrent`。#462 七速於10000 RPM的落點為6951／7194／7418／7704／7885／8171 RPM，符合該合成案例的兩個峰值窗口。一般情況若有經量測成立的可用下界 `nLow`，要求每次落點均不低於它，至少需：
+
+```text
+Rtop/Rfirst = Π(Gnext/Gcurrent) ≥ (nLow/nShift)^(N−1)
+```
+
+這只是必要條件，不能將 torque-peak RPM 冒充 `nLow`。於同一車速、未受抓地限制且傳動效率相同時，相鄰檔輪上力相等的條件是 `T(n)Gcurrent=T(nq)Gnext`，等價於 `P(n)=P(nq)`，其中 `q=Gnext/Gcurrent`。只有兩個峰值仍不足以解出相交轉速；效率差、換檔中斷與抓地還會改變實際最佳策略。
+
+2016 組矩陣驗證網格／數值性質；部分固定HP與獨立扭力組合不符合 `P(n)≤Tpeak×2πn/60`，故不能作為2016個物理可成立車款的證據。
+
+### 可重現診斷修正與 Rspeed 後續研究
+
+理論覆核發現 07b4492 的正式 workflow 將名義 `engineMaxRpm` 傳給診斷並標為 `effectiveLimitRpm`。既有 capture 的 v4 分析已辨識 Beetle5248／Pajero7999 RPM，但診斷用約6000／9000 RPM，換檔落點分別高估14.33%／12.51%。直接 solver／capture 測試通過未涵蓋此資格資料至診斷的傳遞；新 workflow 回歸在修正前以6000對5248失敗。
+
+最小修正只在新Road診斷讀取 `proof.snapshot` 已覆蓋的後端 `engineCalculation.effectiveRedline`，驗證正值且不高於名義上限，缺省時用名義上限。維持名義引擎身份、峰值、起步／頂檔公式與凍結歷史重組。新回歸用兩組原始 capture 經正式 qualify／workflow，檢查有效上限與每次落點，並確認前端偽造 snapshot 不能改寫結果。Pajero測試中的profile只是流程測試載體，沒有新增其實車齒比基線。
+
+依使用者要求由 `gpt-6-luna` 子代理獨立研究 Rspeed，結論為目前資料不能唯一辨識最佳起步目標。76.5／94.5／103.5及驅動形式間比例尚無本輪校準證據；保留明示歷史先驗，避免只替換成另一組未校準常數。有兩條可驗證路線：
+
+1. **先做同車齒比掃描**：固定升級、輪胎、路面、天候、輔助及換檔程序，對數組一檔總減速與共同配置結果重複測0–100，比較中位時間與分散度，先粗掃再細掃。涵蓋舊基線、load目標及其中間候選；記錄每次實際配置與capture，保持頂檔需求及滑桿範圍一致。先驗證 #462 真實車輛與 Beetle，資料足夠後才按驅動形式／檔數加入其他車與未參與校準的驗證車。單車結果不直接泛化。
+2. **曲線與縱向模型搜尋**：以已測得的 `T(n)`、有效輪徑、抓地力、起步離合器／扭力控制、有效質量及阻力，積分 `mEffective dv/dt=Fdrive−Frolling−Faero−Fgrade`，在可行離散齒比上最小化0–X時間並計入換檔。此力平衡框架可參照 [FHWA-HRT-18-037 第3章方程7](https://www.fhwa.dot.gov/publications/research/operations/18037/004.cfm)，但不是FH6引擎物理的證據。現有 moving loaded-sweep 能支持已掃到範圍的輸出曲線，不能識別0速起步離合器行為、低轉外插、實際μ或前後瞬態滑移；需要另補可辨識這些因素的量測。
+
+本輪不替換 Rspeed，不引入HP門檻、torque-peak動力帶下界或另一套前端solver。此準則在明示工程先驗下可修復已定位的退化；實車最適性留待受控A/B及後續校準。
+
+覆核與最小診斷修正的本地驗證：`cargo test --locked --manifest-path backend-rust/Cargo.toml` 為119 passed／3 ignored；兩個選用效能probe與需要真實Windows音訊／GSMTC的測試未執行。`cmd /c "pnpm -C frontend run test"` 為154 files／1099 tests passed、1既有skipped；Cargo fmt及git diff --check通過。獨立Node依本節推導核對14個保存基線的分段性質／端點誤差亦通過。這些結果不包含新的遊戲、GUI或實體裝置驗收。

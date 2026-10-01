@@ -147,6 +147,81 @@ fn qualified_capture_overrides_client_peaks_and_unsupported_gearing_is_not_ready
     assert_eq!(out["readiness"]["gearingAvailable"], false);
     assert!(out["recommendation"].is_null());
 }
+
+#[test]
+fn road_shift_diagnostics_use_the_qualified_effective_limit() {
+    for (source, car, limit) in [
+        (
+            include_str!("../../tests/fixtures/aego_beetle_limiter_capture.json"),
+            "1435",
+            5248.0,
+        ),
+        (
+            include_str!("../../tests/fixtures/aego_pajero_limiter_capture.json"),
+            "2652",
+            7999.0,
+        ),
+    ] {
+        let fixture: Value = serde_json::from_str(source).unwrap();
+        let samples: Vec<Value> = fixture["samples"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|row| {
+                Value::Object(
+                    fixture["fields"]
+                        .as_array()
+                        .unwrap()
+                        .iter()
+                        .zip(row.as_array().unwrap())
+                        .map(|(k, v)| (k.as_str().unwrap().into(), v.clone()))
+                        .collect(),
+                )
+            })
+            .collect();
+        let batch = measurement::batch(&json!({
+            "schemaVersion":"engine-batch/v1", "carId":car,
+            "state":measurement::initial(car), "samples":samples,
+            "nowMs":20000, "connected":true
+        }))
+        .unwrap();
+        let key = json!([car, "RWD", null, 75, 1]).to_string();
+        let raw = json!({"kind":"engine-capture",
+            "observation":{"schema":"engine-observation/v1", "id":"limiter-audit",
+                "carId":car, "source":"measured", "capturedAt":1000,
+                "dependencyKey":key, "data":batch["readySnapshot"]},
+            "capture":{"schemaVersion":"tuning-capture/v1", "metadata":{"carId":car},
+                "samples":samples,
+                "references":{"engineObservationId":"limiter-audit", "dependencyKey":key}}
+        });
+        let mut request = input("RWD");
+        request["evidence"] = raw;
+        request["inputSnapshot"] = json!({"carId":car,
+            "engineCalculation":{"effectiveRedline":1},
+            "roadLaunch":{"effectiveLimitRpm":999}});
+        let out = serde_json::to_value(
+            calculate_workflow(serde_json::from_value(request).unwrap()).unwrap(),
+        )
+        .unwrap();
+        // The profile is only a workflow harness; this is not a Pajero tune baseline.
+        let snapshot = &out["recommendation"]["inputSnapshot"];
+        let nominal = snapshot["engineCalculation"]["engineMaxRpm"]
+            .as_f64()
+            .unwrap();
+        assert!(nominal > limit);
+        assert_eq!(snapshot["engineCalculation"]["effectiveRedline"], limit);
+        assert_eq!(snapshot["roadLaunch"]["effectiveLimitRpm"], limit);
+        let gears = out["gearing"]["gears"].as_array().unwrap();
+        for (pair, landing) in gears.windows(2).zip(
+            snapshot["roadLaunch"]["shiftLandingRpmsAtLimit"]
+                .as_array()
+                .unwrap(),
+        ) {
+            let expected = limit * pair[1].as_f64().unwrap() / pair[0].as_f64().unwrap();
+            assert!((landing.as_f64().unwrap() - expected).abs() < 1e-9);
+        }
+    }
+}
 #[test]
 fn capability_filter_covers_every_family_and_drive() {
     for drive in ["AWD", "RWD", "FWD"] {

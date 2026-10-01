@@ -209,9 +209,15 @@ pub(crate) fn calculate_qualified_version(
     if new_road {
         snapshot["gearingModelVersion"] = json!("aego-road-launch-envelope/v3");
         if let (Some(engine), Some(WorkflowGearing::Ice(g))) = (qualified_engine, &gearing) {
+            // proof.snapshot replaced this summary with backend-qualified evidence.
+            // The telemetry nominal maximum can exceed the observed effective limit.
+            let limit_rpm = snapshot["engineCalculation"]["effectiveRedline"]
+                .as_f64()
+                .filter(|rpm| positive(*rpm) && *rpm <= engine.engine_max_rpm)
+                .unwrap_or(engine.engine_max_rpm);
             snapshot["roadLaunch"] = super::gearing::road_launch_diagnostics(
                 &profile,
-                engine.engine_max_rpm,
+                limit_rpm,
                 engine.peak_power_rpm,
                 engine.peak_torque_rpm,
                 engine.peak_torque_nm.or(profile.max_torque).unwrap_or(0.0),
