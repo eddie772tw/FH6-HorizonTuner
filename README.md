@@ -1,4 +1,6 @@
 # FH6-HorizonTuner 🏎️
+
+v1.7.1 開發中：桌面與 Companion 的底盤及靜態定位共用 Rust `/api/tuning/mechanical` 結果；完整後端 SSOT 遷移尚未完成，量測、齒比與診斷仍在遷移。詳見 [責任契約](docs/contracts/tuning_responsibilities.md)。
 > **Forza Horizon 6 Real-Time Telemetry Analyzer, Vehicle Tuning Workbench & Custom Racing Dashboard Overlay**
 > **《極限競速：地平線 6》即時遙測分析、車輛調校工作台與賽車客製化儀表覆蓋層**
 

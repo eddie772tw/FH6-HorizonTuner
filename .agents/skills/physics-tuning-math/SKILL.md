@@ -8,7 +8,7 @@ description: 當新增、修改車輛物理計算（懸吊、彈簧、防傾桿 
 ## 核心原則
 
 1. **單一真理 (Single Source of Truth)**：
-   - 正式調校純函數集中在 `backend-rust/src/tuning/` 與對齊的 `frontend/src/utils/tuningMath.ts`，診斷入口為 `tuningDiagnosis.ts`；Rust／TypeScript 透過 `tests/fixtures/tuning_golden_fixtures.json` 保持數值契約。
+   - 正式調校與數值診斷純函數集中在 `backend-rust/src/tuning/`；v1.7.1 取代 #430 雙端 SSOT。既有 TS 模型遷移期間以凍結 fixtures 鎖定輸出，不能新增前端計算或 fallback；桌面、Companion、API 與離線 CLI 共用 Rust owner。
    - **絕不**在 React UI 組件重複硬編碼物理計算公式。`legacy_cli.rs` 與 MCP quick solver 僅保留既有 `tuning-dev/v1` 相容輸出，不作為新公式入口。
 
 2. **純函數無副作用 (Pure Functions)**：

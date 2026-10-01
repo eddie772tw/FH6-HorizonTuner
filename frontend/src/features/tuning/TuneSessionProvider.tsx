@@ -1,3 +1,4 @@
+import { useMechanicalCalculation } from './useMechanicalCalculation';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { CarParams } from '../../context/CarParamsContext';
 import { useCarParams } from '../../context/CarParamsContext';
@@ -53,6 +54,7 @@ interface RawCaptureRuntime {
 }
 
 export interface TuneSessionValue {
+  mechanical: ReturnType<typeof useMechanicalCalculation>;
   identity: TuneSessionIdentity;
   identityGeneration: number;
   profile: CarParams | null;
@@ -161,6 +163,7 @@ export function TuneSessionProvider({ children }: { children: ReactNode }) {
   const [workflowStep, setWorkflowStep] = useState(initialWorkflowStep);
   const [goal, setGoal] = useState('Road');
   const [season, setSeason] = useState<'Summer' | 'Autumn' | 'Winter' | 'Spring'>('Summer');
+  const mechanical = useMechanicalCalculation(carId, goal, season, profile);
   const [reviewHistory, setReviewHistory] = useState(false);
   const [identityGeneration, setIdentityGeneration] = useState(0);
   const identityTokenRef = useRef<TuneAsyncToken>({ generation: 0, identity });
@@ -484,6 +487,7 @@ export function TuneSessionProvider({ children }: { children: ReactNode }) {
   );
 
   const value = useMemo<TuneSessionValue>(() => ({
+    mechanical,
     identity,
     identityGeneration,
     profile,
@@ -538,6 +542,7 @@ export function TuneSessionProvider({ children }: { children: ReactNode }) {
       clear: clearCapture,
     },
   }), [
+    mechanical,
     activeCapture,
     captureRuntime,
     clearCapture,

@@ -371,54 +371,8 @@ const TEST_CASES: TuningFixtureCase[] = [
   },
 ];
 
-function generateGoldenFixtures(): TuningGoldenFixtureOutput {
-  return {
-    version: '1.0.0',
-    createdAt: '2026-09-23T00:00:00Z',
-    cases: TEST_CASES.map((tc) => {
-      const aeroDownforce = resolveAeroDownforce(tc.carParams);
-      const chassis = calculateChassisTuning(tc.raceGoal, tc.carParams);
-      const gearing = calculateAEGOGearing(
-        tc.raceGoal,
-        tc.numGears,
-        tc.carParams,
-        tc.maxRpm,
-        tc.secondaryCorrection
-      );
-      return {
-        id: tc.id,
-        description: tc.description,
-        raceGoal: tc.raceGoal,
-        inputs: {
-          carParams: tc.carParams,
-          maxRpm: tc.maxRpm,
-          numGears: tc.numGears,
-          secondaryCorrection: tc.secondaryCorrection,
-        },
-        expected: {
-          aeroDownforce,
-          chassis,
-          gearing,
-        },
-      };
-    }),
-  };
-}
-
 describe('Tuning Golden Fixtures Contract', () => {
-  it('generates or matches tuning_golden_fixtures.json on disk', () => {
-    const generated = generateGoldenFixtures();
-    
-    // Ensure target directory exists
-    const dir = path.dirname(FIXTURE_PATH);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-
-    if (!fs.existsSync(FIXTURE_PATH)) {
-      fs.writeFileSync(FIXTURE_PATH, JSON.stringify(generated, null, 2) + '\n', 'utf-8');
-    }
-
+  it('matches the immutable tuning_golden_fixtures.json on disk', () => {
     const onDisk: TuningGoldenFixtureOutput = JSON.parse(fs.readFileSync(FIXTURE_PATH, 'utf-8'));
     
     expect(onDisk.version).toBe('1.0.0');

@@ -31,7 +31,7 @@ Agent 文件、技能說明、工作日誌與規範內容以繁體中文為主�
 ## 專案核心事實與領域規範 (Core Invariants)
 
 1. **UDP 高頻效能保護**：產品接收器為 `backend-rust/src/runtime.rs`，封包解碼位於 `backend-rust/src/telemetry/packet.rs`。60Hz+ UDP 接收循環內**絕不可放置同步阻塞 (Synchronous Blocking) 或高開銷的 I/O 操作**。
-2. **車輛物理與調校邏輯單一真理 (SSOT)**：懸吊、彈簧、防傾桿與齒輪比公式必須維持純函式。產品後端正式調校公式位於 Rust `backend-rust/src/tuning/`；前端 `frontend/src/utils/tuningMath.ts` 維持 UI 所需的對齊行為。兩端以 `tests/fixtures/tuning_golden_fixtures.json` 驗證數值契約；不要把 TypeScript 前端實作視為後端 SSOT。嚴禁在 UI 組件內任意硬編碼物理計算公式。
+2. **車輛物理與調校邏輯單一真理 (SSOT)**：懸吊、彈簧、防傾桿與齒輪比公式必須維持純函式。產品後端正式調校公式位於 Rust `backend-rust/src/tuning/`；v1.7.1 經使用者授權取代 #430 雙端 SSOT：所有影響建議的公式、資格、預設、限制、readiness 與數值診斷均以 Rust 為唯一 owner；前端僅保留草稿、流程與顯示轉換。迁移中的 TypeScript 僅為尚未退場的實作，不得新增 fallback。兩端以 `tests/fixtures/tuning_golden_fixtures.json` 驗證數值契約；不要把 TypeScript 前端實作視為後端 SSOT。嚴禁在 UI 組件內任意硬編碼物理計算公式。
 3. **單位嚴格性**：處理遙測數據時，必須釐清遊戲原生單位、領域單位與顯示單位的分層轉換，不得在 UI 組件內任意硬編碼物理計算公式。
 4. **路徑安全與檔案存取規範 (Path Security)**：所有涉及外部輸入、檔案名稱、Preset 或 Session 存取的 Rust 模組使用 `backend-rust/src/storage.rs::safe_path` 進行目錄包含性檢驗，嚴禁直接拼接外部輸入路徑。選用維護工具也須在解析 symlink 後驗證資料目錄邊界。
 5. **Agent CLI 工具鏈效率導引 (Agent CLI Tooling)**：專案提供 Rust 工具 `fh6-agent.bat`／`fh6-agent.exe`。車輛檢索、Preset 讀寫、遙測診斷與 MCP 探測**應優先調用 `fh6-agent.bat <subcommand> --json`**。CLI 算牌保留 `tuning-dev/v1` 相容契約，不能視為正式調校核心或已校準結果。詳細指令參閱 [`docs/guides/agent-cli-guide.md`](../docs/guides/agent-cli-guide.md)。

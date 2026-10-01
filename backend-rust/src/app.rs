@@ -476,6 +476,14 @@ impl Backend for App {
         lock(&self.metrics).client_delta(channel, delta);
     }
     fn request(&self, request: ApiRequest) -> ApiResult<ApiResponse> {
+        if request.method == "POST" && request.path == "/api/tuning/mechanical" {
+            let input: crate::tuning::calculation::MechanicalRequest =
+                serde_json::from_value(request.json()?)
+                    .map_err(|error| ApiError::invalid(&error.to_string()))?;
+            let result = crate::tuning::calculation::calculate_mechanical(&input)
+                .map_err(ApiError::invalid)?;
+            return Ok(ApiResponse::json(serde_json::to_value(result)?));
+        }
         if request.method == "GET" && request.path == "/api/health" {
             return Ok(ApiResponse::json(
                 json!({"status":"ready","version":env!("CARGO_PKG_VERSION")}),

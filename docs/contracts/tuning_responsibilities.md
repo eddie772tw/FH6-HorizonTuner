@@ -1,32 +1,28 @@
 # 車輛調校與齒比算牌責任契約 (Tuning & Gearing Responsibilities Contract)
 
-- **版本 (Version)**: 1.1.0
+- **版本 (Version)**: 1.7.1-transition
 - **狀態 (Status)**: 正式架構契約 (Architecture Contract)
 - **管轄範圍 (Scope)**: 車輛底盤調校（防傾桿 ARB、彈簧、車高、阻尼、差速器）與 AEGO 齒比計算邏輯
 - **關聯 Issue**: #423 (前後端調校與遙測責任釐清 Stacked PR 1-4)
 
 ---
 
-## 1. 架構核心原則與單一真理 (SSOT Architecture)
+## 1. v1.7.1 後端唯一 owner（遷移中）
 
-依據 `.agents/AGENTS.md` 之 **Core Invariant #2**：
-> 「所有懸吊、彈簧磅數、防傾桿 (ARB) 與齒輪比算牌公式，必須嚴格維持為純函數 (Pure Functions)，以 Rust `backend-rust/src/tuning/`（與前端同步對齊之 `frontend/src/utils/tuningMath.ts`）作為單一真理 (SSOT)，雙端必須經由 `tests/fixtures/tuning_golden_fixtures.json` 保持 100% 數值一致。」
+經使用者明確授權，此方向取代 #430 的 Twin SSOT 與 #428 的 WASM 討論。所有會影響產品建議的公式、資格、預設、限制、readiness 與數值診斷必須有 Rust owner；UI 保留草稿、流程、格式、顯示單位轉換與版面。
 
-### 1.1 演進階段與落地狀態 (Evolution Phases & Implementation Status)
+目前已落地：
+- 純函式 `tuning::calculation` 與桌面本機 `POST /api/tuning/mechanical`；typed request 包含 schemaVersion、goal、season、完整未儲存 profile。
+- TuneSessionProvider 發出一次計算，桌面與 Companion 轉送同一份 chassis / alignment；完整輸入 key、abort、sequence 與 render-time gate 避免過期結果；失敗每兩秒重試，不以 TS fallback。
+- 計算不持有遙測 engine mutex，不改變 LAN allowlist；共享 library 可供離線 CLI 使用。
+- Road/Rally 正值 spring/height minima 保留小於 1 的數值；零值使用既有桌面預設，反向範圍把 max 提升到 min。這修正未接線 Rust 與桌面的差異，不修改歷史文件或基準。
 
-1. **基礎建立與契約鎖定 (PR 1 ~ PR 2)**：
-   - **現行雙端契約**：Rust `backend-rust/src/tuning/` 與 TypeScript `frontend/src/utils/tuningMath.ts` 經 golden fixtures 對齊；產品後端計算以 Rust 實作為準，前端維持一致的可觀察輸出。
-   - **黃金資料集保護**：建立 `tests/fixtures/tuning_golden_fixtures.json`，鎖定 18 組涵蓋四大賽事與驅動組合之輸入與預期輸出，並建立前端契約測試 `frontend/src/utils/tuningMath.contract.test.ts`。
-   - **後端過渡求解器**：`backend-rust/src/mcp/service.rs` 與 `backend-rust/src/tuning/legacy_cli.rs` 保留 `tuning-dev/v1 (Legacy Quick Baseline Solver)`，明確與正式調校契約區隔。Python 參考已移除，數值由凍結 fixtures 驗證。
+尚未完成（PR 維持 draft）：量測與 tire evidence 資格、ICE/EV 齒比、完整推薦與能力過濾、readiness、診斷，以及 API/CLI/MCP owner 整合與前端重複公式移除。
 
-2. **Rust 純函數核心實作 (PR 3)**：
-   - **純 Rust 核心 (`backend-rust/src/tuning/`)**：完成 `chassis.rs`（底盤、懸吊、防傾桿、車高、阻尼、差速器）與 `gearing.rs`（AEGO 齒比優化），為零相依純數學實現。
-   - **後端契約測試 (`backend-rust/tests/tuning_contract.rs`)**：直接載入 `tests/fixtures/tuning_golden_fixtures.json`，18/18 組情境全部 100% 通過。
-
-3. **跨端整合與真理對齊 (PR 4)**：
-   - **雙端 SSOT 對齊**：Rust `backend-rust/src/tuning/` 與 TypeScript `frontend/src/utils/tuningMath.ts` 經由 18 組 Golden Fixtures 保證 100% 數值一致。
-   - **架構規範同步**：更新 `.agents/AGENTS.md` Core Invariant #2，確立 Rust 核心為後端算牌與未來 WASM 編譯基礎。
-   - **舊求解器退場指引**：MCP 與 Agent CLI 舊有 `tuning-dev/v1` 標記為過渡/已棄用 (Deprecated) 狀態，引導工具鏈逐步調用 Rust `tuning_core`。
+相容性：原 21 組 tuning 與 10 組 EV golden fixtures 不可重寫，缺少 fixture 必須測試失敗。
+新增 `mechanical_desktop_v162.json` 鎖定 66 組 main ca195c7 桌面行為；正常測試不得產生它。
+CLI 與 MCP 雖曾同標 `tuning-dev/v1`，其 drift 數值不同，必須保留不同明確版本，不得以同名模型合併並改寫輸出。
+歷史推薦保持唯讀，未知／鎖定齒比維持 null/unapplied，EV 不可退回 ICE。
 
 ---
 

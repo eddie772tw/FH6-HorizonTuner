@@ -1,11 +1,11 @@
 # FH6-HorizonTuner - 工作區邊界與驗證規範 (Workspace Rules)
 
 ## 核心物理與數學運算規範
-1. **調校計算單一真理 (Source of Truth)**：正式純函數位於 `backend-rust/src/tuning/`，與 `frontend/src/utils/tuningMath.ts` 經 golden fixtures 對齊。`legacy_cli.rs` 僅保存舊版 CLI 相容數值，不作為新公式入口。
+1. **調校計算單一真理 (Source of Truth)**：正式純函數位於 `backend-rust/src/tuning/`，v1.7.1 取代雙端實作；前端透過 typed API 消費後端結果，既有 golden fixtures 保留不可變。`legacy_cli.rs` 僅保存舊版 CLI 相容數值，不作為新公式入口。
 2. **確定性輸入**：嚴禁在物理計算演算法中引入非確定性狀態或副作用。
 
 ## 架構隔離原則
-1. **後端 (Rust / Axum / Tokio)**：獨立 sidecar 保留既有 UDP、WebSocket、REST、MCP 與持久化契約，保持非同步接收循環無阻塞 (Non-blocking)。本次語言遷移不重新分配既有業務職責；既有模糊／重複職責另以 enhancement #423 追蹤。
+1. **後端 (Rust / Axum / Tokio)**：獨立 sidecar 保留既有 UDP、WebSocket、REST、MCP 與持久化契約，保持非同步接收循環無阻塞 (Non-blocking)。v1.7.1 將建議相關業務計算集中於 Rust，桌面與 Companion 共用結果；不得擴大 LAN 白名單。
    - 開發模式下 Forza Data Out 預設使用 UDP `127.0.0.1:8000`，REST/WebSocket 預設使用 HTTP/TCP `127.0.0.1:8001`；兩者不可混用。
    - `TELEMETRY_PORT` 控制 UDP 遙測端口；Dev mode 固定使用 HTTP `8001`。Release Build 優先使用 `8001`，fallback 時改用動態端口，實際 HTTP 端口以 `logs/web_port.txt` 或 sidecar readiness event 為準。
 2. **前端 (Tauri / React)**：僅負責 UI 視覺化與互動展示。

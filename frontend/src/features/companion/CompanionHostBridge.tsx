@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import { useCarParams } from '../../context/CarParamsContext';
 import { useTelemetry } from '../../hooks/useTelemetry';
 import { backendFetch } from '../../services/backend';
-import { calculateChassisTuning, calculateStaticTireAlignment } from '../../utils/tuningMath';
 import { useTuneSession } from '../tuning/TuneSessionProvider';
 import { calculateWizardMeasuredGearing } from '../tuning/measurementTuningProfile';
 import { selectedEngineObservationMatchesLiveTelemetry } from '../tuning/tuneSessionController';
@@ -38,8 +37,8 @@ export function CompanionHostBridge() {
         profileKey: companionProfileKey(current.carId, current.carParams, tune.identityGeneration),
         workflow: { goal, season, step },
         results: {
-          chassis: profile ? calculateChassisTuning(goal, profile) : null,
-          alignment: profile ? calculateStaticTireAlignment(goal, season, profile) : null,
+          chassis: tune.mechanical?.chassis ?? null,
+          alignment: tune.mechanical?.alignment ?? null,
           gearing,
         },
         engine: profile?.isElectric

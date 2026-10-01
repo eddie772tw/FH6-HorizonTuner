@@ -2919,3 +2919,11 @@
 - **實測學習**：Taycan 的持續正功率平台不等於限轉；需分開保存正輸出曲線、高轉速零輸出與低打滑的 RPM／車速映射。A/B/A 二檔 2.00→2.20→2.00 的錄製回放可重現約 +10% 並回復的映射變化；不據此宣稱辨識單顆馬達、抓地力或最佳換檔點。
 - **單速與能力邊界**：單一前進檔可完成 EV 流程；檔位數與可調能力互不推導。終傳與各檔預設鎖定，未顯示的比值保存 null，仍可量測基準。只有已知、確認可調的終傳可預覽變更；鎖定或未知數值不進入待套用設定，不沿用傳統 gearbox 的 Full 預設。
 - **驗證與來源**：前端 145 files／1,030 tests 與 build 通過；Rust 完整 gate 87 passed／3 ignored、Cargo fmt 通過。TS/Rust 共用十個 EV golden cases，含單速、全鎖定、未知齒比、僅終傳可調。選用瀏覽器測試 mock 全部 backend HTTP/WS，驗證跨步驟、模式失效、保存再載入、六種主題組合與繁中標籤；不注入遊戲 UDP。實際單速 EV、新 UI 遊戲操作與最佳化效果尚未實機驗收。採用技能、交接與工程一手來源見 [EV 模型文件](../docs/calibration/ev-foundation.md)。
+
+## 2026-10-01 — v1.7.1 後端 SSOT 第一階段（Bagley as Dot）
+
+- 採用 skills：physics-tuning-math、modular-refactoring、huge-component-refactoring、halfmoon-design-system、pr-author-maintainer；測試規範來源為 rules/testing-strategy.md（無 testing/SKILL.md）。
+- main ca195c7 的 Rust range normalization 曾把正值小於 1 的 minima 拉高；遷移以桌面行為為準，新增 66 組凍結 mechanical fixtures，原 21 tuning / 10 EV fixtures 不改寫。
+- `/api/tuning/mechanical` 為無狀態計算入口，不使用 engine mutex。provider 使用完整草稿 key，桌面與 Companion 共用結果。engineDependencyKey 只適用量測，不足以識別底盤草稿。
+- 驗證：Rust locked 全套通過；前端 150 files / 1092 tests 通過；tsc + Vite build 與 diff check 通過。Linux 原生 Windows HUD 未驗收。
+- 全量 SSOT 尚未完成：量測資格、齒比、readiness、建議組合與診斷繼續遷移；PR 保持 draft。
