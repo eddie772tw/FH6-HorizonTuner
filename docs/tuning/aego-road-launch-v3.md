@@ -34,7 +34,7 @@ v1.6 已對 FWD／**顯式** AWD split 套用 traction cap；照抄這兩個分�
 
 不把 torque-peak RPM 當成低可用轉速，不把 power-peak RPM 當最佳換檔點。既有 raw step .55–.92 經共同縮放後也不是最終動力帶保證；不重新引入 `(powerPeak+50)/redline` 的逐檔上限。
 
-後端新推薦 snapshot 帶 `roadLaunch`：兩個先驗、選定／配置的一檔總減速、功率峰值一檔時速、兩個峰值與有效上限、於有效上限換檔的各檔落點。這些是可審查運動學，不是最佳换檔指令。正式 engine evidence 仍必須 backend-qualified；裸合成峰值不能建立正式推薦。
+後端新推薦 snapshot 帶 `roadLaunch`：兩個先驗、選定／配置的一檔總減速、功率峰值一檔時速、兩個峰值與有效上限、於有效上限換檔的各檔落點。這些是可審查運動學，不是最佳換檔指令。正式 engine evidence 仍必須 backend-qualified；裸合成峰值不能建立正式推薦。
 
 | 合成七速條件 | v2 | v3 |
 | --- | --- | --- |
@@ -49,8 +49,8 @@ v1.6 已對 FWD／**顯式** AWD split 套用 traction cap；照抄這兩個分�
 
 - 正式 Road：`aego-road-launch-envelope/v3`、`rust/ice-measured-workflow-v2`。非Road ICE與EV版本／公式不變。
 - `calculate_aego_gearing_v2` 是明確凍結相容 owner；原21 tuning goldens不改值、不改容差，仍測v2。原10 EV goldens不變。v1持久化依凍結v2重組驗證，不用新公式重寫歷史。
-- `aego_road_launch_v3.json` 是獨立的新模型基線，每例說明變動理由；不是覆蓋旧goldens。新前端僅接受後端結果與版本，不新增TS模型。
-- 2016組合測試涵蓋FWD/RWD/AWD、4–10檔、500–2100kg、80–4000Nm、缺省/0/70/100% AWD分配：1869可行、147模型無解。這是數值壓力矩陣，部分獨立參數组合未必對應真實引擎。
-- Beetle兩個既有齒比goldens、弱引擎與不可行案例不變。Beetle/Pajero原始limiter captures的v4資格／上限不變；Beetle合格峰值帶入既有比較profile後齒比同v2。Pajero沒有完整profile，不補造其實車齒比或宣称不變。
-- 保存／重啟／篡改測試區分新舊model；正式HTTP、Companion relay、CLI、MCP均共用同一workflow。版本不可由前端snapshot指定。
+- `aego_road_launch_v3.json` 是獨立的新模型基線，每例說明變動理由；不是覆蓋舊goldens。新前端僅接受後端結果與版本，不新增TS模型。
+- 2016組合測試涵蓋FWD/RWD/AWD、4–10檔、500–2100kg、80–4000Nm、缺省/0/70/100% AWD分配：1869可行、147模型無解。這是數值壓力矩陣，部分獨立參數組合未必對應真實引擎。
+- Beetle兩個既有齒比goldens、弱引擎與不可行案例不變。Beetle/Pajero原始limiter captures的v4資格／上限不變；Beetle合格峰值帶入既有比較profile後齒比同v2。Pajero沒有完整profile，不補造其實車齒比或宣稱不變。
+- 保存／重啟／篡改測試區分新舊model；正式HTTP、Companion relay、CLI、MCP均共用同一workflow。版本不可由前端snapshot指定。歷史Road v1僅允許缺省或v2模型標籤，不得夾帶v3的roadLaunch診斷；非Road/EV會移除不適用的Road保留metadata，保存時拒絕偽造的診斷。
 - #446已確認的實車驗收仍屬該次舊候選，不自動涵蓋本修正。#462仍缺實際車款、檔數、profile、合格capture／snapshot、`09.4`是否為.94的確認，以及起步／加速記錄。未提供新實車性能改善百分比。

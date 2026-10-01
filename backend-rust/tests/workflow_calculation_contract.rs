@@ -418,6 +418,37 @@ fn road_model_versions_validate_with_their_own_owner_and_do_not_rewrite_history(
         historical["fields"][format!("gearing.gear{}", i + 1)]["value"] = json!(g);
     }
     assert_ne!(historical["fields"], current["fields"]);
+    let mut forged_history = historical.clone();
+    forged_history["inputSnapshot"]["gearingModelVersion"] = json!("aego-road-launch-envelope/v3");
+    forged_history["inputSnapshot"]["roadLaunch"] = json!({"selectedTotalRatio":999});
+    assert!(
+        app.tuning_evidence
+            .verify_recommendation(&forged_history, None)
+            .is_err(),
+        "historical v1 must reject caller-supplied v3 model metadata"
+    );
+    forged_history["inputSnapshot"]["gearingModelVersion"] = json!("aego-road-joint/v2");
+    assert!(app
+        .tuning_evidence
+        .verify_recommendation(&forged_history, None)
+        .is_err());
+    forged_history["inputSnapshot"]
+        .as_object_mut()
+        .unwrap()
+        .remove("roadLaunch");
+    forged_history["inputSnapshot"]["gearingModelVersion"] = json!("unknown-model");
+    assert!(app
+        .tuning_evidence
+        .verify_recommendation(&forged_history, None)
+        .is_err());
+    let mut unlabeled_history = historical.clone();
+    unlabeled_history["inputSnapshot"]
+        .as_object_mut()
+        .unwrap()
+        .remove("gearingModelVersion");
+    app.tuning_evidence
+        .verify_recommendation(&unlabeled_history, None)
+        .unwrap();
     let saved = call(
         &app,
         "/api/road/compatibility",
@@ -442,6 +473,23 @@ fn road_model_versions_validate_with_their_own_owner_and_do_not_rewrite_history(
     assert!(app
         .tuning_evidence
         .verify_recommendation(&altered, None)
+        .is_err());
+    let mut other_request = request.clone();
+    other_request["goal"] = json!("Rally");
+    other_request["inputSnapshot"]["roadLaunch"] = json!({"selectedTotalRatio":999});
+    let other =
+        call(&app, "/api/tuning/workflow", other_request).unwrap()["recommendation"].clone();
+    assert!(other.is_object());
+    assert!(other["inputSnapshot"].get("gearingModelVersion").is_none());
+    assert!(other["inputSnapshot"].get("roadLaunch").is_none());
+    app.tuning_evidence
+        .verify_recommendation(&other, None)
+        .unwrap();
+    let mut forged_other = other.clone();
+    forged_other["inputSnapshot"]["roadLaunch"] = json!({"selectedTotalRatio":999});
+    assert!(app
+        .tuning_evidence
+        .verify_recommendation(&forged_other, None)
         .is_err());
     drop(app);
     let restarted = App::new(temp.path()).unwrap();

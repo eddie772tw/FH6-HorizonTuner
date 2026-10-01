@@ -187,6 +187,25 @@ pub(crate) fn calculate_qualified_version(
         snapshot["evResult"] = serde_json::to_value(&gearing).map_err(|e| e.to_string())?;
     }
     let new_road = input.goal == RaceGoal::Road && !electric && !legacy_road;
+    if input.goal == RaceGoal::Road && !electric && legacy_road {
+        // Historical v1 may predate the optional v2 label, but it cannot claim
+        // new-model diagnostics. Validate reserved metadata instead of copying
+        // caller claims into the supposedly authoritative expected snapshot.
+        if snapshot.get("roadLaunch").is_some()
+            || snapshot
+                .get("gearingModelVersion")
+                .is_some_and(|v| v != "aego-road-joint/v2")
+        {
+            return Err(
+                "Historical Road v1 requires absent/v2 model metadata and no v3 diagnostics".into(),
+            );
+        }
+    } else if !new_road {
+        // Road-owned diagnostics have no meaning on other disciplines or EV.
+        let object = snapshot.as_object_mut().unwrap();
+        object.remove("gearingModelVersion");
+        object.remove("roadLaunch");
+    }
     if new_road {
         snapshot["gearingModelVersion"] = json!("aego-road-launch-envelope/v3");
         if let (Some(engine), Some(WorkflowGearing::Ice(g))) = (qualified_engine, &gearing) {
