@@ -179,7 +179,11 @@ impl RoadService {
             })?;
         if matches!(
             recommendation["formulaVersion"].as_str(),
-            Some("rust/ice-measured-workflow-v1" | "rust/ev-measured-workflow-v1")
+            Some(
+                "rust/ice-measured-workflow-v1"
+                    | "rust/ice-measured-workflow-v2"
+                    | "rust/ev-measured-workflow-v1"
+            )
         ) {
             // Only already-qualified immutable metadata is loaded here. No capture replay.
             return crate::tuning::evidence::EvidenceService {

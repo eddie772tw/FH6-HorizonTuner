@@ -1,12 +1,12 @@
 use fh6_backend::tuning::{
-    calculate_aego_gearing, calculate_chassis_tuning, resolve_aero_downforce,
-    GearingSecondaryCorrection, RaceGoal, TuningCarParams,
+    calculate_chassis_tuning, gearing::calculate_aego_gearing_v2 as calculate_aego_gearing,
+    resolve_aero_downforce, GearingSecondaryCorrection, RaceGoal, TuningCarParams,
 };
 use serde_json::Value;
 use std::path::Path;
 
 #[test]
-fn rust_tuning_core_matches_golden_fixtures() {
+fn frozen_v2_tuning_core_matches_immutable_golden_fixtures() {
     let manifest_dir = Path::new(env!("CARGO_MANIFEST_DIR"));
     let fixture_path = manifest_dir
         .parent()
@@ -203,6 +203,18 @@ fn rust_tuning_core_matches_golden_fixtures() {
             max_rpm,
             secondary_correction.as_ref(),
         );
+        if race_goal != RaceGoal::Road {
+            assert_eq!(
+                actual_gearing,
+                fh6_backend::tuning::calculate_aego_gearing(
+                    race_goal,
+                    num_gears,
+                    &car_params,
+                    max_rpm,
+                    secondary_correction.as_ref()
+                )
+            );
+        }
         let exp_fd = expected["gearing"]["finalDrive"].as_f64().unwrap();
         assert_eq!(
             actual_gearing.unsupported,

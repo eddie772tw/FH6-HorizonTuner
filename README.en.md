@@ -2,6 +2,8 @@
 
 v1.7.1 in development: desktop and Companion share Rust workflow results. ICE/EV evidence, gearing, readiness, capabilities and recommendations have backend owners; CLI/MCP workflow calls reuse the same library. The PR remains draft pending full verification. See the [ownership contract](docs/contracts/tuning_responsibilities.md).
 
+The versioned [Road launch-envelope correction for #462](docs/tuning/aego-road-launch-v3.md) preserves low-power and historical models; its engineering priors do not establish optimal in-game launches.
+
 EV tuning now has an independent measured powertrain model, selected with a persisted EV switch instead of the conventional gear-count input. The same four-step workflow supports single-speed and multi-speed EV scans and final-drive previews. Launch/shift optimization and attainable top-speed prediction remain uncalibrated. See the [model contract and validation notes](docs/calibration/ev-foundation.md).
 > **Forza Horizon 6 Real-Time Telemetry Analyzer, Vehicle Tuning Workbench & Custom Racing Dashboard Overlay**
 

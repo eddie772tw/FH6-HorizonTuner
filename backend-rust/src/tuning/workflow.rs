@@ -62,6 +62,15 @@ pub fn measured_gearing(
     profile: &TuningCarParams,
     engine: Option<&MeasuredEngine>,
 ) -> Option<GearingResult> {
+    measured_gearing_version(goal, count, profile, engine, false)
+}
+fn measured_gearing_version(
+    goal: RaceGoal,
+    count: usize,
+    profile: &TuningCarParams,
+    engine: Option<&MeasuredEngine>,
+    legacy_road: bool,
+) -> Option<GearingResult> {
     let engine = engine?;
     if profile.is_electric == Some(true)
         || !(4..=10).contains(&count)
@@ -85,7 +94,12 @@ pub fn measured_gearing(
     if let Some(torque) = engine.peak_torque_nm {
         profile.max_torque = Some(torque);
     }
-    let result = calculate_aego_gearing(goal, count, &profile, engine.engine_max_rpm, None);
+    let solver = if legacy_road {
+        super::gearing::calculate_aego_gearing_v2
+    } else {
+        calculate_aego_gearing
+    };
+    let result = solver(goal, count, &profile, engine.engine_max_rpm, None);
     if goal != RaceGoal::Road && result.unsupported == Some(true) {
         None
     } else {
@@ -103,6 +117,13 @@ pub fn calculate_workflow(input: WorkflowRequest) -> Result<WorkflowResult, Stri
 pub(crate) fn calculate_qualified(
     input: WorkflowRequest,
     proof: Option<&super::evidence::QualifiedEvidence>,
+) -> Result<WorkflowResult, String> {
+    calculate_qualified_version(input, proof, false)
+}
+pub(crate) fn calculate_qualified_version(
+    input: WorkflowRequest,
+    proof: Option<&super::evidence::QualifiedEvidence>,
+    legacy_road: bool,
 ) -> Result<WorkflowResult, String> {
     if let Some(proof) = proof {
         proof.validate(&input)?;
@@ -140,7 +161,8 @@ pub(crate) fn calculate_qualified(
             .and_then(calculate_ev_gearing)
             .map(WorkflowGearing::Ev)
     } else {
-        measured_gearing(input.goal, count, &profile, qualified_engine).map(WorkflowGearing::Ice)
+        measured_gearing_version(input.goal, count, &profile, qualified_engine, legacy_road)
+            .map(WorkflowGearing::Ice)
     };
     let mechanical = profile.weight.is_some_and(positive)
         && profile
@@ -164,6 +186,20 @@ pub(crate) fn calculate_qualified(
     if electric {
         snapshot["evResult"] = serde_json::to_value(&gearing).map_err(|e| e.to_string())?;
     }
+    let new_road = input.goal == RaceGoal::Road && !electric && !legacy_road;
+    if new_road {
+        snapshot["gearingModelVersion"] = json!("aego-road-launch-envelope/v3");
+        if let (Some(engine), Some(WorkflowGearing::Ice(g))) = (qualified_engine, &gearing) {
+            snapshot["roadLaunch"] = super::gearing::road_launch_diagnostics(
+                &profile,
+                engine.engine_max_rpm,
+                engine.peak_power_rpm,
+                engine.peak_torque_rpm,
+                engine.peak_torque_nm.or(profile.max_torque).unwrap_or(0.0),
+                g,
+            );
+        }
+    }
     let recommendation = if gearing_available {
         Some(recommendation(
             &input.profile,
@@ -171,6 +207,7 @@ pub(crate) fn calculate_qualified(
             &alignment,
             gearing.as_ref().unwrap(),
             snapshot,
+            new_road,
         ))
     } else {
         None
@@ -195,6 +232,7 @@ fn recommendation(
     a: &StaticAlignment,
     gearing: &WorkflowGearing,
     mut snapshot: Value,
+    new_road: bool,
 ) -> Value {
     let mut fields = Map::new();
     let mut add = |key: &str, value: f64, unit: &str| {
@@ -295,5 +333,5 @@ fn recommendation(
     {
         observation.remove("capture");
     }
-    json!({"formulaVersion":if electric {"rust/ev-measured-workflow-v1"} else {"rust/ice-measured-workflow-v1"},"inputSnapshot":snapshot,"fields":fields})
+    json!({"formulaVersion":if electric {"rust/ev-measured-workflow-v1"} else if new_road {"rust/ice-measured-workflow-v2"} else {"rust/ice-measured-workflow-v1"},"inputSnapshot":snapshot,"fields":fields})
 }

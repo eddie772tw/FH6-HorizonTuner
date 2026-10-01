@@ -615,3 +615,12 @@ describe('calculateStaticTireAlignment', () => {
 });
 
 
+
+// Frozen TS is a compatibility reference only; the new production Road model is Rust-owned.
+it('retains v1.7 high-torque history without treating it as a new-model golden', async () => {
+  const history = (await import('../../../tests/fixtures/aego_road_history_462.json')).default;
+  const profile = history.profile as TuningCarParams;
+  const last = history.cases.at(-1)!;
+  expect(calculateAEGOGearing('Road', 7, profile, 10000)).toEqual(last.result);
+  expect(calculateAEGOGearing('Road', 7, { ...profile, maxHpRpm: 8804.031901079223 }, 10000)).toEqual(last.alternate);
+});

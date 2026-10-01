@@ -136,7 +136,7 @@ fn qualified_capture_overrides_client_peaks_and_unsupported_gearing_is_not_ready
     assert_eq!(a["readiness"]["gearingAvailable"], true);
     assert_eq!(
         a["recommendation"]["formulaVersion"],
-        "rust/ice-measured-workflow-v1"
+        "rust/ice-measured-workflow-v2"
     );
     r["engine"] = json!({"engineMaxRpm":1,"peakPowerRpm":1,"peakTorqueRpm":1,"peakTorqueNm":1});
     let b = calculate(r.clone(), "AWD");
@@ -379,4 +379,78 @@ fn ev_desktop_projection_requires_observed_steering_for_qualification() {
     let batch = call(&app, "/api/tuning/ev-batch", json!({"schemaVersion":"ev-batch/v1","state":fh6_backend::tuning::ev_measurement::initial("3445"),"frames":missing["frames"]})).unwrap();
     assert_eq!(batch["readyGears"], json!([]));
     assert!(call(&app, "/api/tuning/ev-evidence", missing).is_err());
+}
+
+#[test]
+fn road_model_versions_validate_with_their_own_owner_and_do_not_rewrite_history() {
+    use fh6_backend::tuning::{gearing::calculate_aego_gearing_v2, RaceGoal, TuningCarParams};
+    let temp = tempfile::tempdir().unwrap();
+    let app = App::new(temp.path()).unwrap();
+    save_engine(&app);
+    // Synthetic draft geometry isolates model versioning; the engine capture stays unchanged.
+    let mut request = saved_request();
+    request["profile"]["weight"] = json!(200);
+    request["inputSnapshot"]["gearingModelVersion"] = json!("caller-cannot-select-model");
+    let current =
+        call(&app, "/api/tuning/workflow", request.clone()).unwrap()["recommendation"].clone();
+    assert_eq!(current["formulaVersion"], "rust/ice-measured-workflow-v2");
+    assert_eq!(
+        current["inputSnapshot"]["gearingModelVersion"],
+        "aego-road-launch-envelope/v3"
+    );
+    assert!(current["inputSnapshot"]["roadLaunch"]["shiftLandingRpmsAtLimit"].is_array());
+    let mut p: TuningCarParams = serde_json::from_value(request["profile"].clone()).unwrap();
+    let engine = proof("AWD").engine().unwrap();
+    p.max_hp_rpm = Some(engine.peak_power_rpm);
+    p.max_torque_rpm = Some(engine.peak_torque_rpm);
+    p.max_torque = engine.peak_torque_nm;
+    let old_gearing = calculate_aego_gearing_v2(RaceGoal::Road, 6, &p, engine.engine_max_rpm, None);
+    assert_ne!(old_gearing.unsupported, Some(true));
+    let mut historical = current.clone();
+    historical["formulaVersion"] = json!("rust/ice-measured-workflow-v1");
+    historical["inputSnapshot"]["gearingModelVersion"] = json!("aego-road-joint/v2");
+    historical["inputSnapshot"]
+        .as_object_mut()
+        .unwrap()
+        .remove("roadLaunch");
+    historical["fields"]["gearing.finalDrive"]["value"] = json!(old_gearing.final_drive);
+    for (i, g) in old_gearing.gears.iter().enumerate() {
+        historical["fields"][format!("gearing.gear{}", i + 1)]["value"] = json!(g);
+    }
+    assert_ne!(historical["fields"], current["fields"]);
+    let saved = call(
+        &app,
+        "/api/road/compatibility",
+        json!({"discipline":"Drag","recommendation":historical}),
+    )
+    .unwrap();
+    assert_eq!(saved["recommendation"], historical);
+    assert!(call(
+        &app,
+        "/api/road/compatibility",
+        json!({"discipline":"Drag","recommendation":current})
+    )
+    .is_ok());
+    let mut relabeled = historical.clone();
+    relabeled["formulaVersion"] = json!("rust/ice-measured-workflow-v2");
+    assert!(app
+        .tuning_evidence
+        .verify_recommendation(&relabeled, None)
+        .is_err());
+    let mut altered = current.clone();
+    altered["inputSnapshot"]["roadLaunch"]["selectedTotalRatio"] = json!(999);
+    assert!(app
+        .tuning_evidence
+        .verify_recommendation(&altered, None)
+        .is_err());
+    drop(app);
+    let restarted = App::new(temp.path()).unwrap();
+    restarted
+        .tuning_evidence
+        .verify_recommendation(&historical, None)
+        .unwrap();
+    restarted
+        .tuning_evidence
+        .verify_recommendation(&current, None)
+        .unwrap();
 }

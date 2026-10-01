@@ -522,7 +522,6 @@ export function TuneSessionProvider({ children }: { children: ReactNode }) {
     ...(profile?.isElectric
       ? { powertrainModel: 'ev/v1', evMeasurement: evMeasurement.state, evResult: evMeasurement.result, evEvidence: evMeasurement.evidenceId ? { kind: 'saved-ev', evidenceId: evMeasurement.evidenceId } : null }
       : { powertrainModel: 'ice', engineObservation: engine.observation ? { ...engine.observation, capture: undefined } : null, engineCalculation: calculation }),
-    ...(goal === 'Road' && !profile?.isElectric ? { gearingModelVersion: 'aego-road-joint/v2' } : {}),
   }), [carId, goal, season, profile, engine.observation, calculation, evMeasurement.result, evMeasurement.evidenceId]);
   const { result, status: calculationStatus } = useWorkflowCalculation(carId, goal, season, profile, calculation ? {
     engineMaxRpm: calculation.engineMaxRpm!, peakPowerRpm: calculation.peakPower!.rpm,

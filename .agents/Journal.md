@@ -2946,3 +2946,10 @@
 - EV preview 503 會顯示 error 並自動重試；Step 2／4 不再把 pending/error 顯示成缺少車輛或引擎輸入。新增實際 React 元件重試／訊息回歸及真實 capture persistence/restart/篡改負例。
 - MCP／離線 CLI 保持唯讀：cold-cache 只重播、不新增 qualification；已保存資格可重用。新增 cache 不變回歸，完整 Rust 預設／no-default-features suites 通過。
 - EV 真實桌面投影漏掉 SteerInput，完整 capture fixture 曾掩蓋 transport 缺欄；補上通道並以實際 React session 投影對照 frozen transport contract，Rust API 重播同一投影驗證資格／保存與缺 steering 拒絕。
+
+### 2026-10-01 / #462 Road 模型修正（Bagley as Dot）
+
+- 使用 physics-tuning-math、modular-refactoring、pr-author-maintainer；使用者授權納入PR460。逐commit固定輸入重播定位972e9c2首次引入高扭力退化；397/412、EV445、446後续limiter修補不是固定輸入公式變更來源。
+- v3以兩個既有先驗的較短齒比作工程啟發式；明確不把traction上限說成物理下限，不宣稱最佳起步。保留低功率、v4量測、共同網格與無解；新增後端運動學診斷。
+- Road正式推薦升v2；歷史v1依凍結gearing v2驗證。舊goldens不改，新基線分檔；歷史與新模型都須經相同資格及保存檢查。
+- 實車資料仍未補齊；因果、矩陣、候選輸出及界限見docs/tuning/aego-road-launch-v3.md。沒有合併／發行或關閉462。

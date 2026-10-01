@@ -395,8 +395,12 @@ impl EvidenceService {
             }
         }
         let request:WorkflowRequest=serde_json::from_value(json!({"schemaVersion":"tuning-workflow-result/v1","goal":snapshot["goal"],"season":snapshot["season"],"profile":snapshot["profile"],"engine":null,"ev":if proof.kind=="ev"{json!({"setup":proof.setup,"measurements":[],"candidateFinalDrive":snapshot["evResult"]["finalDrive"]})}else{Value::Null},"inputSnapshot":snapshot})).map_err(|e|ApiError::invalid(&e.to_string()))?;
-        let expected =
-            calculate_qualified(request, Some(&proof)).map_err(|e| ApiError::invalid(&e))?;
+        let expected = super::workflow::calculate_qualified_version(
+            request,
+            Some(&proof),
+            rec["formulaVersion"] == "rust/ice-measured-workflow-v1",
+        )
+        .map_err(|e| ApiError::invalid(&e))?;
         if !expected
             .recommendation
             .as_ref()

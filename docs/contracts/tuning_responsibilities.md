@@ -19,14 +19,14 @@
 - `dyno_guidance` 擁有舊 dyno wizard 的數值門檻、建議測試檔位與峰值匯入；guidance 隨既有 telemetry 推送，實際 dyno 採樣仍由 Rust `telemetry/dyno.rs` 的獨立品質契約控制。
 - 量測來源不接受客戶端峰值／聚合 moments 自行宣稱 measured。`evidence` 使用 `saved-engine` observationId 或 `saved-ev` evidenceId；Rust 從不可變原始 capture 重播、檢查車輛／PI／class／profile dependency，再產生有版本的 backend-only qualification cache。離線 CLI 可讀本機保存證據，或用 `--args-file PATH` 提供完整 capture 由同一 library 重播；裸峰值不會產生 measured readiness／推薦。外部 capture 明確標記 `imported-capture`，不等同硬體來源認證；正式保存仍必須有 backend-issued evidenceId。MCP 與 CLI 為唯讀：可重用現有資格 cache，cold-cache 則純重播並標記 imported-capture，不會新增資格紀錄；數值 owner 不因此分叉。
 - EV 原始 frames 與 backend-qualified evidence 都不可變保存；`ev-preview` 回傳明確 `unverified-preview`，正式 `ev-gearing` 必須提供 evidenceId。保存推薦時從 backend-owned qualification metadata 重新組合並比對欄位與來源；不相信 snapshot 的峰值／moments，也不在 receiver mutex 內 replay capture。
-- 新推薦使用 `rust/ice-measured-workflow-v1`／`rust/ev-measured-workflow-v1`；EV 保存驗證後端資格來源與推薦一致性，未知／鎖定齒比不套用。歷史版本唯讀，不重寫。
+- Road 新推薦使用 `rust/ice-measured-workflow-v2`／`aego-road-launch-envelope/v3`；非 Road ICE 仍為 `rust/ice-measured-workflow-v1`，EV 為 `rust/ev-measured-workflow-v1`。Road v1 歷史依凍結 v2 owner 驗證，詳見 [#462 修正](../tuning/aego-road-launch-v3.md)；EV 保存驗證後端資格來源與推薦一致性，未知／鎖定齒比不套用。歷史版本唯讀，不重寫。
 - 計算 API 不擴大 LAN allowlist；純函式共享 library 保留離線 CLI。Vite build 拒絕將凍結 TS tuning solver／readiness／diagnosis 參考模組帶入產品 bundle。
 - Road/Rally 正值 spring/height minima 保留小於 1 的數值；零值使用既有桌面預設，反向範圍把 max 提升到 min。靜態定位保留 JS 原運算順序與 toFixed 精確 binary rounding，不能以縮放 round 取代。
 
 模型版本與相容入口：
 | 模型 | 入口／用途 |
 | --- | --- |
-| `rust/ice-measured-workflow-v1`、`rust/ev-measured-workflow-v1` | 桌面、Companion、workflow API、CLI、MCP 共用 |
+| `rust/ice-measured-workflow-v2`（Road）、`rust/ice-measured-workflow-v1`（其他 ICE／歷史）、`rust/ev-measured-workflow-v1` | 桌面、Companion、workflow API、CLI、MCP 共用 |
 | `legacy-cli/v1` | 舊 `solve chassis/gearing/full`；保留歷史數值與 wire schema `tuning-dev/v1` |
 | `legacy-mcp/v1` | 舊 MCP quick chassis；Drift 公式不同於 CLI，獨立凍結 |
 | `legacy-desktop-experimental/v1` | 實驗 UI 呼叫 Rust developer model；保留既有 48 組 fixture 與 `tuning-dev/v1` output schema |

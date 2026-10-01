@@ -3,7 +3,7 @@ import type { CarParams } from '../../context/CarParamsContext';
 import type { WorkflowGearingResult } from './measurementTuningProfile';
 
 export interface WorkflowRecommendation {
-  formulaVersion: 'tuningMath/measured-workflow-v1' | 'ev/measured-workflow-v1' | 'rust/ice-measured-workflow-v1' | 'rust/ev-measured-workflow-v1';
+  formulaVersion: 'tuningMath/measured-workflow-v1' | 'ev/measured-workflow-v1' | 'rust/ice-measured-workflow-v1' | 'rust/ice-measured-workflow-v2' | 'rust/ev-measured-workflow-v1';
   inputSnapshot: Record<string, unknown>;
   fields: Record<string, { value: number; unit: string }>;
 }

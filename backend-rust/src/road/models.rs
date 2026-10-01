@@ -103,6 +103,7 @@ pub fn validate_request(kind: &str, body: &Value) -> ApiResult<()> {
                     "tuningMath/measured-workflow-v1",
                     "ev/measured-workflow-v1",
                     "rust/ice-measured-workflow-v1",
+                    "rust/ice-measured-workflow-v2",
                     "rust/ev-measured-workflow-v1",
                 ]
                 .contains(&text(rec, "formulaVersion", 80)?.as_str())
