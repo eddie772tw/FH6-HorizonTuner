@@ -38,10 +38,11 @@ const finiteOrNull = (value: number | undefined): number | null => (
   typeof value === 'number' && Number.isFinite(value) ? value : null
 );
 
+// [PERF] Unroll Array.every() to eliminate closure allocation and function invocation overhead in 60Hz loop
 const readFour = (values: number[] | undefined): FourValues | null => {
   if (!Array.isArray(values) || values.length < 4) return null;
   const result: [number, number, number, number] = [values[0], values[1], values[2], values[3]];
-  return result.every((value) => Number.isFinite(value)) ? result : null;
+  return Number.isFinite(result[0]) && Number.isFinite(result[1]) && Number.isFinite(result[2]) && Number.isFinite(result[3]) ? result : null;
 };
 
 const requiredFour = (values: number[] | undefined): FourValues => {
