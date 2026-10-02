@@ -35,7 +35,7 @@ export function AppMenu({ onOpen }: { onOpen: (surface: AppSurface) => void }) {
         onClick={() => openSurface(surface.id)}>{t(surface.label)}</button>)}
       <hr className="dropdown-divider" />
       <AppCompanionIndicator onOpen={() => openSurface('companion')} />
-      <button type="button" className="dropdown-item" onClick={() => openSurface('mcp')}>MCP</button>
+      <button type="button" className="dropdown-item" onClick={() => openSurface('mcp')}>{t('MCP')}</button>
       <hr className="dropdown-divider" />
       <button type="button" className="dropdown-item" onClick={() => openSurface('diagnostics')}>{t('Diagnostics')}</button>
       <button type="button" className="dropdown-item" onClick={() => openSurface('about')}>{t('About')}</button>
