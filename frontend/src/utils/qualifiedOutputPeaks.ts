@@ -38,9 +38,10 @@ export function isQualifiedOutputSample(sample: OutputTelemetrySample): boolean 
     && (sample.CurrentEngineRpm ?? 0) > 0
     && Array.isArray(tireSlip)
     && tireSlip.length >= 4
-    && tireSlip.slice(0, 4).every((slip) => (
-      Number.isFinite(slip) && Math.abs(slip) <= MAX_QUALIFIED_TIRE_SLIP_RATIO
-    ));
+    && Number.isFinite(tireSlip[0]) && Math.abs(tireSlip[0]) <= MAX_QUALIFIED_TIRE_SLIP_RATIO
+    && Number.isFinite(tireSlip[1]) && Math.abs(tireSlip[1]) <= MAX_QUALIFIED_TIRE_SLIP_RATIO
+    && Number.isFinite(tireSlip[2]) && Math.abs(tireSlip[2]) <= MAX_QUALIFIED_TIRE_SLIP_RATIO
+    && Number.isFinite(tireSlip[3]) && Math.abs(tireSlip[3]) <= MAX_QUALIFIED_TIRE_SLIP_RATIO;
 }
 
 export function updateQualifiedOutputPeaks(
