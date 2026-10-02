@@ -1,0 +1,195 @@
+{
+  "profile": {
+    "weight": 1104.0451415663472,
+    "weight_distribution": 48,
+    "drivetrain": "AWD",
+    "maxHp": 1249,
+    "maxTorque": 1117.1972449699008,
+    "frontTireWidth": 375,
+    "frontTireAspect": 30,
+    "frontTireRim": 19,
+    "rearTireWidth": 395,
+    "rearTireAspect": 20,
+    "rearTireRim": 21
+  },
+  "cases": [
+    {
+      "id": "missing-rpm-defaults",
+      "inputs": {
+        "carParams": {
+          "weight": 1104.0451415663472,
+          "weight_distribution": 48,
+          "drivetrain": "AWD",
+          "maxHp": 1249,
+          "maxTorque": 1117.1972449699008,
+          "frontTireWidth": 375,
+          "frontTireAspect": 30,
+          "frontTireRim": 19,
+          "rearTireWidth": 395,
+          "rearTireAspect": 20,
+          "rearTireRim": 21
+        },
+        "maxRpm": 0,
+        "numGears": 7
+      },
+      "historical": {
+        "cd96d86": {
+          "finalDrive": 3.09,
+          "gears": [
+            3.51,
+            2.46,
+            1.78,
+            1.33,
+            1.03,
+            0.82,
+            0.67
+          ]
+        },
+        "ca195c7": {
+          "finalDrive": 3.09,
+          "gears": [
+            1.21,
+            1.07,
+            0.95,
+            0.86,
+            0.79,
+            0.73,
+            0.67
+          ]
+        }
+      }
+    },
+    {
+      "id": "explicit-comparison-9000",
+      "inputs": {
+        "carParams": {
+          "weight": 1104.0451415663472,
+          "weight_distribution": 48,
+          "drivetrain": "AWD",
+          "maxHp": 1249,
+          "maxTorque": 1117.1972449699008,
+          "frontTireWidth": 375,
+          "frontTireAspect": 30,
+          "frontTireRim": 19,
+          "rearTireWidth": 395,
+          "rearTireAspect": 20,
+          "rearTireRim": 21,
+          "maxHpRpm": 8000,
+          "maxTorqueRpm": 6000
+        },
+        "maxRpm": 9000,
+        "numGears": 7
+      },
+      "historical": {
+        "cd96d86": {
+          "finalDrive": 3.88,
+          "gears": [
+            3.51,
+            2.46,
+            1.78,
+            1.33,
+            1.03,
+            0.82,
+            0.67
+          ]
+        },
+        "ca195c7": {
+          "finalDrive": 3.74,
+          "gears": [
+            1,
+            0.94,
+            0.88,
+            0.83,
+            0.78,
+            0.73,
+            0.69
+          ]
+        }
+      }
+    },
+    {
+      "id": "historical-synthetic-rpm-only",
+      "inputs": {
+        "carParams": {
+          "weight": 1104.0451415663472,
+          "weight_distribution": 48,
+          "drivetrain": "AWD",
+          "maxHp": 1249,
+          "maxTorque": 1117.1972449699008,
+          "frontTireWidth": 375,
+          "frontTireAspect": 30,
+          "frontTireRim": 19,
+          "rearTireWidth": 395,
+          "rearTireAspect": 20,
+          "rearTireRim": 21,
+          "maxHpRpm": 8804.031901079223,
+          "maxTorqueRpm": 6000
+        },
+        "maxRpm": 10000,
+        "numGears": 7
+      },
+      "historical": {
+        "cd96d86": {
+          "finalDrive": 4.27,
+          "gears": [
+            3.51,
+            2.46,
+            1.78,
+            1.33,
+            1.03,
+            0.82,
+            0.67
+          ]
+        },
+        "ca195c7": {
+          "finalDrive": 3.74,
+          "gears": [
+            1,
+            0.96,
+            0.91,
+            0.87,
+            0.83,
+            0.8,
+            0.76
+          ]
+        }
+      }
+    }
+  ],
+  "reported": {
+    "car": "2021 Pagani Huayra R",
+    "powerHp": 1249,
+    "torqueLbFt": 824,
+    "weightLb": 2434,
+    "frontWeightPercent": 48,
+    "drivetrain": "AWD",
+    "frontTire": "375/30R19",
+    "rearTire": "395/20R21",
+    "numGears": 7,
+    "old": {
+      "finalDrive": 3.99,
+      "gears": [
+        3.64,
+        2.53,
+        1.82,
+        1.35,
+        1.04,
+        0.82,
+        0.67
+      ]
+    },
+    "new": {
+      "finalDrive": 3.78,
+      "gears": [
+        1,
+        0.94,
+        0.88,
+        0.83,
+        0.78,
+        0.73,
+        0.69
+      ]
+    }
+  },
+  "provenance": "Issue #462 static report, 2026-10-02; no Step 3 data supplied. Scenario RPMs are assumptions, not observations. Conversions follow Step1GoalSetup: lb / 2.20462, lb-ft / 0.73756. Unspecified aero and split use solver defaults. Historical outputs executed from cd96d86 and ca195c7; never regenerate during tests."
+}

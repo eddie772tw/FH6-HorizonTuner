@@ -53,7 +53,7 @@ v1.6 已對 FWD／**顯式** AWD split 套用 traction cap；照抄這兩個分�
 - 2016組合測試涵蓋FWD/RWD/AWD、4–10檔、500–2100kg、80–4000Nm、缺省/0/70/100% AWD分配：1869可行、147模型無解。這是數值壓力矩陣，部分獨立參數組合未必對應真實引擎。
 - Beetle兩個既有齒比goldens、弱引擎與不可行案例不變。Beetle/Pajero原始limiter captures的v4資格／上限不變；Beetle合格峰值帶入既有比較profile後齒比同v2。Pajero沒有完整profile，不補造其實車齒比或宣稱不變。
 - 保存／重啟／篡改測試區分新舊model；正式HTTP、Companion relay、CLI、MCP均共用同一workflow。版本不可由前端snapshot指定。歷史Road v1僅允許缺省或v2模型標籤，不得夾帶v3的roadLaunch診斷；非Road/EV會移除不適用的Road保留metadata，保存時拒絕偽造的診斷。
-- #446已確認的實車驗收仍屬該次舊候選，不自動涵蓋本修正。#462仍缺實際車款、檔數、profile、合格capture／snapshot、`09.4`是否為.94的確認，以及起步／加速記錄。未提供新實車性能改善百分比。
+- #446已確認的實車驗收仍屬該次舊候選，不自動涵蓋本修正。#462於2026-10-02已補車型、七速完整齒比與靜態規格（見下節）；仍未提供Step 3動態資料、完整原始輸入／snapshot或起步／加速記錄。未提供新實車性能改善百分比。
 
 ## 07b4492 理論覆核（Codex as Codex；Luna as Codex）
 
@@ -140,3 +140,26 @@ Rtop/Rfirst = Π(Gnext/Gcurrent) ≥ (nLow/nShift)^(N−1)
 本輪不替換 Rspeed，不引入HP門檻、torque-peak動力帶下界或另一套前端solver。此準則在明示工程先驗下可修復已定位的退化；實車最適性留待受控A/B及後續校準。
 
 覆核與最小診斷修正的本地驗證：`cargo test --locked --manifest-path backend-rust/Cargo.toml` 為119 passed／3 ignored；兩個選用效能probe與需要真實Windows音訊／GSMTC的測試未執行。`cmd /c "pnpm -C frontend run test"` 為154 files／1099 tests passed、1既有skipped；Cargo fmt及git diff --check通過。獨立Node依本節推導核對14個保存基線的分段性質／端點誤差亦通過。這些結果不包含新的遊戲、GUI或實體裝置驗收。
+
+
+## 2026-10-02：Pagani 靜態回報核對
+
+已確認回報為2021 Pagani Huayra R、1249 HP、824 lb-ft、2434 lb、前重48%、AWD、前375/30R19、後395/20R21。舊版完整七速為3.64/2.53/1.82/1.35/1.04/.82/.67、FD3.99；新版為1/.94/.88/.83/.78/.73/.69、FD3.78。最新留言明確說未提供Step 3動態資料；不能把缺少附件推定為當時有或沒有使用量測，也不能杜撰capture。現行正式ICE workflow需要Rust合格證據才輸出推薦，直接純函式的預設情境不代表正式readiness。
+
+Step1GoalSetup的顯示換算為`2434/2.20462=1104.0451415663472 kg`、`824/0.73756=1117.1972449699008 Nm`。精確物理換算則為1104.04382858 kg、1117.1939894250736 Nm；這點小差異不足以解釋FD差異。名義後輪半徑為0.3457 m，未宣稱是量測滾動半徑。舊CarParamsView殘留lb-ft內部單位註解，但目前沒有production import；本次重播採正式Step 1換算，不混用不可達舊頁面。
+
+已實際執行歷史`cd96d86`與`ca195c7`的原始TS，並用相同輸入驗證目前Rust v2/v3。獨立fixture為`tests/fixtures/aego_road_report_462.json`，唯讀重播命令為`node tests/manual/replay_issue_462.cjs`（Node24+，須有歷史Git物件）。正常測試不生成fixture。所有情境採Road、七速，未指定aero/split/secondary correction，因而使用模型缺省aero=.5、AWD後分配72%；這些不是回報的實際設定。
+
+| 明示情境（均非量測） | v1.6 TS與目前v3 Rust | v1.7 TS與凍結v2 Rust |
+| --- | --- | --- |
+| 未提供峰值RPM；maxRpm=0觸發7500、功率峰6375、扭力峰4500預設 | FD3.09；3.51/2.46/1.78/1.33/1.03/.82/.67 | FD3.09；1.21/1.07/.95/.86/.79/.73/.67 |
+| 比較假設：功率峰8000、扭力峰6000、上限9000 | FD3.88；同上七速 | FD3.74；1/.94/.88/.83/.78/.73/.69 |
+| 僅沿用昨日合成RPM：8804.031901、6000、10000 | FD4.27；同上七速 | FD3.74；1/.96/.91/.87/.83/.80/.76 |
+
+因此v3涵蓋此靜態規格的高扭力長一檔機制，但尚未逐項重現原回報。不能把相同七個顯示齒比說成相同完整配置，也不能由它反推真實RPM。
+
+還有比RPM缺失更強的限制：原v1.7負載式第一檔總減速`Rload=m×9.81×aG×r/(T×.9)`，任意AWD分配皆有`aG≤1`。依上述正式UI換算，故`Rload≤3.72377003`，但FD3.78且G1取整為1.00至少要求`Rload≥3.78×.995=3.7611`。不同RPM、aero與二次極速修正只改頂檔需求及配置選擇，不能突破此負載端點上限。Rust測試並掃描0–100%分配核對。精確物理單位換算也得同樣結論；原始保存值、輸入路徑、後續手調或版本差異尚無證據，不能自行指定原因。請以原始profile／截圖及實際輸入路徑釐清；無需先有capture才能做這項靜態分析。
+
+目前沒有由新資料確認的額外公式缺陷，因此保留v3、既有21/10 goldens及6e49801有效上限修正。#462繼續開放、PR #460維持Ready；未合併、發行或實車驗收。原10月1日1400kg合成案例仍保留作歷史因果證據，絕不改標成這台Pagani。
+
+本輪Linux完整驗證：Rust locked預設功能121 passed／2 ignored，無預設功能113 passed／2 ignored；前端154 files、1099 passed／1 skipped，TypeScript＋Vite build、Cargo fmt、git diff --check及歷史TS唯讀重播通過。兩個ignored為選用效能probe；未執行Windows GUI或新遊戲試車。

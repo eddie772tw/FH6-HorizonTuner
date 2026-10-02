@@ -2962,3 +2962,12 @@
 - 正式workflow的診斷曾把名義engineMaxRpm當有效上限；原Beetle capture辨識5248但診斷輸出5999.9966，新qualification/workflow回歸先失敗。最小修正讀取proof已覆蓋的engineCalculation.effectiveRedline，缺省回退名義值；不重寫引擎身份、起步／頂檔目標或歷史v1。
 - 兩組Beetle／Pajero limiter capture的正式診斷回歸通過，並檢查偽造snapshot不能決定有效上限。完整Rust locked suite為119 passed／3 ignored（兩個選用效能probe及一個需要真實Windows音訊／GSMTC的測試）；前端154 files／1099 tests passed，1既有skipped；Cargo fmt及git diff --check通過。獨立Node核對14個新基線的目標／取整誤差與扭力分段性質通過。
 - Luna建議先做固定環境、同車齒比掃描與重複0–100 A/B，再補T(n)、起步控制、抓地／滑移及阻力資料建模。現有moving loaded sweep不能唯一辨認launch target，故不換另一組未校準Rspeed常數。未做新遊戲試車；#462保持開放。
+
+### 2026-10-02 / #462 Pagani 靜態回報與端點界限（Bagley as Dot）
+
+- 採用 `physics-tuning-math`、`pr-author-maintainer`；保留另一工作樹的6e49801有效上限修正，main仍為ca195c7。沒有平行修正或合併其他PR。
+- 已補車型、完整七速與靜態規格，沒有Step 3動態資料。新增獨立report fixture、唯讀release TS重播及兩個Rust回歸；歷史1400kg合成案例不改標為Pagani，原始21/10 goldens不變。
+- 正式Step 1換算得到1104.0451416kg／1117.197245Nm、名義後輪半徑.3457m。v1.7任意AWD分配的Rload≤3.72377003，而回報FD3.78／G1=1.00要求≥3.7611，不能僅靠RPM補值解釋。原始保存值／輸入入口／人工調整尚未證實；不杜撰量測覆蓋。
+- 顯式8000/6000/9000RPM比較情境可得到舊版同七比值但FD3.74；v3為FD3.88、一檔3.51。另驗證缺失RPM預設與歷史合成RPM情境。新資料未確認額外公式缺陷，故不改v3常數。
+- Linux Rust locked完整121 passed／2 ignored；no-default-features完整113 passed／2 ignored；前端154 files、1099 passed／1 skipped，TypeScript/Vite build、Cargo fmt、git diff --check、歷史TS唯讀重播通過。未執行新遊戲／Windows GUI驗收。
+- 更新#462矛盾敘述與模型文件；PR #460維持使用者授權Ready、Issue開放，未合併／發行。README原draft敘述同步修正。

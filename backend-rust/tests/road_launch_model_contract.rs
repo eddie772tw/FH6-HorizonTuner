@@ -286,3 +286,62 @@ fn new_model_has_separate_reviewed_baselines() {
         assert_gearing(&r, &case["expected"]);
     }
 }
+
+#[test]
+fn reported_pagani_static_profile_characterizes_defaults_and_explicit_rpm_scenarios() {
+    let fixture: Value = serde_json::from_str(include_str!(
+        "../../tests/fixtures/aego_road_report_462.json"
+    ))
+    .unwrap();
+    assert_eq!(fixture["reported"]["numGears"], 7);
+    for case in fixture["cases"].as_array().unwrap() {
+        let params: TuningCarParams =
+            serde_json::from_value(case["inputs"]["carParams"].clone()).unwrap();
+        let rpm = case["inputs"]["maxRpm"].as_f64().unwrap();
+        assert!((params.weight.unwrap() - 2434.0 / 2.20462).abs() < 1e-9);
+        assert!((params.max_torque.unwrap() - 824.0 / 0.73756).abs() < 1e-9);
+        assert!((radius(&params) - 0.3457).abs() < 1e-12);
+        let frozen = calculate_aego_gearing_v2(RaceGoal::Road, 7, &params, rpm, None);
+        assert_gearing(&frozen, &case["historical"]["ca195c7"]);
+        let current = calculate_aego_gearing(RaceGoal::Road, 7, &params, rpm, None);
+        assert_gearing(&current, &case["historical"]["cd96d86"]);
+        assert_ne!(
+            current.gears,
+            serde_json::from_value::<Vec<f64>>(fixture["reported"]["old"]["gears"].clone())
+                .unwrap()
+        );
+        println!(
+            "REPORT {} {}",
+            case["id"],
+            serde_json::to_string(&current).unwrap()
+        );
+    }
+}
+
+#[test]
+fn reported_static_load_bound_cannot_round_to_reported_first_endpoint() {
+    let fixture: Value = serde_json::from_str(include_str!(
+        "../../tests/fixtures/aego_road_report_462.json"
+    ))
+    .unwrap();
+    let mut params: TuningCarParams = serde_json::from_value(fixture["profile"].clone()).unwrap();
+    let upper =
+        params.weight.unwrap() * 9.81 * radius(&params) / (params.max_torque.unwrap() * 0.90);
+    // Even the best possible aG=1 prior falls below the interval that rounds to
+    // G1=1.00 at FD3.78. Neither RPM nor aero can increase this load-only target.
+    assert!((upper - 3.7237700307813437).abs() < 1e-12);
+    assert!(upper < 3.78 * (1.0 - 0.005));
+    for split in 0..=100 {
+        params.road_awd_rear_percent = Some(split as f64);
+        let result = calculate_aego_gearing_v2(RaceGoal::Road, 7, &params, 9000.0, None);
+        let diagnostics = road_launch_diagnostics(
+            &params,
+            9000.0,
+            8000.0,
+            6000.0,
+            params.max_torque.unwrap(),
+            &result,
+        );
+        assert!(diagnostics["loadPriorTotalRatio"].as_f64().unwrap() <= upper + 1e-12);
+    }
+}
