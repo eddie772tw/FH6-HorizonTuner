@@ -112,3 +112,7 @@ Additionally, attempting to optimize 60Hz telemetry data copying in `FrameInterp
 **Learning:** In high-frequency frontend canvas rendering loops (e.g., drawing telemetry charts with hundreds of points), performing style lookups or evaluating expensive regular expressions for every data point or chart line severely increases CPU overhead.
 **Action:** Extract and cache resolved styling properties (like colors) outside the per-point data loops. Implement fast-path string checks (e.g., `.startsWith('#')`) to bypass expensive regex and `getComputedStyle` operations when standard hex or rgb values are used.
 
+
+## 2024-11-26 - Eliminating Chained Array Methods in High-Frequency Paths
+**Learning:** In high-frequency frontend loops (e.g., telemetry frame processing), using `.slice()` combined with iteration methods like `.every()` or `.some()` (e.g., `arr.slice(0, 4).every(fn)`) allocates intermediate arrays and creates closure overhead, generating significant GC pressure.
+**Action:** Unroll these higher-order function chains into single-pass or explicit logical OR/AND checks with direct index access (e.g., `!fn(arr[0]) || !fn(arr[1])...`) to minimize Garbage Collection (GC) pressure.
