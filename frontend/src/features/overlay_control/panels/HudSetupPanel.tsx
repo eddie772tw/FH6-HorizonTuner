@@ -102,6 +102,7 @@ export function HudSetupPanel({
               style={busy ? { pointerEvents: 'none' } : undefined}
               onClick={onReloadHud}
             >
+              {busy && <span className="spinner-border spinner-border-sm me-2" aria-hidden="true" />}
               {t('Refresh HUD List & Reload HTML')}
             </button>
           </span>
