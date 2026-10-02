@@ -37,6 +37,7 @@ struct Engine {
 }
 pub struct App {
     pub config: Arc<ConfigService>,
+    pub tuning_evidence: crate::tuning::evidence::EvidenceService,
     pub database: Arc<TelemetryStore>,
     pub native: NativeServices,
     pub companion: Arc<CompanionService>,
@@ -65,6 +66,9 @@ impl App {
             )?,
         );
         road.recover()?;
+        let tuning_evidence = crate::tuning::evidence::EvidenceService {
+            store: road.store.clone(),
+        };
         let mut drag = DragRecorder::default();
         drag.set_context(&Value::Null, &config.car_database);
         let engine = Engine {
@@ -87,6 +91,7 @@ impl App {
         let persistence = Persistence::new(database.clone()).map_err(database_error)?;
         Ok(Arc::new(Self {
             config,
+            tuning_evidence,
             database,
             native,
             companion,
@@ -112,7 +117,7 @@ impl App {
         snapshot
     }
     /// Called exclusively by a bounded processing worker, outside UDP/HTTP I/O.
-    pub fn process(&self, frame: Value) {
+    pub fn process(&self, mut frame: Value) {
         let started = Instant::now();
         let settings = self.config.settings();
         let mut engine = lock(&self.engine);
@@ -130,6 +135,7 @@ impl App {
                 (Value::Null, false)
             }
         };
+        frame["DynoGuidance"] = crate::tuning::dyno_guidance::guidance(&frame, &settings, &params);
         engine.drag.record(&frame);
         let _ = self.persist_commands(&mut engine.race);
         if id != "0" && profile_loaded {
@@ -476,6 +482,9 @@ impl Backend for App {
         lock(&self.metrics).client_delta(channel, delta);
     }
     fn request(&self, request: ApiRequest) -> ApiResult<ApiResponse> {
+        if let Some(response) = crate::tuning::api::request(&request, &self.tuning_evidence)? {
+            return Ok(response);
+        }
         if request.method == "GET" && request.path == "/api/health" {
             return Ok(ApiResponse::json(
                 json!({"status":"ready","version":env!("CARGO_PKG_VERSION")}),

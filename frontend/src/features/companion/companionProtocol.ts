@@ -14,6 +14,7 @@ export interface CompanionSnapshot {
   results: { chassis: ChassisTuningResult | null; alignment: StaticTireAlignResult | null; gearing: WorkflowGearingResult | null };
   engine: { phase: string; sampleCount: number; state: TuningMeasurementState | null };
   readiness: WorkflowReadiness;
+  calculationStatus?: 'pending' | 'error' | 'ready';
 }
 export interface CompanionAck { id: string; status: 'pending' | 'applied' | 'rejected'; error?: string }
 export interface CompanionState {

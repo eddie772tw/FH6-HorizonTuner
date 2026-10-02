@@ -91,7 +91,9 @@ export default function CompanionTuning({ state, disabled, onCommand }: Props) {
   const workflow = snapshot.workflow;
   const measurement = snapshot.engine;
   const identityChanged = Boolean(editing && draftIdentity && draftIdentity !== `${snapshot.carId}:${snapshot.profileKey}`);
-  const readinessMessage = !snapshot.readiness.mechanical ? 'Enter vehicle weight and distribution to unlock chassis tuning.'
+  const readinessMessage = snapshot.calculationStatus === 'pending' ? 'Calculating tuning results…'
+    : snapshot.calculationStatus === 'error' ? 'Tuning calculation is unavailable. Retrying…'
+    : !snapshot.readiness.mechanical ? 'Enter vehicle weight and distribution to unlock chassis tuning.'
     : !snapshot.readiness.engineInputs ? 'Enter engine power to unlock measurement.'
       : !snapshot.readiness.measuredEngine ? 'Complete engine measurement before gearing and step 4.'
         : 'Engine measurement is ready. Verify the setup on the PC before saving.';

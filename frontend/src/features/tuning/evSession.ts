@@ -1,6 +1,6 @@
 import type { CarParams } from '../../context/CarParamsContext';
 import type { TelemetryData } from '../../hooks/useTelemetry';
-import { evIdentity, sameEvIdentity } from '../../domain/tuning/ev/measurement';
+import { evIdentity, sameEvIdentity } from '../../domain/tuning/ev/sessionIdentity';
 import type { EvMeasurement } from '../../domain/tuning/ev/types';
 
 export function evDependencyKey(carId: string, profile: CarParams | null): string {

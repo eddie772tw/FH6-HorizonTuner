@@ -1,0 +1,437 @@
+{
+  "modelVersion": "aego-road-launch-envelope/v3",
+  "note": "Deliberate new-model baseline after endpoint/property review. Does not replace immutable v2 goldens or assert in-game optimality. Tests must not regenerate.",
+  "cases": [
+    {
+      "id": "road_launch_target_infeasible",
+      "inputs": {
+        "carParams": {
+          "weight": 801.952,
+          "weight_distribution": 42,
+          "drivetrain": "RWD",
+          "maxHp": 72,
+          "maxTorque": 1,
+          "maxHpRpm": 3983.44,
+          "maxTorqueRpm": 2392,
+          "rearTireWidth": 245,
+          "rearTireAspect": 50,
+          "rearTireRim": 15
+        },
+        "maxRpm": 6000,
+        "numGears": 6
+      },
+      "expected": {
+        "finalDrive": 0.0,
+        "gears": [],
+        "unsupported": true,
+        "unsupportedReason": "Road model targets conflict with the available ratio range. This does not mean the vehicle cannot be driven."
+      },
+      "reason": "Unchanged: load prior remains dominant or grid is infeasible."
+    },
+    {
+      "id": "road_beetle_race_six_3983",
+      "inputs": {
+        "carParams": {
+          "weight": 801.952,
+          "weight_distribution": 42,
+          "drivetrain": "RWD",
+          "induction": "NA",
+          "maxHp": 72,
+          "maxTorque": 158.631,
+          "maxTorqueRpm": 2392,
+          "rearTireWidth": 245,
+          "rearTireAspect": 50,
+          "rearTireRim": 15,
+          "aeroEfficiency": 0.855,
+          "maxHpRpm": 3983.44
+        },
+        "maxRpm": 6000,
+        "numGears": 6
+      },
+      "expected": {
+        "finalDrive": 4.05,
+        "gears": [
+          3.09,
+          2.13,
+          1.53,
+          1.14,
+          0.89,
+          0.72
+        ]
+      },
+      "reason": "Unchanged: load prior remains dominant or grid is infeasible."
+    },
+    {
+      "id": "road_beetle_race_six_3365",
+      "inputs": {
+        "carParams": {
+          "weight": 801.952,
+          "weight_distribution": 42,
+          "drivetrain": "RWD",
+          "induction": "NA",
+          "maxHp": 72,
+          "maxTorque": 158.631,
+          "maxTorqueRpm": 2392,
+          "rearTireWidth": 245,
+          "rearTireAspect": 50,
+          "rearTireRim": 15,
+          "aeroEfficiency": 0.855,
+          "maxHpRpm": 3365.312
+        },
+        "maxRpm": 6000,
+        "numGears": 6
+      },
+      "expected": {
+        "finalDrive": 3.42,
+        "gears": [
+          3.66,
+          2.43,
+          1.68,
+          1.22,
+          0.92,
+          0.72
+        ]
+      },
+      "reason": "Unchanged: load prior remains dominant or grid is infeasible."
+    },
+    {
+      "id": "road_awd_standard",
+      "inputs": {
+        "carParams": {
+          "weight": 1450,
+          "weight_distribution": 54,
+          "drivetrain": "AWD",
+          "maxHp": 450,
+          "maxTorque": 500,
+          "maxHpRpm": 6800,
+          "maxTorqueRpm": 4800,
+          "aero_downforce_front": 80,
+          "aero_downforce_rear": 120,
+          "spring_front_min": 15,
+          "spring_front_max": 130,
+          "spring_rear_min": 15,
+          "spring_rear_max": 130,
+          "height_front_min": 10,
+          "height_front_max": 22,
+          "height_rear_min": 10,
+          "height_rear_max": 22
+        },
+        "maxRpm": 7800,
+        "numGears": 6
+      },
+      "expected": {
+        "finalDrive": 4.07,
+        "gears": [
+          2.69,
+          1.91,
+          1.41,
+          1.09,
+          0.87,
+          0.72
+        ]
+      },
+      "reason": "Speed-at-power-peak prior dominates the load prior; endpoints allocated jointly. Deliberate v3 change."
+    },
+    {
+      "id": "road_rwd_sports",
+      "inputs": {
+        "carParams": {
+          "weight": 1300,
+          "weight_distribution": 50,
+          "drivetrain": "RWD",
+          "maxHp": 380,
+          "maxTorque": 420,
+          "maxHpRpm": 7000,
+          "maxTorqueRpm": 5000,
+          "aero_downforce_front": 40,
+          "aero_downforce_rear": 60
+        },
+        "maxRpm": 8000,
+        "numGears": 6
+      },
+      "expected": {
+        "finalDrive": 4.44,
+        "gears": [
+          1.88,
+          1.45,
+          1.16,
+          0.96,
+          0.82,
+          0.72
+        ]
+      },
+      "reason": "Speed-at-power-peak prior dominates the load prior; endpoints allocated jointly. Deliberate v3 change."
+    },
+    {
+      "id": "road_fwd_hot_hatch",
+      "inputs": {
+        "carParams": {
+          "weight": 1250,
+          "weight_distribution": 62,
+          "drivetrain": "FWD",
+          "maxHp": 280,
+          "maxTorque": 360,
+          "maxHpRpm": 6200,
+          "maxTorqueRpm": 3500,
+          "aero_downforce_front": 30,
+          "aero_downforce_rear": 20
+        },
+        "maxRpm": 7200,
+        "numGears": 6
+      },
+      "expected": {
+        "finalDrive": 4.35,
+        "gears": [
+          1.86,
+          1.44,
+          1.16,
+          0.96,
+          0.82,
+          0.72
+        ]
+      },
+      "reason": "Speed-at-power-peak prior dominates the load prior; endpoints allocated jointly. Deliberate v3 change."
+    },
+    {
+      "id": "aego_weak_engine_4speed",
+      "inputs": {
+        "carParams": {
+          "weight": 2100,
+          "weight_distribution": 50,
+          "drivetrain": "RWD",
+          "maxHp": 85,
+          "maxTorque": 120,
+          "maxHpRpm": 4200,
+          "maxTorqueRpm": 2400,
+          "rearTireWidth": 205,
+          "rearTireAspect": 65,
+          "rearTireRim": 15
+        },
+        "maxRpm": 5000,
+        "numGears": 4
+      },
+      "expected": {
+        "finalDrive": 0.0,
+        "gears": [],
+        "unsupported": true,
+        "unsupportedReason": "Road model targets conflict with the available ratio range. This does not mean the vehicle cannot be driven."
+      },
+      "reason": "Unchanged: load prior remains dominant or grid is infeasible."
+    },
+    {
+      "id": "aego_10speed_hypercar",
+      "inputs": {
+        "carParams": {
+          "weight": 1400,
+          "weight_distribution": 45,
+          "drivetrain": "AWD",
+          "maxHp": 1200,
+          "maxTorque": 1300,
+          "maxHpRpm": 8500,
+          "maxTorqueRpm": 6500,
+          "aeroEfficiency": 0.8
+        },
+        "maxRpm": 9500,
+        "numGears": 10
+      },
+      "expected": {
+        "finalDrive": 4.41,
+        "gears": [
+          3.1,
+          2.42,
+          1.92,
+          1.54,
+          1.26,
+          1.05,
+          0.88,
+          0.76,
+          0.66,
+          0.58
+        ]
+      },
+      "reason": "Speed-at-power-peak prior dominates the load prior; endpoints allocated jointly. Deliberate v3 change."
+    },
+    {
+      "id": "aego_secondary_correction_simulated",
+      "inputs": {
+        "carParams": {
+          "weight": 1400,
+          "weight_distribution": 50,
+          "drivetrain": "RWD",
+          "maxHp": 500,
+          "maxTorque": 600,
+          "maxHpRpm": 7000,
+          "maxTorqueRpm": 5000
+        },
+        "maxRpm": 8000,
+        "numGears": 6,
+        "secondaryCorrection": {
+          "simulatedTopSpeed": 320
+        }
+      },
+      "expected": {
+        "finalDrive": 4.28,
+        "gears": [
+          1.95,
+          1.49,
+          1.18,
+          0.97,
+          0.82,
+          0.72
+        ]
+      },
+      "reason": "Speed-at-power-peak prior dominates the load prior; endpoints allocated jointly. Deliberate v3 change."
+    },
+    {
+      "id": "aego_secondary_correction_softmax",
+      "inputs": {
+        "carParams": {
+          "weight": 1400,
+          "weight_distribution": 50,
+          "drivetrain": "RWD",
+          "maxHp": 500,
+          "maxTorque": 600,
+          "maxHpRpm": 7000,
+          "maxTorqueRpm": 5000
+        },
+        "maxRpm": 8000,
+        "numGears": 6,
+        "secondaryCorrection": {
+          "softMaxSpeed": 280
+        }
+      },
+      "expected": {
+        "finalDrive": 4.89,
+        "gears": [
+          1.7,
+          1.35,
+          1.11,
+          0.93,
+          0.81,
+          0.72
+        ]
+      },
+      "reason": "Speed-at-power-peak prior dominates the load prior; endpoints allocated jointly. Deliberate v3 change."
+    },
+    {
+      "id": "aero_auto_derivation",
+      "inputs": {
+        "carParams": {
+          "weight": 1400,
+          "weight_distribution": 52,
+          "drivetrain": "RWD",
+          "aero_downforce_front": 0,
+          "aero_downforce_rear": 0
+        },
+        "maxRpm": 7500,
+        "numGears": 6
+      },
+      "expected": {
+        "finalDrive": 4.37,
+        "gears": [
+          1.74,
+          1.38,
+          1.12,
+          0.94,
+          0.81,
+          0.72
+        ]
+      },
+      "reason": "Speed-at-power-peak prior dominates the load prior; endpoints allocated jointly. Deliberate v3 change."
+    },
+    {
+      "id": "extreme_boundary_light_heavy",
+      "inputs": {
+        "carParams": {
+          "weight": 500,
+          "weight_distribution": 25,
+          "drivetrain": "RWD",
+          "maxHp": 150,
+          "maxTorque": 180,
+          "maxHpRpm": 6000,
+          "maxTorqueRpm": 4000
+        },
+        "maxRpm": 7000,
+        "numGears": 6
+      },
+      "expected": {
+        "finalDrive": 5.18,
+        "gears": [
+          1.79,
+          1.4,
+          1.14,
+          0.95,
+          0.81,
+          0.72
+        ]
+      },
+      "reason": "Unchanged: load prior remains dominant or grid is infeasible."
+    },
+    {
+      "id": "issue462_synthetic_9023.778268980559",
+      "inputs": {
+        "carParams": {
+          "weight": 1400,
+          "weight_distribution": 50,
+          "drivetrain": "AWD",
+          "maxHp": 1387.939272200741,
+          "maxTorque": 1323.3977695167287,
+          "maxHpRpm": 9023.778268980559,
+          "maxTorqueRpm": 6000,
+          "aeroEfficiency": 0.5,
+          "rearTireWidth": 245,
+          "rearTireAspect": 40,
+          "rearTireRim": 18
+        },
+        "numGears": 7,
+        "maxRpm": 10000
+      },
+      "expected": {
+        "finalDrive": 3.99,
+        "gears": [
+          3.64,
+          2.53,
+          1.82,
+          1.35,
+          1.04,
+          0.82,
+          0.67
+        ]
+      },
+      "reason": "Inherited speed baseline dominates. Synthetic, not the reported vehicle."
+    },
+    {
+      "id": "issue462_synthetic_8804.031901079223",
+      "inputs": {
+        "carParams": {
+          "weight": 1400,
+          "weight_distribution": 50,
+          "drivetrain": "AWD",
+          "maxHp": 1387.939272200741,
+          "maxTorque": 1323.3977695167287,
+          "maxHpRpm": 8804.031901079223,
+          "maxTorqueRpm": 6000,
+          "aeroEfficiency": 0.5,
+          "rearTireWidth": 245,
+          "rearTireAspect": 40,
+          "rearTireRim": 18
+        },
+        "numGears": 7,
+        "maxRpm": 10000
+      },
+      "expected": {
+        "finalDrive": 3.89,
+        "gears": [
+          3.64,
+          2.53,
+          1.82,
+          1.35,
+          1.04,
+          0.82,
+          0.67
+        ]
+      },
+      "reason": "Inherited speed baseline dominates. Synthetic, not the reported vehicle."
+    }
+  ]
+}

@@ -73,7 +73,61 @@ fn road_launch_total_ratio(params: &TuningCarParams, torque_nm: f64, radius_m: f
     mass * 9.81 * acceleration_g * radius_m / (torque_nm * 0.90)
 }
 
-// Same bounded slider-grid allocation as the UI. Priors are not measured grip.
+/// Inherited v1.6 speed at peak-power RPM (not redline or a measured speed).
+fn road_speed_total(drive: Drivetrain, power_rpm: f64, circumference: f64) -> f64 {
+    let modifier = match drive {
+        Drivetrain::AWD => 0.85,
+        Drivetrain::FWD => 1.05,
+        Drivetrain::RWD => 1.15,
+    };
+    power_rpm * circumference * 60.0 / (90.0 * modifier * 1000.0)
+}
+
+/// Inspectable model evidence, not optimal launch/shift predictions. The peak
+/// window is descriptive only: a torque peak is not the lower usable RPM limit.
+pub fn road_launch_diagnostics(
+    params: &TuningCarParams,
+    limit_rpm: f64,
+    power_rpm: f64,
+    torque_rpm: f64,
+    torque_nm: f64,
+    result: &GearingResult,
+) -> serde_json::Value {
+    let p = normalize_road_gearing_inputs(params);
+    let drive = p
+        .drivetrain
+        .as_deref()
+        .map(Drivetrain::from_str_loose)
+        .unwrap_or(Drivetrain::RWD);
+    let (width, aspect, rim) = if drive == Drivetrain::FWD {
+        (
+            p.front_tire_width.unwrap(),
+            p.front_tire_aspect.unwrap(),
+            p.front_tire_rim.unwrap(),
+        )
+    } else {
+        (
+            p.rear_tire_width.unwrap(),
+            p.rear_tire_aspect.unwrap(),
+            p.rear_tire_rim.unwrap(),
+        )
+    };
+    let c = ((width * aspect / 100.0) * 2.0 + rim * 25.4) * PI / 1000.0;
+    let load = road_launch_total_ratio(&p, torque_nm, c / (2.0 * PI));
+    let speed = road_speed_total(drive, power_rpm, c);
+    let first = result.gears.first().copied();
+    serde_json::json!({
+        "modelVersion":"aego-road-launch-envelope/v3",
+        "loadPriorTotalRatio":load,"speedPriorTotalRatio":speed,"selectedTotalRatio":load.max(speed),
+        "allocatedFirstTotalRatio":first.map(|g|g * result.final_drive),
+        "firstGearSpeedAtPowerPeakKmh":first.map(|g|calc_gear_speed(power_rpm,g,result.final_drive,c/(2.0*PI))*3.6),
+        "torquePeakRpm":torque_rpm,"powerPeakRpm":power_rpm,"effectiveLimitRpm":limit_rpm,
+        "shiftLandingRpmsAtLimit":result.gears.windows(2).map(|g|limit_rpm*g[1]/g[0]).collect::<Vec<_>>(),
+        "scope":"engineering-priors-and-kinematics; launch-grip-and-optimal-shifts-unverified"
+    })
+}
+
+// Joint allocation retained from Road v2. Priors are not measured grip.
 fn allocate_road_gearing(first_total: f64, top_total: f64, count: usize) -> GearingResult {
     let unavailable = GearingResult {
         final_drive: 0.0, gears: vec![], unsupported: Some(true),
@@ -214,12 +268,35 @@ fn normalize_road_gearing_inputs(params: &TuningCarParams) -> TuningCarParams {
     p
 }
 
+/// Current production model. Frozen Road v2 is only for historical contracts.
 pub fn calculate_aego_gearing(
+    goal: RaceGoal,
+    count: usize,
+    params: &TuningCarParams,
+    max_rpm: f64,
+    correction: Option<&GearingSecondaryCorrection>,
+) -> GearingResult {
+    calculate_gearing(goal, count, params, max_rpm, correction, true)
+}
+
+/// Explicit compatibility owner for aego-road-joint/v2 and workflow-v1 history.
+pub fn calculate_aego_gearing_v2(
+    goal: RaceGoal,
+    count: usize,
+    params: &TuningCarParams,
+    max_rpm: f64,
+    correction: Option<&GearingSecondaryCorrection>,
+) -> GearingResult {
+    calculate_gearing(goal, count, params, max_rpm, correction, false)
+}
+
+fn calculate_gearing(
     race_goal: RaceGoal,
     mut num_gears: usize,
     car_params: &TuningCarParams,
     mut max_rpm: f64,
     secondary_correction: Option<&GearingSecondaryCorrection>,
+    launch_envelope: bool,
 ) -> GearingResult {
     if car_params.is_electric == Some(true) {
         return GearingResult {
@@ -440,7 +517,17 @@ pub fn calculate_aego_gearing(
             }
         }
         RaceGoal::Road => {
-            let first_total = road_launch_total_ratio(car_params, max_torque, c / (2.0 * PI));
+            let load_target = road_launch_total_ratio(car_params, max_torque, c / (2.0 * PI));
+            // #462: the peak-torque load estimate is not an equality constraint
+            // on launch gearing. Preserve #446 shortening when it dominates,
+            // but do not let high torque lengthen the inherited v1.6 speed target.
+            // Both are engineering priors, not observed launch grip or optimal shifts.
+            // See docs/tuning/aego-road-launch-v3.md for provenance and limitations.
+            let first_total = if launch_envelope {
+                load_target.max(road_speed_total(dt, rpm_hp, c))
+            } else {
+                load_target
+            };
             let mut target_speed =
                 max_hp.powf(1.0 / 3.0) * 37.0 * (1.0 + 0.12 * aero_efficiency) * 0.95;
             if let Some(sc) = secondary_correction {

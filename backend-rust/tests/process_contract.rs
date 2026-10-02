@@ -181,7 +181,9 @@ fn process_http_udp_websocket_persistence_and_shutdown_contract() {
         thread::sleep(Duration::from_millis(30));
     }
     let received: Value = serde_json::from_str(json_ws.read().unwrap().to_text().unwrap()).unwrap();
-    assert_eq!(received, expected);
+    let mut expected_json = expected.clone();
+    expected_json["DynoGuidance"] = json!({"launch":false,"gearCorrect":false,"waiting":false,"start":true,"stop":true,"completed":false,"slipped":false,"targetGear":4.0});
+    assert_eq!(received, expected_json);
     assert_eq!(
         binary_ws.read().unwrap().into_data().as_ref(),
         fh6_backend::telemetry::pack_binary(&expected)
@@ -411,7 +413,7 @@ fn mcp_http_uses_shared_persistence_and_honors_access_settings() {
         202
     );
     let tools = run.json("POST", "/mcp", rpc("tools/list", json!({})));
-    assert_eq!(tools["result"]["tools"].as_array().unwrap().len(), 26);
+    assert_eq!(tools["result"]["tools"].as_array().unwrap().len(), 27);
     let preset = json!({"schemaVersion":"tuning-preset/v1","parameters":{"arb_front":3.0}});
     run.json("POST", "/api/tunings/247/road-test", preset.clone());
     let response = run.json("POST", "/mcp", rpc("tools/call", json!({"name":"get_tuning_preset","arguments":{"car_id":"247","save_name":"road-test"}})));
@@ -642,5 +644,28 @@ fn windows_native_audio_media_and_removed_device_recovery() {
     assert_eq!(diagnostics["native"]["audio"]["error"], Value::Null);
     println!("Windows acceptance: live WASAPI + GSMTC album metadata + {} artwork bytes; removed device recovered", bytes.len());
     drop(overlay);
+    run.stop();
+}
+
+#[test]
+fn local_workflow_transport_smoke_preserves_unsupported_readiness() {
+    let mut run = Running::start(0);
+    let input = json!({"schemaVersion":"tuning-workflow-result/v1","goal":"Road","season":"Summer","profile":{"weight":1400,"weight_distribution":54,"maxHp":300,"maxTorque":400,"adjustability":{"gears":6,"suspension":"Race","gearbox":"Full"}},"engine":null,"ev":null,"inputSnapshot":{}});
+    let output = run.json("POST", "/api/tuning/workflow", input.clone());
+    assert_eq!(output["readiness"]["mechanical"], true);
+    assert_eq!(output["readiness"]["gearingAvailable"], false);
+    assert!(output["recommendation"].is_null());
+    let mut future = input;
+    future["schemaVersion"] = json!("future/v9");
+    assert_eq!(
+        run.request(
+            "POST",
+            "/api/tuning/workflow",
+            &serde_json::to_vec(&future).unwrap(),
+            "Content-Type: application/json\r\n"
+        )
+        .0,
+        422
+    );
     run.stop();
 }

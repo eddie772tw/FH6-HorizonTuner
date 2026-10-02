@@ -87,7 +87,7 @@ fn stable(s: &EvMoments) -> bool {
         && s.m2 >= 0.0
         && (s.m2 / s.count as f64).sqrt() / s.mean <= 0.02
 }
-fn ready(g: &EvGearMeasurement) -> bool {
+pub fn ready(g: &EvGearMeasurement) -> bool {
     g.accepted_ms.is_finite()
         && g.accepted_ms >= 3000.0
         && g.positive_samples >= 90

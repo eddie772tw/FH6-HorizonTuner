@@ -38,7 +38,7 @@ fn initialize_and_tool_registry_match_json_rpc_contract() {
         )
         .unwrap()
         .unwrap();
-    assert_eq!(list["result"]["tools"].as_array().unwrap().len(), 26);
+    assert_eq!(list["result"]["tools"].as_array().unwrap().len(), 27);
     assert_eq!(
         server.status(&app.config.settings())["transport"],
         "streamable-http"

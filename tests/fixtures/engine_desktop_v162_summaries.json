@@ -1,0 +1,41 @@
+[
+  {
+    "id": "b72e930d-cf94-4e83-ad66-a23f08a5530d",
+    "expected": {
+      "analysisVersion": "engine-loaded-sweep/v4",
+      "observationId": "b72e930d-cf94-4e83-ad66-a23f08a5530d",
+      "status": "ready",
+      "reason": "ready",
+      "acceptedMs": 21753,
+      "engineMaxRpm": 5999.99658203125,
+      "effectiveRedline": 5251,
+      "peakPower": {
+        "value": 53637.61704799107,
+        "rpm": 3983.950613839286
+      },
+      "peakTorque": {
+        "value": 158.83334655761718,
+        "rpm": 2389.376708984375
+      }
+    }
+  },
+  {
+    "id": "a97c2862-e5be-4729-a23f-f113a378f9f8",
+    "expected": {
+      "analysisVersion": "engine-loaded-sweep/v4",
+      "observationId": "a97c2862-e5be-4729-a23f-f113a378f9f8",
+      "status": "collecting",
+      "reason": "duration-insufficient",
+      "acceptedMs": 4818,
+      "engineMaxRpm": 5999.99658203125,
+      "peakPower": {
+        "value": 53646.12890625,
+        "rpm": 3983.440380859375
+      },
+      "peakTorque": {
+        "value": 158.84346771240234,
+        "rpm": 2392.6644287109375
+      }
+    }
+  }
+]

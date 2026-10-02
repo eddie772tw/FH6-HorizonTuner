@@ -1,0 +1,6 @@
+[
+  "TimestampMS", "IsRaceOn", "CarOrdinal", "CarClass", "CarPerformanceIndex",
+  "EngineMaxRpm", "CurrentEngineRpm", "Gear", "AccelInput", "BrakeInput",
+  "ClutchInput", "HandBrakeInput", "SteerInput", "PowerWatts", "TorqueNewtons",
+  "WheelRotationSpeed", "TireSlipRatio", "SpeedMetersPerSecond"
+]

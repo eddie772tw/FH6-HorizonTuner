@@ -3,7 +3,6 @@ import { useTelemetry } from '../hooks/useTelemetry';
 import { useSettings } from './SettingsContext';
 import { backendFetch } from '../services/backend';
 import type { DynoQuality } from '../features/car_params/dynoQuality';
-import { normalizeEvProfile } from '../domain/tuning/ev/profile';
 import type { EvGearboxSetup } from '../domain/tuning/ev/types';
 
 export interface CarParams {
@@ -150,81 +149,30 @@ export const CarParamsProvider: React.FC<{ children: ReactNode }> = ({ children 
     prevTelemetryCarIdRef.current = telemetryCarId;
   }, [telemetryCarId]);
 
-  const normalizeCarParams = (raw: any): CarParams => {
-    return {
-      ...normalizeEvProfile(raw),
-      weight: raw?.weight ?? 1500,
-      weight_distribution: raw?.weight_distribution ?? 50,
-      drivetrain: raw?.drivetrain ?? 'RWD',
-      induction: raw?.induction ?? 'NA',
-      maxHp: raw?.maxHp ?? 0,
-      maxTorque: raw?.maxTorque ?? 0,
-      maxHpRpm: raw?.maxHpRpm ?? 0,
-      maxTorqueRpm: raw?.maxTorqueRpm ?? 0,
-      aeroBalance: raw?.aeroBalance ?? 0.50,
-      aeroEfficiency: raw?.aeroEfficiency ?? 0.50,
-      mechBalance: raw?.mechBalance ?? 0.50,
-      aero_downforce_front: raw?.aero_downforce_front ?? 0,
-      aero_downforce_rear: raw?.aero_downforce_rear ?? 0,
-      frontTireWidth: raw?.frontTireWidth ?? 245,
-      frontTireAspect: raw?.frontTireAspect ?? 40,
-      frontTireRim: raw?.frontTireRim ?? 18,
-      rearTireWidth: raw?.rearTireWidth ?? 245,
-      rearTireAspect: raw?.rearTireAspect ?? 40,
-      rearTireRim: raw?.rearTireRim ?? 18,
-      tireType: raw?.tireType ?? 'Stock',
-      adjustability: {
-        gearbox: raw?.adjustability?.gearbox ?? 'Full',
-        gears: raw?.adjustability?.gears ?? 6,
-        suspension: raw?.adjustability?.suspension ?? 'Race',
-        arb: raw?.adjustability?.arb ?? 'Adjustable',
-        aero: raw?.adjustability?.aero ?? 'Adjustable',
-        brakes: raw?.adjustability?.brakes ?? 'Adjustable',
-        diff: raw?.adjustability?.diff ?? 'Adjustable'
-      },
-      dyno_curve: raw?.dyno_curve ?? {},
-      dyno_quality: raw?.dyno_quality,
-      spring_front_min: raw?.spring_front_min ?? 10.0,
-      spring_front_max: raw?.spring_front_max ?? 120.0,
-      spring_rear_min: raw?.spring_rear_min ?? 10.0,
-      spring_rear_max: raw?.spring_rear_max ?? 120.0,
-      height_front_min: raw?.height_front_min ?? 10.0,
-      height_front_max: raw?.height_front_max ?? 25.0,
-      height_rear_min: raw?.height_rear_min ?? 10.0,
-      height_rear_max: raw?.height_rear_max ?? 25.0,
-      roll_center_front: raw?.roll_center_front ?? 0.0,
-      roll_center_rear: raw?.roll_center_rear ?? 0.0,
-      anti_dive: raw?.anti_dive ?? 0,
-      anti_squat: raw?.anti_squat ?? 0,
-      target_ride_frequency: raw?.target_ride_frequency ?? 2.4,
-      target_rebound_ratio: raw?.target_rebound_ratio ?? 0.70,
-      target_bump_ratio: raw?.target_bump_ratio ?? 0.55
-    };
-  };
-
   // Load params when carId changes
   useEffect(() => {
     let active = true;
+    let retry: ReturnType<typeof setTimeout>;
+    const controller = new AbortController();
     const fetchParams = async () => {
       setIsLoading(true);
       try {
-        const res = await backendFetch(`/api/car_params/${carId}`);
+        const res = await backendFetch(`/api/car_params/${carId}`, { signal: controller.signal });
         const result = await res.json();
-        if (active && !result.error) {
-          setCarParams(normalizeCarParams(result));
-          setLoadedCarId(carId);
-        } else if (active && result.error) {
-          setCarParams(normalizeCarParams({}));
-          setLoadedCarId(carId);
-        }
+        if (!res.ok) throw new Error('Car parameters unavailable');
+        const normalized = await backendFetch('/api/tuning/profile', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(result.error ? {} : result), signal: controller.signal });
+        if (!normalized.ok) throw new Error('Car profile normalization unavailable');
+        const profile = await normalized.json() as CarParams;
+        if (active) { setCarParams(profile); setLoadedCarId(carId); }
       } catch (e) {
-        console.error("Failed to load car params", e);
+        if (active) { console.error("Failed to load car params", e); retry = setTimeout(fetchParams, 2000); }
       } finally {
         if (active) setIsLoading(false);
       }
     };
     if (carId) fetchParams();
-    return () => { active = false; };
+    return () => { active = false; controller.abort(); clearTimeout(retry); };
   }, [carId]);
 
   // Poll live dyno fields only, without overwriting user-edited car params.
@@ -277,16 +225,15 @@ export const CarParamsProvider: React.FC<{ children: ReactNode }> = ({ children 
   };
 
   // Manually import peak RPM values from dyno curve into car params
-  const importDynoValues = () => {
+  const importDynoValues = async () => {
     if (!carParams || Object.keys(carParams.dyno_curve).length === 0) return;
-    let mHp = 0, mHpRpm = 0;
-    let mTorque = 0, mTorqueRpm = 0;
-    Object.entries(carParams.dyno_curve).forEach(([rpmStr, vals]) => {
-      const rpm = parseInt(rpmStr);
-      if (vals.hp > mHp) { mHp = vals.hp; mHpRpm = rpm; }
-      if (vals.torque > mTorque) { mTorque = vals.torque; mTorqueRpm = rpm; }
-    });
-    setCarParams({ ...carParams, maxHp: Math.round(mHp), maxTorque: Math.round(mTorque), maxHpRpm: mHpRpm, maxTorqueRpm: mTorqueRpm });
+    const requestedProfile = carParams;
+    try {
+      const response = await backendFetch('/api/tuning/dyno-peaks', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(carParams.dyno_curve) });
+      if (!response.ok) return;
+      const peaks = await response.json();
+      setCarParams(current => current === requestedProfile ? { ...current, ...peaks } : current);
+    } catch { /* Retain the draft until authoritative values are available. */ }
   };
 
 

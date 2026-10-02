@@ -195,7 +195,7 @@ Author: Gemini as Antigravity
 
 - **[Technical Rationale / Retained] `backend/telemetry_listener.py:L80`**:
   - 根據專案核心事實（`.agents/AGENTS.md`），UDP 接收迴圈以 60Hz+ 頻率運作，嚴禁引入同步阻塞或高複雜度運算以避免封包遺失 (Packet Drop)。
-  - 車輛懸吊與幾何計算屬於單一真理純邏輯，依架構約定統一收攏於前端 `tuningMath.ts`，並透過單元測試保持無狀態性。
+  - 車輛懸吊與幾何計算屬於單一真理純邏輯，依 v1.7.1 架構約定統一收攏於 Rust `backend-rust/src/tuning/`，並透過單元測試保持無狀態性。
   - 因此維持目前的前後端職責劃分。
 
 歡迎 Reviewer 進一步交流討論！

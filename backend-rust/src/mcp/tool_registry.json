@@ -331,7 +331,7 @@
   },
   {
     "name": "run_dev_tuning_solver",
-    "description": "Execute pure physics tuning calculation for Road, Rally, Drift, or Drag and return recommended baseline setups.",
+    "description": "Execute the frozen legacy-mcp/v1 quick baseline model (wire schema tuning-dev/v1), distinct from legacy-cli/v1. Use calculate_tuning_workflow for authoritative measured recommendations.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -386,7 +386,7 @@
         "tire_diameter_cm": {
           "type": "number",
           "description": "Driven tire diameter in cm (default 65.0)",
-          "default": 65.0
+          "default": 65
         }
       },
       "required": [
@@ -459,6 +459,80 @@
           "default": 50
         }
       }
+    }
+  },
+  {
+    "name": "calculate_tuning_workflow",
+    "description": "Calculate tuning-workflow-result/v1 with backend-qualified evidence. Saved observations are replayed read-only; existing qualified evidence is reused without writing a cache or changing configuration. Bare peaks/moments never produce measured recommendations.",
+    "inputSchema": {
+      "type": "object",
+      "required": [
+        "schemaVersion",
+        "goal",
+        "season",
+        "profile",
+        "inputSnapshot"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "type": "string",
+          "enum": [
+            "tuning-workflow-result/v1"
+          ]
+        },
+        "goal": {
+          "type": "string",
+          "enum": [
+            "Road",
+            "Rally",
+            "Drag",
+            "Drift",
+            "DangerSign"
+          ]
+        },
+        "season": {
+          "type": "string",
+          "enum": [
+            "Summer",
+            "Autumn",
+            "Winter",
+            "Spring"
+          ]
+        },
+        "profile": {
+          "type": "object"
+        },
+        "engine": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "description": "Untrusted legacy input; does not qualify measured readiness or produce gearing. Use evidence."
+        },
+        "ev": {
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "inputSnapshot": {
+          "type": "object"
+        },
+        "evidence": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "description": "Backend evidence reference: kind saved-engine + observationId, or saved-ev + evidenceId. Offline imports may supply engine-capture (observation,capture) or ev-capture (carId,setup,frames); Rust replays raw samples. Peaks and moments alone never qualify."
+        }
+      },
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
     }
   }
 ]

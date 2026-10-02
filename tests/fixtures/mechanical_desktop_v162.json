@@ -1,0 +1,3521 @@
+{
+  "source": "ca195c7 desktop formulas; captured once before migration",
+  "cases": [
+    {
+      "goal": "Road",
+      "season": "Summer",
+      "profile": {
+        "weight": 1350,
+        "weight_distribution": 54,
+        "drivetrain": "FWD",
+        "maxHp": 300,
+        "rallyProfile": "cross-country"
+      },
+      "alignment": {
+        "pcF": 29.6,
+        "pcR": 26.7,
+        "targetPhot": 32.5,
+        "seasonBias": -0.5,
+        "camber": {
+          "front": -2.1,
+          "rear": -1.3
+        },
+        "toe": {
+          "front": "+0.1°",
+          "rear": "-0.1°"
+        },
+        "caster": 6.1,
+        "hwF": 98,
+        "hwR": 96.3
+      },
+      "chassis": {
+        "arb": {
+          "front": 18.3,
+          "rear": 46.4
+        },
+        "springs": {
+          "front": 65.9,
+          "rear": 74,
+          "heightF": 11.5,
+          "heightR": 11.5
+        },
+        "damping": {
+          "reboundF": 10.4,
+          "reboundR": 10.6,
+          "bumpF": 6.3,
+          "bumpR": 6.3
+        },
+        "diff": {
+          "accelF": 25,
+          "decelF": 5,
+          "accelR": 0,
+          "decelR": 0,
+          "centerRear": 50
+        }
+      }
+    },
+    {
+      "goal": "Road",
+      "season": "Summer",
+      "profile": {
+        "weight": 1350,
+        "weight_distribution": 54,
+        "drivetrain": "RWD",
+        "maxHp": 300,
+        "rallyProfile": "cross-country"
+      },
+      "alignment": {
+        "pcF": 28.6,
+        "pcR": 27.2,
+        "targetPhot": 32.5,
+        "seasonBias": -0.5,
+        "camber": {
+          "front": -2.1,
+          "rear": -1.3
+        },
+        "toe": {
+          "front": "+0.1°",
+          "rear": "-0.1°"
+        },
+        "caster": 6.1,
+        "hwF": 98,
+        "hwR": 96.3
+      },
+      "chassis": {
+        "arb": {
+          "front": 35.6,
+          "rear": 30.4
+        },
+        "springs": {
+          "front": 76,
+          "rear": 63.4,
+          "heightF": 11.5,
+          "heightR": 11.5
+        },
+        "damping": {
+          "reboundF": 11.3,
+          "reboundR": 9.7,
+          "bumpF": 6.8,
+          "bumpR": 5.8
+        },
+        "diff": {
+          "accelF": 0,
+          "decelF": 0,
+          "accelR": 40,
+          "decelR": 20,
+          "centerRear": 50
+        }
+      }
+    },
+    {
+      "goal": "Road",
+      "season": "Summer",
+      "profile": {
+        "weight": 1350,
+        "weight_distribution": 54,
+        "drivetrain": "AWD",
+        "maxHp": 300,
+        "rallyProfile": "cross-country"
+      },
+      "alignment": {
+        "pcF": 28.3,
+        "pcR": 27.2,
+        "targetPhot": 32.5,
+        "seasonBias": -0.5,
+        "camber": {
+          "front": -2.1,
+          "rear": -1.3
+        },
+        "toe": {
+          "front": "+0.1°",
+          "rear": "-0.1°"
+        },
+        "caster": 6.1,
+        "hwF": 98,
+        "hwR": 96.3
+      },
+      "chassis": {
+        "arb": {
+          "front": 3.2,
+          "rear": 50
+        },
+        "springs": {
+          "front": 76.9,
+          "rear": 63,
+          "heightF": 11.5,
+          "heightR": 11.5
+        },
+        "damping": {
+          "reboundF": 11.3,
+          "reboundR": 9.7,
+          "bumpF": 6.8,
+          "bumpR": 5.8
+        },
+        "diff": {
+          "accelF": 15,
+          "decelF": 0,
+          "accelR": 75,
+          "decelR": 15,
+          "centerRear": 66
+        }
+      }
+    },
+    {
+      "goal": "Road",
+      "season": "Autumn",
+      "profile": {
+        "weight": 1350,
+        "weight_distribution": 54,
+        "drivetrain": "FWD",
+        "maxHp": 300,
+        "rallyProfile": "cross-country"
+      },
+      "alignment": {
+        "pcF": 29.6,
+        "pcR": 26.7,
+        "targetPhot": 32.5,
+        "seasonBias": -0.5,
+        "camber": {
+          "front": -2.1,
+          "rear": -1.3
+        },
+        "toe": {
+          "front": "+0.1°",
+          "rear": "-0.1°"
+        },
+        "caster": 6.1,
+        "hwF": 98,
+        "hwR": 96.3
+      },
+      "chassis": {
+        "arb": {
+          "front": 18.3,
+          "rear": 46.4
+        },
+        "springs": {
+          "front": 65.9,
+          "rear": 74,
+          "heightF": 11.5,
+          "heightR": 11.5
+        },
+        "damping": {
+          "reboundF": 10.4,
+          "reboundR": 10.6,
+          "bumpF": 6.3,
+          "bumpR": 6.3
+        },
+        "diff": {
+          "accelF": 25,
+          "decelF": 5,
+          "accelR": 0,
+          "decelR": 0,
+          "centerRear": 50
+        }
+      }
+    },
+    {
+      "goal": "Road",
+      "season": "Autumn",
+      "profile": {
+        "weight": 1350,
+        "weight_distribution": 54,
+        "drivetrain": "RWD",
+        "maxHp": 300,
+        "rallyProfile": "cross-country"
+      },
+      "alignment": {
+        "pcF": 28.6,
+        "pcR": 27.2,
+        "targetPhot": 32.5,
+        "seasonBias": -0.5,
+        "camber": {
+          "front": -2.1,
+          "rear": -1.3
+        },
+        "toe": {
+          "front": "+0.1°",
+          "rear": "-0.1°"
+        },
+        "caster": 6.1,
+        "hwF": 98,
+        "hwR": 96.3
+      },
+      "chassis": {
+        "arb": {
+          "front": 35.6,
+          "rear": 30.4
+        },
+        "springs": {
+          "front": 76,
+          "rear": 63.4,
+          "heightF": 11.5,
+          "heightR": 11.5
+        },
+        "damping": {
+          "reboundF": 11.3,
+          "reboundR": 9.7,
+          "bumpF": 6.8,
+          "bumpR": 5.8
+        },
+        "diff": {
+          "accelF": 0,
+          "decelF": 0,
+          "accelR": 40,
+          "decelR": 20,
+          "centerRear": 50
+        }
+      }
+    },
+    {
+      "goal": "Road",
+      "season": "Autumn",
+      "profile": {
+        "weight": 1350,
+        "weight_distribution": 54,
+        "drivetrain": "AWD",
+        "maxHp": 300,
+        "rallyProfile": "cross-country"
+      },
+      "alignment": {
+        "pcF": 28.3,
+        "pcR": 27.2,
+        "targetPhot": 32.5,
+        "seasonBias": -0.5,
+        "camber": {
+          "front": -2.1,
+          "rear": -1.3
+        },
+        "toe": {
+          "front": "+0.1°",
+          "rear": "-0.1°"
+        },
+        "caster": 6.1,
+        "hwF": 98,
+        "hwR": 96.3
+      },
+      "chassis": {
+        "arb": {
+          "front": 3.2,
+          "rear": 50
+        },
+        "springs": {
+          "front": 76.9,
+          "rear": 63,
+          "heightF": 11.5,
+          "heightR": 11.5
+        },
+        "damping": {
+          "reboundF": 11.3,
+          "reboundR": 9.7,
+          "bumpF": 6.8,
+          "bumpR": 5.8
+        },
+        "diff": {
+          "accelF": 15,
+          "decelF": 0,
+          "accelR": 75,
+          "decelR": 15,
+          "centerRear": 66
+        }
+      }
+    },
+    {
+      "goal": "Road",
+      "season": "Winter",
+      "profile": {
+        "weight": 1350,
+        "weight_distribution": 54,
+        "drivetrain": "FWD",
+        "maxHp": 300,
+        "rallyProfile": "cross-country"
+      },
+      "alignment": {
+        "pcF": 30.6,
+        "pcR": 27.7,
+        "targetPhot": 32.5,
+        "seasonBias": 0.5,
+        "camber": {
+          "front": -2.1,
+          "rear": -1.3
+        },
+        "toe": {
+          "front": "+0.1°",
+          "rear": "-0.1°"
+        },
+        "caster": 6.1,
+        "hwF": 98,
+        "hwR": 96.3
+      },
+      "chassis": {
+        "arb": {
+          "front": 18.3,
+          "rear": 46.4
+        },
+        "springs": {
+          "front": 65.9,
+          "rear": 74,
+          "heightF": 11.5,
+          "heightR": 11.5
+        },
+        "damping": {
+          "reboundF": 10.4,
+          "reboundR": 10.6,
+          "bumpF": 6.3,
+          "bumpR": 6.3
+        },
+        "diff": {
+          "accelF": 25,
+          "decelF": 5,
+          "accelR": 0,
+          "decelR": 0,
+          "centerRear": 50
+        }
+      }
+    },
+    {
+      "goal": "Road",
+      "season": "Winter",
+      "profile": {
+        "weight": 1350,
+        "weight_distribution": 54,
+        "drivetrain": "RWD",
+        "maxHp": 300,
+        "rallyProfile": "cross-country"
+      },
+      "alignment": {
+        "pcF": 29.6,
+        "pcR": 28.2,
+        "targetPhot": 32.5,
+        "seasonBias": 0.5,
+        "camber": {
+          "front": -2.1,
+          "rear": -1.3
+        },
+        "toe": {
+          "front": "+0.1°",
+          "rear": "-0.1°"
+        },
+        "caster": 6.1,
+        "hwF": 98,
+        "hwR": 96.3
+      },
+      "chassis": {
+        "arb": {
+          "front": 35.6,
+          "rear": 30.4
+        },
+        "springs": {
+          "front": 76,
+          "rear": 63.4,
+          "heightF": 11.5,
+          "heightR": 11.5
+        },
+        "damping": {
+          "reboundF": 11.3,
+          "reboundR": 9.7,
+          "bumpF": 6.8,
+          "bumpR": 5.8
+        },
+        "diff": {
+          "accelF": 0,
+          "decelF": 0,
+          "accelR": 40,
+          "decelR": 20,
+          "centerRear": 50
+        }
+      }
+    },
+    {
+      "goal": "Road",
+      "season": "Winter",
+      "profile": {
+        "weight": 1350,
+        "weight_distribution": 54,
+        "drivetrain": "AWD",
+        "maxHp": 300,
+        "rallyProfile": "cross-country"
+      },
+      "alignment": {
+        "pcF": 29.3,
+        "pcR": 28.2,
+        "targetPhot": 32.5,
+        "seasonBias": 0.5,
+        "camber": {
+          "front": -2.1,
+          "rear": -1.3
+        },
+        "toe": {
+          "front": "+0.1°",
+          "rear": "-0.1°"
+        },
+        "caster": 6.1,
+        "hwF": 98,
+        "hwR": 96.3
+      },
+      "chassis": {
+        "arb": {
+          "front": 3.2,
+          "rear": 50
+        },
+        "springs": {
+          "front": 76.9,
+          "rear": 63,
+          "heightF": 11.5,
+          "heightR": 11.5
+        },
+        "damping": {
+          "reboundF": 11.3,
+          "reboundR": 9.7,
+          "bumpF": 6.8,
+          "bumpR": 5.8
+        },
+        "diff": {
+          "accelF": 15,
+          "decelF": 0,
+          "accelR": 75,
+          "decelR": 15,
+          "centerRear": 66
+        }
+      }
+    },
+    {
+      "goal": "Road",
+      "season": "Spring",
+      "profile": {
+        "weight": 1350,
+        "weight_distribution": 54,
+        "drivetrain": "FWD",
+        "maxHp": 300,
+        "rallyProfile": "cross-country"
+      },
+      "alignment": {
+        "pcF": 30.6,
+        "pcR": 27.7,
+        "targetPhot": 32.5,
+        "seasonBias": 0.5,
+        "camber": {
+          "front": -2.1,
+          "rear": -1.3
+        },
+        "toe": {
+          "front": "+0.1°",
+          "rear": "-0.1°"
+        },
+        "caster": 6.1,
+        "hwF": 98,
+        "hwR": 96.3
+      },
+      "chassis": {
+        "arb": {
+          "front": 18.3,
+          "rear": 46.4
+        },
+        "springs": {
+          "front": 65.9,
+          "rear": 74,
+          "heightF": 11.5,
+          "heightR": 11.5
+        },
+        "damping": {
+          "reboundF": 10.4,
+          "reboundR": 10.6,
+          "bumpF": 6.3,
+          "bumpR": 6.3
+        },
+        "diff": {
+          "accelF": 25,
+          "decelF": 5,
+          "accelR": 0,
+          "decelR": 0,
+          "centerRear": 50
+        }
+      }
+    },
+    {
+      "goal": "Road",
+      "season": "Spring",
+      "profile": {
+        "weight": 1350,
+        "weight_distribution": 54,
+        "drivetrain": "RWD",
+        "maxHp": 300,
+        "rallyProfile": "cross-country"
+      },
+      "alignment": {
+        "pcF": 29.6,
+        "pcR": 28.2,
+        "targetPhot": 32.5,
+        "seasonBias": 0.5,
+        "camber": {
+          "front": -2.1,
+          "rear": -1.3
+        },
+        "toe": {
+          "front": "+0.1°",
+          "rear": "-0.1°"
+        },
+        "caster": 6.1,
+        "hwF": 98,
+        "hwR": 96.3
+      },
+      "chassis": {
+        "arb": {
+          "front": 35.6,
+          "rear": 30.4
+        },
+        "springs": {
+          "front": 76,
+          "rear": 63.4,
+          "heightF": 11.5,
+          "heightR": 11.5
+        },
+        "damping": {
+          "reboundF": 11.3,
+          "reboundR": 9.7,
+          "bumpF": 6.8,
+          "bumpR": 5.8
+        },
+        "diff": {
+          "accelF": 0,
+          "decelF": 0,
+          "accelR": 40,
+          "decelR": 20,
+          "centerRear": 50
+        }
+      }
+    },
+    {
+      "goal": "Road",
+      "season": "Spring",
+      "profile": {
+        "weight": 1350,
+        "weight_distribution": 54,
+        "drivetrain": "AWD",
+        "maxHp": 300,
+        "rallyProfile": "cross-country"
+      },
+      "alignment": {
+        "pcF": 29.3,
+        "pcR": 28.2,
+        "targetPhot": 32.5,
+        "seasonBias": 0.5,
+        "camber": {
+          "front": -2.1,
+          "rear": -1.3
+        },
+        "toe": {
+          "front": "+0.1°",
+          "rear": "-0.1°"
+        },
+        "caster": 6.1,
+        "hwF": 98,
+        "hwR": 96.3
+      },
+      "chassis": {
+        "arb": {
+          "front": 3.2,
+          "rear": 50
+        },
+        "springs": {
+          "front": 76.9,
+          "rear": 63,
+          "heightF": 11.5,
+          "heightR": 11.5
+        },
+        "damping": {
+          "reboundF": 11.3,
+          "reboundR": 9.7,
+          "bumpF": 6.8,
+          "bumpR": 5.8
+        },
+        "diff": {
+          "accelF": 15,
+          "decelF": 0,
+          "accelR": 75,
+          "decelR": 15,
+          "centerRear": 66
+        }
+      }
+    },
+    {
+      "goal": "Drift",
+      "season": "Summer",
+      "profile": {
+        "weight": 1350,
+        "weight_distribution": 54,
+        "drivetrain": "FWD",
+        "maxHp": 300,
+        "rallyProfile": "cross-country"
+      },
+      "alignment": {
+        "pcF": 33,
+        "pcR": 19.6,
+        "targetPhot": 21,
+        "seasonBias": -0.5,
+        "camber": {
+          "front": -4.8,
+          "rear": -0.5
+        },
+        "toe": {
+          "front": "+1.2°",
+          "rear": "-0.3°"
+        },
+        "caster": 7,
+        "hwF": 98,
+        "hwR": 96.3
+      },
+      "chassis": {
+        "arb": {
+          "front": 22.3,
+          "rear": 26.8
+        },
+        "springs": {
+          "front": 25.5,
+          "rear": 21.7,
+          "heightF": 10.5,
+          "heightR": 11
+        },
+        "damping": {
+          "reboundF": 3.7,
+          "reboundR": 3,
+          "bumpF": 2.2,
+          "bumpR": 1.8
+        },
+        "diff": {
+          "accelF": 85,
+          "decelF": 5,
+          "accelR": 0,
+          "decelR": 0,
+          "centerRear": 50
+        }
+      }
+    },
+    {
+      "goal": "Drift",
+      "season": "Summer",
+      "profile": {
+        "weight": 1350,
+        "weight_distribution": 54,
+        "drivetrain": "RWD",
+        "maxHp": 300,
+        "rallyProfile": "cross-country"
+      },
+      "alignment": {
+        "pcF": 33,
+        "pcR": 19.6,
+        "targetPhot": 21,
+        "seasonBias": -0.5,
+        "camber": {
+          "front": -4.8,
+          "rear": -0.5
+        },
+        "toe": {
+          "front": "+1.2°",
+          "rear": "-0.3°"
+        },
+        "caster": 7,
+        "hwF": 98,
+        "hwR": 96.3
+      },
+      "chassis": {
+        "arb": {
+          "front": 22.3,
+          "rear": 26.8
+        },
+        "springs": {
+          "front": 25.5,
+          "rear": 21.7,
+          "heightF": 10.5,
+          "heightR": 11
+        },
+        "damping": {
+          "reboundF": 3.7,
+          "reboundR": 3,
+          "bumpF": 2.2,
+          "bumpR": 1.8
+        },
+        "diff": {
+          "accelF": 0,
+          "decelF": 0,
+          "accelR": 90,
+          "decelR": 15,
+          "centerRear": 50
+        }
+      }
+    },
+    {
+      "goal": "Drift",
+      "season": "Summer",
+      "profile": {
+        "weight": 1350,
+        "weight_distribution": 54,
+        "drivetrain": "AWD",
+        "maxHp": 300,
+        "rallyProfile": "cross-country"
+      },
+      "alignment": {
+        "pcF": 33,
+        "pcR": 19.6,
+        "targetPhot": 21,
+        "seasonBias": -0.5,
+        "camber": {
+          "front": -4.8,
+          "rear": -0.5
+        },
+        "toe": {
+          "front": "+1.2°",
+          "rear": "-0.3°"
+        },
+        "caster": 7,
+        "hwF": 98,
+        "hwR": 96.3
+      },
+      "chassis": {
+        "arb": {
+          "front": 22.3,
+          "rear": 26.8
+        },
+        "springs": {
+          "front": 25.5,
+          "rear": 21.7,
+          "heightF": 10.5,
+          "heightR": 11
+        },
+        "damping": {
+          "reboundF": 3.7,
+          "reboundR": 3,
+          "bumpF": 2.2,
+          "bumpR": 1.8
+        },
+        "diff": {
+          "accelF": 85,
+          "decelF": 5,
+          "accelR": 60,
+          "decelR": 15,
+          "centerRear": 75
+        }
+      }
+    },
+    {
+      "goal": "Drift",
+      "season": "Autumn",
+      "profile": {
+        "weight": 1350,
+        "weight_distribution": 54,
+        "drivetrain": "FWD",
+        "maxHp": 300,
+        "rallyProfile": "cross-country"
+      },
+      "alignment": {
+        "pcF": 33,
+        "pcR": 19.6,
+        "targetPhot": 21,
+        "seasonBias": -0.5,
+        "camber": {
+          "front": -4.8,
+          "rear": -0.5
+        },
+        "toe": {
+          "front": "+1.2°",
+          "rear": "-0.3°"
+        },
+        "caster": 7,
+        "hwF": 98,
+        "hwR": 96.3
+      },
+      "chassis": {
+        "arb": {
+          "front": 22.3,
+          "rear": 26.8
+        },
+        "springs": {
+          "front": 25.5,
+          "rear": 21.7,
+          "heightF": 10.5,
+          "heightR": 11
+        },
+        "damping": {
+          "reboundF": 3.7,
+          "reboundR": 3,
+          "bumpF": 2.2,
+          "bumpR": 1.8
+        },
+        "diff": {
+          "accelF": 85,
+          "decelF": 5,
+          "accelR": 0,
+          "decelR": 0,
+          "centerRear": 50
+        }
+      }
+    },
+    {
+      "goal": "Drift",
+      "season": "Autumn",
+      "profile": {
+        "weight": 1350,
+        "weight_distribution": 54,
+        "drivetrain": "RWD",
+        "maxHp": 300,
+        "rallyProfile": "cross-country"
+      },
+      "alignment": {
+        "pcF": 33,
+        "pcR": 19.6,
+        "targetPhot": 21,
+        "seasonBias": -0.5,
+        "camber": {
+          "front": -4.8,
+          "rear": -0.5
+        },
+        "toe": {
+          "front": "+1.2°",
+          "rear": "-0.3°"
+        },
+        "caster": 7,
+        "hwF": 98,
+        "hwR": 96.3
+      },
+      "chassis": {
+        "arb": {
+          "front": 22.3,
+          "rear": 26.8
+        },
+        "springs": {
+          "front": 25.5,
+          "rear": 21.7,
+          "heightF": 10.5,
+          "heightR": 11
+        },
+        "damping": {
+          "reboundF": 3.7,
+          "reboundR": 3,
+          "bumpF": 2.2,
+          "bumpR": 1.8
+        },
+        "diff": {
+          "accelF": 0,
+          "decelF": 0,
+          "accelR": 90,
+          "decelR": 15,
+          "centerRear": 50
+        }
+      }
+    },
+    {
+      "goal": "Drift",
+      "season": "Autumn",
+      "profile": {
+        "weight": 1350,
+        "weight_distribution": 54,
+        "drivetrain": "AWD",
+        "maxHp": 300,
+        "rallyProfile": "cross-country"
+      },
+      "alignment": {
+        "pcF": 33,
+        "pcR": 19.6,
+        "targetPhot": 21,
+        "seasonBias": -0.5,
+        "camber": {
+          "front": -4.8,
+          "rear": -0.5
+        },
+        "toe": {
+          "front": "+1.2°",
+          "rear": "-0.3°"
+        },
+        "caster": 7,
+        "hwF": 98,
+        "hwR": 96.3
+      },
+      "chassis": {
+        "arb": {
+          "front": 22.3,
+          "rear": 26.8
+        },
+        "springs": {
+          "front": 25.5,
+          "rear": 21.7,
+          "heightF": 10.5,
+          "heightR": 11
+        },
+        "damping": {
+          "reboundF": 3.7,
+          "reboundR": 3,
+          "bumpF": 2.2,
+          "bumpR": 1.8
+        },
+        "diff": {
+          "accelF": 85,
+          "decelF": 5,
+          "accelR": 60,
+          "decelR": 15,
+          "centerRear": 75
+        }
+      }
+    },
+    {
+      "goal": "Drift",
+      "season": "Winter",
+      "profile": {
+        "weight": 1350,
+        "weight_distribution": 54,
+        "drivetrain": "FWD",
+        "maxHp": 300,
+        "rallyProfile": "cross-country"
+      },
+      "alignment": {
+        "pcF": 34,
+        "pcR": 20.6,
+        "targetPhot": 21,
+        "seasonBias": 0.5,
+        "camber": {
+          "front": -4.8,
+          "rear": -0.5
+        },
+        "toe": {
+          "front": "+1.2°",
+          "rear": "-0.3°"
+        },
+        "caster": 7,
+        "hwF": 98,
+        "hwR": 96.3
+      },
+      "chassis": {
+        "arb": {
+          "front": 22.3,
+          "rear": 26.8
+        },
+        "springs": {
+          "front": 25.5,
+          "rear": 21.7,
+          "heightF": 10.5,
+          "heightR": 11
+        },
+        "damping": {
+          "reboundF": 3.7,
+          "reboundR": 3,
+          "bumpF": 2.2,
+          "bumpR": 1.8
+        },
+        "diff": {
+          "accelF": 85,
+          "decelF": 5,
+          "accelR": 0,
+          "decelR": 0,
+          "centerRear": 50
+        }
+      }
+    },
+    {
+      "goal": "Drift",
+      "season": "Winter",
+      "profile": {
+        "weight": 1350,
+        "weight_distribution": 54,
+        "drivetrain": "RWD",
+        "maxHp": 300,
+        "rallyProfile": "cross-country"
+      },
+      "alignment": {
+        "pcF": 34,
+        "pcR": 20.6,
+        "targetPhot": 21,
+        "seasonBias": 0.5,
+        "camber": {
+          "front": -4.8,
+          "rear": -0.5
+        },
+        "toe": {
+          "front": "+1.2°",
+          "rear": "-0.3°"
+        },
+        "caster": 7,
+        "hwF": 98,
+        "hwR": 96.3
+      },
+      "chassis": {
+        "arb": {
+          "front": 22.3,
+          "rear": 26.8
+        },
+        "springs": {
+          "front": 25.5,
+          "rear": 21.7,
+          "heightF": 10.5,
+          "heightR": 11
+        },
+        "damping": {
+          "reboundF": 3.7,
+          "reboundR": 3,
+          "bumpF": 2.2,
+          "bumpR": 1.8
+        },
+        "diff": {
+          "accelF": 0,
+          "decelF": 0,
+          "accelR": 90,
+          "decelR": 15,
+          "centerRear": 50
+        }
+      }
+    },
+    {
+      "goal": "Drift",
+      "season": "Winter",
+      "profile": {
+        "weight": 1350,
+        "weight_distribution": 54,
+        "drivetrain": "AWD",
+        "maxHp": 300,
+        "rallyProfile": "cross-country"
+      },
+      "alignment": {
+        "pcF": 34,
+        "pcR": 20.6,
+        "targetPhot": 21,
+        "seasonBias": 0.5,
+        "camber": {
+          "front": -4.8,
+          "rear": -0.5
+        },
+        "toe": {
+          "front": "+1.2°",
+          "rear": "-0.3°"
+        },
+        "caster": 7,
+        "hwF": 98,
+        "hwR": 96.3
+      },
+      "chassis": {
+        "arb": {
+          "front": 22.3,
+          "rear": 26.8
+        },
+        "springs": {
+          "front": 25.5,
+          "rear": 21.7,
+          "heightF": 10.5,
+          "heightR": 11
+        },
+        "damping": {
+          "reboundF": 3.7,
+          "reboundR": 3,
+          "bumpF": 2.2,
+          "bumpR": 1.8
+        },
+        "diff": {
+          "accelF": 85,
+          "decelF": 5,
+          "accelR": 60,
+          "decelR": 15,
+          "centerRear": 75
+        }
+      }
+    },
+    {
+      "goal": "Drift",
+      "season": "Spring",
+      "profile": {
+        "weight": 1350,
+        "weight_distribution": 54,
+        "drivetrain": "FWD",
+        "maxHp": 300,
+        "rallyProfile": "cross-country"
+      },
+      "alignment": {
+        "pcF": 34,
+        "pcR": 20.6,
+        "targetPhot": 21,
+        "seasonBias": 0.5,
+        "camber": {
+          "front": -4.8,
+          "rear": -0.5
+        },
+        "toe": {
+          "front": "+1.2°",
+          "rear": "-0.3°"
+        },
+        "caster": 7,
+        "hwF": 98,
+        "hwR": 96.3
+      },
+      "chassis": {
+        "arb": {
+          "front": 22.3,
+          "rear": 26.8
+        },
+        "springs": {
+          "front": 25.5,
+          "rear": 21.7,
+          "heightF": 10.5,
+          "heightR": 11
+        },
+        "damping": {
+          "reboundF": 3.7,
+          "reboundR": 3,
+          "bumpF": 2.2,
+          "bumpR": 1.8
+        },
+        "diff": {
+          "accelF": 85,
+          "decelF": 5,
+          "accelR": 0,
+          "decelR": 0,
+          "centerRear": 50
+        }
+      }
+    },
+    {
+      "goal": "Drift",
+      "season": "Spring",
+      "profile": {
+        "weight": 1350,
+        "weight_distribution": 54,
+        "drivetrain": "RWD",
+        "maxHp": 300,
+        "rallyProfile": "cross-country"
+      },
+      "alignment": {
+        "pcF": 34,
+        "pcR": 20.6,
+        "targetPhot": 21,
+        "seasonBias": 0.5,
+        "camber": {
+          "front": -4.8,
+          "rear": -0.5
+        },
+        "toe": {
+          "front": "+1.2°",
+          "rear": "-0.3°"
+        },
+        "caster": 7,
+        "hwF": 98,
+        "hwR": 96.3
+      },
+      "chassis": {
+        "arb": {
+          "front": 22.3,
+          "rear": 26.8
+        },
+        "springs": {
+          "front": 25.5,
+          "rear": 21.7,
+          "heightF": 10.5,
+          "heightR": 11
+        },
+        "damping": {
+          "reboundF": 3.7,
+          "reboundR": 3,
+          "bumpF": 2.2,
+          "bumpR": 1.8
+        },
+        "diff": {
+          "accelF": 0,
+          "decelF": 0,
+          "accelR": 90,
+          "decelR": 15,
+          "centerRear": 50
+        }
+      }
+    },
+    {
+      "goal": "Drift",
+      "season": "Spring",
+      "profile": {
+        "weight": 1350,
+        "weight_distribution": 54,
+        "drivetrain": "AWD",
+        "maxHp": 300,
+        "rallyProfile": "cross-country"
+      },
+      "alignment": {
+        "pcF": 34,
+        "pcR": 20.6,
+        "targetPhot": 21,
+        "seasonBias": 0.5,
+        "camber": {
+          "front": -4.8,
+          "rear": -0.5
+        },
+        "toe": {
+          "front": "+1.2°",
+          "rear": "-0.3°"
+        },
+        "caster": 7,
+        "hwF": 98,
+        "hwR": 96.3
+      },
+      "chassis": {
+        "arb": {
+          "front": 22.3,
+          "rear": 26.8
+        },
+        "springs": {
+          "front": 25.5,
+          "rear": 21.7,
+          "heightF": 10.5,
+          "heightR": 11
+        },
+        "damping": {
+          "reboundF": 3.7,
+          "reboundR": 3,
+          "bumpF": 2.2,
+          "bumpR": 1.8
+        },
+        "diff": {
+          "accelF": 85,
+          "decelF": 5,
+          "accelR": 60,
+          "decelR": 15,
+          "centerRear": 75
+        }
+      }
+    },
+    {
+      "goal": "Rally",
+      "season": "Summer",
+      "profile": {
+        "weight": 1350,
+        "weight_distribution": 54,
+        "drivetrain": "FWD",
+        "maxHp": 300,
+        "rallyProfile": "cross-country"
+      },
+      "alignment": {
+        "pcF": 24.9,
+        "pcR": 24.2,
+        "targetPhot": 28.5,
+        "seasonBias": -0.5,
+        "camber": {
+          "front": -0.8,
+          "rear": -0.5
+        },
+        "toe": {
+          "front": "0.0°",
+          "rear": "0.0°"
+        },
+        "caster": 6,
+        "hwF": 98,
+        "hwR": 96.3
+      },
+      "chassis": {
+        "arb": {
+          "front": 13.5,
+          "rear": 14
+        },
+        "springs": {
+          "front": 59,
+          "rear": 51.5,
+          "heightF": 25,
+          "heightR": 25
+        },
+        "damping": {
+          "reboundF": 9.4,
+          "reboundR": 8.2,
+          "bumpF": 4.7,
+          "bumpR": 4.1
+        },
+        "diff": {
+          "accelF": 70,
+          "decelF": 20,
+          "accelR": 0,
+          "decelR": 0,
+          "centerRear": 50
+        }
+      }
+    },
+    {
+      "goal": "Rally",
+      "season": "Summer",
+      "profile": {
+        "weight": 1350,
+        "weight_distribution": 54,
+        "drivetrain": "RWD",
+        "maxHp": 300,
+        "rallyProfile": "cross-country"
+      },
+      "alignment": {
+        "pcF": 24.9,
+        "pcR": 24.2,
+        "targetPhot": 28.5,
+        "seasonBias": -0.5,
+        "camber": {
+          "front": -0.8,
+          "rear": -0.5
+        },
+        "toe": {
+          "front": "0.0°",
+          "rear": "0.0°"
+        },
+        "caster": 6,
+        "hwF": 98,
+        "hwR": 96.3
+      },
+      "chassis": {
+        "arb": {
+          "front": 13.5,
+          "rear": 14
+        },
+        "springs": {
+          "front": 59,
+          "rear": 51.5,
+          "heightF": 25,
+          "heightR": 25
+        },
+        "damping": {
+          "reboundF": 9.4,
+          "reboundR": 8.2,
+          "bumpF": 4.7,
+          "bumpR": 4.1
+        },
+        "diff": {
+          "accelF": 0,
+          "decelF": 0,
+          "accelR": 85,
+          "decelR": 30,
+          "centerRear": 50
+        }
+      }
+    },
+    {
+      "goal": "Rally",
+      "season": "Summer",
+      "profile": {
+        "weight": 1350,
+        "weight_distribution": 54,
+        "drivetrain": "AWD",
+        "maxHp": 300,
+        "rallyProfile": "cross-country"
+      },
+      "alignment": {
+        "pcF": 24.9,
+        "pcR": 24.2,
+        "targetPhot": 28.5,
+        "seasonBias": -0.5,
+        "camber": {
+          "front": -0.8,
+          "rear": -0.5
+        },
+        "toe": {
+          "front": "0.0°",
+          "rear": "0.0°"
+        },
+        "caster": 6,
+        "hwF": 98,
+        "hwR": 96.3
+      },
+      "chassis": {
+        "arb": {
+          "front": 13.5,
+          "rear": 14
+        },
+        "springs": {
+          "front": 59,
+          "rear": 51.5,
+          "heightF": 25,
+          "heightR": 25
+        },
+        "damping": {
+          "reboundF": 9.4,
+          "reboundR": 8.2,
+          "bumpF": 4.7,
+          "bumpR": 4.1
+        },
+        "diff": {
+          "accelF": 50,
+          "decelF": 20,
+          "accelR": 90,
+          "decelR": 35,
+          "centerRear": 55
+        }
+      }
+    },
+    {
+      "goal": "Rally",
+      "season": "Autumn",
+      "profile": {
+        "weight": 1350,
+        "weight_distribution": 54,
+        "drivetrain": "FWD",
+        "maxHp": 300,
+        "rallyProfile": "cross-country"
+      },
+      "alignment": {
+        "pcF": 24.9,
+        "pcR": 24.2,
+        "targetPhot": 28.5,
+        "seasonBias": -0.5,
+        "camber": {
+          "front": -0.8,
+          "rear": -0.5
+        },
+        "toe": {
+          "front": "0.0°",
+          "rear": "0.0°"
+        },
+        "caster": 6,
+        "hwF": 98,
+        "hwR": 96.3
+      },
+      "chassis": {
+        "arb": {
+          "front": 13.5,
+          "rear": 14
+        },
+        "springs": {
+          "front": 59,
+          "rear": 51.5,
+          "heightF": 25,
+          "heightR": 25
+        },
+        "damping": {
+          "reboundF": 9.4,
+          "reboundR": 8.2,
+          "bumpF": 4.7,
+          "bumpR": 4.1
+        },
+        "diff": {
+          "accelF": 70,
+          "decelF": 20,
+          "accelR": 0,
+          "decelR": 0,
+          "centerRear": 50
+        }
+      }
+    },
+    {
+      "goal": "Rally",
+      "season": "Autumn",
+      "profile": {
+        "weight": 1350,
+        "weight_distribution": 54,
+        "drivetrain": "RWD",
+        "maxHp": 300,
+        "rallyProfile": "cross-country"
+      },
+      "alignment": {
+        "pcF": 24.9,
+        "pcR": 24.2,
+        "targetPhot": 28.5,
+        "seasonBias": -0.5,
+        "camber": {
+          "front": -0.8,
+          "rear": -0.5
+        },
+        "toe": {
+          "front": "0.0°",
+          "rear": "0.0°"
+        },
+        "caster": 6,
+        "hwF": 98,
+        "hwR": 96.3
+      },
+      "chassis": {
+        "arb": {
+          "front": 13.5,
+          "rear": 14
+        },
+        "springs": {
+          "front": 59,
+          "rear": 51.5,
+          "heightF": 25,
+          "heightR": 25
+        },
+        "damping": {
+          "reboundF": 9.4,
+          "reboundR": 8.2,
+          "bumpF": 4.7,
+          "bumpR": 4.1
+        },
+        "diff": {
+          "accelF": 0,
+          "decelF": 0,
+          "accelR": 85,
+          "decelR": 30,
+          "centerRear": 50
+        }
+      }
+    },
+    {
+      "goal": "Rally",
+      "season": "Autumn",
+      "profile": {
+        "weight": 1350,
+        "weight_distribution": 54,
+        "drivetrain": "AWD",
+        "maxHp": 300,
+        "rallyProfile": "cross-country"
+      },
+      "alignment": {
+        "pcF": 24.9,
+        "pcR": 24.2,
+        "targetPhot": 28.5,
+        "seasonBias": -0.5,
+        "camber": {
+          "front": -0.8,
+          "rear": -0.5
+        },
+        "toe": {
+          "front": "0.0°",
+          "rear": "0.0°"
+        },
+        "caster": 6,
+        "hwF": 98,
+        "hwR": 96.3
+      },
+      "chassis": {
+        "arb": {
+          "front": 13.5,
+          "rear": 14
+        },
+        "springs": {
+          "front": 59,
+          "rear": 51.5,
+          "heightF": 25,
+          "heightR": 25
+        },
+        "damping": {
+          "reboundF": 9.4,
+          "reboundR": 8.2,
+          "bumpF": 4.7,
+          "bumpR": 4.1
+        },
+        "diff": {
+          "accelF": 50,
+          "decelF": 20,
+          "accelR": 90,
+          "decelR": 35,
+          "centerRear": 55
+        }
+      }
+    },
+    {
+      "goal": "Rally",
+      "season": "Winter",
+      "profile": {
+        "weight": 1350,
+        "weight_distribution": 54,
+        "drivetrain": "FWD",
+        "maxHp": 300,
+        "rallyProfile": "cross-country"
+      },
+      "alignment": {
+        "pcF": 25.9,
+        "pcR": 25.2,
+        "targetPhot": 28.5,
+        "seasonBias": 0.5,
+        "camber": {
+          "front": -0.8,
+          "rear": -0.5
+        },
+        "toe": {
+          "front": "0.0°",
+          "rear": "0.0°"
+        },
+        "caster": 6,
+        "hwF": 98,
+        "hwR": 96.3
+      },
+      "chassis": {
+        "arb": {
+          "front": 13.5,
+          "rear": 14
+        },
+        "springs": {
+          "front": 59,
+          "rear": 51.5,
+          "heightF": 25,
+          "heightR": 25
+        },
+        "damping": {
+          "reboundF": 9.4,
+          "reboundR": 8.2,
+          "bumpF": 4.7,
+          "bumpR": 4.1
+        },
+        "diff": {
+          "accelF": 70,
+          "decelF": 20,
+          "accelR": 0,
+          "decelR": 0,
+          "centerRear": 50
+        }
+      }
+    },
+    {
+      "goal": "Rally",
+      "season": "Winter",
+      "profile": {
+        "weight": 1350,
+        "weight_distribution": 54,
+        "drivetrain": "RWD",
+        "maxHp": 300,
+        "rallyProfile": "cross-country"
+      },
+      "alignment": {
+        "pcF": 25.9,
+        "pcR": 25.2,
+        "targetPhot": 28.5,
+        "seasonBias": 0.5,
+        "camber": {
+          "front": -0.8,
+          "rear": -0.5
+        },
+        "toe": {
+          "front": "0.0°",
+          "rear": "0.0°"
+        },
+        "caster": 6,
+        "hwF": 98,
+        "hwR": 96.3
+      },
+      "chassis": {
+        "arb": {
+          "front": 13.5,
+          "rear": 14
+        },
+        "springs": {
+          "front": 59,
+          "rear": 51.5,
+          "heightF": 25,
+          "heightR": 25
+        },
+        "damping": {
+          "reboundF": 9.4,
+          "reboundR": 8.2,
+          "bumpF": 4.7,
+          "bumpR": 4.1
+        },
+        "diff": {
+          "accelF": 0,
+          "decelF": 0,
+          "accelR": 85,
+          "decelR": 30,
+          "centerRear": 50
+        }
+      }
+    },
+    {
+      "goal": "Rally",
+      "season": "Winter",
+      "profile": {
+        "weight": 1350,
+        "weight_distribution": 54,
+        "drivetrain": "AWD",
+        "maxHp": 300,
+        "rallyProfile": "cross-country"
+      },
+      "alignment": {
+        "pcF": 25.9,
+        "pcR": 25.2,
+        "targetPhot": 28.5,
+        "seasonBias": 0.5,
+        "camber": {
+          "front": -0.8,
+          "rear": -0.5
+        },
+        "toe": {
+          "front": "0.0°",
+          "rear": "0.0°"
+        },
+        "caster": 6,
+        "hwF": 98,
+        "hwR": 96.3
+      },
+      "chassis": {
+        "arb": {
+          "front": 13.5,
+          "rear": 14
+        },
+        "springs": {
+          "front": 59,
+          "rear": 51.5,
+          "heightF": 25,
+          "heightR": 25
+        },
+        "damping": {
+          "reboundF": 9.4,
+          "reboundR": 8.2,
+          "bumpF": 4.7,
+          "bumpR": 4.1
+        },
+        "diff": {
+          "accelF": 50,
+          "decelF": 20,
+          "accelR": 90,
+          "decelR": 35,
+          "centerRear": 55
+        }
+      }
+    },
+    {
+      "goal": "Rally",
+      "season": "Spring",
+      "profile": {
+        "weight": 1350,
+        "weight_distribution": 54,
+        "drivetrain": "FWD",
+        "maxHp": 300,
+        "rallyProfile": "cross-country"
+      },
+      "alignment": {
+        "pcF": 25.9,
+        "pcR": 25.2,
+        "targetPhot": 28.5,
+        "seasonBias": 0.5,
+        "camber": {
+          "front": -0.8,
+          "rear": -0.5
+        },
+        "toe": {
+          "front": "0.0°",
+          "rear": "0.0°"
+        },
+        "caster": 6,
+        "hwF": 98,
+        "hwR": 96.3
+      },
+      "chassis": {
+        "arb": {
+          "front": 13.5,
+          "rear": 14
+        },
+        "springs": {
+          "front": 59,
+          "rear": 51.5,
+          "heightF": 25,
+          "heightR": 25
+        },
+        "damping": {
+          "reboundF": 9.4,
+          "reboundR": 8.2,
+          "bumpF": 4.7,
+          "bumpR": 4.1
+        },
+        "diff": {
+          "accelF": 70,
+          "decelF": 20,
+          "accelR": 0,
+          "decelR": 0,
+          "centerRear": 50
+        }
+      }
+    },
+    {
+      "goal": "Rally",
+      "season": "Spring",
+      "profile": {
+        "weight": 1350,
+        "weight_distribution": 54,
+        "drivetrain": "RWD",
+        "maxHp": 300,
+        "rallyProfile": "cross-country"
+      },
+      "alignment": {
+        "pcF": 25.9,
+        "pcR": 25.2,
+        "targetPhot": 28.5,
+        "seasonBias": 0.5,
+        "camber": {
+          "front": -0.8,
+          "rear": -0.5
+        },
+        "toe": {
+          "front": "0.0°",
+          "rear": "0.0°"
+        },
+        "caster": 6,
+        "hwF": 98,
+        "hwR": 96.3
+      },
+      "chassis": {
+        "arb": {
+          "front": 13.5,
+          "rear": 14
+        },
+        "springs": {
+          "front": 59,
+          "rear": 51.5,
+          "heightF": 25,
+          "heightR": 25
+        },
+        "damping": {
+          "reboundF": 9.4,
+          "reboundR": 8.2,
+          "bumpF": 4.7,
+          "bumpR": 4.1
+        },
+        "diff": {
+          "accelF": 0,
+          "decelF": 0,
+          "accelR": 85,
+          "decelR": 30,
+          "centerRear": 50
+        }
+      }
+    },
+    {
+      "goal": "Rally",
+      "season": "Spring",
+      "profile": {
+        "weight": 1350,
+        "weight_distribution": 54,
+        "drivetrain": "AWD",
+        "maxHp": 300,
+        "rallyProfile": "cross-country"
+      },
+      "alignment": {
+        "pcF": 25.9,
+        "pcR": 25.2,
+        "targetPhot": 28.5,
+        "seasonBias": 0.5,
+        "camber": {
+          "front": -0.8,
+          "rear": -0.5
+        },
+        "toe": {
+          "front": "0.0°",
+          "rear": "0.0°"
+        },
+        "caster": 6,
+        "hwF": 98,
+        "hwR": 96.3
+      },
+      "chassis": {
+        "arb": {
+          "front": 13.5,
+          "rear": 14
+        },
+        "springs": {
+          "front": 59,
+          "rear": 51.5,
+          "heightF": 25,
+          "heightR": 25
+        },
+        "damping": {
+          "reboundF": 9.4,
+          "reboundR": 8.2,
+          "bumpF": 4.7,
+          "bumpR": 4.1
+        },
+        "diff": {
+          "accelF": 50,
+          "decelF": 20,
+          "accelR": 90,
+          "decelR": 35,
+          "centerRear": 55
+        }
+      }
+    },
+    {
+      "goal": "Drag",
+      "season": "Summer",
+      "profile": {
+        "weight": 1350,
+        "weight_distribution": 54,
+        "drivetrain": "FWD",
+        "maxHp": 300,
+        "rallyProfile": "cross-country"
+      },
+      "alignment": {
+        "pcF": 15.6,
+        "pcR": 37.5,
+        "targetPhot": 23.5,
+        "seasonBias": -0.5,
+        "camber": {
+          "front": 0,
+          "rear": -0.1
+        },
+        "toe": {
+          "front": "0.0°",
+          "rear": "0.0°"
+        },
+        "caster": 7,
+        "hwF": 98,
+        "hwR": 96.3
+      },
+      "chassis": {
+        "arb": {
+          "front": 55,
+          "rear": 65
+        },
+        "springs": {
+          "front": 26.5,
+          "rear": 37.5,
+          "heightF": 10,
+          "heightR": 25
+        },
+        "damping": {
+          "reboundF": 8,
+          "reboundR": 8,
+          "bumpF": 12,
+          "bumpR": 10
+        },
+        "diff": {
+          "accelF": 85,
+          "decelF": 0,
+          "accelR": 0,
+          "decelR": 0,
+          "centerRear": 50
+        }
+      }
+    },
+    {
+      "goal": "Drag",
+      "season": "Summer",
+      "profile": {
+        "weight": 1350,
+        "weight_distribution": 54,
+        "drivetrain": "RWD",
+        "maxHp": 300,
+        "rallyProfile": "cross-country"
+      },
+      "alignment": {
+        "pcF": 37.5,
+        "pcR": 15.4,
+        "targetPhot": 23.5,
+        "seasonBias": -0.5,
+        "camber": {
+          "front": 0,
+          "rear": -0.1
+        },
+        "toe": {
+          "front": "0.0°",
+          "rear": "0.0°"
+        },
+        "caster": 7,
+        "hwF": 98,
+        "hwR": 96.3
+      },
+      "chassis": {
+        "arb": {
+          "front": 65,
+          "rear": 65
+        },
+        "springs": {
+          "front": 32,
+          "rear": 32,
+          "heightF": 25,
+          "heightR": 25
+        },
+        "damping": {
+          "reboundF": 3,
+          "reboundR": 12,
+          "bumpF": 12,
+          "bumpR": 4
+        },
+        "diff": {
+          "accelF": 0,
+          "decelF": 0,
+          "accelR": 85,
+          "decelR": 0,
+          "centerRear": 50
+        }
+      }
+    },
+    {
+      "goal": "Drag",
+      "season": "Summer",
+      "profile": {
+        "weight": 1350,
+        "weight_distribution": 54,
+        "drivetrain": "AWD",
+        "maxHp": 300,
+        "rallyProfile": "cross-country"
+      },
+      "alignment": {
+        "pcF": 37.5,
+        "pcR": 15.4,
+        "targetPhot": 23.5,
+        "seasonBias": -0.5,
+        "camber": {
+          "front": 0,
+          "rear": -0.1
+        },
+        "toe": {
+          "front": "0.0°",
+          "rear": "0.0°"
+        },
+        "caster": 7,
+        "hwF": 98,
+        "hwR": 96.3
+      },
+      "chassis": {
+        "arb": {
+          "front": 65,
+          "rear": 65
+        },
+        "springs": {
+          "front": 32,
+          "rear": 32,
+          "heightF": 25,
+          "heightR": 25
+        },
+        "damping": {
+          "reboundF": 3,
+          "reboundR": 12,
+          "bumpF": 12,
+          "bumpR": 4
+        },
+        "diff": {
+          "accelF": 85,
+          "decelF": 0,
+          "accelR": 65,
+          "decelR": 10,
+          "centerRear": 75
+        }
+      }
+    },
+    {
+      "goal": "Drag",
+      "season": "Autumn",
+      "profile": {
+        "weight": 1350,
+        "weight_distribution": 54,
+        "drivetrain": "FWD",
+        "maxHp": 300,
+        "rallyProfile": "cross-country"
+      },
+      "alignment": {
+        "pcF": 15.6,
+        "pcR": 37.5,
+        "targetPhot": 23.5,
+        "seasonBias": -0.5,
+        "camber": {
+          "front": 0,
+          "rear": -0.1
+        },
+        "toe": {
+          "front": "0.0°",
+          "rear": "0.0°"
+        },
+        "caster": 7,
+        "hwF": 98,
+        "hwR": 96.3
+      },
+      "chassis": {
+        "arb": {
+          "front": 55,
+          "rear": 65
+        },
+        "springs": {
+          "front": 26.5,
+          "rear": 37.5,
+          "heightF": 10,
+          "heightR": 25
+        },
+        "damping": {
+          "reboundF": 8,
+          "reboundR": 8,
+          "bumpF": 12,
+          "bumpR": 10
+        },
+        "diff": {
+          "accelF": 85,
+          "decelF": 0,
+          "accelR": 0,
+          "decelR": 0,
+          "centerRear": 50
+        }
+      }
+    },
+    {
+      "goal": "Drag",
+      "season": "Autumn",
+      "profile": {
+        "weight": 1350,
+        "weight_distribution": 54,
+        "drivetrain": "RWD",
+        "maxHp": 300,
+        "rallyProfile": "cross-country"
+      },
+      "alignment": {
+        "pcF": 37.5,
+        "pcR": 15.4,
+        "targetPhot": 23.5,
+        "seasonBias": -0.5,
+        "camber": {
+          "front": 0,
+          "rear": -0.1
+        },
+        "toe": {
+          "front": "0.0°",
+          "rear": "0.0°"
+        },
+        "caster": 7,
+        "hwF": 98,
+        "hwR": 96.3
+      },
+      "chassis": {
+        "arb": {
+          "front": 65,
+          "rear": 65
+        },
+        "springs": {
+          "front": 32,
+          "rear": 32,
+          "heightF": 25,
+          "heightR": 25
+        },
+        "damping": {
+          "reboundF": 3,
+          "reboundR": 12,
+          "bumpF": 12,
+          "bumpR": 4
+        },
+        "diff": {
+          "accelF": 0,
+          "decelF": 0,
+          "accelR": 85,
+          "decelR": 0,
+          "centerRear": 50
+        }
+      }
+    },
+    {
+      "goal": "Drag",
+      "season": "Autumn",
+      "profile": {
+        "weight": 1350,
+        "weight_distribution": 54,
+        "drivetrain": "AWD",
+        "maxHp": 300,
+        "rallyProfile": "cross-country"
+      },
+      "alignment": {
+        "pcF": 37.5,
+        "pcR": 15.4,
+        "targetPhot": 23.5,
+        "seasonBias": -0.5,
+        "camber": {
+          "front": 0,
+          "rear": -0.1
+        },
+        "toe": {
+          "front": "0.0°",
+          "rear": "0.0°"
+        },
+        "caster": 7,
+        "hwF": 98,
+        "hwR": 96.3
+      },
+      "chassis": {
+        "arb": {
+          "front": 65,
+          "rear": 65
+        },
+        "springs": {
+          "front": 32,
+          "rear": 32,
+          "heightF": 25,
+          "heightR": 25
+        },
+        "damping": {
+          "reboundF": 3,
+          "reboundR": 12,
+          "bumpF": 12,
+          "bumpR": 4
+        },
+        "diff": {
+          "accelF": 85,
+          "decelF": 0,
+          "accelR": 65,
+          "decelR": 10,
+          "centerRear": 75
+        }
+      }
+    },
+    {
+      "goal": "Drag",
+      "season": "Winter",
+      "profile": {
+        "weight": 1350,
+        "weight_distribution": 54,
+        "drivetrain": "FWD",
+        "maxHp": 300,
+        "rallyProfile": "cross-country"
+      },
+      "alignment": {
+        "pcF": 16.6,
+        "pcR": 38.5,
+        "targetPhot": 23.5,
+        "seasonBias": 0.5,
+        "camber": {
+          "front": 0,
+          "rear": -0.1
+        },
+        "toe": {
+          "front": "0.0°",
+          "rear": "0.0°"
+        },
+        "caster": 7,
+        "hwF": 98,
+        "hwR": 96.3
+      },
+      "chassis": {
+        "arb": {
+          "front": 55,
+          "rear": 65
+        },
+        "springs": {
+          "front": 26.5,
+          "rear": 37.5,
+          "heightF": 10,
+          "heightR": 25
+        },
+        "damping": {
+          "reboundF": 8,
+          "reboundR": 8,
+          "bumpF": 12,
+          "bumpR": 10
+        },
+        "diff": {
+          "accelF": 85,
+          "decelF": 0,
+          "accelR": 0,
+          "decelR": 0,
+          "centerRear": 50
+        }
+      }
+    },
+    {
+      "goal": "Drag",
+      "season": "Winter",
+      "profile": {
+        "weight": 1350,
+        "weight_distribution": 54,
+        "drivetrain": "RWD",
+        "maxHp": 300,
+        "rallyProfile": "cross-country"
+      },
+      "alignment": {
+        "pcF": 38.5,
+        "pcR": 16.4,
+        "targetPhot": 23.5,
+        "seasonBias": 0.5,
+        "camber": {
+          "front": 0,
+          "rear": -0.1
+        },
+        "toe": {
+          "front": "0.0°",
+          "rear": "0.0°"
+        },
+        "caster": 7,
+        "hwF": 98,
+        "hwR": 96.3
+      },
+      "chassis": {
+        "arb": {
+          "front": 65,
+          "rear": 65
+        },
+        "springs": {
+          "front": 32,
+          "rear": 32,
+          "heightF": 25,
+          "heightR": 25
+        },
+        "damping": {
+          "reboundF": 3,
+          "reboundR": 12,
+          "bumpF": 12,
+          "bumpR": 4
+        },
+        "diff": {
+          "accelF": 0,
+          "decelF": 0,
+          "accelR": 85,
+          "decelR": 0,
+          "centerRear": 50
+        }
+      }
+    },
+    {
+      "goal": "Drag",
+      "season": "Winter",
+      "profile": {
+        "weight": 1350,
+        "weight_distribution": 54,
+        "drivetrain": "AWD",
+        "maxHp": 300,
+        "rallyProfile": "cross-country"
+      },
+      "alignment": {
+        "pcF": 38.5,
+        "pcR": 16.4,
+        "targetPhot": 23.5,
+        "seasonBias": 0.5,
+        "camber": {
+          "front": 0,
+          "rear": -0.1
+        },
+        "toe": {
+          "front": "0.0°",
+          "rear": "0.0°"
+        },
+        "caster": 7,
+        "hwF": 98,
+        "hwR": 96.3
+      },
+      "chassis": {
+        "arb": {
+          "front": 65,
+          "rear": 65
+        },
+        "springs": {
+          "front": 32,
+          "rear": 32,
+          "heightF": 25,
+          "heightR": 25
+        },
+        "damping": {
+          "reboundF": 3,
+          "reboundR": 12,
+          "bumpF": 12,
+          "bumpR": 4
+        },
+        "diff": {
+          "accelF": 85,
+          "decelF": 0,
+          "accelR": 65,
+          "decelR": 10,
+          "centerRear": 75
+        }
+      }
+    },
+    {
+      "goal": "Drag",
+      "season": "Spring",
+      "profile": {
+        "weight": 1350,
+        "weight_distribution": 54,
+        "drivetrain": "FWD",
+        "maxHp": 300,
+        "rallyProfile": "cross-country"
+      },
+      "alignment": {
+        "pcF": 16.6,
+        "pcR": 38.5,
+        "targetPhot": 23.5,
+        "seasonBias": 0.5,
+        "camber": {
+          "front": 0,
+          "rear": -0.1
+        },
+        "toe": {
+          "front": "0.0°",
+          "rear": "0.0°"
+        },
+        "caster": 7,
+        "hwF": 98,
+        "hwR": 96.3
+      },
+      "chassis": {
+        "arb": {
+          "front": 55,
+          "rear": 65
+        },
+        "springs": {
+          "front": 26.5,
+          "rear": 37.5,
+          "heightF": 10,
+          "heightR": 25
+        },
+        "damping": {
+          "reboundF": 8,
+          "reboundR": 8,
+          "bumpF": 12,
+          "bumpR": 10
+        },
+        "diff": {
+          "accelF": 85,
+          "decelF": 0,
+          "accelR": 0,
+          "decelR": 0,
+          "centerRear": 50
+        }
+      }
+    },
+    {
+      "goal": "Drag",
+      "season": "Spring",
+      "profile": {
+        "weight": 1350,
+        "weight_distribution": 54,
+        "drivetrain": "RWD",
+        "maxHp": 300,
+        "rallyProfile": "cross-country"
+      },
+      "alignment": {
+        "pcF": 38.5,
+        "pcR": 16.4,
+        "targetPhot": 23.5,
+        "seasonBias": 0.5,
+        "camber": {
+          "front": 0,
+          "rear": -0.1
+        },
+        "toe": {
+          "front": "0.0°",
+          "rear": "0.0°"
+        },
+        "caster": 7,
+        "hwF": 98,
+        "hwR": 96.3
+      },
+      "chassis": {
+        "arb": {
+          "front": 65,
+          "rear": 65
+        },
+        "springs": {
+          "front": 32,
+          "rear": 32,
+          "heightF": 25,
+          "heightR": 25
+        },
+        "damping": {
+          "reboundF": 3,
+          "reboundR": 12,
+          "bumpF": 12,
+          "bumpR": 4
+        },
+        "diff": {
+          "accelF": 0,
+          "decelF": 0,
+          "accelR": 85,
+          "decelR": 0,
+          "centerRear": 50
+        }
+      }
+    },
+    {
+      "goal": "Drag",
+      "season": "Spring",
+      "profile": {
+        "weight": 1350,
+        "weight_distribution": 54,
+        "drivetrain": "AWD",
+        "maxHp": 300,
+        "rallyProfile": "cross-country"
+      },
+      "alignment": {
+        "pcF": 38.5,
+        "pcR": 16.4,
+        "targetPhot": 23.5,
+        "seasonBias": 0.5,
+        "camber": {
+          "front": 0,
+          "rear": -0.1
+        },
+        "toe": {
+          "front": "0.0°",
+          "rear": "0.0°"
+        },
+        "caster": 7,
+        "hwF": 98,
+        "hwR": 96.3
+      },
+      "chassis": {
+        "arb": {
+          "front": 65,
+          "rear": 65
+        },
+        "springs": {
+          "front": 32,
+          "rear": 32,
+          "heightF": 25,
+          "heightR": 25
+        },
+        "damping": {
+          "reboundF": 3,
+          "reboundR": 12,
+          "bumpF": 12,
+          "bumpR": 4
+        },
+        "diff": {
+          "accelF": 85,
+          "decelF": 0,
+          "accelR": 65,
+          "decelR": 10,
+          "centerRear": 75
+        }
+      }
+    },
+    {
+      "goal": "DangerSign",
+      "season": "Summer",
+      "profile": {
+        "weight": 1350,
+        "weight_distribution": 54,
+        "drivetrain": "FWD",
+        "maxHp": 300,
+        "rallyProfile": "cross-country"
+      },
+      "alignment": {
+        "pcF": 24.9,
+        "pcR": 24.2,
+        "targetPhot": 27.5,
+        "seasonBias": -0.5,
+        "camber": {
+          "front": -1.3,
+          "rear": -0.8
+        },
+        "toe": {
+          "front": "+0.2°",
+          "rear": "0.0°"
+        },
+        "caster": 6,
+        "hwF": 98,
+        "hwR": 96.3
+      },
+      "chassis": {
+        "arb": {
+          "front": 12.4,
+          "rear": 10.7
+        },
+        "springs": {
+          "front": 45.1,
+          "rear": 39.4,
+          "heightF": 25,
+          "heightR": 25
+        },
+        "damping": {
+          "reboundF": 8.6,
+          "reboundR": 7.4,
+          "bumpF": 3.4,
+          "bumpR": 3
+        },
+        "diff": {
+          "accelF": 60,
+          "decelF": 15,
+          "accelR": 0,
+          "decelR": 0,
+          "centerRear": 50
+        }
+      }
+    },
+    {
+      "goal": "DangerSign",
+      "season": "Summer",
+      "profile": {
+        "weight": 1350,
+        "weight_distribution": 54,
+        "drivetrain": "RWD",
+        "maxHp": 300,
+        "rallyProfile": "cross-country"
+      },
+      "alignment": {
+        "pcF": 24.9,
+        "pcR": 24.2,
+        "targetPhot": 27.5,
+        "seasonBias": -0.5,
+        "camber": {
+          "front": -1.3,
+          "rear": -0.8
+        },
+        "toe": {
+          "front": "+0.2°",
+          "rear": "0.0°"
+        },
+        "caster": 6,
+        "hwF": 98,
+        "hwR": 96.3
+      },
+      "chassis": {
+        "arb": {
+          "front": 12.4,
+          "rear": 10.7
+        },
+        "springs": {
+          "front": 45.1,
+          "rear": 39.4,
+          "heightF": 25,
+          "heightR": 25
+        },
+        "damping": {
+          "reboundF": 8.6,
+          "reboundR": 7.4,
+          "bumpF": 3.4,
+          "bumpR": 3
+        },
+        "diff": {
+          "accelF": 0,
+          "decelF": 0,
+          "accelR": 75,
+          "decelR": 25,
+          "centerRear": 50
+        }
+      }
+    },
+    {
+      "goal": "DangerSign",
+      "season": "Summer",
+      "profile": {
+        "weight": 1350,
+        "weight_distribution": 54,
+        "drivetrain": "AWD",
+        "maxHp": 300,
+        "rallyProfile": "cross-country"
+      },
+      "alignment": {
+        "pcF": 24.9,
+        "pcR": 24.2,
+        "targetPhot": 27.5,
+        "seasonBias": -0.5,
+        "camber": {
+          "front": -1.3,
+          "rear": -0.8
+        },
+        "toe": {
+          "front": "+0.2°",
+          "rear": "0.0°"
+        },
+        "caster": 6,
+        "hwF": 98,
+        "hwR": 96.3
+      },
+      "chassis": {
+        "arb": {
+          "front": 12.4,
+          "rear": 10.7
+        },
+        "springs": {
+          "front": 45.1,
+          "rear": 39.4,
+          "heightF": 25,
+          "heightR": 25
+        },
+        "damping": {
+          "reboundF": 8.6,
+          "reboundR": 7.4,
+          "bumpF": 3.4,
+          "bumpR": 3
+        },
+        "diff": {
+          "accelF": 40,
+          "decelF": 10,
+          "accelR": 80,
+          "decelR": 25,
+          "centerRear": 65
+        }
+      }
+    },
+    {
+      "goal": "DangerSign",
+      "season": "Autumn",
+      "profile": {
+        "weight": 1350,
+        "weight_distribution": 54,
+        "drivetrain": "FWD",
+        "maxHp": 300,
+        "rallyProfile": "cross-country"
+      },
+      "alignment": {
+        "pcF": 24.9,
+        "pcR": 24.2,
+        "targetPhot": 27.5,
+        "seasonBias": -0.5,
+        "camber": {
+          "front": -1.3,
+          "rear": -0.8
+        },
+        "toe": {
+          "front": "+0.2°",
+          "rear": "0.0°"
+        },
+        "caster": 6,
+        "hwF": 98,
+        "hwR": 96.3
+      },
+      "chassis": {
+        "arb": {
+          "front": 12.4,
+          "rear": 10.7
+        },
+        "springs": {
+          "front": 45.1,
+          "rear": 39.4,
+          "heightF": 25,
+          "heightR": 25
+        },
+        "damping": {
+          "reboundF": 8.6,
+          "reboundR": 7.4,
+          "bumpF": 3.4,
+          "bumpR": 3
+        },
+        "diff": {
+          "accelF": 60,
+          "decelF": 15,
+          "accelR": 0,
+          "decelR": 0,
+          "centerRear": 50
+        }
+      }
+    },
+    {
+      "goal": "DangerSign",
+      "season": "Autumn",
+      "profile": {
+        "weight": 1350,
+        "weight_distribution": 54,
+        "drivetrain": "RWD",
+        "maxHp": 300,
+        "rallyProfile": "cross-country"
+      },
+      "alignment": {
+        "pcF": 24.9,
+        "pcR": 24.2,
+        "targetPhot": 27.5,
+        "seasonBias": -0.5,
+        "camber": {
+          "front": -1.3,
+          "rear": -0.8
+        },
+        "toe": {
+          "front": "+0.2°",
+          "rear": "0.0°"
+        },
+        "caster": 6,
+        "hwF": 98,
+        "hwR": 96.3
+      },
+      "chassis": {
+        "arb": {
+          "front": 12.4,
+          "rear": 10.7
+        },
+        "springs": {
+          "front": 45.1,
+          "rear": 39.4,
+          "heightF": 25,
+          "heightR": 25
+        },
+        "damping": {
+          "reboundF": 8.6,
+          "reboundR": 7.4,
+          "bumpF": 3.4,
+          "bumpR": 3
+        },
+        "diff": {
+          "accelF": 0,
+          "decelF": 0,
+          "accelR": 75,
+          "decelR": 25,
+          "centerRear": 50
+        }
+      }
+    },
+    {
+      "goal": "DangerSign",
+      "season": "Autumn",
+      "profile": {
+        "weight": 1350,
+        "weight_distribution": 54,
+        "drivetrain": "AWD",
+        "maxHp": 300,
+        "rallyProfile": "cross-country"
+      },
+      "alignment": {
+        "pcF": 24.9,
+        "pcR": 24.2,
+        "targetPhot": 27.5,
+        "seasonBias": -0.5,
+        "camber": {
+          "front": -1.3,
+          "rear": -0.8
+        },
+        "toe": {
+          "front": "+0.2°",
+          "rear": "0.0°"
+        },
+        "caster": 6,
+        "hwF": 98,
+        "hwR": 96.3
+      },
+      "chassis": {
+        "arb": {
+          "front": 12.4,
+          "rear": 10.7
+        },
+        "springs": {
+          "front": 45.1,
+          "rear": 39.4,
+          "heightF": 25,
+          "heightR": 25
+        },
+        "damping": {
+          "reboundF": 8.6,
+          "reboundR": 7.4,
+          "bumpF": 3.4,
+          "bumpR": 3
+        },
+        "diff": {
+          "accelF": 40,
+          "decelF": 10,
+          "accelR": 80,
+          "decelR": 25,
+          "centerRear": 65
+        }
+      }
+    },
+    {
+      "goal": "DangerSign",
+      "season": "Winter",
+      "profile": {
+        "weight": 1350,
+        "weight_distribution": 54,
+        "drivetrain": "FWD",
+        "maxHp": 300,
+        "rallyProfile": "cross-country"
+      },
+      "alignment": {
+        "pcF": 25.9,
+        "pcR": 25.2,
+        "targetPhot": 27.5,
+        "seasonBias": 0.5,
+        "camber": {
+          "front": -1.3,
+          "rear": -0.8
+        },
+        "toe": {
+          "front": "+0.2°",
+          "rear": "0.0°"
+        },
+        "caster": 6,
+        "hwF": 98,
+        "hwR": 96.3
+      },
+      "chassis": {
+        "arb": {
+          "front": 12.4,
+          "rear": 10.7
+        },
+        "springs": {
+          "front": 45.1,
+          "rear": 39.4,
+          "heightF": 25,
+          "heightR": 25
+        },
+        "damping": {
+          "reboundF": 8.6,
+          "reboundR": 7.4,
+          "bumpF": 3.4,
+          "bumpR": 3
+        },
+        "diff": {
+          "accelF": 60,
+          "decelF": 15,
+          "accelR": 0,
+          "decelR": 0,
+          "centerRear": 50
+        }
+      }
+    },
+    {
+      "goal": "DangerSign",
+      "season": "Winter",
+      "profile": {
+        "weight": 1350,
+        "weight_distribution": 54,
+        "drivetrain": "RWD",
+        "maxHp": 300,
+        "rallyProfile": "cross-country"
+      },
+      "alignment": {
+        "pcF": 25.9,
+        "pcR": 25.2,
+        "targetPhot": 27.5,
+        "seasonBias": 0.5,
+        "camber": {
+          "front": -1.3,
+          "rear": -0.8
+        },
+        "toe": {
+          "front": "+0.2°",
+          "rear": "0.0°"
+        },
+        "caster": 6,
+        "hwF": 98,
+        "hwR": 96.3
+      },
+      "chassis": {
+        "arb": {
+          "front": 12.4,
+          "rear": 10.7
+        },
+        "springs": {
+          "front": 45.1,
+          "rear": 39.4,
+          "heightF": 25,
+          "heightR": 25
+        },
+        "damping": {
+          "reboundF": 8.6,
+          "reboundR": 7.4,
+          "bumpF": 3.4,
+          "bumpR": 3
+        },
+        "diff": {
+          "accelF": 0,
+          "decelF": 0,
+          "accelR": 75,
+          "decelR": 25,
+          "centerRear": 50
+        }
+      }
+    },
+    {
+      "goal": "DangerSign",
+      "season": "Winter",
+      "profile": {
+        "weight": 1350,
+        "weight_distribution": 54,
+        "drivetrain": "AWD",
+        "maxHp": 300,
+        "rallyProfile": "cross-country"
+      },
+      "alignment": {
+        "pcF": 25.9,
+        "pcR": 25.2,
+        "targetPhot": 27.5,
+        "seasonBias": 0.5,
+        "camber": {
+          "front": -1.3,
+          "rear": -0.8
+        },
+        "toe": {
+          "front": "+0.2°",
+          "rear": "0.0°"
+        },
+        "caster": 6,
+        "hwF": 98,
+        "hwR": 96.3
+      },
+      "chassis": {
+        "arb": {
+          "front": 12.4,
+          "rear": 10.7
+        },
+        "springs": {
+          "front": 45.1,
+          "rear": 39.4,
+          "heightF": 25,
+          "heightR": 25
+        },
+        "damping": {
+          "reboundF": 8.6,
+          "reboundR": 7.4,
+          "bumpF": 3.4,
+          "bumpR": 3
+        },
+        "diff": {
+          "accelF": 40,
+          "decelF": 10,
+          "accelR": 80,
+          "decelR": 25,
+          "centerRear": 65
+        }
+      }
+    },
+    {
+      "goal": "DangerSign",
+      "season": "Spring",
+      "profile": {
+        "weight": 1350,
+        "weight_distribution": 54,
+        "drivetrain": "FWD",
+        "maxHp": 300,
+        "rallyProfile": "cross-country"
+      },
+      "alignment": {
+        "pcF": 25.9,
+        "pcR": 25.2,
+        "targetPhot": 27.5,
+        "seasonBias": 0.5,
+        "camber": {
+          "front": -1.3,
+          "rear": -0.8
+        },
+        "toe": {
+          "front": "+0.2°",
+          "rear": "0.0°"
+        },
+        "caster": 6,
+        "hwF": 98,
+        "hwR": 96.3
+      },
+      "chassis": {
+        "arb": {
+          "front": 12.4,
+          "rear": 10.7
+        },
+        "springs": {
+          "front": 45.1,
+          "rear": 39.4,
+          "heightF": 25,
+          "heightR": 25
+        },
+        "damping": {
+          "reboundF": 8.6,
+          "reboundR": 7.4,
+          "bumpF": 3.4,
+          "bumpR": 3
+        },
+        "diff": {
+          "accelF": 60,
+          "decelF": 15,
+          "accelR": 0,
+          "decelR": 0,
+          "centerRear": 50
+        }
+      }
+    },
+    {
+      "goal": "DangerSign",
+      "season": "Spring",
+      "profile": {
+        "weight": 1350,
+        "weight_distribution": 54,
+        "drivetrain": "RWD",
+        "maxHp": 300,
+        "rallyProfile": "cross-country"
+      },
+      "alignment": {
+        "pcF": 25.9,
+        "pcR": 25.2,
+        "targetPhot": 27.5,
+        "seasonBias": 0.5,
+        "camber": {
+          "front": -1.3,
+          "rear": -0.8
+        },
+        "toe": {
+          "front": "+0.2°",
+          "rear": "0.0°"
+        },
+        "caster": 6,
+        "hwF": 98,
+        "hwR": 96.3
+      },
+      "chassis": {
+        "arb": {
+          "front": 12.4,
+          "rear": 10.7
+        },
+        "springs": {
+          "front": 45.1,
+          "rear": 39.4,
+          "heightF": 25,
+          "heightR": 25
+        },
+        "damping": {
+          "reboundF": 8.6,
+          "reboundR": 7.4,
+          "bumpF": 3.4,
+          "bumpR": 3
+        },
+        "diff": {
+          "accelF": 0,
+          "decelF": 0,
+          "accelR": 75,
+          "decelR": 25,
+          "centerRear": 50
+        }
+      }
+    },
+    {
+      "goal": "DangerSign",
+      "season": "Spring",
+      "profile": {
+        "weight": 1350,
+        "weight_distribution": 54,
+        "drivetrain": "AWD",
+        "maxHp": 300,
+        "rallyProfile": "cross-country"
+      },
+      "alignment": {
+        "pcF": 25.9,
+        "pcR": 25.2,
+        "targetPhot": 27.5,
+        "seasonBias": 0.5,
+        "camber": {
+          "front": -1.3,
+          "rear": -0.8
+        },
+        "toe": {
+          "front": "+0.2°",
+          "rear": "0.0°"
+        },
+        "caster": 6,
+        "hwF": 98,
+        "hwR": 96.3
+      },
+      "chassis": {
+        "arb": {
+          "front": 12.4,
+          "rear": 10.7
+        },
+        "springs": {
+          "front": 45.1,
+          "rear": 39.4,
+          "heightF": 25,
+          "heightR": 25
+        },
+        "damping": {
+          "reboundF": 8.6,
+          "reboundR": 7.4,
+          "bumpF": 3.4,
+          "bumpR": 3
+        },
+        "diff": {
+          "accelF": 40,
+          "decelF": 10,
+          "accelR": 80,
+          "decelR": 25,
+          "centerRear": 65
+        }
+      }
+    },
+    {
+      "goal": "Road",
+      "season": "Summer",
+      "profile": {
+        "weight": 1350,
+        "weight_distribution": 54,
+        "drivetrain": "AWD",
+        "maxHp": 300,
+        "spring_front_min": 0.2,
+        "spring_front_max": 0.8,
+        "height_front_min": 0.4,
+        "height_front_max": 0.9
+      },
+      "alignment": {
+        "pcF": 28.3,
+        "pcR": 27.2,
+        "targetPhot": 32.5,
+        "seasonBias": -0.5,
+        "camber": {
+          "front": -2.1,
+          "rear": -1.3
+        },
+        "toe": {
+          "front": "+0.1°",
+          "rear": "-0.1°"
+        },
+        "caster": 6.1,
+        "hwF": 98,
+        "hwR": 96.3
+      },
+      "chassis": {
+        "arb": {
+          "front": 3.2,
+          "rear": 50
+        },
+        "springs": {
+          "front": 0.8,
+          "rear": 63,
+          "heightF": 0.9,
+          "heightR": 11.5
+        },
+        "damping": {
+          "reboundF": 11.3,
+          "reboundR": 9.7,
+          "bumpF": 6.8,
+          "bumpR": 5.8
+        },
+        "diff": {
+          "accelF": 15,
+          "decelF": 0,
+          "accelR": 75,
+          "decelR": 15,
+          "centerRear": 66
+        }
+      }
+    },
+    {
+      "goal": "Road",
+      "season": "Summer",
+      "profile": {
+        "weight": 1350,
+        "weight_distribution": 54,
+        "drivetrain": "AWD",
+        "maxHp": 300,
+        "spring_front_min": 0,
+        "spring_front_max": 0,
+        "height_front_min": 0,
+        "height_front_max": 0
+      },
+      "alignment": {
+        "pcF": 28.3,
+        "pcR": 27.2,
+        "targetPhot": 32.5,
+        "seasonBias": -0.5,
+        "camber": {
+          "front": -2.1,
+          "rear": -1.3
+        },
+        "toe": {
+          "front": "+0.1°",
+          "rear": "-0.1°"
+        },
+        "caster": 6.1,
+        "hwF": 98,
+        "hwR": 96.3
+      },
+      "chassis": {
+        "arb": {
+          "front": 3.2,
+          "rear": 50
+        },
+        "springs": {
+          "front": 76.9,
+          "rear": 63,
+          "heightF": 11.5,
+          "heightR": 11.5
+        },
+        "damping": {
+          "reboundF": 11.3,
+          "reboundR": 9.7,
+          "bumpF": 6.8,
+          "bumpR": 5.8
+        },
+        "diff": {
+          "accelF": 15,
+          "decelF": 0,
+          "accelR": 75,
+          "decelR": 15,
+          "centerRear": 66
+        }
+      }
+    },
+    {
+      "goal": "Road",
+      "season": "Summer",
+      "profile": {
+        "weight": 1350,
+        "weight_distribution": 54,
+        "drivetrain": "AWD",
+        "maxHp": 300,
+        "spring_front_min": 25,
+        "spring_front_max": 5,
+        "height_front_min": 20,
+        "height_front_max": 5
+      },
+      "alignment": {
+        "pcF": 28.3,
+        "pcR": 27.2,
+        "targetPhot": 32.5,
+        "seasonBias": -0.5,
+        "camber": {
+          "front": -2.1,
+          "rear": -1.3
+        },
+        "toe": {
+          "front": "+0.1°",
+          "rear": "-0.1°"
+        },
+        "caster": 6.1,
+        "hwF": 98,
+        "hwR": 96.3
+      },
+      "chassis": {
+        "arb": {
+          "front": 3.2,
+          "rear": 50
+        },
+        "springs": {
+          "front": 25,
+          "rear": 63,
+          "heightF": 20,
+          "heightR": 11.5
+        },
+        "damping": {
+          "reboundF": 11.3,
+          "reboundR": 9.7,
+          "bumpF": 6.8,
+          "bumpR": 5.8
+        },
+        "diff": {
+          "accelF": 15,
+          "decelF": 0,
+          "accelR": 75,
+          "decelR": 15,
+          "centerRear": 66
+        }
+      }
+    },
+    {
+      "goal": "Rally",
+      "season": "Summer",
+      "profile": {
+        "weight": 1350,
+        "weight_distribution": 54,
+        "drivetrain": "AWD",
+        "maxHp": 300,
+        "spring_front_min": 0.2,
+        "spring_front_max": 0.8,
+        "height_front_min": 0.4,
+        "height_front_max": 0.9
+      },
+      "alignment": {
+        "pcF": 24.9,
+        "pcR": 24.2,
+        "targetPhot": 27.5,
+        "seasonBias": -0.5,
+        "camber": {
+          "front": -1.3,
+          "rear": -0.8
+        },
+        "toe": {
+          "front": "+0.2°",
+          "rear": "0.0°"
+        },
+        "caster": 6,
+        "hwF": 98,
+        "hwR": 96.3
+      },
+      "chassis": {
+        "arb": {
+          "front": 11.4,
+          "rear": 9.7
+        },
+        "springs": {
+          "front": 0.3,
+          "rear": 39.4,
+          "heightF": 0.8,
+          "heightR": 22.8
+        },
+        "damping": {
+          "reboundF": 8.6,
+          "reboundR": 7.4,
+          "bumpF": 3.4,
+          "bumpR": 3
+        },
+        "diff": {
+          "accelF": 40,
+          "decelF": 10,
+          "accelR": 80,
+          "decelR": 25,
+          "centerRear": 65
+        }
+      }
+    },
+    {
+      "goal": "Rally",
+      "season": "Summer",
+      "profile": {
+        "weight": 1350,
+        "weight_distribution": 54,
+        "drivetrain": "AWD",
+        "maxHp": 300,
+        "spring_front_min": 0,
+        "spring_front_max": 0,
+        "height_front_min": 0,
+        "height_front_max": 0
+      },
+      "alignment": {
+        "pcF": 24.9,
+        "pcR": 24.2,
+        "targetPhot": 27.5,
+        "seasonBias": -0.5,
+        "camber": {
+          "front": -1.3,
+          "rear": -0.8
+        },
+        "toe": {
+          "front": "+0.2°",
+          "rear": "0.0°"
+        },
+        "caster": 6,
+        "hwF": 98,
+        "hwR": 96.3
+      },
+      "chassis": {
+        "arb": {
+          "front": 11.4,
+          "rear": 9.7
+        },
+        "springs": {
+          "front": 45.1,
+          "rear": 39.4,
+          "heightF": 22.8,
+          "heightR": 22.8
+        },
+        "damping": {
+          "reboundF": 8.6,
+          "reboundR": 7.4,
+          "bumpF": 3.4,
+          "bumpR": 3
+        },
+        "diff": {
+          "accelF": 40,
+          "decelF": 10,
+          "accelR": 80,
+          "decelR": 25,
+          "centerRear": 65
+        }
+      }
+    },
+    {
+      "goal": "Rally",
+      "season": "Summer",
+      "profile": {
+        "weight": 1350,
+        "weight_distribution": 54,
+        "drivetrain": "AWD",
+        "maxHp": 300,
+        "spring_front_min": 25,
+        "spring_front_max": 5,
+        "height_front_min": 20,
+        "height_front_max": 5
+      },
+      "alignment": {
+        "pcF": 24.9,
+        "pcR": 24.2,
+        "targetPhot": 27.5,
+        "seasonBias": -0.5,
+        "camber": {
+          "front": -1.3,
+          "rear": -0.8
+        },
+        "toe": {
+          "front": "+0.2°",
+          "rear": "0.0°"
+        },
+        "caster": 6,
+        "hwF": 98,
+        "hwR": 96.3
+      },
+      "chassis": {
+        "arb": {
+          "front": 11.4,
+          "rear": 9.7
+        },
+        "springs": {
+          "front": 25,
+          "rear": 39.4,
+          "heightF": 20,
+          "heightR": 22.8
+        },
+        "damping": {
+          "reboundF": 8.6,
+          "reboundR": 7.4,
+          "bumpF": 3.4,
+          "bumpR": 3
+        },
+        "diff": {
+          "accelF": 40,
+          "decelF": 10,
+          "accelR": 80,
+          "decelR": 25,
+          "centerRear": 65
+        }
+      }
+    }
+  ]
+}

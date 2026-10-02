@@ -2919,3 +2919,55 @@
 - **實測學習**：Taycan 的持續正功率平台不等於限轉；需分開保存正輸出曲線、高轉速零輸出與低打滑的 RPM／車速映射。A/B/A 二檔 2.00→2.20→2.00 的錄製回放可重現約 +10% 並回復的映射變化；不據此宣稱辨識單顆馬達、抓地力或最佳換檔點。
 - **單速與能力邊界**：單一前進檔可完成 EV 流程；檔位數與可調能力互不推導。終傳與各檔預設鎖定，未顯示的比值保存 null，仍可量測基準。只有已知、確認可調的終傳可預覽變更；鎖定或未知數值不進入待套用設定，不沿用傳統 gearbox 的 Full 預設。
 - **驗證與來源**：前端 145 files／1,030 tests 與 build 通過；Rust 完整 gate 87 passed／3 ignored、Cargo fmt 通過。TS/Rust 共用十個 EV golden cases，含單速、全鎖定、未知齒比、僅終傳可調。選用瀏覽器測試 mock 全部 backend HTTP/WS，驗證跨步驟、模式失效、保存再載入、六種主題組合與繁中標籤；不注入遊戲 UDP。實際單速 EV、新 UI 遊戲操作與最佳化效果尚未實機驗收。採用技能、交接與工程一手來源見 [EV 模型文件](../docs/calibration/ev-foundation.md)。
+
+## 2026-10-01 — v1.7.1 後端 SSOT 第一階段（Bagley as Dot）
+
+- 採用 skills：physics-tuning-math、modular-refactoring、huge-component-refactoring、halfmoon-design-system、pr-author-maintainer；測試規範來源為 rules/testing-strategy.md（無 testing/SKILL.md）。
+- main ca195c7 的 Rust range normalization 曾把正值小於 1 的 minima 拉高；遷移以桌面行為為準，新增 66 組凍結 mechanical fixtures，原 21 tuning / 10 EV fixtures 不改寫。
+- `/api/tuning/mechanical` 為無狀態計算入口，不使用 engine mutex。provider 使用完整草稿 key，桌面與 Companion 共用結果。engineDependencyKey 只適用量測，不足以識別底盤草稿。
+- 驗證：Rust locked 全套通過；前端 150 files / 1092 tests 通過；tsc + Vite build 與 diff check 通過。Linux 原生 Windows HUD 未驗收。
+- 全量 SSOT 尚未完成：量測資格、齒比、readiness、建議組合與診斷繼續遷移；PR 保持 draft。
+
+
+## 2026-10-01 / v1.7.1 Rust 調校唯一 owner（Bagley as Dot）
+
+- 使用者授權取代 #430 Twin SSOT；專用分支與 draft PR #460，未合併／發行。#458、#459 未合併；loaded-sweep/v4 以 main 的完整 capture summaries 鎖定。
+- Rust 擁有機械／定位、ICE/EV 量測、readiness、能力過濾、推薦、輪胎證據、profile 預設、實驗模型與 dyno 數值 guidance。桌面／Companion 使用同一 provider result；offline CLI／MCP 新 workflow 入口直接重用 library。
+- CLI、MCP quick 與 desktop experimental 為三個明確 legacy model，保留既有 wire output；新推薦明確 Rust version，歷史持久化不變。
+- 發現並補上 toFixed binary rounding 與 width*(aspect/100) 運算順序邊界；不可重寫既有 21 tuning／10 EV golden，也不可缺檔自動生成。
+- 新增 React hook 真實非同步順序／失敗重試測試；build boundary 拒絕 TS legacy solver 進入產品。capture replay 在 receiver mutex 外；LAN allowlist 不變。
+- 驗證結果見 PR 精確 commit；Windows 平台驗證交由 CI，未聲稱 Linux 已跑 Windows 原生 UI 或遊戲實測。
+
+
+### 2026-10-01 / PR #460 獨立審查後的來源邊界修補
+
+- 審查指出「把公式搬到 Rust」不等於「客戶端 supplied peaks 是後端合格證據」。撤回完成宣稱；workflow 改用 Rust 重播不可變 capture 後的 opaque qualification，裸 ICE peaks／EV moments 不得建立 measured recommendation。
+- 保存時載入 backend-only、明確版本的 evidence metadata，重組推薦並比較；ICE 必須匹配保存觀測與 engine dependency，EV 同時保存原始 frames 及資格紀錄。重播只在接收器鎖外，離線 CLI 仍共用 library。
+- EV preview 503 會顯示 error 並自動重試；Step 2／4 不再把 pending/error 顯示成缺少車輛或引擎輸入。新增實際 React 元件重試／訊息回歸及真實 capture persistence/restart/篡改負例。
+- MCP／離線 CLI 保持唯讀：cold-cache 只重播、不新增 qualification；已保存資格可重用。新增 cache 不變回歸，完整 Rust 預設／no-default-features suites 通過。
+- EV 真實桌面投影漏掉 SteerInput，完整 capture fixture 曾掩蓋 transport 缺欄；補上通道並以實際 React session 投影對照 frozen transport contract，Rust API 重播同一投影驗證資格／保存與缺 steering 拒絕。
+
+### 2026-10-01 / #462 Road 模型修正（Bagley as Dot）
+
+- 使用 physics-tuning-math、modular-refactoring、pr-author-maintainer；使用者授權納入PR460。逐commit固定輸入重播定位972e9c2首次引入高扭力退化；397/412、EV445、446後续limiter修補不是固定輸入公式變更來源。
+- v3以兩個既有先驗的較短齒比作工程啟發式；明確不把traction上限說成物理下限，不宣稱最佳起步。保留低功率、v4量測、共同網格與無解；新增後端運動學診斷。
+- Road正式推薦升v2；歷史v1依凍結gearing v2驗證。舊goldens不改，新基線分檔；歷史與新模型都須經相同資格及保存檢查。
+- 實車資料仍未補齊；因果、矩陣、候選輸出及界限見docs/tuning/aego-road-launch-v3.md。沒有合併／發行或關閉462。
+- 獨立審查重現歷史v1驗證曾照抄caller的v3標籤／roadLaunch；改為檢查版本專屬保留metadata，保留真正無標籤的v1相容，並拒絕非Road偽造診斷。
+
+### 2026-10-01 / Road v3 理論覆核與有效上限診斷（Codex as Codex）
+
+- 採用 `ponytail` full、`physics-tuning-math`、`pr-review-evaluation`、`pr-author-maintainer`；依使用者要求委派 `gpt-6-luna` 只讀研究 Rspeed。完整推導與研究路線見 [Road v3 文件](../docs/tuning/aego-road-launch-v3.md)。
+- `Rfirst=max(Rspeed,A/T)` 等價於功率峰值一檔速度 `min(Vbaseline,KT/A)`，可限制高扭力長一檔退化並保留低扭力縮短。Rload仍是特定抓地先驗上限，max並非無滑移保證；#462合成例要求輪上力約3.86g，同一μ=1先驗下可傳遞扭力約峰值25.9%。固定速度、動力帶及最適換檔尚未校準。
+- 正式workflow的診斷曾把名義engineMaxRpm當有效上限；原Beetle capture辨識5248但診斷輸出5999.9966，新qualification/workflow回歸先失敗。最小修正讀取proof已覆蓋的engineCalculation.effectiveRedline，缺省回退名義值；不重寫引擎身份、起步／頂檔目標或歷史v1。
+- 兩組Beetle／Pajero limiter capture的正式診斷回歸通過，並檢查偽造snapshot不能決定有效上限。完整Rust locked suite為119 passed／3 ignored（兩個選用效能probe及一個需要真實Windows音訊／GSMTC的測試）；前端154 files／1099 tests passed，1既有skipped；Cargo fmt及git diff --check通過。獨立Node核對14個新基線的目標／取整誤差與扭力分段性質通過。
+- Luna建議先做固定環境、同車齒比掃描與重複0–100 A/B，再補T(n)、起步控制、抓地／滑移及阻力資料建模。現有moving loaded sweep不能唯一辨認launch target，故不換另一組未校準Rspeed常數。未做新遊戲試車；#462保持開放。
+
+### 2026-10-02 / #462 Pagani 靜態回報與端點界限（Bagley as Dot）
+
+- 採用 `physics-tuning-math`、`pr-author-maintainer`；保留另一工作樹的6e49801有效上限修正，main仍為ca195c7。沒有平行修正或合併其他PR。
+- 已補車型、完整七速與靜態規格，沒有Step 3動態資料。新增獨立report fixture、唯讀release TS重播及兩個Rust回歸；歷史1400kg合成案例不改標為Pagani，原始21/10 goldens不變。
+- 正式Step 1換算得到1104.0451416kg／1117.197245Nm、名義後輪半徑.3457m。v1.7任意AWD分配的Rload≤3.72377003，而回報FD3.78／G1=1.00要求≥3.7611，不能僅靠RPM補值解釋。原始保存值／輸入入口／人工調整尚未證實；不杜撰量測覆蓋。
+- 顯式8000/6000/9000RPM比較情境可得到舊版同七比值但FD3.74；v3為FD3.88、一檔3.51。另驗證缺失RPM預設與歷史合成RPM情境。新資料未確認額外公式缺陷，故不改v3常數。
+- Linux Rust locked完整121 passed／2 ignored；no-default-features完整113 passed／2 ignored；前端154 files、1099 passed／1 skipped，TypeScript/Vite build、Cargo fmt、git diff --check、歷史TS唯讀重播通過。未執行新遊戲／Windows GUI驗收。
+- 更新#462矛盾敘述與模型文件；PR #460維持使用者授權Ready、Issue開放，未合併／發行。README原draft敘述同步修正。

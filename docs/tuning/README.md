@@ -1,5 +1,7 @@
 # 調校開發入口
 
+v1.7.1：正式計算 owner 已移至 Rust，最新入口與版本見[責任契約](../contracts/tuning_responsibilities.md)；下列舊 TS 檔案為凍結測試參考，不得用作 production fallback。
+
 本頁是程式導航與驗證順序，不是功能完成清單。以下結構於 2026-09-12 依工作區程式核對；修改前仍需確認實際呼叫路徑與對應測試。
 
 本次下一迭代的落地藍圖見[調校工作流下一迭代落地規畫](tuning-workflow-iteration-20260912.md)；目前工作區的實作與證據邊界見[六階段調校工作流現行實作](tuning-workflow-implementation-20260912.md)。藍圖以 `ref/fh6-tuning-restart-20260912` 為參考輸入，不代表參考包內容已全部移植或驗收。

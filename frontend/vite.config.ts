@@ -4,6 +4,24 @@ import { execSync } from "child_process";
 import fs from "fs";
 import path from "path";
 
+// Frozen TypeScript models remain test references, never production fallbacks.
+function backendTuningBoundary(): Plugin {
+  const forbidden = /\/src\/(?:utils\/tuning(?:Math(?:_dev)?|Diagnosis)|features\/tuning\/(?:tuningMeasurement|engineCalculation|engineMeasurementArchive|measurementTuningProfile|tireEvidence|workflowSnapshot|legacyWorkflowReadiness)|domain\/tuning\/(?:chassis|gearing|tires|contracts|constants|ev\/(?:measurement|solver|profile)))\.?(?:[^?]*)$/;
+  return {
+    name: 'backend-tuning-boundary',
+    generateBundle(_options, bundle) {
+      for (const output of Object.values(bundle)) {
+        if (output.type !== 'chunk') continue;
+        for (const [id, module] of Object.entries(output.modules)) {
+          if (module.renderedLength > 0 && forbidden.test(id)) {
+            this.error(`Production tuning must consume Rust results: ${id}`);
+          }
+        }
+      }
+    },
+  };
+}
+
 // In dev mode, the Python backend sidecar may not be running.
 // Serve hud_overlay/ files directly for /hud/* requests instead of proxying.
 const HUD_OVERLAY_DIR = path.resolve(import.meta.dirname, "../hud_overlay");
@@ -173,7 +191,7 @@ if (!['windows', 'lan'].includes(platform)) throw new Error('FH6_PLATFORM must b
 const includesHud = platform === 'windows';
 
 export default defineConfig(async () => ({
-  plugins: [react(), ...(includesHud ? [hudStaticPlugin()] : []), {
+  plugins: [react(), backendTuningBoundary(), ...(includesHud ? [hudStaticPlugin()] : []), {
     name: 'verify-platform-isolation',
     generateBundle() {
       if (!includesHud) {

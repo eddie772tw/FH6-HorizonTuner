@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useSettings } from '../../context/SettingsContext';
-import { roadExplorationStep } from '../../utils/tuningMath';
+import { useLocalCalculation } from '../tuning/useLocalCalculation';
 import type { RoadSetup } from './roadTypes';
 import { candidateParameters, candidateParameterUnits as unitsFor } from './roadPresentation';
 import { createRoadCandidateDraft, type RoadCandidateDraft } from './roadValidationState';
@@ -24,7 +24,8 @@ export function RoadCandidate({ runId, basis, busy, draft: savedDraft, onDraftCh
   }, [basis.id, draft, onDraftChange, runId, savedDraft?.basisSetupId, savedDraft?.runId]);
   const symptoms = ['Front pushes wide on corner entry', 'Front pushes wide in the middle of a corner', 'Rear steps out when accelerating out of a corner', 'Rear feels unstable under braking'];
   const numeric = { value: Number(draft.values.value), minimum: Number(draft.values.minimum), maximum: Number(draft.values.maximum), step: Number(draft.values.step) };
-  const candidate = Object.values(draft.values).every(v => v.trim()) ? roadExplorationStep(numeric, draft.direction) : null;
+  const calculation = useLocalCalculation<{ value: number | null }>('/api/tuning/exploration', Object.values(draft.values).every(v => v.trim()) ? { setting: numeric, direction: draft.direction } : null);
+  const candidate = calculation?.value ?? null;
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!draft.confirmed || candidate === null) return;

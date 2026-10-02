@@ -81,69 +81,76 @@ pub fn get_road_awd_rear_percent(params: &TuningCarParams) -> f64 {
     }
 }
 
+// Preserve desktop positive ranges (including sub-unit minima); zero means absent.
+fn positive(value: Option<f64>, fallback: f64) -> f64 {
+    value
+        .filter(|v| v.is_finite() && *v > 0.0)
+        .unwrap_or(fallback)
+}
+
 fn normalize_road_inputs(params: &TuningCarParams) -> TuningCarParams {
     let mut p = params.clone();
-    p.weight = Some(p.weight.unwrap_or(1400.0).max(1.0));
+    p.weight = Some(positive(p.weight, 1400.0));
     p.weight_distribution = Some(p.weight_distribution.unwrap_or(50.0).max(1.0).min(99.0));
-    p.max_hp = Some(p.max_hp.unwrap_or(300.0).max(1.0));
+    p.max_hp = Some(positive(p.max_hp, 300.0));
     p.max_torque = Some(p.max_torque.unwrap_or(0.0).max(0.0));
     p.max_hp_rpm = Some(p.max_hp_rpm.unwrap_or(0.0).max(0.0));
     p.max_torque_rpm = Some(p.max_torque_rpm.unwrap_or(0.0).max(0.0));
     p.aero_efficiency = Some(p.aero_efficiency.unwrap_or(0.5).max(0.0).min(1.0));
     p.aero_downforce_front = Some(p.aero_downforce_front.unwrap_or(0.0).max(0.0));
     p.aero_downforce_rear = Some(p.aero_downforce_rear.unwrap_or(0.0).max(0.0));
-    p.front_tire_width = Some(p.front_tire_width.unwrap_or(245.0).max(1.0));
-    p.front_tire_aspect = Some(p.front_tire_aspect.unwrap_or(40.0).max(1.0));
-    p.front_tire_rim = Some(p.front_tire_rim.unwrap_or(18.0).max(1.0));
-    p.rear_tire_width = Some(p.rear_tire_width.unwrap_or(245.0).max(1.0));
-    p.rear_tire_aspect = Some(p.rear_tire_aspect.unwrap_or(40.0).max(1.0));
-    p.rear_tire_rim = Some(p.rear_tire_rim.unwrap_or(18.0).max(1.0));
+    p.front_tire_width = Some(positive(p.front_tire_width, 245.0));
+    p.front_tire_aspect = Some(positive(p.front_tire_aspect, 40.0));
+    p.front_tire_rim = Some(positive(p.front_tire_rim, 18.0));
+    p.rear_tire_width = Some(positive(p.rear_tire_width, 245.0));
+    p.rear_tire_aspect = Some(positive(p.rear_tire_aspect, 40.0));
+    p.rear_tire_rim = Some(positive(p.rear_tire_rim, 18.0));
 
-    let min_kf = p.spring_front_min.unwrap_or(10.0).max(1.0);
+    let min_kf = positive(p.spring_front_min, 10.0);
     p.spring_front_min = Some(min_kf);
-    p.spring_front_max = Some(p.spring_front_max.unwrap_or(120.0).max(min_kf));
+    p.spring_front_max = Some(positive(p.spring_front_max, 120.0).max(min_kf));
 
-    let min_kr = p.spring_rear_min.unwrap_or(10.0).max(1.0);
+    let min_kr = positive(p.spring_rear_min, 10.0);
     p.spring_rear_min = Some(min_kr);
-    p.spring_rear_max = Some(p.spring_rear_max.unwrap_or(120.0).max(min_kr));
+    p.spring_rear_max = Some(positive(p.spring_rear_max, 120.0).max(min_kr));
 
-    let min_hf = p.height_front_min.unwrap_or(10.0).max(1.0);
+    let min_hf = positive(p.height_front_min, 10.0);
     p.height_front_min = Some(min_hf);
-    p.height_front_max = Some(p.height_front_max.unwrap_or(25.0).max(min_hf));
+    p.height_front_max = Some(positive(p.height_front_max, 25.0).max(min_hf));
 
-    let min_hr = p.height_rear_min.unwrap_or(10.0).max(1.0);
+    let min_hr = positive(p.height_rear_min, 10.0);
     p.height_rear_min = Some(min_hr);
-    p.height_rear_max = Some(p.height_rear_max.unwrap_or(25.0).max(min_hr));
+    p.height_rear_max = Some(positive(p.height_rear_max, 25.0).max(min_hr));
 
     p
 }
 
 fn rally_calculation_inputs(params: &TuningCarParams) -> TuningCarParams {
     let mut p = params.clone();
-    p.weight = Some(p.weight.unwrap_or(1400.0).max(1.0));
+    p.weight = Some(positive(p.weight, 1400.0));
     p.weight_distribution = Some(p.weight_distribution.unwrap_or(50.0).max(1.0).min(99.0));
-    p.max_hp = Some(p.max_hp.unwrap_or(300.0).max(1.0));
+    p.max_hp = Some(positive(p.max_hp, 300.0));
     p.max_torque = Some(p.max_torque.unwrap_or(0.0).max(0.0));
     p.max_hp_rpm = Some(p.max_hp_rpm.unwrap_or(0.0).max(0.0));
     p.max_torque_rpm = Some(p.max_torque_rpm.unwrap_or(0.0).max(0.0));
     p.aero_downforce_front = Some(p.aero_downforce_front.unwrap_or(0.0).max(0.0));
     p.aero_downforce_rear = Some(p.aero_downforce_rear.unwrap_or(0.0).max(0.0));
 
-    let min_kf = p.spring_front_min.unwrap_or(10.0).max(1.0);
+    let min_kf = positive(p.spring_front_min, 10.0);
     p.spring_front_min = Some(min_kf);
-    p.spring_front_max = Some(p.spring_front_max.unwrap_or(120.0).max(min_kf));
+    p.spring_front_max = Some(positive(p.spring_front_max, 120.0).max(min_kf));
 
-    let min_kr = p.spring_rear_min.unwrap_or(10.0).max(1.0);
+    let min_kr = positive(p.spring_rear_min, 10.0);
     p.spring_rear_min = Some(min_kr);
-    p.spring_rear_max = Some(p.spring_rear_max.unwrap_or(120.0).max(min_kr));
+    p.spring_rear_max = Some(positive(p.spring_rear_max, 120.0).max(min_kr));
 
-    let min_hf = p.height_front_min.unwrap_or(10.0).max(1.0);
+    let min_hf = positive(p.height_front_min, 10.0);
     p.height_front_min = Some(min_hf);
-    p.height_front_max = Some(p.height_front_max.unwrap_or(25.0).max(min_hf));
+    p.height_front_max = Some(positive(p.height_front_max, 25.0).max(min_hf));
 
-    let min_hr = p.height_rear_min.unwrap_or(10.0).max(1.0);
+    let min_hr = positive(p.height_rear_min, 10.0);
     p.height_rear_min = Some(min_hr);
-    p.height_rear_max = Some(p.height_rear_max.unwrap_or(25.0).max(min_hr));
+    p.height_rear_max = Some(positive(p.height_rear_max, 25.0).max(min_hr));
 
     p
 }

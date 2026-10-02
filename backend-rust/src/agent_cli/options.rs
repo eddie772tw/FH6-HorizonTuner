@@ -6,6 +6,7 @@ Usage: fh6-agent <command> [options] [--json] [--data-dir PATH] [--backend-url U
   mcp-config [--client all|codex|claude|cursor]\n\
   cars search QUERY [--drive AWD|RWD|FWD] [--limit 10]\n\
   cars get CAR_ID\n\
+  solve workflow --args JSON | --args-file PATH  Shared Rust tuning-workflow-result/v1 (offline)\n\
   solve chassis [--car-id ID] [--weight KG] [--bias PERCENT] [--drive RWD]\n\
        [--goal road|drift|rally|drag] [--aero-f LBS] [--aero-r LBS] [--export-applied-setup]\n\
   solve gearing --max-rpm RPM --peak-hp-rpm RPM --top-speed KMH [--gears 6] [--tire-diameter CM]\n\
@@ -14,7 +15,7 @@ Usage: fh6-agent <command> [options] [--json] [--data-dir PATH] [--backend-url U
   telemetry diagnose [--symptom understeer_entry|oversteer_exit|none] [--tire-temps FL FR RL RR]\n\
   preset list | preset get CAR_ID SAVE_NAME\n\
   mcp-call TOOL [--args JSON]\n\
-Solve commands preserve the legacy tuning-dev/v1 contract; presets remain unverified.\n\
+Chassis/gearing/full use legacy-cli/v1 (wire schema tuning-dev/v1); workflow uses the shared Rust model. Presets remain unverified.\n\
 All results are readable JSON. No command starts the frontend or backend.";
 
 pub struct Options {
@@ -46,7 +47,7 @@ impl Options {
                 "backend-url" | "data-dir" | "client" | "drive" | "limit" | "car-id" | "weight"
                 | "bias" | "goal" | "aero-f" | "aero-r" | "max-rpm" | "peak-hp-rpm"
                 | "top-speed" | "gears" | "tire-diameter" | "vehicle-class" | "save"
-                | "category" | "symptom" | "args" => 1,
+                | "category" | "symptom" | "args" | "args-file" => 1,
                 _ => return Err(format!("Unknown option --{key}")),
             };
             let mut values = inline.into_iter().collect::<Vec<_>>();
