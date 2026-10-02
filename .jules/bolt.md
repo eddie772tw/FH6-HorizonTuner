@@ -116,3 +116,7 @@ Additionally, attempting to optimize 60Hz telemetry data copying in `FrameInterp
 ## 2024-11-26 - Eliminating Chained Array Methods in High-Frequency Paths
 **Learning:** In high-frequency frontend loops (e.g., telemetry frame processing), using `.slice()` combined with iteration methods like `.every()` or `.some()` (e.g., `arr.slice(0, 4).every(fn)`) allocates intermediate arrays and creates closure overhead, generating significant GC pressure.
 **Action:** Unroll these higher-order function chains into single-pass or explicit logical OR/AND checks with direct index access (e.g., `!fn(arr[0]) || !fn(arr[1])...`) to minimize Garbage Collection (GC) pressure.
+
+## 2026-10-01 - Caching DOM getComputedStyle in Canvas render loop
+**Learning:** `getComputedStyle` is an extremely expensive DOM operation because it triggers layout recalculations and style resolutions. Calling it inside a 60Hz canvas render loop (like `renderCompass`) causes massive CPU overhead and layout thrashing, severely degrading performance.
+**Action:** Extract and cache the resolved style result using a module-level variable or attaching it to the `canvas` instance directly (e.g., `canvas._cachedPrimaryColor`). Only compute the value once per instance rather than every frame to avoid layout penalties.
