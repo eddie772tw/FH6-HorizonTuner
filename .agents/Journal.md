@@ -2971,3 +2971,9 @@
 - 顯式8000/6000/9000RPM比較情境可得到舊版同七比值但FD3.74；v3為FD3.88、一檔3.51。另驗證缺失RPM預設與歷史合成RPM情境。新資料未確認額外公式缺陷，故不改v3常數。
 - Linux Rust locked完整121 passed／2 ignored；no-default-features完整113 passed／2 ignored；前端154 files、1099 passed／1 skipped，TypeScript/Vite build、Cargo fmt、git diff --check、歷史TS唯讀重播通過。未執行新遊戲／Windows GUI驗收。
 - 更新#462矛盾敘述與模型文件；PR #460維持使用者授權Ready、Issue開放，未合併／發行。README原draft敘述同步修正。
+
+## 2026-10-03 / Tauri 相依 PR 的跨端版本合約（Sol as Codex）
+
+- **依賴合約**：`tauri-plugin-process 2.4.0` 與 `tauri-plugin-updater 2.13.0` 的 Rust manifest 都要求 `tauri 2.12`；不能只補 JavaScript lockfile 就假定插件 PR 可獨立打包。先將 Rust Tauri 2.12.0 與 JavaScript API 2.12.1 對齊、保留兩端舊插件，再於後續 PR 同步更新兩端插件及 Cargo／pnpm lockfile。
+- **本地證據**：原生 Tauri 5 個測試及前端 1099 個測試通過；這些證據不等於遊戲或 OTA 更新驗收。
+- **採用技能**：`pr-author-maintainer`、`pr-review-evaluation`、`portable-release-validation`、`agent-governance-audit`、`halfmoon-design-system` 與 `ponytail`。
