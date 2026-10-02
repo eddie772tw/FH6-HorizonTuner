@@ -28,7 +28,7 @@ export function AppStatus({ onOpenMcp }: { onOpenMcp: () => void }) {
       {t('Data Out: ')}{ready ? t('Ready') : t('Check')}
     </button>
     {dynamicPort && <div className="position-relative">
-      <button ref={portTrigger} type="button" className="btn btn-sm btn-outline-warning" aria-expanded={showPort} onClick={() => setShowPort(value => !value)}>MCP :{backendPort}</button>
+      <button ref={portTrigger} type="button" className="btn btn-sm btn-outline-warning" aria-expanded={showPort} onClick={() => setShowPort(value => !value)}>{t('MCP')} :{backendPort}</button>
       {showPort && <div className="popover bs-popover-bottom show glass-panel shadow border position-absolute end-0" role="status"
         style={{ top: 'calc(100% + 8px)', width: 'min(360px, 85vw)', zIndex: 1055 }}>
         <div className="popover-header d-flex justify-content-between gap-2">
