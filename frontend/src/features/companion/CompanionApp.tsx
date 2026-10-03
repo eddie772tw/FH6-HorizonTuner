@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useState } from 'react';
 import CompanionTelemetry from './CompanionTelemetry';
 import CompanionTuning from './CompanionTuning';
 import { useCompanionSession } from './useCompanionSession';
+import { useSettings } from '../../context/SettingsContext';
 import { getAggregateConnectionStatus } from './connectionStatus';
 import { getConnectionDiagnostics } from './connectionDiagnostics';
 import './companion.css';
@@ -34,6 +35,7 @@ function readNativeStatus(): NativeConnectionState {
 }
 
 export default function CompanionApp() {
+  const { t } = useSettings();
   const [tab, setTab] = useState<CompanionTab>('telemetry');
   const [nativeStatus, setNativeStatus] = useState<NativeConnectionState>(readNativeStatus);
   const [host, setHost] = useState(nativeStatus.host);
@@ -113,9 +115,9 @@ export default function CompanionApp() {
       {(error || (noticeVisible && notice)) && <div className={`companion-message ${error ? 'is-error' : 'is-success is-toast'}`} role={error ? 'alert' : 'status'}>{error || notice}</div>}
       {!nativeAvailable && <nav className="companion-tabs nav nav-pills" aria-label="Companion sections">
         {(['telemetry', 'tuning', 'connection'] as const).map((item) => (
-          <button key={item} className={`nav-link ${tab === item ? 'active' : ''}`} onClick={() => setTab(item)} type="button" aria-label={item === 'connection' ? `Connection, ${connectionStatus.accessibleLabel}` : undefined}>
-            {item === 'telemetry' ? 'Telemetry' : item === 'tuning' ? 'Tuning' : <>
-              Connection <span className={`companion-status-dot is-${connectionStatus.color}`} aria-hidden="true" />
+          <button key={item} className={`nav-link ${tab === item ? 'active' : ''}`} onClick={() => setTab(item)} type="button" aria-label={item === 'connection' ? `${t('Connection')}, ${t(connectionStatus.accessibleLabel)}` : undefined}>
+            {item === 'telemetry' ? t('Telemetry') : item === 'tuning' ? t('Tuning') : <>
+              {t('Connection')} <span className={`companion-status-dot is-${connectionStatus.color}`} aria-hidden="true" />
             </>}
           </button>
         ))}
@@ -127,64 +129,64 @@ export default function CompanionApp() {
         {tab === 'connection' && !nativeAvailable && (
           <section className="companion-stack companion-connection-stack" aria-label="Connection settings">
             <article className="companion-panel companion-connection-panel">
-              <h2>Connection</h2>
-              <p className="companion-connection-copy">選擇一般使用的區域網路，或選擇 USB 除錯連線。</p>
+              <h2>{t('Connection')}</h2>
+              <p className="companion-connection-copy">{t('Select the local network you normally use, or select the USB debugging connection.')}</p>
                 <div className="companion-mode-switch" role="group" aria-label="Connection mode">
-                  {(['LAN', 'USB'] as const).map((mode) => <button key={mode} type="button" className={`btn ${nativeStatus.mode === mode || (!nativeStatus.mode && mode === 'LAN') ? 'btn-primary' : 'btn-outline-secondary'}`} aria-pressed={nativeStatus.mode === mode || (!nativeStatus.mode && mode === 'LAN')} onClick={() => { window.HorizonTunerCompanion?.setMode?.(mode); setNativeStatus((current) => ({ ...current, mode })); }}>{mode === 'LAN' ? 'Local network' : 'USB debugging'}</button>)}
+                  {(['LAN', 'USB'] as const).map((mode) => <button key={mode} type="button" className={`btn ${nativeStatus.mode === mode || (!nativeStatus.mode && mode === 'LAN') ? 'btn-primary' : 'btn-outline-secondary'}`} aria-pressed={nativeStatus.mode === mode || (!nativeStatus.mode && mode === 'LAN')} onClick={() => { window.HorizonTunerCompanion?.setMode?.(mode); setNativeStatus((current) => ({ ...current, mode })); }}>{mode === 'LAN' ? t('Local network') : t('USB debugging')}</button>)}
                 </div>
                 <div className="companion-connection-status" role="status">
-                  <span className={`badge rounded-pill text-bg-${connectionStatus.color}`} aria-label={connectionStatus.accessibleLabel}>{connectionStatus.label}</span>
+                  <span className={`badge rounded-pill text-bg-${connectionStatus.color}`} aria-label={connectionStatus.accessibleLabel}>{t(connectionStatus.label)}</span>
                   <span>{diagnostics.address}</span>
                 </div>
                 {nativeStatus.mode === 'USB' ? <>
                   <div className="companion-form-grid companion-connection-form">
-                    <label className="companion-field">USB forwarded host
+                    <label className="companion-field">{t('USB forwarded host')}
                       <input className="form-control" autoCapitalize="none" autoCorrect="off" value={host} onChange={(event) => setHost(event.target.value)} placeholder="127.0.0.1" />
                     </label>
-                    <label className="companion-field">Port
+                    <label className="companion-field">{t('Port')}
                       <input className="form-control" inputMode="numeric" value={port} onChange={(event) => setPort(event.target.value.replace(/\D/g, '').slice(0, 5))} placeholder="8001" />
                     </label>
                   </div>
                   <div className="companion-connection-actions">
-                    <button className="btn btn-primary" type="button" disabled={nativeStatus.state === 'LOADING'} onClick={() => window.HorizonTunerCompanion?.connect(host.trim(), port)}>{nativeStatus.state === 'ERROR' ? 'Retry USB connection' : 'Connect over USB'}</button>
-                    <button className="btn btn-outline-secondary" type="button" disabled={nativeStatus.state === 'DISCONNECTED'} onClick={() => window.HorizonTunerCompanion?.disconnect()}>Disconnect</button>
+                    <button className="btn btn-primary" type="button" disabled={nativeStatus.state === 'LOADING'} onClick={() => window.HorizonTunerCompanion?.connect(host.trim(), port)}>{nativeStatus.state === 'ERROR' ? t('Retry USB connection') : t('Connect over USB')}</button>
+                    <button className="btn btn-outline-secondary" type="button" disabled={nativeStatus.state === 'DISCONNECTED'} onClick={() => window.HorizonTunerCompanion?.disconnect()}>{t('Disconnect')}</button>
                   </div>
                 </> : <>
                   <div className="companion-lan-primary">
-                    <button className="btn btn-primary companion-scan-button" type="button" disabled={!window.HorizonTunerCompanion?.scanLanQr} onClick={() => window.HorizonTunerCompanion?.scanLanQr?.()}>Scan pairing QR</button>
-                    <p>Scan the pairing QR code shown in the desktop app to connect over your local network.</p>
+                    <button className="btn btn-primary companion-scan-button" type="button" disabled={!window.HorizonTunerCompanion?.scanLanQr} onClick={() => window.HorizonTunerCompanion?.scanLanQr?.()}>{t('Scan pairing QR')}</button>
+                    <p>{t('Scan the pairing QR code shown in the desktop app to connect over your local network.')}</p>
                     <div className="companion-connection-actions">
-                      <button className="btn btn-primary" type="button" disabled={nativeStatus.state === 'LOADING' || !nativeStatus.paired || !window.HorizonTunerCompanion?.connectLan} onClick={() => window.HorizonTunerCompanion?.connectLan?.()}>{nativeStatus.state === 'ERROR' ? 'Reconnect LAN' : 'Connect over LAN'}</button>
-                      <button className="btn btn-outline-secondary" type="button" disabled={nativeStatus.state === 'DISCONNECTED'} onClick={() => window.HorizonTunerCompanion?.disconnect()}>Disconnect</button>
+                      <button className="btn btn-primary" type="button" disabled={nativeStatus.state === 'LOADING' || !nativeStatus.paired || !window.HorizonTunerCompanion?.connectLan} onClick={() => window.HorizonTunerCompanion?.connectLan?.()}>{nativeStatus.state === 'ERROR' ? t('Reconnect LAN') : t('Connect over LAN')}</button>
+                      <button className="btn btn-outline-secondary" type="button" disabled={nativeStatus.state === 'DISCONNECTED'} onClick={() => window.HorizonTunerCompanion?.disconnect()}>{t('Disconnect')}</button>
                     </div>
                   </div>
                   <details className="companion-advanced-connection">
-                    <summary>Advanced options · manual connection</summary>
+                    <summary>{t('Advanced options · manual connection')}</summary>
                     <div className="companion-advanced-body">
                       <div className="companion-form-grid companion-connection-form">
-                        <label className="companion-field">PC local network address
+                        <label className="companion-field">{t('PC local network address')}
                           <input className="form-control" autoCapitalize="none" autoCorrect="off" value={host} onChange={(event) => setHost(event.target.value)} placeholder="192.168.1.20" />
                         </label>
-                        <label className="companion-field">Port
+                        <label className="companion-field">{t('Port')}
                           <input className="form-control" inputMode="numeric" value={port} onChange={(event) => setPort(event.target.value.replace(/\D/g, '').slice(0, 5))} placeholder="8001" />
                         </label>
                       </div>
-                      <label className="companion-field companion-token-field">Pairing code
-                        <input className="form-control" autoCapitalize="characters" autoCorrect="off" value={token} onChange={(event) => setToken(event.target.value.trim().toUpperCase())} placeholder="Enter code shown on PC" />
+                      <label className="companion-field companion-token-field">{t('Pairing code')}
+                        <input className="form-control" autoCapitalize="characters" autoCorrect="off" value={token} onChange={(event) => setToken(event.target.value.trim().toUpperCase())} placeholder={t('Enter code shown on PC')} />
                       </label>
-                      <button className="btn btn-outline-secondary" type="button" disabled={!host.trim() || !token || !window.HorizonTunerCompanion?.pairLan} onClick={() => window.HorizonTunerCompanion?.pairLan?.(host.trim(), port, token)}>{nativeStatus.paired ? 'Update pairing' : 'Pair with PC'}</button>
+                      <button className="btn btn-outline-secondary" type="button" disabled={!host.trim() || !token || !window.HorizonTunerCompanion?.pairLan} onClick={() => window.HorizonTunerCompanion?.pairLan?.(host.trim(), port, token)}>{nativeStatus.paired ? t('Update pairing') : t('Pair with PC')}</button>
                     </div>
                   </details>
                 </>}
                 <section className="companion-diagnostics" aria-labelledby="companion-diagnostics-title">
-                  <h3 id="companion-diagnostics-title">Connection diagnostics</h3>
+                  <h3 id="companion-diagnostics-title">{t('Connection diagnostics')}</h3>
                   <dl>
-                    <div><dt>Mode</dt><dd>{diagnostics.mode}</dd></div>
-                    <div><dt>Address</dt><dd>{diagnostics.address}</dd></div>
-                    <div><dt>Companion app</dt><dd>{diagnostics.appState}</dd></div>
-                    <div><dt>Desktop frontend</dt><dd>{diagnostics.desktopState}</dd></div>
-                    {diagnostics.appError && <div className="is-error"><dt>App error</dt><dd>{diagnostics.appError}</dd></div>}
-                    {diagnostics.desktopError && <div className="is-error"><dt>Frontend error</dt><dd>{diagnostics.desktopError}</dd></div>}
+                    <div><dt>{t('Mode')}</dt><dd>{t(diagnostics.mode)}</dd></div>
+                    <div><dt>{t('Address')}</dt><dd>{diagnostics.address}</dd></div>
+                    <div><dt>{t('Companion app')}</dt><dd>{t(diagnostics.appState)}</dd></div>
+                    <div><dt>{t('Desktop frontend')}</dt><dd>{t(diagnostics.desktopState)}</dd></div>
+                    {diagnostics.appError && <div className="is-error"><dt>{t('App error')}</dt><dd>{diagnostics.appError}</dd></div>}
+                    {diagnostics.desktopError && <div className="is-error"><dt>{t('Frontend error')}</dt><dd>{diagnostics.desktopError}</dd></div>}
                   </dl>
                 </section>
             </article>
