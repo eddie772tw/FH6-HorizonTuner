@@ -57,8 +57,10 @@ export function renderGRadar(data, gHist, now, domCache) {
             var maxR_B  = { lat: 0, lon: 0 }, maxR_A  = { lat: 0, lon: 0 };
 
             var hasRecent = false;
+            // [PERF] Iterate directly over the array rather than using modulo arithmetic
+            // `(gHist._offset + i) % gHist.length` because order does not matter for finding minimum and maximum values.
             for (var i = 0; i < gHist.length; i++) {
-                var p = gHist[(gHist._offset + i) % gHist.length];
+                var p = gHist[i];
                 if (now - p.time <= 30000) {
                     hasRecent = true;
                     if (p.lat < maxLatL.lat) maxLatL = p;
