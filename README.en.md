@@ -1,6 +1,6 @@
 # FH6-HorizonTuner 🏎️
 
-v1.7.1 in development: desktop and Companion share Rust workflow results. ICE/EV evidence, gearing, readiness, capabilities and recommendations have backend owners; CLI/MCP workflow calls reuse the same library. The PR remains draft pending full verification. See the [ownership contract](docs/contracts/tuning_responsibilities.md).
+v1.7.1: desktop and Companion share Rust workflow results. ICE/EV evidence, gearing, readiness, capabilities and recommendations have backend owners; CLI/MCP workflow calls reuse the same library. PR #460 has been merged; #462 remains open pending raw input clarification and in-game validation. See the [ownership contract](docs/contracts/tuning_responsibilities.md).
 
 The versioned [Road launch-envelope correction for #462](docs/tuning/aego-road-launch-v3.md) preserves low-power and historical models; its engineering priors do not establish optimal in-game launches.
 

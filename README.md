@@ -1,6 +1,6 @@
 # FH6-HorizonTuner 🏎️
 
-v1.7.1 開發中：桌面與 Companion 共用 Rust 完整調校結果；ICE/EV 量測、齒比、readiness、能力過濾與推薦均由後端計算，CLI/MCP workflow 共用同一 library。PR #460 已經使用者授權轉為 Ready；#462 仍開放待原始輸入釐清及實車驗收，尚未合併或發行。詳見 [責任契約](docs/contracts/tuning_responsibilities.md)。
+v1.7.1：桌面與 Companion 共用 Rust 完整調校結果；ICE/EV 量測、齒比、readiness、能力過濾與推薦均由後端計算，CLI/MCP workflow 共用同一 library。PR #460 已合併；#462 仍開放待原始輸入釐清及實車驗收。詳見 [責任契約](docs/contracts/tuning_responsibilities.md)。
 
 Road #462 修正採版本化 [launch envelope v3](docs/tuning/aego-road-launch-v3.md)，保留低功率與歷史模型；工程先驗不等於實車最佳起步。
 

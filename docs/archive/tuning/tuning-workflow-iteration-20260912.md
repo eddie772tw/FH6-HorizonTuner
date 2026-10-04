@@ -42,7 +42,7 @@
 - 遙測 capture：`frontend/src/domain/tuning/telemetryCapture.ts`、`frontend/src/features/tuning/components/TuningTelemetryCaptureView.tsx`。
 - 校準資料契約：`frontend/src/domain/tuning/calibration.ts`、`docs/calibration/`。
 - 後端記錄基礎：`backend/race_recorder.py`、`backend/telemetry_sqlite.py`、`backend/telemetry_runtime.py`。
-- 現有入口與限制說明：[調校開發入口](README.md)、[校準資料 README](../calibration/README.md)。
+- 現有入口與限制說明：[調校開發入口](../../tuning/README.md)、[校準資料 README](../../calibration/README.md)。
 
 ### 參考包中優先回收、但必須重新對照的內容
 
