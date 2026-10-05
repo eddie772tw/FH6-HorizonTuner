@@ -1,0 +1,46 @@
+{
+  "style": "ap1_rev_arc",
+  "source_model": "1999 Honda S2000 AP1 (Japan launch specification)",
+  "reference_pixels_viewed": true,
+  "reference_browser": "cloud Chromium via supported CUA",
+  "reference_url": "https://www.honda.co.jp/factbook/auto/s2000/199904/image/037_001.gif",
+  "product_code_test_gate": {
+    "command": "pnpm -C frontend test",
+    "files_passed": 157,
+    "files_skipped": 1,
+    "tests_passed": 1139,
+    "tests_skipped": 1,
+    "style_cases": 34
+  },
+  "build": {
+    "command": "pnpm -C frontend build:web-hud",
+    "result": "passed",
+    "new_hud_present": true,
+    "style_tests_excluded": true
+  },
+  "diff_check": "passed",
+  "original_asset": {
+    "source": "hud_overlay/ap1_rev_arc/assets/fascia.svg",
+    "export": "hud_overlay/ap1_rev_arc/assets/fascia.png",
+    "tool": "Inkscape 1.4",
+    "optimization": "ImageMagick 7.1.1-43",
+    "dimensions": [
+      1440,
+      600
+    ],
+    "channels": "RGBA",
+    "corner_alpha": 0,
+    "bytes": 47491,
+    "pixel_review": "exported fascia viewed; not an actual browser HUD screenshot"
+  },
+  "local_browser_review": {
+    "result": "blocked",
+    "chromium_launch": "process_singleton_posix.cc socket() EPERM / SIGABRT, including approved require_escalated execution",
+    "supported_cloud_preview": "net::ERR_BLOCKED_BY_CLIENT on local fixture origin; no alternate hostname bypass attempted",
+    "screenshots": [],
+    "next_step": "Run the style visual workflow in normal GitHub Actions Chromium and inspect the artifact before claiming visual acceptance"
+  },
+  "native_acceptance": "Windows transparent overlay, mouse passthrough and real-game placement not tested",
+  "base_commit": "a9335b158e658faa86bcfcbe4d36beb602f6c9c7",
+  "dependency_install": "pnpm install --frozen-lockfile (passed on pinned base)"
+}

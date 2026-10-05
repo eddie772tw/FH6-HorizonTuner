@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AP1 Rev Arc HUD</title>
+  <link rel="stylesheet" href="../shared/hud-base.css">
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <div class="hud-root-wrapper">
+    <div class="hud-gauge-container ap1-cluster" id="ap1Cluster" role="img" aria-label="AP1 Rev Arc. Waiting for telemetry">
+      <img class="ap1-fascia" src="./assets/fascia.png" alt="" draggable="false">
+      <svg id="ap1Display" viewBox="0 0 720 300" aria-hidden="true">
+        <g id="rpmTicks"></g>
+        <g id="rpmSegments"></g>
+        <text class="ap1-unit" x="109" y="172">×1000 r/min</text>
+        <text class="ap1-label" x="106" y="205">GEAR</text>
+        <text class="ap1-gear" id="gearValue" x="126" y="245" text-anchor="middle">—</text>
+        <path class="ap1-divider" d="M168 192V245 M541 176V245"/>
+        <g id="speedDigits" transform="translate(236 128)"></g>
+        <text class="ap1-speed-unit" id="speedUnit" x="504" y="214" text-anchor="end">km/h</text>
+        <text class="ap1-label" x="575" y="178">FUEL</text>
+        <g id="fuelSegments"></g>
+        <text class="ap1-label" x="562" y="221">E</text>
+        <text class="ap1-label" x="660" y="221">F</text>
+        <text class="ap1-value" id="fuelValue" x="617" y="245" text-anchor="middle">--</text>
+        <text class="ap1-status" id="signalStatus" x="355" y="245" text-anchor="middle">WAITING FOR DATA</text>
+        <text class="ap1-signature" x="56" y="263">AP1 / REV ARC</text>
+        <text class="ap1-signature" id="rpmValue" x="663" y="263" text-anchor="end">RPM ----</text>
+        <text class="ap1-shift" id="shiftLamp" x="487" y="121" text-anchor="end"></text>
+      </svg>
+    </div>
+  </div>
+  <script src="../shared/hud-core.js"></script>
+  <script type="module" src="./controller.js"></script>
+</body>
+</html>

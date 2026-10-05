@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AP1 Rev Arc · Chromium review fixture</title>
+<style>
+:root { color-scheme: dark; font: 14px system-ui, sans-serif; background: #151b1a; color: #deded6; }
+body { margin: 24px; } h1 { font-weight: 500; font-size: 22px; margin: 0 0 12px; }
+p { color: #a0aaa3; margin: 10px 0; } .controls { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+button, select { font: inherit; padding: 8px 11px; border: 1px solid #5d6259; border-radius: 4px; color: inherit; background: #242b25; }
+#stage { position: relative; overflow: hidden; border: 1px solid #4d564c; background: repeating-conic-gradient(#26322d 0% 25%, #324039 0% 50%) 50% / 32px 32px; }
+iframe { position: absolute; border: 0; transform-origin: top left; background: transparent; }
+#result { color: #ffbd68; font-variant-numeric: tabular-nums; }
+</style>
+</head><body>
+<h1>AP1 Rev Arc · browser review</h1>
+<div class="controls">
+<select id="scene"><option>metric</option><option>imperial</option><option>reverse</option><option>neutral</option><option>redline</option><option>missing</option><option>error</option><option>paused</option><option>signal-lost</option><option>rpm6000</option><option>custom</option><option>waiting</option></select>
+<select id="size"><option value="1280,720">1280 × 720</option><option value="1920,1080">1920 × 1080</option><option value="2560,1440">2560 × 1440</option></select>
+<button id="resize">Resize</button><button id="animate">Animate</button><button id="toggle">Hide / show</button><button id="reload">Reload</button><button id="destroy">Destroy</button>
+</div>
+<p id="result"></p><div id="stage"><iframe id="hud" title="Actual AP1 HUD iframe" src="../../index.html"></iframe></div>
+<p>This checkerboard is a review background outside the HUD iframe. Viewport geometry is real; the complete iframe is fit to this page for review. DPR is the browser’s actual devicePixelRatio. Synthetic timestamped telemetry only; no game/Windows native acceptance.</p>
+<script>
+const params = new URLSearchParams(location.search);
+const scene = document.querySelector('#scene'); const size = document.querySelector('#size');
+const hud = document.querySelector('#hud'); const stage = document.querySelector('#stage'); const result = document.querySelector('#result');
+scene.value = params.get('state') || 'metric'; size.value = params.get('size') || '1280,720';
+let timestamp = 1; let hidden = false; let stopped = false;
+const send = (type, value = {}) => hud.contentWindow.postMessage({ type, ...value }, location.origin);
+function setSize() {
+  const [width,height] = size.value.split(',').map(Number); const fit = Math.min(1, (innerWidth - 50) / width, (innerHeight - 220) / height);
+  hud.style.width = width + 'px'; hud.style.height = height + 'px'; hud.style.transform = `scale(${fit})`;
+  stage.style.width = width * fit + 'px'; stage.style.height = height * fit + 'px';
+  result.textContent = `${scene.value} · ${width} × ${height} iframe · actual DPR ${devicePixelRatio} · review fit ${fit.toFixed(3)}`;
+}
+function configure() { send('config', { data: { scale: 1, glowIntensity: .8, useDefaultColors: scene.value !== 'custom', customColor: '#72d8ee', elements: { showGauge: !hidden } } }); }
+function frame() {
+  if (stopped || scene.value === 'waiting') return;
+  const data = { timestamp_ms: scene.value === 'signal-lost' ? 999 : timestamp++, speed_kmh: 188, speed_mph: 117, rpm: 7300, maxRpm: 9000, redlineRpm: 8000, gear: 4, fuel_ratio: .625, isRaceOn: 1 };
+  if (scene.value === 'reverse') Object.assign(data,{ gear: 0, speed_kmh: 24, rpm: 3200 });
+  if (scene.value === 'neutral') Object.assign(data,{ gear: 11, speed_kmh: 0, rpm: 950 });
+  if (scene.value === 'redline') Object.assign(data,{ rpm: 8600, fuel_ratio: .07 });
+  if (scene.value === 'missing') Object.assign(data,{ speed_kmh: null, rpm: null, gear: null, fuel_ratio: null });
+  if (scene.value === 'error') data.success = false;
+  if (scene.value === 'paused') data.isRaceOn = 0;
+  if (scene.value === 'rpm6000') Object.assign(data,{ rpm: 4700, maxRpm: 6000, redlineRpm: 5000 });
+  send('hud:frame', { data, isMetric: scene.value !== 'imperial' });
+}
+hud.addEventListener('load', () => { stopped = false; configure(); send('hud:init', { isMetric: scene.value !== 'imperial' }); frame(); });
+scene.addEventListener('change', () => { setSize(); configure(); frame(); });
+size.addEventListener('change', setSize); window.addEventListener('resize', setSize);
+document.querySelector('#resize').onclick = () => { size.value = size.value === '1280,720' ? '1920,1080' : '1280,720'; setSize(); };
+document.querySelector('#animate').onclick = () => send('hud:animate');
+document.querySelector('#toggle').onclick = () => { hidden = !hidden; send('hud:elements', { showGauge: !hidden }); };
+document.querySelector('#reload').onclick = () => { stopped = false; hud.src = '../../index.html?t=' + Date.now(); };
+document.querySelector('#destroy').onclick = () => { stopped = true; send('hud:destroy'); };
+setSize(); setInterval(frame, 50);
+</script></body></html>
