@@ -144,6 +144,11 @@ pub fn normalize_hud(data: &Value) -> Value {
             value.as_object_mut().unwrap().entry(key).or_insert(v);
         }
     }
+    if style == "lfa_center_ring" {
+        for key in ["lfaManualExpand", "lfaAutoExpand"] {
+            value[key] = json!(value[key].as_bool().unwrap_or(false));
+        }
+    }
     value
 }
 pub fn hud_for_frontend(data: &Value, settings: &Value) -> Value {

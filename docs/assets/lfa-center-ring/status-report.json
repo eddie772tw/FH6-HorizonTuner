@@ -1,0 +1,3632 @@
+{
+  "catalogSource": "backend/car_database.json display_name for ordinals1260/4084; actual existing catalog values",
+  "scope": "Actual Launcher/Coordinator with raw UDP-shaped frames, live media and socket events; synthetic traffic, not native game acceptance",
+  "runs": [
+    {
+      "width": 1280,
+      "height": 720,
+      "dpr": 1,
+      "scale": 1,
+      "samples": [
+        {
+          "name": "initial-pending",
+          "text": "Pending......",
+          "kind": "status",
+          "pending": "true",
+          "title": "Pending......",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "11px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1004,
+            "y": 602.25,
+            "width": 72,
+            "height": 17
+          },
+          "expanded": "false",
+          "clockNow": 37,
+          "received": null
+        },
+        {
+          "name": "media-socket-without-udp",
+          "text": "Pending......",
+          "kind": "status",
+          "pending": "true",
+          "title": "Pending......",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "11px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1076,
+            "y": 602.25,
+            "width": 72,
+            "height": 17
+          },
+          "expanded": "true",
+          "clockNow": 2069,
+          "received": null
+        },
+        {
+          "name": "pi",
+          "text": "S2 850",
+          "kind": "pi",
+          "pending": "false",
+          "title": "S2 850",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "12px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1004,
+            "y": 602.25,
+            "width": 72,
+            "height": 17
+          },
+          "expanded": "false",
+          "clockNow": 3033,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 1100,
+            "timestamp": 1100,
+            "lastFresh": 3017,
+            "restartVersion": 0,
+            "now": 3033
+          },
+          "received": {
+            "rawTimestamp": 1100,
+            "canonicalTimestamp": 1100,
+            "ordinal": 1260,
+            "now": 3033
+          }
+        },
+        {
+          "name": "model",
+          "text": "2010 Lexus LFA",
+          "kind": "car",
+          "pending": "false",
+          "title": "2010 Lexus LFA",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "11px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1004,
+            "y": 602.25,
+            "width": 72,
+            "height": 17
+          },
+          "expanded": "false",
+          "clockNow": 6069,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 3400,
+            "timestamp": 3400,
+            "lastFresh": 6053,
+            "restartVersion": 0,
+            "now": 6064
+          },
+          "received": {
+            "rawTimestamp": 3400,
+            "canonicalTimestamp": 3400,
+            "ordinal": 1260,
+            "now": 6064
+          }
+        },
+        {
+          "name": "brand",
+          "text": "crosXover",
+          "kind": "brand",
+          "pending": "false",
+          "title": "crosXover",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "12px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1004,
+            "y": 602.25,
+            "width": 72,
+            "height": 17
+          },
+          "expanded": "false",
+          "clockNow": 9105,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 5700,
+            "timestamp": 5700,
+            "lastFresh": 9088,
+            "restartVersion": 0,
+            "now": 9105
+          },
+          "received": {
+            "rawTimestamp": 5700,
+            "canonicalTimestamp": 5700,
+            "ordinal": 1260,
+            "now": 9105
+          }
+        },
+        {
+          "name": "live",
+          "text": "LIVE",
+          "kind": "connection",
+          "pending": "false",
+          "title": "LIVE",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "12px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1004,
+            "y": 602.25,
+            "width": 72,
+            "height": 17
+          },
+          "expanded": "false",
+          "clockNow": 12141,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 8000,
+            "timestamp": 8000,
+            "lastFresh": 12125,
+            "restartVersion": 0,
+            "now": 12141
+          },
+          "received": {
+            "rawTimestamp": 8000,
+            "canonicalTimestamp": 8000,
+            "ordinal": 1260,
+            "now": 12141
+          }
+        },
+        {
+          "name": "car-change-reset",
+          "text": "S2 850",
+          "kind": "pi",
+          "pending": "false",
+          "title": "S2 850",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "12px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1004,
+            "y": 602.25,
+            "width": 72,
+            "height": 17
+          },
+          "expanded": "false",
+          "clockNow": 12273,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 8100,
+            "timestamp": 8100,
+            "lastFresh": 12257,
+            "restartVersion": 0,
+            "now": 12273
+          },
+          "received": {
+            "rawTimestamp": 8100,
+            "canonicalTimestamp": 8100,
+            "ordinal": 4084,
+            "now": 12273
+          }
+        },
+        {
+          "name": "long-model",
+          "text": "1972 Datsun #269 Attacking The Clock Racing 240Z All Carbon Hillclimb Beast",
+          "kind": "car",
+          "pending": "false",
+          "title": "1972 Datsun #269 Attacking The Clock Racing 240Z All Carbon Hillclimb Beast",
+          "width": 93,
+          "scrollWidth": 384,
+          "fontSize": "11px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1004,
+            "y": 602.25,
+            "width": 72,
+            "height": 17
+          },
+          "expanded": "false",
+          "clockNow": 15309,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 10400,
+            "timestamp": 10400,
+            "lastFresh": 15293,
+            "restartVersion": 0,
+            "now": 15309
+          },
+          "received": {
+            "rawTimestamp": 10400,
+            "canonicalTimestamp": 10400,
+            "ordinal": 4084,
+            "now": 15309
+          }
+        },
+        {
+          "name": "long-model-expanded",
+          "text": "1972 Datsun #269 Attacking The Clock Racing 240Z All Carbon Hillclimb Beast",
+          "kind": "car",
+          "pending": "false",
+          "title": "1972 Datsun #269 Attacking The Clock Racing 240Z All Carbon Hillclimb Beast",
+          "width": 93,
+          "scrollWidth": 384,
+          "fontSize": "11px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1076,
+            "y": 602.25,
+            "width": 72,
+            "height": 17
+          },
+          "expanded": "true",
+          "clockNow": 16397,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 11200,
+            "timestamp": 11200,
+            "lastFresh": 16381,
+            "restartVersion": 0,
+            "now": 16397
+          },
+          "received": {
+            "rawTimestamp": 11200,
+            "canonicalTimestamp": 11200,
+            "ordinal": 4084,
+            "now": 16397
+          }
+        },
+        {
+          "name": "udp-stopped-media-alive",
+          "text": "Pending......",
+          "kind": "status",
+          "pending": "true",
+          "title": "Pending......",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "11px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1076,
+            "y": 602.25,
+            "width": 72,
+            "height": 17
+          },
+          "expanded": "true",
+          "clockNow": 18397,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 11200,
+            "timestamp": 11200,
+            "lastFresh": 16381,
+            "restartVersion": 0,
+            "now": 18397
+          },
+          "received": {
+            "rawTimestamp": 11200,
+            "canonicalTimestamp": 11200,
+            "ordinal": 4084,
+            "now": 18397
+          }
+        },
+        {
+          "name": "replayed-pending",
+          "text": "Pending......",
+          "kind": "status",
+          "pending": "true",
+          "title": "Pending......",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "11px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1076,
+            "y": 602.25,
+            "width": 72,
+            "height": 17
+          },
+          "expanded": "true",
+          "clockNow": 18429,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 11200,
+            "timestamp": 11200,
+            "lastFresh": 16381,
+            "restartVersion": 0,
+            "now": 18429
+          },
+          "received": {
+            "rawTimestamp": 11200,
+            "canonicalTimestamp": 11200,
+            "ordinal": 4084,
+            "now": 18429
+          }
+        },
+        {
+          "name": "out-of-order-pending",
+          "text": "Pending......",
+          "kind": "status",
+          "pending": "true",
+          "title": "Pending......",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "11px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1076,
+            "y": 602.25,
+            "width": 72,
+            "height": 17
+          },
+          "expanded": "true",
+          "clockNow": 18461,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 11100,
+            "timestamp": 11200,
+            "lastFresh": 16381,
+            "restartVersion": 0,
+            "now": 18461
+          },
+          "received": {
+            "rawTimestamp": 11100,
+            "canonicalTimestamp": 11100,
+            "ordinal": 1260,
+            "now": 18461
+          }
+        },
+        {
+          "name": "reconnected-reset",
+          "text": "S2 850",
+          "kind": "pi",
+          "pending": "false",
+          "title": "S2 850",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "12px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1076,
+            "y": 602.25,
+            "width": 72,
+            "height": 17
+          },
+          "expanded": "true",
+          "clockNow": 18593,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 11300,
+            "timestamp": 11300,
+            "lastFresh": 18577,
+            "restartVersion": 0,
+            "now": 18593
+          },
+          "received": {
+            "rawTimestamp": 11300,
+            "canonicalTimestamp": 11300,
+            "ordinal": 999,
+            "now": 18593
+          }
+        },
+        {
+          "name": "unknown-car",
+          "text": "CAR N/A",
+          "kind": "car",
+          "pending": "false",
+          "title": "CAR N/A",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "11px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1076,
+            "y": 602.25,
+            "width": 72,
+            "height": 17
+          },
+          "expanded": "true",
+          "clockNow": 21629,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 13600,
+            "timestamp": 13600,
+            "lastFresh": 21613,
+            "restartVersion": 0,
+            "now": 21629
+          },
+          "received": {
+            "rawTimestamp": 13600,
+            "canonicalTimestamp": 13600,
+            "ordinal": 999,
+            "now": 21629
+          }
+        },
+        {
+          "name": "class-d",
+          "text": "D 100",
+          "kind": "pi",
+          "pending": "false",
+          "title": "D 100",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "12px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1076,
+            "y": 602.25,
+            "width": 72,
+            "height": 17
+          },
+          "expanded": "true",
+          "clockNow": 21761,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 13700,
+            "timestamp": 13700,
+            "lastFresh": 21745,
+            "restartVersion": 0,
+            "now": 21761
+          },
+          "received": {
+            "rawTimestamp": 13700,
+            "canonicalTimestamp": 13700,
+            "ordinal": 1260,
+            "now": 21761
+          }
+        },
+        {
+          "name": "invalid-pi",
+          "text": "PI N/A",
+          "kind": "pi",
+          "pending": "false",
+          "title": "PI N/A",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "12px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1076,
+            "y": 602.25,
+            "width": 72,
+            "height": 17
+          },
+          "expanded": "true",
+          "clockNow": 21893,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 13800,
+            "timestamp": 13800,
+            "lastFresh": 21877,
+            "restartVersion": 0,
+            "now": 21893
+          },
+          "received": {
+            "rawTimestamp": 13800,
+            "canonicalTimestamp": 13800,
+            "ordinal": 1260,
+            "now": 21893
+          }
+        },
+        {
+          "name": "race-priority",
+          "text": "P3",
+          "kind": "status",
+          "pending": "false",
+          "title": "P3",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "12px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1076,
+            "y": 602.25,
+            "width": 72,
+            "height": 17
+          },
+          "expanded": "true",
+          "clockNow": 22557,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 14400,
+            "timestamp": 14400,
+            "lastFresh": 22541,
+            "restartVersion": 0,
+            "now": 22557
+          },
+          "received": {
+            "rawTimestamp": 14400,
+            "canonicalTimestamp": 14400,
+            "ordinal": 1260,
+            "now": 22557
+          }
+        },
+        {
+          "name": "race-grace-udp-stale",
+          "text": "Pending......",
+          "kind": "status",
+          "pending": "true",
+          "title": "Pending......",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "11px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1076,
+            "y": 602.25,
+            "width": 72,
+            "height": 17
+          },
+          "expanded": "true",
+          "clockNow": 24257,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 14400,
+            "timestamp": 14400,
+            "lastFresh": 22541,
+            "restartVersion": 0,
+            "now": 24257
+          },
+          "received": {
+            "rawTimestamp": 14400,
+            "canonicalTimestamp": 14400,
+            "ordinal": 1260,
+            "now": 24257
+          }
+        },
+        {
+          "name": "reconnect-during-race-grace",
+          "text": "LIVE",
+          "kind": "status",
+          "pending": "false",
+          "title": "LIVE",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "12px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1076,
+            "y": 602.25,
+            "width": 72,
+            "height": 17
+          },
+          "expanded": "true",
+          "clockNow": 24389,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 14500,
+            "timestamp": 14500,
+            "lastFresh": 24373,
+            "restartVersion": 0,
+            "now": 24389
+          },
+          "received": {
+            "rawTimestamp": 14500,
+            "canonicalTimestamp": 14500,
+            "ordinal": 1260,
+            "now": 24389
+          }
+        },
+        {
+          "name": "idle-after-race-grace",
+          "text": "S2 850",
+          "kind": "pi",
+          "pending": "false",
+          "title": "S2 850",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "12px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1076,
+            "y": 602.25,
+            "width": 72,
+            "height": 17
+          },
+          "expanded": "true",
+          "clockNow": 26517,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 16500,
+            "timestamp": 16500,
+            "lastFresh": 26501,
+            "restartVersion": 0,
+            "now": 26517
+          },
+          "received": {
+            "rawTimestamp": 16500,
+            "canonicalTimestamp": 16500,
+            "ordinal": 1260,
+            "now": 26517
+          }
+        },
+        {
+          "name": "race-reconfirmed",
+          "text": "P3",
+          "kind": "status",
+          "pending": "false",
+          "title": "P3",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "12px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1076,
+            "y": 602.25,
+            "width": 72,
+            "height": 17
+          },
+          "expanded": "true",
+          "clockNow": 27181,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 17100,
+            "timestamp": 17100,
+            "lastFresh": 27165,
+            "restartVersion": 0,
+            "now": 27181
+          },
+          "received": {
+            "rawTimestamp": 17100,
+            "canonicalTimestamp": 17100,
+            "ordinal": 1260,
+            "now": 27181
+          }
+        },
+        {
+          "name": "lap-notice",
+          "text": "BEST LAP",
+          "kind": "status",
+          "pending": "false",
+          "title": "BEST LAP",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "12px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1076,
+            "y": 602.25,
+            "width": 72,
+            "height": 17
+          },
+          "expanded": "true",
+          "clockNow": 27313,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 17200,
+            "timestamp": 17200,
+            "lastFresh": 27297,
+            "restartVersion": 0,
+            "now": 27313
+          },
+          "received": {
+            "rawTimestamp": 17200,
+            "canonicalTimestamp": 17200,
+            "ordinal": 1260,
+            "now": 27313
+          }
+        },
+        {
+          "name": "notice-after-race-end",
+          "text": "BEST LAP",
+          "kind": "status",
+          "pending": "false",
+          "title": "BEST LAP",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "12px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1076,
+            "y": 602.25,
+            "width": 72,
+            "height": 17
+          },
+          "expanded": "true",
+          "clockNow": 29441,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 19200,
+            "timestamp": 19200,
+            "lastFresh": 29425,
+            "restartVersion": 0,
+            "now": 29425
+          },
+          "received": {
+            "rawTimestamp": 19200,
+            "canonicalTimestamp": 19200,
+            "ordinal": 1260,
+            "now": 29425
+          }
+        },
+        {
+          "name": "notice-expired-carousel",
+          "text": "S2 850",
+          "kind": "pi",
+          "pending": "false",
+          "title": "S2 850",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "12px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1076,
+            "y": 602.25,
+            "width": 72,
+            "height": 17
+          },
+          "expanded": "true",
+          "clockNow": 30737,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 20400,
+            "timestamp": 20400,
+            "lastFresh": 30721,
+            "restartVersion": 0,
+            "now": 30736
+          },
+          "received": {
+            "rawTimestamp": 20400,
+            "canonicalTimestamp": 20400,
+            "ordinal": 1260,
+            "now": 30736
+          }
+        },
+        {
+          "name": "free-roam-outage",
+          "text": "Pending......",
+          "kind": "status",
+          "pending": "true",
+          "title": "Pending......",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "11px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1076,
+            "y": 602.25,
+            "width": 72,
+            "height": 17
+          },
+          "expanded": "true",
+          "clockNow": 32569,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 20500,
+            "timestamp": 20500,
+            "lastFresh": 30853,
+            "restartVersion": 0,
+            "now": 32569
+          },
+          "received": {
+            "rawTimestamp": 20500,
+            "canonicalTimestamp": 20500,
+            "ordinal": 1260,
+            "now": 32569
+          }
+        },
+        {
+          "name": "free-roam-restart-baseline",
+          "text": "Pending......",
+          "kind": "status",
+          "pending": "true",
+          "title": "Pending......",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "11px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1076,
+            "y": 602.25,
+            "width": 72,
+            "height": 17
+          },
+          "expanded": "true",
+          "clockNow": 32601,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 0,
+            "timestamp": 20500,
+            "lastFresh": null,
+            "restartVersion": 0,
+            "now": 32601
+          },
+          "received": {
+            "rawTimestamp": 0,
+            "canonicalTimestamp": 0,
+            "ordinal": 1260,
+            "now": 32601
+          }
+        },
+        {
+          "name": "free-roam-restart-recovered",
+          "text": "S2 850",
+          "kind": "pi",
+          "pending": "false",
+          "title": "S2 850",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "12px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1076,
+            "y": 602.25,
+            "width": 72,
+            "height": 17
+          },
+          "expanded": "true",
+          "clockNow": 32733,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 100,
+            "timestamp": 100,
+            "lastFresh": 32717,
+            "restartVersion": 1,
+            "now": 32733
+          },
+          "received": {
+            "rawTimestamp": 100,
+            "canonicalTimestamp": 100,
+            "ordinal": 1260,
+            "now": 32733
+          }
+        }
+      ],
+      "errors": [],
+      "passed": true
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "dpr": 2,
+      "scale": 1,
+      "samples": [
+        {
+          "name": "initial-pending",
+          "text": "Pending......",
+          "kind": "status",
+          "pending": "true",
+          "title": "Pending......",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "11px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1644,
+            "y": 962.25,
+            "width": 72,
+            "height": 17
+          },
+          "expanded": "false",
+          "clockNow": 35,
+          "ingestion": {
+            "accepted": false,
+            "timestamp": null,
+            "lastFresh": null,
+            "restartVersion": 0,
+            "now": 3
+          },
+          "received": {
+            "now": 3
+          }
+        },
+        {
+          "name": "media-socket-without-udp",
+          "text": "Pending......",
+          "kind": "status",
+          "pending": "true",
+          "title": "Pending......",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "11px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1716,
+            "y": 962.25,
+            "width": 72,
+            "height": 17
+          },
+          "expanded": "true",
+          "clockNow": 2067,
+          "ingestion": {
+            "accepted": false,
+            "timestamp": null,
+            "lastFresh": null,
+            "restartVersion": 0,
+            "now": 3
+          },
+          "received": {
+            "now": 3
+          }
+        },
+        {
+          "name": "pi",
+          "text": "S2 850",
+          "kind": "pi",
+          "pending": "false",
+          "title": "S2 850",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "12px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1644,
+            "y": 962.25,
+            "width": 72,
+            "height": 17
+          },
+          "expanded": "false",
+          "clockNow": 3031,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 1100,
+            "timestamp": 1100,
+            "lastFresh": 3015,
+            "restartVersion": 0,
+            "now": 3031
+          },
+          "received": {
+            "rawTimestamp": 1100,
+            "canonicalTimestamp": 1100,
+            "ordinal": 1260,
+            "now": 3031
+          }
+        },
+        {
+          "name": "model",
+          "text": "2010 Lexus LFA",
+          "kind": "car",
+          "pending": "false",
+          "title": "2010 Lexus LFA",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "11px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1644,
+            "y": 962.25,
+            "width": 72,
+            "height": 17
+          },
+          "expanded": "false",
+          "clockNow": 6067,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 3400,
+            "timestamp": 3400,
+            "lastFresh": 6051,
+            "restartVersion": 0,
+            "now": 6067
+          },
+          "received": {
+            "rawTimestamp": 3400,
+            "canonicalTimestamp": 3400,
+            "ordinal": 1260,
+            "now": 6067
+          }
+        },
+        {
+          "name": "brand",
+          "text": "crosXover",
+          "kind": "brand",
+          "pending": "false",
+          "title": "crosXover",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "12px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1644,
+            "y": 962.25,
+            "width": 72,
+            "height": 17
+          },
+          "expanded": "false",
+          "clockNow": 9103,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 5700,
+            "timestamp": 5700,
+            "lastFresh": 9087,
+            "restartVersion": 0,
+            "now": 9103
+          },
+          "received": {
+            "rawTimestamp": 5700,
+            "canonicalTimestamp": 5700,
+            "ordinal": 1260,
+            "now": 9103
+          }
+        },
+        {
+          "name": "live",
+          "text": "LIVE",
+          "kind": "connection",
+          "pending": "false",
+          "title": "LIVE",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "12px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1644,
+            "y": 962.25,
+            "width": 72,
+            "height": 17
+          },
+          "expanded": "false",
+          "clockNow": 12139,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 8000,
+            "timestamp": 8000,
+            "lastFresh": 12112,
+            "restartVersion": 0,
+            "now": 12139
+          },
+          "received": {
+            "rawTimestamp": 8000,
+            "canonicalTimestamp": 8000,
+            "ordinal": 1260,
+            "now": 12139
+          }
+        },
+        {
+          "name": "car-change-reset",
+          "text": "S2 850",
+          "kind": "pi",
+          "pending": "false",
+          "title": "S2 850",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "12px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1644,
+            "y": 962.25,
+            "width": 72,
+            "height": 17
+          },
+          "expanded": "false",
+          "clockNow": 12271,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 8100,
+            "timestamp": 8100,
+            "lastFresh": 12255,
+            "restartVersion": 0,
+            "now": 12271
+          },
+          "received": {
+            "rawTimestamp": 8100,
+            "canonicalTimestamp": 8100,
+            "ordinal": 4084,
+            "now": 12271
+          }
+        },
+        {
+          "name": "long-model",
+          "text": "1972 Datsun #269 Attacking The Clock Racing 240Z All Carbon Hillclimb Beast",
+          "kind": "car",
+          "pending": "false",
+          "title": "1972 Datsun #269 Attacking The Clock Racing 240Z All Carbon Hillclimb Beast",
+          "width": 93,
+          "scrollWidth": 384,
+          "fontSize": "11px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1644,
+            "y": 962.25,
+            "width": 72,
+            "height": 17
+          },
+          "expanded": "false",
+          "clockNow": 15307,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 10400,
+            "timestamp": 10400,
+            "lastFresh": 15291,
+            "restartVersion": 0,
+            "now": 15307
+          },
+          "received": {
+            "rawTimestamp": 10400,
+            "canonicalTimestamp": 10400,
+            "ordinal": 4084,
+            "now": 15307
+          }
+        },
+        {
+          "name": "long-model-expanded",
+          "text": "1972 Datsun #269 Attacking The Clock Racing 240Z All Carbon Hillclimb Beast",
+          "kind": "car",
+          "pending": "false",
+          "title": "1972 Datsun #269 Attacking The Clock Racing 240Z All Carbon Hillclimb Beast",
+          "width": 93,
+          "scrollWidth": 384,
+          "fontSize": "11px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1716,
+            "y": 962.25,
+            "width": 72,
+            "height": 17
+          },
+          "expanded": "true",
+          "clockNow": 16395,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 11200,
+            "timestamp": 11200,
+            "lastFresh": 16379,
+            "restartVersion": 0,
+            "now": 16395
+          },
+          "received": {
+            "rawTimestamp": 11200,
+            "canonicalTimestamp": 11200,
+            "ordinal": 4084,
+            "now": 16395
+          }
+        },
+        {
+          "name": "udp-stopped-media-alive",
+          "text": "Pending......",
+          "kind": "status",
+          "pending": "true",
+          "title": "Pending......",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "11px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1716,
+            "y": 962.25,
+            "width": 72,
+            "height": 17
+          },
+          "expanded": "true",
+          "clockNow": 18395,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 11200,
+            "timestamp": 11200,
+            "lastFresh": 16379,
+            "restartVersion": 0,
+            "now": 18395
+          },
+          "received": {
+            "rawTimestamp": 11200,
+            "canonicalTimestamp": 11200,
+            "ordinal": 4084,
+            "now": 18395
+          }
+        },
+        {
+          "name": "replayed-pending",
+          "text": "Pending......",
+          "kind": "status",
+          "pending": "true",
+          "title": "Pending......",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "11px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1716,
+            "y": 962.25,
+            "width": 72,
+            "height": 17
+          },
+          "expanded": "true",
+          "clockNow": 18427,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 11200,
+            "timestamp": 11200,
+            "lastFresh": 16379,
+            "restartVersion": 0,
+            "now": 18427
+          },
+          "received": {
+            "rawTimestamp": 11200,
+            "canonicalTimestamp": 11200,
+            "ordinal": 4084,
+            "now": 18427
+          }
+        },
+        {
+          "name": "out-of-order-pending",
+          "text": "Pending......",
+          "kind": "status",
+          "pending": "true",
+          "title": "Pending......",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "11px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1716,
+            "y": 962.25,
+            "width": 72,
+            "height": 17
+          },
+          "expanded": "true",
+          "clockNow": 18459,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 11100,
+            "timestamp": 11200,
+            "lastFresh": 16379,
+            "restartVersion": 0,
+            "now": 18459
+          },
+          "received": {
+            "rawTimestamp": 11100,
+            "canonicalTimestamp": 11100,
+            "ordinal": 1260,
+            "now": 18459
+          }
+        },
+        {
+          "name": "reconnected-reset",
+          "text": "S2 850",
+          "kind": "pi",
+          "pending": "false",
+          "title": "S2 850",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "12px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1716,
+            "y": 962.25,
+            "width": 72,
+            "height": 17
+          },
+          "expanded": "true",
+          "clockNow": 18591,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 11300,
+            "timestamp": 11300,
+            "lastFresh": 18575,
+            "restartVersion": 0,
+            "now": 18591
+          },
+          "received": {
+            "rawTimestamp": 11300,
+            "canonicalTimestamp": 11300,
+            "ordinal": 999,
+            "now": 18591
+          }
+        },
+        {
+          "name": "unknown-car",
+          "text": "CAR N/A",
+          "kind": "car",
+          "pending": "false",
+          "title": "CAR N/A",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "11px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1716,
+            "y": 962.25,
+            "width": 72,
+            "height": 17
+          },
+          "expanded": "true",
+          "clockNow": 21627,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 13600,
+            "timestamp": 13600,
+            "lastFresh": 21611,
+            "restartVersion": 0,
+            "now": 21627
+          },
+          "received": {
+            "rawTimestamp": 13600,
+            "canonicalTimestamp": 13600,
+            "ordinal": 999,
+            "now": 21627
+          }
+        },
+        {
+          "name": "class-d",
+          "text": "D 100",
+          "kind": "pi",
+          "pending": "false",
+          "title": "D 100",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "12px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1716,
+            "y": 962.25,
+            "width": 72,
+            "height": 17
+          },
+          "expanded": "true",
+          "clockNow": 21759,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 13700,
+            "timestamp": 13700,
+            "lastFresh": 21743,
+            "restartVersion": 0,
+            "now": 21759
+          },
+          "received": {
+            "rawTimestamp": 13700,
+            "canonicalTimestamp": 13700,
+            "ordinal": 1260,
+            "now": 21759
+          }
+        },
+        {
+          "name": "invalid-pi",
+          "text": "PI N/A",
+          "kind": "pi",
+          "pending": "false",
+          "title": "PI N/A",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "12px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1716,
+            "y": 962.25,
+            "width": 72,
+            "height": 17
+          },
+          "expanded": "true",
+          "clockNow": 21891,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 13800,
+            "timestamp": 13800,
+            "lastFresh": 21875,
+            "restartVersion": 0,
+            "now": 21891
+          },
+          "received": {
+            "rawTimestamp": 13800,
+            "canonicalTimestamp": 13800,
+            "ordinal": 1260,
+            "now": 21891
+          }
+        },
+        {
+          "name": "race-priority",
+          "text": "P3",
+          "kind": "status",
+          "pending": "false",
+          "title": "P3",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "12px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1716,
+            "y": 962.25,
+            "width": 72,
+            "height": 17
+          },
+          "expanded": "true",
+          "clockNow": 22555,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 14400,
+            "timestamp": 14400,
+            "lastFresh": 22528,
+            "restartVersion": 0,
+            "now": 22555
+          },
+          "received": {
+            "rawTimestamp": 14400,
+            "canonicalTimestamp": 14400,
+            "ordinal": 1260,
+            "now": 22555
+          }
+        },
+        {
+          "name": "race-grace-udp-stale",
+          "text": "Pending......",
+          "kind": "status",
+          "pending": "true",
+          "title": "Pending......",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "11px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1716,
+            "y": 962.25,
+            "width": 72,
+            "height": 17
+          },
+          "expanded": "true",
+          "clockNow": 24255,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 14400,
+            "timestamp": 14400,
+            "lastFresh": 22528,
+            "restartVersion": 0,
+            "now": 24255
+          },
+          "received": {
+            "rawTimestamp": 14400,
+            "canonicalTimestamp": 14400,
+            "ordinal": 1260,
+            "now": 24255
+          }
+        },
+        {
+          "name": "reconnect-during-race-grace",
+          "text": "LIVE",
+          "kind": "status",
+          "pending": "false",
+          "title": "LIVE",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "12px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1716,
+            "y": 962.25,
+            "width": 72,
+            "height": 17
+          },
+          "expanded": "true",
+          "clockNow": 24387,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 14500,
+            "timestamp": 14500,
+            "lastFresh": 24371,
+            "restartVersion": 0,
+            "now": 24387
+          },
+          "received": {
+            "rawTimestamp": 14500,
+            "canonicalTimestamp": 14500,
+            "ordinal": 1260,
+            "now": 24387
+          }
+        },
+        {
+          "name": "idle-after-race-grace",
+          "text": "S2 850",
+          "kind": "pi",
+          "pending": "false",
+          "title": "S2 850",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "12px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1716,
+            "y": 962.25,
+            "width": 72,
+            "height": 17
+          },
+          "expanded": "true",
+          "clockNow": 26515,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 16500,
+            "timestamp": 16500,
+            "lastFresh": 26499,
+            "restartVersion": 0,
+            "now": 26515
+          },
+          "received": {
+            "rawTimestamp": 16500,
+            "canonicalTimestamp": 16500,
+            "ordinal": 1260,
+            "now": 26515
+          }
+        },
+        {
+          "name": "race-reconfirmed",
+          "text": "P3",
+          "kind": "status",
+          "pending": "false",
+          "title": "P3",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "12px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1716,
+            "y": 962.25,
+            "width": 72,
+            "height": 17
+          },
+          "expanded": "true",
+          "clockNow": 27179,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 17100,
+            "timestamp": 17100,
+            "lastFresh": 27163,
+            "restartVersion": 0,
+            "now": 27179
+          },
+          "received": {
+            "rawTimestamp": 17100,
+            "canonicalTimestamp": 17100,
+            "ordinal": 1260,
+            "now": 27179
+          }
+        },
+        {
+          "name": "lap-notice",
+          "text": "BEST LAP",
+          "kind": "status",
+          "pending": "false",
+          "title": "BEST LAP",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "12px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1716,
+            "y": 962.25,
+            "width": 72,
+            "height": 17
+          },
+          "expanded": "true",
+          "clockNow": 27311,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 17200,
+            "timestamp": 17200,
+            "lastFresh": 27295,
+            "restartVersion": 0,
+            "now": 27311
+          },
+          "received": {
+            "rawTimestamp": 17200,
+            "canonicalTimestamp": 17200,
+            "ordinal": 1260,
+            "now": 27311
+          }
+        },
+        {
+          "name": "notice-after-race-end",
+          "text": "BEST LAP",
+          "kind": "status",
+          "pending": "false",
+          "title": "BEST LAP",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "12px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1716,
+            "y": 962.25,
+            "width": 72,
+            "height": 17
+          },
+          "expanded": "true",
+          "clockNow": 29439,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 19200,
+            "timestamp": 19200,
+            "lastFresh": 29423,
+            "restartVersion": 0,
+            "now": 29439
+          },
+          "received": {
+            "rawTimestamp": 19200,
+            "canonicalTimestamp": 19200,
+            "ordinal": 1260,
+            "now": 29439
+          }
+        },
+        {
+          "name": "notice-expired-carousel",
+          "text": "S2 850",
+          "kind": "pi",
+          "pending": "false",
+          "title": "S2 850",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "12px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1716,
+            "y": 962.25,
+            "width": 72,
+            "height": 17
+          },
+          "expanded": "true",
+          "clockNow": 30735,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 20400,
+            "timestamp": 20400,
+            "lastFresh": 30719,
+            "restartVersion": 0,
+            "now": 30735
+          },
+          "received": {
+            "rawTimestamp": 20400,
+            "canonicalTimestamp": 20400,
+            "ordinal": 1260,
+            "now": 30735
+          }
+        },
+        {
+          "name": "free-roam-outage",
+          "text": "Pending......",
+          "kind": "status",
+          "pending": "true",
+          "title": "Pending......",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "11px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1716,
+            "y": 962.25,
+            "width": 72,
+            "height": 17
+          },
+          "expanded": "true",
+          "clockNow": 32567,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 20500,
+            "timestamp": 20500,
+            "lastFresh": 30851,
+            "restartVersion": 0,
+            "now": 32567
+          },
+          "received": {
+            "rawTimestamp": 20500,
+            "canonicalTimestamp": 20500,
+            "ordinal": 1260,
+            "now": 32567
+          }
+        },
+        {
+          "name": "free-roam-restart-baseline",
+          "text": "Pending......",
+          "kind": "status",
+          "pending": "true",
+          "title": "Pending......",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "11px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1716,
+            "y": 962.25,
+            "width": 72,
+            "height": 17
+          },
+          "expanded": "true",
+          "clockNow": 32599,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 0,
+            "timestamp": 20500,
+            "lastFresh": null,
+            "restartVersion": 0,
+            "now": 32599
+          },
+          "received": {
+            "rawTimestamp": 0,
+            "canonicalTimestamp": 0,
+            "ordinal": 1260,
+            "now": 32599
+          }
+        },
+        {
+          "name": "free-roam-restart-recovered",
+          "text": "S2 850",
+          "kind": "pi",
+          "pending": "false",
+          "title": "S2 850",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "12px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1716,
+            "y": 962.25,
+            "width": 72,
+            "height": 17
+          },
+          "expanded": "true",
+          "clockNow": 32731,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 100,
+            "timestamp": 100,
+            "lastFresh": 32715,
+            "restartVersion": 1,
+            "now": 32731
+          },
+          "received": {
+            "rawTimestamp": 100,
+            "canonicalTimestamp": 100,
+            "ordinal": 1260,
+            "now": 32731
+          }
+        }
+      ],
+      "errors": [],
+      "passed": true
+    },
+    {
+      "width": 1280,
+      "height": 720,
+      "dpr": 1,
+      "scale": 0.8,
+      "samples": [
+        {
+          "name": "initial-pending",
+          "text": "Pending......",
+          "kind": "status",
+          "pending": "true",
+          "title": "Pending......",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "11px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1053.1875,
+            "y": 619.796875,
+            "width": 57.59375,
+            "height": 14
+          },
+          "expanded": "false",
+          "clockNow": 33,
+          "received": null
+        },
+        {
+          "name": "media-socket-without-udp",
+          "text": "Pending......",
+          "kind": "status",
+          "pending": "true",
+          "title": "Pending......",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "11px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1110.7874755859375,
+            "y": 619.796875,
+            "width": 57.59375,
+            "height": 14
+          },
+          "expanded": "true",
+          "clockNow": 2065,
+          "received": null
+        },
+        {
+          "name": "pi",
+          "text": "S2 850",
+          "kind": "pi",
+          "pending": "false",
+          "title": "S2 850",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "12px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1053.1875,
+            "y": 619.796875,
+            "width": 57.59375,
+            "height": 14
+          },
+          "expanded": "false",
+          "clockNow": 3029,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 1100,
+            "timestamp": 1100,
+            "lastFresh": 3013,
+            "restartVersion": 0,
+            "now": 3029
+          },
+          "received": {
+            "rawTimestamp": 1100,
+            "canonicalTimestamp": 1100,
+            "ordinal": 1260,
+            "now": 3029
+          }
+        },
+        {
+          "name": "model",
+          "text": "2010 Lexus LFA",
+          "kind": "car",
+          "pending": "false",
+          "title": "2010 Lexus LFA",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "11px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1053.1875,
+            "y": 619.796875,
+            "width": 57.59375,
+            "height": 14
+          },
+          "expanded": "false",
+          "clockNow": 6065,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 3400,
+            "timestamp": 3400,
+            "lastFresh": 6049,
+            "restartVersion": 0,
+            "now": 6065
+          },
+          "received": {
+            "rawTimestamp": 3400,
+            "canonicalTimestamp": 3400,
+            "ordinal": 1260,
+            "now": 6065
+          }
+        },
+        {
+          "name": "brand",
+          "text": "crosXover",
+          "kind": "brand",
+          "pending": "false",
+          "title": "crosXover",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "12px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1053.1875,
+            "y": 619.796875,
+            "width": 57.59375,
+            "height": 14
+          },
+          "expanded": "false",
+          "clockNow": 9101,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 5700,
+            "timestamp": 5700,
+            "lastFresh": 9085,
+            "restartVersion": 0,
+            "now": 9101
+          },
+          "received": {
+            "rawTimestamp": 5700,
+            "canonicalTimestamp": 5700,
+            "ordinal": 1260,
+            "now": 9101
+          }
+        },
+        {
+          "name": "live",
+          "text": "LIVE",
+          "kind": "connection",
+          "pending": "false",
+          "title": "LIVE",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "12px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1053.1875,
+            "y": 619.796875,
+            "width": 57.59375,
+            "height": 14
+          },
+          "expanded": "false",
+          "clockNow": 12137,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 8000,
+            "timestamp": 8000,
+            "lastFresh": 12121,
+            "restartVersion": 0,
+            "now": 12137
+          },
+          "received": {
+            "rawTimestamp": 8000,
+            "canonicalTimestamp": 8000,
+            "ordinal": 1260,
+            "now": 12137
+          }
+        },
+        {
+          "name": "car-change-reset",
+          "text": "S2 850",
+          "kind": "pi",
+          "pending": "false",
+          "title": "S2 850",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "12px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1053.1875,
+            "y": 619.796875,
+            "width": 57.59375,
+            "height": 14
+          },
+          "expanded": "false",
+          "clockNow": 12269,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 8100,
+            "timestamp": 8100,
+            "lastFresh": 12253,
+            "restartVersion": 0,
+            "now": 12269
+          },
+          "received": {
+            "rawTimestamp": 8100,
+            "canonicalTimestamp": 8100,
+            "ordinal": 4084,
+            "now": 12269
+          }
+        },
+        {
+          "name": "long-model",
+          "text": "1972 Datsun #269 Attacking The Clock Racing 240Z All Carbon Hillclimb Beast",
+          "kind": "car",
+          "pending": "false",
+          "title": "1972 Datsun #269 Attacking The Clock Racing 240Z All Carbon Hillclimb Beast",
+          "width": 93,
+          "scrollWidth": 384,
+          "fontSize": "11px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1053.1875,
+            "y": 619.796875,
+            "width": 57.59375,
+            "height": 14
+          },
+          "expanded": "false",
+          "clockNow": 15305,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 10400,
+            "timestamp": 10400,
+            "lastFresh": 15289,
+            "restartVersion": 0,
+            "now": 15305
+          },
+          "received": {
+            "rawTimestamp": 10400,
+            "canonicalTimestamp": 10400,
+            "ordinal": 4084,
+            "now": 15305
+          }
+        },
+        {
+          "name": "long-model-expanded",
+          "text": "1972 Datsun #269 Attacking The Clock Racing 240Z All Carbon Hillclimb Beast",
+          "kind": "car",
+          "pending": "false",
+          "title": "1972 Datsun #269 Attacking The Clock Racing 240Z All Carbon Hillclimb Beast",
+          "width": 93,
+          "scrollWidth": 384,
+          "fontSize": "11px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1110.7874755859375,
+            "y": 619.796875,
+            "width": 57.59375,
+            "height": 14
+          },
+          "expanded": "true",
+          "clockNow": 16393,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 11200,
+            "timestamp": 11200,
+            "lastFresh": 16377,
+            "restartVersion": 0,
+            "now": 16393
+          },
+          "received": {
+            "rawTimestamp": 11200,
+            "canonicalTimestamp": 11200,
+            "ordinal": 4084,
+            "now": 16393
+          }
+        },
+        {
+          "name": "udp-stopped-media-alive",
+          "text": "Pending......",
+          "kind": "status",
+          "pending": "true",
+          "title": "Pending......",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "11px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1110.7874755859375,
+            "y": 619.796875,
+            "width": 57.59375,
+            "height": 14
+          },
+          "expanded": "true",
+          "clockNow": 18393,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 11200,
+            "timestamp": 11200,
+            "lastFresh": 16377,
+            "restartVersion": 0,
+            "now": 18393
+          },
+          "received": {
+            "rawTimestamp": 11200,
+            "canonicalTimestamp": 11200,
+            "ordinal": 4084,
+            "now": 18393
+          }
+        },
+        {
+          "name": "replayed-pending",
+          "text": "Pending......",
+          "kind": "status",
+          "pending": "true",
+          "title": "Pending......",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "11px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1110.7874755859375,
+            "y": 619.796875,
+            "width": 57.59375,
+            "height": 14
+          },
+          "expanded": "true",
+          "clockNow": 18425,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 11200,
+            "timestamp": 11200,
+            "lastFresh": 16377,
+            "restartVersion": 0,
+            "now": 18425
+          },
+          "received": {
+            "rawTimestamp": 11200,
+            "canonicalTimestamp": 11200,
+            "ordinal": 4084,
+            "now": 18425
+          }
+        },
+        {
+          "name": "out-of-order-pending",
+          "text": "Pending......",
+          "kind": "status",
+          "pending": "true",
+          "title": "Pending......",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "11px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1110.7874755859375,
+            "y": 619.796875,
+            "width": 57.59375,
+            "height": 14
+          },
+          "expanded": "true",
+          "clockNow": 18457,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 11100,
+            "timestamp": 11200,
+            "lastFresh": 16377,
+            "restartVersion": 0,
+            "now": 18457
+          },
+          "received": {
+            "rawTimestamp": 11100,
+            "canonicalTimestamp": 11100,
+            "ordinal": 1260,
+            "now": 18457
+          }
+        },
+        {
+          "name": "reconnected-reset",
+          "text": "S2 850",
+          "kind": "pi",
+          "pending": "false",
+          "title": "S2 850",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "12px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1110.7874755859375,
+            "y": 619.796875,
+            "width": 57.59375,
+            "height": 14
+          },
+          "expanded": "true",
+          "clockNow": 18589,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 11300,
+            "timestamp": 11300,
+            "lastFresh": 18573,
+            "restartVersion": 0,
+            "now": 18589
+          },
+          "received": {
+            "rawTimestamp": 11300,
+            "canonicalTimestamp": 11300,
+            "ordinal": 999,
+            "now": 18589
+          }
+        },
+        {
+          "name": "unknown-car",
+          "text": "CAR N/A",
+          "kind": "car",
+          "pending": "false",
+          "title": "CAR N/A",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "11px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1110.7874755859375,
+            "y": 619.796875,
+            "width": 57.59375,
+            "height": 14
+          },
+          "expanded": "true",
+          "clockNow": 21625,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 13600,
+            "timestamp": 13600,
+            "lastFresh": 21609,
+            "restartVersion": 0,
+            "now": 21625
+          },
+          "received": {
+            "rawTimestamp": 13600,
+            "canonicalTimestamp": 13600,
+            "ordinal": 999,
+            "now": 21625
+          }
+        },
+        {
+          "name": "class-d",
+          "text": "D 100",
+          "kind": "pi",
+          "pending": "false",
+          "title": "D 100",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "12px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1110.7874755859375,
+            "y": 619.796875,
+            "width": 57.59375,
+            "height": 14
+          },
+          "expanded": "true",
+          "clockNow": 21757,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 13700,
+            "timestamp": 13700,
+            "lastFresh": 21741,
+            "restartVersion": 0,
+            "now": 21757
+          },
+          "received": {
+            "rawTimestamp": 13700,
+            "canonicalTimestamp": 13700,
+            "ordinal": 1260,
+            "now": 21757
+          }
+        },
+        {
+          "name": "invalid-pi",
+          "text": "PI N/A",
+          "kind": "pi",
+          "pending": "false",
+          "title": "PI N/A",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "12px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1110.7874755859375,
+            "y": 619.796875,
+            "width": 57.59375,
+            "height": 14
+          },
+          "expanded": "true",
+          "clockNow": 21889,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 13800,
+            "timestamp": 13800,
+            "lastFresh": 21873,
+            "restartVersion": 0,
+            "now": 21889
+          },
+          "received": {
+            "rawTimestamp": 13800,
+            "canonicalTimestamp": 13800,
+            "ordinal": 1260,
+            "now": 21889
+          }
+        },
+        {
+          "name": "race-priority",
+          "text": "P3",
+          "kind": "status",
+          "pending": "false",
+          "title": "P3",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "12px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1110.7874755859375,
+            "y": 619.796875,
+            "width": 57.59375,
+            "height": 14
+          },
+          "expanded": "true",
+          "clockNow": 22553,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 14400,
+            "timestamp": 14400,
+            "lastFresh": 22537,
+            "restartVersion": 0,
+            "now": 22553
+          },
+          "received": {
+            "rawTimestamp": 14400,
+            "canonicalTimestamp": 14400,
+            "ordinal": 1260,
+            "now": 22553
+          }
+        },
+        {
+          "name": "race-grace-udp-stale",
+          "text": "Pending......",
+          "kind": "status",
+          "pending": "true",
+          "title": "Pending......",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "11px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1110.7874755859375,
+            "y": 619.796875,
+            "width": 57.59375,
+            "height": 14
+          },
+          "expanded": "true",
+          "clockNow": 24253,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 14400,
+            "timestamp": 14400,
+            "lastFresh": 22537,
+            "restartVersion": 0,
+            "now": 24253
+          },
+          "received": {
+            "rawTimestamp": 14400,
+            "canonicalTimestamp": 14400,
+            "ordinal": 1260,
+            "now": 24253
+          }
+        },
+        {
+          "name": "reconnect-during-race-grace",
+          "text": "LIVE",
+          "kind": "status",
+          "pending": "false",
+          "title": "LIVE",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "12px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1110.7874755859375,
+            "y": 619.796875,
+            "width": 57.59375,
+            "height": 14
+          },
+          "expanded": "true",
+          "clockNow": 24385,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 14500,
+            "timestamp": 14500,
+            "lastFresh": 24369,
+            "restartVersion": 0,
+            "now": 24384
+          },
+          "received": {
+            "rawTimestamp": 14500,
+            "canonicalTimestamp": 14500,
+            "ordinal": 1260,
+            "now": 24384
+          }
+        },
+        {
+          "name": "idle-after-race-grace",
+          "text": "S2 850",
+          "kind": "pi",
+          "pending": "false",
+          "title": "S2 850",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "12px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1110.7874755859375,
+            "y": 619.796875,
+            "width": 57.59375,
+            "height": 14
+          },
+          "expanded": "true",
+          "clockNow": 26513,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 16500,
+            "timestamp": 16500,
+            "lastFresh": 26497,
+            "restartVersion": 0,
+            "now": 26513
+          },
+          "received": {
+            "rawTimestamp": 16500,
+            "canonicalTimestamp": 16500,
+            "ordinal": 1260,
+            "now": 26513
+          }
+        },
+        {
+          "name": "race-reconfirmed",
+          "text": "P3",
+          "kind": "status",
+          "pending": "false",
+          "title": "P3",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "12px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1110.7874755859375,
+            "y": 619.796875,
+            "width": 57.59375,
+            "height": 14
+          },
+          "expanded": "true",
+          "clockNow": 27177,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 17100,
+            "timestamp": 17100,
+            "lastFresh": 27161,
+            "restartVersion": 0,
+            "now": 27177
+          },
+          "received": {
+            "rawTimestamp": 17100,
+            "canonicalTimestamp": 17100,
+            "ordinal": 1260,
+            "now": 27177
+          }
+        },
+        {
+          "name": "lap-notice",
+          "text": "BEST LAP",
+          "kind": "status",
+          "pending": "false",
+          "title": "BEST LAP",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "12px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1110.7874755859375,
+            "y": 619.796875,
+            "width": 57.59375,
+            "height": 14
+          },
+          "expanded": "true",
+          "clockNow": 27309,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 17200,
+            "timestamp": 17200,
+            "lastFresh": 27280,
+            "restartVersion": 0,
+            "now": 27309
+          },
+          "received": {
+            "rawTimestamp": 17200,
+            "canonicalTimestamp": 17200,
+            "ordinal": 1260,
+            "now": 27309
+          }
+        },
+        {
+          "name": "notice-after-race-end",
+          "text": "BEST LAP",
+          "kind": "status",
+          "pending": "false",
+          "title": "BEST LAP",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "12px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1110.7874755859375,
+            "y": 619.796875,
+            "width": 57.59375,
+            "height": 14
+          },
+          "expanded": "true",
+          "clockNow": 29437,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 19200,
+            "timestamp": 19200,
+            "lastFresh": 29421,
+            "restartVersion": 0,
+            "now": 29437
+          },
+          "received": {
+            "rawTimestamp": 19200,
+            "canonicalTimestamp": 19200,
+            "ordinal": 1260,
+            "now": 29437
+          }
+        },
+        {
+          "name": "notice-expired-carousel",
+          "text": "S2 850",
+          "kind": "pi",
+          "pending": "false",
+          "title": "S2 850",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "12px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1110.7874755859375,
+            "y": 619.796875,
+            "width": 57.59375,
+            "height": 14
+          },
+          "expanded": "true",
+          "clockNow": 30733,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 20400,
+            "timestamp": 20400,
+            "lastFresh": 30717,
+            "restartVersion": 0,
+            "now": 30733
+          },
+          "received": {
+            "rawTimestamp": 20400,
+            "canonicalTimestamp": 20400,
+            "ordinal": 1260,
+            "now": 30733
+          }
+        },
+        {
+          "name": "free-roam-outage",
+          "text": "Pending......",
+          "kind": "status",
+          "pending": "true",
+          "title": "Pending......",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "11px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1110.7874755859375,
+            "y": 619.796875,
+            "width": 57.59375,
+            "height": 14
+          },
+          "expanded": "true",
+          "clockNow": 32565,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 20500,
+            "timestamp": 20500,
+            "lastFresh": 30849,
+            "restartVersion": 0,
+            "now": 32565
+          },
+          "received": {
+            "rawTimestamp": 20500,
+            "canonicalTimestamp": 20500,
+            "ordinal": 1260,
+            "now": 32565
+          }
+        },
+        {
+          "name": "free-roam-restart-baseline",
+          "text": "Pending......",
+          "kind": "status",
+          "pending": "true",
+          "title": "Pending......",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "11px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1110.7874755859375,
+            "y": 619.796875,
+            "width": 57.59375,
+            "height": 14
+          },
+          "expanded": "true",
+          "clockNow": 32597,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 0,
+            "timestamp": 20500,
+            "lastFresh": null,
+            "restartVersion": 0,
+            "now": 32581
+          },
+          "received": {
+            "rawTimestamp": 0,
+            "canonicalTimestamp": 0,
+            "ordinal": 1260,
+            "now": 32581
+          }
+        },
+        {
+          "name": "free-roam-restart-recovered",
+          "text": "S2 850",
+          "kind": "pi",
+          "pending": "false",
+          "title": "S2 850",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "12px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1110.7874755859375,
+            "y": 619.796875,
+            "width": 57.59375,
+            "height": 14
+          },
+          "expanded": "true",
+          "clockNow": 32729,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 100,
+            "timestamp": 100,
+            "lastFresh": 32713,
+            "restartVersion": 1,
+            "now": 32729
+          },
+          "received": {
+            "rawTimestamp": 100,
+            "canonicalTimestamp": 100,
+            "ordinal": 1260,
+            "now": 32729
+          }
+        }
+      ],
+      "errors": [],
+      "passed": true
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "dpr": 2,
+      "scale": 0.8,
+      "samples": [
+        {
+          "name": "initial-pending",
+          "text": "Pending......",
+          "kind": "status",
+          "pending": "true",
+          "title": "Pending......",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "11px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1693.1875,
+            "y": 979.796875,
+            "width": 57.59375,
+            "height": 14
+          },
+          "expanded": "false",
+          "clockNow": 36,
+          "received": null
+        },
+        {
+          "name": "media-socket-without-udp",
+          "text": "Pending......",
+          "kind": "status",
+          "pending": "true",
+          "title": "Pending......",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "11px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1750.7874755859375,
+            "y": 979.796875,
+            "width": 57.59375,
+            "height": 14
+          },
+          "expanded": "true",
+          "clockNow": 2068,
+          "received": null
+        },
+        {
+          "name": "pi",
+          "text": "S2 850",
+          "kind": "pi",
+          "pending": "false",
+          "title": "S2 850",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "12px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1693.1875,
+            "y": 979.796875,
+            "width": 57.59375,
+            "height": 14
+          },
+          "expanded": "false",
+          "clockNow": 3032,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 1100,
+            "timestamp": 1100,
+            "lastFresh": 3016,
+            "restartVersion": 0,
+            "now": 3032
+          },
+          "received": {
+            "rawTimestamp": 1100,
+            "canonicalTimestamp": 1100,
+            "ordinal": 1260,
+            "now": 3032
+          }
+        },
+        {
+          "name": "model",
+          "text": "2010 Lexus LFA",
+          "kind": "car",
+          "pending": "false",
+          "title": "2010 Lexus LFA",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "11px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1693.1875,
+            "y": 979.796875,
+            "width": 57.59375,
+            "height": 14
+          },
+          "expanded": "false",
+          "clockNow": 6068,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 3400,
+            "timestamp": 3400,
+            "lastFresh": 6052,
+            "restartVersion": 0,
+            "now": 6068
+          },
+          "received": {
+            "rawTimestamp": 3400,
+            "canonicalTimestamp": 3400,
+            "ordinal": 1260,
+            "now": 6068
+          }
+        },
+        {
+          "name": "brand",
+          "text": "crosXover",
+          "kind": "brand",
+          "pending": "false",
+          "title": "crosXover",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "12px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1693.1875,
+            "y": 979.796875,
+            "width": 57.59375,
+            "height": 14
+          },
+          "expanded": "false",
+          "clockNow": 9104,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 5700,
+            "timestamp": 5700,
+            "lastFresh": 9088,
+            "restartVersion": 0,
+            "now": 9104
+          },
+          "received": {
+            "rawTimestamp": 5700,
+            "canonicalTimestamp": 5700,
+            "ordinal": 1260,
+            "now": 9104
+          }
+        },
+        {
+          "name": "live",
+          "text": "LIVE",
+          "kind": "connection",
+          "pending": "false",
+          "title": "LIVE",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "12px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1693.1875,
+            "y": 979.796875,
+            "width": 57.59375,
+            "height": 14
+          },
+          "expanded": "false",
+          "clockNow": 12140,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 8000,
+            "timestamp": 8000,
+            "lastFresh": 12124,
+            "restartVersion": 0,
+            "now": 12140
+          },
+          "received": {
+            "rawTimestamp": 8000,
+            "canonicalTimestamp": 8000,
+            "ordinal": 1260,
+            "now": 12140
+          }
+        },
+        {
+          "name": "car-change-reset",
+          "text": "S2 850",
+          "kind": "pi",
+          "pending": "false",
+          "title": "S2 850",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "12px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1693.1875,
+            "y": 979.796875,
+            "width": 57.59375,
+            "height": 14
+          },
+          "expanded": "false",
+          "clockNow": 12272,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 8100,
+            "timestamp": 8100,
+            "lastFresh": 12256,
+            "restartVersion": 0,
+            "now": 12272
+          },
+          "received": {
+            "rawTimestamp": 8100,
+            "canonicalTimestamp": 8100,
+            "ordinal": 4084,
+            "now": 12272
+          }
+        },
+        {
+          "name": "long-model",
+          "text": "1972 Datsun #269 Attacking The Clock Racing 240Z All Carbon Hillclimb Beast",
+          "kind": "car",
+          "pending": "false",
+          "title": "1972 Datsun #269 Attacking The Clock Racing 240Z All Carbon Hillclimb Beast",
+          "width": 93,
+          "scrollWidth": 384,
+          "fontSize": "11px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1693.1875,
+            "y": 979.796875,
+            "width": 57.59375,
+            "height": 14
+          },
+          "expanded": "false",
+          "clockNow": 15308,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 10400,
+            "timestamp": 10400,
+            "lastFresh": 15292,
+            "restartVersion": 0,
+            "now": 15308
+          },
+          "received": {
+            "rawTimestamp": 10400,
+            "canonicalTimestamp": 10400,
+            "ordinal": 4084,
+            "now": 15308
+          }
+        },
+        {
+          "name": "long-model-expanded",
+          "text": "1972 Datsun #269 Attacking The Clock Racing 240Z All Carbon Hillclimb Beast",
+          "kind": "car",
+          "pending": "false",
+          "title": "1972 Datsun #269 Attacking The Clock Racing 240Z All Carbon Hillclimb Beast",
+          "width": 93,
+          "scrollWidth": 384,
+          "fontSize": "11px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1750.7874755859375,
+            "y": 979.796875,
+            "width": 57.59375,
+            "height": 14
+          },
+          "expanded": "true",
+          "clockNow": 16396,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 11200,
+            "timestamp": 11200,
+            "lastFresh": 16380,
+            "restartVersion": 0,
+            "now": 16396
+          },
+          "received": {
+            "rawTimestamp": 11200,
+            "canonicalTimestamp": 11200,
+            "ordinal": 4084,
+            "now": 16396
+          }
+        },
+        {
+          "name": "udp-stopped-media-alive",
+          "text": "Pending......",
+          "kind": "status",
+          "pending": "true",
+          "title": "Pending......",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "11px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1750.7874755859375,
+            "y": 979.796875,
+            "width": 57.59375,
+            "height": 14
+          },
+          "expanded": "true",
+          "clockNow": 18396,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 11200,
+            "timestamp": 11200,
+            "lastFresh": 16380,
+            "restartVersion": 0,
+            "now": 18396
+          },
+          "received": {
+            "rawTimestamp": 11200,
+            "canonicalTimestamp": 11200,
+            "ordinal": 4084,
+            "now": 18396
+          }
+        },
+        {
+          "name": "replayed-pending",
+          "text": "Pending......",
+          "kind": "status",
+          "pending": "true",
+          "title": "Pending......",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "11px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1750.7874755859375,
+            "y": 979.796875,
+            "width": 57.59375,
+            "height": 14
+          },
+          "expanded": "true",
+          "clockNow": 18428,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 11200,
+            "timestamp": 11200,
+            "lastFresh": 16380,
+            "restartVersion": 0,
+            "now": 18428
+          },
+          "received": {
+            "rawTimestamp": 11200,
+            "canonicalTimestamp": 11200,
+            "ordinal": 4084,
+            "now": 18428
+          }
+        },
+        {
+          "name": "out-of-order-pending",
+          "text": "Pending......",
+          "kind": "status",
+          "pending": "true",
+          "title": "Pending......",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "11px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1750.7874755859375,
+            "y": 979.796875,
+            "width": 57.59375,
+            "height": 14
+          },
+          "expanded": "true",
+          "clockNow": 18460,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 11100,
+            "timestamp": 11200,
+            "lastFresh": 16380,
+            "restartVersion": 0,
+            "now": 18460
+          },
+          "received": {
+            "rawTimestamp": 11100,
+            "canonicalTimestamp": 11100,
+            "ordinal": 1260,
+            "now": 18460
+          }
+        },
+        {
+          "name": "reconnected-reset",
+          "text": "S2 850",
+          "kind": "pi",
+          "pending": "false",
+          "title": "S2 850",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "12px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1750.7874755859375,
+            "y": 979.796875,
+            "width": 57.59375,
+            "height": 14
+          },
+          "expanded": "true",
+          "clockNow": 18592,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 11300,
+            "timestamp": 11300,
+            "lastFresh": 18576,
+            "restartVersion": 0,
+            "now": 18592
+          },
+          "received": {
+            "rawTimestamp": 11300,
+            "canonicalTimestamp": 11300,
+            "ordinal": 999,
+            "now": 18592
+          }
+        },
+        {
+          "name": "unknown-car",
+          "text": "CAR N/A",
+          "kind": "car",
+          "pending": "false",
+          "title": "CAR N/A",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "11px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1750.7874755859375,
+            "y": 979.796875,
+            "width": 57.59375,
+            "height": 14
+          },
+          "expanded": "true",
+          "clockNow": 21628,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 13600,
+            "timestamp": 13600,
+            "lastFresh": 21612,
+            "restartVersion": 0,
+            "now": 21628
+          },
+          "received": {
+            "rawTimestamp": 13600,
+            "canonicalTimestamp": 13600,
+            "ordinal": 999,
+            "now": 21628
+          }
+        },
+        {
+          "name": "class-d",
+          "text": "D 100",
+          "kind": "pi",
+          "pending": "false",
+          "title": "D 100",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "12px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1750.7874755859375,
+            "y": 979.796875,
+            "width": 57.59375,
+            "height": 14
+          },
+          "expanded": "true",
+          "clockNow": 21760,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 13700,
+            "timestamp": 13700,
+            "lastFresh": 21744,
+            "restartVersion": 0,
+            "now": 21760
+          },
+          "received": {
+            "rawTimestamp": 13700,
+            "canonicalTimestamp": 13700,
+            "ordinal": 1260,
+            "now": 21760
+          }
+        },
+        {
+          "name": "invalid-pi",
+          "text": "PI N/A",
+          "kind": "pi",
+          "pending": "false",
+          "title": "PI N/A",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "12px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1750.7874755859375,
+            "y": 979.796875,
+            "width": 57.59375,
+            "height": 14
+          },
+          "expanded": "true",
+          "clockNow": 21892,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 13800,
+            "timestamp": 13800,
+            "lastFresh": 21860,
+            "restartVersion": 0,
+            "now": 21876
+          },
+          "received": {
+            "rawTimestamp": 13800,
+            "canonicalTimestamp": 13800,
+            "ordinal": 1260,
+            "now": 21876
+          }
+        },
+        {
+          "name": "race-priority",
+          "text": "P3",
+          "kind": "status",
+          "pending": "false",
+          "title": "P3",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "12px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1750.7874755859375,
+            "y": 979.796875,
+            "width": 57.59375,
+            "height": 14
+          },
+          "expanded": "true",
+          "clockNow": 22556,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 14400,
+            "timestamp": 14400,
+            "lastFresh": 22540,
+            "restartVersion": 0,
+            "now": 22556
+          },
+          "received": {
+            "rawTimestamp": 14400,
+            "canonicalTimestamp": 14400,
+            "ordinal": 1260,
+            "now": 22556
+          }
+        },
+        {
+          "name": "race-grace-udp-stale",
+          "text": "Pending......",
+          "kind": "status",
+          "pending": "true",
+          "title": "Pending......",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "11px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1750.7874755859375,
+            "y": 979.796875,
+            "width": 57.59375,
+            "height": 14
+          },
+          "expanded": "true",
+          "clockNow": 24256,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 14400,
+            "timestamp": 14400,
+            "lastFresh": 22540,
+            "restartVersion": 0,
+            "now": 24256
+          },
+          "received": {
+            "rawTimestamp": 14400,
+            "canonicalTimestamp": 14400,
+            "ordinal": 1260,
+            "now": 24256
+          }
+        },
+        {
+          "name": "reconnect-during-race-grace",
+          "text": "LIVE",
+          "kind": "status",
+          "pending": "false",
+          "title": "LIVE",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "12px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1750.7874755859375,
+            "y": 979.796875,
+            "width": 57.59375,
+            "height": 14
+          },
+          "expanded": "true",
+          "clockNow": 24388,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 14500,
+            "timestamp": 14500,
+            "lastFresh": 24372,
+            "restartVersion": 0,
+            "now": 24388
+          },
+          "received": {
+            "rawTimestamp": 14500,
+            "canonicalTimestamp": 14500,
+            "ordinal": 1260,
+            "now": 24388
+          }
+        },
+        {
+          "name": "idle-after-race-grace",
+          "text": "S2 850",
+          "kind": "pi",
+          "pending": "false",
+          "title": "S2 850",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "12px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1750.7874755859375,
+            "y": 979.796875,
+            "width": 57.59375,
+            "height": 14
+          },
+          "expanded": "true",
+          "clockNow": 26516,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 16500,
+            "timestamp": 16500,
+            "lastFresh": 26500,
+            "restartVersion": 0,
+            "now": 26516
+          },
+          "received": {
+            "rawTimestamp": 16500,
+            "canonicalTimestamp": 16500,
+            "ordinal": 1260,
+            "now": 26516
+          }
+        },
+        {
+          "name": "race-reconfirmed",
+          "text": "P3",
+          "kind": "status",
+          "pending": "false",
+          "title": "P3",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "12px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1750.7874755859375,
+            "y": 979.796875,
+            "width": 57.59375,
+            "height": 14
+          },
+          "expanded": "true",
+          "clockNow": 27180,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 17100,
+            "timestamp": 17100,
+            "lastFresh": 27164,
+            "restartVersion": 0,
+            "now": 27180
+          },
+          "received": {
+            "rawTimestamp": 17100,
+            "canonicalTimestamp": 17100,
+            "ordinal": 1260,
+            "now": 27180
+          }
+        },
+        {
+          "name": "lap-notice",
+          "text": "BEST LAP",
+          "kind": "status",
+          "pending": "false",
+          "title": "BEST LAP",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "12px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1750.7874755859375,
+            "y": 979.796875,
+            "width": 57.59375,
+            "height": 14
+          },
+          "expanded": "true",
+          "clockNow": 27312,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 17200,
+            "timestamp": 17200,
+            "lastFresh": 27296,
+            "restartVersion": 0,
+            "now": 27312
+          },
+          "received": {
+            "rawTimestamp": 17200,
+            "canonicalTimestamp": 17200,
+            "ordinal": 1260,
+            "now": 27312
+          }
+        },
+        {
+          "name": "notice-after-race-end",
+          "text": "BEST LAP",
+          "kind": "status",
+          "pending": "false",
+          "title": "BEST LAP",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "12px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1750.7874755859375,
+            "y": 979.796875,
+            "width": 57.59375,
+            "height": 14
+          },
+          "expanded": "true",
+          "clockNow": 29440,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 19200,
+            "timestamp": 19200,
+            "lastFresh": 29424,
+            "restartVersion": 0,
+            "now": 29440
+          },
+          "received": {
+            "rawTimestamp": 19200,
+            "canonicalTimestamp": 19200,
+            "ordinal": 1260,
+            "now": 29440
+          }
+        },
+        {
+          "name": "notice-expired-carousel",
+          "text": "S2 850",
+          "kind": "pi",
+          "pending": "false",
+          "title": "S2 850",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "12px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1750.7874755859375,
+            "y": 979.796875,
+            "width": 57.59375,
+            "height": 14
+          },
+          "expanded": "true",
+          "clockNow": 30736,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 20400,
+            "timestamp": 20400,
+            "lastFresh": 30720,
+            "restartVersion": 0,
+            "now": 30736
+          },
+          "received": {
+            "rawTimestamp": 20400,
+            "canonicalTimestamp": 20400,
+            "ordinal": 1260,
+            "now": 30736
+          }
+        },
+        {
+          "name": "free-roam-outage",
+          "text": "Pending......",
+          "kind": "status",
+          "pending": "true",
+          "title": "Pending......",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "11px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1750.7874755859375,
+            "y": 979.796875,
+            "width": 57.59375,
+            "height": 14
+          },
+          "expanded": "true",
+          "clockNow": 32568,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 20500,
+            "timestamp": 20500,
+            "lastFresh": 30852,
+            "restartVersion": 0,
+            "now": 32568
+          },
+          "received": {
+            "rawTimestamp": 20500,
+            "canonicalTimestamp": 20500,
+            "ordinal": 1260,
+            "now": 32568
+          }
+        },
+        {
+          "name": "free-roam-restart-baseline",
+          "text": "Pending......",
+          "kind": "status",
+          "pending": "true",
+          "title": "Pending......",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "11px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1750.7874755859375,
+            "y": 979.796875,
+            "width": 57.59375,
+            "height": 14
+          },
+          "expanded": "true",
+          "clockNow": 32600,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 0,
+            "timestamp": 20500,
+            "lastFresh": null,
+            "restartVersion": 0,
+            "now": 32600
+          },
+          "received": {
+            "rawTimestamp": 0,
+            "canonicalTimestamp": 0,
+            "ordinal": 1260,
+            "now": 32600
+          }
+        },
+        {
+          "name": "free-roam-restart-recovered",
+          "text": "S2 850",
+          "kind": "pi",
+          "pending": "false",
+          "title": "S2 850",
+          "width": 93,
+          "scrollWidth": 93,
+          "fontSize": "12px",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "box": {
+            "x": 1750.7874755859375,
+            "y": 979.796875,
+            "width": 57.59375,
+            "height": 14
+          },
+          "expanded": "true",
+          "clockNow": 32732,
+          "ingestion": {
+            "accepted": false,
+            "rawTimestamp": 100,
+            "timestamp": 100,
+            "lastFresh": 32716,
+            "restartVersion": 1,
+            "now": 32732
+          },
+          "received": {
+            "rawTimestamp": 100,
+            "canonicalTimestamp": 100,
+            "ordinal": 1260,
+            "now": 32732
+          }
+        }
+      ],
+      "errors": [],
+      "passed": true
+    }
+  ]
+}

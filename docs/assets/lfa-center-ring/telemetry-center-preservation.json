@@ -1,0 +1,69 @@
+{
+  "referenceHead": "ad4458ec975678055a0b8555e3b0c99f53191aba",
+  "revisionHead": "eac1b9e5bd360a3ca4e9359bd142b43de7c6a0f6",
+  "method": "Exact RGBA comparison at pixel centers inside radius267 around420,277.5 on840x556 DPR2 detail PNGs; no masks/tolerance/resampling. Only matched central telemetry states compared. Rank/notice changes intentional and not included.",
+  "results": [
+    {
+      "file": "detail-metric.png",
+      "comparedPixels": 223942,
+      "differingPixels": 0,
+      "maximumChannelDelta": 0
+    },
+    {
+      "file": "detail-imperial.png",
+      "comparedPixels": 223942,
+      "differingPixels": 0,
+      "maximumChannelDelta": 0
+    },
+    {
+      "file": "detail-reverse.png",
+      "comparedPixels": 223942,
+      "differingPixels": 0,
+      "maximumChannelDelta": 0
+    },
+    {
+      "file": "detail-neutral.png",
+      "comparedPixels": 223942,
+      "differingPixels": 0,
+      "maximumChannelDelta": 0
+    },
+    {
+      "file": "detail-redline.png",
+      "comparedPixels": 223942,
+      "differingPixels": 0,
+      "maximumChannelDelta": 0
+    },
+    {
+      "file": "detail-high-rpm.png",
+      "comparedPixels": 223942,
+      "differingPixels": 0,
+      "maximumChannelDelta": 0
+    },
+    {
+      "file": "detail-missing.png",
+      "comparedPixels": 223942,
+      "differingPixels": 504,
+      "maximumChannelDelta": 149,
+      "differenceBounds": [
+        398,
+        250,
+        441,
+        270
+      ],
+      "fixtureMismatch": "Old missing/no-signal fixture retains mph; new fixture returns to metric before these states. All changed pixels lie within speed-unit text; these are not matched unit conditions."
+    },
+    {
+      "file": "detail-no-signal.png",
+      "comparedPixels": 223942,
+      "differingPixels": 504,
+      "maximumChannelDelta": 149,
+      "differenceBounds": [
+        398,
+        250,
+        441,
+        270
+      ],
+      "fixtureMismatch": "Old missing/no-signal fixture retains mph; new fixture returns to metric before these states. All changed pixels lie within speed-unit text; these are not matched unit conditions."
+    }
+  ]
+}

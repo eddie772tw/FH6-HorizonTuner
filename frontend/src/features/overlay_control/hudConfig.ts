@@ -1,6 +1,7 @@
 import type { S650CenterWidget, S650HmiTheme } from './s650/config';
 import type { ClassicJdmAuxGauge, ClassicJdmDefiTheme, ClassicJdmTachStyle } from './classic_jdm/config';
 import type { HudDisplayUnits } from './HudUnitSettingsSidebar';
+import { DEFAULT_LFA_AUTO_EXPAND, DEFAULT_LFA_MANUAL_EXPAND } from './lfa_center_ring/config';
 
 export interface HudElements {
   showTeleMaster?: boolean;
@@ -46,6 +47,10 @@ export interface HudConfig {
   classicJdmAux1?: ClassicJdmAuxGauge;
   classicJdmAux2?: ClassicJdmAuxGauge;
   classicJdmDefiTheme?: ClassicJdmDefiTheme;
+  /** LFA only: manual expansion overrides automatic race detection. */
+  lfaManualExpand?: boolean;
+  /** LFA only: expand while confirmed lap timing is present. */
+  lfaAutoExpand?: boolean;
   audioDeviceId?: string;
   selectedMonitorIndex: number;
   scale: number;
@@ -94,6 +99,8 @@ export const DEFAULT_HUD_CONFIG: HudConfig = {
   classicJdmAux1: 'tire_temp_4w',
   classicJdmAux2: 'tire_temp_rear',
   classicJdmDefiTheme: 'amber',
+  lfaManualExpand: DEFAULT_LFA_MANUAL_EXPAND,
+  lfaAutoExpand: DEFAULT_LFA_AUTO_EXPAND,
   audioDeviceId: 'default',
   selectedMonitorIndex: 0,
   scale: 1.0,

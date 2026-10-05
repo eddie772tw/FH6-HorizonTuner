@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="560" height="370" viewBox="0 0 560 370">
+  <title>Original LFA-inspired media fascia</title>
+  <desc>Bagley as Codex, MIT 2026. Original menu-shaped surface informed by official LFA normal/menu illustrations. No OEM images or logos.</desc>
+  <defs>
+    <linearGradient id="surface" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#10181c"/><stop offset=".55" stop-color="#0a1115"/><stop offset="1" stop-color="#0b1216"/></linearGradient>
+    <mask id="clearRing"><rect width="560" height="370" fill="white"/><circle id="expandedRingCutout" cx="376" cy="185" r="180" fill="black"/></mask>
+  </defs>
+  <g mask="url(#clearRing)">
+    <path id="expandedSurface" d="M270 43H88C47 73 25 126 23 185C25 244 47 297 88 325H270Z" fill="url(#surface)" stroke="#25353d" stroke-width="1"/>
+    <path d="M61 84H230" fill="none" stroke="#303e45" stroke-width="1"/>
+  </g>
+</svg>

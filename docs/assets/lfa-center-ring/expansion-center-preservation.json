@@ -1,0 +1,998 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-05",
+  "style": "lfa_center_ring",
+  "purpose": "展開功能修訂後，對照既有非線性側表版本，驗證收合狀態中央圓的原始 PNG 像素是否保留",
+  "reference": {
+    "sourceHead": "5c5b8f63c735a0e55a826a263db53199958dd6ce",
+    "githubRunId": 37266656967,
+    "githubArtifactId": 11326489095,
+    "githubRunUrl": "https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37266656967",
+    "provenanceSource": "目前儲存庫 docs/assets/lfa-center-ring/verification.json 與 docs/hud/lfa-center-ring.md 的 baseline provenance",
+    "captureDirectory": "lfa-ci-5c5b8f6",
+    "downloadedArtifactArchiveSha256": "3fb973185a92803d27dce34d5bb047966510006f7b9762b67bde20e1542d40cc",
+    "captureEvidenceSha256": "12ac68d85313a76c2d1d37350e6e6b98c992f8db8e3ec649ce0023d3880696a4",
+    "browser": "154.0.8037.57",
+    "platform": "linux",
+    "captureSource": "Synthetic canonical frames through real HUDCore dispatcher",
+    "captureSuitePassed": true
+  },
+  "revision": {
+    "sourceHead": "f3dd06b7f17b3c12867648780d0622dcb8525b9f",
+    "githubRunId": 37272049555,
+    "githubArtifactId": 11328657701,
+    "githubRunUrl": "https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37272049555",
+    "provenanceSource": "本次指定的實際 Chrome CI head/run/artifact；PNG bytes 另逐檔與下載 artifact ZIP 交叉核對",
+    "captureDirectory": "lfa-ci-f3dd06b",
+    "downloadedArtifactArchiveSha256": "321b641fd8a1862dbeeb0b9ab4ef1e62c6f6f18afccfa978cafba633a2f95329",
+    "captureEvidenceSha256": "745cb0d073f4c95e52b566b8cf2cafb9b05ee475d8b58383c75bfd0b515f2bf5",
+    "browser": "154.0.8037.57",
+    "platform": "linux",
+    "captureSource": "Synthetic canonical frames through real HUDCore dispatcher",
+    "captureSuitePassed": true
+  },
+  "context": {
+    "actualRenderedPngsOnly": true,
+    "syntheticTelemetryFixtureNotGameCapture": true,
+    "nativeWindowsAndGameAcceptance": "未執行；本證據不代表原生遊戲或使用者視覺驗收",
+    "scope": "8 個匹配的 regular collapsed DPR2 detail 狀態，以及 4 個匹配的 metric 完整 viewport。未比較開啟、關閉過程或展開狀態。",
+    "fixtureMatching": "baseline 與 revision 的 render.mjs regular scenario、數據與擷取順序未變；差異僅新增 expansion.mjs import 及 regular suite 結束後的 verifyExpansion 呼叫。fixture.html 無差異。"
+  },
+  "method": {
+    "decoder": "Pillow 12.3.0",
+    "comparison": "NumPy 2.3.5；PNG 解碼後每像素比較完整 RGBA 8-bit channels",
+    "diskCriterion": "對整數像素位置 (x,y)，以像素中心 (x+0.5,y+0.5) 判定：(x+0.5-cx)^2 + (y+0.5-cy)^2 <= radius^2；邊界包含在內",
+    "detailDisk": {
+      "expectedImageWidth": 840,
+      "expectedImageHeight": 556,
+      "centerX": 420,
+      "centerY": 277.5,
+      "radius": 267
+    },
+    "fullViewportDisk": "cx=(fixtureRect.x+210)*DPR；cy=(fixtureRect.y+138.75)*DPR；radius=133.5*DPR。兩份 evidence.json 的 rect 必須完全相同。",
+    "matching": "同檔名、同狀態、同 viewport、同 DPR、同 PNG 寬高；不裁切對齊、不位移、不重新繪製",
+    "tolerancePerChannel": 0,
+    "resizeOrResample": false,
+    "antialiasedOrFeatheredMask": false,
+    "colorSpaceTransform": false,
+    "alphaIgnored": false,
+    "rgbaConversion": "RGB PNG 僅補上不透明 alpha=255；RGBA PNG 保留原有 channels；不做 ICC/gamma 色彩轉換",
+    "centralRgbaHashDefinition": "依影像列優先順序收集所有符合中央圓幾何判定的 RGBA bytes，再計算 SHA-256",
+    "pngInputIntegrity": "每張輸入 PNG 的 bytes 均與指定已下載 ZIP 中同名成員完全相同；未修改圖片"
+  },
+  "detailResults": [
+    {
+      "file": "detail-metric.png",
+      "context": {
+        "state": "metric",
+        "viewportCssPixels": {
+          "width": 1920,
+          "height": 1080
+        },
+        "dpr": 2,
+        "capture": "實際 #lfaContainer locator PNG；兩次 regular collapsed fixture 狀態相同"
+      },
+      "dimensionsPixels": {
+        "width": 840,
+        "height": 556
+      },
+      "referencePng": {
+        "sha256": "26726593b5ddeddca84ed3c206cf32bb778f207c64d31f620cdab5e4fea434ee",
+        "pngMode": "RGB",
+        "archiveMember": "detail-metric.png",
+        "matchesDownloadedArchiveMemberBytes": true
+      },
+      "revisionPng": {
+        "sha256": "26726593b5ddeddca84ed3c206cf32bb778f207c64d31f620cdab5e4fea434ee",
+        "pngMode": "RGB",
+        "archiveMember": "detail-metric.png",
+        "matchesDownloadedArchiveMemberBytes": true
+      },
+      "circleCenterPixels": {
+        "x": 420,
+        "y": 277.5
+      },
+      "radiusPixels": 267,
+      "centralComparedPixels": 223942,
+      "centralDifferingPixels": 0,
+      "centralDifferingChannelValues": 0,
+      "centralMaximumAbsoluteChannelDelta": 0,
+      "centralReferenceRgbaSha256": "0e23cfa0450511d03d9cbd2064ab91c0a0f9f3cc12f75be7fa9a83a680f43109",
+      "centralRevisionRgbaSha256": "0e23cfa0450511d03d9cbd2064ab91c0a0f9f3cc12f75be7fa9a83a680f43109",
+      "centralExactMatch": true,
+      "fullImageComparedPixels": 467040,
+      "fullImageDifferingPixels": 0,
+      "fullImageExactMatch": true,
+      "outsideCentralDiskDifferingPixels": 0,
+      "allDifferingPixels": []
+    },
+    {
+      "file": "detail-imperial.png",
+      "context": {
+        "state": "imperial",
+        "viewportCssPixels": {
+          "width": 1920,
+          "height": 1080
+        },
+        "dpr": 2,
+        "capture": "實際 #lfaContainer locator PNG；兩次 regular collapsed fixture 狀態相同"
+      },
+      "dimensionsPixels": {
+        "width": 840,
+        "height": 556
+      },
+      "referencePng": {
+        "sha256": "64ea441cd4a84f3f3f6d78d550a3b7c37d0ea0ec4f55b6b1cee6beb6e85dff2f",
+        "pngMode": "RGB",
+        "archiveMember": "detail-imperial.png",
+        "matchesDownloadedArchiveMemberBytes": true
+      },
+      "revisionPng": {
+        "sha256": "64ea441cd4a84f3f3f6d78d550a3b7c37d0ea0ec4f55b6b1cee6beb6e85dff2f",
+        "pngMode": "RGB",
+        "archiveMember": "detail-imperial.png",
+        "matchesDownloadedArchiveMemberBytes": true
+      },
+      "circleCenterPixels": {
+        "x": 420,
+        "y": 277.5
+      },
+      "radiusPixels": 267,
+      "centralComparedPixels": 223942,
+      "centralDifferingPixels": 0,
+      "centralDifferingChannelValues": 0,
+      "centralMaximumAbsoluteChannelDelta": 0,
+      "centralReferenceRgbaSha256": "d76321e945e9a4f8e22223f9e536e35f8729873b1ea148c34fe5c6f6b208a568",
+      "centralRevisionRgbaSha256": "d76321e945e9a4f8e22223f9e536e35f8729873b1ea148c34fe5c6f6b208a568",
+      "centralExactMatch": true,
+      "fullImageComparedPixels": 467040,
+      "fullImageDifferingPixels": 0,
+      "fullImageExactMatch": true,
+      "outsideCentralDiskDifferingPixels": 0,
+      "allDifferingPixels": []
+    },
+    {
+      "file": "detail-reverse.png",
+      "context": {
+        "state": "reverse",
+        "viewportCssPixels": {
+          "width": 1920,
+          "height": 1080
+        },
+        "dpr": 2,
+        "capture": "實際 #lfaContainer locator PNG；兩次 regular collapsed fixture 狀態相同"
+      },
+      "dimensionsPixels": {
+        "width": 840,
+        "height": 556
+      },
+      "referencePng": {
+        "sha256": "2b13d951063c6d60c1b9ffa3a00391e1b3f6fd3dd7facd8eb90b9dcc50c30b97",
+        "pngMode": "RGB",
+        "archiveMember": "detail-reverse.png",
+        "matchesDownloadedArchiveMemberBytes": true
+      },
+      "revisionPng": {
+        "sha256": "2b13d951063c6d60c1b9ffa3a00391e1b3f6fd3dd7facd8eb90b9dcc50c30b97",
+        "pngMode": "RGB",
+        "archiveMember": "detail-reverse.png",
+        "matchesDownloadedArchiveMemberBytes": true
+      },
+      "circleCenterPixels": {
+        "x": 420,
+        "y": 277.5
+      },
+      "radiusPixels": 267,
+      "centralComparedPixels": 223942,
+      "centralDifferingPixels": 0,
+      "centralDifferingChannelValues": 0,
+      "centralMaximumAbsoluteChannelDelta": 0,
+      "centralReferenceRgbaSha256": "3cb5e911b7f91321bef0d5fc04059829c4ad7b6b302c4f2a4b57f73962aa928d",
+      "centralRevisionRgbaSha256": "3cb5e911b7f91321bef0d5fc04059829c4ad7b6b302c4f2a4b57f73962aa928d",
+      "centralExactMatch": true,
+      "fullImageComparedPixels": 467040,
+      "fullImageDifferingPixels": 0,
+      "fullImageExactMatch": true,
+      "outsideCentralDiskDifferingPixels": 0,
+      "allDifferingPixels": []
+    },
+    {
+      "file": "detail-neutral.png",
+      "context": {
+        "state": "neutral",
+        "viewportCssPixels": {
+          "width": 1920,
+          "height": 1080
+        },
+        "dpr": 2,
+        "capture": "實際 #lfaContainer locator PNG；兩次 regular collapsed fixture 狀態相同"
+      },
+      "dimensionsPixels": {
+        "width": 840,
+        "height": 556
+      },
+      "referencePng": {
+        "sha256": "a37f035d873a96d3da1b238b62514fc3d8939df8c14c303a99e9400ef519fd37",
+        "pngMode": "RGB",
+        "archiveMember": "detail-neutral.png",
+        "matchesDownloadedArchiveMemberBytes": true
+      },
+      "revisionPng": {
+        "sha256": "a37f035d873a96d3da1b238b62514fc3d8939df8c14c303a99e9400ef519fd37",
+        "pngMode": "RGB",
+        "archiveMember": "detail-neutral.png",
+        "matchesDownloadedArchiveMemberBytes": true
+      },
+      "circleCenterPixels": {
+        "x": 420,
+        "y": 277.5
+      },
+      "radiusPixels": 267,
+      "centralComparedPixels": 223942,
+      "centralDifferingPixels": 0,
+      "centralDifferingChannelValues": 0,
+      "centralMaximumAbsoluteChannelDelta": 0,
+      "centralReferenceRgbaSha256": "098ef62f7363cf5c8a76dc8d74e179e7e78a9a147135e661248f6ff882a3cb92",
+      "centralRevisionRgbaSha256": "098ef62f7363cf5c8a76dc8d74e179e7e78a9a147135e661248f6ff882a3cb92",
+      "centralExactMatch": true,
+      "fullImageComparedPixels": 467040,
+      "fullImageDifferingPixels": 0,
+      "fullImageExactMatch": true,
+      "outsideCentralDiskDifferingPixels": 0,
+      "allDifferingPixels": []
+    },
+    {
+      "file": "detail-redline.png",
+      "context": {
+        "state": "redline",
+        "viewportCssPixels": {
+          "width": 1920,
+          "height": 1080
+        },
+        "dpr": 2,
+        "capture": "實際 #lfaContainer locator PNG；兩次 regular collapsed fixture 狀態相同"
+      },
+      "dimensionsPixels": {
+        "width": 840,
+        "height": 556
+      },
+      "referencePng": {
+        "sha256": "25840e67b5f1c4c80cbfb021531bd1df6134b97af5cb2738a8e326542c227263",
+        "pngMode": "RGB",
+        "archiveMember": "detail-redline.png",
+        "matchesDownloadedArchiveMemberBytes": true
+      },
+      "revisionPng": {
+        "sha256": "25840e67b5f1c4c80cbfb021531bd1df6134b97af5cb2738a8e326542c227263",
+        "pngMode": "RGB",
+        "archiveMember": "detail-redline.png",
+        "matchesDownloadedArchiveMemberBytes": true
+      },
+      "circleCenterPixels": {
+        "x": 420,
+        "y": 277.5
+      },
+      "radiusPixels": 267,
+      "centralComparedPixels": 223942,
+      "centralDifferingPixels": 0,
+      "centralDifferingChannelValues": 0,
+      "centralMaximumAbsoluteChannelDelta": 0,
+      "centralReferenceRgbaSha256": "0b6774a8df18da8af76b0718db7f75a05ac7563ef59b1da8d1ee2c000c78ec85",
+      "centralRevisionRgbaSha256": "0b6774a8df18da8af76b0718db7f75a05ac7563ef59b1da8d1ee2c000c78ec85",
+      "centralExactMatch": true,
+      "fullImageComparedPixels": 467040,
+      "fullImageDifferingPixels": 0,
+      "fullImageExactMatch": true,
+      "outsideCentralDiskDifferingPixels": 0,
+      "allDifferingPixels": []
+    },
+    {
+      "file": "detail-high-rpm.png",
+      "context": {
+        "state": "high-rpm",
+        "viewportCssPixels": {
+          "width": 1920,
+          "height": 1080
+        },
+        "dpr": 2,
+        "capture": "實際 #lfaContainer locator PNG；兩次 regular collapsed fixture 狀態相同"
+      },
+      "dimensionsPixels": {
+        "width": 840,
+        "height": 556
+      },
+      "referencePng": {
+        "sha256": "e8ce304b1ed469af8178af4a31b9f0a2d196962836237a609e21aa2b9c731779",
+        "pngMode": "RGB",
+        "archiveMember": "detail-high-rpm.png",
+        "matchesDownloadedArchiveMemberBytes": true
+      },
+      "revisionPng": {
+        "sha256": "e8ce304b1ed469af8178af4a31b9f0a2d196962836237a609e21aa2b9c731779",
+        "pngMode": "RGB",
+        "archiveMember": "detail-high-rpm.png",
+        "matchesDownloadedArchiveMemberBytes": true
+      },
+      "circleCenterPixels": {
+        "x": 420,
+        "y": 277.5
+      },
+      "radiusPixels": 267,
+      "centralComparedPixels": 223942,
+      "centralDifferingPixels": 0,
+      "centralDifferingChannelValues": 0,
+      "centralMaximumAbsoluteChannelDelta": 0,
+      "centralReferenceRgbaSha256": "1e999b2a8b99f40f1159eaff82577df8e5953ed3c90bdb79e0178551066fda05",
+      "centralRevisionRgbaSha256": "1e999b2a8b99f40f1159eaff82577df8e5953ed3c90bdb79e0178551066fda05",
+      "centralExactMatch": true,
+      "fullImageComparedPixels": 467040,
+      "fullImageDifferingPixels": 0,
+      "fullImageExactMatch": true,
+      "outsideCentralDiskDifferingPixels": 0,
+      "allDifferingPixels": []
+    },
+    {
+      "file": "detail-missing.png",
+      "context": {
+        "state": "missing",
+        "viewportCssPixels": {
+          "width": 1920,
+          "height": 1080
+        },
+        "dpr": 2,
+        "capture": "實際 #lfaContainer locator PNG；兩次 regular collapsed fixture 狀態相同"
+      },
+      "dimensionsPixels": {
+        "width": 840,
+        "height": 556
+      },
+      "referencePng": {
+        "sha256": "adcc1901edd56ee3ce51a80024ad8c91a88ca8e0039b02d8e61a62c1fd4bb66e",
+        "pngMode": "RGB",
+        "archiveMember": "detail-missing.png",
+        "matchesDownloadedArchiveMemberBytes": true
+      },
+      "revisionPng": {
+        "sha256": "adcc1901edd56ee3ce51a80024ad8c91a88ca8e0039b02d8e61a62c1fd4bb66e",
+        "pngMode": "RGB",
+        "archiveMember": "detail-missing.png",
+        "matchesDownloadedArchiveMemberBytes": true
+      },
+      "circleCenterPixels": {
+        "x": 420,
+        "y": 277.5
+      },
+      "radiusPixels": 267,
+      "centralComparedPixels": 223942,
+      "centralDifferingPixels": 0,
+      "centralDifferingChannelValues": 0,
+      "centralMaximumAbsoluteChannelDelta": 0,
+      "centralReferenceRgbaSha256": "da8bd6d26f944008e84e504ba58dd02eb99cdb3a7be402b28e439d32f15827d2",
+      "centralRevisionRgbaSha256": "da8bd6d26f944008e84e504ba58dd02eb99cdb3a7be402b28e439d32f15827d2",
+      "centralExactMatch": true,
+      "fullImageComparedPixels": 467040,
+      "fullImageDifferingPixels": 0,
+      "fullImageExactMatch": true,
+      "outsideCentralDiskDifferingPixels": 0,
+      "allDifferingPixels": []
+    },
+    {
+      "file": "detail-no-signal.png",
+      "context": {
+        "state": "no-signal",
+        "viewportCssPixels": {
+          "width": 1920,
+          "height": 1080
+        },
+        "dpr": 2,
+        "capture": "實際 #lfaContainer locator PNG；兩次 regular collapsed fixture 狀態相同"
+      },
+      "dimensionsPixels": {
+        "width": 840,
+        "height": 556
+      },
+      "referencePng": {
+        "sha256": "4ae5e4b870288cb7c2acced684d3af94c9351479508efcb185d629e2a9f93bd8",
+        "pngMode": "RGB",
+        "archiveMember": "detail-no-signal.png",
+        "matchesDownloadedArchiveMemberBytes": true
+      },
+      "revisionPng": {
+        "sha256": "4ae5e4b870288cb7c2acced684d3af94c9351479508efcb185d629e2a9f93bd8",
+        "pngMode": "RGB",
+        "archiveMember": "detail-no-signal.png",
+        "matchesDownloadedArchiveMemberBytes": true
+      },
+      "circleCenterPixels": {
+        "x": 420,
+        "y": 277.5
+      },
+      "radiusPixels": 267,
+      "centralComparedPixels": 223942,
+      "centralDifferingPixels": 0,
+      "centralDifferingChannelValues": 0,
+      "centralMaximumAbsoluteChannelDelta": 0,
+      "centralReferenceRgbaSha256": "1104935ee056ea983b055962e78cafa7998ba7993177052a48466947b316ec29",
+      "centralRevisionRgbaSha256": "1104935ee056ea983b055962e78cafa7998ba7993177052a48466947b316ec29",
+      "centralExactMatch": true,
+      "fullImageComparedPixels": 467040,
+      "fullImageDifferingPixels": 0,
+      "fullImageExactMatch": true,
+      "outsideCentralDiskDifferingPixels": 0,
+      "allDifferingPixels": []
+    }
+  ],
+  "fullViewportResults": [
+    {
+      "file": "metric-1280x720-dpr1.png",
+      "context": {
+        "state": "metric",
+        "viewportCssPixels": {
+          "width": 1280,
+          "height": 720
+        },
+        "dpr": 1,
+        "rootBoundingRectCssPixels": {
+          "x": 830,
+          "y": 412.5,
+          "width": 420,
+          "height": 277.5
+        },
+        "rootBoundingRectMatchesBothCaptureEvidenceFiles": true,
+        "capture": "實際完整 viewport PNG；中央位置由各 artifact evidence.json 的 fixture rect 推導"
+      },
+      "dimensionsPixels": {
+        "width": 1280,
+        "height": 720
+      },
+      "referencePng": {
+        "sha256": "6b7741dce964c4684c5d0a6b83e2d679185d8dfae0fba5760ba6423145639502",
+        "pngMode": "RGB",
+        "archiveMember": "metric-1280x720-dpr1.png",
+        "matchesDownloadedArchiveMemberBytes": true
+      },
+      "revisionPng": {
+        "sha256": "6b7741dce964c4684c5d0a6b83e2d679185d8dfae0fba5760ba6423145639502",
+        "pngMode": "RGB",
+        "archiveMember": "metric-1280x720-dpr1.png",
+        "matchesDownloadedArchiveMemberBytes": true
+      },
+      "circleCenterPixels": {
+        "x": 1040,
+        "y": 551.25
+      },
+      "radiusPixels": 133.5,
+      "centralComparedPixels": 55974,
+      "centralDifferingPixels": 0,
+      "centralDifferingChannelValues": 0,
+      "centralMaximumAbsoluteChannelDelta": 0,
+      "centralReferenceRgbaSha256": "0e7f73eea9b8e2d95edb6932325cfb753dc0a4746d7939b958f4f334e82e5c22",
+      "centralRevisionRgbaSha256": "0e7f73eea9b8e2d95edb6932325cfb753dc0a4746d7939b958f4f334e82e5c22",
+      "centralExactMatch": true,
+      "fullImageComparedPixels": 921600,
+      "fullImageDifferingPixels": 0,
+      "fullImageExactMatch": true,
+      "outsideCentralDiskDifferingPixels": 0,
+      "allDifferingPixels": []
+    },
+    {
+      "file": "metric-1920x1080-dpr1.png",
+      "context": {
+        "state": "metric",
+        "viewportCssPixels": {
+          "width": 1920,
+          "height": 1080
+        },
+        "dpr": 1,
+        "rootBoundingRectCssPixels": {
+          "x": 1470,
+          "y": 772.5,
+          "width": 420,
+          "height": 277.5
+        },
+        "rootBoundingRectMatchesBothCaptureEvidenceFiles": true,
+        "capture": "實際完整 viewport PNG；中央位置由各 artifact evidence.json 的 fixture rect 推導"
+      },
+      "dimensionsPixels": {
+        "width": 1920,
+        "height": 1080
+      },
+      "referencePng": {
+        "sha256": "285eb1fb0dede2f3555b47657d7977a1cee012659a7a92998c9d79ff856d41ca",
+        "pngMode": "RGB",
+        "archiveMember": "metric-1920x1080-dpr1.png",
+        "matchesDownloadedArchiveMemberBytes": true
+      },
+      "revisionPng": {
+        "sha256": "285eb1fb0dede2f3555b47657d7977a1cee012659a7a92998c9d79ff856d41ca",
+        "pngMode": "RGB",
+        "archiveMember": "metric-1920x1080-dpr1.png",
+        "matchesDownloadedArchiveMemberBytes": true
+      },
+      "circleCenterPixels": {
+        "x": 1680,
+        "y": 911.25
+      },
+      "radiusPixels": 133.5,
+      "centralComparedPixels": 55974,
+      "centralDifferingPixels": 0,
+      "centralDifferingChannelValues": 0,
+      "centralMaximumAbsoluteChannelDelta": 0,
+      "centralReferenceRgbaSha256": "62f25bf02d820349bd3ab4bc39d38346ee4aeeab9bc0d3b1c5be672f4b8ef076",
+      "centralRevisionRgbaSha256": "62f25bf02d820349bd3ab4bc39d38346ee4aeeab9bc0d3b1c5be672f4b8ef076",
+      "centralExactMatch": true,
+      "fullImageComparedPixels": 2073600,
+      "fullImageDifferingPixels": 0,
+      "fullImageExactMatch": true,
+      "outsideCentralDiskDifferingPixels": 0,
+      "allDifferingPixels": []
+    },
+    {
+      "file": "metric-2560x1440-dpr1.png",
+      "context": {
+        "state": "metric",
+        "viewportCssPixels": {
+          "width": 2560,
+          "height": 1440
+        },
+        "dpr": 1,
+        "rootBoundingRectCssPixels": {
+          "x": 2110,
+          "y": 1132.5,
+          "width": 420,
+          "height": 277.5
+        },
+        "rootBoundingRectMatchesBothCaptureEvidenceFiles": true,
+        "capture": "實際完整 viewport PNG；中央位置由各 artifact evidence.json 的 fixture rect 推導"
+      },
+      "dimensionsPixels": {
+        "width": 2560,
+        "height": 1440
+      },
+      "referencePng": {
+        "sha256": "dabaf2e6635b90db70282ac44f7ac2b4e12a8bb9637da38696d116b55bf1fcbd",
+        "pngMode": "RGB",
+        "archiveMember": "metric-2560x1440-dpr1.png",
+        "matchesDownloadedArchiveMemberBytes": true
+      },
+      "revisionPng": {
+        "sha256": "dabaf2e6635b90db70282ac44f7ac2b4e12a8bb9637da38696d116b55bf1fcbd",
+        "pngMode": "RGB",
+        "archiveMember": "metric-2560x1440-dpr1.png",
+        "matchesDownloadedArchiveMemberBytes": true
+      },
+      "circleCenterPixels": {
+        "x": 2320,
+        "y": 1271.25
+      },
+      "radiusPixels": 133.5,
+      "centralComparedPixels": 55974,
+      "centralDifferingPixels": 0,
+      "centralDifferingChannelValues": 0,
+      "centralMaximumAbsoluteChannelDelta": 0,
+      "centralReferenceRgbaSha256": "db5c25f8933983b45909a1056764dcee242a122d3bf06b1165f689a7640d3772",
+      "centralRevisionRgbaSha256": "db5c25f8933983b45909a1056764dcee242a122d3bf06b1165f689a7640d3772",
+      "centralExactMatch": true,
+      "fullImageComparedPixels": 3686400,
+      "fullImageDifferingPixels": 0,
+      "fullImageExactMatch": true,
+      "outsideCentralDiskDifferingPixels": 0,
+      "allDifferingPixels": []
+    },
+    {
+      "file": "metric-1920x1080-dpr2.png",
+      "context": {
+        "state": "metric",
+        "viewportCssPixels": {
+          "width": 1920,
+          "height": 1080
+        },
+        "dpr": 2,
+        "rootBoundingRectCssPixels": {
+          "x": 1470,
+          "y": 772.5,
+          "width": 420,
+          "height": 277.5
+        },
+        "rootBoundingRectMatchesBothCaptureEvidenceFiles": true,
+        "capture": "實際完整 viewport PNG；中央位置由各 artifact evidence.json 的 fixture rect 推導"
+      },
+      "dimensionsPixels": {
+        "width": 3840,
+        "height": 2160
+      },
+      "referencePng": {
+        "sha256": "231f5c03a87084a3f7b3b75e0fc410362a92617c32a0479487e156024647415c",
+        "pngMode": "RGB",
+        "archiveMember": "metric-1920x1080-dpr2.png",
+        "matchesDownloadedArchiveMemberBytes": true
+      },
+      "revisionPng": {
+        "sha256": "20a06f49dbb28fed85508aeb3681bd29c6ebbff2a4796c4ed38202d13d066c12",
+        "pngMode": "RGB",
+        "archiveMember": "metric-1920x1080-dpr2.png",
+        "matchesDownloadedArchiveMemberBytes": true
+      },
+      "circleCenterPixels": {
+        "x": 3360,
+        "y": 1822.5
+      },
+      "radiusPixels": 267.0,
+      "centralComparedPixels": 223942,
+      "centralDifferingPixels": 0,
+      "centralDifferingChannelValues": 0,
+      "centralMaximumAbsoluteChannelDelta": 0,
+      "centralReferenceRgbaSha256": "6ac3b1e075c1856fcc572d50ef558e893d1ad6385f9101307736b73c00ed8726",
+      "centralRevisionRgbaSha256": "6ac3b1e075c1856fcc572d50ef558e893d1ad6385f9101307736b73c00ed8726",
+      "centralExactMatch": true,
+      "fullImageComparedPixels": 8294400,
+      "fullImageDifferingPixels": 14,
+      "fullImageExactMatch": false,
+      "outsideCentralDiskDifferingPixels": 14,
+      "allDifferingPixels": [
+        {
+          "x": 199,
+          "y": 1307,
+          "pixelCenter": [
+            199.5,
+            1307.5
+          ],
+          "insideComparedDisk": false,
+          "referenceRgba": [
+            38,
+            53,
+            59,
+            255
+          ],
+          "revisionRgba": [
+            38,
+            52,
+            58,
+            255
+          ]
+        },
+        {
+          "x": 337,
+          "y": 1307,
+          "pixelCenter": [
+            337.5,
+            1307.5
+          ],
+          "insideComparedDisk": false,
+          "referenceRgba": [
+            38,
+            53,
+            59,
+            255
+          ],
+          "revisionRgba": [
+            38,
+            52,
+            58,
+            255
+          ]
+        },
+        {
+          "x": 680,
+          "y": 1307,
+          "pixelCenter": [
+            680.5,
+            1307.5
+          ],
+          "insideComparedDisk": false,
+          "referenceRgba": [
+            37,
+            51,
+            57,
+            255
+          ],
+          "revisionRgba": [
+            37,
+            50,
+            56,
+            255
+          ]
+        },
+        {
+          "x": 1074,
+          "y": 1307,
+          "pixelCenter": [
+            1074.5,
+            1307.5
+          ],
+          "insideComparedDisk": false,
+          "referenceRgba": [
+            35,
+            50,
+            56,
+            255
+          ],
+          "revisionRgba": [
+            35,
+            49,
+            55,
+            255
+          ]
+        },
+        {
+          "x": 1212,
+          "y": 1307,
+          "pixelCenter": [
+            1212.5,
+            1307.5
+          ],
+          "insideComparedDisk": false,
+          "referenceRgba": [
+            35,
+            49,
+            55,
+            255
+          ],
+          "revisionRgba": [
+            35,
+            48,
+            54,
+            255
+          ]
+        },
+        {
+          "x": 1468,
+          "y": 1307,
+          "pixelCenter": [
+            1468.5,
+            1307.5
+          ],
+          "insideComparedDisk": false,
+          "referenceRgba": [
+            34,
+            48,
+            55,
+            255
+          ],
+          "revisionRgba": [
+            34,
+            47,
+            54,
+            255
+          ]
+        },
+        {
+          "x": 1949,
+          "y": 1307,
+          "pixelCenter": [
+            1949.5,
+            1307.5
+          ],
+          "insideComparedDisk": false,
+          "referenceRgba": [
+            32,
+            46,
+            53,
+            255
+          ],
+          "revisionRgba": [
+            32,
+            45,
+            52,
+            255
+          ]
+        },
+        {
+          "x": 2174,
+          "y": 1307,
+          "pixelCenter": [
+            2174.5,
+            1307.5
+          ],
+          "insideComparedDisk": false,
+          "referenceRgba": [
+            31,
+            45,
+            52,
+            255
+          ],
+          "revisionRgba": [
+            31,
+            44,
+            51,
+            255
+          ]
+        },
+        {
+          "x": 2343,
+          "y": 1307,
+          "pixelCenter": [
+            2343.5,
+            1307.5
+          ],
+          "insideComparedDisk": false,
+          "referenceRgba": [
+            30,
+            44,
+            51,
+            255
+          ],
+          "revisionRgba": [
+            30,
+            43,
+            50,
+            255
+          ]
+        },
+        {
+          "x": 2737,
+          "y": 1307,
+          "pixelCenter": [
+            2737.5,
+            1307.5
+          ],
+          "insideComparedDisk": false,
+          "referenceRgba": [
+            29,
+            42,
+            49,
+            255
+          ],
+          "revisionRgba": [
+            29,
+            41,
+            48,
+            255
+          ]
+        },
+        {
+          "x": 3049,
+          "y": 1307,
+          "pixelCenter": [
+            3049.5,
+            1307.5
+          ],
+          "insideComparedDisk": false,
+          "referenceRgba": [
+            28,
+            41,
+            48,
+            255
+          ],
+          "revisionRgba": [
+            28,
+            40,
+            47,
+            255
+          ]
+        },
+        {
+          "x": 3218,
+          "y": 1307,
+          "pixelCenter": [
+            3218.5,
+            1307.5
+          ],
+          "insideComparedDisk": false,
+          "referenceRgba": [
+            27,
+            41,
+            48,
+            255
+          ],
+          "revisionRgba": [
+            27,
+            40,
+            47,
+            255
+          ]
+        },
+        {
+          "x": 3443,
+          "y": 1307,
+          "pixelCenter": [
+            3443.5,
+            1307.5
+          ],
+          "insideComparedDisk": false,
+          "referenceRgba": [
+            26,
+            39,
+            46,
+            255
+          ],
+          "revisionRgba": [
+            26,
+            38,
+            45,
+            255
+          ]
+        },
+        {
+          "x": 3612,
+          "y": 1307,
+          "pixelCenter": [
+            3612.5,
+            1307.5
+          ],
+          "insideComparedDisk": false,
+          "referenceRgba": [
+            26,
+            39,
+            46,
+            255
+          ],
+          "revisionRgba": [
+            26,
+            38,
+            45,
+            255
+          ]
+        }
+      ]
+    }
+  ],
+  "sourcePreservation": {
+    "referenceHead": "bbf64fbd14406bf42e88e016bde83eb04540f887",
+    "revisionHead": "f3dd06b7f17b3c12867648780d0622dcb8525b9f",
+    "method": "git show 與 git rev-parse 唯讀取出指定 commit 的 blob；未 checkout/reset；檔案及函式均逐 byte 比較",
+    "files": [
+      {
+        "path": "hud_overlay/lfa_center_ring/assets/center-ring.png",
+        "referenceSha256": "3433460df37b91c67f09cfe7b3c99bacd6ad925db36b113042a95bc196422b22",
+        "revisionSha256": "3433460df37b91c67f09cfe7b3c99bacd6ad925db36b113042a95bc196422b22",
+        "referenceGitBlob": "578e53149636e89221536b13d4ee3f9321b429d8",
+        "revisionGitBlob": "578e53149636e89221536b13d4ee3f9321b429d8",
+        "exactBytesUnchanged": true,
+        "workingTreeMatchesRevisionBytesAtCheck": true
+      },
+      {
+        "path": "hud_overlay/lfa_center_ring/assets/center-ring.svg",
+        "referenceSha256": "8570a31f672dac12bb94e198a91cb78576dd0b09b81c140dd4ae7ca68b924028",
+        "revisionSha256": "8570a31f672dac12bb94e198a91cb78576dd0b09b81c140dd4ae7ca68b924028",
+        "referenceGitBlob": "e5312b39e1324297508bfc2d6ce46bb45c437420",
+        "revisionGitBlob": "e5312b39e1324297508bfc2d6ce46bb45c437420",
+        "exactBytesUnchanged": true,
+        "workingTreeMatchesRevisionBytesAtCheck": true
+      },
+      {
+        "path": "hud_overlay/lfa_center_ring/lfa.css",
+        "referenceSha256": "bb3cb33c7808f6e6f800942259d77c9d42ebdb866d94e36abffcc43bd282ebac",
+        "revisionSha256": "bb3cb33c7808f6e6f800942259d77c9d42ebdb866d94e36abffcc43bd282ebac",
+        "referenceGitBlob": "6be9c9a8330349b47150abfcd79af6bc48bf1ac0",
+        "revisionGitBlob": "6be9c9a8330349b47150abfcd79af6bc48bf1ac0",
+        "exactBytesUnchanged": true,
+        "workingTreeMatchesRevisionBytesAtCheck": true
+      }
+    ],
+    "functions": [
+      {
+        "path": "hud_overlay/lfa_center_ring/lfa-renderer.js",
+        "function": "drawScale",
+        "extraction": "從 8 個空格縮排的 function 名稱宣告開始，至下一個同縮排 function 宣告前；保留原始 UTF-8 bytes、空白及換行，不正規化",
+        "referenceBytes": 1467,
+        "revisionBytes": 1467,
+        "referenceSha256": "a51f0d709e92dd99b9a85fe2d6b2d9ed62517c97bf8477420d96938dfad8b1ba",
+        "revisionSha256": "a51f0d709e92dd99b9a85fe2d6b2d9ed62517c97bf8477420d96938dfad8b1ba",
+        "exactBytesUnchanged": true
+      },
+      {
+        "path": "hud_overlay/lfa_center_ring/lfa-renderer.js",
+        "function": "drawNeedle",
+        "extraction": "從 8 個空格縮排的 function 名稱宣告開始，至下一個同縮排 function 宣告前；保留原始 UTF-8 bytes、空白及換行，不正規化",
+        "referenceBytes": 965,
+        "revisionBytes": 965,
+        "referenceSha256": "16986febf6646589aaa0a5b0854497c1243fd11be9f9e41faa77a9cc91e3a191",
+        "revisionSha256": "16986febf6646589aaa0a5b0854497c1243fd11be9f9e41faa77a9cc91e3a191",
+        "exactBytesUnchanged": true
+      }
+    ],
+    "allRequestedSourceBytesUnchanged": true
+  },
+  "summary": {
+    "matchedDetailStates": 8,
+    "detailPixelsComparedAcrossEightStates": 1791536,
+    "detailCentralDifferingPixels": 0,
+    "matchedFullViewports": 4,
+    "fullViewportCentralPixelsComparedAcrossFourCaptures": 391864,
+    "fullViewportCentralDifferingPixels": 0,
+    "allTwelveComparedCentralDisksExactMatch": true,
+    "allTwelveWholePngPixelArraysExactMatch": false,
+    "qualification": "8 個 detail 與 4 個完整 viewport 的指定中央圓皆精確 RGBA 零差異。1080p DPR2 完整 PNG 的圓外有 14 個不同像素；其餘 11 張的完整影像像素相同。此結論僅限列出的匹配輸入，不推論其他解析度、狀態或原生遊戲。"
+  }
+}
