@@ -30,7 +30,7 @@ const base = { timestamp_ms: 100, rpm: 7200, maxRpm: 9000, redlineRpm: 8000, spe
 async function send(frame, type, data = {}) { await frame.evaluate(({ type, data }) => window.HUDCore.handleMessage(type, data), { type, data }); }
 async function text(frame, id) { return frame.locator('#lfa' + id).textContent(); }
 try {
-  browser = await chromium.launch({ ...(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {}), headless: true, chromiumSandbox: true });
+  browser = await chromium.launch({ ...(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {}), headless: true, chromiumSandbox: true, ...(process.env.PLAYWRIGHT_CHANNEL ? { channel: process.env.PLAYWRIGHT_CHANNEL } : {}) });
   summary.browser = await browser.version();
   for (const [width, height, dpr] of [[1280,720,1],[1920,1080,1],[2560,1440,1],[1920,1080,2]]) {
     const context = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: dpr });
