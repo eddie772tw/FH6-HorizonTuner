@@ -1,4 +1,5 @@
 import { useId } from 'react';
+import { R34MfdSettingsCard } from '../r34_mfd/R34MfdSettingsCard';
 import { DEFAULT_HUD_CONFIG, type HudElements } from '../hudConfig';
 import type { HudPanelSharedProps } from '../hudPanelTypes';
 import { CLASSIC_JDM_STYLE_ID } from '../classic_jdm/config';
@@ -95,6 +96,7 @@ function StyleSettings({ config, onConfigPatch, isWipActive, wipForced, onShowWi
         </div>
       )}
       {config.hudStyle === CLASSIC_JDM_STYLE_ID && <ClassicJdmSettingsCard config={config} onChange={onConfigPatch} t={t} />}
+      {config.hudStyle === 'r34_mfd' && <R34MfdSettingsCard config={config} onChange={onConfigPatch} t={t} />}
       {config.hudStyle === 'vfd' && (
         <div className="border-top pt-2 d-flex flex-column gap-3">
           <div>

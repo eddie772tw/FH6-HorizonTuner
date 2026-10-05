@@ -1,5 +1,6 @@
 import type { S650CenterWidget, S650HmiTheme } from './s650/config';
 import type { ClassicJdmAuxGauge, ClassicJdmDefiTheme, ClassicJdmTachStyle } from './classic_jdm/config';
+import type { R34MfdMode, R34Lighting } from './r34_mfd/config';
 import type { HudDisplayUnits } from './HudUnitSettingsSidebar';
 
 export interface HudElements {
@@ -46,6 +47,9 @@ export interface HudConfig {
   classicJdmAux1?: ClassicJdmAuxGauge;
   classicJdmAux2?: ClassicJdmAuxGauge;
   classicJdmDefiTheme?: ClassicJdmDefiTheme;
+  r34MfdMode?: R34MfdMode;
+  r34ShowCluster?: boolean;
+  r34Lighting?: R34Lighting;
   audioDeviceId?: string;
   selectedMonitorIndex: number;
   scale: number;
@@ -94,6 +98,9 @@ export const DEFAULT_HUD_CONFIG: HudConfig = {
   classicJdmAux1: 'tire_temp_4w',
   classicJdmAux2: 'tire_temp_rear',
   classicJdmDefiTheme: 'amber',
+  r34MfdMode: 'single',
+  r34ShowCluster: true,
+  r34Lighting: 'night',
   audioDeviceId: 'default',
   selectedMonitorIndex: 0,
   scale: 1.0,

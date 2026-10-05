@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Skyline R34 MFD HUD</title>
+  <link rel="stylesheet" href="../shared/hud-base.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="hud-root-wrapper"><div id="r34Container" class="hud-gauge-container r34-cockpit" data-lighting="night">
+    <section id="r34Cluster" class="r34-cluster" aria-label="1999 BNR34 V-spec instrument cluster"></section>
+    <section class="r34-mfd" id="r34Mfd" aria-label="R34 expansion MFD">
+      <div class="r34-mfd-topline">MULTI FUNCTION DISPLAY <span>BNR34</span></div>
+      <div class="r34-screen-bezel"><div class="r34-screen" id="r34Screen">
+        <header class="r34-screen-header"><span id="r34ModeTitle">SINGLE</span><span id="r34Status">WAITING</span></header>
+        <div class="r34-page" data-mode="single"><div class="r34-memory"><div class="r34-caption">BOOST MEMORY</div><canvas id="r34History" width="188" height="184" aria-label="Last 30 seconds of received boost telemetry"></canvas><div class="r34-axis-label">30 <span>15</span> 0 sec</div></div><div id="r34SingleDial" class="r34-dial"></div></div>
+        <div class="r34-page" data-mode="twin" hidden><div id="r34TwinBoost" class="r34-dial"></div><div id="r34TwinRpm" class="r34-dial"></div></div>
+        <div class="r34-page r34-multi" data-mode="multi" hidden id="r34Multi"></div>
+        <div class="r34-page r34-g-page" data-mode="g" hidden><canvas id="r34G" width="326" height="197" aria-label="Rectangular lateral and longitudinal acceleration grid"></canvas><div class="r34-g-values"><span id="r34Lateral">LAT — g</span><span id="r34Longitudinal">LONG — g</span></div></div>
+        <div class="r34-page r34-lap-page" data-mode="lap" hidden><div class="r34-lap-readings"><label>LAP <span id="r34LapNumber">—</span></label><strong id="r34CurrentLap">—'——.———</strong><label>BEST</label><strong id="r34BestLap">—'——.———</strong><label>LAST</label><strong id="r34LastLap">—'——.———</strong></div><div class="r34-lap-history"><div>LAP <span>TIME</span></div><ol id="r34LapList"></ol><small>OBSERVED LAPS</small></div></div>
+        <footer class="r34-screen-footer" id="r34ModeNote">30 s trace · session peak</footer>
+      </div><div class="r34-mfd-side" aria-hidden="true"><span>REV</span><i id="r34RevLamp"></i><span class="r34-enter">ENTER</span><div class="r34-joystick"><b>+</b></div></div></div>
+      <div class="r34-bezel-keys" aria-hidden="true"><span>DISP</span><span>RETURN</span><span>MENU</span><span>MODE</span></div>
+      <div class="r34-expansion-label">EXPANSION II <span>GAME TELEMETRY ADAPTER</span></div>
+    </section>
+    <div id="r34StreamStatus" class="r34-stream-status" aria-live="polite">WAITING FOR TELEMETRY</div>
+  </div></div>
+  <script src="../shared/hud-core.js"></script><script src="model.js"></script><script src="canvas-geometry.js"></script><script src="instruments.js"></script><script src="renderer.js"></script><script src="controller.js"></script>
+</body>
+</html>

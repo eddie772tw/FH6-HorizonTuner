@@ -1,0 +1,22 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>R34 MFD interactive review</title>
+<style>body{margin:24px;background:#273038;color:#e5e8e9;font:14px system-ui}label{display:inline-block;margin:0 12px 12px 0}select,button{font:inherit;padding:5px}iframe{width:1280px;height:720px;border:1px solid #75818a;background:repeating-conic-gradient(#283238 0 25%,#323d45 0 50%) 0/40px 40px;transform-origin:top left}#stage{overflow:hidden}p{max-width:950px;line-height:1.5}</style></head><body>
+<h1>Skyline R34 MFD</h1><p>Actual production HUD with synthetic packets. Bezel keys reproduce physical hardware; mode controls are in the main HUD settings. This review page sends those same settings.</p>
+<label>MFD <select id="mode"><option>single</option><option>twin</option><option>multi</option><option>g</option><option>lap</option></select></label>
+<label>Lighting <select id="lighting"><option>night</option><option>day</option></select></label>
+<label>State <select id="state"><option>live</option><option>waiting</option><option>paused</option><option>stale</option><option>missing</option><option>reverse</option><option>neutral</option><option>over-scale</option></select></label>
+<label>Units <select id="unit"><option>metric</option><option>imperial</option><option>kpa</option></select></label>
+<label>Scale <select id="scale"><option>1</option><option>0.7</option><option>1.2</option></select></label>
+<label><input id="cluster" type="checkbox" checked>Traditional cluster</label><button id="reload">Reload</button><button id="lap">Complete a lap</button>
+<div id="stage"><iframe id="hud" title="Actual R34 MFD iframe" src="../../index.html"></iframe></div>
+<p>Stock V·spec dial: 180 km/h and a two-stage 10,000 rpm tachometer. The digital speed honors your units and retains over-scale readings. The game has no coolant, oil pressure, injector duty, exhaust/intake temperatures or front torque-split sensor here. N/A means unavailable. The NISMO Ver.II layout is adapted to genuine game channels, not simulated engine sensors.</p>
+<script>
+const $=id=>document.getElementById(id), hud=$('hud');let timestamp=1000,lap=3,staleStamp=0;
+function send(type,fields){hud.contentWindow.postMessage({type,...fields},location.origin);}
+function config(){send('config',{data:{hudStyle:'r34_mfd',scale:Number($('scale').value),r34MfdMode:$('mode').value,r34Lighting:$('lighting').value,r34ShowCluster:$('cluster').checked,effectiveUnits:{speed:$('unit').value==='imperial'?'mph':'kmh',boostPressure:$('unit').value==='imperial'?'psi':$('unit').value==='kpa'?'kpa':'bar',power:'kw',torque:'nm'},elements:{showGauge:true,showCenterInfo:true}}});}
+function frame(){const state=$('state').value;if(state==='waiting')return;timestamp+=50;const wave=Math.sin(timestamp/900);
+const data={TimestampMS:state==='stale'?staleStamp:timestamp,CarOrdinal:34,IsRaceOn:state==='paused'?0:1,CurrentEngineRpm:6800+wave*450,SpeedMetersPerSecond:45,Gear:4,Boost:17.40456+wave*3,Fuel:.62,AccelInput:195,BrakeInput:0,PowerWatts:215000,TorqueNewtons:405,AccelerationX:wave*7,AccelerationZ:2.5,CurrentLap:67.321,BestLap:82.154,LastLap:83.526,LapNumber:lap,CurrentRaceTime:240,DistanceTraveled:12008};
+if(state==='missing')Object.assign(data,{Boost:null,CurrentEngineRpm:null,SpeedMetersPerSecond:null,Fuel:null,Gear:null});if(state==='reverse')Object.assign(data,{Gear:0,SpeedMetersPerSecond:5});if(state==='neutral')Object.assign(data,{Gear:11,SpeedMetersPerSecond:0,CurrentEngineRpm:950});if(state==='over-scale')Object.assign(data,{CurrentEngineRpm:12000,SpeedMetersPerSecond:100,Boost:43.5114});send('hud:frame',{data,redlineRpm:8000});}
+hud.onload=()=>{config();frame();};for(const id of ['mode','lighting','unit','scale','cluster'])$(id).onchange=config;
+$('state').onchange=()=>{staleStamp=timestamp;if($('state').value==='waiting')hud.src='../../index.html?reload='+Date.now();else frame();};$('reload').onclick=()=>{lap=3;hud.src='../../index.html?reload='+Date.now();};$('lap').onclick=()=>{lap++;frame();};
+function size(){const fit=Math.min(1,(innerWidth-50)/1280);hud.style.transform='scale('+fit+')';$('stage').style.width=1280*fit+'px';$('stage').style.height=720*fit+'px';}size();window.onresize=size;setInterval(frame,50);
+</script></body></html>

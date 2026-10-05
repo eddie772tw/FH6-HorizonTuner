@@ -183,3 +183,41 @@ fn symlinks_and_dangling_junctions_cannot_escape_storage() {
     );
     assert!(!fixture.path().join("missing-outside").exists());
 }
+
+#[test]
+fn r34_settings_normalize_persist_restart_and_relay_without_touching_other_styles() {
+    let invalid = json!({"hudStyle":"r34_mfd","r34MfdMode":"bad","r34ShowCluster":"false","r34Lighting":12,"futureKey":42});
+    let normalized = config::normalize_hud(&invalid);
+    assert_eq!(normalized["r34MfdMode"], "single");
+    assert_eq!(normalized["r34ShowCluster"], true);
+    assert_eq!(normalized["r34Lighting"], "night");
+    assert_eq!(normalized["futureKey"], 42);
+    let other = json!({"hudStyle":"vfd","r34MfdMode":"future"});
+    assert_eq!(config::normalize_hud(&other), other);
+    for mode in ["single", "twin", "multi", "g", "lap"] {
+        let directory = tempfile::tempdir().unwrap();
+        let service = ConfigService::new(directory.path()).unwrap();
+        let mut receiver = service.overlay.subscribe();
+        let requested = json!({"hudStyle":"r34_mfd","r34MfdMode":mode,"r34ShowCluster":false,"r34Lighting":"day","futureKey":42});
+        service
+            .handle("POST", "/api/overlay/config", &requested)
+            .unwrap()
+            .unwrap();
+        let relayed = receiver.try_recv().unwrap();
+        assert_eq!(relayed["type"], "hud:config");
+        assert_eq!(relayed["data"]["r34MfdMode"], mode);
+        assert_eq!(relayed["data"]["r34ShowCluster"], false);
+        assert_eq!(relayed["data"]["r34Lighting"], "day");
+        let persisted = storage::read_json(&directory.path().join("hud_config.json")).unwrap();
+        assert_eq!(persisted["r34MfdMode"], mode);
+        assert_eq!(persisted["futureKey"], 42);
+        let restarted = ConfigService::new(directory.path()).unwrap();
+        let readback = restarted
+            .handle("GET", "/api/overlay/config", &Value::Null)
+            .unwrap()
+            .unwrap();
+        assert_eq!(readback["r34MfdMode"], mode);
+        assert_eq!(readback["r34Lighting"], "day");
+        assert_eq!(readback["r34ShowCluster"], false);
+    }
+}

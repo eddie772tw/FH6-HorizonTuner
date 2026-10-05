@@ -103,6 +103,9 @@
     "s650Theme": "heritage67",
     "s650CenterWidget": "drive",
     "s650HmiOffsetY": 60,
+    "r34MfdMode": "single",
+    "r34ShowCluster": true,
+    "r34Lighting": "night",
     "audioDeviceId": "default",
     "position": {
       "x": 100,
