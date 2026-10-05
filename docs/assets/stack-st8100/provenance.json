@@ -1,0 +1,65 @@
+{
+  "sourceCommit": "a7d2ff3af2ea2e90330b94ee8f770eaa1171ede0",
+  "workflowRunId": 37280301294,
+  "artifactId": 11331921622,
+  "artifactSha256": "4368e785e5f57172dfcfdfd6aff375c0c4a81339f1d2243736c5e1180c1c6ec2",
+  "runtime": "GitHub Actions Google Chrome, chromiumSandbox:true",
+  "scope": "Actual HUD, Launcher/Coordinator and GUI fixture renders; not Windows native or game validation",
+  "transformations": {
+    "preview.png": "Byte-for-byte copy of detail-metric-dpr2.png",
+    "*-warning.png": "Original Chrome screenshot cropped to nontransparent bounds with ImageMagick -trim +repage -depth 8; no visual content redrawn",
+    "settings": "Byte-for-byte copies of actual GUI card screenshots"
+  },
+  "files": [
+    {
+      "path": "docs/assets/stack-st8100/boost-warning.png",
+      "bytes": 39189,
+      "sha256": "cd505bb1998aa89d9cad19ae2b0a36651e47e6ce39668955a70ef5baa3299a3c"
+    },
+    {
+      "path": "docs/assets/stack-st8100/host-audit.json",
+      "bytes": 1658,
+      "sha256": "ea4201fe930a29c8723ef071ae1f6608ebcd67ecfc7e8857b940a7a38a27c9a7"
+    },
+    {
+      "path": "docs/assets/stack-st8100/low-fuel-warning.png",
+      "bytes": 37005,
+      "sha256": "acb1246e228cf1350547eec2b4183ff31c801caca7dbf85aff1f6a3e7e052104"
+    },
+    {
+      "path": "docs/assets/stack-st8100/preview.png",
+      "bytes": 98564,
+      "sha256": "f4b8dbb528198b67422b8917917002ae6e4f74470aa8fd2cd5c64d5615df6850"
+    },
+    {
+      "path": "docs/assets/stack-st8100/settings/settings-audit.json",
+      "bytes": 96027,
+      "sha256": "e365fe9c45896663efb994ee8739c83b2b4b15eb86a136e8a3f191e402514626"
+    },
+    {
+      "path": "docs/assets/stack-st8100/settings/settings-dark-default.png",
+      "bytes": 131418,
+      "sha256": "18b01b2aca2641aa039c454dd0ee8a6b7d44e6ab75c7c143cf5dcfb89a82f9d1"
+    },
+    {
+      "path": "docs/assets/stack-st8100/settings/settings-narrow-ja-jp.png",
+      "bytes": 155922,
+      "sha256": "84eedefc641c30d2d9237bb365d09afdb458bc6900113cfe31249e55fbaacb42"
+    },
+    {
+      "path": "docs/assets/stack-st8100/settings/settings-narrow-zh-tw.png",
+      "bytes": 145031,
+      "sha256": "fd58269d12ee92c8a3e7a6f7530949a0e55dcc6c69cc96984f137c3c7184d4d1"
+    },
+    {
+      "path": "docs/assets/stack-st8100/tire-warning.png",
+      "bytes": 38739,
+      "sha256": "3f3b8bcb00eb4c3488e24bb6068070f0e063ec061d734fd0baee826d79d3fa9b"
+    },
+    {
+      "path": "docs/assets/stack-st8100/visual-evidence.json",
+      "bytes": 8128,
+      "sha256": "f0cc272215b55dfd89453a78bd3a52cd7c4506f0249a993e3a21117aec4d3032"
+    }
+  ]
+}

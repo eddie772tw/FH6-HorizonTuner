@@ -12,6 +12,16 @@
 
 所有 Canvas 外殼、刻度、指針及 5×7 點陣字元均為原創程式；未打包商標圖樣、原廠照片、手冊、字型或第三方圖片。畫面小字 `ST8100 INSPIRED` 是文字說明，不是 Stack 商標圖樣。此樣式沒有原廠認證或合作關係。
 
+## 實際瀏覽器預覽
+
+以下為 sandboxed Google Chrome 執行真實 HUD／GUI 的截圖，非設計稿。來源 commit `a7d2ff3`、[Visual Review run 37280301294](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37280301294)，完整來源與檔案雜湊見 [provenance.json](../assets/stack-st8100/provenance.json)。
+
+![ST8100 正常遙測，DPR 2](../assets/stack-st8100/preview.png)
+
+![高胎溫警示，原始截圖裁切](../assets/stack-st8100/tire-warning.png)
+
+![繁體中文 HUD 設定](../assets/stack-st8100/settings/settings-narrow-zh-tw.png)
+
 ## 使用方式
 
 1. 在 HUD 設定選擇 `Stack ST8100 Inspired`

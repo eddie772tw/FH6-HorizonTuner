@@ -1,0 +1,76 @@
+{
+  "checks": [
+    {
+      "name": "host-live",
+      "status": "LIVE",
+      "warning": "",
+      "shift": "false",
+      "dial": "0-3-8",
+      "rpm": "6400",
+      "lcd1": "KM/H 180 | GEAR 4",
+      "lcd2": "FUEL % 70 | TYRE C 98"
+    },
+    {
+      "name": "host-raw-missing",
+      "status": "LIVE",
+      "warning": "",
+      "shift": "false",
+      "dial": "0-3-8",
+      "rpm": "--",
+      "lcd1": "KM/H -- | GEAR --",
+      "lcd2": "FUEL % -- | TYRE C --"
+    },
+    {
+      "name": "host-stale-with-smoothing",
+      "status": "NO SIGNAL",
+      "warning": "",
+      "shift": "false",
+      "dial": "0-3-8",
+      "rpm": "--",
+      "lcd1": "NO SIGNAL",
+      "lcd2": "TELEMETRY --"
+    },
+    {
+      "name": "host-restarted",
+      "status": "LIVE",
+      "warning": "",
+      "shift": "false",
+      "dial": "0-3-8",
+      "rpm": "6400",
+      "lcd1": "KM/H 180 | GEAR 4",
+      "lcd2": "FUEL % 70 | TYRE C 98"
+    },
+    {
+      "name": "host-imperial",
+      "status": "LIVE",
+      "warning": "",
+      "shift": "false",
+      "dial": "0-3-8",
+      "rpm": "6400",
+      "lcd1": "MPH 112 | GEAR 4",
+      "lcd2": "FUEL % 70 | TYRE C 98"
+    },
+    {
+      "name": "host-720p",
+      "status": "LIVE",
+      "warning": "",
+      "shift": "false",
+      "dial": "0-3-8",
+      "rpm": "6400",
+      "lcd1": "MPH 112 | GEAR 4",
+      "lcd2": "FUEL % 70 | TYRE C 98"
+    },
+    {
+      "name": "host-style-return",
+      "status": "LIVE",
+      "warning": "",
+      "shift": "false",
+      "dial": "0-3-8",
+      "rpm": "6400",
+      "lcd1": "KM/H 180 | GEAR 4",
+      "lcd2": "FUEL % 70 | TYRE C 98"
+    }
+  ],
+  "errors": [],
+  "missing": []
+}

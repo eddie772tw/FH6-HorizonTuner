@@ -11,6 +11,8 @@ on:
       - 'backend-rust/src/config.rs'
       - 'backend-rust/resources/defaults.json'
       - 'backend-rust/tests/stack_st8100_config_contract.rs'
+      - 'docs/assets/stack-st8100/**'
+      - 'docs/hud/stack-st8100.md'
       - '.github/workflows/hud-stack-st8100-visual.yml'
 
 permissions:
