@@ -5,133 +5,133 @@
   "samples": [
     {
       "name": "settings-dark-default",
-      "text": "LFA Ring ExpansionManually Expand LFA RingKeeps the ring expanded. When off, automatic race detection can still keep it expanded.Automatically Expand During RacesExpands when lap timing is detected and restores after it ends or the signal is lost, unless manual expansion is on.",
+      "text": "LFA Ring ExpansionManually Expand LFA RingKeeps the ring expanded. When off, automatic race or media detection can still keep it expanded.Automatically Expand for Races or MediaShows lap data during a confirmed race; otherwise shows active system media. Restores when neither is available, unless manual expansion is on.",
       "width": 448,
       "viewportWidth": 1440,
       "switches": [
         {
           "checked": true,
           "label": "Manually Expand LFA Ring",
-          "description": "Keeps the ring expanded. When off, automatic race detection can still keep it expanded."
+          "description": "Keeps the ring expanded. When off, automatic race or media detection can still keep it expanded."
         },
         {
           "checked": true,
-          "label": "Automatically Expand During Races",
-          "description": "Expands when lap timing is detected and restores after it ends or the signal is lost, unless manual expansion is on."
+          "label": "Automatically Expand for Races or Media",
+          "description": "Shows lap data during a confirmed race; otherwise shows active system media. Restores when neither is available, unless manual expansion is on."
         }
       ]
     },
     {
       "name": "settings-dark-modern",
-      "text": "LFA Ring ExpansionManually Expand LFA RingKeeps the ring expanded. When off, automatic race detection can still keep it expanded.Automatically Expand During RacesExpands when lap timing is detected and restores after it ends or the signal is lost, unless manual expansion is on.",
+      "text": "LFA Ring ExpansionManually Expand LFA RingKeeps the ring expanded. When off, automatic race or media detection can still keep it expanded.Automatically Expand for Races or MediaShows lap data during a confirmed race; otherwise shows active system media. Restores when neither is available, unless manual expansion is on.",
       "width": 448,
       "viewportWidth": 1440,
       "switches": [
         {
           "checked": true,
           "label": "Manually Expand LFA Ring",
-          "description": "Keeps the ring expanded. When off, automatic race detection can still keep it expanded."
+          "description": "Keeps the ring expanded. When off, automatic race or media detection can still keep it expanded."
         },
         {
           "checked": true,
-          "label": "Automatically Expand During Races",
-          "description": "Expands when lap timing is detected and restores after it ends or the signal is lost, unless manual expansion is on."
+          "label": "Automatically Expand for Races or Media",
+          "description": "Shows lap data during a confirmed race; otherwise shows active system media. Restores when neither is available, unless manual expansion is on."
         }
       ]
     },
     {
       "name": "settings-dark-elegant",
-      "text": "LFA Ring ExpansionManually Expand LFA RingKeeps the ring expanded. When off, automatic race detection can still keep it expanded.Automatically Expand During RacesExpands when lap timing is detected and restores after it ends or the signal is lost, unless manual expansion is on.",
+      "text": "LFA Ring ExpansionManually Expand LFA RingKeeps the ring expanded. When off, automatic race or media detection can still keep it expanded.Automatically Expand for Races or MediaShows lap data during a confirmed race; otherwise shows active system media. Restores when neither is available, unless manual expansion is on.",
       "width": 448,
       "viewportWidth": 1440,
       "switches": [
         {
           "checked": true,
           "label": "Manually Expand LFA Ring",
-          "description": "Keeps the ring expanded. When off, automatic race detection can still keep it expanded."
+          "description": "Keeps the ring expanded. When off, automatic race or media detection can still keep it expanded."
         },
         {
           "checked": true,
-          "label": "Automatically Expand During Races",
-          "description": "Expands when lap timing is detected and restores after it ends or the signal is lost, unless manual expansion is on."
+          "label": "Automatically Expand for Races or Media",
+          "description": "Shows lap data during a confirmed race; otherwise shows active system media. Restores when neither is available, unless manual expansion is on."
         }
       ]
     },
     {
       "name": "settings-light-default",
-      "text": "LFA Ring ExpansionManually Expand LFA RingKeeps the ring expanded. When off, automatic race detection can still keep it expanded.Automatically Expand During RacesExpands when lap timing is detected and restores after it ends or the signal is lost, unless manual expansion is on.",
+      "text": "LFA Ring ExpansionManually Expand LFA RingKeeps the ring expanded. When off, automatic race or media detection can still keep it expanded.Automatically Expand for Races or MediaShows lap data during a confirmed race; otherwise shows active system media. Restores when neither is available, unless manual expansion is on.",
       "width": 448,
       "viewportWidth": 1440,
       "switches": [
         {
           "checked": true,
           "label": "Manually Expand LFA Ring",
-          "description": "Keeps the ring expanded. When off, automatic race detection can still keep it expanded."
+          "description": "Keeps the ring expanded. When off, automatic race or media detection can still keep it expanded."
         },
         {
           "checked": true,
-          "label": "Automatically Expand During Races",
-          "description": "Expands when lap timing is detected and restores after it ends or the signal is lost, unless manual expansion is on."
+          "label": "Automatically Expand for Races or Media",
+          "description": "Shows lap data during a confirmed race; otherwise shows active system media. Restores when neither is available, unless manual expansion is on."
         }
       ]
     },
     {
       "name": "settings-light-modern",
-      "text": "LFA Ring ExpansionManually Expand LFA RingKeeps the ring expanded. When off, automatic race detection can still keep it expanded.Automatically Expand During RacesExpands when lap timing is detected and restores after it ends or the signal is lost, unless manual expansion is on.",
+      "text": "LFA Ring ExpansionManually Expand LFA RingKeeps the ring expanded. When off, automatic race or media detection can still keep it expanded.Automatically Expand for Races or MediaShows lap data during a confirmed race; otherwise shows active system media. Restores when neither is available, unless manual expansion is on.",
       "width": 448,
       "viewportWidth": 1440,
       "switches": [
         {
           "checked": true,
           "label": "Manually Expand LFA Ring",
-          "description": "Keeps the ring expanded. When off, automatic race detection can still keep it expanded."
+          "description": "Keeps the ring expanded. When off, automatic race or media detection can still keep it expanded."
         },
         {
           "checked": true,
-          "label": "Automatically Expand During Races",
-          "description": "Expands when lap timing is detected and restores after it ends or the signal is lost, unless manual expansion is on."
+          "label": "Automatically Expand for Races or Media",
+          "description": "Shows lap data during a confirmed race; otherwise shows active system media. Restores when neither is available, unless manual expansion is on."
         }
       ]
     },
     {
       "name": "settings-light-elegant",
-      "text": "LFA Ring ExpansionManually Expand LFA RingKeeps the ring expanded. When off, automatic race detection can still keep it expanded.Automatically Expand During RacesExpands when lap timing is detected and restores after it ends or the signal is lost, unless manual expansion is on.",
+      "text": "LFA Ring ExpansionManually Expand LFA RingKeeps the ring expanded. When off, automatic race or media detection can still keep it expanded.Automatically Expand for Races or MediaShows lap data during a confirmed race; otherwise shows active system media. Restores when neither is available, unless manual expansion is on.",
       "width": 448,
       "viewportWidth": 1440,
       "switches": [
         {
           "checked": true,
           "label": "Manually Expand LFA Ring",
-          "description": "Keeps the ring expanded. When off, automatic race detection can still keep it expanded."
+          "description": "Keeps the ring expanded. When off, automatic race or media detection can still keep it expanded."
         },
         {
           "checked": true,
-          "label": "Automatically Expand During Races",
-          "description": "Expands when lap timing is detected and restores after it ends or the signal is lost, unless manual expansion is on."
+          "label": "Automatically Expand for Races or Media",
+          "description": "Shows lap data during a confirmed race; otherwise shows active system media. Restores when neither is available, unless manual expansion is on."
         }
       ]
     },
     {
       "name": "settings-narrow",
-      "text": "LFA Ring ExpansionManually Expand LFA RingKeeps the ring expanded. When off, automatic race detection can still keep it expanded.Automatically Expand During RacesExpands when lap timing is detected and restores after it ends or the signal is lost, unless manual expansion is on.",
+      "text": "LFA Ring ExpansionManually Expand LFA RingKeeps the ring expanded. When off, automatic race or media detection can still keep it expanded.Automatically Expand for Races or MediaShows lap data during a confirmed race; otherwise shows active system media. Restores when neither is available, unless manual expansion is on.",
       "width": 342,
       "viewportWidth": 390,
       "switches": [
         {
           "checked": true,
           "label": "Manually Expand LFA Ring",
-          "description": "Keeps the ring expanded. When off, automatic race detection can still keep it expanded."
+          "description": "Keeps the ring expanded. When off, automatic race or media detection can still keep it expanded."
         },
         {
           "checked": true,
-          "label": "Automatically Expand During Races",
-          "description": "Expands when lap timing is detected and restores after it ends or the signal is lost, unless manual expansion is on."
+          "label": "Automatically Expand for Races or Media",
+          "description": "Shows lap data during a confirmed race; otherwise shows active system media. Restores when neither is available, unless manual expansion is on."
         }
       ]
     },
     {
       "name": "settings-narrow-zh-tw",
-      "text": "LFA 儀表展開手動展開 LFA 儀表環保持儀表環展開。關閉後，若啟用自動偵測且仍在比賽中，儀表環仍會保持展開。比賽時自動展開偵測到單圈計時後展開，計時結束或訊號中斷後還原；手動展開開啟時則保持展開。",
+      "text": "LFA 儀表展開手動展開 LFA 儀表環保持儀表環展開。關閉後，若啟用自動偵測且有比賽或媒體資訊，仍會保持展開。比賽或媒體時自動展開確認比賽計時後優先顯示單圈資料；否則顯示有效的系統媒體。兩者皆無時還原，手動展開優先。",
       "fits": true,
       "glyphs": {
         "family": "Noto Sans CJK TC",
@@ -147,7 +147,7 @@
     },
     {
       "name": "settings-narrow-ja-jp",
-      "text": "LFA メーター展開LFA メーターリングを手動で展開リングを展開したままにします。オフでも、自動レース検出が有効な場合は展開状態を維持することがあります。レース中に自動展開ラップ計測を検出すると展開し、計測終了または信号途絶後に元に戻ります。手動展開がオンの場合は展開状態を維持します。",
+      "text": "LFA メーター展開LFA メーターリングを手動で展開リングを展開したままにします。オフでも、自動検出でレースまたはメディア情報がある場合は展開を維持します。レースやメディアで自動展開レースを確認するとラップ情報を優先し、それ以外は有効なシステムメディアを表示します。両方ない場合は元に戻りますが、手動展開が優先されます。",
       "fits": true,
       "glyphs": {
         "family": "Noto Sans CJK JP",

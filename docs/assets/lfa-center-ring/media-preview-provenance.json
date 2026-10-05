@@ -1,0 +1,311 @@
+{
+  "sourceHead": "b9a514366c56342b740b48cdb338855b4f2ff917",
+  "run": 37284549662,
+  "artifact": 11333404277,
+  "previewProcessing": "Actual Chrome screenshots. Single views retain all RGBA pixels; sheets only scale and label screenshots. Synthetic telemetry/media, not game captures. All PNGs are 8-bit.",
+  "previews": [
+    {
+      "file": "metric-detail.png",
+      "source": "detail-metric.png",
+      "sha256": "a91fdba403eb11581627f1263cdb4d1d98ff2f52b11b7e08d374459d772e0fbc",
+      "originalRgbaPixelsPreserved": true
+    },
+    {
+      "file": "metric-720p.png",
+      "source": "metric-1280x720-dpr1.png",
+      "sha256": "463b060549d8542ca0ac6034e58a5b528ca71d0fa64af359e2386b76801796b1",
+      "originalRgbaPixelsPreserved": true
+    },
+    {
+      "file": "expanded-detail.png",
+      "source": "detail-expansion-manual.png",
+      "sha256": "9e11486698f7ff8d6ec1659a5bc3f73d61dff6b6be37790586c99ec0d7a89c94",
+      "originalRgbaPixelsPreserved": true
+    },
+    {
+      "file": "expanded-720p.png",
+      "source": "expanded-1280x720-dpr1.png",
+      "sha256": "11bc8e42c5a7221b020d31d16a832c092f952b7cd014e064e7d303ebb2cde74c",
+      "originalRgbaPixelsPreserved": true
+    },
+    {
+      "file": "media-detail.png",
+      "source": "launcher/media-playing-1920x1080-dpr2-scale1.png",
+      "sha256": "641e30e9926361f0a07d2a0ef4e7921b647d741da48be060ecc8df33559feb78",
+      "originalRgbaPixelsPreserved": true
+    },
+    {
+      "file": "race-detail.png",
+      "source": "launcher/media-race-priority-1920x1080-dpr2-scale1.png",
+      "sha256": "6710e557de345f3d9c7eadd3f89c02c0767b2039561c9afdbcf7839e31312865",
+      "originalRgbaPixelsPreserved": true
+    },
+    {
+      "file": "expansion-transitions.png",
+      "sources": [
+        {
+          "file": "detail-expansion-collapsed.png",
+          "label": "Collapsed"
+        },
+        {
+          "file": "detail-expansion-opening-150ms.png",
+          "label": "Opening / +150 ms"
+        },
+        {
+          "file": "detail-expansion-manual.png",
+          "label": "Expanded / curve-following values"
+        },
+        {
+          "file": "detail-expansion-closing-150ms.png",
+          "label": "Closing / +150 ms"
+        }
+      ],
+      "sha256": "f0812a431d826425df121358ae2a0a55971c4b313b50045e4b29c5963efea55c",
+      "processing": "Downscaled and labelled actual screenshots"
+    },
+    {
+      "file": "expanded-before-after.png",
+      "sources": [
+        {
+          "file": "historical/lfa-ci-f3dd06b/detail-expansion-manual.png",
+          "label": "BEFORE / historical rejected layout",
+          "sourceHead": "f3dd06b7f17b3c12867648780d0622dcb8525b9f"
+        },
+        {
+          "file": "detail-expansion-manual.png",
+          "label": "CURRENT / curved anchors and solid pedals"
+        }
+      ],
+      "sha256": "f7552738efd4be1d1bf9b6b45d6e4e70bf44ad09de87f9549e5bb7458624178a",
+      "processing": "Downscaled and labelled actual screenshots"
+    },
+    {
+      "file": "expanded-layout-states.png",
+      "sources": [
+        {
+          "file": "detail-expansion-manual.png",
+          "label": "Default / four individual temperatures"
+        },
+        {
+          "file": "detail-expansion-maximum-width-compact.png",
+          "label": "Compact / maximum lap and signed boost"
+        },
+        {
+          "file": "detail-expansion-four-tires-maximum.png",
+          "label": "Four 9999 F values / capacity unchanged"
+        },
+        {
+          "file": "detail-expansion-four-tires-negative-compact.png",
+          "label": "Compact / four negative temperatures"
+        },
+        {
+          "file": "detail-expansion-four-tires-partial-compact.png",
+          "label": "Compact / missing wheel keeps its slot"
+        },
+        {
+          "file": "detail-expansion-pedals-unavailable-compact.png",
+          "label": "Unavailable pedals / no fabricated zero"
+        }
+      ],
+      "sha256": "38ff456bee8f764562fe4f2f441a92a36d354a135fee17e831ecefec0f1b3ca5",
+      "processing": "Downscaled and labelled actual screenshots"
+    },
+    {
+      "file": "state-contact-sheet.png",
+      "sources": [
+        {
+          "file": "detail-aux-psi-fahrenheit.png",
+          "label": "Independent Fahrenheit / PSI"
+        },
+        {
+          "file": "detail-aux-kpa.png",
+          "label": "Celsius / kPa"
+        },
+        {
+          "file": "detail-aux-negative-boost.png",
+          "label": "Negative boost / blue VAC"
+        },
+        {
+          "file": "detail-aux-zero.png",
+          "label": "Valid zero readings"
+        },
+        {
+          "file": "detail-aux-partial-missing.png",
+          "label": "Partial tyres / unavailable boost"
+        },
+        {
+          "file": "detail-aux-clamped-arcs.png",
+          "label": "Bounded arcs / actual numeric values"
+        },
+        {
+          "file": "detail-neutral.png",
+          "label": "Neutral"
+        },
+        {
+          "file": "detail-redline.png",
+          "label": "SHIFT priority"
+        },
+        {
+          "file": "detail-no-signal.png",
+          "label": "Stale telemetry / unavailable"
+        }
+      ],
+      "sha256": "6f4d81098146c9c55cdd3b5c6bd8736eb7974af51c2ab2d02378df6fa59a0fdf",
+      "processing": "Downscaled and labelled actual screenshots"
+    },
+    {
+      "file": "session-states.png",
+      "sources": [
+        {
+          "file": "detail-rank-lap.png",
+          "label": "Current rank / reported elapsed lap"
+        },
+        {
+          "file": "detail-lap-notice.png",
+          "label": "Completed lap notice"
+        },
+        {
+          "file": "detail-best-notice.png",
+          "label": "Best-lap improvement notice"
+        },
+        {
+          "file": "detail-lap-max-width.png",
+          "label": "Maximum supported lap time"
+        }
+      ],
+      "sha256": "aa0fa182976b40029aab8d11bb64a761a760b6613124ca158a5f8a31622cdb43",
+      "processing": "Downscaled and labelled actual screenshots"
+    },
+    {
+      "file": "lfa-boost-scale-comparison.png",
+      "sources": [
+        {
+          "file": "detail-boost-half.png",
+          "label": "+0.5 bar / 37.5% arc"
+        },
+        {
+          "file": "detail-boost-one.png",
+          "label": "+1 bar / 75% arc"
+        },
+        {
+          "file": "detail-boost-vacuum-half.png",
+          "label": "-0.5 bar / 50% blue VAC arc"
+        },
+        {
+          "file": "detail-boost-zero.png",
+          "label": "Zero / neutral empty arc"
+        }
+      ],
+      "sha256": "9a6d41240600a7784a8b37e312ee50699302bd07f4bc82a09c26c4130eb07b05",
+      "processing": "Downscaled and labelled actual screenshots"
+    },
+    {
+      "file": "media-race-comparison.png",
+      "sources": [
+        {
+          "file": "launcher/media-playing-1920x1080-dpr2-scale1.png",
+          "label": "Media / automatic expansion"
+        },
+        {
+          "file": "launcher/media-race-priority-1920x1080-dpr2-scale1.png",
+          "label": "Confirmed race / timing takes priority"
+        },
+        {
+          "file": "launcher/media-race-ended-media-1920x1080-dpr2-scale1.png",
+          "label": "Race ended / media resumes"
+        },
+        {
+          "file": "launcher/media-manual-media-loss-1920x1080-dpr2-scale1.png",
+          "label": "Media lost / manual holds telemetry"
+        }
+      ],
+      "sha256": "4dba0aed082fc9cab9ac2b831812e95d9d43703be86157938e62e6232e99cd0e",
+      "processing": "Downscaled and labelled actual screenshots"
+    },
+    {
+      "file": "media-states.png",
+      "sources": [
+        {
+          "file": "launcher/media-paused-1920x1080-dpr2-scale1.png",
+          "label": "Paused / GET health keeps session available"
+        },
+        {
+          "file": "launcher/media-stale-grace-1920x1080-dpr2-scale0.8.png",
+          "label": "Compact / stale grace explicitly marked"
+        },
+        {
+          "file": "launcher/media-unicode-missing-duration-1920x1080-dpr2-scale1.png",
+          "label": "Unicode / two-line title / missing duration"
+        },
+        {
+          "file": "launcher/media-failed-art-1920x1080-dpr2-scale0.8.png",
+          "label": "Compact / artwork decode failure fallback"
+        },
+        {
+          "file": "launcher/media-new-art-and-reported-time-1920x1080-dpr2-scale1.png",
+          "label": "New track wins / actual 5:00 exceeds 4:00"
+        },
+        {
+          "file": "launcher/media-playing-1280x720-dpr1-scale0.8.png",
+          "label": "Compact 720p / native screenshot resolution"
+        }
+      ],
+      "sha256": "fd91cb3766cb7650bababcaeb79da90c95e8db96a223338554f8d9cd4e39eebb",
+      "processing": "Downscaled and labelled actual screenshots"
+    },
+    {
+      "file": "settings/settings-light-modern.png",
+      "source": "settings/settings-light-modern.png",
+      "sha256": "6337dcd9ea4f44a145982b2632875437d819679796ef320a131b6d31fd4509d4",
+      "originalRgbaPixelsPreserved": true
+    },
+    {
+      "file": "settings/settings-narrow.png",
+      "source": "settings/settings-narrow.png",
+      "sha256": "03091d0c75b2b27990e3c787fef70c90612a18c15a7f843a1e55acd41cb5b7f4",
+      "originalRgbaPixelsPreserved": true
+    },
+    {
+      "file": "settings/settings-dark-default.png",
+      "source": "settings/settings-dark-default.png",
+      "sha256": "7db5f4e5f999c2f05c922daa375b03a51a175d3931b9e202d99ce416317cb70a",
+      "originalRgbaPixelsPreserved": true
+    },
+    {
+      "file": "settings/settings-dark-elegant.png",
+      "source": "settings/settings-dark-elegant.png",
+      "sha256": "5c3114654c76ad94469a82870e2870900024e5e06d61d57932f986525ad7edd7",
+      "originalRgbaPixelsPreserved": true
+    },
+    {
+      "file": "settings/settings-narrow-zh-tw.png",
+      "source": "settings/settings-narrow-zh-tw.png",
+      "sha256": "248712de23e2b7cbf95fd82bf342dcd5912a7af12d285d7bd3761a6ca76f6158",
+      "originalRgbaPixelsPreserved": true
+    },
+    {
+      "file": "settings/settings-dark-modern.png",
+      "source": "settings/settings-dark-modern.png",
+      "sha256": "c41a563bfedc1f423bdcf3ff9fe3f930865d6fdda717ebf60c3c7f1413eb7fd7",
+      "originalRgbaPixelsPreserved": true
+    },
+    {
+      "file": "settings/settings-light-default.png",
+      "source": "settings/settings-light-default.png",
+      "sha256": "d72c91530bce14ce8c7f8e1512f48ca4abab0ced100a2c8b966c00cf82cf21ef",
+      "originalRgbaPixelsPreserved": true
+    },
+    {
+      "file": "settings/settings-narrow-ja-jp.png",
+      "source": "settings/settings-narrow-ja-jp.png",
+      "sha256": "a8c149a003dd30b3a04afd452dc47b6cb731f960b6aa7d0d280c1d3da33c0870",
+      "originalRgbaPixelsPreserved": true
+    },
+    {
+      "file": "settings/settings-light-elegant.png",
+      "source": "settings/settings-light-elegant.png",
+      "sha256": "12f08101d0d203ea679e93bfdd67e68225eccc508d19ba7cb7f10d27dc5e0b27",
+      "originalRgbaPixelsPreserved": true
+    }
+  ]
+}
