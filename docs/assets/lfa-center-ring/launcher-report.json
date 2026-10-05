@@ -1,0 +1,173 @@
+{
+  "style": "lfa_center_ring",
+  "errors": [],
+  "missing": [],
+  "samples": [
+    {
+      "name": "host-standby",
+      "text": "—\nkm/h\n—\nGEAR\nWAITING\nTHROTTLE\n—%\nINPUT\nBRAKE\n—%\nINPUT\n×1000 r/min",
+      "readings": {
+        "speed": "—",
+        "gear": "—",
+        "status": "WAITING"
+      },
+      "body": "rgba(0, 0, 0, 0)",
+      "style": "lfaContainer",
+      "bounds": {
+        "x": 1470,
+        "y": 772.5,
+        "width": 420,
+        "height": 277.5,
+        "display": "block"
+      }
+    },
+    {
+      "name": "host-cruise",
+      "text": "180\nkm/h\n4\nGEAR\nLIVE\nTHROTTLE\n71%\nINPUT\nBRAKE\n0%\nINPUT\n×1000 r/min",
+      "readings": {
+        "speed": "180",
+        "gear": "4",
+        "status": "LIVE"
+      },
+      "body": "rgba(0, 0, 0, 0)",
+      "style": "lfaContainer",
+      "bounds": {
+        "x": 1470,
+        "y": 772.5,
+        "width": 420,
+        "height": 277.5,
+        "display": "block"
+      }
+    },
+    {
+      "name": "host-stale-with-smoothing",
+      "text": "—\nkm/h\n—\nGEAR\nNO SIGNAL\nTHROTTLE\n—%\nINPUT\nBRAKE\n—%\nINPUT\n×1000 r/min",
+      "readings": {
+        "speed": "—",
+        "gear": "—",
+        "status": "NO SIGNAL"
+      },
+      "body": "rgba(0, 0, 0, 0)",
+      "style": "lfaContainer",
+      "bounds": {
+        "x": 1470,
+        "y": 772.5,
+        "width": 420,
+        "height": 277.5,
+        "display": "block"
+      }
+    },
+    {
+      "name": "host-reverse-reconnected",
+      "text": "16\nkm/h\nR\nGEAR\nLIVE\nTHROTTLE\n71%\nINPUT\nBRAKE\n0%\nINPUT\n×1000 r/min",
+      "readings": {
+        "speed": "16",
+        "gear": "R",
+        "status": "LIVE"
+      },
+      "body": "rgba(0, 0, 0, 0)",
+      "style": "lfaContainer",
+      "bounds": {
+        "x": 1470,
+        "y": 772.5,
+        "width": 420,
+        "height": 277.5,
+        "display": "block"
+      }
+    },
+    {
+      "name": "host-imperial",
+      "text": "10\nmph\nR\nGEAR\nLIVE\nTHROTTLE\n71%\nINPUT\nBRAKE\n0%\nINPUT\n×1000 r/min",
+      "readings": {
+        "speed": "10",
+        "gear": "R",
+        "status": "LIVE"
+      },
+      "body": "rgba(0, 0, 0, 0)",
+      "style": "lfaContainer",
+      "bounds": {
+        "x": 1470,
+        "y": 772.5,
+        "width": 420,
+        "height": 277.5,
+        "display": "block"
+      }
+    },
+    {
+      "name": "host-720p",
+      "text": "10\nmph\nR\nGEAR\nLIVE\nTHROTTLE\n71%\nINPUT\nBRAKE\n0%\nINPUT\n×1000 r/min",
+      "readings": {
+        "speed": "10",
+        "gear": "R",
+        "status": "LIVE"
+      },
+      "body": "rgba(0, 0, 0, 0)",
+      "style": "lfaContainer",
+      "bounds": {
+        "x": 830,
+        "y": 412.5,
+        "width": 420,
+        "height": 277.5,
+        "display": "block"
+      }
+    },
+    {
+      "name": "host-gauge-hidden",
+      "text": "",
+      "readings": {
+        "speed": "10",
+        "gear": "R",
+        "status": "LIVE"
+      },
+      "body": "rgba(0, 0, 0, 0)",
+      "style": "lfaContainer",
+      "bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "display": "none"
+      }
+    },
+    {
+      "name": "host-gauge-restored",
+      "text": "16\nkm/h\nR\nGEAR\nLIVE\nTHROTTLE\n71%\nINPUT\nBRAKE\n0%\nINPUT\n×1000 r/min",
+      "readings": {
+        "speed": "16",
+        "gear": "R",
+        "status": "LIVE"
+      },
+      "body": "rgba(0, 0, 0, 0)",
+      "style": "lfaContainer",
+      "bounds": {
+        "x": 830,
+        "y": 412.5,
+        "width": 420,
+        "height": 277.5,
+        "display": "block"
+      }
+    },
+    {
+      "name": "host-style-reloaded",
+      "text": "16\nkm/h\nR\nGEAR\nLIVE\nTHROTTLE\n71%\nINPUT\nBRAKE\n0%\nINPUT\n×1000 r/min",
+      "readings": {
+        "speed": "16",
+        "gear": "R",
+        "status": "LIVE"
+      },
+      "body": "rgba(0, 0, 0, 0)",
+      "style": "lfaContainer",
+      "bounds": {
+        "x": 830,
+        "y": 412.5,
+        "width": 420,
+        "height": 277.5,
+        "display": "block"
+      }
+    },
+    {
+      "name": "destroy",
+      "remainingBodyChildren": 0
+    }
+  ]
+}

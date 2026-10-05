@@ -1,0 +1,154 @@
+{
+  "browser": "154.0.8037.57",
+  "platform": "linux",
+  "nativeAcceptance": "Not performed: Windows/game unavailable",
+  "source": "Synthetic canonical frames through real HUDCore dispatcher",
+  "scenarios": [
+    {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "dpr": 1,
+      "rect": {
+        "x": 830,
+        "y": 412.5,
+        "width": 420,
+        "height": 277.5
+      },
+      "tests": [
+        "init",
+        "config",
+        "metric",
+        "imperial",
+        "reverse",
+        "neutral",
+        "redline",
+        "16000-rpm-scale",
+        "missing",
+        "invalid",
+        "error",
+        "pause",
+        "replayed-timestamp-stale",
+        "reconnect",
+        "visibility",
+        "resize",
+        "animate",
+        "destroy",
+        "dpr-backing-store",
+        "transparent-outside"
+      ],
+      "errors": []
+    },
+    {
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "dpr": 1,
+      "rect": {
+        "x": 1470,
+        "y": 772.5,
+        "width": 420,
+        "height": 277.5
+      },
+      "tests": [
+        "init",
+        "config",
+        "metric",
+        "imperial",
+        "reverse",
+        "neutral",
+        "redline",
+        "16000-rpm-scale",
+        "missing",
+        "invalid",
+        "error",
+        "pause",
+        "replayed-timestamp-stale",
+        "reconnect",
+        "visibility",
+        "resize",
+        "animate",
+        "destroy",
+        "dpr-backing-store",
+        "transparent-outside"
+      ],
+      "errors": []
+    },
+    {
+      "viewport": {
+        "width": 2560,
+        "height": 1440
+      },
+      "dpr": 1,
+      "rect": {
+        "x": 2110,
+        "y": 1132.5,
+        "width": 420,
+        "height": 277.5
+      },
+      "tests": [
+        "init",
+        "config",
+        "metric",
+        "imperial",
+        "reverse",
+        "neutral",
+        "redline",
+        "16000-rpm-scale",
+        "missing",
+        "invalid",
+        "error",
+        "pause",
+        "replayed-timestamp-stale",
+        "reconnect",
+        "visibility",
+        "resize",
+        "animate",
+        "destroy",
+        "dpr-backing-store",
+        "transparent-outside"
+      ],
+      "errors": []
+    },
+    {
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "dpr": 2,
+      "rect": {
+        "x": 1470,
+        "y": 772.5,
+        "width": 420,
+        "height": 277.5
+      },
+      "tests": [
+        "init",
+        "config",
+        "metric",
+        "imperial",
+        "reverse",
+        "neutral",
+        "redline",
+        "16000-rpm-scale",
+        "missing",
+        "invalid",
+        "error",
+        "pause",
+        "replayed-timestamp-stale",
+        "reconnect",
+        "visibility",
+        "resize",
+        "animate",
+        "destroy",
+        "dpr-backing-store",
+        "transparent-outside"
+      ],
+      "errors": []
+    }
+  ],
+  "passed": true,
+  "error": null
+}

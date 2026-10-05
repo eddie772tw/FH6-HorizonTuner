@@ -2,12 +2,92 @@
   "date": "2026-10-05",
   "style": "lfa_center_ring",
   "verifiedBase": "a9335b158e658faa86bcfcbe4d36beb602f6c9c7",
-  "localUnitGate": {"filesPassed": 156, "filesSkipped": 1, "testsPassed": 1129, "testsSkipped": 1, "styleTests": 24},
+  "sourceHead": "93085acd2ff238650dd9e2ac6c552e224ebdd060",
+  "githubRunId": "37256008636",
+  "githubRunUrl": "https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37256008636",
+  "githubArtifactId": "11322413248",
+  "localUnitGate": {
+    "filesPassed": 156,
+    "filesSkipped": 1,
+    "testsPassed": 1129,
+    "testsSkipped": 1,
+    "styleTests": 24
+  },
   "buildWebHud": "passed",
   "officialReferencePixelsViewed": "OM77006U printed p.116 / PDF p.118",
   "originalHousingPixelsViewed": true,
-  "fullHudPixelsViewed": false,
-  "chromiumGate": "pending GitHub Actions artifacts",
+  "fullHudPixelsViewed": true,
+  "chromiumGate": "passed in GitHub Actions; actual screenshot pixels reviewed",
+  "browser": "154.0.8037.57",
+  "chromiumSandbox": true,
+  "viewportConfigurations": [
+    {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "dpr": 1,
+      "errors": []
+    },
+    {
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "dpr": 1,
+      "errors": []
+    },
+    {
+      "viewport": {
+        "width": 2560,
+        "height": 1440
+      },
+      "dpr": 1,
+      "errors": []
+    },
+    {
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "dpr": 2,
+      "errors": []
+    }
+  ],
+  "launcherGate": {
+    "errors": [],
+    "missing": [],
+    "samples": 10,
+    "destroy": {
+      "name": "destroy",
+      "remainingBodyChildren": 0
+    }
+  },
+  "evidenceFiles": {
+    "evidence.json": {
+      "sha256": "5b1e2a3cfd625899ed3a08cc20ea996095c235a83c5435afe06e04fc6ef45275",
+      "verbatimArtifactCopy": true
+    },
+    "launcher-report.json": {
+      "sha256": "49321d8b0971203d04d14fc3740b76c6a5ec5b82c9d529db9584c153f8f1043c",
+      "verbatimArtifactCopy": true
+    }
+  },
+  "previewFiles": {
+    "metric-detail.png": {
+      "sha256": "09916cf325c431a27c88d3e40f83deb738bf136a2c3c755e74099845775292f7",
+      "processing": "Metadata removed; PNG lossless compression"
+    },
+    "metric-720p.png": {
+      "sha256": "35f61ea35bae42b8af9e6b738ea51bf9f1a33cb3e276c175423e5093ba1070b8",
+      "processing": "Metadata removed; PNG lossless compression"
+    },
+    "state-contact-sheet.png": {
+      "sha256": "c6bb0c42d617323a02482d936135ac07d38519cad6d432e09d3395a92eadbdf6",
+      "processing": "Six actual screenshot images downscaled and arranged with captions; no HUD redraw"
+    }
+  },
+  "visualReview": "Status box clears tach numeral 1; long high-RPM labels clear major ticks; fixture caption UTF-8 corrected; no clipping found in reviewed 720p, 1080p, and 1440p viewports",
   "localBrowserBlocker": "standalone Chromium UNIX socket EPERM; cloud browser localhost ERR_BLOCKED_BY_CLIENT",
   "windowsNativeOverlayAndGameAcceptance": "not performed"
 }

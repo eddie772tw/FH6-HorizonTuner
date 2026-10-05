@@ -8,6 +8,18 @@
 
 適合喜歡真實量產超跑儀表、手排換檔與山路巡航、想減少一般賽車電腦欄位密度的玩家。不是既有 Mustang S650 的換色，也不是 GT3 賽車資料面板。金屬環與側翼由原創 SVG 製作，使用 **Inkscape 1.4** 匯出透明 PNG，再以 **ImageMagick 7.1.1-43** 無損移除 metadata／最佳化壓縮；靜態材質走 PNG，轉速刻度／指針走 Canvas，文字走 DOM。
 
+## 實際瀏覽器預覽
+
+以下為 commit `93085acd2ff238650dd9e2ac6c552e224ebdd060` 的真正 Chromium／Chrome renderer 截圖；輸入為測試 fixture，**不是 Forza 遊戲截圖，也不是效果示意圖**。
+
+![公制中央環儀表細節](../assets/lfa-center-ring/metric-detail.png)
+
+![SHIFT、倒車、空檔、部分資料、斷線與高轉速量尺](../assets/lfa-center-ring/state-contact-sheet.png)
+
+![1280×720 完整 viewport 與右下角位置](../assets/lfa-center-ring/metric-720p.png)
+
+狀態拼圖僅縮小並排列實際截圖，未重新繪製儀表；其他預覽只移除 metadata 並最佳化 PNG 壓縮。原始 artifact 保留全部尺寸與狀態。
+
 ## 官方視覺來源與授權
 
 - [Lexus USA：2012 Lexus LFA 官方圖庫](https://pressroom.lexus.com/album/2012-lexus-lfa/)：核對車型與年份；開發時圖庫的 S3 縮圖回傳 AccessDenied，因此沒有把未看見的照片列為已驗證構圖。
@@ -71,6 +83,15 @@ node hud_overlay/lfa_center_ring/tests/visual/render.mjs
 
 runner 以真正的 HUDCore dispatcher 檢查 1280×720、1920×1080、2560×1440、1920×1080 DPR2，涵蓋初始化、設定、公英制、倒車、空檔、高轉速、紅線、缺失／非法值、錯誤、暫停、重播 timestamp 逾時、重連、隱藏恢復、resize、動畫與 destroy；成功或失敗都輸出 `evidence.json`，有頁面時保留失敗畫面。完整 viewport 與主要狀態 PNG 供人工檢視，不採逐像素／Canvas 呼叫次數斷言。
 
-本機無法啟動獨立 Chromium（UNIX socket EPERM），雲端瀏覽器開啟本機 fixture 被 ERR_BLOCKED_BY_CLIENT 阻擋。**因此 Chromium 視覺 gate 目前待 GitHub Actions artifact 完成後檢視，沒有宣稱本機 browser pass。** 原創外殼 PNG 已實際開啟檢視；完整 HUD 的視覺裁切、重疊與可讀性仍須由遠端截圖驗證。檢查完遠端證據後應更新此段結果。
+本機無法啟動獨立 Chromium（UNIX socket EPERM），雲端瀏覽器開啟本機 fixture 被 ERR_BLOCKED_BY_CLIENT 阻擋；因此改由正常 GitHub Actions 執行，不停用 sandbox。**遠端 Chromium fixture 與真正 launcher＋coordinator 整合 gate 均已通過**：
+
+- [GitHub Actions run 37256008636](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37256008636)，原始碼 head `93085acd2ff238650dd9e2ac6c552e224ebdd060`，artifact ID `11322413248`
+- 使用 GitHub runner 預先安裝的 Chrome **154.0.8037.57**，Playwright `chromiumSandbox: true`；沒有新增產品相依套件
+- [完整 fixture 報告](../assets/lfa-center-ring/evidence.json)：四組 viewport／DPR 配置全部完成，`passed: true`，每組 `errors: []`
+- [真正 launcher 報告](../assets/lfa-center-ring/launcher-report.json)：動態發現、raw telemetry → coordinator、smoothing 重播後失效、帶負號倒車重連、公英制、720p、隱藏恢復、樣式重載及 destroy 完成；`errors: []`、`missing: []`
+- 已實際檢視公英制、R／N、SHIFT、部分資料、NO SIGNAL、高轉速與完整 720p／1080p／1440p 圖片；依第一輪像素修正狀態框碰到刻度 1 的問題，以及高轉速長標籤與主刻度碰撞，第二輪截圖確認消除
+- [驗證摘要與來源](../assets/lfa-center-ring/verification.json) 記錄來源 commit、run、artifact 與本機測試結果
+
+以上是 Linux Chromium／Chrome 合成遙測與 launcher 驗證，**不等同 Windows 原生 overlay 或 Forza 實機驗收**。
 
 互動手動 fixture：`node hud_overlay/lfa_center_ring/tests/visual/serve.mjs`，在可連到該伺服器的瀏覽器開啟終端顯示網址。`tests/visual/fixture.html` 可切換尺寸／狀態並執行行為檢查；此頁不打包於產品。
