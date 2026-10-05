@@ -44,14 +44,14 @@ const boostPaint = async page => page.evaluate(() => {
   }));
 });
 const inspectArcLayout = async page => page.evaluate(async () => {
-  const { ARC, arcFrame } = await import('./arc-geometry.js');
+  const { ARC, rpmFrame } = await import('./arc-geometry.js');
   const labels = Array.from(document.querySelectorAll('#rpmTicks text'));
   const labelClearances = labels.map(node => {
-    const { point, normal } = arcFrame(Number(node.dataset.ratio));
+    const { point, normal } = rpmFrame(Number(node.dataset.ratio));
     const b = node.getBBox();
     const corners = [[b.x,b.y],[b.x+b.width,b.y],[b.x,b.y+b.height],[b.x+b.width,b.y+b.height]];
     const distances = corners.map(([x,y]) => (x-point.x)*normal.x + (y-point.y)*normal.y);
-    return { text: node.textContent, ratio: Number(node.dataset.ratio), bandGap: -Math.max(...distances), side: 'inward/below strip' };
+    return { text: node.textContent, ratio: Number(node.dataset.ratio), bandGap: ARC.rpmOffset - Math.max(...distances), side: 'inward/below strip' };
   });
   const container = document.querySelector('#ap1Cluster');
   const rect = value => ({ x: value.x, y: value.y, width: value.width, height: value.height });
@@ -61,7 +61,7 @@ const inspectArcLayout = async page => page.evaluate(async () => {
     tag: node.tagName,
     attributes: Object.fromEntries(geometricAttributes.map(key => [key, node.getAttribute(key)])),
   });
-  const readouts = Object.fromEntries(['speedDigits','gearValue','boostSegments','boostValue','boostTicks','boostModeLabel','vacModeLabel','speedUnit','speedUnitMph'].map(id => {
+  const readouts = Object.fromEntries(['rpmUnit','speedDigits','gearValue','boostSegments','boostValue','boostTicks','boostModeLabel','vacModeLabel','speedUnit','speedUnitMph'].map(id => {
     const node = document.getElementById(id);
     const b = rect(node.getBoundingClientRect());
     const box = rect(node.getBBox());
@@ -84,7 +84,7 @@ const inspectArcLayout = async page => page.evaluate(async () => {
 
 });
 const inspectRpm = async page => page.evaluate(async () => {
-  const { ARC, arcFrame } = await import('./arc-geometry.js');
+  const { ARC, rpmFrame } = await import('./arc-geometry.js');
   const rect = node => { const b = node.getBoundingClientRect(); return { x:b.x, y:b.y, width:b.width, height:b.height }; };
   const overlap = (a,b) => a.x < b.x+b.width && a.x+a.width > b.x && a.y < b.y+b.height && a.y+a.height > b.y;
   const labels = [...document.querySelectorAll('#rpmTicks text')];
@@ -103,10 +103,20 @@ const inspectRpm = async page => page.evaluate(async () => {
   const gaps = points.slice(1).flatMap((p,i) => [length(points[i][1],p[0]),length(points[i][2],p[3])]);
   const markBelow = marks.every(node => {
     const rpm = Number(node.dataset.rpm), last = Number(marks.at(-1).dataset.rpm);
-    const {point,normal} = arcFrame(rpm/last);
-    return [node.getPointAtLength(0),node.getPointAtLength(node.getTotalLength())].every(p => (p.x-point.x)*normal.x+(p.y-point.y)*normal.y < 0);
+    const {point,normal} = rpmFrame(rpm/last);
+    return [node.getPointAtLength(0),node.getPointAtLength(node.getTotalLength())].every(p => (p.x-point.x)*normal.x+(p.y-point.y)*normal.y < ARC.rpmOffset);
   });
-  return { cells:cells.length, lit:cells.filter(n => n.classList.contains('is-lit')).length, hotLit:cells.filter(n => n.classList.contains('is-lit') && n.classList.contains('is-hot')).length,
+  const bezelGaps = cells.flatMap((node,index)=>[0,1].map(end=>{
+    const ratio=(index+(end?ARC.segmentFill:0))/cells.length;
+    const {point,normal}=rpmFrame(ratio),outer=node.points.getItem(end?2:3);
+    return ARC.faceEdge-((outer.x-point.x)*normal.x+(outer.y-point.y)*normal.y);
+  }));
+  const glowFilter=getComputedStyle(cells.find(node=>node.classList.contains('is-lit')) || cells[0]).filter;
+  const glowBlur=Math.max(0,Number([...glowFilter.matchAll(/(-?[\d.]+)px/g)].at(-1)?.[1] || 0));
+  const gapAfterFaceStroke=Math.min(...bezelGaps)-2; // Existing fascia face stroke is4design units.
+  return { minimumBezelGapDesign:Math.min(...bezelGaps), gapAfterFaceStrokeDesign:gapAfterFaceStroke,
+    nominalThreeSigmaGlowClearanceDesign:gapAfterFaceStroke-3*glowBlur, actualRpmGlowFilter:glowFilter,
+    cells:cells.length, lit:cells.filter(n => n.classList.contains('is-lit')).length, hotLit:cells.filter(n => n.classList.contains('is-lit') && n.classList.contains('is-hot')).length,
     labels:labels.map(n => ({text:n.textContent,rpm:Number(n.dataset.rpm),ratio:Number(n.dataset.ratio)})),
     graduations:marks.map(n => ({rpm:Number(n.dataset.rpm),major:n.dataset.major==='true'})),
     minimumCellWidthDevicePixels:Math.min(...widths), minimumCellGapDevicePixels:Math.min(...gaps), collisions, markBelow,
@@ -236,6 +246,7 @@ try {
           report.checks.push({rpmScenario:name,expected:scenario,rpm,labelClearances:layout.labelClearances});
           assert.deepEqual(rpm.collisions, [], 'RPM scale must clear readouts and its own graduations: ' + name);
           assert(rpm.markBelow && layout.labelClearances.every(n=>n.bandGap>0), 'Numeral/mark ink must stay below the strip: ' + name);
+          assert(rpm.minimumBezelGapDesign > 0 && rpm.nominalThreeSigmaGlowClearanceDesign > 0, 'RPM strip must remain inside the unchanged fascia with glow clearance');
           assert(rpm.majorTickLength > rpm.minorTickLength && rpm.minorTickLength > 0);
           assert(rpm.minimumCellWidthDevicePixels >= 1, 'Dense oblique cells must retain at least one device pixel of width');
           assert(rpm.minimumCellGapDevicePixels >= .5, 'Dense oblique cells need an actual dark gap at compact DPR1');
@@ -245,6 +256,14 @@ try {
           assert(rpm.labels.at(-1).ratio < 1, 'Numbered scale must leave the explicit headroom tail');
           assert(rpm.labels.every(label => Math.abs(label.ratio-label.rpm/scenario.axis)<1e-12));
         }
+        await page.evaluate(scale=>window.HUDCore.handleMessage('config',{data:{scale,glowIntensity:2,elements:{showGauge:true}}}),scale);
+        await frame(page,{rpm:10000,maxRpm:9000,redlineRpm:8000});
+        const glowName=`rpm-upper-glow-${scale===1?'default':'compact'}-dpr${dpr}`;
+        await save(page,glowName+'.png');
+        const glow=await inspectRpm(page);
+        report.checks.push({rpmUpperGlow:glowName,rpm:glow});
+        assert(glow.minimumBezelGapDesign > 0 && glow.nominalThreeSigmaGlowClearanceDesign > 0);
+        assert.deepEqual(glow.collisions,[]);
       }
       await page.evaluate(() => window.HUDCore.handleMessage('config', { data: { scale: 1, glowIntensity: .8, elements: { showGauge: true } } }));
       await frame(page);

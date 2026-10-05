@@ -13,7 +13,7 @@ function fixture() {
     replaceChildren() { this.children = []; },
     classList: { toggle() {} },
   });
-  const ids = Object.fromEntries(['rpmTicks','rpmSegments','speedDigits','boostSegments','speedUnit','speedUnitMph','gearValue','boostValue','boostModeLabel','vacModeLabel','boostTicks','signalStatus','shiftLamp'].map(id => [id, node()]));
+  const ids = Object.fromEntries(['rpmUnit','rpmTicks','rpmSegments','speedDigits','boostSegments','speedUnit','speedUnitMph','gearValue','boostValue','boostModeLabel','vacModeLabel','boostTicks','signalStatus','shiftLamp'].map(id => [id, node()]));
   // Fixed legends are seeded by HTML. Any renderer text replacement is a regression.
   for (const [id, value] of Object.entries({ speedUnit: 'km/h', speedUnitMph: 'mph', boostModeLabel: 'BOOST', vacModeLabel: 'VAC' })) {
     Object.defineProperty(ids[id], 'textContent', { get: () => value, set: () => { throw new Error('Fixed legend was replaced: ' + id); } });
