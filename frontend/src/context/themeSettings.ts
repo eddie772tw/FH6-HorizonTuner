@@ -1,8 +1,9 @@
-export type HalfmoonCore = 'default' | 'modern' | 'elegant' | 'swiss';
+import { isCoreTheme, type CoreThemeId } from './themeCatalog';
 
 export interface ThemeSettings {
   mode: 'dark' | 'light';
-  halfmoonCore: HalfmoonCore;
+  /** Legacy storage/API key; identifies a core from any design system. */
+  halfmoonCore: CoreThemeId;
   primaryColor: string;
   secondaryColor: string;
   accentColor: string;
@@ -18,10 +19,6 @@ export const defaultThemeSettings: ThemeSettings = {
   customCSS: '',
 };
 
-export const isHalfmoonCore = (value: unknown): value is HalfmoonCore => (
-  value === 'default' || value === 'modern' || value === 'elegant' || value === 'swiss'
-);
-
 const isHexColor = (value: unknown): value is string => (
   typeof value === 'string' && /^#[\da-f]{6}$/i.test(value)
 );
@@ -32,7 +29,7 @@ export function normalizeThemeSettings(
 ): ThemeSettings {
   const settings: ThemeSettings = {
     mode: candidate?.mode === 'light' ? 'light' : candidate?.mode === 'dark' ? 'dark' : fallback.mode,
-    halfmoonCore: isHalfmoonCore(candidate?.halfmoonCore) ? candidate.halfmoonCore : fallback.halfmoonCore,
+    halfmoonCore: isCoreTheme(candidate?.halfmoonCore) ? candidate.halfmoonCore : fallback.halfmoonCore,
     primaryColor: isHexColor(candidate?.primaryColor) ? candidate.primaryColor : fallback.primaryColor,
     secondaryColor: isHexColor(candidate?.secondaryColor) ? candidate.secondaryColor : fallback.secondaryColor,
     accentColor: isHexColor(candidate?.accentColor) ? candidate.accentColor : fallback.accentColor,
@@ -78,8 +75,6 @@ export function themeColorProperties(theme: ThemeSettings): Record<string, strin
     '--secondary': theme.secondaryColor,
     '--accent': theme.accentColor,
     '--on-primary': foreground,
-    '--primary-glow': theme.halfmoonCore === 'swiss' ? 'transparent'
-      : 'color-mix(in srgb, var(--primary) 25%, transparent)',
     '--bs-primary': 'var(--primary)',
     '--bs-primary-hsl': hsl,
     '--bs-link-color-hsl': hsl,

@@ -1,0 +1,147 @@
+/* --- Swiss Technical (Matte Industrial / High-Contrast Precision Grid) --- */
+[data-design-system="swiss"][data-bs-core="swiss"][data-bs-theme="dark"] {
+  --bg-gradient:    #0b0d12;
+  --glass-bg:       #0e1117;
+  --glass-border:   rgba(255, 255, 255, 0.12);
+  --surface-1:      #161b24;
+  --surface-2:      #1e2530;
+  --surface-3:      rgba(255, 255, 255, 0.08);
+  --divider:        rgba(255, 255, 255, 0.12);
+  --divider-md:     rgba(255, 255, 255, 0.22);
+  --text-primary:   #f8fafc;
+  --text-secondary: #aeb9c9;
+}
+[data-design-system="swiss"][data-bs-core="swiss"][data-bs-theme="light"] {
+  --bg-gradient:    #f8fafc;
+  --glass-bg:       #ffffff;
+  --glass-border:   rgba(0, 0, 0, 0.15);
+  --surface-1:      #f1f5f9;
+  --surface-2:      #e2e8f0;
+  --surface-3:      rgba(203, 213, 225, 0.60);
+  --divider:        rgba(0, 0, 0, 0.12);
+  --divider-md:     rgba(0, 0, 0, 0.20);
+  --text-primary:   #090d16;
+  --text-secondary: #475569;
+}
+
+[data-design-system="swiss"] {
+  --primary-glow: transparent;
+  --instrument-glow-strength: 0;
+  --control-font-weight: 600;
+  --control-tracking: 0.025em;
+  --heading-weight: 700;
+  --readout-transform: uppercase;
+  --readout-tracking: 0.08em;
+  --glass-blur: 0px;
+  --glass-shadow: none;
+  --panel-radius: 4px;
+  --input-radius: 2px;
+  --bs-body-font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+  --bs-body-color: var(--text-primary);
+  --bs-body-bg: var(--bg-gradient);
+  --bs-secondary-color: var(--text-secondary);
+  --bs-secondary-bg: var(--surface-1);
+  --bs-tertiary-bg: var(--surface-2);
+  --bs-border-color: var(--glass-border);
+  --bs-border-radius: var(--panel-radius);
+  --bs-border-radius-sm: var(--input-radius);
+  --bs-border-radius-lg: var(--panel-radius);
+  --bs-action-bg: var(--surface-1);
+  --bs-action-color: var(--text-primary);
+  --bs-action-border-color: var(--glass-border);
+  --bs-action-hover-bg: var(--surface-2);
+  --bs-action-hover-color: var(--text-primary);
+  --bs-action-active-bg: var(--surface-3);
+  --bs-action-active-color: var(--text-primary);
+  --input-bg: var(--surface-1);
+  --input-text: var(--text-primary);
+  --surface-filter: none;
+  --section-header-bg: var(--glass-bg);
+  --heading-color: var(--text-primary);
+  --heading-tracking: 0.04em;
+  --focus-color: var(--text-primary);
+  --form-focus-shadow: none;
+  --interactive-transform: none;
+  --interactive-shadow: none;
+  --section-border: 1px solid var(--glass-border);
+  --section-bg: var(--glass-bg);
+  --section-padding: 16px;
+  --panel-padding: 16px;
+  --instrument-font-family: var(--bs-body-font-family);
+  --instrument-value-color: var(--text-primary);
+  --instrument-marker-shadow: none;
+}
+
+/* Swiss component details are scoped to this design system. */
+:where([data-design-system="swiss"]) .btn {
+  border-radius: var(--input-radius) !important;
+  font-weight: var(--control-font-weight);
+  letter-spacing: var(--control-tracking);
+  box-shadow: none;
+}
+:where([data-design-system="swiss"]) .btn-outline-secondary {
+  --bs-btn-color: var(--text-secondary);
+  --bs-btn-border-color: var(--glass-border);
+  --bs-btn-hover-color: var(--text-primary);
+  --bs-btn-hover-bg: var(--surface-3);
+  --bs-btn-hover-border-color: var(--text-secondary);
+  --bs-btn-active-color: var(--text-primary);
+  --bs-btn-active-bg: var(--surface-2);
+  --bs-btn-active-border-color: var(--text-primary);
+}
+:where([data-design-system="swiss"]) :is(.navbar, .glass-panel, .card, .halfmoon-card, .popover, .offcanvas, .dropdown-menu, .modal-content, .toast, .telemetry-card-shell) {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: none !important;
+}
+:where([data-design-system="swiss"]) :is(.card, .halfmoon-card, .popover, .dropdown-menu, .modal-content, .toast, .companion-panel, .telemetry-card-shell) {
+  background: var(--glass-bg);
+  color: var(--text-primary);
+  border-color: var(--glass-border);
+  border-radius: var(--panel-radius);
+}
+:where([data-design-system="swiss"]) :is(.glass-panel, .card, .halfmoon-card)[class*="rounded-"] { border-radius: var(--panel-radius) !important; }
+:where([data-design-system="swiss"]) :is(.card-header, .card-footer, .modal-header, .modal-footer, .offcanvas-header) { border-color: var(--glass-border); background: var(--section-header-bg); }
+:where([data-design-system="swiss"]) .cyber-btn-glow:hover { transform: none !important; box-shadow: none !important; }
+:where([data-design-system="swiss"]) .telemetry-card-shell { border: 1px solid var(--glass-border); }
+:where([data-design-system="swiss"]) .telemetry-card-shell .border { border-color: var(--glass-border) !important; border-radius: var(--panel-radius) !important; }
+
+:where([data-design-system="swiss"]) .badge {
+  --badge-accent: var(--text-secondary);
+  --badge-ink: var(--text-secondary);
+  padding: 0.3em 0.5em;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  line-height: 1.25;
+  border: 1px solid color-mix(in srgb, var(--badge-accent) 50%, var(--glass-border));
+  border-radius: var(--input-radius) !important;
+}
+:where([data-design-system="swiss"]) .badge:is(.text-bg-primary, .bg-primary, .bg-primary-subtle) { --badge-accent: var(--primary); --badge-ink: var(--text-primary); }
+:where([data-design-system="swiss"]) .badge:is(.text-bg-success, .bg-success, .bg-success-subtle) { --badge-accent: var(--bs-success); --badge-ink: var(--bs-success-text-emphasis); }
+:where([data-design-system="swiss"]) .badge:is(.text-bg-danger, .bg-danger, .bg-danger-subtle) { --badge-accent: var(--bs-danger); --badge-ink: var(--bs-danger-text-emphasis); }
+:where([data-design-system="swiss"]) .badge:is(.text-bg-warning, .bg-warning, .bg-warning-subtle) { --badge-accent: var(--bs-warning); --badge-ink: var(--bs-warning-text-emphasis); }
+:where([data-design-system="swiss"]) .badge:is(.text-bg-info, .bg-info, .bg-info-subtle) { --badge-accent: var(--bs-info); --badge-ink: var(--bs-info-text-emphasis); }
+/* Include utility classes so text-bg-* and text-white cannot bypass the badge contract. */
+:where([data-design-system="swiss"]) .badge[class] {
+  color: var(--badge-ink) !important;
+  background: color-mix(in srgb, var(--badge-accent) 12%, var(--glass-bg)) !important;
+  box-shadow: none !important;
+}
+
+:where([data-design-system="swiss"]) .workspace-tabs.nav { border-bottom: 1px solid var(--glass-border); }
+:where([data-design-system="swiss"]) .workspace-tabs .nav-link {
+  border: 0;
+  border-bottom: 3px solid transparent;
+  border-radius: 0;
+  color: var(--text-secondary);
+  background: transparent;
+  box-shadow: none;
+}
+:where([data-design-system="swiss"]) .workspace-tabs .nav-link:hover:not(:disabled) { background: var(--surface-3); color: var(--text-primary); }
+:where([data-design-system="swiss"]) .workspace-tabs .nav-link.active {
+  color: var(--text-primary) !important;
+  background: var(--surface-1);
+  border-bottom-color: var(--primary);
+  font-weight: 700;
+}
+:where([data-design-system="swiss"]) .telemetry-card-shell :is(.text-secondary, .text-info) { color: var(--text-secondary) !important; }

@@ -2,9 +2,12 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { backendFetch } from '../services/backend';
 import { validateCSS } from '../utils/cssValidator';
 
-import { defaultThemeSettings, normalizeThemeSettings, themeColorProperties, type ThemeSettings } from './themeSettings';
-export { defaultThemeSettings, normalizeThemeSettings, isHalfmoonCore } from './themeSettings';
-export type { ThemeSettings, HalfmoonCore } from './themeSettings';
+import { defaultThemeSettings, normalizeThemeSettings, type ThemeSettings } from './themeSettings';
+import { applyThemeToDocument } from './themeDocument';
+export { defaultThemeSettings, normalizeThemeSettings } from './themeSettings';
+export type { ThemeSettings } from './themeSettings';
+export { isCoreTheme } from './themeCatalog';
+export type { CoreThemeId, DesignSystemId } from './themeCatalog';
 
 interface ThemeContextType {
   themeSettings: ThemeSettings;
@@ -45,15 +48,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, []);
 
   useEffect(() => {
-    // Apply Halfmoon theme attributes (replaces manual data-theme system)
-    document.documentElement.setAttribute('data-bs-theme', themeSettings.mode || 'dark');
-    document.documentElement.setAttribute('data-bs-core', themeSettings.halfmoonCore || 'default');
-
-    // Inject user-defined brand colors as CSS custom properties
-    // Override both project tokens and native Halfmoon colors for every core.
-    for (const [property, value] of Object.entries(themeColorProperties(themeSettings))) {
-      document.documentElement.style.setProperty(property, value);
-    }
+    applyThemeToDocument(themeSettings);
 
     // Inject custom CSS
     let styleTag = document.getElementById('custom-theme-css');

@@ -1,4 +1,5 @@
-import { normalizeThemeSettings, themeColorProperties } from '../context/themeSettings';
+import { normalizeThemeSettings } from '../context/themeSettings';
+import { applyThemeToDocument } from '../context/themeDocument';
 
 /** Shared startup path; no React state or backend request before first paint. */
 export function applyThemeEarly(): void {
@@ -7,10 +8,5 @@ export function applyThemeEarly(): void {
     const raw = localStorage.getItem('themeSettings');
     saved = raw ? JSON.parse(raw) : null;
   } catch { /* Invalid or unavailable storage uses the same defaults as React. */ }
-  const theme = normalizeThemeSettings(saved);
-  document.documentElement.setAttribute('data-bs-theme', theme.mode);
-  document.documentElement.setAttribute('data-bs-core', theme.halfmoonCore);
-  for (const [property, value] of Object.entries(themeColorProperties(theme))) {
-    document.documentElement.style.setProperty(property, value);
-  }
+  applyThemeToDocument(normalizeThemeSettings(saved));
 }

@@ -72,7 +72,7 @@ Road #462 修正採版本化 [launch envelope v3](docs/tuning/aego-road-launch-v
   - **自動化發布架構**：維護者僅需在 GitHub 網頁建立 Release，GitHub Actions 即自動觸發編譯與簽名。`FH6-HorizonTuner-Full-Installer.exe` 與 `FH6-HorizonTuner-Lite-Installer.exe` 是可直接安裝的正式 NSIS installer，也是 OTA updater 重用的同一個經簽署 payload；Full/Lite portable EXE 與 Portable ZIP 則清楚標示為可攜版。兩個 OTA 管道分別使用 `latest.json`（Full）與 `latest-lite.json`（Lite），可獨立下載與安裝，不依賴另一個版本。
 * **診斷主控台與主題 / 多語言系統 (Diagnostics, Theme & i18n)**:
   - **診斷主控台**：內建即時日誌檢視器，支援 DEBUG / INFO / WARNING / ERROR 層級篩選與 Traceback 自動拼接。
-  - **設計系統與主題**：基於 Halfmoon CSS v2，保留三款 Glassmorphism 核心並提供 Swiss Technical 消光主題。各頁共用分頁、按鈕、徽章與面板外觀；一般分頁按內容決定寬度並限制最大值，調校流程保留編號與等寬填滿整列。10 組配色同步套用原生控制項與圖表，包含 Swiss Signal 與隨日夜切換黑白主色的 Bauhaus Mono。從「應用程式選單 → 外觀」選擇核心與配色。`frontend/src/styles/` 分離主題 token、版面及共用元件，新增核心可沿用整套頁面結構。
+  - **設計系統與主題**：Core Theme 同時決定整體配色、材質與元件設計；Default／Modern／Elegant 屬於 Halfmoon，Swiss Technical 屬於 Swiss。各頁沿用共用結構，系統模組分別提供圓角玻璃風格與消光工程風格。一般分頁依內容寬度且設最大值，調校保留編號與等寬滿列。從「應用程式選單 → 外觀」按系統分組選擇核心；系統色彩調配整合三個色票／HEX 欄位及 10 組 Color Presets，同步原生控制項與圖表。CSS 編輯器與速查指南預設折疊供進階使用。`themeCatalog.ts` 管理核心歸屬，`styles/design-systems/` 隔離系統樣式，未來可新增模組而不複製各頁 CSS；舊主題設定及匯入／匯出格式保持相容。
   - **動態多語言**：預設支援繁體中文 (zh-tw)、英文 (en-us)、日文 (ja-jp) 等。
 
 ---

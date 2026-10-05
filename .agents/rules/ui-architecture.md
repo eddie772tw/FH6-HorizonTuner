@@ -8,7 +8,8 @@
 
 1. **職責劃分**：
    - **Layer 1（核心基礎）**：採用 **Halfmoon CSS v2.0.2**，提供 Bootstrap 相容之語意標籤、響應式排版與按鈕/表單基底。
-   - **Layer 2（專案外觀）**：`src/App.css` 依序載入 `styles/themes.css`、`base.css`、`components.css`、`navigation.css`。核心只定義 token；共用元件消費 token；頁面保留結構規則。所有核心透過 `themeColorProperties` 將 Color Presets 同步至 Halfmoon 原生控制項與專案元件。
+   - **Layer 2（專案外觀）**：`src/App.css` 依序載入 `styles/themes.css`（中性 token 合約）、`base.css`、`components.css`、`navigation.css` 與 `design-systems/index.css`。Core Theme 同時決定整體配色、材質與元件細節；`context/themeCatalog.ts` 將 Default／Modern／Elegant 歸屬 Halfmoon、Swiss Technical 歸屬 Swiss。各系統模組以 `data-design-system` 限定 token 與元件外觀，頁面只保留結構；新增系統不需複製各頁 CSS。
+   - **配色覆寫**：所有核心透過 `themeColorProperties` 將 Color Presets 同步至 Halfmoon 原生控制項與專案元件；配色不切換設計系統。功能警示色保持獨立。儀表效果消費系統 token，不在元件內判斷核心名稱。
 2. **禁止硬編碼色彩**：
    - 所有背景、文字、邊框與陰影一律使用 CSS 語意變數（例如 `var(--glass-bg)`, `var(--text-primary)`, `var(--surface-1)`, `var(--primary)`）。
    - 嚴禁在 inline style 或自訂樣式中寫死 `#000000` 或 `#ffffff`。
@@ -30,7 +31,7 @@
   - **非阻斷性全域通知**：使用 `useToast().addToast(...)` 於右上角固定位置彈出。
 
 ### 3. 防閃爍 (Anti-FOUC) 護欄
-- 頁面首幀透過 HTML `data-bs-theme` (dark/light) 與 `data-bs-core` (default/modern/elegant/swiss) 同步外觀模式；`applyThemeEarly` 與 React 共用 `context/themeSettings.ts` 正規化設定，確保首幀與 localStorage 一致。
+- 頁面首幀透過 HTML `data-bs-theme`、`data-bs-core` 與衍生的 `data-design-system` 同步外觀。`applyThemeEarly` 與 React 共用 `themeSettings.ts` 正規化設定及 `themeDocument.ts` 寫入入口。保留舊儲存／API 欄位 `halfmoonCore`，設計系統由 catalog 推導，不另存第二份狀態。
 
 ---
 
@@ -42,3 +43,4 @@
 
 ### 2. 60Hz 高頻繪圖效能隔絕
 - 所有 Canvas、圖表、滑桿控制項在 60Hz 遙測即時更新時，必須維持 `transition: none !important`，避免高頻數據流觸發動畫佇列堆疊導致介面遲鈍。
+- 即時儀表卡片以系統底色、圓角與陰影呈現材質，卡片與其開關提示不疊加 `backdrop-filter`，避免動態 Canvas 周圍建立多層模糊合成。外層導覽列、抽屜等靜態表面仍可使用系統模糊 token。

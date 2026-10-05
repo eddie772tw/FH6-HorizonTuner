@@ -14,7 +14,7 @@ const EngineRpmDisplay: React.FC = React.memo(() => {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   
-  const themeVars = useRef({ primary: '#00f0ff', secondary: '#ffaa00', isLight: false, isSwiss: false });
+  const themeVars = useRef({ primary: '#00f0ff', secondary: '#ffaa00', isLight: false, glowStrength: 1 });
   const lastFlashRef = useRef(false);
   const lastFlashTimeRef = useRef(0);
 
@@ -27,13 +27,13 @@ const EngineRpmDisplay: React.FC = React.memo(() => {
         primary: style.getPropertyValue('--primary').trim() || '#00f0ff',
         secondary: style.getPropertyValue('--secondary').trim() || '#ffaa00',
         isLight: document.documentElement.getAttribute('data-bs-theme') === 'light',
-        isSwiss: document.documentElement.getAttribute('data-bs-core') === 'swiss',
+        glowStrength: Number(style.getPropertyValue('--instrument-glow-strength').trim() || '1'),
       };
     };
 
     updateThemeVars();
     const observer = new MutationObserver(updateThemeVars);
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-bs-theme', 'data-bs-core', 'style'] });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-bs-theme', 'data-bs-core', 'data-design-system', 'style'] });
 
     if (speedUnitRef.current) speedUnitRef.current.innerText = convertSpeed(0).label;
 
@@ -72,7 +72,7 @@ const EngineRpmDisplay: React.FC = React.memo(() => {
       const segWidth = (w - (numSegments - 1) * gap) / numSegments;
       const activeSegs = Math.round(rpmPercent * numSegments);
 
-      const { primary, secondary, isLight, isSwiss } = themeVars.current;
+      const { primary, secondary, isLight, glowStrength } = themeVars.current;
 
       const now = performance.now();
       if (now - lastFlashTimeRef.current > 100) {
@@ -106,11 +106,11 @@ const EngineRpmDisplay: React.FC = React.memo(() => {
           if (isShiftAlert && segRatio >= 0.85) {
             ctx.fillStyle = lastFlashRef.current ? '#ffffff' : '#ff003c';
             ctx.shadowColor = '#ff003c';
-            ctx.shadowBlur = isSwiss ? 0 : 10 * dpr;
+            ctx.shadowBlur = glowStrength * 10 * dpr;
           } else {
             ctx.fillStyle = activeColor;
             ctx.shadowColor = activeColor;
-            ctx.shadowBlur = isSwiss ? 0 : 6 * dpr;
+            ctx.shadowBlur = glowStrength * 6 * dpr;
           }
           ctx.fill();
           ctx.shadowBlur = 0;

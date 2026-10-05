@@ -39,6 +39,8 @@ const TARGET_SELECTORS = [
   ['[data-bs-core="modern"]', 'Modern core theme'],
   ['[data-bs-core="elegant"]', 'Elegant core theme'],
   ['[data-bs-core="swiss"]', 'Swiss core theme'],
+  ['[data-design-system="halfmoon"]', 'Halfmoon design system'],
+  ['[data-design-system="swiss"]', 'Swiss design system'],
 ] as const;
 
 const CustomCSSEditorPanel: React.FC = () => {

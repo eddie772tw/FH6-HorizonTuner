@@ -1,7 +1,7 @@
+import { isCoreTheme } from './themeCatalog';
 import { describe, expect, it } from 'vitest';
 import {
   defaultThemeSettings,
-  isHalfmoonCore,
   normalizeThemeSettings,
   primaryForeground,
   themeColorProperties,
@@ -9,12 +9,12 @@ import {
 } from './themeSettings';
 
 describe('ThemeContext - Swiss Style and Core Theme support', () => {
-  it('validates swiss as a recognized HalfmoonCore value', () => {
-    expect(isHalfmoonCore('swiss')).toBe(true);
-    expect(isHalfmoonCore('default')).toBe(true);
-    expect(isHalfmoonCore('modern')).toBe(true);
-    expect(isHalfmoonCore('elegant')).toBe(true);
-    expect(isHalfmoonCore('unknown')).toBe(false);
+  it('validates swiss as a recognized core theme value', () => {
+    expect(isCoreTheme('swiss')).toBe(true);
+    expect(isCoreTheme('default')).toBe(true);
+    expect(isCoreTheme('modern')).toBe(true);
+    expect(isCoreTheme('elegant')).toBe(true);
+    expect(isCoreTheme('unknown')).toBe(false);
   });
 
   it('correctly normalizes theme settings when halfmoonCore is swiss', () => {

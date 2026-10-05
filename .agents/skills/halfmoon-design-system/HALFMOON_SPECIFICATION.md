@@ -1,6 +1,6 @@
 # FH6-HorizonTuner 前端 Halfmoon CSS 視覺設計與組件規格書 (Halfmoon Specification)
 
-> **文件版本**：2.3.0
+> **文件版本**：2.4.0
 > **參考標準**：[Halfmoon CSS v2.0.2 官方文件 (gethalfmoon.com/docs)](https://www.gethalfmoon.com/docs/) + Bootstrap 5 相容語意層  
 > ** Agent 遵循與維護宣告**：所有 AI Agent 在開發、重構或維護前端 UI 組件與 Halfmoon CSS 樣式時，**必須嚴格遵循並主動維護本規格書**與 [halfmoon-design-system](SKILL.md) 技能標準。
 > **目標與任務**：定義與規範 FH6-HorizonTuner 專案在實際前端開發時套用 Halfmoon CSS 所有 Components、Layout、Helpers 與 Utilities 的特定規格、參數、語意 Token、視覺行為與使用時機。
@@ -13,7 +13,7 @@ FH6-HorizonTuner 前端採用 **雙層視覺設計架構 (Two-Layer Visual Archi
 
 ```
 +-----------------------------------------------------------------------+
-|  Layer 2: App.css -> styles/{themes,base,components,navigation}.css  |
+|  Layer 2: App.css -> shared styles + styles/design-systems/          |
 |  - 賽車儀表動態霓虹權杖 (--primary, --secondary, --accent, --primary-glow) |
 |  - 語意化表面材質變數 (--glass-bg, --glass-border, --surface-1/2/3)   |
 +-----------------------------------------------------------------------+
@@ -27,13 +27,29 @@ FH6-HorizonTuner 前端採用 **雙層視覺設計架構 (Two-Layer Visual Archi
 
 新增核心 `swiss`（Swiss Technical）沿用 Layer 2，保留既有 default、modern、elegant 與八組配色；另加入 Swiss Signal 與 Bauhaus Mono。`context/themeSettings.ts` 是載入、匯入、React 更新及首幀設定的共同正規化入口；Bauhaus Mono 以完整三色組識別，日間主色為黑、夜間為淺白，其他自訂配色不改寫。
 
-`App.css` 只管理載入順序：`themes.css` 定義核心／模式 token，`base.css` 管理版面，`components.css` 提供按鈕、徽章、表單、面板等共用外觀，`navigation.css` 管理 `.workspace-tabs`。新增設計核心應擴充 token，不在各頁複製核心 selector。首幀與 React 共用 `themeColorProperties`，將使用者配色同步至 `--primary/secondary/accent` 及 Halfmoon 的 `--bs-primary-*`、HSL 與勾選圖示；原生按鈕、開關、進度條和 utilities 不得停留於核心預設配色。成功／警告／錯誤等功能語意色保持獨立。
+Core Theme 同時決定整體配色風格與元件細節。`context/themeCatalog.ts` 統一登錄核心及設計系統歸屬：Default／Modern／Elegant 屬於 Halfmoon，Swiss Technical 屬於 Swiss。外觀面板依此 registry 分組，不維護第二份選項表。
+
+Halfmoon 按鈕與卡片材質以 Swiss 導入前的 `22f9660f` 為參照：`.btn` 沿用 Halfmoon 原生尺寸圓角、outline/hover 狀態及 cyber 按鈕縮放；`.card`／`.glass-panel` 保留原本玻璃 token 與 utility 圓角優先權。一般即時儀表外層只負責排版，不新增整片玻璃底色、邊框或投影；材質由內層儀表容器負責，展開面板保留獨立表面。Swiss 的實色卡片、統一細框與按鈕圓角只存在於 Swiss 模組。現行分頁設計與響應式修正不回退。
+
+`App.css` 只管理載入順序：`themes.css` 定義中性 token 合約，`base.css` 管理版面，`components.css` 讓控制項消費 token，`navigation.css` 管理 `.workspace-tabs` 的結構與響應式寬度；最後載入 `design-systems/index.css` 的系統模組。Halfmoon 圓角實色分頁／徽章與 Swiss 底線分頁／細框徽章各自限定於 `data-design-system`。一般分頁依內容寬度且最大 14rem；調校步驟保留編號與滿列等寬，手機兩欄。
+
+首幀與 React 共用 `themeDocument.ts` 寫入根元素屬性，並以 `themeColorProperties` 將使用者配色同步至 `--primary/secondary/accent` 及 Halfmoon 的 `--bs-primary-*`、HSL 與勾選圖示；原生按鈕、開關、進度條和 utilities 不得停留於核心預設配色。成功／警告／錯誤等功能語意色保持獨立。儲存與 JSON 匯入／匯出繼續使用 `halfmoonCore` 欄位及 schema 2；`data-design-system` 由 catalog 推導，不接受匯入檔指定另一套歸屬。
+
+外觀面板將三個色票／HEX 欄位及 Color Presets 收在「系統色彩調配」內。CSS 編輯器、匯入／匯出及 Cheatsheet 放在預設關閉的原生 `details`；折疊不會停用已儲存的自訂 CSS。
+
+#### 擴充核心與設計系統
+1. 在 `themeCatalog.ts` 登錄新核心；同系統沿用既有 designSystem，新系統先加入 `DESIGN_SYSTEMS`。
+2. 在對應的 `styles/design-systems/<system>.css` 定義模式／核心配色與材質 token。系統特有的分頁、徽章等 selector 必須以 `[data-design-system="<system>"]` 限定範圍；新模組加入 `index.css` 靜態載入，保證首幀可用。
+3. 共用元件透過 token 表達差異；儀表讀取 `--instrument-glow-strength` 等 token 並快取，不在繪圖循環查 DOM，也不加入 `isSwiss` 等核心名稱分支。
+4. 補核心歸屬、舊設定載入及首幀／React 一致性驗證；瀏覽器檢查日夜、配色、跨系統往返、鍵盤焦點與窄畫面。新增設計系統不需要複製各個頁面的 CSS。
 
 Swiss 的 `--bg-gradient` 為實色（夜間 `#0b0d12`、日間 `#f8fafc`），`--glass-shadow: none`、`--glass-blur: 0px`；主要面板直接使用 `backdrop-filter: none`。`--on-primary` 依主色相對亮度選取黑或白，供實色按鈕文字使用。焦點使用清楚的 outline。全域數字採 `tabular-nums lining-nums`；Swiss 採 Inter／系統無襯線字型。
 
 遙測沿用五張卡片及四輪順序，以 8px 間距、1px 邊框分組；窄畫面改為可捲動堆疊，手機上的四輪區塊改為單欄。調校沿用四個獨立步驟，以 `tuning-workflow__steps` 與 `tuning-workflow__grid` 套用階層及 16px 網格間距。樣式不改寫步驟解鎖、量測、調校公式或 Portal 行為。
 
-透過 HTML 根元素 (`<html>`) 的二元屬性實作動態主題切換：
+即時儀表卡片及其開關提示不使用 `backdrop-filter`：卡片保留系統半透明底色、圓角與陰影，提示使用不透明模式底色，避免動態 Canvas 與滑鼠提示疊加模糊圖層。Halfmoon 的導覽列、抽屜與一般靜態面板仍使用玻璃模糊。
+
+透過 HTML 根元素 (`<html>`) 的三個屬性實作動態主題切換：
 
 * **`data-bs-theme`** (外觀模式)：
   - `dark`（預設暗色模式，適合賽車儀表板與低光源環境）
@@ -43,9 +59,10 @@ Swiss 的 `--bg-gradient` 為實色（夜間 `#0b0d12`、日間 `#f8fafc`），`
   - `modern`（深靛藍 Navy 現代競賽風格）
   - `elegant`（暖沙 Espresso 典雅精緻風格）
   - `swiss`（消光表面、髮絲邊框、工程數字排版）
+* **`data-design-system`** (衍生的元件設計系統)：`halfmoon` 或 `swiss`，由核心 catalog 決定。
 
 #### 首幀防閃爍 (Anti-FOUC) 腳本
-由 `src/app/applyThemeEarly.ts` 於 React DOM 掛載前同步寫入模式、核心及正規化配色，桌面、Lite 與 Companion 共用：
+由 `src/app/applyThemeEarly.ts` 於 React DOM 掛載前同步寫入模式、核心、設計系統及正規化配色，桌面、Lite 與 Web Companion 共用；Android Compose 的整合另由 #485 追蹤：
 ```typescript
 import { applyThemeEarly } from './app/applyThemeEarly';
 applyThemeEarly();
@@ -53,7 +70,7 @@ applyThemeEarly();
 
 ### 1.2 全域 CSS 設計權杖表 (Design Tokens)
 
-全域顏色與材質定義於 `src/styles/themes.css` 的 `:root`、`[data-bs-theme]` 與 `[data-bs-core]` 選擇器。共用元件以 `--surface-filter`、`--heading-color`、`--input-radius`、`--panel-radius`、`--interactive-shadow` 等 token 決定外觀：
+`src/styles/themes.css` 提供中性預設；具體顏色、材質與元件細節定義於 `styles/design-systems/`，以 `data-design-system` 搭配模式／核心選擇器限定。共用元件以 `--surface-filter`、`--heading-color`、`--input-radius`、`--panel-radius`、`--interactive-shadow` 等 token 決定外觀。以下色值為 Halfmoon 參考，Swiss 依上節覆寫：
 
 | CSS 變數名稱 | 語意與用途 | Dark Mode (暗色) | Light Mode (亮色) | 專案規範與邊界 |
 | :--- | :--- | :--- | :--- | :--- |

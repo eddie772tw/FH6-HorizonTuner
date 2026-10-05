@@ -1,8 +1,8 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap');
 
-/* Halfmoon foundation -> theme tokens -> application layout -> shared components.
-   New cores belong in themes.css; pages keep only their structural layout rules. */
+/* Foundation -> neutral tokens/layout -> shared components -> scoped design systems. */
 @import './styles/themes.css';
 @import './styles/base.css';
 @import './styles/components.css';
 @import './styles/navigation.css';
+@import './styles/design-systems/index.css';

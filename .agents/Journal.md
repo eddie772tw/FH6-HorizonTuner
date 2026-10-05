@@ -1,5 +1,17 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-10-05 / Core Theme 的設計系統歸屬與外觀設定分組（Codex as Codex）
+
+- **來源／狀態**：`local`／`verified`；PR #481 依使用者補充重新定義 Core Theme，同時管理配色、材質與元件細節。
+- **Learning**：只分離配色 token，卻把 Swiss 徽章／分頁 selector 放在共用 CSS，仍會讓其他核心套上 Swiss 細節。使用 catalog 推導 `data-design-system`，以系統模組隔離元件 selector，首幀與 React 共用同一個 DOM 套用入口。保留 `halfmoonCore` 舊儲存欄位可避免無必要的 API／JSON 遷移。
+- **Action**：Halfmoon／Swiss 模組分開；Canvas 光暈改讀快取 token，移除核心名稱判斷。外觀設定依系統分組、三個色票搭配可編輯 HEX、Color Presets 納入系統色彩調配；CSS 編輯器與 Cheatsheet 預設折疊，既有 CSS 保持套用。外觀抽屜寬度使用既有上限，避免短翻譯讓 fit-content 擠成不必要的直列。
+- **Evidence**：新增 7 項整合案例涵蓋四核心首幀／React 對應、跨系統切換、舊 JSON 匯入、配色保留、UI 分組、預設折疊與 HEX 草稿。瀏覽器驗證 4 cores × 2 modes，Halfmoon 圓角／實色徽章與 Swiss 底線／細框徽章互相隔離；配色更新三欄且不換核心，重載保留設計系統；320px 無水平溢出，可捲至進階區塊並展開速查表。
+- **邊界**：Companion Android 原生外殼與跨層設計同步依使用者決定留待 #485；本次瀏覽器及合成資料驗證不代表實車或 Android 驗收。
+- **即時圖層修正**：使用者回報切回 Halfmoon 後，滑鼠移動會在儀表卡片角落出現毛玻璃覆蓋。DOM 確認五個 Canvas 卡片有 14px 背景模糊，開關提示另有第二層模糊；移除這兩處背景模糊，保留卡片底色、圓角與陰影，提示使用不透明模式底色。瀏覽器確認五卡與提示的 filter 均為 none；使用者再次實測回覆「目前沒有再出現」。此為實際改善證據，未宣稱已證明 Chromium 內部合成機制。
+- **Halfmoon 舊版參照**：再依使用者要求對照 PR base `22f9660f`，僅還原按鈕與卡片材質。移除套到 Halfmoon 的統一按鈕圓角／secondary outline 覆寫，恢復原生 `.btn` 尺寸與 cyber hover；把整片卡片、額外投影／邊框及內層強制圓角限定於 Swiss。Halfmoon 一般即時卡片外層恢復透明排版容器，既有 glass/card 容器繼續使用原始材質。分頁、配色連動、對齊與捲動修正維持。
+- **本地 Gate**：最終前端 157 files passed／1 skipped、1,125 tests passed／1 skipped；TypeScript／Vite build 與 `git diff --check` 通過。Rust 122 passed／3 ignored、文件測試通過；build 與 Cargo 未並行。瀏覽器複核 Swiss 2px 按鈕／1px 卡片與 Halfmoon 原生 4px 小按鈕／透明外層互不干擾。
+- **Skills**：`ponytail`（full）、`halfmoon-design-system`、`modular-refactoring`、`huge-component-refactoring`、`pr-author-maintainer`、`pr-review-evaluation`、`agent-governance-audit`。
+
 ## 2026-10-05 / 賽事紀錄與跨頁排版巡檢（Codex as Codex）
 
 - **來源／狀態**：`local`／`verified`；PR #481 使用者回報賽事頁尺寸、對齊與無法捲動。

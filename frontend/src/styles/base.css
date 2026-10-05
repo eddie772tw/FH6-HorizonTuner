@@ -34,11 +34,11 @@ body,
   font-feature-settings: "tnum" 1, "lnum" 1;
 }
 
-.swiss-readout-label {
+.instrument-readout-label {
   font-size: 0.6875rem;
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+  text-transform: var(--readout-transform);
+  letter-spacing: var(--readout-tracking);
   color: var(--text-secondary);
 }
 

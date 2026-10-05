@@ -1,4 +1,4 @@
-/* One navigation vocabulary for workspaces, nested pages and workflow steps. */
+/* Shared navigation layout and accessibility; system modules own the visual skin. */
 .workspace-tabs.nav {
   display: flex;
   flex-wrap: wrap;
@@ -6,9 +6,7 @@
   width: 100%;
   min-width: 0;
   padding: 0;
-  border-bottom: 1px solid var(--glass-border);
 }
-
 .workspace-tabs .nav-item { min-width: 0; max-width: 14rem; }
 .workspace-tabs .nav-link {
   display: flex;
@@ -22,21 +20,8 @@
   margin: 0;
   text-align: left;
   overflow-wrap: anywhere;
-  border: 0;
-  border-bottom: 3px solid transparent;
-  border-radius: 0;
-  color: var(--text-secondary);
-  background: transparent;
-  box-shadow: none;
 }
 .workspace-tabs .nav-item .nav-link { width: 100%; height: 100%; }
-.workspace-tabs .nav-link:hover:not(:disabled) { background: var(--surface-3); color: var(--text-primary); }
-.workspace-tabs .nav-link.active {
-  color: var(--text-primary) !important;
-  background: var(--surface-1);
-  border-bottom-color: var(--primary);
-  font-weight: 700;
-}
 .workspace-tabs .nav-link:focus-visible { outline: 2px solid var(--text-primary); outline-offset: -2px; }
 .workspace-tabs .nav-link:disabled { opacity: 0.55; cursor: not-allowed; }
 .workspace-tabs__number { font-size: 1.5rem; font-weight: 700; line-height: 1.2; }
