@@ -26,7 +26,7 @@ await new Promise((r) => server.listen(0, '127.0.0.1', r));
 const origin = `http://127.0.0.1:${server.address().port}`;
 let browser, activePage;
 const summary = { browser: null, platform: process.platform, nativeAcceptance: 'Not performed: Windows/game unavailable', source: 'Synthetic canonical frames through real HUDCore dispatcher', scenarios: [], passed: false, error: null };
-const base = { timestamp_ms: 100, rpm: 7200, maxRpm: 9000, redlineRpm: 8000, speed_kmh: 180, speed_mph: 111.85, gear: 4, throttle: .82, brake: 0, isRaceOn: 1 };
+const base = { timestamp_ms: 100, rpm: 7200, maxRpm: 9000, redlineRpm: 8000, speed_kmh: 180, speed_mph: 111.85, gear: 4, throttle: .82, brake: 0, fuel_ratio: .68, isRaceOn: 1 };
 async function send(frame, type, data = {}) { await frame.evaluate(({ type, data }) => window.HUDCore.handleMessage(type, data), { type, data }); }
 async function text(frame, id) { return frame.locator('#lfa' + id).textContent(); }
 try {
@@ -42,6 +42,8 @@ try {
     await frame.waitForFunction(() => window.HUDCore?.getActiveStyle());
     assert.equal(await text(frame, 'Status'), 'WAITING');
     assert.equal(await text(frame, 'Speed'), '—');
+    assert.equal(await text(frame, 'Fuel'), 'N/A');
+    for (const sensor of ['Coolant', 'OilTemperature', 'OilPressure']) assert.equal(await text(frame, sensor), 'N/A');
     await send(frame, 'hud:init', { isMetric: true });
     await page.waitForTimeout(40);
     assert.equal(await frame.locator('#lfaSelfCheck').isVisible(), true);
@@ -54,7 +56,7 @@ try {
     async function detail(name) {
       if (width === 1920 && dpr === 2) await frame.locator('#lfaContainer').screenshot({ path: path.join(out, `detail-${name}.png`), omitBackground: true });
     }
-    await reading(); assert.equal(await text(frame, 'Speed'), '180');
+    await reading(); assert.equal(await text(frame, 'Speed'), '180'); assert.equal(await text(frame, 'Fuel'), '68%');
     const rect = await frame.locator('#lfaContainer').boundingBox();
     assert.ok(rect.x >= 0 && rect.y >= 0 && rect.x + rect.width <= width && rect.y + rect.height <= height);
     const tag = `${width}x${height}-dpr${dpr}`;
@@ -75,8 +77,13 @@ try {
     await detail('neutral');
     await reading({ rpm: 15000, maxRpm: 16000, redlineRpm: 15000 }); assert.equal(await text(frame, 'Status'), 'SHIFT');
     await detail('high-rpm');
+    for (const [fuel, expected] of [[0, '0%'], [.5, '50%'], [1, '100%'], [null, 'N/A'], [1.5, 'N/A']]) {
+      await reading({ fuel_ratio: fuel }); assert.equal(await text(frame, 'Fuel'), expected);
+      if (fuel === 0) await detail('fuel-empty');
+      if (fuel === 1) await detail('fuel-full');
+    }
     await send(frame, 'hud:frame', { data: { timestamp_ms: ++stamp, rpm: 3000 } }); await page.waitForTimeout(40);
-    assert.equal(await text(frame, 'Speed'), '—'); assert.equal(await text(frame, 'Gear'), '—');
+    assert.equal(await text(frame, 'Speed'), '—'); assert.equal(await text(frame, 'Gear'), '—'); assert.equal(await text(frame, 'Fuel'), 'N/A');
     await detail('missing');
     await reading({ rpm: Infinity, speed_mph: 1e12, gear: 99, throttle: null, brake: NaN });
     assert.equal(await text(frame, 'Speed'), '—'); assert.equal(await text(frame, 'Gear'), '—');
@@ -85,9 +92,9 @@ try {
     const duplicate = { ...base, timestamp_ms: ++stamp };
     await send(frame, 'hud:frame', { data: duplicate });
     for (let i = 0; i < 9; i++) { await page.waitForTimeout(180); await send(frame, 'hud:frame', { data: duplicate }); }
-    await page.waitForTimeout(40); assert.equal(await text(frame, 'Status'), 'NO SIGNAL'); assert.equal(await text(frame, 'Speed'), '—');
+    await page.waitForTimeout(40); assert.equal(await text(frame, 'Status'), 'NO SIGNAL'); assert.equal(await text(frame, 'Speed'), '—'); assert.equal(await text(frame, 'Fuel'), 'N/A');
     if (width === 1920 && dpr === 2) await frame.locator('#lfaContainer').screenshot({ path: path.join(out, 'detail-no-signal.png'), omitBackground: true });
-    await reading(); assert.equal(await text(frame, 'Status'), 'LIVE');
+    await reading(); assert.equal(await text(frame, 'Status'), 'LIVE'); assert.equal(await text(frame, 'Fuel'), '68%');
     await send(frame, 'hud:elements', { showGauge: false }); assert.equal(await frame.locator('#lfaContainer').isVisible(), false);
     await send(frame, 'hud:elements', { showGauge: true }); assert.equal(await frame.locator('#lfaContainer').isVisible(), true);
     await page.setViewportSize({ width: width - 100, height: height - 80 }); await reading();
@@ -95,7 +102,7 @@ try {
     await reading(); assert.equal(await frame.locator('#lfaSelfCheck').isVisible(), false);
     await send(frame, 'hud:destroy'); await page.waitForTimeout(50); assert.equal(await frame.locator('#lfaContainer').count(), 0);
     assert.deepEqual(errors, []);
-    summary.scenarios.push({ viewport: { width, height }, dpr, rect, tests: ['init', 'config', 'metric', 'imperial', 'reverse', 'neutral', 'redline', '16000-rpm-scale', 'missing', 'invalid', 'error', 'pause', 'replayed-timestamp-stale', 'reconnect', 'visibility', 'resize', 'animate', 'destroy', 'dpr-backing-store', 'transparent-outside'], errors });
+    summary.scenarios.push({ viewport: { width, height }, dpr, rect, tests: ['init', 'config', 'metric', 'imperial', 'reverse', 'neutral', 'redline', '16000-rpm-scale', 'fuel-empty-half-full', 'fuel-missing-invalid', 'unsupported-sensors-unavailable', 'missing', 'invalid', 'error', 'pause', 'replayed-timestamp-stale', 'reconnect', 'visibility', 'resize', 'animate', 'destroy', 'dpr-backing-store', 'transparent-outside'], errors });
     await context.close();
   }
   summary.passed = true;

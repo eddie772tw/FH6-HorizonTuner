@@ -7,6 +7,7 @@
     const nonnegative = (value) => finite(value) !== null && value >= 0 ? value : null;
     const ratio = (value) => finite(value) === null ? null : Math.max(0, Math.min(1, value));
     const speedReading = (value) => finite(value) !== null && Math.abs(value) <= 999 ? Math.abs(value) : null;
+    const fuelRatio = (value) => finite(value) !== null && value >= 0 && value <= 1 ? value : null;
     const object = (value) => value && typeof value === 'object' ? value : {};
 
     function gear(value) {
@@ -50,6 +51,7 @@
             redline: maxRpm && redline ? Math.min(maxRpm, redline) : null,
             speed, speedUnit: metric ? 'km/h' : 'mph', gear: gear(d.gear),
             throttle: ratio(d.throttle), brake: ratio(d.brake),
+            fuelRatio: fuelRatio(d.fuel_ratio),
             timestamp: nonnegative(d.timestamp_ms) ?? nonnegative(d.TimestampMS),
             raceOn: raceOn !== 0 && raceOn !== false,
             failed: d.success === false || p.success === false || Boolean(d.error || p.error),
@@ -98,6 +100,7 @@
             needle: live && source.rpm !== null ? angle(source.rpm, dial.maximum) : null,
             speedText: source.speed === null ? '—' : String(Math.round(source.speed)),
             rpmText: source.rpm === null ? '—' : Math.round(source.rpm).toLocaleString('en-US'),
+            fuelText: source.fuelRatio === null ? 'N/A' : String(Math.round(source.fuelRatio * 100)) + '%',
         };
     }
     root.LfaModel = { STALE_MS, finite, gear, config, frame, scale, angle, newState, ingest, view };

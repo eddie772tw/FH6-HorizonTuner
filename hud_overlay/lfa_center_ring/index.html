@@ -6,11 +6,13 @@
     <title>LFA Center Ring · HorizonTuner</title>
     <link rel="stylesheet" href="../shared/hud-base.css">
     <link rel="stylesheet" href="lfa.css">
+    <link rel="stylesheet" href="lfa-side-gauges.css">
 </head>
 <body>
     <div class="hud-root-wrapper">
         <section id="lfaContainer" class="hud-gauge-container lfa-cluster" aria-label="Center ring driving telemetry">
-            <img class="lfa-housing" src="assets/center-ring.png" alt="" draggable="false">
+            <img class="lfa-side-fascia" src="assets/side-crescents.png" alt="" draggable="false">
+            <div class="lfa-approved-center-mask"><img class="lfa-housing" src="assets/center-ring.png" alt="" draggable="false"></div>
             <canvas id="lfaScale" width="1120" height="740" aria-hidden="true"></canvas>
             <canvas id="lfaNeedle" width="1120" height="740" aria-hidden="true"></canvas>
             <div class="lfa-readouts">
@@ -21,8 +23,17 @@
                 <div class="lfa-gear-label">GEAR</div>
                 <div id="lfaStatus" class="lfa-status" role="status">WAITING</div>
             </div>
-            <div class="lfa-wing lfa-wing-left"><span class="lfa-wing-label">THROTTLE</span><span id="lfaThrottle">—</span><span class="lfa-percent">%</span><div class="lfa-pedal-track"><i id="lfaThrottleBar"></i></div><span class="lfa-wing-foot">INPUT</span></div>
-            <div class="lfa-wing lfa-wing-right"><span class="lfa-wing-label">BRAKE</span><span id="lfaBrake">—</span><span class="lfa-percent">%</span><div class="lfa-pedal-track"><i id="lfaBrakeBar"></i></div><span class="lfa-wing-foot">INPUT</span></div>
+            <svg class="lfa-side-readings" viewBox="0 0 560 370" aria-label="Auxiliary gauges: fuel level; temperature and pressure unavailable">
+                <g class="lfa-side-unavailable" aria-label="Coolant temperature unavailable"><text id="lfaCoolant" x="83" y="139">N/A</text></g>
+                <g class="lfa-side-unavailable" aria-label="Oil temperature unavailable"><text id="lfaOilTemperature" x="477" y="139">N/A</text></g>
+                <g class="lfa-side-unavailable" aria-label="Oil pressure unavailable"><text id="lfaOilPressure" x="466" y="281">N/A</text></g>
+                <g class="lfa-side-middle" aria-label="Ambient temperature unavailable"><text x="63" y="190">— °C</text></g>
+                <g class="lfa-side-middle" aria-label="Vehicle clock unavailable"><text x="497" y="190">—:—</text></g>
+                <g id="lfaFuelGauge" aria-label="Fuel level unavailable">
+                    <path id="lfaFuelFill" class="lfa-fuel-fill" d="M103 314 C71 287 45 252 32 214" pathLength="100"/>
+                    <text id="lfaFuel" class="lfa-fuel-value" x="94" y="281">N/A</text>
+                </g>
+            </svg>
             <div class="lfa-scale-unit">×1000 r/min</div>
             <div id="lfaSelfCheck" class="lfa-self-check" hidden>DISPLAY CHECK</div>
         </section>

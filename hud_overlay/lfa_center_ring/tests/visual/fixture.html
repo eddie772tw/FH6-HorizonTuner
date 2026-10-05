@@ -5,7 +5,7 @@
 const params = new URLSearchParams(location.search); const size=document.querySelector('#size'), scenario=document.querySelector('#scenario'), stage=document.querySelector('#stage'), hud=document.querySelector('#hud'), report=document.querySelector('#report');
 size.value=params.get('size')||'1280x720';scenario.value=params.get('state')||'metric';
 let stamp=1000, timer=null, detail=params.has('detail'), running=false;
-const base={rpm:7200,maxRpm:9000,redlineRpm:8000,speed_kmh:180,speed_mph:111.85,gear:4,throttle:.82,brake:0,isRaceOn:1};
+const base={rpm:7200,maxRpm:9000,redlineRpm:8000,speed_kmh:180,speed_mph:111.85,gear:4,throttle:.82,brake:0,fuel_ratio:.68,isRaceOn:1};
 const send=(type,data={})=>hud.contentWindow.postMessage({type,...data},location.origin);
 const delay=ms=>new Promise(r=>setTimeout(r,ms));
 function setSize(){const [w,h]=size.value.split('x').map(Number);stage.style.width=w+'px';stage.style.height=h+'px';}

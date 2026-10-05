@@ -4,6 +4,12 @@
 
 設計方向是精密、簡潔的量產超跑儀表，適合喜歡真實車輛儀表、手排換檔與山路巡航，希望降低賽車資料面板資訊密度的玩家。Normal 指手冊的主儀表版面，不宣稱遊戲有原車駕駛模式。
 
+### Side-Gauge Revision Status
+
+依使用者最新回饋，只重建兩側子錶。已補看 Lexus UK 正面／斜角實車照片、MotorTrend 2012 近照及 C Ling Fan 攝影作品，改回冷卻液／油溫／燃油／油壓四個曲線量尺；沒有資料的溫度與壓力顯示 N/A，只有 canonical fuel_ratio 驅動燃油條。已核准中央 PNG／SVG、CSS、刻度／指針繪圖與讀數位置保留不變。**本次新側錶的遠端截圖與中央圓形區域像素比對待完成；以下是上一版中央核准基準，不代表側錶修訂已通過。**
+
+來源：Lexus UK T_6820 照片本身標示 Issued 10/2009、中央 AUTO；MotorTrend 2012 近照中央是 SPORT。只採用一致的側錶結構，2012 年式範圍仍以官方 OM77006U 為準。詳見 docs/hud/lfa-center-ring.md。
+
 ### Actual Renderer Previews
 
 以下為 source head `93085acd2ff238650dd9e2ac6c552e224ebdd060` 的真正 Chrome renderer 截圖。使用合成遙測 fixture，**不是 Forza 遊戲截圖，也不是效果示意圖**。
@@ -25,16 +31,16 @@
 ### Key Modifications
 
 - **原創外觀**：Inkscape 1.4 製作 SVG 並匯出透明金屬環 PNG，ImageMagick 7 最佳化；靜態材質、Canvas 刻度／指針與 DOM 讀數分層
-- **誠實遙測**：公英制速度、R／N／1–10 檔位、RPM 與 coordinator 紅線；側翼為明確標示的油門／煞車輸入，不捏造冷卻液、機油溫度或壓力
+- **誠實遙測**：公英制速度、R／N／1–10 檔位、RPM 與 coordinator 紅線；側面保留四子錶原型，只有燃油讀取 canonical fuel_ratio，冷卻液／機油溫度／壓力清楚標記 N/A
 - **跨車種量尺**：刻度始終代表真實 `×1000 r/min`；高轉速車重新標示量尺，不把其他引擎硬套為 LFA 轉速
 - **資料失效**：以 timestamp 變化辨識新封包，避免 coordinator RAF 重播延長過期讀數；缺失、錯誤、暫停與斷線清空顯示，新封包可恢復
 - **生命週期**：沿用 HUDCore 設定、縮放與顯隱；DISPLAY CHECK 不產生虛構車速／檔位；destroy／pagehide 取消 RAF 與本樣式監聽器
 - **整合範圍**：新增單一 dropdown 顯示名稱；未修改 shared 協定、HUDCore、coordinator 或後端
-- **可維護性**：24 個新樣式行為測試、可重現 browser fixtures、實際 launcher audit，以及原型／來源／限制文件
+- **可維護性**：29 個新樣式行為測試、可重現 browser fixtures、實際 launcher audit，以及原型／來源／限制文件
 
 ### Pre-Commit & Local Verification
 
-- **Frontend Tests:** `pnpm -C frontend test`，156 files passed／1 skipped；1,129 tests passed／1 skipped，含 24 個 LFA 行為測試
+- **Frontend Tests:** `pnpm -C frontend test`，156 files passed／1 skipped；1,134 tests passed／1 skipped，含 29 個 LFA 行為測試
 - **Frontend Build:** `pnpm -C frontend run build:web-hud` 通過；新 HUD 檔案已打包，tests 與本 PR body 不隨產品散布
 - **Syntax / Whitespace:** 新增 JS 的 `node --check` 與 `git diff --check` 通過
 - **Remote Browser Gate:** [GitHub Actions run 37256008636](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37256008636) 通過；artifact ID `11322413248`；Chrome `154.0.8037.57`，`chromiumSandbox: true`

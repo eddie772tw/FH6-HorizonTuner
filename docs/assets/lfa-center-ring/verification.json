@@ -89,5 +89,30 @@
   },
   "visualReview": "Status box clears tach numeral 1; long high-RPM labels clear major ticks; fixture caption UTF-8 corrected; no clipping found in reviewed 720p, 1080p, and 1440p viewports",
   "localBrowserBlocker": "standalone Chromium UNIX socket EPERM; cloud browser localhost ERR_BLOCKED_BY_CLIENT",
-  "windowsNativeOverlayAndGameAcceptance": "not performed"
+  "windowsNativeOverlayAndGameAcceptance": "not performed",
+  "sideRevision": {
+    "baseHead": "dfad352be6728fca43e443a8610aa447a6c59472",
+    "status": "pending new remote browser evidence and central-disk pixel comparison",
+    "officialPhotosViewed": [
+      "https://media.lexus.co.uk/wp-content/uploads/sites/3/2011/10/T_6820-scaled.jpg",
+      "https://media.lexus.co.uk/wp-content/uploads/sites/3/2011/10/T_6833-scaled.jpg",
+      "https://media.lexus.co.uk/wp-content/uploads/sites/3/2012/12/DSC_4040-scaled.jpg"
+    ],
+    "additionalPhotosViewed": [
+      "https://www.motortrend.com/uploads/sites/5/2012/07/2012-Lexus-LFA-Tach.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/f/f7/Lexus_LFA_speedometer_view_01.jpg"
+    ],
+    "referenceCaution": "T_6820 says Issued 10/2009 and AUTO; MotorTrend close-up has SPORT center. Only side geometry adopted; 2012 model scope remains OM77006U.",
+    "centralPngSha256": "3433460df37b91c67f09cfe7b3c99bacd6ad925db36b113042a95bc196422b22",
+    "centralSvgSha256": "8570a31f672dac12bb94e198a91cb78576dd0b09b81c140dd4ae7ca68b924028",
+    "centralAssetsAndCssAndDrawFunctionsUnchanged": true,
+    "localUnitGate": {
+      "filesPassed": 156,
+      "filesSkipped": 1,
+      "testsPassed": 1134,
+      "testsSkipped": 1,
+      "styleTests": 29
+    },
+    "buildWebHud": "passed"
+  }
 }

@@ -19,15 +19,6 @@
 .lfa-gear { position: absolute; top: 188px; left: 240px; width: 80px; font-size: 47px; line-height: 48px; font-weight: 600; }
 .lfa-gear-label { position: absolute; top: 238px; left: 240px; width: 80px; font-size: 10px; letter-spacing: 2px; color: var(--lfa-secondary); }
 .lfa-status { position: absolute; top: 253px; left: 232px; width: 96px; font-size: 12px; line-height: 20px; letter-spacing: 1px; color: var(--lfa-primary); background: var(--lfa-surface); border: 1px solid var(--lfa-line); }
-.lfa-wing { position: absolute; top: 141px; width: 70px; text-align: center; font-size: 29px; line-height: 36px; }
-.lfa-wing-left { left: 26px; }
-.lfa-wing-right { right: 26px; }
-.lfa-wing-label { display: block; font-size: 11px; line-height: 24px; font-weight: 600; letter-spacing: .9px; color: var(--lfa-secondary); }
-.lfa-percent { font-size: 12px; margin-left: 3px; color: var(--lfa-secondary); }
-.lfa-pedal-track { margin: 8px auto 0; width: 58px; height: 5px; background: var(--lfa-track); overflow: hidden; }
-.lfa-pedal-track i { display: block; height: 100%; width: 100%; background: var(--lfa-accent); transform-origin: left; transform: scaleX(0); }
-.lfa-wing-right .lfa-pedal-track i { background: var(--lfa-red); }
-.lfa-wing-foot { display: block; margin-top: 3px; font-size: 9px; letter-spacing: 2px; color: var(--lfa-dim); }
 .lfa-scale-unit { position: absolute; top: 305px; left: 300px; width: 65px; font-size: 9px; text-align: center; color: var(--lfa-secondary); }
 .lfa-cluster[data-state="warning"] .lfa-status { color: var(--lfa-red); border-color: var(--lfa-red); }
 .lfa-cluster[data-state="offline"] .lfa-status { color: var(--lfa-amber); }

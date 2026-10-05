@@ -56,14 +56,14 @@ async function main() {
   async function record(name) {
     const frame = page.frames().find(f => f.url().includes('/'+style+'/index.html'));
     if (!frame) throw new Error('HUD was not dynamically discovered');
-    const state = await frame.evaluate(() => ({ text: document.body.innerText, readings: { speed: document.querySelector('#ap1Cluster')?.dataset.speed || document.querySelector('#lfaSpeed')?.textContent, gear: document.querySelector('#gearValue, #lfaGear')?.textContent, status: document.querySelector('#signalStatus, #lfaStatus')?.textContent }, body: getComputedStyle(document.body).backgroundColor,
+    const state = await frame.evaluate(() => ({ text: document.body.innerText, readings: { speed: document.querySelector('#ap1Cluster')?.dataset.speed || document.querySelector('#lfaSpeed')?.textContent, gear: document.querySelector('#gearValue, #lfaGear')?.textContent, status: document.querySelector('#signalStatus, #lfaStatus')?.textContent, fuel: document.querySelector('#lfaFuel')?.textContent }, body: getComputedStyle(document.body).backgroundColor,
       style: window.HUDCore.getActiveStyle().containerId,
       bounds: (() => { const e=document.getElementById(window.HUDCore.getActiveStyle().containerId); const b=e.getBoundingClientRect(); return {x:b.x,y:b.y,width:b.width,height:b.height,display:getComputedStyle(e).display}; })() }));
     await page.screenshot({ path: path.join(out,name+'.png'), omitBackground: true });
     samples.push({name,...state});
     const assert = require('node:assert/strict');
-    if (name === 'host-cruise') { assert.equal(state.readings.speed, '180'); assert.equal(state.readings.gear, '4'); }
-    if (name === 'host-stale-with-smoothing') { assert.match(state.readings.status, /SIGNAL/); assert.match(state.readings.speed, /^(---|—)$/); }
+    if (name === 'host-cruise') { assert.equal(state.readings.speed, '180'); assert.equal(state.readings.gear, '4'); assert.equal(state.readings.fuel, '68%'); }
+    if (name === 'host-stale-with-smoothing') { assert.match(state.readings.status, /SIGNAL/); assert.match(state.readings.speed, /^(---|—)$/); assert.equal(state.readings.fuel, 'N/A'); }
     if (name === 'host-reverse-reconnected') { assert.equal(state.readings.gear, 'R'); assert.equal(state.readings.speed, '16'); }
     if (name === 'host-imperial') assert.equal(state.readings.speed, '10');
     if (name === 'host-gauge-hidden') assert.equal(state.bounds.display, 'none');

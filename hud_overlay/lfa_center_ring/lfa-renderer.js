@@ -8,7 +8,7 @@
         const scaleCanvas = get('lfaScale'), needleCanvas = get('lfaNeedle');
         const dial = scaleCanvas.getContext('2d'), needle = needleCanvas.getContext('2d');
         const nodes = {};
-        ['Speed', 'SpeedUnit', 'Gear', 'Status', 'Throttle', 'Brake', 'ThrottleBar', 'BrakeBar', 'SelfCheck'].forEach((n) => { nodes[n] = get('lfa' + n); });
+        ['Speed', 'SpeedUnit', 'Gear', 'Status', 'Fuel', 'FuelFill', 'FuelGauge', 'SelfCheck'].forEach((n) => { nodes[n] = get('lfa' + n); });
         let colors, dialKey = '', lastNeedle = '', ratio = 2;
         function setText(name, value) { if (nodes[name].textContent !== value) nodes[name].textContent = value; }
         function palette(settings) {
@@ -80,10 +80,10 @@
             drawScale(v); drawNeedle(v, check, settings);
             setText('Speed', v.speedText); setText('SpeedUnit', v.speedUnit); setText('Gear', v.gear);
             setText('Status', v.shift ? 'SHIFT' : v.status);
-            [['Throttle', v.throttle], ['Brake', v.brake]].forEach(([name, value]) => {
-                setText(name, value === null ? '—' : String(Math.round(value * 100)));
-                nodes[name + 'Bar'].style.transform = 'scaleX(' + (value ?? 0) + ')';
-            });
+            setText('Fuel', v.fuelText);
+            nodes.FuelFill.style.strokeDasharray = (v.fuelRatio ?? 0) * 100 + ' 100';
+            nodes.FuelFill.style.opacity = v.fuelRatio === null ? '0' : '1';
+            nodes.FuelGauge.setAttribute('aria-label', v.fuelRatio === null ? 'Fuel level unavailable' : 'Fuel level ' + v.fuelText);
             nodes.SelfCheck.hidden = check === null;
             container.dataset.state = v.shift ? 'warning' : v.live ? 'live' : 'offline';
         }
