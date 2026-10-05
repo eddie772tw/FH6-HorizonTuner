@@ -29,7 +29,9 @@ const elements = { showGauge: true, showRPM: true, showCenterInfo: true, showSpe
 let timestamp = 10000;
 async function frame(page, extra = {}) {
   await page.evaluate(data => window.HUDCore.handleMessage('hud:frame', { data }), { ...base, ...extra, TimestampMS: timestamp += 16 });
-  await page.waitForTimeout(110);
+  // LCD work is coalesced at 100ms, with a separate 100ms idle timer. A frame
+  // just after a config repaint can require the second timer tick to be shown.
+  await page.waitForTimeout(250);
 }
 async function config(page, data = {}) {
   await page.evaluate(data => window.HUDCore.handleMessage('config', { data }), { scale: 1, elements, ...data });
