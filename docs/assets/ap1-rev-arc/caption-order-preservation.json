@@ -1,0 +1,114 @@
+{
+  "reference_head": "888ea8ba9af69e65f95f96874d3563dacf620680",
+  "revision_head": "d6c74ba5af2f83df94ee4a45cadaaf086e524361",
+  "method": "Exact RGBA comparison of matching metric screenshots within actual HUD container; exclude only unions of old/new BOOST/VAC caption ink boxes, plus one device pixel for edge antialiasing. No resampling, value tolerance, or full auxiliary-gauge exclusion.",
+  "scope": "Default and 70% compact, DPR1 and DPR2, identical synthetic frame. This does not claim every scene or native-game rendering is pixel-identical.",
+  "comparisons": [
+    {
+      "file": "metric-1280x720-dpr1.png",
+      "dpr": 1,
+      "scale": "default",
+      "container_device_pixel_rect": [
+        710,
+        465,
+        1250,
+        690
+      ],
+      "excluded_label_rects": [
+        {
+          "group": "boost-mode",
+          "device_pixel_rect": [
+            1140,
+            578,
+            1188,
+            602
+          ]
+        }
+      ],
+      "compared_pixels": 120348,
+      "differing_pixels": 0,
+      "changed_pixels_inside_label_rects": 331,
+      "outside_difference_bbox": null
+    },
+    {
+      "file": "compact-1280x720-dpr1.png",
+      "dpr": 1,
+      "scale": "70% compact",
+      "container_device_pixel_rect": [
+        872,
+        532,
+        1250,
+        690
+      ],
+      "excluded_label_rects": [
+        {
+          "group": "boost-mode",
+          "device_pixel_rect": [
+            1172,
+            611,
+            1207,
+            628
+          ]
+        }
+      ],
+      "compared_pixels": 59129,
+      "differing_pixels": 0,
+      "changed_pixels_inside_label_rects": 181,
+      "outside_difference_bbox": null
+    },
+    {
+      "file": "metric-1280x720-dpr2.png",
+      "dpr": 2,
+      "scale": "default",
+      "container_device_pixel_rect": [
+        1420,
+        930,
+        2500,
+        1380
+      ],
+      "excluded_label_rects": [
+        {
+          "group": "boost-mode",
+          "device_pixel_rect": [
+            2281,
+            1158,
+            2374,
+            1202
+          ]
+        }
+      ],
+      "compared_pixels": 481908,
+      "differing_pixels": 0,
+      "changed_pixels_inside_label_rects": 1051,
+      "outside_difference_bbox": null
+    },
+    {
+      "file": "compact-1280x720-dpr2.png",
+      "dpr": 2,
+      "scale": "70% compact",
+      "container_device_pixel_rect": [
+        1744,
+        1065,
+        2500,
+        1380
+      ],
+      "excluded_label_rects": [
+        {
+          "group": "boost-mode",
+          "device_pixel_rect": [
+            2346,
+            1224,
+            2412,
+            1257
+          ]
+        }
+      ],
+      "compared_pixels": 235962,
+      "differing_pixels": 0,
+      "changed_pixels_inside_label_rects": 539,
+      "outside_difference_bbox": null
+    }
+  ],
+  "total_compared_pixels": 897347,
+  "total_differing_pixels": 0
+}

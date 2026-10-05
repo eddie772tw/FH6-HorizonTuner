@@ -24,6 +24,7 @@ export interface HudStyleFetchOptions {
 
 export const HUD_DISPLAY_NAMES: Record<string, string> = {
   vfd: 'Retro VFD',
+  ap1_rev_arc: 'AP1 Rev Arc · S2000',
   drift: 'Drift HUD',
   s650_hmi: 'Ford Mustang HMI',
   advanced: 'Advanced Racing Arc',

@@ -1,0 +1,394 @@
+{
+  "reference_head": "932bbae09e04226c016d8608679d74588c6d6526",
+  "revision_head": "04b20fe7c54715ebae1477c104f23d89e6be641f",
+  "method": "Exact RGBA on unions of actual browser-recorded old/new protected-readout ink boxes, with 5 design-unit padding for existing glow; no image resampling or pixel tolerance. RPM cells, RPM numbers, RPM graduations, the relocated RPM unit, and unrelated pixels outside those rectangles are not part of this claim.",
+  "protected": [
+    "speedDigits",
+    "gearValue",
+    "speedUnit",
+    "speedUnitMph",
+    "boostSegments",
+    "boostTicks",
+    "boostValue",
+    "vacModeLabel",
+    "boostModeLabel"
+  ],
+  "geometry": "Each protected readout has identical authored SVG geometry before/after; all tested containers identical",
+  "comparisons": [
+    {
+      "file": "metric-1280x720-dpr1.png",
+      "scale": "default",
+      "dpr": 1,
+      "protected_readout_regions": [
+        {
+          "readout": "speedDigits",
+          "device_pixel_rect": [
+            883,
+            557,
+            1046,
+            633
+          ]
+        },
+        {
+          "readout": "gearValue",
+          "device_pixel_rect": [
+            791,
+            614,
+            818,
+            660
+          ]
+        },
+        {
+          "readout": "speedUnit",
+          "device_pixel_rect": [
+            1050,
+            607,
+            1092,
+            633
+          ]
+        },
+        {
+          "readout": "speedUnitMph",
+          "device_pixel_rect": [
+            1053,
+            588,
+            1092,
+            613
+          ]
+        },
+        {
+          "readout": "boostSegments",
+          "device_pixel_rect": [
+            1130,
+            600,
+            1210,
+            622
+          ]
+        },
+        {
+          "readout": "boostTicks",
+          "device_pixel_rect": [
+            1127,
+            615,
+            1212,
+            637
+          ]
+        },
+        {
+          "readout": "boostValue",
+          "device_pixel_rect": [
+            1144,
+            633,
+            1202,
+            656
+          ]
+        },
+        {
+          "readout": "vacModeLabel",
+          "device_pixel_rect": [
+            1156,
+            575,
+            1184,
+            593
+          ]
+        },
+        {
+          "readout": "boostModeLabel",
+          "device_pixel_rect": [
+            1149,
+            587,
+            1191,
+            605
+          ]
+        }
+      ],
+      "compared_pixels": 20517,
+      "differing_pixels": 0,
+      "difference_bbox": null
+    },
+    {
+      "file": "compact-1280x720-dpr1.png",
+      "scale": "70% compact",
+      "dpr": 1,
+      "protected_readout_regions": [
+        {
+          "readout": "speedDigits",
+          "device_pixel_rect": [
+            993,
+            597,
+            1108,
+            650
+          ]
+        },
+        {
+          "readout": "gearValue",
+          "device_pixel_rect": [
+            928,
+            637,
+            948,
+            669
+          ]
+        },
+        {
+          "readout": "speedUnit",
+          "device_pixel_rect": [
+            1110,
+            632,
+            1140,
+            650
+          ]
+        },
+        {
+          "readout": "speedUnitMph",
+          "device_pixel_rect": [
+            1112,
+            618,
+            1140,
+            636
+          ]
+        },
+        {
+          "readout": "boostSegments",
+          "device_pixel_rect": [
+            1166,
+            627,
+            1222,
+            643
+          ]
+        },
+        {
+          "readout": "boostTicks",
+          "device_pixel_rect": [
+            1164,
+            638,
+            1224,
+            653
+          ]
+        },
+        {
+          "readout": "boostValue",
+          "device_pixel_rect": [
+            1176,
+            650,
+            1216,
+            666
+          ]
+        },
+        {
+          "readout": "vacModeLabel",
+          "device_pixel_rect": [
+            1184,
+            609,
+            1204,
+            622
+          ]
+        },
+        {
+          "readout": "boostModeLabel",
+          "device_pixel_rect": [
+            1179,
+            618,
+            1209,
+            630
+          ]
+        }
+      ],
+      "compared_pixels": 10153,
+      "differing_pixels": 0,
+      "difference_bbox": null
+    },
+    {
+      "file": "metric-1280x720-dpr2.png",
+      "scale": "default",
+      "dpr": 2,
+      "protected_readout_regions": [
+        {
+          "readout": "speedDigits",
+          "device_pixel_rect": [
+            1766,
+            1114,
+            2092,
+            1265
+          ]
+        },
+        {
+          "readout": "gearValue",
+          "device_pixel_rect": [
+            1582,
+            1230,
+            1636,
+            1321
+          ]
+        },
+        {
+          "readout": "speedUnit",
+          "device_pixel_rect": [
+            2100,
+            1217,
+            2184,
+            1267
+          ]
+        },
+        {
+          "readout": "speedUnitMph",
+          "device_pixel_rect": [
+            2107,
+            1178,
+            2184,
+            1228
+          ]
+        },
+        {
+          "readout": "boostSegments",
+          "device_pixel_rect": [
+            2260,
+            1201,
+            2419,
+            1244
+          ]
+        },
+        {
+          "readout": "boostTicks",
+          "device_pixel_rect": [
+            2255,
+            1231,
+            2424,
+            1273
+          ]
+        },
+        {
+          "readout": "boostValue",
+          "device_pixel_rect": [
+            2288,
+            1266,
+            2404,
+            1311
+          ]
+        },
+        {
+          "readout": "vacModeLabel",
+          "device_pixel_rect": [
+            2312,
+            1151,
+            2367,
+            1185
+          ]
+        },
+        {
+          "readout": "boostModeLabel",
+          "device_pixel_rect": [
+            2298,
+            1175,
+            2381,
+            1209
+          ]
+        }
+      ],
+      "compared_pixels": 81097,
+      "differing_pixels": 0,
+      "difference_bbox": null
+    },
+    {
+      "file": "compact-1280x720-dpr2.png",
+      "scale": "70% compact",
+      "dpr": 2,
+      "protected_readout_regions": [
+        {
+          "readout": "speedDigits",
+          "device_pixel_rect": [
+            1986,
+            1194,
+            2215,
+            1300
+          ]
+        },
+        {
+          "readout": "gearValue",
+          "device_pixel_rect": [
+            1857,
+            1276,
+            1895,
+            1340
+          ]
+        },
+        {
+          "readout": "speedUnit",
+          "device_pixel_rect": [
+            2220,
+            1266,
+            2279,
+            1301
+          ]
+        },
+        {
+          "readout": "speedUnitMph",
+          "device_pixel_rect": [
+            2225,
+            1239,
+            2279,
+            1274
+          ]
+        },
+        {
+          "readout": "boostSegments",
+          "device_pixel_rect": [
+            2332,
+            1255,
+            2444,
+            1285
+          ]
+        },
+        {
+          "readout": "boostTicks",
+          "device_pixel_rect": [
+            2328,
+            1276,
+            2447,
+            1307
+          ]
+        },
+        {
+          "readout": "boostValue",
+          "device_pixel_rect": [
+            2352,
+            1300,
+            2432,
+            1332
+          ]
+        },
+        {
+          "readout": "vacModeLabel",
+          "device_pixel_rect": [
+            2369,
+            1219,
+            2407,
+            1245
+          ]
+        },
+        {
+          "readout": "boostModeLabel",
+          "device_pixel_rect": [
+            2359,
+            1236,
+            2417,
+            1262
+          ]
+        }
+      ],
+      "compared_pixels": 40018,
+      "differing_pixels": 0,
+      "difference_bbox": null
+    }
+  ],
+  "total_compared_pixels": 151785,
+  "total_differing_pixels": 0,
+  "scope_limit": "Four matching metric default/compact DPR1/DPR2 frames only; not whole-image identity, all-scene identity or native-game acceptance",
+  "unchanged_source_assets": {
+    "fascia.svg": "a3f241f7c2ddde160f5b99d835b970230f7bf86595868cbd7f8919a19bcfb664",
+    "fascia.png": "08f6fa407fd8366179dc805ee3faae67c431ee1cbbfc435e387b3eddb28033fe"
+  },
+  "reference_visual_run_url": "https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37283549559",
+  "revision_visual_run_url": "https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37287538534",
+  "unchanged_source_asset_comparison": "Both fascia.svg and fascia.png bytes exactly match git source932bbae; listed hashes are the current and previous identical bytes",
+  "excluded_moved_readout": "rpmUnit moves with the RPM assembly and is explicitly excluded"
+}

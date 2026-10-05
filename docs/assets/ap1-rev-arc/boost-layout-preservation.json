@@ -1,0 +1,9 @@
+{
+  "referenceHead": "662d93432243ff0d18d758651ae208436722a24a",
+  "revisionHead": "a995df88fc8c4d4b4e6989c61a03e8c8a249cb6b",
+  "viewport": "1280x720 DPR2",
+  "method": "Exact RGBA comparison inside unchanged 720x300 design container. Exclude only requested right auxiliary region x540..700/y162..250 and footer text area x45..675/y248..275. No resampling/tolerance.",
+  "comparedPixels": 416143,
+  "differingPixels": 0,
+  "firstDifferences": []
+}

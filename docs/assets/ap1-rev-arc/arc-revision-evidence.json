@@ -1,0 +1,64 @@
+{
+  "style": "ap1_rev_arc",
+  "revision": "shared-normal upper arc",
+  "base_head": "f70b6301d3691aef31fcdd813c80b6dcccb735eb",
+  "status": "remote renderer+launcher passed; independently pixel-reviewed; awaiting user review",
+  "reference_rechecked": "Honda official 1999 cockpit pixels viewed again on 2026-10-05",
+  "diagnosis": {
+    "previous_band": "parabola with vertical extrusion",
+    "previous_bezel": "independently drawn asymmetric cubic curves",
+    "sampled_previous_nearest_inner_gap": [
+      18.9,
+      41.9
+    ]
+  },
+  "construction": {
+    "source": "hud_overlay/ap1_rev_arc/arc-geometry.js",
+    "parameterization": "equal arc length at strip centerline",
+    "geometry": "ellipse with unit-normal offsets",
+    "band_thickness": 18,
+    "band_top_to_face_gap": 36,
+    "rim_width": 10,
+    "label_center_outset": 34,
+    "label_radius_bound": 15
+  },
+  "scope": {
+    "changed": "upper band, ticks and coordinated bezel contours",
+    "preserved": [
+      "speed/gear/fuel/other readout anchors",
+      "720x300 container",
+      "telemetry contract",
+      "lifecycle"
+    ]
+  },
+  "tests": {
+    "style_cases": 39,
+    "full_cases_passed": 1144,
+    "full_cases_skipped": 1,
+    "files_passed": 158,
+    "files_skipped": 1
+  },
+  "visual_scope": {
+    "local": "Inkscape geometry-construction inspection only, not browser acceptance",
+    "remote": "Default and70% compact DPR1/DPR2, all state captures, label containment, semantic readout anchor preservation, actual launcher audit and historical before/after reviewed"
+  },
+  "preview_notice": "Current documented previews replaced with actual revised captures. User approval is not implied.",
+  "reviewed_head": "662d93432243ff0d18d758651ae208436722a24a",
+  "run_id": 37258259085,
+  "artifact_id": 11323397245,
+  "layout_diagnostics": {
+    "maximum_anchor_residual_device_pixels": 0.006502151193899408,
+    "gear_ink_y_normalized_deltas": [
+      {
+        "dpr": 1,
+        "delta": 0.0044312686011904745
+      },
+      {
+        "dpr": 2,
+        "delta": 0.006336030505952328
+      }
+    ],
+    "semantic_geometry_fonts_and_local_transforms": "exact comparison passed",
+    "interpretation": "The previous strict normalized-ink-box check tested font ink metrics instead of authored anchor preservation. The new captures establish metric differences with stable authored and screen anchors."
+  }
+}
