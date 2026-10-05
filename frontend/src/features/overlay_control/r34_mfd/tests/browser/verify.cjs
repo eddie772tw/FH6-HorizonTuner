@@ -13,6 +13,7 @@ async function main() {
   fs.writeFileSync(configPath, JSON.stringify({ ...defaults.DEFAULT_HUD_CONFIG, hudStyle: 'simple', fixtureUnknownField: 42,
     elements: { ...defaults.DEFAULT_HUD_CONFIG.elements, showTeleMaster: false } }));
   const read = () => JSON.parse(fs.readFileSync(configPath, 'utf8'));
+  let appUnitPresets;
   const report = { scope: 'Real React settings and runtime, disk-backed HTTP fixture; not native/game acceptance', saves: [], screenshots: [], checks: [], errors: [] };
   const json = (res, body, status = 200) => { res.writeHead(status, { 'content-type': 'application/json' }); res.end(JSON.stringify(body)); };
   const api = { name: 'r34-browser-fixture-api', configureServer(server) { server.middlewares.use((req, res, next) => {
@@ -26,7 +27,7 @@ async function main() {
     }
     if (name === '/api/settings') {
       const query = new URL(req.headers.referer || 'http://localhost').searchParams;
-      return json(res, { ...defaults.DEFAULT_SETTINGS, language: query.get('language') || 'en-us', units: { ...defaults.DEFAULT_SETTINGS.units, temperature: query.get('temperature') === 'F' ? 'F' : 'C' } });
+      return json(res, { ...defaults.DEFAULT_SETTINGS, language: query.get('language') || 'en-us', units: appUnitPresets[query.get('temperature') === 'F' ? 'imperial' : 'metric'] });
     }
     if (name === '/api/languages') return json(res, [{ code: 'en-us', name: 'English' }, { code: 'zh-tw', name: '繁體中文' }, { code: 'ja-jp', name: '日本語' }]);
     if (name.startsWith('/api/languages/')) { const code = name.split('/').pop(); return json(res, ['en-us', 'zh-tw', 'ja-jp'].includes(code) ? JSON.parse(fs.readFileSync(path.join(repo, 'lang', code + '.json'), 'utf8')) : {}); }
@@ -40,6 +41,13 @@ async function main() {
   const server = await createServer({ root: frontend, configFile: path.join(frontend, 'vite.config.ts'), plugins: [api], server: { host: '127.0.0.1', port: 0, strictPort: false }, logLevel: 'warn' });
   let browser, page;
   try {
+    // App settings deliberately normalize the complete general unit system from speed.
+    // Supply a real imperial preset, not an inconsistent kmh + Fahrenheit fixture.
+    const { applyGeneralUnitSystem } = await server.ssrLoadModule('/src/utils/gameUnitSettings.ts');
+    appUnitPresets = {
+      metric: applyGeneralUnitSystem(defaults.DEFAULT_SETTINGS.units, 'metric'),
+      imperial: applyGeneralUnitSystem(defaults.DEFAULT_SETTINGS.units, 'imperial'),
+    };
     await server.listen(); const origin = 'http://127.0.0.1:' + server.httpServer.address().port;
     browser = await chromium.launch({ headless: true, chromiumSandbox: true, ...(process.env.PLAYWRIGHT_CHANNEL ? { channel: process.env.PLAYWRIGHT_CHANNEL } : {}) });
     const context = await browser.newContext({ viewport: { width: 1440, height: 1100 } });
@@ -85,10 +93,11 @@ async function main() {
     await open('?temperature=F'); await card().waitFor({ state: 'visible' });
     const unitPanel = () => page.getByRole('dialog', { name: 'HUD Unit Settings', exact: true });
     const openUnits = async () => { await page.getByRole('button', { name: 'HUD Unit Settings', exact: true }).click(); await unitPanel().waitFor({ state: 'visible' }); };
+    // Overlay configuration can finish loading before app settings hydrate.
+    await page.waitForFunction(() => window.fixtureBroadcasts.some(message => message.type === 'config' && message.data?.followAppUnits === true && message.data.effectiveUnits?.temperature === 'F' && message.data.effectiveUnits.speed === 'mph'));
     await openUnits();
     assert.equal(await unitPanel().getByRole('combobox', { name: 'Temperature', exact: true }).inputValue(), 'F');
     assert.equal(await unitPanel().getByRole('combobox', { name: 'Temperature', exact: true }).isDisabled(), true);
-    await page.waitForFunction(() => window.fixtureBroadcasts.some(message => message.data?.effectiveUnits?.temperature === 'F'));
     await unitPanel().getByRole('checkbox', { name: 'Follow App Global Units', exact: true }).uncheck();
     await unitPanel().getByRole('combobox', { name: 'Temperature', exact: true }).selectOption('C');
     await page.waitForFunction(async () => { const c = await (await fetch('/api/overlay/config')).json(); return c.followAppUnits === false && c.units.temperature === 'C'; });

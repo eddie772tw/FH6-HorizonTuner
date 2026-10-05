@@ -30,8 +30,8 @@ try {
       });
       if (status) assert(status.clear && status.fits, 'Stream status must fit below the live instrument islands');
       report.checks.push({ name, viewport: [width, height], dpr, bounds, status });
-      if (width === 1280 && dpr === 1) {
-        const crop = 'mfd-' + name + '-dpr1.png';
+      if (width === 1280 && (dpr === 1 || (dpr === 2 && ['single', 'twin', 'multi', 'g', 'lap'].includes(name)))) {
+        const crop = 'mfd-' + name + '-dpr' + dpr + '.png';
         await page.locator('#r34Mfd').screenshot({ path: path.join(out, crop), omitBackground: true }); report.screenshots.push(crop);
       }
     };
