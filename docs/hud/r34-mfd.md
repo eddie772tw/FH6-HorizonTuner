@@ -1,12 +1,23 @@
-# Skyline R34 MFD：原型與遙測契約
+# Skyline R34 MFD：核心錶盤、原型與遙測契約
 
-## 原型、年代與玩家
+## 當前設計與速度單位
 
-`r34_mfd` 以 **1999 Nissan Skyline GT-R BNR34 V·spec 傳統儀表**，搭配後續 **NISMO MFD 擴充套件 Ver.II** 為明確原型。這不是 R35 多功能觸控畫面，也不是以 NISMO 320 km/h／11,000 rpm 替換儀表冒充原廠版本。適合喜歡晚期 1990 年代日系實體儀表、想同時看類比速度／轉速與賽道遙測的玩家。
+本款採 **R34／V·spec 10,000 rpm 雙段轉速錶**，搭配 **2002 Nür 300 速度錶面**與 **NISMO MFD Ver.II** 畫面語彙。這是依使用者要求的 HUD 佈局適配，不冒稱整組原裝座艙，也不是 R35 或 NISMO 320 儀表。
 
-原廠 V·spec 錶面為 180 km/h、10,000 rpm，轉速錶在 3,000 rpm 以下每千轉 15°，以上每千轉 30°。本實作保留這個非等距幾何：轉速在左、速度在右、左側水溫、右側油量、轉速錶下方油壓。原型的實體速度錶固定標示 km/h；額外數位速度遵循使用者單位，超過原型刻度仍保留正確讀數及 `OVER SCALE`，不把極速改寫成 180。轉速超過 10,000 時同樣保留數位提示。
+**全部速度讀數刻意固定為 kmh**：由原始 `SpeedMetersPerSecond × 3.6` 取得，全球 mph 設定不改變數字、錶面或指針。原件印字是 `km/h`，本 HUD 依使用者明確要求改為字面 `kmh`；已註記於受支援的 `author.json.description`。300 以上保留真實數字與 OVER SCALE，只有指針停在最大刻度；缺失仍是 N/A。里程窗顯示遊戲 session distance（km），不是車輛累計里程。
 
-HUD 保留右駕車的相對位置：中央 MFD 在左，駕駛者儀表在右；兩個獨立機殼經過壓縮構圖，不附方向盤或整片中控台。原創正視圖採連續拉絲銀色飾板、黑底錶面、低置小錶、薄紅指針，以及低寬遮光罩、內凹 LCD 與大型環形搖桿。1280×410 的畫布、760×350 的儀表與 500×244 的 MFD 是參考透視照片後訂定的 HUD 設計比例，不是 Nissan 工程尺寸。所有向量、數字筆畫、材質線條與圖示均為原創；不附 Nissan/NISMO 照片、商標圖檔、OEM 字型或原廠軟體。背景透明，檔位／數位時速置於原型錶面之外。
+Nür 面板為 0～300、每 20 標號、每 10 刻線，數字較緊湊粗實。兩張原件照片支持約 250° 的視覺弧形，0 附近另有相近參考刻線；無工廠工程圖可證實其精確低速校準，因此本 HUD 使用穩定的線性 0～300 視覺映射，不把照片估角冒稱工廠尺寸或電子校準曲線。V·spec 轉速錶保留型錄明載的 3,000 rpm 以下每千轉 15°、以上每千轉 30°。
+
+## 獨立定位與固定子錶
+
+- 中下方：轉速左、速度右；檔位與數位 kmh 放在兩錶之間，取消外框與資訊卡片
+- 兩個外側子錶：左側固定 BOOST；右側固定四輪平均 TIRE TEMP。沒有自訂資料來源或角度選項
+- 右下角：獨立 MFD 螢幕。取消遮光罩、銀色連續飾板、外殼、搖桿、裝飾按鍵與不可用的油壓內嵌錶
+- 兩支子錶指針都只在左半部掃動：低值左下、半量正左、高值左上。胎溫採 C/H（冷／熱）及溫度計圖示，另明示 TIRE TEMP、真實數值與 °C／°F，並非水溫
+- 純函式 `layout.js` 使用 viewport、HUDCore 的使用者縮放與可用空間計算各獨立元件。先同時檢查寬、高，再限制至可容納的尺寸；右子錶與 MFD 保留間隔。720p、1080p、1440p、超寬、3840×360 矮視窗及 compact／放大倍率均有幾何契約
+- 隱藏儀表組時，MFD 保持獨立右下定位，不留下原機殼尺寸的空位。產品背景透明；靜態提案中的道路背景與標註不包含於產品
+
+靜態錶面、數字筆畫與圖示皆為原創向量，初始化組裝一次；不附 Nissan/NISMO 照片、標誌圖檔、OEM 字型或軟體。沒有逐幀重建字形或材質濾鏡。
 
 ## 實際查閱的資料
 
@@ -24,63 +35,67 @@ HUD 保留右駕車的相對位置：中央 MFD 在左，駕駛者儀表在右�
 
 Ver.II 常被泛稱為擴充「卡匣」，產品清單描述的是電路板、感測器、計圈按鈕／線束與 RS-232C 配套。2371A-RSR48-V 與 2371B-RSR48 的感測器包差異只有零件識別意義；HUD 不模擬安裝、校正或 serial 硬體。舊官方 `ie01.pdf` 連結現在轉址，未假裝已讀到原始套件手冊；也未採用零售文案含糊的油溫範圍作為實作依據。
 
-## 五個 MFD 模式
+11. [Nür 300 原裝速度錶商品與實物照片](https://nizmopartsplug.com/products/r34-skyline-gtr-v-spec-ii-nur-300kmh-speedometer)：實際查看 AA414 面板、0～300 標號、10 間隔刻線、原件 km/h 字樣及 0 附近相近刻線；不是 NISMO 320 或 GT-T 300 錶。
+12. [2002 V-spec II Nür 完整儀表照片](https://www.jdmgarage.com.au/wp-content/uploads/2022/02/0960725D-A341-4B35-84E3-922E3951969B.jpg)：實際查看完整原件與速度盤裁切，交叉確認數字、弧形及原件配置。參考圖僅用於查閱，未嵌入產品或預覽資產。
 
-預設 **SINGLE**。使用主程式 HUD → 進階設定中的 **R34 MFD mode** 切換；設定與既有 BroadcastChannel、POST、原子持久化、WebSocket、Launcher 和 HUDCore 共用管線。
+## 五個 MFD 模式與真正選單
 
-| 模式 | 保留的原型特徵 | 遊戲適配 |
+保留 **SINGLE／TWIN／MULTI／G／LAP 全部五頁**，預設 SINGLE。比照現有 S650，於主程式 HUD → 進階設定的 **R34 MFD mode** 選單切換。此選單使用既有 BroadcastChannel、POST、原子保存、WebSocket、Launcher、HUDCore 管線；原生 overlay 維持 click-through，沒有假裝能點的螢幕按鍵。
+
+| 模式 | 保留的畫面語彙 | 遊戲資料 |
 | --- | --- | --- |
-| SINGLE | 左側 30 秒格線／右側圓形扇形錶、PEAK 尾板 | 真實 Boost，bar／psi／kPa；缺資料顯示 N/A |
-| TWIN | 兩個銀灰刻度、綠色扇形、峰值窗 | 以增壓圖示與 RPM／x1000 rpm 標示遊戲適配，採真實增壓與轉速；不是把油溫改名成轉速 |
-| MULTI | 七列白框、綠條、右側數字 | BOOST、ENGINE、THROTTLE、BRAKE、POWER、TORQUE、FUEL；適配說明保留於設定頁與本文 |
-| G | 矩形交叉格線及活動點 | 車體 −X／Z 加速度除以 9.80665，單位 g，顯示界限 ±1.5 g；數字保留超界值 |
-| LAP | 左側目前／最佳／上圈，右側五列紀錄 | 目前圈數 = 已完成圈數 + 1；相鄰 LapNumber 推進時，LastLap 記在新完成的圈號，不重建錯過圈數 |
+| SINGLE | 左側 30 秒記憶、右側銀灰刻度／綠色扇形／PEAK | 原始 Boost，依偏好顯示 bar／psi／kPa，含負壓 |
+| TWIN | 兩個扇形錶與歷史峰值 | BOOST 與 RPM／x1000 rpm；不偽裝成油溫／水溫 |
+| MULTI | 七列白框、綠條、右側數字 | BOOST、ENGINE、THROTTLE、BRAKE、POWER、TORQUE、**TIRE TEMP** |
+| G | 矩形交叉格線與活動點 | 車體 −X／Z 加速度 ÷9.80665，±1.5 g 視窗，保留超界數字 |
+| LAP | 目前／最佳／上圈、五列紀錄 | 目前圈數=已完成圈數+1；只記錄真正觀察到的相鄰圈數推進 |
 
-`r34ShowCluster` 只切換傳統儀表；`r34Lighting` 提供 night／day。預設原色為中性白色刻度與深底綠色 MFD，Custom Gauge Color 改變綠色資料色，紅色指針／REV 安全色保留。day／night 調整材質亮度與 LCD 照明，不增加黃色發光圈。原型外殼按鍵是裝飾，不偽裝成 click-through 原生視窗內可操作按鈕。沒有額外 DATA 頁、沒有 Windows 分析軟體假畫面、沒有自製假計圈器。
+`r34ShowCluster` 控制四個核心錶盤與中間讀數，`r34Lighting` 控制 day／night。Custom Gauge Color 只改變 MFD 資料色；紅色指針與 REV 安全色保留。REV 取真實 RPM/redline，獨立於是否顯示檔位。
+
+## 四輪平均胎溫與單位
+
+唯一來源是唯讀原始封包的 `TireTemp = [FL, FR, RL, RR]`。專案 raw 契約是 Fahrenheit；官方 FH6 文件列出四輪溫度欄位，但沒有明寫其溫度單位。
+
+`meanTireTemperatureC` 必須收到**剛好四個有限數字**，先算全四輪平均 °F，再一次轉成 canonical °C。缺少、null、字串、NaN 或 Infinity 任一輪均是 N/A，不計算部分平均，也不使用 Coordinator 補零的外層 alias。原始 0°F 與負值有效；例如 [32,68,104,140] 得30°C／86°F，而四個0°F得−17.78°C。
+
+右子錶與 MULTI 的 **TIRE TEMP** 共用同一平均與比例。顯示量程固定 canonical **0～150°C（32～302°F）**，這是顯示範圍，不是冷卻水數值或輪胎安全門檻。切換 C/F 不改變指針或綠條位置；超界只限制幾何，數字仍保留負值或較高溫度。
+
+使用既有 **HUD Unit Settings → Temperature**，可以跟隨 app 溫度偏好或獨立保存 C/F；沒有新增 R34 專用重複單位控制。缺失／無效溫度偏好回到 C，不能從 mph 猜測 Fahrenheit。effectiveUnits 仍是 renderer-only 衍生欄位，不寫入持久設定。
 
 ## 資料誠實與狀態
 
-| 顯示內容 | 唯一資料來源／轉換 |
+| 顯示 | 原始來源／轉換 |
 | --- | --- |
-| 速度 | `SpeedMetersPerSecond`；類比面固定 km/h，數位遵循 effectiveUnits |
-| 轉速／REV | `CurrentEngineRpm`；REV 採共用 payload `redlineRpm` |
-| 增壓 | 有限數字的原始 `Boost`（PSI），保留負值；不取已補零／截負值的 aliases |
-| 油量 | 原始 `Fuel` 的 0–1 比例 |
-| 踏板／輸出 | `AccelInput`／`BrakeInput` 的 0–255、`PowerWatts`、`TorqueNewtons` |
-| G | `−AccelerationX`、`AccelerationZ` 除以 9.80665；依共用 G radar 反向 X，不把垂直 Y 當縱向 |
-| 圈速 | `CurrentLap`、`BestLap`、`LastLap`，秒轉分／秒／毫秒；`LapNumber` 是已完成圈數，0→1 的 LastLap 屬於第 1 圈 |
-| 原型油壓／水溫 | 永遠 N/A，移除假指針；UDP 未提供這些感測器 |
+| 速度、里程窗 | SpeedMetersPerSecond×3.6，固定 kmh；DistanceTraveled÷1000，session km |
+| RPM／REV | CurrentEngineRpm；共用 payload redlineRpm |
+| Boost | 原始有限 Boost（PSI），保留負壓，拒絕補零／截負 aliases |
+| 胎溫 | 四個 raw TireTemp °F 的嚴格平均→canonical °C→顯示 °C／°F |
+| 踏板、輸出 | AccelInput／BrakeInput 的0～255、PowerWatts、TorqueNewtons |
+| G | −AccelerationX、AccelerationZ ÷9.80665；不使用垂直 Y |
+| 圈速 | CurrentLap／BestLap／LastLap 秒數；LapNumber 是已完成圈數 |
 
-不推算油溫、水溫、油壓、噴油嘴 duty、進排氣溫、前輪扭力分配，也不將輪胎溫度偷偷冠上油溫名稱。資料缺失是 N/A；數值 0 是有效資料，不混淆兩者。ODO 位置明確使用遊戲 `DistanceTraveled` 的 session distance，並非真車累計里程。
+沒有合成油溫、水溫、油壓、噴油嘴 duty、進排氣溫或前輪扭力分配。所有缺失即時值顯示 N/A 並隱藏指針；合法零值不等於缺失。
 
 Recorder 優先取 `data.sourceTelemetry` 的原始唯讀封包；否則接受直接 raw fixture。原始 `TimestampMS` 必須是 uint32。重複時間戳的插值畫面不能更新峰值、歷史或最後收訊時間；即使 interpolator 顯示 7,250 rpm，原始 7,000 rpm 峰值仍保持 7,000。接收間隔超過 1,500 ms 進入 STALE，隱藏即時指針／清空即時數字，歷史峰值與過去圈速仍標示為歷史。暫停、缺失／無效 IsRaceOn 或錯誤 payload 都停止記錄並清空即時讀數；只有明確 1／true 才是 live。RPM、油量、踏板及距離等超出有效物理範圍時顯示不可用，不以截斷製造合理值。切車或有圈數／race time 共同佐證的重新開始才重設；單一倒退時間戳視為封包重排並拒收，須在 stale／重設證據存在時取得兩個車輛與時鐘一致、相隔小於 500 ms 且向前推進的候選封包才接受新 epoch。uint32 正常溢位不當成重新開始。
 
-靜態幾何由 artwork.js、cluster-art.js 與 mfd-art.js 在初始化時組裝一次；拉絲／塑膠材質採低對比向量 pattern，沒有 turbulence 或逐幀濾鏡。中性白色數字為原創筆畫，更新遙測時只移動指針、修改文字／扇形與繪製快取 Canvas，不重建字形。
+30 秒歷史使用預先配置 301 個樣本、最多 10 Hz 取樣，顯示最多 30 Hz。Canvas backing 隨獨立 MFD 縮放、DPR 與 resize 邊界更新，每邊最多 2048 像素；穩定畫格不量測 DOM。保留 DPR 1→2→1 回復、observer／media-query／RAF 清理與原始 sourceTelemetry 證據契約。
 
-30 秒記憶採 301 個預先配置容量、最多 10 Hz 的環形取樣；畫面與文字採 30 Hz，沒有每幀新增 DOM 或重建靜態錶面。資料中斷產生的長間隔不連成假曲線。G／history Canvas 的 backing store 隨 HUD 最終 scale、DPR、ResizeObserver 與視窗／螢幕密度改變重新配置；每邊最多 2048 像素。邏輯幾何只在這些邊界量測並快取，隱藏／零尺寸不配置，render loop 僅比較快取 DPR 數字以捕捉 media query 可能遺漏的返回轉換，不讀取 DOM 尺寸或在穩定畫格配置物件；destroy 時移除 observer、media query 與 resize listener。
+完整原廠離線記錄／RS-232C PC 分析、額外 DATA 頁、自製計圈器與後續高性能版本功能皆未實作。
 
-原始 MFD 的完整離線記錄／PC 分析並未實作，不能稱為原廠資料記錄器替代品。
+## 驗證入口與證據邊界
 
-## 驗證入口與限制
+採用 skills：`halfmoon-design-system`、`huge-component-refactoring`、`modular-refactoring`。沒有改 UDP 解碼或其他 HUD 的繪圖程式。
 
-採用的 repo skills：`halfmoon-design-system`、`huge-component-refactoring`、`modular-refactoring`。沒有修改 UDP 解碼格式或調校公式。
+- `pnpm -C frontend exec vitest run ../hud_overlay/r34_mfd/tests/unit src/features/overlay_control/r34_mfd`：狀態／刻度／固定 kmh／嚴格四輪平均／C-F 比例／左半掃動／responsive 純函式
+- `cargo test --locked --manifest-path backend-rust/Cargo.toml --test config_contract`：頁面與新增溫度單位的 POST／disk／restart／relay
+- `pnpm -C frontend run test`、Windows 及 LAN 前端 build、`git diff --check`：aggregate gates
+- `hud_overlay/r34_mfd/tests/visual/fixture.html`：人工操作真實 iframe，僅使用合成封包
+- `PLAYWRIGHT_CHANNEL=chrome PLAYWRIGHT_MODULE_PATH=/path/to/playwright OUTPUT_DIR=/tmp/r34-preview node hud_overlay/r34_mfd/tests/visual/render.mjs`：720p／1080p 透明全畫面、五頁 DPR1 MFD 裁切、DPR2、負壓、C/F、部分缺胎溫、stale、最小／中間／最大左掃動、1440p／ultrawide／矮視窗及 compact
+- 同上執行 `launcher.mjs`：真正 Launcher／Coordinator 與持續遙測下 C/F config 更新、固定 kmh、原始缺值與 stale replay
+- 同上執行 `frontend/src/features/overlay_control/r34_mfd/tests/browser/verify.cjs`：真實五頁選單、day/night、cluster、單位繼承／獨立 C/F 保存重載、reset、六主題、窄版繁中／日文
 
-- `pnpm -C frontend exec vitest run ../hud_overlay/r34_mfd/tests/unit src/features/overlay_control/r34_mfd`：純函式領域狀態、刻度、資料來源、單位與 runtime 持久化設定；DOM／React 驗收僅在 browser fixture
-- `cargo test --locked --manifest-path backend-rust/Cargo.toml --test config_contract r34_settings`：五模式 POST／disk／restart／WebSocket relay
-- `pnpm -C frontend run test`、`pnpm -C frontend run build`、`git diff --check`：完整前端及靜態關卡
-- 以既有靜態伺服器開啟 `hud_overlay/r34_mfd/tests/visual/fixture.html`：人工操作真實 iframe；合成遙測、裝飾按鍵，不修改外部帳號
-- `PLAYWRIGHT_MODULE_PATH=/path/to/playwright PLAYWRIGHT_CHANNEL=chrome OUTPUT_DIR=/tmp/r34-preview node hud_overlay/r34_mfd/tests/visual/render.mjs`
-- 同上執行 `frontend/src/features/overlay_control/r34_mfd/tests/browser/verify.cjs`：真實 OverlayView 控制、五模式／day-night／cluster、disk-backed HTTP、reload／reset／切換返回、六種 Halfmoon 主題及窄版繁中／日文含字形驗證
-- 同上執行 `launcher.mjs`：真實 Launcher → Coordinator → sourceTelemetry → HUDCore 流程、模式 relay、缺失 boost、stale replay、切換返回
+Chrome fixture 保持 `chromiumSandbox:true`，不以停用 sandbox 繞過本地限制。靜態構圖不能取代真正 HTML／SVG／Canvas 像素驗證；Chrome 證據也不是 Windows 原生透明 click-through 或遊戲實測。
 
-靜態構圖先以 Inkscape 輸出常用尺寸與 2× PNG，逐張對照上述型錄／實物照片；這只驗證美術方向，不能冒充實際 runtime 截圖。最終 browser fixture 另外輸出五個模式的透明裁切圖。
+## 先前外殼版本
 
-讀數可見性檢查除了 viewport 包含性，也直接比較刻度／單位與同層 PEAK 面板的幾何重疊；bar、psi、kPa 與 RPM 最大刻度都必須完整可讀。狀態提示放在機殼下方的透明留白，設定頁則驗證完整英語原文與繁中／日文翻譯，不接受顯示短 lookup key。
-
-視覺 workflow 使用 GitHub Actions 的 Google Chrome 並維持 `chromiumSandbox: true`，輸出 720p／1080p／DPR 2 的實際 HTML／SVG／Canvas 截圖與 JSON 證據。不得用停用 sandbox 迴避本地環境限制。這些是 Chrome fixture，仍不是 Windows 原生透明 click-through 或真實遊戲驗收；完成狀態以該 PR 的實際結果為準。
-
-## 保存的實際重建畫面
-
-`bed166f290621675c445defe8b42c15e451217fa` 的 [Visual run37295509701](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37295509701) 已產出並通過94項HUD檢查、59張HUD圖、7項Launcher檢查及11張設定圖。獨立review逐張比較五模式DPR1／2與OEM／NISMO參考，並查看單位、overscale、缺值／斷訊、day／night、custom color與隱藏讀值；無新增actionable findings。
-
-[完整runtime預覽](../assets/r34-mfd/preview.png)、[正常大小](../assets/r34-mfd/preview-normal.png)及[MFD四模式](../assets/r34-mfd/mfd-modes.png)皆來自真正HTML／SVG／Canvas，不是先前的靜態美術樣稿。拼版由原始MFD區域垂直排列TWIN／MULTI／G／LAP，僅裁切與加留白，沒有重繪儀表像素。來源與雜湊見[provenance](../assets/r34-mfd/provenance.json)。正常約845px構圖的主讀值清楚，次要MFD刻度及機殼小字需近看；可依遊戲畫面使用既有HUD scale調整，不聲稱工廠尺寸或實機操作驗收。
+`docs/assets/r34-mfd/` 目前保存的 `bed166f` 圖片屬於已被本次無外框／Nür300 方向取代的歷史版本，不能作為新佈局完成證據。新的透明 runtime 圖與來源紀錄將在本次視覺 CI 通過並實際審閱後更新。

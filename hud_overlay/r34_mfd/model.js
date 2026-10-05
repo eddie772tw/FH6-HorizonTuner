@@ -13,6 +13,16 @@
             r34Lighting: config.r34Lighting === 'day' ? 'day' : 'night'
         };
     }
+    // Packet TireTemp is FL/FR/RL/RR in Fahrenheit. Never use a zero-filled alias.
+    function meanTireTemperatureC(values) {
+        if (!Array.isArray(values) || values.length !== 4) return null;
+        var meanF = 0;
+        for (var i = 0; i < 4; i++) {
+            if (finite(values[i]) === null) return null;
+            meanF += values[i] / 4;
+        }
+        return finite((meanF - 32) * (5 / 9));
+    }
     function gear(value) {
         if (value === 0) return 'R';
         if (value === 11) return 'N';
@@ -32,8 +42,10 @@
     function units(config, data) {
         var supplied = config.effectiveUnits || data.displayUnits || config.units || {};
         return {
-            speed: supplied.speed === 'mph' || (!supplied.speed && config.unit === 'mph') ? 'mph' : 'kmh',
+            // Nür speed face is intentionally fixed to kmh, independent of global speed units.
+            speed: 'kmh',
             boost: boostUnit(supplied.boostPressure),
+            temperature: supplied.temperature === 'F' ? 'F' : 'C',
             power: ['kw', 'ps'].indexOf(supplied.power) >= 0 ? supplied.power : 'hp',
             torque: supplied.torque === 'lbft' ? 'lbft' : 'nm'
         };
@@ -137,8 +149,9 @@
         config = config || {};
         var data = state.data, currentStatus = status(state, now), live = currentStatus === 'live';
         var u = displayUnits || units(config, data);
-        var speed = convert(data, live, 'SpeedMetersPerSecond', u.speed === 'mph' ? 2.2369362921 : 3.6);
+        var speed = convert(data, live, 'SpeedMetersPerSecond', 3.6);
         var fuel = read(data, live, 'Fuel'); if (fuel !== null) fuel *= 100;
+        var tireTemperatureC = live ? meanTireTemperatureC(data.TireTemp) : null;
         var throttle = convert(data, live, 'AccelInput', 100 / 255), brake = convert(data, live, 'BrakeInput', 100 / 255);
         var rpm = read(data, live, 'CurrentEngineRpm'), boost = convert(data, live, 'Boost', u.boost.factor);
         out = out || {};
@@ -147,10 +160,14 @@
         out.sequence = state.sequence;
         out.session = state.session;
         out.speed = speed;
-        out.speedUnit = u.speed === 'mph' ? 'mph' : 'km/h';
+        out.speedUnit = 'kmh';
         out.rpm = rpm;
         out.gear = live ? gear(data.Gear) : '—';
         out.fuel = fuel;
+        out.tireTemperatureC = tireTemperatureC;
+        out.tireTemperature = tireTemperatureC === null ? null : u.temperature === 'F' ? tireTemperatureC * 1.8 + 32 : tireTemperatureC;
+        out.tireTemperatureUnit = u.temperature === 'F' ? '°F' : '°C';
+        out.tireTemperatureRatio = ratio(tireTemperatureC, 0, 150);
         out.coolant = null;
         out.oilPressure = null;
         out.boost = boost;
@@ -173,11 +190,11 @@
         out.bestLap = read(data, live, 'BestLap');
         out.lastLap = read(data, live, 'LastLap');
         out.laps = state.laps;
-        out.distance = convert(data, live, 'DistanceTraveled', u.speed === 'mph' ? 1 / 1609.344 : 0.001);
+        out.distance = convert(data, live, 'DistanceTraveled', 0.001);
         return out;
     }
     root.R34Model = { MODES: MODES, STALE_MS: STALE_MS, CAPACITY: CAPACITY, WINDOW_MS: WINDOW_MS,
-        finite: finite, clamp: clamp, ratio: ratio, normalizeConfig: normalizeConfig, gear: gear, lapTime: lapTime,
+        finite: finite, clamp: clamp, ratio: ratio, meanTireTemperatureC: meanTireTemperatureC, normalizeConfig: normalizeConfig, gear: gear, lapTime: lapTime,
         boostUnit: boostUnit, units: units, createState: createState, reset: reset, ingest: ingest, snapshot: snapshot, status: status };
     if (typeof module !== 'undefined' && module.exports) module.exports = root.R34Model;
 })(typeof window !== 'undefined' ? window : globalThis);

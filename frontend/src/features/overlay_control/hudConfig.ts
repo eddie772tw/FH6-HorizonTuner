@@ -107,7 +107,7 @@ export const DEFAULT_HUD_CONFIG: HudConfig = {
   unit: 'kmh',
   followAppUnits: true,
   enableSmoothing: true,
-  units: { speed: 'kmh', boostPressure: 'bar', torque: 'nm', power: 'hp' },
+  units: { speed: 'kmh', boostPressure: 'bar', torque: 'nm', power: 'hp', temperature: 'C' },
   telemetryOpacity: 0.65,
   telemetryGRadarScale: 1.0,
   telemetryGRadarAlignment: 'center',

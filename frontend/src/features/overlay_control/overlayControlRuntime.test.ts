@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   applyHudConfigPatch,
   createOverlayControlRuntime,
+  normalizeHudRuntimeConfig,
   type OverlayControlTransport,
   type ResponseLike,
 } from './overlayControlRuntime';
@@ -29,12 +30,32 @@ async function flushTasks() {
 }
 
 describe('overlay control runtime', () => {
+  it.each([
+    [undefined, 'C'], [null, 'C'], ['', 'C'], ['c', 'C'], ['f', 'C'],
+    ['°F', 'C'], ['K', 'C'], [true, 'C'], [32, 'C'], [{}, 'C'], [[], 'C'],
+    ['C', 'C'], ['F', 'F'],
+  ])('normalizes HUD temperature %j to %s without changing other unit values', (temperature, expected) => {
+    const normalized = normalizeHudRuntimeConfig({
+      units: { speed: 'mph', boostPressure: 'psi', torque: 'lbft', power: 'kw', temperature },
+    });
+    expect(normalized.units).toEqual({
+      speed: 'mph', boostPressure: 'psi', torque: 'lbft', power: 'kw', temperature: expected,
+    });
+  });
+
+  it('defaults legacy HUD configs without temperature to Celsius', () => {
+    expect(normalizeHudRuntimeConfig({}).units?.temperature).toBe('C');
+    expect(normalizeHudRuntimeConfig({ units: { speed: 'mph' } }).units).toEqual({
+      speed: 'mph', boostPressure: 'bar', torque: 'nm', power: 'hp', temperature: 'C',
+    });
+  });
+
   it('deeply patches typed nested fields while preserving unknown persisted fields and S650 normalization', () => {
     const runtime = createOverlayControlRuntime(createTransport());
     const persistedConfig = {
       ...runtime.getSnapshot().config,
       elements: { ...runtime.getSnapshot().config.elements, pluginElement: { retained: true } },
-      units: { ...runtime.getSnapshot().config.units!, pluginUnit: { retained: true } },
+      units: { ...runtime.getSnapshot().config.units!, temperature: 'F' as const, pluginUnit: { retained: true } },
       pluginField: { nested: { retained: true } },
     };
     const patched = applyHudConfigPatch(persistedConfig, {
@@ -49,6 +70,7 @@ describe('overlay control runtime', () => {
     expect(patched.elements.showSpeed).toBe(true);
     expect(patched.units?.speed).toBe('mph');
     expect(patched.units?.power).toBe('hp');
+    expect(patched.units?.temperature).toBe('F');
     expect((patched.elements as Record<string, unknown>).pluginElement).toEqual({ retained: true });
     expect((patched.units as Record<string, unknown>).pluginUnit).toEqual({ retained: true });
     expect(patched.pluginField).toEqual({ nested: { retained: true } });
@@ -69,7 +91,7 @@ describe('overlay control runtime', () => {
       },
     }), { postMessage: message => channelMessages.push(message) });
 
-    runtime.setEffectiveUnits({ speed: 'mph', boostPressure: 'psi', torque: 'lbft', power: 'kw' });
+    runtime.setEffectiveUnits({ speed: 'mph', boostPressure: 'psi', torque: 'lbft', power: 'kw', temperature: 'F' });
     expect(channelMessages).toHaveLength(0);
     await expect(runtime.refresh()).resolves.toBe(false);
     await expect(runtime.retry()).resolves.toBe(true);
@@ -78,8 +100,62 @@ describe('overlay control runtime', () => {
     expect(runtime.getSnapshot().config).toMatchObject({ enabled: true, pluginField: { source: 'persisted' } });
     expect(channelMessages).toEqual([{
       type: 'config',
-      data: expect.objectContaining({ enabled: true, effectiveUnit: 'mph', effectiveUnits: { speed: 'mph', boostPressure: 'psi', torque: 'lbft', power: 'kw' } }),
+      data: expect.objectContaining({ enabled: true, effectiveUnit: 'mph', effectiveUnits: { speed: 'mph', boostPressure: 'psi', torque: 'lbft', power: 'kw', temperature: 'F' } }),
     }]);
+  });
+
+  it('inherits app temperature live while preserving independent units through saves and reloads', async () => {
+    let persisted: unknown = { followAppUnits: true, units: { temperature: 'C' } };
+    const transport = createTransport({
+      readConfig: async () => response(persisted),
+      saveConfig: async config => {
+        persisted = JSON.parse(JSON.stringify(config));
+        return response({ success: true });
+      },
+    });
+    const channelMessages: unknown[] = [];
+    const channel = { postMessage: (message: unknown) => channelMessages.push(message) };
+    const runtime = createOverlayControlRuntime(transport, channel);
+    const appUnits = { speed: 'mph', boostPressure: 'psi', torque: 'lbft', power: 'kw', temperature: 'F' } as const;
+    const expectTemperature = (temperature: 'C' | 'F') => {
+      expect(channelMessages.at(-1)).toMatchObject({
+        type: 'config', data: { effectiveUnits: { temperature } },
+      });
+    };
+    runtime.setEffectiveUnits(appUnits);
+    await expect(runtime.refresh()).resolves.toBe(true);
+    expectTemperature('F');
+    expect(runtime.getSnapshot().config.units?.temperature).toBe('C');
+
+    runtime.setEffectiveUnits({ ...appUnits, temperature: 'C' });
+    expectTemperature('C');
+    await expect(runtime.updateConfig({ followAppUnits: false, units: { temperature: 'F' } })).resolves.toBe(true);
+    expectTemperature('F');
+    await flushTasks();
+    expect(persisted).toMatchObject({ followAppUnits: false, units: { temperature: 'F' } });
+    expect(persisted).not.toHaveProperty('effectiveUnit');
+    expect(persisted).not.toHaveProperty('effectiveUnits');
+
+    const reloaded = createOverlayControlRuntime(transport, channel);
+    reloaded.setEffectiveUnits({ ...appUnits, temperature: 'C' });
+    await expect(reloaded.refresh()).resolves.toBe(true);
+    expectTemperature('F');
+    expect(reloaded.getSnapshot().config.units?.temperature).toBe('F');
+
+    await expect(reloaded.updateConfig({ followAppUnits: true })).resolves.toBe(true);
+    expectTemperature('C');
+    reloaded.setEffectiveUnits(appUnits);
+    expectTemperature('F');
+    reloaded.setEffectiveUnits({ ...appUnits, temperature: 'invalid' as 'C' });
+    expectTemperature('C');
+    reloaded.setEffectiveUnits(appUnits);
+    reloaded.setEffectiveUnits({ ...appUnits, temperature: undefined as unknown as 'C' });
+    expectTemperature('C');
+    await flushTasks();
+    await expect(reloaded.updateConfig({ followAppUnits: false })).resolves.toBe(true);
+    expectTemperature('F');
+    await flushTasks();
+    expect(persisted).not.toHaveProperty('effectiveUnits');
   });
 
   it('waits for an authoritative base before applying a local patch, retaining unknown nested config', async () => {

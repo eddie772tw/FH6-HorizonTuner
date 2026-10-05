@@ -26,7 +26,7 @@
   "R34 instrument lighting": "R34 儀表照明",
   "R34 night lighting": "夜間背光",
   "R34 day lighting": "日間錶面",
-  "1999 V-spec cluster with NISMO MFD Ver.II design. Change modes here; bezel keys are decorative. No game coolant, oil pressure, oil temperature or front torque split is invented. Live channels use their actual names.": "1999 V·spec 儀表與 NISMO MFD Ver.II 設計。模式由此設定；錶框按鍵為外觀。油溫、水溫、油壓與前輪扭力分配沒有遊戲來源；可用數據會以正確名稱顯示。",
+  "R34 core dials and five NISMO MFD Ver.II pages. Change pages here. Auxiliary gauges show boost and all-four average tire temperature, not coolant. Missing inputs remain N/A.": "R34 核心錶盤與五頁 NISMO MFD Ver.II 畫面，可在此切換頁面。兩個子錶固定顯示增壓與四輪平均胎溫，不代表水溫；缺少輸入時顯示 N/A。",
   "EV calculation is unavailable or the captured evidence did not qualify. Try again.": "EV 計算暫時無法使用，或擷取的證據尚未合格，請重試。",
   "Calculating tuning results…": "正在計算調校結果…",
   "Tuning calculation is unavailable. Retrying…": "調校計算暫時無法使用，正在重試…",

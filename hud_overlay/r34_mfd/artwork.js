@@ -23,30 +23,29 @@ const digitPaths = {
  '9':'M1 17Q2 18 4 18H5Q9 18 9 13V3Q9 0 6 0H3Q0 0 0 3V7Q0 10 3 10H6Q9 10 9 7',
  '.':'M3 17L3 18', '-':'M1 9H7'
 };
-function digits(x,y,value,h=20,col='#e1e3e3',weight=1.45,italic=false) {
- const chars=String(value).split(''), scale=h/18, width=1.12*chars.reduce((n,c)=>n+(c==='.'?5:c==='1'?9:12),-3)*scale;
- let dx=0,s=`<g transform="translate(${f(x-width/2)} ${f(y-h/2)}) scale(${scale*1.12} ${scale})" fill="none" stroke="${col}" stroke-width="${weight}" stroke-linecap="round" stroke-linejoin="round">`;
+function digits(x,y,value,h=20,col='#e1e3e3',weight=1.45,italic=false,widthScale=1.12) {
+ const chars=String(value).split(''), scale=h/18, width=widthScale*chars.reduce((n,c)=>n+(c==='.'?5:c==='1'?9:12),-3)*scale;
+ let dx=0,s=`<g transform="translate(${f(x-width/2)} ${f(y-h/2)}) scale(${scale*widthScale} ${scale})" fill="none" stroke="${col}" stroke-width="${weight}" stroke-linecap="round" stroke-linejoin="round">`;
  for(const c of chars){s+=`<g transform="translate(${dx} 0)${italic?' skewX(-5)':''}">${path(digitPaths[c]||'', 'none')}</g>`;dx+=c==='.'?5:c==='1'?9:12;}
  return s+'</g>';
 }
-const metal = '<linearGradient id="metal" x1="0" y1="0" x2="0" y2="1"><stop stop-color="var(--r34-silver-top)"/><stop offset=".24" stop-color="var(--r34-silver-light)"/><stop offset=".48" stop-color="var(--r34-silver-mid)"/><stop offset=".72" stop-color="var(--r34-silver-light)"/><stop offset="1" stop-color="var(--r34-silver-low)"/></linearGradient>';
-const defs = `<defs>${metal}
- <linearGradient id="hood" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#434648"/><stop offset=".075" stop-color="#282b2e"/><stop offset=".35" stop-color="#16191d"/><stop offset="1" stop-color="#0a0c10"/></linearGradient>
- <linearGradient id="edge" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#666b6d"/><stop offset=".2" stop-color="#33373a"/><stop offset="1" stop-color="#121519"/></linearGradient>
- <linearGradient id="mfdFace" x1="0" y1="0" x2=".2" y2="1"><stop stop-color="#3e4246"/><stop offset=".4" stop-color="var(--r34-case)"/><stop offset="1" stop-color="#262a2e"/></linearGradient>
- <linearGradient id="mfdBrow" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#6b7070"/><stop offset=".13" stop-color="#474b4d"/><stop offset=".65" stop-color="#24292c"/><stop offset="1" stop-color="#101316"/></linearGradient>
- <linearGradient id="lens" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#030507"/><stop offset=".5" stop-color="#161a20"/><stop offset="1" stop-color="#08090c"/></linearGradient>
+const defs = `<defs>
+
+
+
+
+
  <linearGradient id="chrome" x1="0" y1="0" x2=".7" y2="1"><stop stop-color="#e0e0d7"/><stop offset=".16" stop-color="#b0b2ab"/><stop offset=".31" stop-color="#656b6c"/><stop offset=".5" stop-color="#b1b5ae"/><stop offset=".68" stop-color="#dddcd1"/><stop offset=".85" stop-color="#7b8381"/><stop offset="1" stop-color="#444b4c"/></linearGradient>
- <linearGradient id="button" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#575d5e"/><stop offset=".1" stop-color="#454b4c"/><stop offset=".8" stop-color="#303537"/><stop offset="1" stop-color="#15191b"/></linearGradient>
- <radialGradient id="thumb"><stop stop-color="#2b3136"/><stop offset=".55" stop-color="#21272d"/><stop offset=".73" stop-color="#3e454a"/><stop offset="1" stop-color="#101519"/></radialGradient>
+
+
  <radialGradient id="face"><stop stop-color="var(--r34-face)"/><stop offset=".78" stop-color="#1e1f21"/><stop offset="1" stop-color="#141618"/></radialGradient>
  <linearGradient id="lcd" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#76806b"/><stop offset=".45" stop-color="var(--r34-lcd)"/><stop offset="1" stop-color="#919e82"/></linearGradient>
- <linearGradient id="screen" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#141921"/><stop offset=".65" stop-color="#111820"/><stop offset="1" stop-color="#162028"/></linearGradient>
+
  <radialGradient id="sector"><stop stop-color="#898f83"/><stop offset="1" stop-color="#626c61"/></radialGradient>
  <linearGradient id="peak" x1="0" y1="0" x2=".5" y2="1"><stop stop-color="#3f747b"/><stop offset=".12" stop-color="#346169"/><stop offset="1" stop-color="#1c3947"/></linearGradient>
- <pattern id="brush" width="13" height="320" patternUnits="userSpaceOnUse"><path d="M1 0V320M5 0V320M10 0V320" stroke="#fff" stroke-width=".35" opacity=".025"/><path d="M2 0V320M6.5 0V320M11 0V320" stroke="#151a18" stroke-width=".3" opacity=".04"/></pattern>
- <pattern id="plastic" width="9" height="8" patternUnits="userSpaceOnUse"><path d="M1 2h.4M5 6h.5M8 1h.4" stroke="#a3a6a3" stroke-width=".6" opacity=".12"/><path d="M2 5h.6M7 3h.7" stroke="#05070a" stroke-width=".7" opacity=".22"/></pattern>
- <pattern id="scan" width="2" height="2" patternUnits="userSpaceOnUse"><path d="M0 1.7H2" stroke="#000" stroke-width=".25" opacity=".13"/></pattern>
+
+
+
 </defs>`;
 function needle(x,y,len,angle,id){return `<g id="${id}" transform="translate(${x} ${y}) rotate(${angle})">${path(`M-17 -1.7L${len-8} -1.3L${len} 0L${len-8} 1.3L-17 1.7Z`,'#cb252c')}${ln(0,-.7,len-7,-.6,'#fa4a42',.65)}${circle(0,0,11,'#141619')}${circle(-.5,-.5,8.4,'#25272a')}${path('M-6 -6Q0 -11 7 -5','none','stroke="#414245" stroke-width=".8"')}</g>`;}
 function coolant(x,y){return `<g transform="translate(${x} ${y})" fill="none" stroke="#bcc0bf" stroke-width="1.3" stroke-linecap="round"><path d="M-2 -8v12a3 3 0 1 0 4 0V-8M0 -7v11M2 -5h4M2 -1h4M2 3h4M-8 10q2 -2 4 0t4 0t4 0t4 0"/></g>`;}

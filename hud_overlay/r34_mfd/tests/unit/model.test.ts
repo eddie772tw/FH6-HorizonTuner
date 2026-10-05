@@ -35,22 +35,23 @@ describe('BNR34 telemetry truth and units', () => {
   it('honors effective independent units, and keeps numerical overscale readings', () => {
     const state = M.createState(); accept(state, { Boost: 43.5114, SpeedMetersPerSecond: 100 });
     const v = M.snapshot(state, { effectiveUnits: { speed: 'mph', boostPressure: 'kpa', power: 'hp', torque: 'lbft' } }, 0);
-    expect(v.speed).toBeCloseTo(223.6936); expect(v.boost).toBeCloseTo(300.000660264, 8); expect(v.boostRatio).toBe(1);
-    expect(v.power).toBeCloseTo(268.2044); expect(v.torque).toBeCloseTo(295.0248); expect(v.speedUnit).toBe('mph');
+    expect(v.speed).toBeCloseTo(360); expect(v.boost).toBeCloseTo(300.000660264, 8); expect(v.boostRatio).toBe(1);
+    expect(v.power).toBeCloseTo(268.2044); expect(v.torque).toBeCloseTo(295.0248); expect(v.speedUnit).toBe('kmh');
   });
   it('uses the documented nonuniform stock V-spec tach intervals', () => {
     expect(I.tachAngle(3000) - I.tachAngle(2000)).toBe(15);
     expect(I.tachAngle(4000) - I.tachAngle(3000)).toBe(30);
     expect(I.tachAngle(10000)).toBe(I.tachAngle(14000));
   });
-  it('keeps stock speed and fuel needles bounded and ordered while numeric readings retain overscale', () => {
+  it('keeps stock speed and auxiliary needles bounded and ordered while numeric readings retain overscale', () => {
     expect(I.speedAngle(0)).toBeLessThan(I.speedAngle(80));
-    expect(I.speedAngle(80)).toBeLessThan(I.speedAngle(180));
-    expect(I.speedAngle(360)).toBe(I.speedAngle(180));
+    expect(I.speedAngle(80)).toBeLessThan(I.speedAngle(300));
+    expect(I.SPEED_MAX).toBe(300);
+    expect(I.speedAngle(360)).toBe(I.speedAngle(300));
     expect(I.speedAngle(-10)).toBe(I.speedAngle(0));
-    expect(I.fuelAngle(0)).toBeLessThan(I.fuelAngle(50));
-    expect(I.fuelAngle(50)).toBeLessThan(I.fuelAngle(100));
-    expect(I.fuelAngle(110)).toBe(I.fuelAngle(100));
+    expect(I.auxiliaryAngle(0)).toBeLessThan(I.auxiliaryAngle(.5));
+    expect(I.auxiliaryAngle(.5)).toBeLessThan(I.auxiliaryAngle(1));
+    expect(I.auxiliaryAngle(1.1)).toBe(I.auxiliaryAngle(1));
   });
   it('formats Forza reverse, neutral, missing and valid gear values', () => {
     expect(M.gear(0)).toBe('R'); expect(M.gear(11)).toBe('N'); expect(M.gear(6)).toBe('6'); expect(M.gear(null)).toBe('—');
@@ -188,4 +189,72 @@ describe('R34 shared direction and official completed-lap semantics', () => {
     const v = M.snapshot(state, {}, 100); expect(v.completedLaps).toBe(1); expect(v.lap).toBe(2);
     expect(state.laps[0]).toEqual({ number: 1, seconds: 82.5 });
   });
+});
+
+
+describe('strict four-wheel tire temperature and shared left sweep', () => {
+  it.each([
+    [[32, 32, 32, 32], 0, 32],
+    [[0, 0, 0, 0], -160 / 9, 0],
+    [[-40, -40, -40, -40], -40, -40],
+    [[32, 68, 104, 140], 30, 86],
+  ])('averages all four raw Fahrenheit inputs before conversion', (raw, c, f) => {
+    expect(M.meanTireTemperatureC(raw)).toBeCloseTo(c);
+    const state = M.createState(); accept(state, { TireTemp: raw });
+    const metric = M.snapshot(state, { effectiveUnits: { temperature: 'C' } }, 0);
+    const imperial = M.snapshot(state, { effectiveUnits: { temperature: 'F' } }, 0);
+    expect(metric.tireTemperatureC).toBeCloseTo(c); expect(metric.tireTemperature).toBeCloseTo(c);
+    expect(imperial.tireTemperature).toBeCloseTo(f); expect(imperial.tireTemperatureUnit).toBe('°F');
+    expect(imperial.tireTemperatureRatio).toBe(metric.tireTemperatureRatio);
+  });
+  it.each([undefined, null, [], [32, 32, 32], [32, 32, 32, 32, 32], [32, null, 32, 32],
+    [32, '32', 32, 32], [32, NaN, 32, 32], [32, Infinity, 32, 32], [32, undefined, 32, 32]])('never substitutes a partial or zero-filled average', raw => {
+    expect(M.meanTireTemperatureC(raw)).toBeNull();
+    const state = M.createState(); accept(state, { TireTemp: raw });
+    expect(M.snapshot(state, {}, 0).tireTemperature).toBeNull();
+  });
+  it('uses sourceTelemetry rather than interpolated or zero-filled outer tire values', () => {
+    const state = M.createState(), source = packet({ TireTemp: [32, 68, 104, 140] });
+    M.ingest(state, { ...source, TireTemp: [500, 500, 500, 500], sourceTelemetry: source }, {}, 0);
+    expect(M.snapshot(state, {}, 0).tireTemperatureC).toBeCloseTo(30);
+    const missing = packet({ TimestampMS: 1100 });
+    M.ingest(state, { ...missing, TireTemp: [0, 0, 0, 0], sourceTelemetry: missing }, {}, 100);
+    expect(M.snapshot(state, {}, 100).tireTemperatureC).toBeNull();
+  });
+  it('clears live temperature on stale, pause and session change without manufacturing a value', () => {
+    const state = M.createState(); accept(state, { TireTemp: [212, 212, 212, 212] });
+    expect(M.snapshot(state, {}, 0).tireTemperature).toBeCloseTo(100);
+    expect(M.snapshot(state, {}, 1600).tireTemperature).toBeNull();
+    accept(state, { TimestampMS: 1100, IsRaceOn: 0 }, 1601);
+    expect(M.snapshot(state, {}, 1601).tireTemperature).toBeNull();
+    accept(state, { TimestampMS: 1200, CarOrdinal: 99 }, 1700);
+    expect(M.snapshot(state, {}, 1700).tireTemperature).toBeNull();
+  });
+  it('keeps negative and high numeric temperatures while bounding only geometry', () => {
+    const state = M.createState(); accept(state, { TireTemp: [392, 392, 392, 392] });
+    const high = M.snapshot(state, {}, 0); expect(high.tireTemperature).toBe(200); expect(high.tireTemperatureRatio).toBe(1);
+    accept(state, { TimestampMS: 1100, TireTemp: [-40, -40, -40, -40] }, 100);
+    const cold = M.snapshot(state, {}, 100); expect(cold.tireTemperature).toBe(-40); expect(cold.tireTemperatureRatio).toBe(0);
+    expect(M.units({ units: { temperature: 'bad' } }, {}).temperature).toBe('C');
+  });
+  it('keeps minimum, midpoint and maximum entirely on the left hemisphere', () => {
+    for (const ratio of [0, .25, .5, .75, 1]) expect(Math.cos(I.auxiliaryAngle(ratio) * Math.PI / 180)).toBeLessThan(0);
+    expect(Math.sin(I.auxiliaryAngle(0) * Math.PI / 180)).toBeGreaterThan(0);
+    expect(Math.sin(I.auxiliaryAngle(.5) * Math.PI / 180)).toBeCloseTo(0);
+    expect(Math.sin(I.auxiliaryAngle(1) * Math.PI / 180)).toBeLessThan(0);
+  });
+});
+
+
+it('locks all R34 speed values to kmh through metric/imperial preference changes', () => {
+  const state = M.createState(); accept(state, { SpeedMetersPerSecond: 90, DistanceTraveled: 12340 });
+  const metric = M.snapshot(state, { effectiveUnits: { speed: 'kmh', temperature: 'C' } }, 0);
+  const imperial = M.snapshot(state, { effectiveUnits: { speed: 'mph', temperature: 'F' } }, 0);
+  expect(metric.speed).toBe(324); expect(imperial.speed).toBe(metric.speed);
+  expect(I.speedAngle(imperial.speed)).toBe(I.speedAngle(metric.speed));
+  expect(I.speedAngle(imperial.speed)).toBe(I.speedAngle(300));
+  expect(imperial.speedUnit).toBe('kmh'); expect(imperial.distance).toBe(metric.distance);
+  expect(imperial.distance).toBeCloseTo(12.34);
+  accept(state, { TimestampMS: 1100, SpeedMetersPerSecond: undefined }, 100);
+  expect(M.snapshot(state, { unit: 'mph' }, 100).speed).toBeNull();
 });

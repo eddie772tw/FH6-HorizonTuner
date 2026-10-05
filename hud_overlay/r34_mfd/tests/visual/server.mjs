@@ -4,13 +4,13 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 export const root = path.resolve(fileURLToPath(new URL('../../../', import.meta.url)));
 export const baseConfig = { hudStyle: 'r34_mfd', scale: 1, r34MfdMode: 'single', r34ShowCluster: true, r34Lighting: 'night',
-  unit: 'kmh', effectiveUnits: { speed: 'kmh', boostPressure: 'bar', power: 'kw', torque: 'nm' }, enableSmoothing: true,
+  unit: 'kmh', effectiveUnits: { speed: 'kmh', boostPressure: 'bar', power: 'kw', torque: 'nm', temperature: 'C' }, enableSmoothing: true,
   useDefaultColors: true, glowIntensity: 1, elements: { showGauge: true, showRPM: true, showSpeed: true, showGear: true,
     showBoost: true, showCenterInfo: true, showPowerTorque: true, showTeleMaster: false, showMotionEffect: false,
     showTeleSuspension: false, showTeleTires: false, showTeleAttitude: false, showTelePedals: false, showTeleCompass: false } };
 export const rawSample = { TimestampMS: 1000, IsRaceOn: 1, CarOrdinal: 34, CurrentEngineRpm: 6800, EngineMaxRpm: 9000,
   SpeedMetersPerSecond: 45, Gear: 4, Boost: 17.40456, Fuel: .62, AccelInput: 195, BrakeInput: 0,
-  PowerWatts: 215000, TorqueNewtons: 405, AccelerationX: 5.2, AccelerationY: 0, AccelerationZ: 2.5,
+  TireTemp: [195, 205, 215, 225], PowerWatts: 215000, TorqueNewtons: 405, AccelerationX: 5.2, AccelerationY: 0, AccelerationZ: 2.5,
   CurrentLap: 67.321, BestLap: 82.154, LastLap: 83.526, LapNumber: 3, CurrentRaceTime: 240, DistanceTraveled: 12008 };
 export async function serve() {
   const mime = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.png': 'image/png', '.json': 'application/json', '.otf': 'font/otf' };

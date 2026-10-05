@@ -26,7 +26,7 @@ async function main() {
     }
     if (name === '/api/settings') {
       const query = new URL(req.headers.referer || 'http://localhost').searchParams;
-      return json(res, { ...defaults.DEFAULT_SETTINGS, language: query.get('language') || 'en-us' });
+      return json(res, { ...defaults.DEFAULT_SETTINGS, language: query.get('language') || 'en-us', units: { ...defaults.DEFAULT_SETTINGS.units, temperature: query.get('temperature') === 'F' ? 'F' : 'C' } });
     }
     if (name === '/api/languages') return json(res, [{ code: 'en-us', name: 'English' }, { code: 'zh-tw', name: '繁體中文' }, { code: 'ja-jp', name: '日本語' }]);
     if (name.startsWith('/api/languages/')) { const code = name.split('/').pop(); return json(res, ['en-us', 'zh-tw', 'ja-jp'].includes(code) ? JSON.parse(fs.readFileSync(path.join(repo, 'lang', code + '.json'), 'utf8')) : {}); }
@@ -57,7 +57,7 @@ async function main() {
     }, expected);
     const card = () => page.getByRole('group', { name: 'R34 MFD settings', exact: true });
     const style = () => page.getByRole('combobox', { name: 'Speedometer Settings', exact: true });
-    const helper = "1999 V-spec cluster with NISMO MFD Ver.II design. Change modes here; bezel keys are decorative. No game coolant, oil pressure, oil temperature or front torque split is invented. Live channels use their actual names.";
+    const helper = "R34 core dials and five NISMO MFD Ver.II pages. Change pages here. Auxiliary gauges show boost and all-four average tire temperature, not coolant. Missing inputs remain N/A.";
     const capture = async (name, target = card()) => {
       await target.scrollIntoViewIfNeeded();
       const expectedHelper = name.endsWith('zh-tw') || name.endsWith('ja-jp')
@@ -82,6 +82,26 @@ async function main() {
     await open(); await card().waitFor({ state: 'visible' }); assert.equal(await card().getByRole('combobox', { name: 'R34 MFD mode', exact: true }).inputValue(), 'lap');
     assert.equal(await card().getByRole('checkbox', { name: 'R34 show instrument cluster', exact: true }).isChecked(), false);
     report.checks.push('All five modes, day/night, cluster control, disk persistence, effective-unit separation, BroadcastChannel and reload');
+    await open('?temperature=F'); await card().waitFor({ state: 'visible' });
+    const unitPanel = () => page.getByRole('dialog', { name: 'HUD Unit Settings', exact: true });
+    const openUnits = async () => { await page.getByRole('button', { name: 'HUD Unit Settings', exact: true }).click(); await unitPanel().waitFor({ state: 'visible' }); };
+    await openUnits();
+    assert.equal(await unitPanel().getByRole('combobox', { name: 'Temperature', exact: true }).inputValue(), 'F');
+    assert.equal(await unitPanel().getByRole('combobox', { name: 'Temperature', exact: true }).isDisabled(), true);
+    await page.waitForFunction(() => window.fixtureBroadcasts.some(message => message.data?.effectiveUnits?.temperature === 'F'));
+    await unitPanel().getByRole('checkbox', { name: 'Follow App Global Units', exact: true }).uncheck();
+    await unitPanel().getByRole('combobox', { name: 'Temperature', exact: true }).selectOption('C');
+    await page.waitForFunction(async () => { const c = await (await fetch('/api/overlay/config')).json(); return c.followAppUnits === false && c.units.temperature === 'C'; });
+    await unitPanel().getByRole('combobox', { name: 'Temperature', exact: true }).selectOption('F');
+    await page.waitForFunction(async () => (await (await fetch('/api/overlay/config')).json()).units.temperature === 'F');
+    await unitPanel().screenshot({ path: path.join(out, 'temperature-independent-f.png') }); report.screenshots.push({ name: 'temperature-independent-f' });
+    await unitPanel().getByRole('button', { name: 'Close Unit Settings', exact: true }).click();
+    await open(); await card().waitFor({ state: 'visible' }); await openUnits();
+    assert.equal(await unitPanel().getByRole('combobox', { name: 'Temperature', exact: true }).inputValue(), 'F');
+    assert.equal(await unitPanel().getByRole('combobox', { name: 'Temperature', exact: true }).isEnabled(), true);
+    assert.equal(read().effectiveUnits, undefined);
+    await unitPanel().getByRole('button', { name: 'Close Unit Settings', exact: true }).click();
+    report.checks.push('Temperature app inheritance, independent C/F control, disk persistence, reload and derived-unit separation');
     for (const theme of ['dark', 'light']) for (const core of ['default', 'modern', 'elegant']) {
       await page.evaluate(({ theme, core }) => { document.documentElement.dataset.bsTheme = theme; document.documentElement.dataset.bsCore = core; }, { theme, core });
       await capture('settings-' + theme + '-' + core);
@@ -92,6 +112,7 @@ async function main() {
     const before = report.saves.length; page.once('dialog', dialog => dialog.dismiss()); await page.getByRole('button', { name: 'Reset HUD Settings', exact: true }).click(); assert.equal(report.saves.length, before);
     page.once('dialog', dialog => dialog.accept()); await page.getByRole('button', { name: 'Reset HUD Settings', exact: true }).click();
     await card().waitFor({ state: 'detached' }); await savedAs({ hudStyle: 'vfd', r34MfdMode: 'single', r34Lighting: 'night', r34ShowCluster: true });
+    assert.equal(read().units.temperature, 'C');
     await style().selectOption('r34_mfd'); await card().waitFor({ state: 'visible' }); report.checks.push('Style round-trip, reset cancel and confirmed defaults');
     for (const language of ['zh-tw', 'ja-jp']) {
       const translations = JSON.parse(fs.readFileSync(path.join(repo, 'lang', language + '.json'), 'utf8'));

@@ -2,13 +2,14 @@
     'use strict';
     var M = root.R34Model, state = M.createState(), config = {}, view = {};
     var renderer = new root.R34Renderer(document), displayUnits = M.units(config, {});
-    var frameId = null, resizeId = null, destroyed = false, lastRender = -Infinity, currentScale = 1;
+    var frameId = null, resizeId = null, destroyed = false, lastRender = -Infinity, currentScale = .66;
     var observer = null, dprQuery = null, appliedDpr = null;
     function resize() {
         if (resizeId !== null) cancelAnimationFrame(resizeId);
         resizeId = null; if (destroyed) return;
         appliedDpr = root.devicePixelRatio || 1;
-        renderer.resizeCanvases(currentScale, appliedDpr); lastRender = -Infinity;
+        var screenScale = renderer.layout(root.innerWidth, root.innerHeight, currentScale / .66);
+        renderer.resizeCanvases(screenScale, appliedDpr); lastRender = -Infinity;
     }
     function queueResize() { if (!destroyed && resizeId === null) resizeId = requestAnimationFrame(resize); }
     function watchDpr() {

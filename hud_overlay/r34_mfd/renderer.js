@@ -8,13 +8,15 @@
         this.doc = doc; this.mode = ''; this.unit = ''; this.lastStatus = ''; this.historySequence = -1; this.historyLive = null;
         this.palette = {}; this.nodes = {}; this.rows = []; this.lapRows = [];
         doc.getElementById('r34Paints').innerHTML = root.R34Artwork.defs;
-        doc.getElementById('r34MfdCase').innerHTML = root.R34MfdArt.markup();
-        doc.getElementById('r34Cluster').innerHTML = I.clusterMarkup();
+        doc.getElementById('r34TachModule').innerHTML = root.R34ClusterArt.main('tach');
+        doc.getElementById('r34SpeedModule').innerHTML = root.R34ClusterArt.main('speed');
+        doc.getElementById('r34BoostModule').innerHTML = root.R34ClusterArt.auxiliary('boost');
+        doc.getElementById('r34TempModule').innerHTML = root.R34ClusterArt.auxiliary('temperature');
         doc.getElementById('r34SingleDial').innerHTML = I.mfdDialMarkup('r34Single', 'BOOST');
         doc.getElementById('r34TwinBoost').innerHTML = I.mfdDialMarkup('r34TwinB', 'BOOST');
         doc.getElementById('r34TwinRpm').innerHTML = I.mfdDialMarkup('r34TwinR', 'ENGINE');
-        var labels = ['BOOST', 'ENGINE', 'THROTTLE', 'BRAKE', 'POWER', 'TORQUE', 'FUEL'];
-        var keys = ['boost', 'rpm', 'throttle', 'brake', 'power', 'torque', 'fuel'];
+        var labels = ['BOOST', 'ENGINE', 'THROTTLE', 'BRAKE', 'POWER', 'TORQUE', 'TIRE TEMP'];
+        var keys = ['boost', 'rpm', 'throttle', 'brake', 'power', 'torque', 'tireTemperature'];
         var multi = doc.getElementById('r34Multi');
         for (var n = 0; n < labels.length; n++) {
             var row = doc.createElement('div'); row.className = 'r34-multi-row';
@@ -34,6 +36,28 @@
         this.nodes['r34TwinR-unit'].textContent = 'x1000 rpm';
         this.updatePalette();
     }
+    Renderer.prototype.layout = function (width, height, scale) {
+        var n = this.nodes, shown = n.r34Container.dataset.cluster !== 'hidden';
+        var g = root.R34Layout.layout(width, height, scale, shown);
+        var ids = ['r34TachModule', 'r34SpeedModule', 'r34BoostModule', 'r34TempModule', 'r34Mfd'];
+        var boxes = [g.tach, g.speed, g.boost, g.temperature, g.screen];
+        for (var i = 0; i < ids.length; i++) {
+            var style = n[ids[i]].style, box = boxes[i];
+            style.left = box.x + 'px'; style.top = box.y + 'px';
+            style.width = box.width + 'px'; style.height = box.height + 'px';
+        }
+        n.r34Screen.style.transform = 'scale(' + g.screen.width / 270 + ')';
+        n.r34Readouts.style.left = g.readouts.x - 80 * g.scale + 'px';
+        n.r34Readouts.style.top = g.readouts.y - 20 * g.scale + 'px';
+        n.r34Readouts.style.transform = 'scale(' + g.scale + ')';
+        n.r34ClusterNote.style.left = g.readouts.x - 80 * g.scale + 'px';
+        n.r34ClusterNote.style.top = g.readouts.y + 76 * g.scale + 'px';
+        n.r34ClusterNote.style.transform = 'scale(' + g.scale + ')';
+        n.r34StreamStatus.style.left = (shown ? g.status.x : g.screen.x + g.screen.width / 2) + 'px';
+        n.r34StreamStatus.style.top = Math.min(height - 14, g.status.y) + 'px';
+        this.layoutGeometry = g;
+        return g.screen.width / 270;
+    };
     Renderer.prototype.resizeCanvases = function (scale, dpr) {
         // Layout reads occur only on resize/config/scale/DPR changes, never in render().
         var pairs = [['history', 'historyGeometry'], ['g', 'gGeometry']];
@@ -69,8 +93,8 @@
         }
         var e = config.elements || {};
         nodes.r34Container.hidden = e.showGauge === false;
-        // HUDCore restores generic containers as block; this cockpit owns flex layout.
-        nodes.r34Container.style.display = e.showGauge === false ? 'none' : 'flex';
+        // The full viewport is stationary; each instrument owns its independent anchor.
+        nodes.r34Container.style.display = e.showGauge === false ? 'none' : 'block';
         nodes.r34Mfd.hidden = e.showCenterInfo === false;
         nodes.r34TachFace.hidden = e.showRPM === false;
         nodes.r34TachNeedle.style.display = e.showRPM === false ? 'none' : '';
@@ -91,30 +115,37 @@
     Renderer.prototype.render = function (view, state, config) {
         var n = this.nodes, e = config.elements || {};
         this.text('r34Status', view.status.toUpperCase());
-        this.text('r34StreamStatus', view.live ? '' : view.status === 'waiting' ? 'WAITING FOR TELEMETRY' : view.status === 'paused' ? 'GAME PAUSED · LIVE VALUES UNAVAILABLE' : view.status === 'error' ? 'TELEMETRY ERROR · LIVE VALUES UNAVAILABLE' : view.status === 'unavailable' ? 'TELEMETRY UNAVAILABLE' : 'TELEMETRY STALE · LIVE VALUES UNAVAILABLE');
+        this.text('r34StreamStatus', view.live ? '' : view.status === 'waiting' ? 'WAITING FOR TELEMETRY' : view.status === 'paused' ? 'PAUSED · N/A' : view.status === 'error' ? 'TELEMETRY ERROR' : view.status === 'unavailable' ? 'UNAVAILABLE' : 'STALE · N/A');
         n.r34Container.dataset.status = view.status;
-        n.r34TachNeedle.setAttribute('transform', 'translate(251 207) rotate(' + I.tachAngle(view.rpm) + ')');
+        n.r34TachNeedle.setAttribute('transform', 'translate(108 108) rotate(' + I.tachAngle(view.rpm) + ')');
         n.r34TachNeedle.style.visibility = view.rpm === null ? 'hidden' : 'visible';
-        var physicalSpeed = view.speed === null ? null : view.speed * (view.speedUnit === 'mph' ? 1.609344 : 1);
-        n.r34SpeedNeedle.setAttribute('transform', 'translate(508 207) rotate(' + I.speedAngle(physicalSpeed) + ')');
+        var physicalSpeed = view.speed; // Fixed kmh from the raw m/s adapter.
+        n.r34SpeedNeedle.setAttribute('transform', 'translate(108 108) rotate(' + I.speedAngle(physicalSpeed) + ')');
         n.r34SpeedNeedle.style.visibility = view.speed === null ? 'hidden' : 'visible';
-        n.r34FuelNeedle.setAttribute('transform', 'translate(679 266) rotate(' + I.fuelAngle(view.fuel) + ')');
-        n.r34FuelNeedle.style.visibility = view.fuel === null ? 'hidden' : 'visible';
         this.text('r34Gear', view.gear); this.text('r34DigitalSpeed', value(view.speed) + ' ' + view.speedUnit);
         this.text('r34Distance', view.distance === null ? '—' : view.distance.toFixed(1));
-        var speedOver = e.showSpeed !== false && physicalSpeed > 180, rpmOver = e.showRPM !== false && view.rpm > 10000;
+        var speedOver = e.showSpeed !== false && physicalSpeed > I.SPEED_MAX, rpmOver = e.showRPM !== false && view.rpm > 10000;
         this.text('r34ClusterNote', (speedOver ? 'SPEED OVER SCALE' : '') + (rpmOver ? (speedOver ? '\n' : '') + 'RPM OVER SCALE: ' + Math.round(view.rpm) : ''));
-        this.text('r34DistanceUnit', view.speedUnit === 'mph' ? 'mi' : 'km');
+        this.text('r34DistanceUnit', 'km');
         n.r34RevLamp.classList.toggle('active', view.live && view.rpm !== null && view.redline !== null && view.rpm >= view.redline && e.showRPM !== false);
         if (this.unit !== view.boostSpec.unit) {
             this.unit = view.boostSpec.unit;
             I.setDialLabels(n['r34Single-labels'], view.boostSpec.min, view.boostSpec.max);
             I.setDialLabels(n['r34TwinB-labels'], view.boostSpec.min, view.boostSpec.max);
             I.setHistoryLabels(n.r34HistoryLabels, view.boostSpec.min, view.boostSpec.max);
+            I.setAuxiliaryLabels(n.r34BoostAuxLabels, view.boostSpec.min, view.boostSpec.max);
+            this.text('r34BoostUnit', view.boostSpec.unit);
             this.text('r34HistoryUnit', view.boostSpec.unit);
             this.text('r34Single-unit', view.boostSpec.unit); this.text('r34TwinB-unit', view.boostSpec.unit); this.historySequence = -1;
         }
         var boost = e.showBoost === false ? null : view.boost, boostRatio = e.showBoost === false ? null : view.boostRatio;
+        n.r34BoostNeedle.setAttribute('transform', 'translate(60 60) rotate(' + I.auxiliaryAngle(boostRatio) + ')');
+        n.r34BoostNeedle.style.visibility = boost === null ? 'hidden' : 'visible';
+        n.r34TempNeedle.setAttribute('transform', 'translate(60 60) rotate(' + I.auxiliaryAngle(view.tireTemperatureRatio) + ')');
+        n.r34TempNeedle.style.visibility = view.tireTemperature === null ? 'hidden' : 'visible';
+        this.text('r34BoostValue', value(boost, view.boostSpec.decimals));
+        this.text('r34TempValue', value(view.tireTemperature, 1));
+        this.text('r34TempUnit', view.tireTemperatureUnit);
         if (this.mode === 'single') {
             this.dial('r34Single', boost, boostRatio, e.showBoost === false ? null : view.peakBoost, view.boostSpec.decimals);
             if (this.historySequence !== state.sequence || this.historyLive !== view.live) { this.drawHistory(view, state, e.showBoost !== false); this.historySequence = state.sequence; this.historyLive = view.live; }
@@ -132,8 +163,9 @@
             if (row.key === 'rpm') { max = 10000; unit = 'rpm'; if (e.showRPM === false) num = null; }
             if (row.key === 'power') { max = v.powerUnit === 'kW' ? 750 : 1000; unit = v.powerUnit; if (e.showPowerTorque === false) num = null; }
             if (row.key === 'torque') { max = v.torqueUnit === 'N·m' ? 1500 : 1100; unit = v.torqueUnit; if (e.showPowerTorque === false) num = null; }
+            if (row.key === 'tireTemperature') { min = 0; max = 150; unit = v.tireTemperatureUnit; precision = 1; }
             row.value.textContent = value(num, precision); row.unit.textContent = unit;
-            row.bar.style.transform = 'scaleX(' + (M.ratio(num, min, max) || 0) + ')';
+            row.bar.style.transform = 'scaleX(' + ((row.key === 'tireTemperature' ? v.tireTemperatureRatio : M.ratio(num, min, max)) || 0) + ')';
         }
     };
     Renderer.prototype.drawHistory = function (v, state, show) {

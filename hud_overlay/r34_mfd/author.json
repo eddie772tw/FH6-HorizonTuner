@@ -1,4 +1,4 @@
 {
   "author": "HorizonTuner · Bagley as Codex",
-  "description": "1999 Skyline GT-R BNR34 V·spec cluster with NISMO MFD Ver.II-inspired single/memory, twin, multi, G and lap pages. Original artwork. Forza telemetry adaptation; unsupported engine sensors stay unavailable. Mode and lighting are controlled in HUD settings."
+  "description": "R34 / V-spec tachometer layout adaptation with a Nür 300 kmh speed face, fixed boost and four-wheel average tire-temperature auxiliaries, and five NISMO MFD Ver.II-inspired pages. Speed is intentionally fixed to kmh regardless of global mph settings. Original core-dial artwork; unavailable telemetry stays N/A. Change pages in HUD Advanced Settings."
 }

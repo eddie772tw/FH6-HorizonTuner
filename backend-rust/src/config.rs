@@ -179,6 +179,7 @@ pub fn hud_for_frontend(data: &Value, settings: &Value) -> Value {
         ("boostPressure", &["bar", "psi", "kpa"][..], "bar"),
         ("torque", &["nm", "lbft"][..], "nm"),
         ("power", &["kw", "hp", "ps"][..], "hp"),
+        ("temperature", &["C", "F"][..], "C"),
     ] {
         let configured = hud["units"]
             .get(key)
@@ -204,6 +205,11 @@ pub fn hud_for_frontend(data: &Value, settings: &Value) -> Value {
                 units[key] = v.clone();
             }
         }
+        units["temperature"] = json!(if settings["units"]["temperature"] == "F" {
+            "F"
+        } else {
+            "C"
+        });
     }
     hud["effectiveUnit"] = units["speed"].clone();
     hud["effectiveUnits"] = units;

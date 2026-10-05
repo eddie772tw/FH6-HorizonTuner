@@ -13,8 +13,9 @@
         rpm = root.R34Model.clamp(rpm || 0, 0, 10000);
         return 135 + (rpm <= 3000 ? rpm / 1000 * 15 : 45 + (rpm - 3000) / 1000 * 30);
     }
-    function speedAngle(kmh) { return 140 + root.R34Model.clamp(kmh || 0, 0, 180) / 180 * 240; }
-    function fuelAngle(percent) { return 128 + root.R34Model.clamp(percent || 0, 0, 100) / 100 * 104; }
+    // Nür photographs establish the markings and approximate250° arc; this is a HUD visual mapping, not factory calibration.
+    function speedAngle(kmh) { return 145 + root.R34Model.clamp(kmh || 0, 0, 300) / 300 * 250; }
+    function auxiliaryAngle(ratio) { return 120 + root.R34Model.clamp(ratio || 0, 0, 1) * 120; }
     function mfdDialMarkup(id, label) {
         var A = root.R34Artwork;
         var s = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 144 152" role="img" aria-label="' + label + '">';
@@ -62,9 +63,12 @@
         return 'M76,74 L76,117 A43,43 0 ' + (sweep > 180 ? 1 : 0) + ' 1 ' + x + ',' + y + ' Z';
     }
     root.R34Instruments = {
-        clusterMarkup: function () { return root.R34ClusterArt.markup(); },
+        setAuxiliaryLabels: function (group, min, max) {
+            var A = root.R34Artwork;
+            group.innerHTML = A.txt(41, 28, scaleLabel(max), 8) + A.txt(41, 96, scaleLabel(min), 8);
+        },
         mfdDialMarkup: mfdDialMarkup, setDialLabels: setDialLabels, setHistoryLabels: setHistoryLabels,
-        tachAngle: tachAngle, speedAngle: speedAngle, fuelAngle: fuelAngle, sector: sector
+        SPEED_MAX: 300, tachAngle: tachAngle, speedAngle: speedAngle, auxiliaryAngle: auxiliaryAngle, sector: sector
     };
     if (typeof module !== 'undefined' && module.exports) module.exports = root.R34Instruments;
 })(typeof window !== 'undefined' ? window : globalThis);

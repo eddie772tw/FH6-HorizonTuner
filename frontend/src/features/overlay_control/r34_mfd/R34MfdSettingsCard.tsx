@@ -21,6 +21,6 @@ export function R34MfdSettingsCard({ config, onChange, t }: {
       onChange={event => onChange({ r34Lighting: event.target.value as R34Lighting })}>
       <option value="night">{t('R34 night lighting')}</option><option value="day">{t('R34 day lighting')}</option>
     </select>
-    <p className="small text-body-secondary mb-0">{t('1999 V-spec cluster with NISMO MFD Ver.II design. Change modes here; bezel keys are decorative. No game coolant, oil pressure, oil temperature or front torque split is invented. Live channels use their actual names.')}</p>
+    <p className="small text-body-secondary mb-0">{t('R34 core dials and five NISMO MFD Ver.II pages. Change pages here. Auxiliary gauges show boost and all-four average tire temperature, not coolant. Missing inputs remain N/A.')}</p>
   </div>;
 }

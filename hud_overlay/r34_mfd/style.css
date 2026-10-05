@@ -3,26 +3,26 @@
   --r34-ink: #e0e5df; --r34-dim: #98a39d; --r34-hot: #ed463f; --r34-amber: #d8bd7a;
   --r34-screen: #121b24; --r34-grid: #4c5b66; --r34-green: #77b95a; --r34-teal: #284e59;
   --r34-peak-edge: #78a3a5; --r34-shadow: #0b1014; --r34-lcd: #a4ad94; --r34-lcd-ink: #374536;
-  --r34-silver-top: #929996; --r34-silver-light: #bfc3bd; --r34-silver-mid: #a5aca8; --r34-silver-low: #a1a7a1;
   --r34-readout: #151b20; --r34-readout-border: #323a3f; --hud-default-color: #77b95a;
 }
+.hud-root-wrapper { display: block; padding: 0; }
+/* Keep the viewport unzoomed; onScale applies HUDCore's value to independent islands. */
 .r34-cockpit {
-  position: relative; width: 1280px; height: 410px; display: flex; pointer-events: none;
-  font-family: Arial, sans-serif; transition: none; color: var(--r34-ink);
+  position: fixed; inset: 0; width: 100vw; height: 100vh; display: block; zoom: 1 !important;
+  pointer-events: none; font-family: Arial, sans-serif; transition: none; color: var(--r34-ink);
 }
 .r34-cockpit[data-lighting="day"] {
-  --r34-case: #40464a; --r34-face: #25282a; --r34-lcd: #bcc5a5;
-  --r34-silver-top: #a8aeaa; --r34-silver-light: #d0d4ce; --r34-silver-mid: #b6bcb8; --r34-silver-low: #b1b7b1;
+  --r34-case: #40464a; --r34-face: #3a4143; --r34-screen: #1d2830; --r34-lcd: #bcc5a5;
 }
 .r34-paint-defs { position: absolute; width: 0; height: 0; overflow: hidden; }
-.r34-cluster { position: absolute; left: 520px; top: 48px; width: 760px; height: 350px; }
-.r34-cluster > svg { width: 100%; height: 100%; overflow: visible; }
+.r34-cluster { position: absolute; inset: 0; pointer-events: none; }
+.r34-gauge { position: absolute; }
+.r34-gauge > svg { width: 100%; height: 100%; overflow: visible; }
+.r34-aux-value { font-variant-numeric: tabular-nums; font-weight: 600; }
 .r34-lcd-readout { font-family: monospace; font-size: 15px; letter-spacing: .2px; }
-.r34-mfd { position: absolute; left: 0; top: 0; width: 500px; height: 244px; }
-.r34-mfd-case, .r34-mfd-case svg { position: absolute; inset: 0; width: 100%; height: 100%; }
-#r34RevLamp.active .r34-rev-core { fill: var(--r34-hot); }
+.r34-mfd { position: absolute; transform-origin: top left; }
 .r34-screen {
-  position: absolute; left: 63px; top: 51px; width: 270px; height: 152px; overflow: hidden;
+  position: absolute; left: 0; top: 0; transform-origin: top left; width: 270px; height: 152px; overflow: hidden;
   background: var(--r34-screen); border-radius: 1px; color: var(--r34-ink);
 }
 .r34-screen::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(to bottom, transparent 0, transparent 1.7px, var(--r34-shadow) 1.7px, var(--r34-shadow) 2px); opacity: .13; }
@@ -42,15 +42,15 @@
 .r34-mfd-number { font-size: 11px; font-weight: 700; }
 .r34-mfd-unit { font-size: 8px; }
 .r34-mfd-symbol { font-size: 8px; font-weight: 700; }
-.r34-digital { font-size: 15px; font-weight: 700; }
+.r34-digital { font-size: 16px; font-weight: 700; }
 .r34-peak-label { font-size: 8.5px; font-weight: 700; }
 .r34-peak-value { font-size: 10px; }
 .r34-multi { flex-direction: column; gap: 1.5px; padding: 5px; }
-.r34-multi-row { width: 100%; height: 19px; border: 1px solid var(--r34-ink); display: grid; grid-template-columns: 66px 1fr 75px; font: italic 9px Arial, sans-serif; }
+.r34-multi-row { width: 100%; height: 19px; border: 1px solid var(--r34-ink); display: grid; grid-template-columns: 66px 1fr 75px; font: italic 9.5px Arial, sans-serif; }
 .r34-multi-row label { padding: 3px; border-right: 1px solid var(--r34-ink); }
 .r34-multi-row .r34-bar { position: relative; margin: 1px; background: var(--r34-shadow); overflow: hidden; }
 .r34-bar i { position: absolute; inset: 0; transform-origin: left; background: var(--r34-green); }
-.r34-multi-row strong { text-align: right; font-size: 10px; padding: 2px; border-left: 1px solid var(--r34-ink); white-space: nowrap; }
+.r34-multi-row strong { text-align: right; font-size: 11px; padding: 2px; border-left: 1px solid var(--r34-ink); white-space: nowrap; }
 .r34-multi-row small { font-size: 7px; margin-left: 2px; }
 .r34-g-page { flex-direction: column; gap: 2px; padding: 5px 7px; }
 #r34G { width: 256px; height: 126px; display: block; }
@@ -64,19 +64,13 @@
 .r34-lap-history > div { display: flex; justify-content: space-between; border: 1px solid var(--r34-ink); padding: 4px; }
 .r34-lap-history ol { list-style: none; padding: 0; margin: 0; }
 .r34-lap-history li { height: 20px; padding: 4px 3px; border: 1px solid var(--r34-ink); border-top: none; display: flex; justify-content: space-between; font-size: 8px; }
-.r34-readouts {
-  position: absolute; left: 745px; top: 378px; width: 310px; height: 32px; display: flex; align-items: center;
-  justify-content: space-between; gap: 12px; padding: 2px 12px; border: 1px solid var(--r34-readout-border);
-  border-radius: 3px; background: var(--r34-readout); color: var(--r34-ink);
-}
-.r34-gear { display: flex; align-items: center; gap: 13px; }
-.r34-gear small { font: 9px Arial, sans-serif; color: var(--r34-dim); }
-.r34-gear strong { font: 25px Arial, sans-serif; min-width: 18px; text-align: center; }
-#r34DigitalSpeedGroup { padding-left: 12px; border-left: 1px solid var(--r34-readout-border); }
-#r34DigitalSpeed { font: 22px Arial, sans-serif; white-space: nowrap; }
-#r34Status { font: 8px Arial, sans-serif; color: var(--r34-dim); }
-.r34-scale-note { position: absolute; top: 386px; left: 1065px; width: 210px; height: 24px; white-space: pre-line; color: var(--r34-amber); font: 9px Arial, sans-serif; text-align: center; }
-.r34-stream-status { position: absolute; top: 417px; left: 520px; width: 760px; height: 12px; line-height: 12px; text-align: center; white-space: nowrap; color: var(--r34-amber); font: 9px Arial, sans-serif; letter-spacing: .6px; }
-.r34-cockpit[data-cluster="hidden"] { width: 500px; height: 244px; }
+.r34-readouts { position: absolute; width: 160px; height: 96px; transform-origin: top left; text-align: center; }
+.r34-gear { position: absolute; left: 0; top: 0; width: 100%; display: block; height: 40px; line-height: 40px; }
+.r34-gear strong { font: 32px/40px Arial, sans-serif; }
+#r34RevLamp { position: absolute; width: 5px; height: 5px; left: 110px; top: 18px; border-radius: 50%; background: transparent; }
+#r34RevLamp.active { background: var(--r34-hot); }
+#r34DigitalSpeedGroup { position: absolute; top: 48px; left: 0; width: 100%; display: block; }
+#r34DigitalSpeed { font: 22px/26px Arial, sans-serif; white-space: nowrap; }
+.r34-scale-note { position: absolute; width: 160px; min-height: 24px; white-space: pre-line; color: var(--r34-amber); font: 9px/11px Arial, sans-serif; text-align: center; transform-origin: top left; }
+.r34-stream-status { position: absolute; height: 12px; line-height: 12px; transform: translateX(-50%); text-align: center; white-space: nowrap; color: var(--r34-amber); font: 9px Arial, sans-serif; letter-spacing: .4px; }
 .r34-cockpit[data-cluster="hidden"] .r34-readouts, .r34-cockpit[data-cluster="hidden"] .r34-scale-note { display: none; }
-.r34-cockpit[data-cluster="hidden"] .r34-stream-status { top: 251px; left: 0; width: 500px; }

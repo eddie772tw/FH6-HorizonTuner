@@ -25,11 +25,15 @@ try {
         if (!node.textContent.trim()) return null;
         const b = node.getBoundingClientRect();
         const cluster = document.getElementById('r34Cluster');
-        const owner = (cluster.hidden ? document.getElementById('r34Mfd') : cluster).getBoundingClientRect();
+        const owner = document.getElementById(cluster.hidden ? 'r34Mfd' : 'r34SpeedModule').getBoundingClientRect();
         return { text: node.textContent, clear: b.top >= owner.bottom, fits: b.left >= 0 && b.right <= innerWidth && b.bottom <= innerHeight };
       });
-      if (status) assert(status.clear && status.fits, 'Stream status must fit in clear space below the physical case');
+      if (status) assert(status.clear && status.fits, 'Stream status must fit below the live instrument islands');
       report.checks.push({ name, viewport: [width, height], dpr, bounds, status });
+      if (width === 1280 && dpr === 1) {
+        const crop = 'mfd-' + name + '-dpr1.png';
+        await page.locator('#r34Mfd').screenshot({ path: path.join(out, crop), omitBackground: true }); report.screenshots.push(crop);
+      }
     };
     const inspectCanvas = async id => {
       const geometry = await page.locator('#' + id).evaluate(canvas => {
@@ -65,15 +69,22 @@ try {
       report.checks.push({ mode, dialReadability: dials });
     };
     await configure({}); await save('waiting');
-    const physicalLayout = await page.evaluate(() => {
-      const box = id => document.getElementById(id).getBoundingClientRect();
-      const mfd = box('r34Mfd'), cluster = box('r34Cluster'), screen = box('r34Screen');
-      return { mfdOnLeft: mfd.right < cluster.left, caseAspect: mfd.width / mfd.height, screenAspect: screen.width / screen.height };
-    });
-    assert(physicalLayout.mfdOnLeft, 'The center MFD stays left of the RHD driver cluster');
-    assert(physicalLayout.caseAspect > 1.9 && physicalLayout.caseAspect < 2.2, 'The MFD must retain its low/wide physical case');
-    assert(Math.abs(physicalLayout.screenAspect - 16 / 9) < .02, 'The active LCD retains the period widescreen proportion');
-    report.checks.push({ physicalLayout });
+    const inspectLayout = async () => {
+      const layout = await page.evaluate(() => {
+        const ids = ['r34TachModule', 'r34SpeedModule', 'r34BoostModule', 'r34TempModule', 'r34Mfd'];
+        const boxes = ids.map(id => { const r = document.getElementById(id).getBoundingClientRect(); return { id, x: r.x, y: r.y, right: r.right, bottom: r.bottom, width: r.width, height: r.height }; });
+        return { boxes, clusterHidden: document.getElementById('r34Cluster').hidden, width: innerWidth, height: innerHeight };
+      });
+      const visible = layout.clusterHidden ? layout.boxes.slice(-1) : layout.boxes;
+      assert(visible.every(b => b.x >= 0 && b.y >= 0 && b.right <= layout.width + .01 && b.bottom <= layout.height + .01), 'Independent islands must fit the viewport');
+      if (!layout.clusterHidden) {
+        assert(layout.boxes[0].right < layout.boxes[1].x, 'R34 main dials preserve tach-left/speed-right and a clear center');
+        assert(layout.boxes[3].right < layout.boxes[4].x, 'Right auxiliary must not overlap the MFD');
+      }
+      const screen = layout.boxes.at(-1); assert(Math.abs(screen.width / screen.height - 270 / 152) < .01);
+      report.checks.push({ layout });
+    };
+    await inspectLayout();
     await inspectDials('single');
     await inspectCanvas('r34History');
     for (const mode of ['single', 'twin', 'multi', 'g', 'lap']) {
@@ -81,13 +92,44 @@ try {
       for (let sample = 0; sample < 80; sample++) await frame({ Boost: (1 + Math.sin(sample / 12) * .4) * 14.5038, LapNumber: mode === 'lap' ? Math.floor(sample / 20) + 3 : 3 });
       await frame({ LapNumber: mode === 'lap' ? 6 : 3 }); await save(mode);
       if (width === 1280) {
-        const filename = 'detail-' + mode + '-dpr' + dpr + '.png';
+        const filename = 'context-' + mode + '-dpr' + dpr + '.png';
         await page.locator('#r34Container').screenshot({ path: path.join(out, filename), omitBackground: true });
         report.screenshots.push(filename);
       }
       assert.equal(await page.locator('[data-mode]:not([hidden])').getAttribute('data-mode'), mode);
       if (mode === 'single' || mode === 'g') await inspectCanvas(mode === 'g' ? 'r34G' : 'r34History');
       if (mode === 'single' || mode === 'twin') await inspectDials(mode);
+    }
+    await configure({ r34MfdMode: 'multi' }); await frame({ TireTemp: [32, 68, 104, 140] });
+    assert.equal(await page.locator('#r34TempValue').textContent(), '30.0');
+    assert.equal(await page.locator('#r34Multi .r34-multi-row:last-child label').textContent(), 'TIRE TEMP');
+    assert.equal(await page.locator('#r34Multi .r34-multi-row:last-child strong span').textContent(), '30.0');
+    const cAngle = await page.locator('#r34TempNeedle').getAttribute('transform');
+    const cBar = await page.locator('#r34Multi .r34-multi-row:last-child i').getAttribute('style');
+    await save('temperature-c');
+    await configure({ r34MfdMode: 'multi', effectiveUnits: { ...baseConfig.effectiveUnits, temperature: 'F' } });
+    await frame({ TireTemp: [32, 68, 104, 140] });
+    assert.equal(await page.locator('#r34TempValue').textContent(), '86.0');
+    assert.equal(await page.locator('#r34TempUnit').textContent(), '°F');
+    assert.equal(await page.locator('#r34TempNeedle').getAttribute('transform'), cAngle);
+    assert.equal(await page.locator('#r34Multi .r34-multi-row:last-child i').getAttribute('style'), cBar);
+    await save('temperature-f');
+    await frame({ TireTemp: [32, null, 104, 140] });
+    assert.equal(await page.locator('#r34TempValue').textContent(), 'N/A');
+    assert.equal(await page.locator('#r34Multi .r34-multi-row:last-child strong span').textContent(), 'N/A');
+    assert.equal(await page.locator('#r34TempNeedle').evaluate(node => getComputedStyle(node).visibility), 'hidden');
+    await save('missing-one-tire');
+    await configure({ r34MfdMode: 'multi' }); await frame({ TireTemp: [0, 0, 0, 0] });
+    assert.equal(await page.locator('#r34TempValue').textContent(), '-17.8'); await save('zero-fahrenheit-input');
+    await frame({ TireTemp: [-40, -40, -40, -40] });
+    assert.equal(await page.locator('#r34TempValue').textContent(), '-40.0'); await save('negative-tire-temperature');
+    for (const [name, boost, tire] of [['min', -.5, 32], ['mid', .75, 167], ['max', 2, 302]]) {
+      await configure({ r34MfdMode: 'single' }); await frame({ Boost: boost * 14.5038, TireTemp: [tire, tire, tire, tire] });
+      const directions = await page.locator('#r34BoostNeedle, #r34TempNeedle').evaluateAll(nodes => nodes.map(node => {
+        const matrix = node.transform.baseVal.consolidate().matrix; return { x: matrix.a, y: matrix.b };
+      }));
+      assert(directions.every(d => d.x < 0 && (name === 'min' ? d.y > 0 : name === 'max' ? d.y < 0 : Math.abs(d.y) < .001)), 'Both auxiliary needles must use the same left hemisphere');
+      await save('sweep-' + name);
     }
     const gMarker = async () => page.locator('#r34G').evaluate(canvas => {
       const pixels = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height).data;
@@ -99,9 +141,11 @@ try {
     });
     for (const mode of ['single', 'g']) {
       await configure({ r34MfdMode: mode, scale: 1 }); await frame({});
+      await inspectLayout();
       const full = await inspectCanvas(mode === 'g' ? 'r34G' : 'r34History');
       const fullMarker = mode === 'g' ? await gMarker() : null;
       await configure({ r34MfdMode: mode, scale: .7 }); await frame({});
+      await inspectLayout();
       const compact = await inspectCanvas(mode === 'g' ? 'r34G' : 'r34History');
       assert(compact.pixelWidth < full.pixelWidth && compact.pixelHeight < full.pixelHeight, 'Compact HUD must resize backing');
       if (mode === 'g') {
@@ -131,7 +175,13 @@ try {
     assert.equal(await page.locator('#r34LapList li:first-child span:first-child').textContent(), '1');
     await save('first-completed-lap');
     await configure({ r34MfdMode: 'single', r34Lighting: 'day' }); await frame({}); await save('day');
+    const fixedSpeedNeedle = await page.locator('#r34SpeedNeedle').getAttribute('transform');
+    const fixedSpeedFace = await page.locator('#r34SpeedFace').innerHTML();
     await configure({ r34MfdMode: 'single', effectiveUnits: { speed: 'mph', boostPressure: 'psi' } }); await frame({ Boost: -7.2519, Gear: 0 }); await save('imperial-vacuum'); await inspectDials('single');
+    assert.equal(await page.locator('#r34DigitalSpeed').textContent(), '162 kmh');
+    assert.equal(await page.locator('#r34SpeedNeedle').getAttribute('transform'), fixedSpeedNeedle);
+    assert.equal(await page.locator('#r34SpeedFace').innerHTML(), fixedSpeedFace);
+    assert.equal(await page.locator('#r34SpeedFace text').textContent(), 'kmh');
     assert.equal(await page.locator('#r34Single-value').textContent(), '-7.3'); assert.equal(await page.locator('#r34Gear').textContent(), 'R');
     await configure({ r34MfdMode: 'single', effectiveUnits: { speed: 'kmh', boostPressure: 'kpa' } }); await frame({ Boost: 43.5114, CurrentEngineRpm: 12000, SpeedMetersPerSecond: 100 }); await save('over-scale-kpa'); await inspectDials('single');
     assert.equal(await page.locator('#r34Single-value').textContent(), '300'); assert.match(await page.locator('#r34DigitalSpeed').textContent(), /360/);
@@ -150,21 +200,39 @@ try {
     assert.equal(await page.locator('#r34SpeedFace').isVisible(), true);
     assert.equal(await page.locator('#r34GearGroup').isVisible(), true);
     assert.match(await page.locator('#r34ClusterNote').textContent(), /SPEED OVER SCALE/);
-    await configure({}); await frame({ Boost: null, CurrentEngineRpm: null, SpeedMetersPerSecond: null, Fuel: null, Gear: null }); await save('missing');
+    await configure({}); await frame({ Boost: null, CurrentEngineRpm: null, SpeedMetersPerSecond: null, Fuel: null, Gear: null, TireTemp: null }); await save('missing');
     assert.equal(await page.locator('#r34Single-value').textContent(), 'N/A');
+    assert.equal(await page.locator('#r34DigitalSpeed').textContent(), 'N/A kmh');
     await frame({ IsRaceOn: 0 }); await save('paused'); assert.equal(await page.locator('#r34Status').textContent(), 'PAUSED');
     await frame({}); await page.waitForTimeout(1700); await save('stale'); assert.equal(await page.locator('#r34Single-value').textContent(), 'N/A');
+    assert.equal(await page.locator('#r34TempValue').textContent(), 'N/A');
     await configure({ r34ShowCluster: false, r34MfdMode: 'multi', scale: .7, useDefaultColors: false, customColor: '#70c9df' }); await frame({}); await save('compact-mfd-only-custom');
-    assert.equal(await page.locator('#r34Cluster').isVisible(), false);
+    assert.equal(await page.locator('#r34Cluster').isVisible(), false); await inspectLayout();
+    await configure({ elements: { ...baseConfig.elements, showGear: false, showRPM: true } }); await frame({ CurrentEngineRpm: 8500 });
+    assert.equal(await page.locator('#r34GearGroup').isVisible(), false);
+    assert.equal(await page.locator('#r34RevLamp').isVisible(), true);
+    assert.equal(await page.locator('#r34RevLamp').evaluate(node => node.classList.contains('active')), true);
+    await save('gear-hidden-rev-active');
     await configure({}); await frame({ CarOrdinal: 999, Boost: 0, Gear: 11 }); assert.equal(await page.locator('#r34Single-peak').textContent(), '0.00'); await save('new-car-neutral');
     await page.evaluate(() => window.HUDCore.handleMessage('hud:elements', { showGauge: false })); assert.equal(await page.locator('#r34Container').isVisible(), false);
     await configure({}); await frame({}); assert.equal(await page.locator('#r34Container').isVisible(), true);
     await page.evaluate(() => window.HUDCore.handleMessage('hud:elements', { showGauge: true }));
-    assert.equal(await page.locator('#r34Container').evaluate(node => getComputedStyle(node).display), 'flex');
-    assert.equal(await page.locator('.r34-bezel-keys button').count(), 0);
+    assert.equal(await page.locator('#r34Container').evaluate(node => getComputedStyle(node).display), 'block');
+    assert.equal(await page.locator('#r34MfdCase, .r34-bezel-keys, .r34-joystick').count(), 0);
     await configure({ r34MfdMode: 'twin' }); await frame({ CurrentEngineRpm: 6800 });
     assert.equal(await page.locator('#r34TwinR-value').textContent(), '6.8');
     await page.reload(); await page.waitForFunction(() => Boolean(window.R34Hud)); await configure({}); assert.equal(await page.locator('#r34Status').textContent(), 'WAITING');
+    if (width === 1280 && dpr === 1) {
+      for (const [rw, rh] of [[2560, 1440], [3440, 1440], [3840, 360]]) {
+        await page.setViewportSize({ width: rw, height: rh });
+        for (const scale of [.7, 1, 2]) {
+          await configure({ scale }); await frame({}); await inspectLayout(); await inspectCanvas('r34History');
+          const filename = 'responsive-' + rw + 'x' + rh + '-scale' + scale + '.png';
+          await page.screenshot({ path: path.join(out, filename), omitBackground: true }); report.screenshots.push(filename);
+        }
+        await configure({ r34ShowCluster: false, scale: 2, r34MfdMode: 'g' }); await frame({}); await inspectLayout(); await inspectCanvas('r34G');
+      }
+    }
     await context.close();
   }
   assert.deepEqual(report.errors, []);

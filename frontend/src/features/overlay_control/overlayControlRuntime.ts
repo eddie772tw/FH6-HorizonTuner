@@ -56,6 +56,10 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
+function normalizeTemperatureUnit(value: unknown): HudDisplayUnits['temperature'] {
+  return value === 'F' ? 'F' : 'C';
+}
+
 function withoutDerivedChannelFields(record: Record<string, unknown>): Record<string, unknown> {
   return Object.fromEntries(Object.entries(record).filter(([key]) => !DERIVED_CHANNEL_FIELDS.has(key)));
 }
@@ -86,10 +90,15 @@ export function normalizeHudRuntimeConfig(input: unknown): HudConfigRecord {
     classicJdmDefiTheme?: unknown;
     [key: string]: unknown;
   })));
+  const configuredUnits = isRecord(normalized.units) ? normalized.units : {};
   return {
     ...DEFAULT_HUD_CONFIG,
     ...normalized,
-    units: { ...DEFAULT_HUD_CONFIG.units, ...(isRecord(normalized.units) ? normalized.units : {}) },
+    units: {
+      ...DEFAULT_HUD_CONFIG.units,
+      ...configuredUnits,
+      temperature: normalizeTemperatureUnit(configuredUnits.temperature),
+    },
     elements: { ...DEFAULT_HUD_CONFIG.elements, ...(isRecord(normalized.elements) ? normalized.elements : {}) },
   } as HudConfigRecord;
 }
@@ -134,6 +143,7 @@ export function createOverlayControlRuntime(
     boostPressure: 'bar',
     torque: 'nm',
     power: 'hp',
+    temperature: 'C',
   };
   const listeners = new Set<() => void>();
 
@@ -315,7 +325,7 @@ export function createOverlayControlRuntime(
       setSnapshot({ config, status: 'ready', error: null, pendingWrites: 0 });
     },
     setEffectiveUnits(units) {
-      effectiveUnits = units;
+      effectiveUnits = { ...units, temperature: normalizeTemperatureUnit(units.temperature) };
       publish();
     },
     publishConfig() {
