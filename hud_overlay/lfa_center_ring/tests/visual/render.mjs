@@ -159,6 +159,11 @@ try {
     for (let i = 0; i < 9; i++) { await page.waitForTimeout(180); await send(frame, 'hud:frame', { data: duplicate }); }
     await page.waitForTimeout(40); assert.equal(await text(frame, 'Status'), 'Pending......'); assert.equal(await text(frame, 'Speed'), '—'); assert.equal(await text(frame, 'Tire'), 'N/A'); assert.equal(await text(frame, 'LapTime'), '—:—');
     if (width === 1920 && dpr === 2) await frame.locator('#lfaContainer').screenshot({ path: path.join(out, 'detail-no-signal.png'), omitBackground: true });
+    // UDP expires at1.5s; confirmed race has its own longer exit grace. This
+    // assertion intentionally tests idle reconnect after that grace has ended.
+    // The clock-controlled real-launcher fixture separately asserts LIVE while
+    // reconnecting inside race grace, then PI after fresh nonrace timing exits.
+    await frame.waitForFunction(() => document.getElementById('lfaContainer').dataset.expandedPage === 'telemetry');
     await reading(); assert.equal(await text(frame, 'Status'), 'S2 850'); assert.equal(await text(frame, 'Tire'), '95°C');
     await send(frame, 'hud:elements', { showGauge: false }); assert.equal(await frame.locator('#lfaContainer').isVisible(), false);
     await send(frame, 'hud:elements', { showGauge: true }); assert.equal(await frame.locator('#lfaContainer').isVisible(), true);

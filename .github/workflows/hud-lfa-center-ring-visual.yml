@@ -47,11 +47,31 @@ jobs:
         run: PLAYWRIGHT_CHANNEL=chrome PLAYWRIGHT_MODULE_PATH="$RUNNER_TEMP/hud-browser/node_modules/playwright" OUTPUT_DIR="$RUNNER_TEMP/hud-lfa-center-ring-preview" node hud_overlay/lfa_center_ring/tests/visual/launcher.cjs
       - name: Verify real HUD settings controls and config delivery
         run: PLAYWRIGHT_CHANNEL=chrome PLAYWRIGHT_MODULE_PATH="$RUNNER_TEMP/hud-browser/node_modules/playwright" OUTPUT_DIR="$RUNNER_TEMP/hud-lfa-center-ring-preview" node frontend/src/features/overlay_control/lfa_center_ring/tests/browser/verify.cjs
-      - name: Upload visual evidence, including failures
+      - name: Stage status evidence with launcher paths
+        if: always()
+        run: |
+          for file in "$RUNNER_TEMP/hud-lfa-center-ring-preview"/launcher/status-*.png "$RUNNER_TEMP/hud-lfa-center-ring-preview/launcher/status-report.json"; do
+            if [ -f "$file" ]; then
+              mkdir -p "$RUNNER_TEMP/hud-lfa-center-ring-status/launcher"
+              cp "$file" "$RUNNER_TEMP/hud-lfa-center-ring-status/launcher/"
+            fi
+          done
+      - name: Upload base visual evidence, including failures
         if: always()
         uses: actions/upload-artifact@v7
         with:
           name: hud-lfa-center-ring-visual-${{ github.event.pull_request.head.sha }}
-          path: ${{ runner.temp }}/hud-lfa-center-ring-preview
+          path: |
+            ${{ runner.temp }}/hud-lfa-center-ring-preview/**
+            !${{ runner.temp }}/hud-lfa-center-ring-preview/launcher/status-*.png
+            !${{ runner.temp }}/hud-lfa-center-ring-preview/launcher/status-report.json
           if-no-files-found: error
+          retention-days: 14
+      - name: Upload status visual evidence, including failures
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: hud-lfa-center-ring-status-${{ github.event.pull_request.head.sha }}
+          path: ${{ runner.temp }}/hud-lfa-center-ring-status
+          if-no-files-found: warn
           retention-days: 14

@@ -35,7 +35,11 @@ async function verifyStatus({browser,origin,config,raw,out}){
    await feed(100,{CarOrdinal:999});await capture('reconnected-reset','S2 850');await slot('car');await capture('unknown-car','CAR N/A');
    await feed(100,{CarOrdinal:1260,CarClass:0,CarPerformanceIndex:100});await capture('class-d','D 100');await feed(100,{CarPerformanceIndex:0});await capture('invalid-pi','PI N/A');
    await feed(100,{CarClass:5,CarPerformanceIndex:850,CurrentLap:1,CurrentRaceTime:1,RacePosition:3});await feed(500,{CurrentLap:1.5,CurrentRaceTime:1.5});await capture('race-priority','P3');
-   await feed(100,{CurrentLap:0,CurrentRaceTime:2,LapNumber:1,LastLap:85,BestLap:85});await capture('lap-notice','BEST LAP');
+   await page.clock.runFor(1700);await capture('race-grace-udp-stale','Pending......');
+   await feed(100,{CurrentLap:null,RacePosition:0});await capture('reconnect-during-race-grace','LIVE');
+   for(let i=0;i<4;i++)await feed(500);await capture('idle-after-race-grace','S2 850');
+   await feed(100,{CurrentLap:2,CurrentRaceTime:2,RacePosition:3});await feed(500,{CurrentLap:2.5,CurrentRaceTime:2.5});await capture('race-reconfirmed','P3');
+   await feed(100,{CurrentLap:0,CurrentRaceTime:3,LapNumber:1,LastLap:85,BestLap:85});await capture('lap-notice','BEST LAP');
    for(let i=0;i<4;i++)await feed(500,{CurrentLap:null,RacePosition:0});await capture('notice-after-race-end','BEST LAP');
    for(let i=0;i<3;i++)await feed(400);assert.notEqual((await status()).text,'BEST LAP');await capture('notice-expired-carousel');
    await feed(100,{CurrentLap:0,CurrentRaceTime:0,LapNumber:0,LastLap:0,BestLap:0,RacePosition:0});
