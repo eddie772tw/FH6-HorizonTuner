@@ -7,7 +7,6 @@
     const nonnegative = (value) => finite(value) !== null && value >= 0 ? value : null;
     const ratio = (value) => finite(value) === null ? null : Math.max(0, Math.min(1, value));
     const speedReading = (value) => finite(value) !== null && Math.abs(value) <= 999 ? Math.abs(value) : null;
-    const fuelRatio = (value) => finite(value) !== null && value >= 0 && value <= 1 ? value : null;
     const object = (value) => value && typeof value === 'object' ? value : {};
 
     function gear(value) {
@@ -30,6 +29,8 @@
         const glow = finite(p.glowIntensity);
         return {
             isMetric: metric,
+            temperatureUnit: ['C', 'F'].includes(p.effectiveUnits?.temperature) ? p.effectiveUnits.temperature : ['C', 'F'].includes(p.units?.temperature) ? p.units.temperature : old.temperatureUnit || null,
+            boostUnit: root.LfaAuxiliary.unit(p.effectiveUnits?.boostPressure) || root.LfaAuxiliary.unit(p.units?.boostPressure) || old.boostUnit || null,
             accent,
             glow: glow === null ? old.glow : Math.max(0, Math.min(2, glow)),
             showGauge: typeof p.elements?.showGauge === 'boolean' ? p.elements.showGauge : old.showGauge,
@@ -46,13 +47,14 @@
         const maxRpm = positive(d.maxRpm) ?? positive(d.max_rpm);
         const redline = positive(p.redlineRpm) ?? positive(d.redlineRpm);
         const raceOn = d.isRaceOn ?? d.is_race_on ?? d.IsRaceOn;
+        const timestamp = nonnegative(d.timestamp_ms) ?? nonnegative(d.TimestampMS);
         return {
             rpm: nonnegative(d.rpm), maxRpm,
             redline: maxRpm && redline ? Math.min(maxRpm, redline) : null,
             speed, speedUnit: metric ? 'km/h' : 'mph', gear: gear(d.gear),
             throttle: ratio(d.throttle), brake: ratio(d.brake),
-            fuelRatio: fuelRatio(d.fuel_ratio),
-            timestamp: nonnegative(d.timestamp_ms) ?? nonnegative(d.TimestampMS),
+            auxiliary: root.LfaAuxiliary.normalize(d), race: root.LfaSession.normalize(d, timestamp),
+            timestamp,
             raceOn: raceOn !== 0 && raceOn !== false,
             failed: d.success === false || p.success === false || Boolean(d.error || p.error),
         };
@@ -67,13 +69,14 @@
         return Math.PI / 2 + Math.max(0, Math.min(1, (nonnegative(rpm) || 0) / maximum)) * Math.PI * 5 / 3;
     }
     function newState() {
-        return { latest: null, token: null, lastAdvance: null, blocked: false, settings: config({}) };
+        return { latest: null, token: null, lastAdvance: null, blocked: false, settings: config({}), race: root.LfaSession.create() };
     }
     function ingest(state, data, payload, now) {
         const latest = frame(data, payload, state.settings);
         state.latest = latest;
         state.blocked = latest.failed || !latest.raceOn;
         const hasReading = latest.rpm !== null || latest.speed !== null;
+        root.LfaSession.update(state.race, latest.race, now, hasReading && !state.blocked);
         // Timestamp changes, not onFrame delivery, prove fresh UDP data: coordinator replays frames.
         // Untimestamped third-party fixtures are supported only when meaningful values change.
         const token = latest.timestamp !== null ? 't:' + latest.timestamp
@@ -100,7 +103,9 @@
             needle: live && source.rpm !== null ? angle(source.rpm, dial.maximum) : null,
             speedText: source.speed === null ? '—' : String(Math.round(source.speed)),
             rpmText: source.rpm === null ? '—' : Math.round(source.rpm).toLocaleString('en-US'),
-            fuelText: source.fuelRatio === null ? 'N/A' : String(Math.round(source.fuelRatio * 100)) + '%',
+            auxiliary: root.LfaAuxiliary.display(source.auxiliary, state.settings),
+            lapText: root.LfaSession.formatLap(source.race.currentLap),
+            centerText: root.LfaSession.centerText(state.race, source.race, now, live, shift, status),
         };
     }
     root.LfaModel = { STALE_MS, finite, gear, config, frame, scale, angle, newState, ingest, view };

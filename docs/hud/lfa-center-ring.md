@@ -2,128 +2,101 @@
 
 作者：Bagley as Codex。樣式 ID：`lfa_center_ring`。
 
-## 原型、設計方向與適合玩家
+## 原型、方向與目前修改
 
-以 **2012 Lexus LFA、車主手冊的 Normal display（非 Menu display）** 為明確原型。此處的 Normal 是儀表版面名稱，不宣稱遊戲提供原車 NORMAL／SPORT 駕駛模式。本設計保留厚金屬中央錶環、黑底白字、順時針 0–10 轉速刻度、上方數位速度與中央檔位，以及兩側克制的窄翼資訊。
+原型為 **2012 Lexus LFA 車主手冊的 Normal display**，保留已核准的厚金屬環、黑底白字、中央速度／檔位、0–10 轉速刻度及四弧側面輪廓。Normal display 是「主錶置中、沒有左側選單」的版面名稱，與 AUTO／NORMAL／SPORT 駕駛模式不同。
 
-適合喜歡真實量產超跑儀表、手排換檔與山路巡航、想減少一般賽車電腦欄位密度的玩家。不是既有 Mustang S650 的換色，也不是 GT3 賽車資料面板。金屬環與側翼由原創 SVG 製作，使用 **Inkscape 1.4** 匯出透明 PNG，再以 **ImageMagick 7.1.1-43** 無損移除 metadata／最佳化壓縮；靜態材質走 PNG，轉速刻度／指針走 Canvas，文字走 DOM。
+適合偏好真實量產超跑儀表、手排換檔與山路巡航的玩家。中央 material、geometry、PNG／SVG 原檔與刻度／指針繪圖維持原樣；此次依使用者明確要求，修改側錶資料含義，並允許中央原 LIVE 區域顯示排名與短暫單圈通知。
 
-## 實際瀏覽器預覽
+- 左上弧條與左側中央讀數：四輪平均胎溫，明確標示 TIRE 4W
+- 左下／右下：油門／煞車 0–100%，沒有舊燃油／機油圖示，保留 THR／BRK 文字與百分比
+- 右上：可帶負值的增壓，原創渦輪圖示與可見 bar／psi／kPa 單位
+- 右側中央：封包回報的目前單圈經過時間，沒有資料時保留 `—:—`
+- 中央原 LIVE 區：有效排名 `P#`；完成單圈／最佳單圈改善時短暫提示，之後回到排名或 LIVE
 
-本次依使用者回饋只重建兩側子錶。以下是 commit `ad4458ec975678055a0b8555e3b0c99f53191aba` 的新實際截圖；browser gate 與獨立像素檢視已完成。**新側錶已實作並檢查，等待使用者視覺回饋，尚未獲使用者核准**。所有截圖輸入為合成遙測 fixture，不是 Forza 遊戲截圖。
+## 精確資料與單位契約
 
-![公制中央環儀表細節](../assets/lfa-center-ring/metric-detail.png)
-
-![SHIFT、倒車、空檔、部分資料、斷線與高轉速量尺](../assets/lfa-center-ring/state-contact-sheet.png)
-
-![1280×720 完整 viewport 與右下角位置](../assets/lfa-center-ring/metric-720p.png)
-
-狀態拼圖僅縮小並排列實際截圖，未重新繪製儀表；其他預覽只移除 metadata 並最佳化 PNG 壓縮。原始 artifact 保留全部尺寸與狀態。
-
-另存 [燃油 0%](../assets/lfa-center-ring/fuel-empty.png) 與 [燃油 100%](../assets/lfa-center-ring/fuel-full.png) 實際截圖：真實空油箱與 N/A 使用不同標示，缺失資料不會偽裝成 0%。
-
-## 官方視覺來源與授權
-
-- [Lexus USA：2012 Lexus LFA 官方圖庫](https://pressroom.lexus.com/album/2012-lexus-lfa/)：核對車型與年份；開發時圖庫的 S3 縮圖回傳 AccessDenied，因此沒有把未看見的照片列為已驗證構圖。
-- [Toyota／Lexus 官方車主手冊 OM77006U](https://assets.sia.toyota.com/publications/en/om-s/OM77006U/pdf/OM77006U.pdf#page=118)：**印刷第 116 頁，PDF 第 118 頁**，已下載並實際檢視 Normal display 與 Menu display 的像素。Normal 圖可辨識金屬大環、0–10 tachometer、速度位於檔位上方、窄側翼與原車輔助儀表。此為本次可驗證的主要視覺來源。
-
-### 側錶二次研究：實車照片與模式區分
-
-本次額外下載並實際檢視下列實車照片，不只依賴手冊示意圖：
-
-| 來源 | 實際看見的內容 | 本次用途／限制 |
+| 顯示 | 來源與條件 | 顯示範圍／缺失處理 |
 | --- | --- | --- |
-| [Lexus UK 官方 LFA Interior 圖庫](https://media.lexus.co.uk/images/lfa-interior/)／[T_6820 原圖](https://media.lexus.co.uk/wp-content/uploads/sites/3/2011/10/T_6820-scaled.jpg) | 正面駕駛艙；中央為 AUTO、藍色錶面，左右各兩個沿外緣彎曲的量尺 | 照片本身標示 **Issued 10/2009**，雖於 2011 圖庫發布，也不能當成 2012 年式證據。只用於早期標準置中版面與四側錶位置 |
-| [Lexus UK T_6833 原圖](https://media.lexus.co.uk/wp-content/uploads/sites/3/2011/10/T_6833-scaled.jpg) | 斜角實車近照，可見環與後方螢幕的層次 | 確认側錶屬於深色背景螢幕，不是帶亮框、凸起的獨立數位卡片；部分文字失焦，不用來判斷刻度值 |
-| [Lexus UK DSC_4040 原圖](https://media.lexus.co.uk/wp-content/uploads/sites/3/2012/12/DSC_4040-scaled.jpg) | 2012 圖庫的實車斜角內裝照片 | 核對安裝比例與黑色座艙融合方式，不用模糊小字推測模式或數值 |
-| [MotorTrend 2012 專題](https://www.motortrend.com/news/thread-of-the-day-are-you-afraid-to-rev-your-engine-to-its-redline-228293)／[2012-Lexus-LFA-Tach 原圖](https://www.motortrend.com/uploads/sites/5/2012/07/2012-Lexus-LFA-Tach.jpg) | 高解析度正面近照；**SPORT 白色中央錶面**，四側錶清晰，圖片 EXIF 標示 ISP-Grube.de | 只核對冷卻液、機油溫度、燃油、機油壓力的位置、弧線、短刻度與填條；不採用 SPORT 中央白底 |
-| [C Ling Fan：Lexus LFA speedometer view 01](https://commons.wikimedia.org/wiki/File:Lexus_LFA_speedometer_view_01.jpg)／[原圖](https://upload.wikimedia.org/wikipedia/commons/f/f7/Lexus_LFA_speedometer_view_01.jpg) | 2009-10-31 攝影作品，實車反光／斜角，中央 SPORT 顯示 | 比對不同視角仍維持四量尺結構；屬早期照片，不宣稱是 2012 年式。僅作視覺參考，沒有將 CC BY 照片散布於專案 |
+| 速度、檔位、RPM | 既有 canonical 速度與 gear／rpm | 既有 R=0、N=11、公英制、紅線與失效行為保留 |
+| 四輪平均胎溫 | `tire_temp_f` 必須恰好有四個有限 number；四輪算術平均，原始單位 °F | 一輪缺失、null、字串、NaN 或無窮值即 N/A；不用 legacy `TireTemp` 的補零 fallback，也不做部分平均 |
+| 溫度單位 | 先看 frame `displayUnits.temperature`，再看 config `effectiveUnits.temperature`／`units.temperature` 的 C/F；未提供時沿用 HUD metric/imperial fallback | 目前主 GUI 的 HUD config **未傳遞獨立溫度單位**，因此普通操作時由 HUD 公英制回退選擇 C/F；未修改 shared／backend 來擴充設定 |
+| 胎溫量尺 | 20–140°C，精確等值 68–284°F；沿用 Classic JDM 範圍 | 弧條夾在 0–100%，數字仍顯示實際平均值；75°C 以下冷色、105°C 以上熱色，沿用共用胎溫區間 |
+| 增壓原始來源 | coordinator 保留的 `Boost`，**PSI above atmospheric**；必須是有限 number，正、負、0 均保留 | 原始欄位存在但非法時直接 N/A；coordinator 型態缺少原始 Boost 也為 N/A，不被補零的 aliases 偽裝成 0 |
+| canonical-only 增壓 | `boost_psi` → `boost_bar` → `boost_kpa`；或有明確合法單位的 `boost` | 明確但不支援的 `boost_unit`（如 Pa）不依數值大小或另一個 display hint 猜單位 |
+| 增壓顯示單位 | frame `displayUnits.boostPressure`、`boost_unit`、config `effectiveUnits.boostPressure`／`units.boostPressure`，再 fallback bar/psi | bar／psi／kPa 可獨立於速度選擇；使用同一路徑的 14.5038 PSI/bar、6.89476 kPa/PSI 轉換 |
+| 增壓量尺 | −1…2 bar 物理範圍；負壓區佔弧長 35%，0…2 bar 佔 65%，沿用 Classic JDM 約定 | 只夾弧條，正負數字不夾為端點。0 有有效讀值，missing 為 N/A；不把缺失當自然進氣 0 |
+| 踏板 | canonical `throttle`／`brake` ratio，有限數字夾 0–1 | 0% 與 N/A 分開；對 coordinator 型態也驗證原始 AccelInput／BrakeInput 存在且有效，避免預設零 |
+| 單圈時間 | `CurrentLap`，秒；欄位有效且非負，接受 0 | 最新回報值格式 `m:ss.ss`；不以 wall clock 外推。最高 99:59.99，超出／非法／缺失顯示 `—:—` |
+| 排名 | canonical `race_position` 或 `RacePosition` | 只接受正整數 1–255；缺失／0／非法值回到 LIVE |
 
-手冊的 Normal display 是「主錶置中、沒有左側選單」的版面名稱，和 AUTO／NORMAL／SPORT 驅動模式不同。上述照片有 AUTO 與 SPORT，本次只採用其一致的側錶結構，**已核准的中央黑底、金屬環、刻度、字體與位置均維持原樣**；2012 年式範圍仍以 OM77006U 為準。
+極大但有限的增壓／胎溫值若超出簡短數字容量，顯示 HI／LO 而非擠出錶面。這是顯示容量保護，不修改原始數值或任意推論物理狀態。
 
-診斷差異：前一版把側面畫成兩塊大百分比卡片，具有直立內壁、明顯外框與水平踏板條。實車是四個上下分區的狹長弧形量尺，沿外緣配置短刻度，圖示位於量尺內側，中段留給環境溫度與時鐘；外殼高低延伸較長，融入黑色背景。本次依此重建側錶輪廓、分區、量尺與手繪通用圖示。
+### UDP → JSON → HUD 的增壓與計圈來源
 
-### 核准中央區域的保留界線
+[Forza 官方 Data Out 文件](https://support.forza.net/hc/en-us/articles/51744149102611-Forza-Horizon-6-Data-Out-Documentation) 指明 Boost 是 PSI above atmospheric，BestLap／LastLap／CurrentLap 是秒，LapNumber 是完成圈數，RacePosition 為目前排名。
 
-- `assets/center-ring.png` 與 `.svg` 原檔逐位元保留，不重新匯出中央圖層
-- 原有中央 CSS、文字 DOM、`drawScale()` 與 `drawNeedle()` 保持不變；只移除原側翼專用 CSS
-- 新增 `side-crescents.svg`／PNG 作獨立側面圖層；中央半徑 180 設計像素內透明
-- 以同心半徑 180 的外層裁切隱藏舊圖的過大側翼，這是唯一必要的邊界合成調整；中心仍為 `(280,185)`，尺寸與縮放未變
-- 已驗證中央 PNG SHA-256：`3433460df37b91c67f09cfe7b3c99bacd6ad925db36b113042a95bc196422b22`；SVG：`8570a31f672dac12bb94e198a91cb78576dd0b09b81c140dd4ae7ca68b924028`
-- 已和 `93085ac` 的八個同狀態 DPR2 detail 截圖逐像素比較。840×556 圖內，以 `(420,277.5)` 為圓心、**半徑 267 px**，涵蓋原 177 設計像素錶環及 1 px 外線、經 0.75 縮放與 DPR2。所有納入的 RGBA 像素均完全相等，八組 **AE=0**
-- 精確納入條件：像素中心 `(x+0.5,y+0.5)` 至圓心的平方距離 `≤267²`；不使用容差、羽化、灰階轉換或縮小半徑。最近差異點 `(589,70)` 距離 **267.543 px**，已在該圓外；RGB 僅由 `(21,33,40)` 變成 `(20,32,39)`
-- 使用抗鋸齒的軟圓形遮罩會在名義半徑外仍有部分覆蓋，故 ImageMagick 軟遮罩可計到 1 個圓外側面邊界像素；這不等於核准金屬環內有差異。保留原合成 mask，未以改半徑來掩飾差異
-- 額外完整 viewport 比較：1440p DPR1／1080p DPR2 的中央圓亦 AE=0；720p／1080p DPR1 完整圖分別有 **466／478 個輕微色值差異**，主要為金屬環左側稀疏像素，另有一個狀態框附近像素；視覺幾何未變，成因尚未確定，因此不宣稱所有解析度的截圖逐位元相同。原始比對結果見 [central-preservation.json](../assets/lfa-center-ring/central-preservation.json)
+已確認本 HUD 使用的路徑：
 
-沒有打包、裁切、描圖或重新散布官方照片、手冊圖片、商標、OEM 字體或原車面板貼圖。Lexus／LFA 名稱僅用於原型辨識，不代表合作或官方產品。`assets/center-ring.svg`／`center-ring.png`、CSS 與程式均為本 PR 原創內容，沿用 repository 的 MIT license。
+1. `backend-rust/src/telemetry/packet.rs::parse_packet` 解碼 float index 71 的 Boost，保持原值；計圈欄位亦直接解碼
+2. UDP runtime → `App.process` → `telemetry.send_replace(frame)`，JSON websocket 分支以 `value.to_string()` 發送，這條路徑沒有 Boost 單位轉換
+3. `hud_overlay/shared/ws.js` 連至 `/ws/telemetry` 的 JSON 通道；coordinator 保留 `...raw` 的 Boost、CurrentLap、LastLap、BestLap 等欄位
+4. coordinator 的 `boost_*` 會把負值夾成 0，缺失也補 0；本樣式讀保留的嚴格原始 Boost 以避免資訊損失。canonical-only fixture 仍可提供有單位的 signed boost
 
-## 遙測誠實性
+另有 frontend converter／`pack_binary` 的 Pa 解讀與這條官方 UDP／JSON 路徑不一致；本次**不碰該無關路徑，也不猜測單位或修改 shared 協定**。
 
-| 顯示 | 資料 | 缺失／異常處理 |
-| --- | --- | --- |
-| 速度 | canonical `speed_kmh`／`speed_mph`；具 `displayUnits.speed` 才可使用 `speed` | 有限數值取絕對值以支援倒車；超過三位數容量 999 顯示 `—`，不截斷或回繞 |
-| 檔位 | `gear` | 0＝R、11＝N、1–10 保留；缺失／非法值＝`—` |
-| 轉速 | `rpm`、`maxRpm`／`max_rpm` | 缺失指針隱藏；不從速度或聲音推算 |
-| 紅線／SHIFT | 優先 `payload.redlineRpm`，其次 canonical `data.redlineRpm`，並需有效最大轉速 | 缺失時無紅線／SHIFT；不硬套 LFA 原車 9,000 rpm |
-| 左下燃油量尺 | canonical `fuel_ratio`，0–1 | 0%／100% 為真實端點；缺失、非有限數值或超出 0–1＝N/A，沒有填條 |
-| 左上冷卻液／右上油溫／右下油壓 | 沒有可靠支援欄位 | 保留原型量尺和圖示，明確顯示 N/A，不畫出讀值填條或指針 |
-| 側面中段環境溫度／車輛時鐘 | 沒有來源 | 顯示 `— °C`／`—:—`，不製造氣溫或遊戲時間 |
-| 狀態 | timestamp、race-on、success/error | WAITING／NO DATA／PAUSED／DATA ERROR／NO SIGNAL |
+`tests/fixtures/udp-parser-samples.json` 包含以未修改的真正 Rust parser＋production JSON serialization 產生的三個合成 324-byte 封包結果：+14.5038、0、−7.2519 PSI；胎溫 [176,194,212,230]°F → 203°F／95°C，踏板 204／51 → 80%／20%，CurrentLap 34.21、LapNumber 2、P3。launcher fixture 將這些已解析 JSON 送入真正的共用 coordinator。這是 parser／JSON 與 launcher 測試，**不是實際遊戲或 live websocket 錄影**。
 
-原車側翼的冷卻液、機油溫度與壓力沒有可靠對應欄位，**本 HUD 不製造這些讀數，也不拿胎溫或踏板輸入代替物理感測器**。固定量尺採參考照片的 °C／×100 kPa；與速度公英制設定分開。新側錶移除原來的油門／煞車卡片，保留唯一有 canonical 來源的燃油弧條。所有速度單位轉換由共用 coordinator 負責，本樣式不重算物理或重新解碼 UDP。
+## 計圈通知與生命週期
 
-0–10 刻度代表真實的 `×1000 r/min`，不是 0–100% 的偽刻度。最大轉速不高於 10,000 的車保留原型量尺；較高轉速車以 2,000 rpm 向上取整上限，維持 11 個真實數值標籤。例如 16,000 rpm 的刻度為 0、1.6、3.2…16。指針、刻度與紅線使用同一上限。
+中央狀態優先順序：**資料失效／錯誤／暫停 → SHIFT → BEST LAP／LAP n → P# → LIVE**。不擴大已核准的 96 px 中央狀態框。
 
-## 資料中斷與生命週期
+- 首包只建立 baseline，不對既有 LastLap／BestLap 慶祝
+- LapNumber 正常遞增，或已建立 baseline 的 LastLap 更新，可顯示完成通知；CurrentLap 每幀增加不算新圈
+- BestLap 必須從已知值真正降低，或首個最佳值與已確認完成圈一起出現。單純第一次填入 BestLap 不提示
+- 同時更新以 BEST LAP 優先，通知 3 秒後回到目前排名／LIVE；重播或未變更資料不延長通知
+- 重複 timestamp、倒序封包不回捲事件 baseline；斷線後新包重新建立 baseline，不補慶祝離線期間的圈
+- race clock／圈數／車輛重設會清空通知。timestamp 同時歸零且 race clock 與完成圈數共同歸零時立即清空舊通知，下一個遞增封包再靜默建 baseline
+- 仍使用 timestamp **變化**判定 freshness，1,500 ms 未變即清空側面讀數與時間；smoothing RAF 重播不保活
+- destroy／pagehide 取消 RAF／監聽；既有 DISPLAY CHECK 不產生虛構速度、RPM 或檔位
 
-- 以 `timestamp_ms`／`TimestampMS` 的**變化**判斷新封包，1,500 ms 未變化即清空行車值與警示，顯示 NO SIGNAL。共用 coordinator 的 RAF 重播不會延長資料有效期限
-- 僅對沒有 timestamp 的第三方 fixture 使用有意義讀數變化作 fallback；相同讀數不會永久保持 LIVE，launcher 的全零待機畫面維持 WAITING
-- race-off、`success:false`、truthy `error` 與完全缺失資料立即清空數值；下一個有效新 timestamp 可恢復，不保留前車讀數
-- `hud:init`／`config`／`hud:elements`／縮放沿用 HUDCore。動畫只繪製有 DISPLAY CHECK 標示的錶圈亮線，不掃出虛構車速、轉速或檔位；新有效遙測立即結束檢查
-- `hud:destroy`／`pagehide` 取消 RAF、解除本樣式的監聽器。destroy 後 hooks 不再更新已卸載介面
-- 自訂色影響已核准中央指針；燃油條保持實車式冷白，紅線保留紅色語意。glow＝0 可關閉指針發光
+## 視覺來源與授權
 
-## 尺寸與 safe zone
+- [2012 官方車主手冊 OM77006U，印刷 116／PDF 118 頁](https://assets.sia.toyota.com/publications/en/om-s/OM77006U/pdf/OM77006U.pdf#page=118)：車型年份與 Normal／Menu 版面，已實際看圖
+- [Lexus UK 官方內裝圖庫](https://media.lexus.co.uk/images/lfa-interior/)；[T_6820 正面](https://media.lexus.co.uk/wp-content/uploads/sites/3/2011/10/T_6820-scaled.jpg)、[T_6833 斜角](https://media.lexus.co.uk/wp-content/uploads/sites/3/2011/10/T_6833-scaled.jpg)、[DSC_4040 實車內裝](https://media.lexus.co.uk/wp-content/uploads/sites/3/2012/12/DSC_4040-scaled.jpg)，均已實際看圖
+- [MotorTrend 2012 近照](https://www.motortrend.com/uploads/sites/5/2012/07/2012-Lexus-LFA-Tach.jpg)、[C Ling Fan 攝影作品](https://commons.wikimedia.org/wiki/File:Lexus_LFA_speedometer_view_01.jpg)：比對四弧側錶位置與不同角度
 
-560 × 370 設計座標，預設 HUDCore 全域倍率 0.75，視覺槽位約 420 × 277.5 CSS px。沿用 `.hud-root-wrapper` 右下角 30 px 邊界與 framework 縮放；外殼外側透明。靜態材質 PNG 為 1120 × 740，Canvas 隨實際 DPR 1–3 重建 backing store。
+T_6820 圖本身標示 Issued 10/2009、中央 AUTO，不能當作 2012 年式證明。MotorTrend 與 C Ling Fan 圖中央為 SPORT 白底；只參考一致的側面構圖，不替換已核准中央。側錶新資料含義是使用者明確指定，已重新標示胎溫、渦輪、THR／BRK，不冒稱原車水溫或油壓。
 
-此槽位**假設取代遊戲右下原生儀表**，不是承諾與原生儀表同時開啟時互不遮擋。720p 的寬度佔比最大，須在實際遊戲中確認右側提示、字幕及玩家自訂 HUD 比例。Windows click-through、置頂、原生 overlay 與 Forza 實機尚未驗收。
+所有側面與中央素材為原創 SVG／PNG，使用 Inkscape 1.4 匯出、ImageMagick 7 最佳化，沿用 repository MIT license。沒有散布、裁切貼用或描圖 OEM 照片／商標／字體；Lexus／LFA 名稱只用於原型辨識。
 
-## 重現與驗證
+## 尺寸、中央保留與驗證狀態
 
-採用 skill ID：`halfmoon-design-system`、`telemetry-udp-protocol`、`pr-author-maintainer`。未改 shared 協定、coordinator、HUDCore 或後端；新增的 tests 已由既有 Vitest include glob 收集。
+560×370 設計座標、0.75 預設縮放，約 420×277.5 CSS px，沿用右下 30 px 邊界。四弧輪廓與半徑 180 的外部合成 mask 保持原樣；原中央 PNG／SVG 雜湊、`lfa.css`、`drawScale()`／`drawNeedle()` 已確認與此次基底 `48a3d5e4bc27bc36d75cddba75cbf989fd2b2857` 相同。只有原 LIVE 字串按使用者要求更新，geometry／material 不變。
+
+- 中央 PNG SHA-256：`3433460df37b91c67f09cfe7b3c99bacd6ad925db36b113042a95bc196422b22`
+- 中央 SVG SHA-256：`8570a31f672dac12bb94e198a91cb78576dd0b09b81c140dd4ae7ca68b924028`
+- 本機：**157 files passed／1 skipped；1,150 tests passed／1 skipped**，含 45 個 LFA 行為測試；`build:web-hud`、語法與 diff gate 通過
+- 新的 Chrome fixture／完整合成像素檢視仍待 CI。保留沒有排名／通知、中心 RPM7200／180km/h／4檔的 `detail-metric.png`，供和已核准版本比較；排名／完成圈／最佳圈另有獨立截圖
+- 視覺 runner 涵蓋 720p／1080p／1440p／DPR2，C/F、bar/psi/kPa、平均缺失／0、signed boost／0／missing、踏板端點與夾值、排名／計圈通知／逾時／重設、99:59.99 最大寬度、斷線重連與原有生命週期
+- **Windows 原生 overlay、click-through、置頂與 Forza 實機未驗證**。右下槽位假設取代遊戲原生儀表，仍需檢查遊戲提示／字幕遮擋
+
+採用技能：`halfmoon-design-system`、`telemetry-udp-protocol`、`pr-author-maintainer`。不修改後端、共用協定或其他 HUD。
 
 ```sh
-pnpm -C frontend install --frozen-lockfile --store-dir /tmp/lfa-pnpm-store
 pnpm -C frontend test
 pnpm -C frontend run build:web-hud
 node --check hud_overlay/lfa_center_ring/tests/visual/render.mjs
+node --check hud_overlay/lfa_center_ring/tests/visual/launcher.cjs
 git diff --check
 ```
 
-基於已核准的 PR head `dfad352be6728fca43e443a8610aa447a6c59472` 執行此次側錶修訂；本機完整前端測試：**156 files passed／1 skipped；1,134 tests passed／1 skipped**（含本樣式 29 個行為測試）。`build:web-hud` 通過，已確認新樣式入口、JS、CSS、原創 PNG／SVG 打包至 `frontend/dist/hud/lfa_center_ring/`，測試目錄不隨產品打包。
+瀏覽器重現：以 isolated Playwright、正常啟用的 Chromium sandbox 執行 `tests/visual/render.mjs` 與 `launcher.cjs`；`PLAYWRIGHT_MODULE_PATH`、`OUTPUT_DIR`、選用 `PLAYWRIGHT_CHANNEL=chrome`。本機 socket／localhost 環境限制已確認，不透過停用 sandbox 繞過。
 
-### Chromium fixture gate
+## 上一版實際預覽（此次資料／計圈修訂尚未更新）
 
-```sh
-PLAYWRIGHT_MODULE_PATH=/path/to/node_modules/playwright \
-OUTPUT_DIR=/tmp/lfa-evidence \
-node hud_overlay/lfa_center_ring/tests/visual/render.mjs
-```
+以下保留前次四弧輪廓版本；此版本的燃油／N/A 與時間文字並非本次新語義，待新 CI 實際截圖後由維護者替換。圖片是合成遙測 renderer，不是遊戲截圖。
 
-預設使用 Playwright 內附 Chromium；只有明確提供 `CHROMIUM_PATH` 才指定外部執行檔。啟用 Chromium sandbox，不透過停用 sandbox 解決環境限制。不增加產品 npm dependency。
-
-runner 以真正的 HUDCore dispatcher 檢查 1280×720、1920×1080、2560×1440、1920×1080 DPR2，涵蓋初始化、設定、公英制、倒車、空檔、高轉速、紅線、缺失／非法值、錯誤、暫停、重播 timestamp 逾時、重連、隱藏恢復、resize、動畫與 destroy；成功或失敗都輸出 `evidence.json`，有頁面時保留失敗畫面。完整 viewport 與主要狀態 PNG 供人工檢視，不採逐像素／Canvas 呼叫次數斷言。
-
-本機無法啟動獨立 Chromium（UNIX socket EPERM），雲端瀏覽器開啟本機 fixture 被 ERR_BLOCKED_BY_CLIENT 阻擋；因此改由正常 GitHub Actions 執行，不停用 sandbox。**此次四側錶修訂的 browser fixture 與真正 launcher＋coordinator gate 均通過，實際截圖已獨立檢視**：
-
-- [GitHub Actions run 37258540232](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37258540232)，原始碼 head `ad4458ec975678055a0b8555e3b0c99f53191aba`，artifact ID `11323881665`
-- 使用 GitHub runner 預先安裝的 Chrome **154.0.8037.57**，Playwright `chromiumSandbox: true`；沒有新增產品相依套件
-- [完整 fixture 報告](../assets/lfa-center-ring/evidence.json)：四組 viewport／DPR 配置全部完成，`passed: true`，每組 `errors: []`
-- [真正 launcher 報告](../assets/lfa-center-ring/launcher-report.json)：動態發現、raw telemetry → coordinator、smoothing 重播後失效、帶負號倒車重連、公英制、720p、隱藏恢復、樣式重載及 destroy 完成；`errors: []`、`missing: []`。新增 raw Fuel → 68% 與失效後 N/A 斷言
-- 已實際檢視公英制、R／N、SHIFT、部分資料、NO SIGNAL、高轉速、燃油 0%／100% 與完整 720p／1080p／1440p 圖片；側錶分區／刻度／圖示與已研究照片的四弧量尺一致，沒有觀察到文字重疊或裁切。固定 N/A 與缺失燃油不會產生虛構填條
-- [驗證摘要與來源](../assets/lfa-center-ring/verification.json) 記錄來源 commit、run、artifact 與本機測試結果
-
-以上是 Linux Chromium／Chrome 合成遙測與 launcher 驗證，**不等同 Windows 原生 overlay 或 Forza 實機驗收**。
-
-互動手動 fixture：`node hud_overlay/lfa_center_ring/tests/visual/serve.mjs`，在可連到該伺服器的瀏覽器開啟終端顯示網址。`tests/visual/fixture.html` 可切換尺寸／狀態並執行行為檢查；此頁不打包於產品。
+![上一版四弧側錶輪廓](../assets/lfa-center-ring/metric-detail.png)
+![上一版 renderer 狀態](../assets/lfa-center-ring/state-contact-sheet.png)
+![上一版 720p 位置](../assets/lfa-center-ring/metric-720p.png)

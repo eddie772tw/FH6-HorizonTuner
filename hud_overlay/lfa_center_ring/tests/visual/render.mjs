@@ -26,7 +26,7 @@ await new Promise((r) => server.listen(0, '127.0.0.1', r));
 const origin = `http://127.0.0.1:${server.address().port}`;
 let browser, activePage;
 const summary = { browser: null, platform: process.platform, nativeAcceptance: 'Not performed: Windows/game unavailable', source: 'Synthetic canonical frames through real HUDCore dispatcher', scenarios: [], passed: false, error: null };
-const base = { timestamp_ms: 100, rpm: 7200, maxRpm: 9000, redlineRpm: 8000, speed_kmh: 180, speed_mph: 111.85, gear: 4, throttle: .82, brake: 0, fuel_ratio: .68, isRaceOn: 1 };
+const base = { timestamp_ms: 100, rpm: 7200, maxRpm: 9000, redlineRpm: 8000, speed_kmh: 180, speed_mph: 111.85, gear: 4, throttle: .8, brake: .2, tire_temp_f: [176, 194, 212, 230], boost_psi: 14.5038, isRaceOn: 1 };
 async function send(frame, type, data = {}) { await frame.evaluate(({ type, data }) => window.HUDCore.handleMessage(type, data), { type, data }); }
 async function text(frame, id) { return frame.locator('#lfa' + id).textContent(); }
 try {
@@ -42,8 +42,8 @@ try {
     await frame.waitForFunction(() => window.HUDCore?.getActiveStyle());
     assert.equal(await text(frame, 'Status'), 'WAITING');
     assert.equal(await text(frame, 'Speed'), '—');
-    assert.equal(await text(frame, 'Fuel'), 'N/A');
-    for (const sensor of ['Coolant', 'OilTemperature', 'OilPressure']) assert.equal(await text(frame, sensor), 'N/A');
+    for (const sensor of ['Tire', 'Boost', 'Throttle', 'Brake']) assert.equal(await text(frame, sensor), 'N/A');
+    assert.equal(await text(frame, 'LapTime'), '—:—');
     await send(frame, 'hud:init', { isMetric: true });
     await page.waitForTimeout(40);
     assert.equal(await frame.locator('#lfaSelfCheck').isVisible(), true);
@@ -56,7 +56,8 @@ try {
     async function detail(name) {
       if (width === 1920 && dpr === 2) await frame.locator('#lfaContainer').screenshot({ path: path.join(out, `detail-${name}.png`), omitBackground: true });
     }
-    await reading(); assert.equal(await text(frame, 'Speed'), '180'); assert.equal(await text(frame, 'Fuel'), '68%');
+    await reading(); assert.equal(await text(frame, 'Speed'), '180'); assert.equal(await text(frame, 'Tire'), '95°C');
+    assert.equal(await text(frame, 'Boost'), '1'); assert.equal(await text(frame, 'Throttle'), '80%'); assert.equal(await text(frame, 'Brake'), '20%');
     const rect = await frame.locator('#lfaContainer').boundingBox();
     assert.ok(rect.x >= 0 && rect.y >= 0 && rect.x + rect.width <= width && rect.y + rect.height <= height);
     const tag = `${width}x${height}-dpr${dpr}`;
@@ -77,13 +78,30 @@ try {
     await detail('neutral');
     await reading({ rpm: 15000, maxRpm: 16000, redlineRpm: 15000 }); assert.equal(await text(frame, 'Status'), 'SHIFT');
     await detail('high-rpm');
-    for (const [fuel, expected] of [[0, '0%'], [.5, '50%'], [1, '100%'], [null, 'N/A'], [1.5, 'N/A']]) {
-      await reading({ fuel_ratio: fuel }); assert.equal(await text(frame, 'Fuel'), expected);
-      if (fuel === 0) await detail('fuel-empty');
-      if (fuel === 1) await detail('fuel-full');
-    }
+    await send(frame, 'config', { data: { isMetric: true, effectiveUnits: { temperature: 'F', boostPressure: 'psi' } } });
+    await reading(); assert.equal(await text(frame, 'Tire'), '203°F'); assert.equal(await text(frame, 'BoostUnit'), 'psi'); assert.equal(await text(frame, 'Boost'), '14.5'); await detail('aux-psi-fahrenheit');
+    await send(frame, 'config', { data: { effectiveUnits: { temperature: 'C', boostPressure: 'kpa' } } });
+    await reading(); assert.equal(await text(frame, 'Boost'), '100'); assert.equal(await text(frame, 'BoostUnit'), 'kPa'); await detail('aux-kpa');
+    await reading({ Boost: -7.2519, boost_psi: 0 }); assert.equal(await text(frame, 'Boost'), '-50'); await detail('aux-negative-boost');
+    await reading({ Boost: 0, throttle: 0, brake: 0, tire_temp_f: [32, 32, 32, 32] });
+    assert.equal(await text(frame, 'Boost'), '0'); assert.equal(await text(frame, 'Throttle'), '0%'); assert.equal(await text(frame, 'Brake'), '0%'); assert.equal(await text(frame, 'Tire'), '0°C'); await detail('aux-zero');
+    await reading({ tire_temp_f: [176, null, 212, 230], boost_psi: undefined }); assert.equal(await text(frame, 'Tire'), 'N/A'); assert.equal(await text(frame, 'Boost'), 'N/A'); await detail('aux-partial-missing');
+    await reading({ boost_psi: 72.519, throttle: 2, brake: -.5, tire_temp_f: [320, 320, 320, 320] });
+    assert.equal(await text(frame, 'Throttle'), '100%'); assert.equal(await text(frame, 'Brake'), '0%'); assert.equal(await text(frame, 'Tire'), '160°C'); await detail('aux-clamped-arcs');
+    await send(frame, 'config', { data: { effectiveUnits: { temperature: 'C', boostPressure: 'bar' } } });
+    const race = { lap: 2, race_position: 3, CurrentLap: 34.21, LastLap: 91, BestLap: 88, CurrentRaceTime: 210 };
+    await reading(race); assert.equal(await text(frame, 'Status'), 'P3'); assert.equal(await text(frame, 'LapTime'), '0:34.21'); await detail('rank-lap');
+    await reading({ ...race, lap: 3, LastLap: 92, CurrentLap: 0, CurrentRaceTime: 220 });
+    assert.equal(await text(frame, 'Status'), 'LAP 3'); assert.equal(await text(frame, 'LapTime'), '0:00.00'); await detail('lap-notice');
+    for (let i = 0; i < 6; i++) { await page.waitForTimeout(500); await reading({ ...race, lap: 3, LastLap: 92, CurrentLap: i, CurrentRaceTime: 221 + i }); }
+    assert.equal(await text(frame, 'Status'), 'P3');
+    await reading({ ...race, lap: 4, LastLap: 87, BestLap: 87, CurrentLap: .5, CurrentRaceTime: 300 });
+    assert.equal(await text(frame, 'Status'), 'BEST LAP'); await detail('best-notice');
+    await reading({ ...race, timestamp_ms: 0, lap: 0, LastLap: 0, BestLap: 0, CurrentLap: 0, CurrentRaceTime: 0 }); assert.equal(await text(frame, 'Status'), 'P3');
+    await reading({ CurrentLap: 5999.99 }); assert.equal(await text(frame, 'LapTime'), '99:59.99'); await detail('lap-max-width');
+    await reading({ CurrentLap: 6000 }); assert.equal(await text(frame, 'LapTime'), '—:—');
     await send(frame, 'hud:frame', { data: { timestamp_ms: ++stamp, rpm: 3000 } }); await page.waitForTimeout(40);
-    assert.equal(await text(frame, 'Speed'), '—'); assert.equal(await text(frame, 'Gear'), '—'); assert.equal(await text(frame, 'Fuel'), 'N/A');
+    assert.equal(await text(frame, 'Speed'), '—'); assert.equal(await text(frame, 'Gear'), '—'); assert.equal(await text(frame, 'Tire'), 'N/A');
     await detail('missing');
     await reading({ rpm: Infinity, speed_mph: 1e12, gear: 99, throttle: null, brake: NaN });
     assert.equal(await text(frame, 'Speed'), '—'); assert.equal(await text(frame, 'Gear'), '—');
@@ -92,9 +110,9 @@ try {
     const duplicate = { ...base, timestamp_ms: ++stamp };
     await send(frame, 'hud:frame', { data: duplicate });
     for (let i = 0; i < 9; i++) { await page.waitForTimeout(180); await send(frame, 'hud:frame', { data: duplicate }); }
-    await page.waitForTimeout(40); assert.equal(await text(frame, 'Status'), 'NO SIGNAL'); assert.equal(await text(frame, 'Speed'), '—'); assert.equal(await text(frame, 'Fuel'), 'N/A');
+    await page.waitForTimeout(40); assert.equal(await text(frame, 'Status'), 'NO SIGNAL'); assert.equal(await text(frame, 'Speed'), '—'); assert.equal(await text(frame, 'Tire'), 'N/A'); assert.equal(await text(frame, 'LapTime'), '—:—');
     if (width === 1920 && dpr === 2) await frame.locator('#lfaContainer').screenshot({ path: path.join(out, 'detail-no-signal.png'), omitBackground: true });
-    await reading(); assert.equal(await text(frame, 'Status'), 'LIVE'); assert.equal(await text(frame, 'Fuel'), '68%');
+    await reading(); assert.equal(await text(frame, 'Status'), 'LIVE'); assert.equal(await text(frame, 'Tire'), '95°C');
     await send(frame, 'hud:elements', { showGauge: false }); assert.equal(await frame.locator('#lfaContainer').isVisible(), false);
     await send(frame, 'hud:elements', { showGauge: true }); assert.equal(await frame.locator('#lfaContainer').isVisible(), true);
     await page.setViewportSize({ width: width - 100, height: height - 80 }); await reading();
@@ -102,7 +120,7 @@ try {
     await reading(); assert.equal(await frame.locator('#lfaSelfCheck').isVisible(), false);
     await send(frame, 'hud:destroy'); await page.waitForTimeout(50); assert.equal(await frame.locator('#lfaContainer').count(), 0);
     assert.deepEqual(errors, []);
-    summary.scenarios.push({ viewport: { width, height }, dpr, rect, tests: ['init', 'config', 'metric', 'imperial', 'reverse', 'neutral', 'redline', '16000-rpm-scale', 'fuel-empty-half-full', 'fuel-missing-invalid', 'unsupported-sensors-unavailable', 'missing', 'invalid', 'error', 'pause', 'replayed-timestamp-stale', 'reconnect', 'visibility', 'resize', 'animate', 'destroy', 'dpr-backing-store', 'transparent-outside'], errors });
+    summary.scenarios.push({ viewport: { width, height }, dpr, rect, tests: ['init', 'config', 'metric', 'imperial', 'reverse', 'neutral', 'redline', '16000-rpm-scale', 'four-tire-average-C-F', 'boost-bar-psi-kPa', 'signed-zero-missing-boost', 'pedal-percent-clamps', 'partial-tire-unavailable', 'rank-reported-lap', 'lap-and-best-notices', 'notice-expiry-reset', 'lap-max-width-overflow', 'missing', 'invalid', 'error', 'pause', 'replayed-timestamp-stale', 'reconnect', 'visibility', 'resize', 'animate', 'destroy', 'dpr-backing-store', 'transparent-outside'], errors });
     await context.close();
   }
   summary.passed = true;

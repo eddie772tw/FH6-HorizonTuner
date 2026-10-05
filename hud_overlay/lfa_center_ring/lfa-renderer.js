@@ -8,7 +8,8 @@
         const scaleCanvas = get('lfaScale'), needleCanvas = get('lfaNeedle');
         const dial = scaleCanvas.getContext('2d'), needle = needleCanvas.getContext('2d');
         const nodes = {};
-        ['Speed', 'SpeedUnit', 'Gear', 'Status', 'Fuel', 'FuelFill', 'FuelGauge', 'SelfCheck'].forEach((n) => { nodes[n] = get('lfa' + n); });
+        ['Speed', 'SpeedUnit', 'Gear', 'Status', 'Tire', 'TireFill', 'TireGauge', 'Boost', 'BoostUnit', 'BoostFill', 'BoostGauge', 'Throttle', 'ThrottleFill', 'ThrottleGauge', 'Brake', 'BrakeFill', 'BrakeGauge', 'LapTime', 'SelfCheck'].forEach((n) => { nodes[n] = get('lfa' + n); });
+        for (const name of ['Tire', 'Boost']) for (let i = 0; i < 4; i++) nodes[name + 'Tick' + i] = get('lfa' + name + 'Tick' + i);
         let colors, dialKey = '', lastNeedle = '', ratio = 2;
         function setText(name, value) { if (nodes[name].textContent !== value) nodes[name].textContent = value; }
         function palette(settings) {
@@ -79,11 +80,22 @@
         function render(v, check, settings) {
             drawScale(v); drawNeedle(v, check, settings);
             setText('Speed', v.speedText); setText('SpeedUnit', v.speedUnit); setText('Gear', v.gear);
-            setText('Status', v.shift ? 'SHIFT' : v.status);
-            setText('Fuel', v.fuelText);
-            nodes.FuelFill.style.strokeDasharray = (v.fuelRatio ?? 0) * 100 + ' 100';
-            nodes.FuelFill.style.opacity = v.fuelRatio === null ? '0' : '1';
-            nodes.FuelGauge.setAttribute('aria-label', v.fuelRatio === null ? 'Fuel level unavailable' : 'Fuel level ' + v.fuelText);
+            setText('Status', v.centerText);
+            const a = v.auxiliary;
+            setText('Tire', a.tireText === 'N/A' ? 'N/A' : a.tireText + a.temperatureUnit);
+            setText('Boost', a.boostText); setText('BoostUnit', a.boostUnit);
+            setText('Throttle', a.throttleText); setText('Brake', a.brakeText); setText('LapTime', v.lapText);
+            for (let i = 0; i < 4; i++) {
+                setText('TireTick' + i, a.temperatureTicks[i] + (i === 3 ? a.temperatureUnit : ''));
+                setText('BoostTick' + i, a.boostTicks[i]);
+            }
+            for (const [name, fraction, value] of [['Tire', a.tireFraction, a.tireText + a.temperatureUnit], ['Boost', a.boostFraction, a.boostText + ' ' + a.boostUnit], ['Throttle', a.throttle, a.throttleText], ['Brake', a.brake, a.brakeText]]) {
+                nodes[name + 'Fill'].style.strokeDasharray = (fraction ?? 0) * 100 + ' 100';
+                nodes[name + 'Fill'].style.opacity = fraction === null ? '0' : '1';
+                nodes[name + 'Gauge'].setAttribute('aria-label', fraction === null ? name + ' unavailable' : name + ' ' + value);
+            }
+            nodes.TireFill.dataset.band = a.tireBand;
+            nodes.BoostFill.dataset.negative = String(a.boostNegative);
             nodes.SelfCheck.hidden = check === null;
             container.dataset.state = v.shift ? 'warning' : v.live ? 'live' : 'offline';
         }

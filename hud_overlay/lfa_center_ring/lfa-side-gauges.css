@@ -16,10 +16,12 @@
     transition: none !important;
 }
 .lfa-side-readings { overflow: visible; font-family: Arial, sans-serif; text-anchor: middle; }
-.lfa-side-unavailable { fill: var(--lfa-secondary); font-size: 12px; font-weight: 600; letter-spacing: .5px; }
+.lfa-side-scale { fill: var(--lfa-secondary); font-size: 12px; text-anchor: start; }
+.lfa-side-caption { fill: var(--lfa-secondary); font-size: 9px; font-weight: 600; letter-spacing: .5px; }
 .lfa-side-middle { fill: var(--lfa-primary); font-size: 17px; }
-.lfa-fuel-value { fill: var(--lfa-primary); font-size: 12px; font-weight: 600; letter-spacing: .3px; }
-.lfa-fuel-fill {
+.lfa-lap-time { fill: var(--lfa-primary); font-size: 14px; }
+.lfa-side-value { fill: var(--lfa-primary); font-size: 12px; font-weight: 600; letter-spacing: .3px; }
+.lfa-side-fill {
     fill: none;
     stroke: var(--lfa-primary);
     stroke-width: 7px;
@@ -27,3 +29,6 @@
     stroke-dasharray: 0 100;
     opacity: 0;
 }
+.lfa-brake-fill { stroke: var(--lfa-red); }
+#lfaTireFill[data-band="cold"], #lfaBoostFill[data-negative="true"] { stroke: var(--lfa-cold, #8fcee5); }
+#lfaTireFill[data-band="hot"] { stroke: var(--lfa-red); }

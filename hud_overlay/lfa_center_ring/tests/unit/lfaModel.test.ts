@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 const path = resolve(process.cwd(), '../hud_overlay/lfa_center_ring');
 function load() {
   const scope: any = {};
-  runInNewContext(readFileSync(resolve(path, 'lfa-model.js'), 'utf8'), scope);
+  for (const file of ['lfa-auxiliary.js', 'lfa-session.js', 'lfa-model.js']) runInNewContext(readFileSync(resolve(path, file), 'utf8'), scope);
   return scope.LfaModel;
 }
 const sample = { timestamp_ms: 100, rpm: 7200, maxRpm: 9000, redlineRpm: 8000, speed_kmh: 180, speed_mph: 111.85, gear: 4, throttle: .8, brake: 0 };
@@ -127,52 +127,6 @@ describe('LFA liveness and absence', () => {
   });
 });
 
-describe('LFA original-layout auxiliary data', () => {
-  const M = load();
-  it('uses only canonical fuel ratio, preserving genuine empty and full values', () => {
-    for (const [input, text] of [[0, '0%'], [.68, '68%'], [1, '100%']]) {
-      const s = M.newState(); M.ingest(s, { ...sample, fuel_ratio: input }, {}, 0);
-      expect(M.view(s, 1)).toMatchObject({ fuelRatio: input, fuelText: text });
-    }
-    expect(M.frame({ ...sample, Fuel: 68 }, {}, M.config({})).fuelRatio).toBeNull();
-  });
-  it('marks missing, malformed and out-of-range fuel unavailable rather than empty', () => {
-    for (const input of [undefined, null, '', '0.5', NaN, Infinity, -0.1, 1.1]) {
-      const s = M.newState(); M.ingest(s, { ...sample, fuel_ratio: input }, {}, 0);
-      expect(M.view(s, 1)).toMatchObject({ fuelRatio: null, fuelText: 'N/A' });
-    }
-  });
-  it('clears fuel on timestamp expiry, explicit error, pause and partial frames', () => {
-    const s = M.newState(); M.ingest(s, { ...sample, fuel_ratio: .68 }, {}, 0);
-    expect(M.view(s, 1500)).toMatchObject({ fuelRatio: null, fuelText: 'N/A' });
-    for (const patch of [{ success: false }, { isRaceOn: 0 }, { fuel_ratio: undefined }]) {
-      M.ingest(s, { ...sample, fuel_ratio: .68, timestamp_ms: 101, ...patch }, {}, 2000);
-      expect(M.view(s, 2001).fuelText).toBe('N/A');
-    }
-  });
-  it('never projects substitute inputs as coolant, oil temperature or oil pressure', () => {
-    const s = M.newState(); M.ingest(s, { ...sample, fuel_ratio: .5, TireTemp: [250, 250, 250, 250], coolant: 90, oilPressure: 4, oilTemperature: 110 }, {}, 0);
-    const v = M.view(s, 1);
-    expect(v).not.toHaveProperty('coolant'); expect(v).not.toHaveProperty('oilPressure'); expect(v).not.toHaveProperty('oilTemperature');
-    expect(v.fuelText).toBe('50%');
-  });
-  it('renders available and unavailable fuel distinctly without manufacturing sensor values', () => {
-    const nodes: Record<string, any> = {};
-    const element = (id: string) => nodes[id] ||= { textContent: '', dataset: {}, style: { setProperty: () => {} }, attrs: {}, setAttribute(name: string, value: string) { this.attrs[name] = value; }, getContext: () => null };
-    const window: any = { getComputedStyle: () => ({ getPropertyValue: () => '#edf7fa' }) };
-    runInNewContext(readFileSync(resolve(path, 'lfa-renderer.js'), 'utf8'), { window });
-    const renderer = window.LfaRenderer.create({ getElementById: element }, M);
-    const state = M.newState(); renderer.palette(state.settings);
-    M.ingest(state, { ...sample, fuel_ratio: 0 }, {}, 0);
-    renderer.render(M.view(state, 1), null, state.settings);
-    expect(nodes.lfaFuel.textContent).toBe('0%'); expect(nodes.lfaFuelFill.style.opacity).toBe('1');
-    expect(nodes.lfaFuelGauge.attrs['aria-label']).toBe('Fuel level 0%');
-    renderer.render(M.view(state, 1600), null, state.settings);
-    expect(nodes.lfaFuel.textContent).toBe('N/A'); expect(nodes.lfaFuelFill.style.opacity).toBe('0');
-    expect(nodes.lfaFuelGauge.attrs['aria-label']).toBe('Fuel level unavailable');
-  });
-});
-
 describe('LFA lifecycle through registered HUDCore hooks', () => {
   function controller() {
     let now = 0, nextRaf = 0, hooks: any;
@@ -189,7 +143,7 @@ describe('LFA lifecycle through registered HUDCore hooks', () => {
       LfaRenderer: { create: () => ({ palette: () => {}, resize: () => {}, visibility: () => {}, render: (view: any, check: any, settings: any) => renders.push({ view, check, settings }) }) },
     };
     const scope = { window, document: {} };
-    runInNewContext(readFileSync(resolve(path, 'lfa-model.js'), 'utf8'), scope);
+    for (const file of ['lfa-auxiliary.js', 'lfa-session.js', 'lfa-model.js']) runInNewContext(readFileSync(resolve(path, file), 'utf8'), scope);
     runInNewContext(readFileSync(resolve(path, 'lfa-controller.js'), 'utf8'), scope);
     return { hooks, renders, pending, listeners, tick: (time: number) => { now = time; const jobs = [...pending.values()]; pending.clear(); jobs.forEach((fn) => fn(time)); }, event: (type: string, event: any = {}) => listeners.get(type)?.forEach((fn) => fn(event)) };
   }

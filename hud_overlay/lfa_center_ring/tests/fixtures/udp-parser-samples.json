@@ -1,0 +1,320 @@
+{
+  "provenance": {
+    "source": "Actual unchanged backend-rust/src/telemetry/packet.rs parse_packet plus production serde_json serialization, offline synthetic 324-byte UDP packets",
+    "packetParserSha256": "c21772fd6a29f2b2e90328b777adbb2f4a46a6d9e96169f01ee6f70084389891",
+    "boostUnit": "PSI above atmospheric",
+    "tireUnit": "Fahrenheit per project contract",
+    "limitation": "Not a live network or game capture"
+  },
+  "samples": [
+    {
+      "inputBoostPsi": 14.503800392150879,
+      "parsedJson": {
+        "IsRaceOn": 1,
+        "TelemetrySchema": "forza-data-out/fh6-324-v2",
+        "TimestampMS": 1000,
+        "EngineMaxRpm": 9000,
+        "EngineIdleRpm": 900,
+        "CurrentEngineRpm": 6500,
+        "AccelerationX": 0,
+        "AccelerationY": 0,
+        "AccelerationZ": 0,
+        "VelocityX": 0,
+        "VelocityY": 0,
+        "VelocityZ": 0,
+        "AngularVelocityX": 0,
+        "AngularVelocityY": 0,
+        "AngularVelocityZ": 0,
+        "Yaw": 0,
+        "Pitch": 0,
+        "Roll": 0,
+        "NormalizedSuspensionTravel": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "TireSlipRatio": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "WheelRotationSpeed": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "SurfaceRumble": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "TireSlipAngle": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "TireCombinedSlip": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "SuspensionTravelMeters": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "WheelOnRumbleStrip": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "CarOrdinal": 0,
+        "CarClass": 0,
+        "CarPerformanceIndex": 0,
+        "DrivetrainType": 0,
+        "Cylinders": 0,
+        "PositionX": 0,
+        "PositionY": 0,
+        "PositionZ": 0,
+        "SpeedMetersPerSecond": 50,
+        "PowerWatts": 0,
+        "TorqueNewtons": 0,
+        "TireTemp": [
+          176,
+          194,
+          212,
+          230
+        ],
+        "Boost": 14.503800392150879,
+        "Fuel": 0.6800000071525574,
+        "DistanceTraveled": 0,
+        "BestLap": 80.33000183105469,
+        "LastLap": 81.19999694824219,
+        "CurrentLap": 34.209999084472656,
+        "CurrentRaceTime": 0,
+        "LapNumber": 2,
+        "RacePosition": 3,
+        "AccelInput": 204,
+        "BrakeInput": 51,
+        "ClutchInput": 0,
+        "HandBrakeInput": 0,
+        "Gear": 4,
+        "SteerInput": 0
+      }
+    },
+    {
+      "inputBoostPsi": 0,
+      "parsedJson": {
+        "IsRaceOn": 1,
+        "TelemetrySchema": "forza-data-out/fh6-324-v2",
+        "TimestampMS": 1000,
+        "EngineMaxRpm": 9000,
+        "EngineIdleRpm": 900,
+        "CurrentEngineRpm": 6500,
+        "AccelerationX": 0,
+        "AccelerationY": 0,
+        "AccelerationZ": 0,
+        "VelocityX": 0,
+        "VelocityY": 0,
+        "VelocityZ": 0,
+        "AngularVelocityX": 0,
+        "AngularVelocityY": 0,
+        "AngularVelocityZ": 0,
+        "Yaw": 0,
+        "Pitch": 0,
+        "Roll": 0,
+        "NormalizedSuspensionTravel": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "TireSlipRatio": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "WheelRotationSpeed": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "SurfaceRumble": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "TireSlipAngle": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "TireCombinedSlip": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "SuspensionTravelMeters": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "WheelOnRumbleStrip": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "CarOrdinal": 0,
+        "CarClass": 0,
+        "CarPerformanceIndex": 0,
+        "DrivetrainType": 0,
+        "Cylinders": 0,
+        "PositionX": 0,
+        "PositionY": 0,
+        "PositionZ": 0,
+        "SpeedMetersPerSecond": 50,
+        "PowerWatts": 0,
+        "TorqueNewtons": 0,
+        "TireTemp": [
+          176,
+          194,
+          212,
+          230
+        ],
+        "Boost": 0,
+        "Fuel": 0.6800000071525574,
+        "DistanceTraveled": 0,
+        "BestLap": 80.33000183105469,
+        "LastLap": 81.19999694824219,
+        "CurrentLap": 34.209999084472656,
+        "CurrentRaceTime": 0,
+        "LapNumber": 2,
+        "RacePosition": 3,
+        "AccelInput": 204,
+        "BrakeInput": 51,
+        "ClutchInput": 0,
+        "HandBrakeInput": 0,
+        "Gear": 4,
+        "SteerInput": 0
+      }
+    },
+    {
+      "inputBoostPsi": -7.2519001960754395,
+      "parsedJson": {
+        "IsRaceOn": 1,
+        "TelemetrySchema": "forza-data-out/fh6-324-v2",
+        "TimestampMS": 1000,
+        "EngineMaxRpm": 9000,
+        "EngineIdleRpm": 900,
+        "CurrentEngineRpm": 6500,
+        "AccelerationX": 0,
+        "AccelerationY": 0,
+        "AccelerationZ": 0,
+        "VelocityX": 0,
+        "VelocityY": 0,
+        "VelocityZ": 0,
+        "AngularVelocityX": 0,
+        "AngularVelocityY": 0,
+        "AngularVelocityZ": 0,
+        "Yaw": 0,
+        "Pitch": 0,
+        "Roll": 0,
+        "NormalizedSuspensionTravel": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "TireSlipRatio": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "WheelRotationSpeed": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "SurfaceRumble": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "TireSlipAngle": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "TireCombinedSlip": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "SuspensionTravelMeters": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "WheelOnRumbleStrip": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "CarOrdinal": 0,
+        "CarClass": 0,
+        "CarPerformanceIndex": 0,
+        "DrivetrainType": 0,
+        "Cylinders": 0,
+        "PositionX": 0,
+        "PositionY": 0,
+        "PositionZ": 0,
+        "SpeedMetersPerSecond": 50,
+        "PowerWatts": 0,
+        "TorqueNewtons": 0,
+        "TireTemp": [
+          176,
+          194,
+          212,
+          230
+        ],
+        "Boost": -7.2519001960754395,
+        "Fuel": 0.6800000071525574,
+        "DistanceTraveled": 0,
+        "BestLap": 80.33000183105469,
+        "LastLap": 81.19999694824219,
+        "CurrentLap": 34.209999084472656,
+        "CurrentRaceTime": 0,
+        "LapNumber": 2,
+        "RacePosition": 3,
+        "AccelInput": 204,
+        "BrakeInput": 51,
+        "ClutchInput": 0,
+        "HandBrakeInput": 0,
+        "Gear": 4,
+        "SteerInput": 0
+      }
+    }
+  ]
+}

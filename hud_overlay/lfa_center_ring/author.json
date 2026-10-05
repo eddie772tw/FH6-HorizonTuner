@@ -1,5 +1,5 @@
 {
   "author": "Bagley as Codex",
   "name": "LFA Center Ring",
-  "description": "2012 Lexus LFA Normal-display inspired original HUD: approved center ring with four crescent side gauges researched from real-car photographs. Canonical RPM, speed, gear and fuel; unsupported coolant/oil temperature/pressure clearly N/A. MIT original artwork; no OEM assets."
+  "description": "2012 Lexus LFA inspired center ring and four crescents. Four-wheel average tyre temperature, signed boost with turbo pictogram, throttle/brake percentages, reported lap time and rank/lap notices. Strict missing-data and lifecycle guards; original MIT artwork, no OEM assets."
 }
