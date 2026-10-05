@@ -29,7 +29,7 @@ describe('AP1 boost source and display contract', () => {
   it('accepts canonical-only typed values without magnitude guessing', () => {
     expect(normalizeBoost({ boost_psi: PSI_PER_BAR }).bar).toBeCloseTo(1);
     expect(normalizeBoost({ boost_bar: -.75 }).bar).toBe(-.75);
-    expect(normalizeBoost({ boost_kpa: -100 }).ratio).toBe(1);
+    expect(normalizeBoost({ boost_kpa: -100 }).ratio).toBe(.75);
     expect(normalizeBoost({ boost: 100, boost_unit: 'kPa' }).valueText).toBe('100');
     expect(normalizeBoost({ boost: 10, displayUnits: { boostPressure: 'psi' } }).valueText).toBe('10.0');
     expect(normalizeBoost({ boost: 14.5 }).value).toBeNull();
@@ -47,10 +47,10 @@ describe('AP1 boost source and display contract', () => {
     expect(normalizeBoost({ ...raw, displayUnits: { boostPressure: 'bar' } }, { effectiveUnits: { boostPressure: 'psi' } }).unit).toBe('bar');
   });
   it('clamps the signed geometry only and preserves actual out-of-range numbers', () => {
-    const low = normalizeBoost({ boost_bar: -2 });
+    const low = normalizeBoost({ boost_bar: -3 });
     const high = normalizeBoost({ boost_bar: 3 });
     expect(low.ratio).toBe(1);
-    expect(low.valueText).toBe('-2.00');
+    expect(low.valueText).toBe('-3.00');
     expect(low.overflow).toBe('low');
     expect(high.ratio).toBe(1);
     expect(high.valueText).toBe('3.00');
@@ -81,16 +81,25 @@ describe('AP1 boost source and display contract', () => {
 });
 
 
-describe('AP1 nonlinear boost and full-rail vacuum mapping', () => {
+describe('AP1 shared monochrome magnitude mapping', () => {
   it.each([[0,0],[.25,.1875],[.5,.375],[1,.75],[1.5,.875],[2,1],[3,1]])('maps positive %sbar to the requested fraction %s', (bar, ratio) => {
     expect(boostGaugeRatio(bar)).toBe(ratio);
   });
-  it.each([-.25,-.5,-1,-2])('uses the whole rail for vacuum magnitude %sbar', bar => {
+  it.each([-.25,-.5,-1,-2])('uses the same nonlinear magnitude curve for negative %sbar', bar => {
     const boost = normalizeBoost({ boost_bar: bar });
-    expect(boost.ratio).toBe(Math.min(1, Math.abs(bar)));
+    expect(boost.ratio).toBe(boostGaugeRatio(Math.abs(bar)));
     expect(boost.mode).toBe('vacuum');
     expect(boost.modeLabel).toBe('VAC');
     expect(boost.value).toBe(bar);
+  });
+  it.each([.5,1,2])('shares the exact fill fraction and magnitude graduations for both signs at%sbar', bar => {
+    const positive = normalizeBoost({ boost_bar: bar });
+    const negative = normalizeBoost({ boost_bar: -bar });
+    expect(negative.ratio).toBe(positive.ratio);
+    expect(negative.ticks).toEqual(positive.ticks);
+    expect(negative.valueText).toBe('-' + positive.valueText);
+    expect(negative.modeLabel).toBe('VAC');
+    expect(negative.overflow).toBeNull();
   });
   it('is monotonic within each mode and continuous at the positive breakpoint', () => {
     for (let i = 0; i < 200; i++) {
@@ -102,7 +111,7 @@ describe('AP1 nonlinear boost and full-rail vacuum mapping', () => {
     expect(boostGaugeRatio(null)).toBeNull();
   });
   it('keeps fill fractions and tick positions invariant across units', () => {
-    for (const bar of [-.5,0,.25,.5,1,2]) {
+    for (const bar of [-2,-1,-.5,0,.25,.5,1,2]) {
       const expected = boostGaugeRatio(bar);
       for (const data of [{ boost_bar: bar }, { boost_psi: bar * PSI_PER_BAR }, { boost_kpa: bar * 100 }]) {
         for (const unit of ['bar','psi','kpa']) {
@@ -112,9 +121,9 @@ describe('AP1 nonlinear boost and full-rail vacuum mapping', () => {
     }
     for (const unit of ['bar','psi','kpa']) {
       expect(boostScaleTicks(unit, 'boost').map((tick: any) => tick.position)).toEqual([0,.375,.75,1]);
-      expect(boostScaleTicks(unit, 'vacuum').map((tick: any) => tick.position)).toEqual([0,.25,.5,1]);
+      expect(boostScaleTicks(unit, 'vacuum').map((tick: any) => tick.position)).toEqual([0,.375,.75,1]);
     }
     expect(boostScaleTicks('kpa','boost').map((tick: any) => tick.label)).toEqual(['0','50','100','200']);
-    expect(boostScaleTicks('bar','vacuum').map((tick: any) => tick.label)).toEqual(['0','0.25','0.5','1']);
+    expect(boostScaleTicks('bar','vacuum').map((tick: any) => tick.label)).toEqual(['0','0.5','1','2']);
   });
 });

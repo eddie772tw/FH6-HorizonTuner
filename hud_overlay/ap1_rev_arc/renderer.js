@@ -63,12 +63,8 @@ export function createRenderer(document, container) {
       text('speedUnit', frame.unit === 'mph' ? 'mph' : 'km/h');
       text('gearValue', frame.gear);
       text('boostValue', `${frame.boost.valueText} ${frame.boost.unitLabel}`);
-      const vacuum = frame.boost.mode === 'vacuum';
       text('boostModeLabel', frame.boost.modeLabel);
-      set(el('boostModeLabel'), 'class', 'ap1-label' + (vacuum ? ' ap1-boost-vacuum' : ''));
-      set(el('boostValue'), 'class', 'ap1-boost-value' + (vacuum ? ' ap1-boost-vacuum' : ''));
-      set(el('boostTicks'), 'class', vacuum ? 'ap1-boost-vacuum' : '');
-      const scaleKey = (vacuum ? 'vacuum' : 'boost') + ':' + frame.boost.unit;
+      const scaleKey = frame.boost.unit;
       if (scaleKey !== lastBoostScaleKey) {
         lastBoostScaleKey = scaleKey;
         el('boostTicks').replaceChildren();
@@ -83,7 +79,7 @@ export function createRenderer(document, container) {
       boostBars.forEach(bar => {
         const width = Math.max(0, Math.min(bar.width, fillEnd - bar.x));
         set(bar.active, 'width', width);
-        set(bar.active, 'class', 'ap1-segment' + (width > 0 ? ' is-lit' : '') + (vacuum ? ' is-vacuum' : ''));
+        set(bar.active, 'class', 'ap1-segment' + (width > 0 ? ' is-lit' : ''));
       });
       container.dataset.boost = frame.boost.valueText;
       container.dataset.boostUnit = frame.boost.unitLabel;

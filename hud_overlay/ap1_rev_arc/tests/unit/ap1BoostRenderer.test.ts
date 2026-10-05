@@ -32,19 +32,28 @@ describe('AP1 boost rendering cache', () => {
     expect(f.ids.boostValue.textContent).toBe(value);
     expect(f.fillWidth()).toBeGreaterThan(before);
   });
-  it('switches VAC label, warm color role and magnitude ticks at the same fill ratio', () => {
+  it('switches only the VAC caption and numeric sign while paint classes and scale stay identical', () => {
     const f = fixture();
     f.render(1 / 1024);
     const text = f.ids.boostValue.textContent, ratio = f.container.dataset.boostRatio;
     expect(f.ids.boostModeLabel.textContent).toBe('BOOST');
-    f.render(-3 / 4096);
+    f.render(-1 / 1024);
     expect(f.ids.boostValue.textContent).toBe('-' + text);
     expect(f.container.dataset.boostRatio).toBe(ratio);
     expect(f.container.dataset.boostMode).toBe('vacuum');
     expect(f.ids.boostModeLabel.textContent).toBe('VAC');
-    expect(f.ids.boostValue.attributes.class).toContain('ap1-boost-vacuum');
-    expect(f.lit().every((n: any) => n.attributes.class.includes('is-vacuum'))).toBe(true);
-    expect(f.ids.boostTicks.children.filter((n: any) => n.attributes.class === 'ap1-boost-scale').map((n: any) => n.textContent)).toEqual(['0','0.25','0.5','1']);
+    expect(f.ids.boostValue.attributes.class).toBeUndefined();
+    expect(f.lit().every((n: any) => n.attributes.class === 'ap1-segment is-lit')).toBe(true);
+    expect(f.ids.boostTicks.children.filter((n: any) => n.attributes.class === 'ap1-boost-scale').map((n: any) => n.textContent)).toEqual(['0','0.5','1','2']);
+  });
+  it.each([.5,1])('preserves the complete lit geometry and paint attributes for positive/negative%sbar', bar => {
+    const f = fixture();
+    f.render(bar);
+    const positive = f.lit().map((n: any) => ({ ...n.attributes }));
+    f.render(-bar);
+    expect(f.lit().map((n: any) => n.attributes)).toEqual(positive);
+    expect(f.ids.boostModeLabel.textContent).toBe('VAC');
+    expect(f.ids.boostValue.textContent.startsWith('-')).toBe(true);
   });
   it('shows zero as empty neutral and missing as unavailable without fill', () => {
     const f = fixture();

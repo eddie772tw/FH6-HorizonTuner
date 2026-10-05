@@ -2,7 +2,6 @@
   --hud-default-color: #ffb144;
   --ap1-primary: var(--hud-custom-color, var(--hud-default-color));
   --ap1-hot: #ff6043;
-  --ap1-vacuum: #c18439;
   --ap1-inactive: #42351e;
   --ap1-label: #c9954d;
   --ap1-fallback-face: #0c120e;
@@ -19,7 +18,6 @@
 .ap1-boost-value { font-size: 17px; letter-spacing: .4px; }
 .ap1-boost-scale { font-size: 10.5px; letter-spacing: .3px; }
 .ap1-boost-mark { fill: none; stroke: currentColor; stroke-width: 1; opacity: .7; }
-.ap1-boost-vacuum { color: var(--ap1-vacuum); fill: var(--ap1-vacuum); }
 .ap1-speed-unit { font-size: 21px; }
 .ap1-tick-label { font-size: 21px; font-weight: 600; }
 .ap1-divider { fill: none; stroke: var(--ap1-label); opacity: .25; }
@@ -27,7 +25,6 @@
 .ap1-shift { font-size: 15px; letter-spacing: 2px; fill: var(--ap1-hot); font-weight: 700; }
 .ap1-segment { fill: var(--ap1-inactive); }
 .ap1-segment.is-lit { fill: var(--ap1-primary); filter: drop-shadow(0 0 calc(2px * var(--ap1-glow)) var(--ap1-primary)); }
-.ap1-segment.is-vacuum.is-lit { fill: var(--ap1-vacuum); filter: drop-shadow(0 0 calc(1px * var(--ap1-glow)) var(--ap1-vacuum)); }
 .ap1-segment.is-hot.is-lit { fill: var(--ap1-hot); filter: drop-shadow(0 0 calc(2px * var(--ap1-glow)) var(--ap1-hot)); }
 .ap1-redline-tick { fill: var(--ap1-hot); }
 .ap1-digit { fill: var(--ap1-inactive); opacity: .45; }

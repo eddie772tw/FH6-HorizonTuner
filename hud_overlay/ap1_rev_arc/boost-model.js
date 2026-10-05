@@ -2,7 +2,7 @@
 // Never apply the unrelated binary/Pa assumption or guess units by magnitude.
 export const PSI_PER_BAR = 14.5038;
 export const KPA_PER_PSI = 6.89476;
-export const BOOST_RANGE = Object.freeze({ minBar: -1, maxBar: 2 });
+export const BOOST_RANGE = Object.freeze({ minBar: -2, maxBar: 2 });
 const own = (object, key) => Object.prototype.hasOwnProperty.call(object, key);
 const finite = value => typeof value === 'number' && Number.isFinite(value) ? value : null;
 const knownUnit = value => typeof value === 'string' && ['bar', 'psi', 'kpa'].includes(value.toLowerCase()) ? value.toLowerCase() : null;
@@ -45,19 +45,18 @@ function numberText(value, unit) {
   return fixed.length <= 7 ? fixed : value.toExponential(0);
 }
 
-// Positive pressure deliberately devotes 75% of the rail to the first bar.
-// Vacuum reuses the entire rail as a separate magnitude scale, never a zone.
+// Both signs share one monochrome magnitude scale: 75% for 0–1 bar,
+// then the remaining25% for 1–2 bar. Only sign/caption distinguishes VAC.
 export function boostGaugeRatio(bar) {
   if (finite(bar) === null) return null;
   if (bar === 0) return 0;
-  if (bar < 0) return Math.min(1, Math.abs(bar));
-  return Math.min(1, bar <= 1 ? .75 * bar : .75 + .25 * (bar - 1));
+  const magnitude = Math.abs(bar);
+  return Math.min(1, magnitude <= 1 ? .75 * magnitude : .75 + .25 * (magnitude - 1));
 }
 
-export function boostScaleTicks(unit, mode) {
-  const vacuum = mode === 'vacuum';
-  const values = vacuum ? [0, .25, .5, 1] : [0, .5, 1, 2];
-  const positions = vacuum ? [0, .25, .5, 1] : [0, .375, .75, 1];
+export function boostScaleTicks(unit) {
+  const values = [0, .5, 1, 2];
+  const positions = [0, .375, .75, 1];
   return values.map((bar, i) => {
     const value = unit === 'psi' ? bar * PSI_PER_BAR : unit === 'kpa' ? bar * 100 : bar;
     const label = String(Number(value.toFixed(unit === 'psi' ? 1 : unit === 'kpa' ? 0 : 2)));
@@ -69,7 +68,7 @@ export function emptyBoost(unit = 'bar') {
   return {
     bar: null, value: null, ratio: null, overflow: null, unit,
     unitLabel: unit === 'psi' ? 'PSI' : unit === 'kpa' ? 'kPa' : 'bar',
-    valueText: '--', mode: 'unavailable', modeLabel: 'BOOST', ticks: boostScaleTicks(unit, 'boost'),
+    valueText: '--', mode: 'unavailable', modeLabel: 'BOOST', ticks: boostScaleTicks(unit),
   };
 }
 
@@ -92,7 +91,7 @@ export function normalizeBoost(data = {}, config = {}, speedUnit = 'kmh') {
   const mode = bar < 0 ? 'vacuum' : bar === 0 ? 'neutral' : 'boost';
   return {
     ...display, bar, value, mode, modeLabel: mode === 'vacuum' ? 'VAC' : 'BOOST',
-    ticks: boostScaleTicks(unit, mode), ratio: boostGaugeRatio(bar),
+    ticks: boostScaleTicks(unit), ratio: boostGaugeRatio(bar),
     overflow: bar < BOOST_RANGE.minBar ? 'low' : bar > BOOST_RANGE.maxBar ? 'high' : null,
     valueText: numberText(value, unit),
   };

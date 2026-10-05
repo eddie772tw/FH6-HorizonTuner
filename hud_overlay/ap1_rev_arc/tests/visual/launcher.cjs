@@ -64,9 +64,9 @@ async function main() {
     samples.push({name,...state});
     const assert = require('node:assert/strict');
     if (name === 'host-cruise') { assert.equal(state.readings.speed, '180'); assert.equal(state.readings.gear, '4'); assert.equal(state.readings.boost, '1.00 bar'); }
-    const boostExpected = { 'host-boost-quarter': '0.25 bar', 'host-boost-half': '0.50 bar', 'host-boost-one': '1.00 bar', 'host-boost-two': '2.00 bar', 'host-boost-zero': '0.00 bar', 'host-boost-negative': '-0.50 bar', 'host-boost-missing': '-- bar', 'host-boost-overflow': '3.00 bar', 'host-boost-psi': '14.5 PSI', 'host-boost-kpa': '100 kPa' };
+    const boostExpected = { 'host-boost-quarter': '0.25 bar', 'host-boost-half': '0.50 bar', 'host-boost-one': '1.00 bar', 'host-boost-two': '2.00 bar', 'host-boost-zero': '0.00 bar', 'host-boost-negative': '-0.50 bar', 'host-boost-negative-one': '-1.00 bar', 'host-boost-negative-two': '-2.00 bar', 'host-boost-missing': '-- bar', 'host-boost-overflow': '3.00 bar', 'host-boost-psi': '14.5 PSI', 'host-boost-kpa': '100 kPa' };
     if (boostExpected[name]) assert.equal(state.readings.boost, boostExpected[name]);
-    const expectedRatios = { 'host-cruise': .75, 'host-boost-quarter': .1875, 'host-boost-half': .375, 'host-boost-one': .75, 'host-boost-two': 1, 'host-boost-zero': 0, 'host-boost-negative': .5 };
+    const expectedRatios = { 'host-cruise': .75, 'host-boost-quarter': .1875, 'host-boost-half': .375, 'host-boost-one': .75, 'host-boost-two': 1, 'host-boost-zero': 0, 'host-boost-negative': .375, 'host-boost-negative-one': .75, 'host-boost-negative-two': 1 };
     if (name in expectedRatios) assert(Math.abs(Number(state.readings.boostRatio) - expectedRatios[name]) < 1e-6, 'Boost mapping must match parser float32 precision');
     if (name === 'host-boost-negative') { assert.equal(state.readings.boostMode, 'vacuum'); assert.equal(state.readings.boostCaption, 'VAC'); }
     if (name === 'host-boost-zero') assert.equal(state.readings.boostMode, 'neutral');
@@ -92,7 +92,7 @@ async function main() {
     }, boostFixtures.cases[0].frame);
     await page.waitForTimeout(300);
     await record('host-cruise');
-    for (const [name, boost] of [['host-boost-quarter', 3.62595], ['host-boost-half', 7.2519], ['host-boost-one', 14.5038], ['host-boost-two', 29.0076], ['host-boost-zero', boostFixtures.cases[1].frame.Boost], ['host-boost-negative', boostFixtures.cases[2].frame.Boost], ['host-boost-missing', null], ['host-boost-overflow', 43.5114]]) {
+    for (const [name, boost] of [['host-boost-quarter', 3.62595], ['host-boost-half', 7.2519], ['host-boost-one', 14.5038], ['host-boost-two', 29.0076], ['host-boost-zero', boostFixtures.cases[1].frame.Boost], ['host-boost-negative', boostFixtures.cases[2].frame.Boost], ['host-boost-negative-one', -14.5038], ['host-boost-negative-two', -29.0076], ['host-boost-missing', null], ['host-boost-overflow', 43.5114]]) {
       await page.evaluate(value => { if (value === null) delete window.auditRaw.Boost; else window.auditRaw.Boost = value; }, boost);
       await page.waitForTimeout(200); await record(name);
     }

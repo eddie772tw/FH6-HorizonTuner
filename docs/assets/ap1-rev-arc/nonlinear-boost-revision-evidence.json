@@ -1,8 +1,8 @@
 {
   "style": "ap1_rev_arc",
-  "revision": "piecewise positive boost and full-rail warm-amber VAC",
-  "base_head": "f1f78ed21e156ea97674cdfd374ecb763d7bdedc",
-  "status": "implemented; new remote visual and user review pending",
+  "revision": "shared monochrome absolute-magnitude boost",
+  "base_head": "fb77c3ef2214c15d9db31bb8715a88224681210d",
+  "status": "implemented; new actual monochrome renderer/user review pending",
   "positive": {
     "segments": [
       {
@@ -40,22 +40,10 @@
     ]
   },
   "vacuum": {
-    "fill": "linear absolute pressure magnitude0..1bar across whole rail",
-    "tick_magnitude_bar": [
-      0,
-      0.25,
-      0.5,
-      1
-    ],
-    "tick_positions": [
-      0,
-      0.25,
-      0.5,
-      1
-    ],
+    "mapping": "exactly the same shared abs(bar) mapping and ticks",
     "label": "VAC",
-    "color": "#c18439 warm dark amber; not blue",
-    "signed_numeric": true
+    "signed_numeric": true,
+    "paint": "identical RGBA, opacity, glow/filter and text/tick color to positive boost; no VAC-specific color state"
   },
   "states": {
     "zero": "neutral, empty rail",
@@ -64,8 +52,8 @@
     "tiny_negative": "minus retained when rounded to zero; actual negative zero neutral"
   },
   "tests": {
-    "style_cases": 80,
-    "frontend_passed": 1185,
+    "style_cases": 85,
+    "frontend_passed": 1190,
     "frontend_skipped": 1,
     "files_passed": 160,
     "files_skipped": 1
@@ -88,9 +76,51 @@
       "boost-positive-two.png",
       "boost-vac-psi.png",
       "boost-vac-kpa.png",
-      "boost-tiny-negative.png"
+      "boost-tiny-negative.png",
+      "boost-negative-one.png",
+      "boost-negative-two.png",
+      "boost-negative-overflow.png"
     ],
-    "automatic": "piecewise ratios, unit tick values, warm RGB ordering, lower luminance than positive boost, black-background readability, actual launcher mapping"
+    "automatic": "exact computed-paint equality across signs, matching±.5/±1 fill fractions, shared unit ticks, actual launcher checks"
   },
-  "limitations": "No new actual browser screenshots yet. Existing previews are the prior linear version. Windows/game acceptance and user approval remain unclaimed."
+  "limitations": "Prior dark-amber VAC design is superseded and is not the final deliverable. New monochrome screenshots remain pending. No native Windows/game acceptance or user approval claimed.",
+  "design_context": "Monochrome LCD / TN was supplied as user design context, not independently hardware-verified here",
+  "shared_mapping": {
+    "input": "abs(bar)",
+    "segments": [
+      {
+        "bar": [
+          0,
+          1
+        ],
+        "rail": [
+          0,
+          0.75
+        ]
+      },
+      {
+        "bar": [
+          1,
+          2
+        ],
+        "rail": [
+          0.75,
+          1
+        ]
+      }
+    ],
+    "ticks": [
+      0,
+      0.5,
+      1,
+      2
+    ],
+    "tick_positions": [
+      0,
+      0.375,
+      0.75,
+      1
+    ],
+    "both_signs": true
+  }
 }
