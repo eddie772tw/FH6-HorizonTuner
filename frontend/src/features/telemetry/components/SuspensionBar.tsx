@@ -1,7 +1,11 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { telemetryEmitter } from '../../../hooks/useTelemetry';
 import { useSettings } from '../../../context/SettingsContext';
 import { getSuspensionDisplayValue, type SuspensionTravelMode } from '../../../utils/suspensionTravel';
+import {
+  clearSuspensionTraceHistory, createSuspensionTraceHistory,
+  SUSPENSION_TRACE_WINDOW_MS, updateSuspensionTraceHistory,
+} from '../suspensionTrace';
 
 // --- COMPONENT: SuspensionBar ---
 interface SuspensionBarProps {
@@ -23,23 +27,19 @@ const SuspensionBar: React.FC<SuspensionBarProps> = React.memo(({ title, isLeft,
   const unitRef = useRef<HTMLSpanElement>(null);
   const { t } = useSettings();
   
-  const hist = useRef<{travel: number, time: number}[]>([]);
-  const offsetRef = useRef(0);
-  const lastTimeRef = useRef(performance.now());
+  const [history] = useState(createSuspensionTraceHistory);
   const minMax = useRef<{ min: number | null, max: number | null }>({ min: null, max: null });
   const prevCar = useRef<number | null>(null);
   const prevRace = useRef<number | null>(null);
 
   useEffect(() => {
-    hist.current = [];
-    offsetRef.current = 0;
+    clearSuspensionTraceHistory(history);
     minMax.current = { min: null, max: null };
-  }, [displayMode]);
+  }, [displayMode, history]);
 
   useEffect(() => {
     if (!renderHistoryTrace) {
-      hist.current = [];
-      offsetRef.current = 0;
+      clearSuspensionTraceHistory(history);
       const canvas = canvasRef.current;
       if (canvas && canvas.width > 0 && canvas.height > 0) {
         const ctx = canvas.getContext('2d');
@@ -52,7 +52,7 @@ const SuspensionBar: React.FC<SuspensionBarProps> = React.memo(({ title, isLeft,
         }
       }
     }
-  }, [renderHistoryTrace]);
+  }, [renderHistoryTrace, history]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -105,8 +105,7 @@ const SuspensionBar: React.FC<SuspensionBarProps> = React.memo(({ title, isLeft,
       
       if ((prevCar.current !== null && prevCar.current !== liveData.CarOrdinal) ||
           (prevRace.current !== null && prevRace.current !== liveData.IsRaceOn)) {
-        hist.current = [];
-        offsetRef.current = 0;
+        clearSuspensionTraceHistory(history);
         minMax.current = { min: null, max: null };
       }
       prevCar.current = liveData.CarOrdinal;
@@ -115,8 +114,6 @@ const SuspensionBar: React.FC<SuspensionBarProps> = React.memo(({ title, isLeft,
       if (liveData.IsRaceOn !== 1) return;
       
       const now = performance.now();
-      const dt = now - lastTimeRef.current;
-      lastTimeRef.current = now;
 
       const normalizedTravel = (liveData.NormalizedSuspensionTravel && liveData.NormalizedSuspensionTravel[tireIdx]) || 0;
       const absoluteMeters = (liveData.SuspensionTravelMeters && liveData.SuspensionTravelMeters[tireIdx]) || 0;
@@ -130,29 +127,10 @@ const SuspensionBar: React.FC<SuspensionBarProps> = React.memo(({ title, isLeft,
         if (travel > minMax.current.max) minMax.current.max = travel;
       }
       
-      const speed = liveData.SpeedMetersPerSecond || 0;
-      const isMoving = Math.abs(speed) > 0.5;
-
       if (renderHistoryTrace) {
-        if (!isMoving) {
-          for (let i = 0; i < hist.current.length; i++) hist.current[i].time += dt;
-        } else {
-          // [PERF] Use O(1) circular buffer instead of O(N) Array.shift() in 60Hz loop
-          if (hist.current.length < 180) {
-            hist.current.push({ travel: normalizedTravel, time: now });
-          } else {
-            const idx = offsetRef.current;
-            const old = hist.current[idx];
-            if (old) {
-              old.travel = normalizedTravel;
-              old.time = now;
-            }
-            offsetRef.current = (idx + 1) % 180;
-          }
-        }
+        updateSuspensionTraceHistory(history, normalizedTravel, now);
       } else {
-        hist.current = [];
-        offsetRef.current = 0;
+        clearSuspensionTraceHistory(history);
       }
 
       const percent = Math.max(0, Math.min(100, normalizedTravel * 100));
@@ -173,7 +151,7 @@ const SuspensionBar: React.FC<SuspensionBarProps> = React.memo(({ title, isLeft,
           
           drawBackground(ctx, w, h);
 
-          if (renderHistoryTrace && hist.current.length > 0) {
+          if (renderHistoryTrace && history.size > 0) {
             ctx.beginPath();
             const grad = ctx.createLinearGradient(0, 0, 0, h);
             grad.addColorStop(0, '#ff003c');
@@ -184,13 +162,13 @@ const SuspensionBar: React.FC<SuspensionBarProps> = React.memo(({ title, isLeft,
             ctx.lineWidth = 2 * dpr;
             ctx.lineJoin = 'round';
     
-            const len = hist.current.length;
-            const latestIdx = (offsetRef.current - 1 + len) % len;
-            const maxT = hist.current[latestIdx].time;
+            const len = history.size;
+            const latestIdx = (history.offset - 1 + len) % len;
+            const maxT = history.samples[latestIdx].time;
             for (let k = 0; k < len; k++) {
-              const idx = (offsetRef.current + k) % len;
-              const p = hist.current[idx];
-              const x = w - ((maxT - p.time) / 2500) * w; 
+              const idx = (history.offset + k) % len;
+              const p = history.samples[idx];
+              const x = w - ((maxT - p.time) / SUSPENSION_TRACE_WINDOW_MS) * w;
               const y = h - (p.travel * h);
               if (k === 0) ctx.moveTo(x, y);
               else ctx.lineTo(x, y);
@@ -202,7 +180,7 @@ const SuspensionBar: React.FC<SuspensionBarProps> = React.memo(({ title, isLeft,
     };
     telemetryEmitter.addEventListener('update', handleUpdate);
     return () => telemetryEmitter.removeEventListener('update', handleUpdate);
-  }, [tireIdx, renderHistoryTrace, displayMode]);
+  }, [tireIdx, renderHistoryTrace, displayMode, history]);
 
   return (
     <div ref={containerRef} className="p-2 rounded-3 border d-flex flex-column justify-content-between h-100 overflow-hidden" style={{ background: 'var(--surface-1)', borderColor: 'var(--glass-border) !important' }}>

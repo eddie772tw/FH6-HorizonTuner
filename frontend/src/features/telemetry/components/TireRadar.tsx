@@ -23,9 +23,8 @@ const TireRadar: React.FC<TireRadarProps> = React.memo(({ title, isLeft, tireIdx
   const containerRef = useRef<HTMLDivElement>(null);
   const radarCanvasRef = useRef<HTMLCanvasElement>(null);
   const tempCanvasRef = useRef<HTMLCanvasElement>(null);
-  const hist = useRef<{ temp: number, ratio: number, angle: number, time: number, speed: number }[]>([]);
+  const hist = useRef<{ temp: number, ratio: number, angle: number, time: number }[]>([]);
   const offsetRef = useRef(0);
-  const lastTimeRef = useRef(performance.now());
   const tempLabelRef = useRef<HTMLSpanElement>(null);
 
   const angRef = useRef<HTMLSpanElement>(null);
@@ -173,8 +172,6 @@ const TireRadar: React.FC<TireRadarProps> = React.memo(({ title, isLeft, tireIdx
       if (liveData.IsRaceOn !== 1) return;
 
       const now = performance.now();
-      const dt = now - lastTimeRef.current;
-      lastTimeRef.current = now;
 
       let cTemp = 0, cRatio = 0, cAngle = 0;
       if (liveData.TireTemp && liveData.TireSlipRatio && liveData.TireSlipAngle) {
@@ -182,24 +179,18 @@ const TireRadar: React.FC<TireRadarProps> = React.memo(({ title, isLeft, tireIdx
         cRatio = liveData.TireSlipRatio[tireIdx];
         cAngle = liveData.TireSlipAngle[tireIdx];
       }
-      const speed = liveData.SpeedMetersPerSecond || 0;
-      const isMoving = Math.abs(speed) > 0.5;
 
       if (renderCharts) {
-        if (!isMoving) {
-          for (let i = 0; i < hist.current.length; i++) hist.current[i].time += dt;
+        // [PERF] Use O(1) circular buffer instead of O(N) Array.shift() in the render loop.
+        if (hist.current.length < 900) {
+          hist.current.push({ temp: cTemp, ratio: cRatio, angle: cAngle, time: now });
         } else {
-          // [PERF] Use O(1) circular buffer instead of O(N) Array.shift() in 60Hz loop
-          if (hist.current.length < 900) {
-            hist.current.push({ temp: cTemp, ratio: cRatio, angle: cAngle, time: now, speed });
-          } else {
-            const idx = offsetRef.current;
-            const old = hist.current[idx];
-            if (old) {
-              old.temp = cTemp; old.ratio = cRatio; old.angle = cAngle; old.time = now; old.speed = speed;
-            }
-            offsetRef.current = (idx + 1) % 900;
+          const idx = offsetRef.current;
+          const old = hist.current[idx];
+          if (old) {
+            old.temp = cTemp; old.ratio = cRatio; old.angle = cAngle; old.time = now;
           }
+          offsetRef.current = (idx + 1) % 900;
         }
       } else {
         hist.current = [];
@@ -341,7 +332,6 @@ const TireRadar: React.FC<TireRadarProps> = React.memo(({ title, isLeft, tireIdx
             for (let i = 0; i < hLen; i++) {
               const idx = hLen < 900 ? i : (offsetRef.current + i) % hLen;
               const p = hist.current[idx];
-              if (Math.abs(p.speed) < 0.5) continue;
               let normT = Math.max(0, Math.min(1, (p.temp - tempMinScale) / tempRange));
               let binIdx = Math.min(numBins - 1, Math.floor(normT * numBins));
               bins[binIdx]++;
