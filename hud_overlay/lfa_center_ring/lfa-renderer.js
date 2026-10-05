@@ -11,8 +11,10 @@
         ['Speed', 'SpeedUnit', 'Gear', 'Status', 'Tire', 'TireFill', 'TireGauge', 'Boost', 'BoostUnit', 'BoostMode', 'BoostFill', 'BoostGauge', 'Throttle', 'ThrottleFill', 'ThrottleGauge', 'Brake', 'BrakeFill', 'BrakeGauge', 'LapTime', 'SelfCheck'].forEach((n) => { nodes[n] = get('lfa' + n); });
         for (const name of ['Tire', 'Boost']) for (let i = 0; i < 4; i++) nodes[name + 'Tick' + i] = get('lfa' + name + 'Tick' + i);
         for (let i = 0; i < 4; i++) nodes['BoostMark' + i] = get('lfaBoostMark' + i);
+        ['MovingCenter', 'CollapsedFascia', 'CollapsedReadings', 'ExpandedPane', 'ExpandedCurrent', 'ExpandedLast', 'ExpandedBest', 'ExpandedTire', 'ExpandedBoost', 'ExpandedBoostLabel', 'ExpandedThrottle', 'ExpandedBrake'].forEach(name => { nodes[name] = get('lfa' + name); });
         let colors, dialKey = '', lastNeedle = '', ratio = 2;
         let boostTicksKey = '';
+        let layoutKey = '';
         function setText(name, value) { if (nodes[name].textContent !== value) nodes[name].textContent = value; }
         function palette(settings) {
             const css = root.getComputedStyle(container);
@@ -92,8 +94,40 @@
                 nodes['BoostTick' + i].setAttribute('y', point.y + 4);
             });
         }
-        function render(v, check, settings) {
+        function expandedLayout(v, motion) {
+            const progress = motion?.progress ?? 0, target = motion?.target === true, settled = motion?.settled !== false;
+            const key = [progress, target, settled].join(':');
+            if (key !== layoutKey) {
+                layoutKey = key;
+                // No transform/compositor layer remains on the settled approved collapsed face.
+                nodes.MovingCenter.style.transform = progress === 0 ? 'none' : 'translateX(' + progress * 96 + 'px)';
+                const wings = Math.max(0, 1 - progress * 4);
+                for (const node of [nodes.CollapsedFascia, nodes.CollapsedReadings]) {
+                    node.style.opacity = wings === 1 ? '' : String(wings);
+                    node.style.visibility = progress === 1 ? 'hidden' : '';
+                }
+                nodes.CollapsedReadings.setAttribute('aria-hidden', String(progress === 1));
+                nodes.ExpandedPane.style.display = progress === 0 ? 'none' : '';
+                nodes.ExpandedPane.style.opacity = String(Math.max(0, Math.min(1, (progress - .18) / .5)));
+                nodes.ExpandedPane.setAttribute('aria-hidden', String(progress === 0));
+                container.dataset.expanded = String(target);
+                container.dataset.expansionSettled = String(settled);
+                container.dataset.expansionProgress = String(progress);
+            }
+            if (progress === 0) return;
+            const a = v.auxiliary;
+            setText('ExpandedCurrent', v.lapText);
+            setText('ExpandedLast', root.LfaSession.formatLap(v.race.lastLap));
+            setText('ExpandedBest', root.LfaSession.formatLap(v.race.bestLap));
+            setText('ExpandedTire', a.tireText === 'N/A' ? 'N/A' : a.tireText + a.temperatureUnit);
+            setText('ExpandedBoost', a.boostText === 'N/A' ? 'N/A' : a.boostText + ' ' + a.boostUnit);
+            setText('ExpandedBoostLabel', a.boostNegative ? 'VAC' : 'BOOST');
+            nodes.ExpandedBoost.dataset.negative = nodes.ExpandedBoostLabel.dataset.negative = String(a.boostNegative);
+            setText('ExpandedThrottle', a.throttleText); setText('ExpandedBrake', a.brakeText);
+        }
+        function render(v, check, settings, motion) {
             drawScale(v); drawNeedle(v, check, settings);
+            expandedLayout(v, motion);
             setText('Speed', v.speedText); setText('SpeedUnit', v.speedUnit); setText('Gear', v.gear);
             setText('Status', v.centerText);
             const a = v.auxiliary;

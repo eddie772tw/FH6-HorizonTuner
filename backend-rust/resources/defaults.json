@@ -103,6 +103,8 @@
     "s650Theme": "heritage67",
     "s650CenterWidget": "drive",
     "s650HmiOffsetY": 60,
+    "lfaManualExpand": false,
+    "lfaAutoExpand": false,
     "audioDeviceId": "default",
     "position": {
       "x": 100,

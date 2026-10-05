@@ -14,6 +14,21 @@
 - 右側中央：封包回報的目前單圈經過時間，沒有資料時保留 `—:—`
 - 中央原 LIVE 區：有效排名 `P#`；完成單圈／最佳單圈改善時短暫提示，之後回到排名或 LIVE
 
+## 展開／還原機構（Chrome 驗證待完成）
+
+已查看 [2012 官方手冊 Normal／Menu 圖，印刷116／PDF118頁](https://assets.sia.toyota.com/publications/en/om-s/OM77006U/pdf/OM77006U.pdf#page=118)，以及 [Lexus 日本官方 LFA 手冊，印刷98／PDF100頁](https://manual.lexus.jp/pdf/lfa/LFA_OM_JP_M77001J_1_1012.pdf#page=100)。[官方年份索引](https://manual.lexus.jp/lfa/) 對應2010年12月至2012年12月。兩者都顯示主錶環連同畫面右移、左方出現選單；英文手冊印刷144–145頁另有單圈資訊版面。這是 **Menu display 機構**，不把 SPORT 或日本版 Circuit Mode 誤當相同功能；本 HUD 自動依單圈訊號切換是原創適配。
+
+- 固定560×370占位，整個中央組件從x280平移至x376，即+96設計px／預設72 CSS px。錶環、指針、速度／檔位／狀態同步移動，不縮放；還原後移除transform，避免永久改變收合畫面的合成方式
+- 四弧側錶淡出，左側x23–190原創面板顯示封包的CURRENT／LAST／BEST LAP與胎溫／增壓／踏板。缺失為N/A或`—:—`，沒有假原車選單或推算圈速
+- 約600ms臨界阻尼滑移，反轉時保留位置與速度。位移／時間是HUD設計值，**不是原車硬體量測**；reduced-motion立即切換，resize不重設進度，首次持久化手動設定直接採用終點布局
+- HUD設定有`lfaManualExpand`、`lfaAutoExpand`兩個嚴格boolean，預設皆false。優先順序為手動ON → 已確認比賽的自動ON → 收合；手動OFF仍可能由自動模式維持展開
+- 自動進入需順序正確的uint32 timestamp與**400ms且至少兩個不同正值的CurrentLap增長**；初始0即使有排名也不進入，IsRaceOn或race clock單獨不足以進入
+- 已確認後，新鮮封包內固定正圈時可維持；換圈0有排名可維持，新觀察到圈數增加則提供緩衝。靜態歷史圈數不能永久維持0；缺失／非法圈時或無背景的持續0在2秒後收合
+- timestamp停止真正前進3秒後自動收合；讀數仍在1.5秒失效。短斷流重連不抖動，重播／倒序不刷新確認時鐘，時代或車輛變更靜默重建基準。短暫error只啟動緩衝，不立即收合；有效圈時的pause或缺少速度／RPM不單獨改變布局，讀數安全規則仍清空內容
+- 手動ON可在失聯時維持展開，但內容仍清空。本功能是有界的單圈訊號推論，並非完美比賽旗標
+
+`tests/visual/expansion.mjs` 用可控制時鐘產生收合、展開、中間幀與還原證據，並測試真實螢幕右移、快速反轉、reduced-motion、resize、初始0／換圈／缺失／斷線。設定頁另有真實OverlayView→BroadcastChannel→Launcher整合測試。新功能的Chrome像素審查尚待CI，既有預覽不代表展開版已驗收。
+
 ## 精確資料與單位契約
 
 | 顯示 | 來源與條件 | 顯示範圍／缺失處理 |
@@ -77,7 +92,7 @@ T_6820 圖本身標示 Issued 10/2009、中央 AUTO，不能當作 2012 年式�
 
 - 中央 PNG SHA-256：`3433460df37b91c67f09cfe7b3c99bacd6ad925db36b113042a95bc196422b22`
 - 中央 SVG SHA-256：`8570a31f672dac12bb94e198a91cb78576dd0b09b81c140dd4ae7ca68b924028`
-- 本機：**157 files passed／1 skipped；1,154 tests passed／1 skipped**，含 49 個 LFA 行為測試；`build:web-hud`、語法與 diff gate 通過
+- 本機：**160 files passed／1 skipped；1,208 tests passed／1 skipped**，含 81 個 LFA 行為測試；`build:web-hud`、語法與 diff gate 通過
 - 最新右上增壓比例修訂已完成本機與實際 Chrome 驗證。僅移除右上舊固定刻度、按弧長投影切換刻度，渦輪圖示下移並縮至 80%，數字／單位／VAC 區塊移至 x481、y148／160／172 以避開 VAC 中段標籤；其餘三弧與中央未改。側面 PNG 與前版逐像素比對，改動只在右上區域
 - **實際 Chrome 154.0.8037.57 renderer 與共用 launcher 通過**：[run 37266656967](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37266656967)，來源 `5c5b8f63c735a0e55a826a263db53199958dd6ce`、artifact `11326489095`，維持 `chromiumSandbox:true`
 - 實際執行 1280×720、1920×1080、2560×1440 的 DPR1 與 1920×1080 DPR2。C/F、bar/psi/kPa、平均缺失／0、signed boost／0／missing、踏板端點與夾值、排名／計圈通知／逾時／重設、99:59.99 最大寬度、斷線重連與原有生命週期均通過；launcher 使用真正 coordinator、開啟 smoothing，驗證 parser JSON、過期清空、重連、設定、重載與 destroy
@@ -90,19 +105,20 @@ T_6820 圖本身標示 Issued 10/2009、中央 AUTO，不能當作 2012 年式�
 
 證據：[驗證摘要](../assets/lfa-center-ring/verification.json)、[renderer 報告](../assets/lfa-center-ring/evidence.json)、[launcher 報告](../assets/lfa-center-ring/launcher-report.json)、[中央像素比較](../assets/lfa-center-ring/telemetry-center-preservation.json)、[UDP／JSON 單位稽核](../assets/lfa-center-ring/json-unit-audit.json)。上述成功指向已驗證的 runtime head；補入本次文件與預覽後的最終文件 commit CI 仍待執行。
 
-採用技能：`halfmoon-design-system`、`telemetry-udp-protocol`、`pr-author-maintainer`。不修改後端、共用協定或其他 HUD。
+採用技能：`halfmoon-design-system`、`telemetry-udp-protocol`、`modular-refactoring`、`pr-author-maintainer`。展開設定另有前端／後端設定欄位與持久化支援；不修改UDP協定、共用launcher或其他HUD。
 
 ```sh
 pnpm -C frontend test
 pnpm -C frontend run build:web-hud
 node --check hud_overlay/lfa_center_ring/tests/visual/render.mjs
 node --check hud_overlay/lfa_center_ring/tests/visual/launcher.cjs
+node --check hud_overlay/lfa_center_ring/tests/visual/expansion.mjs
 git diff --check
 ```
 
 瀏覽器重現：以 isolated Playwright、正常啟用的 Chromium sandbox 執行 `tests/visual/render.mjs` 與 `launcher.cjs`；`PLAYWRIGHT_MODULE_PATH`、`OUTPUT_DIR`、選用 `PLAYWRIGHT_CHANNEL=chrome`。本機 socket／localhost 環境限制已確認，不透過停用 sandbox 繞過。
 
-## 本次實際 Chrome 預覽
+## 已驗證收合版 Chrome 預覽（展開版待CI）
 
 以下取自上述成功 CI 的真實 renderer，呈現新的非等比例／VAC 量尺。主圖與 720p 圖保留截圖像素；比較／狀態圖僅縮小並加上標題排列，沒有重繪 HUD。全部使用合成遙測，**不是遊戲截圖**。目錄中舊 `fuel-empty.png`／`fuel-full.png` 僅為歷史證據，不代表目前已改為踏板的側錶。
 

@@ -15,6 +15,7 @@ async function main() {
     showCenterInfo: true, showTeleMaster: false, showMotionEffect: false, showTeleSuspension: false,
     showTeleTires: false, showTeleAttitude: false, showTelePedals: false, showPowerTorque: false, showTeleCompass: false };
   const config = { hudStyle: style, scale: 1, unit: 'kmh', effectiveUnit: 'kmh',
+    lfaManualExpand: false, lfaAutoExpand: false,
     effectiveUnits: { speed: 'kmh', boostPressure: 'bar' }, enableSmoothing: true,
     useDefaultColors: true, glowIntensity: 1, elements };
   const types = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.svg': 'image/svg+xml', '.png': 'image/png', '.otf': 'font/otf', '.ttf': 'font/ttf' };
@@ -46,7 +47,7 @@ async function main() {
       const text = id => document.getElementById('lfa' + id)?.textContent;
       const e = document.getElementById(window.HUDCore.getActiveStyle().containerId), b = e.getBoundingClientRect();
       const fill = document.getElementById('lfaBoostFill');
-      return { readings: { speed:text('Speed'),gear:text('Gear'),status:text('Status'),tire:text('Tire'),boost:text('Boost'),boostUnit:text('BoostUnit'),boostMode:text('BoostMode'),boostFraction:parseFloat(fill.style.strokeDasharray)/100,boostVisible:fill.style.opacity,throttle:text('Throttle'),brake:text('Brake'),lap:text('LapTime') },
+      return { readings: { speed:text('Speed'),gear:text('Gear'),status:text('Status'),tire:text('Tire'),boost:text('Boost'),boostUnit:text('BoostUnit'),boostMode:text('BoostMode'),boostFraction:parseFloat(fill.style.strokeDasharray)/100,boostVisible:fill.style.opacity,throttle:text('Throttle'),brake:text('Brake'),lap:text('LapTime'),expanded:e.dataset.expanded,expansionSettled:e.dataset.expansionSettled,expandedCurrent:text('ExpandedCurrent') },
         body:getComputedStyle(document.body).backgroundColor, bounds:{x:b.x,y:b.y,width:b.width,height:b.height,display:getComputedStyle(e).display} };
     });
     await page.screenshot({ path: path.join(out,name+'.png'), omitBackground: true }); samples.push({name,...state});
@@ -70,6 +71,10 @@ async function main() {
     }, parser.samples[0].parsedJson);
     await page.waitForTimeout(300);
     await record('host-parser-positive', {speed:'180',gear:'4',status:'P3',tire:'95°C',boost:'1',boostUnit:'bar',boostMode:'',throttle:'80%',brake:'20%',lap:'0:34.21'});
+    await page.evaluate(config => window.dispatchEvent(new CustomEvent('hud:config', { detail: { ...config, lfaManualExpand: true } })), config);
+    await page.waitForTimeout(800); await record('host-manual-expanded', {expanded:'true',expansionSettled:'true',expandedCurrent:'0:34.21'});
+    await page.evaluate(config => window.dispatchEvent(new CustomEvent('hud:config', { detail: config })), config);
+    await page.waitForTimeout(800); await record('host-manual-restored', {expanded:'false',expansionSettled:'true'});
     for (const [bar, boostFraction] of [[.25,.1875],[.5,.375],[1,.75],[2,1]]) {
       await patch({Boost:bar*14.5038}); await record('host-nonlinear-boost-'+bar, {boost:String(bar),boostFraction,boostMode:''});
     }

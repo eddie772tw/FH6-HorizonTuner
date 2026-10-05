@@ -3,12 +3,17 @@
     const model = window.LfaModel;
     const state = model.newState();
     const renderer = window.LfaRenderer.create(document, model);
+    const expansion = window.LfaExpansion;
+    const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)');
+    let motion = expansion.createMotion(false), expansionConfigured = false;
     let raf = null, destroyed = false, checkStart = null;
     function paint(now) {
         if (destroyed) return;
         let check = checkStart === null ? null : Math.min(1, (now - checkStart) / 750);
         if (check === 1) { check = null; checkStart = null; }
-        if (state.settings.showGauge) renderer.render(model.view(state, now), check, state.settings);
+        const view = model.view(state, now);
+        expansion.advanceMotion(motion, view.expansionTarget, now, reducedMotion?.matches === true);
+        if (state.settings.showGauge) renderer.render(view, check, state.settings, motion);
     }
     function loop(now) {
         if (destroyed) return;
@@ -18,6 +23,11 @@
     function configure(payload) {
         if (destroyed) return;
         state.settings = model.config(payload, state.settings);
+        if (!expansionConfigured && ['lfaManualExpand', 'lfaAutoExpand'].some(key => Object.prototype.hasOwnProperty.call(payload, key))) {
+            // First persisted expansion config is the starting layout, not a user-toggle animation.
+            motion = expansion.createMotion(model.view(state, window.performance.now()).expansionTarget);
+            expansionConfigured = true;
+        }
         renderer.palette(state.settings);
         renderer.visibility(state.settings.showGauge);
         paint(window.performance.now());
@@ -26,6 +36,7 @@
         if (destroyed) return;
         renderer.resize(); paint(window.performance.now());
     }
+    function motionPreferenceChanged() { paint(window.performance.now()); }
     function destroy() {
         if (destroyed) return;
         destroyed = true; checkStart = null;
@@ -34,6 +45,7 @@
         window.removeEventListener('resize', resize);
         window.removeEventListener('pagehide', destroy);
         window.removeEventListener('message', lifecycle);
+        reducedMotion?.removeEventListener?.('change', motionPreferenceChanged);
         state.latest = null;
     }
     function lifecycle(event) {
@@ -55,6 +67,7 @@
     window.addEventListener('message', lifecycle);
     window.addEventListener('pagehide', destroy);
     window.addEventListener('resize', resize);
+    reducedMotion?.addEventListener?.('change', motionPreferenceChanged);
     window.HUDCore.init('lfa_center_ring');
     renderer.resize(); configure({});
     raf = window.requestAnimationFrame(loop);

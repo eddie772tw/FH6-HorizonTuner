@@ -1,0 +1,20 @@
+/* The collapsed instrument retains its existing assets and styles. */
+.lfa-moving-center, .lfa-expanded-pane {
+    position: absolute;
+    inset: 0;
+    width: 560px;
+    height: 370px;
+    pointer-events: none;
+    transition: none !important;
+}
+.lfa-moving-center { transform: none; }
+.lfa-expanded-pane { font-family: Arial, sans-serif; fill: var(--lfa-primary); }
+.lfa-expanded-heading { text-anchor: middle; font-size: 10px; letter-spacing: 2px; fill: var(--lfa-secondary); }
+.lfa-expanded-label, .lfa-expanded-pedal-label { font-size: 9px; letter-spacing: .5px; fill: var(--lfa-secondary); }
+.lfa-expanded-current { font-size: 23px; }
+.lfa-expanded-time { text-anchor: end; font-size: 18px; }
+.lfa-expanded-value { text-anchor: end; font-size: 16px; }
+.lfa-expanded-boost { text-anchor: end; font-size: 14px; }
+.lfa-expanded-pedal-label, .lfa-expanded-pedal { text-anchor: middle; }
+.lfa-expanded-pedal { font-size: 16px; }
+#lfaExpandedBoost[data-negative="true"], #lfaExpandedBoostLabel[data-negative="true"] { fill: var(--lfa-cold, #8fcee5); }

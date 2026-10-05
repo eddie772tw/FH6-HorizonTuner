@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 const path = resolve(process.cwd(), '../hud_overlay/lfa_center_ring');
 function load() {
   const scope: any = {};
-  for (const file of ['lfa-auxiliary.js', 'lfa-session.js', 'lfa-model.js']) runInNewContext(readFileSync(resolve(path, file), 'utf8'), scope);
+  for (const file of ['lfa-auxiliary.js', 'lfa-session.js', 'lfa-expansion.js', 'lfa-model.js']) runInNewContext(readFileSync(resolve(path, file), 'utf8'), scope);
   return scope.LfaModel;
 }
 const sample = { timestamp_ms: 100, rpm: 7200, maxRpm: 9000, redlineRpm: 8000, speed_kmh: 180, speed_mph: 111.85, gear: 4, throttle: .8, brake: 0 };
@@ -84,6 +84,12 @@ describe('LFA center-ring canonical display', () => {
     expect(M.config({ useDefaultColors: true }, c).accent).toBe('#edf7fa');
     expect(M.config({ effectiveUnits: { speed: 'kmh' } }, c).isMetric).toBe(true);
   });
+  it('accepts only boolean expansion switches, defaults off and preserves omitted settings', () => {
+    expect(M.config({})).toMatchObject({ lfaManualExpand: false, lfaAutoExpand: false });
+    const manual = M.config({ lfaManualExpand: true, lfaAutoExpand: true });
+    expect(M.config({ isMetric: false }, manual)).toMatchObject({ lfaManualExpand: true, lfaAutoExpand: true });
+    for (const invalid of [1, 'true', null, []]) expect(M.config({ lfaManualExpand: invalid, lfaAutoExpand: invalid }, manual)).toMatchObject({ lfaManualExpand: false, lfaAutoExpand: false });
+  });
 });
 
 describe('LFA liveness and absence', () => {
@@ -140,10 +146,10 @@ describe('LFA lifecycle through registered HUDCore hooks', () => {
       addEventListener: (name: string, fn: Function) => { if (!listeners.has(name)) listeners.set(name, new Set()); listeners.get(name)!.add(fn); },
       removeEventListener: (name: string, fn: Function) => listeners.get(name)?.delete(fn),
       HUDCore: { registerStyle: (_id: string, def: any) => { hooks = def; }, init: () => {} },
-      LfaRenderer: { create: () => ({ palette: () => {}, resize: () => {}, visibility: () => {}, render: (view: any, check: any, settings: any) => renders.push({ view, check, settings }) }) },
+      LfaRenderer: { create: () => ({ palette: () => {}, resize: () => {}, visibility: () => {}, render: (view: any, check: any, settings: any, motion: any) => renders.push({ view, check, settings, motion: { ...motion } }) }) },
     };
     const scope = { window, document: {} };
-    for (const file of ['lfa-auxiliary.js', 'lfa-session.js', 'lfa-model.js']) runInNewContext(readFileSync(resolve(path, file), 'utf8'), scope);
+    for (const file of ['lfa-auxiliary.js', 'lfa-session.js', 'lfa-expansion.js', 'lfa-model.js']) runInNewContext(readFileSync(resolve(path, file), 'utf8'), scope);
     runInNewContext(readFileSync(resolve(path, 'lfa-controller.js'), 'utf8'), scope);
     return { hooks, renders, pending, listeners, tick: (time: number) => { now = time; const jobs = [...pending.values()]; pending.clear(); jobs.forEach((fn) => fn(time)); }, event: (type: string, event: any = {}) => listeners.get(type)?.forEach((fn) => fn(event)) };
   }
@@ -159,6 +165,16 @@ describe('LFA lifecycle through registered HUDCore hooks', () => {
     expect(c.renders.at(-1)).toBe(last);
     c.hooks.onElementsChange({ showGauge: true }); c.hooks.onAnimate(); c.hooks.onAnimate(); c.tick(1000);
     expect(c.renders.at(-1).check).toBeNull(); expect(c.pending.size).toBe(1);
+  });
+  it('starts from persisted manual layout, then animates user toggles without resize resets', () => {
+    const c = controller(); c.hooks.onInit({ lfaManualExpand: true, lfaAutoExpand: false });
+    expect(c.renders.at(-1).motion).toMatchObject({ progress: 1, settled: true });
+    c.hooks.onInit({ lfaManualExpand: false }); c.tick(150);
+    const closing = c.renders.at(-1).motion;
+    expect(closing.progress).toBeGreaterThan(0); expect(closing.progress).toBeLessThan(1);
+    c.hooks.onScale(); expect(c.renders.at(-1).motion.progress).toBe(closing.progress);
+    c.hooks.onInit({ lfaManualExpand: true }); expect(c.renders.at(-1).motion.progress).toBe(closing.progress);
+    c.tick(1000); expect(c.renders.at(-1).motion).toMatchObject({ progress: 1, settled: true });
   });
   it.each(['pagehide', 'hud:destroy'])('releases the render loop and listeners on %s', (event) => {
     const c = controller(); c.hooks.onAnimate();

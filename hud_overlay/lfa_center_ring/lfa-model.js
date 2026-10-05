@@ -34,6 +34,8 @@
             accent,
             glow: glow === null ? old.glow : Math.max(0, Math.min(2, glow)),
             showGauge: typeof p.elements?.showGauge === 'boolean' ? p.elements.showGauge : old.showGauge,
+            lfaManualExpand: Object.prototype.hasOwnProperty.call(p, 'lfaManualExpand') ? p.lfaManualExpand === true : old.lfaManualExpand === true,
+            lfaAutoExpand: Object.prototype.hasOwnProperty.call(p, 'lfaAutoExpand') ? p.lfaAutoExpand === true : old.lfaAutoExpand === true,
         };
     }
 
@@ -69,7 +71,7 @@
         return Math.PI / 2 + Math.max(0, Math.min(1, (nonnegative(rpm) || 0) / maximum)) * Math.PI * 5 / 3;
     }
     function newState() {
-        return { latest: null, token: null, lastAdvance: null, blocked: false, settings: config({}), race: root.LfaSession.create() };
+        return { latest: null, token: null, lastAdvance: null, blocked: false, settings: config({}), race: root.LfaSession.create(), expansion: root.LfaExpansion.createRace() };
     }
     function ingest(state, data, payload, now) {
         const latest = frame(data, payload, state.settings);
@@ -77,6 +79,8 @@
         state.blocked = latest.failed || !latest.raceOn;
         const hasReading = latest.rpm !== null || latest.speed !== null;
         root.LfaSession.update(state.race, latest.race, now, hasReading && !state.blocked);
+        // Layout follows the lap signal, independently of speed/RPM availability or pause readout safety.
+        root.LfaExpansion.ingestRace(state.expansion, latest.race, now, !latest.failed);
         // Timestamp changes, not onFrame delivery, prove fresh UDP data: coordinator replays frames.
         // Untimestamped third-party fixtures are supported only when meaningful values change.
         const token = latest.timestamp !== null ? 't:' + latest.timestamp
@@ -100,6 +104,7 @@
         const dial = scale(source.maxRpm);
         const shift = live && source.rpm !== null && source.redline !== null && source.rpm >= source.redline;
         return { ...source, status, live, shift, dial,
+            expansionTarget: root.LfaExpansion.target(state.expansion, state.settings, now),
             needle: live && source.rpm !== null ? angle(source.rpm, dial.maximum) : null,
             speedText: source.speed === null ? '—' : String(Math.round(source.speed)),
             rpmText: source.rpm === null ? '—' : Math.round(source.rpm).toLocaleString('en-US'),

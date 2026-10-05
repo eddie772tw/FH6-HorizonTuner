@@ -4,7 +4,7 @@ import { runInNewContext } from 'node:vm';
 import { describe, expect, it } from 'vitest';
 const directory = resolve(process.cwd(), '../hud_overlay/lfa_center_ring');
 const scope: any = {};
-for (const file of ['lfa-auxiliary.js', 'lfa-session.js', 'lfa-model.js']) runInNewContext(readFileSync(resolve(directory, file), 'utf8'), scope);
+for (const file of ['lfa-auxiliary.js', 'lfa-session.js', 'lfa-expansion.js', 'lfa-model.js']) runInNewContext(readFileSync(resolve(directory, file), 'utf8'), scope);
 const M = scope.LfaModel, A = scope.LfaAuxiliary, R = scope.LfaSession;
 const base = { timestamp_ms: 100, rpm: 7200, maxRpm: 9000, redlineRpm: 8000, speed_kmh: 180, speed_mph: 111.85, gear: 4, throttle: .8, brake: .2, tire_temp_f: [176, 194, 212, 230], boost_psi: 14.5038 };
 function view(patch: any = {}, config: any = {}) { const s = M.newState(); s.settings = M.config(config); M.ingest(s, { ...base, ...patch }, {}, 0); return M.view(s, 1); }
@@ -104,6 +104,20 @@ describe('LFA measured auxiliary gauges', () => {
 });
 
 describe('LFA reported laps and rank', () => {
+  it('keeps confirmed automatic layout through pause, lap-only data and a recovered error without exposing unsafe readings', () => {
+    const state = M.newState(); state.settings = M.config({ lfaAutoExpand: true });
+    M.ingest(state, { ...base, CurrentLap: 1 }, {}, 0);
+    M.ingest(state, { ...base, timestamp_ms: 101, CurrentLap: 1.5 }, {}, 500);
+    expect(M.view(state, 500).expansionTarget).toBe(true);
+    M.ingest(state, { ...base, timestamp_ms: 102, CurrentLap: 2, IsRaceOn: 0 }, {}, 1000);
+    expect(M.view(state, 1000)).toMatchObject({ expansionTarget: true, status: 'PAUSED', speedText: '—' });
+    M.ingest(state, { timestamp_ms: 103, CurrentLap: 2.5 }, {}, 1500);
+    expect(M.view(state, 1500)).toMatchObject({ expansionTarget: true, status: 'NO DATA', speedText: '—' });
+    M.ingest(state, { ...base, timestamp_ms: 104, CurrentLap: 3, success: false }, {}, 1600);
+    expect(M.view(state, 1600)).toMatchObject({ expansionTarget: true, status: 'DATA ERROR' });
+    M.ingest(state, { ...base, timestamp_ms: 105, CurrentLap: 3.1 }, {}, 1700);
+    expect(M.view(state, 1700)).toMatchObject({ expansionTarget: true, status: 'LIVE' });
+  });
   it('shows latest reported lap time including zero and bounds formatted width', () => {
     expect(R.formatLap(0)).toBe('0:00.00'); expect(R.formatLap(34.21)).toBe('0:34.21'); expect(R.formatLap(83.456)).toBe('1:23.46');
     expect(R.formatLap(5999.99)).toBe('99:59.99');
@@ -163,7 +177,7 @@ describe('LFA auxiliary and session DOM projection', () => {
   it('renders signed/unit values, pedal percentages, lap/rank and clears all active fills when stale', () => {
     const nodes: Record<string, any> = {};
     const element = (id: string) => nodes[id] ||= { textContent: '', dataset: {}, style: { setProperty: () => {} }, attrs: {}, setAttribute(name: string, value: string) { this.attrs[name] = value; }, getContext: () => null, getTotalLength: () => 100, getPointAtLength: (length: number) => ({ x: length, y: length }) };
-    const window: any = { getComputedStyle: () => ({ getPropertyValue: () => '#edf7fa' }) };
+    const window: any = { LfaSession: R, getComputedStyle: () => ({ getPropertyValue: () => '#edf7fa' }) };
     runInNewContext(readFileSync(resolve(directory, 'lfa-renderer.js'), 'utf8'), { window });
     const renderer = window.LfaRenderer.create({ getElementById: element }, M), s = session(); renderer.palette(s.state.settings);
     renderer.render(s.feed({ Boost: -7.2519 }), null, s.state.settings);
@@ -171,15 +185,22 @@ describe('LFA auxiliary and session DOM projection', () => {
     expect(nodes.lfaThrottle.textContent).toBe('80%'); expect(nodes.lfaBrake.textContent).toBe('20%'); expect(nodes.lfaLapTime.textContent).toBe('0:34.21'); expect(nodes.lfaStatus.textContent).toBe('P3');
     expect(nodes.lfaBoostMode.textContent).toBe('VAC'); expect(nodes.lfaBoostFill.dataset.negative).toBe('true');
     expect(nodes.lfaBoostGauge.attrs['aria-label']).toBe('Vacuum -0.5 bar');
+    renderer.render(s.feed({ Boost: -7.2519 }), null, s.state.settings, { progress: 1, target: true, settled: true });
+    expect(nodes.lfaContainer.dataset).toMatchObject({ expanded: 'true', expansionSettled: 'true', expansionProgress: '1' });
+    expect(nodes.lfaExpandedCurrent.textContent).toBe('0:34.21'); expect(nodes.lfaExpandedLast.textContent).toBe('1:31.00'); expect(nodes.lfaExpandedBest.textContent).toBe('1:28.00');
+    expect(nodes.lfaExpandedBoost.textContent).toBe('-0.5 bar'); expect(nodes.lfaExpandedBoostLabel.textContent).toBe('VAC'); expect(nodes.lfaCollapsedReadings.attrs['aria-hidden']).toBe('true');
     for (const [Boost, label, negative, fraction] of [[0, '', 'false', 0], [7.2519, '', 'false', .375], [null, '', 'false', 0], [-7.2519, 'VAC', 'true', .5]]) {
       renderer.render(s.feed({ Boost }), null, s.state.settings);
       expect(nodes.lfaBoostMode.textContent).toBe(label); expect(nodes.lfaBoostFill.dataset.negative).toBe(negative);
       expect(parseFloat(nodes.lfaBoostFill.style.strokeDasharray) / 100).toBe(fraction);
       expect(nodes.lfaBoostFill.style.opacity).toBe(Boost === null ? '0' : '1');
     }
-    renderer.render(M.view(s.state, 1600), null, s.state.settings);
+    renderer.render(M.view(s.state, 1600), null, s.state.settings, { progress: 1, target: true, settled: true });
     for (const name of ['Tire', 'Boost', 'Throttle', 'Brake']) expect(nodes['lfa' + name + 'Fill'].style.opacity).toBe('0');
     expect(nodes.lfaLapTime.textContent).toBe('—:—'); expect(nodes.lfaStatus.textContent).toBe('NO SIGNAL');
     expect(nodes.lfaBoostMode.textContent).toBe(''); expect(nodes.lfaBoostFill.dataset.negative).toBe('false');
+    expect(nodes.lfaExpandedCurrent.textContent).toBe('—:—'); expect(nodes.lfaExpandedLast.textContent).toBe('—:—'); expect(nodes.lfaExpandedBest.textContent).toBe('—:—'); expect(nodes.lfaExpandedBoost.textContent).toBe('N/A');
+    renderer.render(M.view(s.state, 1600), null, s.state.settings, { progress: 0, target: false, settled: true });
+    expect(nodes.lfaMovingCenter.style.transform).toBe('none'); expect(nodes.lfaExpandedPane.style.display).toBe('none'); expect(nodes.lfaCollapsedReadings.style.opacity).toBe('');
   });
 });

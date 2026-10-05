@@ -7,11 +7,29 @@
     <link rel="stylesheet" href="../shared/hud-base.css">
     <link rel="stylesheet" href="lfa.css">
     <link rel="stylesheet" href="lfa-side-gauges.css">
+    <link rel="stylesheet" href="lfa-expansion.css">
 </head>
 <body>
     <div class="hud-root-wrapper">
         <section id="lfaContainer" class="hud-gauge-container lfa-cluster" aria-label="Center ring driving telemetry">
-            <img class="lfa-side-fascia" src="assets/side-crescents.png" alt="" draggable="false">
+            <svg id="lfaExpandedPane" class="lfa-expanded-pane" viewBox="0 0 560 370" aria-label="Expanded session telemetry" aria-hidden="true" style="display:none">
+                <image href="assets/expanded-pane.png" width="560" height="370"/>
+                <text class="lfa-expanded-heading" x="117" y="65">SESSION</text>
+                <text class="lfa-expanded-label" x="50" y="88">CURRENT LAP</text>
+                <text id="lfaExpandedCurrent" class="lfa-expanded-current" x="50" y="112">—:—</text>
+                <text class="lfa-expanded-label" x="50" y="134">LAST LAP</text>
+                <text id="lfaExpandedLast" class="lfa-expanded-time" x="185" y="153">—:—</text>
+                <text class="lfa-expanded-label" x="50" y="170">BEST LAP</text>
+                <text id="lfaExpandedBest" class="lfa-expanded-time" x="185" y="189">—:—</text>
+                <text class="lfa-expanded-label" x="43" y="222">TIRE 4W</text>
+                <text id="lfaExpandedTire" class="lfa-expanded-value" x="185" y="222">N/A</text>
+                <text id="lfaExpandedBoostLabel" class="lfa-expanded-label" x="43" y="253">BOOST</text>
+                <text id="lfaExpandedBoost" class="lfa-expanded-boost" x="185" y="253">N/A</text>
+                <text class="lfa-expanded-pedal-label" x="66" y="281">THR</text><text class="lfa-expanded-pedal-label" x="139" y="281">BRK</text>
+                <text id="lfaExpandedThrottle" class="lfa-expanded-pedal" x="66" y="302">N/A</text><text id="lfaExpandedBrake" class="lfa-expanded-pedal" x="139" y="302">N/A</text>
+            </svg>
+            <img id="lfaCollapsedFascia" class="lfa-side-fascia" src="assets/side-crescents.png" alt="" draggable="false">
+            <div id="lfaMovingCenter" class="lfa-moving-center">
             <div class="lfa-approved-center-mask"><img class="lfa-housing" src="assets/center-ring.png" alt="" draggable="false"></div>
             <canvas id="lfaScale" width="1120" height="740" aria-hidden="true"></canvas>
             <canvas id="lfaNeedle" width="1120" height="740" aria-hidden="true"></canvas>
@@ -23,7 +41,10 @@
                 <div class="lfa-gear-label">GEAR</div>
                 <div id="lfaStatus" class="lfa-status" role="status">WAITING</div>
             </div>
-            <svg class="lfa-side-readings" viewBox="0 0 560 370" aria-label="Four-wheel average tyre temperature, boost, throttle, brake and current lap">
+            <div class="lfa-scale-unit">×1000 r/min</div>
+            <div id="lfaSelfCheck" class="lfa-self-check" hidden>DISPLAY CHECK</div>
+            </div>
+            <svg id="lfaCollapsedReadings" class="lfa-side-readings" viewBox="0 0 560 370" aria-label="Four-wheel average tyre temperature, boost, throttle, brake and current lap">
                 <g class="lfa-side-scale" aria-hidden="true">
                     <text id="lfaTireTick0" x="43" y="164">20</text><text id="lfaTireTick1" x="52" y="125">60</text>
                     <text id="lfaTireTick2" x="70" y="85">100</text><text id="lfaTireTick3" x="93" y="52">140°C</text>
@@ -51,13 +72,12 @@
                     <text class="lfa-side-caption" x="466" y="259">BRK</text><text id="lfaBrake" class="lfa-side-value" x="466" y="281">N/A</text>
                 </g>
             </svg>
-            <div class="lfa-scale-unit">×1000 r/min</div>
-            <div id="lfaSelfCheck" class="lfa-self-check" hidden>DISPLAY CHECK</div>
         </section>
     </div>
     <script src="../shared/hud-core.js"></script>
     <script src="lfa-auxiliary.js"></script>
     <script src="lfa-session.js"></script>
+    <script src="lfa-expansion.js"></script>
     <script src="lfa-model.js"></script>
     <script src="lfa-renderer.js"></script>
     <script src="lfa-controller.js"></script>

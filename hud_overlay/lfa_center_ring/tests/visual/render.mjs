@@ -5,6 +5,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
 import assert from 'node:assert/strict';
+import { verifyExpansion } from './expansion.mjs';
 const require = createRequire(import.meta.url);
 const { chromium } = require(process.env.PLAYWRIGHT_MODULE_PATH || 'playwright');
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../..');
@@ -161,6 +162,7 @@ try {
     summary.scenarios.push({ viewport: { width, height }, dpr, rect, tests: ['init', 'config', 'metric', 'imperial', 'reverse', 'neutral', 'redline', '16000-rpm-scale', 'four-tire-average-C-F', 'boost-bar-psi-kPa', 'nonlinear-positive-boost', 'vacuum-magnitude-scale-and-blue-label', 'arc-length-major-marks', 'upper-right-text-no-overlap', 'signed-zero-missing-boost', 'pedal-percent-clamps', 'partial-tire-unavailable', 'rank-reported-lap', 'lap-and-best-notices', 'notice-expiry-reset', 'lap-max-width-overflow', 'missing', 'invalid', 'error', 'pause', 'replayed-timestamp-stale', 'reconnect', 'visibility', 'resize', 'animate', 'destroy', 'dpr-backing-store', 'transparent-outside'], errors });
     await context.close();
   }
+  await verifyExpansion({ browser, origin, out, summary });
   summary.passed = true;
 } catch (error) {
   summary.error = error.stack || String(error);
