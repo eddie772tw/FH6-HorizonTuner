@@ -1,0 +1,40 @@
+name: HUD AP1 Rev Arc Visual Review
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'hud_overlay/ap1_rev_arc/**'
+      - 'hud_overlay/shared/**'
+      - '.github/workflows/hud-ap1-rev-arc-visual.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  render-fixtures:
+    name: AP1 Rev Arc Chromium fixture render
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+      - name: Install isolated visual-test tooling
+        run: npm install --prefix "$RUNNER_TEMP/hud-browser" --ignore-scripts --no-save --package-lock=false playwright@1.63.0
+      - name: Verify preinstalled Google Chrome
+        run: google-chrome --version
+      - name: Render actual HUD fixture states
+        run: PLAYWRIGHT_CHANNEL=chrome PLAYWRIGHT_MODULE_PATH="$RUNNER_TEMP/hud-browser/node_modules/playwright" OUTPUT_DIR="$RUNNER_TEMP/hud-ap1-rev-arc-preview" node hud_overlay/ap1_rev_arc/tests/visual/render.mjs
+      - name: Verify real launcher and Coordinator integration
+        run: PLAYWRIGHT_CHANNEL=chrome PLAYWRIGHT_MODULE_PATH="$RUNNER_TEMP/hud-browser/node_modules/playwright" OUTPUT_DIR="$RUNNER_TEMP/hud-ap1-rev-arc-preview" node hud_overlay/ap1_rev_arc/tests/visual/launcher.cjs
+      - name: Upload visual evidence, including failures
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: hud-ap1-rev-arc-visual-${{ github.event.pull_request.head.sha }}
+          path: ${{ runner.temp }}/hud-ap1-rev-arc-preview
+          if-no-files-found: error
+          retention-days: 14
+

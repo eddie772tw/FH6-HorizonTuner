@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" width="560" height="370" viewBox="0 0 560 370">
+  <title>Original brushed-metal center ring housing</title>
+  <desc>Bagley as Codex. MIT, 2026. Original geometry and gradients. No Lexus assets.</desc>
+  <defs>
+    <linearGradient id="wing" x2="0" y2="1"><stop stop-color="#333a3e"/><stop offset=".38" stop-color="#141a1d"/><stop offset="1" stop-color="#090d0f"/></linearGradient>
+    <linearGradient id="bevel" x1=".1" y1="0" x2=".88" y2="1"><stop stop-color="#b0b5b6"/><stop offset=".18" stop-color="#5e6569"/><stop offset=".33" stop-color="#272e32"/><stop offset=".5" stop-color="#747b7e"/><stop offset=".63" stop-color="#2c3236"/><stop offset=".81" stop-color="#889093"/><stop offset="1" stop-color="#3c4448"/></linearGradient>
+    <linearGradient id="edge" x2="0" y2="1"><stop stop-color="#d3d9da"/><stop offset=".43" stop-color="#727a7c"/><stop offset=".65" stop-color="#20262a"/><stop offset="1" stop-color="#7c8588"/></linearGradient>
+    <radialGradient id="face" cx=".42" cy=".32" r=".8"><stop stop-color="#20272b"/><stop offset=".5" stop-color="#11171a"/><stop offset="1" stop-color="#080c0e"/></radialGradient>
+    <radialGradient id="recess"><stop offset=".85" stop-color="#101519"/><stop offset=".92" stop-color="#030608"/><stop offset=".98" stop-color="#3e474c"/><stop offset="1" stop-color="#0a0d0f"/></radialGradient>
+    <pattern id="grain" width="4" height="4" patternUnits="userSpaceOnUse"><path d="M0 .5h4M0 2.5h4" stroke="#c6d0d5" stroke-opacity=".065" stroke-width=".4"/></pattern>
+  </defs>
+  <g id="side-wings">
+    <path d="M123 83H62C34 96 15 139 15 185s19 89 47 102h61zm314 0h61c28 13 47 56 47 102s-19 89-47 102h-61z" fill="url(#wing)" stroke="#535d62" stroke-width="1.4"/>
+    <path d="M59 98C31 129 27 157 27 181M59 272c-28-31-32-59-32-83m474-91c28 31 32 59 32 83m-32 91c28-31 32-59 32-83" fill="none" stroke="#7f898e" stroke-width="1" opacity=".6"/>
+    <path d="M52 120h43M52 248h43m370-128h43m-43 128h43" stroke="#3f4a50" stroke-width="1"/>
+  </g>
+  <g id="machined-ring">
+    <circle cx="280" cy="185" r="177" fill="#080c0e" stroke="#101518" stroke-width="2"/>
+    <circle cx="280" cy="185" r="174" fill="url(#edge)"/>
+    <circle cx="280" cy="185" r="171" fill="url(#bevel)" stroke="#212b30" stroke-width="1.2"/>
+    <circle cx="280" cy="185" r="170" fill="url(#grain)"/>
+    <circle cx="280" cy="185" r="166" fill="none" stroke="#c9d2d5" stroke-width=".45" opacity=".5"/>
+    <circle cx="280" cy="185" r="160" fill="url(#recess)" stroke="#181d20" stroke-width="1.8"/>
+    <circle cx="280" cy="185" r="153" fill="url(#face)" stroke="#a0afb5" stroke-width=".55"/>
+    <path d="M280 13v9m0 326v9M108 185h9m326 0h9M194 36l5 8m162 282 5 8M131 99l8 5m282 162 8 5M131 271l8-5m282-162 8-5M194 334l5-8M361 44l5-8" stroke="#d9e1e3" stroke-width="2" opacity=".85"/>
+    <path d="M157 67A171 171 0 0 1 382 47" fill="none" stroke="#f0f2f3" stroke-width=".7" opacity=".7"/>
+  </g>
+</svg>

@@ -1,0 +1,373 @@
+{
+  "sourceHead": "30a34d8fc5eb914362a89de32f04dcd8d7bafc4e",
+  "baselineHead": "b9a514366c56342b740b48cdb338855b4f2ff917",
+  "method": "Exact decoded RGBA, geometric pixel centers inside full approved ring. Exclude only the union of old/new outer96-design-pixel status field rectangles. New rectangles are measured browser getBoundingClientRect; old outer geometry is identical because lfa.css remains byte-identical and status override changes only text font/overflow/color. Rectangle inclusion uses half-open pixel-center coordinates [left,right),[top,bottom); no padding, tolerance, blur, resampling, or reduced ring.",
+  "comparisons": [
+    {
+      "file": "detail-metric.png",
+      "center": [
+        420,
+        277.5
+      ],
+      "radius": 267,
+      "oldStatusBox": [
+        348,
+        379.5,
+        144,
+        34
+      ],
+      "newStatusBox": [
+        348,
+        379.5,
+        144,
+        34
+      ],
+      "centralPixelsComparedOutsideStatus": 219046,
+      "changedPixelsOutsideStatus": 0,
+      "changedStatusPixels": 519,
+      "wholeImageChangedPixels": 519,
+      "outsideStatusDifferenceBounds": null
+    },
+    {
+      "file": "detail-imperial.png",
+      "center": [
+        420,
+        277.5
+      ],
+      "radius": 267,
+      "oldStatusBox": [
+        348,
+        379.5,
+        144,
+        34
+      ],
+      "newStatusBox": [
+        348,
+        379.5,
+        144,
+        34
+      ],
+      "centralPixelsComparedOutsideStatus": 219046,
+      "changedPixelsOutsideStatus": 0,
+      "changedStatusPixels": 519,
+      "wholeImageChangedPixels": 519,
+      "outsideStatusDifferenceBounds": null
+    },
+    {
+      "file": "detail-reverse.png",
+      "center": [
+        420,
+        277.5
+      ],
+      "radius": 267,
+      "oldStatusBox": [
+        348,
+        379.5,
+        144,
+        34
+      ],
+      "newStatusBox": [
+        348,
+        379.5,
+        144,
+        34
+      ],
+      "centralPixelsComparedOutsideStatus": 219046,
+      "changedPixelsOutsideStatus": 0,
+      "changedStatusPixels": 519,
+      "wholeImageChangedPixels": 519,
+      "outsideStatusDifferenceBounds": null
+    },
+    {
+      "file": "detail-neutral.png",
+      "center": [
+        420,
+        277.5
+      ],
+      "radius": 267,
+      "oldStatusBox": [
+        348,
+        379.5,
+        144,
+        34
+      ],
+      "newStatusBox": [
+        348,
+        379.5,
+        144,
+        34
+      ],
+      "centralPixelsComparedOutsideStatus": 219046,
+      "changedPixelsOutsideStatus": 0,
+      "changedStatusPixels": 519,
+      "wholeImageChangedPixels": 519,
+      "outsideStatusDifferenceBounds": null
+    },
+    {
+      "file": "detail-redline.png",
+      "center": [
+        420,
+        277.5
+      ],
+      "radius": 267,
+      "oldStatusBox": [
+        348,
+        379.5,
+        144,
+        34
+      ],
+      "newStatusBox": [
+        348,
+        379.5,
+        144,
+        34
+      ],
+      "centralPixelsComparedOutsideStatus": 219046,
+      "changedPixelsOutsideStatus": 0,
+      "changedStatusPixels": 0,
+      "wholeImageChangedPixels": 0,
+      "outsideStatusDifferenceBounds": null
+    },
+    {
+      "file": "detail-high-rpm.png",
+      "center": [
+        420,
+        277.5
+      ],
+      "radius": 267,
+      "oldStatusBox": [
+        348,
+        379.5,
+        144,
+        34
+      ],
+      "newStatusBox": [
+        348,
+        379.5,
+        144,
+        34
+      ],
+      "centralPixelsComparedOutsideStatus": 219046,
+      "changedPixelsOutsideStatus": 0,
+      "changedStatusPixels": 0,
+      "wholeImageChangedPixels": 0,
+      "outsideStatusDifferenceBounds": null
+    },
+    {
+      "file": "detail-missing.png",
+      "center": [
+        420,
+        277.5
+      ],
+      "radius": 267,
+      "oldStatusBox": [
+        348,
+        379.5,
+        144,
+        34
+      ],
+      "newStatusBox": [
+        348,
+        379.5,
+        144,
+        34
+      ],
+      "centralPixelsComparedOutsideStatus": 219046,
+      "changedPixelsOutsideStatus": 0,
+      "changedStatusPixels": 0,
+      "wholeImageChangedPixels": 0,
+      "outsideStatusDifferenceBounds": null
+    },
+    {
+      "file": "detail-no-signal.png",
+      "center": [
+        420,
+        277.5
+      ],
+      "radius": 267,
+      "oldStatusBox": [
+        348,
+        379.5,
+        144,
+        34
+      ],
+      "newStatusBox": [
+        348,
+        379.5,
+        144,
+        34
+      ],
+      "centralPixelsComparedOutsideStatus": 219046,
+      "changedPixelsOutsideStatus": 144,
+      "changedStatusPixels": 1456,
+      "wholeImageChangedPixels": 1600,
+      "outsideStatusDifferenceBounds": [
+        348,
+        413,
+        491,
+        413
+      ],
+      "boundaryRasterNote": {
+        "pixels": 144,
+        "row": 413,
+        "xRange": [
+          348,
+          491
+        ],
+        "pixelCenterY": 413.5,
+        "exactStatusBottom": 413.5,
+        "allRemainingPixelsLieExactlyOnStatusBottomBoundary": true,
+        "cause": "Intentional Pending amber border versus prior NO SIGNAL border; preserved as a strict half-open-mask difference, not hidden by padding",
+        "maxRgbaChannelDelta": 180
+      }
+    },
+    {
+      "file": "metric-1280x720-dpr1.png",
+      "center": [
+        1040,
+        551.25
+      ],
+      "radius": 133.5,
+      "oldStatusBox": [
+        1004,
+        602.25,
+        72,
+        17
+      ],
+      "newStatusBox": [
+        1004,
+        602.25,
+        72,
+        17
+      ],
+      "centralPixelsComparedOutsideStatus": 54750,
+      "changedPixelsOutsideStatus": 0,
+      "changedStatusPixels": 167,
+      "wholeImageChangedPixels": 167,
+      "outsideStatusDifferenceBounds": null
+    },
+    {
+      "file": "metric-1920x1080-dpr1.png",
+      "center": [
+        1680,
+        911.25
+      ],
+      "radius": 133.5,
+      "oldStatusBox": [
+        1644,
+        962.25,
+        72,
+        17
+      ],
+      "newStatusBox": [
+        1644,
+        962.25,
+        72,
+        17
+      ],
+      "centralPixelsComparedOutsideStatus": 54750,
+      "changedPixelsOutsideStatus": 0,
+      "changedStatusPixels": 167,
+      "wholeImageChangedPixels": 167,
+      "outsideStatusDifferenceBounds": null
+    },
+    {
+      "file": "metric-2560x1440-dpr1.png",
+      "center": [
+        2320,
+        1271.25
+      ],
+      "radius": 133.5,
+      "oldStatusBox": [
+        2284,
+        1322.25,
+        72,
+        17
+      ],
+      "newStatusBox": [
+        2284,
+        1322.25,
+        72,
+        17
+      ],
+      "centralPixelsComparedOutsideStatus": 54750,
+      "changedPixelsOutsideStatus": 0,
+      "changedStatusPixels": 167,
+      "wholeImageChangedPixels": 167,
+      "outsideStatusDifferenceBounds": null
+    },
+    {
+      "file": "metric-1920x1080-dpr2.png",
+      "center": [
+        3360,
+        1822.5
+      ],
+      "radius": 267.0,
+      "oldStatusBox": [
+        3288,
+        1924.5,
+        144,
+        34
+      ],
+      "newStatusBox": [
+        3288,
+        1924.5,
+        144,
+        34
+      ],
+      "centralPixelsComparedOutsideStatus": 219046,
+      "changedPixelsOutsideStatus": 0,
+      "changedStatusPixels": 519,
+      "wholeImageChangedPixels": 519,
+      "outsideStatusDifferenceBounds": null
+    },
+    {
+      "file": "detail-expansion-manual.png",
+      "center": [
+        564,
+        277.5
+      ],
+      "radius": 267,
+      "oldStatusBox": [
+        492,
+        379.5,
+        144,
+        34
+      ],
+      "newStatusBox": [
+        492,
+        379.5,
+        144,
+        34
+      ],
+      "centralPixelsComparedOutsideStatus": 219046,
+      "changedPixelsOutsideStatus": 0,
+      "changedStatusPixels": 518,
+      "wholeImageChangedPixels": 518,
+      "outsideStatusDifferenceBounds": null
+    }
+  ],
+  "sourcePreservation": {
+    "assets/center-ring.png": {
+      "sha256": "3433460df37b91c67f09cfe7b3c99bacd6ad925db36b113042a95bc196422b22",
+      "unchanged": true
+    },
+    "assets/center-ring.svg": {
+      "sha256": "8570a31f672dac12bb94e198a91cb78576dd0b09b81c140dd4ae7ca68b924028",
+      "unchanged": true
+    },
+    "lfa.css": {
+      "sha256": "bb3cb33c7808f6e6f800942259d77c9d42ebdb866d94e36abffcc43bd282ebac",
+      "unchanged": true
+    },
+    "drawScale": {
+      "sha256": "ed971b4f351577ec8293294ce78a6fafecfc84ef99183bd8a52c6cc25bad64b5",
+      "unchanged": true
+    },
+    "drawNeedle": {
+      "sha256": "345aecabf61d324631196530d76cb84bf5688ac86645ef2739ac2278854c185b",
+      "unchanged": true
+    }
+  },
+  "qualification": "12 of13 exact half-open-mask comparisons have0 outside-field changes. Pending/no-signal retains144 changed border pixels with centers exactly on the status bottom boundary. All differences are counted; no padded mask or all-central-byte-identity claim."
+}

@@ -1,0 +1,63 @@
+{
+  "referenceHead": "eac1b9e5bd360a3ca4e9359bd142b43de7c6a0f6",
+  "revisionHead": "5c5b8f63c735a0e55a826a263db53199958dd6ce",
+  "method": "Exact RGBA pixel-center comparison with no tolerance/resampling. Central disk radius267 around420,277.5 on840x556 DPR2 captures. Separately compare all pixels outside design upper-right rectangle x440..560,y40..175 (scaled1.5).",
+  "results": [
+    {
+      "file": "detail-metric.png",
+      "centralCompared": 223942,
+      "centralDiffering": 0,
+      "outsideUpperRightCompared": 430500,
+      "outsideUpperRightDiffering": 0
+    },
+    {
+      "file": "detail-imperial.png",
+      "centralCompared": 223942,
+      "centralDiffering": 0,
+      "outsideUpperRightCompared": 430500,
+      "outsideUpperRightDiffering": 0
+    },
+    {
+      "file": "detail-reverse.png",
+      "centralCompared": 223942,
+      "centralDiffering": 0,
+      "outsideUpperRightCompared": 430500,
+      "outsideUpperRightDiffering": 0
+    },
+    {
+      "file": "detail-neutral.png",
+      "centralCompared": 223942,
+      "centralDiffering": 0,
+      "outsideUpperRightCompared": 430500,
+      "outsideUpperRightDiffering": 0
+    },
+    {
+      "file": "detail-redline.png",
+      "centralCompared": 223942,
+      "centralDiffering": 0,
+      "outsideUpperRightCompared": 430500,
+      "outsideUpperRightDiffering": 0
+    },
+    {
+      "file": "detail-high-rpm.png",
+      "centralCompared": 223942,
+      "centralDiffering": 0,
+      "outsideUpperRightCompared": 430500,
+      "outsideUpperRightDiffering": 0
+    },
+    {
+      "file": "detail-missing.png",
+      "centralCompared": 223942,
+      "centralDiffering": 0,
+      "outsideUpperRightCompared": 430500,
+      "outsideUpperRightDiffering": 0
+    },
+    {
+      "file": "detail-no-signal.png",
+      "centralCompared": 223942,
+      "centralDiffering": 0,
+      "outsideUpperRightCompared": 430500,
+      "outsideUpperRightDiffering": 0
+    }
+  ]
+}

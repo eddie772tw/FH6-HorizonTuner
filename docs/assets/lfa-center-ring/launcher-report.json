@@ -1,0 +1,746 @@
+{
+  "style": "lfa_center_ring",
+  "parserFixtureProvenance": {
+    "source": "Actual unchanged backend-rust/src/telemetry/packet.rs parse_packet plus production serde_json serialization, offline synthetic 324-byte UDP packets",
+    "packetParserSha256": "c21772fd6a29f2b2e90328b777adbb2f4a46a6d9e96169f01ee6f70084389891",
+    "boostUnit": "PSI above atmospheric",
+    "tireUnit": "Fahrenheit per project contract",
+    "limitation": "Not a live network or game capture"
+  },
+  "errors": [],
+  "missing": [],
+  "samples": [
+    {
+      "name": "host-standby",
+      "readings": {
+        "speed": "—",
+        "gear": "—",
+        "status": "Pending......",
+        "tire": "N/A",
+        "boost": "N/A",
+        "boostUnit": "bar",
+        "boostMode": "",
+        "boostFraction": 0,
+        "boostVisible": "0",
+        "throttle": "N/A",
+        "brake": "N/A",
+        "lap": "—:—",
+        "expanded": "false",
+        "expansionSettled": "true",
+        "expandedCurrent": "—:—"
+      },
+      "body": "rgba(0, 0, 0, 0)",
+      "bounds": {
+        "x": 1470,
+        "y": 772.5,
+        "width": 420,
+        "height": 277.5,
+        "display": "block"
+      }
+    },
+    {
+      "name": "host-parser-positive",
+      "readings": {
+        "speed": "180",
+        "gear": "4",
+        "status": "PI N/A",
+        "tire": "95°C",
+        "boost": "1",
+        "boostUnit": "bar",
+        "boostMode": "",
+        "boostFraction": 0.75,
+        "boostVisible": "1",
+        "throttle": "80%",
+        "brake": "20%",
+        "lap": "0:34.21",
+        "expanded": "false",
+        "expansionSettled": "true",
+        "expandedCurrent": "—:—"
+      },
+      "body": "rgba(0, 0, 0, 0)",
+      "bounds": {
+        "x": 1470,
+        "y": 772.5,
+        "width": 420,
+        "height": 277.5,
+        "display": "block"
+      }
+    },
+    {
+      "name": "host-manual-expanded",
+      "readings": {
+        "speed": "180",
+        "gear": "4",
+        "status": "P3",
+        "tire": "95°C",
+        "boost": "1",
+        "boostUnit": "bar",
+        "boostMode": "",
+        "boostFraction": 0.75,
+        "boostVisible": "1",
+        "throttle": "80%",
+        "brake": "20%",
+        "lap": "0:34.80",
+        "expanded": "true",
+        "expansionSettled": "true",
+        "expandedCurrent": "0:34.80"
+      },
+      "body": "rgba(0, 0, 0, 0)",
+      "bounds": {
+        "x": 1470,
+        "y": 772.5,
+        "width": 420,
+        "height": 277.5,
+        "display": "block"
+      }
+    },
+    {
+      "name": "host-manual-restored",
+      "readings": {
+        "speed": "180",
+        "gear": "4",
+        "status": "P3",
+        "tire": "95°C",
+        "boost": "1",
+        "boostUnit": "bar",
+        "boostMode": "",
+        "boostFraction": 0.75,
+        "boostVisible": "1",
+        "throttle": "80%",
+        "brake": "20%",
+        "lap": "0:34.80",
+        "expanded": "false",
+        "expansionSettled": "true",
+        "expandedCurrent": "0:34.80"
+      },
+      "body": "rgba(0, 0, 0, 0)",
+      "bounds": {
+        "x": 1470,
+        "y": 772.5,
+        "width": 420,
+        "height": 277.5,
+        "display": "block"
+      }
+    },
+    {
+      "name": "host-nonlinear-boost-0.25",
+      "readings": {
+        "speed": "180",
+        "gear": "4",
+        "status": "P3",
+        "tire": "95°C",
+        "boost": "0.25",
+        "boostUnit": "bar",
+        "boostMode": "",
+        "boostFraction": 0.1875,
+        "boostVisible": "1",
+        "throttle": "80%",
+        "brake": "20%",
+        "lap": "0:34.80",
+        "expanded": "false",
+        "expansionSettled": "true",
+        "expandedCurrent": "0:34.80"
+      },
+      "body": "rgba(0, 0, 0, 0)",
+      "bounds": {
+        "x": 1470,
+        "y": 772.5,
+        "width": 420,
+        "height": 277.5,
+        "display": "block"
+      }
+    },
+    {
+      "name": "host-nonlinear-boost-0.5",
+      "readings": {
+        "speed": "180",
+        "gear": "4",
+        "status": "P3",
+        "tire": "95°C",
+        "boost": "0.5",
+        "boostUnit": "bar",
+        "boostMode": "",
+        "boostFraction": 0.375,
+        "boostVisible": "1",
+        "throttle": "80%",
+        "brake": "20%",
+        "lap": "0:34.80",
+        "expanded": "false",
+        "expansionSettled": "true",
+        "expandedCurrent": "0:34.80"
+      },
+      "body": "rgba(0, 0, 0, 0)",
+      "bounds": {
+        "x": 1470,
+        "y": 772.5,
+        "width": 420,
+        "height": 277.5,
+        "display": "block"
+      }
+    },
+    {
+      "name": "host-nonlinear-boost-1",
+      "readings": {
+        "speed": "180",
+        "gear": "4",
+        "status": "P3",
+        "tire": "95°C",
+        "boost": "1",
+        "boostUnit": "bar",
+        "boostMode": "",
+        "boostFraction": 0.75,
+        "boostVisible": "1",
+        "throttle": "80%",
+        "brake": "20%",
+        "lap": "0:34.80",
+        "expanded": "false",
+        "expansionSettled": "true",
+        "expandedCurrent": "0:34.80"
+      },
+      "body": "rgba(0, 0, 0, 0)",
+      "bounds": {
+        "x": 1470,
+        "y": 772.5,
+        "width": 420,
+        "height": 277.5,
+        "display": "block"
+      }
+    },
+    {
+      "name": "host-nonlinear-boost-2",
+      "readings": {
+        "speed": "180",
+        "gear": "4",
+        "status": "P3",
+        "tire": "95°C",
+        "boost": "2",
+        "boostUnit": "bar",
+        "boostMode": "",
+        "boostFraction": 1,
+        "boostVisible": "1",
+        "throttle": "80%",
+        "brake": "20%",
+        "lap": "0:34.80",
+        "expanded": "false",
+        "expansionSettled": "true",
+        "expandedCurrent": "0:34.80"
+      },
+      "body": "rgba(0, 0, 0, 0)",
+      "bounds": {
+        "x": 1470,
+        "y": 772.5,
+        "width": 420,
+        "height": 277.5,
+        "display": "block"
+      }
+    },
+    {
+      "name": "host-parser-zero",
+      "readings": {
+        "speed": "180",
+        "gear": "4",
+        "status": "P3",
+        "tire": "95°C",
+        "boost": "0",
+        "boostUnit": "bar",
+        "boostMode": "",
+        "boostFraction": 0,
+        "boostVisible": "1",
+        "throttle": "80%",
+        "brake": "20%",
+        "lap": "0:34.80",
+        "expanded": "false",
+        "expansionSettled": "true",
+        "expandedCurrent": "0:34.80"
+      },
+      "body": "rgba(0, 0, 0, 0)",
+      "bounds": {
+        "x": 1470,
+        "y": 772.5,
+        "width": 420,
+        "height": 277.5,
+        "display": "block"
+      }
+    },
+    {
+      "name": "host-vacuum-half",
+      "readings": {
+        "speed": "180",
+        "gear": "4",
+        "status": "P3",
+        "tire": "95°C",
+        "boost": "-0.5",
+        "boostUnit": "bar",
+        "boostMode": "VAC",
+        "boostFraction": 0.5,
+        "boostVisible": "1",
+        "throttle": "80%",
+        "brake": "20%",
+        "lap": "0:34.80",
+        "expanded": "false",
+        "expansionSettled": "true",
+        "expandedCurrent": "0:34.80"
+      },
+      "body": "rgba(0, 0, 0, 0)",
+      "bounds": {
+        "x": 1470,
+        "y": 772.5,
+        "width": 420,
+        "height": 277.5,
+        "display": "block"
+      }
+    },
+    {
+      "name": "host-parser-negative",
+      "readings": {
+        "speed": "180",
+        "gear": "4",
+        "status": "P3",
+        "tire": "95°C",
+        "boost": "-0.5",
+        "boostUnit": "bar",
+        "boostMode": "VAC",
+        "boostFraction": 0.5,
+        "boostVisible": "1",
+        "throttle": "80%",
+        "brake": "20%",
+        "lap": "0:34.80",
+        "expanded": "false",
+        "expansionSettled": "true",
+        "expandedCurrent": "0:34.80"
+      },
+      "body": "rgba(0, 0, 0, 0)",
+      "bounds": {
+        "x": 1470,
+        "y": 772.5,
+        "width": 420,
+        "height": 277.5,
+        "display": "block"
+      }
+    },
+    {
+      "name": "host-imperial-units",
+      "readings": {
+        "speed": "112",
+        "gear": "4",
+        "status": "P3",
+        "tire": "203°F",
+        "boost": "-7.3",
+        "boostUnit": "psi",
+        "boostMode": "VAC",
+        "boostFraction": 0.5,
+        "boostVisible": "1",
+        "throttle": "80%",
+        "brake": "20%",
+        "lap": "0:34.80",
+        "expanded": "false",
+        "expansionSettled": "true",
+        "expandedCurrent": "0:34.80"
+      },
+      "body": "rgba(0, 0, 0, 0)",
+      "bounds": {
+        "x": 1470,
+        "y": 772.5,
+        "width": 420,
+        "height": 277.5,
+        "display": "block"
+      }
+    },
+    {
+      "name": "host-independent-kpa",
+      "readings": {
+        "speed": "180",
+        "gear": "4",
+        "status": "P3",
+        "tire": "95°C",
+        "boost": "-50",
+        "boostUnit": "kPa",
+        "boostMode": "VAC",
+        "boostFraction": 0.5,
+        "boostVisible": "1",
+        "throttle": "80%",
+        "brake": "20%",
+        "lap": "0:34.80",
+        "expanded": "false",
+        "expansionSettled": "true",
+        "expandedCurrent": "0:34.80"
+      },
+      "body": "rgba(0, 0, 0, 0)",
+      "bounds": {
+        "x": 1470,
+        "y": 772.5,
+        "width": 420,
+        "height": 277.5,
+        "display": "block"
+      }
+    },
+    {
+      "name": "host-missing-boost-partial-tires",
+      "readings": {
+        "speed": "180",
+        "gear": "4",
+        "status": "P3",
+        "tire": "N/A",
+        "boost": "N/A",
+        "boostUnit": "kPa",
+        "boostMode": "",
+        "boostFraction": 0,
+        "boostVisible": "0",
+        "throttle": "80%",
+        "brake": "20%",
+        "lap": "0:34.80",
+        "expanded": "false",
+        "expansionSettled": "true",
+        "expandedCurrent": "0:34.80"
+      },
+      "body": "rgba(0, 0, 0, 0)",
+      "bounds": {
+        "x": 1470,
+        "y": 772.5,
+        "width": 420,
+        "height": 277.5,
+        "display": "block"
+      }
+    },
+    {
+      "name": "host-zero-pedals",
+      "readings": {
+        "speed": "180",
+        "gear": "4",
+        "status": "P3",
+        "tire": "95°C",
+        "boost": "100",
+        "boostUnit": "kPa",
+        "boostMode": "",
+        "boostFraction": 0.75,
+        "boostVisible": "1",
+        "throttle": "0%",
+        "brake": "0%",
+        "lap": "0:34.80",
+        "expanded": "false",
+        "expansionSettled": "true",
+        "expandedCurrent": "0:34.80"
+      },
+      "body": "rgba(0, 0, 0, 0)",
+      "bounds": {
+        "x": 1470,
+        "y": 772.5,
+        "width": 420,
+        "height": 277.5,
+        "display": "block"
+      }
+    },
+    {
+      "name": "host-full-pedals",
+      "readings": {
+        "speed": "180",
+        "gear": "4",
+        "status": "P3",
+        "tire": "95°C",
+        "boost": "100",
+        "boostUnit": "kPa",
+        "boostMode": "",
+        "boostFraction": 0.75,
+        "boostVisible": "1",
+        "throttle": "100%",
+        "brake": "100%",
+        "lap": "0:34.80",
+        "expanded": "false",
+        "expansionSettled": "true",
+        "expandedCurrent": "0:34.80"
+      },
+      "body": "rgba(0, 0, 0, 0)",
+      "bounds": {
+        "x": 1470,
+        "y": 772.5,
+        "width": 420,
+        "height": 277.5,
+        "display": "block"
+      }
+    },
+    {
+      "name": "host-lap-completion",
+      "readings": {
+        "speed": "180",
+        "gear": "4",
+        "status": "LAP 3",
+        "tire": "95°C",
+        "boost": "100",
+        "boostUnit": "kPa",
+        "boostMode": "",
+        "boostFraction": 0.75,
+        "boostVisible": "1",
+        "throttle": "80%",
+        "brake": "20%",
+        "lap": "0:00.00",
+        "expanded": "false",
+        "expansionSettled": "true",
+        "expandedCurrent": "0:34.80"
+      },
+      "body": "rgba(0, 0, 0, 0)",
+      "bounds": {
+        "x": 1470,
+        "y": 772.5,
+        "width": 420,
+        "height": 277.5,
+        "display": "block"
+      }
+    },
+    {
+      "name": "host-lap-notice-expired",
+      "readings": {
+        "speed": "180",
+        "gear": "4",
+        "status": "P2",
+        "tire": "95°C",
+        "boost": "100",
+        "boostUnit": "kPa",
+        "boostMode": "",
+        "boostFraction": 0.75,
+        "boostVisible": "1",
+        "throttle": "80%",
+        "brake": "20%",
+        "lap": "0:00.00",
+        "expanded": "false",
+        "expansionSettled": "true",
+        "expandedCurrent": "0:34.80"
+      },
+      "body": "rgba(0, 0, 0, 0)",
+      "bounds": {
+        "x": 1470,
+        "y": 772.5,
+        "width": 420,
+        "height": 277.5,
+        "display": "block"
+      }
+    },
+    {
+      "name": "host-best-improvement",
+      "readings": {
+        "speed": "180",
+        "gear": "4",
+        "status": "BEST LAP",
+        "tire": "95°C",
+        "boost": "100",
+        "boostUnit": "kPa",
+        "boostMode": "",
+        "boostFraction": 0.75,
+        "boostVisible": "1",
+        "throttle": "80%",
+        "brake": "20%",
+        "lap": "0:01.23",
+        "expanded": "false",
+        "expansionSettled": "true",
+        "expandedCurrent": "0:34.80"
+      },
+      "body": "rgba(0, 0, 0, 0)",
+      "bounds": {
+        "x": 1470,
+        "y": 772.5,
+        "width": 420,
+        "height": 277.5,
+        "display": "block"
+      }
+    },
+    {
+      "name": "host-stale-with-smoothing",
+      "readings": {
+        "speed": "—",
+        "gear": "—",
+        "status": "Pending......",
+        "tire": "N/A",
+        "boost": "N/A",
+        "boostUnit": "kPa",
+        "boostMode": "",
+        "boostFraction": 0,
+        "boostVisible": "0",
+        "throttle": "N/A",
+        "brake": "N/A",
+        "lap": "—:—",
+        "expanded": "false",
+        "expansionSettled": "true",
+        "expandedCurrent": "0:34.80"
+      },
+      "body": "rgba(0, 0, 0, 0)",
+      "bounds": {
+        "x": 1470,
+        "y": 772.5,
+        "width": 420,
+        "height": 277.5,
+        "display": "block"
+      }
+    },
+    {
+      "name": "host-reverse-reconnected",
+      "readings": {
+        "speed": "16",
+        "gear": "R",
+        "status": "PI N/A",
+        "tire": "95°C",
+        "boost": "100",
+        "boostUnit": "kPa",
+        "boostMode": "",
+        "boostFraction": 0.75,
+        "boostVisible": "1",
+        "throttle": "80%",
+        "brake": "20%",
+        "lap": "0:01.23",
+        "expanded": "false",
+        "expansionSettled": "true",
+        "expandedCurrent": "0:34.80"
+      },
+      "body": "rgba(0, 0, 0, 0)",
+      "bounds": {
+        "x": 1470,
+        "y": 772.5,
+        "width": 420,
+        "height": 277.5,
+        "display": "block"
+      }
+    },
+    {
+      "name": "host-imperial",
+      "readings": {
+        "speed": "10",
+        "gear": "R",
+        "status": "PI N/A",
+        "tire": "203°F",
+        "boost": "14.5",
+        "boostUnit": "psi",
+        "boostMode": "",
+        "boostFraction": 0.75,
+        "boostVisible": "1",
+        "throttle": "80%",
+        "brake": "20%",
+        "lap": "0:01.23",
+        "expanded": "false",
+        "expansionSettled": "true",
+        "expandedCurrent": "0:34.80"
+      },
+      "body": "rgba(0, 0, 0, 0)",
+      "bounds": {
+        "x": 1470,
+        "y": 772.5,
+        "width": 420,
+        "height": 277.5,
+        "display": "block"
+      }
+    },
+    {
+      "name": "host-720p",
+      "readings": {
+        "speed": "10",
+        "gear": "R",
+        "status": "PI N/A",
+        "tire": "203°F",
+        "boost": "14.5",
+        "boostUnit": "psi",
+        "boostMode": "",
+        "boostFraction": 0.75,
+        "boostVisible": "1",
+        "throttle": "80%",
+        "brake": "20%",
+        "lap": "0:01.23",
+        "expanded": "false",
+        "expansionSettled": "true",
+        "expandedCurrent": "0:34.80"
+      },
+      "body": "rgba(0, 0, 0, 0)",
+      "bounds": {
+        "x": 830,
+        "y": 412.5,
+        "width": 420,
+        "height": 277.5,
+        "display": "block"
+      }
+    },
+    {
+      "name": "host-gauge-hidden",
+      "readings": {
+        "speed": "10",
+        "gear": "R",
+        "status": "PI N/A",
+        "tire": "203°F",
+        "boost": "14.5",
+        "boostUnit": "psi",
+        "boostMode": "",
+        "boostFraction": 0.75,
+        "boostVisible": "1",
+        "throttle": "80%",
+        "brake": "20%",
+        "lap": "0:01.23",
+        "expanded": "false",
+        "expansionSettled": "true",
+        "expandedCurrent": "0:34.80"
+      },
+      "body": "rgba(0, 0, 0, 0)",
+      "bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "display": "none"
+      }
+    },
+    {
+      "name": "host-gauge-restored",
+      "readings": {
+        "speed": "16",
+        "gear": "R",
+        "status": "PI N/A",
+        "tire": "203°F",
+        "boost": "1",
+        "boostUnit": "bar",
+        "boostMode": "",
+        "boostFraction": 0.75,
+        "boostVisible": "1",
+        "throttle": "80%",
+        "brake": "20%",
+        "lap": "0:01.23",
+        "expanded": "false",
+        "expansionSettled": "true",
+        "expandedCurrent": "0:34.80"
+      },
+      "body": "rgba(0, 0, 0, 0)",
+      "bounds": {
+        "x": 830,
+        "y": 412.5,
+        "width": 420,
+        "height": 277.5,
+        "display": "block"
+      }
+    },
+    {
+      "name": "host-style-reloaded",
+      "readings": {
+        "speed": "16",
+        "gear": "R",
+        "status": "PI N/A",
+        "tire": "95°C",
+        "boost": "1",
+        "boostUnit": "bar",
+        "boostMode": "",
+        "boostFraction": 0.75,
+        "boostVisible": "1",
+        "throttle": "80%",
+        "brake": "20%",
+        "lap": "0:01.23",
+        "expanded": "false",
+        "expansionSettled": "true",
+        "expandedCurrent": "—:—"
+      },
+      "body": "rgba(0, 0, 0, 0)",
+      "bounds": {
+        "x": 830,
+        "y": 412.5,
+        "width": 420,
+        "height": 277.5,
+        "display": "block"
+      }
+    },
+    {
+      "name": "destroy",
+      "remainingBodyChildren": 0
+    }
+  ]
+}

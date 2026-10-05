@@ -1,0 +1,170 @@
+{
+  "style": "ap1_rev_arc",
+  "revision": "VAC above BOOST, both centered over the unchanged boost rail",
+  "base_head": "ad7458383199529b6f3bb97c0a6096bb87600492",
+  "status": "Actual renderer/launcher and independent pixel review passed; final documentation-head CI and ready-for-review transition pending",
+  "change": [
+    "VAC occupies upper existing baseline, BOOST lower existing baseline",
+    "Both fixed labels use text-anchor middle on the shared rail center",
+    "Label font, baseline spacing, active/dim semantics and all other geometry remain unchanged"
+  ],
+  "browser_checks": [
+    "Default and70% compact atDPR1 andDPR2",
+    "VAC above BOOST with non-overlapping ink and containment above rail",
+    "Both middle text anchors align to actual rail center within one device pixel",
+    "Existing fixed-node selection cases metric/imperial, positive/negative/zero/missing/stale remain active"
+  ],
+  "review_transition": "User explicitly authorized Ready for Review after this adjustment and verified final checks; transition pending final-head CI",
+  "limitations": [
+    "Final documentation-head CI and ready-for-review transition pending",
+    "Windows native/game acceptance unperformed; review readiness is not reviewer approval"
+  ],
+  "skills": [
+    "halfmoon-design-system",
+    "pr-author-maintainer"
+  ],
+  "local_verification": {
+    "files_passed": 160,
+    "files_skipped": 1,
+    "tests_passed": 1195,
+    "tests_skipped": 1,
+    "style_cases": 90,
+    "build_web_hud": "passed; packaged HTML matches source, tests excluded",
+    "syntax_diff_pr_body": "passed",
+    "protected_geometry": "All other SVG nodes unchanged; original two caption baselines swapped exactly"
+  },
+  "remote": {
+    "source_head": "d6c74ba5af2f83df94ee4a45cadaaf086e524361",
+    "run_id": 37275496032,
+    "artifact_id": 11330051871,
+    "run_url": "https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37275496032",
+    "artifact_url": "https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37275496032/artifacts/11330051871",
+    "browser": "Chrome154.0.8037.57",
+    "platform": "GitHub Actions Linux",
+    "sandbox": true,
+    "screenshots": 61,
+    "paired_label_scenarios": 28,
+    "launcher_samples": 32,
+    "result": "passed"
+  },
+  "pixel_comparison": {
+    "reference_head": "888ea8ba9af69e65f95f96874d3563dacf620680",
+    "revision_head": "d6c74ba5af2f83df94ee4a45cadaaf086e524361",
+    "method": "Exact RGBA comparison of matching metric screenshots within actual HUD container; exclude only unions of old/new BOOST/VAC caption ink boxes, plus one device pixel for edge antialiasing. No resampling, value tolerance, or full auxiliary-gauge exclusion.",
+    "scope": "Default and 70% compact, DPR1 and DPR2, identical synthetic frame. This does not claim every scene or native-game rendering is pixel-identical.",
+    "comparisons": [
+      {
+        "file": "metric-1280x720-dpr1.png",
+        "dpr": 1,
+        "scale": "default",
+        "container_device_pixel_rect": [
+          710,
+          465,
+          1250,
+          690
+        ],
+        "excluded_label_rects": [
+          {
+            "group": "boost-mode",
+            "device_pixel_rect": [
+              1140,
+              578,
+              1188,
+              602
+            ]
+          }
+        ],
+        "compared_pixels": 120348,
+        "differing_pixels": 0,
+        "changed_pixels_inside_label_rects": 331,
+        "outside_difference_bbox": null
+      },
+      {
+        "file": "compact-1280x720-dpr1.png",
+        "dpr": 1,
+        "scale": "70% compact",
+        "container_device_pixel_rect": [
+          872,
+          532,
+          1250,
+          690
+        ],
+        "excluded_label_rects": [
+          {
+            "group": "boost-mode",
+            "device_pixel_rect": [
+              1172,
+              611,
+              1207,
+              628
+            ]
+          }
+        ],
+        "compared_pixels": 59129,
+        "differing_pixels": 0,
+        "changed_pixels_inside_label_rects": 181,
+        "outside_difference_bbox": null
+      },
+      {
+        "file": "metric-1280x720-dpr2.png",
+        "dpr": 2,
+        "scale": "default",
+        "container_device_pixel_rect": [
+          1420,
+          930,
+          2500,
+          1380
+        ],
+        "excluded_label_rects": [
+          {
+            "group": "boost-mode",
+            "device_pixel_rect": [
+              2281,
+              1158,
+              2374,
+              1202
+            ]
+          }
+        ],
+        "compared_pixels": 481908,
+        "differing_pixels": 0,
+        "changed_pixels_inside_label_rects": 1051,
+        "outside_difference_bbox": null
+      },
+      {
+        "file": "compact-1280x720-dpr2.png",
+        "dpr": 2,
+        "scale": "70% compact",
+        "container_device_pixel_rect": [
+          1744,
+          1065,
+          2500,
+          1380
+        ],
+        "excluded_label_rects": [
+          {
+            "group": "boost-mode",
+            "device_pixel_rect": [
+              2346,
+              1224,
+              2412,
+              1257
+            ]
+          }
+        ],
+        "compared_pixels": 235962,
+        "differing_pixels": 0,
+        "changed_pixels_inside_label_rects": 539,
+        "outside_difference_bbox": null
+      }
+    ],
+    "total_compared_pixels": 897347,
+    "total_differing_pixels": 0
+  },
+  "visual_findings": [
+    "VAC above BOOST, both centered over the same unchanged rail",
+    "Default and70% compact, DPR1/DPR2 contain both captions without overlap",
+    "Metric/imperial and positive/negative/zero/missing/stale active/dim selection preserved",
+    "Four matching renders show0 differing pixels outside only old/new mode-caption ink rectangles"
+  ]
+}

@@ -6,6 +6,8 @@ import { DEFAULT_HUD_CONFIG, type HudElements } from '../hudConfig';
 import type { HudPanelSharedProps } from '../hudPanelTypes';
 import { CLASSIC_JDM_STYLE_ID } from '../classic_jdm/config';
 import { ClassicJdmSettingsCard } from '../classic_jdm/ClassicJdmSettingsCard';
+import { LFA_CENTER_RING_STYLE_ID } from '../lfa_center_ring/config';
+import { LfaExpansionSettingsCard } from '../lfa_center_ring/LfaExpansionSettingsCard';
 import { S650_HMI_STYLE_ID, S650_HMI_THEMES, S650_CENTER_WIDGETS, type S650HmiTheme, type S650CenterWidget } from '../s650/config';
 
 export interface HudAdvancedPanelProps extends HudPanelSharedProps {
@@ -100,6 +102,7 @@ function StyleSettings({ config, appUnits, onConfigPatch, isWipActive, wipForced
       )}
       {config.hudStyle === STACK_ST8100_STYLE_ID && <StackSt8100SettingsCard config={config} appUnits={appUnits} onChange={onConfigPatch} t={t} />}
       {config.hudStyle === CLASSIC_JDM_STYLE_ID && <ClassicJdmSettingsCard config={config} onChange={onConfigPatch} t={t} />}
+      {config.hudStyle === LFA_CENTER_RING_STYLE_ID && <LfaExpansionSettingsCard config={config} onChange={onConfigPatch} t={t} />}
       {config.hudStyle === 'vfd' && (
         <div className="border-top pt-2 d-flex flex-column gap-3">
           <div>

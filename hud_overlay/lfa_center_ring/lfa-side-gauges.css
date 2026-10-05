@@ -1,0 +1,36 @@
+/* Side-only revision. The original center asset and every central rule remain unchanged. */
+.lfa-approved-center-mask {
+    position: absolute;
+    inset: 0;
+    width: 560px;
+    height: 370px;
+    clip-path: circle(180px at 280px 185px);
+    pointer-events: none;
+}
+.lfa-side-fascia, .lfa-side-readings {
+    position: absolute;
+    inset: 0;
+    width: 560px;
+    height: 370px;
+    pointer-events: none;
+    transition: none !important;
+}
+.lfa-side-readings { overflow: visible; font-family: Arial, sans-serif; text-anchor: middle; }
+.lfa-side-scale { fill: var(--lfa-secondary); font-size: 12px; text-anchor: start; }
+.lfa-side-caption { fill: var(--lfa-secondary); font-size: 9px; font-weight: 600; letter-spacing: .5px; }
+.lfa-side-middle { fill: var(--lfa-primary); font-size: 17px; }
+.lfa-lap-time { fill: var(--lfa-primary); font-size: 14px; }
+.lfa-side-value { fill: var(--lfa-primary); font-size: 12px; font-weight: 600; letter-spacing: .3px; }
+.lfa-side-fill {
+    fill: none;
+    stroke: var(--lfa-primary);
+    stroke-width: 7px;
+    stroke-linecap: butt;
+    stroke-dasharray: 0 100;
+    opacity: 0;
+}
+.lfa-brake-fill { stroke: var(--lfa-red); }
+.lfa-boost-marks { stroke: var(--lfa-secondary); stroke-width: 1.1px; }
+.lfa-vacuum-label { fill: var(--lfa-cold, #8fcee5); }
+#lfaTireFill[data-band="cold"], #lfaBoostFill[data-negative="true"] { stroke: var(--lfa-cold, #8fcee5); }
+#lfaTireFill[data-band="hot"] { stroke: var(--lfa-red); }

@@ -1,0 +1,374 @@
+{
+  "reviewDate": "2026-10-05",
+  "reviewer": "Bagley as Codex",
+  "status": "passed",
+  "scope": "一般模式輪胎／渦輪圖示，default／compact 與 DPR1／DPR2 的人工原尺寸像素檢視及實際 Chromium 幾何結果覆核",
+  "source": {
+    "repository": "https://github.com/eddie772tw/FH6-HorizonTuner",
+    "runtimeCommit": "bfbfa0618d95b7ce182cfa3ee32a94359200a205",
+    "workflowRunId": 37283193074,
+    "workflowRunUrl": "https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37283193074",
+    "artifactId": 11333142420,
+    "artifactArchiveSha256": "8b3adab5e5188ec1b6c37db9a38c8ed462aa53c76bb0ff22c6ff21e396076d3f",
+    "rendererEvidenceFile": "evidence.json",
+    "rendererEvidenceSha256": "400b2ab782a41731f13ce5fb654103708ed13170eeae86bc1149afaf8b0d8ae1",
+    "browser": "154.0.8037.57",
+    "rendererEvidencePassed": true,
+    "rendererEvidenceError": null,
+    "sourceMapping": "父任務提供 exact run／artifact 對應；本次逐一核對20張解壓PNG與該ZIP中的原始bytes一致"
+  },
+  "method": {
+    "nativeImageReview": "逐張檢視20張原始截圖，包含 HUD 周圍即時文字，沒有用重製示意圖代替；DPR2圖保留原始像素大小",
+    "geometry": "來源SVG圖示bbox與同一瀏覽器實際文字bbox比較，維持原有2設計單位留白門檻",
+    "spacingUnits": "設計單位，不是實機物理像素；bbox不含stroke，既有2單位留白包含半stroke及抗鋸齒裕量"
+  },
+  "result": {
+    "imagesInspected": 20,
+    "allTwentyCasesPassed": true,
+    "tire": "可辨認胎壁／輪轂與右側溫度計，保留TIRE 4W語意，沒有TPMS驚嘆號或單輪定位暗示；compact DPR1仍能分辨輪胎和溫度計",
+    "turbo": "蝸殼、切線出口與進氣口可辨；compact DPR1的轉子細節較小，但沒有與刻度或讀值混成一塊",
+    "imperialClearance": "輪胎右移5設計單位後，140華氏刻度與圖示在default／compact、DPR1／DPR2均有可見分隔，無中央圓侵入",
+    "vacuumAndUnavailable": "負壓bar的0.5／0.25刻度、kPa與VAC標示、N/A狀態均無圖示重疊或裁切",
+    "visualDefects": [],
+    "codeChangesRequired": false
+  },
+  "measuredSpacing": {
+    "minimumLabelDistances": {
+      "tireIcon": {
+        "designUnitDistance": 3.958332061767578,
+        "remainingAfterTwoUnitClearance": 1.9583320617675781,
+        "label": "140",
+        "screenshot": "detail-icons-imperial-dpr1.png",
+        "iconBounds": {
+          "left": 76,
+          "right": 103.20000076293945,
+          "top": 101,
+          "bottom": 119.49799919128418
+        },
+        "labelBounds": {
+          "left": 52,
+          "right": 72.04166793823242,
+          "top": 114.33333587646484,
+          "bottom": 127.66666984558105
+        },
+        "dpr": 1,
+        "displayScale": 1
+      },
+      "turboIcon": {
+        "designUnitDistance": 2.6550856232643127,
+        "remainingAfterTwoUnitClearance": 0.6550856232643127,
+        "label": "0.5",
+        "screenshot": "detail-icons-vacuum-bar-dpr1-compact.png",
+        "iconBounds": {
+          "left": 464.39999985694885,
+          "right": 484.4000001549721,
+          "top": 109.19999986886978,
+          "bottom": 128.40000015497208
+        },
+        "labelBounds": {
+          "left": 484.0570373535156,
+          "right": 500.7237033843994,
+          "top": 91.54491424560547,
+          "bottom": 106.54491424560547
+        },
+        "dpr": 1,
+        "displayScale": 0.8
+      }
+    },
+    "tireToPreservedCenterAfterTwoUnitInflation": 5.9772669978417525,
+    "preservedCenter": {
+      "cx": 280,
+      "cy": 185,
+      "radius": 180,
+      "source": "side-crescents.svg#preserveCenter circle"
+    }
+  },
+  "groups": [
+    {
+      "dpr": 1,
+      "displayScale": 1,
+      "cases": [
+        "metric",
+        "imperial",
+        "vacuum-bar",
+        "vacuum-kpa",
+        "unavailable"
+      ],
+      "iconLabelOverlaps": 0,
+      "iconsOutsideSurface": 0,
+      "centerIntersections": 0,
+      "pageErrors": []
+    },
+    {
+      "dpr": 1,
+      "displayScale": 0.8,
+      "cases": [
+        "metric",
+        "imperial",
+        "vacuum-bar",
+        "vacuum-kpa",
+        "unavailable"
+      ],
+      "iconLabelOverlaps": 0,
+      "iconsOutsideSurface": 0,
+      "centerIntersections": 0,
+      "pageErrors": []
+    },
+    {
+      "dpr": 2,
+      "displayScale": 1,
+      "cases": [
+        "metric",
+        "imperial",
+        "vacuum-bar",
+        "vacuum-kpa",
+        "unavailable"
+      ],
+      "iconLabelOverlaps": 0,
+      "iconsOutsideSurface": 0,
+      "centerIntersections": 0,
+      "pageErrors": []
+    },
+    {
+      "dpr": 2,
+      "displayScale": 0.8,
+      "cases": [
+        "metric",
+        "imperial",
+        "vacuum-bar",
+        "vacuum-kpa",
+        "unavailable"
+      ],
+      "iconLabelOverlaps": 0,
+      "iconsOutsideSurface": 0,
+      "centerIntersections": 0,
+      "pageErrors": []
+    }
+  ],
+  "checkedImages": [
+    {
+      "file": "detail-icons-metric-dpr1.png",
+      "sha256": "8856fa35b1bed7eb536a8c878ef23bf3ed01665151ec7707782179318648c60a",
+      "pixelWidth": 420,
+      "pixelHeight": 278,
+      "dpr": 1,
+      "displayScale": 1,
+      "cssScale": 0.75,
+      "artifactBytesVerified": true,
+      "visuallyInspected": true
+    },
+    {
+      "file": "detail-icons-imperial-dpr1.png",
+      "sha256": "aa55750055bf0db3f3779a819321cf820b2b24458b57afc6f4ac90015205f97f",
+      "pixelWidth": 420,
+      "pixelHeight": 278,
+      "dpr": 1,
+      "displayScale": 1,
+      "cssScale": 0.75,
+      "artifactBytesVerified": true,
+      "visuallyInspected": true
+    },
+    {
+      "file": "detail-icons-vacuum-bar-dpr1.png",
+      "sha256": "309f52e423b89fa0d0baca61a7fb4173d4cc308a714aa1af0ececa48b8bc7fda",
+      "pixelWidth": 420,
+      "pixelHeight": 278,
+      "dpr": 1,
+      "displayScale": 1,
+      "cssScale": 0.75,
+      "artifactBytesVerified": true,
+      "visuallyInspected": true
+    },
+    {
+      "file": "detail-icons-vacuum-kpa-dpr1.png",
+      "sha256": "cc57a0bd86723b33ba5f7eaa650395d173861ea745cfa521588b61ed1ef0cc63",
+      "pixelWidth": 420,
+      "pixelHeight": 278,
+      "dpr": 1,
+      "displayScale": 1,
+      "cssScale": 0.75,
+      "artifactBytesVerified": true,
+      "visuallyInspected": true
+    },
+    {
+      "file": "detail-icons-unavailable-dpr1.png",
+      "sha256": "aba4bcde14791dc5c79257b29ca7998c568b6d85c10f2041d12aa7be52ed7640",
+      "pixelWidth": 420,
+      "pixelHeight": 278,
+      "dpr": 1,
+      "displayScale": 1,
+      "cssScale": 0.75,
+      "artifactBytesVerified": true,
+      "visuallyInspected": true
+    },
+    {
+      "file": "detail-icons-metric-dpr1-compact.png",
+      "sha256": "7e9045fb31de39335c4cf87e9d6a32d88776f290977a5caf76995dc1397e1164",
+      "pixelWidth": 336,
+      "pixelHeight": 222,
+      "dpr": 1,
+      "displayScale": 0.8,
+      "cssScale": 0.6000000000000001,
+      "artifactBytesVerified": true,
+      "visuallyInspected": true
+    },
+    {
+      "file": "detail-icons-imperial-dpr1-compact.png",
+      "sha256": "58bac11835158b895475fdb06ed1abe3e588755c12d7b4d70407b6442bfe4efd",
+      "pixelWidth": 336,
+      "pixelHeight": 222,
+      "dpr": 1,
+      "displayScale": 0.8,
+      "cssScale": 0.6000000000000001,
+      "artifactBytesVerified": true,
+      "visuallyInspected": true
+    },
+    {
+      "file": "detail-icons-vacuum-bar-dpr1-compact.png",
+      "sha256": "8f089f25bdec442b5602ce45e5440bf0a7ab8aa6d4f9072dad635e08ef252f68",
+      "pixelWidth": 336,
+      "pixelHeight": 222,
+      "dpr": 1,
+      "displayScale": 0.8,
+      "cssScale": 0.6000000000000001,
+      "artifactBytesVerified": true,
+      "visuallyInspected": true
+    },
+    {
+      "file": "detail-icons-vacuum-kpa-dpr1-compact.png",
+      "sha256": "88b381fbc8692c6e56e9a3291ad47ab02ee0ba6f29c28f0bd2146b48e0488fe9",
+      "pixelWidth": 336,
+      "pixelHeight": 222,
+      "dpr": 1,
+      "displayScale": 0.8,
+      "cssScale": 0.6000000000000001,
+      "artifactBytesVerified": true,
+      "visuallyInspected": true
+    },
+    {
+      "file": "detail-icons-unavailable-dpr1-compact.png",
+      "sha256": "b82a0200bee4435a1c213283cf1eaa3e43d3aa863af6a799b78755ec7f92c220",
+      "pixelWidth": 336,
+      "pixelHeight": 222,
+      "dpr": 1,
+      "displayScale": 0.8,
+      "cssScale": 0.6000000000000001,
+      "artifactBytesVerified": true,
+      "visuallyInspected": true
+    },
+    {
+      "file": "detail-icons-metric-dpr2.png",
+      "sha256": "4bf643e93858c84ef877d6839aa9ba8ad40d4b252e31f314eb955b0eeec6885c",
+      "pixelWidth": 840,
+      "pixelHeight": 556,
+      "dpr": 2,
+      "displayScale": 1,
+      "cssScale": 0.75,
+      "artifactBytesVerified": true,
+      "visuallyInspected": true
+    },
+    {
+      "file": "detail-icons-imperial-dpr2.png",
+      "sha256": "3b156e4538dc6443f6a5ad7d518b85152ee0477aad6c44d457d594d08be78da1",
+      "pixelWidth": 840,
+      "pixelHeight": 556,
+      "dpr": 2,
+      "displayScale": 1,
+      "cssScale": 0.75,
+      "artifactBytesVerified": true,
+      "visuallyInspected": true
+    },
+    {
+      "file": "detail-icons-vacuum-bar-dpr2.png",
+      "sha256": "8b308c05c061d10a2ca14494ebf542d17e96c68bd53eebf45574a274d0ad830e",
+      "pixelWidth": 840,
+      "pixelHeight": 556,
+      "dpr": 2,
+      "displayScale": 1,
+      "cssScale": 0.75,
+      "artifactBytesVerified": true,
+      "visuallyInspected": true
+    },
+    {
+      "file": "detail-icons-vacuum-kpa-dpr2.png",
+      "sha256": "4c5ac78b89de43a10e4e1f3e8e6fd4102486adfdff92620a3d2acf03cf3a22e7",
+      "pixelWidth": 840,
+      "pixelHeight": 556,
+      "dpr": 2,
+      "displayScale": 1,
+      "cssScale": 0.75,
+      "artifactBytesVerified": true,
+      "visuallyInspected": true
+    },
+    {
+      "file": "detail-icons-unavailable-dpr2.png",
+      "sha256": "354374a7fc43f7efc935522d8b05e26f3eb8e18e0f9e0c5f67611d21f0abd395",
+      "pixelWidth": 840,
+      "pixelHeight": 556,
+      "dpr": 2,
+      "displayScale": 1,
+      "cssScale": 0.75,
+      "artifactBytesVerified": true,
+      "visuallyInspected": true
+    },
+    {
+      "file": "detail-icons-metric-dpr2-compact.png",
+      "sha256": "73036770eb54e82a8556a2ff71d86d52368fc4e59466d4a0af8346b22fca73be",
+      "pixelWidth": 672,
+      "pixelHeight": 444,
+      "dpr": 2,
+      "displayScale": 0.8,
+      "cssScale": 0.6000000000000001,
+      "artifactBytesVerified": true,
+      "visuallyInspected": true
+    },
+    {
+      "file": "detail-icons-imperial-dpr2-compact.png",
+      "sha256": "3c34ad985e6f8178db8c001b2ad4148541e8ce71e43ed36ff5e9340eeecf2d11",
+      "pixelWidth": 672,
+      "pixelHeight": 444,
+      "dpr": 2,
+      "displayScale": 0.8,
+      "cssScale": 0.6000000000000001,
+      "artifactBytesVerified": true,
+      "visuallyInspected": true
+    },
+    {
+      "file": "detail-icons-vacuum-bar-dpr2-compact.png",
+      "sha256": "1147be13b90c8dfd0c0f464cb06f1c53b19a85cb160717bad7789433240599b2",
+      "pixelWidth": 672,
+      "pixelHeight": 444,
+      "dpr": 2,
+      "displayScale": 0.8,
+      "cssScale": 0.6000000000000001,
+      "artifactBytesVerified": true,
+      "visuallyInspected": true
+    },
+    {
+      "file": "detail-icons-vacuum-kpa-dpr2-compact.png",
+      "sha256": "698d89fbf12cc3fe23e712c976711464709c1b97f8f875bc17992cdb69daf2ba",
+      "pixelWidth": 672,
+      "pixelHeight": 444,
+      "dpr": 2,
+      "displayScale": 0.8,
+      "cssScale": 0.6000000000000001,
+      "artifactBytesVerified": true,
+      "visuallyInspected": true
+    },
+    {
+      "file": "detail-icons-unavailable-dpr2-compact.png",
+      "sha256": "4101b6b5f2c88e86e92e6f5966b94e978bc8a5bfb6eb22263978a0aa8a95bca8",
+      "pixelWidth": 672,
+      "pixelHeight": 444,
+      "dpr": 2,
+      "displayScale": 0.8,
+      "cssScale": 0.6000000000000001,
+      "artifactBytesVerified": true,
+      "visuallyInspected": true
+    }
+  ],
+  "limits": [
+    "此為Linux Chromium與合成遙測驗證，不等於Windows WebView2／真實遊戲實機驗收",
+    "人工辨識度是圖像檢視結論；幾何通過不能取代人工像素檢視"
+  ]
+}

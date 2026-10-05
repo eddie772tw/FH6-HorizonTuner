@@ -1,0 +1,98 @@
+{
+  "sourceHead": "c4a5abeef26642ecafc63439dac5c8ca73a99a02",
+  "run": 37276468705,
+  "artifact": 11329914689,
+  "previews": [
+    {
+      "file": "expanded-detail.png",
+      "source": "detail-expansion-manual.png",
+      "sourceHead": "c4a5abeef26642ecafc63439dac5c8ca73a99a02",
+      "processing": "Lossless PNG recompression; unchanged screenshot pixels"
+    },
+    {
+      "file": "expanded-720p.png",
+      "source": "expanded-1280x720-dpr1.png",
+      "sourceHead": "c4a5abeef26642ecafc63439dac5c8ca73a99a02",
+      "processing": "Lossless PNG recompression; unchanged screenshot pixels"
+    },
+    {
+      "file": "expansion-transitions.png",
+      "sources": [
+        {
+          "sourceHead": "c4a5abeef26642ecafc63439dac5c8ca73a99a02",
+          "file": "detail-expansion-collapsed.png",
+          "label": "Collapsed / unchanged"
+        },
+        {
+          "sourceHead": "c4a5abeef26642ecafc63439dac5c8ca73a99a02",
+          "file": "detail-expansion-opening-150ms.png",
+          "label": "Opening / clock +150 ms"
+        },
+        {
+          "sourceHead": "c4a5abeef26642ecafc63439dac5c8ca73a99a02",
+          "file": "detail-expansion-manual.png",
+          "label": "Expanded / revised aligned rows"
+        },
+        {
+          "sourceHead": "c4a5abeef26642ecafc63439dac5c8ca73a99a02",
+          "file": "detail-expansion-closing-150ms.png",
+          "label": "Closing / clock +150 ms / unavailable data"
+        }
+      ],
+      "processing": "Actual captures downscaled and labelled; no HUD redraw"
+    },
+    {
+      "file": "expanded-before-after.png",
+      "sources": [
+        {
+          "sourceHead": "f3dd06b7f17b3c12867648780d0622dcb8525b9f",
+          "file": "detail-expansion-manual.png",
+          "label": "BEFORE / historical rejected layout"
+        },
+        {
+          "sourceHead": "c4a5abeef26642ecafc63439dac5c8ca73a99a02",
+          "file": "detail-expansion-manual.png",
+          "label": "AFTER / current aligned rows"
+        }
+      ],
+      "processing": "Actual captures downscaled and labelled; no HUD redraw"
+    },
+    {
+      "file": "expanded-layout-states.png",
+      "sources": [
+        {
+          "sourceHead": "c4a5abeef26642ecafc63439dac5c8ca73a99a02",
+          "file": "detail-expansion-manual.png",
+          "label": "Default scale1 / current layout"
+        },
+        {
+          "sourceHead": "c4a5abeef26642ecafc63439dac5c8ca73a99a02",
+          "file": "detail-expansion-manual-compact.png",
+          "label": "Compact scale0.8 / current layout"
+        },
+        {
+          "sourceHead": "c4a5abeef26642ecafc63439dac5c8ca73a99a02",
+          "file": "detail-expansion-maximum-width.png",
+          "label": "99:59.99 / long signed bar value"
+        },
+        {
+          "sourceHead": "c4a5abeef26642ecafc63439dac5c8ca73a99a02",
+          "file": "detail-expansion-maximum-width-compact.png",
+          "label": "Compact / maximum-width stress"
+        },
+        {
+          "sourceHead": "c4a5abeef26642ecafc63439dac5c8ca73a99a02",
+          "file": "detail-expansion-unavailable-readings.png",
+          "label": "Unavailable timing and sensors"
+        },
+        {
+          "sourceHead": "c4a5abeef26642ecafc63439dac5c8ca73a99a02",
+          "file": "detail-expansion-manual-without-data.png",
+          "label": "Manual expansion / no signal"
+        }
+      ],
+      "processing": "All actual captures reduced to50%; compact0.8 retains its relative size; captions and padding only"
+    }
+  ],
+  "disclosure": "Actual Chrome screenshots with synthetic telemetry, not game footage. Only the BEFORE tile is historical. Numeric-unit captures will be added from the targeted fixture rerender; current images do not imply numeric-unit screenshot coverage."
+}

@@ -1,0 +1,2985 @@
+{
+  "scope": "Actual Launcher/HUDCore with controlled GET media health and hud:media events; not native Windows media acceptance",
+  "runs": [
+    {
+      "width": 1280,
+      "height": 720,
+      "dpr": 1,
+      "scale": 1,
+      "samples": [
+        {
+          "name": "playing",
+          "page": "media",
+          "expanded": "true",
+          "title": "Night Drive",
+          "artist": "Horizon Fixture",
+          "album": "Original Test Session",
+          "status": "PLAYING",
+          "position": "0:00",
+          "duration": "4:00",
+          "fallback": false,
+          "geometry": {
+            "bounds": [
+              {
+                "name": "text",
+                "x": 112.88542175292969,
+                "y": 60.66666793823242,
+                "width": 38.22916793823242,
+                "height": 12
+              },
+              {
+                "name": "foreignObject",
+                "x": 88,
+                "y": 86,
+                "width": 96,
+                "height": 96
+              },
+              {
+                "name": "foreignObject",
+                "x": 42,
+                "y": 193,
+                "width": 146,
+                "height": 34
+              },
+              {
+                "name": "foreignObject",
+                "x": 45,
+                "y": 233,
+                "width": 143,
+                "height": 17
+              },
+              {
+                "name": "foreignObject",
+                "x": 50,
+                "y": 252,
+                "width": 138,
+                "height": 16
+              },
+              {
+                "name": "lfaMediaPosition",
+                "x": 74,
+                "y": 287.66668701171875,
+                "width": 19.479167938232422,
+                "height": 12
+              },
+              {
+                "name": "lfaMediaDuration",
+                "x": 168.52084350585938,
+                "y": 287.66668701171875,
+                "width": 19.479167938232422,
+                "height": 12
+              },
+              {
+                "name": "lfaMediaStatus",
+                "x": 117.32292175292969,
+                "y": 307,
+                "width": 45.35416793823242,
+                "height": 9.333333969116211
+              }
+            ],
+            "outside": [],
+            "intersections": [],
+            "overlaps": [],
+            "metadata": [
+              {
+                "name": "Title",
+                "contained": true
+              },
+              {
+                "name": "Artist",
+                "contained": true
+              },
+              {
+                "name": "Album",
+                "contained": true
+              }
+            ],
+            "titleHeight": 17,
+            "titleLineHeight": 17,
+            "titleChildren": 0,
+            "titleText": "Night Drive"
+          }
+        },
+        {
+          "name": "paused",
+          "page": "media",
+          "expanded": "true",
+          "title": "Night Drive",
+          "artist": "Horizon Fixture",
+          "album": "Original Test Session",
+          "status": "PAUSED",
+          "position": "1:15",
+          "duration": "4:00",
+          "fallback": false,
+          "geometry": {
+            "bounds": [
+              {
+                "name": "text",
+                "x": 112.88542175292969,
+                "y": 60.66666793823242,
+                "width": 38.22916793823242,
+                "height": 12
+              },
+              {
+                "name": "foreignObject",
+                "x": 88,
+                "y": 86,
+                "width": 96,
+                "height": 96
+              },
+              {
+                "name": "foreignObject",
+                "x": 42,
+                "y": 193,
+                "width": 146,
+                "height": 34
+              },
+              {
+                "name": "foreignObject",
+                "x": 45,
+                "y": 233,
+                "width": 143,
+                "height": 17
+              },
+              {
+                "name": "foreignObject",
+                "x": 50,
+                "y": 252,
+                "width": 138,
+                "height": 16
+              },
+              {
+                "name": "lfaMediaPosition",
+                "x": 74,
+                "y": 287.66668701171875,
+                "width": 19.479167938232422,
+                "height": 12
+              },
+              {
+                "name": "lfaMediaDuration",
+                "x": 168.52084350585938,
+                "y": 287.66668701171875,
+                "width": 19.479167938232422,
+                "height": 12
+              },
+              {
+                "name": "lfaMediaStatus",
+                "x": 118.82292175292969,
+                "y": 307,
+                "width": 42.35416793823242,
+                "height": 9.333333969116211
+              }
+            ],
+            "outside": [],
+            "intersections": [],
+            "overlaps": [],
+            "metadata": [
+              {
+                "name": "Title",
+                "contained": true
+              },
+              {
+                "name": "Artist",
+                "contained": true
+              },
+              {
+                "name": "Album",
+                "contained": true
+              }
+            ],
+            "titleHeight": 17,
+            "titleLineHeight": 17,
+            "titleChildren": 0,
+            "titleText": "Night Drive"
+          }
+        },
+        {
+          "name": "race-priority",
+          "page": "race",
+          "expanded": "true",
+          "title": "Night Drive",
+          "artist": "Horizon Fixture",
+          "album": "Original Test Session",
+          "status": "PAUSED",
+          "position": "1:15",
+          "duration": "4:00",
+          "fallback": true,
+          "geometry": null
+        },
+        {
+          "name": "race-ended-media",
+          "page": "media",
+          "expanded": "true",
+          "title": "Night Drive",
+          "artist": "Horizon Fixture",
+          "album": "Original Test Session",
+          "status": "PAUSED",
+          "position": "1:15",
+          "duration": "4:00",
+          "fallback": false,
+          "geometry": {
+            "bounds": [
+              {
+                "name": "text",
+                "x": 112.88542175292969,
+                "y": 60.66666793823242,
+                "width": 38.22916793823242,
+                "height": 12
+              },
+              {
+                "name": "foreignObject",
+                "x": 88,
+                "y": 86,
+                "width": 96,
+                "height": 96
+              },
+              {
+                "name": "foreignObject",
+                "x": 42,
+                "y": 193,
+                "width": 146,
+                "height": 34
+              },
+              {
+                "name": "foreignObject",
+                "x": 45,
+                "y": 233,
+                "width": 143,
+                "height": 17
+              },
+              {
+                "name": "foreignObject",
+                "x": 50,
+                "y": 252,
+                "width": 138,
+                "height": 16
+              },
+              {
+                "name": "lfaMediaPosition",
+                "x": 74,
+                "y": 287.66668701171875,
+                "width": 19.479167938232422,
+                "height": 12
+              },
+              {
+                "name": "lfaMediaDuration",
+                "x": 168.52084350585938,
+                "y": 287.66668701171875,
+                "width": 19.479167938232422,
+                "height": 12
+              },
+              {
+                "name": "lfaMediaStatus",
+                "x": 118.82292175292969,
+                "y": 307,
+                "width": 42.35416793823242,
+                "height": 9.333333969116211
+              }
+            ],
+            "outside": [],
+            "intersections": [],
+            "overlaps": [],
+            "metadata": [
+              {
+                "name": "Title",
+                "contained": true
+              },
+              {
+                "name": "Artist",
+                "contained": true
+              },
+              {
+                "name": "Album",
+                "contained": true
+              }
+            ],
+            "titleHeight": 17,
+            "titleLineHeight": 17,
+            "titleChildren": 0,
+            "titleText": "Night Drive"
+          }
+        },
+        {
+          "name": "stale-grace",
+          "page": "media",
+          "expanded": "true",
+          "title": "Night Drive",
+          "artist": "Horizon Fixture",
+          "album": "Original Test Session",
+          "status": "STALE / PAUSED",
+          "position": "1:15",
+          "duration": "4:00",
+          "fallback": false,
+          "geometry": {
+            "bounds": [
+              {
+                "name": "text",
+                "x": 112.88542175292969,
+                "y": 60.66666793823242,
+                "width": 38.22916793823242,
+                "height": 12
+              },
+              {
+                "name": "foreignObject",
+                "x": 88,
+                "y": 86,
+                "width": 96,
+                "height": 96
+              },
+              {
+                "name": "foreignObject",
+                "x": 42,
+                "y": 193,
+                "width": 146,
+                "height": 34
+              },
+              {
+                "name": "foreignObject",
+                "x": 45,
+                "y": 233,
+                "width": 143,
+                "height": 17
+              },
+              {
+                "name": "foreignObject",
+                "x": 50,
+                "y": 252,
+                "width": 138,
+                "height": 16
+              },
+              {
+                "name": "lfaMediaPosition",
+                "x": 74,
+                "y": 287.66668701171875,
+                "width": 19.479167938232422,
+                "height": 12
+              },
+              {
+                "name": "lfaMediaDuration",
+                "x": 168.52084350585938,
+                "y": 287.66668701171875,
+                "width": 19.479167938232422,
+                "height": 12
+              },
+              {
+                "name": "lfaMediaStatus",
+                "x": 97.14583587646484,
+                "y": 307,
+                "width": 85.70833587646484,
+                "height": 9.333333969116211
+              }
+            ],
+            "outside": [],
+            "intersections": [],
+            "overlaps": [],
+            "metadata": [
+              {
+                "name": "Title",
+                "contained": true
+              },
+              {
+                "name": "Artist",
+                "contained": true
+              },
+              {
+                "name": "Album",
+                "contained": true
+              }
+            ],
+            "titleHeight": 17,
+            "titleLineHeight": 17,
+            "titleChildren": 0,
+            "titleText": "Night Drive"
+          }
+        },
+        {
+          "name": "unicode-missing-duration",
+          "page": "media",
+          "expanded": "true",
+          "title": "很長的曲名・とても長い曲名 — <img src=x> 很長的曲名・とても長い曲名 — <img src=x> 很長的曲名・とても長い曲名 — <img src=x> 很長的曲名・とても長い曲名 — <img src=x> 很長的曲名・とても長い曲名 — <img src=x> 很長的曲名・とても長い曲名 — <img src=x> 很長的曲名・とても長い曲名 — <img src=x> 很長的曲名・とても長い曲名 — <img src=x>",
+          "artist": "藝術家／アーティスト 藝術家／アーティスト 藝術家／アーティスト 藝術家／アーティスト 藝術家／アーティスト 藝術家／アーティスト 藝術家／アーティスト 藝術家／アーティスト 藝術家／アーティスト 藝術家／アーティスト 藝術家／アーティスト 藝術家／アーティスト",
+          "album": "Album 長い名前 Album 長い名前 Album 長い名前 Album 長い名前 Album 長い名前 Album 長い名前 Album 長い名前 Album 長い名前 Album 長い名前 Album 長い名前 Album 長い名前 Album 長い名前 Album 長い名前 Album 長い名前 Album 長い名前",
+          "status": "PLAYING",
+          "position": "0:12",
+          "duration": "—:—",
+          "fallback": true,
+          "geometry": {
+            "bounds": [
+              {
+                "name": "text",
+                "x": 112.88542175292969,
+                "y": 60.66666793823242,
+                "width": 38.22916793823242,
+                "height": 12
+              },
+              {
+                "name": "foreignObject",
+                "x": 88,
+                "y": 86,
+                "width": 96,
+                "height": 96
+              },
+              {
+                "name": "foreignObject",
+                "x": 42,
+                "y": 193,
+                "width": 146,
+                "height": 34
+              },
+              {
+                "name": "foreignObject",
+                "x": 45,
+                "y": 233,
+                "width": 143,
+                "height": 17
+              },
+              {
+                "name": "foreignObject",
+                "x": 50,
+                "y": 252,
+                "width": 138,
+                "height": 16
+              },
+              {
+                "name": "lfaMediaPosition",
+                "x": 74,
+                "y": 287.66668701171875,
+                "width": 19.479167938232422,
+                "height": 12
+              },
+              {
+                "name": "lfaMediaDuration",
+                "x": 165.20834350585938,
+                "y": 287.66668701171875,
+                "width": 23.444988250732422,
+                "height": 12
+              },
+              {
+                "name": "lfaMediaStatus",
+                "x": 117.32292175292969,
+                "y": 307,
+                "width": 45.35416793823242,
+                "height": 9.333333969116211
+              }
+            ],
+            "outside": [],
+            "intersections": [],
+            "overlaps": [],
+            "metadata": [
+              {
+                "name": "Title",
+                "contained": true
+              },
+              {
+                "name": "Artist",
+                "contained": true
+              },
+              {
+                "name": "Album",
+                "contained": true
+              }
+            ],
+            "titleHeight": 34,
+            "titleLineHeight": 17,
+            "titleChildren": 0,
+            "titleText": "很長的曲名・とても長い曲名 — <img src=x> 很長的曲名・とても長い曲名 — <img src=x> 很長的曲名・とても長い曲名 — <img src=x> 很長的曲名・とても長い曲名 — <img src=x> 很長的曲名・とても長い曲名 — <img src=x> 很長的曲名・とても長い曲名 — <img src=x> 很長的曲名・とても長い曲名 — <img src=x> 很長的曲名・とても長い曲名 — <img src=x>"
+          }
+        },
+        {
+          "name": "new-art-and-reported-time",
+          "page": "media",
+          "expanded": "true",
+          "title": "New track",
+          "artist": "Horizon Fixture",
+          "album": "Original Test Session",
+          "status": "PLAYING",
+          "position": "5:00",
+          "duration": "4:00",
+          "fallback": false,
+          "geometry": {
+            "bounds": [
+              {
+                "name": "text",
+                "x": 112.88542175292969,
+                "y": 60.66666793823242,
+                "width": 38.22916793823242,
+                "height": 12
+              },
+              {
+                "name": "foreignObject",
+                "x": 88,
+                "y": 86,
+                "width": 96,
+                "height": 96
+              },
+              {
+                "name": "foreignObject",
+                "x": 42,
+                "y": 193,
+                "width": 146,
+                "height": 34
+              },
+              {
+                "name": "foreignObject",
+                "x": 45,
+                "y": 233,
+                "width": 143,
+                "height": 17
+              },
+              {
+                "name": "foreignObject",
+                "x": 50,
+                "y": 252,
+                "width": 138,
+                "height": 16
+              },
+              {
+                "name": "lfaMediaPosition",
+                "x": 74,
+                "y": 287.66668701171875,
+                "width": 19.479167938232422,
+                "height": 12
+              },
+              {
+                "name": "lfaMediaDuration",
+                "x": 168.52084350585938,
+                "y": 287.66668701171875,
+                "width": 19.479167938232422,
+                "height": 12
+              },
+              {
+                "name": "lfaMediaStatus",
+                "x": 117.32292175292969,
+                "y": 307,
+                "width": 45.35416793823242,
+                "height": 9.333333969116211
+              }
+            ],
+            "outside": [],
+            "intersections": [],
+            "overlaps": [],
+            "metadata": [
+              {
+                "name": "Title",
+                "contained": true
+              },
+              {
+                "name": "Artist",
+                "contained": true
+              },
+              {
+                "name": "Album",
+                "contained": true
+              }
+            ],
+            "titleHeight": 17,
+            "titleLineHeight": 17,
+            "titleChildren": 0,
+            "titleText": "New track"
+          }
+        },
+        {
+          "name": "failed-art",
+          "page": "media",
+          "expanded": "true",
+          "title": "Decode failure fallback",
+          "artist": "Horizon Fixture",
+          "album": "Original Test Session",
+          "status": "PLAYING",
+          "position": "0:00",
+          "duration": "4:00",
+          "fallback": true,
+          "geometry": {
+            "bounds": [
+              {
+                "name": "text",
+                "x": 112.88542175292969,
+                "y": 60.66666793823242,
+                "width": 38.22916793823242,
+                "height": 12
+              },
+              {
+                "name": "foreignObject",
+                "x": 88,
+                "y": 86,
+                "width": 96,
+                "height": 96
+              },
+              {
+                "name": "foreignObject",
+                "x": 42,
+                "y": 193,
+                "width": 146,
+                "height": 34
+              },
+              {
+                "name": "foreignObject",
+                "x": 45,
+                "y": 233,
+                "width": 143,
+                "height": 17
+              },
+              {
+                "name": "foreignObject",
+                "x": 50,
+                "y": 252,
+                "width": 138,
+                "height": 16
+              },
+              {
+                "name": "lfaMediaPosition",
+                "x": 74,
+                "y": 287.66668701171875,
+                "width": 19.479167938232422,
+                "height": 12
+              },
+              {
+                "name": "lfaMediaDuration",
+                "x": 168.52084350585938,
+                "y": 287.66668701171875,
+                "width": 19.479167938232422,
+                "height": 12
+              },
+              {
+                "name": "lfaMediaStatus",
+                "x": 117.32292175292969,
+                "y": 307,
+                "width": 45.35416793823242,
+                "height": 9.333333969116211
+              }
+            ],
+            "outside": [],
+            "intersections": [],
+            "overlaps": [],
+            "metadata": [
+              {
+                "name": "Title",
+                "contained": true
+              },
+              {
+                "name": "Artist",
+                "contained": true
+              },
+              {
+                "name": "Album",
+                "contained": true
+              }
+            ],
+            "titleHeight": 34,
+            "titleLineHeight": 17,
+            "titleChildren": 0,
+            "titleText": "Decode failure fallback"
+          }
+        },
+        {
+          "name": "manual-media-loss",
+          "page": "telemetry",
+          "expanded": "true",
+          "title": "Decode failure fallback",
+          "artist": "Horizon Fixture",
+          "album": "Original Test Session",
+          "status": "STALE / PLAYING",
+          "position": "0:00",
+          "duration": "4:00",
+          "fallback": true,
+          "geometry": null
+        }
+      ],
+      "requests": [
+        {
+          "endpoint": "system_media",
+          "method": "GET"
+        },
+        {
+          "endpoint": "system_media",
+          "method": "GET"
+        },
+        {
+          "endpoint": "system_media",
+          "method": "GET"
+        },
+        {
+          "endpoint": "system_media",
+          "method": "GET"
+        },
+        {
+          "endpoint": "system_media",
+          "method": "GET"
+        },
+        {
+          "endpoint": "system_media",
+          "method": "GET"
+        },
+        {
+          "endpoint": "system_media",
+          "method": "GET"
+        },
+        {
+          "endpoint": "system_media",
+          "method": "GET"
+        },
+        {
+          "endpoint": "system_media",
+          "method": "GET"
+        },
+        {
+          "endpoint": "system_media",
+          "method": "GET"
+        },
+        {
+          "endpoint": "system_media",
+          "method": "GET"
+        },
+        {
+          "endpoint": "system_media",
+          "method": "GET"
+        },
+        {
+          "endpoint": "system_media",
+          "method": "GET"
+        },
+        {
+          "endpoint": "system_media",
+          "method": "GET"
+        }
+      ],
+      "errors": [],
+      "passed": true
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "dpr": 2,
+      "scale": 1,
+      "samples": [
+        {
+          "name": "playing",
+          "page": "media",
+          "expanded": "true",
+          "title": "Night Drive",
+          "artist": "Horizon Fixture",
+          "album": "Original Test Session",
+          "status": "PLAYING",
+          "position": "0:00",
+          "duration": "4:00",
+          "fallback": false,
+          "geometry": {
+            "bounds": [
+              {
+                "name": "text",
+                "x": 112.88542175292969,
+                "y": 60.66666793823242,
+                "width": 38.22916793823242,
+                "height": 12
+              },
+              {
+                "name": "foreignObject",
+                "x": 88,
+                "y": 86,
+                "width": 96,
+                "height": 96
+              },
+              {
+                "name": "foreignObject",
+                "x": 42,
+                "y": 193,
+                "width": 146,
+                "height": 34
+              },
+              {
+                "name": "foreignObject",
+                "x": 45,
+                "y": 233,
+                "width": 143,
+                "height": 17
+              },
+              {
+                "name": "foreignObject",
+                "x": 50,
+                "y": 252,
+                "width": 138,
+                "height": 16
+              },
+              {
+                "name": "lfaMediaPosition",
+                "x": 74,
+                "y": 287.66668701171875,
+                "width": 19.479167938232422,
+                "height": 12
+              },
+              {
+                "name": "lfaMediaDuration",
+                "x": 168.52084350585938,
+                "y": 287.66668701171875,
+                "width": 19.479167938232422,
+                "height": 12
+              },
+              {
+                "name": "lfaMediaStatus",
+                "x": 117.32292175292969,
+                "y": 308.3333435058594,
+                "width": 45.35416793823242,
+                "height": 9.333333969116211
+              }
+            ],
+            "outside": [],
+            "intersections": [],
+            "overlaps": [],
+            "metadata": [
+              {
+                "name": "Title",
+                "contained": true
+              },
+              {
+                "name": "Artist",
+                "contained": true
+              },
+              {
+                "name": "Album",
+                "contained": true
+              }
+            ],
+            "titleHeight": 17,
+            "titleLineHeight": 17,
+            "titleChildren": 0,
+            "titleText": "Night Drive"
+          }
+        },
+        {
+          "name": "paused",
+          "page": "media",
+          "expanded": "true",
+          "title": "Night Drive",
+          "artist": "Horizon Fixture",
+          "album": "Original Test Session",
+          "status": "PAUSED",
+          "position": "1:15",
+          "duration": "4:00",
+          "fallback": false,
+          "geometry": {
+            "bounds": [
+              {
+                "name": "text",
+                "x": 112.88542175292969,
+                "y": 60.66666793823242,
+                "width": 38.22916793823242,
+                "height": 12
+              },
+              {
+                "name": "foreignObject",
+                "x": 88,
+                "y": 86,
+                "width": 96,
+                "height": 96
+              },
+              {
+                "name": "foreignObject",
+                "x": 42,
+                "y": 193,
+                "width": 146,
+                "height": 34
+              },
+              {
+                "name": "foreignObject",
+                "x": 45,
+                "y": 233,
+                "width": 143,
+                "height": 17
+              },
+              {
+                "name": "foreignObject",
+                "x": 50,
+                "y": 252,
+                "width": 138,
+                "height": 16
+              },
+              {
+                "name": "lfaMediaPosition",
+                "x": 74,
+                "y": 287.66668701171875,
+                "width": 19.479167938232422,
+                "height": 12
+              },
+              {
+                "name": "lfaMediaDuration",
+                "x": 168.52084350585938,
+                "y": 287.66668701171875,
+                "width": 19.479167938232422,
+                "height": 12
+              },
+              {
+                "name": "lfaMediaStatus",
+                "x": 118.82292175292969,
+                "y": 308.3333435058594,
+                "width": 42.35416793823242,
+                "height": 9.333333969116211
+              }
+            ],
+            "outside": [],
+            "intersections": [],
+            "overlaps": [],
+            "metadata": [
+              {
+                "name": "Title",
+                "contained": true
+              },
+              {
+                "name": "Artist",
+                "contained": true
+              },
+              {
+                "name": "Album",
+                "contained": true
+              }
+            ],
+            "titleHeight": 17,
+            "titleLineHeight": 17,
+            "titleChildren": 0,
+            "titleText": "Night Drive"
+          }
+        },
+        {
+          "name": "race-priority",
+          "page": "race",
+          "expanded": "true",
+          "title": "Night Drive",
+          "artist": "Horizon Fixture",
+          "album": "Original Test Session",
+          "status": "PAUSED",
+          "position": "1:15",
+          "duration": "4:00",
+          "fallback": true,
+          "geometry": null
+        },
+        {
+          "name": "race-ended-media",
+          "page": "media",
+          "expanded": "true",
+          "title": "Night Drive",
+          "artist": "Horizon Fixture",
+          "album": "Original Test Session",
+          "status": "PAUSED",
+          "position": "1:15",
+          "duration": "4:00",
+          "fallback": false,
+          "geometry": {
+            "bounds": [
+              {
+                "name": "text",
+                "x": 112.88542175292969,
+                "y": 60.66666793823242,
+                "width": 38.22916793823242,
+                "height": 12
+              },
+              {
+                "name": "foreignObject",
+                "x": 88,
+                "y": 86,
+                "width": 96,
+                "height": 96
+              },
+              {
+                "name": "foreignObject",
+                "x": 42,
+                "y": 193,
+                "width": 146,
+                "height": 34
+              },
+              {
+                "name": "foreignObject",
+                "x": 45,
+                "y": 233,
+                "width": 143,
+                "height": 17
+              },
+              {
+                "name": "foreignObject",
+                "x": 50,
+                "y": 252,
+                "width": 138,
+                "height": 16
+              },
+              {
+                "name": "lfaMediaPosition",
+                "x": 74,
+                "y": 287.66668701171875,
+                "width": 19.479167938232422,
+                "height": 12
+              },
+              {
+                "name": "lfaMediaDuration",
+                "x": 168.52084350585938,
+                "y": 287.66668701171875,
+                "width": 19.479167938232422,
+                "height": 12
+              },
+              {
+                "name": "lfaMediaStatus",
+                "x": 118.82292175292969,
+                "y": 308.3333435058594,
+                "width": 42.35416793823242,
+                "height": 9.333333969116211
+              }
+            ],
+            "outside": [],
+            "intersections": [],
+            "overlaps": [],
+            "metadata": [
+              {
+                "name": "Title",
+                "contained": true
+              },
+              {
+                "name": "Artist",
+                "contained": true
+              },
+              {
+                "name": "Album",
+                "contained": true
+              }
+            ],
+            "titleHeight": 17,
+            "titleLineHeight": 17,
+            "titleChildren": 0,
+            "titleText": "Night Drive"
+          }
+        },
+        {
+          "name": "stale-grace",
+          "page": "media",
+          "expanded": "true",
+          "title": "Night Drive",
+          "artist": "Horizon Fixture",
+          "album": "Original Test Session",
+          "status": "STALE / PAUSED",
+          "position": "1:15",
+          "duration": "4:00",
+          "fallback": false,
+          "geometry": {
+            "bounds": [
+              {
+                "name": "text",
+                "x": 112.88542175292969,
+                "y": 60.66666793823242,
+                "width": 38.22916793823242,
+                "height": 12
+              },
+              {
+                "name": "foreignObject",
+                "x": 88,
+                "y": 86,
+                "width": 96,
+                "height": 96
+              },
+              {
+                "name": "foreignObject",
+                "x": 42,
+                "y": 193,
+                "width": 146,
+                "height": 34
+              },
+              {
+                "name": "foreignObject",
+                "x": 45,
+                "y": 233,
+                "width": 143,
+                "height": 17
+              },
+              {
+                "name": "foreignObject",
+                "x": 50,
+                "y": 252,
+                "width": 138,
+                "height": 16
+              },
+              {
+                "name": "lfaMediaPosition",
+                "x": 74,
+                "y": 287.66668701171875,
+                "width": 19.479167938232422,
+                "height": 12
+              },
+              {
+                "name": "lfaMediaDuration",
+                "x": 168.52084350585938,
+                "y": 287.66668701171875,
+                "width": 19.479167938232422,
+                "height": 12
+              },
+              {
+                "name": "lfaMediaStatus",
+                "x": 97.14583587646484,
+                "y": 308.3333435058594,
+                "width": 85.70833587646484,
+                "height": 9.333333969116211
+              }
+            ],
+            "outside": [],
+            "intersections": [],
+            "overlaps": [],
+            "metadata": [
+              {
+                "name": "Title",
+                "contained": true
+              },
+              {
+                "name": "Artist",
+                "contained": true
+              },
+              {
+                "name": "Album",
+                "contained": true
+              }
+            ],
+            "titleHeight": 17,
+            "titleLineHeight": 17,
+            "titleChildren": 0,
+            "titleText": "Night Drive"
+          }
+        },
+        {
+          "name": "unicode-missing-duration",
+          "page": "media",
+          "expanded": "true",
+          "title": "很長的曲名・とても長い曲名 — <img src=x> 很長的曲名・とても長い曲名 — <img src=x> 很長的曲名・とても長い曲名 — <img src=x> 很長的曲名・とても長い曲名 — <img src=x> 很長的曲名・とても長い曲名 — <img src=x> 很長的曲名・とても長い曲名 — <img src=x> 很長的曲名・とても長い曲名 — <img src=x> 很長的曲名・とても長い曲名 — <img src=x>",
+          "artist": "藝術家／アーティスト 藝術家／アーティスト 藝術家／アーティスト 藝術家／アーティスト 藝術家／アーティスト 藝術家／アーティスト 藝術家／アーティスト 藝術家／アーティスト 藝術家／アーティスト 藝術家／アーティスト 藝術家／アーティスト 藝術家／アーティスト",
+          "album": "Album 長い名前 Album 長い名前 Album 長い名前 Album 長い名前 Album 長い名前 Album 長い名前 Album 長い名前 Album 長い名前 Album 長い名前 Album 長い名前 Album 長い名前 Album 長い名前 Album 長い名前 Album 長い名前 Album 長い名前",
+          "status": "PLAYING",
+          "position": "0:12",
+          "duration": "—:—",
+          "fallback": true,
+          "geometry": {
+            "bounds": [
+              {
+                "name": "text",
+                "x": 112.88542175292969,
+                "y": 60.66666793823242,
+                "width": 38.22916793823242,
+                "height": 12
+              },
+              {
+                "name": "foreignObject",
+                "x": 88,
+                "y": 86,
+                "width": 96,
+                "height": 96
+              },
+              {
+                "name": "foreignObject",
+                "x": 42,
+                "y": 193,
+                "width": 146,
+                "height": 34
+              },
+              {
+                "name": "foreignObject",
+                "x": 45,
+                "y": 233,
+                "width": 143,
+                "height": 17
+              },
+              {
+                "name": "foreignObject",
+                "x": 50,
+                "y": 252,
+                "width": 138,
+                "height": 16
+              },
+              {
+                "name": "lfaMediaPosition",
+                "x": 74,
+                "y": 287.66668701171875,
+                "width": 19.479167938232422,
+                "height": 12
+              },
+              {
+                "name": "lfaMediaDuration",
+                "x": 165.20834350585938,
+                "y": 287.66668701171875,
+                "width": 23.444988250732422,
+                "height": 12
+              },
+              {
+                "name": "lfaMediaStatus",
+                "x": 117.32292175292969,
+                "y": 308.3333435058594,
+                "width": 45.35416793823242,
+                "height": 9.333333969116211
+              }
+            ],
+            "outside": [],
+            "intersections": [],
+            "overlaps": [],
+            "metadata": [
+              {
+                "name": "Title",
+                "contained": true
+              },
+              {
+                "name": "Artist",
+                "contained": true
+              },
+              {
+                "name": "Album",
+                "contained": true
+              }
+            ],
+            "titleHeight": 34,
+            "titleLineHeight": 17,
+            "titleChildren": 0,
+            "titleText": "很長的曲名・とても長い曲名 — <img src=x> 很長的曲名・とても長い曲名 — <img src=x> 很長的曲名・とても長い曲名 — <img src=x> 很長的曲名・とても長い曲名 — <img src=x> 很長的曲名・とても長い曲名 — <img src=x> 很長的曲名・とても長い曲名 — <img src=x> 很長的曲名・とても長い曲名 — <img src=x> 很長的曲名・とても長い曲名 — <img src=x>"
+          }
+        },
+        {
+          "name": "new-art-and-reported-time",
+          "page": "media",
+          "expanded": "true",
+          "title": "New track",
+          "artist": "Horizon Fixture",
+          "album": "Original Test Session",
+          "status": "PLAYING",
+          "position": "5:00",
+          "duration": "4:00",
+          "fallback": false,
+          "geometry": {
+            "bounds": [
+              {
+                "name": "text",
+                "x": 112.88542175292969,
+                "y": 60.66666793823242,
+                "width": 38.22916793823242,
+                "height": 12
+              },
+              {
+                "name": "foreignObject",
+                "x": 88,
+                "y": 86,
+                "width": 96,
+                "height": 96
+              },
+              {
+                "name": "foreignObject",
+                "x": 42,
+                "y": 193,
+                "width": 146,
+                "height": 34
+              },
+              {
+                "name": "foreignObject",
+                "x": 45,
+                "y": 233,
+                "width": 143,
+                "height": 17
+              },
+              {
+                "name": "foreignObject",
+                "x": 50,
+                "y": 252,
+                "width": 138,
+                "height": 16
+              },
+              {
+                "name": "lfaMediaPosition",
+                "x": 74,
+                "y": 287.66668701171875,
+                "width": 19.479167938232422,
+                "height": 12
+              },
+              {
+                "name": "lfaMediaDuration",
+                "x": 168.52084350585938,
+                "y": 287.66668701171875,
+                "width": 19.479167938232422,
+                "height": 12
+              },
+              {
+                "name": "lfaMediaStatus",
+                "x": 117.32292175292969,
+                "y": 308.3333435058594,
+                "width": 45.35416793823242,
+                "height": 9.333333969116211
+              }
+            ],
+            "outside": [],
+            "intersections": [],
+            "overlaps": [],
+            "metadata": [
+              {
+                "name": "Title",
+                "contained": true
+              },
+              {
+                "name": "Artist",
+                "contained": true
+              },
+              {
+                "name": "Album",
+                "contained": true
+              }
+            ],
+            "titleHeight": 17,
+            "titleLineHeight": 17,
+            "titleChildren": 0,
+            "titleText": "New track"
+          }
+        },
+        {
+          "name": "failed-art",
+          "page": "media",
+          "expanded": "true",
+          "title": "Decode failure fallback",
+          "artist": "Horizon Fixture",
+          "album": "Original Test Session",
+          "status": "PLAYING",
+          "position": "0:00",
+          "duration": "4:00",
+          "fallback": true,
+          "geometry": {
+            "bounds": [
+              {
+                "name": "text",
+                "x": 112.88542175292969,
+                "y": 60.66666793823242,
+                "width": 38.22916793823242,
+                "height": 12
+              },
+              {
+                "name": "foreignObject",
+                "x": 88,
+                "y": 86,
+                "width": 96,
+                "height": 96
+              },
+              {
+                "name": "foreignObject",
+                "x": 42,
+                "y": 193,
+                "width": 146,
+                "height": 34
+              },
+              {
+                "name": "foreignObject",
+                "x": 45,
+                "y": 233,
+                "width": 143,
+                "height": 17
+              },
+              {
+                "name": "foreignObject",
+                "x": 50,
+                "y": 252,
+                "width": 138,
+                "height": 16
+              },
+              {
+                "name": "lfaMediaPosition",
+                "x": 74,
+                "y": 287.66668701171875,
+                "width": 19.479167938232422,
+                "height": 12
+              },
+              {
+                "name": "lfaMediaDuration",
+                "x": 168.52084350585938,
+                "y": 287.66668701171875,
+                "width": 19.479167938232422,
+                "height": 12
+              },
+              {
+                "name": "lfaMediaStatus",
+                "x": 117.32292175292969,
+                "y": 308.3333435058594,
+                "width": 45.35416793823242,
+                "height": 9.333333969116211
+              }
+            ],
+            "outside": [],
+            "intersections": [],
+            "overlaps": [],
+            "metadata": [
+              {
+                "name": "Title",
+                "contained": true
+              },
+              {
+                "name": "Artist",
+                "contained": true
+              },
+              {
+                "name": "Album",
+                "contained": true
+              }
+            ],
+            "titleHeight": 34,
+            "titleLineHeight": 17,
+            "titleChildren": 0,
+            "titleText": "Decode failure fallback"
+          }
+        },
+        {
+          "name": "manual-media-loss",
+          "page": "telemetry",
+          "expanded": "true",
+          "title": "Decode failure fallback",
+          "artist": "Horizon Fixture",
+          "album": "Original Test Session",
+          "status": "STALE / PLAYING",
+          "position": "0:00",
+          "duration": "4:00",
+          "fallback": true,
+          "geometry": null
+        }
+      ],
+      "requests": [
+        {
+          "endpoint": "system_media",
+          "method": "GET"
+        },
+        {
+          "endpoint": "system_media",
+          "method": "GET"
+        },
+        {
+          "endpoint": "system_media",
+          "method": "GET"
+        },
+        {
+          "endpoint": "system_media",
+          "method": "GET"
+        },
+        {
+          "endpoint": "system_media",
+          "method": "GET"
+        },
+        {
+          "endpoint": "system_media",
+          "method": "GET"
+        },
+        {
+          "endpoint": "system_media",
+          "method": "GET"
+        },
+        {
+          "endpoint": "system_media",
+          "method": "GET"
+        },
+        {
+          "endpoint": "system_media",
+          "method": "GET"
+        },
+        {
+          "endpoint": "system_media",
+          "method": "GET"
+        },
+        {
+          "endpoint": "system_media",
+          "method": "GET"
+        },
+        {
+          "endpoint": "system_media",
+          "method": "GET"
+        },
+        {
+          "endpoint": "system_media",
+          "method": "GET"
+        },
+        {
+          "endpoint": "system_media",
+          "method": "GET"
+        }
+      ],
+      "errors": [],
+      "passed": true
+    },
+    {
+      "width": 1280,
+      "height": 720,
+      "dpr": 1,
+      "scale": 0.8,
+      "samples": [
+        {
+          "name": "playing",
+          "page": "media",
+          "expanded": "true",
+          "title": "Night Drive",
+          "artist": "Horizon Fixture",
+          "album": "Original Test Session",
+          "status": "PLAYING",
+          "position": "0:00",
+          "duration": "4:00",
+          "fallback": false,
+          "geometry": {
+            "bounds": [
+              {
+                "name": "text",
+                "x": 112.88542175292969,
+                "y": 61.666664123535156,
+                "width": 38.229164123535156,
+                "height": 10
+              },
+              {
+                "name": "foreignObject",
+                "x": 88,
+                "y": 86,
+                "width": 96,
+                "height": 96
+              },
+              {
+                "name": "foreignObject",
+                "x": 42,
+                "y": 193,
+                "width": 146,
+                "height": 34
+              },
+              {
+                "name": "foreignObject",
+                "x": 45,
+                "y": 233,
+                "width": 143,
+                "height": 17
+              },
+              {
+                "name": "foreignObject",
+                "x": 50,
+                "y": 252.00001525878906,
+                "width": 138,
+                "height": 16
+              },
+              {
+                "name": "lfaMediaPosition",
+                "x": 74,
+                "y": 288.66668701171875,
+                "width": 20.56803321838379,
+                "height": 10
+              },
+              {
+                "name": "lfaMediaDuration",
+                "x": 168.5208282470703,
+                "y": 288.66668701171875,
+                "width": 20.56803321838379,
+                "height": 10
+              },
+              {
+                "name": "lfaMediaStatus",
+                "x": 117.35676574707031,
+                "y": 306.6666564941406,
+                "width": 45.28645706176758,
+                "height": 10
+              }
+            ],
+            "outside": [],
+            "intersections": [],
+            "overlaps": [],
+            "metadata": [
+              {
+                "name": "Title",
+                "contained": true
+              },
+              {
+                "name": "Artist",
+                "contained": true
+              },
+              {
+                "name": "Album",
+                "contained": true
+              }
+            ],
+            "titleHeight": 17.0052,
+            "titleLineHeight": 17,
+            "titleChildren": 0,
+            "titleText": "Night Drive"
+          }
+        },
+        {
+          "name": "paused",
+          "page": "media",
+          "expanded": "true",
+          "title": "Night Drive",
+          "artist": "Horizon Fixture",
+          "album": "Original Test Session",
+          "status": "PAUSED",
+          "position": "1:15",
+          "duration": "4:00",
+          "fallback": false,
+          "geometry": {
+            "bounds": [
+              {
+                "name": "text",
+                "x": 112.88542175292969,
+                "y": 61.666664123535156,
+                "width": 38.229164123535156,
+                "height": 10
+              },
+              {
+                "name": "foreignObject",
+                "x": 88,
+                "y": 86,
+                "width": 96,
+                "height": 96
+              },
+              {
+                "name": "foreignObject",
+                "x": 42,
+                "y": 193,
+                "width": 146,
+                "height": 34
+              },
+              {
+                "name": "foreignObject",
+                "x": 45,
+                "y": 233,
+                "width": 143,
+                "height": 17
+              },
+              {
+                "name": "foreignObject",
+                "x": 50,
+                "y": 252.00001525878906,
+                "width": 138,
+                "height": 16
+              },
+              {
+                "name": "lfaMediaPosition",
+                "x": 74,
+                "y": 288.66668701171875,
+                "width": 20.56803321838379,
+                "height": 10
+              },
+              {
+                "name": "lfaMediaDuration",
+                "x": 168.5208282470703,
+                "y": 288.66668701171875,
+                "width": 20.56803321838379,
+                "height": 10
+              },
+              {
+                "name": "lfaMediaStatus",
+                "x": 118.85416412353516,
+                "y": 306.6666564941406,
+                "width": 42.291664123535156,
+                "height": 10
+              }
+            ],
+            "outside": [],
+            "intersections": [],
+            "overlaps": [],
+            "metadata": [
+              {
+                "name": "Title",
+                "contained": true
+              },
+              {
+                "name": "Artist",
+                "contained": true
+              },
+              {
+                "name": "Album",
+                "contained": true
+              }
+            ],
+            "titleHeight": 17.0052,
+            "titleLineHeight": 17,
+            "titleChildren": 0,
+            "titleText": "Night Drive"
+          }
+        },
+        {
+          "name": "race-priority",
+          "page": "race",
+          "expanded": "true",
+          "title": "Night Drive",
+          "artist": "Horizon Fixture",
+          "album": "Original Test Session",
+          "status": "PAUSED",
+          "position": "1:15",
+          "duration": "4:00",
+          "fallback": true,
+          "geometry": null
+        },
+        {
+          "name": "race-ended-media",
+          "page": "media",
+          "expanded": "true",
+          "title": "Night Drive",
+          "artist": "Horizon Fixture",
+          "album": "Original Test Session",
+          "status": "PAUSED",
+          "position": "1:15",
+          "duration": "4:00",
+          "fallback": false,
+          "geometry": {
+            "bounds": [
+              {
+                "name": "text",
+                "x": 112.88542175292969,
+                "y": 61.666664123535156,
+                "width": 38.229164123535156,
+                "height": 10
+              },
+              {
+                "name": "foreignObject",
+                "x": 88,
+                "y": 86,
+                "width": 96,
+                "height": 96
+              },
+              {
+                "name": "foreignObject",
+                "x": 42,
+                "y": 193,
+                "width": 146,
+                "height": 34
+              },
+              {
+                "name": "foreignObject",
+                "x": 45,
+                "y": 233,
+                "width": 143,
+                "height": 17
+              },
+              {
+                "name": "foreignObject",
+                "x": 50,
+                "y": 252.00001525878906,
+                "width": 138,
+                "height": 16
+              },
+              {
+                "name": "lfaMediaPosition",
+                "x": 74,
+                "y": 288.66668701171875,
+                "width": 20.56803321838379,
+                "height": 10
+              },
+              {
+                "name": "lfaMediaDuration",
+                "x": 168.5208282470703,
+                "y": 288.66668701171875,
+                "width": 20.56803321838379,
+                "height": 10
+              },
+              {
+                "name": "lfaMediaStatus",
+                "x": 118.85416412353516,
+                "y": 306.6666564941406,
+                "width": 42.291664123535156,
+                "height": 10
+              }
+            ],
+            "outside": [],
+            "intersections": [],
+            "overlaps": [],
+            "metadata": [
+              {
+                "name": "Title",
+                "contained": true
+              },
+              {
+                "name": "Artist",
+                "contained": true
+              },
+              {
+                "name": "Album",
+                "contained": true
+              }
+            ],
+            "titleHeight": 17.0052,
+            "titleLineHeight": 17,
+            "titleChildren": 0,
+            "titleText": "Night Drive"
+          }
+        },
+        {
+          "name": "stale-grace",
+          "page": "media",
+          "expanded": "true",
+          "title": "Night Drive",
+          "artist": "Horizon Fixture",
+          "album": "Original Test Session",
+          "status": "STALE / PAUSED",
+          "position": "1:15",
+          "duration": "4:00",
+          "fallback": false,
+          "geometry": {
+            "bounds": [
+              {
+                "name": "text",
+                "x": 112.88542175292969,
+                "y": 61.666664123535156,
+                "width": 38.229164123535156,
+                "height": 10
+              },
+              {
+                "name": "foreignObject",
+                "x": 88,
+                "y": 86,
+                "width": 96,
+                "height": 96
+              },
+              {
+                "name": "foreignObject",
+                "x": 42,
+                "y": 193,
+                "width": 146,
+                "height": 34
+              },
+              {
+                "name": "foreignObject",
+                "x": 45,
+                "y": 233,
+                "width": 143,
+                "height": 17
+              },
+              {
+                "name": "foreignObject",
+                "x": 50,
+                "y": 252.00001525878906,
+                "width": 138,
+                "height": 16
+              },
+              {
+                "name": "lfaMediaPosition",
+                "x": 74,
+                "y": 288.66668701171875,
+                "width": 20.56803321838379,
+                "height": 10
+              },
+              {
+                "name": "lfaMediaDuration",
+                "x": 168.5208282470703,
+                "y": 288.66668701171875,
+                "width": 20.56803321838379,
+                "height": 10
+              },
+              {
+                "name": "lfaMediaStatus",
+                "x": 97.21353912353516,
+                "y": 306.6666564941406,
+                "width": 85.57291412353516,
+                "height": 10
+              }
+            ],
+            "outside": [],
+            "intersections": [],
+            "overlaps": [],
+            "metadata": [
+              {
+                "name": "Title",
+                "contained": true
+              },
+              {
+                "name": "Artist",
+                "contained": true
+              },
+              {
+                "name": "Album",
+                "contained": true
+              }
+            ],
+            "titleHeight": 17.0052,
+            "titleLineHeight": 17,
+            "titleChildren": 0,
+            "titleText": "Night Drive"
+          }
+        },
+        {
+          "name": "unicode-missing-duration",
+          "page": "media",
+          "expanded": "true",
+          "title": "很長的曲名・とても長い曲名 — <img src=x> 很長的曲名・とても長い曲名 — <img src=x> 很長的曲名・とても長い曲名 — <img src=x> 很長的曲名・とても長い曲名 — <img src=x> 很長的曲名・とても長い曲名 — <img src=x> 很長的曲名・とても長い曲名 — <img src=x> 很長的曲名・とても長い曲名 — <img src=x> 很長的曲名・とても長い曲名 — <img src=x>",
+          "artist": "藝術家／アーティスト 藝術家／アーティスト 藝術家／アーティスト 藝術家／アーティスト 藝術家／アーティスト 藝術家／アーティスト 藝術家／アーティスト 藝術家／アーティスト 藝術家／アーティスト 藝術家／アーティスト 藝術家／アーティスト 藝術家／アーティスト",
+          "album": "Album 長い名前 Album 長い名前 Album 長い名前 Album 長い名前 Album 長い名前 Album 長い名前 Album 長い名前 Album 長い名前 Album 長い名前 Album 長い名前 Album 長い名前 Album 長い名前 Album 長い名前 Album 長い名前 Album 長い名前",
+          "status": "PLAYING",
+          "position": "0:12",
+          "duration": "—:—",
+          "fallback": true,
+          "geometry": {
+            "bounds": [
+              {
+                "name": "text",
+                "x": 112.88542175292969,
+                "y": 61.666664123535156,
+                "width": 38.229164123535156,
+                "height": 10
+              },
+              {
+                "name": "foreignObject",
+                "x": 88,
+                "y": 86,
+                "width": 96,
+                "height": 96
+              },
+              {
+                "name": "foreignObject",
+                "x": 42,
+                "y": 193,
+                "width": 146,
+                "height": 34
+              },
+              {
+                "name": "foreignObject",
+                "x": 45,
+                "y": 233,
+                "width": 143,
+                "height": 17
+              },
+              {
+                "name": "foreignObject",
+                "x": 50,
+                "y": 252.00001525878906,
+                "width": 138,
+                "height": 16
+              },
+              {
+                "name": "lfaMediaPosition",
+                "x": 74,
+                "y": 288.66668701171875,
+                "width": 20.56803321838379,
+                "height": 10
+              },
+              {
+                "name": "lfaMediaDuration",
+                "x": 165.2135467529297,
+                "y": 288.66668701171875,
+                "width": 22.786457061767578,
+                "height": 10
+              },
+              {
+                "name": "lfaMediaStatus",
+                "x": 117.35676574707031,
+                "y": 306.6666564941406,
+                "width": 45.28645706176758,
+                "height": 10
+              }
+            ],
+            "outside": [],
+            "intersections": [],
+            "overlaps": [],
+            "metadata": [
+              {
+                "name": "Title",
+                "contained": true
+              },
+              {
+                "name": "Artist",
+                "contained": true
+              },
+              {
+                "name": "Album",
+                "contained": true
+              }
+            ],
+            "titleHeight": 33.9844,
+            "titleLineHeight": 17,
+            "titleChildren": 0,
+            "titleText": "很長的曲名・とても長い曲名 — <img src=x> 很長的曲名・とても長い曲名 — <img src=x> 很長的曲名・とても長い曲名 — <img src=x> 很長的曲名・とても長い曲名 — <img src=x> 很長的曲名・とても長い曲名 — <img src=x> 很長的曲名・とても長い曲名 — <img src=x> 很長的曲名・とても長い曲名 — <img src=x> 很長的曲名・とても長い曲名 — <img src=x>"
+          }
+        },
+        {
+          "name": "new-art-and-reported-time",
+          "page": "media",
+          "expanded": "true",
+          "title": "New track",
+          "artist": "Horizon Fixture",
+          "album": "Original Test Session",
+          "status": "PLAYING",
+          "position": "5:00",
+          "duration": "4:00",
+          "fallback": false,
+          "geometry": {
+            "bounds": [
+              {
+                "name": "text",
+                "x": 112.88542175292969,
+                "y": 61.666664123535156,
+                "width": 38.229164123535156,
+                "height": 10
+              },
+              {
+                "name": "foreignObject",
+                "x": 88,
+                "y": 86,
+                "width": 96,
+                "height": 96
+              },
+              {
+                "name": "foreignObject",
+                "x": 42,
+                "y": 193,
+                "width": 146,
+                "height": 34
+              },
+              {
+                "name": "foreignObject",
+                "x": 45,
+                "y": 233,
+                "width": 143,
+                "height": 17
+              },
+              {
+                "name": "foreignObject",
+                "x": 50,
+                "y": 252.00001525878906,
+                "width": 138,
+                "height": 16
+              },
+              {
+                "name": "lfaMediaPosition",
+                "x": 74,
+                "y": 288.66668701171875,
+                "width": 20.56803321838379,
+                "height": 10
+              },
+              {
+                "name": "lfaMediaDuration",
+                "x": 168.5208282470703,
+                "y": 288.66668701171875,
+                "width": 20.56803321838379,
+                "height": 10
+              },
+              {
+                "name": "lfaMediaStatus",
+                "x": 117.35676574707031,
+                "y": 306.6666564941406,
+                "width": 45.28645706176758,
+                "height": 10
+              }
+            ],
+            "outside": [],
+            "intersections": [],
+            "overlaps": [],
+            "metadata": [
+              {
+                "name": "Title",
+                "contained": true
+              },
+              {
+                "name": "Artist",
+                "contained": true
+              },
+              {
+                "name": "Album",
+                "contained": true
+              }
+            ],
+            "titleHeight": 17.0052,
+            "titleLineHeight": 17,
+            "titleChildren": 0,
+            "titleText": "New track"
+          }
+        },
+        {
+          "name": "failed-art",
+          "page": "media",
+          "expanded": "true",
+          "title": "Decode failure fallback",
+          "artist": "Horizon Fixture",
+          "album": "Original Test Session",
+          "status": "PLAYING",
+          "position": "0:00",
+          "duration": "4:00",
+          "fallback": true,
+          "geometry": {
+            "bounds": [
+              {
+                "name": "text",
+                "x": 112.88542175292969,
+                "y": 61.666664123535156,
+                "width": 38.229164123535156,
+                "height": 10
+              },
+              {
+                "name": "foreignObject",
+                "x": 88,
+                "y": 86,
+                "width": 96,
+                "height": 96
+              },
+              {
+                "name": "foreignObject",
+                "x": 42,
+                "y": 193,
+                "width": 146,
+                "height": 34
+              },
+              {
+                "name": "foreignObject",
+                "x": 45,
+                "y": 233,
+                "width": 143,
+                "height": 17
+              },
+              {
+                "name": "foreignObject",
+                "x": 50,
+                "y": 252.00001525878906,
+                "width": 138,
+                "height": 16
+              },
+              {
+                "name": "lfaMediaPosition",
+                "x": 74,
+                "y": 288.66668701171875,
+                "width": 20.56803321838379,
+                "height": 10
+              },
+              {
+                "name": "lfaMediaDuration",
+                "x": 168.5208282470703,
+                "y": 288.66668701171875,
+                "width": 20.56803321838379,
+                "height": 10
+              },
+              {
+                "name": "lfaMediaStatus",
+                "x": 117.35676574707031,
+                "y": 306.6666564941406,
+                "width": 45.28645706176758,
+                "height": 10
+              }
+            ],
+            "outside": [],
+            "intersections": [],
+            "overlaps": [],
+            "metadata": [
+              {
+                "name": "Title",
+                "contained": true
+              },
+              {
+                "name": "Artist",
+                "contained": true
+              },
+              {
+                "name": "Album",
+                "contained": true
+              }
+            ],
+            "titleHeight": 33.9844,
+            "titleLineHeight": 17,
+            "titleChildren": 0,
+            "titleText": "Decode failure fallback"
+          }
+        },
+        {
+          "name": "manual-media-loss",
+          "page": "telemetry",
+          "expanded": "true",
+          "title": "Decode failure fallback",
+          "artist": "Horizon Fixture",
+          "album": "Original Test Session",
+          "status": "STALE / PLAYING",
+          "position": "0:00",
+          "duration": "4:00",
+          "fallback": true,
+          "geometry": null
+        }
+      ],
+      "requests": [
+        {
+          "endpoint": "system_media",
+          "method": "GET"
+        },
+        {
+          "endpoint": "system_media",
+          "method": "GET"
+        },
+        {
+          "endpoint": "system_media",
+          "method": "GET"
+        },
+        {
+          "endpoint": "system_media",
+          "method": "GET"
+        },
+        {
+          "endpoint": "system_media",
+          "method": "GET"
+        },
+        {
+          "endpoint": "system_media",
+          "method": "GET"
+        },
+        {
+          "endpoint": "system_media",
+          "method": "GET"
+        },
+        {
+          "endpoint": "system_media",
+          "method": "GET"
+        },
+        {
+          "endpoint": "system_media",
+          "method": "GET"
+        },
+        {
+          "endpoint": "system_media",
+          "method": "GET"
+        },
+        {
+          "endpoint": "system_media",
+          "method": "GET"
+        },
+        {
+          "endpoint": "system_media",
+          "method": "GET"
+        },
+        {
+          "endpoint": "system_media",
+          "method": "GET"
+        },
+        {
+          "endpoint": "system_media",
+          "method": "GET"
+        }
+      ],
+      "errors": [],
+      "passed": true
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "dpr": 2,
+      "scale": 0.8,
+      "samples": [
+        {
+          "name": "playing",
+          "page": "media",
+          "expanded": "true",
+          "title": "Night Drive",
+          "artist": "Horizon Fixture",
+          "album": "Original Test Session",
+          "status": "PLAYING",
+          "position": "0:00",
+          "duration": "4:00",
+          "fallback": false,
+          "geometry": {
+            "bounds": [
+              {
+                "name": "text",
+                "x": 112.88542175292969,
+                "y": 61.666664123535156,
+                "width": 38.229164123535156,
+                "height": 11.666666030883789
+              },
+              {
+                "name": "foreignObject",
+                "x": 88,
+                "y": 86,
+                "width": 96,
+                "height": 96
+              },
+              {
+                "name": "foreignObject",
+                "x": 42,
+                "y": 193,
+                "width": 146,
+                "height": 34
+              },
+              {
+                "name": "foreignObject",
+                "x": 45,
+                "y": 233,
+                "width": 143,
+                "height": 17
+              },
+              {
+                "name": "foreignObject",
+                "x": 50,
+                "y": 252.00001525878906,
+                "width": 138,
+                "height": 16
+              },
+              {
+                "name": "lfaMediaPosition",
+                "x": 74,
+                "y": 288.66668701171875,
+                "width": 20.56803321838379,
+                "height": 11.666666030883789
+              },
+              {
+                "name": "lfaMediaDuration",
+                "x": 168.5208282470703,
+                "y": 288.66668701171875,
+                "width": 20.56803321838379,
+                "height": 11.666666030883789
+              },
+              {
+                "name": "lfaMediaStatus",
+                "x": 117.35676574707031,
+                "y": 308.33331298828125,
+                "width": 45.28645706176758,
+                "height": 10
+              }
+            ],
+            "outside": [],
+            "intersections": [],
+            "overlaps": [],
+            "metadata": [
+              {
+                "name": "Title",
+                "contained": true
+              },
+              {
+                "name": "Artist",
+                "contained": true
+              },
+              {
+                "name": "Album",
+                "contained": true
+              }
+            ],
+            "titleHeight": 17.0052,
+            "titleLineHeight": 17,
+            "titleChildren": 0,
+            "titleText": "Night Drive"
+          }
+        },
+        {
+          "name": "paused",
+          "page": "media",
+          "expanded": "true",
+          "title": "Night Drive",
+          "artist": "Horizon Fixture",
+          "album": "Original Test Session",
+          "status": "PAUSED",
+          "position": "1:15",
+          "duration": "4:00",
+          "fallback": false,
+          "geometry": {
+            "bounds": [
+              {
+                "name": "text",
+                "x": 112.88542175292969,
+                "y": 61.666664123535156,
+                "width": 38.229164123535156,
+                "height": 11.666666030883789
+              },
+              {
+                "name": "foreignObject",
+                "x": 88,
+                "y": 86,
+                "width": 96,
+                "height": 96
+              },
+              {
+                "name": "foreignObject",
+                "x": 42,
+                "y": 193,
+                "width": 146,
+                "height": 34
+              },
+              {
+                "name": "foreignObject",
+                "x": 45,
+                "y": 233,
+                "width": 143,
+                "height": 17
+              },
+              {
+                "name": "foreignObject",
+                "x": 50,
+                "y": 252.00001525878906,
+                "width": 138,
+                "height": 16
+              },
+              {
+                "name": "lfaMediaPosition",
+                "x": 74,
+                "y": 288.66668701171875,
+                "width": 20.56803321838379,
+                "height": 11.666666030883789
+              },
+              {
+                "name": "lfaMediaDuration",
+                "x": 168.5208282470703,
+                "y": 288.66668701171875,
+                "width": 20.56803321838379,
+                "height": 11.666666030883789
+              },
+              {
+                "name": "lfaMediaStatus",
+                "x": 118.85416412353516,
+                "y": 308.33331298828125,
+                "width": 42.291664123535156,
+                "height": 10
+              }
+            ],
+            "outside": [],
+            "intersections": [],
+            "overlaps": [],
+            "metadata": [
+              {
+                "name": "Title",
+                "contained": true
+              },
+              {
+                "name": "Artist",
+                "contained": true
+              },
+              {
+                "name": "Album",
+                "contained": true
+              }
+            ],
+            "titleHeight": 17.0052,
+            "titleLineHeight": 17,
+            "titleChildren": 0,
+            "titleText": "Night Drive"
+          }
+        },
+        {
+          "name": "race-priority",
+          "page": "race",
+          "expanded": "true",
+          "title": "Night Drive",
+          "artist": "Horizon Fixture",
+          "album": "Original Test Session",
+          "status": "PAUSED",
+          "position": "1:15",
+          "duration": "4:00",
+          "fallback": true,
+          "geometry": null
+        },
+        {
+          "name": "race-ended-media",
+          "page": "media",
+          "expanded": "true",
+          "title": "Night Drive",
+          "artist": "Horizon Fixture",
+          "album": "Original Test Session",
+          "status": "PAUSED",
+          "position": "1:15",
+          "duration": "4:00",
+          "fallback": false,
+          "geometry": {
+            "bounds": [
+              {
+                "name": "text",
+                "x": 112.88542175292969,
+                "y": 61.666664123535156,
+                "width": 38.229164123535156,
+                "height": 11.666666030883789
+              },
+              {
+                "name": "foreignObject",
+                "x": 88,
+                "y": 86,
+                "width": 96,
+                "height": 96
+              },
+              {
+                "name": "foreignObject",
+                "x": 42,
+                "y": 193,
+                "width": 146,
+                "height": 34
+              },
+              {
+                "name": "foreignObject",
+                "x": 45,
+                "y": 233,
+                "width": 143,
+                "height": 17
+              },
+              {
+                "name": "foreignObject",
+                "x": 50,
+                "y": 252.00001525878906,
+                "width": 138,
+                "height": 16
+              },
+              {
+                "name": "lfaMediaPosition",
+                "x": 74,
+                "y": 288.66668701171875,
+                "width": 20.56803321838379,
+                "height": 11.666666030883789
+              },
+              {
+                "name": "lfaMediaDuration",
+                "x": 168.5208282470703,
+                "y": 288.66668701171875,
+                "width": 20.56803321838379,
+                "height": 11.666666030883789
+              },
+              {
+                "name": "lfaMediaStatus",
+                "x": 118.85416412353516,
+                "y": 308.33331298828125,
+                "width": 42.291664123535156,
+                "height": 10
+              }
+            ],
+            "outside": [],
+            "intersections": [],
+            "overlaps": [],
+            "metadata": [
+              {
+                "name": "Title",
+                "contained": true
+              },
+              {
+                "name": "Artist",
+                "contained": true
+              },
+              {
+                "name": "Album",
+                "contained": true
+              }
+            ],
+            "titleHeight": 17.0052,
+            "titleLineHeight": 17,
+            "titleChildren": 0,
+            "titleText": "Night Drive"
+          }
+        },
+        {
+          "name": "stale-grace",
+          "page": "media",
+          "expanded": "true",
+          "title": "Night Drive",
+          "artist": "Horizon Fixture",
+          "album": "Original Test Session",
+          "status": "STALE / PAUSED",
+          "position": "1:15",
+          "duration": "4:00",
+          "fallback": false,
+          "geometry": {
+            "bounds": [
+              {
+                "name": "text",
+                "x": 112.88542175292969,
+                "y": 61.666664123535156,
+                "width": 38.229164123535156,
+                "height": 11.666666030883789
+              },
+              {
+                "name": "foreignObject",
+                "x": 88,
+                "y": 86,
+                "width": 96,
+                "height": 96
+              },
+              {
+                "name": "foreignObject",
+                "x": 42,
+                "y": 193,
+                "width": 146,
+                "height": 34
+              },
+              {
+                "name": "foreignObject",
+                "x": 45,
+                "y": 233,
+                "width": 143,
+                "height": 17
+              },
+              {
+                "name": "foreignObject",
+                "x": 50,
+                "y": 252.00001525878906,
+                "width": 138,
+                "height": 16
+              },
+              {
+                "name": "lfaMediaPosition",
+                "x": 74,
+                "y": 288.66668701171875,
+                "width": 20.56803321838379,
+                "height": 11.666666030883789
+              },
+              {
+                "name": "lfaMediaDuration",
+                "x": 168.5208282470703,
+                "y": 288.66668701171875,
+                "width": 20.56803321838379,
+                "height": 11.666666030883789
+              },
+              {
+                "name": "lfaMediaStatus",
+                "x": 97.21353912353516,
+                "y": 308.33331298828125,
+                "width": 85.57291412353516,
+                "height": 10
+              }
+            ],
+            "outside": [],
+            "intersections": [],
+            "overlaps": [],
+            "metadata": [
+              {
+                "name": "Title",
+                "contained": true
+              },
+              {
+                "name": "Artist",
+                "contained": true
+              },
+              {
+                "name": "Album",
+                "contained": true
+              }
+            ],
+            "titleHeight": 17.0052,
+            "titleLineHeight": 17,
+            "titleChildren": 0,
+            "titleText": "Night Drive"
+          }
+        },
+        {
+          "name": "unicode-missing-duration",
+          "page": "media",
+          "expanded": "true",
+          "title": "很長的曲名・とても長い曲名 — <img src=x> 很長的曲名・とても長い曲名 — <img src=x> 很長的曲名・とても長い曲名 — <img src=x> 很長的曲名・とても長い曲名 — <img src=x> 很長的曲名・とても長い曲名 — <img src=x> 很長的曲名・とても長い曲名 — <img src=x> 很長的曲名・とても長い曲名 — <img src=x> 很長的曲名・とても長い曲名 — <img src=x>",
+          "artist": "藝術家／アーティスト 藝術家／アーティスト 藝術家／アーティスト 藝術家／アーティスト 藝術家／アーティスト 藝術家／アーティスト 藝術家／アーティスト 藝術家／アーティスト 藝術家／アーティスト 藝術家／アーティスト 藝術家／アーティスト 藝術家／アーティスト",
+          "album": "Album 長い名前 Album 長い名前 Album 長い名前 Album 長い名前 Album 長い名前 Album 長い名前 Album 長い名前 Album 長い名前 Album 長い名前 Album 長い名前 Album 長い名前 Album 長い名前 Album 長い名前 Album 長い名前 Album 長い名前",
+          "status": "PLAYING",
+          "position": "0:12",
+          "duration": "—:—",
+          "fallback": true,
+          "geometry": {
+            "bounds": [
+              {
+                "name": "text",
+                "x": 112.88542175292969,
+                "y": 61.666664123535156,
+                "width": 38.229164123535156,
+                "height": 11.666666030883789
+              },
+              {
+                "name": "foreignObject",
+                "x": 88,
+                "y": 86,
+                "width": 96,
+                "height": 96
+              },
+              {
+                "name": "foreignObject",
+                "x": 42,
+                "y": 193,
+                "width": 146,
+                "height": 34
+              },
+              {
+                "name": "foreignObject",
+                "x": 45,
+                "y": 233,
+                "width": 143,
+                "height": 17
+              },
+              {
+                "name": "foreignObject",
+                "x": 50,
+                "y": 252.00001525878906,
+                "width": 138,
+                "height": 16
+              },
+              {
+                "name": "lfaMediaPosition",
+                "x": 74,
+                "y": 288.66668701171875,
+                "width": 20.56803321838379,
+                "height": 11.666666030883789
+              },
+              {
+                "name": "lfaMediaDuration",
+                "x": 165.2135467529297,
+                "y": 290.3333435058594,
+                "width": 22.786457061767578,
+                "height": 10
+              },
+              {
+                "name": "lfaMediaStatus",
+                "x": 117.35676574707031,
+                "y": 308.33331298828125,
+                "width": 45.28645706176758,
+                "height": 10
+              }
+            ],
+            "outside": [],
+            "intersections": [],
+            "overlaps": [],
+            "metadata": [
+              {
+                "name": "Title",
+                "contained": true
+              },
+              {
+                "name": "Artist",
+                "contained": true
+              },
+              {
+                "name": "Album",
+                "contained": true
+              }
+            ],
+            "titleHeight": 33.9844,
+            "titleLineHeight": 17,
+            "titleChildren": 0,
+            "titleText": "很長的曲名・とても長い曲名 — <img src=x> 很長的曲名・とても長い曲名 — <img src=x> 很長的曲名・とても長い曲名 — <img src=x> 很長的曲名・とても長い曲名 — <img src=x> 很長的曲名・とても長い曲名 — <img src=x> 很長的曲名・とても長い曲名 — <img src=x> 很長的曲名・とても長い曲名 — <img src=x> 很長的曲名・とても長い曲名 — <img src=x>"
+          }
+        },
+        {
+          "name": "new-art-and-reported-time",
+          "page": "media",
+          "expanded": "true",
+          "title": "New track",
+          "artist": "Horizon Fixture",
+          "album": "Original Test Session",
+          "status": "PLAYING",
+          "position": "5:00",
+          "duration": "4:00",
+          "fallback": false,
+          "geometry": {
+            "bounds": [
+              {
+                "name": "text",
+                "x": 112.88542175292969,
+                "y": 61.666664123535156,
+                "width": 38.229164123535156,
+                "height": 11.666666030883789
+              },
+              {
+                "name": "foreignObject",
+                "x": 88,
+                "y": 86,
+                "width": 96,
+                "height": 96
+              },
+              {
+                "name": "foreignObject",
+                "x": 42,
+                "y": 193,
+                "width": 146,
+                "height": 34
+              },
+              {
+                "name": "foreignObject",
+                "x": 45,
+                "y": 233,
+                "width": 143,
+                "height": 17
+              },
+              {
+                "name": "foreignObject",
+                "x": 50,
+                "y": 252.00001525878906,
+                "width": 138,
+                "height": 16
+              },
+              {
+                "name": "lfaMediaPosition",
+                "x": 74,
+                "y": 288.66668701171875,
+                "width": 20.56803321838379,
+                "height": 11.666666030883789
+              },
+              {
+                "name": "lfaMediaDuration",
+                "x": 168.5208282470703,
+                "y": 288.66668701171875,
+                "width": 20.56803321838379,
+                "height": 11.666666030883789
+              },
+              {
+                "name": "lfaMediaStatus",
+                "x": 117.35676574707031,
+                "y": 308.33331298828125,
+                "width": 45.28645706176758,
+                "height": 10
+              }
+            ],
+            "outside": [],
+            "intersections": [],
+            "overlaps": [],
+            "metadata": [
+              {
+                "name": "Title",
+                "contained": true
+              },
+              {
+                "name": "Artist",
+                "contained": true
+              },
+              {
+                "name": "Album",
+                "contained": true
+              }
+            ],
+            "titleHeight": 17.0052,
+            "titleLineHeight": 17,
+            "titleChildren": 0,
+            "titleText": "New track"
+          }
+        },
+        {
+          "name": "failed-art",
+          "page": "media",
+          "expanded": "true",
+          "title": "Decode failure fallback",
+          "artist": "Horizon Fixture",
+          "album": "Original Test Session",
+          "status": "PLAYING",
+          "position": "0:00",
+          "duration": "4:00",
+          "fallback": true,
+          "geometry": {
+            "bounds": [
+              {
+                "name": "text",
+                "x": 112.88542175292969,
+                "y": 61.666664123535156,
+                "width": 38.229164123535156,
+                "height": 11.666666030883789
+              },
+              {
+                "name": "foreignObject",
+                "x": 88,
+                "y": 86,
+                "width": 96,
+                "height": 96
+              },
+              {
+                "name": "foreignObject",
+                "x": 42,
+                "y": 193,
+                "width": 146,
+                "height": 34
+              },
+              {
+                "name": "foreignObject",
+                "x": 45,
+                "y": 233,
+                "width": 143,
+                "height": 17
+              },
+              {
+                "name": "foreignObject",
+                "x": 50,
+                "y": 252.00001525878906,
+                "width": 138,
+                "height": 16
+              },
+              {
+                "name": "lfaMediaPosition",
+                "x": 74,
+                "y": 288.66668701171875,
+                "width": 20.56803321838379,
+                "height": 11.666666030883789
+              },
+              {
+                "name": "lfaMediaDuration",
+                "x": 168.5208282470703,
+                "y": 288.66668701171875,
+                "width": 20.56803321838379,
+                "height": 11.666666030883789
+              },
+              {
+                "name": "lfaMediaStatus",
+                "x": 117.35676574707031,
+                "y": 308.33331298828125,
+                "width": 45.28645706176758,
+                "height": 10
+              }
+            ],
+            "outside": [],
+            "intersections": [],
+            "overlaps": [],
+            "metadata": [
+              {
+                "name": "Title",
+                "contained": true
+              },
+              {
+                "name": "Artist",
+                "contained": true
+              },
+              {
+                "name": "Album",
+                "contained": true
+              }
+            ],
+            "titleHeight": 33.9844,
+            "titleLineHeight": 17,
+            "titleChildren": 0,
+            "titleText": "Decode failure fallback"
+          }
+        },
+        {
+          "name": "manual-media-loss",
+          "page": "telemetry",
+          "expanded": "true",
+          "title": "Decode failure fallback",
+          "artist": "Horizon Fixture",
+          "album": "Original Test Session",
+          "status": "STALE / PLAYING",
+          "position": "0:00",
+          "duration": "4:00",
+          "fallback": true,
+          "geometry": null
+        }
+      ],
+      "requests": [
+        {
+          "endpoint": "system_media",
+          "method": "GET"
+        },
+        {
+          "endpoint": "system_media",
+          "method": "GET"
+        },
+        {
+          "endpoint": "system_media",
+          "method": "GET"
+        },
+        {
+          "endpoint": "system_media",
+          "method": "GET"
+        },
+        {
+          "endpoint": "system_media",
+          "method": "GET"
+        },
+        {
+          "endpoint": "system_media",
+          "method": "GET"
+        },
+        {
+          "endpoint": "system_media",
+          "method": "GET"
+        },
+        {
+          "endpoint": "system_media",
+          "method": "GET"
+        },
+        {
+          "endpoint": "system_media",
+          "method": "GET"
+        },
+        {
+          "endpoint": "system_media",
+          "method": "GET"
+        },
+        {
+          "endpoint": "system_media",
+          "method": "GET"
+        },
+        {
+          "endpoint": "system_media",
+          "method": "GET"
+        },
+        {
+          "endpoint": "system_media",
+          "method": "GET"
+        },
+        {
+          "endpoint": "system_media",
+          "method": "GET"
+        }
+      ],
+      "errors": [],
+      "passed": true
+    }
+  ]
+}

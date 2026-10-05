@@ -1,0 +1,332 @@
+{
+  "referenceHead": "93085acd2ff238650dd9e2ac6c552e224ebdd060",
+  "revisionHead": "ad4458ec975678055a0b8555e3b0c99f53191aba",
+  "method": "Exact RGBA byte comparison at pixel centers (x+0.5,y+0.5); no tolerance, color-space conversion, feathering or mask shrink. Radius covers original 177-design-px housing plus 1-design-px outer stroke, scaled 0.75 and output DPR.",
+  "softMaskCaution": "An antialiased drawn mask has nonzero coverage outside its stated circle and therefore counts modified side-fascia edge pixels; a radius267 soft mask produced AE1, but the geometric radius267 disk is unchanged.",
+  "results": [
+    {
+      "file": "detail-metric.png",
+      "width": 840,
+      "height": 556,
+      "cx": 420,
+      "cy": 277.5,
+      "radius": 267,
+      "insidePixelCenters": 223942,
+      "differingPixelsWithinDisk": 0,
+      "nearestChangedPixel": {
+        "x": 250,
+        "y": 70,
+        "distance": 267.54298720018807,
+        "oldRgba": [
+          21,
+          33,
+          40,
+          255
+        ],
+        "newRgba": [
+          20,
+          32,
+          39,
+          255
+        ]
+      }
+    },
+    {
+      "file": "detail-imperial.png",
+      "width": 840,
+      "height": 556,
+      "cx": 420,
+      "cy": 277.5,
+      "radius": 267,
+      "insidePixelCenters": 223942,
+      "differingPixelsWithinDisk": 0,
+      "nearestChangedPixel": {
+        "x": 250,
+        "y": 70,
+        "distance": 267.54298720018807,
+        "oldRgba": [
+          21,
+          33,
+          40,
+          255
+        ],
+        "newRgba": [
+          20,
+          32,
+          39,
+          255
+        ]
+      }
+    },
+    {
+      "file": "detail-reverse.png",
+      "width": 840,
+      "height": 556,
+      "cx": 420,
+      "cy": 277.5,
+      "radius": 267,
+      "insidePixelCenters": 223942,
+      "differingPixelsWithinDisk": 0,
+      "nearestChangedPixel": {
+        "x": 250,
+        "y": 70,
+        "distance": 267.54298720018807,
+        "oldRgba": [
+          21,
+          33,
+          40,
+          255
+        ],
+        "newRgba": [
+          20,
+          32,
+          39,
+          255
+        ]
+      }
+    },
+    {
+      "file": "detail-neutral.png",
+      "width": 840,
+      "height": 556,
+      "cx": 420,
+      "cy": 277.5,
+      "radius": 267,
+      "insidePixelCenters": 223942,
+      "differingPixelsWithinDisk": 0,
+      "nearestChangedPixel": {
+        "x": 250,
+        "y": 70,
+        "distance": 267.54298720018807,
+        "oldRgba": [
+          21,
+          33,
+          40,
+          255
+        ],
+        "newRgba": [
+          20,
+          32,
+          39,
+          255
+        ]
+      }
+    },
+    {
+      "file": "detail-redline.png",
+      "width": 840,
+      "height": 556,
+      "cx": 420,
+      "cy": 277.5,
+      "radius": 267,
+      "insidePixelCenters": 223942,
+      "differingPixelsWithinDisk": 0,
+      "nearestChangedPixel": {
+        "x": 250,
+        "y": 70,
+        "distance": 267.54298720018807,
+        "oldRgba": [
+          21,
+          33,
+          40,
+          255
+        ],
+        "newRgba": [
+          20,
+          32,
+          39,
+          255
+        ]
+      }
+    },
+    {
+      "file": "detail-missing.png",
+      "width": 840,
+      "height": 556,
+      "cx": 420,
+      "cy": 277.5,
+      "radius": 267,
+      "insidePixelCenters": 223942,
+      "differingPixelsWithinDisk": 0,
+      "nearestChangedPixel": {
+        "x": 250,
+        "y": 70,
+        "distance": 267.54298720018807,
+        "oldRgba": [
+          21,
+          33,
+          40,
+          255
+        ],
+        "newRgba": [
+          20,
+          32,
+          39,
+          255
+        ]
+      }
+    },
+    {
+      "file": "detail-no-signal.png",
+      "width": 840,
+      "height": 556,
+      "cx": 420,
+      "cy": 277.5,
+      "radius": 267,
+      "insidePixelCenters": 223942,
+      "differingPixelsWithinDisk": 0,
+      "nearestChangedPixel": {
+        "x": 250,
+        "y": 70,
+        "distance": 267.54298720018807,
+        "oldRgba": [
+          21,
+          33,
+          40,
+          255
+        ],
+        "newRgba": [
+          20,
+          32,
+          39,
+          255
+        ]
+      }
+    },
+    {
+      "file": "detail-high-rpm.png",
+      "width": 840,
+      "height": 556,
+      "cx": 420,
+      "cy": 277.5,
+      "radius": 267,
+      "insidePixelCenters": 223942,
+      "differingPixelsWithinDisk": 0,
+      "nearestChangedPixel": {
+        "x": 250,
+        "y": 70,
+        "distance": 267.54298720018807,
+        "oldRgba": [
+          21,
+          33,
+          40,
+          255
+        ],
+        "newRgba": [
+          20,
+          32,
+          39,
+          255
+        ]
+      }
+    },
+    {
+      "file": "metric-1280x720-dpr1.png",
+      "width": 1280,
+      "height": 720,
+      "cx": 1040,
+      "cy": 551.25,
+      "radius": 133.5,
+      "insidePixelCenters": 55974,
+      "differingPixelsWithinDisk": 466,
+      "nearestChangedPixel": {
+        "x": 1017,
+        "y": 607,
+        "distance": 60.583104080263176,
+        "oldRgba": [
+          21,
+          27,
+          30,
+          255
+        ],
+        "newRgba": [
+          21,
+          33,
+          50,
+          255
+        ]
+      }
+    },
+    {
+      "file": "metric-1920x1080-dpr1.png",
+      "width": 1920,
+      "height": 1080,
+      "cx": 1680,
+      "cy": 911.25,
+      "radius": 133.5,
+      "insidePixelCenters": 55974,
+      "differingPixelsWithinDisk": 478,
+      "nearestChangedPixel": {
+        "x": 1657,
+        "y": 967,
+        "distance": 60.583104080263176,
+        "oldRgba": [
+          21,
+          27,
+          30,
+          255
+        ],
+        "newRgba": [
+          21,
+          33,
+          50,
+          255
+        ]
+      }
+    },
+    {
+      "file": "metric-2560x1440-dpr1.png",
+      "width": 2560,
+      "height": 1440,
+      "cx": 2320,
+      "cy": 1271.25,
+      "radius": 133.5,
+      "insidePixelCenters": 55974,
+      "differingPixelsWithinDisk": 0,
+      "nearestChangedPixel": {
+        "x": 2234,
+        "y": 1168,
+        "distance": 133.6705371426329,
+        "oldRgba": [
+          20,
+          31,
+          38,
+          255
+        ],
+        "newRgba": [
+          20,
+          31,
+          37,
+          255
+        ]
+      }
+    },
+    {
+      "file": "metric-1920x1080-dpr2.png",
+      "width": 3840,
+      "height": 2160,
+      "cx": 3360,
+      "cy": 1822.5,
+      "radius": 267,
+      "insidePixelCenters": 223942,
+      "differingPixelsWithinDisk": 0,
+      "nearestChangedPixel": {
+        "x": 3190,
+        "y": 1614,
+        "distance": 268.3174425936562,
+        "oldRgba": [
+          21,
+          33,
+          40,
+          255
+        ],
+        "newRgba": [
+          20,
+          32,
+          39,
+          255
+        ]
+      }
+    }
+  ]
+}
