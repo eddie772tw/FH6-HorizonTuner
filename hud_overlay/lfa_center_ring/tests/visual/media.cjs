@@ -56,10 +56,17 @@ async function verifyMedia({ browser, origin, config, raw, out }) {
             for (const b of list.slice(i+1)) if (a.x < b.x+b.width && a.x+a.width > b.x && a.y < b.y+b.height && a.y+a.height > b.y) overlaps.push([a.name,b.name]);
           }
           const title = document.getElementById('lfaMediaTitle');
-          return { bounds: list, outside, intersections, overlaps, titleChildren: title.childElementCount, titleText: title.textContent };
+          const titleStyle = getComputedStyle(title);
+          const metadata = ['Title', 'Artist', 'Album'].map(name => {
+            const node = document.getElementById('lfaMedia' + name), child = node.getBoundingClientRect(), host = node.parentElement.getBoundingClientRect();
+            return { name, contained: child.left >= host.left && child.top >= host.top && child.right <= host.right && child.bottom <= host.bottom };
+          });
+          return { bounds: list, outside, intersections, overlaps, metadata, titleHeight: parseFloat(titleStyle.height), titleLineHeight: parseFloat(titleStyle.lineHeight), titleChildren: title.childElementCount, titleText: title.textContent };
         } finally { documentSource.remove(); }
       });
       assert.deepEqual(result.outside, []); assert.deepEqual(result.intersections, []); assert.deepEqual(result.overlaps, []); assert.equal(result.titleChildren, 0);
+      assert.ok(result.titleHeight <= result.titleLineHeight * 2, 'Title block must end at the second line, with no third-line sliver');
+      assert.ok(result.metadata.every(item => item.contained), 'Actual HTML metadata must fit its SVG host');
       return result;
     }
     async function capture(name, checkBounds = true) {
