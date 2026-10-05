@@ -16,9 +16,9 @@
 
 ## Defi：A 方案
 
-![Defi A 方案，淺色背景](assets/hud-visual-iteration-20260910/defi_triple-cruise-light.png)
+![Defi A 方案，淺色背景](../../assets/hud-visual-iteration-20260910/defi_triple-cruise-light.png)
 
-[修改前](assets/hud-visual-review-20260910/defi_triple-detail.png) · [完整右下畫面](assets/hud-visual-iteration-20260910/defi_triple-full-dpr1.png) · [英制倒檔狀態](assets/hud-visual-iteration-20260910/defi_triple-reverse-light.png) · [DPR 2](assets/hud-visual-iteration-20260910/defi_triple-detail-dpr2.png) · [20 組狀態量測](assets/hud-visual-iteration-20260910/defi_triple-states.json)
+[修改前](../../assets/hud-visual-review-20260910/defi_triple-detail.png) · [完整右下畫面](../../assets/hud-visual-iteration-20260910/defi_triple-full-dpr1.png) · [英制倒檔狀態](../../assets/hud-visual-iteration-20260910/defi_triple-reverse-light.png) · [DPR 2](../../assets/hud-visual-iteration-20260910/defi_triple-detail-dpr2.png) · [20 組狀態量測](../../assets/hud-visual-iteration-20260910/defi_triple-states.json)
 
 - 改為 380×360 邏輯畫布，右下為主轉速表，上方／左側錯落三副表。四個黑色圓盤與金屬表圈各自獨立，外部矩形背景、邊框與陰影已移除。
 - 預設顯示 342×324 CSS px；主表直徑 180、副表 115.2。相較舊預設 342×126，主要收益是副表可讀性與右下配置，不宣稱顯示面積縮小。
@@ -32,9 +32,9 @@
 
 **後續基準更新**：使用者於此版推送後指定以 ULTRA Clubman 物理風格及原作虛構刻度重製。以下含 NIPPONDENSO／數位讀值的內容保留為第一輪歷史，已由下方「AE86 追加重製」取代。
 
-![AE86 更新盤面](assets/hud-visual-iteration-20260910/initial_d-cruise-dark.png)
+![AE86 更新盤面](../../assets/hud-visual-iteration-20260910/initial_d-cruise-dark.png)
 
-[修改前](assets/hud-visual-review-20260910/initial_d-detail.png) · [完整右下畫面](assets/hud-visual-iteration-20260910/initial_d-full-dpr1.png) · [紅線／漂移](assets/hud-visual-iteration-20260910/initial_d-redline-dark.png) · [英制倒檔](assets/hud-visual-iteration-20260910/initial_d-reverse-light.png) · [DPR 2](assets/hud-visual-iteration-20260910/initial_d-detail-dpr2.png) · [狀態量測](assets/hud-visual-iteration-20260910/initial_d-states.json)
+[修改前](../../assets/hud-visual-review-20260910/initial_d-detail.png) · [完整右下畫面](../../assets/hud-visual-iteration-20260910/initial_d-full-dpr1.png) · [紅線／漂移](../../assets/hud-visual-iteration-20260910/initial_d-redline-dark.png) · [英制倒檔](../../assets/hud-visual-iteration-20260910/initial_d-reverse-light.png) · [DPR 2](../../assets/hud-visual-iteration-20260910/initial_d-detail-dpr2.png) · [狀態量測](../../assets/hud-visual-iteration-20260910/initial_d-states.json)
 
 - 主表中心／半徑、非線性轉速映射、速度／檔位／外掛燈座標、420×420 與倍率 0.95 均保留；預設仍約 299.25×299.25 CSS px。
 - 以方向性明暗重建黑色烤漆金屬表圈，盤面加入低對比固定紋理與玻璃反射。直立工業数字取代原來傾斜字形，TRD／NIPPONDENSO／×1000 RPM 使用原創字樣處理。
@@ -45,9 +45,9 @@
 
 ## FH5 Arc：原生資訊層級與細刻度
 
-![FH5 亮背景](assets/hud-visual-iteration-20260910/fh5_arc-cruise-light.png)
+![FH5 亮背景](../../assets/hud-visual-iteration-20260910/fh5_arc-cruise-light.png)
 
-[修改前](assets/hud-visual-review-20260910/fh5_arc-detail.png) · [完整右下畫面](assets/hud-visual-iteration-20260910/fh5_arc-full-dpr1.png) · [紅線](assets/hud-visual-iteration-20260910/fh5_arc-redline-dark.png) · [英制倒檔／手煞車](assets/hud-visual-iteration-20260910/fh5_arc-reverse-light.png) · [狀態量測](assets/hud-visual-iteration-20260910/fh5_arc-states.json)
+[修改前](../../assets/hud-visual-review-20260910/fh5_arc-detail.png) · [完整右下畫面](../../assets/hud-visual-iteration-20260910/fh5_arc-full-dpr1.png) · [紅線](../../assets/hud-visual-iteration-20260910/fh5_arc-redline-dark.png) · [英制倒檔／手煞車](../../assets/hud-visual-iteration-20260910/fh5_arc-reverse-light.png) · [狀態量測](../../assets/hud-visual-iteration-20260910/fh5_arc-states.json)
 
 - 以細白轉速環、每千轉數字、半千轉短刻度與固定紅線段，取代粗漸層進度弧；短徑向針呈現轉速。刻度隨引擎最高轉速適配。
 - 檔位移至環內中央、速度位於下方開口、單位位於中右，移除右侧膠囊。細暗底線與文字描邊維持亮背景辨識，外部仍透明。
@@ -58,9 +58,9 @@
 
 ## MoTeC：重建 C125 左右欄內容
 
-![MoTeC C125 適配頁](assets/hud-visual-iteration-20260910/motec_gt3-cruise-dark.png)
+![MoTeC C125 適配頁](../../assets/hud-visual-iteration-20260910/motec_gt3-cruise-dark.png)
 
-[修改前](assets/hud-visual-review-20260910/motec_gt3-detail.png) · [完整右下畫面](assets/hud-visual-iteration-20260910/motec_gt3-full-dpr1.png) · [缺資料](assets/hud-visual-iteration-20260910/motec_gt3-missing-light.png) · [DPR 2](assets/hud-visual-iteration-20260910/motec_gt3-detail-dpr2.png) · [狀態量測](assets/hud-visual-iteration-20260910/motec_gt3-states.json)
+[修改前](../../assets/hud-visual-review-20260910/motec_gt3-detail.png) · [完整右下畫面](../../assets/hud-visual-iteration-20260910/motec_gt3-full-dpr1.png) · [缺資料](../../assets/hud-visual-iteration-20260910/motec_gt3-missing-light.png) · [DPR 2](../../assets/hud-visual-iteration-20260910/motec_gt3-detail-dpr2.png) · [狀態量測](../../assets/hud-visual-iteration-20260910/motec_gt3-states.json)
 
 | 區域 | 迭代後内容 | 資料邊界 |
 |---|---|---|
@@ -77,9 +77,9 @@
 
 ## Cyberpunk：Turbo-R 概念啟發的窄幅模組
 
-![Cyberpunk 工業面板](assets/hud-visual-iteration-20260910/cyberpunk_hud-cruise-dark.png)
+![Cyberpunk 工業面板](../../assets/hud-visual-iteration-20260910/cyberpunk_hud-cruise-dark.png)
 
-[修改前](assets/hud-visual-review-20260910/cyberpunk_hud-detail.png) · [完整右下畫面](assets/hud-visual-iteration-20260910/cyberpunk_hud-full-dpr1.png) · [紅線](assets/hud-visual-iteration-20260910/cyberpunk_hud-redline-dark.png) · [缺 boost](assets/hud-visual-iteration-20260910/cyberpunk_hud-missing-light.png) · [狀態量測](assets/hud-visual-iteration-20260910/cyberpunk_hud-states.json)
+[修改前](../../assets/hud-visual-review-20260910/cyberpunk_hud-detail.png) · [完整右下畫面](../../assets/hud-visual-iteration-20260910/cyberpunk_hud-full-dpr1.png) · [紅線](../../assets/hud-visual-iteration-20260910/cyberpunk_hud-redline-dark.png) · [缺 boost](../../assets/hud-visual-iteration-20260910/cyberpunk_hud-missing-light.png) · [狀態量測](../../assets/hud-visual-iteration-20260910/cyberpunk_hud-states.json)
 
 - 統一 Turbo-R V-Tech 身份，移除 Type-66 混稱；以琥珀磷光字、深橄欖金屬外框及窄幅分段面板重新編排。上方 RPM、主速度／檔位、右方增壓／踏板形成明確層級。
 - 移除假的 SYS.LINK／60HZ 狀態、姿態角、可見 EQ 與隨機 Glitch。媒體僅以實際收到的歌名置於底部次要文字；保留既有 hooks。缺 boost 顯示 `—`，取消油門製造的增壓數值。
@@ -90,9 +90,9 @@
 
 ## AE86 追加重製：ULTRA 物理風格、原作虛構盤面
 
-![最終 AE86，純轉速表](assets/hud-visual-iteration-20260910/initial_d_ultra-cruise-light.png)
+![最終 AE86，純轉速表](../../assets/hud-visual-iteration-20260910/initial_d_ultra-cruise-light.png)
 
-[前一輪 TRD](assets/hud-visual-iteration-20260910/initial_d-cruise-dark.png) · [完整右下畫面](assets/hud-visual-iteration-20260910/initial_d_ultra-full-dpr1.png) · [低轉](assets/hud-visual-iteration-20260910/initial_d_ultra-idle-dark.png) · [警示燈](assets/hud-visual-iteration-20260910/initial_d_ultra-redline-dark.png) · [DPR 2](assets/hud-visual-iteration-20260910/initial_d_ultra-detail-dpr2.png) · [狀態量測](assets/hud-visual-iteration-20260910/initial_d_ultra-states.json)
+[前一輪 TRD](../../assets/hud-visual-iteration-20260910/initial_d-cruise-dark.png) · [完整右下畫面](../../assets/hud-visual-iteration-20260910/initial_d_ultra-full-dpr1.png) · [低轉](../../assets/hud-visual-iteration-20260910/initial_d_ultra-idle-dark.png) · [警示燈](../../assets/hud-visual-iteration-20260910/initial_d_ultra-redline-dark.png) · [DPR 2](../../assets/hud-visual-iteration-20260910/initial_d_ultra-detail-dpr2.png) · [狀態量測](../../assets/hud-visual-iteration-20260910/initial_d_ultra-states.json)
 
 採用使用者最後指定的邊界：ULTRA 是實物設計來源，原作為虛構盤面，**不能將市售線性校準套入**。TRD 識別與 ×1000 RPM 保留，NIPPONDENSO 移除；使用黑表圈、黑盤、白針與盤內右下紅／黃雙警示燈，取消外掛燈筒及原先假定的固定紅色區段。
 
@@ -122,7 +122,7 @@
 | MoTeC | 420×252 | 30 / 30 px |
 | Cyberpunk | 390×165 | 30 / 30 px |
 
-[最終 45 組定位量測](assets/hud-visual-iteration-20260910/layout-results-final.json)：3 種 viewport × 3 種 scale × 5 款，全部右下對齊且容器不越界，無 pageerror。原五款各一次推送，加上 AE86 追加重製，合計六次獨立提交／推送。各次完整 gate 的命令、退出碼與摘要保存於 [Defi](assets/hud-visual-iteration-20260910/gate-defi.json)、[AE86 第一輪](assets/hud-visual-iteration-20260910/gate-ae86.json)、[FH5](assets/hud-visual-iteration-20260910/gate-fh5.json)、[MoTeC](assets/hud-visual-iteration-20260910/gate-motec.json)、[Cyberpunk](assets/hud-visual-iteration-20260910/gate-cyberpunk.json)、[AE86 最終版](assets/hud-visual-iteration-20260910/gate-ae86-ultra.json)。
+[最終 45 組定位量測](../../assets/hud-visual-iteration-20260910/layout-results-final.json)：3 種 viewport × 3 種 scale × 5 款，全部右下對齊且容器不越界，無 pageerror。原五款各一次推送，加上 AE86 追加重製，合計六次獨立提交／推送。各次完整 gate 的命令、退出碼與摘要保存於 [Defi](../../assets/hud-visual-iteration-20260910/gate-defi.json)、[AE86 第一輪](../../assets/hud-visual-iteration-20260910/gate-ae86.json)、[FH5](../../assets/hud-visual-iteration-20260910/gate-fh5.json)、[MoTeC](../../assets/hud-visual-iteration-20260910/gate-motec.json)、[Cyberpunk](../../assets/hud-visual-iteration-20260910/gate-cyberpunk.json)、[AE86 最終版](../../assets/hud-visual-iteration-20260910/gate-ae86-ultra.json)。
 
 ## 執行環境註記
 

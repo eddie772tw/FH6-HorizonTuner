@@ -41,11 +41,11 @@
 #### 【視覺比對圖組】
 
 ````carousel
-![【真實原型】Lovely-Sim-Racing GT3 DDU 官方實機動態儀表（MoTeC C125 規格）](../ref/real_references/real_motec_c125_ddu.gif)
+![【真實原型】Lovely-Sim-Racing GT3 DDU 官方實機動態儀表（MoTeC C125 規格）](../../../ref/real_references/real_motec_c125_ddu.gif)
 <!-- slide -->
-![【實機渲染】MoTeC C125 實機巡航狀態：換檔燈、G-Force 與 Team Radio](../ref/audit_screenshots/hud_motec_gt3_feature.png)
+![【實機渲染】MoTeC C125 實機巡航狀態：換檔燈、G-Force 與 Team Radio](../../../ref/audit_screenshots/hud_motec_gt3_feature.png)
 <!-- slide -->
-![【動態極限】MoTeC C125 實機極限狀態：紅線超轉全藍光爆閃 (8300 RPM)](../ref/audit_screenshots/motec_gt3_redline.png)
+![【動態極限】MoTeC C125 實機極限狀態：紅線超轉全藍光爆閃 (8300 RPM)](../../../ref/audit_screenshots/motec_gt3_redline.png)
 ````
 
 #### 【對比分析與合規證明】
@@ -72,11 +72,11 @@
 #### 【視覺比對圖組】
 
 ````carousel
-![【真實原型】日本精機 (Nippon Seiki) Defi 官方 Defi-Link ADVANCE BF 產品展示照](../ref/real_references/real_defi_advance_bf.jpg)
+![【真實原型】日本精機 (Nippon Seiki) Defi 官方 Defi-Link ADVANCE BF 產品展示照](../../../ref/real_references/real_defi_advance_bf.jpg)
 <!-- slide -->
-![【實機渲染】Defi Advance BF 實機狀態：Peak Hold 峰值鎖定指針與琥珀紅背光](../ref/audit_screenshots/hud_defi_triple_feature.png)
+![【實機渲染】Defi Advance BF 實機狀態：Peak Hold 峰值鎖定指針與琥珀紅背光](../../../ref/audit_screenshots/hud_defi_triple_feature.png)
 <!-- slide -->
-![【動態極限】Defi Advance BF 實機極限狀態：紅線超轉燈筒全亮 (10200 RPM)](../ref/audit_screenshots/defi_triple_redline.png)
+![【動態極限】Defi Advance BF 實機極限狀態：紅線超轉燈筒全亮 (10200 RPM)](../../../ref/audit_screenshots/defi_triple_redline.png)
 ````
 
 #### 【對比分析與合規證明】
@@ -103,13 +103,13 @@
 #### 【視覺比對圖組】
 
 ````carousel
-![【真實原型】Forza Horizon 官方原生 HUD 實機遊戲畫面](../ref/real_references/real_fh5_hud.png)
+![【真實原型】Forza Horizon 官方原生 HUD 實機遊戲畫面](../../../ref/real_references/real_fh5_hud.png)
 <!-- slide -->
-![【實機渲染】FH5 弧形 HUD 實機狀態：Horizon Radio 電台膠囊卡片](../ref/audit_screenshots/hud_fh5_arc_radio.png)
+![【實機渲染】FH5 弧形 HUD 實機狀態：Horizon Radio 電台膠囊卡片](../../../ref/audit_screenshots/hud_fh5_arc_radio.png)
 <!-- slide -->
-![【實機渲染】FH5 弧形 HUD 實機狀態：(P) HANDBRAKE 動態手煞車警示](../ref/audit_screenshots/hud_fh5_arc_feature.png)
+![【實機渲染】FH5 弧形 HUD 實機狀態：(P) HANDBRAKE 動態手煞車警示](../../../ref/audit_screenshots/hud_fh5_arc_feature.png)
 <!-- slide -->
-![【動態極限】FH5 弧形 HUD 實機極限狀態：20Hz 斷油呼吸爆閃 (8450 RPM)](../ref/audit_screenshots/fh5_arc_limiter.png)
+![【動態極限】FH5 弧形 HUD 實機極限狀態：20Hz 斷油呼吸爆閃 (8450 RPM)](../../../ref/audit_screenshots/fh5_arc_limiter.png)
 ````
 
 #### 【對比分析與合規證明】
@@ -136,13 +136,13 @@
 #### 【視覺比對圖組】
 
 ````carousel
-![【真實原型】頭文字D 原作漫畫 Chapter 716 拓海 AE86 破萬轉超轉特寫](../ref/real_references/real_initial_d_overrev.png)
+![【真實原型】頭文字D 原作漫畫 Chapter 716 拓海 AE86 破萬轉超轉特寫](../../../ref/real_references/real_initial_d_overrev.png)
 <!-- slide -->
-![【真實原型】原作者重野秀一 (Shuichi Shigeno) AE86 實車改裝競技儀表特寫](../ref/real_references/real_initial_d_interior.png)
+![【真實原型】原作者重野秀一 (Shuichi Shigeno) AE86 實車改裝競技儀表特寫](../../../ref/real_references/real_initial_d_interior.png)
 <!-- slide -->
-![【實機渲染】頭文字D AE86 萬轉表：動態甩尾狀態 ⚡ DRIFT ⚡ 街機徽章點亮](../ref/audit_screenshots/hud_initial_d_feature.png)
+![【實機渲染】頭文字D AE86 萬轉表：動態甩尾狀態 ⚡ DRIFT ⚡ 街機徽章點亮](../../../ref/audit_screenshots/hud_initial_d_feature.png)
 <!-- slide -->
-![【動態極限】頭文字D AE86 萬轉表：萬轉爆轉狀態 (10600 RPM 超轉燈筒爆閃)](../ref/audit_screenshots/initial_d_redline.png)
+![【動態極限】頭文字D AE86 萬轉表：萬轉爆轉狀態 (10600 RPM 超轉燈筒爆閃)](../../../ref/audit_screenshots/initial_d_redline.png)
 ````
 
 #### 【對比分析與合規證明】
@@ -169,11 +169,11 @@
 #### 【視覺比對圖組】
 
 ````carousel
-![【真實原型】Cyberpunk 2077 官方 Quadra Turbo-R V-Tech 儀表板特寫截圖](../ref/real_references/real_cyberpunk_dashboard.png)
+![【真實原型】Cyberpunk 2077 官方 Quadra Turbo-R V-Tech 儀表板特寫截圖](../../../ref/real_references/real_cyberpunk_dashboard.png)
 <!-- slide -->
-![【實機渲染】Cyberpunk Quadra HUD 實機狀態：夜城電台、姿態角與 10 段音訊頻譜](../ref/audit_screenshots/hud_cyberpunk_hud_feature.png)
+![【實機渲染】Cyberpunk Quadra HUD 實機狀態：夜城電台、姿態角與 10 段音訊頻譜](../../../ref/audit_screenshots/hud_cyberpunk_hud_feature.png)
 <!-- slide -->
-![【動態極限】Cyberpunk Quadra HUD 實機極限狀態：紅線超轉與 Glitch 故障特效](../ref/audit_screenshots/cyberpunk_hud_redline.png)
+![【動態極限】Cyberpunk Quadra HUD 實機極限狀態：紅線超轉與 Glitch 故障特效](../../../ref/audit_screenshots/cyberpunk_hud_redline.png)
 ````
 
 #### 【對比分析與合規證明】

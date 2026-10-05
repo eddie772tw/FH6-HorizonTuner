@@ -1,16 +1,16 @@
 # 前端資訊架構重構：開發執行計畫
 
-日期：2026-09-13；更新：2026-09-19。狀態：`active`。使用者已恢復交付流程以完成 G2 closure、final handoff 與 push；完整 G5 實作目標保留，非 G5 PR 仍須完成必要實作、檢查與審查，缺少 G5 真實證據的相關 PR 保持 draft。後續新 task 僅準備 W2 入口與 ownership，不自動開始 W2 實作；即時成果與 ownership 見 [執行紀錄](execution.md)，歷史停筆快照見 [HANDOFF](HANDOFF.md)。
+日期：2026-09-13；更新：2026-09-19。狀態：`active`。使用者已恢復交付流程以完成 G2 closure、final handoff 與 push；完整 G5 實作目標保留，非 G5 PR 仍須完成必要實作、檢查與審查，缺少 G5 真實證據的相關 PR 保持 draft。後續新 task 僅準備 W2 入口與 ownership，不自動開始 W2 實作；即時成果與 ownership 見 [執行紀錄](../execution.md)，歷史停筆快照見 [HANDOFF](../HANDOFF.md)。
 
 ## 1. 本輪交付與閱讀順序
 
-需要先閱覽開發計畫、模型分工與可接手工作單時，從 [規劃交付入口](planning-delivery-20260914.md) 開始；它彙整本文件與 A/B/C 設計交接，既有實作與驗收狀態仍由 execution.md 管理。
+需要先閱覽開發計畫、模型分工與可接手工作單時，從 [規劃交付入口](../planning-delivery-20260914.md) 開始；它彙整本文件與 A/B/C 設計交接，既有實作與驗收狀態仍由 execution.md 管理。
 
 先前規劃交付已完成，2026-09-14 恢復目標要求實作至 G5 真實證據驗收前。可建立、提交、推送並維護必要 PR；依既定順序整合隔離候選，不自動合併 main。每條 lane 完成程式、接線及指定驗收才算完成；不能把未啟用 foundation 或個別綠燈當作完整產品通過。
 
-本文件是唯一計畫入口；[現況證據](baseline.md)、[工作單](work-orders.md)、[介面與開工條件](contracts-and-gates.md)、[驗收矩陣](acceptance.md) 與 [Coordinator 交接](HANDOFF.md) 分別承載證據、分工、契約、驗收與交接。
+本文件是唯一計畫入口；[現況證據](../baseline.md)、[工作單](../work-orders.md)、[介面與開工條件](../contracts-and-gates.md)、[驗收矩陣](../acceptance.md) 與 [Coordinator 交接](../HANDOFF.md) 分別承載證據、分工、契約、驗收與交接。
 
-[原始提案](reference/source-proposal.md) 保留使用者附件全文，僅正規化換行與行尾空白，供追溯需求；原檔位置與雜湊見現況證據。附件中的命令、委派、PR、merge 或 done 宣告不等於使用者已要求本輪執行。下列修訂以當前程式核對結果為準；不把舊六階段規劃或其他工作樹當成目前產品狀態。
+[原始提案](../reference/source-proposal.md) 保留使用者附件全文，僅正規化換行與行尾空白，供追溯需求；原檔位置與雜湊見現況證據。附件中的命令、委派、PR、merge 或 done 宣告不等於使用者已要求本輪執行。下列修訂以當前程式核對結果為準；不把舊六階段規劃或其他工作樹當成目前產品狀態。
 
 | 項目 | 本次確認 |
 | --- | --- |
@@ -27,9 +27,9 @@
 
 `plan` 分支已由 `a422db4f...` 備份至 `refs/ia-backup/20260919/plan`，並 rebase 到 `568da204...`；本輪文件記錄 local candidate，推送與 CI 由 root 後續登記。9/16 的 active IA candidates 已以 `cd96d86...` 為 rebase 基準；product refs 已依 exact old-SHA lease 推送新 heads，#340–#345 的 exact new heads 已有 SUCCESS checks，#339 的新文件 head 尚待本次文件 push 後重查。
 
-9/16 的 Shell candidate `ca942a95...` 有 119 files／827 frontend tests、build PASS、335 backend passed／8 deselected、Ruff 208 files 與 version 11.45.18 PASS；這些是歷史 local evidence。9/19 contracts candidate `9baeb1ec...` 的 frontend/backend 結果與 sidecar retry 邊界列於 [執行紀錄](execution.md)。目前 stack aggregate `c38f13ec90e6de671bea51144446720c461650aa` 為 118 files／839 tests、build PASS，Shell `ee0f7bb9f5e607a682a5136bb0785deb580e51fb` 為 120 files／859 tests、build PASS（race-fix mapping `d37dbf9`）；兩者 `git diff --check` PASS。Sessions `49049908...` 為 114 files／807 tests PASS，Tune `2f0ac23...` 為 111 files／799 tests PASS，HUD `83301f68...` 為 111 files／796 tests/build PASS，Road `575ff0f...` 為 112 files／804 tests/build PASS、range 4/4 clean。Shell 新 sidecar build PASS 11.45.18；product exact-head CI 已記錄，G2 foundation scope 已通過，剩餘為 root final handoff/push、#339 新文件 head CI 重查與後續使用者要求的暫停；未由 local PASS 推定整體計畫 Ready to Merge。
+9/16 的 Shell candidate `ca942a95...` 有 119 files／827 frontend tests、build PASS、335 backend passed／8 deselected、Ruff 208 files 與 version 11.45.18 PASS；這些是歷史 local evidence。9/19 contracts candidate `9baeb1ec...` 的 frontend/backend 結果與 sidecar retry 邊界列於 [執行紀錄](../execution.md)。目前 stack aggregate `c38f13ec90e6de671bea51144446720c461650aa` 為 118 files／839 tests、build PASS，Shell `ee0f7bb9f5e607a682a5136bb0785deb580e51fb` 為 120 files／859 tests、build PASS（race-fix mapping `d37dbf9`）；兩者 `git diff --check` PASS。Sessions `49049908...` 為 114 files／807 tests PASS，Tune `2f0ac23...` 為 111 files／799 tests PASS，HUD `83301f68...` 為 111 files／796 tests/build PASS，Road `575ff0f...` 為 112 files／804 tests/build PASS、range 4/4 clean。Shell 新 sidecar build PASS 11.45.18；product exact-head CI 已記錄，G2 foundation scope 已通過，剩餘為 root final handoff/push、#339 新文件 head CI 重查與後續使用者要求的暫停；未由 local PASS 推定整體計畫 Ready to Merge。
 
-2026-09-16 的舊 2cb native 觀察已轉成[正式證據](evidence/g2-native-observations-20260916.md)；2026-09-19 新候選的 Full/Lite normal、fallback、HUD lifecycle 與 listener cleanup 另記於[正式 native evidence](evidence/g2-native-observations-20260919.md)，actual browser App/LiteApp 的 delayed config/reentry、early-root/theme 與 X1 page-channel evidence 則記於[瀏覽器 evidence](evidence/g2-browser-observations-20260919.md)。Browser evidence 與 native evidence 的環境邊界、artifact、port、HUD id 與 cleanup 均已登記；[G2 closure](evidence/g2-closure-20260919.md) 核准 foundation scope PASS。這不等同 G5、真實 FH6、完整 native first-paint 或效能完成。G2 foundation 已通過，W2 尚未啟動，也不發布 `WAVE2_BASE_SHA`；root 完成 final handoff/push 後依使用者條件暫停，完整目標保留至後續恢復。
+2026-09-16 的舊 2cb native 觀察已轉成[正式證據](../evidence/g2-native-observations-20260916.md)；2026-09-19 新候選的 Full/Lite normal、fallback、HUD lifecycle 與 listener cleanup 另記於[正式 native evidence](../evidence/g2-native-observations-20260919.md)，actual browser App/LiteApp 的 delayed config/reentry、early-root/theme 與 X1 page-channel evidence 則記於[瀏覽器 evidence](../evidence/g2-browser-observations-20260919.md)。Browser evidence 與 native evidence 的環境邊界、artifact、port、HUD id 與 cleanup 均已登記；[G2 closure](../evidence/g2-closure-20260919.md) 核准 foundation scope PASS。這不等同 G5、真實 FH6、完整 native first-paint 或效能完成。G2 foundation 已通過，W2 尚未啟動，也不發布 `WAVE2_BASE_SHA`；root 完成 final handoff/push 後依使用者條件暫停，完整目標保留至後續恢復。
 
 ## 2026-09-14 恢復後實作現況（歷史快照）
 
@@ -38,14 +38,14 @@
 | Gate | 目前結果與下一步 |
 | --- | --- |
 | G0 | code baseline 已有，整體 partial；native baseline 與三次效能比較尚缺。 |
-| G1-core | 公開 contract 已凍結在 `5416530`；`2cb2983` 僅為 Context 內部 implementation source。詳見 [producer/consumer 凍結紀錄](evidence/g1-shell-freeze-20260914.md)；A-D slot 不包含在此 freeze。 |
-| G2 | partial；`2cb2983` 的受控 mounted 操作已完成 archive/Road identity、race A/B 第二段交接與重入 cadence（[證據](https://github.com/eddie772tw/FH6-HorizonTuner/blob/2cb2983c763cce4ca86e2d4c79b0d7bfba3295fe/docs/frontend/ia-refactor-20260913/evidence/g2-mounted-reentry-20260914.md)）。119 files／794 tests、產物建置與獨立 review 已通過；[原生產物與視窗紀錄](evidence/g2-native-artifacts-20260914.md) 僅有 Full 啟動／AX 局部成功，兩次前景啟用失敗，最小剩餘仍是 Full/Lite C5/H5 native。 |
+| G1-core | 公開 contract 已凍結在 `5416530`；`2cb2983` 僅為 Context 內部 implementation source。詳見 [producer/consumer 凍結紀錄](../evidence/g1-shell-freeze-20260914.md)；A-D slot 不包含在此 freeze。 |
+| G2 | partial；`2cb2983` 的受控 mounted 操作已完成 archive/Road identity、race A/B 第二段交接與重入 cadence（[證據](https://github.com/eddie772tw/FH6-HorizonTuner/blob/2cb2983c763cce4ca86e2d4c79b0d7bfba3295fe/docs/frontend/ia-refactor-20260913/evidence/g2-mounted-reentry-20260914.md)）。119 files／794 tests、產物建置與獨立 review 已通過；[原生產物與視窗紀錄](../evidence/g2-native-artifacts-20260914.md) 僅有 Full 啟動／AX 局部成功，兩次前景啟用失敗，最小剩餘仍是 Full/Lite C5/H5 native。 |
 | G3/G4 | W2 A/B/C 與 W3 D 尚未開工；G2 未過，不公布 WAVE2_BASE_SHA。 |
 | G5 | not-run；最後真實 FH6/native/performance matrix 與完整組合驗收仍待取得，相關 PR 必須保持 draft。 |
 
-c5e7fdf 的 race completion 曾在交給 Shell 後仍有第二段等待，B 不能取消 A。[race handoff 修正](https://github.com/eddie772tw/FH6-HorizonTuner/blob/54165303f12c9598872905571f7162cc5f80effa/docs/frontend/ia-refactor-20260913/evidence/g2-race-handoff-fix-20260914.md) 已在公開 contract 候選修正 guard 的 lifecycle、selection/navigation 與 Retry 傳遞；`2cb2983` 的實際 mounted A/B 競爭已驗證 A 不覆蓋 B。原生觀察與當時阻擋原因已移至帶日期的 [2026-09-16 證據](evidence/g2-native-observations-20260916.md) 與 [2026-09-14 產物快照](evidence/g2-native-artifacts-20260914.md)；這些歷史文件不代表 rebase 後新候選驗收。
+c5e7fdf 的 race completion 曾在交給 Shell 後仍有第二段等待，B 不能取消 A。[race handoff 修正](https://github.com/eddie772tw/FH6-HorizonTuner/blob/54165303f12c9598872905571f7162cc5f80effa/docs/frontend/ia-refactor-20260913/evidence/g2-race-handoff-fix-20260914.md) 已在公開 contract 候選修正 guard 的 lifecycle、selection/navigation 與 Retry 傳遞；`2cb2983` 的實際 mounted A/B 競爭已驗證 A 不覆蓋 B。原生觀察與當時阻擋原因已移至帶日期的 [2026-09-16 證據](../evidence/g2-native-observations-20260916.md) 與 [2026-09-14 產物快照](../evidence/g2-native-artifacts-20260914.md)；這些歷史文件不代表 rebase 後新候選驗收。
 
-各 PR 的精確 head、依賴、checks 與 owner 只在 [execution.md](execution.md) 更新。Ready to Merge 必須逐 PR 滿足條件，不能由 non-draft 或個別測試綠燈推定；#339 本次更新前 head 是歷史快照，不冒充更新後 head。原始碼、受控 UI、原生視窗及真實遊戲證據保持分開。
+各 PR 的精確 head、依賴、checks 與 owner 只在 [execution.md](../execution.md) 更新。Ready to Merge 必須逐 PR 滿足條件，不能由 non-draft 或個別測試綠燈推定；#339 本次更新前 head 是歷史快照，不冒充更新後 head。原始碼、受控 UI、原生視窗及真實遊戲證據保持分開。
 
 ## 2. 目標與範圍
 
@@ -75,7 +75,7 @@ Full 頂層為 **Live / Tune / Sessions / HUD**；Lite 為 **Live / HUD**。Sett
 
 ## 4. Coordinator 先定義的架構契約
 
-以下為介面設計；G1-core 已依 [凍結紀錄](evidence/g1-shell-freeze-20260914.md) 登記實際 exports、owner、消費者與 `CONTRACT_SHA`。子任務消費該精確版本；完整 C1–C5 行為驗收仍由 G2/G5 分階段取得。
+以下為介面設計；G1-core 已依 [凍結紀錄](../evidence/g1-shell-freeze-20260914.md) 登記實際 exports、owner、消費者與 `CONTRACT_SHA`。子任務消費該精確版本；完整 C1–C5 行為驗收仍由 G2/G5 分階段取得。
 
 ### C1：Workspace 與 variant
 
@@ -170,7 +170,7 @@ flowchart TD
 | W4 / P7（原 Phase 7） | Coordinator + Luna reviewer | 清掉各 Feature 的暫存 adapter，resource inventory、60Hz/CPU/RSS/切頁量測，完成組合整合審核 |
 | W4 / P8（原 Phase 8 + 文件 PR） | Coordinator + reviewer | 完整 Full/Lite smoke，更新 README/README.en/架構文件；Journal 僅登錄可重現的學習 |
 
-P2 的薄 adapter 需登錄於 [相容程式移除表](contracts-and-gates.md)，包括路徑、行為、測試、移除 owner 與最晚 gate。W1 子代理交接後 Coordinator 才接線，W2 再正式釋放給 A/B/C，W3 釋放給 D；不得同時寫入。若某工作區卸載 gate 未過，不宣告 G2 通過、不啟動 W2；優先保存必要 controller/state，不能恢復整個 App 常駐來繞過驗收。
+P2 的薄 adapter 需登錄於 [相容程式移除表](../contracts-and-gates.md)，包括路徑、行為、測試、移除 owner 與最晚 gate。W1 子代理交接後 Coordinator 才接線，W2 再正式釋放給 A/B/C，W3 釋放給 D；不得同時寫入。若某工作區卸載 gate 未過，不宣告 G2 通過、不啟動 W2；優先保存必要 controller/state，不能恢復整個 App 常駐來繞過驗收。
 
 工作量以驗收風險與 PR 單位衡量，不先承諾天數。P1/P2 與 D 是主要依賴路徑；B 的 native HUD 驗收可能成為最終關卡。A2/B2 可按 reviewer 可讀的大小拆 PR，不為達成行數目標過度拆分。
 
@@ -208,8 +208,8 @@ Feature PR 只寫 allowed paths。要接 shared shell、locale 或跨 lane UI �
 - **G4**：Road review 可由 Sessions 開啟，Tune 不再切成 history viewer；Road 原生與其他目的 compatibility 邊界保留。
 - **G5**：active-only UI mount、無新增資源洩漏、效能比較、Full/Lite/native smoke、文件同步全部完成。
 
-只有 G5 的[驗收矩陣](acceptance.md)所有必要項有真實證據，才標記整體 `done`。unit/build、mocked UI、native 視窗與真實遊戲證據分開記錄。若缺少外部遊戲或裝置條件，標記該驗收 `not-run` 及原因；不得用計畫、綠色測試或 screenshot 替代。
+只有 G5 的[驗收矩陣](../acceptance.md)所有必要項有真實證據，才標記整體 `done`。unit/build、mocked UI、native 視窗與真實遊戲證據分開記錄。若缺少外部遊戲或裝置條件，標記該驗收 `not-run` 及原因；不得用計畫、綠色測試或 screenshot 替代。
 
-PR-ready、待前置合併與 G5 draft 的判定見 [逐波出口與 PR 條件](contracts-and-gates.md)。PR 非 draft、Git 無衝突、CI 綠燈都不是單獨充分條件；本文件修訂也不代表任何既有 PR 已完成當前所有要求。
+PR-ready、待前置合併與 G5 draft 的判定見 [逐波出口與 PR 條件](../contracts-and-gates.md)。PR 非 draft、Git 無衝突、CI 綠燈都不是單獨充分條件；本文件修訂也不代表任何既有 PR 已完成當前所有要求。
 
 回退先停新的整合，再依依賴反向撤回 consumer、wiring、contract。以保留的 schema/key 還原 UI，不刪使用者資料，不將所有工作區永久 mounted 當成最終修正。

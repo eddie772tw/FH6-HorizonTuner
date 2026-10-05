@@ -27,13 +27,13 @@
 
 畫布內仍有透明留白，因此圓表可見邊緣不一定距螢幕恰好 30px。這不構成置中。此次驗證為 Edge Chromium、DPR=1、合成 telemetry、直接載入目前樣式與共用 HUDCore 的全視窗 iframe；未啟動真實遊戲、Tauri overlay 或作業系統 DPI 切換測試，也未驗證 host 中央遙測卡片與儀表的動態避讓。
 
-測試矩陣：1920×1080、1280×720、3440×1440；scale=0.75、1、1.5；5 款。45/45 通過右下錨定與 viewport 邊界檢查，無 pageerror。[原始量測 JSON](assets/hud-visual-review-20260910/layout-results.json)。初期 Edge CLI 截圖有啟動 viewport 變化，已以明確固定 viewport 的 Playwright 截圖取代，以下收錄均為後者。
+測試矩陣：1920×1080、1280×720、3440×1440；scale=0.75、1、1.5；5 款。45/45 通過右下錨定與 viewport 邊界檢查，無 pageerror。[原始量測 JSON](../../assets/hud-visual-review-20260910/layout-results.json)。初期 Edge CLI 截圖有啟動 viewport 變化，已以明確固定 viewport 的 Playwright 截圖取代，以下收錄均為後者。
 
 ## Defi：優先修正透明背景與布局
 
-![目前 Defi，預設顯示尺寸](assets/hud-visual-review-20260910/defi_triple-detail.png)
+![目前 Defi，預設顯示尺寸](../../assets/hud-visual-review-20260910/defi_triple-detail.png)
 
-[1920×1080 完整定位畫面](assets/hud-visual-review-20260910/defi_triple.png)
+[1920×1080 完整定位畫面](../../assets/hud-visual-review-20260910/defi_triple.png)
 
 ### 現況問題
 
@@ -76,9 +76,9 @@
 
 ## AE86 TRD Racing：保留版型，修材質與盤面字樣
 
-![目前 AE86，預設顯示尺寸](assets/hud-visual-review-20260910/initial_d-detail.png)
+![目前 AE86，預設顯示尺寸](../../assets/hud-visual-review-20260910/initial_d-detail.png)
 
-[1920×1080 完整定位畫面](assets/hud-visual-review-20260910/initial_d.png)
+[1920×1080 完整定位畫面](../../assets/hud-visual-review-20260910/initial_d.png)
 
 目前單一圓表、外掛警示燈、表內速度與檔位的版型依使用者回饋保留。迭代範圍：
 
@@ -93,9 +93,9 @@
 
 ## FH5 Arc：重建原生資訊層級
 
-![目前 FH5 Arc](assets/hud-visual-review-20260910/fh5_arc-detail.png)
+![目前 FH5 Arc](../../assets/hud-visual-review-20260910/fh5_arc-detail.png)
 
-[完整定位畫面](assets/hud-visual-review-20260910/fh5_arc.png)
+[完整定位畫面](../../assets/hud-visual-review-20260910/fh5_arc.png)
 
 已目視 [FH5 遊戲畫面，媒體刊載](https://www.autoevolution.com/news/forza-horizon-5-full-map-revealed-new-2020-toyota-supra-gr-shown-off-166952.html)。右下原生儀表具有數字轉速刻度、細弧線、紅線區、指示、ABS/TCR 與不同的速度／檔位組合。目前為粗厚的白青黃漸層進度弧，缺少數字刻度，以速度置中、右側膠囊檔位和內置電台文字重新編排，不能視為原版還原。
 
@@ -103,9 +103,9 @@
 
 ## MoTeC GT3：保留三區骨架，重做左右欄內容
 
-![目前 MoTeC GT3](assets/hud-visual-review-20260910/motec_gt3-detail.png)
+![目前 MoTeC GT3](../../assets/hud-visual-review-20260910/motec_gt3-detail.png)
 
-[完整定位畫面](assets/hud-visual-review-20260910/motec_gt3.png)
+[完整定位畫面](../../assets/hud-visual-review-20260910/motec_gt3.png)
 
 依使用者回饋，保留左右欄與中央主顯示的分區。**修正核心為左右欄資訊的選擇與編排，不是把現有四輪胎溫小卡放大。**C125 真實硬體與 Lovely Dashboard 不是同一個原型；本輪改以 [MoTeC 官方 C125 產品頁](https://www.motec.com.au/products/C125) 的實機展示畫面為主要參考，已在瀏覽器目視核對。它是官方硬體展示頁，不是已指定 GT3 車隊的實車攝影，後續不能把它泛化成所有 GT3 通用內容。
 
@@ -132,9 +132,9 @@
 
 ## Cyberpunk：明確區分主題創作與 Quadra 還原
 
-![目前 Cyberpunk](assets/hud-visual-review-20260910/cyberpunk_hud-detail.png)
+![目前 Cyberpunk](../../assets/hud-visual-review-20260910/cyberpunk_hud-detail.png)
 
-[完整定位畫面](assets/hud-visual-review-20260910/cyberpunk_hud.png)
+[完整定位畫面](../../assets/hud-visual-review-20260910/cyberpunk_hud.png)
 
 已目視 [Paweł Breshke Czyżewski 的 Quadra TURBO-R 3D concept](https://www.behance.net/gallery/119042489/CYBERPUNK-2077-Quadra-TURBO-R-3d-concept)：分布式窄幅數位儀表、實體座艙結構與工業材質。這是設計者概念圖，並非最終遊戲儀表近照，不能直接作最終像素基準。
 

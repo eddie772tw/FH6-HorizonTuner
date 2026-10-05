@@ -1,6 +1,6 @@
 # 車輛調校與齒比算牌責任契約 (Tuning & Gearing Responsibilities Contract)
 
-- **版本 (Version)**: 1.7.1-transition
+- **版本 (Version)**: 1.7.1
 - **狀態 (Status)**: 正式架構契約 (Architecture Contract)
 - **管轄範圍 (Scope)**: 車輛底盤調校（防傾桿 ARB、彈簧、車高、阻尼、差速器）與 AEGO 齒比計算邏輯
 - **關聯 Issue**: #423 (前後端調校與遙測責任釐清 Stacked PR 1-4)
@@ -33,7 +33,7 @@
 
 TypeScript 舊純模型僅作凍結測試參考；未掛載的 Step5TelemetryCalibration 舊診斷不是產品路徑，不可重新掛載而繞過 Rust owner。圖表 RPM／速度軸幾何與真正顯示單位轉換屬顯示用途，不產生設定建議。
 
-PR 在全部驗證與精確 SHA CI 完成前維持 draft；不合併、不發行。
+PR #460 經使用者授權與全量驗證已合併入 main（v1.7.1）。
 
 相容性：原 21 組 tuning 與 10 組 EV golden fixtures 不可重寫，缺少 fixture 必須測試失敗。
 新增 `mechanical_desktop_v162.json` 鎖定 66 組 main ca195c7 桌面行為；正常測試不得產生它。

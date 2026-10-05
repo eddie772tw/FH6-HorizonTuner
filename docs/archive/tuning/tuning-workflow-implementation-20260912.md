@@ -45,7 +45,7 @@ Rally、Drag、Drift 在本輪只保留既有 `tuningMath` 輸出與相容性快
 3. `/ws/telemetry` 與前端 capture 只保存收到的解碼 frame；raw WebSocket capture 不做插值。`tuning-capture/v1` 的 metadata、`unknown` 欄位、來源 schema 與 samples 一起保存。
 4. Road run 使用同一組 decoded points 經 `RaceRecorder` 保存，再由 `road_analysis.py` 產生描述性 summary；分析資料與原始點、session metadata、workflow/run/setup parent references 分開保存。
 
-主要欄位的單位與語意如下；完整 offset 狀態見 [UDP packet format reference](../../.agents/skills/telemetry-udp-protocol/references/packet_format_reference.md)。
+主要欄位的單位與語意如下；完整 offset 狀態見 [UDP packet format reference](../../../.agents/skills/telemetry-udp-protocol/references/packet_format_reference.md)。
 
 | canonical 欄位 | 單位／語意 | 來源與用途 |
 | --- | --- | --- |
@@ -93,7 +93,7 @@ Road workflow 透過 `backend/road_service.py`、`road_store.py` 與 `frontend/s
 整合驗證如下（2026-09-12）：
 
 - `cmd /c "pnpm -C frontend run test"`：94 files／621 tests passed。
-> 歷史驗證記錄（2026-09-12）：當時使用 Python 後端的 pytest gate；產品後端已遷移至 Rust。現行驗證命令見 [測試策略](../../.agents/rules/testing-strategy.md)。
+> 歷史驗證記錄（2026-09-12）：當時使用 Python 後端的 pytest gate；產品後端已遷移至 Rust。現行驗證命令見 [測試策略](../../../.agents/rules/testing-strategy.md)。
 
 - 當時 `uv run --no-project --python .venv\Scripts\python.exe python -m pytest tests/ -q`：315 passed，8 項 host／executable 驗收依當時 pytest 設定排除。
 - `cmd /c "pnpm -C frontend run build"`：TypeScript 與 Vite production build 通過。
@@ -110,10 +110,10 @@ Road workflow 透過 `backend/road_service.py`、`road_store.py` 與 `frontend/s
 <details>
 <summary>展開檔案清單</summary>
 
-- [.agents/Journal.md](../../.agents/Journal.md)
-- [.agents/skills/telemetry-udp-protocol/references/packet_format_reference.md](../../.agents/skills/telemetry-udp-protocol/references/packet_format_reference.md)
-- [README.en.md](../../README.en.md)
-- [README.md](../../README.md)
+- [.agents/Journal.md](../../../.agents/Journal.md)
+- [.agents/skills/telemetry-udp-protocol/references/packet_format_reference.md](../../../.agents/skills/telemetry-udp-protocol/references/packet_format_reference.md)
+- [README.en.md](../../../README.en.md)
+- [README.md](../../../README.md)
 - `backend/main.py`（歷史路徑：`../../backend/main.py`）
 - `backend/motec_exporter.py`（歷史路徑：`../../backend/motec_exporter.py`）
 - `backend/race_recorder.py`（歷史路徑：`../../backend/race_recorder.py`）
@@ -128,61 +128,61 @@ Road workflow 透過 `backend/road_service.py`、`road_store.py` 與 `frontend/s
 - `backend/telemetry_listener.py`（歷史路徑：`../../backend/telemetry_listener.py`）
 - `backend/telemetry_sqlite.py`（歷史路徑：`../../backend/telemetry_sqlite.py`）
 - `backend/tuning_capture.py`（歷史路徑：`../../backend/tuning_capture.py`）
-- [docs/tuning/README.md](../../docs/tuning/README.md)
-- [docs/tuning/community-tuning-needs-20260912.md](../../docs/tuning/community-tuning-needs-20260912.md)
-- [docs/tuning/tuning-workflow-implementation-20260912.md](../../docs/tuning/tuning-workflow-implementation-20260912.md)
-- [docs/tuning/tuning-workflow-iteration-20260912.md](../../docs/tuning/tuning-workflow-iteration-20260912.md)
-- [docs/tuning/workflow-order-evidence-20260912.md](../../docs/tuning/workflow-order-evidence-20260912.md)
-- [frontend/src/App.tsx](../../frontend/src/App.tsx)
+- [docs/tuning/README.md](../../tuning/README.md)
+- [docs/tuning/community-tuning-needs-20260912.md](community-tuning-needs-20260912.md)
+- [docs/tuning/tuning-workflow-implementation-20260912.md](tuning-workflow-implementation-20260912.md)
+- [docs/tuning/tuning-workflow-iteration-20260912.md](tuning-workflow-iteration-20260912.md)
+- [docs/tuning/workflow-order-evidence-20260912.md](workflow-order-evidence-20260912.md)
+- [frontend/src/App.tsx](../../../frontend/src/App.tsx)
 - `frontend/src/components/Navigation.tsx`（歷史路徑：`../../frontend/src/components/Navigation.tsx`）
-- [frontend/src/context/CarParamsContext.tsx](../../frontend/src/context/CarParamsContext.tsx)
-- [frontend/src/context/TelemetryRecorderContext.tsx](../../frontend/src/context/TelemetryRecorderContext.tsx)
-- [frontend/src/domain/tuning/telemetryCapture.test.ts](../../frontend/src/domain/tuning/telemetryCapture.test.ts)
-- [frontend/src/domain/tuning/telemetryCapture.ts](../../frontend/src/domain/tuning/telemetryCapture.ts)
-- [frontend/src/features/analysis/AnalysisView.tsx](../../frontend/src/features/analysis/AnalysisView.tsx)
-- [frontend/src/features/analysis/LapDeltaCanvas.tsx](../../frontend/src/features/analysis/LapDeltaCanvas.tsx)
-- [frontend/src/features/analysis/SessionHealthDebrief.tsx](../../frontend/src/features/analysis/SessionHealthDebrief.tsx)
-- [frontend/src/features/analysis/sessionDebriefMath.test.ts](../../frontend/src/features/analysis/sessionDebriefMath.test.ts)
-- [frontend/src/features/analysis/sessionDebriefMath.ts](../../frontend/src/features/analysis/sessionDebriefMath.ts)
-- [frontend/src/features/road/RoadCandidate.tsx](../../frontend/src/features/road/RoadCandidate.tsx)
-- [frontend/src/features/road/RoadCompare.tsx](../../frontend/src/features/road/RoadCompare.tsx)
-- [frontend/src/features/road/RoadLocalDetails.tsx](../../frontend/src/features/road/RoadLocalDetails.tsx)
-- [frontend/src/features/road/RoadObservation.tsx](../../frontend/src/features/road/RoadObservation.tsx)
-- [frontend/src/features/road/RoadPrepare.tsx](../../frontend/src/features/road/RoadPrepare.tsx)
-- [frontend/src/features/road/RoadReportCard.tsx](../../frontend/src/features/road/RoadReportCard.tsx)
-- [frontend/src/features/road/RoadResults.tsx](../../frontend/src/features/road/RoadResults.tsx)
-- [frontend/src/features/road/RoadRunPanel.tsx](../../frontend/src/features/road/RoadRunPanel.tsx)
-- [frontend/src/features/road/RoadWorkflowView.tsx](../../frontend/src/features/road/RoadWorkflowView.tsx)
-- [frontend/src/features/road/roadPresentation.test.ts](../../frontend/src/features/road/roadPresentation.test.ts)
-- [frontend/src/features/road/roadPresentation.ts](../../frontend/src/features/road/roadPresentation.ts)
-- [frontend/src/features/road/roadTypes.ts](../../frontend/src/features/road/roadTypes.ts)
-- [frontend/src/features/road/useRoadWorkflow.ts](../../frontend/src/features/road/useRoadWorkflow.ts)
-- [frontend/src/features/tuning/TuningView.tsx](../../frontend/src/features/tuning/TuningView.tsx)
-- [frontend/src/features/tuning/captureDownload.ts](../../frontend/src/features/tuning/captureDownload.ts)
-- [frontend/src/features/tuning/components/EngineDataStep.tsx](../../frontend/src/features/tuning/components/EngineDataStep.tsx)
-- [frontend/src/features/tuning/components/EngineObservationHistory.tsx](../../frontend/src/features/tuning/components/EngineObservationHistory.tsx)
-- [frontend/src/features/tuning/components/GearingTuner.tsx](../../frontend/src/features/tuning/components/GearingTuner.tsx)
-- [frontend/src/features/tuning/components/LegacyTuningHistory.tsx](../../frontend/src/features/tuning/components/LegacyTuningHistory.tsx)
-- [frontend/src/features/tuning/components/SetupVerificationStep.tsx](../../frontend/src/features/tuning/components/SetupVerificationStep.tsx)
-- [frontend/src/features/tuning/components/Step1GoalSetup.tsx](../../frontend/src/features/tuning/components/Step1GoalSetup.tsx)
+- [frontend/src/context/CarParamsContext.tsx](../../../frontend/src/context/CarParamsContext.tsx)
+- [frontend/src/context/TelemetryRecorderContext.tsx](../../../frontend/src/context/TelemetryRecorderContext.tsx)
+- [frontend/src/domain/tuning/telemetryCapture.test.ts](../../../frontend/src/domain/tuning/telemetryCapture.test.ts)
+- [frontend/src/domain/tuning/telemetryCapture.ts](../../../frontend/src/domain/tuning/telemetryCapture.ts)
+- [frontend/src/features/analysis/AnalysisView.tsx](../../../frontend/src/features/analysis/AnalysisView.tsx)
+- [frontend/src/features/analysis/LapDeltaCanvas.tsx](../../../frontend/src/features/analysis/LapDeltaCanvas.tsx)
+- [frontend/src/features/analysis/SessionHealthDebrief.tsx](../../../frontend/src/features/analysis/SessionHealthDebrief.tsx)
+- [frontend/src/features/analysis/sessionDebriefMath.test.ts](../../../frontend/src/features/analysis/sessionDebriefMath.test.ts)
+- [frontend/src/features/analysis/sessionDebriefMath.ts](../../../frontend/src/features/analysis/sessionDebriefMath.ts)
+- [frontend/src/features/road/RoadCandidate.tsx](../../../frontend/src/features/road/RoadCandidate.tsx)
+- [frontend/src/features/road/RoadCompare.tsx](../../../frontend/src/features/road/RoadCompare.tsx)
+- [frontend/src/features/road/RoadLocalDetails.tsx](../../../frontend/src/features/road/RoadLocalDetails.tsx)
+- [frontend/src/features/road/RoadObservation.tsx](../../../frontend/src/features/road/RoadObservation.tsx)
+- [frontend/src/features/road/RoadPrepare.tsx](../../../frontend/src/features/road/RoadPrepare.tsx)
+- [frontend/src/features/road/RoadReportCard.tsx](../../../frontend/src/features/road/RoadReportCard.tsx)
+- [frontend/src/features/road/RoadResults.tsx](../../../frontend/src/features/road/RoadResults.tsx)
+- [frontend/src/features/road/RoadRunPanel.tsx](../../../frontend/src/features/road/RoadRunPanel.tsx)
+- [frontend/src/features/road/RoadWorkflowView.tsx](../../../frontend/src/features/road/RoadWorkflowView.tsx)
+- [frontend/src/features/road/roadPresentation.test.ts](../../../frontend/src/features/road/roadPresentation.test.ts)
+- [frontend/src/features/road/roadPresentation.ts](../../../frontend/src/features/road/roadPresentation.ts)
+- [frontend/src/features/road/roadTypes.ts](../../../frontend/src/features/road/roadTypes.ts)
+- [frontend/src/features/road/useRoadWorkflow.ts](../../../frontend/src/features/road/useRoadWorkflow.ts)
+- [frontend/src/features/tuning/TuningView.tsx](../../../frontend/src/features/tuning/TuningView.tsx)
+- [frontend/src/features/tuning/captureDownload.ts](../../../frontend/src/features/tuning/captureDownload.ts)
+- [frontend/src/features/tuning/components/EngineDataStep.tsx](../../../frontend/src/features/tuning/components/EngineDataStep.tsx)
+- [frontend/src/features/tuning/components/EngineObservationHistory.tsx](../../../frontend/src/features/tuning/components/EngineObservationHistory.tsx)
+- [frontend/src/features/tuning/components/GearingTuner.tsx](../../../frontend/src/features/tuning/components/GearingTuner.tsx)
+- [frontend/src/features/tuning/components/LegacyTuningHistory.tsx](../../../frontend/src/features/tuning/components/LegacyTuningHistory.tsx)
+- [frontend/src/features/tuning/components/SetupVerificationStep.tsx](../../../frontend/src/features/tuning/components/SetupVerificationStep.tsx)
+- [frontend/src/features/tuning/components/Step1GoalSetup.tsx](../../../frontend/src/features/tuning/components/Step1GoalSetup.tsx)
 - `frontend/src/features/tuning/components/TireBaselineStep.tsx`（歷史路徑：`../../frontend/src/features/tuning/components/TireBaselineStep.tsx`）
-- [frontend/src/features/tuning/components/TuningMeasurementStep.tsx](../../frontend/src/features/tuning/components/TuningMeasurementStep.tsx)
-- [frontend/src/features/tuning/components/TuningTelemetryCaptureView.tsx](../../frontend/src/features/tuning/components/TuningTelemetryCaptureView.tsx)
+- [frontend/src/features/tuning/components/TuningMeasurementStep.tsx](../../../frontend/src/features/tuning/components/TuningMeasurementStep.tsx)
+- [frontend/src/features/tuning/components/TuningTelemetryCaptureView.tsx](../../../frontend/src/features/tuning/components/TuningTelemetryCaptureView.tsx)
 - `frontend/src/features/tuning/components/WheelAlignmentStep.tsx`（歷史路徑：`../../frontend/src/features/tuning/components/WheelAlignmentStep.tsx`）
-- [frontend/src/features/tuning/components/WorkflowGuide.tsx](../../frontend/src/features/tuning/components/WorkflowGuide.tsx)
-- [frontend/src/features/tuning/engineMeasurementArchive.test.ts](../../frontend/src/features/tuning/engineMeasurementArchive.test.ts)
-- [frontend/src/features/tuning/engineMeasurementArchive.ts](../../frontend/src/features/tuning/engineMeasurementArchive.ts)
-- [frontend/src/features/tuning/tuningMeasurement.test.ts](../../frontend/src/features/tuning/tuningMeasurement.test.ts)
-- [frontend/src/features/tuning/tuningMeasurement.ts](../../frontend/src/features/tuning/tuningMeasurement.ts)
-- [frontend/src/features/tuning/tuningWorkflow.test.ts](../../frontend/src/features/tuning/tuningWorkflow.test.ts)
-- [frontend/src/features/tuning/tuningWorkflow.ts](../../frontend/src/features/tuning/tuningWorkflow.ts)
-- [frontend/src/features/tuning/useEngineMeasurementArchive.ts](../../frontend/src/features/tuning/useEngineMeasurementArchive.ts)
-- [frontend/src/features/tuning/workflowSnapshot.test.ts](../../frontend/src/features/tuning/workflowSnapshot.test.ts)
-- [frontend/src/features/tuning/workflowSnapshot.ts](../../frontend/src/features/tuning/workflowSnapshot.ts)
-- [frontend/src/hooks/useTelemetry.ts](../../frontend/src/hooks/useTelemetry.ts)
-- [frontend/src/utils/tuningMath.ts](../../frontend/src/utils/tuningMath.ts)
-- [lang/zh-tw.json](../../lang/zh-tw.json)
-- [tests/fixtures/road_observation_contract.json](../../tests/fixtures/road_observation_contract.json)
+- [frontend/src/features/tuning/components/WorkflowGuide.tsx](../../../frontend/src/features/tuning/components/WorkflowGuide.tsx)
+- [frontend/src/features/tuning/engineMeasurementArchive.test.ts](../../../frontend/src/features/tuning/engineMeasurementArchive.test.ts)
+- [frontend/src/features/tuning/engineMeasurementArchive.ts](../../../frontend/src/features/tuning/engineMeasurementArchive.ts)
+- [frontend/src/features/tuning/tuningMeasurement.test.ts](../../../frontend/src/features/tuning/tuningMeasurement.test.ts)
+- [frontend/src/features/tuning/tuningMeasurement.ts](../../../frontend/src/features/tuning/tuningMeasurement.ts)
+- [frontend/src/features/tuning/tuningWorkflow.test.ts](../../../frontend/src/features/tuning/tuningWorkflow.test.ts)
+- [frontend/src/features/tuning/tuningWorkflow.ts](../../../frontend/src/features/tuning/tuningWorkflow.ts)
+- [frontend/src/features/tuning/useEngineMeasurementArchive.ts](../../../frontend/src/features/tuning/useEngineMeasurementArchive.ts)
+- [frontend/src/features/tuning/workflowSnapshot.test.ts](../../../frontend/src/features/tuning/workflowSnapshot.test.ts)
+- [frontend/src/features/tuning/workflowSnapshot.ts](../../../frontend/src/features/tuning/workflowSnapshot.ts)
+- [frontend/src/hooks/useTelemetry.ts](../../../frontend/src/hooks/useTelemetry.ts)
+- [frontend/src/utils/tuningMath.ts](../../../frontend/src/utils/tuningMath.ts)
+- [lang/zh-tw.json](../../../lang/zh-tw.json)
+- [tests/fixtures/road_observation_contract.json](../../../tests/fixtures/road_observation_contract.json)
 - `tests/test_analysis_sqlite.py`（歷史路徑：`../../tests/test_analysis_sqlite.py`）
 - `tests/test_motec_exporter.py`（歷史路徑：`../../tests/test_motec_exporter.py`）
 - `tests/test_race_recorder.py`（歷史路徑：`../../tests/test_race_recorder.py`）
