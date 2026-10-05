@@ -225,13 +225,33 @@ async function main() {
       const translatedCard = settings.getByRole('group', { name: translatedTitle, exact: true });
       await translatedCard.scrollIntoViewIfNeeded();
       assert.equal(await translatedCard.getByRole('switch').count(), 2);
+      const glyphs = await translatedCard.evaluate(async (element, language) => {
+        const family = language === 'zh-tw' ? 'Noto Sans CJK TC' : 'Noto Sans CJK JP';
+        // FontFace.load rejects a missing local face; document.fonts.check alone
+        // can return true for an unavailable family that falls back to tofu.
+        await new FontFace('LfaCjkAvailabilityProbe', `local("${family}")`).load();
+        await document.fonts.ready;
+        const fontFamily = getComputedStyle(element).fontFamily;
+        const canvas = document.createElement('canvas'); canvas.width = canvas.height = 64;
+        const context = canvas.getContext('2d', { willReadFrequently: true });
+        context.font = `400 32px ${fontFamily}`;
+        const probes = language === 'zh-tw' ? ['儀', '環', '展'] : ['メ', 'タ', '計'];
+        const rasters = probes.map(glyph => {
+          context.clearRect(0, 0, 64, 64); context.fillText(glyph, 8, 44);
+          const pixels = context.getImageData(0, 0, 64, 64).data;
+          return Array.from(pixels).filter((_, index) => index % 4 === 3);
+        });
+        return { family, fontFamily, probes, nonempty: rasters.every(pixels => pixels.some(alpha => alpha > 0)),
+          distinct: new Set(rasters.map(pixels => pixels.join(','))).size === probes.length };
+      }, language);
+      assert.equal(glyphs.nonempty && glyphs.distinct, true, language + ' missing or identical fallback glyphs');
       const fits = await translatedCard.evaluate(element => {
         const bounds = element.getBoundingClientRect();
         return bounds.left >= 0 && bounds.right <= innerWidth && element.scrollWidth <= element.clientWidth + 1;
       });
       assert.equal(fits, true, language + ' settings overflow');
       await translatedCard.screenshot({ path: path.join(out, 'settings-narrow-' + language + '.png') });
-      samples.push({ name: 'settings-narrow-' + language, text: await translatedCard.textContent(), fits });
+      samples.push({ name: 'settings-narrow-' + language, text: await translatedCard.textContent(), fits, glyphs });
     }
     assert.deepEqual(errors, []); assert.deepEqual(failedResponses, []);
   } catch (error) {
