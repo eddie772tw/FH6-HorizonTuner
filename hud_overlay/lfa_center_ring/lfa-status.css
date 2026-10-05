@@ -1,0 +1,4 @@
+/* Only the approved 96px status field changes; outer geometry stays untouched. */
+#lfaStatus { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+#lfaStatus[data-kind="car"] { font-size: 11px; letter-spacing: 0; }
+#lfaStatus[data-pending="true"] { font-size: 11px; letter-spacing: 0; color: var(--lfa-amber); border-color: var(--lfa-amber); }

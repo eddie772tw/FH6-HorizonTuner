@@ -1,0 +1,68 @@
+{
+  "date": "2026-10-05",
+  "officialProtocolUrl": "https://support.forza.net/hc/en-us/articles/51744149102611-Forza-Horizon-6-Data-Out-Documentation",
+  "boostContract": "Raw Boost is PSI above atmospheric, not Pa; no magnitude-based detection",
+  "tireContract": "Project tire_temp_f contract is Fahrenheit; all four finite readings required",
+  "sourceHead": "48a3d5e4bc27bc36d75cddba75cbf989fd2b2857",
+  "parserSha256": "c21772fd6a29f2b2e90328b777adbb2f4a46a6d9e96169f01ee6f70084389891",
+  "executed": "Offline Rust harness compiles actual unchanged packet.rs, parses fixed 324-byte fixtures, then serializes and deserializes with production preserve_order/float_roundtrip serde_json features",
+  "notExecuted": "This harness does not run live UDP, App.process, WebSocket transport, or Windows/game acceptance",
+  "staticRouteAudit": [
+    "backend-rust/src/runtime.rs receive_udp -> parse_packet -> worker App.process",
+    "backend-rust/src/app.rs process adds DynoGuidance; Boost/TireTemp remain unchanged; telemetry.send_replace(frame)",
+    "backend-rust/src/network.rs JSON socket channel serializes unchanged Value",
+    "hud_overlay/shared/ws.js consumes /ws/telemetry JSON",
+    "hud_overlay/shared/coordinator.js preserves raw via spread; aliases clamp negative/missing Boost, so style reads raw presence first"
+  ],
+  "unrelatedPathCaution": "Separate binary pack_binary and frontend useTelemetry assume Pa. These are not the JSON HUD route and are unchanged by these style revisions.",
+  "samples": [
+    {
+      "inputBoostPsi": 14.503800392150879,
+      "parsedBoostPsi": 14.503800392150879,
+      "parsedTireTempF": [
+        176.0,
+        194.0,
+        212.0,
+        230.0
+      ],
+      "meanTireF": 203,
+      "meanTireC": 95,
+      "parsedAccelInput": 204,
+      "parsedBrakeInput": 51,
+      "throttlePercent": 80,
+      "brakePercent": 20
+    },
+    {
+      "inputBoostPsi": 0.0,
+      "parsedBoostPsi": 0.0,
+      "parsedTireTempF": [
+        176.0,
+        194.0,
+        212.0,
+        230.0
+      ],
+      "meanTireF": 203,
+      "meanTireC": 95,
+      "parsedAccelInput": 204,
+      "parsedBrakeInput": 51,
+      "throttlePercent": 80,
+      "brakePercent": 20
+    },
+    {
+      "inputBoostPsi": -7.2519001960754395,
+      "parsedBoostPsi": -7.2519001960754395,
+      "parsedTireTempF": [
+        176.0,
+        194.0,
+        212.0,
+        230.0
+      ],
+      "meanTireF": 203,
+      "meanTireC": 95,
+      "parsedAccelInput": 204,
+      "parsedBrakeInput": 51,
+      "throttlePercent": 80,
+      "brakePercent": 20
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="560" height="370" viewBox="0 0 560 370">
+  <title>Original LFA-inspired four auxiliary crescent gauges</title>
+  <desc>Bagley as Codex, MIT 2026. Original shapes and pictograms; tire with thermometer denotes four-wheel average temperature, and compressor volute denotes turbo boost. No third-party paths, OEM assets or sensor values. Center disk intentionally empty.</desc>
+  <defs>
+    <linearGradient id="sideSurface" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#10181c"/><stop offset=".55" stop-color="#0a1115"/><stop offset="1" stop-color="#0b1216"/></linearGradient>
+    <mask id="preserveCenter"><rect width="560" height="370" fill="white"/><circle cx="280" cy="185" r="180" fill="black"/></mask>
+    <g id="tireIcon" fill="none" stroke="#c0ced3" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="-4" r="9"/><circle cx="-4" r="5"/>
+      <path d="M-4-5v5m4.8-1.5L-4 0-1.1 4M-6.9 4-4 0-8.8-1.5"/>
+      <path d="M9-7a2 2 0 0 1 4 0V3.8a3.2 3.2 0 1 1-4 0Z"/>
+      <path d="M11-3v9"/>
+    </g>
+    <g id="turboIcon" fill="none" stroke="#c0ced3" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M-12-11H1C8-11 13-6 13 1S8 13 1 13-11 8-11 1c0-3 1-6 4-8h-5Z"/>
+      <circle cx="1" cy="1" r="6.4"/>
+      <g fill="#c0ced3" stroke="none">
+        <path d="M.1-.2C-1-2-1-3.5 1-5.1c2 .7 2.3 3.2.9 5Z"/>
+        <path d="M.1-.2C-1-2-1-3.5 1-5.1c2 .7 2.3 3.2.9 5Z" transform="rotate(120 1 1)"/>
+        <path d="M.1-.2C-1-2-1-3.5 1-5.1c2 .7 2.3 3.2.9 5Z" transform="rotate(240 1 1)"/>
+        <circle cx="1" cy="1" r="1.5"/>
+      </g>
+    </g>
+  </defs>
+  <g mask="url(#preserveCenter)">
+    <path d="M174 43H76C47 79 29 123 23 164V205C33 250 62 292 105 325H174Z M386 43h98c29 36 47 80 53 121v41c-10 45-39 87-82 120h-69z" fill="url(#sideSurface)"/>
+    <g fill="none" stroke="#45565f" stroke-width="1">
+      <path d="M31 159C35 122 51 79 82 48M529 159C525 122 509 79 478 48"/>
+      <path d="M103 314C71 287 45 252 32 214M457 314C489 287 515 252 528 214" stroke-width="9" stroke="#25353d"/>
+      <path d="M31 159C35 122 51 79 82 48M529 159C525 122 509 79 478 48" stroke-width="7" stroke="#25353d"/>
+    </g>
+    <g fill="none" stroke="#8fa1a9" stroke-width="1.1">
+      <path d="M31 159h9M40.4 119h8M57.3 81.1h8M82 48h8"/>
+      <path d="M31 214h11M40 237h6M54 262h6M74 288h6M102 314h11"/>
+      <path d="M529 214h-11M520 237h-6M506 262h-6M486 288h-6M458 314h-11"/>
+    </g>
+    <g fill="none" stroke="#8e3335" stroke-width="2.3">
+      <path d="M68 65Q75 55 82 48"/>
+    </g>
+    <g font-family="Arial, sans-serif" font-size="12" fill="#c0ced3">
+      <text x="44" y="218">100</text><text x="116" y="318">0</text>
+      <g text-anchor="end"><text x="515" y="218">100</text><text x="444" y="318">0</text></g>
+    </g>
+    <use href="#tireIcon" transform="translate(89 110)"/>
+    <use href="#turboIcon" transform="translate(474 118) scale(.8)"/>
+  </g>
+</svg>

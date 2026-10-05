@@ -1,0 +1,367 @@
+{
+  "referenceHead": "f3dd06b7f17b3c12867648780d0622dcb8525b9f",
+  "sourceHead": "c4a5abeef26642ecafc63439dac5c8ca73a99a02",
+  "run": 37276468705,
+  "artifact": 11329914689,
+  "method": "Exact decoded RGBA arrays, without resizing or tolerance; complete matched regular collapsed frames",
+  "results": [
+    {
+      "file": "detail-metric.png",
+      "shape": [
+        556,
+        840,
+        4
+      ],
+      "differentPixels": 0,
+      "centralDisk": {
+        "center": [
+          420,
+          277.5
+        ],
+        "radius": 267,
+        "pixelCenterCriterion": true,
+        "comparedPixels": 223942,
+        "differentPixels": 0
+      }
+    },
+    {
+      "file": "detail-imperial.png",
+      "shape": [
+        556,
+        840,
+        4
+      ],
+      "differentPixels": 0,
+      "centralDisk": {
+        "center": [
+          420,
+          277.5
+        ],
+        "radius": 267,
+        "pixelCenterCriterion": true,
+        "comparedPixels": 223942,
+        "differentPixels": 0
+      }
+    },
+    {
+      "file": "detail-reverse.png",
+      "shape": [
+        556,
+        840,
+        4
+      ],
+      "differentPixels": 0,
+      "centralDisk": {
+        "center": [
+          420,
+          277.5
+        ],
+        "radius": 267,
+        "pixelCenterCriterion": true,
+        "comparedPixels": 223942,
+        "differentPixels": 0
+      }
+    },
+    {
+      "file": "detail-neutral.png",
+      "shape": [
+        556,
+        840,
+        4
+      ],
+      "differentPixels": 0,
+      "centralDisk": {
+        "center": [
+          420,
+          277.5
+        ],
+        "radius": 267,
+        "pixelCenterCriterion": true,
+        "comparedPixels": 223942,
+        "differentPixels": 0
+      }
+    },
+    {
+      "file": "detail-redline.png",
+      "shape": [
+        556,
+        840,
+        4
+      ],
+      "differentPixels": 0,
+      "centralDisk": {
+        "center": [
+          420,
+          277.5
+        ],
+        "radius": 267,
+        "pixelCenterCriterion": true,
+        "comparedPixels": 223942,
+        "differentPixels": 0
+      }
+    },
+    {
+      "file": "detail-high-rpm.png",
+      "shape": [
+        556,
+        840,
+        4
+      ],
+      "differentPixels": 0,
+      "centralDisk": {
+        "center": [
+          420,
+          277.5
+        ],
+        "radius": 267,
+        "pixelCenterCriterion": true,
+        "comparedPixels": 223942,
+        "differentPixels": 0
+      }
+    },
+    {
+      "file": "detail-missing.png",
+      "shape": [
+        556,
+        840,
+        4
+      ],
+      "differentPixels": 0,
+      "centralDisk": {
+        "center": [
+          420,
+          277.5
+        ],
+        "radius": 267,
+        "pixelCenterCriterion": true,
+        "comparedPixels": 223942,
+        "differentPixels": 0
+      }
+    },
+    {
+      "file": "detail-no-signal.png",
+      "shape": [
+        556,
+        840,
+        4
+      ],
+      "differentPixels": 0,
+      "centralDisk": {
+        "center": [
+          420,
+          277.5
+        ],
+        "radius": 267,
+        "pixelCenterCriterion": true,
+        "comparedPixels": 223942,
+        "differentPixels": 0
+      }
+    },
+    {
+      "file": "metric-1280x720-dpr1.png",
+      "shape": [
+        720,
+        1280,
+        4
+      ],
+      "differentPixels": 0,
+      "centralDisk": {
+        "center": [
+          1040.0,
+          551.25
+        ],
+        "radius": 133.5,
+        "pixelCenterCriterion": true,
+        "comparedPixels": 55974,
+        "differentPixels": 0
+      }
+    },
+    {
+      "file": "metric-1920x1080-dpr1.png",
+      "shape": [
+        1080,
+        1920,
+        4
+      ],
+      "differentPixels": 0,
+      "centralDisk": {
+        "center": [
+          1680.0,
+          911.25
+        ],
+        "radius": 133.5,
+        "pixelCenterCriterion": true,
+        "comparedPixels": 55974,
+        "differentPixels": 0
+      }
+    },
+    {
+      "file": "metric-2560x1440-dpr1.png",
+      "shape": [
+        1440,
+        2560,
+        4
+      ],
+      "differentPixels": 0,
+      "centralDisk": {
+        "center": [
+          2320.0,
+          1271.25
+        ],
+        "radius": 133.5,
+        "pixelCenterCriterion": true,
+        "comparedPixels": 55974,
+        "differentPixels": 0
+      }
+    },
+    {
+      "file": "metric-1920x1080-dpr2.png",
+      "shape": [
+        2160,
+        3840,
+        4
+      ],
+      "differentPixels": 14,
+      "centralDisk": {
+        "center": [
+          3360.0,
+          1822.5
+        ],
+        "radius": 267.0,
+        "pixelCenterCriterion": true,
+        "comparedPixels": 223942,
+        "differentPixels": 0
+      }
+    }
+  ],
+  "sourcePreservation": {
+    "lfa.css": {
+      "unchanged": true,
+      "sha256": "bb3cb33c7808f6e6f800942259d77c9d42ebdb866d94e36abffcc43bd282ebac"
+    },
+    "lfa-renderer.js": {
+      "unchanged": true,
+      "sha256": "eaa6611d05f863736622aaaf11c3144ba4192d6c62868260d8f608ab8b9ecd5d"
+    },
+    "lfa-controller.js": {
+      "unchanged": true,
+      "sha256": "b0e88f3febadee158eb0faa6e0037c70216c04cd5b01f615f6f74eb87ee0478a"
+    },
+    "lfa-model.js": {
+      "unchanged": true,
+      "sha256": "740459685b8ae2e103cbfd799d0235cf3094427073fe34f595e1a62bd0585b36"
+    },
+    "lfa-expansion.js": {
+      "unchanged": true,
+      "sha256": "451ef4313a47f2616f2d891098631a34e707ba78ff54007f87f67dd674f541b3"
+    },
+    "assets/center-ring.png": {
+      "unchanged": true,
+      "sha256": "3433460df37b91c67f09cfe7b3c99bacd6ad925db36b113042a95bc196422b22"
+    },
+    "assets/center-ring.svg": {
+      "unchanged": true,
+      "sha256": "8570a31f672dac12bb94e198a91cb78576dd0b09b81c140dd4ae7ca68b924028"
+    },
+    "assets/side-crescents.png": {
+      "unchanged": true,
+      "sha256": "19fe6ebd66eb5c9f1e57cd65e82b09bcbb3e6ba07c8fb093dd58201ad5506a69"
+    },
+    "assets/side-crescents.svg": {
+      "unchanged": true,
+      "sha256": "cc662c22a1c64e8035b4dcb45663a086cec9d96ec6b49242e5bc6c652260d786"
+    }
+  },
+  "containment": {
+    "source": "evidence.json / expansion[*].samples[*].panelBounds",
+    "checks": "Actual rendered SVG text bboxes plus2 design-unit clearance sampled against original fascia SVG filled path; exact ring-cutout intersection and text-text overlap guards",
+    "cases": [
+      {
+        "viewport": {
+          "width": 1280,
+          "height": 720
+        },
+        "dpr": 1,
+        "scale": 1,
+        "passed": true,
+        "auditedCapturedStates": 11,
+        "maximumTextCount": 15,
+        "overlaps": 0,
+        "outsideSurface": 0,
+        "ringIntersections": 0
+      },
+      {
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "dpr": 1,
+        "scale": 1,
+        "passed": true,
+        "auditedCapturedStates": 11,
+        "maximumTextCount": 15,
+        "overlaps": 0,
+        "outsideSurface": 0,
+        "ringIntersections": 0
+      },
+      {
+        "viewport": {
+          "width": 2560,
+          "height": 1440
+        },
+        "dpr": 1,
+        "scale": 1,
+        "passed": true,
+        "auditedCapturedStates": 11,
+        "maximumTextCount": 15,
+        "overlaps": 0,
+        "outsideSurface": 0,
+        "ringIntersections": 0
+      },
+      {
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "dpr": 2,
+        "scale": 1,
+        "passed": true,
+        "auditedCapturedStates": 11,
+        "maximumTextCount": 15,
+        "overlaps": 0,
+        "outsideSurface": 0,
+        "ringIntersections": 0
+      },
+      {
+        "viewport": {
+          "width": 1280,
+          "height": 720
+        },
+        "dpr": 1,
+        "scale": 0.8,
+        "passed": true,
+        "auditedCapturedStates": 11,
+        "maximumTextCount": 15,
+        "overlaps": 0,
+        "outsideSurface": 0,
+        "ringIntersections": 0
+      },
+      {
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "dpr": 2,
+        "scale": 0.8,
+        "passed": true,
+        "auditedCapturedStates": 11,
+        "maximumTextCount": 15,
+        "overlaps": 0,
+        "outsideSurface": 0,
+        "ringIntersections": 0
+      }
+    ]
+  },
+  "scope": "Only matching states and configurations above. Expanded-panel pixels intentionally changed. Intermediate moving-ring occlusion is intentional; no spill outside fascia is permitted.",
+  "summary": "Eight matched detail frames are completely pixel-identical. All four matched full-view central disks are identical;1080p DPR2 has14 differences outside the disk. No broader equality claim."
+}

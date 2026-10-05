@@ -1,0 +1,22 @@
+/* The collapsed instrument retains its existing assets and styles. */
+.lfa-moving-center, .lfa-expanded-pane {
+    position: absolute;
+    inset: 0;
+    width: 560px;
+    height: 370px;
+    pointer-events: none;
+    transition: none !important;
+}
+.lfa-moving-center { transform: none; }
+.lfa-expanded-pane { font-family: Arial, sans-serif; fill: var(--lfa-primary); }
+.lfa-expanded-heading { text-anchor: middle; font-size: 10px; letter-spacing: 1.2px; fill: var(--lfa-secondary); }
+.lfa-expanded-label { font-size: 10px; letter-spacing: .4px; fill: var(--lfa-secondary); }
+.lfa-expanded-current { text-anchor: end; font-size: 18px; }
+.lfa-expanded-time { text-anchor: end; font-size: 16px; }
+.lfa-expanded-value, .lfa-expanded-boost { text-anchor: end; font-size: 15px; }
+.lfa-expanded-tires { text-anchor: end; font-size: 13px; }
+.lfa-expanded-pedal { text-anchor: end; font-size: 12px; }
+.lfa-expanded-pedal-track { fill: var(--lfa-track); }
+.lfa-expanded-pedal-fill { fill: var(--lfa-primary); }
+.lfa-expanded-brake-fill { fill: var(--lfa-red); }
+#lfaExpandedBoost[data-negative="true"], #lfaExpandedBoostLabel[data-negative="true"] { fill: var(--lfa-cold, #8fcee5); }

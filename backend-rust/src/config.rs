@@ -95,6 +95,140 @@ pub fn merge_settings(settings: &Value, patch: &Value) -> ApiResult<Value> {
     }
     Ok(next)
 }
+fn stack_st8100_alarm_spec(metric: &str) -> Option<(f64, f64, f64)> {
+    Some(match metric {
+        "rpm" => (0.0, 30000.0, 7000.0),
+        "speed" => (0.0, 1440.0, 200.0),
+        "tire_avg" | "tire_max" => (-100.0, 800.0, 120.0),
+        "boost" => (-1.0, 10.0, 1.5),
+        "power" => (-2000.0, 20000.0, 300.0),
+        "torque" => (-100000.0, 100000.0, 500.0),
+        "throttle" | "brake" => (0.0, 100.0, 90.0),
+        _ => return None,
+    })
+}
+fn stack_st8100_number(input: &Value, min: f64, max: f64, fallback: &Value) -> Value {
+    match input.as_f64().filter(|v| v.is_finite()) {
+        Some(v) if v < min || v > max => json!(v.clamp(min, max)),
+        Some(_) => input.clone(),
+        None => fallback.clone(),
+    }
+}
+fn normalize_stack_st8100_alarms(value: &Value, defaults: &Value) -> Value {
+    json!((0..3)
+        .map(|index| {
+            let input = value
+                .as_array()
+                .and_then(|array| array.get(index))
+                .filter(|v| v.is_object());
+            let get = |key: &str| input.and_then(|v| v.get(key)).unwrap_or(&Value::Null);
+            let metric = get("metric")
+                .as_str()
+                .filter(|m| stack_st8100_alarm_spec(m).is_some())
+                .unwrap_or_else(|| {
+                    defaults[index]["metric"]
+                        .as_str()
+                        .expect("alarm default metric")
+                });
+            let (min, max, threshold) =
+                stack_st8100_alarm_spec(metric).expect("known alarm metric");
+            json!({"enabled":get("enabled").as_bool() == Some(true), "metric":metric,
+            "direction":if get("direction") == "low" { "low" } else { "high" },
+            "threshold":stack_st8100_number(get("threshold"), min, max, &json!(threshold))})
+        })
+        .collect::<Vec<_>>())
+}
+/// Stack owns only its namespaced keys; migration never populates unrelated HUD defaults.
+fn normalize_stack_st8100(value: &mut Value) {
+    let active = value["hudStyle"] == "stack_st8100";
+    if !active
+        && !value
+            .as_object()
+            .is_some_and(|object| object.keys().any(|key| key.starts_with("stackSt8100")))
+    {
+        return;
+    }
+    let defaults = defaults("DEFAULT_STACK_ST8100_CONFIG");
+    let legacy = [
+        "stackSt8100FuelWarningEnabled",
+        "stackSt8100FuelWarningPercent",
+        "stackSt8100TireWarningEnabled",
+        "stackSt8100TireWarningC",
+        "stackSt8100BoostWarningEnabled",
+        "stackSt8100BoostWarningBar",
+    ];
+    if value.get("stackSt8100Alarms").is_none()
+        && legacy[2..].iter().any(|key| value.get(key).is_some())
+    {
+        value["stackSt8100Alarms"] = json!([
+            {"metric":"tire_max","enabled":value["stackSt8100TireWarningEnabled"],"threshold":value["stackSt8100TireWarningC"]},
+            {"metric":"boost","enabled":value["stackSt8100BoostWarningEnabled"],"threshold":value["stackSt8100BoostWarningBar"]}
+        ]);
+    }
+    for key in legacy {
+        value.as_object_mut().expect("HUD object").remove(key);
+    }
+    let fields = [
+        "speed",
+        "gear",
+        "tire_avg",
+        "tire_max",
+        "boost",
+        "rpm",
+        "power",
+        "torque",
+        "throttle",
+        "brake",
+        "current_lap",
+        "race_time",
+        "last_lap",
+        "best_lap",
+        "lap",
+        "peak_rpm",
+        "peak_speed",
+    ];
+    for (key, fallback) in defaults.as_object().expect("Stack defaults object") {
+        if !active && value.get(key).is_none() {
+            continue;
+        }
+        let input = &value[key];
+        let normalized = match key.as_str() {
+            "stackSt8100Alarms" => Some(normalize_stack_st8100_alarms(input, fallback)),
+            "stackSt8100Field1" | "stackSt8100Field2" | "stackSt8100Field3"
+            | "stackSt8100Field4" => {
+                if input == "fuel" {
+                    Some(json!("race_time"))
+                } else {
+                    input
+                        .as_str()
+                        .filter(|v| fields.contains(v))
+                        .map(|v| json!(v))
+                }
+            }
+            "stackSt8100Page" => input
+                .as_str()
+                .filter(|v| ["live", "peaks"].contains(v))
+                .map(|v| json!(v)),
+            "stackSt8100TemperatureUnit" => input
+                .as_str()
+                .filter(|v| ["c", "f"].contains(v))
+                .map(|v| json!(v)),
+            "stackSt8100Dial" => input
+                .as_str()
+                .filter(|v| ["auto", "0-3-8", "0-4-10", "0-3-10.5", "0-6-13"].contains(v))
+                .map(|v| json!(v)),
+            "stackSt8100Face" => input
+                .as_str()
+                .filter(|v| ["black", "white"].contains(v))
+                .map(|v| json!(v)),
+            "stackSt8100ShiftEnabled" => input.as_bool().map(|v| json!(v)),
+            "stackSt8100ShiftPercent" => Some(stack_st8100_number(input, 50.0, 100.0, fallback)),
+            _ => None,
+        };
+        value[key] = normalized.unwrap_or_else(|| fallback.clone());
+    }
+}
+
 pub fn normalize_hud(data: &Value) -> Value {
     let mut value = if data.is_object() {
         data.clone()
@@ -142,6 +276,12 @@ pub fn normalize_hud(data: &Value) -> Value {
             ("classicJdmAux2", json!("tire_temp_rear")),
         ] {
             value.as_object_mut().unwrap().entry(key).or_insert(v);
+        }
+    }
+    normalize_stack_st8100(&mut value);
+    if style == "lfa_center_ring" {
+        for key in ["lfaManualExpand", "lfaAutoExpand"] {
+            value[key] = json!(value[key].as_bool().unwrap_or(false));
         }
     }
     if style == "r34_mfd" {

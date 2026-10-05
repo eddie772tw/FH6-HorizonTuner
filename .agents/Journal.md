@@ -1,5 +1,13 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-10-05 / 懸吊歷史時間窗與靜止遙測一致性（Sol as Codex）
+
+- **Scope**：以 `main`／`v1.7.1` 的 `59e9e83` 為基準；採用 `ponytail`、`halfmoon-design-system`、`huge-component-refactoring`、`pr-author-maintainer`。
+- **Learning**：`telemetryEmitter` 由 `requestAnimationFrame` 驅動，不保證 60Hz。逐渲染幀覆寫 180 筆懸吊 ring buffer，卻使用固定 2500ms X 軸，會在 144Hz 只保留約 1243ms，曲線僅覆蓋右側一半。將新增歷史點限制為最多 60Hz，期間原地更新最新端點，能兼顧完整時間窗、即時讀數與固定記憶體。
+- **Stationary assessment**：懸吊、輪胎與 G 力原本在靜止時仍繪圖，另以 O(N) 逐筆平移時間戳凍結歷史；這不是停止繪圖的性能保護。移除三處速度門檻及胎溫直方圖的靜止樣本過濾，改為持續 O(1) 寫入固定容量 ring，讓輪胎變化、懸吊波形與 G 力歷史正常更新／老化。既有圖表開關、HUD 暫停與比賽／車輛重置仍適用。
+- **Evidence**：純歷史回歸 10 cases 涵蓋 30／60／120／144／165／240／360Hz、多次 wraparound、即時端點、恆定行程持續捲動與 reset。隔離瀏覽器回放實際三種 React 組件：144Hz 四輪曲線覆蓋率由 50% 恢復 100%，240Hz 由 30% 恢復 100%；靜止回放、停車後胎溫分佈／G 力標記、relative／absolute、亮暗主題及圖表開關皆檢查。最終前端 gate：`pnpm -C frontend run test` 156 files／1115 passed、1 skipped；`pnpm -C frontend run build` 與 `git diff --check` 通過。
+- **Boundary**：瀏覽器使用合成資料及模擬時鐘，不是實際 FH6、Tauri WebView 或發行 EXE 驗收；O(1) 寫入是程式路徑分析，不代表已測得整頁 FPS 改善。
+
 ## 2026-10-05 / Swiss 開發文件與 PR 送審整理（Codex as Codex）
 
 - **來源／狀態**：`local`／`verified`；使用者要求整理開發文件，將 PR #481 整理至 Ready to Review。
@@ -54,6 +62,13 @@
 - **Evidence**：Vitest 1,114 passed／1 skipped；frontend build 通過；Windows Cargo 122 passed／3 ignored。實際 Rust 後端＋Vite／瀏覽器驗證四款核心的日夜模式、Mono 重載、1440／390／320px 版型與 Portal Escape 焦點。合成 UDP 回放 1111→8888 RPM 寬度皆 46.546875px，11→88 km/h 皆 42px，Canvas transition 為 0s；不代表真實遊戲或原生裝置驗收。
 - **驗證順序**：Cargo 以 `include_bytes!` 嵌入 frontend/dist；不可同時執行會清換 hashed assets 的 Vite build 與 Cargo／doc-tests。此處先完成 frontend build，再跑 Cargo，已消除資源消失錯誤。
 - **Skills**：`ponytail`（full）、`halfmoon-design-system`、`huge-component-refactoring`、`portable-release-validation`、`pr-author-maintainer`、`pr-review-evaluation`、`agent-governance-audit`。
+## 2026-10-05 / ST8100 原始遙測與巢狀捲動截圖證據（Bagley as Codex）
+
+- **來源／狀態**：固定 source `60dfae6` 的 sandboxed Chrome CI／verified；不是 Windows 原生或真實遊戲驗收。
+- **Learning**：視覺插值可將原始7,000 RPM外插成7,250，故警示／峰值／圈事件必須使用唯讀原始sourceTelemetry與前進timestamp，不得以顯示幀當新封包。LastLap事件須記住已完成圈identity，避免相同圈時漏播或延遲更正重播。
+- **截圖邊界**：Playwright元素截圖不能穿透祖先overflow:auto；即使水平fits=true，大型設定卡仍可能被巢狀scrollport裁切。先在原始viewport逐項捲動，檢查所有clipping ancestors、hit-test和focus，再於相同寬度且記錄高度的較高viewport保存完整圖；不可隱藏產品toolbar或改CSS製造通過。
+- **Evidence**：[Visual run37291320148](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37291320148) 與 [style provenance](../docs/assets/stack-st8100/provenance.json)；完整設定9組，每組31內容目標／22控制項；390×844分段圖保留原viewport證據。
+- **Skills**：`halfmoon-design-system`、`huge-component-refactoring`、`modular-refactoring`、`pr-author-maintainer`；相關用法詳見 [ST8100設計文件](../docs/hud/stack-st8100.md)。
 
 ## 2026-10-05 / v1.7.1 候選收尾與 Rust SSOT 邊界（Codex as Codex）
 

@@ -1,7 +1,9 @@
 import type { S650CenterWidget, S650HmiTheme } from './s650/config';
 import type { ClassicJdmAuxGauge, ClassicJdmDefiTheme, ClassicJdmTachStyle } from './classic_jdm/config';
 import type { R34MfdMode, R34Lighting } from './r34_mfd/config';
+import type { StackSt8100Settings } from './stack_st8100/config';
 import type { HudDisplayUnits } from './HudUnitSettingsSidebar';
+import { DEFAULT_LFA_AUTO_EXPAND, DEFAULT_LFA_MANUAL_EXPAND } from './lfa_center_ring/config';
 
 export interface HudElements {
   showTeleMaster?: boolean;
@@ -35,7 +37,7 @@ export interface MonitorOption {
   is_primary: boolean;
 }
 
-export interface HudConfig {
+export interface HudConfig extends Partial<StackSt8100Settings> {
   enabled: boolean;
   hudStyle: string;
   s650Theme?: S650HmiTheme;
@@ -50,6 +52,10 @@ export interface HudConfig {
   r34MfdMode?: R34MfdMode;
   r34ShowCluster?: boolean;
   r34Lighting?: R34Lighting;
+  /** LFA only: manual expansion overrides automatic race detection. */
+  lfaManualExpand?: boolean;
+  /** LFA only: expand while confirmed lap timing is present. */
+  lfaAutoExpand?: boolean;
   audioDeviceId?: string;
   selectedMonitorIndex: number;
   scale: number;
@@ -101,6 +107,8 @@ export const DEFAULT_HUD_CONFIG: HudConfig = {
   r34MfdMode: 'single',
   r34ShowCluster: true,
   r34Lighting: 'night',
+  lfaManualExpand: DEFAULT_LFA_MANUAL_EXPAND,
+  lfaAutoExpand: DEFAULT_LFA_AUTO_EXPAND,
   audioDeviceId: 'default',
   selectedMonitorIndex: 0,
   scale: 1.0,

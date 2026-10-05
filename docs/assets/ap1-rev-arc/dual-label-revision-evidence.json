@@ -1,0 +1,159 @@
+{
+  "style": "ap1_rev_arc",
+  "revision": "fixed stacked speed-unit and BOOST/VAC legends",
+  "base_head": "c5341c9056c7b8e4619f6d3ed82ebdaabf418d59",
+  "status": "actual renderer and launcher checks passed; screenshots independently reviewed; final documentation-head CI and user review pending",
+  "selection": {
+    "speed": [
+      "mph above unchanged km/h anchor",
+      "selected setting full opacity; other same RGB at reduced opacity",
+      "unit setting remains visible when speed is unavailable"
+    ],
+    "boost": [
+      "BOOST above VAC; both fixed above unchanged rail",
+      "positive and genuine zero select BOOST",
+      "negative including tiny negatives select VAC",
+      "missing, stale, paused and error dim both; no fill and -- reading"
+    ]
+  },
+  "unchanged": [
+    "RPM arc and fascia",
+    "speed digits and km/h anchor",
+    "gear, auxiliary rail, numeric and tick geometry",
+    "shared abs nonlinear mapping and signed numeric handling",
+    "positive/negative bar, numeric and tick paint",
+    "footer removals and telemetry lifecycle"
+  ],
+  "historical_visual_source": {
+    "head": "2d88a29993f6d0bc6b2b2c881ac7a55865cc2c70",
+    "run_id": 37268451649,
+    "artifact_id": 11327007457,
+    "note": "Prior single-label version, retained as the exact pixel comparison baseline; preview paths now contain current dual labels"
+  },
+  "limitations": [
+    "Final documentation-head CI and user review pending",
+    "No native Windows, actual network/game acceptance or user approval",
+    "TN LCD is user design context, not independently hardware-verified here",
+    "Exact cross-run pixel identity does not hold for 64 default-DPR1 outer-fascia-edge pixels; no expanded mask or tolerance hides them"
+  ],
+  "skills": [
+    "halfmoon-design-system",
+    "telemetry-udp-protocol",
+    "pr-author-maintainer"
+  ],
+  "local_verification": {
+    "style_cases_passed": 90,
+    "frontend_files_passed": 160,
+    "frontend_files_skipped": 1,
+    "frontend_tests_passed": 1195,
+    "frontend_tests_skipped": 1,
+    "build_web_hud": "passed; runtime matches source and tests excluded",
+    "syntax": "renderer and visual scripts passed node --check",
+    "pr_body_validation": "passed",
+    "protected_geometry": "Baseline comparison confirms unchanged main SVG nodes and km/h anchor; arc/model/controller/fascia unchanged",
+    "actual_new_browser_render": "passed remote run37271674297; historical local Chromium restriction unchanged"
+  },
+  "rendered_source_head": "888ea8ba9af69e65f95f96874d3563dacf620680",
+  "remote": {
+    "platform": "GitHub Actions Linux",
+    "browser": "Chrome 154.0.8037.57",
+    "chromium_sandbox": true,
+    "telemetry": "synthetic direct-render and production-parser JSON fixtures through actual launcher/Coordinator",
+    "run_id": 37271674297,
+    "artifact_id": 11328239382,
+    "run_url": "https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37271674297",
+    "artifact_url": "https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37271674297/artifacts/11328239382",
+    "visual_job": "passed",
+    "renderer_errors": [],
+    "launcher_errors": [],
+    "launcher_missing": [],
+    "renderer_screenshots": 61,
+    "paired_label_scenarios": 28,
+    "launcher_samples": 32
+  },
+  "verified_remote_checks": {
+    "sizes": [
+      "default",
+      "70% compact"
+    ],
+    "dpr": [
+      1,
+      2
+    ],
+    "states": [
+      "metric-boost",
+      "imperial-boost",
+      "metric-vac",
+      "imperial-vac",
+      "zero",
+      "missing",
+      "stale"
+    ],
+    "invariants": [
+      "fixed text and DOM identity",
+      "same horizontal anchor and upper/lower order",
+      "no label overlap or collision with rail, speed digits or RPM",
+      "all legends contained; selected opacity and same RGB",
+      "real launcher/Coordinator smoothing stale and reconnect"
+    ]
+  },
+  "visual_review": {
+    "result": "passed scoped technical inspection",
+    "inspected": [
+      "metric/imperial by BOOST/VAC, default and 70% compact DPR2",
+      "zero/missing/stale, default and 70% compact DPR2",
+      "actual DPR1 four-state comparison and nine-state compact/status contact sheet",
+      "hero and compact detail crops"
+    ],
+    "findings": [
+      "Both fixed speed labels stay visible, with mph above the unchanged km/h anchor",
+      "All metric/imperial by BOOST/VAC combinations show the correct selection with the same RGB and opacity-only dimming",
+      "Zero selects BOOST with an empty rail; missing/stale dim both boost legends while retaining the selected speed-unit setting",
+      "Default and 70% compact show no visible overlap between paired labels, rail, speed digits or RPM band",
+      "Bar, numeric and tick paint remain equal across signs; absolute piecewise mapping and negative numeric signs preserved"
+    ],
+    "runtime_changes_needed": false,
+    "user_approval": "not received or implied"
+  },
+  "pixel_comparison": {
+    "evidence": "dual-label-preservation.json",
+    "reference_head": "2d88a29993f6d0bc6b2b2c881ac7a55865cc2c70",
+    "scope": "Default and 70% compact, DPR1 and DPR2, identical synthetic frame. This does not claim every scene or native-game rendering is pixel-identical.",
+    "default_dpr2": {
+      "compared_pixels": 476857,
+      "differing_pixels": 0
+    },
+    "compact_dpr2": {
+      "compared_pixels": 233439,
+      "differing_pixels": 0
+    },
+    "compact_dpr1": {
+      "compared_pixels": 58441,
+      "differing_pixels": 0
+    },
+    "default_dpr1": {
+      "compared_pixels": 119025,
+      "differing_pixels": 64,
+      "location": "far-left outer fascia edge, screen x741..771/y514..553",
+      "interpretation": "No source fascia/arc change and no visible structural defect; cross-run raster difference retained without asserting a proven cause"
+    }
+  },
+  "supplemental_unit_selection_probe": {
+    "kind": "read-only local model execution, separate from committed Vitest cases",
+    "result": "passed",
+    "observations": [
+      "Configured effectiveUnits.speed=mph overrides last-frame displayUnits.speed=kmh",
+      "Typed speed_mph is used while live; stale numeric remains --- and boost unavailable",
+      "Generic speed with the opposite unit is rejected, not relabeled or converted locally"
+    ]
+  },
+  "previews": {
+    "hero": "detail-metric.png",
+    "comparison": "ap1-boost-scale-comparison.png",
+    "states": "states.png",
+    "compact": "detail-compact.png",
+    "full_viewport": "metric-1280x720.png",
+    "derivation": "Actual current screenshots; alpha-bound crop or unscaled montage with labels/review background; 8-bit PNG",
+    "historical_arc_comparison": "before-after.png remains the earlier fuel-version arc comparison"
+  }
+}

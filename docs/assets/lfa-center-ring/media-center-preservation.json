@@ -1,0 +1,307 @@
+{
+  "sourceHead": "b9a514366c56342b740b48cdb338855b4f2ff917",
+  "method": "Compare exact decoded RGBA at each pixel center inside full approved metal-ring disk; squared-distance <= radius squared. No feathering, tolerance, resampling, or reduced boundary. Only matching inputs are compared.",
+  "comparisons": [
+    {
+      "baselineArtifact": "lfa-ci-13a00e9",
+      "details": [
+        {
+          "file": "detail-metric.png",
+          "center": [
+            420,
+            277.5
+          ],
+          "radius": 267,
+          "comparedPixels": 223942,
+          "changedCentralPixels": 0,
+          "wholeImageChangedPixels": 1314
+        },
+        {
+          "file": "detail-imperial.png",
+          "center": [
+            420,
+            277.5
+          ],
+          "radius": 267,
+          "comparedPixels": 223942,
+          "changedCentralPixels": 0,
+          "wholeImageChangedPixels": 1314
+        },
+        {
+          "file": "detail-reverse.png",
+          "center": [
+            420,
+            277.5
+          ],
+          "radius": 267,
+          "comparedPixels": 223942,
+          "changedCentralPixels": 0,
+          "wholeImageChangedPixels": 1314
+        },
+        {
+          "file": "detail-neutral.png",
+          "center": [
+            420,
+            277.5
+          ],
+          "radius": 267,
+          "comparedPixels": 223942,
+          "changedCentralPixels": 0,
+          "wholeImageChangedPixels": 1314
+        },
+        {
+          "file": "detail-redline.png",
+          "center": [
+            420,
+            277.5
+          ],
+          "radius": 267,
+          "comparedPixels": 223942,
+          "changedCentralPixels": 0,
+          "wholeImageChangedPixels": 1314
+        },
+        {
+          "file": "detail-high-rpm.png",
+          "center": [
+            420,
+            277.5
+          ],
+          "radius": 267,
+          "comparedPixels": 223942,
+          "changedCentralPixels": 0,
+          "wholeImageChangedPixels": 1314
+        },
+        {
+          "file": "detail-missing.png",
+          "center": [
+            420,
+            277.5
+          ],
+          "radius": 267,
+          "comparedPixels": 223942,
+          "changedCentralPixels": 0,
+          "wholeImageChangedPixels": 1314
+        },
+        {
+          "file": "detail-no-signal.png",
+          "center": [
+            420,
+            277.5
+          ],
+          "radius": 267,
+          "comparedPixels": 223942,
+          "changedCentralPixels": 0,
+          "wholeImageChangedPixels": 1314
+        }
+      ],
+      "fullViewports": [
+        {
+          "file": "metric-1280x720-dpr1.png",
+          "center": [
+            1040,
+            551.25
+          ],
+          "radius": 133.5,
+          "comparedPixels": 55974,
+          "changedCentralPixels": 0,
+          "wholeImageChangedPixels": 371
+        },
+        {
+          "file": "metric-1920x1080-dpr1.png",
+          "center": [
+            1680,
+            911.25
+          ],
+          "radius": 133.5,
+          "comparedPixels": 55974,
+          "changedCentralPixels": 0,
+          "wholeImageChangedPixels": 371
+        },
+        {
+          "file": "metric-2560x1440-dpr1.png",
+          "center": [
+            2320,
+            1271.25
+          ],
+          "radius": 133.5,
+          "comparedPixels": 55974,
+          "changedCentralPixels": 0,
+          "wholeImageChangedPixels": 371
+        },
+        {
+          "file": "metric-1920x1080-dpr2.png",
+          "center": [
+            3360,
+            1822.5
+          ],
+          "radius": 267.0,
+          "comparedPixels": 223942,
+          "changedCentralPixels": 0,
+          "wholeImageChangedPixels": 1328
+        }
+      ]
+    },
+    {
+      "baselineArtifact": "lfa-ci-5c5b8f6",
+      "details": [
+        {
+          "file": "detail-metric.png",
+          "center": [
+            420,
+            277.5
+          ],
+          "radius": 267,
+          "comparedPixels": 223942,
+          "changedCentralPixels": 0,
+          "wholeImageChangedPixels": 2014
+        },
+        {
+          "file": "detail-imperial.png",
+          "center": [
+            420,
+            277.5
+          ],
+          "radius": 267,
+          "comparedPixels": 223942,
+          "changedCentralPixels": 0,
+          "wholeImageChangedPixels": 2014
+        },
+        {
+          "file": "detail-reverse.png",
+          "center": [
+            420,
+            277.5
+          ],
+          "radius": 267,
+          "comparedPixels": 223942,
+          "changedCentralPixels": 0,
+          "wholeImageChangedPixels": 2014
+        },
+        {
+          "file": "detail-neutral.png",
+          "center": [
+            420,
+            277.5
+          ],
+          "radius": 267,
+          "comparedPixels": 223942,
+          "changedCentralPixels": 0,
+          "wholeImageChangedPixels": 2014
+        },
+        {
+          "file": "detail-redline.png",
+          "center": [
+            420,
+            277.5
+          ],
+          "radius": 267,
+          "comparedPixels": 223942,
+          "changedCentralPixels": 0,
+          "wholeImageChangedPixels": 2014
+        },
+        {
+          "file": "detail-high-rpm.png",
+          "center": [
+            420,
+            277.5
+          ],
+          "radius": 267,
+          "comparedPixels": 223942,
+          "changedCentralPixels": 0,
+          "wholeImageChangedPixels": 2014
+        },
+        {
+          "file": "detail-missing.png",
+          "center": [
+            420,
+            277.5
+          ],
+          "radius": 267,
+          "comparedPixels": 223942,
+          "changedCentralPixels": 0,
+          "wholeImageChangedPixels": 2014
+        },
+        {
+          "file": "detail-no-signal.png",
+          "center": [
+            420,
+            277.5
+          ],
+          "radius": 267,
+          "comparedPixels": 223942,
+          "changedCentralPixels": 0,
+          "wholeImageChangedPixels": 2014
+        }
+      ],
+      "fullViewports": [
+        {
+          "file": "metric-1280x720-dpr1.png",
+          "center": [
+            1040,
+            551.25
+          ],
+          "radius": 133.5,
+          "comparedPixels": 55974,
+          "changedCentralPixels": 0,
+          "wholeImageChangedPixels": 589
+        },
+        {
+          "file": "metric-1920x1080-dpr1.png",
+          "center": [
+            1680,
+            911.25
+          ],
+          "radius": 133.5,
+          "comparedPixels": 55974,
+          "changedCentralPixels": 0,
+          "wholeImageChangedPixels": 589
+        },
+        {
+          "file": "metric-2560x1440-dpr1.png",
+          "center": [
+            2320,
+            1271.25
+          ],
+          "radius": 133.5,
+          "comparedPixels": 55974,
+          "changedCentralPixels": 0,
+          "wholeImageChangedPixels": 589
+        },
+        {
+          "file": "metric-1920x1080-dpr2.png",
+          "center": [
+            3360,
+            1822.5
+          ],
+          "radius": 267.0,
+          "comparedPixels": 223942,
+          "changedCentralPixels": 0,
+          "wholeImageChangedPixels": 2014
+        }
+      ]
+    }
+  ],
+  "sourcePreservation": {
+    "assets/center-ring.png": {
+      "sha256": "3433460df37b91c67f09cfe7b3c99bacd6ad925db36b113042a95bc196422b22",
+      "matchesApprovedBaseBbf64fbd": true
+    },
+    "assets/center-ring.svg": {
+      "sha256": "8570a31f672dac12bb94e198a91cb78576dd0b09b81c140dd4ae7ca68b924028",
+      "matchesApprovedBaseBbf64fbd": true
+    },
+    "lfa.css": {
+      "sha256": "bb3cb33c7808f6e6f800942259d77c9d42ebdb866d94e36abffcc43bd282ebac",
+      "matchesApprovedBaseBbf64fbd": true
+    },
+    "drawScale": {
+      "sha256": "ed971b4f351577ec8293294ce78a6fafecfc84ef99183bd8a52c6cc25bad64b5",
+      "matchesApprovedBaseBbf64fbd": true
+    },
+    "drawNeedle": {
+      "sha256": "345aecabf61d324631196530d76cb84bf5688ac86645ef2739ac2278854c185b",
+      "matchesApprovedBaseBbf64fbd": true
+    }
+  },
+  "qualification": "Exact conclusions apply only to listed captures and geometric disks. Whole images intentionally differ with revised auxiliary icons. No claim of all-resolution/all-state byte identity or Windows/game acceptance."
+}

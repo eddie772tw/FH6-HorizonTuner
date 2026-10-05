@@ -1,0 +1,136 @@
+{
+  "sourceHead": "f3dd06b7f17b3c12867648780d0622dcb8525b9f",
+  "run": 37272049555,
+  "artifact": 11328657701,
+  "previews": [
+    {
+      "file": "metric-detail.png",
+      "source": "detail-metric.png",
+      "processing": "Lossless PNG recompression and metadata removal; actual screenshot pixels preserved"
+    },
+    {
+      "file": "metric-720p.png",
+      "source": "metric-1280x720-dpr1.png",
+      "processing": "Lossless PNG recompression and metadata removal; actual screenshot pixels preserved"
+    },
+    {
+      "file": "expanded-detail.png",
+      "source": "detail-expansion-manual.png",
+      "processing": "Lossless PNG recompression and metadata removal; actual screenshot pixels preserved"
+    },
+    {
+      "file": "expanded-720p.png",
+      "source": "expanded-1280x720-dpr1.png",
+      "processing": "Lossless PNG recompression and metadata removal; actual screenshot pixels preserved"
+    },
+    {
+      "file": "expansion-transitions.png",
+      "sources": [
+        {
+          "file": "detail-expansion-collapsed.png",
+          "label": "Collapsed / target OFF"
+        },
+        {
+          "file": "detail-expansion-opening-150ms.png",
+          "label": "Opening / clock +150 ms"
+        },
+        {
+          "file": "detail-expansion-manual.png",
+          "label": "Expanded / settled"
+        },
+        {
+          "file": "detail-expansion-closing-150ms.png",
+          "label": "Closing / clock +150 ms / width stress test"
+        }
+      ],
+      "processing": "Actual screenshots downscaled and arranged with labels; no HUD redraw"
+    },
+    {
+      "file": "state-contact-sheet.png",
+      "sources": [
+        {
+          "file": "detail-aux-psi-fahrenheit.png",
+          "label": "Independent Fahrenheit / PSI"
+        },
+        {
+          "file": "detail-aux-kpa.png",
+          "label": "Independent Celsius / kPa"
+        },
+        {
+          "file": "detail-aux-negative-boost.png",
+          "label": "Negative boost / VAC"
+        },
+        {
+          "file": "detail-aux-zero.png",
+          "label": "Valid zero readings"
+        },
+        {
+          "file": "detail-aux-partial-missing.png",
+          "label": "Partial tyres / boost unavailable"
+        },
+        {
+          "file": "detail-aux-clamped-arcs.png",
+          "label": "Bounded arcs / actual numbers"
+        },
+        {
+          "file": "detail-neutral.png",
+          "label": "Neutral"
+        },
+        {
+          "file": "detail-redline.png",
+          "label": "SHIFT priority"
+        },
+        {
+          "file": "detail-no-signal.png",
+          "label": "Stale telemetry / unavailable"
+        }
+      ],
+      "processing": "Actual screenshots downscaled and arranged with labels; no HUD redraw"
+    },
+    {
+      "file": "session-states.png",
+      "sources": [
+        {
+          "file": "detail-rank-lap.png",
+          "label": "Rank / reported current lap"
+        },
+        {
+          "file": "detail-lap-notice.png",
+          "label": "Lap completion notice"
+        },
+        {
+          "file": "detail-best-notice.png",
+          "label": "Best-lap improvement"
+        },
+        {
+          "file": "detail-lap-max-width.png",
+          "label": "Maximum supported lap-time width"
+        }
+      ],
+      "processing": "Actual screenshots downscaled and arranged with labels; no HUD redraw"
+    },
+    {
+      "file": "lfa-boost-scale-comparison.png",
+      "sources": [
+        {
+          "file": "detail-boost-half.png",
+          "label": "+0.5 bar / 37.5% arc"
+        },
+        {
+          "file": "detail-boost-one.png",
+          "label": "+1 bar / 75% arc"
+        },
+        {
+          "file": "detail-boost-vacuum-half.png",
+          "label": "-0.5 bar / 50% blue VAC arc"
+        },
+        {
+          "file": "detail-boost-zero.png",
+          "label": "Zero / empty neutral arc"
+        }
+      ],
+      "processing": "Actual screenshots downscaled and arranged with labels; no HUD redraw"
+    }
+  ],
+  "disclosure": "Synthetic telemetry in real Chrome; not game capture. Intermediate frames partially occlude side data behind the moving ring. All output PNGs are 8-bit."
+}

@@ -97,6 +97,38 @@
       }
     }
   },
+  "DEFAULT_STACK_ST8100_CONFIG": {
+    "stackSt8100Field1": "speed",
+    "stackSt8100Field2": "gear",
+    "stackSt8100Field3": "race_time",
+    "stackSt8100Field4": "tire_avg",
+    "stackSt8100Page": "live",
+    "stackSt8100TemperatureUnit": "c",
+    "stackSt8100Dial": "auto",
+    "stackSt8100Face": "black",
+    "stackSt8100ShiftEnabled": true,
+    "stackSt8100ShiftPercent": 90,
+    "stackSt8100Alarms": [
+      {
+        "enabled": false,
+        "metric": "tire_max",
+        "direction": "high",
+        "threshold": 120
+      },
+      {
+        "enabled": false,
+        "metric": "boost",
+        "direction": "high",
+        "threshold": 1.5
+      },
+      {
+        "enabled": false,
+        "metric": "rpm",
+        "direction": "high",
+        "threshold": 7000
+      }
+    ]
+  },
   "DEFAULT_HUD_CONFIG": {
     "enabled": false,
     "hudStyle": "vfd",
@@ -106,12 +138,14 @@
     "r34MfdMode": "single",
     "r34ShowCluster": true,
     "r34Lighting": "night",
+    "lfaManualExpand": false,
+    "lfaAutoExpand": false,
     "audioDeviceId": "default",
     "position": {
       "x": 100,
       "y": 100
     },
-    "scale": 1.0,
+    "scale": 1,
     "unit": "kmh",
     "followAppUnits": true,
     "units": {
@@ -122,13 +156,13 @@
       "temperature": "C"
     },
     "telemetryOpacity": 0.65,
-    "telemetryGRadarScale": 1.0,
-    "telemetryCornersScale": 1.0,
-    "telemetryPedalScale": 1.0,
-    "telemetryPowerTorqueScale": 1.0,
-    "telemetryMergedChartsScale": 1.0,
-    "telemetryLiveMapScale": 1.0,
-    "telemetryLiveMapOpacity": 1.0,
+    "telemetryGRadarScale": 1,
+    "telemetryCornersScale": 1,
+    "telemetryPedalScale": 1,
+    "telemetryPowerTorqueScale": 1,
+    "telemetryMergedChartsScale": 1,
+    "telemetryLiveMapScale": 1,
+    "telemetryLiveMapOpacity": 1,
     "telemetryLiveMapOffsetX": 0,
     "telemetryLiveMapOffsetY": 0,
     "telemetrySideBySideCharts": true,

@@ -44,6 +44,7 @@ AEGO Road now uses qualified moving-sweep bin averages and jointly allocates fir
   - **Skyline R34 MFD**: Original 1999 V-spec analogue cluster plus five NISMO Ver.II-inspired MFD layouts, with honest game telemetry, peak/memory and observed-lap history. [Prototype and data contract](docs/hud/r34-mfd.md).
   - **All-New Classic JDM Gauge Cluster**: High-contrast vintage white-dial tachometer, shift lights, dual trip meters, and boost gauge delivering an authentic 90s Japanese sports car dashboard feel.
   - **Arcade Multi-Gauge Layout & Standardized 1080p Scaling**: Supports side-by-side modular gauges with unified anchor points and adaptive proportional scaling across resolutions.
+  - **[Stack ST8100 Inspired](docs/hud/stack-st8100.md)**: Original compressed analog tachometer and green dot-matrix LCD, with four selectable telemetry fields, session tell-tales, configurable warnings and real GUI settings. No fabricated engine sensors.
   - **Multi-Style Overlay Support**: Features Ford Mustang S650 HMI (with Windows GSMTC media widget), GT7 style, Retro VFD vacuum fluorescent display, 093 Drift HUD, and 5 popular community overlay styles.
   - **Lite Standalone Client (`FH6-HorizonTuner_lite.exe`)**: Provides Telemetry Dashboard, HUD Overlay, and Settings tabs while sharing existing frontend features and backend lifecycle with the Full client.
   - 100% injection-free, zero hook, zero anti-cheat ban risk. Multi-channel WebSocket telemetry streaming and fullscreen adaptive auto-scaling.

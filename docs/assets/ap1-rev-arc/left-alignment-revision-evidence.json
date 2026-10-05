@@ -1,0 +1,810 @@
+{
+  "style": "ap1_rev_arc",
+  "revision": "Common left alignment for the two fixed caption pairs",
+  "reference_head": "4f5470e9d83cc33530be4e85f1a40abc6d76a2db",
+  "rendered_source_head": "3e00409d0fbe86ee0f394581f6347349e7d7df00",
+  "status": "Actual Chrome renderer/launcher passed and pixels independently inspected; final documentation-head CI pending",
+  "anchors": {
+    "speed_labels": {
+      "x": 458,
+      "upper": "mph",
+      "lower": "km/h",
+      "y": [
+        188,
+        214
+      ]
+    },
+    "boost_labels": {
+      "x": 591,
+      "upper": "VAC",
+      "lower": "BOOST",
+      "y": [
+        162,
+        178
+      ]
+    },
+    "text_anchor": "start",
+    "change_scope": "Only x and text-anchor attributes on four fixed text nodes; other authored HTML content and runtime unchanged"
+  },
+  "local_verification": {
+    "command": "pnpm -C frontend test --maxWorkers=2",
+    "files_passed": 160,
+    "files_skipped": 1,
+    "tests_passed": 1202,
+    "tests_skipped": 1,
+    "style_cases": 97,
+    "build_web_hud": "passed",
+    "syntax_diff_body": "passed"
+  },
+  "remote": {
+    "source_head": "3e00409d0fbe86ee0f394581f6347349e7d7df00",
+    "platform": "GitHub Actions Linux",
+    "browser": "Chrome154.0.8037.57",
+    "browser_version_log_job": 111708651066,
+    "sandbox": true,
+    "telemetry": "Synthetic direct frames plus stored production-parser JSON through actual launcher/Coordinator",
+    "fixture_scope": "Real launcher/Coordinator; fixture HTTP config/style discovery and WebSocket. Stored raw JSON originated from synthetic324-byte packets through production parser/serde_json; browser job does not run backend parser, live UDP or game",
+    "run_id": 37293328206,
+    "artifact_id": 11337143995,
+    "run_url": "https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37293328206",
+    "artifact_url": "https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37293328206/artifacts/11337143995",
+    "result": "passed",
+    "renderer_screenshots": 93,
+    "rpm_scenarios": 28,
+    "maximum_glow_scenarios": 4,
+    "fixed_label_scenarios": 28,
+    "launcher_samples": 38,
+    "renderer_errors": [],
+    "launcher_errors": [],
+    "launcher_missing": []
+  },
+  "pair_checks": [
+    {
+      "scenario": "labels-metric-boost-default-dpr1",
+      "pair": [
+        "speedUnitMph",
+        "speedUnit"
+      ],
+      "dpr": 1,
+      "left_edge_delta_device_pixels": 0.0,
+      "screen_anchor_delta_device_pixels": 0.0,
+      "upper_selected": false,
+      "lower_selected": true
+    },
+    {
+      "scenario": "labels-metric-boost-default-dpr1",
+      "pair": [
+        "vacModeLabel",
+        "boostModeLabel"
+      ],
+      "dpr": 1,
+      "left_edge_delta_device_pixels": 0.0,
+      "screen_anchor_delta_device_pixels": 0.0,
+      "upper_selected": false,
+      "lower_selected": true
+    },
+    {
+      "scenario": "labels-imperial-boost-default-dpr1",
+      "pair": [
+        "speedUnitMph",
+        "speedUnit"
+      ],
+      "dpr": 1,
+      "left_edge_delta_device_pixels": 0.0,
+      "screen_anchor_delta_device_pixels": 0.0,
+      "upper_selected": true,
+      "lower_selected": false
+    },
+    {
+      "scenario": "labels-imperial-boost-default-dpr1",
+      "pair": [
+        "vacModeLabel",
+        "boostModeLabel"
+      ],
+      "dpr": 1,
+      "left_edge_delta_device_pixels": 0.0,
+      "screen_anchor_delta_device_pixels": 0.0,
+      "upper_selected": false,
+      "lower_selected": true
+    },
+    {
+      "scenario": "labels-metric-vac-default-dpr1",
+      "pair": [
+        "speedUnitMph",
+        "speedUnit"
+      ],
+      "dpr": 1,
+      "left_edge_delta_device_pixels": 0.0,
+      "screen_anchor_delta_device_pixels": 0.0,
+      "upper_selected": false,
+      "lower_selected": true
+    },
+    {
+      "scenario": "labels-metric-vac-default-dpr1",
+      "pair": [
+        "vacModeLabel",
+        "boostModeLabel"
+      ],
+      "dpr": 1,
+      "left_edge_delta_device_pixels": 0.0,
+      "screen_anchor_delta_device_pixels": 0.0,
+      "upper_selected": true,
+      "lower_selected": false
+    },
+    {
+      "scenario": "labels-imperial-vac-default-dpr1",
+      "pair": [
+        "speedUnitMph",
+        "speedUnit"
+      ],
+      "dpr": 1,
+      "left_edge_delta_device_pixels": 0.0,
+      "screen_anchor_delta_device_pixels": 0.0,
+      "upper_selected": true,
+      "lower_selected": false
+    },
+    {
+      "scenario": "labels-imperial-vac-default-dpr1",
+      "pair": [
+        "vacModeLabel",
+        "boostModeLabel"
+      ],
+      "dpr": 1,
+      "left_edge_delta_device_pixels": 0.0,
+      "screen_anchor_delta_device_pixels": 0.0,
+      "upper_selected": true,
+      "lower_selected": false
+    },
+    {
+      "scenario": "labels-zero-default-dpr1",
+      "pair": [
+        "speedUnitMph",
+        "speedUnit"
+      ],
+      "dpr": 1,
+      "left_edge_delta_device_pixels": 0.0,
+      "screen_anchor_delta_device_pixels": 0.0,
+      "upper_selected": false,
+      "lower_selected": true
+    },
+    {
+      "scenario": "labels-zero-default-dpr1",
+      "pair": [
+        "vacModeLabel",
+        "boostModeLabel"
+      ],
+      "dpr": 1,
+      "left_edge_delta_device_pixels": 0.0,
+      "screen_anchor_delta_device_pixels": 0.0,
+      "upper_selected": false,
+      "lower_selected": true
+    },
+    {
+      "scenario": "labels-missing-default-dpr1",
+      "pair": [
+        "speedUnitMph",
+        "speedUnit"
+      ],
+      "dpr": 1,
+      "left_edge_delta_device_pixels": 0.0,
+      "screen_anchor_delta_device_pixels": 0.0,
+      "upper_selected": true,
+      "lower_selected": false
+    },
+    {
+      "scenario": "labels-missing-default-dpr1",
+      "pair": [
+        "vacModeLabel",
+        "boostModeLabel"
+      ],
+      "dpr": 1,
+      "left_edge_delta_device_pixels": 0.0,
+      "screen_anchor_delta_device_pixels": 0.0,
+      "upper_selected": false,
+      "lower_selected": false
+    },
+    {
+      "scenario": "labels-stale-default-dpr1",
+      "pair": [
+        "speedUnitMph",
+        "speedUnit"
+      ],
+      "dpr": 1,
+      "left_edge_delta_device_pixels": 0.0,
+      "screen_anchor_delta_device_pixels": 0.0,
+      "upper_selected": true,
+      "lower_selected": false
+    },
+    {
+      "scenario": "labels-stale-default-dpr1",
+      "pair": [
+        "vacModeLabel",
+        "boostModeLabel"
+      ],
+      "dpr": 1,
+      "left_edge_delta_device_pixels": 0.0,
+      "screen_anchor_delta_device_pixels": 0.0,
+      "upper_selected": false,
+      "lower_selected": false
+    },
+    {
+      "scenario": "labels-metric-boost-compact-dpr1",
+      "pair": [
+        "speedUnitMph",
+        "speedUnit"
+      ],
+      "dpr": 1,
+      "left_edge_delta_device_pixels": 0.0,
+      "screen_anchor_delta_device_pixels": 0.0,
+      "upper_selected": false,
+      "lower_selected": true
+    },
+    {
+      "scenario": "labels-metric-boost-compact-dpr1",
+      "pair": [
+        "vacModeLabel",
+        "boostModeLabel"
+      ],
+      "dpr": 1,
+      "left_edge_delta_device_pixels": 0.0,
+      "screen_anchor_delta_device_pixels": 0.0,
+      "upper_selected": false,
+      "lower_selected": true
+    },
+    {
+      "scenario": "labels-imperial-boost-compact-dpr1",
+      "pair": [
+        "speedUnitMph",
+        "speedUnit"
+      ],
+      "dpr": 1,
+      "left_edge_delta_device_pixels": 0.0,
+      "screen_anchor_delta_device_pixels": 0.0,
+      "upper_selected": true,
+      "lower_selected": false
+    },
+    {
+      "scenario": "labels-imperial-boost-compact-dpr1",
+      "pair": [
+        "vacModeLabel",
+        "boostModeLabel"
+      ],
+      "dpr": 1,
+      "left_edge_delta_device_pixels": 0.0,
+      "screen_anchor_delta_device_pixels": 0.0,
+      "upper_selected": false,
+      "lower_selected": true
+    },
+    {
+      "scenario": "labels-metric-vac-compact-dpr1",
+      "pair": [
+        "speedUnitMph",
+        "speedUnit"
+      ],
+      "dpr": 1,
+      "left_edge_delta_device_pixels": 0.0,
+      "screen_anchor_delta_device_pixels": 0.0,
+      "upper_selected": false,
+      "lower_selected": true
+    },
+    {
+      "scenario": "labels-metric-vac-compact-dpr1",
+      "pair": [
+        "vacModeLabel",
+        "boostModeLabel"
+      ],
+      "dpr": 1,
+      "left_edge_delta_device_pixels": 0.0,
+      "screen_anchor_delta_device_pixels": 0.0,
+      "upper_selected": true,
+      "lower_selected": false
+    },
+    {
+      "scenario": "labels-imperial-vac-compact-dpr1",
+      "pair": [
+        "speedUnitMph",
+        "speedUnit"
+      ],
+      "dpr": 1,
+      "left_edge_delta_device_pixels": 0.0,
+      "screen_anchor_delta_device_pixels": 0.0,
+      "upper_selected": true,
+      "lower_selected": false
+    },
+    {
+      "scenario": "labels-imperial-vac-compact-dpr1",
+      "pair": [
+        "vacModeLabel",
+        "boostModeLabel"
+      ],
+      "dpr": 1,
+      "left_edge_delta_device_pixels": 0.0,
+      "screen_anchor_delta_device_pixels": 0.0,
+      "upper_selected": true,
+      "lower_selected": false
+    },
+    {
+      "scenario": "labels-zero-compact-dpr1",
+      "pair": [
+        "speedUnitMph",
+        "speedUnit"
+      ],
+      "dpr": 1,
+      "left_edge_delta_device_pixels": 0.0,
+      "screen_anchor_delta_device_pixels": 0.0,
+      "upper_selected": false,
+      "lower_selected": true
+    },
+    {
+      "scenario": "labels-zero-compact-dpr1",
+      "pair": [
+        "vacModeLabel",
+        "boostModeLabel"
+      ],
+      "dpr": 1,
+      "left_edge_delta_device_pixels": 0.0,
+      "screen_anchor_delta_device_pixels": 0.0,
+      "upper_selected": false,
+      "lower_selected": true
+    },
+    {
+      "scenario": "labels-missing-compact-dpr1",
+      "pair": [
+        "speedUnitMph",
+        "speedUnit"
+      ],
+      "dpr": 1,
+      "left_edge_delta_device_pixels": 0.0,
+      "screen_anchor_delta_device_pixels": 0.0,
+      "upper_selected": true,
+      "lower_selected": false
+    },
+    {
+      "scenario": "labels-missing-compact-dpr1",
+      "pair": [
+        "vacModeLabel",
+        "boostModeLabel"
+      ],
+      "dpr": 1,
+      "left_edge_delta_device_pixels": 0.0,
+      "screen_anchor_delta_device_pixels": 0.0,
+      "upper_selected": false,
+      "lower_selected": false
+    },
+    {
+      "scenario": "labels-stale-compact-dpr1",
+      "pair": [
+        "speedUnitMph",
+        "speedUnit"
+      ],
+      "dpr": 1,
+      "left_edge_delta_device_pixels": 0.0,
+      "screen_anchor_delta_device_pixels": 0.0,
+      "upper_selected": true,
+      "lower_selected": false
+    },
+    {
+      "scenario": "labels-stale-compact-dpr1",
+      "pair": [
+        "vacModeLabel",
+        "boostModeLabel"
+      ],
+      "dpr": 1,
+      "left_edge_delta_device_pixels": 0.0,
+      "screen_anchor_delta_device_pixels": 0.0,
+      "upper_selected": false,
+      "lower_selected": false
+    },
+    {
+      "scenario": "labels-metric-boost-default-dpr2",
+      "pair": [
+        "speedUnitMph",
+        "speedUnit"
+      ],
+      "dpr": 2,
+      "left_edge_delta_device_pixels": 0.0,
+      "screen_anchor_delta_device_pixels": 0.0,
+      "upper_selected": false,
+      "lower_selected": true
+    },
+    {
+      "scenario": "labels-metric-boost-default-dpr2",
+      "pair": [
+        "vacModeLabel",
+        "boostModeLabel"
+      ],
+      "dpr": 2,
+      "left_edge_delta_device_pixels": 0.0,
+      "screen_anchor_delta_device_pixels": 0.0,
+      "upper_selected": false,
+      "lower_selected": true
+    },
+    {
+      "scenario": "labels-imperial-boost-default-dpr2",
+      "pair": [
+        "speedUnitMph",
+        "speedUnit"
+      ],
+      "dpr": 2,
+      "left_edge_delta_device_pixels": 0.0,
+      "screen_anchor_delta_device_pixels": 0.0,
+      "upper_selected": true,
+      "lower_selected": false
+    },
+    {
+      "scenario": "labels-imperial-boost-default-dpr2",
+      "pair": [
+        "vacModeLabel",
+        "boostModeLabel"
+      ],
+      "dpr": 2,
+      "left_edge_delta_device_pixels": 0.0,
+      "screen_anchor_delta_device_pixels": 0.0,
+      "upper_selected": false,
+      "lower_selected": true
+    },
+    {
+      "scenario": "labels-metric-vac-default-dpr2",
+      "pair": [
+        "speedUnitMph",
+        "speedUnit"
+      ],
+      "dpr": 2,
+      "left_edge_delta_device_pixels": 0.0,
+      "screen_anchor_delta_device_pixels": 0.0,
+      "upper_selected": false,
+      "lower_selected": true
+    },
+    {
+      "scenario": "labels-metric-vac-default-dpr2",
+      "pair": [
+        "vacModeLabel",
+        "boostModeLabel"
+      ],
+      "dpr": 2,
+      "left_edge_delta_device_pixels": 0.0,
+      "screen_anchor_delta_device_pixels": 0.0,
+      "upper_selected": true,
+      "lower_selected": false
+    },
+    {
+      "scenario": "labels-imperial-vac-default-dpr2",
+      "pair": [
+        "speedUnitMph",
+        "speedUnit"
+      ],
+      "dpr": 2,
+      "left_edge_delta_device_pixels": 0.0,
+      "screen_anchor_delta_device_pixels": 0.0,
+      "upper_selected": true,
+      "lower_selected": false
+    },
+    {
+      "scenario": "labels-imperial-vac-default-dpr2",
+      "pair": [
+        "vacModeLabel",
+        "boostModeLabel"
+      ],
+      "dpr": 2,
+      "left_edge_delta_device_pixels": 0.0,
+      "screen_anchor_delta_device_pixels": 0.0,
+      "upper_selected": true,
+      "lower_selected": false
+    },
+    {
+      "scenario": "labels-zero-default-dpr2",
+      "pair": [
+        "speedUnitMph",
+        "speedUnit"
+      ],
+      "dpr": 2,
+      "left_edge_delta_device_pixels": 0.0,
+      "screen_anchor_delta_device_pixels": 0.0,
+      "upper_selected": false,
+      "lower_selected": true
+    },
+    {
+      "scenario": "labels-zero-default-dpr2",
+      "pair": [
+        "vacModeLabel",
+        "boostModeLabel"
+      ],
+      "dpr": 2,
+      "left_edge_delta_device_pixels": 0.0,
+      "screen_anchor_delta_device_pixels": 0.0,
+      "upper_selected": false,
+      "lower_selected": true
+    },
+    {
+      "scenario": "labels-missing-default-dpr2",
+      "pair": [
+        "speedUnitMph",
+        "speedUnit"
+      ],
+      "dpr": 2,
+      "left_edge_delta_device_pixels": 0.0,
+      "screen_anchor_delta_device_pixels": 0.0,
+      "upper_selected": true,
+      "lower_selected": false
+    },
+    {
+      "scenario": "labels-missing-default-dpr2",
+      "pair": [
+        "vacModeLabel",
+        "boostModeLabel"
+      ],
+      "dpr": 2,
+      "left_edge_delta_device_pixels": 0.0,
+      "screen_anchor_delta_device_pixels": 0.0,
+      "upper_selected": false,
+      "lower_selected": false
+    },
+    {
+      "scenario": "labels-stale-default-dpr2",
+      "pair": [
+        "speedUnitMph",
+        "speedUnit"
+      ],
+      "dpr": 2,
+      "left_edge_delta_device_pixels": 0.0,
+      "screen_anchor_delta_device_pixels": 0.0,
+      "upper_selected": true,
+      "lower_selected": false
+    },
+    {
+      "scenario": "labels-stale-default-dpr2",
+      "pair": [
+        "vacModeLabel",
+        "boostModeLabel"
+      ],
+      "dpr": 2,
+      "left_edge_delta_device_pixels": 0.0,
+      "screen_anchor_delta_device_pixels": 0.0,
+      "upper_selected": false,
+      "lower_selected": false
+    },
+    {
+      "scenario": "labels-metric-boost-compact-dpr2",
+      "pair": [
+        "speedUnitMph",
+        "speedUnit"
+      ],
+      "dpr": 2,
+      "left_edge_delta_device_pixels": 0.0,
+      "screen_anchor_delta_device_pixels": 0.0,
+      "upper_selected": false,
+      "lower_selected": true
+    },
+    {
+      "scenario": "labels-metric-boost-compact-dpr2",
+      "pair": [
+        "vacModeLabel",
+        "boostModeLabel"
+      ],
+      "dpr": 2,
+      "left_edge_delta_device_pixels": 0.0,
+      "screen_anchor_delta_device_pixels": 0.0,
+      "upper_selected": false,
+      "lower_selected": true
+    },
+    {
+      "scenario": "labels-imperial-boost-compact-dpr2",
+      "pair": [
+        "speedUnitMph",
+        "speedUnit"
+      ],
+      "dpr": 2,
+      "left_edge_delta_device_pixels": 0.0,
+      "screen_anchor_delta_device_pixels": 0.0,
+      "upper_selected": true,
+      "lower_selected": false
+    },
+    {
+      "scenario": "labels-imperial-boost-compact-dpr2",
+      "pair": [
+        "vacModeLabel",
+        "boostModeLabel"
+      ],
+      "dpr": 2,
+      "left_edge_delta_device_pixels": 0.0,
+      "screen_anchor_delta_device_pixels": 0.0,
+      "upper_selected": false,
+      "lower_selected": true
+    },
+    {
+      "scenario": "labels-metric-vac-compact-dpr2",
+      "pair": [
+        "speedUnitMph",
+        "speedUnit"
+      ],
+      "dpr": 2,
+      "left_edge_delta_device_pixels": 0.0,
+      "screen_anchor_delta_device_pixels": 0.0,
+      "upper_selected": false,
+      "lower_selected": true
+    },
+    {
+      "scenario": "labels-metric-vac-compact-dpr2",
+      "pair": [
+        "vacModeLabel",
+        "boostModeLabel"
+      ],
+      "dpr": 2,
+      "left_edge_delta_device_pixels": 0.0,
+      "screen_anchor_delta_device_pixels": 0.0,
+      "upper_selected": true,
+      "lower_selected": false
+    },
+    {
+      "scenario": "labels-imperial-vac-compact-dpr2",
+      "pair": [
+        "speedUnitMph",
+        "speedUnit"
+      ],
+      "dpr": 2,
+      "left_edge_delta_device_pixels": 0.0,
+      "screen_anchor_delta_device_pixels": 0.0,
+      "upper_selected": true,
+      "lower_selected": false
+    },
+    {
+      "scenario": "labels-imperial-vac-compact-dpr2",
+      "pair": [
+        "vacModeLabel",
+        "boostModeLabel"
+      ],
+      "dpr": 2,
+      "left_edge_delta_device_pixels": 0.0,
+      "screen_anchor_delta_device_pixels": 0.0,
+      "upper_selected": true,
+      "lower_selected": false
+    },
+    {
+      "scenario": "labels-zero-compact-dpr2",
+      "pair": [
+        "speedUnitMph",
+        "speedUnit"
+      ],
+      "dpr": 2,
+      "left_edge_delta_device_pixels": 0.0,
+      "screen_anchor_delta_device_pixels": 0.0,
+      "upper_selected": false,
+      "lower_selected": true
+    },
+    {
+      "scenario": "labels-zero-compact-dpr2",
+      "pair": [
+        "vacModeLabel",
+        "boostModeLabel"
+      ],
+      "dpr": 2,
+      "left_edge_delta_device_pixels": 0.0,
+      "screen_anchor_delta_device_pixels": 0.0,
+      "upper_selected": false,
+      "lower_selected": true
+    },
+    {
+      "scenario": "labels-missing-compact-dpr2",
+      "pair": [
+        "speedUnitMph",
+        "speedUnit"
+      ],
+      "dpr": 2,
+      "left_edge_delta_device_pixels": 0.0,
+      "screen_anchor_delta_device_pixels": 0.0,
+      "upper_selected": true,
+      "lower_selected": false
+    },
+    {
+      "scenario": "labels-missing-compact-dpr2",
+      "pair": [
+        "vacModeLabel",
+        "boostModeLabel"
+      ],
+      "dpr": 2,
+      "left_edge_delta_device_pixels": 0.0,
+      "screen_anchor_delta_device_pixels": 0.0,
+      "upper_selected": false,
+      "lower_selected": false
+    },
+    {
+      "scenario": "labels-stale-compact-dpr2",
+      "pair": [
+        "speedUnitMph",
+        "speedUnit"
+      ],
+      "dpr": 2,
+      "left_edge_delta_device_pixels": 0.0,
+      "screen_anchor_delta_device_pixels": 0.0,
+      "upper_selected": true,
+      "lower_selected": false
+    },
+    {
+      "scenario": "labels-stale-compact-dpr2",
+      "pair": [
+        "vacModeLabel",
+        "boostModeLabel"
+      ],
+      "dpr": 2,
+      "left_edge_delta_device_pixels": 0.0,
+      "screen_anchor_delta_device_pixels": 0.0,
+      "upper_selected": false,
+      "lower_selected": false
+    }
+  ],
+  "maximum_absolute_pair_left_edge_delta_device_pixels": 0,
+  "maximum_absolute_pair_screen_anchor_delta_device_pixels": 0,
+  "visual_review": {
+    "inspected": [
+      "default and70%compact metric/BOOST atDPR1/DPR2",
+      "metric/imperial xBOOST/VAC comparison and current hero/compact",
+      "negative/zero/missing/stale default/compact DPR2 and nine-state DPR1 sheet",
+      "historical4f/current3e before-after and unmatched RPM crop"
+    ],
+    "findings": [
+      "Both stacked pairs now visibly share left edges in default/70%compact DPR1/DPR2, with all28 scenario assertions reporting exact zero left-edge and screen-anchor deltas",
+      "mph remains above km/h and VAC above BOOST; fixed nodes, text, opacity selection and shared monochrome paint are retained",
+      "Positive/negative/zero/missing/stale default/compact pixels inspected; genuine zero selects BOOST with empty rail, while missing/stale mode captions are both dim and numeric stays dashed",
+      "Labels stay inside their existing zones without visible collisions with RPM, digits or boost bar",
+      "Scoped outside-label comparison retains69 unmatched pixels in default DPR1 upper-left RPM area; remaining three matching captures have zero outside-label differences; cause unproven"
+    ],
+    "runtime_changes_needed": false
+  },
+  "pixel_preservation": {
+    "evidence": "left-alignment-preservation.json",
+    "compared_pixels": 890089,
+    "differing_pixels": 69,
+    "scope": "Four matched default/70% compact x DPR1/DPR2 metric frames. Not all-scene or native-game identity.",
+    "note": "69 exact mismatches remain in the default DPR1 upper-left RPM region, bbox[741,486,883,554). The other three captures match outside label masks. Source geometry/assets are unchanged; the cause of these raster differences is not established. No masks were enlarged."
+  },
+  "previews": {
+    "hero": "detail-metric.png",
+    "compact": "detail-compact.png",
+    "current_caption_comparison": "ap1-boost-scale-comparison.png",
+    "before_after": "rpm-before-after.png",
+    "before_after_heads": {
+      "historical": "4f5470e9d83cc33530be4e85f1a40abc6d76a2db",
+      "current": "3e00409d0fbe86ee0f394581f6347349e7d7df00"
+    },
+    "before_after_scope": "Existing filename/Library identity now shows left-alignment before/after; both sides already use the lifted120-cell RPM geometry",
+    "states": "states.png",
+    "full_viewport": "metric-1280x720.png",
+    "derivation": "Actual screenshots without resampling; alpha-bound crops or montage with captions/review background;8-bit PNG",
+    "prior_arc_comparison": "before-after.png remains the historical fuel-version arc comparison"
+  },
+  "source_head_ci": {
+    "head": "3e00409d0fbe86ee0f394581f6347349e7d7df00",
+    "workflows": [
+      {
+        "name": "HUD AP1 Rev Arc Visual Review",
+        "id": 37293328206,
+        "result": "success"
+      },
+      {
+        "name": "CI Pipeline",
+        "id": 37293328132,
+        "result": "in_progress"
+      },
+      {
+        "name": "Release Packaging Test",
+        "id": 37293328721,
+        "result": "success"
+      }
+    ],
+    "observed_at_utc": "2026-10-05T10:01:22Z",
+    "final_documentation_head": "pending publication; must be checked separately"
+  },
+  "limitations": [
+    "Current source visual job passed; final documentation-head CI pending publication",
+    "No native Windows, live UDP/game, display-panel or moving-footage acceptance",
+    "Ready for Review retained; not a reviewer approval or merge",
+    "Outside-label images are not universally pixel-identical:69 default DPR1 mismatches explicitly retained"
+  ],
+  "historical_rpm_reference": "rpm-reference-revision-evidence.json retains the OEM sources and verified04b upward-normal construction",
+  "provenance": "Original graphics and code under repository MIT; no OEM photo/logo/font shipped",
+  "skills": [
+    "halfmoon-design-system",
+    "telemetry-udp-protocol",
+    "pr-author-maintainer"
+  ]
+}

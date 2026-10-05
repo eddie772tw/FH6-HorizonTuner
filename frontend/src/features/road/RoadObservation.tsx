@@ -32,7 +32,7 @@ export function RoadObservation({ summary, busy, draft, onDraftChange, saveFinis
       <p className="small">{t('Temperatures describe this run. Near-compression is not proof of bottoming. No pressure or tire compound was inferred.')}</p>
       <p className="small">{t('Telemetry gaps')}: {summary.observations.quality.gapSeconds.toFixed(1)} s · {t('End reason')}: {t(summary.recording.endReason)}</p>
       <ul>{summary.observations.laps.map(lap => <li key={lap.lapNumber}>{t('Lap')} {lap.lapNumber}: {fmt(lap.lapTimeSeconds, 3)} s · {t(lap.complete ? 'Complete observed lap' : 'Partial or unconfirmed lap')}</li>)}</ul>
-      {summary.observations.channels && <div className="table-responsive"><table className="table table-sm"><thead><tr><th>{t('Telemetry channel')}</th><th>{t('Mean')}</th><th>P05 / P50 / P95</th><th>{t('Observed driving')} s</th></tr></thead>
+      {summary.observations.channels && <div className="table-responsive"><table className="table table-sm"><thead><tr><th>{t('Telemetry channel')}</th><th>{t('Mean')}</th><th>{t('P05 / P50 / P95')}</th><th>{t('Observed driving')} s</th></tr></thead>
         <tbody>{Object.entries(summary.observations.channels).map(([key, values]) => <tr key={key}><th>{t(key)}</th><td>{fmt(values.mean, 3)}</td>
           <td>{fmt(values.p05, 3)} / {fmt(values.p50, 3)} / {fmt(values.p95, 3)}</td><td>{fmt(values.observedSeconds)}</td></tr>)}</tbody></table>
         <p className="small">{t('Raw units: speed m/s, power W, torque Nm, acceleration m/s², angular velocity rad/s, controls in game input units. Gaps do not count toward observed duration.')}</p>

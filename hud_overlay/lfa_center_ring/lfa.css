@@ -1,0 +1,25 @@
+:root {
+    --hud-default-color: #edf7fa;
+    --lfa-primary: #edf7fa;
+    --lfa-secondary: #a8b4b8;
+    --lfa-dim: #617076;
+    --lfa-red: #ff514b;
+    --lfa-amber: #ffce7c;
+    --lfa-surface: #151b1e;
+    --lfa-line: #4b555b;
+    --lfa-track: #30383d;
+    --lfa-accent: var(--hud-custom-color, var(--lfa-primary));
+}
+.lfa-cluster { width: 560px; height: 370px; pointer-events: none; font-family: Arial, sans-serif; font-variant-numeric: tabular-nums; color: var(--lfa-primary); zoom: .75; transition: none; }
+.lfa-housing, .lfa-cluster canvas { position: absolute; inset: 0; width: 560px; height: 370px; pointer-events: none; transition: none !important; }
+.lfa-readouts { position: absolute; inset: 0; text-align: center; }
+.lfa-speed { position: absolute; top: 101px; left: 205px; width: 150px; font-size: 62px; line-height: 65px; letter-spacing: -3px; font-weight: 500; }
+.lfa-speed-unit { position: absolute; top: 164px; left: 240px; width: 80px; font-size: 14px; color: var(--lfa-secondary); }
+.lfa-divider { position: absolute; top: 184px; left: 219px; width: 122px; height: 1px; background: var(--lfa-line); }
+.lfa-gear { position: absolute; top: 188px; left: 240px; width: 80px; font-size: 47px; line-height: 48px; font-weight: 600; }
+.lfa-gear-label { position: absolute; top: 238px; left: 240px; width: 80px; font-size: 10px; letter-spacing: 2px; color: var(--lfa-secondary); }
+.lfa-status { position: absolute; top: 253px; left: 232px; width: 96px; font-size: 12px; line-height: 20px; letter-spacing: 1px; color: var(--lfa-primary); background: var(--lfa-surface); border: 1px solid var(--lfa-line); }
+.lfa-scale-unit { position: absolute; top: 305px; left: 300px; width: 65px; font-size: 9px; text-align: center; color: var(--lfa-secondary); }
+.lfa-cluster[data-state="warning"] .lfa-status { color: var(--lfa-red); border-color: var(--lfa-red); }
+.lfa-cluster[data-state="offline"] .lfa-status { color: var(--lfa-amber); }
+.lfa-self-check { position: absolute; left: 217px; top: 76px; width: 126px; text-align: center; color: var(--lfa-amber); font-size: 10px; letter-spacing: 1px; }

@@ -226,6 +226,73 @@ fn tuning_and_hud_json_round_trip_and_relay() {
     let disk = storage::read_json(&directory.path().join("hud_config.json")).unwrap();
     assert!(disk.get("effectiveUnits").is_none());
 }
+
+#[test]
+fn lfa_expansion_settings_round_trip_restart_reset_and_relay() {
+    let directory = tempfile::tempdir().unwrap();
+    let service = ConfigService::new(directory.path()).unwrap();
+    let mut receiver = service.overlay.subscribe();
+    for manual in [false, true] {
+        for automatic in [false, true] {
+            let config = json!({"hudStyle":"lfa_center_ring", "lfaManualExpand":manual,
+                "lfaAutoExpand":automatic, "futureField":{"keep":3}});
+            service
+                .handle("POST", "/api/overlay/config", &config)
+                .unwrap()
+                .unwrap();
+            let disk = storage::read_json(&directory.path().join("hud_config.json")).unwrap();
+            assert_eq!(disk, config);
+            let notification = receiver.try_recv().unwrap();
+            assert_eq!(notification["type"], "hud:config");
+            assert_eq!(notification["data"]["lfaManualExpand"], manual);
+            assert_eq!(notification["data"]["lfaAutoExpand"], automatic);
+            let restarted = ConfigService::new(directory.path()).unwrap();
+            let read = restarted
+                .handle("GET", "/api/overlay/config", &Value::Null)
+                .unwrap()
+                .unwrap();
+            assert_eq!(read["lfaManualExpand"], manual);
+            assert_eq!(read["lfaAutoExpand"], automatic);
+            assert_eq!(read["futureField"], config["futureField"]);
+        }
+    }
+    service
+        .handle("POST", "/api/overlay/reset", &Value::Null)
+        .unwrap()
+        .unwrap();
+    let reset = ConfigService::new(directory.path()).unwrap().hud();
+    assert_eq!(reset["lfaManualExpand"], false);
+    assert_eq!(reset["lfaAutoExpand"], false);
+    let notification = receiver.try_recv().unwrap();
+    assert_eq!(notification["data"]["lfaManualExpand"], false);
+    assert_eq!(notification["data"]["lfaAutoExpand"], false);
+}
+
+#[test]
+fn lfa_switches_require_booleans_and_leave_other_styles_untouched() {
+    let missing = config::normalize_hud(&json!({"hudStyle":"lfa_center_ring"}));
+    assert_eq!(missing["lfaManualExpand"], false);
+    assert_eq!(missing["lfaAutoExpand"], false);
+    for invalid in [
+        Value::Null,
+        json!(0),
+        json!(1),
+        json!("true"),
+        json!("false"),
+        json!([]),
+        json!({}),
+    ] {
+        let normalized = config::normalize_hud(&json!({"hudStyle":"lfa_center_ring",
+            "lfaManualExpand":invalid, "lfaAutoExpand":invalid}));
+        assert_eq!(normalized["lfaManualExpand"], false);
+        assert_eq!(normalized["lfaAutoExpand"], false);
+    }
+    for style in ["simple", "vfd", "classic_jdm", "custom_style"] {
+        let other = json!({"hudStyle":style, "lfaManualExpand":"leave alone",
+            "lfaAutoExpand":true, "futureField":3});
+        assert_eq!(config::normalize_hud(&other), other);
+    }
+}
 #[test]
 fn externally_supplied_paths_remain_inside_the_data_root() {
     let directory = tempfile::tempdir().unwrap();

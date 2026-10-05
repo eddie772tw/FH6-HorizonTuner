@@ -1,0 +1,65 @@
+{
+  "renderer_source_commit": "60dfae6a8dbb55b1b809b0bda1ef229c4f71d80d",
+  "workflow_run": "https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37291320148",
+  "artifact_id": 11337220472,
+  "artifact_sha256": "1e77a415d039d40eb73cb22ce6fdfca6c716af3c058226b4200be187124d8bf4",
+  "runtime": "Actual HUD and GUI in sandboxed Google Chrome, synthetic telemetry; not Windows native or FH6 game acceptance",
+  "settings_capture": "Each of31 controls/text targets checked at original viewport, including390x844; complete-card PNGs use a recorded taller same-width viewport without modifying product CSS; see settings audit",
+  "files": [
+    {
+      "path": "docs/assets/stack-st8100/preview.png",
+      "source": "detail-black-dpr2.png",
+      "transform": "Unchanged actual-render PNG",
+      "sha256": "f96dd6cbe204446fd73c1fc492ac9c6897d7552e4ea8e7756863ef7bda8ef0be"
+    },
+    {
+      "path": "docs/assets/stack-st8100/white-face.png",
+      "source": "detail-white-dpr2.png",
+      "transform": "Unchanged actual-render PNG",
+      "sha256": "6a533a64a40cbad06931aca1c6ce58a7bcb1e4a3db6d1593f8cd82fa9458ae92"
+    },
+    {
+      "path": "docs/assets/stack-st8100/tire-warning.png",
+      "source": "alarm-slot-1.png",
+      "transform": "Trim transparent viewport margins only",
+      "sha256": "a09dba29e739a9a75d2cb75269d04ccde185fdb8cad6b5dabbd388344135271c"
+    },
+    {
+      "path": "docs/assets/stack-st8100/boost-warning.png",
+      "source": "alarm-slot-2-after-lap.png",
+      "transform": "Trim transparent viewport margins only",
+      "sha256": "51e3c5583c4d90f1c0d5770d6e3976d8e62401a38ff9343c069c59913b7ed8e5"
+    },
+    {
+      "path": "docs/assets/stack-st8100/timing-page.png",
+      "source": "timing-page.png",
+      "transform": "Trim transparent viewport margins only",
+      "sha256": "ba0a11864c252ad9805482c63924804919b7e469ed6c9bdc7832674caf020acf"
+    },
+    {
+      "path": "docs/assets/stack-st8100/last-lap.png",
+      "source": "lap-replaces-next-warning.png",
+      "transform": "Trim transparent viewport margins only",
+      "sha256": "20afab9bcf70b8758f93f4e04c425b666c2a897e1bc2f55367dee86ae454fde5"
+    },
+    {
+      "path": "docs/assets/stack-st8100/settings/settings-dark-default.png",
+      "source": "settings/settings-dark-default.png",
+      "transform": "Unchanged actual-render PNG",
+      "sha256": "cade889e2c3fd17e72ce06c9330a408589d7663e8fedfddd11e41cdd0f50f487"
+    },
+    {
+      "path": "docs/assets/stack-st8100/settings/settings-narrow-zh-tw.png",
+      "source": "settings/settings-narrow-zh-tw.png",
+      "transform": "Unchanged actual-render PNG",
+      "sha256": "df415d15513a8f6765ecca69bb52e48d957b6143085f0cb2671bc4ad0a2a18e7"
+    },
+    {
+      "path": "docs/assets/stack-st8100/settings/settings-narrow-ja-jp.png",
+      "source": "settings/settings-narrow-ja-jp.png",
+      "transform": "Unchanged actual-render PNG",
+      "sha256": "dc1dcb90cd87e3c69329c93c56333703a55032c094df6d35ea9167af0378d51d"
+    }
+  ],
+  "settings_audit": "Condensed-browser-evidence/v1 includes original audit SHA256, all target results and saved count; repetitive geometry/save payloads omitted, not new measurements"
+}

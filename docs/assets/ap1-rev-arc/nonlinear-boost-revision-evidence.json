@@ -1,0 +1,259 @@
+{
+  "style": "ap1_rev_arc",
+  "revision": "shared monochrome absolute-magnitude boost",
+  "base_head": "fb77c3ef2214c15d9db31bb8715a88224681210d",
+  "status": "remote renderer and actual launcher checks passed; screenshots independently reviewed; final documentation-head CI and user review pending",
+  "vacuum": {
+    "mapping": "exactly the same shared abs(bar) mapping and ticks",
+    "label": "VAC",
+    "signed_numeric": true,
+    "paint": "identical RGBA, opacity, glow/filter and text/tick color to positive boost; no VAC-specific color state"
+  },
+  "states": {
+    "zero": "neutral, empty rail",
+    "missing": "-- with unit, empty rail",
+    "overflow": "fill bounded, numeric value unbounded",
+    "tiny_negative": "minus retained when rounded to zero; actual negative zero neutral"
+  },
+  "tests": {
+    "style_cases": 85,
+    "frontend_passed": 1190,
+    "frontend_skipped": 1,
+    "files_passed": 160,
+    "files_skipped": 1
+  },
+  "preserved": [
+    "RPM arc and bezel geometry",
+    "speed and gear",
+    "footer removals",
+    "raw PSI source and missing-data contract"
+  ],
+  "limitations": "Prior dark-amber VAC design is superseded. Final documentation-head CI remains pending. No native Windows, actual network/game acceptance, or user approval claimed.",
+  "design_context": "Monochrome LCD / TN was supplied as user design context, not independently hardware-verified here",
+  "shared_mapping": {
+    "input": "abs(bar)",
+    "segments": [
+      {
+        "bar": [
+          0,
+          1
+        ],
+        "rail": [
+          0,
+          0.75
+        ]
+      },
+      {
+        "bar": [
+          1,
+          2
+        ],
+        "rail": [
+          0.75,
+          1
+        ]
+      }
+    ],
+    "ticks": [
+      0,
+      0.5,
+      1,
+      2
+    ],
+    "tick_positions": [
+      0,
+      0.375,
+      0.75,
+      1
+    ],
+    "both_signs": true
+  },
+  "rendered_source_head": "2d88a29993f6d0bc6b2b2c881ac7a55865cc2c70",
+  "remote": {
+    "platform": "GitHub Actions Linux",
+    "browser": "Chrome 154",
+    "chromium_sandbox": true,
+    "telemetry": "synthetic direct-render and production-parser JSON fixtures through actual launcher/Coordinator",
+    "run_id": 37268451649,
+    "artifact_id": 11327007457,
+    "run_url": "https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37268451649",
+    "artifact_url": "https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37268451649/artifacts/11327007457",
+    "result": "passed",
+    "renderer_errors": [],
+    "launcher_errors": [],
+    "launcher_missing": []
+  },
+  "visual_review": {
+    "result": "passed scoped technical review",
+    "inspected": [
+      "detail-metric.png",
+      "detail-compact.png",
+      "boost-positive-half.png",
+      "boost-positive-one.png",
+      "boost-negative.png",
+      "boost-zero.png",
+      "boost-negative-one.png",
+      "boost-negative-two.png",
+      "boost-vac-psi.png",
+      "boost-vac-kpa.png",
+      "boost-tiny-negative.png",
+      "boost-missing.png",
+      "boost-negative-overflow.png",
+      "ap1-boost-scale-comparison.png"
+    ],
+    "findings": [
+      "Positive and negative rails share the same amber appearance and magnitude graduations",
+      "VAC caption and actual minus sign clearly distinguish negative values",
+      "No visible tick/readout overlaps in inspected default and compact renders",
+      "Zero and missing have no active rail; tiny negative retains its minus sign",
+      "Negative overflow keeps -3.00 bar while the rail remains bounded"
+    ],
+    "user_approval": "not received or implied"
+  },
+  "computed_paint": {
+    "source": "visual-evidence.json boostScenario checks",
+    "identical_across_signs": true,
+    "compared_parts": [
+      "bar",
+      "caption",
+      "value",
+      "tick",
+      "marker"
+    ],
+    "compared_properties": [
+      "fill",
+      "stroke",
+      "color",
+      "opacity",
+      "fillOpacity",
+      "filter",
+      "textShadow"
+    ],
+    "positive_sample": {
+      "bar": {
+        "fill": "rgb(255, 177, 68)",
+        "stroke": "none",
+        "color": "rgb(255, 177, 68)",
+        "opacity": "1",
+        "fillOpacity": "1",
+        "filter": "drop-shadow(rgb(255, 177, 68) 0px 0px 1.6px)",
+        "textShadow": "none"
+      },
+      "caption": {
+        "fill": "rgb(255, 177, 68)",
+        "stroke": "none",
+        "color": "rgb(255, 177, 68)",
+        "opacity": "1",
+        "fillOpacity": "1",
+        "filter": "none",
+        "textShadow": "none"
+      },
+      "value": {
+        "fill": "rgb(255, 177, 68)",
+        "stroke": "none",
+        "color": "rgb(255, 177, 68)",
+        "opacity": "1",
+        "fillOpacity": "1",
+        "filter": "none",
+        "textShadow": "none"
+      },
+      "tick": {
+        "fill": "rgb(255, 177, 68)",
+        "stroke": "none",
+        "color": "rgb(255, 177, 68)",
+        "opacity": "1",
+        "fillOpacity": "1",
+        "filter": "none",
+        "textShadow": "none"
+      },
+      "marker": {
+        "fill": "none",
+        "stroke": "rgb(255, 177, 68)",
+        "color": "rgb(255, 177, 68)",
+        "opacity": "0.7",
+        "fillOpacity": "1",
+        "filter": "none",
+        "textShadow": "none"
+      }
+    },
+    "symmetric_samples": [
+      {
+        "positive": "boost-positive-half",
+        "negative": "boost-negative",
+        "ratio": 0.375,
+        "paint_equal": true,
+        "tick_labels": [
+          "0",
+          "0.5",
+          "1",
+          "2"
+        ]
+      },
+      {
+        "positive": "boost-positive-one",
+        "negative": "boost-negative-one",
+        "ratio": 0.75,
+        "paint_equal": true,
+        "tick_labels": [
+          "0",
+          "0.5",
+          "1",
+          "2"
+        ]
+      },
+      {
+        "positive": "boost-positive-two",
+        "negative": "boost-negative-two",
+        "ratio": 1.0,
+        "paint_equal": true,
+        "tick_labels": [
+          "0",
+          "0.5",
+          "1",
+          "2"
+        ]
+      }
+    ]
+  },
+  "visual_evidence": {
+    "parent_comparison": [
+      "boost-positive-half.png",
+      "boost-positive-one.png",
+      "boost-negative.png",
+      "boost-zero.png"
+    ],
+    "other_fixtures": [
+      "boost-positive-quarter.png",
+      "boost-positive-two.png",
+      "boost-vac-psi.png",
+      "boost-vac-kpa.png",
+      "boost-tiny-negative.png",
+      "boost-negative-one.png",
+      "boost-negative-two.png",
+      "boost-negative-overflow.png"
+    ],
+    "automatic": "Passed exact computed-paint equality across signs, matching ±0.5/±1/±2 fractions, shared unit ticks, and actual launcher/Coordinator checks"
+  },
+  "previews": {
+    "hero": "detail-metric.png",
+    "comparison": "ap1-boost-scale-comparison.png",
+    "states": "states.png",
+    "compact": "detail-compact.png",
+    "viewport": "metric-1280x720.png",
+    "source": "same run actual screenshots; detail crops and contact-sheet arrangement only",
+    "historical_arc_comparison": "before-after.png remains the earlier fuel-version arc comparison, not current BOOST"
+  },
+  "pixel_preservation": {
+    "evidence": "monochrome-boost-preservation.json",
+    "reference_head": "a995df88fc8c4d4b4e6989c61a03e8c8a249cb6b",
+    "revision_head": "2d88a29993f6d0bc6b2b2c881ac7a55865cc2c70",
+    "protected_region": "All pixels outside the requested right auxiliary region, including footer",
+    "compared_pixels": 454320,
+    "differing_pixels": 0,
+    "positive_negative_half_bar": {
+      "compared_pixels": 1309,
+      "differing_pixels": 0
+    },
+    "method": "exact RGBA comparison of actual source screenshots"
+  }
+}

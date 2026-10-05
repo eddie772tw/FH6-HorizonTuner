@@ -1,0 +1,77 @@
+name: HUD LFA Center Ring Visual Review
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'hud_overlay/lfa_center_ring/**'
+      - 'hud_overlay/shared/**'
+      - 'frontend/src/features/overlay_control/**'
+      - 'lang/**'
+      - 'backend-rust/src/config.rs'
+      - 'backend-rust/resources/defaults.json'
+      - 'backend-rust/tests/config_contract.rs'
+      - '.github/workflows/hud-lfa-center-ring-visual.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  render-fixtures:
+    name: LFA Center Ring Chromium fixture render
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 11.27.0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+      - name: Install existing frontend dependencies
+        run: pnpm -C frontend install --frozen-lockfile
+      - name: Install isolated visual-test tooling
+        run: npm install --prefix "$RUNNER_TEMP/hud-browser" --ignore-scripts --no-save --package-lock=false playwright@1.63.0
+      - name: Verify preinstalled Google Chrome
+        run: google-chrome --version
+      - name: Install CJK fonts for localized settings visual review
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y fonts-noto-cjk
+          fc-match 'Noto Sans CJK TC'
+          fc-match 'Noto Sans CJK JP'
+      - name: Render actual HUD fixture states
+        run: PLAYWRIGHT_CHANNEL=chrome PLAYWRIGHT_MODULE_PATH="$RUNNER_TEMP/hud-browser/node_modules/playwright" OUTPUT_DIR="$RUNNER_TEMP/hud-lfa-center-ring-preview" node hud_overlay/lfa_center_ring/tests/visual/render.mjs
+      - name: Verify real launcher and Coordinator integration
+        run: PLAYWRIGHT_CHANNEL=chrome PLAYWRIGHT_MODULE_PATH="$RUNNER_TEMP/hud-browser/node_modules/playwright" OUTPUT_DIR="$RUNNER_TEMP/hud-lfa-center-ring-preview" node hud_overlay/lfa_center_ring/tests/visual/launcher.cjs
+      - name: Verify real HUD settings controls and config delivery
+        run: PLAYWRIGHT_CHANNEL=chrome PLAYWRIGHT_MODULE_PATH="$RUNNER_TEMP/hud-browser/node_modules/playwright" OUTPUT_DIR="$RUNNER_TEMP/hud-lfa-center-ring-preview" node frontend/src/features/overlay_control/lfa_center_ring/tests/browser/verify.cjs
+      - name: Stage status evidence with launcher paths
+        if: always()
+        run: |
+          for file in "$RUNNER_TEMP/hud-lfa-center-ring-preview"/launcher/status-*.png "$RUNNER_TEMP/hud-lfa-center-ring-preview/launcher/status-report.json"; do
+            if [ -f "$file" ]; then
+              mkdir -p "$RUNNER_TEMP/hud-lfa-center-ring-status/launcher"
+              cp "$file" "$RUNNER_TEMP/hud-lfa-center-ring-status/launcher/"
+            fi
+          done
+      - name: Upload base visual evidence, including failures
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: hud-lfa-center-ring-visual-${{ github.event.pull_request.head.sha }}
+          path: |
+            ${{ runner.temp }}/hud-lfa-center-ring-preview/**
+            !${{ runner.temp }}/hud-lfa-center-ring-preview/launcher/status-*.png
+            !${{ runner.temp }}/hud-lfa-center-ring-preview/launcher/status-report.json
+          if-no-files-found: error
+          retention-days: 14
+      - name: Upload status visual evidence, including failures
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: hud-lfa-center-ring-status-${{ github.event.pull_request.head.sha }}
+          path: ${{ runner.temp }}/hud-lfa-center-ring-status
+          if-no-files-found: warn
+          retention-days: 14

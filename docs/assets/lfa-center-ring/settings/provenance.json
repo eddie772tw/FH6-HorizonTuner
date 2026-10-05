@@ -1,0 +1,101 @@
+{
+  "sourceHead": "7c16b8543397ecf7d3541a7c08c99b34105db03c",
+  "run": 37349662998,
+  "artifact": 11362038769,
+  "scope": "Actual sandboxed Chrome settings page; production catalog and applyThemeToDocument; six cores x dark/light plus three narrow/localized captures. Synthetic fixture environment, not agent-executed native/game validation.",
+  "captures": [
+    {
+      "file": "settings/settings-dark-default.png",
+      "source": "settings/settings-dark-default.png",
+      "sha256": "4738b276e9d02b4b93b8a22ab1977c8f901fe4f4a846b744493510b85c10aefd",
+      "originalRgbaPixelsPreserved": true
+    },
+    {
+      "file": "settings/settings-dark-elegant.png",
+      "source": "settings/settings-dark-elegant.png",
+      "sha256": "9d16a21a88801d0a04bf45d2a38a45ac696ff2c1d0e5b65bae8decf17fee5a22",
+      "originalRgbaPixelsPreserved": true
+    },
+    {
+      "file": "settings/settings-dark-modern.png",
+      "source": "settings/settings-dark-modern.png",
+      "sha256": "96eb502e16a55b7255677890f31e66f6f72f65628aad6c074eef63d7b838cb3d",
+      "originalRgbaPixelsPreserved": true
+    },
+    {
+      "file": "settings/settings-dark-swiss-contrast.png",
+      "source": "settings/settings-dark-swiss-contrast.png",
+      "sha256": "c147a7f6d5cb8b62a9b6c6013463d7f7b2ab1f159e07b2b08d4645e3c71e1b1a",
+      "originalRgbaPixelsPreserved": true
+    },
+    {
+      "file": "settings/settings-dark-swiss-editorial.png",
+      "source": "settings/settings-dark-swiss-editorial.png",
+      "sha256": "046ddd89b3578100ca0eb5bfe3dd7b1d83ee15cfab8cf26e2114e788e38dc341",
+      "originalRgbaPixelsPreserved": true
+    },
+    {
+      "file": "settings/settings-dark-swiss.png",
+      "source": "settings/settings-dark-swiss.png",
+      "sha256": "46337544523d082fb88ffa38f6af0970b19100bc5bd1fb8c5d5611b3b7828f51",
+      "originalRgbaPixelsPreserved": true
+    },
+    {
+      "file": "settings/settings-light-default.png",
+      "source": "settings/settings-light-default.png",
+      "sha256": "3d66aeaf64bd9836a2524dd660095f950ef98a45e5ff8e97d66b10c64ea5a39d",
+      "originalRgbaPixelsPreserved": true
+    },
+    {
+      "file": "settings/settings-light-elegant.png",
+      "source": "settings/settings-light-elegant.png",
+      "sha256": "7e854ea9481bad6fdd414b1448c6b0bce844ab7267838b081f7c4eae91cda3ad",
+      "originalRgbaPixelsPreserved": true
+    },
+    {
+      "file": "settings/settings-light-modern.png",
+      "source": "settings/settings-light-modern.png",
+      "sha256": "ab8398c28993651e01e9ee917d7d01323fa887b5925d51da83cf1537cb0f7f7b",
+      "originalRgbaPixelsPreserved": true
+    },
+    {
+      "file": "settings/settings-light-swiss-contrast.png",
+      "source": "settings/settings-light-swiss-contrast.png",
+      "sha256": "0b6be4ea88ba0b4631432fc42086f364080d804e378694b47754db17013e79bd",
+      "originalRgbaPixelsPreserved": true
+    },
+    {
+      "file": "settings/settings-light-swiss-editorial.png",
+      "source": "settings/settings-light-swiss-editorial.png",
+      "sha256": "1eddb0a60faad62791096a1880c9a73b900885e26e205b009e9a04b79719bf1f",
+      "originalRgbaPixelsPreserved": true
+    },
+    {
+      "file": "settings/settings-light-swiss.png",
+      "source": "settings/settings-light-swiss.png",
+      "sha256": "f3fabc9397e5170e5491b6bf6fcf592b6f7b7ba1335daad6d86b6d55623dd8ea",
+      "originalRgbaPixelsPreserved": true
+    },
+    {
+      "file": "settings/settings-narrow-ja-jp.png",
+      "source": "settings/settings-narrow-ja-jp.png",
+      "sha256": "e64bb4dd429f9fb033b20ef7118bbfb11c433075bc1777a3627f272b38b6d98c",
+      "originalRgbaPixelsPreserved": true
+    },
+    {
+      "file": "settings/settings-narrow-zh-tw.png",
+      "source": "settings/settings-narrow-zh-tw.png",
+      "sha256": "c0115de05a7ccf7adc7a799d9982f40d4e6ffe1caecf7b338c625707f91b8e59",
+      "originalRgbaPixelsPreserved": true
+    },
+    {
+      "file": "settings/settings-narrow.png",
+      "source": "settings/settings-narrow.png",
+      "sha256": "a043140d642dbcda4a107ccdd30ca1dbff39454aefc3fbb2b3c592d32c7fce4b",
+      "originalRgbaPixelsPreserved": true
+    }
+  ],
+  "settingsAuditArtifact": "https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37349662998/artifacts/11362038769",
+  "settingsAuditPathInArtifact": "settings/settings-audit.json",
+  "committedAuditNote": "The adjacent committed settings-audit.json is retained as historical evidence; current audit remains in the linked source artifact."
+}

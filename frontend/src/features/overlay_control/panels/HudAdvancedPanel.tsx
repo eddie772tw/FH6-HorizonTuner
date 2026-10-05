@@ -1,12 +1,18 @@
 import { useId } from 'react';
 import { R34MfdSettingsCard } from '../r34_mfd/R34MfdSettingsCard';
+import type { HudDisplayUnits } from '../HudUnitSettingsSidebar';
+import { STACK_ST8100_STYLE_ID } from '../stack_st8100/config';
+import { StackSt8100SettingsCard } from '../stack_st8100/StackSt8100SettingsCard';
 import { DEFAULT_HUD_CONFIG, type HudElements } from '../hudConfig';
 import type { HudPanelSharedProps } from '../hudPanelTypes';
 import { CLASSIC_JDM_STYLE_ID } from '../classic_jdm/config';
 import { ClassicJdmSettingsCard } from '../classic_jdm/ClassicJdmSettingsCard';
+import { LFA_CENTER_RING_STYLE_ID } from '../lfa_center_ring/config';
+import { LfaExpansionSettingsCard } from '../lfa_center_ring/LfaExpansionSettingsCard';
 import { S650_HMI_STYLE_ID, S650_HMI_THEMES, S650_CENTER_WIDGETS, type S650HmiTheme, type S650CenterWidget } from '../s650/config';
 
 export interface HudAdvancedPanelProps extends HudPanelSharedProps {
+  appUnits: HudDisplayUnits;
   t: (key: string) => string;
   audioDevices: readonly { id: string; name: string; is_default: boolean }[];
   loadingAudioDevices: boolean;
@@ -64,7 +70,7 @@ function ColorSettings({ config, onConfigPatch, onElementToggle, t }: HudAdvance
   );
 }
 
-function StyleSettings({ config, onConfigPatch, isWipActive, wipForced, onShowWipChange, onS650CenterInfoToggle, t }: HudAdvancedPanelProps) {
+function StyleSettings({ config, appUnits, onConfigPatch, isWipActive, wipForced, onShowWipChange, onS650CenterInfoToggle, t }: HudAdvancedPanelProps) {
   const id = useId();
   const centerEnabled = config.s650CenterWidget !== 'disable' && config.elements.showCenterInfo !== false;
   return (
@@ -95,7 +101,9 @@ function StyleSettings({ config, onConfigPatch, isWipActive, wipForced, onShowWi
           </select>
         </div>
       )}
+      {config.hudStyle === STACK_ST8100_STYLE_ID && <StackSt8100SettingsCard config={config} appUnits={appUnits} onChange={onConfigPatch} t={t} />}
       {config.hudStyle === CLASSIC_JDM_STYLE_ID && <ClassicJdmSettingsCard config={config} onChange={onConfigPatch} t={t} />}
+      {config.hudStyle === LFA_CENTER_RING_STYLE_ID && <LfaExpansionSettingsCard config={config} onChange={onConfigPatch} t={t} />}
       {config.hudStyle === 'r34_mfd' && <R34MfdSettingsCard config={config} onChange={onConfigPatch} t={t} />}
       {config.hudStyle === 'vfd' && (
         <div className="border-top pt-2 d-flex flex-column gap-3">
