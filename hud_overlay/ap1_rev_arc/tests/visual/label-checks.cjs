@@ -13,7 +13,8 @@ function inspectLabels() {
     return [id, {
       text: node.textContent, selected: node.dataset.active === 'true', opacity: Number(css.opacity),
       sameNode: node === window.ap1FixedLabelReferences[id], rect: rect(node),
-      anchor: { x: node.getAttribute('x'), y: node.getAttribute('y'), transform: node.getAttribute('transform') },
+      anchor: { x: node.getAttribute('x'), y: node.getAttribute('y'), textAnchor: node.getAttribute('text-anchor'), transform: node.getAttribute('transform') },
+      screenAnchorX: (() => { const matrix = node.getScreenCTM(); return matrix ? new DOMPoint(Number(node.getAttribute('x')), Number(node.getAttribute('y'))).matrixTransform(matrix).x : null; })(),
       paint: { fill: css.fill, stroke: css.stroke, color: css.color, fillOpacity: css.fillOpacity, filter: css.filter, textShadow: css.textShadow },
     }];
   }));
@@ -38,11 +39,15 @@ function assertLabels(snapshot, { unit, boostMode }) {
     assert(label.opacity > 0 && label.opacity <= 1, 'Both legends must remain visible: ' + id);
     assert.equal(label.opacity === 1, selected, 'Only selected legends use full opacity: ' + id);
   }
-  for (const [upper, lower] of [['speedUnitMph', 'speedUnit'], ['boostModeLabel', 'vacModeLabel']]) {
+  for (const [upper, lower] of [['speedUnitMph', 'speedUnit'], ['vacModeLabel', 'boostModeLabel']]) {
     assert.deepEqual(labels[upper].paint, labels[lower].paint, 'Paired legends differ only in opacity');
     assert.equal(labels[upper].anchor.x, labels[lower].anchor.x, 'Paired legends share horizontal anchor');
     assert(Number(labels[upper].anchor.y) < Number(labels[lower].anchor.y), 'Upper legend must remain above lower legend');
     if (snapshot.visible) assert(labels[upper].rect.y + labels[upper].rect.height <= labels[lower].rect.y, 'Stacked legend ink must not overlap');
+  }
+  for (const id of ['vacModeLabel', 'boostModeLabel']) {
+    assert.equal(labels[id].anchor.textAnchor, 'middle', 'Mode legends must share a centered text anchor');
+    if (snapshot.visible) assert(Math.abs(labels[id].screenAnchorX - (snapshot.rail.x + snapshot.rail.width / 2)) * snapshot.dpr <= 1, 'Mode legend center must align to the rail within one device pixel');
   }
   if (boostMode === 'unavailable') {
     assert.equal(labels.boostModeLabel.opacity, labels.vacModeLabel.opacity);
@@ -59,7 +64,7 @@ function assertLabels(snapshot, { unit, boostMode }) {
     assert(!overlaps(b, snapshot.digits), 'Legend must not overlap speed digits: ' + id);
     assert(!snapshot.rpmSegments.some(segment => overlaps(b, segment)), 'Legend must not overlap RPM band: ' + id);
   }
-  assert(labels.vacModeLabel.rect.y + labels.vacModeLabel.rect.height <= snapshot.rail.y, 'Both boost legends must fit above the unchanged rail');
+  assert(labels.boostModeLabel.rect.y + labels.boostModeLabel.rect.height <= snapshot.rail.y, 'VAC above BOOST must fit above the unchanged rail');
 }
 
 module.exports = { inspectLabels, assertLabels };

@@ -1,0 +1,37 @@
+{
+  "style": "ap1_rev_arc",
+  "revision": "VAC above BOOST, both centered over the unchanged boost rail",
+  "base_head": "ad7458383199529b6f3bb97c0a6096bb87600492",
+  "status": "implemented; full frontend tests/build and syntax/diff/body gates passed; actual new renderer/launcher review pending",
+  "change": [
+    "VAC occupies upper existing baseline, BOOST lower existing baseline",
+    "Both fixed labels use text-anchor middle on the shared rail center",
+    "Label font, baseline spacing, active/dim semantics and all other geometry remain unchanged"
+  ],
+  "browser_checks": [
+    "Default and70% compact atDPR1 andDPR2",
+    "VAC above BOOST with non-overlapping ink and containment above rail",
+    "Both middle text anchors align to actual rail center within one device pixel",
+    "Existing fixed-node selection cases metric/imperial, positive/negative/zero/missing/stale remain active"
+  ],
+  "review_transition": "User explicitly requested removal of draft and Ready for Review after this adjustment and verified final checks; root coordinator owns the remote status action",
+  "limitations": [
+    "New source visual CI and pixel review pending",
+    "Current preview paths depict prior BOOST-above-VAC state until replaced",
+    "Windows/native-game acceptance unperformed; review readiness is not reviewer approval"
+  ],
+  "skills": [
+    "halfmoon-design-system",
+    "pr-author-maintainer"
+  ],
+  "local_verification": {
+    "files_passed": 160,
+    "files_skipped": 1,
+    "tests_passed": 1195,
+    "tests_skipped": 1,
+    "style_cases": 90,
+    "build_web_hud": "passed; packaged HTML matches source, tests excluded",
+    "syntax_diff_pr_body": "passed",
+    "protected_geometry": "All other SVG nodes unchanged; original two caption baselines swapped exactly"
+  }
+}
