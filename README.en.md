@@ -185,6 +185,8 @@ The [backend performance audit](docs/backend-rust/performance-audit.md) records 
 
 Start with the [documentation index](docs/README.md) for CLI/MCP guides, HUD contracts, tuning development, and calibration procedures. Previous plans and research are kept in the [archive index](docs/archive/README.md), separate from current development guidance.
 
+For frontend work, use the [frontend development entry](frontend/README.md) and [theme/design-system guide](docs/frontend/design-systems.md), covering all six cores, CSS ownership, extension steps and the review validation matrix.
+
 Agent collaboration rules are in [`.agents/AGENTS.md`](.agents/AGENTS.md); read them before making changes. Project decisions and learnings are maintained in [`.agents/Journal.md`](.agents/Journal.md).
 
 Optional Python maintenance tools use **[Ruff](https://github.com/astral-sh/ruff)** for formatting and linting. These commands apply to Python tools; they are not the Rust product backend CI gate.

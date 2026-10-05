@@ -16,7 +16,7 @@ description: 當開發或重構前端 UI 組件、調整 Halfmoon CSS v2 主題�
    - 首幀與 React 共用 `themeSettings.ts` 正規化及 `themeDocument.ts` 套用入口，設定 `data-bs-theme`、`data-bs-core`、`data-design-system`。保留 `halfmoonCore` 儲存合約；設計系統只由 catalog 推導。所有核心的 Color Presets 必須同步原生 Halfmoon `--bs-primary-*` 與專案色彩；成功／警告／錯誤維持語意色。
 3. **靜態面板 vs 互動卡片明確分離**：
    - 靜態資訊/圖表面板：使用 `.glass-panel` 或 `.card`，絕對不加 hover 浮動位移動畫。
-   - 可點擊選單/卡片：使用 `.glass-panel-interactive` 或 `.card-interactive`，點擊與懸浮時觸發位移與發光。
+   - 可點擊選單/卡片：使用 `.glass-panel-interactive` 或 `.card-interactive`，由 `--interactive-transform`／`--interactive-shadow` 決定 hover；Halfmoon 保留位移與光暈，Swiss 禁用裝飾位移／光暈。
 4. **60Hz 高頻渲染效能排除**：
    - 所有 Canvas、[class*="recharts"] 圖表、`input[type="range"]` 與 `input[type="color"]` 必須維持 `transition: none !important`，避免每幀數據驅動時的動畫延遲與重排重繪。
 5. **全域 Portal 掛載護欄 (ModalPortal)**：
@@ -50,3 +50,4 @@ description: 當開發或重構前端 UI 組件、調整 Halfmoon CSS v2 主題�
 
 ## 搭配資料 (References)
 - [HALFMOON_SPECIFICATION.md](HALFMOON_SPECIFICATION.md)：完整組件、佈局、Helper Utilities 與 CSS Tokens 規格手冊。
+- [主題與設計系統開發指南](../../../docs/frontend/design-systems.md)：核心／CSS 責任地圖、擴充步驟、驗收矩陣與 Companion 邊界。

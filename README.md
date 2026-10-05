@@ -198,6 +198,8 @@ uv run --no-project --python .venv\Scripts\python.exe ruff format --check .
 
 操作指南、HUD 契約、調校開發及校準流程統一由 [文件索引](docs/README.md) 查找；舊計畫與研究已分流至 [歷史索引](docs/archive/README.md)，不代表目前開發進度。
 
+前端工作從[前端開發入口](frontend/README.md)與[主題／設計系統指南](docs/frontend/design-systems.md)開始，包含六個核心、CSS 模組責任、擴充方式及送審驗收矩陣。
+
 協作代理規範位於 [`.agents/AGENTS.md`](.agents/AGENTS.md)，變更前請先閱讀；專案決策與經驗紀錄維護於 [`.agents/Journal.md`](.agents/Journal.md)。
 
 選用 Python 維護工具採用 **[Ruff](https://github.com/astral-sh/ruff)** 格式化與檢查。這些命令只適用於 Python 工具，不是 Rust 產品後端的 CI gate。

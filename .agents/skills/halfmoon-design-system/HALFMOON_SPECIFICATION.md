@@ -1,9 +1,11 @@
-# FH6-HorizonTuner 前端 Halfmoon CSS 視覺設計與組件規格書 (Halfmoon Specification)
+# FH6-HorizonTuner 前端設計系統與組件規格書 (Halfmoon / Swiss)
 
-> **文件版本**：2.5.0
+> **文件版本**：2.5.1
 > **參考標準**：[Halfmoon CSS v2.0.2 官方文件 (gethalfmoon.com/docs)](https://www.gethalfmoon.com/docs/) + Bootstrap 5 相容語意層  
 > ** Agent 遵循與維護宣告**：所有 AI Agent 在開發、重構或維護前端 UI 組件與 Halfmoon CSS 樣式時，**必須嚴格遵循並主動維護本規格書**與 [halfmoon-design-system](SKILL.md) 技能標準。
 > **目標與任務**：定義與規範 FH6-HorizonTuner 專案在實際前端開發時套用 Halfmoon CSS 所有 Components、Layout、Helpers 與 Utilities 的特定規格、參數、語意 Token、視覺行為與使用時機。
+
+實作入口、核心清單及送審矩陣見[主題與設計系統開發指南](../../../docs/frontend/design-systems.md)。本檔保留原路徑供既有技能引用；Halfmoon 是共用 CSS 基底，元件外觀由各設計系統限定。
 
 ---
 
@@ -25,7 +27,7 @@ FH6-HorizonTuner 前端採用 **雙層視覺設計架構 (Two-Layer Visual Archi
 
 ### 1.1 主態與主題切換機制 (Theme & Core Attributes)
 
-新增核心 `swiss`（Swiss Technical）沿用 Layer 2，保留既有 default、modern、elegant 與八組配色；另加入 Swiss Signal 與 Bauhaus Mono。`context/themeSettings.ts` 是載入、匯入、React 更新及首幀設定的共同正規化入口；Bauhaus Mono 以完整三色組識別，日間主色為黑、夜間為淺白，其他自訂配色不改寫。
+六個核心沿用 Layer 2，保留既有八組配色並提供 Swiss Signal 與 Bauhaus Mono，共十組 Color Presets。`context/themeSettings.ts` 是載入、匯入、React 更新及首幀設定的共同正規化入口；Bauhaus Mono 以完整三色組識別，日間主色為黑、夜間為淺白，其他自訂配色不改寫。
 
 Core Theme 同時決定整體配色風格與元件細節。`context/themeCatalog.ts` 統一登錄核心及設計系統歸屬：Default／Modern／Elegant 屬於 Halfmoon，Swiss Technical／Editorial／Contrast 屬於 Swiss。外觀面板依此 registry 分組，不維護第二份選項表。
 
@@ -47,11 +49,11 @@ Halfmoon 按鈕與卡片材質以 Swiss 導入前的 `22f9660f` 為參照：`.bt
 3. 共用元件透過 token 表達差異；儀表讀取 `--instrument-glow-strength` 等 token 並快取，不在繪圖循環查 DOM，也不加入 `isSwiss` 等核心名稱分支。
 4. 補核心歸屬、舊設定載入及首幀／React 一致性驗證；瀏覽器檢查日夜、配色、跨系統往返、鍵盤焦點與窄畫面。新增設計系統不需要複製各個頁面的 CSS。
 
-Swiss 的 `--bg-gradient` 為實色（夜間 `#0b0d12`、日間 `#f8fafc`），`--glass-shadow: none`、`--glass-blur: 0px`；主要面板直接使用 `backdrop-filter: none`。`--on-primary` 依主色相對亮度選取黑或白，供實色按鈕文字使用。焦點使用清楚的 outline。全域數字採 `tabular-nums lining-nums`；Swiss 採 Inter／系統無襯線字型。
+Swiss 的 `--bg-gradient` 為各核心定義的實色；Technical 夜間為 `#0b0d12`、日間為 `#f8fafc`，Editorial 與 Contrast 各有獨立日夜表面。三核心皆為 `--glass-shadow: none`、`--glass-blur: 0px`，主要面板直接使用 `backdrop-filter: none`。`--on-primary` 依主色相對亮度選取黑或白，供實色按鈕文字使用。焦點使用清楚的 outline。全域數字採 `tabular-nums lining-nums`；Swiss 採 Inter／系統無襯線字型。
 
 遙測沿用五張卡片及四輪順序，以 8px 間距、1px 邊框分組；窄畫面改為可捲動堆疊，手機上的四輪區塊改為單欄。調校沿用四個獨立步驟，以 `tuning-workflow__steps` 與 `tuning-workflow__grid` 套用階層及 16px 網格間距。樣式不改寫步驟解鎖、量測、調校公式或 Portal 行為。
 
-即時儀表卡片及其開關提示不使用 `backdrop-filter`：卡片保留系統半透明底色、圓角與陰影，提示使用不透明模式底色，避免動態 Canvas 與滑鼠提示疊加模糊圖層。Halfmoon 的導覽列、抽屜與一般靜態面板仍使用玻璃模糊。
+即時儀表卡片及其開關提示不使用 `backdrop-filter`：Halfmoon 一般卡片外層維持透明排版容器、內層保留原材質；Swiss 由系統模組提供實色面板與細框。提示使用不透明模式底色，避免動態 Canvas 與滑鼠提示疊加模糊圖層。Halfmoon 的導覽列、抽屜與一般靜態面板仍使用玻璃模糊。
 
 透過 HTML 根元素 (`<html>`) 的三個屬性實作動態主題切換：
 
@@ -63,6 +65,8 @@ Swiss 的 `--bg-gradient` 為實色（夜間 `#0b0d12`、日間 `#f8fafc`），`
   - `modern`（深靛藍 Navy 現代競賽風格）
   - `elegant`（暖沙 Espresso 典雅精緻風格）
   - `swiss`（消光表面、髮絲邊框、工程數字排版）
+  - `swiss-editorial`（暖紙色／暖炭色、閱讀層級、細微圓角）
+  - `swiss-contrast`（中性黑白、直角、反差標頭）
 * **`data-design-system`** (衍生的元件設計系統)：`halfmoon` 或 `swiss`，由核心 catalog 決定。
 
 #### 首幀防閃爍 (Anti-FOUC) 腳本
@@ -96,7 +100,7 @@ applyThemeEarly();
 
 ## 2. Components (組件規格與參數)
 
-根據 Halfmoon CSS 官方文件組件分類，定義 FH6-HorizonTuner 之套用標準：
+沿用 Halfmoon CSS 組件分類與語意類別。以下元件消費系統 token；不能將 Halfmoon 的玻璃／光暈或 Swiss 的細框外觀寫成全域固定值。實際值以 `styles/design-systems/` 為準。
 
 ### 2.1 Cards & Glass Panels (卡片與毛玻璃容器)
 
@@ -106,8 +110,8 @@ applyThemeEarly();
 
 | 類別組合 | CSS 參數與視覺表現 | 適用時機與業務場景 | 禁忌與行為規範 |
 | :--- | :--- | :--- | :--- |
-| `.glass-panel` / `.card` | `background: var(--glass-bg)`, `backdrop-filter: blur(14px)`, `border: 1px solid var(--glass-border)`, `border-radius: 16px` (`var(--panel-radius)`) | **靜態面板**：調校精靈步驟容器、遙測數據繪圖面板、歷史圖表畫布外框 | 絕對禁止添加 `hover: translateY` 浮動動畫，防範非必要 DOM 重繪 |
-| `.glass-panel-interactive` / `.card-interactive` | 繼承靜態面板 + `cursor: pointer`, `transition: transform 0.25s, border-color 0.2s, box-shadow 0.25s` | **可點擊互動卡片**：Core Theme 核心主題預覽選擇卡、Slot 存檔槽位卡片、分析 Slot 圖表點擊卡 | Hover 時產生 `transform: translateY(-3px)`, `border-color: var(--primary)`, `box-shadow: 0 0 18px var(--primary-glow)` |
+| `.glass-panel` / `.card` | 使用 `--glass-bg`、`--glass-border`、`--panel-radius` 與系統材質；Halfmoon 靜態玻璃有模糊，Swiss 無模糊 | **靜態面板**：調校步驟容器、資訊面板；即時卡片遵守上節模糊例外 | 禁止添加 hover 浮動動畫；Halfmoon utility 圓角保留，Swiss 由核心統一 |
+| `.glass-panel-interactive` / `.card-interactive` | 繼承靜態面板與互動游標；hover 消費 `--interactive-transform`／`--interactive-shadow` | **可點擊互動卡片**：Slot 存檔與圖表選擇卡；核心選擇卡另使用 `.theme-choice` | Halfmoon 依 token 浮動／發光，Swiss 維持無位移／無光暈；不能把動畫寫死在頁面 |
 
 ---
 
@@ -119,13 +123,13 @@ applyThemeEarly();
 
 | 類別組合 | 尺寸與顏色參數 | 適用時機與業務場景 | Focus / Active 視覺規範 |
 | :--- | :--- | :--- | :--- |
-| `.btn.btn-primary` | `background: var(--primary)`, 文字 `var(--bs-dark)` / 深色 | **主要核心操作**：如「儲存車輛參數」、「計算齒輪比」、「確定發布」。 | Focus 時觸發 `box-shadow: 0 0 0 0.25rem var(--primary-glow)` |
+| `.btn.btn-primary` | 背景由 `--primary` 映射，文字由 `--on-primary`／原生 foreground 映射選擇黑白 | **主要核心操作**：如「儲存車輛參數」、「計算齒輪比」、「確定發布」。 | 鍵盤 focus 使用 `--focus-color` outline；須在反差標頭上仍可辨識 |
 | `.btn.btn-outline-primary` | 背景透明，`border: 1px solid var(--primary)`, 文字 `var(--primary)` | **次要強調動作**：如「顯示日誌 (Show Logs)」、「開啟編輯器」。 | Hover 時自動滿版 `var(--primary)` 襯底 |
-| `.btn.btn-outline-secondary` | 背景透明，`border: 1px solid var(--glass-border)`, 文字 `var(--text-secondary)` | **中性輔助動作**：如「主題設定 (Theme)」、「重置選項」、「關閉 Modal」。 | Hover 時呈現 `var(--surface-3)` |
+| `.btn.btn-outline-secondary` | Halfmoon 沿用原生外框；Swiss 使用 `--glass-border`／`--text-secondary` | **中性輔助動作**：如「主題設定 (Theme)」、「重置選項」、「關閉 Modal」。 | Swiss hover 使用 `--surface-3`；反差標頭的外框按鈕保留自己的底色 |
 | `.btn.btn-danger` / `.btn-outline-danger` | 紅色警示色彩 | **危險/破壞性操作**：如「刪除 Slot」、「清除遙測紀錄」。 | 需要明確二次確認或警示提示 |
-| `.btn.btn-sm` | Padding `0.25rem 0.5rem`，字型 `fs-7` | 導覽列頂部動作區、密集表單列、列表橫向按鈕。 | 精緻不佔據主畫面空間 |
-| `.btn-group` | 橫向緊密按鈕群組，共享圓角邊框 | 遙測子頁面 Tab 切換（`Dashboard` / `Analysis` / `Drag Test`）。 | 被選中按鈕賦予 `.active.fw-bold` |
-| `.cyber-btn-glow` | 懸浮位移 `scale(1.02)`，發光 `0 0 12px var(--primary-glow)` | 極限調校啟動、動態展示專用按鈕。 | 帶有滑順的微動畫體驗 |
+| `.btn.btn-sm` | 沿用 Halfmoon 原生尺寸；Swiss 另消費 `--input-radius` 與字重 token | 導覽列動作、密集表單列與局部工具列。 | 不以不同外距補償相鄰按鈕高度 |
+| `.btn-group` | 橫向緊密按鈕群組 | 相對值／絕對值等局部模式切換；頁面分頁使用 `.workspace-tabs`。 | 保留選中與停用狀態 |
+| `.cyber-btn-glow` | Halfmoon 保留既有縮放／光暈；Swiss 禁用裝飾位移與陰影 | 既有強調操作。 | 高頻繪圖與靜態面板不套用 |
 
 ---
 
@@ -137,15 +141,17 @@ applyThemeEarly();
 
 | 元件 / 類別 | CSS 規格與參數 | 適用時機與業務場景 | 特殊規則與限制 |
 | :--- | :--- | :--- | :--- |
-| `.form-control` / `.cyber-input` | `background: var(--input-bg)`, `color: var(--input-text)`, `border: 1px solid var(--glass-border)`, `border-radius: 8px` | 車輛物理參數輸入框（車重、前後輪胎尺寸、彈簧磅數範圍）。 | Focus 狀態自動點亮 `border-color: var(--primary)` |
+| `.form-control` / `.cyber-input` | 使用 `--input-bg`、`--input-text`、`--glass-border` 與原生／系統圓角 | 車輛物理參數輸入框（車重、前後輪胎尺寸、彈簧磅數範圍）。 | 鍵盤 focus 使用 `--focus-color` 與 `--form-focus-shadow` |
 | `.form-select` / `.cyber-select` | 繼承 input 樣式 + 右側原生箭頭向下空間 | 賽事類型選擇 (Road/Drift/Rally/Drag)、季節選擇 (Summer/Winter)。 | **禁止寫死黑底**（`background: black`），統一導轉至 `var(--input-bg)` |
 | `input[type="range"]` / `.form-range` | 軌道高度 `6px` (`var(--surface-2)`)，Thumb 圓點 `16px x 16px` (`var(--primary)`) | 懸吊高度調整、ARB 硬度調整、齒輪比動態拉桿。 | **效能例外**：必須設定 `transition: none !important` 確保 60FPS 拖動 |
-| `.form-check.form-switch` / `RenderSwitch` | 關閉灰軌，開啟時軌道變為 `var(--primary)` 並帶光暈 | 遙測 5 大卡片區塊獨立渲染開關、HUD Overlay 懸浮窗啟用開關。 | 操作直觀且不引起頁面 re-layout |
+| `.form-check.form-switch` / `RenderSwitch` | 關閉灰軌，開啟時跟隨主要色；圖示與效果由共用映射及系統 token 決定 | 遙測卡片獨立渲染開關、HUD Overlay 懸浮窗啟用開關。 | 不引起頁面 re-layout；提示使用不透明表面、不疊加模糊 |
 | `.input-group` + `.input-group-text` | 前置/後置單位組合框 | 輸入帶單位的數值（如 `kgf/mm`, `PSI`, `mm`, `kg`）。 | 單位文字以 `var(--surface-2)` 與 `var(--text-secondary)` 呈現 |
 
 ---
 
 ### 2.4 Badges & Status Tags (標籤與徽章)
+
+Halfmoon 保留原生實色徽章；下表描述 Swiss 的細框／淡色表面。兩者共用成功、警告、錯誤等語意類別，不以 Color Presets 改寫功能意義。
 
 * **官方組件**：`.badge`, `.text-bg-primary`, `.text-bg-secondary`, `.text-bg-success`, `.text-bg-danger`, `.text-bg-warning`, `.text-bg-info`, `.bg-primary-subtle`, `.text-primary`, `.rounded-pill`
 * **特定規格參數與選用原則**：
@@ -170,7 +176,7 @@ applyThemeEarly();
 
 | 模式與類別組合 | CSS 規格與 Z-Index | 適用時機與業務場景 | 互動行為與規範 |
 | :--- | :--- | :--- | :--- |
-| **Header Badge 向下 Popover 模式**<br>`position: relative` + `.popover.bs-popover-bottom.glass-panel` | `position: absolute; top: calc(100% + 8px); left: 0; z-index: 1050; backdrop-filter: blur(16px);` | **狀態/警示詳細說明**：如遙測 HUD 啟用時於頂部 `RENDER PAUSED` 標籤向下展開詳細氣泡；車輛參數未填滿時於標籤向下提示缺漏欄位。 | 切換至該視圖時**自動彈出**且**常駐不消失**，標頭附帶 `.btn-close` 關閉按鈕，點擊標籤或關閉按鈕可手動開關。 |
+| **Header Badge 向下 Popover 模式**<br>`position: relative` + `.popover.bs-popover-bottom.glass-panel` | `position: absolute; top: calc(100% + 8px); left: 0; z-index: 1050;`；表面由系統決定，Swiss 與即時開關提示無模糊 | **狀態/警示詳細說明**：如 HUD 狀態、缺漏欄位。 | 保留各功能原有開關策略，支援關閉、焦點與完整內容可達；樣式不得改變觸發行為。 |
 | **全域懸浮 Toast 模式**<br>`.toast-container.position-fixed.top-0.end-0.p-3` + `.toast.glass-panel` | `position: fixed; top: 0; right: 0; z-index: 1060;` | **即時非阻斷動作通知**：車輛設定檔匯入/匯出成功、主題切換通知、日誌清空完成。 | 不佔用 DOM 流，帶有滑順淡入動畫與 Auto-dismiss 自動定時收起機制。 |
 | **頂部常態狀態 Alert 條**<br>`.alert.alert-danger` (頁面靜態標頭) | 靜態掛載，非動態突兀插入 | **阻斷性全頁鎖定警告**：極端錯誤導致頁面無法運作時使用。 | 僅限靜態佈局，不得在 60Hz 遙測畫面上動態切換推擠版型。 |
 
@@ -196,9 +202,9 @@ applyThemeEarly();
 
 | 類別 / 屬性 | CSS 規格與參數 | 適用時機與規範 | 護欄與限制 |
 | :--- | :--- | :--- | :--- |
-| `.navbar.sticky-top` | `z-index: 1050`, `background: var(--glass-bg)`, `backdrop-filter: blur(14px)`, `border-bottom: 1px solid var(--glass-border)` | 全站頂部固定導覽列。 | `.navbar` 與 `.container-fluid` **必須帶 `overflow: visible !important`** |
-| `.navbar-brand` | `font-size: 1.25rem`, `font-weight: 700`, `color: var(--primary)` | 專案品牌標誌與 Git Commit 版本 Badge 容器。 | 不隨滾動消失 |
-| `.workspace-tabs.nav` | 依內容寬度排列，單個標籤最大 14rem，空間不足換行；作用中以 3px 主色底線標示 | 主導覽、頁內子分頁、Companion 與工作流步驟共用。一般分頁不編號，只有調校／Road 等有順序流程使用 `.workspace-tabs__number`。調校 `.tuning-workflow__steps` 保留四欄等寬填滿整列；手機改為兩欄。 | 保留既有 ARIA、鍵盤操作與步驟門檻；Companion 卡片選擇列可水平捲動 |
+| `.navbar.sticky-top` | `z-index: 1050`、系統底色／模糊與底框；Swiss 禁用模糊 | 全站頂部固定導覽列。 | 下拉區必須保留 visible overflow，選單向下展開 |
+| `.navbar-brand` | 保留品牌字級與字重，文字消費 `--heading-color` | 專案品牌標誌與 Git Commit 版本 Badge 容器。 | 不隨滾動消失 |
+| `.workspace-tabs.nav` | 依內容寬度排列，單個標籤最大 14rem，空間不足換行；Halfmoon 作用中實色，Swiss 3px 主色底線 | 主導覽、頁內子分頁、共用 Companion 導覽與工作流步驟。一般分頁不編號，只有有順序流程使用 `.workspace-tabs__number`。調校 `.tuning-workflow__steps` 保留四欄等寬填滿整列；手機兩欄。 | 保留 ARIA、鍵盤與步驟門檻；Companion 卡片列可橫向捲動，完整原生／WebView 整合由 #485 追蹤 |
 
 ---
 
@@ -209,7 +215,7 @@ applyThemeEarly();
 
 | 類別組合 | 滑出方向與 CSS 規格 | 適用時機與業務場景 | 常態掛載規範 |
 | :--- | :--- | :--- | :--- |
-| `.offcanvas.offcanvas-start` | 左側滑入，寬度 `380px` ~ `450px`，`z-index: 1045` | **主題與外觀設定面板 (`ThemeView`)**：透過頂部工具列「Theme」按鈕喚起。 | **採用常態 DOM 掛載 + `show` prop 切換**，禁止條件渲染以確保滑入動畫流暢 |
+| `.offcanvas.offcanvas-end.app-menu-drawer` | 右側滑入；共用 `--bs-offcanvas-width`／drawer 上限，窄畫面滿寬；ThemeView 層級為 1050 | **外觀設定 (`ThemeView`)**：應用程式選單 → 外觀。 | 常態 DOM 掛載 + `show` 切換；經 `ModalPortal` 掛載並保留焦點管理與內部捲動 |
 | `.offcanvas.offcanvas-bottom` | 底部滑入，高度 `40vh` ~ `50vh`，`z-index: 1045` | **診斷主控台 (`DiagnosticConsole`)**：透過頂部工具列「Show Logs」喚起。 | 搭配 `.offcanvas-backdrop` 背景點擊關閉 |
 
 ---

@@ -2,6 +2,8 @@
 
 本規範定義 FH6-HorizonTuner 前端視覺呈現、Halfmoon CSS 設計系統、版型穩定度與 React 元件架構原則。
 
+實作檔案與主題擴充／驗收入口見[主題與設計系統開發指南](../../docs/frontend/design-systems.md)；本文件維護架構護欄。
+
 ---
 
 ## 一、 雙層視覺架構 (Dual-Layer Architecture)
@@ -43,4 +45,4 @@
 
 ### 2. 60Hz 高頻繪圖效能隔絕
 - 所有 Canvas、圖表、滑桿控制項在 60Hz 遙測即時更新時，必須維持 `transition: none !important`，避免高頻數據流觸發動畫佇列堆疊導致介面遲鈍。
-- 即時儀表卡片以系統底色、圓角與陰影呈現材質，卡片與其開關提示不疊加 `backdrop-filter`，避免動態 Canvas 周圍建立多層模糊合成。外層導覽列、抽屜等靜態表面仍可使用系統模糊 token。
+- 即時儀表卡片與其開關提示不疊加 `backdrop-filter`，避免動態 Canvas 周圍建立多層模糊合成。Halfmoon 一般卡片外層維持透明排版容器、內層保留原材質；Swiss 外層使用實色細框。導覽列、抽屜等靜態表面依所屬系統使用材質 token。

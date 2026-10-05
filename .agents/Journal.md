@@ -1,5 +1,13 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-10-05 / Swiss 開發文件與 PR 送審整理（Codex as Codex）
+
+- **來源／狀態**：`local`／`verified`；使用者要求整理開發文件，將 PR #481 整理至 Ready to Review。
+- **Learning**：規格第一節已登錄新設計系統，不代表下方元件表同步完成。原文件仍將互動位移／光暈、徽章外觀與分頁底線寫成所有核心的固定規則；frontend README 也仍指向已淘汰的 `src/utils/tuningMath.ts`。開發入口、實作責任與元件表必須共同核對。
+- **Action**：新增 `docs/frontend/design-systems.md` 作為責任地圖、擴充與驗收入口；重寫 frontend README、串接中英文 README／文件索引、區分 2026-09-24 階段紀錄。規格升至 2.5.1，修正六核心、系統限定外觀、右側抽屜、焦點及 Halfmoon 即時卡片材質描述。Companion README 明示原生主題同步由 #485 追蹤。
+- **Evidence**：本輪僅修改 Markdown；變更文件的本地連結、13 個 canonical skill ID、技能 validator、tracked path case 與 `git diff --check` 通過。依 AGENTS 的純文件驗證分流不重跑產品測試；前端 1,131 passed／1 skipped、Rust 122 passed／3 ignored 與瀏覽器證據仍明確歸屬產品提交 `dcd9be9f`，新 HEAD 的 CI 另在 PR 記錄。
+- **Skills**：`ponytail`（full）、`halfmoon-design-system`、`pr-author-maintainer`、`agent-governance-audit`。保留既有未提交的 `frontend/src-tauri/Cargo.toml`，不納入文件提交。
+
 ## 2026-10-05 / Swiss Editorial 與 Contrast 核心主題（Codex as Codex）
 
 - **來源／狀態**：`local`／`verified`；使用者核准規劃後，在 PR #481 新增 Swiss 的另外兩組 Core Theme。
