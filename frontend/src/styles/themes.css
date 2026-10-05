@@ -1,0 +1,197 @@
+/* Theme definitions. Shared components consume these tokens. */
+:root {
+  /* Font Stack */
+  --bs-body-font-family: 'Outfit', 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  /* Brand Accent Colors — overridable via ThemeContext */
+  --primary:      #00f0ff;
+  --secondary:    #ff003c;
+  --accent:       #7000ff;
+  --primary-glow: rgba(0, 240, 255, 0.25);
+
+  /* Semantic Mappings */
+  --text-primary:   var(--bs-body-color, #e0e0e0);
+  --text-secondary: var(--bs-secondary-color, #9ca3af);
+  --glass-border:   var(--bs-border-color-translucent, rgba(255,255,255,0.10));
+  --input-bg:       var(--bs-form-bg, rgba(0, 0, 0, 0.35));
+  --input-text:     var(--bs-form-color, #e0e0e0);
+
+  /* Default Surface Tokens */
+  --glass-bg:       rgba(25, 28, 36, 0.65);
+  --glass-shadow:   0 12px 40px 0 rgba(0, 0, 0, 0.35);
+  --glass-blur:     14px;
+  --panel-radius:   16px;
+  --input-radius:   8px;
+  --bg-gradient:    radial-gradient(circle at top right, #1a1c23, #0f1115);
+
+  /* Interior Surfaces */
+  --surface-1:  rgba(0, 0, 0, 0.25);   /* Elevated inner card */
+  --surface-2:  rgba(0, 0, 0, 0.15);   /* Input/Control track */
+  --surface-3:  rgba(255, 255, 255, 0.05); /* Hover highlight */
+  --divider:    rgba(255, 255, 255, 0.08);
+  --divider-md: rgba(255, 255, 255, 0.15);
+  --on-primary: #000000;
+  --surface-filter: blur(var(--glass-blur));
+  --section-header-bg: var(--surface-1);
+  --heading-color: var(--primary);
+  --heading-tracking: 0.025em;
+  --focus-color: var(--primary);
+  --form-focus-shadow: 0 0 0 0.25rem var(--primary-glow);
+  --interactive-transform: translateY(-3px);
+  --interactive-shadow: 0 0 18px var(--primary-glow), var(--glass-shadow);
+  --choice-shadow: none;
+  --section-border: 0;
+  --section-bg: transparent;
+  --section-padding: 8px;
+  --panel-padding: 24px;
+  --instrument-font-family: var(--bs-font-monospace);
+  --instrument-value-color: var(--primary);
+}
+
+/* =============================================================================
+   (B) Dark / Light Mode Semantic Overrides
+   ============================================================================= */
+
+[data-bs-theme="dark"] {
+  --text-primary:   var(--bs-body-color, #f1f5f9);
+  --text-secondary: var(--bs-secondary-color, #94a3b8);
+  --glass-bg:       rgba(20, 24, 33, 0.70);
+  --glass-border:   rgba(255, 255, 255, 0.10);
+  --bg-gradient:    radial-gradient(circle at top right, #12151d, #0a0c10);
+  --surface-1:      rgba(0, 0, 0, 0.28);
+  --surface-2:      rgba(0, 0, 0, 0.18);
+  --surface-3:      rgba(255, 255, 255, 0.05);
+  --divider:        rgba(255, 255, 255, 0.08);
+  --divider-md:     rgba(255, 255, 255, 0.15);
+  --input-bg:       rgba(0, 0, 0, 0.40);
+  --input-text:     #f8fafc;
+  --glass-shadow:   0 16px 40px rgba(0, 0, 0, 0.45);
+}
+
+[data-bs-theme="light"] {
+  --text-primary:   #0f172a;                     /* Dark Slate 900 for high readability */
+  --text-secondary: #475569;                     /* Slate 600 */
+  --glass-bg:       rgba(255, 255, 255, 0.82);   /* Crystal clear white glass */
+  --glass-border:   rgba(0, 0, 0, 0.10);         /* Crisp subtle outline */
+  --bg-gradient:    linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+  --surface-1:      rgba(241, 245, 249, 0.85);   /* Crisp light container */
+  --surface-2:      rgba(226, 232, 240, 0.75);   /* Interactive control background */
+  --surface-3:      rgba(203, 213, 225, 0.50);   /* Active/Hover state */
+  --divider:        rgba(0, 0, 0, 0.09);
+  --divider-md:     rgba(0, 0, 0, 0.16);
+  --input-bg:       #ffffff;                     /* Pure white input box */
+  --input-text:     #0f172a;
+  --glass-shadow:   0 12px 36px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+/* =============================================================================
+   (C) Core Theme Visual Differentiation (data-bs-core x data-bs-theme)
+   ============================================================================= */
+
+/* --- Default (Cyan / Slate Tone) --- */
+[data-bs-core="default"][data-bs-theme="dark"] {
+  --bg-gradient: radial-gradient(ellipse at top right, #111a2e, #080b12);
+  --glass-bg:    rgba(16, 22, 36, 0.72);
+}
+[data-bs-core="default"][data-bs-theme="light"] {
+  --bg-gradient: linear-gradient(135deg, #f0f4fa 0%, #dbe4f0 100%);
+  --glass-bg:    rgba(255, 255, 255, 0.85);
+}
+
+/* --- Modern (Deep Indigo / Slate Navy) --- */
+[data-bs-core="modern"][data-bs-theme="dark"] {
+  --bg-gradient: radial-gradient(ellipse at top left, #0e172a, #050a16);
+  --glass-bg:    rgba(15, 23, 42, 0.75);
+  --divider:     rgba(99, 102, 241, 0.15);
+}
+[data-bs-core="modern"][data-bs-theme="light"] {
+  --bg-gradient: linear-gradient(135deg, #f0f3ff 0%, #dbe1f7 100%);
+  --glass-bg:    rgba(255, 255, 255, 0.88);
+  --surface-1:   rgba(238, 242, 255, 0.85);
+  --surface-2:   rgba(224, 231, 255, 0.70);
+}
+
+/* --- Elegant (Warm Sand / Espresso) --- */
+[data-bs-core="elegant"][data-bs-theme="dark"] {
+  --bg-gradient: radial-gradient(ellipse at bottom right, #1c1813, #0d0a07);
+  --glass-bg:    rgba(28, 23, 18, 0.78);
+  --divider:     rgba(212, 169, 106, 0.15);
+}
+[data-bs-core="elegant"][data-bs-theme="light"] {
+  --bg-gradient: linear-gradient(135deg, #f7f4ee 0%, #e8decb 100%);
+  --glass-bg:    rgba(255, 253, 248, 0.90);
+  --surface-1:   rgba(247, 242, 233, 0.85);
+  --surface-2:   rgba(237, 228, 212, 0.75);
+  --text-primary:#292219;
+}
+
+/* --- Swiss Technical (Matte Industrial / High-Contrast Precision Grid) --- */
+[data-bs-core="swiss"][data-bs-theme="dark"] {
+  --bg-gradient:    #0b0d12;
+  --glass-bg:       #0e1117;
+  --glass-blur:     0px;
+  --glass-border:   rgba(255, 255, 255, 0.12);
+  --glass-shadow:   none;
+  --panel-radius:   4px;
+  --input-radius:   2px;
+  --surface-1:      #161b24;
+  --surface-2:      #1e2530;
+  --surface-3:      rgba(255, 255, 255, 0.08);
+  --divider:        rgba(255, 255, 255, 0.12);
+  --divider-md:     rgba(255, 255, 255, 0.22);
+  --text-primary:   #f8fafc;
+  --text-secondary: #aeb9c9;
+}
+[data-bs-core="swiss"][data-bs-theme="light"] {
+  --bg-gradient:    #f8fafc;
+  --glass-bg:       #ffffff;
+  --glass-blur:     0px;
+  --glass-border:   rgba(0, 0, 0, 0.15);
+  --glass-shadow:   none;
+  --panel-radius:   4px;
+  --input-radius:   2px;
+  --surface-1:      #f1f5f9;
+  --surface-2:      #e2e8f0;
+  --surface-3:      rgba(203, 213, 225, 0.60);
+  --divider:        rgba(0, 0, 0, 0.12);
+  --divider-md:     rgba(0, 0, 0, 0.20);
+  --text-primary:   #090d16;
+  --text-secondary: #475569;
+}
+
+[data-bs-core="swiss"] {
+  --bs-body-font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+  --bs-body-color: var(--text-primary);
+  --bs-body-bg: var(--bg-gradient);
+  --bs-secondary-color: var(--text-secondary);
+  --bs-secondary-bg: var(--surface-1);
+  --bs-tertiary-bg: var(--surface-2);
+  --bs-border-color: var(--glass-border);
+  --bs-border-radius: var(--panel-radius);
+  --bs-border-radius-sm: var(--input-radius);
+  --bs-border-radius-lg: var(--panel-radius);
+  --bs-action-bg: var(--surface-1);
+  --bs-action-color: var(--text-primary);
+  --bs-action-border-color: var(--glass-border);
+  --bs-action-hover-bg: var(--surface-2);
+  --bs-action-hover-color: var(--text-primary);
+  --bs-action-active-bg: var(--surface-3);
+  --bs-action-active-color: var(--text-primary);
+  --input-bg: var(--surface-1);
+  --input-text: var(--text-primary);
+  --surface-filter: none;
+  --section-header-bg: var(--glass-bg);
+  --heading-color: var(--text-primary);
+  --heading-tracking: 0.04em;
+  --focus-color: var(--text-primary);
+  --form-focus-shadow: none;
+  --interactive-transform: none;
+  --interactive-shadow: none;
+  --section-border: 1px solid var(--glass-border);
+  --section-bg: var(--glass-bg);
+  --section-padding: 16px;
+  --panel-padding: 16px;
+  --instrument-font-family: var(--bs-body-font-family);
+  --instrument-value-color: var(--text-primary);
+  --instrument-marker-shadow: none;
+}

@@ -4,6 +4,7 @@ import {
   isHalfmoonCore,
   normalizeThemeSettings,
   primaryForeground,
+  themeColorProperties,
   type ThemeSettings,
 } from './themeSettings';
 
@@ -63,5 +64,17 @@ describe('ThemeContext - Swiss Style and Core Theme support', () => {
     ['#f1f5f9', '#000000'], ['#00f0ff', '#000000'],
   ])('chooses readable text for primary fill %s', (color, foreground) => {
     expect(primaryForeground(color)).toBe(foreground);
+  });
+
+  it.each(['default', 'modern', 'elegant', 'swiss'] as const)('shares the preset with Halfmoon controls in %s', halfmoonCore => {
+    const theme = normalizeThemeSettings({ halfmoonCore, primaryColor: '#ff0000' });
+    const properties = themeColorProperties(theme);
+    expect(properties['--primary']).toBe('#ff0000');
+    expect(properties['--bs-primary-hsl']).toBe('0, 100%, 50%');
+    expect(properties['--bs-primary-foreground']).toBe(properties['--on-primary']);
+    const mono = themeColorProperties({ ...theme, primaryColor: '#ffffff' });
+    expect(mono['--bs-primary-hsl']).toBe('0, 0%, 100%');
+    expect(mono['--bs-primary-foreground-hsl']).toBe('0, 0%, 0%');
+    expect(mono['--bs-primary-switch-svg']).toBe('var(--bs-switch-svg-dark)');
   });
 });

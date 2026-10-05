@@ -118,12 +118,12 @@ const PresetPanel: React.FC = () => {
             aria-pressed={themeSettings.primaryColor === preset.primaryColor
               && themeSettings.secondaryColor === preset.secondaryColor
               && themeSettings.accentColor === preset.accentColor}
-            className="cyber-btn-glow"
+            className="theme-choice cyber-btn-glow"
             style={presetBtnStyle}
           >
             {/* 3-Color Dots Swatch */}
             <div style={{ display: 'flex', gap: '0.25rem', alignItems: 'center' }}>
-              <span style={{
+              <span className="theme-swatch" style={{
                 display: 'inline-block', width: '10px', height: '10px',
                 borderRadius: '50%', background: preset.primaryColor,
                 boxShadow: `0 0 4px ${preset.primaryColor}`,

@@ -1,6 +1,6 @@
 # FH6-HorizonTuner 前端 Halfmoon CSS 視覺設計與組件規格書 (Halfmoon Specification)
 
-> **文件版本**：2.2.0
+> **文件版本**：2.3.0
 > **參考標準**：[Halfmoon CSS v2.0.2 官方文件 (gethalfmoon.com/docs)](https://www.gethalfmoon.com/docs/) + Bootstrap 5 相容語意層  
 > ** Agent 遵循與維護宣告**：所有 AI Agent 在開發、重構或維護前端 UI 組件與 Halfmoon CSS 樣式時，**必須嚴格遵循並主動維護本規格書**與 [halfmoon-design-system](SKILL.md) 技能標準。
 > **目標與任務**：定義與規範 FH6-HorizonTuner 專案在實際前端開發時套用 Halfmoon CSS 所有 Components、Layout、Helpers 與 Utilities 的特定規格、參數、語意 Token、視覺行為與使用時機。
@@ -13,7 +13,7 @@ FH6-HorizonTuner 前端採用 **雙層視覺設計架構 (Two-Layer Visual Archi
 
 ```
 +-----------------------------------------------------------------------+
-|  Layer 2: App.css Skin (Glassmorphism + Dynamic Neon Theme Tokens)    |
+|  Layer 2: App.css -> styles/{themes,base,components,navigation}.css  |
 |  - 賽車儀表動態霓虹權杖 (--primary, --secondary, --accent, --primary-glow) |
 |  - 語意化表面材質變數 (--glass-bg, --glass-border, --surface-1/2/3)   |
 +-----------------------------------------------------------------------+
@@ -26,6 +26,8 @@ FH6-HorizonTuner 前端採用 **雙層視覺設計架構 (Two-Layer Visual Archi
 ### 1.1 主態與主題切換機制 (Theme & Core Attributes)
 
 新增核心 `swiss`（Swiss Technical）沿用 Layer 2，保留既有 default、modern、elegant 與八組配色；另加入 Swiss Signal 與 Bauhaus Mono。`context/themeSettings.ts` 是載入、匯入、React 更新及首幀設定的共同正規化入口；Bauhaus Mono 以完整三色組識別，日間主色為黑、夜間為淺白，其他自訂配色不改寫。
+
+`App.css` 只管理載入順序：`themes.css` 定義核心／模式 token，`base.css` 管理版面，`components.css` 提供按鈕、徽章、表單、面板等共用外觀，`navigation.css` 管理 `.workspace-tabs`。新增設計核心應擴充 token，不在各頁複製核心 selector。首幀與 React 共用 `themeColorProperties`，將使用者配色同步至 `--primary/secondary/accent` 及 Halfmoon 的 `--bs-primary-*`、HSL 與勾選圖示；原生按鈕、開關、進度條和 utilities 不得停留於核心預設配色。成功／警告／錯誤等功能語意色保持獨立。
 
 Swiss 的 `--bg-gradient` 為實色（夜間 `#0b0d12`、日間 `#f8fafc`），`--glass-shadow: none`、`--glass-blur: 0px`；主要面板直接使用 `backdrop-filter: none`。`--on-primary` 依主色相對亮度選取黑或白，供實色按鈕文字使用。焦點使用清楚的 outline。全域數字採 `tabular-nums lining-nums`；Swiss 採 Inter／系統無襯線字型。
 
@@ -51,7 +53,7 @@ applyThemeEarly();
 
 ### 1.2 全域 CSS 設計權杖表 (Design Tokens)
 
-全域顏色與材質定義於 `src/App.css` 的 `:root`、`[data-bs-theme]` 與 `[data-bs-core]` 選擇器：
+全域顏色與材質定義於 `src/styles/themes.css` 的 `:root`、`[data-bs-theme]` 與 `[data-bs-core]` 選擇器。共用元件以 `--surface-filter`、`--heading-color`、`--input-radius`、`--panel-radius`、`--interactive-shadow` 等 token 決定外觀：
 
 | CSS 變數名稱 | 語意與用途 | Dark Mode (暗色) | Light Mode (亮色) | 專案規範與邊界 |
 | :--- | :--- | :--- | :--- | :--- |
@@ -129,11 +131,11 @@ applyThemeEarly();
 
 | 類別組合 | 視覺呈現與顏色 | 適用時機與業務場景 |
 | :--- | :--- | :--- |
-| `.badge.text-bg-success` | 亮綠色背景，高對比文字 | **連線正常指示**：如 `UDP SIGNAL ACTIVE` 狀態標籤。 |
-| `.badge.text-bg-danger` | 霓虹紅背景 | **斷線/異常指示**：如 `UDP DISCONNECTED` 或觸底告警。 |
-| `.badge.text-bg-info` | 亮藍色背景 | **車輛等級標籤**：如 `S1`, `S2`, `Class X`。 |
-| `.badge.bg-primary-subtle.text-primary` | 半透明主色背景，亮主色文字 | **嚮導步驟序號**：如 Step 1~5 下拉選單序號標籤 (`1`, `2`, `3`...)。 |
-| `.badge.text-bg-warning` | 暖黃色背景 | **警告標記**：如 `EV` 電腦模擬過載或暫停提示。 |
+| `.badge.text-bg-success` | 淡綠背景、語意文字與細框 | **連線正常指示**：如 `UDP SIGNAL ACTIVE` 狀態標籤。 |
+| `.badge.text-bg-danger` | 淡紅背景、語意文字與細框 | **斷線/異常指示**：如 `UDP DISCONNECTED` 或觸底告警。 |
+| `.badge.text-bg-info` | 淡藍背景、語意文字與細框 | **車輛等級標籤**：如 `S1`, `S2`, `Class X`。 |
+| `.badge.bg-primary-subtle.text-primary` | 淡主色背景、中性文字與主色細框 | **嚮導步驟或一般主色狀態**。 |
+| `.badge.text-bg-warning` | 淡黃背景、語意文字與細框 | **警告標記**：如 `EV` 電腦模擬過載或暫停提示。 |
 
 ---
 
@@ -175,7 +177,7 @@ applyThemeEarly();
 | :--- | :--- | :--- | :--- |
 | `.navbar.sticky-top` | `z-index: 1050`, `background: var(--glass-bg)`, `backdrop-filter: blur(14px)`, `border-bottom: 1px solid var(--glass-border)` | 全站頂部固定導覽列。 | `.navbar` 與 `.container-fluid` **必須帶 `overflow: visible !important`** |
 | `.navbar-brand` | `font-size: 1.25rem`, `font-weight: 700`, `color: var(--primary)` | 專案品牌標誌與 Git Commit 版本 Badge 容器。 | 不隨滾動消失 |
-| `.nav.nav-pills` | 丸狀按鈕頁籤組，`.nav-link.active` 亮主色 | 視圖內部二級子分頁切換（如 Telemetry 內 `Dashboard` / `Analysis` / `Drag Test`）。 | 簡潔且反應迅速 |
+| `.workspace-tabs.nav` | 依內容寬度排列，單個標籤最大 14rem，空間不足換行；作用中以 3px 主色底線標示 | 主導覽、頁內子分頁、Companion 與工作流步驟共用。一般分頁不編號，只有調校／Road 等有順序流程使用 `.workspace-tabs__number`。調校 `.tuning-workflow__steps` 保留四欄等寬填滿整列；手機改為兩欄。 | 保留既有 ARIA、鍵盤操作與步驟門檻；Companion 卡片選擇列可水平捲動 |
 
 ---
 
@@ -336,7 +338,7 @@ applyThemeEarly();
 ## 5. 視覺行為與設計原則標準 (Design Behavior Standards)
 
 1. **60Hz 高頻渲染元件效能護欄**：
-   - 包含 Canvas、[class*="recharts"] 圖表、`input[type="range"]` 與 `input[type="color"]` 必須在 `App.css` 中明確設定 `transition: none !important`。
+   - 包含 Canvas、[class*="recharts"] 圖表、`input[type="range"]` 與 `input[type="color"]` 必須在 `styles/base.css` 中明確設定 `transition: none !important`。
 2. **極簡專業視覺 (Emoji 禁用原則)**：
    - 依據專案 `AGENTS.md` 規範，**嚴禁在 UI 字串或 UI 組件內直接加入 Emoji 圖示**。所有狀態提示與箭頭必須採用純文字（如 `▾`）、 Halfmoon `.badge` 標籤或向量圖示。
 3. **硬編碼色彩禁用**：
@@ -350,7 +352,7 @@ applyThemeEarly();
    - 所有 AI Agent 在建立、重構或微調前端 UI 組件、CSS 樣式或佈局時，必須強制對照並維持本規格書之要求。
    - 若引入新的 Halfmoon 組件或變更全域設計變數，必須同步更新 [HALFMOON_SPECIFICATION.md](HALFMOON_SPECIFICATION.md) 與 [SKILL.md](SKILL.md)。
 2. **變更測試流程**：
-   - 修改 `frontend/src/App.css` 或組件樣式前，請執行 Vite 畫面測試。
+   - 修改 `frontend/src/styles/` 或組件樣式時，請執行 Vite 畫面測試。
    - 修改完畢後，執行前端測試確保零語法與邏輯錯誤：
      ```bash
      cmd /c "pnpm -C frontend run test"

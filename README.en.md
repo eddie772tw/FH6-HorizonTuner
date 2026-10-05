@@ -71,7 +71,7 @@ AEGO Road now uses qualified moving-sweep bin averages and jointly allocates fir
   - **Automated Web-Triggered Release Pipeline**: Maintainers simply publish a release on GitHub Web; Actions builds and signs the Full installer and attaches both Full/Lite portable executables, their Portable ZIP, `.sig`, and `latest.json`.
 * **Diagnostics Console, Theme System & i18n**:
   - **Diagnostic Console**: Live log viewer with DEBUG / INFO / WARNING / ERROR level filtering and automated Traceback stitching.
-  - **Design System & Theme**: Halfmoon CSS v2 offers three Glassmorphism cores and the matte Swiss Technical core. Swiss telemetry cards and the tuning wizard use hairline borders, modular grids and tabular figures. All 10 color presets remain available, including Swiss Signal and Bauhaus Mono, whose black/white primary adapts to light/dark mode. Choose a core and palette under App menu → Appearance.
+  - **Design System & Theme**: Halfmoon CSS v2 offers three Glassmorphism cores and the matte Swiss Technical core. Pages share navigation, buttons, badges and panel styling. General tabs use content widths with a maximum; the tuning workflow retains numbered, equal-width steps filling the row. All 10 color presets update native controls and charts, including Swiss Signal and Bauhaus Mono, whose black/white primary adapts to light/dark mode. Choose a core and palette under App menu → Appearance. `frontend/src/styles/` separates theme tokens, layout and shared components so new cores can reuse existing page structures.
   - **Dynamic i18n**: Multi-language framework supporting Traditional Chinese (`zh-tw`), English (`en-us`), Japanese (`ja-jp`), and more.
 
 ---

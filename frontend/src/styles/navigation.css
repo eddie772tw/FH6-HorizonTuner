@@ -1,0 +1,63 @@
+/* One navigation vocabulary for workspaces, nested pages and workflow steps. */
+.workspace-tabs.nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.workspace-tabs .nav-item { min-width: 0; max-width: 14rem; }
+.workspace-tabs .nav-link {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex: 0 1 auto;
+  width: auto;
+  max-width: 14rem;
+  min-width: 0;
+  padding: 12px !important;
+  margin: 0;
+  text-align: left;
+  overflow-wrap: anywhere;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  border-radius: 0;
+  color: var(--text-secondary);
+  background: transparent;
+  box-shadow: none;
+}
+.workspace-tabs .nav-item .nav-link { width: 100%; height: 100%; }
+.workspace-tabs .nav-link:hover:not(:disabled) { background: var(--surface-3); color: var(--text-primary); }
+.workspace-tabs .nav-link.active {
+  color: var(--text-primary) !important;
+  background: var(--surface-1);
+  border-bottom-color: var(--primary);
+  font-weight: 700;
+}
+.workspace-tabs .nav-link:focus-visible { outline: 2px solid var(--text-primary); outline-offset: -2px; }
+.workspace-tabs .nav-link:disabled { opacity: 0.55; cursor: not-allowed; }
+.workspace-tabs__number { font-size: 1.5rem; font-weight: 700; line-height: 1.2; }
+.tuning-workflow__steps.nav {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.tuning-workflow__steps .nav-link { width: 100%; max-width: none; }
+.workspace-tabs--primary.nav { width: auto; }
+.app-header > div:first-child { flex: 1; min-width: 0; }
+.live-workspace > .workspace-toolbar { padding: 0; border: 0; }
+
+@media (max-width: 767.98px) {
+  .app-header > div:first-child { flex-basis: 100%; }
+  .app-header > div:last-child { margin-left: auto; }
+  .app-header .workspace-tabs--primary.nav { width: 100%; }
+  .workspace-tabs .nav-link { padding: 8px !important; gap: 4px; }
+  .workspace-tabs__number { font-size: 1.125rem; }
+  .tuning-workflow__steps.nav { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* Small Companion screens scroll the card picker rather than compressing five labels. */
+.companion-card-picker.workspace-tabs { flex-wrap: nowrap; overflow-x: auto; }
+.companion-card-picker.workspace-tabs .nav-link { flex-shrink: 0; }

@@ -31,7 +31,7 @@ export const LiveWorkspace: React.FC<LiveWorkspaceProps> = ({ variant }) => {
   return (
     <div className="live-workspace d-flex flex-column h-100 gap-2">
       <div className="workspace-toolbar flex-shrink-0">
-        <div className="nav nav-pills gap-1" role="tablist" aria-label={t('Live')}>
+        <div className="workspace-tabs nav" role="tablist" aria-label={t('Live')}>
           {panels.map((value, index) => <button key={value} type="button" role="tab"
             id={`${id}-tab-${value}`} aria-controls={`${id}-panel-${value}`} aria-selected={panel === value}
             tabIndex={panel === value ? 0 : -1} ref={element => { tabs.current[index] = element; }}

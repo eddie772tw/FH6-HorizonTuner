@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { backendFetch } from '../services/backend';
 import { validateCSS } from '../utils/cssValidator';
 
-import { defaultThemeSettings, normalizeThemeSettings, primaryForeground, type ThemeSettings } from './themeSettings';
+import { defaultThemeSettings, normalizeThemeSettings, themeColorProperties, type ThemeSettings } from './themeSettings';
 export { defaultThemeSettings, normalizeThemeSettings, isHalfmoonCore } from './themeSettings';
 export type { ThemeSettings, HalfmoonCore } from './themeSettings';
 
@@ -50,13 +50,10 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     document.documentElement.setAttribute('data-bs-core', themeSettings.halfmoonCore || 'default');
 
     // Inject user-defined brand colors as CSS custom properties
-    // These override the defaults set in App.css, allowing full user customization
-    document.documentElement.style.setProperty('--primary', themeSettings.primaryColor);
-    document.documentElement.style.setProperty('--on-primary', primaryForeground(themeSettings.primaryColor));
-    document.documentElement.style.setProperty('--secondary', themeSettings.secondaryColor);
-    document.documentElement.style.setProperty('--accent', themeSettings.accentColor);
-    document.documentElement.style.setProperty('--primary-glow', themeSettings.halfmoonCore === 'swiss'
-      ? 'transparent' : `rgba(${hexToRgb(themeSettings.primaryColor)}, 0.25)`);
+    // Override both project tokens and native Halfmoon colors for every core.
+    for (const [property, value] of Object.entries(themeColorProperties(themeSettings))) {
+      document.documentElement.style.setProperty(property, value);
+    }
 
     // Inject custom CSS
     let styleTag = document.getElementById('custom-theme-css');
@@ -144,10 +141,3 @@ export const useTheme = () => {
   }
   return context;
 };
-
-// Helper: convert hex color to "r, g, b" string for use in rgba()
-function hexToRgb(hex: string): string {
-  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-  if (!result) return '0, 240, 255';
-  return `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}`;
-}

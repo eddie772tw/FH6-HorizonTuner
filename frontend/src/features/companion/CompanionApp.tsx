@@ -113,7 +113,7 @@ export default function CompanionApp() {
   return (
     <main className="companion-app" aria-label="HorizonTuner Companion">
       {(error || (noticeVisible && notice)) && <div className={`companion-message ${error ? 'is-error' : 'is-success is-toast'}`} role={error ? 'alert' : 'status'}>{error || notice}</div>}
-      {!nativeAvailable && <nav className="companion-tabs nav nav-pills" aria-label="Companion sections">
+      {!nativeAvailable && <nav className="companion-tabs workspace-tabs nav" aria-label="Companion sections">
         {(['telemetry', 'tuning', 'connection'] as const).map((item) => (
           <button key={item} className={`nav-link ${tab === item ? 'active' : ''}`} onClick={() => setTab(item)} type="button" aria-label={item === 'connection' ? `${t('Connection')}, ${t(connectionStatus.accessibleLabel)}` : undefined}>
             {item === 'telemetry' ? t('Telemetry') : item === 'tuning' ? t('Tuning') : <>

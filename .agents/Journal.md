@@ -1,5 +1,14 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-10-05 / 全站主題與分頁規則收攏（Codex as Codex）
+
+- **來源／狀態**：`local`／`verified`；依 PR #481 使用者回饋補齊跨頁一致性，遠端 Checks 按新提交另核對。
+- **Learning**：只更新 `--primary` 不會覆蓋 Halfmoon core 的原生 Primary/HSL、開關 SVG 與連結色，造成 Color Presets 部分失效。應由首幀與 React 共用 `themeColorProperties`，集中映射兩套變數。CSS 的核心差異也應透過 token 表達，不在每頁追加 Swiss selector。
+- **Action**：`App.css` 分流至 `styles/{themes,base,components,navigation}.css`；共用按鈕、徽章、面板、表單與分頁。一般分頁無編號、依內容寬度且最大 14rem；調校保留步驟編號與等寬全列，手機兩欄。Companion 同步使用共用樣式；功能性警示色獨立於品牌配色。
+- **Evidence**：4 cores × 日夜 × Swiss Signal／Bauhaus Mono 共 16 組瀏覽器檢查原生 Primary 與開關同步，另切換全部 10 組 preset。1440px 調校列寬 1408px、四步各 352px；390／320px 無頁面橫向溢出。方向鍵切換與 Portal Escape 焦點還原正常。瀏覽器使用隔離資料根目錄，未啟用原生 HUD 或真實遊戲量測。
+- **本地 Gate**：Vitest 1,118 passed／1 skipped；frontend build 通過；Cargo 122 passed／3 ignored，文件測試通過。前端 build 與 Cargo 循序執行，避免嵌入 hashed assets 時互相覆寫。
+- **Skills**：`ponytail`（full）、`halfmoon-design-system`、`huge-component-refactoring`、`modular-refactoring`、`pr-author-maintainer`、`pr-review-evaluation`、`agent-governance-audit`。
+
 ## 2026-10-05 / Swiss Technical 三階段實作（Codex as Codex）
 
 - **來源／狀態**：`local`／`verified`；對應 #480、PR #481，遠端 CI 另按最終提交確認。

@@ -389,7 +389,7 @@ const CarParamsView: React.FC<CarParamsViewProps> = ({ subTab: propSubTab, setSu
           </div>
 
           <div className="d-flex align-items-center gap-3">
-            <ul className="nav nav-pills gap-1">
+            <ul className="workspace-tabs nav">
               <li className="nav-item">
                 <button 
                   className={`nav-link btn-sm py-1 px-3 ${subTab === 'config' ? 'active fw-bold' : 'text-body-secondary'}`}

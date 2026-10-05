@@ -8,7 +8,7 @@
 
 1. **職責劃分**：
    - **Layer 1（核心基礎）**：採用 **Halfmoon CSS v2.0.2**，提供 Bootstrap 相容之語意標籤、響應式排版與按鈕/表單基底。
-   - **Layer 2（專案外觀）**：於 `src/App.css` 定義 Glassmorphism 賽車暗色/亮色主題皮膚與霓虹發光變數。
+   - **Layer 2（專案外觀）**：`src/App.css` 依序載入 `styles/themes.css`、`base.css`、`components.css`、`navigation.css`。核心只定義 token；共用元件消費 token；頁面保留結構規則。所有核心透過 `themeColorProperties` 將 Color Presets 同步至 Halfmoon 原生控制項與專案元件。
 2. **禁止硬編碼色彩**：
    - 所有背景、文字、邊框與陰影一律使用 CSS 語意變數（例如 `var(--glass-bg)`, `var(--text-primary)`, `var(--surface-1)`, `var(--primary)`）。
    - 嚴禁在 inline style 或自訂樣式中寫死 `#000000` 或 `#ffffff`。

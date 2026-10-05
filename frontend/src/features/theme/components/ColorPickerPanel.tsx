@@ -10,7 +10,7 @@ const ColorField: React.FC<{
 }> = ({ id, label, value, onChange }) => (
   <div style={{
     padding: '1rem',
-    borderRadius: '8px',
+    borderRadius: 'var(--panel-radius)',
     background: 'var(--surface-1)',
     border: '1px solid var(--glass-border)',
   }}>
@@ -34,7 +34,7 @@ const ColorField: React.FC<{
         style={{ width: '110px', textAlign: 'center', fontFamily: 'monospace' }}
       />
       {/* Live preview swatch */}
-      <div style={{
+      <div className="theme-swatch" style={{
         width: '32px', height: '32px', borderRadius: '6px',
         background: value,
         border: '1px solid var(--glass-border)',

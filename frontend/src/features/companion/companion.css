@@ -1,8 +1,7 @@
 html, body, #root { height: var(--companion-viewport-height, 100dvh); min-height: 0; }
 .companion-app { position: relative; height: var(--companion-viewport-height, 100dvh); min-height: 0; flex-shrink: 0; display: flex; flex-direction: column; box-sizing: border-box; padding: .55rem .75rem .7rem; color: var(--text-primary); background: var(--surface-1); }
-.companion-tabs { position: sticky; top: 0; z-index: 10; display: grid; grid-template-columns: repeat(3, 1fr); gap: .25rem; padding: .2rem 0; background: var(--surface-1); }
+.companion-tabs { position: sticky; top: 0; z-index: 10; background: var(--surface-1); }
 .companion-tabs .nav-link { min-height: 2.35rem; padding: .4rem .5rem; color: var(--text-secondary); }
-.companion-tabs .nav-link.active { color: var(--surface-1); background: var(--primary); }
 .companion-tabs, .companion-message { flex-shrink: 0; }
 .companion-content { flex: 1; min-height: 0; padding-top: .35rem; overflow: auto; }
 .companion-stack { display: flex; flex-direction: column; gap: .75rem; }
@@ -19,9 +18,9 @@ html, body, #root { height: var(--companion-viewport-height, 100dvh); min-height
 .companion-profile-summary { margin-left: auto; color: var(--text-secondary); font-size: .75rem; text-align: right; }
 .companion-profile-body { display: flex; flex-direction: column; gap: .75rem; padding-top: .75rem; }
 .companion-tuning-results { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: .75rem; }
-.companion-panel { padding: 1rem; border: 1px solid var(--glass-border); border-radius: .75rem; background: var(--glass-bg); box-shadow: var(--glass-shadow); }
+.companion-panel { padding: 1rem; border: 1px solid var(--glass-border); border-radius: var(--panel-radius); background: var(--glass-bg); box-shadow: var(--glass-shadow); }
 .companion-panel h2, .companion-panel h3 { margin: 0 0 .45rem; font-size: 1rem; }
-.companion-message { margin: .5rem 0; padding: .65rem .8rem; border-radius: .5rem; background: var(--surface-2); }
+.companion-message { margin: .5rem 0; padding: .65rem .8rem; border-radius: var(--panel-radius); background: var(--surface-2); }
 .companion-message.is-error { color: var(--bs-danger); }
 .companion-message.is-success { color: var(--bs-success); }
 .companion-message.is-toast { position: absolute; z-index: 20; top: 3.05rem; left: 50%; width: max-content; max-width: calc(100% - 1.5rem); margin: 0; transform: translateX(-50%); box-shadow: var(--glass-shadow); pointer-events: none; }
@@ -34,7 +33,7 @@ html, body, #root { height: var(--companion-viewport-height, 100dvh); min-height
 .companion-mode-switch .btn { min-height: 2.65rem; }
 .companion-connection-stack { min-height: 100%; }
 .companion-connection-panel { display: flex; flex: 1; min-height: 100%; flex-direction: column; }
-.companion-lan-primary { display: flex; flex-direction: column; align-items: flex-start; gap: .5rem; padding: .85rem; border: 1px solid var(--glass-border); border-radius: .6rem; background: var(--surface-1); }
+.companion-lan-primary { display: flex; flex-direction: column; align-items: flex-start; gap: .5rem; padding: .85rem; border: 1px solid var(--glass-border); border-radius: var(--panel-radius); background: var(--surface-1); }
 .companion-lan-primary p { margin: 0; color: var(--text-secondary); font-size: .85rem; }
 .companion-scan-button { min-height: 3.1rem; width: 100%; font-size: 1rem; }
 .companion-advanced-connection { margin-top: .75rem; border-top: 1px solid var(--glass-border); }
@@ -46,7 +45,7 @@ html, body, #root { height: var(--companion-viewport-height, 100dvh); min-height
 .companion-advanced-body { display: flex; flex-direction: column; gap: .7rem; padding: .25rem 0 .5rem; }
 .companion-diagnostics { margin-top: auto; padding: .8rem 0 0; }
 .companion-diagnostics h3 { margin: 0 0 .45rem; font-size: .9rem; }
-.companion-diagnostics dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .35rem .8rem; margin: 0; padding: .65rem; border: 1px solid var(--glass-border); border-radius: .55rem; background: var(--surface-1); font-size: .76rem; }
+.companion-diagnostics dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .35rem .8rem; margin: 0; padding: .65rem; border: 1px solid var(--glass-border); border-radius: var(--panel-radius); background: var(--surface-1); font-size: .76rem; }
 .companion-diagnostics dl > div { min-width: 0; }
 .companion-diagnostics dt { color: var(--text-secondary); font-weight: 400; }
 .companion-diagnostics dd { margin: 0; overflow-wrap: anywhere; }

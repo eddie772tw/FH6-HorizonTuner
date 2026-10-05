@@ -52,11 +52,11 @@ export function TuningViewContent({ unitPreference, onUnitPreferenceChange }: {
           {currentStep < 4 && <button className="btn btn-primary" disabled={!canOpenTuningStep(currentStep + 1, readiness)} onClick={() => setCurrentStep(currentStep + 1)}>{t('Next')}</button>}
         </div>
       </div>
-      <nav className="tuning-workflow__steps nav nav-pills gap-2 flex-wrap" aria-label={t('Tuning workflow steps')}>
+      <nav className="workspace-tabs tuning-workflow__steps nav" aria-label={t('Tuning workflow steps')}>
         {TUNING_WORKFLOW_STEPS.map(step => <button key={step.id} className={'nav-link ' + (currentStep === step.number ? 'active' : '')}
           aria-current={currentStep === step.number ? 'step' : undefined} disabled={!canOpenTuningStep(step.number, readiness)}
           title={step.number === 4 && !readiness.gearingAvailable ? t('Engine analysis and a feasible gearing result are required before setup verification.') : undefined}
-          onClick={() => { session.workflow.setReviewHistory(false); setCurrentStep(step.number); }}><span className="tuning-workflow__step-number">{step.number}.</span> {t(step.label)}</button>)}
+          onClick={() => { session.workflow.setReviewHistory(false); setCurrentStep(step.number); }}><span className="workspace-tabs__number">{step.number}.</span> {t(step.label)}</button>)}
       </nav>
       <div className="small text-body-secondary mt-2" role="status">{t(session.calculationStatus === 'pending' ? 'Calculating tuning results…' : session.calculationStatus === 'error' ? 'Tuning calculation is unavailable. Retrying…' : !readiness.mechanical ? 'Complete the vehicle weight and distribution first.' : !readiness.measuredEngine ? 'Mechanical estimates are available. Engine data and gearing still require measurement.' : !readiness.gearingAvailable ? 'Engine analysis is ready, but the gearing model has no feasible result. Review Step 3.' : 'Engine measurement is ready. Confirm game settings before recording a validation run.')}</div>
       {!reviewHistory && session.calculationStatus === 'ready' && <WorkflowGuide readiness={readiness} currentStep={currentStep} openStep={step => setCurrentStep(step)} />}

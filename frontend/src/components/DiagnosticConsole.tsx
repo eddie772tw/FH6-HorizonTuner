@@ -231,7 +231,7 @@ const DiagnosticConsole: React.FC<DiagnosticConsoleProps> = ({ show, onClose }) 
         </p>
 
         {/* Offcanvas Body */}
-        <div className="offcanvas-body p-0 d-flex flex-column flex-grow-1 overflow-hidden" style={{ background: '#050508' }}>
+        <div className="offcanvas-body p-0 d-flex flex-column flex-grow-1 overflow-hidden" style={{ background: 'var(--surface-1)' }}>
           {errorMsg && (
             <div className="alert alert-danger mb-0 rounded-0 py-2 px-3 fs-7">
               {errorMsg}
@@ -239,7 +239,7 @@ const DiagnosticConsole: React.FC<DiagnosticConsoleProps> = ({ show, onClose }) 
           )}
           <pre
             ref={consoleRef}
-            className="p-3 m-0 flex-grow-1 overflow-auto text-light"
+            className="p-3 m-0 flex-grow-1 overflow-auto text-body"
             style={{
               fontFamily: "'JetBrains Mono', 'Fira Code', Consolas, Monaco, monospace",
               fontSize: '0.85rem',

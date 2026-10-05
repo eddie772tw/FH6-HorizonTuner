@@ -1,0 +1,120 @@
+/* Shared component skin. No core names or per-page color palettes in this layer. */
+:is(.btn, .theme-choice) {
+  border-radius: var(--input-radius) !important;
+  font-weight: 600;
+  letter-spacing: 0.025em;
+  box-shadow: var(--control-shadow, none);
+}
+.btn-primary.text-white { color: var(--on-primary) !important; }
+.btn-outline-secondary {
+  --bs-btn-color: var(--text-secondary);
+  --bs-btn-border-color: var(--glass-border);
+  --bs-btn-hover-color: var(--text-primary);
+  --bs-btn-hover-bg: var(--surface-3);
+  --bs-btn-hover-border-color: var(--text-secondary);
+  --bs-btn-active-color: var(--text-primary);
+  --bs-btn-active-bg: var(--surface-2);
+  --bs-btn-active-border-color: var(--text-primary);
+}
+.theme-choice[aria-pressed="true"] { border-color: var(--primary) !important; }
+:is(.btn, .theme-choice, .form-check-input):focus-visible {
+  outline: 2px solid var(--focus-color);
+  outline-offset: 2px;
+  box-shadow: none;
+}
+.badge {
+  --badge-accent: var(--text-secondary);
+  --badge-ink: var(--text-secondary);
+  padding: 0.3em 0.5em;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  line-height: 1.25;
+  border: 1px solid color-mix(in srgb, var(--badge-accent) 50%, var(--glass-border));
+  border-radius: var(--input-radius) !important;
+}
+.badge:is(.text-bg-primary, .bg-primary, .bg-primary-subtle) { --badge-accent: var(--primary); --badge-ink: var(--text-primary); }
+.badge:is(.text-bg-success, .bg-success, .bg-success-subtle) { --badge-accent: var(--bs-success); --badge-ink: var(--bs-success-text-emphasis); }
+.badge:is(.text-bg-danger, .bg-danger, .bg-danger-subtle) { --badge-accent: var(--bs-danger); --badge-ink: var(--bs-danger-text-emphasis); }
+.badge:is(.text-bg-warning, .bg-warning, .bg-warning-subtle) { --badge-accent: var(--bs-warning); --badge-ink: var(--bs-warning-text-emphasis); }
+.badge:is(.text-bg-info, .bg-info, .bg-info-subtle) { --badge-accent: var(--bs-info); --badge-ink: var(--bs-info-text-emphasis); }
+/* Include utility classes so text-bg-* and text-white cannot bypass the badge contract. */
+.badge[class] {
+  color: var(--badge-ink) !important;
+  background: color-mix(in srgb, var(--badge-accent) 12%, var(--glass-bg)) !important;
+  box-shadow: none !important;
+}
+
+:is(.navbar, .glass-panel, .card, .halfmoon-card, .popover, .offcanvas, .dropdown-menu, .modal-content, .toast, .telemetry-card-shell) {
+  backdrop-filter: var(--surface-filter) !important;
+  -webkit-backdrop-filter: var(--surface-filter) !important;
+  box-shadow: var(--glass-shadow) !important;
+}
+:is(.card, .halfmoon-card, .popover, .dropdown-menu, .modal-content, .toast, .companion-panel) {
+  background: var(--glass-bg);
+  color: var(--text-primary);
+  border-color: var(--glass-border);
+  border-radius: var(--panel-radius);
+}
+:is(.glass-panel, .card, .halfmoon-card)[class*="rounded-"] { border-radius: var(--panel-radius) !important; }
+:is(.card-header, .card-footer, .modal-header, .modal-footer, .offcanvas-header) { border-color: var(--glass-border); background: var(--section-header-bg); }
+:is(.glass-panel-interactive, .card-interactive, .cyber-btn-glow):hover {
+  transform: var(--interactive-transform) !important;
+  box-shadow: var(--interactive-shadow) !important;
+}
+:is(.theme-choice, .theme-swatch) { box-shadow: var(--choice-shadow) !important; }
+:is(.form-control, .form-select, .cyber-input, .cyber-select):focus-visible {
+  outline: 2px solid var(--focus-color) !important;
+  outline-offset: 2px;
+  box-shadow: var(--form-focus-shadow) !important;
+}
+:is(.app-shell, .app-menu-drawer, .companion-app) :is(h1, h2, h3, h4, h5, h6, .workspace-section-heading, .offcanvas-title) {
+  color: var(--heading-color) !important;
+  letter-spacing: var(--heading-tracking);
+  font-weight: 700;
+}
+.navbar-brand.text-primary { color: var(--heading-color) !important; }
+.workspace-section {
+  border: var(--section-border);
+  background: var(--section-bg);
+  padding: var(--section-padding);
+  border-radius: var(--panel-radius);
+}
+.settings-surface-grid { gap: 16px !important; }
+.settings-section-header { border-bottom: 1px solid var(--glass-border); }
+.table { --bs-table-color: var(--text-primary); --bs-table-bg: transparent; --bs-table-border-color: var(--glass-border); }
+.table thead { color: var(--text-secondary); font-size: 0.75rem; letter-spacing: 0.04em; text-transform: uppercase; }
+.dropdown-item { color: var(--text-primary); }
+.dropdown-item:is(:hover, :focus) { background: var(--surface-3); color: var(--text-primary); }
+.dropdown-item.active { background: var(--primary); color: var(--on-primary); }
+.tuning-workflow__grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr)) !important; gap: 16px !important; }
+.tuning-workflow label { font-weight: 600; letter-spacing: 0.02em; }
+
+.telemetry-card-shell { background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: var(--panel-radius); }
+.telemetry-card-shell .border { border-color: var(--glass-border) !important; border-radius: var(--panel-radius) !important; }
+.telemetry-card-shell__header h3 { font-size: 0.875rem !important; text-transform: uppercase; }
+.telemetry-card-shell .font-monospace { font-family: var(--instrument-font-family) !important; }
+.telemetry-card-shell .text-primary { color: var(--instrument-value-color) !important; }
+.telemetry-card-shell :is(.text-secondary, .text-info) { color: var(--text-secondary) !important; }
+.telemetry-card-shell, .telemetry-card-shell * { transition: none !important; }
+.telemetry-live-grid, .telemetry-card-layout { gap: 8px !important; }
+.telemetry-live-grid:not(.telemetry-live-grid--focused) { min-height: 44rem; }
+
+@media (max-width: 1199.98px) {
+  .telemetry-live-grid:not(.telemetry-live-grid--focused) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: none;
+    grid-auto-rows: minmax(20rem, auto);
+    height: auto;
+    flex: 0 0 auto !important;
+  }
+  .telemetry-live-grid:not(.telemetry-live-grid--focused) > * { grid-column: span 2 !important; }
+  .telemetry-live-grid:not(.telemetry-live-grid--focused) > :nth-child(-n+2) { grid-column: span 1 !important; }
+}
+@media (max-width: 767.98px) {
+  .telemetry-live-grid:not(.telemetry-live-grid--focused) { grid-template-columns: minmax(0, 1fr); }
+  .telemetry-live-grid:not(.telemetry-live-grid--focused) > * { grid-column: 1 !important; }
+}
+@media (max-width: 575.98px) {
+  .telemetry-card-shell:has(.telemetry-card-layout--grid) { min-height: 38rem; }
+  .telemetry-card-layout--grid { grid-template-columns: minmax(0, 1fr); grid-template-rows: repeat(4, minmax(0, 1fr)); }
+}

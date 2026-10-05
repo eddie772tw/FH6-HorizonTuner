@@ -10,10 +10,10 @@ description: 當開發或重構前端 UI 組件、調整 Halfmoon CSS v2 主題�
 ## 六大核心視覺契約與護欄 (Core Invariants)
 
 1. **雙層架構與語意權杖 (Two-Layer Architecture & Tokens)**：
-   - 核心框架使用 **Halfmoon CSS v2.0.2**（Layer 1），覆蓋與皮膚調整於 `src/App.css`（Layer 2）。
+   - 核心框架使用 **Halfmoon CSS v2.0.2**（Layer 1），`src/App.css` 僅作 Layer 2 載入入口：依序載入 `styles/themes.css`（核心與模式 token）、`base.css`（版面）、`components.css`（共用控制項）、`navigation.css`（分頁）。新增核心以 token 定義外觀，不複製各頁 selector。
    - **禁止硬編碼顏色**：背景色、文字色、邊框與陰影必須使用語意化 CSS 變數（如 `var(--glass-bg)`, `var(--text-primary)`, `var(--surface-1)`, `var(--primary)`），嚴禁於 inline style 硬編碼 `#ffffff` 或 `#000000`。
 2. **首幀防閃爍 (Anti-FOUC) 護欄**：
-   - 頁面載入首幀透過 HTML `data-bs-theme` (dark/light) 與 `data-bs-core` (default/modern/elegant/swiss) 設定外觀模式；首幀與 React 共用 `context/themeSettings.ts` 的正規化設定。
+   - 頁面載入首幀透過 HTML `data-bs-theme` (dark/light) 與 `data-bs-core` (default/modern/elegant/swiss) 設定外觀模式；首幀與 React 共用 `context/themeSettings.ts` 的正規化設定及 `themeColorProperties`。所有核心的 Color Presets 必須同步原生 Halfmoon `--bs-primary-*` 與專案色彩；成功／警告／錯誤維持語意色。
 3. **靜態面板 vs 互動卡片明確分離**：
    - 靜態資訊/圖表面板：使用 `.glass-panel` 或 `.card`，絕對不加 hover 浮動位移動畫。
    - 可點擊選單/卡片：使用 `.glass-panel-interactive` 或 `.card-interactive`，點擊與懸浮時觸發位移與發光。
