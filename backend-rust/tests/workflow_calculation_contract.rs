@@ -315,13 +315,18 @@ fn ev_persistence_replays_frames_and_locked_ratios_remain_unapplied() {
     r["profile"]["evGearbox"] = raw["setup"].clone();
     r["inputSnapshot"]["carId"] = json!("3445");
     r["evidence"] = json!({"kind":"saved-ev","evidenceId":proof["evidenceId"]});
-    let result = call(&app, "/api/tuning/workflow", r).unwrap();
+    let result = call(&app, "/api/tuning/workflow", r.clone()).unwrap();
     let road = call(
         &app,
         "/api/road/workflows",
         json!({"identity":{"ordinal":3445,"performanceIndex":795,"drivetrain":2},"carName":"Taycan","event":{"name":"Test","format":"circuit"},"recommendation":result["recommendation"]}),
     );
-    assert!(road.is_ok(), "{:?}", road.err());
+    let saved = road.unwrap();
+    drop(app);
+    let app = App::new(temp.path()).unwrap();
+    assert_eq!(call(&app, "/api/tuning/workflow", r).unwrap(), result);
+    assert_eq!(saved["identity"]["ordinal"], 3445);
+
     let fields = result["recommendation"]["fields"].as_object().unwrap();
     assert!(!fields.keys().any(|k| k.starts_with("gearing.")));
     assert!(call(
