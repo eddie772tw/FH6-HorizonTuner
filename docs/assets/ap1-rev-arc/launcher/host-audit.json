@@ -1,0 +1,173 @@
+{
+  "style": "ap1_rev_arc",
+  "errors": [],
+  "missing": [],
+  "samples": [
+    {
+      "name": "host-standby",
+      "text": "×1000 r/min\nGEAR\n—\nkm/h\nFUEL\nE\nF\n--\nWAITING FOR DATA\nAP1 / REV ARC\nRPM ----",
+      "readings": {
+        "speed": "---",
+        "gear": "—",
+        "status": "WAITING FOR DATA"
+      },
+      "body": "rgba(0, 0, 0, 0)",
+      "style": "ap1Cluster",
+      "bounds": {
+        "x": 1350,
+        "y": 825,
+        "width": 540,
+        "height": 225,
+        "display": "block"
+      }
+    },
+    {
+      "name": "host-cruise",
+      "text": "0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n×1000 r/min\nGEAR\n4\nkm/h\nFUEL\nE\nF\n68%\nAP1 / REV ARC\nRPM 6500",
+      "readings": {
+        "speed": "180",
+        "gear": "4",
+        "status": ""
+      },
+      "body": "rgba(0, 0, 0, 0)",
+      "style": "ap1Cluster",
+      "bounds": {
+        "x": 1350,
+        "y": 825,
+        "width": 540,
+        "height": 225,
+        "display": "block"
+      }
+    },
+    {
+      "name": "host-stale-with-smoothing",
+      "text": "×1000 r/min\nGEAR\n—\nkm/h\nFUEL\nE\nF\n--\nSIGNAL LOST\nAP1 / REV ARC\nRPM ----",
+      "readings": {
+        "speed": "---",
+        "gear": "—",
+        "status": "SIGNAL LOST"
+      },
+      "body": "rgba(0, 0, 0, 0)",
+      "style": "ap1Cluster",
+      "bounds": {
+        "x": 1350,
+        "y": 825,
+        "width": 540,
+        "height": 225,
+        "display": "block"
+      }
+    },
+    {
+      "name": "host-reverse-reconnected",
+      "text": "0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n×1000 r/min\nGEAR\nR\nkm/h\nFUEL\nE\nF\n68%\nAP1 / REV ARC\nRPM 1400",
+      "readings": {
+        "speed": "16",
+        "gear": "R",
+        "status": ""
+      },
+      "body": "rgba(0, 0, 0, 0)",
+      "style": "ap1Cluster",
+      "bounds": {
+        "x": 1350,
+        "y": 825,
+        "width": 540,
+        "height": 225,
+        "display": "block"
+      }
+    },
+    {
+      "name": "host-imperial",
+      "text": "0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n×1000 r/min\nGEAR\nR\nmph\nFUEL\nE\nF\n68%\nAP1 / REV ARC\nRPM 1400",
+      "readings": {
+        "speed": "10",
+        "gear": "R",
+        "status": ""
+      },
+      "body": "rgba(0, 0, 0, 0)",
+      "style": "ap1Cluster",
+      "bounds": {
+        "x": 1350,
+        "y": 825,
+        "width": 540,
+        "height": 225,
+        "display": "block"
+      }
+    },
+    {
+      "name": "host-720p",
+      "text": "0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n×1000 r/min\nGEAR\nR\nmph\nFUEL\nE\nF\n68%\nAP1 / REV ARC\nRPM 1400",
+      "readings": {
+        "speed": "10",
+        "gear": "R",
+        "status": ""
+      },
+      "body": "rgba(0, 0, 0, 0)",
+      "style": "ap1Cluster",
+      "bounds": {
+        "x": 710,
+        "y": 465,
+        "width": 540,
+        "height": 225,
+        "display": "block"
+      }
+    },
+    {
+      "name": "host-gauge-hidden",
+      "text": "",
+      "readings": {
+        "speed": "16",
+        "gear": "R",
+        "status": ""
+      },
+      "body": "rgba(0, 0, 0, 0)",
+      "style": "ap1Cluster",
+      "bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "display": "none"
+      }
+    },
+    {
+      "name": "host-gauge-restored",
+      "text": "0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n×1000 r/min\nGEAR\nR\nkm/h\nFUEL\nE\nF\n68%\nAP1 / REV ARC\nRPM 1400",
+      "readings": {
+        "speed": "16",
+        "gear": "R",
+        "status": ""
+      },
+      "body": "rgba(0, 0, 0, 0)",
+      "style": "ap1Cluster",
+      "bounds": {
+        "x": 710,
+        "y": 465,
+        "width": 540,
+        "height": 225,
+        "display": "block"
+      }
+    },
+    {
+      "name": "host-style-reloaded",
+      "text": "0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n×1000 r/min\nGEAR\nR\nkm/h\nFUEL\nE\nF\n68%\nAP1 / REV ARC\nRPM 1400",
+      "readings": {
+        "speed": "16",
+        "gear": "R",
+        "status": ""
+      },
+      "body": "rgba(0, 0, 0, 0)",
+      "style": "ap1Cluster",
+      "bounds": {
+        "x": 710,
+        "y": 465,
+        "width": 540,
+        "height": 225,
+        "display": "block"
+      }
+    },
+    {
+      "name": "destroy",
+      "remainingBodyChildren": 0
+    }
+  ]
+}

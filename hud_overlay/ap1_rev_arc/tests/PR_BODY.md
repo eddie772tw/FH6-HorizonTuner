@@ -4,7 +4,7 @@
 
 整體採低寬煙燻黑儀表罩、密集琥珀 LCD 分段、上拱轉速帶與中央大型速度；左下新增適合遊戲的低調檔位，右下呈現有實際資料的燃油。目標是喜歡 1990 年代末 Honda/JDM、高轉自然進氣與簡潔道路駕駛 HUD 的玩家。
 
-本 PR 為可執行原型。當前本地程式 gate 已通過；HUD 瀏覽器視覺驗收仍待正常 GitHub Actions 的 Chromium artifact 檢查，沒有把受阻的本地執行宣稱成功。
+本 PR 為可執行原型。本地程式 gate 與 sandbox 啟用的遠端 Chromium 視覺／實際 launcher 檢查已通過，且已獨立目視實際截圖；Windows 原生與遊戲內驗收仍保留。完整專案 CI 在此更新時仍執行中，請另看 PR checks。
 
 ### Key Modifications
 
@@ -25,7 +25,9 @@
 - **JavaScript Syntax:** `node --check` model、renderer、controller 與 visual runner → pass
 - **Whitespace:** `git diff --check` → pass
 - **Original Asset:** Inkscape 匯出 1440×600 RGBA PNG，47,491 bytes；ImageMagick 驗證角落 alpha=0，已目視原創外殼輸出
-- **HUD Browser Review:** 本地 Chromium launch 被環境 UNIX socket `EPERM` 阻擋；approved `require_escalated` 仍相同。CUA 到本地 origin 為 `ERR_BLOCKED_BY_CLIENT`。待 CI artifact 的實際像素檢查，不能視為已通過
+- **HUD Browser Review:** Linux Chrome 154.0.8037.57、Chromium sandbox 啟用，視覺 fixture 與實際 launcher／Coordinator job pass。head `8b783d080511ad5b49939f7f6603bd5d86e9a659`；[run 37255610983](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37255610983)／[artifact 11322980570](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37255610983/artifacts/11322980570)。三解析度、DPR2、十種狀態、smoothing 斷線／重連、config、resize、reload、destroy 已自動驗證；DPR2、狀態集、720p／1440p 與 host 重連的實際像素已目視，未發現裁切或文字重疊
+- **Local Browser Limitation:** 本地程序曾因 UNIX socket `EPERM` 受阻，CUA 本地 origin 為 `ERR_BLOCKED_BY_CLIENT`；保留此歷史限制，透過正常 CI 驗證，沒有繞過限制或停用 sandbox
+- **General CI:** 在此紀錄更新時仍執行中；視覺 job 成功不代表完整專案 CI 已完成
 - **Native Platform:** Windows 原生 overlay、滑鼠穿透、Forza 遊戲畫面與右下安全區未驗收。此 HUD 預期取代原生右下角儀表，同時啟用可能重疊
 - **Backend / Python:** 未修改，不以不相關測試取代前端 gate
 
@@ -33,7 +35,7 @@
 
 - 2026-10-05（Bagley as Codex）：以官方 1999 Fact Book 研究原型並實際查看座艙圖片；完成原創外殼、遙測與生命週期
 - 2026-10-05（Bagley as Codex）：依獨立檢查補上 timestamp replay 斷線偵測、負值倒車、max_rpm、null payload/config、legacy unit fallback；擴充純行為測試
-- 2026-10-05（Bagley as Codex）：本地 frontend gate 通過；提供正常 CI 視覺重製路徑，保留視覺與原生平台待驗收事項
+- 2026-10-05（Bagley as Codex）：本地 frontend gate 通過；正常 GitHub Actions Chrome 154 視覺與實際 launcher 檢查通過並完成獨立像素檢查，收錄三張精選實際 PNG 與完整 JSON 證據；原生平台仍待驗收
 
 ### Related Issues / References
 
@@ -41,6 +43,7 @@
 - [實際檢視的官方座艙圖](https://www.honda.co.jp/factbook/auto/s2000/199904/image/037_001.gif)
 - [Honda S2000 99 官方新聞資料](https://hondanews.eu/eu/fi/cars/media/pressreleases/34329/honda-s2000-99)（文字索引可讀；直接擷取 502，未以此聲稱已目視額外照片）
 - [原型與資料契約](../../docs/hud/ap1-rev-arc.md)
+- 實際截圖：`docs/assets/ap1-rev-arc/detail-metric.png`、`states.png`、`metric-1280x720.png`；來源／版本／檢視記錄：`review-evidence.json`
 - 原創程式與圖形依 repository MIT license；參考照片僅供研究，未封裝。Honda 商標與原廠圖像所有權仍屬原權利人；本樣式無官方合作／授權背書
 - 採用技能：`halfmoon-design-system`、`telemetry-udp-protocol`、`pr-author-maintainer`
 

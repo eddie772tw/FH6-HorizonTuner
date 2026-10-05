@@ -1,0 +1,78 @@
+{
+  "style": "ap1_rev_arc",
+  "reviewed_head": "8b783d080511ad5b49939f7f6603bd5d86e9a659",
+  "reviewed_on": "2026-10-05",
+  "browser": "Chrome 154.0.8037.57",
+  "platform": "Linux (GitHub Actions)",
+  "chromium_sandbox": true,
+  "run_id": 37255610983,
+  "artifact_id": 11322980570,
+  "run_url": "https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37255610983",
+  "artifact_url": "https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37255610983/artifacts/11322980570",
+  "visual_job": "passed",
+  "general_ci": "pending at documentation update; see pull request checks for current status",
+  "automated_evidence": [
+    "visual-evidence.json",
+    "launcher/host-audit.json"
+  ],
+  "visual_inspection": {
+    "result": "passed",
+    "inspected": [
+      "DPR2 detail",
+      "ten state crops",
+      "1280x720 full viewport",
+      "2560x1440 full viewport",
+      "actual launcher reverse/reconnect"
+    ],
+    "findings": [
+      "No clipping or overlapping readouts observed",
+      "Amber LCD and arcing tachometer preserve the researched AP1 design direction",
+      "Speed, gear, fuel and redline remain distinguishable at the default lower-right size",
+      "Missing/error/paused/signal-lost states clear old live measurements"
+    ],
+    "runtime_changes_needed": false
+  },
+  "curated_previews": [
+    {
+      "file": "detail-metric.png",
+      "source": "metric-1280x720-dpr2.png",
+      "derivation": "Transparent-margin crop of actual browser screenshot; lossless PNG compression",
+      "dimensions": [
+        1056,
+        404
+      ],
+      "outside_alpha": 0
+    },
+    {
+      "file": "states.png",
+      "source": "contact-sheet.png",
+      "derivation": "Ten actual browser screenshot crops arranged with labels on an opaque review background; lossless PNG compression",
+      "dimensions": [
+        1088,
+        1210
+      ],
+      "outside_alpha": "opaque review contact sheet"
+    },
+    {
+      "file": "metric-1280x720.png",
+      "source": "metric-1280x720-dpr1.png",
+      "derivation": "Full original viewport; lossless PNG compression only",
+      "dimensions": [
+        1280,
+        720
+      ],
+      "outside_alpha": 0
+    }
+  ],
+  "compression_pixel_comparison": {
+    "metric": "ImageMagick absolute error (AE)",
+    "detail_metric": 0,
+    "states": 0,
+    "metric_1280x720": 0
+  },
+  "scope_limitations": [
+    "Synthetic timestamped telemetry in actual Chromium and real launcher/Coordinator; not a real game recording",
+    "Windows transparent overlay, mouse passthrough and native-game safe-zone acceptance remain untested",
+    "Full source artifact contains additional screenshots listed in visual-evidence.json; only selected previews are committed"
+  ]
+}

@@ -1,0 +1,80 @@
+{
+  "runtime": "Chromium fixture, not Windows native/game acceptance",
+  "screenshots": [
+    "metric-1280x720-dpr1.png",
+    "imperial.png",
+    "reverse.png",
+    "neutral.png",
+    "redline.png",
+    "missing.png",
+    "data-error.png",
+    "paused.png",
+    "adaptive-6000rpm.png",
+    "signal-lost.png",
+    "resize-1920x1080.png",
+    "custom-color.png",
+    "metric-1920x1080-dpr1.png",
+    "metric-2560x1440-dpr1.png",
+    "metric-1280x720-dpr2.png"
+  ],
+  "checks": [
+    {
+      "viewport": [
+        1280,
+        720
+      ],
+      "dpr": 1,
+      "bounds": {
+        "x": 710,
+        "y": 465,
+        "width": 540,
+        "height": 225
+      },
+      "metric": "188 km/h"
+    },
+    "imperial, reverse, neutral, redline, missing, error, paused, 6000 RPM scale, frozen-timestamp disconnect, reconnect, resize, visibility, custom color, destroy",
+    {
+      "viewport": [
+        1920,
+        1080
+      ],
+      "dpr": 1,
+      "bounds": {
+        "x": 1350,
+        "y": 825,
+        "width": 540,
+        "height": 225
+      },
+      "metric": "188 km/h"
+    },
+    {
+      "viewport": [
+        2560,
+        1440
+      ],
+      "dpr": 1,
+      "bounds": {
+        "x": 1990,
+        "y": 1185,
+        "width": 540,
+        "height": 225
+      },
+      "metric": "188 km/h"
+    },
+    {
+      "viewport": [
+        1280,
+        720
+      ],
+      "dpr": 2,
+      "bounds": {
+        "x": 710,
+        "y": 465,
+        "width": 540,
+        "height": 225
+      },
+      "metric": "188 km/h"
+    }
+  ],
+  "errors": []
+}

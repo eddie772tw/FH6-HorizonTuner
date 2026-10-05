@@ -38,9 +38,14 @@
     "chromium_launch": "process_singleton_posix.cc socket() EPERM / SIGABRT, including approved require_escalated execution",
     "supported_cloud_preview": "net::ERR_BLOCKED_BY_CLIENT on local fixture origin; no alternate hostname bypass attempted",
     "screenshots": [],
-    "next_step": "Run the style visual workflow in normal GitHub Actions Chromium and inspect the artifact before claiming visual acceptance"
+    "next_step": "Resolved through normal sandboxed GitHub Actions Chromium; see review-evidence.json. Local environment restriction remains historical evidence."
   },
   "native_acceptance": "Windows transparent overlay, mouse passthrough and real-game placement not tested",
   "base_commit": "a9335b158e658faa86bcfcbe4d36beb602f6c9c7",
-  "dependency_install": "pnpm install --frozen-lockfile (passed on pinned base)"
+  "dependency_install": "pnpm install --frozen-lockfile (passed on pinned base)",
+  "remote_browser_review": {
+    "result": "passed",
+    "evidence": "review-evidence.json",
+    "reviewed_head": "8b783d080511ad5b49939f7f6603bd5d86e9a659"
+  }
 }

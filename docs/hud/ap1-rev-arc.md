@@ -57,8 +57,21 @@ magick hud_overlay/ap1_rev_arc/assets/fascia.png -strip -define png:compression-
 - Style-owned Vitest：34 項純資料／行為測試；涵蓋單位、R/N、空值、NaN、Infinity、速度超界、燃油、適應刻度、重播 timestamp、恢復、設定與 destroy
 - 完整 `pnpm -C frontend test`：157 個檔案通過／1 個略過，1139 個測試通過／1 個略過；`pnpm -C frontend build:web-hud` 與 `git diff --check` 通過。已確認 dist 包含新 HUD 且排除 tests
 - 本地 Chromium 程序被執行環境的 UNIX socket `EPERM` 阻擋；require_escalated 亦相同。雲端瀏覽器至本地 fixture URL 遭 `ERR_BLOCKED_BY_CLIENT`，沒有改用其他 hostname 迴避
-- 因此 **目前尚未完成 HUD 的 Chromium 截圖驗收**；官方參考照片的瀏覽不等同 HUD 驗收。可重製 runner 已提供，等待允許的 CI Chromium artifact 檢查
+- **遠端 Chromium 視覺與實際 launcher／Coordinator 檢查已通過**：Linux Chrome 154.0.8037.57、sandbox 啟用，驗證 head `8b783d080511ad5b49939f7f6603bd5d86e9a659`。[CI run 37255610983](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37255610983)／[artifact 11322980570](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37255610983/artifacts/11322980570)
+- 已獨立目視 DPR2 細節、十種狀態、720p／1440p 全幅與 launcher 倒車重連圖片：沒有發現裁切或文字重疊；不需變更 runtime。完整專案 CI 在此紀錄更新時仍執行中，應另看 PR checks，不能以視覺 job 取代全部 gate
 - Windows 原生透明 overlay、滑鼠穿透、真實 Forza 遊戲畫面與遊戲內安全區仍須平台實測
+
+### 實際瀏覽器預覽與證據
+
+![AP1 Rev Arc：實際 DPR2 Chromium 截圖細節](../assets/ap1-rev-arc/detail-metric.png)
+
+![AP1 Rev Arc：十種實際遙測與錯誤狀態](../assets/ap1-rev-arc/states.png)
+
+[720p 全幅透明 screenshot](../assets/ap1-rev-arc/metric-1280x720.png) 顯示預設右下位置。細節圖只裁切透明邊界；狀態 contact sheet 以實際截圖裁切後加標籤與深色檢視背景。三張 PNG 僅作無損壓縮，ImageMagick AE 比較均為 0。不是美術 mockup，也沒有遊戲背景。
+
+- [視覺／viewport 自動檢查](../assets/ap1-rev-arc/visual-evidence.json)：三種解析度、DPR2、單位、R/N、紅線、缺值、錯誤、暫停、斷線、重連、resize、配色與 destroy，errors 為空
+- [實際 launcher／Coordinator audit](../assets/ap1-rev-arc/launcher/host-audit.json)：含 smoothing 持續重播下的 signal loss、倒車重連、英制、顯隱、reload 與 destroy；errors 與 missing 均為空，頁面背景為透明
+- [研究、像素檢查與 artifact 來源](../assets/ap1-rev-arc/review-evidence.json)：記錄瀏覽器版本、head、CI 來源與限制。JSON 保留完整 artifact 的 screenshot 名稱；repo 僅收錄精選三張，其餘可從該 artifact 取得
 
 ### 可重製瀏覽器檢查
 
