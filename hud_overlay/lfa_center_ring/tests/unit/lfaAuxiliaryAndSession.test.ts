@@ -4,7 +4,7 @@ import { runInNewContext } from 'node:vm';
 import { describe, expect, it } from 'vitest';
 const directory = resolve(process.cwd(), '../hud_overlay/lfa_center_ring');
 const scope: any = {};
-for (const file of ['lfa-auxiliary.js', 'lfa-session.js', 'lfa-expansion.js', 'lfa-panel-layout.js', 'lfa-model.js']) runInNewContext(readFileSync(resolve(directory, file), 'utf8'), scope);
+for (const file of ['lfa-auxiliary.js', 'lfa-session.js', 'lfa-expansion.js', 'lfa-panel-layout.js', 'lfa-status.js', 'lfa-model.js']) runInNewContext(readFileSync(resolve(directory, file), 'utf8'), scope);
 const M = scope.LfaModel, A = scope.LfaAuxiliary, R = scope.LfaSession;
 const base = { timestamp_ms: 100, rpm: 7200, maxRpm: 9000, redlineRpm: 8000, speed_kmh: 180, speed_mph: 111.85, gear: 4, throttle: .8, brake: .2, tire_temp_f: [176, 194, 212, 230], boost_psi: 14.5038 };
 function view(patch: any = {}, config: any = {}) { const s = M.newState(); s.settings = M.config(config); M.ingest(s, { ...base, ...patch }, {}, 0); return M.view(s, 1); }
@@ -139,9 +139,10 @@ describe('LFA reported laps and rank', () => {
     for (const value of [null, undefined, '', NaN, Infinity, -1, 6000]) expect(R.formatLap(value)).toBe('—:—');
   });
   it('accepts only positive integer rank and never celebrates the first snapshot', () => {
-    const s = session(); expect(s.feed().centerText).toBe('P3');
-    for (const rank of [0, -1, 1.5, null, undefined, 256]) expect(view({ race_position: rank }).centerText).toBe('LIVE');
-    expect(view({ RacePosition: 255 }).centerText).toBe('P255');
+    const s = session(); expect(s.feed().centerText).toBe('PI N/A');
+    expect(s.feed({ CurrentLap: 34.8 }, 500).centerText).toBe('P3');
+    for (const rank of [0, -1, 1.5, null, undefined, 256]) expect(R.centerText(R.create(), { rank: R.normalize({ race_position: rank }, 0).rank }, 0, true, false, 'LIVE')).toBe('LIVE');
+    expect(R.centerText(R.create(), { rank: 255 }, 0, true, false, 'LIVE')).toBe('P255');
   });
   it('does not infer lap completion from increasing elapsed time', () => {
     const s = session(); s.feed(); expect(s.feed({ CurrentLap: 59, CurrentRaceTime: 235 }, 1000).centerText).toBe('P3');
@@ -149,7 +150,7 @@ describe('LFA reported laps and rank', () => {
   it('shows a single 3-second completion notice then restores rank', () => {
     const s = session(); s.feed(); expect(s.feed({ lap: 3, LastLap: 92 }, 100).centerText).toBe('LAP 3');
     for (const now of [900, 1800, 2700, 3100]) s.feed({ lap: 3, LastLap: 92, CurrentLap: 2, CurrentRaceTime: 212 }, now);
-    expect(M.view(s.state, 3100).centerText).toBe('P3');
+    expect(M.view(s.state, 3100).centerText).toBe('PI N/A');
   });
   it('prioritizes actual best improvement when best and lap update together', () => {
     const s = session(); s.feed(); expect(s.feed({ lap: 3, LastLap: 87, BestLap: 87 }, 100).centerText).toBe('BEST LAP');
@@ -157,34 +158,34 @@ describe('LFA reported laps and rank', () => {
     expect(s.state.race.notice.until).toBe(3100);
   });
   it('does not celebrate newly populated best time without a completion', () => {
-    const s = session(); s.feed({ BestLap: 0 }); expect(s.feed({ BestLap: 88 }, 100).centerText).toBe('P3');
+    const s = session(); s.feed({ BestLap: 0 }); expect(s.feed({ BestLap: 88 }, 100).centerText).toBe('PI N/A');
   });
   it('ignores replayed timestamps and out-of-order frames without rewinding the event baseline', () => {
     const s = session(); s.feed();
-    expect(s.feed({ timestamp_ms: 101, lap: 3, LastLap: 80, BestLap: 80 }, 100).centerText).toBe('P3');
-    expect(s.feed({ timestamp_ms: 90, lap: 1, CurrentRaceTime: 100, LastLap: 100, BestLap: 100 }, 200).centerText).toBe('P3');
-    expect(s.feed({}, 300).centerText).toBe('P3');
+    expect(s.feed({ timestamp_ms: 101, lap: 3, LastLap: 80, BestLap: 80 }, 100).centerText).toBe('PI N/A');
+    expect(s.feed({ timestamp_ms: 90, lap: 1, CurrentRaceTime: 100, LastLap: 100, BestLap: 100 }, 200).centerText).toBe('PI N/A');
+    expect(s.feed({}, 300).centerText).toBe('PI N/A');
   });
   it('silently rebaselines after stale smoothing replay and reconnect', () => {
     const s = session(); s.feed(); s.feed({ timestamp_ms: 101 }, 2000);
-    expect(M.view(s.state, 2000).centerText).toBe('NO SIGNAL');
-    expect(s.feed({ lap: 3, LastLap: 80, BestLap: 80 }, 2100).centerText).toBe('P3');
+    expect(M.view(s.state, 2000).centerText).toBe('Pending......');
+    expect(s.feed({ lap: 3, LastLap: 80, BestLap: 80 }, 2100).centerText).toBe('PI N/A');
   });
   it('clears an old notice on corroborated timestamp/race-clock/lap reset', () => {
     const s = session(); s.feed(); expect(s.feed({ lap: 3, LastLap: 87, BestLap: 87 }, 100).centerText).toBe('BEST LAP');
-    expect(s.feed({ timestamp_ms: 0, lap: 0, CurrentLap: 0, CurrentRaceTime: 0, LastLap: 0, BestLap: 0 }, 200).centerText).toBe('P3');
-    expect(s.feed({ timestamp_ms: 1, lap: 0, CurrentLap: .1, CurrentRaceTime: .1, LastLap: 0, BestLap: 0 }, 300).centerText).toBe('P3');
+    expect(s.feed({ timestamp_ms: 0, lap: 0, CurrentLap: 0, CurrentRaceTime: 0, LastLap: 0, BestLap: 0 }, 200).centerText).toBe('Pending......');
+    expect(s.feed({ timestamp_ms: 1, lap: 0, CurrentLap: .1, CurrentRaceTime: .1, LastLap: 0, BestLap: 0 }, 300).centerText).toBe('PI N/A');
   });
   it('rebaselines car changes, race restart and skipped completed laps', () => {
     for (const patch of [{ carOrdinal: 200 }, { CurrentRaceTime: 0, lap: 0 }, { lap: 10 }]) {
-      const s = session(); s.feed(); expect(s.feed({ LastLap: 80, BestLap: 80, ...patch }, 100).centerText).toBe('P3');
+      const s = session(); s.feed(); expect(s.feed({ LastLap: 80, BestLap: 80, ...patch }, 100).centerText).toBe('PI N/A');
     }
   });
   it('prioritizes SHIFT and inactive/error states over race messages', () => {
     const s = session(); s.feed(); expect(s.feed({ lap: 3, LastLap: 87, BestLap: 87, rpm: 8500 }, 100).centerText).toBe('SHIFT');
     expect(s.feed({ success: false }, 200).centerText).toBe('DATA ERROR');
     expect(s.feed({ isRaceOn: 0 }, 300).centerText).toBe('PAUSED');
-    expect(s.feed({ lap: 4, LastLap: 85, BestLap: 85 }, 400).centerText).toBe('P3');
+    expect(s.feed({ lap: 4, LastLap: 85, BestLap: 85 }, 400).centerText).toBe('PI N/A');
   });
 });
 
@@ -199,7 +200,7 @@ describe('LFA auxiliary and session DOM projection', () => {
     const renderer = window.LfaRenderer.create({ getElementById: element }, M), s = session(); renderer.palette(s.state.settings);
     renderer.render(s.feed({ Boost: -7.2519 }), null, s.state.settings);
     expect(nodes.lfaTire.textContent).toBe('95°C'); expect(nodes.lfaBoost.textContent).toBe('-0.5'); expect(nodes.lfaBoostUnit.textContent).toBe('bar');
-    expect(nodes.lfaThrottle.textContent).toBe('80%'); expect(nodes.lfaBrake.textContent).toBe('20%'); expect(nodes.lfaLapTime.textContent).toBe('0:34.21'); expect(nodes.lfaStatus.textContent).toBe('P3');
+    expect(nodes.lfaThrottle.textContent).toBe('80%'); expect(nodes.lfaBrake.textContent).toBe('20%'); expect(nodes.lfaLapTime.textContent).toBe('0:34.21'); expect(nodes.lfaStatus.textContent).toBe('PI N/A');
     expect(nodes.lfaBoostMode.textContent).toBe('VAC'); expect(nodes.lfaBoostFill.dataset.negative).toBe('true');
     expect(nodes.lfaBoostGauge.attrs['aria-label']).toBe('Vacuum -0.5 bar');
     renderer.render(s.feed({ Boost: -7.2519 }), null, s.state.settings, { progress: 1, target: true, settled: true });
@@ -216,7 +217,7 @@ describe('LFA auxiliary and session DOM projection', () => {
     }
     renderer.render(M.view(s.state, 1600), null, s.state.settings, { progress: 1, target: true, settled: true });
     for (const name of ['Tire', 'Boost', 'Throttle', 'Brake']) expect(nodes['lfa' + name + 'Fill'].style.opacity).toBe('0');
-    expect(nodes.lfaLapTime.textContent).toBe('—:—'); expect(nodes.lfaStatus.textContent).toBe('NO SIGNAL');
+    expect(nodes.lfaLapTime.textContent).toBe('—:—'); expect(nodes.lfaStatus.textContent).toBe('Pending......');
     expect(nodes.lfaBoostMode.textContent).toBe(''); expect(nodes.lfaBoostFill.dataset.negative).toBe('false');
     expect(nodes.lfaExpandedCurrent.textContent).toBe('—:—'); expect(nodes.lfaExpandedLast.textContent).toBe('—:—'); expect(nodes.lfaExpandedBest.textContent).toBe('—:—'); expect(nodes.lfaExpandedBoost.textContent).toBe('N/A');
     renderer.render(M.view(s.state, 1600), null, s.state.settings, { progress: 0, target: false, settled: true });

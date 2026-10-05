@@ -166,6 +166,9 @@
             expandedLayout(v, motion);
             setText('Speed', v.speedText); setText('SpeedUnit', v.speedUnit); setText('Gear', v.gear);
             setText('Status', v.centerText);
+            nodes.Status.dataset.kind = v.centerKind;
+            nodes.Status.dataset.pending = String(!v.udpConnected);
+            nodes.Status.setAttribute('title', v.centerText);
             const a = v.auxiliary;
             setText('Tire', a.tireText === 'N/A' ? 'N/A' : a.tireText + a.temperatureUnit);
             setText('Boost', a.boostText); setText('BoostUnit', a.boostUnit);

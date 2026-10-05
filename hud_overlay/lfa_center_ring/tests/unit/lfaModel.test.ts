@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 const path = resolve(process.cwd(), '../hud_overlay/lfa_center_ring');
 function load() {
   const scope: any = {};
-  for (const file of ['lfa-auxiliary.js', 'lfa-session.js', 'lfa-expansion.js', 'lfa-panel-layout.js', 'lfa-model.js']) runInNewContext(readFileSync(resolve(path, file), 'utf8'), scope);
+  for (const file of ['lfa-auxiliary.js', 'lfa-session.js', 'lfa-expansion.js', 'lfa-panel-layout.js', 'lfa-status.js', 'lfa-model.js']) runInNewContext(readFileSync(resolve(path, file), 'utf8'), scope);
   return scope.LfaModel;
 }
 const sample = { timestamp_ms: 100, rpm: 7200, maxRpm: 9000, redlineRpm: 8000, speed_kmh: 180, speed_mph: 111.85, gear: 4, throttle: .8, brake: 0 };
@@ -147,7 +147,7 @@ describe('LFA lifecycle through registered HUDCore hooks', () => {
       addEventListener: (name: string, fn: Function) => { if (!listeners.has(name)) listeners.set(name, new Set()); listeners.get(name)!.add(fn); },
       removeEventListener: (name: string, fn: Function) => listeners.get(name)?.delete(fn),
       HUDCore: { registerStyle: (_id: string, def: any) => { hooks = def; }, init: () => {} },
-      LfaMedia: { create: (options: any) => { mediaChanged = options.onChange; return {
+      LfaCatalog: { create: () => ({ start() {}, destroy() {} }) }, LfaMedia: { create: (options: any) => { mediaChanged = options.onChange; return {
         setEnabled: (enabled: boolean) => mediaCalls.push(['enabled', enabled]), view: () => mediaView,
         accept: (snapshot: any) => { mediaCalls.push(['snapshot', snapshot]); mediaView = snapshot; mediaChanged(); },
         destroy: () => mediaCalls.push(['destroy']),
@@ -155,7 +155,7 @@ describe('LFA lifecycle through registered HUDCore hooks', () => {
       LfaRenderer: { create: () => ({ palette: () => {}, resize: () => {}, visibility: () => {}, render: (view: any, check: any, settings: any, motion: any) => renders.push({ view, check, settings, motion: { ...motion } }) }) },
     };
     const scope = { window, document: {} };
-    for (const file of ['lfa-auxiliary.js', 'lfa-session.js', 'lfa-expansion.js', 'lfa-panel-layout.js', 'lfa-model.js']) runInNewContext(readFileSync(resolve(path, file), 'utf8'), scope);
+    for (const file of ['lfa-auxiliary.js', 'lfa-session.js', 'lfa-expansion.js', 'lfa-panel-layout.js', 'lfa-status.js', 'lfa-model.js']) runInNewContext(readFileSync(resolve(path, file), 'utf8'), scope);
     runInNewContext(readFileSync(resolve(path, 'lfa-controller.js'), 'utf8'), scope);
     return { hooks, renders, pending, listeners, mediaCalls, tick: (time: number) => { now = time; const jobs = [...pending.values()]; pending.clear(); jobs.forEach((fn) => fn(time)); }, event: (type: string, event: any = {}) => listeners.get(type)?.forEach((fn) => fn(event)) };
   }

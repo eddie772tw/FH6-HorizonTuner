@@ -71,10 +71,17 @@
         return Math.PI / 2 + Math.max(0, Math.min(1, (nonnegative(rpm) || 0) / maximum)) * Math.PI * 5 / 3;
     }
     function newState() {
-        return { latest: null, token: null, lastAdvance: null, blocked: false, settings: config({}), race: root.LfaSession.create(), expansion: root.LfaExpansion.createRace() };
+        return { statusField: root.LfaStatus.create(), catalog: null, latest: null, token: null, lastAdvance: null, blocked: false, settings: config({}), race: root.LfaSession.create(), expansion: root.LfaExpansion.createRace() };
     }
     function ingest(state, data, payload, now) {
         const latest = frame(data, payload, state.settings);
+        const restartVersion = state.statusField.restartVersion;
+        root.LfaStatus.ingest(state.statusField, object(data), now);
+        if (state.statusField.restartVersion !== restartVersion) {
+            // A confirmed new UDP epoch cannot inherit the retired race or notices.
+            state.race = root.LfaSession.create();
+            state.expansion = root.LfaExpansion.createRace();
+        }
         state.latest = latest;
         state.blocked = latest.failed || !latest.raceOn;
         const hasReading = latest.rpm !== null || latest.speed !== null;
@@ -104,6 +111,7 @@
         const dial = scale(source.maxRpm);
         const shift = live && source.rpm !== null && source.redline !== null && source.rpm >= source.redline;
         const confirmedRace = root.LfaExpansion.confirmed(state.expansion, now);
+        const center = root.LfaStatus.view(state.statusField, { live, shift, status, racing: confirmedRace, rank: source.race.rank, notice: state.race.notice }, now, state.catalog);
         return { ...source, status, live, shift, dial,
             confirmedRace, expansionTarget: root.LfaExpansion.layoutPolicy(state.settings, confirmedRace, false).expanded,
             needle: live && source.rpm !== null ? angle(source.rpm, dial.maximum) : null,
@@ -111,7 +119,7 @@
             rpmText: source.rpm === null ? '—' : Math.round(source.rpm).toLocaleString('en-US'),
             auxiliary: root.LfaAuxiliary.display(source.auxiliary, state.settings),
             lapText: root.LfaSession.formatLap(source.race.currentLap),
-            centerText: root.LfaSession.centerText(state.race, source.race, now, live, shift, status),
+            centerText: center.text, centerKind: center.kind, udpConnected: center.connected,
         };
     }
     root.LfaModel = { STALE_MS, finite, gear, config, frame, scale, angle, newState, ingest, view };

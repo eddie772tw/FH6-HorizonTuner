@@ -29,6 +29,7 @@ async function main() {
     configureServer(server) {
       server.middlewares.use((req, res, next) => {
         const pathname = new URL(req.url, 'http://localhost').pathname;
+        if (pathname === '/api/cars/database') return json(res, {});
         if (pathname === '/api/runtime') return json(res, { platform: 'windows', capabilities: { systemMedia: true } });
         if (pathname === '/api/overlay/system_media') return json(res, { success: true, has_media: false, state: 'unavailable', source: 'winrt' });
         if (pathname === '/api/overlay/config') {

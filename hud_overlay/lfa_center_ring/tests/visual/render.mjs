@@ -21,6 +21,7 @@ const server = http.createServer(async (req, res) => {
       res.end(JSON.stringify(name === '/api/runtime' ? { platform: 'windows', capabilities: { systemMedia: true } }
         : { success: true, has_media: false, state: 'unavailable', source: 'winrt' })); return;
     }
+    if (name === '/api/cars/database') { res.setHeader('content-type', 'application/json'); res.end(JSON.stringify({"1260": {"display_name": "2010 Lexus LFA"}, "4084": {"display_name": "1972 Datsun #269 Attacking The Clock Racing 240Z All Carbon Hillclimb Beast"}})); return; }
     if (name === '/fixture') { res.setHeader('content-type', 'text/html'); res.end(fixture); return; }
     const file = path.resolve(root, '.' + name);
     if (!file.startsWith(root + path.sep)) { res.writeHead(403).end(); return; }
@@ -33,7 +34,7 @@ await new Promise((r) => server.listen(0, '127.0.0.1', r));
 const origin = `http://127.0.0.1:${server.address().port}`;
 let browser, activePage;
 const summary = { browser: null, platform: process.platform, nativeAcceptance: 'Not performed: Windows/game unavailable', source: 'Synthetic canonical frames through real HUDCore dispatcher', scenarios: [], passed: false, error: null };
-const base = { timestamp_ms: 100, rpm: 7200, maxRpm: 9000, redlineRpm: 8000, speed_kmh: 180, speed_mph: 111.85, gear: 4, throttle: .8, brake: .2, tire_temp_f: [176, 194, 212, 230], boost_psi: 14.5038, isRaceOn: 1 };
+const base = { timestamp_ms: 100, rpm: 7200, maxRpm: 9000, redlineRpm: 8000, speed_kmh: 180, speed_mph: 111.85, gear: 4, throttle: .8, brake: .2, tire_temp_f: [176, 194, 212, 230], boost_psi: 14.5038, isRaceOn: 1, carOrdinal: 1260, carClass: 5, carPi: 850 };
 async function send(frame, type, data = {}) { await frame.evaluate(({ type, data }) => window.HUDCore.handleMessage(type, data), { type, data }); }
 async function text(frame, id) { return frame.locator('#lfa' + id).textContent(); }
 try {
@@ -47,7 +48,7 @@ try {
     await page.goto(origin + '/fixture');
     const frame = page.frames().find((f) => f.url().includes('/lfa_center_ring/'));
     await frame.waitForFunction(() => window.HUDCore?.getActiveStyle());
-    assert.equal(await text(frame, 'Status'), 'WAITING');
+    assert.equal(await text(frame, 'Status'), 'Pending......');
     assert.equal(await text(frame, 'Speed'), '—');
     for (const sensor of ['Tire', 'Boost', 'Throttle', 'Brake']) assert.equal(await text(frame, sensor), 'N/A');
     assert.equal(await text(frame, 'LapTime'), '—:—');
@@ -91,6 +92,7 @@ try {
     await reading(); assert.equal(await text(frame, 'Speed'), '180'); assert.equal(await text(frame, 'Tire'), '95°C');
     assert.equal(await text(frame, 'Boost'), '1'); assert.equal(await text(frame, 'Throttle'), '80%'); assert.equal(await text(frame, 'Brake'), '20%');
     const rect = await frame.locator('#lfaContainer').boundingBox();
+    const statusBox = await frame.locator('#lfaStatus').boundingBox();
     assert.ok(rect.x >= 0 && rect.y >= 0 && rect.x + rect.width <= width && rect.y + rect.height <= height);
     const tag = `${width}x${height}-dpr${dpr}`;
     assert.equal(await frame.evaluate(() => document.querySelector('#lfaNeedle').width), 560 * dpr);
@@ -135,14 +137,14 @@ try {
     assert.equal(await text(frame, 'Throttle'), '100%'); assert.equal(await text(frame, 'Brake'), '0%'); assert.equal(await text(frame, 'Tire'), '160°C'); await detail('aux-clamped-arcs');
     await send(frame, 'config', { data: { effectiveUnits: { temperature: 'C', boostPressure: 'bar' } } });
     const race = { lap: 2, race_position: 3, CurrentLap: 34.21, LastLap: 91, BestLap: 88, CurrentRaceTime: 210 };
-    await reading(race); assert.equal(await text(frame, 'Status'), 'P3'); assert.equal(await text(frame, 'LapTime'), '0:34.21'); await detail('rank-lap');
+    await reading(race); await page.waitForTimeout(500); await reading({ ...race, CurrentLap: 34.8 }); assert.equal(await text(frame, 'Status'), 'P3'); assert.equal(await text(frame, 'LapTime'), '0:34.80'); await detail('rank-lap');
     await reading({ ...race, lap: 3, LastLap: 92, CurrentLap: 0, CurrentRaceTime: 220 });
     assert.equal(await text(frame, 'Status'), 'LAP 3'); assert.equal(await text(frame, 'LapTime'), '0:00.00'); await detail('lap-notice');
     for (let i = 0; i < 6; i++) { await page.waitForTimeout(500); await reading({ ...race, lap: 3, LastLap: 92, CurrentLap: i, CurrentRaceTime: 221 + i }); }
     assert.equal(await text(frame, 'Status'), 'P3');
     await reading({ ...race, lap: 4, LastLap: 87, BestLap: 87, CurrentLap: .5, CurrentRaceTime: 300 });
     assert.equal(await text(frame, 'Status'), 'BEST LAP'); await detail('best-notice');
-    await reading({ ...race, timestamp_ms: 0, lap: 0, LastLap: 0, BestLap: 0, CurrentLap: 0, CurrentRaceTime: 0 }); assert.equal(await text(frame, 'Status'), 'P3');
+    await reading({ ...race, timestamp_ms: 0, lap: 0, LastLap: 0, BestLap: 0, CurrentLap: 0, CurrentRaceTime: 0 }); assert.equal(await text(frame, 'Status'), 'Pending......');
     await reading({ CurrentLap: 5999.99 }); assert.equal(await text(frame, 'LapTime'), '99:59.99'); await detail('lap-max-width');
     await reading({ CurrentLap: 6000 }); assert.equal(await text(frame, 'LapTime'), '—:—');
     await send(frame, 'hud:frame', { data: { timestamp_ms: ++stamp, rpm: 3000 } }); await page.waitForTimeout(40);
@@ -155,9 +157,9 @@ try {
     const duplicate = { ...base, timestamp_ms: ++stamp };
     await send(frame, 'hud:frame', { data: duplicate });
     for (let i = 0; i < 9; i++) { await page.waitForTimeout(180); await send(frame, 'hud:frame', { data: duplicate }); }
-    await page.waitForTimeout(40); assert.equal(await text(frame, 'Status'), 'NO SIGNAL'); assert.equal(await text(frame, 'Speed'), '—'); assert.equal(await text(frame, 'Tire'), 'N/A'); assert.equal(await text(frame, 'LapTime'), '—:—');
+    await page.waitForTimeout(40); assert.equal(await text(frame, 'Status'), 'Pending......'); assert.equal(await text(frame, 'Speed'), '—'); assert.equal(await text(frame, 'Tire'), 'N/A'); assert.equal(await text(frame, 'LapTime'), '—:—');
     if (width === 1920 && dpr === 2) await frame.locator('#lfaContainer').screenshot({ path: path.join(out, 'detail-no-signal.png'), omitBackground: true });
-    await reading(); assert.equal(await text(frame, 'Status'), 'LIVE'); assert.equal(await text(frame, 'Tire'), '95°C');
+    await reading(); assert.equal(await text(frame, 'Status'), 'S2 850'); assert.equal(await text(frame, 'Tire'), '95°C');
     await send(frame, 'hud:elements', { showGauge: false }); assert.equal(await frame.locator('#lfaContainer').isVisible(), false);
     await send(frame, 'hud:elements', { showGauge: true }); assert.equal(await frame.locator('#lfaContainer').isVisible(), true);
     await page.setViewportSize({ width: width - 100, height: height - 80 }); await reading();
@@ -165,7 +167,7 @@ try {
     await reading(); assert.equal(await frame.locator('#lfaSelfCheck').isVisible(), false);
     await send(frame, 'hud:destroy'); await page.waitForTimeout(50); assert.equal(await frame.locator('#lfaContainer').count(), 0);
     assert.deepEqual(errors, []);
-    summary.scenarios.push({ viewport: { width, height }, dpr, rect, tests: ['init', 'config', 'metric', 'imperial', 'reverse', 'neutral', 'redline', '16000-rpm-scale', 'four-tire-average-C-F', 'boost-bar-psi-kPa', 'nonlinear-positive-boost', 'vacuum-magnitude-scale-and-blue-label', 'arc-length-major-marks', 'upper-right-text-no-overlap', 'signed-zero-missing-boost', 'pedal-percent-clamps', 'partial-tire-unavailable', 'rank-reported-lap', 'lap-and-best-notices', 'notice-expiry-reset', 'lap-max-width-overflow', 'missing', 'invalid', 'error', 'pause', 'replayed-timestamp-stale', 'reconnect', 'visibility', 'resize', 'animate', 'destroy', 'dpr-backing-store', 'transparent-outside'], errors });
+    summary.scenarios.push({ viewport: { width, height }, dpr, rect, statusBox, preservationScope: 'Compare matching prior center pixels outside the exact rendered statusBox; identity/carousel is the only permitted central change', tests: ['init', 'config', 'metric', 'imperial', 'reverse', 'neutral', 'redline', '16000-rpm-scale', 'four-tire-average-C-F', 'boost-bar-psi-kPa', 'nonlinear-positive-boost', 'vacuum-magnitude-scale-and-blue-label', 'arc-length-major-marks', 'upper-right-text-no-overlap', 'signed-zero-missing-boost', 'pedal-percent-clamps', 'partial-tire-unavailable', 'rank-reported-lap', 'lap-and-best-notices', 'notice-expiry-reset', 'lap-max-width-overflow', 'missing', 'invalid', 'error', 'pause', 'replayed-timestamp-stale', 'reconnect', 'visibility', 'resize', 'animate', 'destroy', 'dpr-backing-store', 'transparent-outside'], errors });
     await context.close();
   }
   await verifyExpansion({ browser, origin, out, summary });

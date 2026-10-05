@@ -4,6 +4,7 @@ const path = require('node:path');
 const assert = require('node:assert/strict');
 const { chromium } = require(process.env.PLAYWRIGHT_MODULE_PATH || 'playwright');
 const { verifyMedia } = require('./media.cjs');
+const { verifyStatus } = require('./status.cjs');
 
 async function main() {
   const repo = path.resolve(__dirname, '../../../..');
@@ -27,6 +28,7 @@ async function main() {
       return res.end(JSON.stringify(u.pathname === '/api/runtime' ? { platform: 'windows', capabilities: { systemMedia: true } }
         : { success: true, has_media: false, state: 'unavailable', source: 'winrt' }));
     }
+    if (u.pathname === '/api/cars/database') { res.setHeader('Content-Type', 'application/json'); return res.end(JSON.stringify({"1260": {"display_name": "2010 Lexus LFA"}, "4084": {"display_name": "1972 Datsun #269 Attacking The Clock Racing 240Z All Carbon Hillclimb Beast"}})); }
     if (u.pathname === '/api/hud/styles') {
       res.setHeader('Content-Type', 'application/json');
       return res.end(JSON.stringify({ styles: fs.readdirSync(root).filter(n => fs.existsSync(path.join(root,n,'index.html'))).map(id => ({ id, source: 'builtin', urlPrefix: '/hud' })) }));
@@ -70,15 +72,16 @@ async function main() {
     await page.goto('http://127.0.0.1:'+server.address().port+'/hud/index.html');
     await page.waitForFunction(() => document.querySelector('#hud-iframe')?.contentWindow?.HUDCore?.getActiveStyle());
     await page.waitForTimeout(1800);
-    await record('host-standby', {status:'WAITING',speed:'—',tire:'N/A',boost:'N/A',lap:'—:—'});
+    await record('host-standby', {status:'Pending......',speed:'—',tire:'N/A',boost:'N/A',lap:'—:—'});
     await page.evaluate(raw => {
       window.auditRaw={...raw};
       window.auditFeed=setInterval(()=>{window.auditRaw.TimestampMS+=16;window.dispatchEvent(new CustomEvent('telemetry',{detail:{...window.auditRaw}}));},16);
     }, parser.samples[0].parsedJson);
     await page.waitForTimeout(300);
-    await record('host-parser-positive', {speed:'180',gear:'4',status:'P3',tire:'95°C',boost:'1',boostUnit:'bar',boostMode:'',throttle:'80%',brake:'20%',lap:'0:34.21'});
+    await record('host-parser-positive', {speed:'180',gear:'4',status:'PI N/A',tire:'95°C',boost:'1',boostUnit:'bar',boostMode:'',throttle:'80%',brake:'20%',lap:'0:34.21'});
+    await patch({CurrentLap:34.8});
     await page.evaluate(config => window.dispatchEvent(new CustomEvent('hud:config', { detail: { ...config, lfaManualExpand: true } })), config);
-    await page.waitForTimeout(800); await record('host-manual-expanded', {expanded:'true',expansionSettled:'true',expandedCurrent:'0:34.21'});
+    await page.waitForTimeout(800); await record('host-manual-expanded', {expanded:'true',expansionSettled:'true',expandedCurrent:'0:34.80'});
     await page.evaluate(config => window.dispatchEvent(new CustomEvent('hud:config', { detail: config })), config);
     await page.waitForTimeout(800); await record('host-manual-restored', {expanded:'false',expansionSettled:'true'});
     for (const [bar, boostFraction] of [[.25,.1875],[.5,.375],[1,.75],[2,1]]) {
@@ -102,12 +105,12 @@ async function main() {
     await patch({LapNumber:4,LastLap:79,BestLap:79,CurrentLap:1.23,CurrentRaceTime:300});
     await record('host-best-improvement', {status:'BEST LAP',lap:'0:01.23'});
     await page.evaluate(()=>clearInterval(window.auditFeed)); await page.waitForTimeout(3100);
-    await record('host-stale-with-smoothing', {status:'NO SIGNAL',speed:'—',tire:'N/A',boost:'N/A',throttle:'N/A',brake:'N/A',lap:'—:—'});
+    await record('host-stale-with-smoothing', {status:'Pending......',speed:'—',tire:'N/A',boost:'N/A',throttle:'N/A',brake:'N/A',lap:'—:—'});
     await page.evaluate(() => {
       window.auditRaw.Gear=0;window.auditRaw.SpeedMetersPerSecond=-4.5;window.auditRaw.CurrentEngineRpm=1400;
       window.auditFeed=setInterval(()=>{window.auditRaw.TimestampMS+=16;window.dispatchEvent(new CustomEvent('telemetry',{detail:{...window.auditRaw}}));},16);
     });
-    await page.waitForTimeout(200); await record('host-reverse-reconnected', {gear:'R',speed:'16',status:'P2'});
+    await page.waitForTimeout(200); await record('host-reverse-reconnected', {gear:'R',speed:'16',status:'PI N/A'});
     await units({speed:'mph',boostPressure:'psi',temperature:'F'}); await record('host-imperial', {speed:'10'});
     await page.setViewportSize({width:1280,height:720}); await page.waitForTimeout(150);
     const small = await record('host-720p'); assert(small.state.bounds.x >= 0 && small.state.bounds.y >= 0 && small.state.bounds.x + small.state.bounds.width <= 1280 && small.state.bounds.y + small.state.bounds.height <= 720);
@@ -117,10 +120,11 @@ async function main() {
     await page.waitForTimeout(100); assert.notEqual((await record('host-gauge-restored')).state.bounds.display,'none');
     await page.evaluate(config=>window.dispatchEvent(new CustomEvent('hud:config',{detail:{...config,hudStyle:'simple'}})),config); await page.waitForTimeout(250);
     await page.evaluate(config=>window.dispatchEvent(new CustomEvent('hud:config',{detail:config})),config); await page.waitForTimeout(1800);
-    const { frame }=await record('host-style-reloaded', {status:'P2'});
+    const { frame }=await record('host-style-reloaded', {status:'PI N/A'});
     await frame.evaluate(()=>window.postMessage({type:'hud:destroy'},'*')); await page.waitForTimeout(500);
     samples.push({name:'destroy',remainingBodyChildren:await frame.evaluate(()=>document.body.childElementCount)});
     assert.equal(samples.at(-1).remainingBodyChildren,0);assert.deepEqual(errors,[]);assert.deepEqual(missing,[]);
+    await verifyStatus({ browser, origin: 'http://127.0.0.1:' + server.address().port, config, raw: parser.samples[0].parsedJson, out });
     await verifyMedia({ browser, origin: 'http://127.0.0.1:' + server.address().port, config, raw: parser.samples[0].parsedJson, out });
   } catch (error) { errors.push(String(error)); throw error; } finally {
     fs.writeFileSync(path.join(out,'host-audit.json'),JSON.stringify({style,parserFixtureProvenance:parser.provenance,errors,missing,samples},null,2));

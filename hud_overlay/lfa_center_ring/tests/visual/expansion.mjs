@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 
 export async function verifyExpansion({ browser, origin, out, summary }) {
-  const base = { timestamp_ms: 100, rpm: 7200, maxRpm: 9000, redlineRpm: 8000, speed_kmh: 180, speed_mph: 111.85, gear: 4, throttle: .8, brake: .2, tire_temp_f: [176, 194, 212, 230], boost_psi: 14.5038, isRaceOn: 1, carOrdinal: 10 };
+  const base = { timestamp_ms: 100, rpm: 7200, maxRpm: 9000, redlineRpm: 8000, speed_kmh: 180, speed_mph: 111.85, gear: 4, throttle: .8, brake: .2, tire_temp_f: [176, 194, 212, 230], boost_psi: 14.5038, isRaceOn: 1, carOrdinal: 1260, carClass: 5, carPi: 850 };
   summary.expansion = [];
   for (const [width, height, dpr, displayScale] of [[1280,720,1,1],[1920,1080,1,1],[2560,1440,1,1],[1920,1080,2,1],[1280,720,1,.8],[1920,1080,2,.8]]) {
     const context = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: dpr });
@@ -20,8 +20,9 @@ export async function verifyExpansion({ browser, origin, out, summary }) {
       await page.clock.runFor(16);
     }
     const layout = () => frame.evaluate(() => {
+      const status = document.getElementById('lfaStatus').getBoundingClientRect();
       const root = document.getElementById('lfaContainer'), speed = document.getElementById('lfaSpeed').getBoundingClientRect(), bounds = root.getBoundingClientRect();
-      return { target: root.dataset.expanded === 'true', settled: root.dataset.expansionSettled === 'true', progress: Number(root.dataset.expansionProgress), x: speed.x,
+      return { statusBox: { x: status.x, y: status.y, width: status.width, height: status.height }, target: root.dataset.expanded === 'true', settled: root.dataset.expansionSettled === 'true', progress: Number(root.dataset.expansionProgress), x: speed.x,
         transform: getComputedStyle(document.getElementById('lfaMovingCenter')).transform, bounds: { x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height } };
     });
     async function capture(name) {

@@ -10,6 +10,9 @@
     const media = window.LfaMedia.create({ fetch: window.fetch?.bind(window), now: () => window.performance.now(),
         setTimeout: window.setTimeout?.bind(window), clearTimeout: window.clearTimeout?.bind(window), AbortController: window.AbortController,
         onChange: () => paint(window.performance.now()) });
+    const catalog = window.LfaCatalog.create({ fetch: window.fetch?.bind(window), AbortController: window.AbortController,
+        setTimeout: window.setTimeout?.bind(window), clearTimeout: window.clearTimeout?.bind(window),
+        onLoad: data => { if (!destroyed) { state.catalog = data; paint(window.performance.now()); } } });
     function paint(now) {
         if (destroyed) return;
         let check = checkStart === null ? null : Math.min(1, (now - checkStart) / 750);
@@ -53,7 +56,7 @@
         window.removeEventListener('pagehide', destroy);
         window.removeEventListener('message', lifecycle);
         reducedMotion?.removeEventListener?.('change', motionPreferenceChanged);
-        media.destroy(); renderer.destroy?.();
+        media.destroy(); catalog.destroy(); renderer.destroy?.();
         state.latest = null;
     }
     function lifecycle(event) {
@@ -78,6 +81,6 @@
     window.addEventListener('resize', resize);
     reducedMotion?.addEventListener?.('change', motionPreferenceChanged);
     window.HUDCore.init('lfa_center_ring');
-    renderer.resize(); configure({});
+    renderer.resize(); configure({}); catalog.start();
     raf = window.requestAnimationFrame(loop);
 })(window, document);
