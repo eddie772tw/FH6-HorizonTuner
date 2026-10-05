@@ -24,7 +24,7 @@ const server = createServer(async (req, res) => {
 await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
 const report = { runtime: 'Chromium fixture, not Windows native/game acceptance', screenshots: [], checks: [], errors: [] };
 let browser;
-try { browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined, headless: true, chromiumSandbox: true }); } catch (error) {
+try { browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined, headless: true, chromiumSandbox: true, ...(process.env.PLAYWRIGHT_CHANNEL ? { channel: process.env.PLAYWRIGHT_CHANNEL } : {}) }); } catch (error) {
   report.errors.push(String(error));
   await writeFile(path.join(out, 'visual-evidence.json'), JSON.stringify(report, null, 2) + '\n');
   server.close(); throw error;
