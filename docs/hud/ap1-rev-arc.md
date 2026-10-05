@@ -1,6 +1,6 @@
 # AP1 Rev Arc：1999 Honda S2000 AP1 儀表原型
 
-> 最新修正將mph／km/h與VAC／BOOST各自改為共同左緣，順序與明暗語意不變。source `3e00409` 的實際Chrome／launcher與像素複查已通過；目前預覽全部更新，比較圖明列歷史4f與目前3e。最終文件head的CI待發布後確認；PR保持Ready。
+> 最新修正將mph／km/h與VAC／BOOST各自改為共同左緣，順序與明暗語意不變。source `3e00409` 的實際Chrome／launcher與像素複查已通過；目前預覽全部更新，比較圖明列歷史4f與目前3e。已驗證文件／預覽版本 `c24e4b4` 的 CI、Packaging、Visual 均成功，詳見下方固定版本證據；PR保持Ready。
 
 ## 原型與來源
 
@@ -119,19 +119,19 @@ magick hud_overlay/ap1_rev_arc/assets/fascia.png -strip -define png:compression-
 使用技能：`halfmoon-design-system`、`telemetry-udp-protocol`、`pr-author-maintainer`。未修改 backend、共用生命週期或協定，沒有第三方產品相依新增。
 
 - Style-owned Vitest：97 項純資料／行為測試；涵蓋單位、R/N、空值、NaN、Infinity、速度超界、signed BOOST／單位／缺值／量程、同字串快取邊界、適應刻度、重播 timestamp、恢復、設定與 destroy
-- **Source CI:** `3e00409`的[Visual37293328206](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37293328206)與[Packaging37293328721](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37293328721)成功；[CI37293328132](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37293328132)於10:01 UTC仍執行中。最終文件head的CI待發布後另驗，不宣稱全綠；Packaging成功不代表原生Windows／遊戲驗收
+- **已驗證版本 CI:** 文件／預覽版本 `c24e4b4a6b27db6bb8c8433deac1ba67e770f4ba` 的 [CI 37294803869](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37294803869)、[Packaging 37294804295](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37294804295) 與 [Visual 37294803776](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37294803776) 均成功（2026-10-05重新核實）。該版本 runtime 與預覽來源 `3e00409` 相同；四張 default／compact × DPR1／DPR2 主畫面逐 RGBA 相同。這是固定版本證據，不代表後續 commit 自動通過；Packaging成功不代表原生Windows／遊戲驗收
 - 完整 `pnpm -C frontend test --maxWorkers=2`：160 個檔案通過／1 個略過，1202 個測試通過／1 個略過；`pnpm -C frontend build:web-hud` 與 `git diff --check` 通過。已確認 dist 包含新 HUD 且排除 tests
 - 本地 Chromium 程序被執行環境的 UNIX socket `EPERM` 阻擋；require_escalated 亦相同。雲端瀏覽器至本地 fixture URL 遭 `ERR_BLOCKED_BY_CLIENT`，沒有改用其他 hostname 迴避
 - **歷史雙字標renderer／實際launcher＋Coordinator通過**：GitHub Actions Linux Chrome 154.0.8037.57、sandbox啟用、合成遙測；source `888ea8ba9af69e65f95f96874d3563dacf620680`。[CI run 37271674297](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37271674297)／[artifact 11328239382](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37271674297/artifacts/11328239382)
 - 前版實際產出61張renderer截圖、28組default／70%compact × DPR1／DPR2雙字標情境與32筆launcher audit樣本；renderer errors及launcher errors／missing皆為空。已獨立查看metric／imperial × BOOST／VAC，以及zero／missing／stale的default／compact畫面：字標與數字清楚，選中狀態正確，沒有可見重疊
 - [前版範圍限定像素比較](../assets/ap1-rev-arc/dual-label-preservation.json)：相對`2d88a299`，只排除兩組舊／新字標ink-box聯集及1 device pixel邊緣。default DPR2為0／476,857變動；compact DPR2為0／233,439；compact DPR1為0／58,441。default DPR1另保留64／119,025個範圍外差異，集中左側外殼邊緣；未擴張遮罩隱藏差異，也不宣稱全部像素相同。fascia與弧線source未變，差異原因未另行證明
 - 單位優先序另以唯讀model probe確認：設定mph覆蓋上一幀km/h metadata，有typed mph時正確顯示；stale仍為`---`，不匹配的generic speed不會被改標單位。這是補充執行證據，沒有冒充新增的Vitest regression
-- 先前字標換序版本已完成驗證，PR已解除draft。本輪RPM source的實際visual CI與像素複查已通過，最終文件head checks另外追蹤；維持Ready狀態
+- 先前字標換序版本已完成驗證，PR已解除draft。本輪RPM source的實際visual CI與像素複查已通過，固定版本 `c24e4b4` 的三項 workflow 亦已成功；維持Ready狀態
 - Windows 原生透明 overlay、滑鼠穿透、真實 Forza 遊戲畫面與遊戲內安全區仍須平台實測
 
 - **Fixture範圍**：launcher／Coordinator為實際程式，HTTP config／style discovery與WebSocket為fixture；production parser JSON來自先前合成封包處理，這次browser job不執行backend parser，不代表live UDP或遊戲實測
 - **本輪左對齊實際驗證**：source `3e00409d0fbe86ee0f394581f6347349e7d7df00`，Chrome154.0.8037.57、Linux、sandbox啟用；[run37293328206](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37293328206)／[artifact11337143995](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37293328206/artifacts/11337143995)。93張current renderer圖、28組固定字標場景、28組RPM及4組最大glow、38筆launcher樣本；errors／missing為空
-- **本輪範圍限定像素比較**：相對`4f5470e`，只排除四個新／舊字標bounds聯集及1 device pixel邊緣。compact DPR1為0／58,566、default DPR2為0／478,388、compact DPR2為0／233,858；default DPR1保留69／119,277個差異，位於左上RPM區，bbox[741,486,883,554)。未擴張遮罩；RPM幾何／fascia source bytes未變，但差異原因未證明，不能宣稱全圖相同。詳見[left-alignment-preservation.json](../assets/ap1-rev-arc/left-alignment-preservation.json)
+- **本輪範圍限定像素比較**：相對`4f5470e`，只排除四個新／舊字標bounds聯集及1 device pixel邊緣。compact DPR1為0／58,566、default DPR2為0／478,388、compact DPR2為0／233,858；default DPR1保留69／119,277個差異，bbox[741,486,883,554)；逐像素標記並查看原圖後，位置確認為左上fascia外緣及內側陰影，未落在RPM亮條或數字。未擴張遮罩；RPM幾何／fascia source bytes未變，但差異原因未證明，不能宣稱全圖相同。詳見[left-alignment-preservation.json](../assets/ap1-rev-arc/left-alignment-preservation.json)
 - **歷史RPM上移驗證**：source `04b20fe7c54715ebae1477c104f23d89e6be641f`，Chrome154.0.8037.57、GitHub Actions Linux、sandbox啟用；[run37287538534](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37287538534)／[artifact11334872773](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37287538534/artifacts/11334872773)。93張renderer圖、28組RPM及4組最大glow場景、28組固定字標場景與38筆launcher樣本，errors／missing為空
 - **歷史RPM保護讀值像素比較**：相對`932bbae`，四組default／compact × DPR1／2的速度、檔位、速度單位與BOOST/VAC讀值矩形（含既有glow邊界）共151,785像素中0變動。只證明這些明列區域，不包含改動的RPM區與已移動RPM單位，也不宣稱全圖相同；詳見[rpm-layout-preservation.json](../assets/ap1-rev-arc/rpm-layout-preservation.json)
 - **歷史字標換序驗證**：source `d6c74ba5af2f83df94ee4a45cadaaf086e524361`，sandbox啟用，Chrome154.0.8037.57；[run37275496032](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37275496032)／[artifact11330051871](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37275496032/artifacts/11330051871)。61張截圖、28組固定字標情境、32筆launcher樣本通過；已實際查看default／compact的正負零、缺值與stale，順序與對齊正確

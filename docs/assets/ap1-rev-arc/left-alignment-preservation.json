@@ -237,5 +237,13 @@
     10
   ],
   "source_byte_check": "arc-geometry.js, fascia.svg and fascia.png exactly match4f5470e source",
-  "revision_visual_run_url": "https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37293328206"
+  "revision_visual_run_url": "https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37293328206",
+  "follow_up_inspection": {
+    "date": "2026-10-05",
+    "method": "Decoded original PNGs as 8-bit RGBA via ImageMagick; independently repeated the original container and label-mask comparison, then inspected original before/after pixels and a nearest-neighbor enlarged difference-location overlay.",
+    "confirmed_differing_pixels": 69,
+    "localization": "Upper-left fascia rim edge and inner shadow; inspected difference markers do not lie on the illuminated RPM cells or tick numerals.",
+    "cause": "Not established. This localization is not evidence of a runtime geometry defect or proof of raster nondeterminism.",
+    "scope": "Existing two historical captures only; original masks, counts, bounds, and channel differences retained. No new browser or native-game run."
+  }
 }
