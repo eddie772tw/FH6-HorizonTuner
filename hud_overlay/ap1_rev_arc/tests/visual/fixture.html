@@ -15,7 +15,7 @@ iframe { position: absolute; border: 0; transform-origin: top left; background: 
 </head><body>
 <h1>AP1 Rev Arc · browser review</h1>
 <div class="controls">
-<select id="scene"><option>metric</option><option>imperial</option><option>imperial-vac</option><option>reverse</option><option>neutral</option><option>redline</option><option>missing</option><option>error</option><option>paused</option><option>signal-lost</option><option>rpm6000</option><option>custom</option><option>waiting</option><option>boost-positive-quarter</option><option>boost-positive-half</option><option>boost-positive-one</option><option>boost-positive-two</option><option>boost-zero</option><option>boost-negative</option><option>boost-negative-one</option><option>boost-negative-two</option><option>boost-missing</option><option>boost-psi</option><option>boost-kpa</option><option>boost-overflow</option></select>
+<select id="scene"><option>metric</option><option>imperial</option><option>imperial-vac</option><option>reverse</option><option>neutral</option><option>redline</option><option>missing</option><option>error</option><option>paused</option><option>signal-lost</option><option>rpm6000</option><option>rpm-zero</option><option>rpm-engine-max</option><option>rpm-headroom</option><option>rpm-overrange</option><option>rpm-high</option><option>custom</option><option>waiting</option><option>boost-positive-quarter</option><option>boost-positive-half</option><option>boost-positive-one</option><option>boost-positive-two</option><option>boost-zero</option><option>boost-negative</option><option>boost-negative-one</option><option>boost-negative-two</option><option>boost-missing</option><option>boost-psi</option><option>boost-kpa</option><option>boost-overflow</option></select>
 <select id="size"><option value="1280,720">1280 × 720</option><option value="1920,1080">1920 × 1080</option><option value="2560,1440">2560 × 1440</option></select>
 <select id="scale"><option value="1">Default</option><option value="0.7">70% compact</option></select>
 <button id="resize">Resize</button><button id="animate">Animate</button><button id="toggle">Hide / show</button><button id="reload">Reload</button><button id="destroy">Destroy</button>
@@ -56,6 +56,9 @@ function frame() {
   if (scene.value === 'boost-overflow') data.Boost = 43.5114;
   if (scene.value === 'boost-psi') data.displayUnits = { boostPressure: 'psi' };
   if (scene.value === 'boost-kpa') data.displayUnits = { boostPressure: 'kpa' };
+  const rpmScene = { 'rpm-zero': 0, 'rpm-engine-max': 9000, 'rpm-headroom': 10000, 'rpm-overrange': 11000 };
+  if (scene.value in rpmScene) data.rpm = rpmScene[scene.value];
+  if (scene.value === 'rpm-high') Object.assign(data,{rpm:11000,maxRpm:12000,redlineRpm:11000});
   if (scene.value === 'rpm6000') Object.assign(data,{ rpm: 4700, maxRpm: 6000, redlineRpm: 5000 });
   send('hud:frame', { data, isMetric: !scene.value.startsWith('imperial') });
 }

@@ -23,13 +23,18 @@
 .ap1-boost-caption { font-size: 11px; letter-spacing: 1.2px; }
 .ap1-choice-label { opacity: var(--ap1-caption-inactive-opacity); transition: none; }
 .ap1-choice-label[data-active="true"] { opacity: 1; }
-.ap1-tick-label { font-size: 21px; font-weight: 600; }
+.ap1-tick-label { font-weight: 600; }
+.ap1-rpm-mark { fill: none; stroke: var(--ap1-primary); stroke-width: 1.25; stroke-linecap: butt; }
+.ap1-rpm-mark.is-major { stroke-width: 1.8; }
+.ap1-rpm-mark.is-hot { stroke: var(--ap1-hot); }
 .ap1-divider { fill: none; stroke: var(--ap1-label); opacity: .25; }
 .ap1-status { font-size: 12px; letter-spacing: 2.4px; }
 .ap1-shift { font-size: 15px; letter-spacing: 2px; fill: var(--ap1-hot); font-weight: 700; }
 .ap1-segment { fill: var(--ap1-inactive); }
 .ap1-segment.is-lit { fill: var(--ap1-primary); filter: drop-shadow(0 0 calc(2px * var(--ap1-glow)) var(--ap1-primary)); }
 .ap1-segment.is-hot.is-lit { fill: var(--ap1-hot); filter: drop-shadow(0 0 calc(2px * var(--ap1-glow)) var(--ap1-hot)); }
+#rpmSegments .ap1-segment.is-lit { filter: drop-shadow(0 0 calc(.6px * var(--ap1-glow)) var(--ap1-primary)); }
+#rpmSegments .ap1-segment.is-hot.is-lit { filter: drop-shadow(0 0 calc(.6px * var(--ap1-glow)) var(--ap1-hot)); }
 .ap1-redline-tick { fill: var(--ap1-hot); }
 .ap1-digit { fill: var(--ap1-inactive); opacity: .45; }
 .ap1-digit.is-lit { fill: var(--ap1-primary); opacity: 1; filter: drop-shadow(0 0 calc(2px * var(--ap1-glow)) var(--ap1-primary)); }

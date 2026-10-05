@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 // Style-owned plain JavaScript is also loaded directly by the HUD iframe.
 // @ts-expect-error Standalone HUD modules intentionally have no TypeScript build dependency.
-import { createState, emptyFrame, gearLabel, normalizeFrame, segmentState, STALE_AFTER_MS, tachometerTicks } from '../../model.js';
+import { createState, emptyFrame, gearLabel, normalizeFrame, segmentState, STALE_AFTER_MS, tachometerTicks, tachometerGraduations, tachometerScale } from '../../model.js';
 
 const sample = { timestamp_ms: 100, rpm: 7200, maxRpm: 9000, speed_kmh: 180, speed_mph: 112, gear: 4, boost_bar: 1.3 };
 
@@ -63,6 +63,47 @@ describe('AP1 canonical display boundary', () => {
     expect(normalizeFrame({ ...sample, rpm: 10000 }).rpmRatio).toBe(1);
     expect(normalizeFrame(sample, { redlineRpm: 10000 }).redlineRpm).toBeNull();
   });
+  it('uses one explicit unnumbered interval of display headroom without inventing redline telemetry', () => {
+    for (const maximum of [4500, 6000, 9000, 9500, 12000, 20000]) {
+      const scale = tachometerScale(maximum), ticks = tachometerTicks(maximum);
+      expect(scale.labelledMaxRpm).toBeGreaterThanOrEqual(maximum);
+      expect(scale.labelledMaxRpm - maximum).toBeLessThan(scale.majorStep);
+      expect(scale.maxRpm - scale.labelledMaxRpm).toBe(scale.majorStep);
+      expect(ticks.at(-1).ratio).toBeLessThan(1);
+      const frame = normalizeFrame({ ...sample, maxRpm: maximum, rpm: maximum });
+      expect(frame.scaleMaxRpm).toBe(scale.maxRpm);
+      expect(frame.rpmRatio).toBeCloseTo(maximum / scale.maxRpm);
+      expect(frame.redlineRpm).toBeNull();
+    }
+  });
+  it('aligns major numbers and halfway minor graduations to the same RPM domain', () => {
+    for (const maximum of [4500, 9000, 12000, 20000]) {
+      const graduations = tachometerGraduations(maximum), ticks = tachometerTicks(maximum);
+      expect(graduations[0].ratio).toBe(0);
+      expect(graduations.at(-1).ratio).toBe(1);
+      for (const tick of ticks) expect(graduations.find((g: any) => g.major && g.rpm === tick.rpm)?.ratio).toBe(tick.ratio);
+      for (let i = 1; i < graduations.length - 1; i += 2) {
+        expect(graduations[i].major).toBe(false);
+        expect(graduations[i].rpm).toBe((graduations[i - 1].rpm + graduations[i + 1].rpm) / 2);
+      }
+    }
+    for (const invalid of [null, 0, -1, NaN, Infinity, Number.MAX_VALUE]) {
+      expect(tachometerScale(invalid)).toBeNull();
+      expect(tachometerGraduations(invalid)).toEqual([]);
+    }
+  });
+  it('maps zero, engine maximum, redline and displayed overrange monotonically to dense cells', () => {
+    const frames = [0, 1000, 4500, 8000, 9000, 10000, 11000].map(rpm => normalizeFrame({ ...sample, rpm }, { redlineRpm: 8000 }));
+    const amounts = frames.map(f => segmentState(f.rpmRatio, f.redlineRatio).filter((s: any) => s.lit).length);
+    expect(amounts[0]).toBe(0);
+    expect(amounts).toEqual([...amounts].sort((a,b) => a-b));
+    expect(frames[4].rpmRatio).toBe(.9);
+    expect(frames[3].redlineRatio).toBe(.8);
+    expect(frames[3].shift).toBe(true);
+    expect(frames[5].rpmRatio).toBe(1);
+    expect(amounts[5]).toBe(amounts[6]);
+    expect(segmentState(frames[3].rpmRatio, frames[3].redlineRatio).some((s: any) => s.hot)).toBe(true);
+  });
   it('has bounded, proportional segments and readable dynamic tick intervals', () => {
     expect(segmentState(0, .8).some((s: { lit: boolean }) => s.lit)).toBe(false);
     expect(segmentState(1, .8).every((s: { lit: boolean }) => s.lit)).toBe(true);
@@ -117,10 +158,13 @@ describe('AP1 telemetry lifecycle', () => {
   });
   it('unit/config changes never extend freshness, and destroy cannot be revived', () => {
     const state = createState();
-    state.receive(sample, {}, 0);
+    state.receive({ ...sample, displayUnits: { speed: 'kmh' } }, { isMetric: true }, 0);
     state.configure({ effectiveUnits: { speed: 'mph' } });
     expect(state.snapshot(1).speedText).toBe('112');
     expect(state.snapshot(STALE_AFTER_MS).status).toBe('SIGNAL LOST');
+    expect(state.snapshot(STALE_AFTER_MS).unit).toBe('mph');
+    expect(state.snapshot(STALE_AFTER_MS).speedText).toBe('---');
+    expect(state.snapshot(STALE_AFTER_MS).boost.mode).toBe('unavailable');
     state.destroy();
     state.receive({ ...sample, timestamp_ms: 200 }, {}, STALE_AFTER_MS + 1);
     state.configure({ isMetric: true });

@@ -1,5 +1,5 @@
-import { SEGMENT_COUNT, segmentState, tachometerTicks } from './model.js';
-import { ARC, arcPoint, arcSegment } from './arc-geometry.js';
+import { SEGMENT_COUNT, segmentState, tachometerTicks, tachometerGraduations } from './model.js';
+import { arcSegment, arcGraduation, rpmLabelLayout } from './arc-geometry.js';
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const DIGITS = { '0': 'ab cdef'.replaceAll(' ', ''), '1': 'bc', '2': 'abdeg', '3': 'abcdg', '4': 'bcfg', '5': 'acdfg', '6': 'acdefg', '7': 'abc', '8': 'abcdefg', '9': 'abcdfg', '-': 'g', ' ': '' };
 // Original seven-segment glyphs, no redistributed instrument font.
@@ -46,10 +46,18 @@ export function createRenderer(document, container) {
       if (tickKey !== lastTickKey) {
         lastTickKey = tickKey;
         el('rpmTicks').replaceChildren();
-        for (const tick of tachometerTicks(frame.maxRpm)) {
-          const p = arcPoint(tick.ratio, ARC.labelCenter);
+        for (const tick of tachometerGraduations(frame.maxRpm)) {
+          const [a, b] = arcGraduation(tick.ratio, tick.major);
           const hot = frame.redlineRpm !== null && tick.rpm >= frame.redlineRpm;
-          const node = create('text', { x: p.x, y: p.y, 'text-anchor': 'middle', 'dominant-baseline': 'central', class: `ap1-tick-label${hot ? ' ap1-redline-tick' : ''}` }, el('rpmTicks'));
+          create('path', { d: `M${a.x} ${a.y}L${b.x} ${b.y}`, 'data-rpm': tick.rpm, 'data-major': tick.major,
+            class: `ap1-rpm-mark${tick.major ? ' is-major' : ''}${hot ? ' is-hot' : ''}` }, el('rpmTicks'));
+        }
+        for (const tick of tachometerTicks(frame.maxRpm)) {
+          const p = rpmLabelLayout(tick.ratio, tick.label);
+          const hot = frame.redlineRpm !== null && tick.rpm >= frame.redlineRpm;
+          const node = create('text', { x: p.x, y: p.y, 'text-anchor': p.textAnchor, 'dominant-baseline': p.baseline,
+            'font-size': p.fontSize, 'data-ratio': tick.ratio, 'data-rpm': tick.rpm,
+            class: `ap1-tick-label${hot ? ' ap1-redline-tick' : ''}` }, el('rpmTicks'));
           node.textContent = tick.label;
         }
       }

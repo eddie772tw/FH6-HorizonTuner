@@ -1,6 +1,6 @@
 # AP1 Rev Arc：1999 Honda S2000 AP1 儀表原型
 
-> 最新調整將固定字標改為VAC在上、BOOST在下，兩者置中對齊既有增壓色帶；保留字標間距、選中／暗態語意及其餘版面。新實際Chrome／launcher及像素複查通過，下方圖片已更新為VAC在上的版本。使用者已要求完成此輪調整與驗證後將PR解除draft、交付review；此要求不等同已完成Windows／遊戲驗收。單色LCD／TN仍只作為使用者設計背景。
+> RPM修正進行中：重新查看原廠儀表像素後，將數字移至色帶下方，改為120格細長分段並補主／半步刻度。既有橢圓基準、色帶兩緣與外框維持不變。120格與顯示軸headroom是本HUD的適配選擇，不宣稱原廠精確格數或校準值。PR保持既有Ready for Review狀態；新實際Chrome圖待CI，下方圖片暫為前一版。
 
 ## 原型與來源
 
@@ -15,21 +15,38 @@
 ## 設計方向與玩家
 
 - **整體風格**：低寬煙燻黑色儀表罩、琥珀色 LCD、密集轉速分段與簡短字標，避免把既有 VFD 收音機 HUD 換色當成新風格
-- **視覺主角**：60 格上拱 RPM 帶和中央大型三位七段速度；轉速刻度隨當前車輛調整，不把所有車款硬套 9000 RPM
+- **視覺主角**：120 格細長上拱 RPM 帶和中央大型三位七段速度；轉速刻度隨當前車輛調整，不把所有車款硬套 9000 RPM
 - **HUD 改編**：左下低調檔位是遊戲用途的新增欄位，並非宣稱 1999 原廠即有此數位檔位；右側依使用者要求改為 BOOST；這是遊戲用途改編，並非宣稱1999原廠儀表配有增壓錶
 - **目標玩家**：喜歡 1990 年代末 Honda/JDM 數位儀表、高轉自然進氣車款與簡潔道路駕駛 HUD 的玩家
 - **取捨**：不加入沒有可靠遙測的水溫、油溫、機油警示、里程表、方向燈或 OEM 商標
 
 標準 HUDCore 比例下，720 × 300 的設計面積顯示為 540 × 225 CSS px。沿用共用右下角 flex 容器與 30px 邊界；這個槽位假設用來**取代遊戲原生右下角儀表**。若同時顯示原生儀表，必須由玩家調整 HUD 比例或遊戲顯示設定。外殼以外保持透明，不宣稱適合每種遊戲 UI 配置。
 
-## 固定成對LCD字標（本輪修正）
+## RPM原型複查與本輪幾何修正
+
+本輪先實際查看下列圖片，再修改RPM區；研究圖片沒有封裝到HUD或預覽：
+
+- [Honda 1999.04 Fact Book](https://www.honda.co.jp/factbook/auto/s2000/199904/046.html)與[其座艙圖](https://www.honda.co.jp/factbook/auto/s2000/199904/image/037_001.gif)：日本1999年4月上市初期S2000 AP1，雲端瀏覽器重新查看點亮的宣傳畫面；原圖較小，不用它推算精確cell數量
+- [Honda手冊掃描（s2000.club保存為S2Kbooklet1999.pdf）](https://www.s2000.club/OM/S2Kbooklet1999.pdf)：實際查看第27頁座艙／點亮儀表小圖。保存站的年份標記只作輔助，掃描PDF製作日期不當成原件出版日期證據
+- [Motor Magazine的1999年4月15日發表回顧之儀表照片](https://web.motormagazine.co.jp/_ct/17065339/album/16782798/image/16818352)與[1280×544原圖](https://d1uzk9o9cg136f.cloudfront.net/f/16783018/rc/2019/04/09/14f33f22cadf21d6da43ec05ae6def9f90dc3a65.jpg)：實際查看原廠AP1儀表，全部分段點亮、速度0 km/h的展示模式。照片可見細長密集cells，數字位於色帶內側／下方，主刻度間有較短的半步刻度，最後數字後仍有未標數字的尾段；不是實際行駛遙測或OEM校準文件
+- [2000–03 AP1原廠拆車儀表的第一手商品照片](https://www.ebay.com/itm/334214668079)與[1200×900原圖](https://i.ebayimg.com/images/g/GNwAAOSwlVphKPmS/s-l1200.jpg)：實際查看未通電狀態，佐證印刷數字／長短刻度的位置。此圖不是日本1999年單一車輛的年份證據，也不用來數LCD cells
+
+原本把數字放在色帶與外框之間，與原型不符。本輪保留原有ellipse和兩條band edge，數字改由同一曲線的inward normal offset產生；主／半步刻度也沿相同normal置於band下方。60格改為120格，填色佔每個等弧長pitch的64%；這是針對小型HUD的密度適配，未聲稱OEM恰有120格。RPM自己的glow稍減，避免細格間隙被光暈連成一片；BOOST的paint不變。
+
+照片的無數字尾段提供編排參考。本HUD在向上取整的引擎最大RPM之外保留一個major interval：9000引擎max對應10000顯示axis，12000引擎max對應14000 axis。數字、長短刻度和填色都使用同一顯示axis；`maxRpm`保留引擎資料，`scaleMaxRpm`只描述顯示範圍。這不是由照片推定OEM必定校準到10000，也不是提高引擎上限。紅線與SHIFT仍只依Coordinator提供的實際門檻，沒有改用headroom推導；超出顯示axis只限制填色，aria中的實際RPM不截斷。
+
+無數字尾段也讓最右端數字能留在共同內側曲線上，避開既有VAC／BOOST；速度、檔位、RPM單位、增壓區與fascia完全不移動。幾何估算在70% compact／DPR1最窄斜格仍約1.55 device pixels，最小間隙約0.88 pixels；這是模型估算，moire與實際筆畫清楚度仍須新Chrome截圖複查。
+
+本輪95個style tests涵蓋數字內側、刻度長短／映射、cell長寬與間隙比例、zero／redline／engine max／headroom／overrange和高轉車。新增28組RPM browser scenes覆蓋default／compact × DPR1／DPR2，記錄實際最小寬度、gap、數字與既有讀值／刻度相交情況，並保留real launcher回放。詳見[rpm-reference-revision-evidence.json](../assets/ap1-rev-arc/rpm-reference-revision-evidence.json)。新實際browser結果待CI，Inkscape概念排版不作為browser驗收。
+
+## 固定成對LCD字標（既有功能）
 
 - `mph`／`km/h`為兩個固定SVG文字節點，上下排列；km/h保留原來的位置。單位設定選中者全亮，另一個以相同RGB降低opacity，速度數值仍依設定選擇實際遙測
 - `VAC`在上、`BOOST`在下，兩個固定caption以相同middle anchor置中於既有色帶上方；正壓與真正零點亮BOOST，有限負壓點亮VAC，缺值／錯誤／暫停／stale兩者皆暗。沒有以替換字串或增刪節點切換模式
 - 缺少速度或訊號時可保留速度單位的設定提示，但數值仍為破折號與真實狀態。缺少增壓維持`--`和空條，不把缺值視為零壓
 - 只切換兩對caption的opacity；bar、數值、刻度、glow保持原來的單色行為，abs分段映射、微小負號及±0.5／±1／±2對稱性皆未改動
-- 新增default／70%compact、DPR1／DPR2的固定節點、上下相對位置、容納、色帶／速度／RPM避讓、metric／imperial切換，以及positive／negative／zero／missing／stale fixtures。直接renderer與實際launcher共用測試helper；前版實際CI的28組雙字標情境通過；本輪VAC／BOOST順序與色帶置中assertions已通過新的default／compact × DPR1／DPR2渲染
-- 本輪記錄：[caption-order-revision-evidence.json](../assets/ap1-rev-arc/caption-order-revision-evidence.json)；前版雙字標證據保留於`dual-label-revision-evidence.json`
+- 新增default／70%compact、DPR1／DPR2的固定節點、上下相對位置、容納、色帶／速度／RPM避讓、metric／imperial切換，以及positive／negative／zero／missing／stale fixtures。直接renderer與實際launcher共用測試helper；前版實際CI的28組雙字標情境通過；先前VAC／BOOST順序與色帶置中assertions已通過新的default／compact × DPR1／DPR2渲染
+- 先前字標換序記錄：[caption-order-revision-evidence.json](../assets/ap1-rev-arc/caption-order-revision-evidence.json)；前版雙字標證據保留於`dual-label-revision-evidence.json`
 
 ## 上方弧度修正
 
@@ -48,7 +65,7 @@
 | 顯示 | 來源／規則 |
 | --- | --- |
 | 速度 | canonical `speed_kmh` / `speed_mph` 的絕對值（支援負值倒車），搭配 `effectiveUnits.speed`、`displayUnits.speed`、`isMetric`；只有 generic `speed` 的單位一致才使用，不重新換算原始 m/s |
-| RPM | `rpm`、`maxRpm`（相容 `max_rpm`）；分段比例限制於 0–1。沒有有效 maxRpm 時不畫假刻度 |
+| RPM | `rpm`、引擎`maxRpm`（相容 `max_rpm`）；以額外保留一個主區間的`scaleMaxRpm`做顯示映射。分段比例限制於0–1，沒有有效maxRpm時不畫假刻度 |
 | 紅線 | 優先 `payload.redlineRpm`，否則 `data.redlineRpm`；不在樣式內推導引擎紅線。SHIFT 是此共用門檻的視覺提示 |
 | 檔位 | 0 = R、11 = N、1–10 = 前進檔；不合法／缺少時顯示破折號 |
 | BOOST | JSON路徑保留的原始 `Boost` 明確是 PSI above atmospheric，優先嚴格讀取有限數字；保留負值與0，缺少或無效時顯示 `--`。canonical-only輸入接受帶單位欄位，不猜測Pa或數值量級 |
@@ -92,20 +109,20 @@ magick hud_overlay/ap1_rev_arc/assets/fascia.png -strip -define png:compression-
 
 使用技能：`halfmoon-design-system`、`telemetry-udp-protocol`、`pr-author-maintainer`。未修改 backend、共用生命週期或協定，沒有第三方產品相依新增。
 
-- Style-owned Vitest：90 項純資料／行為測試；涵蓋單位、R/N、空值、NaN、Infinity、速度超界、signed BOOST／單位／缺值／量程、同字串快取邊界、適應刻度、重播 timestamp、恢復、設定與 destroy
-- 完整 `pnpm -C frontend test`：160 個檔案通過／1 個略過，1195 個測試通過／1 個略過；`pnpm -C frontend build:web-hud` 與 `git diff --check` 通過。已確認 dist 包含新 HUD 且排除 tests
+- Style-owned Vitest：95 項純資料／行為測試；涵蓋單位、R/N、空值、NaN、Infinity、速度超界、signed BOOST／單位／缺值／量程、同字串快取邊界、適應刻度、重播 timestamp、恢復、設定與 destroy
+- 完整 `pnpm -C frontend test`：160 個檔案通過／1 個略過，1200 個測試通過／1 個略過；`pnpm -C frontend build:web-hud` 與 `git diff --check` 通過。已確認 dist 包含新 HUD 且排除 tests
 - 本地 Chromium 程序被執行環境的 UNIX socket `EPERM` 阻擋；require_escalated 亦相同。雲端瀏覽器至本地 fixture URL 遭 `ERR_BLOCKED_BY_CLIENT`，沒有改用其他 hostname 迴避
 - **歷史雙字標renderer／實際launcher＋Coordinator通過**：GitHub Actions Linux Chrome 154.0.8037.57、sandbox啟用、合成遙測；source `888ea8ba9af69e65f95f96874d3563dacf620680`。[CI run 37271674297](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37271674297)／[artifact 11328239382](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37271674297/artifacts/11328239382)
 - 前版實際產出61張renderer截圖、28組default／70%compact × DPR1／DPR2雙字標情境與32筆launcher audit樣本；renderer errors及launcher errors／missing皆為空。已獨立查看metric／imperial × BOOST／VAC，以及zero／missing／stale的default／compact畫面：字標與數字清楚，選中狀態正確，沒有可見重疊
 - [前版範圍限定像素比較](../assets/ap1-rev-arc/dual-label-preservation.json)：相對`2d88a299`，只排除兩組舊／新字標ink-box聯集及1 device pixel邊緣。default DPR2為0／476,857變動；compact DPR2為0／233,439；compact DPR1為0／58,441。default DPR1另保留64／119,025個範圍外差異，集中左側外殼邊緣；未擴張遮罩隱藏差異，也不宣稱全部像素相同。fascia與弧線source未變，差異原因未另行證明
 - 單位優先序另以唯讀model probe確認：設定mph覆蓋上一幀km/h metadata，有typed mph時正確顯示；stale仍為`---`，不匹配的generic speed不會被改標單位。這是補充執行證據，沒有冒充新增的Vitest regression
-- 本輪VAC／BOOST換序與置中調整的實際Chrome與像素複查已通過；最終文件head CI仍待完成；完成驗證後依使用者要求解除draft交付review。最終head的CI仍應另行核對
+- 先前字標換序版本已完成驗證，PR已解除draft。本輪RPM修正的新CI與像素複查待完成；維持Ready狀態
 - Windows 原生透明 overlay、滑鼠穿透、真實 Forza 遊戲畫面與遊戲內安全區仍須平台實測
 
-- **本輪實際換序驗證**：source `d6c74ba5af2f83df94ee4a45cadaaf086e524361`，sandbox啟用，Chrome154.0.8037.57；[run37275496032](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37275496032)／[artifact11330051871](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37275496032/artifacts/11330051871)。61張截圖、28組固定字標情境、32筆launcher樣本通過；已實際查看default／compact的正負零、缺值與stale，順序與對齊正確
-- **本輪像素保留**：對照`888ea8ba`，只排除兩個模式字標的新／舊ink範圍及1device pixel邊緣，四個default／compact × DPR1／2場景合計897,347像素中0變動；速度單位、數字、色帶、刻度、上弧與外框均納入比較。詳見`caption-order-preservation.json`
+- **歷史字標換序驗證**：source `d6c74ba5af2f83df94ee4a45cadaaf086e524361`，sandbox啟用，Chrome154.0.8037.57；[run37275496032](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37275496032)／[artifact11330051871](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37275496032/artifacts/11330051871)。61張截圖、28組固定字標情境、32筆launcher樣本通過；已實際查看default／compact的正負零、缺值與stale，順序與對齊正確
+- **歷史字標像素保留**：對照`888ea8ba`，只排除兩個模式字標的新／舊ink範圍及1device pixel邊緣，四個default／compact × DPR1／2場景合計897,347像素中0變動；速度單位、數字、色帶、刻度、上弧與外框均納入比較。詳見`caption-order-preservation.json`
 
-### 本輪VAC在上Chrome預覽
+### 前一版RPM實際Chrome預覽（新密度／刻度版待CI）
 
 ![AP1 Rev Arc：VAC在上實際DPR2 Chrome截圖細節](../assets/ap1-rev-arc/detail-metric.png)
 

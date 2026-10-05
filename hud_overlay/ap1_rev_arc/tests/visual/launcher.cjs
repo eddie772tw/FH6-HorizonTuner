@@ -58,7 +58,7 @@ async function main() {
   async function record(name) {
     const frame = page.frames().find(f => f.url().includes('/'+style+'/index.html'));
     if (!frame) throw new Error('HUD was not dynamically discovered');
-    const state = await frame.evaluate(() => ({ text: document.body.innerText, readings: { speed: document.querySelector('#ap1Cluster')?.dataset.speed || document.querySelector('#lfaSpeed')?.textContent, gear: document.querySelector('#gearValue, #lfaGear')?.textContent, status: document.querySelector('#signalStatus, #lfaStatus')?.textContent, boost: document.querySelector('#boostValue')?.textContent, boostRange: document.querySelector('#ap1Cluster')?.dataset.boostRange, boostMode: document.querySelector('#ap1Cluster')?.dataset.boostMode, boostRatio: document.querySelector('#ap1Cluster')?.dataset.boostRatio, boostCaption: document.querySelector('.ap1-boost-caption[data-active="true"]')?.textContent || null, footerRemoved: document.querySelectorAll('.ap1-signature, #rpmValue, #fuelValue').length === 0 }, body: getComputedStyle(document.body).backgroundColor,
+    const state = await frame.evaluate(() => ({ text: document.body.innerText, rpm: { cells:document.querySelectorAll('#rpmSegments polygon').length, lit:document.querySelectorAll('#rpmSegments .is-lit').length, graduationMax:Number([...document.querySelectorAll('#rpmTicks path')].at(-1)?.dataset.rpm || 0), labels:[...document.querySelectorAll('#rpmTicks text')].map(n=>({text:n.textContent,rpm:Number(n.dataset.rpm),ratio:Number(n.dataset.ratio)})), shift:document.querySelector('#shiftLamp').textContent, aria:document.querySelector('#ap1Cluster').getAttribute('aria-label') }, readings: { speed: document.querySelector('#ap1Cluster')?.dataset.speed || document.querySelector('#lfaSpeed')?.textContent, gear: document.querySelector('#gearValue, #lfaGear')?.textContent, status: document.querySelector('#signalStatus, #lfaStatus')?.textContent, boost: document.querySelector('#boostValue')?.textContent, boostRange: document.querySelector('#ap1Cluster')?.dataset.boostRange, boostMode: document.querySelector('#ap1Cluster')?.dataset.boostMode, boostRatio: document.querySelector('#ap1Cluster')?.dataset.boostRatio, boostCaption: document.querySelector('.ap1-boost-caption[data-active="true"]')?.textContent || null, footerRemoved: document.querySelectorAll('.ap1-signature, #rpmValue, #fuelValue').length === 0 }, body: getComputedStyle(document.body).backgroundColor,
       style: window.HUDCore.getActiveStyle().containerId,
       bounds: (() => { const e=document.getElementById(window.HUDCore.getActiveStyle().containerId); const b=e.getBoundingClientRect(); return {x:b.x,y:b.y,width:b.width,height:b.height,display:getComputedStyle(e).display}; })() }));
     await page.screenshot({ path: path.join(out,name+'.png'), omitBackground: true });
@@ -95,6 +95,19 @@ async function main() {
     }, boostFixtures.cases[0].frame);
     await page.waitForTimeout(300);
     await record('host-cruise');
+    for (const [name,rpm,maximum,axis] of [['zero',0,9000,10000],['redline',8000,9000,10000],['engine-max',9000,9000,10000],['headroom',10000,9000,10000],['overrange',11000,9000,10000],['adaptive-high',11000,12000,14000]]) {
+      await page.evaluate(({rpm,maximum})=>{window.auditRaw.CurrentEngineRpm=rpm;window.auditRaw.EngineMaxRpm=maximum;},{rpm,maximum});
+      await page.waitForTimeout(300);
+      await record('host-rpm-'+name);
+      const snapshot=samples.at(-1).rpm, assert=require('node:assert/strict');
+      assert.equal(snapshot.graduationMax,axis);
+      assert.equal(snapshot.lit,Math.ceil(Math.min(1,rpm/axis)*snapshot.cells));
+      assert.equal(snapshot.shift === 'SHIFT',rpm >= maximum-1000);
+      assert(snapshot.labels.every(label=>Math.abs(label.ratio-label.rpm/axis)<1e-12));
+      assert(snapshot.aria.includes('RPM '+rpm+'.'), 'Accessible RPM must remain actual, including overrange');
+    }
+    await page.evaluate(()=>{window.auditRaw.CurrentEngineRpm=6500;window.auditRaw.EngineMaxRpm=9000;});
+    await page.waitForTimeout(200);
     for (const [name, boost] of [['host-boost-quarter', 3.62595], ['host-boost-half', 7.2519], ['host-boost-one', 14.5038], ['host-boost-two', 29.0076], ['host-boost-zero', boostFixtures.cases[1].frame.Boost], ['host-boost-negative', boostFixtures.cases[2].frame.Boost], ['host-boost-negative-one', -14.5038], ['host-boost-negative-two', -29.0076], ['host-boost-missing', null], ['host-boost-overflow', 43.5114]]) {
       await page.evaluate(value => { if (value === null) delete window.auditRaw.Boost; else window.auditRaw.Boost = value; }, boost);
       await page.waitForTimeout(200); await record(name);

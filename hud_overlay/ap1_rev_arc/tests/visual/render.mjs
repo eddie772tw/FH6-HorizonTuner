@@ -46,12 +46,12 @@ const boostPaint = async page => page.evaluate(() => {
 const inspectArcLayout = async page => page.evaluate(async () => {
   const { ARC, arcFrame } = await import('./arc-geometry.js');
   const labels = Array.from(document.querySelectorAll('#rpmTicks text'));
-  const labelClearances = labels.map((node, i) => {
-    const { point, normal } = arcFrame(i / (labels.length - 1));
+  const labelClearances = labels.map(node => {
+    const { point, normal } = arcFrame(Number(node.dataset.ratio));
     const b = node.getBBox();
     const corners = [[b.x,b.y],[b.x+b.width,b.y],[b.x,b.y+b.height],[b.x+b.width,b.y+b.height]];
     const distances = corners.map(([x,y]) => (x-point.x)*normal.x + (y-point.y)*normal.y);
-    return { text: node.textContent, bandGap: Math.min(...distances) - ARC.bandTop, bezelGap: ARC.faceEdge - Math.max(...distances) };
+    return { text: node.textContent, ratio: Number(node.dataset.ratio), bandGap: -Math.max(...distances), side: 'inward/below strip' };
   });
   const container = document.querySelector('#ap1Cluster');
   const rect = value => ({ x: value.x, y: value.y, width: value.width, height: value.height });
@@ -82,6 +82,38 @@ const inspectArcLayout = async page => page.evaluate(async () => {
   }));
   return { labelClearances, readouts, cluster, dpr: devicePixelRatio, zoom: getComputedStyle(container).zoom };
 
+});
+const inspectRpm = async page => page.evaluate(async () => {
+  const { ARC, arcFrame } = await import('./arc-geometry.js');
+  const rect = node => { const b = node.getBoundingClientRect(); return { x:b.x, y:b.y, width:b.width, height:b.height }; };
+  const overlap = (a,b) => a.x < b.x+b.width && a.x+a.width > b.x && a.y < b.y+b.height && a.y+a.height > b.y;
+  const labels = [...document.querySelectorAll('#rpmTicks text')];
+  const marks = [...document.querySelectorAll('#rpmTicks path')];
+  const protectedNodes = [...document.querySelectorAll('#speedDigits, #speedUnit, #speedUnitMph, #gearValue, #vacModeLabel, #boostModeLabel, #boostSegments, #boostValue, .ap1-unit')];
+  const collisions = [];
+  for (const label of labels) {
+    for (const other of [...protectedNodes, ...marks, ...labels.filter(n => n !== label)]) {
+      if (overlap(rect(label),rect(other))) collisions.push({label:label.textContent,other:other.id || other.dataset.rpm || other.textContent});
+    }
+  }
+  const cells = [...document.querySelectorAll('#rpmSegments polygon')];
+  const points = cells.map(node => Array.from({length:node.points.numberOfItems},(_,i)=>node.points.getItem(i)).map(p => new DOMPoint(p.x,p.y).matrixTransform(node.getScreenCTM())));
+  const length = (a,b) => Math.hypot(a.x-b.x,a.y-b.y)*devicePixelRatio;
+  const widths = points.flatMap(p => [length(p[0],p[1]),length(p[3],p[2])]);
+  const gaps = points.slice(1).flatMap((p,i) => [length(points[i][1],p[0]),length(points[i][2],p[3])]);
+  const markBelow = marks.every(node => {
+    const rpm = Number(node.dataset.rpm), last = Number(marks.at(-1).dataset.rpm);
+    const {point,normal} = arcFrame(rpm/last);
+    return [node.getPointAtLength(0),node.getPointAtLength(node.getTotalLength())].every(p => (p.x-point.x)*normal.x+(p.y-point.y)*normal.y < 0);
+  });
+  return { cells:cells.length, lit:cells.filter(n => n.classList.contains('is-lit')).length, hotLit:cells.filter(n => n.classList.contains('is-lit') && n.classList.contains('is-hot')).length,
+    labels:labels.map(n => ({text:n.textContent,rpm:Number(n.dataset.rpm),ratio:Number(n.dataset.ratio)})),
+    graduations:marks.map(n => ({rpm:Number(n.dataset.rpm),major:n.dataset.major==='true'})),
+    minimumCellWidthDevicePixels:Math.min(...widths), minimumCellGapDevicePixels:Math.min(...gaps), collisions, markBelow,
+    majorTickLength:marks.find(n=>n.dataset.major==='true')?.getTotalLength() ?? 0,
+    minorTickLength:marks.find(n=>n.dataset.major==='false')?.getTotalLength() ?? 0,
+    shift:document.querySelector('#shiftLamp').textContent,
+  };
 });
 const save = async (page, name) => {
   await page.screenshot({ path: path.join(out, name), omitBackground: true });
@@ -129,7 +161,7 @@ try {
       const verify = action => { try { action(); } catch (error) { report.errors.push(String(error)); } };
       for (const layout of [normalLayout, compactLayout]) {
         for (const label of layout.labelClearances) {
-          verify(() => assert(label.bandGap > 0 && label.bezelGap > 0, 'RPM label must fit between band and bezel: ' + label.text));
+          verify(() => assert(label.bandGap > 0, 'RPM numeral ink must remain below the strip: ' + label.text));
         }
         const budget = 1 / layout.dpr;
         for (const [id, reading] of Object.entries(layout.readouts)) {
@@ -184,6 +216,35 @@ try {
         assert.equal(await page.locator('#signalStatus').textContent(), 'SIGNAL LOST');
         await page.evaluate(() => clearInterval(window.fixtureLabelReplay));
         await frame(page);
+      }
+      for (const scale of [1, .7]) {
+        await page.evaluate(scale => window.HUDCore.handleMessage('config', { data: { scale, glowIntensity: .8, elements: { showGauge: true } } }), scale);
+        const rpmCases = [
+          { name:'zero',rpm:0,maxRpm:9000,redlineRpm:8000,axis:10000,shift:false },
+          { name:'redline',rpm:8000,maxRpm:9000,redlineRpm:8000,axis:10000,shift:true },
+          { name:'engine-max',rpm:9000,maxRpm:9000,redlineRpm:8000,axis:10000,shift:true },
+          { name:'headroom',rpm:10000,maxRpm:9000,redlineRpm:8000,axis:10000,shift:true },
+          { name:'overrange',rpm:11000,maxRpm:9000,redlineRpm:8000,axis:10000,shift:true },
+          { name:'adaptive-high',rpm:11000,maxRpm:12000,redlineRpm:11000,axis:14000,shift:true },
+          { name:'adaptive-rounded',rpm:9200,maxRpm:9500,redlineRpm:9000,axis:11000,shift:true },
+        ];
+        for (const scenario of rpmCases) {
+          await frame(page, scenario);
+          const name = `rpm-${scenario.name}-${scale===1?'default':'compact'}-dpr${dpr}`;
+          await save(page,name+'.png');
+          const rpm = await inspectRpm(page), layout = await inspectArcLayout(page);
+          report.checks.push({rpmScenario:name,expected:scenario,rpm,labelClearances:layout.labelClearances});
+          assert.deepEqual(rpm.collisions, [], 'RPM scale must clear readouts and its own graduations: ' + name);
+          assert(rpm.markBelow && layout.labelClearances.every(n=>n.bandGap>0), 'Numeral/mark ink must stay below the strip: ' + name);
+          assert(rpm.majorTickLength > rpm.minorTickLength && rpm.minorTickLength > 0);
+          assert(rpm.minimumCellWidthDevicePixels >= 1, 'Dense oblique cells must retain at least one device pixel of width');
+          assert(rpm.minimumCellGapDevicePixels >= .5, 'Dense oblique cells need an actual dark gap at compact DPR1');
+          assert.equal(rpm.lit, Math.ceil(Math.min(1,scenario.rpm/scenario.axis)*rpm.cells));
+          assert.equal(rpm.shift === 'SHIFT', scenario.shift, 'Shift uses actual redline, not display headroom');
+          assert.equal(rpm.graduations.at(-1).rpm, scenario.axis);
+          assert(rpm.labels.at(-1).ratio < 1, 'Numbered scale must leave the explicit headroom tail');
+          assert(rpm.labels.every(label => Math.abs(label.ratio-label.rpm/scenario.axis)<1e-12));
+        }
       }
       await page.evaluate(() => window.HUDCore.handleMessage('config', { data: { scale: 1, glowIntensity: .8, elements: { showGauge: true } } }));
       await frame(page);

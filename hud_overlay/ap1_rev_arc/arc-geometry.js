@@ -2,7 +2,8 @@
 // The curve is parameterized by arc length; offsets follow its unit normal.
 export const ARC = Object.freeze({
   centerX: 360, centerY: 183, radiusX: 290, radiusY: 113, endAngle: .23,
-  bandTop: 18, labelCenter: 34, labelRadius: 15, faceEdge: 54, outerEdge: 64,
+  bandTop: 18, labelCenter: -22, labelRadius: 14, faceEdge: 54, outerEdge: 64,
+  segmentFill: .64, graduationStart: -1, majorEnd: -7, minorEnd: -3.5,
 });
 const TABLE_STEPS = 512;
 const span = Math.PI - 2 * ARC.endAngle;
@@ -48,9 +49,23 @@ export function arcPoint(ratio, outward = 0) {
   return { x: point.x + normal.x * outward, y: point.y + normal.y * outward };
 }
 
-export function arcSegment(index, count, fill = .72) {
+export function arcSegment(index, count, fill = ARC.segmentFill) {
   const start = index / count, end = (index + fill) / count;
   return [arcPoint(start), arcPoint(end), arcPoint(end, ARC.bandTop), arcPoint(start, ARC.bandTop)];
+}
+
+export function arcGraduation(ratio, major) {
+  const inward = major ? ARC.majorEnd : ARC.minorEnd;
+  return [arcPoint(ratio, ARC.graduationStart), arcPoint(ratio, inward)];
+}
+
+// Uniform inward label contour. The scale's unnumbered terminal interval keeps
+// the last numeral clear of the unchanged auxiliary captions, like the OEM tail.
+export function rpmLabelLayout(ratio, label) {
+  const point = arcPoint(ratio, ARC.labelCenter);
+  return { ...point, ratio,
+    textAnchor: 'middle', baseline: 'central', fontSize: label.length > 2 ? 13 : 16,
+  };
 }
 
 export function arcSamples(outward, count = 180) {

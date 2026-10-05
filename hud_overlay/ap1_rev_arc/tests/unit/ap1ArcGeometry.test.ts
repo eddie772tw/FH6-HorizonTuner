@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 // @ts-expect-error Standalone HUD geometry is shared with the asset generator.
-import { ARC, ARC_LENGTH, arcFrame, arcPoint, arcSamples, arcSegment } from '../../arc-geometry.js';
+import { ARC, ARC_LENGTH, arcFrame, arcPoint, arcSamples, arcSegment, arcGraduation, rpmLabelLayout } from '../../arc-geometry.js';
+// @ts-expect-error Standalone HUD model supplies semantic RPM scale values.
+import { SEGMENT_COUNT, tachometerTicks } from '../../model.js';
 const ratios = Array.from({ length: 101 }, (_, i) => i / 100);
 const dot = (a: any, b: any) => a.x * b.x + a.y * b.y;
 const difference = (a: any, b: any) => ({ x: a.x - b.x, y: a.y - b.y });
@@ -41,21 +43,44 @@ describe('AP1 shared upper arc geometry', () => {
       }
     }
   });
-  it('keeps glyph envelopes between the band and fascia at both ends and the crown', () => {
-    const clearance = Math.min(ARC.labelCenter - ARC.bandTop, ARC.faceEdge - ARC.labelCenter);
-    // Label radius includes the narrow typeface two-digit width; compare margins,
-    // not hardcoded draw coordinates or Canvas calls.
-    expect(ARC.faceEdge - ARC.labelCenter).toBeGreaterThan(ARC.labelRadius);
-    expect(clearance).toBeGreaterThan(ARC.labelRadius);
-    for (const ratio of [0, .5, 1]) {
-      const a = arcPoint(ratio, ARC.labelCenter);
-      expect(a.x - ARC.labelRadius).toBeGreaterThan(0);
-      expect(a.x + ARC.labelRadius).toBeLessThan(2 * ARC.centerX);
-      expect(a.y - ARC.labelRadius).toBeGreaterThan(0);
+  it('places numbered scales on the shared inward contour below the strip', () => {
+    expect(ARC.labelCenter + ARC.labelRadius).toBeLessThan(0);
+    for (const maximum of [4500, 6000, 9000, 9500, 12000, 20000]) {
+      for (const tick of tachometerTicks(maximum)) {
+        const label = rpmLabelLayout(tick.ratio, tick.label);
+        const { point, normal, tangent } = arcFrame(tick.ratio);
+        const delta = difference(label, point);
+        expect(dot(delta, normal)).toBeCloseTo(ARC.labelCenter, 9);
+        expect(dot(delta, tangent)).toBeCloseTo(0, 9);
+        expect(label.y).toBeGreaterThan(point.y);
+        expect(label.textAnchor).toBe('middle');
+        expect(label.fontSize).toBeGreaterThan(0);
+      }
+    }
+  });
+  it('puts major and minor graduations inward of the strip with distinct lengths', () => {
+    for (const ratio of ratios) {
+      const { point, normal, tangent } = arcFrame(ratio);
+      const major = arcGraduation(ratio, true), minor = arcGraduation(ratio, false);
+      expect(magnitude(difference(major[1], major[0]))).toBeGreaterThan(magnitude(difference(minor[1], minor[0])));
+      for (const p of [...major, ...minor]) {
+        expect(dot(difference(p, point), normal)).toBeLessThan(0);
+        expect(dot(difference(p, point), tangent)).toBeCloseTo(0, 9);
+      }
+    }
+  });
+  it('keeps dense cells slender with a meaningful dark gap along the arc', () => {
+    for (let index = 0; index < SEGMENT_COUNT - 1; index++) {
+      const [a, b, c, d] = arcSegment(index, SEGMENT_COUNT);
+      const next = arcSegment(index + 1, SEGMENT_COUNT)[0];
+      const width = Math.max(magnitude(difference(b, a)), magnitude(difference(c, d)));
+      const gap = magnitude(difference(next, b));
+      expect(width / ARC.bandTop).toBeLessThan(.25);
+      expect(gap / (width + gap)).toBeGreaterThan(.3);
     }
   });
   it('makes every segment span the same radial thickness and preserves bilateral symmetry', () => {
-    const count = 60;
+    const count = SEGMENT_COUNT;
     for (let i = 0; i < count; i++) {
       const [a, b, c, d] = arcSegment(i, count);
       expect(magnitude(difference(d, a))).toBeCloseTo(ARC.bandTop, 9);

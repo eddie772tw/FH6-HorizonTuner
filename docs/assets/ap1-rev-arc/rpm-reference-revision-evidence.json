@@ -1,0 +1,105 @@
+{
+  "style": "ap1_rev_arc",
+  "revision": "inward RPM numerals, slender dense cells and major/minor graduations",
+  "base_head": "bff048522e4472ae1fdcb40ca006be6edaccc1a7",
+  "status": "implemented; local gates passed; new actual Chrome rendering and moire review pending",
+  "reference_sources": [
+    {
+      "url": "https://www.honda.co.jp/factbook/auto/s2000/199904/046.html",
+      "image_url": "https://www.honda.co.jp/factbook/auto/s2000/199904/image/037_001.gif",
+      "model": "Japan launch 1999 Honda S2000 AP1",
+      "mode": "illuminated promotional cockpit; small original image",
+      "pixels_viewed": true,
+      "provider": "official Honda Japan; cloud browser page image"
+    },
+    {
+      "url": "https://www.s2000.club/OM/S2Kbooklet1999.pdf",
+      "page": 27,
+      "model": "Honda AP1 booklet hosted as 1999 scan",
+      "mode": "illuminated instrument inset",
+      "pixels_viewed": true,
+      "limitation": "Host filename is not proof of original printing date; PDF scan generation is later"
+    },
+    {
+      "url": "https://web.motormagazine.co.jp/_ct/17065339/album/16782798/image/16818352",
+      "image_url": "https://d1uzk9o9cg136f.cloudfront.net/f/16783018/rc/2019/04/09/14f33f22cadf21d6da43ec05ae6def9f90dc3a65.jpg",
+      "pixels": [
+        1280,
+        544
+      ],
+      "model": "Factory AP1 cluster in retrospective of1999-04-15 launch",
+      "mode": "all segments illuminated,0km/h and warning lamps visible; promotional/test display, not driving telemetry",
+      "pixels_viewed": true,
+      "limitation": "Republished photo, not a calibration specification; no exact OEM cell count asserted"
+    },
+    {
+      "url": "https://www.ebay.com/itm/334214668079",
+      "image_url": "https://i.ebayimg.com/images/g/GNwAAOSwlVphKPmS/s-l1200.jpg",
+      "pixels": [
+        1200,
+        900
+      ],
+      "model": "Seller-labelled2000–03 AP1 OEM removed cluster",
+      "mode": "unpowered; printed numeric and major/minor scale visible",
+      "pixels_viewed": true,
+      "limitation": "Corroborates layout; not exact1999 Japan-year evidence"
+    }
+  ],
+  "oem_observations": [
+    "Numerals are below/inward of the strip",
+    "Cells are visibly dense and slender",
+    "Major graduations alternate with shorter intermediate graduations",
+    "An unnumbered terminal band remains after the last numeral"
+  ],
+  "hud_adaptations": {
+    "segments": 120,
+    "exact_oem_cell_count": "not established and not asserted",
+    "fill_fraction_of_pitch": 0.64,
+    "sampling": "equal arc length along original band middle, same normal-offset ellipse and bezel",
+    "numerals": "uniform inward normal offset; no relocation of adjacent readouts",
+    "graduations": "major at adaptive1000-RPM multiples, minor at half major interval",
+    "headroom": "one major interval beyond rounded engine maximum; all marks/labels/fill share scaleMaxRpm",
+    "headroom_is_not": "OEM10000 calibration claim, changed engine maximum, or inferred redline",
+    "rpm_glow": "reduced only on RPM cells to avoid joining narrow gaps"
+  },
+  "estimated_compact_dpr1": {
+    "minimum_cell_width_device_pixels": 1.5493006987555908,
+    "minimum_gap_device_pixels": 0.8770041269434572,
+    "kind": "geometric estimate, not actual Chrome or moire acceptance"
+  },
+  "local_verification": {
+    "files_passed": 160,
+    "files_skipped": 1,
+    "tests_passed": 1200,
+    "tests_skipped": 1,
+    "style_cases": 95,
+    "build_web_hud": "passed",
+    "syntax_diff_body": "passed",
+    "fascia": "SVG regeneration unchanged; Inkscape raster re-export exactly matches committed PNG (ImageMagick AE=0)"
+  },
+  "planned_actual_checks": [
+    "Numbers and marks below band; no protected-readout or graduation overlap",
+    "Default/70%compact atDPR1/DPR2, including oblique end-cell width/gap",
+    "zero/redline/engine max/display headroom/overrange/highRPM/rounded maximum",
+    "Actual launcher and Coordinator with raw data and unchanged threshold ownership"
+  ],
+  "preserved": [
+    "ellipse and both band-edge curves",
+    "fascia SVG/PNG",
+    "speed and gear anchors",
+    "fixed speed-unit pair and centered VAC-above-BOOST pair",
+    "BOOST signed abs mapping and all paint",
+    "shared lifecycle/protocol and Ready PR status"
+  ],
+  "provenance": "No OEM image, logo or font shipped. Original HUD graphics remain repository MIT. Reference photos are research-only.",
+  "limitations": [
+    "New actual Chrome review pending; current preview images are historical",
+    "Inkscape layout draft is a concept check, not browser acceptance",
+    "Native Windows, real network/game and safe-zone acceptance unperformed"
+  ],
+  "skills": [
+    "halfmoon-design-system",
+    "telemetry-udp-protocol",
+    "pr-author-maintainer"
+  ]
+}
