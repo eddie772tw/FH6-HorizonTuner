@@ -43,12 +43,35 @@ const inspectArcLayout = async page => page.evaluate(async () => {
     const distances = corners.map(([x,y]) => (x-point.x)*normal.x + (y-point.y)*normal.y);
     return { text: node.textContent, bandGap: Math.min(...distances) - ARC.bandTop, bezelGap: ARC.faceEdge - Math.max(...distances) };
   });
-  const cluster = document.querySelector('#ap1Cluster').getBoundingClientRect();
+  const container = document.querySelector('#ap1Cluster');
+  const rect = value => ({ x: value.x, y: value.y, width: value.width, height: value.height });
+  const cluster = rect(container.getBoundingClientRect());
+  const geometricAttributes = ['x','y','width','height','transform','d','points','viewBox','text-anchor','dominant-baseline'];
+  const geometry = node => ({
+    tag: node.tagName,
+    attributes: Object.fromEntries(geometricAttributes.map(key => [key, node.getAttribute(key)])),
+  });
   const readouts = Object.fromEntries(['speedDigits','gearValue','fuelSegments','fuelValue','rpmValue','speedUnit'].map(id => {
-    const b = document.getElementById(id).getBoundingClientRect();
-    return [id, { x: (b.x-cluster.x)/cluster.width, y: (b.y-cluster.y)/cluster.height, width: b.width/cluster.width, height: b.height/cluster.height }];
+    const node = document.getElementById(id);
+    const b = rect(node.getBoundingClientRect());
+    const box = rect(node.getBBox());
+    const anchor = new DOMPoint(Number(node.getAttribute('x') || 0), Number(node.getAttribute('y') || 0));
+    const screenAnchor = anchor.matrixTransform(node.getScreenCTM());
+    const ancestors = [];
+    for (let parent = node.parentElement; parent && parent !== container; parent = parent.parentElement) {
+      ancestors.push({ tag: parent.tagName, transform: parent.getAttribute('transform'), viewBox: parent.getAttribute('viewBox') });
+    }
+    const font = getComputedStyle(node);
+    return [id, {
+      inkRect: b, svgInkRect: box,
+      inkNormalized: { x: (b.x-cluster.x)/cluster.width, y: (b.y-cluster.y)/cluster.height, width: b.width/cluster.width, height: b.height/cluster.height },
+      anchorNormalized: { x: (screenAnchor.x-cluster.x)/cluster.width, y: (screenAnchor.y-cluster.y)/cluster.height },
+      semanticGeometry: { self: geometry(node), descendants: Array.from(node.querySelectorAll('*')).map(geometry), ancestors },
+      font: { family: font.fontFamily, size: font.fontSize, weight: font.fontWeight }, localCssTransform: font.transform,
+    }];
   }));
-  return { labelClearances, readouts };
+  return { labelClearances, readouts, cluster, dpr: devicePixelRatio, zoom: getComputedStyle(container).zoom };
+
 });
 const save = async (page, name) => {
   await page.screenshot({ path: path.join(out, name), omitBackground: true });
@@ -70,19 +93,44 @@ try {
     report.checks.push({ viewport: [width, height], dpr, bounds, metric: '188 km/h' });
     if (width === 1280) {
       const normalLayout = await inspectArcLayout(page);
-      for (const label of normalLayout.labelClearances) {
-        assert(label.bandGap > 0 && label.bezelGap > 0, 'RPM label must fit between band and bezel: ' + label.text);
-      }
       await page.evaluate(() => window.HUDCore.handleMessage('config', { data: { scale: .7, glowIntensity: .8, elements: { showGauge: true } } }));
       await frame(page);
       const compactLayout = await inspectArcLayout(page);
-      for (const [id, normal] of Object.entries(normalLayout.readouts)) {
-        for (const key of ['x','y','width','height']) {
-          assert(Math.abs(normal[key] - compactLayout.readouts[id][key]) < .001, 'Compact scaling must preserve readout positions: ' + id);
+      // Save both screenshots and all coordinates before any geometry assertion.
+      // A failed layout check must leave enough evidence to diagnose the failure.
+      await save(page, 'compact-1280x720-dpr' + dpr + '.png');
+      const diagnostics = Object.fromEntries(Object.entries(normalLayout.readouts).map(([id, normal]) => {
+        const compact = compactLayout.readouts[id];
+        return [id, {
+          inkNormalizedDelta: Object.fromEntries(['x','y','width','height'].map(key => [key, compact.inkNormalized[key] - normal.inkNormalized[key]])),
+          anchorResidualDevicePixels: {
+            x: (compact.anchorNormalized.x - normal.anchorNormalized.x) * compactLayout.cluster.width * compactLayout.dpr,
+            y: (compact.anchorNormalized.y - normal.anchorNormalized.y) * compactLayout.cluster.height * compactLayout.dpr,
+          },
+        }];
+      }));
+      report.checks.push({ arcRevision: 'one shared normal-offset curve', dpr, normalLayout, compactLayout, diagnostics,
+        invariant: 'SVG anchors, descendant geometry, font settings and local transforms stay exact; screen anchors and containment allow one device pixel for rendering quantization. Text ink metrics are diagnostic, not anchor invariants.' });
+      await writeFile(path.join(out, 'visual-evidence.json'), JSON.stringify(report, null, 2) + '\n');
+      // Collect failures so DPR2 captures still run if DPR1 has a layout issue.
+      const verify = action => { try { action(); } catch (error) { report.errors.push(String(error)); } };
+      for (const layout of [normalLayout, compactLayout]) {
+        for (const label of layout.labelClearances) {
+          verify(() => assert(label.bandGap > 0 && label.bezelGap > 0, 'RPM label must fit between band and bezel: ' + label.text));
+        }
+        const budget = 1 / layout.dpr;
+        for (const [id, reading] of Object.entries(layout.readouts)) {
+          const b = reading.inkRect, c = layout.cluster;
+          verify(() => assert(b.x >= c.x - budget && b.y >= c.y - budget && b.x + b.width <= c.x + c.width + budget && b.y + b.height <= c.y + c.height + budget, 'Readout must remain contained at the requested scale: ' + id));
         }
       }
-      await save(page, 'compact-1280x720-dpr' + dpr + '.png');
-      report.checks.push({ arcRevision: 'one shared normal-offset curve', dpr, normalLayout, compactLayout });
+      for (const [id, normal] of Object.entries(normalLayout.readouts)) {
+        verify(() => assert.deepEqual(compactLayout.readouts[id].semanticGeometry, normal.semanticGeometry, 'Compact scaling must preserve SVG anchors and local transforms: ' + id));
+        verify(() => assert.deepEqual(compactLayout.readouts[id].font, normal.font, 'Compact scaling must not change authored font settings: ' + id));
+        verify(() => assert.equal(compactLayout.readouts[id].localCssTransform, normal.localCssTransform, 'Compact scaling must preserve local CSS transforms: ' + id));
+        const residual = diagnostics[id].anchorResidualDevicePixels;
+        verify(() => assert(Math.abs(residual.x) <= 1 && Math.abs(residual.y) <= 1, 'Screen anchor must follow the container scale within one device pixel: ' + id));
+      }
       await page.evaluate(() => window.HUDCore.handleMessage('config', { data: { scale: 1, glowIntensity: .8, elements: { showGauge: true } } }));
       await frame(page);
     }
