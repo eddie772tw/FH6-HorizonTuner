@@ -62,8 +62,21 @@ export async function verifyExpansion({ browser, origin, out, summary }) {
       await feed({ CurrentLap: 5999.99, LastLap: 5999.99, BestLap: 5999.99, boost_psi: -998.99 * 14.5038 });
       await capture('maximum-width'); await noOverlap();
       await config({ lfaManualExpand: false }); await page.clock.runFor(120);
-      const reversing = await layout(); await config({ lfaManualExpand: true }); const retargeted = await layout();
-      assert.equal(retargeted.progress, reversing.progress, 'Retargeting preserves the current position');
+      const reversal = await frame.evaluate(() => {
+        const data = { isMetric: true, scale: 1, elements: { showGauge: true }, lfaManualExpand: false, lfaAutoExpand: false };
+        // runFor may stop between RAF ticks. First paint the old target at the
+        // current clock instant, then reverse at that SAME instant. Comparing
+        // an older RAF snapshot to a later config paint would test elapsed
+        // motion, not a discontinuity caused by retargeting.
+        window.HUDCore.handleMessage('config', { data });
+        const read = () => ({ now: performance.now(), progress: Number(document.getElementById('lfaContainer').dataset.expansionProgress),
+          transform: getComputedStyle(document.getElementById('lfaMovingCenter')).transform, x: document.getElementById('lfaSpeed').getBoundingClientRect().x });
+        const before = read();
+        window.HUDCore.handleMessage('config', { data: { ...data, lfaManualExpand: true } });
+        return { before, after: read() };
+      });
+      assert.ok(reversal.before.progress > 0 && reversal.before.progress < 1);
+      assert.deepEqual(reversal.after, reversal.before, 'At the same clock instant, reversing preserves rendered position and transform exactly');
       for (const target of [false, true, false, true]) { await page.clock.runFor(45); await config({ lfaManualExpand: target }); assert.ok((await layout()).progress >= 0 && (await layout()).progress <= 1); }
       await page.clock.runFor(700); assert.equal((await layout()).progress, 1);
       await config({ lfaManualExpand: false }); await page.clock.runFor(150); await capture('closing-150ms');

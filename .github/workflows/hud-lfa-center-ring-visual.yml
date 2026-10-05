@@ -37,8 +37,6 @@ jobs:
         run: google-chrome --version
       - name: Render actual HUD fixture states
         run: PLAYWRIGHT_CHANNEL=chrome PLAYWRIGHT_MODULE_PATH="$RUNNER_TEMP/hud-browser/node_modules/playwright" OUTPUT_DIR="$RUNNER_TEMP/hud-lfa-center-ring-preview" node hud_overlay/lfa_center_ring/tests/visual/render.mjs
-      - name: Verify moving-ring layout and race transitions
-        run: PLAYWRIGHT_CHANNEL=chrome PLAYWRIGHT_MODULE_PATH="$RUNNER_TEMP/hud-browser/node_modules/playwright" OUTPUT_DIR="$RUNNER_TEMP/hud-lfa-center-ring-preview" node hud_overlay/lfa_center_ring/tests/visual/expansion.mjs
       - name: Verify real launcher and Coordinator integration
         run: PLAYWRIGHT_CHANNEL=chrome PLAYWRIGHT_MODULE_PATH="$RUNNER_TEMP/hud-browser/node_modules/playwright" OUTPUT_DIR="$RUNNER_TEMP/hud-lfa-center-ring-preview" node hud_overlay/lfa_center_ring/tests/visual/launcher.cjs
       - name: Verify real HUD settings controls and config delivery
