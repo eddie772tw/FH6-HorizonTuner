@@ -78,14 +78,15 @@ T_6820 圖本身標示 Issued 10/2009、中央 AUTO，不能當作 2012 年式�
 - 中央 PNG SHA-256：`3433460df37b91c67f09cfe7b3c99bacd6ad925db36b113042a95bc196422b22`
 - 中央 SVG SHA-256：`8570a31f672dac12bb94e198a91cb78576dd0b09b81c140dd4ae7ca68b924028`
 - 本機：**157 files passed／1 skipped；1,154 tests passed／1 skipped**，含 49 個 LFA 行為測試；`build:web-hud`、語法與 diff gate 通過
-- 最新右上增壓比例修訂已完成本機驗證，**新 Chrome 截圖／合成視覺審查待 CI**。僅移除右上舊固定刻度、按弧長投影切換刻度，渦輪圖示下移並縮至 80% 以避開 VAC 中段標籤；其餘三弧與中央未改。側面 PNG 與前版逐像素比對，改動只在右上區域
-- **實際 Chrome 154.0.8037.57 renderer 與共用 launcher 通過**：[run 37264359295](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37264359295)，來源 `eac1b9e5bd360a3ca4e9359bd142b43de7c6a0f6`、artifact `11324929540`，維持 `chromiumSandbox:true`
+- 最新右上增壓比例修訂已完成本機與實際 Chrome 驗證。僅移除右上舊固定刻度、按弧長投影切換刻度，渦輪圖示下移並縮至 80%，數字／單位／VAC 區塊移至 x481、y148／160／172 以避開 VAC 中段標籤；其餘三弧與中央未改。側面 PNG 與前版逐像素比對，改動只在右上區域
+- **實際 Chrome 154.0.8037.57 renderer 與共用 launcher 通過**：[run 37266656967](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37266656967)，來源 `5c5b8f63c735a0e55a826a263db53199958dd6ce`、artifact `11326489095`，維持 `chromiumSandbox:true`
 - 實際執行 1280×720、1920×1080、2560×1440 的 DPR1 與 1920×1080 DPR2。C/F、bar/psi/kPa、平均缺失／0、signed boost／0／missing、踏板端點與夾值、排名／計圈通知／逾時／重設、99:59.99 最大寬度、斷線重連與原有生命週期均通過；launcher 使用真正 coordinator、開啟 smoothing，驗證 parser JSON、過期清空、重連、設定、重載與 destroy
-- 已獨立查看實際截圖：新側錶、渦輪圖案、排名／LAP 3／BEST LAP、最大時間與缺失狀態可辨識，未觀察到標籤重疊或侵入中央圓。這是實作與視覺檢查結果，**最新修訂仍待使用者驗收**
+- 新增正增壓 0.25／0.5／1／2 bar 與 −0.5 VAC 比較，實際弧長刻度、模式切換、藍色負壓、零／缺失與文字不重疊檢查均通過；也涵蓋 bar／psi／kPa 長字串搭配 99:59.99。已查看 +0.5、−0.5 與 PSI VAC 實際像素，刻度、圖示、數字、單位與 VAC 清楚分離。這是實作與視覺檢查結果，**最新修訂仍待使用者驗收**
+- 比例修訂首輪 run `37266270934` 的真實文字 bounds 檢查抓到 VAC 0.25 刻度與 −0.5 讀數相撞。保留該斷言，僅移動右上讀數區塊並擴充長字串／單圈時間檢查；上述新 run 已通過
 - 首輪 run `37263909153` 因 fixture 已切回 metric、卻只將 mph 設為非法值，錯把有效的 180 km/h 預期為空白而失敗。修正測試為兩個速度欄位皆非法；runtime 未改，重新執行本機 gate 與上述 Chrome gate 均通過
 - **Windows 原生 overlay、click-through、置頂與 Forza 實機未驗證**。右下槽位假設取代遊戲原生儀表，仍需檢查遊戲提示／字幕遮擋
 
-中央像素比較以 `ad4458ec975678055a0b8555e3b0c99f53191aba` 為參考，使用 840×556 的 DPR2 detail 截圖。在中心 (420, 277.5)、半徑 267 px 內，依像素中心到圓心距離逐一比較原始 RGBA，不使用容差、羽化 mask 或重新取樣。公制、英制、倒檔、空檔、紅線、高 RPM **六個相同條件各比較 223,942 像素，差異均為 0**。排名與通知屬明確要求的變更，不列入此相同比較。缺失／離線兩張因舊 fixture 為 mph、新 fixture 為 km/h，各有 504 像素差異，全部位於速度單位文字；不能當作相同條件或宣稱所有解析度逐位元一致。
+前次資料／計圈修訂 `eac1b9e` 的中央像素比較以 `ad4458ec975678055a0b8555e3b0c99f53191aba` 為參考，使用 840×556 的 DPR2 detail 截圖。在中心 (420, 277.5)、半徑 267 px 內，依像素中心到圓心距離逐一比較原始 RGBA，不使用容差、羽化 mask 或重新取樣。公制、英制、倒檔、空檔、紅線、高 RPM **六個相同條件各比較 223,942 像素，差異均為 0**。排名與通知屬明確要求的變更，不列入此相同比較。缺失／離線兩張因舊 fixture 為 mph、新 fixture 為 km/h，各有 504 像素差異，全部位於速度單位文字；不能當作相同條件或宣稱所有解析度逐位元一致。這份歷史比較不冒充本次增壓比例修訂的重新量測。
 
 證據：[驗證摘要](../assets/lfa-center-ring/verification.json)、[renderer 報告](../assets/lfa-center-ring/evidence.json)、[launcher 報告](../assets/lfa-center-ring/launcher-report.json)、[中央像素比較](../assets/lfa-center-ring/telemetry-center-preservation.json)、[UDP／JSON 單位稽核](../assets/lfa-center-ring/json-unit-audit.json)。上述成功指向已驗證的 runtime head；補入本次文件與預覽後的最終文件 commit CI 仍待執行。
 
@@ -101,11 +102,14 @@ git diff --check
 
 瀏覽器重現：以 isolated Playwright、正常啟用的 Chromium sandbox 執行 `tests/visual/render.mjs` 與 `launcher.cjs`；`PLAYWRIGHT_MODULE_PATH`、`OUTPUT_DIR`、選用 `PLAYWRIGHT_CHANNEL=chrome`。本機 socket／localhost 環境限制已確認，不透過停用 sandbox 繞過。
 
-## 前版實際 Chrome 預覽（最新增壓比例待更新）
+## 本次實際 Chrome 預覽
 
-以下取自上述成功 CI 的真實 renderer，**仍顯示前版增壓比例，尚未反映新的非等比例／VAC 量尺**。主圖與 720p 圖保留截圖像素；狀態圖僅縮小並加上標題排列，沒有重繪 HUD。全部使用合成遙測，**不是遊戲截圖**。目錄中舊 `fuel-empty.png`／`fuel-full.png` 僅為歷史證據，不代表目前已改為踏板的側錶。
+以下取自上述成功 CI 的真實 renderer，呈現新的非等比例／VAC 量尺。主圖與 720p 圖保留截圖像素；比較／狀態圖僅縮小並加上標題排列，沒有重繪 HUD。全部使用合成遙測，**不是遊戲截圖**。目錄中舊 `fuel-empty.png`／`fuel-full.png` 僅為歷史證據，不代表目前已改為踏板的側錶。
 
 ![四輪平均胎溫、增壓與油門煞車的實際畫面](../assets/lfa-center-ring/metric-detail.png)
+![正增壓0.5／1bar、負壓VAC−0.5bar與零值比較](../assets/lfa-center-ring/lfa-boost-scale-comparison.png)
 ![單位、負壓、零值、夾限與缺失資料](../assets/lfa-center-ring/state-contact-sheet.png)
 ![排名、完成圈、最佳圈與最大時間寬度](../assets/lfa-center-ring/session-states.png)
 ![1280×720 右下角實際位置](../assets/lfa-center-ring/metric-720p.png)
+
+本輪5c5b8f63對照eac1b9e的八個相同DPR2狀態，中央圓223,942像素及右上區域以外430,500像素均為0差異；新證據見 `docs/assets/lfa-center-ring/boost-scale-preservation.json`。此為精確RGBA比對，沒有容差或重新取樣。

@@ -4,21 +4,17 @@
 
 依使用者最新要求，左上與左側中央改為四輪平均胎溫；左右下弧改為油門／煞車百分比、移除舊圖示；右上改為 signed boost 與原創渦輪圖案。右側中央顯示封包回報的本圈經過時間；原 LIVE 區改為有效排名及短暫的完成圈／最佳圈通知。**中央素材、geometry、CSS、刻度／指針繪圖及四弧輪廓保留**。
 
-最新追加修訂僅調整右上增壓量尺：正增壓 0–1 bar 佔弧長 75%、1–2 bar 佔 25%；負壓用同一弧條的藍色 VAC 顯示。填充與刻度同步按弧長切換，保留負號與實際數值。**本機 gate 已通過，新 Chrome 視覺驗證待 CI**。
+最新追加修訂僅調整右上增壓量尺：正增壓 0–1 bar 佔弧長 75%、1–2 bar 佔 25%；負壓用同一弧條的藍色 VAC 顯示。填充與刻度同步按弧長切換，保留負號與實際數值。**本機 gate 與實際 Chrome renderer／launcher 已通過**。
 
-### Actual Renderer Previews — Prior Boost Scale
+### Actual Renderer Previews
 
-以下圖片尚為前版增壓量尺；待新 CI 取得實際非等比例／VAC 畫面後替換，不能視為本次比例修訂的像素驗收。
-
-以下為新版 **Chrome 154.0.8037.57 真實 renderer** 截圖，取自成功的 [run 37264359295](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37264359295)，來源 `eac1b9e5bd360a3ca4e9359bd142b43de7c6a0f6`、artifact `11324929540`。主圖與 720p 圖保留截圖像素；狀態圖只縮小並排列實際畫面。所有圖片均為合成遙測 fixture，**不是遊戲截圖**。本次資料與計圈修訂已實作並檢查，仍待使用者視覺驗收。
+以下為新版 **Chrome 154.0.8037.57 真實 renderer** 截圖，取自成功的 [run 37266656967](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37266656967)，來源 `5c5b8f63c735a0e55a826a263db53199958dd6ce`、artifact `11326489095`。主圖與 720p 圖保留截圖像素；狀態圖只縮小並排列實際畫面。所有圖片均為合成遙測 fixture，**不是遊戲截圖**。本次資料與計圈修訂已實作並檢查，仍待使用者視覺驗收。
 
 ![四輪平均胎溫、增壓、油門與煞車](RAW_PREFIX/docs/assets/lfa-center-ring/metric-detail.png)
 
-![C/F與增壓單位、負壓、零值、夾限與缺失](RAW_PREFIX/docs/assets/lfa-center-ring/state-contact-sheet.png)
+![正增壓0.5／1bar、VAC−0.5bar與零值比較](RAW_PREFIX/docs/assets/lfa-center-ring/lfa-boost-scale-comparison.png)
 
-![排名、完成圈、最佳圈與99:59.99最大時間寬度](RAW_PREFIX/docs/assets/lfa-center-ring/session-states.png)
-
-![1280×720右下角實際位置](RAW_PREFIX/docs/assets/lfa-center-ring/metric-720p.png)
+其他實際畫面：[單位／缺失狀態](RAW_PREFIX/docs/assets/lfa-center-ring/state-contact-sheet.png)、[排名／計圈通知／最大時間](RAW_PREFIX/docs/assets/lfa-center-ring/session-states.png)、[1280×720右下位置](RAW_PREFIX/docs/assets/lfa-center-ring/metric-720p.png)
 
 ### Key Modifications
 
@@ -29,7 +25,7 @@
 - **VAC**：負壓幅值0–1bar線性使用整條藍色弧，顯示VAC；刻度同步變為0／0.25／0.5／1幅值、位置0／25／50／100%。數字仍帶負號，微小負值保留-0.00或-0.0；真實0空弧、缺失N/A無填充。只有圖形夾限，signed數字不夾限
 - **計圈與排名**：CurrentLap 使用秒，接受0、缺失保留 `—:—`，不做時間外推；最大99:59.99，超出時不擠破側錶。有效正整數排名顯示P#；有真實完成圈或最佳時間改善才通知3秒，同時發生優先BEST LAP
 - **狀態優先順序**：失效／錯誤／暫停 → SHIFT → BEST LAP／LAP n → P# → LIVE。首次baseline、重連、重播、倒序或重設不產生假慶祝，通知不會因重播而延長
-- **中央保留**：原PNG／SVG SHA-256、`lfa.css`、`drawScale()`／`drawNeedle()` 未變。相同中心讀值、沒有排名／通知的六個DPR2狀態，完整中央圓內逐像素比較均為零差異；rank/notice 是使用者明確允許的文字更新
+- **中央保留**：原PNG／SVG SHA-256、`lfa.css`、`drawScale()`／`drawNeedle()` 未變。前次資料／計圈修訂eac1b9e的六個匹配DPR2狀態，完整中央圓內逐像素比較均為零差異；此歷史比較不冒充本次增壓修訂重新量測；rank/notice 是使用者明確允許的文字更新
 
 ### Pre-Commit & Local Verification
 
@@ -37,8 +33,9 @@
 - **Frontend Build:** `pnpm -C frontend run build:web-hud` 通過；新模組已打包，tests／fixture／PR body不隨產品散布
 - **Syntax / Whitespace:** 新JS、兩個browser runner的`node --check`及`git diff --check`通過
 - **Parser／JSON Provenance:** style-owned `tests/fixtures/udp-parser-samples.json` 取自未修改的真正Rust parser與production JSON serialization：+14.5038／0／−7.2519PSI，四輪203°F平均＝95°C，踏板204／51＝80%／20%，CurrentLap34.21／LapNumber2／P3
-- **Previous Browser Gate (new boost scale pending):** 上述GitHub Actions Chrome renderer與launcher均通過，`chromiumSandbox:true`；1280×720／1920×1080／2560×1440 DPR1及1920×1080 DPR2無錯誤。涵蓋C/F與bar/psi/kPa、正負零缺失boost、胎溫部分缺失、踏板夾限、排名／圈通知／重設／最大時間寬度與原生命週期；launcher以真正coordinator、開啟smoothing接收上述parser JSON，亦通過過期清空／重連／設定／重載／destroy
-- **Previous Pixel Review (new boost scale pending):** 已查看實際單位、負壓、零值、缺失、圈通知與最大寬度截圖，未見標籤重疊或侵入中央圓。對照`ad4458e`的840×556 DPR2截圖，以圓心(420,277.5)、半徑267px、像素中心落在圓內為條件逐一比較原始RGBA；metric／imperial／reverse／neutral／redline／high-RPM六個狀態，各223,942像素均為AE0，沒有容差或重新取樣。missing／no-signal因舊fixture為mph、新fixture為km/h，各504個單位文字像素不同，並非相同條件；不宣稱所有解析度逐位元一致
+- **Actual Browser Gate:** 上述GitHub Actions Chrome renderer與launcher均通過，`chromiumSandbox:true`；1280×720／1920×1080／2560×1440 DPR1及1920×1080 DPR2無錯誤。涵蓋C/F與bar/psi/kPa、正負零缺失boost、胎溫部分缺失、踏板夾限、排名／圈通知／重設／最大時間寬度與原生命週期；launcher以真正coordinator、開啟smoothing接收上述parser JSON，亦通過過期清空／重連／設定／重載／destroy
+- **Actual Boost Review:** 新增0.25／0.5／1／2bar、VAC−0.5、零／缺失、弧長刻度及bar／psi／kPa長字串搭配99:59.99檢查均通過。已實際查看+0.5、−0.5與PSI VAC，刻度、圖示、signed數字、單位與VAC分離清楚
+- **Historical Center Pixel Evidence:** 前次eac1b9e對照`ad4458e`的840×556 DPR2截圖，以圓心(420,277.5)、半徑267px、像素中心落在圓內為條件逐一比較原始RGBA；metric／imperial／reverse／neutral／redline／high-RPM六個狀態，各223,942像素均為AE0，沒有容差或重新取樣。missing／no-signal因舊fixture為mph、新fixture為km/h，各504個單位文字像素不同，並非相同條件；不宣稱所有解析度逐位元一致
 - **Evidence:** [renderer](RAW_PREFIX/docs/assets/lfa-center-ring/evidence.json)、[launcher](RAW_PREFIX/docs/assets/lfa-center-ring/launcher-report.json)、[中央保留比較](RAW_PREFIX/docs/assets/lfa-center-ring/telemetry-center-preservation.json)、[UDP／JSON單位稽核](RAW_PREFIX/docs/assets/lfa-center-ring/json-unit-audit.json)、[驗證摘要](RAW_PREFIX/docs/assets/lfa-center-ring/verification.json)
 
 上述成功結果對應已驗證的runtime head；補入本次文件與預覽後的最終文件commit CI仍待執行。
@@ -49,14 +46,18 @@ frontend另一個Pa converter與binary packing通道有既存單位解讀差異�
 
 Windows原生overlay、click-through、置頂與Forza實機仍未驗證。預設420×277.5 CSS px、右下30px槽位假設取代遊戲原生儀表，仍需實機檢查提示／字幕遮擋。
 
+本輪5c5b8f63對照eac1b9e的八個相同DPR2狀態，中央圓223,942像素及右上區域以外430,500像素均為0差異；新證據見 `docs/assets/lfa-center-ring/boost-scale-preservation.json`。此為精確RGBA比對，沒有容差或重新取樣。
+
 ### Living Changelog & Review Iterations
 
-- 2026-10-05（Bagley as Codex）：依最新要求只調整右上正增壓非等比例刻度與藍色VAC模式，刻度和填充共用弧長映射；移除舊固定刻度、微調渦輪圖示，新增單調性／轉折／單位不變／微小負值／模式切換測試與實際Chrome scenarios。本機測試與build通過，新Chrome證據待取得
+- 2026-10-05（Bagley as Codex）：非等比例首輪run37266270934實際抓到VAC0.25刻度與−0.5讀數相撞。保留不重疊斷言，僅將右上數字／單位／VAC移至x481、y148／160／172，並擴充長字串與單圈時間檢查；run37266656967的renderer與launcher均通過
+
+- 2026-10-05（Bagley as Codex）：依最新要求只調整右上正增壓非等比例刻度與藍色VAC模式，刻度和填充共用弧長映射；移除舊固定刻度、微調渦輪圖示，新增單調性／轉折／單位不變／微小負值／模式切換測試與實際Chrome scenarios。本機測試與build及Chrome run37266656967通過
 
 - 2026-10-05（Bagley as Codex）：建立官方Normal display原型與原創中央素材，依截圖修正字距並保留獲使用者肯定的中央
 - 2026-10-05（Bagley as Codex）：補看多張實車照片，將側面重建為四弧量尺
 - 2026-10-05（Bagley as Codex）：依新要求接入平均胎溫、signed boost、踏板、圈時間、排名與3秒通知；本機gate通過
-- 2026-10-05（Bagley as Codex）：首輪run37263909153發現測試已回到metric，卻僅使mph非法，錯誤期待有效180km/h為空白。只修正fixture同時使兩個速度欄位非法，runtime未改；重跑本機完整測試／build與Chrome run37264359295通過，替換實際預覽並記錄六個匹配狀態的中央AE0
+- 2026-10-05（Bagley as Codex）：首輪run37263909153發現測試已回到metric，卻僅使mph非法，錯誤期待有效180km/h為空白。只修正fixture同時使兩個速度欄位非法，runtime未改；重跑本機完整測試／build與當時Chrome run37264359295通過，替換實際預覽並記錄六個匹配狀態的中央AE0
 
 ### Related Issues / References
 

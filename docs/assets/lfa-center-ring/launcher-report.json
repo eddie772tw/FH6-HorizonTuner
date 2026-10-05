@@ -19,6 +19,9 @@
         "tire": "N/A",
         "boost": "N/A",
         "boostUnit": "bar",
+        "boostMode": "",
+        "boostFraction": 0,
+        "boostVisible": "0",
         "throttle": "N/A",
         "brake": "N/A",
         "lap": "—:—"
@@ -41,6 +44,109 @@
         "tire": "95°C",
         "boost": "1",
         "boostUnit": "bar",
+        "boostMode": "",
+        "boostFraction": 0.75,
+        "boostVisible": "1",
+        "throttle": "80%",
+        "brake": "20%",
+        "lap": "0:34.21"
+      },
+      "body": "rgba(0, 0, 0, 0)",
+      "bounds": {
+        "x": 1470,
+        "y": 772.5,
+        "width": 420,
+        "height": 277.5,
+        "display": "block"
+      }
+    },
+    {
+      "name": "host-nonlinear-boost-0.25",
+      "readings": {
+        "speed": "180",
+        "gear": "4",
+        "status": "P3",
+        "tire": "95°C",
+        "boost": "0.25",
+        "boostUnit": "bar",
+        "boostMode": "",
+        "boostFraction": 0.1875,
+        "boostVisible": "1",
+        "throttle": "80%",
+        "brake": "20%",
+        "lap": "0:34.21"
+      },
+      "body": "rgba(0, 0, 0, 0)",
+      "bounds": {
+        "x": 1470,
+        "y": 772.5,
+        "width": 420,
+        "height": 277.5,
+        "display": "block"
+      }
+    },
+    {
+      "name": "host-nonlinear-boost-0.5",
+      "readings": {
+        "speed": "180",
+        "gear": "4",
+        "status": "P3",
+        "tire": "95°C",
+        "boost": "0.5",
+        "boostUnit": "bar",
+        "boostMode": "",
+        "boostFraction": 0.375,
+        "boostVisible": "1",
+        "throttle": "80%",
+        "brake": "20%",
+        "lap": "0:34.21"
+      },
+      "body": "rgba(0, 0, 0, 0)",
+      "bounds": {
+        "x": 1470,
+        "y": 772.5,
+        "width": 420,
+        "height": 277.5,
+        "display": "block"
+      }
+    },
+    {
+      "name": "host-nonlinear-boost-1",
+      "readings": {
+        "speed": "180",
+        "gear": "4",
+        "status": "P3",
+        "tire": "95°C",
+        "boost": "1",
+        "boostUnit": "bar",
+        "boostMode": "",
+        "boostFraction": 0.75,
+        "boostVisible": "1",
+        "throttle": "80%",
+        "brake": "20%",
+        "lap": "0:34.21"
+      },
+      "body": "rgba(0, 0, 0, 0)",
+      "bounds": {
+        "x": 1470,
+        "y": 772.5,
+        "width": 420,
+        "height": 277.5,
+        "display": "block"
+      }
+    },
+    {
+      "name": "host-nonlinear-boost-2",
+      "readings": {
+        "speed": "180",
+        "gear": "4",
+        "status": "P3",
+        "tire": "95°C",
+        "boost": "2",
+        "boostUnit": "bar",
+        "boostMode": "",
+        "boostFraction": 1,
+        "boostVisible": "1",
         "throttle": "80%",
         "brake": "20%",
         "lap": "0:34.21"
@@ -63,6 +169,34 @@
         "tire": "95°C",
         "boost": "0",
         "boostUnit": "bar",
+        "boostMode": "",
+        "boostFraction": 0,
+        "boostVisible": "1",
+        "throttle": "80%",
+        "brake": "20%",
+        "lap": "0:34.21"
+      },
+      "body": "rgba(0, 0, 0, 0)",
+      "bounds": {
+        "x": 1470,
+        "y": 772.5,
+        "width": 420,
+        "height": 277.5,
+        "display": "block"
+      }
+    },
+    {
+      "name": "host-vacuum-half",
+      "readings": {
+        "speed": "180",
+        "gear": "4",
+        "status": "P3",
+        "tire": "95°C",
+        "boost": "-0.5",
+        "boostUnit": "bar",
+        "boostMode": "VAC",
+        "boostFraction": 0.5,
+        "boostVisible": "1",
         "throttle": "80%",
         "brake": "20%",
         "lap": "0:34.21"
@@ -85,6 +219,9 @@
         "tire": "95°C",
         "boost": "-0.5",
         "boostUnit": "bar",
+        "boostMode": "VAC",
+        "boostFraction": 0.5,
+        "boostVisible": "1",
         "throttle": "80%",
         "brake": "20%",
         "lap": "0:34.21"
@@ -107,6 +244,9 @@
         "tire": "203°F",
         "boost": "-7.3",
         "boostUnit": "psi",
+        "boostMode": "VAC",
+        "boostFraction": 0.5,
+        "boostVisible": "1",
         "throttle": "80%",
         "brake": "20%",
         "lap": "0:34.21"
@@ -129,6 +269,9 @@
         "tire": "95°C",
         "boost": "-50",
         "boostUnit": "kPa",
+        "boostMode": "VAC",
+        "boostFraction": 0.5,
+        "boostVisible": "1",
         "throttle": "80%",
         "brake": "20%",
         "lap": "0:34.21"
@@ -151,6 +294,9 @@
         "tire": "N/A",
         "boost": "N/A",
         "boostUnit": "kPa",
+        "boostMode": "",
+        "boostFraction": 0,
+        "boostVisible": "0",
         "throttle": "80%",
         "brake": "20%",
         "lap": "0:34.21"
@@ -173,6 +319,9 @@
         "tire": "95°C",
         "boost": "100",
         "boostUnit": "kPa",
+        "boostMode": "",
+        "boostFraction": 0.75,
+        "boostVisible": "1",
         "throttle": "0%",
         "brake": "0%",
         "lap": "0:34.21"
@@ -195,6 +344,9 @@
         "tire": "95°C",
         "boost": "100",
         "boostUnit": "kPa",
+        "boostMode": "",
+        "boostFraction": 0.75,
+        "boostVisible": "1",
         "throttle": "100%",
         "brake": "100%",
         "lap": "0:34.21"
@@ -217,6 +369,9 @@
         "tire": "95°C",
         "boost": "100",
         "boostUnit": "kPa",
+        "boostMode": "",
+        "boostFraction": 0.75,
+        "boostVisible": "1",
         "throttle": "80%",
         "brake": "20%",
         "lap": "0:00.00"
@@ -239,6 +394,9 @@
         "tire": "95°C",
         "boost": "100",
         "boostUnit": "kPa",
+        "boostMode": "",
+        "boostFraction": 0.75,
+        "boostVisible": "1",
         "throttle": "80%",
         "brake": "20%",
         "lap": "0:00.00"
@@ -261,6 +419,9 @@
         "tire": "95°C",
         "boost": "100",
         "boostUnit": "kPa",
+        "boostMode": "",
+        "boostFraction": 0.75,
+        "boostVisible": "1",
         "throttle": "80%",
         "brake": "20%",
         "lap": "0:01.23"
@@ -283,6 +444,9 @@
         "tire": "N/A",
         "boost": "N/A",
         "boostUnit": "kPa",
+        "boostMode": "",
+        "boostFraction": 0,
+        "boostVisible": "0",
         "throttle": "N/A",
         "brake": "N/A",
         "lap": "—:—"
@@ -305,6 +469,9 @@
         "tire": "95°C",
         "boost": "100",
         "boostUnit": "kPa",
+        "boostMode": "",
+        "boostFraction": 0.75,
+        "boostVisible": "1",
         "throttle": "80%",
         "brake": "20%",
         "lap": "0:01.23"
@@ -327,6 +494,9 @@
         "tire": "203°F",
         "boost": "14.5",
         "boostUnit": "psi",
+        "boostMode": "",
+        "boostFraction": 0.75,
+        "boostVisible": "1",
         "throttle": "80%",
         "brake": "20%",
         "lap": "0:01.23"
@@ -349,6 +519,9 @@
         "tire": "203°F",
         "boost": "14.5",
         "boostUnit": "psi",
+        "boostMode": "",
+        "boostFraction": 0.75,
+        "boostVisible": "1",
         "throttle": "80%",
         "brake": "20%",
         "lap": "0:01.23"
@@ -371,6 +544,9 @@
         "tire": "203°F",
         "boost": "14.5",
         "boostUnit": "psi",
+        "boostMode": "",
+        "boostFraction": 0.75,
+        "boostVisible": "1",
         "throttle": "80%",
         "brake": "20%",
         "lap": "0:01.23"
@@ -393,6 +569,9 @@
         "tire": "203°F",
         "boost": "1",
         "boostUnit": "bar",
+        "boostMode": "",
+        "boostFraction": 0.75,
+        "boostVisible": "1",
         "throttle": "80%",
         "brake": "20%",
         "lap": "0:01.23"
@@ -415,6 +594,9 @@
         "tire": "95°C",
         "boost": "1",
         "boostUnit": "bar",
+        "boostMode": "",
+        "boostFraction": 0.75,
+        "boostVisible": "1",
         "throttle": "80%",
         "brake": "20%",
         "lap": "0:01.23"
