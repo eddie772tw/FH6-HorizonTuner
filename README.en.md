@@ -71,7 +71,7 @@ AEGO Road now uses qualified moving-sweep bin averages and jointly allocates fir
   - **Automated Web-Triggered Release Pipeline**: Maintainers simply publish a release on GitHub Web; Actions builds and signs the Full installer and attaches both Full/Lite portable executables, their Portable ZIP, `.sig`, and `latest.json`.
 * **Diagnostics Console, Theme System & i18n**:
   - **Diagnostic Console**: Live log viewer with DEBUG / INFO / WARNING / ERROR level filtering and automated Traceback stitching.
-  - **Design System & Theme**: Built on Halfmoon CSS v2 neon Glassmorphism skin, supporting "crosXover", "Retro VFD", and "Solar Flare" color presets.
+  - **Design System & Theme**: Core Theme defines the overall palette, surfaces and component design. Default, Modern and Elegant belong to Halfmoon; Swiss Technical, Editorial and Contrast belong to Swiss. Halfmoon retains rounded glass surfaces; Swiss offers cool technical, warm paper and neutral contrast day/night appearances with shared matte controls and panel headers. General tabs use capped content widths; tuning keeps numbered, equal-width steps filling the row. App menu → Appearance groups cores by system, previews Swiss headers/buttons/badges, and combines three swatch/HEX controls with 10 Color Presets under Colors. Native controls and charts share the palette, which persists when switching cores. The CSS editor and cheatsheet are collapsed by default for advanced users. `themeCatalog.ts` owns core membership and `styles/design-systems/` isolates system styles, allowing new modules without copying page CSS while preserving saved themes and import/export compatibility.
   - **Dynamic i18n**: Multi-language framework supporting Traditional Chinese (`zh-tw`), English (`en-us`), Japanese (`ja-jp`), and more.
 
 ---
@@ -184,6 +184,8 @@ The [backend performance audit](docs/backend-rust/performance-audit.md) records 
 ## Developer Guide & Formatting
 
 Start with the [documentation index](docs/README.md) for CLI/MCP guides, HUD contracts, tuning development, and calibration procedures. Previous plans and research are kept in the [archive index](docs/archive/README.md), separate from current development guidance.
+
+For frontend work, use the [frontend development entry](frontend/README.md) and [theme/design-system guide](docs/frontend/design-systems.md), covering all six cores, CSS ownership, extension steps and the review validation matrix.
 
 Agent collaboration rules are in [`.agents/AGENTS.md`](.agents/AGENTS.md); read them before making changes. Project decisions and learnings are maintained in [`.agents/Journal.md`](.agents/Journal.md).
 

@@ -76,7 +76,7 @@ export function AppShell({ variant, workspaces, Runtime, prepareSession }: {
   }, []);
   const closeSurface = useCallback(() => setSurface(null), []);
   const Workspace = workspaces[resolveWorkspace(variant, activeWorkspace)];
-  return <div className="app-shell d-flex flex-column vh-100" style={{ background: 'var(--bg-color)', color: 'var(--text)' }}>
+  return <div className="app-shell d-flex flex-column vh-100" style={{ background: 'var(--bg-gradient)', color: 'var(--text-primary)' }}>
     <AppRuntime activeWorkspace={activeWorkspace} />
     <AppHeader variant={variant} activeWorkspace={activeWorkspace} onSelect={selectWorkspace} onOpenSurface={openSurface} />
     {Runtime && <Runtime activeWorkspace={activeWorkspace} onOpenSessions={openSessions} />}

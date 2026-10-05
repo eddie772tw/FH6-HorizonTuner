@@ -23,16 +23,15 @@ const TireRadar: React.FC<TireRadarProps> = React.memo(({ title, isLeft, tireIdx
   const containerRef = useRef<HTMLDivElement>(null);
   const radarCanvasRef = useRef<HTMLCanvasElement>(null);
   const tempCanvasRef = useRef<HTMLCanvasElement>(null);
-  const hist = useRef<{ temp: number, ratio: number, angle: number, time: number, speed: number }[]>([]);
+  const hist = useRef<{ temp: number, ratio: number, angle: number, time: number }[]>([]);
   const offsetRef = useRef(0);
-  const lastTimeRef = useRef(performance.now());
   const tempLabelRef = useRef<HTMLSpanElement>(null);
 
   const angRef = useRef<HTMLSpanElement>(null);
   const ratioRef = useRef<HTMLSpanElement>(null);
   const prevCar = useRef<number | null>(null);
   const prevRace = useRef<number | null>(null);
-  const themeVars = useRef({ primary: '#00f0ff', isLight: false });
+  const themeVars = useRef({ primary: '#00f0ff', isLight: false, glowStrength: 1 });
   const bgCacheRef = useRef<{ canvas: OffscreenCanvas | null; isLosingGrip: boolean }>({ canvas: null, isLosingGrip: false });
   
   // 保存 DOM 的實體邏輯尺寸 (CSS 像素)
@@ -110,12 +109,13 @@ const TireRadar: React.FC<TireRadarProps> = React.memo(({ title, isLeft, tireIdx
       themeVars.current = {
         primary: style.getPropertyValue('--primary').trim() || '#00f0ff',
         isLight: document.documentElement.getAttribute('data-bs-theme') === 'light',
+        glowStrength: Number(style.getPropertyValue('--instrument-glow-strength').trim() || '1'),
       };
       bgCacheRef.current.canvas = null;
     };
     updateThemeVars();
     const themeObserver = new MutationObserver(updateThemeVars);
-    themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-bs-theme'] });
+    themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-bs-theme', 'data-bs-core', 'data-design-system', 'style'] });
 
     const getOrCreateBgCache = (scaledRadius: number, isLosingGrip: boolean): OffscreenCanvas | null => {
       const dpr = window.devicePixelRatio || 1;
@@ -173,8 +173,6 @@ const TireRadar: React.FC<TireRadarProps> = React.memo(({ title, isLeft, tireIdx
       if (liveData.IsRaceOn !== 1) return;
 
       const now = performance.now();
-      const dt = now - lastTimeRef.current;
-      lastTimeRef.current = now;
 
       let cTemp = 0, cRatio = 0, cAngle = 0;
       if (liveData.TireTemp && liveData.TireSlipRatio && liveData.TireSlipAngle) {
@@ -182,24 +180,18 @@ const TireRadar: React.FC<TireRadarProps> = React.memo(({ title, isLeft, tireIdx
         cRatio = liveData.TireSlipRatio[tireIdx];
         cAngle = liveData.TireSlipAngle[tireIdx];
       }
-      const speed = liveData.SpeedMetersPerSecond || 0;
-      const isMoving = Math.abs(speed) > 0.5;
 
       if (renderCharts) {
-        if (!isMoving) {
-          for (let i = 0; i < hist.current.length; i++) hist.current[i].time += dt;
+        // [PERF] Use O(1) circular buffer instead of O(N) Array.shift() in the render loop.
+        if (hist.current.length < 900) {
+          hist.current.push({ temp: cTemp, ratio: cRatio, angle: cAngle, time: now });
         } else {
-          // [PERF] Use O(1) circular buffer instead of O(N) Array.shift() in 60Hz loop
-          if (hist.current.length < 900) {
-            hist.current.push({ temp: cTemp, ratio: cRatio, angle: cAngle, time: now, speed });
-          } else {
-            const idx = offsetRef.current;
-            const old = hist.current[idx];
-            if (old) {
-              old.temp = cTemp; old.ratio = cRatio; old.angle = cAngle; old.time = now; old.speed = speed;
-            }
-            offsetRef.current = (idx + 1) % 900;
+          const idx = offsetRef.current;
+          const old = hist.current[idx];
+          if (old) {
+            old.temp = cTemp; old.ratio = cRatio; old.angle = cAngle; old.time = now;
           }
+          offsetRef.current = (idx + 1) % 900;
         }
       } else {
         hist.current = [];
@@ -282,7 +274,7 @@ const TireRadar: React.FC<TireRadarProps> = React.memo(({ title, isLeft, tireIdx
 
             ctx.beginPath();
             ctx.arc(dotCenterX, dotCenterY, 6 * dpr, 0, Math.PI * 2);
-            ctx.fillStyle = dotGlowColor;
+            ctx.fillStyle = themeVars.current.glowStrength === 0 ? 'transparent' : dotGlowColor;
             ctx.fill();
 
             ctx.beginPath();
@@ -341,7 +333,6 @@ const TireRadar: React.FC<TireRadarProps> = React.memo(({ title, isLeft, tireIdx
             for (let i = 0; i < hLen; i++) {
               const idx = hLen < 900 ? i : (offsetRef.current + i) % hLen;
               const p = hist.current[idx];
-              if (Math.abs(p.speed) < 0.5) continue;
               let normT = Math.max(0, Math.min(1, (p.temp - tempMinScale) / tempRange));
               let binIdx = Math.min(numBins - 1, Math.floor(normT * numBins));
               bins[binIdx]++;
@@ -400,7 +391,7 @@ const TireRadar: React.FC<TireRadarProps> = React.memo(({ title, isLeft, tireIdx
     >
       {/* 雷達圖區 (固定佔據 ~38% 寬度) */}
       <div className="d-flex flex-column align-items-center justify-content-center h-100 overflow-hidden" style={{ flex: '0 0 38%', maxWidth: '42%', minWidth: '40px' }}>
-        <div className="fw-bold text-body mb-1 fs-8 flex-shrink-0 text-truncate">{title}</div>
+        <div className="instrument-readout-label fw-bold text-body mb-1 fs-8 flex-shrink-0 text-truncate">{title}</div>
         <div className="w-100 flex-grow-1 position-relative d-flex align-items-center justify-content-center overflow-hidden" style={{ minHeight: 0 }}>
           <canvas ref={radarCanvasRef} className="position-absolute" />
         </div>

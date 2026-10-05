@@ -79,8 +79,8 @@ const VerticalInputBar: React.FC<VerticalInputBarProps> = React.memo(({ label, s
           className="position-absolute start-0 end-0 bottom-0 rounded-bottom-2"
           style={{
             height: '0%',
-            background: `linear-gradient(to top, ${color}cc, ${color})`,
-            boxShadow: `0 0 10px ${color}a0`,
+            background: color,
+            boxShadow: `var(--instrument-marker-shadow, 0 0 10px ${color}a0)`,
             transition: 'height 0.04s ease-out'
           }}
         />
@@ -92,8 +92,8 @@ const VerticalInputBar: React.FC<VerticalInputBarProps> = React.memo(({ label, s
           style={{
             height: '2px',
             bottom: '0%',
-            background: '#ffffff',
-            boxShadow: '0 0 6px rgba(255,255,255,0.9)',
+            background: 'var(--text-primary)',
+            boxShadow: 'var(--instrument-marker-shadow, 0 0 6px var(--text-primary))',
             transition: 'bottom 0.04s ease-out, opacity 0.2s ease',
             zIndex: 3
           }}

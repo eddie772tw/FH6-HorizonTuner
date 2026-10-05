@@ -1,41 +1,27 @@
-# Tauri + React + Typescript
+# HorizonTuner 前端開發
 
-This template should help get you started developing with Tauri, React and Typescript in Vite.
+React／TypeScript／Vite 提供桌面 Full／Lite 與 Companion Web 的共用介面，Tauri 負責桌面原生整合。調校公式、資格及診斷由 Rust 後端擁有；前端僅處理草稿、流程與顯示轉換。
 
-## Recommended IDE Setup
+## 開發入口
 
-- [VS Code](https://code.visualstudio.com/) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
+從專案根目錄執行：
 
-## 開發常用指令
+| 指令 | 用途 |
+| --- | --- |
+| `cmd /c "pnpm -C frontend run dev"` | 啟動 Vite，預設 port 1420；需要後端的功能另啟動 Rust |
+| `.\dev_full.bat` / `.\dev_lite.bat` | 啟動完整桌面開發環境，擇一執行 |
+| `cmd /c "pnpm -C frontend run test"` | 執行前端 Vitest |
+| `cmd /c "pnpm -C frontend run build"` | TypeScript 檢查、Vite 建置及 tuning runtime 邊界檢查 |
 
-| 指令 | 說明 |
-| :--- | :--- |
-| `pnpm run dev` | 啟動 Vite 開發伺服器 (port 1420) |
-| `pnpm run build` | TypeScript 類型檢查 + Vite 生產建置 |
-| `pnpm run test` | 執行 Vitest 單元測試 (一次性) |
-| `pnpm run tauri` | 啟動 Tauri 桌面應用 |
+安裝、埠號、sidecar 與打包流程見[開發啟動指南](../docs/guides/development.md)。Rust 會嵌入前端建置資源，前端 build 與 Cargo 編譯／測試應依序執行。
 
-## 單元測試 (Vitest)
+## 程式與規範入口
 
-專案使用 [Vitest](https://vitest.dev/) 作為前端單元測試框架，與 Vite 工具鏈無縫整合，無需額外設定。
+| 工作 | 入口 |
+| --- | --- |
+| 設計系統、六個 Core Theme、配色及視覺驗收 | [主題與設計系統開發指南](../docs/frontend/design-systems.md) |
+| 元件／Portal／高頻繪圖規則 | [UI 架構](../.agents/rules/ui-architecture.md)、[元件規格](../.agents/skills/halfmoon-design-system/HALFMOON_SPECIFICATION.md) |
+| 調校責任與 typed API | [調校開發](../docs/tuning/README.md)、[責任契約](../docs/contracts/tuning_responsibilities.md) |
+| Android 原生外殼與 WebView 邊界 | [Companion README](../companion/README.md) |
 
-### 測試檔案慣例
-
-- 測試檔與被測模組**同目錄**，命名為 `<模組名>.test.ts`
-- 例如：`src/utils/tuningMath.ts` → `src/utils/tuningMath.test.ts`
-
-### 執行測試
-
-```bash
-# 從 frontend/ 目錄
-pnpm run test
-
-# 從專案根目錄
-pnpm -C frontend run test
-```
-
-### 目前的測試涵蓋範圍
-
-| 測試檔案 | 覆蓋範圍 |
-| :--- | :--- |
-| `src/utils/tuningMath.test.ts` | 彈簧、ARB、阻尼器、齒輪比 (AEGO)、對齊設定、胎壓等 11 個導出純函數 |
+Vitest 案例通常與模組並列，命名為 `*.test.ts`／`*.test.tsx`；主題入口案例為 [ThemeContext.test.ts](src/context/ThemeContext.test.ts) 與 [themeDocument.test.tsx](src/context/themeDocument.test.tsx)。凍結的 TypeScript 調校模型位於 [test-reference/tuning](test-reference/tuning/README.md)，不得由產品 runtime 匯入。完整測試分流見[測試策略](../.agents/rules/testing-strategy.md)。

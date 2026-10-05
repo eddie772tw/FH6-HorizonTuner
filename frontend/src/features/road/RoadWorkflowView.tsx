@@ -55,8 +55,8 @@ function RoadWorkflowContent({ recommendation, carId }: Props) {
           <option value="">{t('New Road workflow')}</option>{state.workflows.map(workflow => <option key={workflow.id} value={workflow.id}>{workflow.carName} · {workflow.event.name}</option>)}
         </select>
       </div>
-      <nav className="d-flex flex-wrap gap-2 mt-3" aria-label={t('Road workflow steps')}>
-        {(['prepare', 'drive', 'results'] as const).map((key, index) => <button className={'btn btn-sm ' + (validation.step === key ? 'btn-primary' : 'btn-outline-secondary')} key={key} onClick={() => validation.setStep(key)} disabled={key !== 'prepare' && !work}>{index + 1}. {t(['Confirm car and event', 'Drive', 'Result and next step'][index])}</button>)}
+      <nav className="workspace-tabs nav mt-3" aria-label={t('Road workflow steps')}>
+        {(['prepare', 'drive', 'results'] as const).map((key, index) => <button className={'nav-link ' + (validation.step === key ? 'active' : '')} aria-current={validation.step === key ? 'step' : undefined} key={key} onClick={() => validation.setStep(key)} disabled={key !== 'prepare' && !work}><span className="workspace-tabs__number">{index + 1}.</span>{t(['Confirm car and event', 'Drive', 'Result and next step'][index])}</button>)}
       </nav>
       <div className="small mt-2" role="status" style={{ minHeight: '1.5em' }}>{t(verificationState(state.documents.map(document => document.kind)))} · {state.error ? t(state.error) : operationStatus === 'pending' ? t('Saving changes…') : operationStatus === 'failed' ? t('The last change could not be saved. Review the current values and retry.') : state.live?.error ? t(state.live.error) : validation.choiceSaved ? t('Choice saved. Game values must be confirmed again before another run.') : t('Saved observations and drafts are available after disconnecting.')}</div>
     </header>

@@ -93,7 +93,7 @@ export default function DataOutGuide({ health, open, onClose }: DataOutGuideProp
           height: '100vh',
           zIndex: 1050,
           backgroundColor: 'rgba(0, 0, 0, 0.7)',
-          backdropFilter: 'blur(4px)',
+          backdropFilter: 'var(--surface-filter)',
           WebkitBackdropFilter: 'blur(4px)',
         }}
         onClick={onClose}

@@ -14,7 +14,7 @@ const PowerTorqueCanvas: React.FC<PowerTorqueCanvasProps> = React.memo(({ height
   const offsetRef = useRef(0);
   const prevCar = useRef<number | null>(null);
   const prevRace = useRef<number | null>(null);
-  const themeVars = useRef({ primary: '#00f0ff', secondary: '#ffaa00', isLight: false });
+  const themeVars = useRef({ primary: '#00f0ff', secondary: '#ffaa00', isLight: false, glowStrength: 1 });
 
   const { convertPower, convertTorque, t } = useSettings();
 
@@ -43,11 +43,12 @@ const PowerTorqueCanvas: React.FC<PowerTorqueCanvasProps> = React.memo(({ height
         primary: style.getPropertyValue('--primary').trim() || '#00f0ff',
         secondary: style.getPropertyValue('--secondary').trim() || '#ffaa00',
         isLight: document.documentElement.getAttribute('data-bs-theme') === 'light',
+        glowStrength: Number(style.getPropertyValue('--instrument-glow-strength').trim() || '1'),
       };
     };
     updateThemeVars();
     const themeObserver = new MutationObserver(updateThemeVars);
-    themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-bs-theme'] });
+    themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-bs-theme', 'data-bs-core', 'data-design-system', 'style'] });
 
     // ResizeObserver to automatically scale canvas resolution
     const resizeObserver = new ResizeObserver((entries) => {
@@ -197,7 +198,7 @@ const PowerTorqueCanvas: React.FC<PowerTorqueCanvasProps> = React.memo(({ height
         ctx.arc(pxRpm, pyPower, 4 * dpr, 0, Math.PI * 2);
         ctx.fillStyle = primaryHex;
         ctx.shadowColor = primaryHex;
-        ctx.shadowBlur = 10 * dpr;
+        ctx.shadowBlur = themeVars.current.glowStrength * 10 * dpr;
         ctx.fill();
         ctx.shadowBlur = 0;
 
@@ -206,7 +207,7 @@ const PowerTorqueCanvas: React.FC<PowerTorqueCanvasProps> = React.memo(({ height
         ctx.arc(pxRpm, pyTorque, 4 * dpr, 0, Math.PI * 2);
         ctx.fillStyle = secondaryHex;
         ctx.shadowColor = secondaryHex;
-        ctx.shadowBlur = 10 * dpr;
+        ctx.shadowBlur = themeVars.current.glowStrength * 10 * dpr;
         ctx.fill();
         ctx.shadowBlur = 0;
       }

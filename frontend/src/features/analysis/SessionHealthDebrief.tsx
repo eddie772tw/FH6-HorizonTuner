@@ -85,11 +85,11 @@ const SessionHealthDebrief: React.FC<SessionHealthDebriefProps> = ({ debrief, is
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1rem", width: "100%" }}>
       {/* Cards 2x2 Grid */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "1rem" }}>
+      <div className="analysis-summary-grid">
         {/* Card 1: Tire Thermal Balance */}
-        <div className="glass-panel" style={{ padding: "1.2rem", display: "flex", flexDirection: "column", gap: "0.8rem" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontWeight: "bold", color: "var(--text-primary)", fontSize: "0.95rem" }}>
+        <div className="glass-panel analysis-summary-card">
+          <div className="analysis-summary-card__header workspace-panel-header">
+            <span className="workspace-panel-title" style={{ fontWeight: "bold", color: "var(--text-primary)", fontSize: "0.95rem" }}>
               {t("Tire Thermal Balance")}
             </span>
             <span className={thermalBadgeClass} style={{ fontSize: "0.75rem", padding: "0.3rem 0.6rem" }}>
@@ -97,7 +97,7 @@ const SessionHealthDebrief: React.FC<SessionHealthDebriefProps> = ({ debrief, is
             </span>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.6rem", background: "rgba(0,0,0,0.25)", padding: "0.75rem", borderRadius: "6px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.6rem", background: "var(--surface-1)", padding: "0.75rem", borderRadius: "var(--panel-radius)" }}>
             <div style={{ textAlign: "center" }}>
               <div style={{ fontSize: "0.7rem", color: "var(--text-secondary)" }}>FL</div>
               <div style={{ fontSize: "1.1rem", fontWeight: "bold", color: "var(--text-primary)" }}>
@@ -126,9 +126,9 @@ const SessionHealthDebrief: React.FC<SessionHealthDebriefProps> = ({ debrief, is
         </div>
 
         {/* Card 2: Suspension & Bottom-out */}
-        <div className="glass-panel" style={{ padding: "1.2rem", display: "flex", flexDirection: "column", gap: "0.8rem" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontWeight: "bold", color: "var(--text-primary)", fontSize: "0.95rem" }}>
+        <div className="glass-panel analysis-summary-card">
+          <div className="analysis-summary-card__header workspace-panel-header">
+            <span className="workspace-panel-title" style={{ fontWeight: "bold", color: "var(--text-primary)", fontSize: "0.95rem" }}>
               {t("Suspension Utilization")}
             </span>
             <span className={suspBadgeClass} style={{ fontSize: "0.75rem", padding: "0.3rem 0.6rem" }}>
@@ -136,14 +136,14 @@ const SessionHealthDebrief: React.FC<SessionHealthDebriefProps> = ({ debrief, is
             </span>
           </div>
 
-          <div style={{ display: "flex", justifyContent: "space-around", alignItems: "center", background: "rgba(0,0,0,0.25)", padding: "0.75rem", borderRadius: "6px", flex: 1 }}>
+          <div style={{ display: "flex", justifyContent: "space-around", alignItems: "center", background: "var(--surface-1)", padding: "0.75rem", borderRadius: "var(--panel-radius)", flex: 1 }}>
             <div style={{ textAlign: "center" }}>
               <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>{t("Peak Travel")}</div>
               <div style={{ fontSize: "1.25rem", fontWeight: "bold", color: "var(--primary)" }}>
                 {formatMetric(suspension.peak_travel_pct, "%")}
               </div>
             </div>
-            <div style={{ width: "1px", height: "30px", background: "rgba(255,255,255,0.1)" }} />
+            <div style={{ width: "1px", height: "30px", background: "var(--divider)" }} />
             <div style={{ textAlign: "center" }}>
               <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>{t("Bottom-out Count")}</div>
               <div
@@ -163,9 +163,9 @@ const SessionHealthDebrief: React.FC<SessionHealthDebriefProps> = ({ debrief, is
         </div>
 
         {/* Card 3: Handling Dynamics & Tendency */}
-        <div className="glass-panel" style={{ padding: "1.2rem", display: "flex", flexDirection: "column", gap: "0.8rem" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontWeight: "bold", color: "var(--text-primary)", fontSize: "0.95rem" }}>
+        <div className="glass-panel analysis-summary-card">
+          <div className="analysis-summary-card__header workspace-panel-header">
+            <span className="workspace-panel-title" style={{ fontWeight: "bold", color: "var(--text-primary)", fontSize: "0.95rem" }}>
               {t("Cornering Balance")}
             </span>
             <span className={handlingBadgeClass} style={{ fontSize: "0.75rem", padding: "0.3rem 0.6rem" }}>
@@ -173,13 +173,13 @@ const SessionHealthDebrief: React.FC<SessionHealthDebriefProps> = ({ debrief, is
             </span>
           </div>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem", background: "rgba(0,0,0,0.25)", padding: "0.75rem", borderRadius: "6px", flex: 1, justifyContent: "center" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem", background: "var(--surface-1)", padding: "0.75rem", borderRadius: "var(--panel-radius)", flex: 1, justifyContent: "center" }}>
             <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.75rem", color: "var(--text-secondary)" }}>
               <span>{t("Understeer")}: {formatMetric(handling_balance.understeer_pct, "%")}</span>
               <span>{t("Oversteer")}: {formatMetric(handling_balance.oversteer_pct, "%")}</span>
             </div>
             {/* Dual Color Progress Bar */}
-            <div style={{ width: "100%", height: "8px", background: "rgba(255,255,255,0.1)", borderRadius: "4px", overflow: "hidden", display: "flex" }}>
+            <div style={{ width: "100%", height: "8px", background: "var(--divider)", borderRadius: "4px", overflow: "hidden", display: "flex" }}>
               <div style={{ width: `${understeerWidth}%`, background: "var(--bs-info)", transition: "width 0.3s" }} />
               <div style={{ width: `${oversteerWidth}%`, background: "var(--bs-warning)", transition: "width 0.3s" }} />
             </div>
@@ -187,9 +187,9 @@ const SessionHealthDebrief: React.FC<SessionHealthDebriefProps> = ({ debrief, is
         </div>
 
         {/* Card 4: Telemetry Sample Health */}
-        <div className="glass-panel" style={{ padding: "1.2rem", display: "flex", flexDirection: "column", gap: "0.8rem" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontWeight: "bold", color: "var(--text-primary)", fontSize: "0.95rem" }}>
+        <div className="glass-panel analysis-summary-card">
+          <div className="analysis-summary-card__header workspace-panel-header">
+            <span className="workspace-panel-title" style={{ fontWeight: "bold", color: "var(--text-primary)", fontSize: "0.95rem" }}>
               {t("Signal Integrity")}
             </span>
             <span className="badge text-bg-success" style={{ fontSize: "0.75rem", padding: "0.3rem 0.6rem" }}>
@@ -197,14 +197,14 @@ const SessionHealthDebrief: React.FC<SessionHealthDebriefProps> = ({ debrief, is
             </span>
           </div>
 
-          <div style={{ display: "flex", justifyContent: "space-around", alignItems: "center", background: "rgba(0,0,0,0.25)", padding: "0.75rem", borderRadius: "6px", flex: 1 }}>
+          <div style={{ display: "flex", justifyContent: "space-around", alignItems: "center", background: "var(--surface-1)", padding: "0.75rem", borderRadius: "var(--panel-radius)", flex: 1 }}>
             <div style={{ textAlign: "center" }}>
               <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>{t("Valid Laps")}</div>
               <div style={{ fontSize: "1.25rem", fontWeight: "bold", color: "var(--primary)" }}>
                 {formatCount(valid_laps)}
               </div>
             </div>
-            <div style={{ width: "1px", height: "30px", background: "rgba(255,255,255,0.1)" }} />
+            <div style={{ width: "1px", height: "30px", background: "var(--divider)" }} />
             <div style={{ textAlign: "center" }}>
               <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>{t("Total Samples")}</div>
               <div style={{ fontSize: "1.25rem", fontWeight: "bold", color: "var(--text-primary)" }}>

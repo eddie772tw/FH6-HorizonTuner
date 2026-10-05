@@ -1,6 +1,6 @@
 # 前端版型一致化：Live 基準、成熟應用與設計系統研究
 
-日期：2026-09-24。狀態：active；使用者已授權依本方案實作、分階段提交與 PR／CI 交付。
+日期：2026-09-24。本文保留當時的版型研究與實作脈絡；目前主題、CSS 模組與送審流程請從[主題與設計系統開發指南](design-systems.md)進入，階段驗證見[同日紀錄](ui-layout-validation-20260924.md)。文中原始主題範圍不代表後續 Swiss 設計系統的限制。
 
 基準：`main` / `2426238`（v1.6.1）。研究由使用者指定的 `gpt-6-luna` 子代理執行，主代理核對官方來源、參考圖片與本地元件。採用技能：`halfmoon-design-system`、`ponytail`、`cross-agent-collaboration`。
 

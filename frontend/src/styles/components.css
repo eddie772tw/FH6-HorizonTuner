@@ -1,0 +1,76 @@
+/* Shared component skin. No core names or per-page color palettes in this layer. */
+.theme-choice {
+  border-radius: var(--input-radius) !important;
+  font-weight: var(--control-font-weight);
+  letter-spacing: var(--control-tracking);
+  box-shadow: var(--control-shadow, none);
+}
+.btn-primary.text-white { color: var(--on-primary) !important; }
+.theme-choice[aria-pressed="true"] { border-color: var(--primary) !important; }
+:is(.btn, .theme-choice, .form-check-input):focus-visible {
+  outline: 2px solid var(--focus-color);
+  outline-offset: 2px;
+  box-shadow: none;
+}
+
+:is(.glass-panel-interactive, .card-interactive):hover {
+  transform: var(--interactive-transform) !important;
+  box-shadow: var(--interactive-shadow) !important;
+}
+:is(.theme-choice, .theme-swatch) { box-shadow: var(--choice-shadow) !important; }
+:is(.form-control, .form-select, .cyber-input, .cyber-select):focus-visible {
+  outline: 2px solid var(--focus-color) !important;
+  outline-offset: 2px;
+  box-shadow: var(--form-focus-shadow) !important;
+}
+:is(.app-shell, .app-menu-drawer, .companion-app) :is(h1, h2, h3, h4, h5, h6, .workspace-section-heading, .offcanvas-title) {
+  color: var(--heading-color) !important;
+  letter-spacing: var(--heading-tracking);
+  font-weight: var(--heading-weight);
+}
+.navbar-brand.text-primary { color: var(--heading-color) !important; }
+.workspace-section {
+  border: var(--section-border);
+  background: var(--section-bg);
+  padding: var(--section-padding);
+  border-radius: var(--panel-radius);
+}
+.settings-surface-grid { gap: 16px !important; }
+.settings-section-header { border-bottom: 1px solid var(--glass-border); }
+.table { --bs-table-color: var(--text-primary); --bs-table-bg: transparent; --bs-table-border-color: var(--glass-border); }
+.table thead { color: var(--text-secondary); font-size: 0.75rem; letter-spacing: 0.04em; text-transform: var(--readout-transform); }
+.dropdown-item { color: var(--text-primary); }
+.dropdown-item:is(:hover, :focus) { background: var(--surface-3); color: var(--text-primary); }
+.dropdown-item.active { background: var(--primary); color: var(--on-primary); }
+.tuning-workflow__grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr)) !important; gap: 16px !important; }
+.tuning-workflow label { font-weight: 600; letter-spacing: 0.02em; }
+
+/* Keep live canvases out of backdrop-filter compositing while retaining the system's tint and shadow. */
+.telemetry-card-shell { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+.telemetry-card-shell__header { --panel-heading-spacing: 0.25rem; min-height: calc(29px + 2 * var(--panel-heading-inset, 0px)); }
+.telemetry-card-shell__header h3 { font-size: var(--panel-heading-size, 0.875rem) !important; text-transform: var(--readout-transform); }
+.telemetry-card-shell .font-monospace { font-family: var(--instrument-font-family) !important; }
+.telemetry-card-shell .text-primary { color: var(--instrument-value-color) !important; }
+.telemetry-card-shell, .telemetry-card-shell * { transition: none !important; }
+.telemetry-live-grid, .telemetry-card-layout { gap: 8px !important; }
+.telemetry-live-grid:not(.telemetry-live-grid--focused) { min-height: 44rem; }
+
+@media (max-width: 1199.98px) {
+  .telemetry-live-grid:not(.telemetry-live-grid--focused) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: none;
+    grid-auto-rows: minmax(20rem, auto);
+    height: auto;
+    flex: 0 0 auto !important;
+  }
+  .telemetry-live-grid:not(.telemetry-live-grid--focused) > * { grid-column: span 2 !important; }
+  .telemetry-live-grid:not(.telemetry-live-grid--focused) > :nth-child(-n+2) { grid-column: span 1 !important; }
+}
+@media (max-width: 767.98px) {
+  .telemetry-live-grid:not(.telemetry-live-grid--focused) { grid-template-columns: minmax(0, 1fr); }
+  .telemetry-live-grid:not(.telemetry-live-grid--focused) > * { grid-column: 1 !important; }
+}
+@media (max-width: 575.98px) {
+  .telemetry-card-shell:has(.telemetry-card-layout--grid) { min-height: 38rem; }
+  .telemetry-card-layout--grid { grid-template-columns: minmax(0, 1fr); grid-template-rows: repeat(4, minmax(0, 1fr)); }
+}

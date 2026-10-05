@@ -2,45 +2,12 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { backendFetch } from '../services/backend';
 import { validateCSS } from '../utils/cssValidator';
 
-export type HalfmoonCore = 'default' | 'modern' | 'elegant';
-
-export interface ThemeSettings {
-  mode: 'dark' | 'light';
-  halfmoonCore: HalfmoonCore;
-  primaryColor: string;
-  secondaryColor: string;
-  accentColor: string;
-  customCSS: string;
-}
-
-export const defaultThemeSettings: ThemeSettings = {
-  mode: 'dark',
-  halfmoonCore: 'default',
-  primaryColor: '#00f0ff',
-  secondaryColor: '#ff003c',
-  accentColor: '#7000ff',
-  customCSS: ''
-};
-
-const isHalfmoonCore = (value: unknown): value is HalfmoonCore => (
-  value === 'default' || value === 'modern' || value === 'elegant'
-);
-
-const isHexColor = (value: unknown): value is string => (
-  typeof value === 'string' && /^#[\da-f]{6}$/i.test(value)
-);
-
-const normalizeThemeSettings = (
-  candidate: Partial<ThemeSettings> | null | undefined,
-  fallback: ThemeSettings = defaultThemeSettings,
-): ThemeSettings => ({
-  mode: candidate?.mode === 'light' ? 'light' : candidate?.mode === 'dark' ? 'dark' : fallback.mode,
-  halfmoonCore: isHalfmoonCore(candidate?.halfmoonCore) ? candidate.halfmoonCore : fallback.halfmoonCore,
-  primaryColor: isHexColor(candidate?.primaryColor) ? candidate.primaryColor : fallback.primaryColor,
-  secondaryColor: isHexColor(candidate?.secondaryColor) ? candidate.secondaryColor : fallback.secondaryColor,
-  accentColor: isHexColor(candidate?.accentColor) ? candidate.accentColor : fallback.accentColor,
-  customCSS: typeof candidate?.customCSS === 'string' ? candidate.customCSS : fallback.customCSS,
-});
+import { defaultThemeSettings, normalizeThemeSettings, type ThemeSettings } from './themeSettings';
+import { applyThemeToDocument } from './themeDocument';
+export { defaultThemeSettings, normalizeThemeSettings } from './themeSettings';
+export type { ThemeSettings } from './themeSettings';
+export { isCoreTheme } from './themeCatalog';
+export type { CoreThemeId, DesignSystemId } from './themeCatalog';
 
 interface ThemeContextType {
   themeSettings: ThemeSettings;
@@ -81,16 +48,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, []);
 
   useEffect(() => {
-    // Apply Halfmoon theme attributes (replaces manual data-theme system)
-    document.documentElement.setAttribute('data-bs-theme', themeSettings.mode || 'dark');
-    document.documentElement.setAttribute('data-bs-core', themeSettings.halfmoonCore || 'default');
-
-    // Inject user-defined brand colors as CSS custom properties
-    // These override the defaults set in App.css, allowing full user customization
-    document.documentElement.style.setProperty('--primary', themeSettings.primaryColor);
-    document.documentElement.style.setProperty('--secondary', themeSettings.secondaryColor);
-    document.documentElement.style.setProperty('--accent', themeSettings.accentColor);
-    document.documentElement.style.setProperty('--primary-glow', `rgba(${hexToRgb(themeSettings.primaryColor)}, 0.25)`);
+    applyThemeToDocument(themeSettings);
 
     // Inject custom CSS
     let styleTag = document.getElementById('custom-theme-css');
@@ -178,10 +136,3 @@ export const useTheme = () => {
   }
   return context;
 };
-
-// Helper: convert hex color to "r, g, b" string for use in rgba()
-function hexToRgb(hex: string): string {
-  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-  if (!result) return '0, 240, 255';
-  return `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}`;
-}

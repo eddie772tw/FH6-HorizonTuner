@@ -1,0 +1,242 @@
+/* Swiss cores share component rules; each core owns its day/night surfaces. */
+[data-design-system="swiss"][data-bs-core="swiss"][data-bs-theme="dark"] {
+  --bg-gradient:    #0b0d12;
+  --glass-bg:       #0e1117;
+  --glass-border:   rgba(255, 255, 255, 0.12);
+  --surface-1:      #161b24;
+  --surface-2:      #1e2530;
+  --surface-3:      rgba(255, 255, 255, 0.08);
+  --divider:        rgba(255, 255, 255, 0.12);
+  --divider-md:     rgba(255, 255, 255, 0.22);
+  --text-primary:   #f8fafc;
+  --text-secondary: #aeb9c9;
+}
+[data-design-system="swiss"][data-bs-core="swiss"][data-bs-theme="light"] {
+  --bg-gradient:    #f8fafc;
+  --glass-bg:       #ffffff;
+  --glass-border:   rgba(0, 0, 0, 0.15);
+  --surface-1:      #f1f5f9;
+  --surface-2:      #e2e8f0;
+  --surface-3:      rgba(203, 213, 225, 0.60);
+  --divider:        rgba(0, 0, 0, 0.12);
+  --divider-md:     rgba(0, 0, 0, 0.20);
+  --text-primary:   #090d16;
+  --text-secondary: #475569;
+}
+
+[data-design-system="swiss"][data-bs-core="swiss-editorial"][data-bs-theme="dark"] {
+  --bg-gradient: #191815;
+  --glass-bg: #22201c;
+  --glass-border: #595347;
+  --surface-1: #2d2a24;
+  --surface-2: #38342c;
+  --surface-3: #423d33;
+  --divider: #484237;
+  --divider-md: #595347;
+  --text-primary: #f3f0e7;
+  --text-secondary: #bdb6a8;
+}
+[data-design-system="swiss"][data-bs-core="swiss-editorial"][data-bs-theme="light"] {
+  --bg-gradient: #efede7;
+  --glass-bg: #faf8f2;
+  --glass-border: #c8c3b7;
+  --surface-1: #e9e5dc;
+  --surface-2: #e0dbcf;
+  --surface-3: #d6d0c2;
+  --divider: #d6d0c2;
+  --divider-md: #c8c3b7;
+  --text-primary: #25241f;
+  --text-secondary: #666157;
+}
+[data-design-system="swiss"][data-bs-core="swiss-contrast"][data-bs-theme="dark"] {
+  --bg-gradient: #0d0d0d;
+  --glass-bg: #171717;
+  --glass-border: #8a8a8a;
+  --surface-1: #262626;
+  --surface-2: #333333;
+  --surface-3: #414141;
+  --divider: #4b4b4b;
+  --divider-md: #8a8a8a;
+  --text-primary: #f5f5f5;
+  --text-secondary: #bfbfbf;
+}
+[data-design-system="swiss"][data-bs-core="swiss-contrast"][data-bs-theme="light"] {
+  --bg-gradient: #eeeeee;
+  --glass-bg: #ffffff;
+  --glass-border: #707070;
+  --surface-1: #e5e5e5;
+  --surface-2: #d9d9d9;
+  --surface-3: #cccccc;
+  --divider: #b3b3b3;
+  --divider-md: #707070;
+  --text-primary: #101010;
+  --text-secondary: #4b4b4b;
+}
+
+[data-design-system="swiss"] {
+  --primary-glow: transparent;
+  --instrument-glow-strength: 0;
+  --control-font-weight: 600;
+  --control-tracking: 0.025em;
+  --heading-weight: 700;
+  --panel-heading-size: initial;
+  --panel-heading-bg: transparent;
+  --panel-heading-color: var(--text-primary);
+  --panel-heading-inset: 0px;
+  --panel-heading-rule: 1px;
+  --readout-transform: uppercase;
+  --readout-tracking: 0.08em;
+  --glass-blur: 0px;
+  --glass-shadow: none;
+  --panel-radius: 4px;
+  --input-radius: 2px;
+  --bs-body-font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+  --bs-body-color: var(--text-primary);
+  --bs-body-bg: var(--bg-gradient);
+  --bs-secondary-color: var(--text-secondary);
+  --bs-secondary-bg: var(--surface-1);
+  --bs-tertiary-bg: var(--surface-2);
+  --bs-border-color: var(--glass-border);
+  --bs-border-radius: var(--panel-radius);
+  --bs-border-radius-sm: var(--input-radius);
+  --bs-border-radius-lg: var(--panel-radius);
+  --bs-action-bg: var(--surface-1);
+  --bs-action-color: var(--text-primary);
+  --bs-action-border-color: var(--glass-border);
+  --bs-action-hover-bg: var(--surface-2);
+  --bs-action-hover-color: var(--text-primary);
+  --bs-action-active-bg: var(--surface-3);
+  --bs-action-active-color: var(--text-primary);
+  --input-bg: var(--surface-1);
+  --input-text: var(--text-primary);
+  --surface-filter: none;
+  --section-header-bg: var(--glass-bg);
+  --heading-color: var(--text-primary);
+  --heading-tracking: 0.04em;
+  --focus-color: var(--text-primary);
+  --form-focus-shadow: none;
+  --interactive-transform: none;
+  --interactive-shadow: none;
+  --section-border: 1px solid var(--glass-border);
+  --section-bg: var(--glass-bg);
+  --section-padding: 16px;
+  --panel-padding: 16px;
+  --instrument-font-family: var(--bs-body-font-family);
+  --instrument-value-color: var(--text-primary);
+  --instrument-marker-shadow: none;
+}
+
+[data-design-system="swiss"][data-bs-core="swiss-editorial"] {
+  --panel-radius: 2px;
+  --heading-weight: 600;
+  --heading-tracking: normal;
+  --control-tracking: normal;
+  --readout-tracking: 0.025em;
+  --panel-heading-size: 1.05rem;
+}
+[data-design-system="swiss"][data-bs-core="swiss-contrast"] {
+  --panel-radius: 0px;
+  --input-radius: 0px;
+  --heading-tracking: 0.02em;
+  --control-tracking: 0.02em;
+  --panel-heading-bg: var(--text-primary);
+  --panel-heading-color: var(--glass-bg);
+  --panel-heading-inset: 8px;
+  --panel-heading-rule: 2px;
+}
+
+/* A shared header hook keeps page structure, portals and control surfaces intact. */
+:where([data-design-system="swiss"]) .workspace-panel-header :is(h3, .workspace-section-heading, .workspace-panel-title) {
+  font-weight: var(--heading-weight) !important;
+  letter-spacing: var(--heading-tracking);
+  color: var(--panel-heading-color) !important;
+  border-bottom: 0;
+}
+:where([data-design-system="swiss"]) .workspace-panel-header .workspace-section-heading { font-size: var(--panel-heading-size, 1rem) !important; }
+:where([data-design-system="swiss"]) .workspace-panel-header .workspace-panel-title { font-size: var(--panel-heading-size, 0.95rem) !important; }
+:where([data-design-system="swiss"]) .workspace-panel-header {
+  --heading-color: var(--panel-heading-color);
+  --focus-color: var(--panel-heading-color);
+  background: var(--panel-heading-bg);
+  color: var(--panel-heading-color);
+  border-bottom: var(--panel-heading-rule) solid var(--glass-border) !important;
+  padding: var(--panel-heading-inset) var(--panel-heading-inset) max(var(--panel-heading-inset), var(--panel-heading-spacing, 0.5rem)) !important;
+}
+/* Outline controls retain their own surface on an inverted header, including hover. */
+:where([data-design-system="swiss"]) .workspace-panel-header .btn[class*="btn-outline-"] {
+  --bs-btn-bg: var(--glass-bg);
+}
+
+/* Swiss component details are scoped to this design system. */
+:where([data-design-system="swiss"]) .btn {
+  border-radius: var(--input-radius) !important;
+  font-weight: var(--control-font-weight);
+  letter-spacing: var(--control-tracking);
+  box-shadow: none;
+}
+:where([data-design-system="swiss"]) .btn-outline-secondary {
+  --bs-btn-color: var(--text-secondary);
+  --bs-btn-border-color: var(--glass-border);
+  --bs-btn-hover-color: var(--text-primary);
+  --bs-btn-hover-bg: var(--surface-3);
+  --bs-btn-hover-border-color: var(--text-secondary);
+  --bs-btn-active-color: var(--text-primary);
+  --bs-btn-active-bg: var(--surface-2);
+  --bs-btn-active-border-color: var(--text-primary);
+}
+:where([data-design-system="swiss"]) :is(.navbar, .glass-panel, .card, .halfmoon-card, .popover, .offcanvas, .dropdown-menu, .modal-content, .toast, .telemetry-card-shell) {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: none !important;
+}
+:where([data-design-system="swiss"]) :is(.card, .halfmoon-card, .popover, .dropdown-menu, .modal-content, .toast, .companion-panel, .telemetry-card-shell) {
+  background: var(--glass-bg);
+  color: var(--text-primary);
+  border-color: var(--glass-border);
+  border-radius: var(--panel-radius);
+}
+:where([data-design-system="swiss"]) :is(.glass-panel, .card, .halfmoon-card)[class*="rounded-"] { border-radius: var(--panel-radius) !important; }
+:where([data-design-system="swiss"]) :is(.card-header, .card-footer, .modal-header, .modal-footer, .offcanvas-header) { border-color: var(--glass-border); background: var(--section-header-bg); }
+:where([data-design-system="swiss"]) .cyber-btn-glow:hover { transform: none !important; box-shadow: none !important; }
+:where([data-design-system="swiss"]) .telemetry-card-shell { border: 1px solid var(--glass-border); }
+:where([data-design-system="swiss"]) .telemetry-card-shell .border { border-color: var(--glass-border) !important; border-radius: var(--panel-radius) !important; }
+
+:where([data-design-system="swiss"]) .badge {
+  --badge-accent: var(--text-secondary);
+  --badge-ink: var(--text-secondary);
+  padding: 0.3em 0.5em;
+  font-weight: 600;
+  letter-spacing: var(--control-tracking);
+  line-height: 1.25;
+  border: 1px solid color-mix(in srgb, var(--badge-accent) 50%, var(--glass-border));
+  border-radius: var(--input-radius) !important;
+}
+:where([data-design-system="swiss"]) .badge:is(.text-bg-primary, .bg-primary, .bg-primary-subtle) { --badge-accent: var(--primary); --badge-ink: var(--text-primary); }
+:where([data-design-system="swiss"]) .badge:is(.text-bg-success, .bg-success, .bg-success-subtle) { --badge-accent: var(--bs-success); --badge-ink: var(--bs-success-text-emphasis); }
+:where([data-design-system="swiss"]) .badge:is(.text-bg-danger, .bg-danger, .bg-danger-subtle) { --badge-accent: var(--bs-danger); --badge-ink: var(--bs-danger-text-emphasis); }
+:where([data-design-system="swiss"]) .badge:is(.text-bg-warning, .bg-warning, .bg-warning-subtle) { --badge-accent: var(--bs-warning); --badge-ink: var(--bs-warning-text-emphasis); }
+:where([data-design-system="swiss"]) .badge:is(.text-bg-info, .bg-info, .bg-info-subtle) { --badge-accent: var(--bs-info); --badge-ink: var(--bs-info-text-emphasis); }
+/* Include utility classes so text-bg-* and text-white cannot bypass the badge contract. */
+:where([data-design-system="swiss"]) .badge[class] {
+  color: var(--badge-ink) !important;
+  background: color-mix(in srgb, var(--badge-accent) 12%, var(--glass-bg)) !important;
+  box-shadow: none !important;
+}
+
+:where([data-design-system="swiss"]) .workspace-tabs.nav { border-bottom: 1px solid var(--glass-border); }
+:where([data-design-system="swiss"]) .workspace-tabs .nav-link {
+  border: 0;
+  border-bottom: 3px solid transparent;
+  border-radius: 0;
+  color: var(--text-secondary);
+  background: transparent;
+  box-shadow: none;
+}
+:where([data-design-system="swiss"]) .workspace-tabs .nav-link:hover:not(:disabled) { background: var(--surface-3); color: var(--text-primary); }
+:where([data-design-system="swiss"]) .workspace-tabs .nav-link.active {
+  color: var(--text-primary) !important;
+  background: var(--surface-1);
+  border-bottom-color: var(--primary);
+  font-weight: 700;
+}
+:where([data-design-system="swiss"]) .telemetry-card-shell :is(.text-secondary, .text-info) { color: var(--text-secondary) !important; }

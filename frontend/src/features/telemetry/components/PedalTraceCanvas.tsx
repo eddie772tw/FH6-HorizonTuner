@@ -17,6 +17,7 @@ const PedalTraceCanvas: React.FC<PedalTraceCanvasProps> = React.memo(({ height =
   const prevCar = useRef<number | null>(null);
   const prevRace = useRef<number | null>(null);
   const isLightRef = useRef(false);
+  const glowStrengthRef = useRef(1);
   const { t } = useSettings();
 
   useEffect(() => {
@@ -37,10 +38,11 @@ const PedalTraceCanvas: React.FC<PedalTraceCanvasProps> = React.memo(({ height =
     // 策略 A：快取 isLight 主題屬性
     const updateIsLight = () => {
       isLightRef.current = document.documentElement.getAttribute('data-bs-theme') === 'light';
+      glowStrengthRef.current = Number(getComputedStyle(document.documentElement).getPropertyValue('--instrument-glow-strength').trim() || '1');
     };
     updateIsLight();
     const themeObserver = new MutationObserver(updateIsLight);
-    themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-bs-theme'] });
+    themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-bs-theme', 'data-bs-core', 'data-design-system', 'style'] });
 
     const resizeObserver = new ResizeObserver((entries) => {
       for (const entry of entries) {
@@ -138,7 +140,7 @@ const PedalTraceCanvas: React.FC<PedalTraceCanvasProps> = React.memo(({ height =
           ctx.lineWidth = 2.2 * dpr;
           ctx.strokeStyle = '#00ff66';
           ctx.shadowColor = 'rgba(0, 255, 102, 0.5)';
-          ctx.shadowBlur = 4 * dpr;
+          ctx.shadowBlur = glowStrengthRef.current * 4 * dpr;
           ctx.stroke();
           ctx.shadowBlur = 0;
 
@@ -154,7 +156,7 @@ const PedalTraceCanvas: React.FC<PedalTraceCanvasProps> = React.memo(({ height =
           ctx.lineWidth = 2.2 * dpr;
           ctx.strokeStyle = '#ff0055';
           ctx.shadowColor = 'rgba(255, 0, 85, 0.5)';
-          ctx.shadowBlur = 4 * dpr;
+          ctx.shadowBlur = glowStrengthRef.current * 4 * dpr;
           ctx.stroke();
           ctx.shadowBlur = 0;
         }

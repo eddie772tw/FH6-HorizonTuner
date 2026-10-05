@@ -14,7 +14,7 @@ export function AppHeader({ variant, activeWorkspace, onSelect, onOpenSurface }:
     <div className="d-flex align-items-center flex-wrap gap-2">
       <span className="navbar-brand text-primary fw-bold m-0">{t(variant === 'lite' ? 'FH6 HorizonTuner Lite' : 'FH6-Horizon Tuner')}</span>
       <AppBuildInfo />
-      <nav className="nav nav-pills flex-row flex-wrap gap-1" aria-label={t('Workspaces')}>
+      <nav className="workspace-tabs workspace-tabs--primary nav" aria-label={t('Workspaces')}>
         {getWorkspaces(variant).map(workspace => <button key={workspace.id} type="button"
           className={`nav-link ${workspace.id === activeWorkspace ? 'active' : ''}`}
           aria-current={workspace.id === activeWorkspace ? 'page' : undefined} onClick={() => onSelect(workspace.id)}>{t(workspace.label)}</button>)}

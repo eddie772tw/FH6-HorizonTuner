@@ -18,7 +18,6 @@ const GForceRadar: React.FC<GForceRadarProps> = React.memo(({ size: propSize, re
   const lonRef = useRef<HTMLSpanElement>(null);
   const hist = useRef<{ lat: number; lon: number; time: number }[]>([]);
   const offsetRef = useRef(0);
-  const lastTimeRef = useRef(performance.now());
   const markerCanvasRef = useRef<HTMLCanvasElement>(null);
   const sizeRef = useRef<number>(propSize || 170);
   const prevCar = useRef<number | null>(null);
@@ -86,7 +85,7 @@ const GForceRadar: React.FC<GForceRadarProps> = React.memo(({ size: propSize, re
     };
     updatePrimaryColor();
     const themeObserver = new MutationObserver(updatePrimaryColor);
-    themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-bs-theme'] });
+    themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-bs-theme', 'data-bs-core', 'style'] });
 
     const handleDraw = (e: any) => {
       const data = e.detail;
@@ -105,12 +104,9 @@ const GForceRadar: React.FC<GForceRadarProps> = React.memo(({ size: propSize, re
       if (data.IsRaceOn !== 1) return;
 
       const now = performance.now();
-      const dt = now - lastTimeRef.current;
-      lastTimeRef.current = now;
 
       const lat = -(data.AccelerationX || 0) / 9.81;
       const lon = (data.AccelerationZ || 0) / 9.81;
-      const isMoving = Math.abs(data.SpeedMetersPerSecond || 0) > 0.5;
 
       if (latRef.current) latRef.current.innerText = Math.abs(lat).toFixed(2);
       if (lonRef.current) lonRef.current.innerText = Math.abs(lon).toFixed(2);
@@ -124,22 +120,18 @@ const GForceRadar: React.FC<GForceRadarProps> = React.memo(({ size: propSize, re
         return;
       }
 
-      if (!isMoving) {
-        for (let i = 0; i < hist.current.length; i++) hist.current[i].time += dt;
+      // [PERF] Use O(1) circular buffer instead of O(N) Array.shift() in the render loop.
+      if (hist.current.length < 900) {
+        hist.current.push({ lat, lon, time: now });
       } else {
-        // [PERF] Use O(1) circular buffer instead of O(N) Array.shift() in 60Hz loop
-        if (hist.current.length < 900) {
-          hist.current.push({ lat, lon, time: now });
-        } else {
-          const idx = offsetRef.current;
-          const old = hist.current[idx];
-          if (old) {
-            old.lat = lat;
-            old.lon = lon;
-            old.time = now;
-          }
-          offsetRef.current = (idx + 1) % 900;
+        const idx = offsetRef.current;
+        const old = hist.current[idx];
+        if (old) {
+          old.lat = lat;
+          old.lon = lon;
+          old.time = now;
         }
+        offsetRef.current = (idx + 1) % 900;
       }
 
       const size = sizeRef.current;
@@ -294,7 +286,7 @@ const GForceRadar: React.FC<GForceRadarProps> = React.memo(({ size: propSize, re
             top: '50%',
             left: '50%',
             backgroundColor: 'var(--primary)',
-            boxShadow: '0 0 12px var(--primary)',
+            boxShadow: 'var(--instrument-marker-shadow, 0 0 12px var(--primary))',
             transform: 'translate(-50%, -50%) translate(0px, 0px)',
             willChange: 'transform',
           }}

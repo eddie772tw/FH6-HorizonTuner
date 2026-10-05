@@ -36,6 +36,7 @@
   max-width: 65rem;
   min-width: 0;
   margin-inline: auto;
+  overflow-wrap: anywhere;
 }
 
 .settings-surface-grid {
@@ -89,7 +90,7 @@
 }
 
 .app-dialog .settings-section-title {
-  font-size: 0.95rem !important;
+  font-size: var(--panel-heading-size, 0.95rem) !important;
   line-height: 1.35;
 }
 
@@ -165,4 +166,15 @@
 .settings-surface .settings-row {
   flex-direction: row;
   align-items: center !important;
+}
+
+@media (max-width: 767.98px) {
+  .offcanvas.app-menu-drawer {
+    --bs-offcanvas-width: 100vw;
+    /* Compact screens need the full viewport for settings controls. */
+    min-width: 100vw;
+    max-width: 100vw;
+  }
+  .offcanvas.app-menu-drawer .offcanvas-body { padding: 16px !important; }
+  .app-about-credit { grid-template-columns: minmax(0, 1fr); }
 }
