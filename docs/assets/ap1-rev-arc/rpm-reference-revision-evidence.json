@@ -282,18 +282,19 @@
     "excluded": "All moved RPM elements including rpmUnit; no whole-image identity claim"
   },
   "previews": {
-    "hero": "detail-metric.png",
-    "compact": "detail-compact.png",
-    "current_caption_comparison": "ap1-boost-scale-comparison.png",
-    "rpm_before_after": "rpm-before-after.png",
+    "hero": "https://raw.githubusercontent.com/eddie772tw/FH6-HorizonTuner/4f5470e9d83cc33530be4e85f1a40abc6d76a2db/docs/assets/ap1-rev-arc/detail-metric.png",
+    "compact": "https://raw.githubusercontent.com/eddie772tw/FH6-HorizonTuner/4f5470e9d83cc33530be4e85f1a40abc6d76a2db/docs/assets/ap1-rev-arc/detail-compact.png",
+    "current_caption_comparison": "https://raw.githubusercontent.com/eddie772tw/FH6-HorizonTuner/4f5470e9d83cc33530be4e85f1a40abc6d76a2db/docs/assets/ap1-rev-arc/ap1-boost-scale-comparison.png",
+    "rpm_before_after": "https://raw.githubusercontent.com/eddie772tw/FH6-HorizonTuner/4f5470e9d83cc33530be4e85f1a40abc6d76a2db/docs/assets/ap1-rev-arc/rpm-before-after.png",
     "rpm_before_after_heads": {
       "historical": "932bbae09e04226c016d8608679d74588c6d6526",
       "current": "04b20fe7c54715ebae1477c104f23d89e6be641f"
     },
-    "states": "states.png",
-    "full_viewport": "metric-1280x720.png",
+    "states": "https://raw.githubusercontent.com/eddie772tw/FH6-HorizonTuner/4f5470e9d83cc33530be4e85f1a40abc6d76a2db/docs/assets/ap1-rev-arc/states.png",
+    "full_viewport": "https://raw.githubusercontent.com/eddie772tw/FH6-HorizonTuner/4f5470e9d83cc33530be4e85f1a40abc6d76a2db/docs/assets/ap1-rev-arc/metric-1280x720.png",
     "derivation": "Actual screenshots without resampling; alpha-bound crops or montage with captions and review background;8-bit PNG",
-    "prior_arc_comparison": "before-after.png remains the earlier fuel-version arc comparison, not current RPM placement"
+    "prior_arc_comparison": "before-after.png remains the earlier fuel-version arc comparison, not current RPM placement",
+    "snapshot_commit": "4f5470e9d83cc33530be4e85f1a40abc6d76a2db"
   },
   "source_head_ci": {
     "head": "04b20fe7c54715ebae1477c104f23d89e6be641f",
@@ -322,5 +323,6 @@
     "RPM graduations",
     "RPM numerals",
     "left RPM unit"
-  ]
+  ],
+  "record_scope": "Historical04b upward-placement/OEM-reference evidence; current caption alignment is documented in left-alignment-revision-evidence.json"
 }

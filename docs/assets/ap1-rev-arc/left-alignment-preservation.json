@@ -1,0 +1,241 @@
+{
+  "reference_head": "4f5470e9d83cc33530be4e85f1a40abc6d76a2db",
+  "revision_head": "3e00409d0fbe86ee0f394581f6347349e7d7df00",
+  "method": "Exact RGBA comparison of matching metric screenshots within actual HUD container; exclude only each of the four old/new label ink-box unions plus one device pixel for raster edges. No resampling, value tolerance or whole gauge exclusions.",
+  "scope": "Four matched default/70% compact x DPR1/DPR2 metric frames. Not all-scene or native-game identity.",
+  "comparisons": [
+    {
+      "file": "metric-1280x720-dpr1.png",
+      "dpr": 1,
+      "scale": "default",
+      "container_device_pixel_rect": [
+        710,
+        465,
+        1250,
+        690
+      ],
+      "excluded_label_rects": [
+        {
+          "label": "speedUnit",
+          "device_pixel_rect": [
+            1052,
+            610,
+            1089,
+            630
+          ]
+        },
+        {
+          "label": "speedUnitMph",
+          "device_pixel_rect": [
+            1052,
+            591,
+            1089,
+            610
+          ]
+        },
+        {
+          "label": "boostModeLabel",
+          "device_pixel_rect": [
+            1152,
+            590,
+            1188,
+            602
+          ]
+        },
+        {
+          "label": "vacModeLabel",
+          "device_pixel_rect": [
+            1152,
+            578,
+            1181,
+            590
+          ]
+        }
+      ],
+      "compared_pixels": 119277,
+      "differing_pixels": 69,
+      "changed_pixels_inside_label_rects": 730,
+      "outside_difference_bbox": [
+        741,
+        486,
+        883,
+        554
+      ]
+    },
+    {
+      "file": "compact-1280x720-dpr1.png",
+      "dpr": 1,
+      "scale": "70% compact",
+      "container_device_pixel_rect": [
+        872,
+        532,
+        1250,
+        690
+      ],
+      "excluded_label_rects": [
+        {
+          "label": "speedUnit",
+          "device_pixel_rect": [
+            1111,
+            633,
+            1138,
+            648
+          ]
+        },
+        {
+          "label": "speedUnitMph",
+          "device_pixel_rect": [
+            1111,
+            620,
+            1138,
+            635
+          ]
+        },
+        {
+          "label": "boostModeLabel",
+          "device_pixel_rect": [
+            1181,
+            619,
+            1207,
+            628
+          ]
+        },
+        {
+          "label": "vacModeLabel",
+          "device_pixel_rect": [
+            1181,
+            611,
+            1202,
+            620
+          ]
+        }
+      ],
+      "compared_pixels": 58566,
+      "differing_pixels": 0,
+      "changed_pixels_inside_label_rects": 340,
+      "outside_difference_bbox": null
+    },
+    {
+      "file": "metric-1280x720-dpr2.png",
+      "dpr": 2,
+      "scale": "default",
+      "container_device_pixel_rect": [
+        1420,
+        930,
+        2500,
+        1380
+      ],
+      "excluded_label_rects": [
+        {
+          "label": "speedUnit",
+          "device_pixel_rect": [
+            2106,
+            1224,
+            2177,
+            1260
+          ]
+        },
+        {
+          "label": "speedUnitMph",
+          "device_pixel_rect": [
+            2106,
+            1185,
+            2177,
+            1221
+          ]
+        },
+        {
+          "label": "boostModeLabel",
+          "device_pixel_rect": [
+            2305,
+            1182,
+            2375,
+            1202
+          ]
+        },
+        {
+          "label": "vacModeLabel",
+          "device_pixel_rect": [
+            2305,
+            1158,
+            2360,
+            1178
+          ]
+        }
+      ],
+      "compared_pixels": 478388,
+      "differing_pixels": 0,
+      "changed_pixels_inside_label_rects": 2145,
+      "outside_difference_bbox": null
+    },
+    {
+      "file": "compact-1280x720-dpr2.png",
+      "dpr": 2,
+      "scale": "70% compact",
+      "container_device_pixel_rect": [
+        1744,
+        1065,
+        2500,
+        1380
+      ],
+      "excluded_label_rects": [
+        {
+          "label": "speedUnit",
+          "device_pixel_rect": [
+            2223,
+            1270,
+            2275,
+            1297
+          ]
+        },
+        {
+          "label": "speedUnitMph",
+          "device_pixel_rect": [
+            2223,
+            1243,
+            2275,
+            1270
+          ]
+        },
+        {
+          "label": "boostModeLabel",
+          "device_pixel_rect": [
+            2363,
+            1240,
+            2413,
+            1257
+          ]
+        },
+        {
+          "label": "vacModeLabel",
+          "device_pixel_rect": [
+            2363,
+            1224,
+            2402,
+            1241
+          ]
+        }
+      ],
+      "compared_pixels": 233858,
+      "differing_pixels": 0,
+      "changed_pixels_inside_label_rects": 1198,
+      "outside_difference_bbox": null
+    }
+  ],
+  "total_compared_pixels": 890089,
+  "total_differing_pixels": 69,
+  "unchanged_geometry_assets_sha256": {
+    "arc-geometry.js": "604382eb2cb283228b963c5c238028b4a84fd1caaa03dcac7a6a79056d5271c8",
+    "assets/fascia.svg": "a3f241f7c2ddde160f5b99d835b970230f7bf86595868cbd7f8919a19bcfb664",
+    "assets/fascia.png": "08f6fa407fd8366179dc805ee3faae67c431ee1cbbfc435e387b3eddb28033fe"
+  },
+  "unmatched_difference_note": "69 exact mismatches remain in the default DPR1 upper-left RPM region, bbox[741,486,883,554). The other three captures match outside label masks. Source geometry/assets are unchanged; the cause of these raster differences is not established. No masks were enlarged.",
+  "unmatched_max_absolute_rgba_channel_delta": [
+    21,
+    21,
+    64,
+    10
+  ],
+  "source_byte_check": "arc-geometry.js, fascia.svg and fascia.png exactly match4f5470e source",
+  "revision_visual_run_url": "https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37293328206"
+}

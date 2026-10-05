@@ -1,18 +1,19 @@
 {
   "style": "ap1_rev_arc",
-  "revision": "Entire120-cell RPM assembly lifted toward fixed fascia by shared normal offset24",
-  "reviewed_head": "04b20fe7c54715ebae1477c104f23d89e6be641f",
+  "revision": "Common left alignment for the two fixed caption pairs",
+  "reviewed_head": "3e00409d0fbe86ee0f394581f6347349e7d7df00",
   "remote": {
-    "source_head": "04b20fe7c54715ebae1477c104f23d89e6be641f",
+    "source_head": "3e00409d0fbe86ee0f394581f6347349e7d7df00",
     "platform": "GitHub Actions Linux",
     "browser": "Chrome154.0.8037.57",
-    "browser_version_log_job": 111689913769,
+    "browser_version_log_job": 111708651066,
     "sandbox": true,
-    "telemetry": "Synthetic direct frames and production-parser JSON through actual launcher/Coordinator; not real UDP/game capture",
-    "run_id": 37287538534,
-    "artifact_id": 11334872773,
-    "run_url": "https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37287538534",
-    "artifact_url": "https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37287538534/artifacts/11334872773",
+    "telemetry": "Synthetic direct frames plus stored production-parser JSON through actual launcher/Coordinator",
+    "fixture_scope": "Real launcher/Coordinator; fixture HTTP config/style discovery and WebSocket. Stored raw JSON originated from synthetic324-byte packets through production parser/serde_json; browser job does not run backend parser, live UDP or game",
+    "run_id": 37293328206,
+    "artifact_id": 11337143995,
+    "run_url": "https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37293328206",
+    "artifact_url": "https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37293328206/artifacts/11337143995",
     "result": "passed",
     "renderer_screenshots": 93,
     "rpm_scenarios": 28,
@@ -21,8 +22,7 @@
     "launcher_samples": 38,
     "renderer_errors": [],
     "launcher_errors": [],
-    "launcher_missing": [],
-    "fixture_scope": "Real launcher and Coordinator code with fixture HTTP config/style discovery and fixture WebSocket; stored JSON originated from synthetic324-byte packets processed by production parser/serde_json, not a parser/backend execution inside this browser job"
+    "launcher_missing": []
   },
   "actual_metrics": {
     "minimum_cell_width_device_pixels": 1.7249100053683428,
@@ -127,56 +127,59 @@
     ]
   },
   "visual_findings": [
-    "The entire RPM assembly now follows a24-design-unit outward normal offset; the fixed upper fascia stays unchanged at crest and both ends",
-    "Lower numerals, alternating major/minor marks and relocated left RPM unit remain clearly separated from the fixed speed/gear/auxiliary readouts",
-    "120 slender cells remain distinct in inspected default/70%compact DPR1/DPR2 screenshots; no broad moire, merged rail, top clipping or visible glow spill observed",
-    "All four maximum-glow screenshots (default/compact x DPR1/DPR2, intensity2) inspected; nominal geometric clearance is supported by actual pixels, not treated as a finite Gaussian bound",
-    "Engine/display-axis mapping unchanged:9000 engine maximum lights108/120 on10000 axis;10000 headroom and11000 overrange saturate fill;12000 maximum uses14000 axis",
-    "Current unit/mode comparison uses latest raised-RPM pixels; historical932 before/current04b after use matching metric telemetry"
+    "Both stacked pairs now visibly share left edges in default/70%compact DPR1/DPR2, with all28 scenario assertions reporting exact zero left-edge and screen-anchor deltas",
+    "mph remains above km/h and VAC above BOOST; fixed nodes, text, opacity selection and shared monochrome paint are retained",
+    "Positive/negative/zero/missing/stale default/compact pixels inspected; genuine zero selects BOOST with empty rail, while missing/stale mode captions are both dim and numeric stays dashed",
+    "Labels stay inside their existing zones without visible collisions with RPM, digits or boost bar",
+    "Scoped outside-label comparison retains69 unmatched pixels in default DPR1 upper-left RPM area; remaining three matching captures have zero outside-label differences; cause unproven"
   ],
-  "pixel_comparison": "rpm-layout-preservation.json",
-  "pixel_comparison_scope": "Four matching metric default/compact DPR1/DPR2 frames only; not whole-image identity, all-scene identity or native-game acceptance",
+  "pixel_comparison": "left-alignment-preservation.json",
+  "pixel_comparison_scope": "Four matched default/70% compact x DPR1/DPR2 metric frames. Not all-scene or native-game identity.",
   "previews": {
     "hero": "detail-metric.png",
     "compact": "detail-compact.png",
     "current_caption_comparison": "ap1-boost-scale-comparison.png",
-    "rpm_before_after": "rpm-before-after.png",
-    "rpm_before_after_heads": {
-      "historical": "932bbae09e04226c016d8608679d74588c6d6526",
-      "current": "04b20fe7c54715ebae1477c104f23d89e6be641f"
+    "before_after": "rpm-before-after.png",
+    "before_after_heads": {
+      "historical": "4f5470e9d83cc33530be4e85f1a40abc6d76a2db",
+      "current": "3e00409d0fbe86ee0f394581f6347349e7d7df00"
     },
+    "before_after_scope": "Existing filename/Library identity now shows left-alignment before/after; both sides already use the lifted120-cell RPM geometry",
     "states": "states.png",
     "full_viewport": "metric-1280x720.png",
-    "derivation": "Actual screenshots without resampling; alpha-bound crops or montage with captions and review background;8-bit PNG",
-    "prior_arc_comparison": "before-after.png remains the earlier fuel-version arc comparison, not current RPM placement"
+    "derivation": "Actual screenshots without resampling; alpha-bound crops or montage with captions/review background;8-bit PNG",
+    "prior_arc_comparison": "before-after.png remains the historical fuel-version arc comparison"
   },
   "audit_json_derivation": "Whitespace-only compaction; parsed data exactly matches original artifact, no nested old metadata",
   "limitations": [
-    "Source visual job passed; final documentation-head CI must be checked separately after publication",
-    "No native Windows, real network/game, display-panel or moving-footage acceptance",
-    "No reviewer approval or merge implied; PR remains Ready for Review",
-    "OEM exact segment count and10000 calibration not established; chosen density/headroom/24-unit inset are HUD adaptations"
+    "Current source visual job passed; final documentation-head CI pending publication",
+    "No native Windows, live UDP/game, display-panel or moving-footage acceptance",
+    "Ready for Review retained; not a reviewer approval or merge",
+    "Outside-label images are not universally pixel-identical:69 default DPR1 mismatches explicitly retained"
   ],
   "source_head_ci": {
-    "head": "04b20fe7c54715ebae1477c104f23d89e6be641f",
+    "head": "3e00409d0fbe86ee0f394581f6347349e7d7df00",
     "workflows": [
       {
         "name": "HUD AP1 Rev Arc Visual Review",
-        "id": 37287538534,
+        "id": 37293328206,
         "result": "success"
       },
       {
         "name": "CI Pipeline",
-        "id": 37287538420,
-        "result": "success"
+        "id": 37293328132,
+        "result": "in_progress"
       },
       {
         "name": "Release Packaging Test",
-        "id": 37287538834,
+        "id": 37293328721,
         "result": "success"
       }
     ],
-    "observed_at_utc": "2026-10-05T09:14:08Z",
+    "observed_at_utc": "2026-10-05T10:01:22Z",
     "final_documentation_head": "pending publication; must be checked separately"
-  }
+  },
+  "left_alignment_evidence": "left-alignment-revision-evidence.json",
+  "pair_left_edge_delta_device_pixels": 0,
+  "pair_screen_anchor_delta_device_pixels": 0
 }
