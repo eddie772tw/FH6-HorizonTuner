@@ -11,6 +11,8 @@ import {
 describe('ThemeContext - Swiss Style and Core Theme support', () => {
   it('validates swiss as a recognized core theme value', () => {
     expect(isCoreTheme('swiss')).toBe(true);
+    expect(isCoreTheme('swiss-editorial')).toBe(true);
+    expect(isCoreTheme('swiss-contrast')).toBe(true);
     expect(isCoreTheme('default')).toBe(true);
     expect(isCoreTheme('modern')).toBe(true);
     expect(isCoreTheme('elegant')).toBe(true);
@@ -66,7 +68,7 @@ describe('ThemeContext - Swiss Style and Core Theme support', () => {
     expect(primaryForeground(color)).toBe(foreground);
   });
 
-  it.each(['default', 'modern', 'elegant', 'swiss'] as const)('shares the preset with Halfmoon controls in %s', halfmoonCore => {
+  it.each(['default', 'modern', 'elegant', 'swiss', 'swiss-editorial', 'swiss-contrast'] as const)('shares the preset with Halfmoon controls in %s', halfmoonCore => {
     const theme = normalizeThemeSettings({ halfmoonCore, primaryColor: '#ff0000' });
     const properties = themeColorProperties(theme);
     expect(properties['--primary']).toBe('#ff0000');

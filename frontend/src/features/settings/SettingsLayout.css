@@ -90,7 +90,7 @@
 }
 
 .app-dialog .settings-section-title {
-  font-size: 0.95rem !important;
+  font-size: var(--panel-heading-size, 0.95rem) !important;
   line-height: 1.35;
 }
 

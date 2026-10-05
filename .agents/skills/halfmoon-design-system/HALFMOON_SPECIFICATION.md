@@ -1,6 +1,6 @@
 # FH6-HorizonTuner 前端 Halfmoon CSS 視覺設計與組件規格書 (Halfmoon Specification)
 
-> **文件版本**：2.4.0
+> **文件版本**：2.5.0
 > **參考標準**：[Halfmoon CSS v2.0.2 官方文件 (gethalfmoon.com/docs)](https://www.gethalfmoon.com/docs/) + Bootstrap 5 相容語意層  
 > ** Agent 遵循與維護宣告**：所有 AI Agent 在開發、重構或維護前端 UI 組件與 Halfmoon CSS 樣式時，**必須嚴格遵循並主動維護本規格書**與 [halfmoon-design-system](SKILL.md) 技能標準。
 > **目標與任務**：定義與規範 FH6-HorizonTuner 專案在實際前端開發時套用 Halfmoon CSS 所有 Components、Layout、Helpers 與 Utilities 的特定規格、參數、語意 Token、視覺行為與使用時機。
@@ -27,7 +27,11 @@ FH6-HorizonTuner 前端採用 **雙層視覺設計架構 (Two-Layer Visual Archi
 
 新增核心 `swiss`（Swiss Technical）沿用 Layer 2，保留既有 default、modern、elegant 與八組配色；另加入 Swiss Signal 與 Bauhaus Mono。`context/themeSettings.ts` 是載入、匯入、React 更新及首幀設定的共同正規化入口；Bauhaus Mono 以完整三色組識別，日間主色為黑、夜間為淺白，其他自訂配色不改寫。
 
-Core Theme 同時決定整體配色風格與元件細節。`context/themeCatalog.ts` 統一登錄核心及設計系統歸屬：Default／Modern／Elegant 屬於 Halfmoon，Swiss Technical 屬於 Swiss。外觀面板依此 registry 分組，不維護第二份選項表。
+Core Theme 同時決定整體配色風格與元件細節。`context/themeCatalog.ts` 統一登錄核心及設計系統歸屬：Default／Modern／Elegant 屬於 Halfmoon，Swiss Technical／Editorial／Contrast 屬於 Swiss。外觀面板依此 registry 分組，不維護第二份選項表。
+
+Swiss Technical 保留 `swiss` ID；新增 `swiss-editorial` 與 `swiss-contrast`，皆沿用 schema 2 的 `halfmoonCore` 欄位。Editorial 使用暖紙白／暖炭黑、2px 面板圓角、較自然字距及 1.05rem 區塊標題；Contrast 使用中性黑白灰、直角控制項、2px 標頭分隔與反差標頭。三核心共用 Swiss 元件規則、無模糊／光暈及既有分頁尺寸；切換核心不重設三色。
+
+`workspace-panel-header` 是即時儀表、調校、賽事摘要及設定的共用結構 hook。`--panel-heading-*` 管理字級、成對底色／文字、內距及分隔線；標頭內按鈕、徽章與提示仍保留自己的表面，不能無差別反轉所有後代色彩。Swiss 選擇卡的預覽以相同 core／mode 屬性及 `themeColorProperties` 顯示實際元件；巢狀預覽必須重新套用三色映射，避免內層 `data-bs-theme` 重設 Halfmoon 原生主色。
 
 Halfmoon 按鈕與卡片材質以 Swiss 導入前的 `22f9660f` 為參照：`.btn` 沿用 Halfmoon 原生尺寸圓角、outline/hover 狀態及 cyber 按鈕縮放；`.card`／`.glass-panel` 保留原本玻璃 token 與 utility 圓角優先權。一般即時儀表外層只負責排版，不新增整片玻璃底色、邊框或投影；材質由內層儀表容器負責，展開面板保留獨立表面。Swiss 的實色卡片、統一細框與按鈕圓角只存在於 Swiss 模組。現行分頁設計與響應式修正不回退。
 

@@ -1,6 +1,7 @@
 import React from 'react';
 import { useTheme } from '../../../context/ThemeContext';
 import { DESIGN_SYSTEMS, coreThemeEntries } from '../../../context/themeCatalog';
+import { themeColorProperties } from '../../../context/themeSettings';
 import { useSettings } from '../../../context/SettingsContext';
 
 const AppearanceModePanel: React.FC = () => {
@@ -28,9 +29,18 @@ const AppearanceModePanel: React.FC = () => {
             {coreThemeEntries.filter(([, core]) => core.designSystem === systemId).map(([id, core]) => <button
               key={id} type="button" id={`theme-core-${id}`} className="theme-choice theme-core-choice"
               aria-pressed={themeSettings.halfmoonCore === id} onClick={() => updateThemeSettings({ halfmoonCore: id })}>
-              <span className="theme-core-swatches" aria-hidden="true">
+              {core.designSystem === 'swiss' ? <span className="theme-core-preview" aria-hidden="true"
+                data-design-system={core.designSystem} data-bs-core={id} data-bs-theme={themeSettings.mode}
+                style={themeColorProperties(themeSettings) as React.CSSProperties}>
+                <span className="workspace-panel-header">
+                  <span className="workspace-section-heading">Aa</span><span className="badge text-bg-primary">123</span>
+                </span>
+                <span className="theme-core-preview__body">
+                  <span>12.34</span><span className="btn btn-primary btn-sm">Aa</span>
+                </span>
+              </span> : <span className="theme-core-swatches" aria-hidden="true">
                 <span style={{ background: core.swatchPrimary }} /><span style={{ background: core.swatchBg }} />
-              </span>
+              </span>}
               <span className="fw-semibold">{core.label}</span>
               <span className="theme-help mb-0">{t(core.description)}</span>
             </button>)}

@@ -47,7 +47,8 @@
 
 /* Keep live canvases out of backdrop-filter compositing while retaining the system's tint and shadow. */
 .telemetry-card-shell { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
-.telemetry-card-shell__header h3 { font-size: 0.875rem !important; text-transform: var(--readout-transform); }
+.telemetry-card-shell__header { --panel-heading-spacing: 0.25rem; min-height: calc(29px + 2 * var(--panel-heading-inset, 0px)); }
+.telemetry-card-shell__header h3 { font-size: var(--panel-heading-size, 0.875rem) !important; text-transform: var(--readout-transform); }
 .telemetry-card-shell .font-monospace { font-family: var(--instrument-font-family) !important; }
 .telemetry-card-shell .text-primary { color: var(--instrument-value-color) !important; }
 .telemetry-card-shell, .telemetry-card-shell * { transition: none !important; }

@@ -1,5 +1,14 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-10-05 / Swiss Editorial 與 Contrast 核心主題（Codex as Codex）
+
+- **來源／狀態**：`local`／`verified`；使用者核准規劃後，在 PR #481 新增 Swiss 的另外兩組 Core Theme。
+- **Learning**：核心選擇卡若以巢狀 `data-bs-theme` 顯示獨立預覽，Halfmoon 會在該節點重新設定原生主色；必須共用 `themeColorProperties`，才能讓預覽與正式控制項使用相同三色。核心差異由各預覽節點的 token 決定，避免外層核心 selector 汙染其他預覽。反差標頭只改標題及底色，按鈕／徽章／提示保留獨立表面，焦點線改用標頭文字色。
+- **Action**：catalog 登錄 `swiss-editorial`／`swiss-contrast`，保留 `swiss` ID 與 schema 2。Editorial 採暖紙色、2px 面板及閱讀標題；Contrast 採中性灰階、直角與反差標頭。共用 `workspace-panel-header` 套用即時、直線加速、調校、賽事摘要及設定；遙測標頭最小高度隨內距調整，使五張卡片對齊。外觀設定加入真實 CSS 元件預覽，更新三語文案、Cheatsheet 及規範。
+- **Evidence**：前端 157 files passed／1 skipped、1,131 tests passed／1 skipped；TypeScript／Vite build、Rust 122 passed／3 ignored（含文件測試）及 `git diff --check` 通過，build 與 Cargo 不並行。新增案例涵蓋兩核心首幀／React 歸屬、UI 選取、配色保留、JSON 往返及預覽配色映射。
+- **Browser**：六核心 × 日夜模式確認材質與原配色保留；Mono 日間黑／夜間白、Swiss Signal 與自訂配色正常。Editorial 重載保留。1440px 調校四步各 352px；Contrast 五張儀表標頭皆 45px。MoTeC 既有 fixture 經 UI 匯入後，四張摘要標頭等高且語意徽章可讀；320px 賽事捲到底、外觀與系統設定無水平溢出。反差標頭鍵盤焦點以深色線顯示在淺色標頭上。未啟動原生 HUD，Companion 原生同步仍由 #485 追蹤。
+- **Skills**：`ponytail`（full）、`halfmoon-design-system`、`pr-author-maintainer`、`agent-governance-audit`。
+
 ## 2026-10-05 / Core Theme 的設計系統歸屬與外觀設定分組（Codex as Codex）
 
 - **來源／狀態**：`local`／`verified`；PR #481 依使用者補充重新定義 Core Theme，同時管理配色、材質與元件細節。

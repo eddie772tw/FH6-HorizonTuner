@@ -1,4 +1,4 @@
-/* --- Swiss Technical (Matte Industrial / High-Contrast Precision Grid) --- */
+/* Swiss cores share component rules; each core owns its day/night surfaces. */
 [data-design-system="swiss"][data-bs-core="swiss"][data-bs-theme="dark"] {
   --bg-gradient:    #0b0d12;
   --glass-bg:       #0e1117;
@@ -24,12 +24,66 @@
   --text-secondary: #475569;
 }
 
+[data-design-system="swiss"][data-bs-core="swiss-editorial"][data-bs-theme="dark"] {
+  --bg-gradient: #191815;
+  --glass-bg: #22201c;
+  --glass-border: #595347;
+  --surface-1: #2d2a24;
+  --surface-2: #38342c;
+  --surface-3: #423d33;
+  --divider: #484237;
+  --divider-md: #595347;
+  --text-primary: #f3f0e7;
+  --text-secondary: #bdb6a8;
+}
+[data-design-system="swiss"][data-bs-core="swiss-editorial"][data-bs-theme="light"] {
+  --bg-gradient: #efede7;
+  --glass-bg: #faf8f2;
+  --glass-border: #c8c3b7;
+  --surface-1: #e9e5dc;
+  --surface-2: #e0dbcf;
+  --surface-3: #d6d0c2;
+  --divider: #d6d0c2;
+  --divider-md: #c8c3b7;
+  --text-primary: #25241f;
+  --text-secondary: #666157;
+}
+[data-design-system="swiss"][data-bs-core="swiss-contrast"][data-bs-theme="dark"] {
+  --bg-gradient: #0d0d0d;
+  --glass-bg: #171717;
+  --glass-border: #8a8a8a;
+  --surface-1: #262626;
+  --surface-2: #333333;
+  --surface-3: #414141;
+  --divider: #4b4b4b;
+  --divider-md: #8a8a8a;
+  --text-primary: #f5f5f5;
+  --text-secondary: #bfbfbf;
+}
+[data-design-system="swiss"][data-bs-core="swiss-contrast"][data-bs-theme="light"] {
+  --bg-gradient: #eeeeee;
+  --glass-bg: #ffffff;
+  --glass-border: #707070;
+  --surface-1: #e5e5e5;
+  --surface-2: #d9d9d9;
+  --surface-3: #cccccc;
+  --divider: #b3b3b3;
+  --divider-md: #707070;
+  --text-primary: #101010;
+  --text-secondary: #4b4b4b;
+}
+
 [data-design-system="swiss"] {
   --primary-glow: transparent;
   --instrument-glow-strength: 0;
   --control-font-weight: 600;
   --control-tracking: 0.025em;
   --heading-weight: 700;
+  --panel-heading-size: initial;
+  --panel-heading-bg: transparent;
+  --panel-heading-color: var(--text-primary);
+  --panel-heading-inset: 0px;
+  --panel-heading-rule: 1px;
   --readout-transform: uppercase;
   --readout-tracking: 0.08em;
   --glass-blur: 0px;
@@ -72,6 +126,47 @@
   --instrument-marker-shadow: none;
 }
 
+[data-design-system="swiss"][data-bs-core="swiss-editorial"] {
+  --panel-radius: 2px;
+  --heading-weight: 600;
+  --heading-tracking: normal;
+  --control-tracking: normal;
+  --readout-tracking: 0.025em;
+  --panel-heading-size: 1.05rem;
+}
+[data-design-system="swiss"][data-bs-core="swiss-contrast"] {
+  --panel-radius: 0px;
+  --input-radius: 0px;
+  --heading-tracking: 0.02em;
+  --control-tracking: 0.02em;
+  --panel-heading-bg: var(--text-primary);
+  --panel-heading-color: var(--glass-bg);
+  --panel-heading-inset: 8px;
+  --panel-heading-rule: 2px;
+}
+
+/* A shared header hook keeps page structure, portals and control surfaces intact. */
+:where([data-design-system="swiss"]) .workspace-panel-header :is(h3, .workspace-section-heading, .workspace-panel-title) {
+  font-weight: var(--heading-weight) !important;
+  letter-spacing: var(--heading-tracking);
+  color: var(--panel-heading-color) !important;
+  border-bottom: 0;
+}
+:where([data-design-system="swiss"]) .workspace-panel-header .workspace-section-heading { font-size: var(--panel-heading-size, 1rem) !important; }
+:where([data-design-system="swiss"]) .workspace-panel-header .workspace-panel-title { font-size: var(--panel-heading-size, 0.95rem) !important; }
+:where([data-design-system="swiss"]) .workspace-panel-header {
+  --heading-color: var(--panel-heading-color);
+  --focus-color: var(--panel-heading-color);
+  background: var(--panel-heading-bg);
+  color: var(--panel-heading-color);
+  border-bottom: var(--panel-heading-rule) solid var(--glass-border) !important;
+  padding: var(--panel-heading-inset) var(--panel-heading-inset) max(var(--panel-heading-inset), var(--panel-heading-spacing, 0.5rem)) !important;
+}
+/* Outline controls retain their own surface on an inverted header, including hover. */
+:where([data-design-system="swiss"]) .workspace-panel-header .btn[class*="btn-outline-"] {
+  --bs-btn-bg: var(--glass-bg);
+}
+
 /* Swiss component details are scoped to this design system. */
 :where([data-design-system="swiss"]) .btn {
   border-radius: var(--input-radius) !important;
@@ -111,7 +206,7 @@
   --badge-ink: var(--text-secondary);
   padding: 0.3em 0.5em;
   font-weight: 600;
-  letter-spacing: 0.04em;
+  letter-spacing: var(--control-tracking);
   line-height: 1.25;
   border: 1px solid color-mix(in srgb, var(--badge-accent) 50%, var(--glass-border));
   border-radius: var(--input-radius) !important;

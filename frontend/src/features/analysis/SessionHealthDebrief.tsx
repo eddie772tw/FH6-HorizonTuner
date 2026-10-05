@@ -88,8 +88,8 @@ const SessionHealthDebrief: React.FC<SessionHealthDebriefProps> = ({ debrief, is
       <div className="analysis-summary-grid">
         {/* Card 1: Tire Thermal Balance */}
         <div className="glass-panel analysis-summary-card">
-          <div className="analysis-summary-card__header">
-            <span style={{ fontWeight: "bold", color: "var(--text-primary)", fontSize: "0.95rem" }}>
+          <div className="analysis-summary-card__header workspace-panel-header">
+            <span className="workspace-panel-title" style={{ fontWeight: "bold", color: "var(--text-primary)", fontSize: "0.95rem" }}>
               {t("Tire Thermal Balance")}
             </span>
             <span className={thermalBadgeClass} style={{ fontSize: "0.75rem", padding: "0.3rem 0.6rem" }}>
@@ -127,8 +127,8 @@ const SessionHealthDebrief: React.FC<SessionHealthDebriefProps> = ({ debrief, is
 
         {/* Card 2: Suspension & Bottom-out */}
         <div className="glass-panel analysis-summary-card">
-          <div className="analysis-summary-card__header">
-            <span style={{ fontWeight: "bold", color: "var(--text-primary)", fontSize: "0.95rem" }}>
+          <div className="analysis-summary-card__header workspace-panel-header">
+            <span className="workspace-panel-title" style={{ fontWeight: "bold", color: "var(--text-primary)", fontSize: "0.95rem" }}>
               {t("Suspension Utilization")}
             </span>
             <span className={suspBadgeClass} style={{ fontSize: "0.75rem", padding: "0.3rem 0.6rem" }}>
@@ -164,8 +164,8 @@ const SessionHealthDebrief: React.FC<SessionHealthDebriefProps> = ({ debrief, is
 
         {/* Card 3: Handling Dynamics & Tendency */}
         <div className="glass-panel analysis-summary-card">
-          <div className="analysis-summary-card__header">
-            <span style={{ fontWeight: "bold", color: "var(--text-primary)", fontSize: "0.95rem" }}>
+          <div className="analysis-summary-card__header workspace-panel-header">
+            <span className="workspace-panel-title" style={{ fontWeight: "bold", color: "var(--text-primary)", fontSize: "0.95rem" }}>
               {t("Cornering Balance")}
             </span>
             <span className={handlingBadgeClass} style={{ fontSize: "0.75rem", padding: "0.3rem 0.6rem" }}>
@@ -188,8 +188,8 @@ const SessionHealthDebrief: React.FC<SessionHealthDebriefProps> = ({ debrief, is
 
         {/* Card 4: Telemetry Sample Health */}
         <div className="glass-panel analysis-summary-card">
-          <div className="analysis-summary-card__header">
-            <span style={{ fontWeight: "bold", color: "var(--text-primary)", fontSize: "0.95rem" }}>
+          <div className="analysis-summary-card__header workspace-panel-header">
+            <span className="workspace-panel-title" style={{ fontWeight: "bold", color: "var(--text-primary)", fontSize: "0.95rem" }}>
               {t("Signal Integrity")}
             </span>
             <span className="badge text-bg-success" style={{ fontSize: "0.75rem", padding: "0.3rem 0.6rem" }}>

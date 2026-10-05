@@ -35,6 +35,16 @@ export const CORE_THEMES = {
     description: 'High-contrast grid with objective typography and matte instruments',
     swatchPrimary: '#e30613', swatchBg: '#0b0d12',
   },
+  'swiss-editorial': {
+    label: 'Swiss Editorial', designSystem: 'swiss',
+    description: 'Warm paper surfaces with calm editorial hierarchy',
+    swatchPrimary: '#e30613', swatchBg: '#191815',
+  },
+  'swiss-contrast': {
+    label: 'Swiss Contrast', designSystem: 'swiss',
+    description: 'Neutral monochrome surfaces with crisp edges and contrasting headers',
+    swatchPrimary: '#e30613', swatchBg: '#0d0d0d',
+  },
 } as const satisfies Record<string, CoreThemeDefinition>;
 
 export type CoreThemeId = keyof typeof CORE_THEMES;

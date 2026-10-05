@@ -28,6 +28,7 @@ async function mount(panel = false) {
 
 it.each([
   ['default', 'halfmoon'], ['modern', 'halfmoon'], ['elegant', 'halfmoon'], ['swiss', 'swiss'],
+  ['swiss-editorial', 'swiss'], ['swiss-contrast', 'swiss'],
 ] as const)('resolves saved %s consistently before first paint and after React mounts', async (core, system) => {
   const saved = { ...defaultThemeSettings, halfmoonCore: core, primaryColor: '#123456' };
   localStorage.setItem('themeSettings', JSON.stringify(saved));
@@ -60,13 +61,32 @@ it('groups cores by system, nests presets under colors and keeps saved CSS activ
   localStorage.setItem('themeSettings', JSON.stringify({ ...defaultThemeSettings, customCSS: '.card { border-width: 2px; }' }));
   await mount(true);
   expect(document.querySelector('[aria-labelledby="theme-system-halfmoon"]')?.querySelectorAll('button').length).toBe(3);
-  expect(document.querySelector('[aria-labelledby="theme-system-swiss"]')?.querySelectorAll('button').length).toBe(1);
+  expect(document.querySelector('[aria-labelledby="theme-system-swiss"]')?.querySelectorAll('button').length).toBe(3);
   expect(document.querySelector('.theme-colors .theme-presets')).not.toBeNull();
   expect(document.querySelector<HTMLDetailsElement>('.theme-advanced')?.open).toBe(false);
   expect(document.getElementById('custom-theme-css')?.textContent).toBe('.card { border-width: 2px; }');
   await act(async () => (document.querySelector('#preset-swiss-signal') as HTMLButtonElement).click());
   expect(theme.themeSettings).toMatchObject({ halfmoonCore: 'default', primaryColor: '#e30613', secondaryColor: '#f59e0b', accentColor: '#2563eb' });
   expect((document.getElementById('color-primary-text') as HTMLInputElement).value).toBe('#e30613');
+  for (const preview of document.querySelectorAll<HTMLElement>('.theme-core-preview')) {
+    expect(preview.style.getPropertyValue('--primary')).toBe('#e30613');
+    expect(preview.style.getPropertyValue('--bs-primary-hsl')).toBe(document.documentElement.style.getPropertyValue('--bs-primary-hsl'));
+  }
+});
+
+it.each(['swiss-editorial', 'swiss-contrast'] as const)('selects %s through the grouped UI and preserves colors on export/import', async core => {
+  localStorage.setItem('themeSettings', JSON.stringify({ ...defaultThemeSettings, mode: 'light', primaryColor: '#123456' }));
+  await mount(true);
+  await act(async () => (document.getElementById(`theme-core-${core}`) as HTMLButtonElement).click());
+  expect(document.getElementById(`theme-core-${core}`)?.getAttribute('aria-pressed')).toBe('true');
+  expect(theme.themeSettings).toMatchObject({ halfmoonCore: core, mode: 'light', primaryColor: '#123456' });
+  const exported = theme.exportThemeJSON();
+  await act(async () => theme.updateThemeSettings({ halfmoonCore: 'elegant', mode: 'dark' }));
+  await act(async () => { expect(theme.importThemeJSON(exported)).toBe(true); });
+  expect(document.documentElement.dataset.designSystem).toBe('swiss');
+  expect(document.documentElement.getAttribute('data-bs-core')).toBe(core);
+  expect(theme.themeSettings).toMatchObject({ halfmoonCore: core, mode: 'light', primaryColor: '#123456' });
+  expect(JSON.parse(localStorage.getItem('themeSettings')!)).toEqual(theme.themeSettings);
 });
 
 it('allows incomplete HEX drafts without saving them, then applies a complete color', async () => {

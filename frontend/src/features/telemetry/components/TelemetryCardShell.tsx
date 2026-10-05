@@ -52,7 +52,7 @@ const TelemetryCardShell: React.FC<TelemetryCardShellProps> = ({
       role={expanded ? 'dialog' : undefined}
       aria-modal={expanded ? true : undefined}
     >
-      <div className="telemetry-card-shell__header d-flex justify-content-between align-items-center gap-2 border-bottom pb-1 mb-2 flex-shrink-0">
+      <div className="telemetry-card-shell__header workspace-panel-header d-flex justify-content-between align-items-center gap-2 border-bottom pb-1 mb-2 flex-shrink-0">
         <h3 id={`${id}-card-title`} className="fs-6 text-primary fw-bold m-0 text-truncate">{title}</h3>
         <div className="d-flex align-items-center gap-2 flex-shrink-0">
           {renderSwitch}

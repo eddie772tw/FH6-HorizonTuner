@@ -127,7 +127,7 @@ export const Step2ChassisTuner: React.FC<Step2ChassisTunerProps> = ({
       >
         {/* Column 1: Tires & Wheel Alignment */}
         <div className="glass-panel p-3 d-flex flex-column gap-3">
-          <div className="border-bottom pb-2 d-flex justify-content-between align-items-center">
+          <div className="workspace-panel-header border-bottom pb-2 d-flex justify-content-between align-items-center gap-2 flex-wrap">
             <span className="workspace-section-heading fw-bold fs-6">{t('Tires & Wheel Alignment')}</span>
           </div>
 
@@ -209,7 +209,7 @@ export const Step2ChassisTuner: React.FC<Step2ChassisTunerProps> = ({
 
         {/* Column 2: Suspension Platform */}
         <div className="glass-panel p-3 d-flex flex-column gap-3">
-          <div className="border-bottom pb-2 d-flex justify-content-between align-items-center">
+          <div className="workspace-panel-header border-bottom pb-2 d-flex justify-content-between align-items-center gap-2 flex-wrap">
             <span className="workspace-section-heading fw-bold fs-6">{t('Suspension Platform')}</span>
             <span className="badge text-bg-secondary">{t('ARB & Springs')}</span>
           </div>
@@ -291,7 +291,7 @@ export const Step2ChassisTuner: React.FC<Step2ChassisTunerProps> = ({
 
         {/* Column 3: Damping & Differential */}
         <div className="glass-panel p-3 d-flex flex-column gap-3">
-          <div className="border-bottom pb-2 d-flex justify-content-between align-items-center">
+          <div className="workspace-panel-header border-bottom pb-2 d-flex justify-content-between align-items-center gap-2 flex-wrap">
             <span className="workspace-section-heading fw-bold fs-6">{t('Damping & Differential')}</span>
             <span className="badge text-bg-warning">{drivetrain}</span>
           </div>

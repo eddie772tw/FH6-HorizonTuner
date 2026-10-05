@@ -483,7 +483,7 @@ const DragTestView: React.FC = () => {
       {(status === 'idle' || status === 'waiting') && (
         <section className="workspace-section drag-test-guide">
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxWidth: '500px' }}>
-            <h4 className="workspace-section-heading">{t("How to perform a Drag Test:")}</h4>
+            <h4 className="workspace-section-heading workspace-panel-header">{t("How to perform a Drag Test:")}</h4>
             <ol style={{ textAlign: 'left', fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: '1.6', paddingLeft: '1.2rem' }}>
               <li>{t("Click the 'Ready for Test' button above.")}</li>
               <li>{t("Bring your car to a complete stop (0 km/h) in the game.")}</li>
@@ -533,7 +533,7 @@ const DragTestView: React.FC = () => {
           {/* LEFT COLUMN: Charts */}
           <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', padding: '1.2rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h4 className="workspace-section-heading">{t("Telemetry Visualization")}</h4>
+              <h4 className="workspace-section-heading workspace-panel-header">{t("Telemetry Visualization")}</h4>
               
               <div style={{ display: 'flex', gap: '0.5rem', background: 'rgba(255,255,255,0.05)', padding: '0.2rem', borderRadius: '6px' }}>
                 <button 
@@ -635,7 +635,7 @@ const DragTestView: React.FC = () => {
             
             {/* Session Stats Summary */}
             <div className="glass-panel" style={{ padding: '1.2rem', display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
-              <h4 className="workspace-section-heading">{t("Run Summary")}</h4>
+              <h4 className="workspace-section-heading workspace-panel-header">{t("Run Summary")}</h4>
               {analysis && (
                 compareAnalysis ? (
                   /* Comparison Table View */
@@ -747,7 +747,7 @@ const DragTestView: React.FC = () => {
 
             {/* Gearing Optimization Recommendations */}
             <div className="glass-panel" style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem', flex: 1, minWidth: 0 }}>
-              <h4 className="workspace-section-heading">
+              <h4 className="workspace-section-heading workspace-panel-header">
                 {t("Gearing Tuning Assist")}
               </h4>
               

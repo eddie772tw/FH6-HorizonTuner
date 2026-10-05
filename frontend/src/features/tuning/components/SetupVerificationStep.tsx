@@ -40,7 +40,7 @@ export function SetupVerificationStep({ goal, carId, recommendation }: {
     } catch { setStatus('Snapshot could not be saved. Try again.'); }
     finally { setBusy(false); }
   };
-  return <section className="workspace-section"><h3 className="workspace-section-heading">{t('Setup verification')} · {goal}</h3>
+  return <section className="workspace-section"><h3 className="workspace-section-heading workspace-panel-header">{t('Setup verification')} · {goal}</h3>
     <p>{t('Compatibility mode: existing formulas are preserved. Native run comparison is currently available for Road.')}</p>
     <div className="table-responsive"><table className="table table-sm"><tbody>{Object.entries(recommendation.fields).map(([key, field]) =>
       <tr key={key}><th>{t(key)}</th><td>{field.value} {field.unit}</td><td>{t('Estimate')}</td></tr>)}</tbody></table></div>

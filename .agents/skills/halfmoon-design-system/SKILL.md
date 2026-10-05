@@ -10,7 +10,7 @@ description: 當開發或重構前端 UI 組件、調整 Halfmoon CSS v2 主題�
 ## 六大核心視覺契約與護欄 (Core Invariants)
 
 1. **雙層架構與語意權杖 (Two-Layer Architecture & Tokens)**：
-   - 核心框架使用 **Halfmoon CSS v2.0.2**（Layer 1）。Layer 2 由 `App.css` 載入中性 token、版面、共用控制項、分頁結構及 `styles/design-systems/index.css`。Core Theme 包含配色與元件細節；Default／Modern／Elegant 屬於 Halfmoon，Swiss Technical 屬於 Swiss。catalog 為歸屬關係的唯一來源，各系統 CSS 限定於 `data-design-system`，不可把 Swiss 外觀無條件施加到其他系統。
+   - 核心框架使用 **Halfmoon CSS v2.0.2**（Layer 1）。Layer 2 由 `App.css` 載入中性 token、版面、共用控制項、分頁結構及 `styles/design-systems/index.css`。Core Theme 包含配色與元件細節；Default／Modern／Elegant 屬於 Halfmoon，Swiss Technical／Editorial／Contrast 屬於 Swiss。catalog 為歸屬關係的唯一來源，各系統 CSS 限定於 `data-design-system`，不可把 Swiss 外觀無條件施加到其他系統。
    - **禁止硬編碼顏色**：背景色、文字色、邊框與陰影必須使用語意化 CSS 變數（如 `var(--glass-bg)`, `var(--text-primary)`, `var(--surface-1)`, `var(--primary)`），嚴禁於 inline style 硬編碼 `#ffffff` 或 `#000000`。
 2. **首幀防閃爍 (Anti-FOUC) 護欄**：
    - 首幀與 React 共用 `themeSettings.ts` 正規化及 `themeDocument.ts` 套用入口，設定 `data-bs-theme`、`data-bs-core`、`data-design-system`。保留 `halfmoonCore` 儲存合約；設計系統只由 catalog 推導。所有核心的 Color Presets 必須同步原生 Halfmoon `--bs-primary-*` 與專案色彩；成功／警告／錯誤維持語意色。
@@ -44,7 +44,7 @@ description: 當開發或重構前端 UI 組件、調整 Halfmoon CSS v2 主題�
 當開發或修改前端 UI 組件時，Agent 依序執行：
 1. **樣式與規範遵循檢查**：確認無硬編碼顏色、無 Emoji 圖示、無違規 hover 動畫，且符合 [HALFMOON_SPECIFICATION.md](HALFMOON_SPECIFICATION.md)。
 2. **單元測試驗證**：從專案根目錄執行 `cmd /c "pnpm -C frontend run test"`。
-3. **主題切換確認**：確認四款 core 的日夜模式、配色與元件細節。Swiss 使用實色表面、底線分頁、細框徽章及無裝飾陰影；切回 Halfmoon 須恢復其圓角、實色分頁／徽章及玻璃材質。驗證配色跨系統保留、首幀與重新載入一致。外觀面板依系統分組，Color Presets 位於系統色彩調配內，CSS 編輯器及 Cheatsheet 預設折疊且既有自訂 CSS 仍生效。保留鍵盤焦點、ModalPortal 與高頻繪圖例外。
+3. **主題切換確認**：確認 catalog 所有 core 的日夜模式、配色與元件細節。Swiss 使用實色表面、底線分頁、細框徽章及無裝飾陰影；Editorial 採暖紙色與閱讀標題，Contrast 採中性灰階、直角及反差標頭。`workspace-panel-header` 由系統 token 管理，標頭控制項與提示保留自己的可讀表面。切回 Halfmoon 須恢復其圓角、實色分頁／徽章及玻璃材質。驗證配色跨系統保留、首幀與重新載入一致。外觀面板依系統分組，Color Presets 位於系統色彩調配內，CSS 編輯器及 Cheatsheet 預設折疊且既有自訂 CSS 仍生效。保留鍵盤焦點、ModalPortal 與高頻繪圖例外。
 
 ---
 
