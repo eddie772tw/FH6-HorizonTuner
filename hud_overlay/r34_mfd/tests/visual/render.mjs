@@ -65,12 +65,26 @@ try {
       report.checks.push({ mode, dialReadability: dials });
     };
     await configure({}); await save('waiting');
+    const physicalLayout = await page.evaluate(() => {
+      const box = id => document.getElementById(id).getBoundingClientRect();
+      const mfd = box('r34Mfd'), cluster = box('r34Cluster'), screen = box('r34Screen');
+      return { mfdOnLeft: mfd.right < cluster.left, caseAspect: mfd.width / mfd.height, screenAspect: screen.width / screen.height };
+    });
+    assert(physicalLayout.mfdOnLeft, 'The center MFD stays left of the RHD driver cluster');
+    assert(physicalLayout.caseAspect > 1.9 && physicalLayout.caseAspect < 2.2, 'The MFD must retain its low/wide physical case');
+    assert(Math.abs(physicalLayout.screenAspect - 16 / 9) < .02, 'The active LCD retains the period widescreen proportion');
+    report.checks.push({ physicalLayout });
     await inspectDials('single');
     await inspectCanvas('r34History');
     for (const mode of ['single', 'twin', 'multi', 'g', 'lap']) {
       await configure({ r34MfdMode: mode });
       for (let sample = 0; sample < 80; sample++) await frame({ Boost: (1 + Math.sin(sample / 12) * .4) * 14.5038, LapNumber: mode === 'lap' ? Math.floor(sample / 20) + 3 : 3 });
       await frame({ LapNumber: mode === 'lap' ? 6 : 3 }); await save(mode);
+      if (width === 1280) {
+        const filename = 'detail-' + mode + '-dpr' + dpr + '.png';
+        await page.locator('#r34Container').screenshot({ path: path.join(out, filename), omitBackground: true });
+        report.screenshots.push(filename);
+      }
       assert.equal(await page.locator('[data-mode]:not([hidden])').getAttribute('data-mode'), mode);
       if (mode === 'single' || mode === 'g') await inspectCanvas(mode === 'g' ? 'r34G' : 'r34History');
       if (mode === 'single' || mode === 'twin') await inspectDials(mode);
@@ -120,7 +134,22 @@ try {
     await configure({ r34MfdMode: 'single', effectiveUnits: { speed: 'mph', boostPressure: 'psi' } }); await frame({ Boost: -7.2519, Gear: 0 }); await save('imperial-vacuum'); await inspectDials('single');
     assert.equal(await page.locator('#r34Single-value').textContent(), '-7.3'); assert.equal(await page.locator('#r34Gear').textContent(), 'R');
     await configure({ r34MfdMode: 'single', effectiveUnits: { speed: 'kmh', boostPressure: 'kpa' } }); await frame({ Boost: 43.5114, CurrentEngineRpm: 12000, SpeedMetersPerSecond: 100 }); await save('over-scale-kpa'); await inspectDials('single');
-    assert.equal(await page.locator('#r34Single-value').textContent(), '300'); assert.match(await page.locator('#r34DigitalSpeed').textContent(), /360.*OVER SCALE/);
+    assert.equal(await page.locator('#r34Single-value').textContent(), '300'); assert.match(await page.locator('#r34DigitalSpeed').textContent(), /360/);
+    assert.match(await page.locator('#r34ClusterNote').textContent(), /SPEED OVER SCALE/);
+    assert.match(await page.locator('#r34ClusterNote').textContent(), /RPM OVER SCALE: 12000/);
+    await configure({ elements: { ...baseConfig.elements, showSpeed: false, showRPM: false, showGear: false } });
+    await frame({ CurrentEngineRpm: 12000, SpeedMetersPerSecond: 100 });
+    assert.equal(await page.locator('#r34ClusterNote').textContent(), '');
+    assert.equal(await page.locator('#r34TachFace').isVisible(), false);
+    assert.equal(await page.locator('#r34SpeedFace').isVisible(), false);
+    assert.equal(await page.locator('#r34DigitalSpeedGroup').isVisible(), false);
+    assert.equal(await page.locator('#r34GearGroup').isVisible(), false);
+    await save('overscale-common-readouts-hidden');
+    await configure({}); await frame({ CurrentEngineRpm: 12000, SpeedMetersPerSecond: 100 });
+    assert.equal(await page.locator('#r34TachFace').isVisible(), true);
+    assert.equal(await page.locator('#r34SpeedFace').isVisible(), true);
+    assert.equal(await page.locator('#r34GearGroup').isVisible(), true);
+    assert.match(await page.locator('#r34ClusterNote').textContent(), /SPEED OVER SCALE/);
     await configure({}); await frame({ Boost: null, CurrentEngineRpm: null, SpeedMetersPerSecond: null, Fuel: null, Gear: null }); await save('missing');
     assert.equal(await page.locator('#r34Single-value').textContent(), 'N/A');
     await frame({ IsRaceOn: 0 }); await save('paused'); assert.equal(await page.locator('#r34Status').textContent(), 'PAUSED');

@@ -6,15 +6,21 @@
 
 原廠 V·spec 錶面為 180 km/h、10,000 rpm，轉速錶在 3,000 rpm 以下每千轉 15°，以上每千轉 30°。本實作保留這個非等距幾何：轉速在左、速度在右、左側水溫、右側油量、轉速錶下方油壓。原型的實體速度錶固定標示 km/h；額外數位速度遵循使用者單位，超過原型刻度仍保留正確讀數及 `OVER SCALE`，不把極速改寫成 180。轉速超過 10,000 時同樣保留數位提示。
 
-兩個機殼並排是為 HUD 可讀性重新構圖，不聲稱重現整個車內儀表板的空間位置。所有向量、CSS 外殼與圖示均為原創程式繪製；不附 Nissan/NISMO 照片、商標圖檔、字型或原廠軟體。
+HUD 保留右駕車的相對位置：中央 MFD 在左，駕駛者儀表在右；兩個獨立機殼經過壓縮構圖，不附方向盤或整片中控台。原創正視圖採連續拉絲銀色飾板、黑底錶面、低置小錶、薄紅指針，以及低寬遮光罩、內凹 LCD 與大型環形搖桿。1280×410 的畫布、760×350 的儀表與 500×244 的 MFD 是參考透視照片後訂定的 HUD 設計比例，不是 Nissan 工程尺寸。所有向量、數字筆畫、材質線條與圖示均為原創；不附 Nissan/NISMO 照片、商標圖檔、OEM 字型或原廠軟體。背景透明，檔位／數位時速置於原型錶面之外。
 
 ## 實際查閱的資料
 
-1. [Nissan 1999 年 1 月原始型錄掃描](https://jdm-catalogues.com/catalogues/nissan/skyline/r34/nissan_skyline_r34_gtr/)，[第 26–27 頁影像](https://images.jdm-catalogues.com/nissan/skyline/r34/nissan_skyline_r34_gtr/images/m/page.14.webp)：實際查看原廠儀表照片、V·spec 雙段刻度說明與原始 MFD 的 SINGLE/TWIN/MULTI 版面。這是第三方保存的 Nissan 原始文件，不是現行官方主機。
+1. [Nissan 1999 年 1 月原始型錄掃描](https://jdm-catalogues.com/catalogues/nissan/skyline/r34/nissan_skyline_r34_gtr/)，[第 26–27 頁影像](https://images.jdm-catalogues.com/nissan/skyline/r34/nissan_skyline_r34_gtr/images/l/page.14.webp)：實際查看原廠儀表照片、V·spec 雙段刻度說明與原始 MFD 的 SINGLE/TWIN/MULTI 版面。這是第三方保存的 Nissan 原始文件，不是現行官方主機。
 2. [Forza 官方 Data Out 文件](https://support.forza.net/hc/en-us/articles/51744149102611-Forza-Horizon-6-Data-Out-Documentation)：`LapNumber` 為「已完成圈數」；車體座標 X 朝右、Z 朝前。HUD 遵循共用 G radar 的使用者指定橫向 X 反向慣例；正縱向仍向下，煞車向上。
 3. [NISMO 官方 Z-tune 內裝介紹](https://www.nismo.co.jp/Z-tune/data_e/5.html)：官方明列 MFD 資料記錄、計圈功能；白底 320 km/h 儀表是 Z-tune 組合，未用來推定本 HUD 的原廠刻度。
 4. [Ver.II 套件照片與產品識別](https://www.nengun.com/nismo/multi-fuction-display-version-ii)，[實際查看的六格畫面影像](https://image.nengun.com/catalogue/1024x768/nengun-0374-0000-10-nismo-multi_fuction_display_-_version_ii-90bd145a.jpg)：照片直接顯示啟動畫面、SINGLE 左側 30 秒記憶／右側扇形錶、TWIN、七列綠條 MULTI、矩形 G 格線與圈速／五列紀錄。原型增壓刻度是 −0.5 至 2.0 ×100 kPa。另查看的分析軟體影像是外部 Windows 程式，不是第六個車內模式。
 5. [社群 R34 MFD 操作整理 PDF](https://www.ninni.info/downloads/R34_GTR_MFD_Manual.pdf)：下載後實際查看照片，確認四個下方按鍵、右側搖桿與 REV 燈的位置。作者 Ned 的整理不是 Nissan 原廠手冊，未當作官方硬體規格。
+
+6. [原裝 BNR34 儀表實物](https://www.vspecperformance.com.au/products/1460)：實際查看高解析度拆下的 OEM 機殼，確認銀色連續飾板、黑色罩體、各錶大小、油壓下弧與細刻度；賣家標示 1999–2002，精確 V·spec 刻度仍由 1999 Nissan 型錄佐證。
+7. [車主夜間儀表照片](https://www.flickr.com/photos/iwanta34gtr/7609565064)：確認刻度、指針與下弧細節；拍攝白平衡或改裝燈泡可能影響色調，沒有將照片的藍白色直接視為原廠燈色規格。
+8. [MFD 正面操作照片](https://toprankglobal.jp/news/92/How%20to%20use%20the%20R34%20Nissan%20Skyline%20GT-R%20MFD%20:%20Part%201)、[NISMO 官方維修照片](https://npc-staffblog.nismo.co.jp/archives/2019071710004536252)：實際查看正面、拆下及裝回車內的多張照片，確認低寬遮光罩、內凹面板、四個下鍵、REV 燈和大型環形搖桿。這些標準 MFD 畫面只佐證機殼，不覆蓋 Ver.II 的 −0.5～2.0 刻度與較深畫面色。
+9. [Nissan 1999 R34 Supplement 1 維修手冊掃描](https://www.yariksteel.ru/manual/R34/R34_Service_supplement_1.pdf)：實際查看封面、Nissan 前言及 EL-31（PDF 第 175 頁）的 MFD 外觀與操作圖；這不是 NISMO 擴充套件手冊。
+10. [1999 全座艙照片](https://toprankglobal.jp/stockdetail/32911/1999%20Nissan%20SKYLINE%20GT-R)：實際查看銀色原型儀表與中央 MFD 的左右位置，未將後來的 320 km/h 改裝面板混入原廠參考。
 
 Ver.II 常被泛稱為擴充「卡匣」，產品清單描述的是電路板、感測器、計圈按鈕／線束與 RS-232C 配套。2371A-RSR48-V 與 2371B-RSR48 的感測器包差異只有零件識別意義；HUD 不模擬安裝、校正或 serial 硬體。舊官方 `ie01.pdf` 連結現在轉址，未假裝已讀到原始套件手冊；也未採用零售文案含糊的油溫範圍作為實作依據。
 
@@ -25,12 +31,12 @@ Ver.II 常被泛稱為擴充「卡匣」，產品清單描述的是電路板、�
 | 模式 | 保留的原型特徵 | 遊戲適配 |
 | --- | --- | --- |
 | SINGLE | 左側 30 秒格線／右側圓形扇形錶、PEAK 尾板 | 真實 Boost，bar／psi／kPa；缺資料顯示 N/A |
-| TWIN | 兩個銀灰刻度、綠色扇形、峰值窗 | 明確標示 BOOST／ENGINE，採增壓與 RPM；不是把油溫改名成轉速 |
-| MULTI | 七列白框、綠條、右側數字 | BOOST、ENGINE、THROTTLE、BRAKE、POWER、TORQUE、FUEL；頁尾標示七個遊戲欄位 |
+| TWIN | 兩個銀灰刻度、綠色扇形、峰值窗 | 以增壓圖示與 RPM／x1000 rpm 標示遊戲適配，採真實增壓與轉速；不是把油溫改名成轉速 |
+| MULTI | 七列白框、綠條、右側數字 | BOOST、ENGINE、THROTTLE、BRAKE、POWER、TORQUE、FUEL；適配說明保留於設定頁與本文 |
 | G | 矩形交叉格線及活動點 | 車體 −X／Z 加速度除以 9.80665，單位 g，顯示界限 ±1.5 g；數字保留超界值 |
 | LAP | 左側目前／最佳／上圈，右側五列紀錄 | 目前圈數 = 已完成圈數 + 1；相鄰 LapNumber 推進時，LastLap 記在新完成的圈號，不重建錯過圈數 |
 
-`r34ShowCluster` 只切換傳統儀表；`r34Lighting` 提供 night／day。預設原色為柔暖刻度與綠色 MFD，Custom Gauge Color 改變綠色資料色，紅色指針／REV 安全色保留。原型外殼按鍵是裝飾，不偽裝成 click-through 原生視窗內可操作按鈕。沒有額外 DATA 頁、沒有 Windows 分析軟體假畫面、沒有自製假計圈器。
+`r34ShowCluster` 只切換傳統儀表；`r34Lighting` 提供 night／day。預設原色為中性白色刻度與深底綠色 MFD，Custom Gauge Color 改變綠色資料色，紅色指針／REV 安全色保留。day／night 調整材質亮度與 LCD 照明，不增加黃色發光圈。原型外殼按鍵是裝飾，不偽裝成 click-through 原生視窗內可操作按鈕。沒有額外 DATA 頁、沒有 Windows 分析軟體假畫面、沒有自製假計圈器。
 
 ## 資料誠實與狀態
 
@@ -49,6 +55,8 @@ Ver.II 常被泛稱為擴充「卡匣」，產品清單描述的是電路板、�
 
 Recorder 優先取 `data.sourceTelemetry` 的原始唯讀封包；否則接受直接 raw fixture。原始 `TimestampMS` 必須是 uint32。重複時間戳的插值畫面不能更新峰值、歷史或最後收訊時間；即使 interpolator 顯示 7,250 rpm，原始 7,000 rpm 峰值仍保持 7,000。接收間隔超過 1,500 ms 進入 STALE，隱藏即時指針／清空即時數字，歷史峰值與過去圈速仍標示為歷史。暫停、缺失／無效 IsRaceOn 或錯誤 payload 都停止記錄並清空即時讀數；只有明確 1／true 才是 live。RPM、油量、踏板及距離等超出有效物理範圍時顯示不可用，不以截斷製造合理值。切車或有圈數／race time 共同佐證的重新開始才重設；單一倒退時間戳視為封包重排並拒收，須在 stale／重設證據存在時取得兩個車輛與時鐘一致、相隔小於 500 ms 且向前推進的候選封包才接受新 epoch。uint32 正常溢位不當成重新開始。
 
+靜態幾何由 artwork.js、cluster-art.js 與 mfd-art.js 在初始化時組裝一次；拉絲／塑膠材質採低對比向量 pattern，沒有 turbulence 或逐幀濾鏡。中性白色數字為原創筆畫，更新遙測時只移動指針、修改文字／扇形與繪製快取 Canvas，不重建字形。
+
 30 秒記憶採 301 個預先配置容量、最多 10 Hz 的環形取樣；畫面與文字採 30 Hz，沒有每幀新增 DOM 或重建靜態錶面。資料中斷產生的長間隔不連成假曲線。G／history Canvas 的 backing store 隨 HUD 最終 scale、DPR、ResizeObserver 與視窗／螢幕密度改變重新配置；每邊最多 2048 像素。邏輯幾何只在這些邊界量測並快取，隱藏／零尺寸不配置，render loop 僅比較快取 DPR 數字以捕捉 media query 可能遺漏的返回轉換，不讀取 DOM 尺寸或在穩定畫格配置物件；destroy 時移除 observer、media query 與 resize listener。
 
 原始 MFD 的完整離線記錄／PC 分析並未實作，不能稱為原廠資料記錄器替代品。
@@ -64,6 +72,8 @@ Recorder 優先取 `data.sourceTelemetry` 的原始唯讀封包；否則接受�
 - `PLAYWRIGHT_MODULE_PATH=/path/to/playwright PLAYWRIGHT_CHANNEL=chrome OUTPUT_DIR=/tmp/r34-preview node hud_overlay/r34_mfd/tests/visual/render.mjs`
 - 同上執行 `frontend/src/features/overlay_control/r34_mfd/tests/browser/verify.cjs`：真實 OverlayView 控制、五模式／day-night／cluster、disk-backed HTTP、reload／reset／切換返回、六種 Halfmoon 主題及窄版繁中／日文含字形驗證
 - 同上執行 `launcher.mjs`：真實 Launcher → Coordinator → sourceTelemetry → HUDCore 流程、模式 relay、缺失 boost、stale replay、切換返回
+
+靜態構圖先以 Inkscape 輸出常用尺寸與 2× PNG，逐張對照上述型錄／實物照片；這只驗證美術方向，不能冒充實際 runtime 截圖。最終 browser fixture 另外輸出五個模式的透明裁切圖。
 
 讀數可見性檢查除了 viewport 包含性，也直接比較刻度／單位與同層 PEAK 面板的幾何重疊；bar、psi、kPa 與 RPM 最大刻度都必須完整可讀。狀態提示放在機殼下方的透明留白，設定頁則驗證完整英語原文與繁中／日文翻譯，不接受顯示短 lookup key。
 

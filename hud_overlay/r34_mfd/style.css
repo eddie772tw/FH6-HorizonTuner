@@ -1,72 +1,82 @@
 :root {
-  --r34-case: #202429; --r34-edge: #4a4e52; --r34-face: #12171b; --r34-ink: #e5e4d6;
-  --r34-dim: #89918c; --r34-needle: #f2473e; --r34-hot: #ed473c; --r34-amber: #e8c26e;
-  --r34-screen: #091210; --r34-grid: #758380; --r34-green: #77b95a; --r34-teal: #397780;
-  --r34-metal: #959c98; --r34-shadow: #090c0e; --r34-lcd: #b5b9a0; --r34-lcd-ink: #232d24;
-  --r34-tick: #d6d9cc; --hud-default-color: #77b95a;
+  --r34-case: #32363a; --r34-face: #29292b; --r34-edge: #485157;
+  --r34-ink: #e0e5df; --r34-dim: #98a39d; --r34-hot: #ed463f; --r34-amber: #d8bd7a;
+  --r34-screen: #121b24; --r34-grid: #4c5b66; --r34-green: #77b95a; --r34-teal: #284e59;
+  --r34-peak-edge: #78a3a5; --r34-shadow: #0b1014; --r34-lcd: #a4ad94; --r34-lcd-ink: #374536;
+  --r34-silver-top: #929996; --r34-silver-light: #bfc3bd; --r34-silver-mid: #a5aca8; --r34-silver-low: #a1a7a1;
+  --r34-readout: #151b20; --r34-readout-border: #323a3f; --hud-default-color: #77b95a;
 }
-.r34-cockpit { width: 1130px; height: 354px; display: flex; align-items: flex-end; gap: 13px; pointer-events: none; font-family: Arial, sans-serif; transition: none; }
-.r34-cockpit[data-lighting="night"] { --r34-ink: #eee2b0; --r34-tick: #e8d89a; --r34-lcd: #a1b19c; }
-.r34-cockpit[data-lighting="day"] { --r34-ink: #e6e8e0; --r34-tick: #d9ded5; --r34-screen: #14231d; }
-.r34-cluster { width: 675px; height: 290px; flex: 0 0 675px; }
-.r34-cluster svg { width: 100%; height: 100%; overflow: visible; }
-.r34-cluster text { font-family: Arial, sans-serif; fill: var(--r34-ink); font-weight: 500; }
-.r34-cluster .r34-dial-number { font-size: 21px; font-style: italic; }
-.r34-cluster .r34-small-label { font-size: 11px; }
-.r34-cluster .r34-needle { fill: var(--r34-needle); }
-.r34-cluster .r34-off { fill: var(--r34-dim); font-size: 12px; }
-.r34-cockpit[data-lighting="night"] .r34-cluster .r34-lit { filter: drop-shadow(0 0 calc(1.8px * var(--hud-glow-intensity, 1)) var(--r34-tick)); }
-.r34-cluster .r34-lcd-readout { font: 20px monospace; fill: var(--r34-lcd-ink); letter-spacing: 1px; }
-.r34-mfd { flex: 0 0 442px; width: 442px; height: 350px; padding: 17px 15px 9px; border-radius: 50px 45px 14px 14px / 30px 28px 12px 12px; background: linear-gradient(165deg, var(--r34-edge), var(--r34-case) 18%, var(--r34-face)); border: 2px solid var(--r34-edge); box-shadow: inset 0 4px 2px var(--r34-shadow), 0 6px 10px var(--r34-shadow); }
-.r34-mfd-topline { color: var(--r34-dim); font-size: 9px; letter-spacing: 1.4px; padding: 0 12px 8px; }
-.r34-mfd-topline span { float: right; }
-.r34-screen-bezel { display: flex; gap: 9px; }
-.r34-screen { flex: 0 0 350px; width: 350px; height: 260px; border: 5px solid var(--r34-shadow); border-radius: 5px; color: var(--r34-ink); background: var(--r34-screen); box-shadow: 0 0 0 1px var(--r34-edge), inset 0 0 16px var(--r34-shadow); overflow: hidden; }
-.r34-screen-header { height: 24px; display: flex; justify-content: space-between; padding: 5px 8px; font-size: 10px; letter-spacing: 1px; color: var(--r34-ink); border-bottom: 1px solid var(--r34-teal); }
-#r34Status { color: var(--r34-green); font-size: 9px; }
-.r34-screen-footer { height: 20px; padding: 4px 7px; color: var(--r34-dim); font: 9px Arial, sans-serif; letter-spacing: .25px; border-top: 1px solid var(--r34-teal); white-space: nowrap; }
-.r34-page { height: 207px; display: flex; align-items: center; justify-content: center; gap: 2px; padding: 3px; }
+.r34-cockpit {
+  position: relative; width: 1280px; height: 410px; display: flex; pointer-events: none;
+  font-family: Arial, sans-serif; transition: none; color: var(--r34-ink);
+}
+.r34-cockpit[data-lighting="day"] {
+  --r34-case: #40464a; --r34-face: #25282a; --r34-lcd: #bcc5a5;
+  --r34-silver-top: #a8aeaa; --r34-silver-light: #d0d4ce; --r34-silver-mid: #b6bcb8; --r34-silver-low: #b1b7b1;
+}
+.r34-paint-defs { position: absolute; width: 0; height: 0; overflow: hidden; }
+.r34-cluster { position: absolute; left: 520px; top: 48px; width: 760px; height: 350px; }
+.r34-cluster > svg { width: 100%; height: 100%; overflow: visible; }
+.r34-lcd-readout { font-family: monospace; font-size: 15px; letter-spacing: .2px; }
+.r34-mfd { position: absolute; left: 0; top: 0; width: 500px; height: 244px; }
+.r34-mfd-case, .r34-mfd-case svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+#r34RevLamp.active .r34-rev-core { fill: var(--r34-hot); }
+.r34-screen {
+  position: absolute; left: 63px; top: 51px; width: 270px; height: 152px; overflow: hidden;
+  background: var(--r34-screen); border-radius: 1px; color: var(--r34-ink);
+}
+.r34-screen::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(to bottom, transparent 0, transparent 1.7px, var(--r34-shadow) 1.7px, var(--r34-shadow) 2px); opacity: .13; }
+.r34-a11y { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.r34-page { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 0; }
 .r34-page[hidden], .r34-cockpit [hidden] { display: none !important; }
-.r34-memory { width: 155px; height: 198px; padding: 6px 0 0 3px; }
-.r34-caption { font: italic 10px Arial, sans-serif; color: var(--r34-ink); }
-#r34History { width: 150px; height: 166px; display: block; }
-.r34-axis-label { font: italic 9px Arial, sans-serif; display: flex; justify-content: space-between; padding-right: 4px; }
-.r34-dial { width: 171px; height: 202px; flex-shrink: 0; }
-.r34-page[data-mode="twin"] .r34-dial { width: 164px; height: 194px; }
+.r34-memory { position: relative; flex: 0 0 128px; width: 128px; height: 152px; }
+#r34History { position: absolute; left: 24px; top: 18px; width: 101px; height: 109px; display: block; }
+.r34-history-unit, .r34-history-seconds { position: absolute; top: 1px; left: 5px; font: bold italic 8px Arial, sans-serif; }
+.r34-history-seconds { top: auto; bottom: 0; left: auto; right: 0; font-weight: 400; }
+.r34-history-labels { position: absolute; top: 14px; left: 0; width: 21px; height: 118px; display: flex; flex-direction: column; justify-content: space-between; text-align: right; font: bold italic 8.5px/9px Arial, sans-serif; }
+.r34-axis-label { position: absolute; top: 132px; left: 18px; width: 111px; display: flex; justify-content: space-between; font: bold italic 10px Arial, sans-serif; }
+.r34-dial { width: 142px; height: 152px; flex: 0 0 142px; }
+.r34-page[data-mode="twin"] .r34-dial { width: 134px; flex-basis: 134px; }
 .r34-dial svg { width: 100%; height: 100%; overflow: visible; }
 .r34-dial text { fill: var(--r34-ink); font-family: Arial, sans-serif; font-style: italic; }
-.r34-dial .r34-mfd-number { font-size: 12px; }
-.r34-dial .r34-digital { font: bold 17px monospace; }
-.r34-mfd-side { width: 39px; padding-top: 23px; display: flex; align-items: center; flex-direction: column; color: var(--r34-dim); font-size: 8px; letter-spacing: 1px; }
-#r34RevLamp { width: 13px; height: 13px; border: 3px solid var(--r34-shadow); border-radius: 50%; background: var(--r34-case); margin-top: 6px; }
-#r34RevLamp.active { background: var(--r34-hot); box-shadow: 0 0 9px var(--r34-hot); }
-.r34-enter { margin-top: 70px; margin-bottom: 10px; font-size: 7px; }
-.r34-joystick { width: 39px; height: 39px; border-radius: 50%; border: 4px solid var(--r34-metal); box-shadow: 0 0 0 2px var(--r34-shadow), inset 0 0 0 3px var(--r34-shadow); background: var(--r34-case); display: grid; place-items: center; }
-.r34-joystick b { font-size: 21px; font-weight: 400; color: var(--r34-dim); }
-.r34-bezel-keys { margin-left: 33px; height: 20px; width: 277px; display: flex; gap: 2px; }
-.r34-bezel-keys span { flex: 1; display: grid; place-items: center; color: var(--r34-ink); font-size: 8px; background: linear-gradient(var(--r34-edge), var(--r34-case)); border: 1px solid var(--r34-shadow); border-radius: 0 0 2px 2px; }
-.r34-expansion-label { margin: 10px 5px 0; color: var(--r34-ink); font-size: 8px; letter-spacing: 1.5px; }
-.r34-expansion-label span { float: right; color: var(--r34-dim); font-size: 7px; letter-spacing: 1px; }
-.r34-multi { flex-direction: column; gap: 2px; padding: 6px 7px; }
-.r34-multi-row { width: 100%; height: 26px; border: 1px solid var(--r34-grid); display: grid; grid-template-columns: 80px 1fr 81px; font: italic 11px Arial, sans-serif; }
-.r34-multi-row label { padding: 5px 3px; border-right: 1px solid var(--r34-grid); }
-.r34-multi-row .r34-bar { position: relative; margin: 2px; background: var(--r34-case); overflow: hidden; }
+.r34-mfd-number { font-size: 11px; font-weight: 700; }
+.r34-mfd-unit { font-size: 8px; }
+.r34-mfd-symbol { font-size: 8px; font-weight: 700; }
+.r34-digital { font-size: 15px; font-weight: 700; }
+.r34-peak-label { font-size: 8.5px; font-weight: 700; }
+.r34-peak-value { font-size: 10px; }
+.r34-multi { flex-direction: column; gap: 1.5px; padding: 5px; }
+.r34-multi-row { width: 100%; height: 19px; border: 1px solid var(--r34-ink); display: grid; grid-template-columns: 66px 1fr 75px; font: italic 9px Arial, sans-serif; }
+.r34-multi-row label { padding: 3px; border-right: 1px solid var(--r34-ink); }
+.r34-multi-row .r34-bar { position: relative; margin: 1px; background: var(--r34-shadow); overflow: hidden; }
 .r34-bar i { position: absolute; inset: 0; transform-origin: left; background: var(--r34-green); }
-.r34-multi-row strong { text-align: right; font-size: 12px; padding: 4px; border-left: 1px solid var(--r34-grid); }
-.r34-multi-row small { font-size: 8px; margin-left: 3px; }
-.r34-g-page { flex-direction: column; gap: 0; padding: 3px 6px; }
-#r34G { width: 316px; height: 182px; }
-.r34-g-values { display: flex; justify-content: space-between; width: 100%; font: italic 11px monospace; }
-.r34-lap-page { align-items: flex-start; padding: 12px 8px; gap: 9px; }
-.r34-lap-readings { width: 190px; display: flex; flex-direction: column; gap: 6px; }
-.r34-lap-readings label { font-size: 11px; letter-spacing: 1px; color: var(--r34-dim); }
-.r34-lap-readings strong { font: 19px monospace; letter-spacing: .4px; }
-.r34-lap-readings strong:first-of-type { font-size: 23px; color: var(--r34-ink); margin-bottom: 4px; }
-.r34-lap-history { width: 118px; font: 10px monospace; }
-.r34-lap-history > div { display: flex; justify-content: space-between; border: 1px solid var(--r34-grid); padding: 4px; }
-.r34-lap-history ol { list-style: none; }
-.r34-lap-history li { height: 25px; padding: 5px 3px; border: 1px solid var(--r34-grid); border-top: none; display: flex; justify-content: space-between; font-size: 9px; }
-.r34-lap-history small { display: block; font-size: 8px; margin-top: 8px; color: var(--r34-dim); }
-.r34-stream-status { position: absolute; bottom: -16px; left: 0; width: 675px; height: 12px; line-height: 12px; text-align: center; white-space: nowrap; color: var(--r34-amber); font: 9px Arial, sans-serif; letter-spacing: 1px; }
-.r34-cockpit[data-cluster="hidden"] { width: 442px; }
-.r34-cockpit[data-cluster="hidden"] .r34-stream-status { width: 442px; }
+.r34-multi-row strong { text-align: right; font-size: 10px; padding: 2px; border-left: 1px solid var(--r34-ink); white-space: nowrap; }
+.r34-multi-row small { font-size: 7px; margin-left: 2px; }
+.r34-g-page { flex-direction: column; gap: 2px; padding: 5px 7px; }
+#r34G { width: 256px; height: 126px; display: block; }
+.r34-g-values { display: flex; justify-content: space-between; width: 100%; font: italic 9px monospace; }
+.r34-lap-page { align-items: flex-start; gap: 8px; padding: 9px 6px; }
+.r34-lap-readings { width: 144px; display: flex; flex-direction: column; gap: 4px; }
+.r34-lap-readings label { font: italic 10px Arial, sans-serif; color: var(--r34-ink); }
+.r34-lap-readings strong { font: italic 15px monospace; letter-spacing: -.4px; }
+.r34-lap-readings strong:first-of-type { font-size: 18px; margin-bottom: 3px; }
+.r34-lap-history { width: 106px; font: italic 9px monospace; }
+.r34-lap-history > div { display: flex; justify-content: space-between; border: 1px solid var(--r34-ink); padding: 4px; }
+.r34-lap-history ol { list-style: none; padding: 0; margin: 0; }
+.r34-lap-history li { height: 20px; padding: 4px 3px; border: 1px solid var(--r34-ink); border-top: none; display: flex; justify-content: space-between; font-size: 8px; }
+.r34-readouts {
+  position: absolute; left: 745px; top: 378px; width: 310px; height: 32px; display: flex; align-items: center;
+  justify-content: space-between; gap: 12px; padding: 2px 12px; border: 1px solid var(--r34-readout-border);
+  border-radius: 3px; background: var(--r34-readout); color: var(--r34-ink);
+}
+.r34-gear { display: flex; align-items: center; gap: 13px; }
+.r34-gear small { font: 9px Arial, sans-serif; color: var(--r34-dim); }
+.r34-gear strong { font: 25px Arial, sans-serif; min-width: 18px; text-align: center; }
+#r34DigitalSpeedGroup { padding-left: 12px; border-left: 1px solid var(--r34-readout-border); }
+#r34DigitalSpeed { font: 22px Arial, sans-serif; white-space: nowrap; }
+#r34Status { font: 8px Arial, sans-serif; color: var(--r34-dim); }
+.r34-scale-note { position: absolute; top: 386px; left: 1065px; width: 210px; height: 24px; white-space: pre-line; color: var(--r34-amber); font: 9px Arial, sans-serif; text-align: center; }
+.r34-stream-status { position: absolute; top: 417px; left: 520px; width: 760px; height: 12px; line-height: 12px; text-align: center; white-space: nowrap; color: var(--r34-amber); font: 9px Arial, sans-serif; letter-spacing: .6px; }
+.r34-cockpit[data-cluster="hidden"] { width: 500px; height: 244px; }
+.r34-cockpit[data-cluster="hidden"] .r34-readouts, .r34-cockpit[data-cluster="hidden"] .r34-scale-note { display: none; }
+.r34-cockpit[data-cluster="hidden"] .r34-stream-status { top: 251px; left: 0; width: 500px; }

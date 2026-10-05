@@ -43,6 +43,15 @@ describe('BNR34 telemetry truth and units', () => {
     expect(I.tachAngle(4000) - I.tachAngle(3000)).toBe(30);
     expect(I.tachAngle(10000)).toBe(I.tachAngle(14000));
   });
+  it('keeps stock speed and fuel needles bounded and ordered while numeric readings retain overscale', () => {
+    expect(I.speedAngle(0)).toBeLessThan(I.speedAngle(80));
+    expect(I.speedAngle(80)).toBeLessThan(I.speedAngle(180));
+    expect(I.speedAngle(360)).toBe(I.speedAngle(180));
+    expect(I.speedAngle(-10)).toBe(I.speedAngle(0));
+    expect(I.fuelAngle(0)).toBeLessThan(I.fuelAngle(50));
+    expect(I.fuelAngle(50)).toBeLessThan(I.fuelAngle(100));
+    expect(I.fuelAngle(110)).toBe(I.fuelAngle(100));
+  });
   it('formats Forza reverse, neutral, missing and valid gear values', () => {
     expect(M.gear(0)).toBe('R'); expect(M.gear(11)).toBe('N'); expect(M.gear(6)).toBe('6'); expect(M.gear(null)).toBe('—');
   });

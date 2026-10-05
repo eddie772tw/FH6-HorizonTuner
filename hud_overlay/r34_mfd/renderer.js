@@ -7,6 +7,8 @@
     function Renderer(doc) {
         this.doc = doc; this.mode = ''; this.unit = ''; this.lastStatus = ''; this.historySequence = -1; this.historyLive = null;
         this.palette = {}; this.nodes = {}; this.rows = []; this.lapRows = [];
+        doc.getElementById('r34Paints').innerHTML = root.R34Artwork.defs;
+        doc.getElementById('r34MfdCase').innerHTML = root.R34MfdArt.markup();
         doc.getElementById('r34Cluster').innerHTML = I.clusterMarkup();
         doc.getElementById('r34SingleDial').innerHTML = I.mfdDialMarkup('r34Single', 'BOOST');
         doc.getElementById('r34TwinBoost').innerHTML = I.mfdDialMarkup('r34TwinB', 'BOOST');
@@ -75,7 +77,7 @@
         nodes.r34SpeedFace.style.display = e.showSpeed === false ? 'none' : '';
         nodes.r34SpeedNeedle.style.display = e.showSpeed === false ? 'none' : '';
         nodes.r34DigitalSpeedGroup.style.display = e.showSpeed === false ? 'none' : '';
-        nodes.r34Gear.style.display = e.showGear === false ? 'none' : '';
+        nodes.r34GearGroup.style.display = e.showGear === false ? 'none' : '';
         nodes.r34TachFace.style.display = e.showRPM === false ? 'none' : '';
         var color = config.useDefaultColors === false && /^#[0-9a-f]{6}$/i.test(config.customColor || '') ? config.customColor : '';
         nodes.r34Container.style.setProperty('--r34-green', color || '#77b95a');
@@ -85,29 +87,31 @@
     Renderer.prototype.dial = function (id, reading, ratio, peak, precision) {
         this.text(id + '-value', value(reading, precision)); this.text(id + '-peak', value(peak, precision));
         this.nodes[id + '-sector'].setAttribute('d', I.sector(ratio));
-        this.nodes[id + '-needle'].style.visibility = ratio === null ? 'hidden' : 'visible';
-        this.nodes[id + '-needle'].setAttribute('transform', 'translate(86 101) rotate(' + (135 + (ratio || 0) * 270) + ')');
     };
     Renderer.prototype.render = function (view, state, config) {
         var n = this.nodes, e = config.elements || {};
         this.text('r34Status', view.status.toUpperCase());
         this.text('r34StreamStatus', view.live ? '' : view.status === 'waiting' ? 'WAITING FOR TELEMETRY' : view.status === 'paused' ? 'GAME PAUSED · LIVE VALUES UNAVAILABLE' : view.status === 'error' ? 'TELEMETRY ERROR · LIVE VALUES UNAVAILABLE' : view.status === 'unavailable' ? 'TELEMETRY UNAVAILABLE' : 'TELEMETRY STALE · LIVE VALUES UNAVAILABLE');
         n.r34Container.dataset.status = view.status;
-        n.r34TachNeedle.setAttribute('transform', 'translate(221 151) rotate(' + I.tachAngle(view.rpm) + ')');
+        n.r34TachNeedle.setAttribute('transform', 'translate(251 207) rotate(' + I.tachAngle(view.rpm) + ')');
         n.r34TachNeedle.style.visibility = view.rpm === null ? 'hidden' : 'visible';
         var physicalSpeed = view.speed === null ? null : view.speed * (view.speedUnit === 'mph' ? 1.609344 : 1);
-        n.r34SpeedNeedle.setAttribute('transform', 'translate(450 151) rotate(' + (145 + M.clamp(physicalSpeed || 0, 0, 180) / 180 * 255) + ')');
+        n.r34SpeedNeedle.setAttribute('transform', 'translate(508 207) rotate(' + I.speedAngle(physicalSpeed) + ')');
         n.r34SpeedNeedle.style.visibility = view.speed === null ? 'hidden' : 'visible';
-        n.r34FuelNeedle.setAttribute('transform', 'translate(613 206) rotate(' + (135 + (view.fuel || 0) / 100 * 120) + ')');
+        n.r34FuelNeedle.setAttribute('transform', 'translate(679 266) rotate(' + I.fuelAngle(view.fuel) + ')');
         n.r34FuelNeedle.style.visibility = view.fuel === null ? 'hidden' : 'visible';
-        this.text('r34Gear', view.gear); this.text('r34DigitalSpeed', value(view.speed) + ' ' + view.speedUnit + (physicalSpeed > 180 ? ' · OVER SCALE' : ''));
+        this.text('r34Gear', view.gear); this.text('r34DigitalSpeed', value(view.speed) + ' ' + view.speedUnit);
         this.text('r34Distance', view.distance === null ? '—' : view.distance.toFixed(1));
-        this.text('r34ClusterNote', view.rpm > 10000 ? 'RPM OVER SCALE: ' + Math.round(view.rpm) : 'SESSION DISTANCE · ' + (view.speedUnit === 'mph' ? 'mi' : 'km'));
+        var speedOver = e.showSpeed !== false && physicalSpeed > 180, rpmOver = e.showRPM !== false && view.rpm > 10000;
+        this.text('r34ClusterNote', (speedOver ? 'SPEED OVER SCALE' : '') + (rpmOver ? (speedOver ? '\n' : '') + 'RPM OVER SCALE: ' + Math.round(view.rpm) : ''));
+        this.text('r34DistanceUnit', view.speedUnit === 'mph' ? 'mi' : 'km');
         n.r34RevLamp.classList.toggle('active', view.live && view.rpm !== null && view.redline !== null && view.rpm >= view.redline && e.showRPM !== false);
         if (this.unit !== view.boostSpec.unit) {
             this.unit = view.boostSpec.unit;
             I.setDialLabels(n['r34Single-labels'], view.boostSpec.min, view.boostSpec.max);
             I.setDialLabels(n['r34TwinB-labels'], view.boostSpec.min, view.boostSpec.max);
+            I.setHistoryLabels(n.r34HistoryLabels, view.boostSpec.min, view.boostSpec.max);
+            this.text('r34HistoryUnit', view.boostSpec.unit);
             this.text('r34Single-unit', view.boostSpec.unit); this.text('r34TwinB-unit', view.boostSpec.unit); this.historySequence = -1;
         }
         var boost = e.showBoost === false ? null : view.boost, boostRatio = e.showBoost === false ? null : view.boostRatio;
@@ -137,15 +141,15 @@
         var geometry = this.historyGeometry; if (!geometry.drawable) return;
         var w = geometry.width, h = geometry.height, p = this.palette;
         c.clearRect(0, 0, w, h); c.strokeStyle = p.grid; c.lineWidth = .5;
-        for (var x = 0; x <= 6; x++) { c.beginPath(); c.moveTo(x * w / 6, 3); c.lineTo(x * w / 6, h - 3); c.stroke(); }
-        for (var y = 0; y <= 10; y++) { c.beginPath(); c.moveTo(0, y * (h - 6) / 10 + 3); c.lineTo(w, y * (h - 6) / 10 + 3); c.stroke(); }
+        for (var x = 0; x <= 3; x++) { c.beginPath(); c.moveTo(x * w / 3, 0); c.lineTo(x * w / 3, h); c.stroke(); }
+        for (var y = 0; y <= 25; y++) { c.beginPath(); c.moveTo(0, y * h / 25); c.lineTo(w, y * h / 25); c.stroke(); }
         if (!show) return;
         c.strokeStyle = v.live ? p.green : p.dim; c.lineWidth = 1.5; c.beginPath(); var pen = false;
         for (var i = 0; i < state.historyCount; i++) {
             var at = (state.historyHead - state.historyCount + i + M.CAPACITY) % M.CAPACITY;
             var age = state.elapsed - state.historyTime[at], raw = state.historyBoost[at];
             if (age > M.WINDOW_MS || !Number.isFinite(raw)) { pen = false; continue; }
-            var px = w * (1 - age / M.WINDOW_MS), py = 3 + (h - 6) * (1 - M.ratio(raw * v.boostSpec.factor, v.boostSpec.min, v.boostSpec.max));
+            var px = w * (1 - age / M.WINDOW_MS), py = h * (1 - M.ratio(raw * v.boostSpec.factor, v.boostSpec.min, v.boostSpec.max));
             if (i > 0) { var before = (at - 1 + M.CAPACITY) % M.CAPACITY; if (state.historyTime[at] - state.historyTime[before] > 1000) pen = false; }
             if (pen) c.lineTo(px, py); else c.moveTo(px, py); pen = true;
         }
