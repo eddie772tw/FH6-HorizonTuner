@@ -1,78 +1,86 @@
 {
   "style": "ap1_rev_arc",
-  "reviewed_head": "8b783d080511ad5b49939f7f6603bd5d86e9a659",
+  "revision": "shared-normal upper arc",
+  "reviewed_head": "662d93432243ff0d18d758651ae208436722a24a",
   "reviewed_on": "2026-10-05",
-  "browser": "Chrome 154.0.8037.57",
+  "browser": "Chrome via PLAYWRIGHT_CHANNEL=chrome",
   "platform": "Linux (GitHub Actions)",
   "chromium_sandbox": true,
-  "run_id": 37255610983,
-  "artifact_id": 11322980570,
-  "run_url": "https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37255610983",
-  "artifact_url": "https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37255610983/artifacts/11322980570",
+  "run_id": 37258259085,
+  "artifact_id": 11323397245,
+  "run_url": "https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37258259085",
+  "artifact_url": "https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37258259085/artifacts/11323397245",
   "visual_job": "passed",
-  "general_ci": "pending at documentation update; see pull request checks for current status",
+  "general_ci": "pending at this documentation update; check current PR status separately",
+  "user_review": "pending; this evidence does not imply user approval",
   "automated_evidence": [
     "visual-evidence.json",
     "launcher/host-audit.json"
   ],
   "visual_inspection": {
-    "result": "passed",
+    "result": "passed scoped technical review",
     "inspected": [
-      "DPR2 detail",
-      "ten state crops",
-      "1280x720 full viewport",
-      "2560x1440 full viewport",
-      "actual launcher reverse/reconnect"
+      "default DPR2 detail",
+      "70% compact DPR2 detail",
+      "all ten state crops",
+      "same-viewport before/after",
+      "full720p"
     ],
     "findings": [
-      "No clipping or overlapping readouts observed",
-      "Amber LCD and arcing tachometer preserve the researched AP1 design direction",
-      "Speed, gear, fuel and redline remain distinguishable at the default lower-right size",
-      "Missing/error/paused/signal-lost states clear old live measurements"
+      "Upper RPM band and bezel now follow the same curve through both shoulders",
+      "Both endpoint labels remain contained at default and compact scales",
+      "No new text clipping or overlap observed in the inspected states",
+      "Speed/gear/fuel/readout anchors preserved; no broader restyling"
     ],
     "runtime_changes_needed": false
+  },
+  "measured_layout": {
+    "maximum_anchor_residual_device_pixels": 0.006502151193899408,
+    "gear_ink_y_normalized_deltas": [
+      {
+        "dpr": 1,
+        "delta": 0.0044312686011904745
+      },
+      {
+        "dpr": 2,
+        "delta": 0.006336030505952328
+      }
+    ],
+    "semantic_geometry_fonts_and_local_transforms": "exact comparison passed",
+    "interpretation": "The previous strict normalized-ink-box check tested font ink metrics instead of authored anchor preservation. The new captures establish metric differences with stable authored and screen anchors."
   },
   "curated_previews": [
     {
       "file": "detail-metric.png",
       "source": "metric-1280x720-dpr2.png",
-      "derivation": "Transparent-margin crop of actual browser screenshot; lossless PNG compression",
-      "dimensions": [
-        1056,
-        404
-      ],
-      "outside_alpha": 0
+      "derivation": "Transparent-margin crop; lossless recompression"
+    },
+    {
+      "file": "detail-compact.png",
+      "source": "compact-1280x720-dpr2.png",
+      "derivation": "Transparent-margin crop; lossless recompression"
     },
     {
       "file": "states.png",
-      "source": "contact-sheet.png",
-      "derivation": "Ten actual browser screenshot crops arranged with labels on an opaque review background; lossless PNG compression",
-      "dimensions": [
-        1088,
-        1210
-      ],
-      "outside_alpha": "opaque review contact sheet"
+      "derivation": "Ten actual screenshot crops arranged without resampling on a labelled review background"
     },
     {
       "file": "metric-1280x720.png",
       "source": "metric-1280x720-dpr1.png",
-      "derivation": "Full original viewport; lossless PNG compression only",
-      "dimensions": [
-        1280,
-        720
-      ],
-      "outside_alpha": 0
+      "derivation": "Full viewport; lossless recompression only"
+    },
+    {
+      "file": "before-after.png",
+      "derivation": "Old/new actual720p captures, identical540x225 crop at x710,y465; placed side by side with labels, no resampling",
+      "before_head": "8b783d080511ad5b49939f7f6603bd5d86e9a659",
+      "after_head": "662d93432243ff0d18d758651ae208436722a24a"
     }
   ],
-  "compression_pixel_comparison": {
-    "metric": "ImageMagick absolute error (AE)",
-    "detail_metric": 0,
-    "states": 0,
-    "metric_1280x720": 0
-  },
+  "lossless_recompression_AE": 0,
   "scope_limitations": [
-    "Synthetic timestamped telemetry in actual Chromium and real launcher/Coordinator; not a real game recording",
-    "Windows transparent overlay, mouse passthrough and native-game safe-zone acceptance remain untested",
-    "Full source artifact contains additional screenshots listed in visual-evidence.json; only selected previews are committed"
+    "Synthetic timestamped telemetry, actual browser and real launcher/Coordinator; not an in-game recording",
+    "Windows native overlay, mouse passthrough and real-game safe-zone acceptance remain untested",
+    "User review remains pending",
+    "Complete screenshot set remains in the linked CI artifact"
   ]
 }

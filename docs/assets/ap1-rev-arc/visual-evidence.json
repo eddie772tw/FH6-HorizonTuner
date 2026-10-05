@@ -2,6 +2,7 @@
   "runtime": "Chromium fixture, not Windows native/game acceptance",
   "screenshots": [
     "metric-1280x720-dpr1.png",
+    "compact-1280x720-dpr1.png",
     "imperial.png",
     "reverse.png",
     "neutral.png",
@@ -15,7 +16,8 @@
     "custom-color.png",
     "metric-1920x1080-dpr1.png",
     "metric-2560x1440-dpr1.png",
-    "metric-1280x720-dpr2.png"
+    "metric-1280x720-dpr2.png",
+    "compact-1280x720-dpr2.png"
   ],
   "checks": [
     {
@@ -31,6 +33,1837 @@
         "height": 225
       },
       "metric": "188 km/h"
+    },
+    {
+      "arcRevision": "one shared normal-offset curve",
+      "dpr": 1,
+      "normalLayout": {
+        "labelClearances": [
+          {
+            "text": "0",
+            "bandGap": 4.8857756335427,
+            "bezelGap": 9.153647169336757
+          },
+          {
+            "text": "1",
+            "bandGap": 3.103460207366986,
+            "bezelGap": 7.249376212373704
+          },
+          {
+            "text": "2",
+            "bandGap": 3.4205571715788494,
+            "bezelGap": 7.5054499568568005
+          },
+          {
+            "text": "3",
+            "bandGap": 3.8872653999054094,
+            "bezelGap": 7.93304148156308
+          },
+          {
+            "text": "4",
+            "bandGap": 4.392189698646849,
+            "bezelGap": 8.406754372360602
+          },
+          {
+            "text": "5",
+            "bandGap": 4.4067482622882785,
+            "bezelGap": 8.392195808719173
+          },
+          {
+            "text": "6",
+            "bandGap": 3.9330338207053295,
+            "bezelGap": 7.887273060763157
+          },
+          {
+            "text": "7",
+            "bandGap": 3.5054369449242877,
+            "bezelGap": 7.4205701835113445
+          },
+          {
+            "text": "8",
+            "bandGap": 3.2493565914802893,
+            "bezelGap": 7.103479828260397
+          },
+          {
+            "text": "9",
+            "bandGap": 5.153655507373298,
+            "bezelGap": 8.885767295506156
+          }
+        ],
+        "readouts": {
+          "speedDigits": {
+            "inkRect": {
+              "x": 887,
+              "y": 561,
+              "width": 155.25,
+              "height": 67.5
+            },
+            "svgInkRect": {
+              "x": 0,
+              "y": 0,
+              "width": 207,
+              "height": 90
+            },
+            "inkNormalized": {
+              "x": 0.3277777777777778,
+              "y": 0.4266666666666667,
+              "width": 0.2875,
+              "height": 0.3
+            },
+            "anchorNormalized": {
+              "x": 0.3277777777777778,
+              "y": 0.4266666666666667
+            },
+            "semanticGeometry": {
+              "self": {
+                "tag": "g",
+                "attributes": {
+                  "x": null,
+                  "y": null,
+                  "width": null,
+                  "height": null,
+                  "transform": "translate(236 128)",
+                  "d": null,
+                  "points": null,
+                  "viewBox": null,
+                  "text-anchor": null,
+                  "dominant-baseline": null
+                }
+              },
+              "descendants": [
+                {
+                  "tag": "g",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": "translate(0 0)",
+                    "d": null,
+                    "points": null,
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": null,
+                    "d": null,
+                    "points": "9,0 49,0 55,6 49,12 9,12 3,6",
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": null,
+                    "d": null,
+                    "points": "51,14 57,8 61,12 61,37 55,43 49,37",
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": null,
+                    "d": null,
+                    "points": "55,47 61,53 61,78 57,82 51,76 49,53",
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": null,
+                    "d": null,
+                    "points": "9,78 49,78 55,84 49,90 9,90 3,84",
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": null,
+                    "d": null,
+                    "points": "3,48 9,54 9,76 3,82 0,78 0,54",
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": null,
+                    "d": null,
+                    "points": "3,8 9,14 9,36 3,42 0,36 0,12",
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": null,
+                    "d": null,
+                    "points": "10,39 48,39 54,45 48,51 10,51 4,45",
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "g",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": "translate(73 0)",
+                    "d": null,
+                    "points": null,
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": null,
+                    "d": null,
+                    "points": "9,0 49,0 55,6 49,12 9,12 3,6",
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": null,
+                    "d": null,
+                    "points": "51,14 57,8 61,12 61,37 55,43 49,37",
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": null,
+                    "d": null,
+                    "points": "55,47 61,53 61,78 57,82 51,76 49,53",
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": null,
+                    "d": null,
+                    "points": "9,78 49,78 55,84 49,90 9,90 3,84",
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": null,
+                    "d": null,
+                    "points": "3,48 9,54 9,76 3,82 0,78 0,54",
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": null,
+                    "d": null,
+                    "points": "3,8 9,14 9,36 3,42 0,36 0,12",
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": null,
+                    "d": null,
+                    "points": "10,39 48,39 54,45 48,51 10,51 4,45",
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "g",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": "translate(146 0)",
+                    "d": null,
+                    "points": null,
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": null,
+                    "d": null,
+                    "points": "9,0 49,0 55,6 49,12 9,12 3,6",
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": null,
+                    "d": null,
+                    "points": "51,14 57,8 61,12 61,37 55,43 49,37",
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": null,
+                    "d": null,
+                    "points": "55,47 61,53 61,78 57,82 51,76 49,53",
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": null,
+                    "d": null,
+                    "points": "9,78 49,78 55,84 49,90 9,90 3,84",
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": null,
+                    "d": null,
+                    "points": "3,48 9,54 9,76 3,82 0,78 0,54",
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": null,
+                    "d": null,
+                    "points": "3,8 9,14 9,36 3,42 0,36 0,12",
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": null,
+                    "d": null,
+                    "points": "10,39 48,39 54,45 48,51 10,51 4,45",
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                }
+              ],
+              "ancestors": [
+                {
+                  "tag": "svg",
+                  "transform": null,
+                  "viewBox": "0 0 720 300"
+                }
+              ]
+            },
+            "font": {
+              "family": "\"Arial Narrow\", \"Liberation Sans Narrow\", Arial, sans-serif",
+              "size": "16px",
+              "weight": "400"
+            },
+            "localCssTransform": "matrix(1, 0, 0, 1, 236, 128)"
+          },
+          "gearValue": {
+            "inkRect": {
+              "x": 795.109375,
+              "y": 617.75,
+              "width": 19,
+              "height": 38
+            },
+            "svgInkRect": {
+              "x": 113.47917175292969,
+              "y": 203.6666717529297,
+              "width": 25.33333396911621,
+              "height": 50.66666793823242
+            },
+            "inkNormalized": {
+              "x": 0.1576099537037037,
+              "y": 0.6788888888888889,
+              "width": 0.03518518518518519,
+              "height": 0.1688888888888889
+            },
+            "anchorNormalized": {
+              "x": 0.175,
+              "y": 0.8166666666666667
+            },
+            "semanticGeometry": {
+              "self": {
+                "tag": "text",
+                "attributes": {
+                  "x": "126",
+                  "y": "245",
+                  "width": null,
+                  "height": null,
+                  "transform": null,
+                  "d": null,
+                  "points": null,
+                  "viewBox": null,
+                  "text-anchor": "middle",
+                  "dominant-baseline": null
+                }
+              },
+              "descendants": [],
+              "ancestors": [
+                {
+                  "tag": "svg",
+                  "transform": null,
+                  "viewBox": "0 0 720 300"
+                }
+              ]
+            },
+            "font": {
+              "family": "\"Arial Narrow\", \"Liberation Sans Narrow\", Arial, sans-serif",
+              "size": "45px",
+              "weight": "600"
+            },
+            "localCssTransform": "none"
+          },
+          "fuelSegments": {
+            "inkRect": {
+              "x": 1133.75,
+              "y": 604.6500244140625,
+              "width": 69.75,
+              "height": 13.3499755859375
+            },
+            "svgInkRect": {
+              "x": 565,
+              "y": 186.1999969482422,
+              "width": 93,
+              "height": 17.800018310546875
+            },
+            "inkNormalized": {
+              "x": 0.7847222222222222,
+              "y": 0.6206667751736111,
+              "width": 0.12916666666666668,
+              "height": 0.05933322482638889
+            },
+            "anchorNormalized": {
+              "x": 0,
+              "y": 0
+            },
+            "semanticGeometry": {
+              "self": {
+                "tag": "g",
+                "attributes": {
+                  "x": null,
+                  "y": null,
+                  "width": null,
+                  "height": null,
+                  "transform": null,
+                  "d": null,
+                  "points": null,
+                  "viewBox": null,
+                  "text-anchor": null,
+                  "dominant-baseline": null
+                }
+              },
+              "descendants": [
+                {
+                  "tag": "rect",
+                  "attributes": {
+                    "x": "565",
+                    "y": "189",
+                    "width": "9",
+                    "height": "15",
+                    "transform": null,
+                    "d": null,
+                    "points": null,
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "rect",
+                  "attributes": {
+                    "x": "577",
+                    "y": "188.6",
+                    "width": "9",
+                    "height": "15.4",
+                    "transform": null,
+                    "d": null,
+                    "points": null,
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "rect",
+                  "attributes": {
+                    "x": "589",
+                    "y": "188.2",
+                    "width": "9",
+                    "height": "15.8",
+                    "transform": null,
+                    "d": null,
+                    "points": null,
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "rect",
+                  "attributes": {
+                    "x": "601",
+                    "y": "187.8",
+                    "width": "9",
+                    "height": "16.2",
+                    "transform": null,
+                    "d": null,
+                    "points": null,
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "rect",
+                  "attributes": {
+                    "x": "613",
+                    "y": "187.4",
+                    "width": "9",
+                    "height": "16.6",
+                    "transform": null,
+                    "d": null,
+                    "points": null,
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "rect",
+                  "attributes": {
+                    "x": "625",
+                    "y": "187",
+                    "width": "9",
+                    "height": "17",
+                    "transform": null,
+                    "d": null,
+                    "points": null,
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "rect",
+                  "attributes": {
+                    "x": "637",
+                    "y": "186.6",
+                    "width": "9",
+                    "height": "17.4",
+                    "transform": null,
+                    "d": null,
+                    "points": null,
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "rect",
+                  "attributes": {
+                    "x": "649",
+                    "y": "186.2",
+                    "width": "9",
+                    "height": "17.8",
+                    "transform": null,
+                    "d": null,
+                    "points": null,
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                }
+              ],
+              "ancestors": [
+                {
+                  "tag": "svg",
+                  "transform": null,
+                  "viewBox": "0 0 720 300"
+                }
+              ]
+            },
+            "font": {
+              "family": "\"Arial Narrow\", \"Liberation Sans Narrow\", Arial, sans-serif",
+              "size": "16px",
+              "weight": "400"
+            },
+            "localCssTransform": "none"
+          },
+          "fuelValue": {
+            "inkRect": {
+              "x": 1156.234375,
+              "y": 635.75,
+              "width": 33.03125,
+              "height": 16
+            },
+            "svgInkRect": {
+              "x": 594.9791870117188,
+              "y": 227.6666717529297,
+              "width": 44.04166793823242,
+              "height": 21.33333396911621
+            },
+            "inkNormalized": {
+              "x": 0.8263599537037037,
+              "y": 0.7588888888888888,
+              "width": 0.061168981481481484,
+              "height": 0.07111111111111111
+            },
+            "anchorNormalized": {
+              "x": 0.8569444444444444,
+              "y": 0.8166666666666667
+            },
+            "semanticGeometry": {
+              "self": {
+                "tag": "text",
+                "attributes": {
+                  "x": "617",
+                  "y": "245",
+                  "width": null,
+                  "height": null,
+                  "transform": null,
+                  "d": null,
+                  "points": null,
+                  "viewBox": null,
+                  "text-anchor": "middle",
+                  "dominant-baseline": null
+                }
+              },
+              "descendants": [],
+              "ancestors": [
+                {
+                  "tag": "svg",
+                  "transform": null,
+                  "viewBox": "0 0 720 300"
+                }
+              ]
+            },
+            "font": {
+              "family": "\"Arial Narrow\", \"Liberation Sans Narrow\", Arial, sans-serif",
+              "size": "19px",
+              "weight": "400"
+            },
+            "localCssTransform": "none"
+          },
+          "rpmValue": {
+            "inkRect": {
+              "x": 1165.15625,
+              "y": 656.25,
+              "width": 42.09375,
+              "height": 7
+            },
+            "svgInkRect": {
+              "x": 606.875,
+              "y": 255,
+              "width": 56.125,
+              "height": 9.333333969116211
+            },
+            "inkNormalized": {
+              "x": 0.8428819444444444,
+              "y": 0.85,
+              "width": 0.07795138888888889,
+              "height": 0.03111111111111111
+            },
+            "anchorNormalized": {
+              "x": 0.9208333333333333,
+              "y": 0.8766666666666667
+            },
+            "semanticGeometry": {
+              "self": {
+                "tag": "text",
+                "attributes": {
+                  "x": "663",
+                  "y": "263",
+                  "width": null,
+                  "height": null,
+                  "transform": null,
+                  "d": null,
+                  "points": null,
+                  "viewBox": null,
+                  "text-anchor": "end",
+                  "dominant-baseline": null
+                }
+              },
+              "descendants": [],
+              "ancestors": [
+                {
+                  "tag": "svg",
+                  "transform": null,
+                  "viewBox": "0 0 720 300"
+                }
+              ]
+            },
+            "font": {
+              "family": "\"Arial Narrow\", \"Liberation Sans Narrow\", Arial, sans-serif",
+              "size": "9px",
+              "weight": "400"
+            },
+            "localCssTransform": "none"
+          },
+          "speedUnit": {
+            "inkRect": {
+              "x": 1053.859375,
+              "y": 611.5,
+              "width": 34.140625,
+              "height": 17
+            },
+            "svgInkRect": {
+              "x": 458.47918701171875,
+              "y": 195.33334350585938,
+              "width": 45.520835876464844,
+              "height": 22.666667938232422
+            },
+            "inkNormalized": {
+              "x": 0.6367766203703704,
+              "y": 0.6511111111111111,
+              "width": 0.06322337962962964,
+              "height": 0.07555555555555556
+            },
+            "anchorNormalized": {
+              "x": 0.7,
+              "y": 0.7133333333333334
+            },
+            "semanticGeometry": {
+              "self": {
+                "tag": "text",
+                "attributes": {
+                  "x": "504",
+                  "y": "214",
+                  "width": null,
+                  "height": null,
+                  "transform": null,
+                  "d": null,
+                  "points": null,
+                  "viewBox": null,
+                  "text-anchor": "end",
+                  "dominant-baseline": null
+                }
+              },
+              "descendants": [],
+              "ancestors": [
+                {
+                  "tag": "svg",
+                  "transform": null,
+                  "viewBox": "0 0 720 300"
+                }
+              ]
+            },
+            "font": {
+              "family": "\"Arial Narrow\", \"Liberation Sans Narrow\", Arial, sans-serif",
+              "size": "21px",
+              "weight": "400"
+            },
+            "localCssTransform": "none"
+          }
+        },
+        "cluster": {
+          "x": 710,
+          "y": 465,
+          "width": 540,
+          "height": 225
+        },
+        "dpr": 1,
+        "zoom": "0.75"
+      },
+      "compactLayout": {
+        "labelClearances": [
+          {
+            "text": "0",
+            "bandGap": 5.100312826510148,
+            "bezelGap": 9.10030807347318
+          },
+          {
+            "text": "1",
+            "bandGap": 3.162535106767031,
+            "bezelGap": 7.162533219369074
+          },
+          {
+            "text": "2",
+            "bandGap": 3.4120468150764864,
+            "bezelGap": 7.412061144555146
+          },
+          {
+            "text": "3",
+            "bandGap": 3.837670114625798,
+            "bezelGap": 7.837666871237161
+          },
+          {
+            "text": "4",
+            "bandGap": 4.234668917737096,
+            "bezelGap": 8.310925266085015
+          },
+          {
+            "text": "5",
+            "bandGap": 4.310924388164739,
+            "bezelGap": 8.310924644136826
+          },
+          {
+            "text": "6",
+            "bandGap": 3.837674304645276,
+            "bezelGap": 7.8376626812176795
+          },
+          {
+            "text": "7",
+            "bandGap": 3.4120462969861727,
+            "bezelGap": 7.412061662645449
+          },
+          {
+            "text": "8",
+            "bandGap": 3.162530654145307,
+            "bezelGap": 7.1625376719907905
+          },
+          {
+            "text": "9",
+            "bandGap": 5.100334080070397,
+            "bezelGap": 9.100286819912938
+          }
+        ],
+        "readouts": {
+          "speedDigits": {
+            "inkRect": {
+              "x": 995.9105224609375,
+              "y": 599.700439453125,
+              "width": 108.6705322265625,
+              "height": 47.24810791015625
+            },
+            "svgInkRect": {
+              "x": 0,
+              "y": 0,
+              "width": 207,
+              "height": 90
+            },
+            "inkNormalized": {
+              "x": 0.32777782801455085,
+              "y": 0.4266694568452381,
+              "width": 0.28750006459013683,
+              "height": 0.2999879867311508
+            },
+            "anchorNormalized": {
+              "x": 0.3277777800939935,
+              "y": 0.42666967474706685
+            },
+            "semanticGeometry": {
+              "self": {
+                "tag": "g",
+                "attributes": {
+                  "x": null,
+                  "y": null,
+                  "width": null,
+                  "height": null,
+                  "transform": "translate(236 128)",
+                  "d": null,
+                  "points": null,
+                  "viewBox": null,
+                  "text-anchor": null,
+                  "dominant-baseline": null
+                }
+              },
+              "descendants": [
+                {
+                  "tag": "g",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": "translate(0 0)",
+                    "d": null,
+                    "points": null,
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": null,
+                    "d": null,
+                    "points": "9,0 49,0 55,6 49,12 9,12 3,6",
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": null,
+                    "d": null,
+                    "points": "51,14 57,8 61,12 61,37 55,43 49,37",
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": null,
+                    "d": null,
+                    "points": "55,47 61,53 61,78 57,82 51,76 49,53",
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": null,
+                    "d": null,
+                    "points": "9,78 49,78 55,84 49,90 9,90 3,84",
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": null,
+                    "d": null,
+                    "points": "3,48 9,54 9,76 3,82 0,78 0,54",
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": null,
+                    "d": null,
+                    "points": "3,8 9,14 9,36 3,42 0,36 0,12",
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": null,
+                    "d": null,
+                    "points": "10,39 48,39 54,45 48,51 10,51 4,45",
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "g",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": "translate(73 0)",
+                    "d": null,
+                    "points": null,
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": null,
+                    "d": null,
+                    "points": "9,0 49,0 55,6 49,12 9,12 3,6",
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": null,
+                    "d": null,
+                    "points": "51,14 57,8 61,12 61,37 55,43 49,37",
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": null,
+                    "d": null,
+                    "points": "55,47 61,53 61,78 57,82 51,76 49,53",
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": null,
+                    "d": null,
+                    "points": "9,78 49,78 55,84 49,90 9,90 3,84",
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": null,
+                    "d": null,
+                    "points": "3,48 9,54 9,76 3,82 0,78 0,54",
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": null,
+                    "d": null,
+                    "points": "3,8 9,14 9,36 3,42 0,36 0,12",
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": null,
+                    "d": null,
+                    "points": "10,39 48,39 54,45 48,51 10,51 4,45",
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "g",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": "translate(146 0)",
+                    "d": null,
+                    "points": null,
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": null,
+                    "d": null,
+                    "points": "9,0 49,0 55,6 49,12 9,12 3,6",
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": null,
+                    "d": null,
+                    "points": "51,14 57,8 61,12 61,37 55,43 49,37",
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": null,
+                    "d": null,
+                    "points": "55,47 61,53 61,78 57,82 51,76 49,53",
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": null,
+                    "d": null,
+                    "points": "9,78 49,78 55,84 49,90 9,90 3,84",
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": null,
+                    "d": null,
+                    "points": "3,48 9,54 9,76 3,82 0,78 0,54",
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": null,
+                    "d": null,
+                    "points": "3,8 9,14 9,36 3,42 0,36 0,12",
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": null,
+                    "d": null,
+                    "points": "10,39 48,39 54,45 48,51 10,51 4,45",
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                }
+              ],
+              "ancestors": [
+                {
+                  "tag": "svg",
+                  "transform": null,
+                  "viewBox": "0 0 720 300"
+                }
+              ]
+            },
+            "font": {
+              "family": "\"Arial Narrow\", \"Liberation Sans Narrow\", Arial, sans-serif",
+              "size": "16px",
+              "weight": "400"
+            },
+            "localCssTransform": "matrix(1, 0, 0, 1, 236, 128)"
+          },
+          "gearValue": {
+            "inkRect": {
+              "x": 931.5925903320312,
+              "y": 640.1229248046875,
+              "width": 13.140625,
+              "height": 26
+            },
+            "svgInkRect": {
+              "x": 113.4845962524414,
+              "y": 204.9983367919922,
+              "width": 25.030797958374023,
+              "height": 49.52585983276367
+            },
+            "inkNormalized": {
+              "x": 0.15761753467198544,
+              "y": 0.6833201574900793,
+              "width": 0.03476499524616593,
+              "height": 0.16507936507936508
+            },
+            "anchorNormalized": {
+              "x": 0.17500000123662357,
+              "y": 0.8166535564711113
+            },
+            "semanticGeometry": {
+              "self": {
+                "tag": "text",
+                "attributes": {
+                  "x": "126",
+                  "y": "245",
+                  "width": null,
+                  "height": null,
+                  "transform": null,
+                  "d": null,
+                  "points": null,
+                  "viewBox": null,
+                  "text-anchor": "middle",
+                  "dominant-baseline": null
+                }
+              },
+              "descendants": [],
+              "ancestors": [
+                {
+                  "tag": "svg",
+                  "transform": null,
+                  "viewBox": "0 0 720 300"
+                }
+              ]
+            },
+            "font": {
+              "family": "\"Arial Narrow\", \"Liberation Sans Narrow\", Arial, sans-serif",
+              "size": "45px",
+              "weight": "600"
+            },
+            "localCssTransform": "none"
+          },
+          "fuelSegments": {
+            "inkRect": {
+              "x": 1168.62841796875,
+              "y": 630.2542114257812,
+              "width": 48.822998046875,
+              "height": 9.3446044921875
+            },
+            "svgInkRect": {
+              "x": 565,
+              "y": 186.1999969482422,
+              "width": 93,
+              "height": 17.800003051757812
+            },
+            "inkNormalized": {
+              "x": 0.7847223657558596,
+              "y": 0.6206616598462301,
+              "width": 0.1291667097267579,
+              "height": 0.05933082217261905
+            },
+            "anchorNormalized": {
+              "x": 0,
+              "y": 0.000020641749821902882
+            },
+            "semanticGeometry": {
+              "self": {
+                "tag": "g",
+                "attributes": {
+                  "x": null,
+                  "y": null,
+                  "width": null,
+                  "height": null,
+                  "transform": null,
+                  "d": null,
+                  "points": null,
+                  "viewBox": null,
+                  "text-anchor": null,
+                  "dominant-baseline": null
+                }
+              },
+              "descendants": [
+                {
+                  "tag": "rect",
+                  "attributes": {
+                    "x": "565",
+                    "y": "189",
+                    "width": "9",
+                    "height": "15",
+                    "transform": null,
+                    "d": null,
+                    "points": null,
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "rect",
+                  "attributes": {
+                    "x": "577",
+                    "y": "188.6",
+                    "width": "9",
+                    "height": "15.4",
+                    "transform": null,
+                    "d": null,
+                    "points": null,
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "rect",
+                  "attributes": {
+                    "x": "589",
+                    "y": "188.2",
+                    "width": "9",
+                    "height": "15.8",
+                    "transform": null,
+                    "d": null,
+                    "points": null,
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "rect",
+                  "attributes": {
+                    "x": "601",
+                    "y": "187.8",
+                    "width": "9",
+                    "height": "16.2",
+                    "transform": null,
+                    "d": null,
+                    "points": null,
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "rect",
+                  "attributes": {
+                    "x": "613",
+                    "y": "187.4",
+                    "width": "9",
+                    "height": "16.6",
+                    "transform": null,
+                    "d": null,
+                    "points": null,
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "rect",
+                  "attributes": {
+                    "x": "625",
+                    "y": "187",
+                    "width": "9",
+                    "height": "17",
+                    "transform": null,
+                    "d": null,
+                    "points": null,
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "rect",
+                  "attributes": {
+                    "x": "637",
+                    "y": "186.6",
+                    "width": "9",
+                    "height": "17.4",
+                    "transform": null,
+                    "d": null,
+                    "points": null,
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "rect",
+                  "attributes": {
+                    "x": "649",
+                    "y": "186.2",
+                    "width": "9",
+                    "height": "17.8",
+                    "transform": null,
+                    "d": null,
+                    "points": null,
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                }
+              ],
+              "ancestors": [
+                {
+                  "tag": "svg",
+                  "transform": null,
+                  "viewBox": "0 0 720 300"
+                }
+              ]
+            },
+            "font": {
+              "family": "\"Arial Narrow\", \"Liberation Sans Narrow\", Arial, sans-serif",
+              "size": "16px",
+              "weight": "400"
+            },
+            "localCssTransform": "none"
+          },
+          "fuelValue": {
+            "inkRect": {
+              "x": 1184.37255859375,
+              "y": 652.1229248046875,
+              "width": 23.109375,
+              "height": 11
+            },
+            "svgInkRect": {
+              "x": 594.9901733398438,
+              "y": 227.85643005371094,
+              "width": 44.01968002319336,
+              "height": 20.9532470703125
+            },
+            "inkNormalized": {
+              "x": 0.8263752531933364,
+              "y": 0.7595106336805556,
+              "width": 0.06113843991567112,
+              "height": 0.06984126984126984
+            },
+            "anchorNormalized": {
+              "x": 0.856944450499975,
+              "y": 0.8166535564711113
+            },
+            "semanticGeometry": {
+              "self": {
+                "tag": "text",
+                "attributes": {
+                  "x": "617",
+                  "y": "245",
+                  "width": null,
+                  "height": null,
+                  "transform": null,
+                  "d": null,
+                  "points": null,
+                  "viewBox": null,
+                  "text-anchor": "middle",
+                  "dominant-baseline": null
+                }
+              },
+              "descendants": [],
+              "ancestors": [
+                {
+                  "tag": "svg",
+                  "transform": null,
+                  "viewBox": "0 0 720 300"
+                }
+              ]
+            },
+            "font": {
+              "family": "\"Arial Narrow\", \"Liberation Sans Narrow\", Arial, sans-serif",
+              "size": "19px",
+              "weight": "400"
+            },
+            "localCssTransform": "none"
+          },
+          "rpmValue": {
+            "inkRect": {
+              "x": 1190.638671875,
+              "y": 666.5725708007812,
+              "width": 29.4375,
+              "height": 4.99993896484375
+            },
+            "svgInkRect": {
+              "x": 606.92626953125,
+              "y": 255.38064575195312,
+              "width": 56.07374954223633,
+              "height": 9.524203300476074
+            },
+            "inkNormalized": {
+              "x": 0.8429529577115457,
+              "y": 0.8512544177827381,
+              "width": 0.07788020338142285,
+              "height": 0.031745644221230156
+            },
+            "anchorNormalized": {
+              "x": 0.9208333398403294,
+              "y": 0.8766510767363487
+            },
+            "semanticGeometry": {
+              "self": {
+                "tag": "text",
+                "attributes": {
+                  "x": "663",
+                  "y": "263",
+                  "width": null,
+                  "height": null,
+                  "transform": null,
+                  "d": null,
+                  "points": null,
+                  "viewBox": null,
+                  "text-anchor": "end",
+                  "dominant-baseline": null
+                }
+              },
+              "descendants": [],
+              "ancestors": [
+                {
+                  "tag": "svg",
+                  "transform": null,
+                  "viewBox": "0 0 720 300"
+                }
+              ]
+            },
+            "font": {
+              "family": "\"Arial Narrow\", \"Liberation Sans Narrow\", Arial, sans-serif",
+              "size": "9px",
+              "weight": "400"
+            },
+            "localCssTransform": "none"
+          },
+          "speedUnit": {
+            "inkRect": {
+              "x": 1112.729736328125,
+              "y": 634.8486328125,
+              "width": 23.875,
+              "height": 12
+            },
+            "svgInkRect": {
+              "x": 458.52191162109375,
+              "y": 194.95159912109375,
+              "width": 45.47807312011719,
+              "height": 22.858089447021484
+            },
+            "inkNormalized": {
+              "x": 0.6368361425736845,
+              "y": 0.6498325892857143,
+              "width": 0.06316398660658923,
+              "height": 0.0761904761904762
+            },
+            "anchorNormalized": {
+              "x": 0.700000004946495,
+              "y": 0.7133244937920912
+            },
+            "semanticGeometry": {
+              "self": {
+                "tag": "text",
+                "attributes": {
+                  "x": "504",
+                  "y": "214",
+                  "width": null,
+                  "height": null,
+                  "transform": null,
+                  "d": null,
+                  "points": null,
+                  "viewBox": null,
+                  "text-anchor": "end",
+                  "dominant-baseline": null
+                }
+              },
+              "descendants": [],
+              "ancestors": [
+                {
+                  "tag": "svg",
+                  "transform": null,
+                  "viewBox": "0 0 720 300"
+                }
+              ]
+            },
+            "font": {
+              "family": "\"Arial Narrow\", \"Liberation Sans Narrow\", Arial, sans-serif",
+              "size": "21px",
+              "weight": "400"
+            },
+            "localCssTransform": "none"
+          }
+        },
+        "cluster": {
+          "x": 872.015625,
+          "y": 532.5,
+          "width": 377.984375,
+          "height": 157.5
+        },
+        "dpr": 1,
+        "zoom": "0.525"
+      },
+      "diagnostics": {
+        "speedDigits": {
+          "inkNormalizedDelta": {
+            "x": 5.023677307480767e-8,
+            "y": 0.0000027901785714101734,
+            "width": 6.459013685011783e-8,
+            "height": -0.000012013268849198067
+          },
+          "anchorResidualDevicePixels": {
+            "x": 8.754933509954807e-7,
+            "y": 0.0004737726630248129
+          }
+        },
+        "gearValue": {
+          "inkNormalizedDelta": {
+            "x": 0.000007580968281739597,
+            "y": 0.0044312686011904745,
+            "width": -0.00042018993901925955,
+            "height": -0.003809523809523818
+          },
+          "anchorResidualDevicePixels": {
+            "x": 4.674243914929571e-7,
+            "y": -0.0020648557999736195
+          }
+        },
+        "fuelSegments": {
+          "inkNormalizedDelta": {
+            "x": 1.4353363742003467e-7,
+            "y": -0.00000511532738101117,
+            "width": 4.306009121490817e-8,
+            "height": -0.000002402653769842389
+          },
+          "anchorResidualDevicePixels": {
+            "x": 0,
+            "y": 0.003251075596949704
+          }
+        },
+        "fuelValue": {
+          "inkNormalizedDelta": {
+            "x": 0.000015299489632636387,
+            "y": 0.0006217447916667673,
+            "width": -0.00003054156581036582,
+            "height": -0.001269841269841268
+          },
+          "anchorResidualDevicePixels": {
+            "x": 0.000002288895961414031,
+            "y": -0.0020648557999736195
+          }
+        },
+        "rpmValue": {
+          "inkNormalizedDelta": {
+            "x": 0.00007101326710123868,
+            "y": 0.0012544177827381597,
+            "width": -0.0000711855074660428,
+            "height": 0.0006345331101190455
+          },
+          "anchorResidualDevicePixels": {
+            "x": 0.0000024595428782196033,
+            "y": -0.0024554140250893086
+          }
+        },
+        "speedUnit": {
+          "inkNormalizedDelta": {
+            "x": 0.000059522203314066324,
+            "y": -0.0012785218253967834,
+            "width": -0.00005939302304040772,
+            "height": 0.000634920634920641
+          },
+          "anchorResidualDevicePixels": {
+            "x": 0.000001869697817760002,
+            "y": -0.0013922277456465681
+          }
+        }
+      },
+      "invariant": "SVG anchors, descendant geometry, font settings and local transforms stay exact; screen anchors and containment allow one device pixel for rendering quantization. Text ink metrics are diagnostic, not anchor invariants."
     },
     "imperial, reverse, neutral, redline, missing, error, paused, 6000 RPM scale, frozen-timestamp disconnect, reconnect, resize, visibility, custom color, destroy",
     {
@@ -74,7 +1907,1843 @@
         "height": 225
       },
       "metric": "188 km/h"
+    },
+    {
+      "arcRevision": "one shared normal-offset curve",
+      "dpr": 2,
+      "normalLayout": {
+        "labelClearances": [
+          {
+            "text": "0",
+            "bandGap": 4.8857756335427,
+            "bezelGap": 9.153647169336757
+          },
+          {
+            "text": "1",
+            "bandGap": 3.103460207366986,
+            "bezelGap": 7.249376212373704
+          },
+          {
+            "text": "2",
+            "bandGap": 3.4205571715788494,
+            "bezelGap": 7.5054499568568005
+          },
+          {
+            "text": "3",
+            "bandGap": 3.8872653999054094,
+            "bezelGap": 7.93304148156308
+          },
+          {
+            "text": "4",
+            "bandGap": 4.392189698646849,
+            "bezelGap": 8.406754372360602
+          },
+          {
+            "text": "5",
+            "bandGap": 4.4067482622882785,
+            "bezelGap": 8.392195808719173
+          },
+          {
+            "text": "6",
+            "bandGap": 3.9330338207053295,
+            "bezelGap": 7.887273060763157
+          },
+          {
+            "text": "7",
+            "bandGap": 3.5054369449242877,
+            "bezelGap": 7.4205701835113445
+          },
+          {
+            "text": "8",
+            "bandGap": 3.2493565914802893,
+            "bezelGap": 7.103479828260397
+          },
+          {
+            "text": "9",
+            "bandGap": 5.153655507373298,
+            "bezelGap": 8.885767295506156
+          }
+        ],
+        "readouts": {
+          "speedDigits": {
+            "inkRect": {
+              "x": 887,
+              "y": 561,
+              "width": 155.25,
+              "height": 67.5
+            },
+            "svgInkRect": {
+              "x": 0,
+              "y": 0,
+              "width": 207,
+              "height": 90
+            },
+            "inkNormalized": {
+              "x": 0.3277777777777778,
+              "y": 0.4266666666666667,
+              "width": 0.2875,
+              "height": 0.3
+            },
+            "anchorNormalized": {
+              "x": 0.3277777777777778,
+              "y": 0.4266666666666667
+            },
+            "semanticGeometry": {
+              "self": {
+                "tag": "g",
+                "attributes": {
+                  "x": null,
+                  "y": null,
+                  "width": null,
+                  "height": null,
+                  "transform": "translate(236 128)",
+                  "d": null,
+                  "points": null,
+                  "viewBox": null,
+                  "text-anchor": null,
+                  "dominant-baseline": null
+                }
+              },
+              "descendants": [
+                {
+                  "tag": "g",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": "translate(0 0)",
+                    "d": null,
+                    "points": null,
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": null,
+                    "d": null,
+                    "points": "9,0 49,0 55,6 49,12 9,12 3,6",
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": null,
+                    "d": null,
+                    "points": "51,14 57,8 61,12 61,37 55,43 49,37",
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": null,
+                    "d": null,
+                    "points": "55,47 61,53 61,78 57,82 51,76 49,53",
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": null,
+                    "d": null,
+                    "points": "9,78 49,78 55,84 49,90 9,90 3,84",
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": null,
+                    "d": null,
+                    "points": "3,48 9,54 9,76 3,82 0,78 0,54",
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": null,
+                    "d": null,
+                    "points": "3,8 9,14 9,36 3,42 0,36 0,12",
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": null,
+                    "d": null,
+                    "points": "10,39 48,39 54,45 48,51 10,51 4,45",
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "g",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": "translate(73 0)",
+                    "d": null,
+                    "points": null,
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": null,
+                    "d": null,
+                    "points": "9,0 49,0 55,6 49,12 9,12 3,6",
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": null,
+                    "d": null,
+                    "points": "51,14 57,8 61,12 61,37 55,43 49,37",
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": null,
+                    "d": null,
+                    "points": "55,47 61,53 61,78 57,82 51,76 49,53",
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": null,
+                    "d": null,
+                    "points": "9,78 49,78 55,84 49,90 9,90 3,84",
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": null,
+                    "d": null,
+                    "points": "3,48 9,54 9,76 3,82 0,78 0,54",
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": null,
+                    "d": null,
+                    "points": "3,8 9,14 9,36 3,42 0,36 0,12",
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": null,
+                    "d": null,
+                    "points": "10,39 48,39 54,45 48,51 10,51 4,45",
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "g",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": "translate(146 0)",
+                    "d": null,
+                    "points": null,
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": null,
+                    "d": null,
+                    "points": "9,0 49,0 55,6 49,12 9,12 3,6",
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": null,
+                    "d": null,
+                    "points": "51,14 57,8 61,12 61,37 55,43 49,37",
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": null,
+                    "d": null,
+                    "points": "55,47 61,53 61,78 57,82 51,76 49,53",
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": null,
+                    "d": null,
+                    "points": "9,78 49,78 55,84 49,90 9,90 3,84",
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": null,
+                    "d": null,
+                    "points": "3,48 9,54 9,76 3,82 0,78 0,54",
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": null,
+                    "d": null,
+                    "points": "3,8 9,14 9,36 3,42 0,36 0,12",
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": null,
+                    "d": null,
+                    "points": "10,39 48,39 54,45 48,51 10,51 4,45",
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                }
+              ],
+              "ancestors": [
+                {
+                  "tag": "svg",
+                  "transform": null,
+                  "viewBox": "0 0 720 300"
+                }
+              ]
+            },
+            "font": {
+              "family": "\"Arial Narrow\", \"Liberation Sans Narrow\", Arial, sans-serif",
+              "size": "16px",
+              "weight": "400"
+            },
+            "localCssTransform": "matrix(1, 0, 0, 1, 236, 128)"
+          },
+          "gearValue": {
+            "inkRect": {
+              "x": 795.109375,
+              "y": 618.75,
+              "width": 19,
+              "height": 38
+            },
+            "svgInkRect": {
+              "x": 113.47917175292969,
+              "y": 205,
+              "width": 25.33333396911621,
+              "height": 50.66666793823242
+            },
+            "inkNormalized": {
+              "x": 0.1576099537037037,
+              "y": 0.6833333333333333,
+              "width": 0.03518518518518519,
+              "height": 0.1688888888888889
+            },
+            "anchorNormalized": {
+              "x": 0.175,
+              "y": 0.8166666666666667
+            },
+            "semanticGeometry": {
+              "self": {
+                "tag": "text",
+                "attributes": {
+                  "x": "126",
+                  "y": "245",
+                  "width": null,
+                  "height": null,
+                  "transform": null,
+                  "d": null,
+                  "points": null,
+                  "viewBox": null,
+                  "text-anchor": "middle",
+                  "dominant-baseline": null
+                }
+              },
+              "descendants": [],
+              "ancestors": [
+                {
+                  "tag": "svg",
+                  "transform": null,
+                  "viewBox": "0 0 720 300"
+                }
+              ]
+            },
+            "font": {
+              "family": "\"Arial Narrow\", \"Liberation Sans Narrow\", Arial, sans-serif",
+              "size": "45px",
+              "weight": "600"
+            },
+            "localCssTransform": "none"
+          },
+          "fuelSegments": {
+            "inkRect": {
+              "x": 1133.75,
+              "y": 604.6500244140625,
+              "width": 69.75,
+              "height": 13.3499755859375
+            },
+            "svgInkRect": {
+              "x": 565,
+              "y": 186.1999969482422,
+              "width": 93,
+              "height": 17.800018310546875
+            },
+            "inkNormalized": {
+              "x": 0.7847222222222222,
+              "y": 0.6206667751736111,
+              "width": 0.12916666666666668,
+              "height": 0.05933322482638889
+            },
+            "anchorNormalized": {
+              "x": 0,
+              "y": 0
+            },
+            "semanticGeometry": {
+              "self": {
+                "tag": "g",
+                "attributes": {
+                  "x": null,
+                  "y": null,
+                  "width": null,
+                  "height": null,
+                  "transform": null,
+                  "d": null,
+                  "points": null,
+                  "viewBox": null,
+                  "text-anchor": null,
+                  "dominant-baseline": null
+                }
+              },
+              "descendants": [
+                {
+                  "tag": "rect",
+                  "attributes": {
+                    "x": "565",
+                    "y": "189",
+                    "width": "9",
+                    "height": "15",
+                    "transform": null,
+                    "d": null,
+                    "points": null,
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "rect",
+                  "attributes": {
+                    "x": "577",
+                    "y": "188.6",
+                    "width": "9",
+                    "height": "15.4",
+                    "transform": null,
+                    "d": null,
+                    "points": null,
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "rect",
+                  "attributes": {
+                    "x": "589",
+                    "y": "188.2",
+                    "width": "9",
+                    "height": "15.8",
+                    "transform": null,
+                    "d": null,
+                    "points": null,
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "rect",
+                  "attributes": {
+                    "x": "601",
+                    "y": "187.8",
+                    "width": "9",
+                    "height": "16.2",
+                    "transform": null,
+                    "d": null,
+                    "points": null,
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "rect",
+                  "attributes": {
+                    "x": "613",
+                    "y": "187.4",
+                    "width": "9",
+                    "height": "16.6",
+                    "transform": null,
+                    "d": null,
+                    "points": null,
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "rect",
+                  "attributes": {
+                    "x": "625",
+                    "y": "187",
+                    "width": "9",
+                    "height": "17",
+                    "transform": null,
+                    "d": null,
+                    "points": null,
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "rect",
+                  "attributes": {
+                    "x": "637",
+                    "y": "186.6",
+                    "width": "9",
+                    "height": "17.4",
+                    "transform": null,
+                    "d": null,
+                    "points": null,
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "rect",
+                  "attributes": {
+                    "x": "649",
+                    "y": "186.2",
+                    "width": "9",
+                    "height": "17.8",
+                    "transform": null,
+                    "d": null,
+                    "points": null,
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                }
+              ],
+              "ancestors": [
+                {
+                  "tag": "svg",
+                  "transform": null,
+                  "viewBox": "0 0 720 300"
+                }
+              ]
+            },
+            "font": {
+              "family": "\"Arial Narrow\", \"Liberation Sans Narrow\", Arial, sans-serif",
+              "size": "16px",
+              "weight": "400"
+            },
+            "localCssTransform": "none"
+          },
+          "fuelValue": {
+            "inkRect": {
+              "x": 1156.234375,
+              "y": 636.75,
+              "width": 33.03125,
+              "height": 16
+            },
+            "svgInkRect": {
+              "x": 594.9791870117188,
+              "y": 229,
+              "width": 44.04166793823242,
+              "height": 21.33333396911621
+            },
+            "inkNormalized": {
+              "x": 0.8263599537037037,
+              "y": 0.7633333333333333,
+              "width": 0.061168981481481484,
+              "height": 0.07111111111111111
+            },
+            "anchorNormalized": {
+              "x": 0.8569444444444444,
+              "y": 0.8166666666666667
+            },
+            "semanticGeometry": {
+              "self": {
+                "tag": "text",
+                "attributes": {
+                  "x": "617",
+                  "y": "245",
+                  "width": null,
+                  "height": null,
+                  "transform": null,
+                  "d": null,
+                  "points": null,
+                  "viewBox": null,
+                  "text-anchor": "middle",
+                  "dominant-baseline": null
+                }
+              },
+              "descendants": [],
+              "ancestors": [
+                {
+                  "tag": "svg",
+                  "transform": null,
+                  "viewBox": "0 0 720 300"
+                }
+              ]
+            },
+            "font": {
+              "family": "\"Arial Narrow\", \"Liberation Sans Narrow\", Arial, sans-serif",
+              "size": "19px",
+              "weight": "400"
+            },
+            "localCssTransform": "none"
+          },
+          "rpmValue": {
+            "inkRect": {
+              "x": 1165.15625,
+              "y": 657.25,
+              "width": 42.09375,
+              "height": 7
+            },
+            "svgInkRect": {
+              "x": 606.875,
+              "y": 256.3333435058594,
+              "width": 56.125,
+              "height": 9.333333969116211
+            },
+            "inkNormalized": {
+              "x": 0.8428819444444444,
+              "y": 0.8544444444444445,
+              "width": 0.07795138888888889,
+              "height": 0.03111111111111111
+            },
+            "anchorNormalized": {
+              "x": 0.9208333333333333,
+              "y": 0.8766666666666667
+            },
+            "semanticGeometry": {
+              "self": {
+                "tag": "text",
+                "attributes": {
+                  "x": "663",
+                  "y": "263",
+                  "width": null,
+                  "height": null,
+                  "transform": null,
+                  "d": null,
+                  "points": null,
+                  "viewBox": null,
+                  "text-anchor": "end",
+                  "dominant-baseline": null
+                }
+              },
+              "descendants": [],
+              "ancestors": [
+                {
+                  "tag": "svg",
+                  "transform": null,
+                  "viewBox": "0 0 720 300"
+                }
+              ]
+            },
+            "font": {
+              "family": "\"Arial Narrow\", \"Liberation Sans Narrow\", Arial, sans-serif",
+              "size": "9px",
+              "weight": "400"
+            },
+            "localCssTransform": "none"
+          },
+          "speedUnit": {
+            "inkRect": {
+              "x": 1053.859375,
+              "y": 612.5,
+              "width": 34.140625,
+              "height": 17
+            },
+            "svgInkRect": {
+              "x": 458.47918701171875,
+              "y": 196.6666717529297,
+              "width": 45.520835876464844,
+              "height": 22.666667938232422
+            },
+            "inkNormalized": {
+              "x": 0.6367766203703704,
+              "y": 0.6555555555555556,
+              "width": 0.06322337962962964,
+              "height": 0.07555555555555556
+            },
+            "anchorNormalized": {
+              "x": 0.7,
+              "y": 0.7133333333333334
+            },
+            "semanticGeometry": {
+              "self": {
+                "tag": "text",
+                "attributes": {
+                  "x": "504",
+                  "y": "214",
+                  "width": null,
+                  "height": null,
+                  "transform": null,
+                  "d": null,
+                  "points": null,
+                  "viewBox": null,
+                  "text-anchor": "end",
+                  "dominant-baseline": null
+                }
+              },
+              "descendants": [],
+              "ancestors": [
+                {
+                  "tag": "svg",
+                  "transform": null,
+                  "viewBox": "0 0 720 300"
+                }
+              ]
+            },
+            "font": {
+              "family": "\"Arial Narrow\", \"Liberation Sans Narrow\", Arial, sans-serif",
+              "size": "21px",
+              "weight": "400"
+            },
+            "localCssTransform": "none"
+          }
+        },
+        "cluster": {
+          "x": 710,
+          "y": 465,
+          "width": 540,
+          "height": 225
+        },
+        "dpr": 2,
+        "zoom": "0.75"
+      },
+      "compactLayout": {
+        "labelClearances": [
+          {
+            "text": "0",
+            "bandGap": 5.100312826510148,
+            "bezelGap": 9.10030807347318
+          },
+          {
+            "text": "1",
+            "bandGap": 3.162535106767031,
+            "bezelGap": 7.162533219369074
+          },
+          {
+            "text": "2",
+            "bandGap": 3.4120468150764864,
+            "bezelGap": 7.412061144555146
+          },
+          {
+            "text": "3",
+            "bandGap": 3.837670114625798,
+            "bezelGap": 7.837666871237161
+          },
+          {
+            "text": "4",
+            "bandGap": 4.234668917737096,
+            "bezelGap": 8.310925266085015
+          },
+          {
+            "text": "5",
+            "bandGap": 4.310924388164739,
+            "bezelGap": 8.310924644136826
+          },
+          {
+            "text": "6",
+            "bandGap": 3.837674304645276,
+            "bezelGap": 7.8376626812176795
+          },
+          {
+            "text": "7",
+            "bandGap": 3.4120462969861727,
+            "bezelGap": 7.412061662645449
+          },
+          {
+            "text": "8",
+            "bandGap": 3.162530654145307,
+            "bezelGap": 7.1625376719907905
+          },
+          {
+            "text": "9",
+            "bandGap": 5.100334080070397,
+            "bezelGap": 9.100286819912938
+          }
+        ],
+        "readouts": {
+          "speedDigits": {
+            "inkRect": {
+              "x": 995.9105224609375,
+              "y": 599.700439453125,
+              "width": 108.6705322265625,
+              "height": 47.24810791015625
+            },
+            "svgInkRect": {
+              "x": 0,
+              "y": 0,
+              "width": 207,
+              "height": 90
+            },
+            "inkNormalized": {
+              "x": 0.32777782801455085,
+              "y": 0.4266694568452381,
+              "width": 0.28750006459013683,
+              "height": 0.2999879867311508
+            },
+            "anchorNormalized": {
+              "x": 0.3277777800939935,
+              "y": 0.42666967474706685
+            },
+            "semanticGeometry": {
+              "self": {
+                "tag": "g",
+                "attributes": {
+                  "x": null,
+                  "y": null,
+                  "width": null,
+                  "height": null,
+                  "transform": "translate(236 128)",
+                  "d": null,
+                  "points": null,
+                  "viewBox": null,
+                  "text-anchor": null,
+                  "dominant-baseline": null
+                }
+              },
+              "descendants": [
+                {
+                  "tag": "g",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": "translate(0 0)",
+                    "d": null,
+                    "points": null,
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": null,
+                    "d": null,
+                    "points": "9,0 49,0 55,6 49,12 9,12 3,6",
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": null,
+                    "d": null,
+                    "points": "51,14 57,8 61,12 61,37 55,43 49,37",
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": null,
+                    "d": null,
+                    "points": "55,47 61,53 61,78 57,82 51,76 49,53",
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": null,
+                    "d": null,
+                    "points": "9,78 49,78 55,84 49,90 9,90 3,84",
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": null,
+                    "d": null,
+                    "points": "3,48 9,54 9,76 3,82 0,78 0,54",
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": null,
+                    "d": null,
+                    "points": "3,8 9,14 9,36 3,42 0,36 0,12",
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": null,
+                    "d": null,
+                    "points": "10,39 48,39 54,45 48,51 10,51 4,45",
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "g",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": "translate(73 0)",
+                    "d": null,
+                    "points": null,
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": null,
+                    "d": null,
+                    "points": "9,0 49,0 55,6 49,12 9,12 3,6",
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": null,
+                    "d": null,
+                    "points": "51,14 57,8 61,12 61,37 55,43 49,37",
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": null,
+                    "d": null,
+                    "points": "55,47 61,53 61,78 57,82 51,76 49,53",
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": null,
+                    "d": null,
+                    "points": "9,78 49,78 55,84 49,90 9,90 3,84",
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": null,
+                    "d": null,
+                    "points": "3,48 9,54 9,76 3,82 0,78 0,54",
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": null,
+                    "d": null,
+                    "points": "3,8 9,14 9,36 3,42 0,36 0,12",
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": null,
+                    "d": null,
+                    "points": "10,39 48,39 54,45 48,51 10,51 4,45",
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "g",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": "translate(146 0)",
+                    "d": null,
+                    "points": null,
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": null,
+                    "d": null,
+                    "points": "9,0 49,0 55,6 49,12 9,12 3,6",
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": null,
+                    "d": null,
+                    "points": "51,14 57,8 61,12 61,37 55,43 49,37",
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": null,
+                    "d": null,
+                    "points": "55,47 61,53 61,78 57,82 51,76 49,53",
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": null,
+                    "d": null,
+                    "points": "9,78 49,78 55,84 49,90 9,90 3,84",
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": null,
+                    "d": null,
+                    "points": "3,48 9,54 9,76 3,82 0,78 0,54",
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": null,
+                    "d": null,
+                    "points": "3,8 9,14 9,36 3,42 0,36 0,12",
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "x": null,
+                    "y": null,
+                    "width": null,
+                    "height": null,
+                    "transform": null,
+                    "d": null,
+                    "points": "10,39 48,39 54,45 48,51 10,51 4,45",
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                }
+              ],
+              "ancestors": [
+                {
+                  "tag": "svg",
+                  "transform": null,
+                  "viewBox": "0 0 720 300"
+                }
+              ]
+            },
+            "font": {
+              "family": "\"Arial Narrow\", \"Liberation Sans Narrow\", Arial, sans-serif",
+              "size": "16px",
+              "weight": "400"
+            },
+            "localCssTransform": "matrix(1, 0, 0, 1, 236, 128)"
+          },
+          "gearValue": {
+            "inkRect": {
+              "x": 931.5925903320312,
+              "y": 641.1229248046875,
+              "width": 13.140625,
+              "height": 26
+            },
+            "svgInkRect": {
+              "x": 113.4845962524414,
+              "y": 206.90318298339844,
+              "width": 25.030797958374023,
+              "height": 49.52585983276367
+            },
+            "inkNormalized": {
+              "x": 0.15761753467198544,
+              "y": 0.6896693638392857,
+              "width": 0.03476499524616593,
+              "height": 0.16507936507936508
+            },
+            "anchorNormalized": {
+              "x": 0.17500000123662357,
+              "y": 0.8166535564711113
+            },
+            "semanticGeometry": {
+              "self": {
+                "tag": "text",
+                "attributes": {
+                  "x": "126",
+                  "y": "245",
+                  "width": null,
+                  "height": null,
+                  "transform": null,
+                  "d": null,
+                  "points": null,
+                  "viewBox": null,
+                  "text-anchor": "middle",
+                  "dominant-baseline": null
+                }
+              },
+              "descendants": [],
+              "ancestors": [
+                {
+                  "tag": "svg",
+                  "transform": null,
+                  "viewBox": "0 0 720 300"
+                }
+              ]
+            },
+            "font": {
+              "family": "\"Arial Narrow\", \"Liberation Sans Narrow\", Arial, sans-serif",
+              "size": "45px",
+              "weight": "600"
+            },
+            "localCssTransform": "none"
+          },
+          "fuelSegments": {
+            "inkRect": {
+              "x": 1168.62841796875,
+              "y": 630.2542114257812,
+              "width": 48.822998046875,
+              "height": 9.3446044921875
+            },
+            "svgInkRect": {
+              "x": 565,
+              "y": 186.1999969482422,
+              "width": 93,
+              "height": 17.800003051757812
+            },
+            "inkNormalized": {
+              "x": 0.7847223657558596,
+              "y": 0.6206616598462301,
+              "width": 0.1291667097267579,
+              "height": 0.05933082217261905
+            },
+            "anchorNormalized": {
+              "x": 0,
+              "y": 0.000020641749821902882
+            },
+            "semanticGeometry": {
+              "self": {
+                "tag": "g",
+                "attributes": {
+                  "x": null,
+                  "y": null,
+                  "width": null,
+                  "height": null,
+                  "transform": null,
+                  "d": null,
+                  "points": null,
+                  "viewBox": null,
+                  "text-anchor": null,
+                  "dominant-baseline": null
+                }
+              },
+              "descendants": [
+                {
+                  "tag": "rect",
+                  "attributes": {
+                    "x": "565",
+                    "y": "189",
+                    "width": "9",
+                    "height": "15",
+                    "transform": null,
+                    "d": null,
+                    "points": null,
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "rect",
+                  "attributes": {
+                    "x": "577",
+                    "y": "188.6",
+                    "width": "9",
+                    "height": "15.4",
+                    "transform": null,
+                    "d": null,
+                    "points": null,
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "rect",
+                  "attributes": {
+                    "x": "589",
+                    "y": "188.2",
+                    "width": "9",
+                    "height": "15.8",
+                    "transform": null,
+                    "d": null,
+                    "points": null,
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "rect",
+                  "attributes": {
+                    "x": "601",
+                    "y": "187.8",
+                    "width": "9",
+                    "height": "16.2",
+                    "transform": null,
+                    "d": null,
+                    "points": null,
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "rect",
+                  "attributes": {
+                    "x": "613",
+                    "y": "187.4",
+                    "width": "9",
+                    "height": "16.6",
+                    "transform": null,
+                    "d": null,
+                    "points": null,
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "rect",
+                  "attributes": {
+                    "x": "625",
+                    "y": "187",
+                    "width": "9",
+                    "height": "17",
+                    "transform": null,
+                    "d": null,
+                    "points": null,
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "rect",
+                  "attributes": {
+                    "x": "637",
+                    "y": "186.6",
+                    "width": "9",
+                    "height": "17.4",
+                    "transform": null,
+                    "d": null,
+                    "points": null,
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "rect",
+                  "attributes": {
+                    "x": "649",
+                    "y": "186.2",
+                    "width": "9",
+                    "height": "17.8",
+                    "transform": null,
+                    "d": null,
+                    "points": null,
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                }
+              ],
+              "ancestors": [
+                {
+                  "tag": "svg",
+                  "transform": null,
+                  "viewBox": "0 0 720 300"
+                }
+              ]
+            },
+            "font": {
+              "family": "\"Arial Narrow\", \"Liberation Sans Narrow\", Arial, sans-serif",
+              "size": "16px",
+              "weight": "400"
+            },
+            "localCssTransform": "none"
+          },
+          "fuelValue": {
+            "inkRect": {
+              "x": 1184.37255859375,
+              "y": 653.1229248046875,
+              "width": 23.109375,
+              "height": 11
+            },
+            "svgInkRect": {
+              "x": 594.9901733398438,
+              "y": 229.76126098632812,
+              "width": 44.01968002319336,
+              "height": 20.9532470703125
+            },
+            "inkNormalized": {
+              "x": 0.8263752531933364,
+              "y": 0.7658598400297619,
+              "width": 0.06113843991567112,
+              "height": 0.06984126984126984
+            },
+            "anchorNormalized": {
+              "x": 0.856944450499975,
+              "y": 0.8166535564711113
+            },
+            "semanticGeometry": {
+              "self": {
+                "tag": "text",
+                "attributes": {
+                  "x": "617",
+                  "y": "245",
+                  "width": null,
+                  "height": null,
+                  "transform": null,
+                  "d": null,
+                  "points": null,
+                  "viewBox": null,
+                  "text-anchor": "middle",
+                  "dominant-baseline": null
+                }
+              },
+              "descendants": [],
+              "ancestors": [
+                {
+                  "tag": "svg",
+                  "transform": null,
+                  "viewBox": "0 0 720 300"
+                }
+              ]
+            },
+            "font": {
+              "family": "\"Arial Narrow\", \"Liberation Sans Narrow\", Arial, sans-serif",
+              "size": "19px",
+              "weight": "400"
+            },
+            "localCssTransform": "none"
+          },
+          "rpmValue": {
+            "inkRect": {
+              "x": 1190.638671875,
+              "y": 666.5725708007812,
+              "width": 29.4375,
+              "height": 6
+            },
+            "svgInkRect": {
+              "x": 606.92626953125,
+              "y": 255.38064575195312,
+              "width": 56.07374954223633,
+              "height": 11.429044723510742
+            },
+            "inkNormalized": {
+              "x": 0.8429529577115457,
+              "y": 0.8512544177827381,
+              "width": 0.07788020338142285,
+              "height": 0.0380952380952381
+            },
+            "anchorNormalized": {
+              "x": 0.9208333398403294,
+              "y": 0.8766510767363487
+            },
+            "semanticGeometry": {
+              "self": {
+                "tag": "text",
+                "attributes": {
+                  "x": "663",
+                  "y": "263",
+                  "width": null,
+                  "height": null,
+                  "transform": null,
+                  "d": null,
+                  "points": null,
+                  "viewBox": null,
+                  "text-anchor": "end",
+                  "dominant-baseline": null
+                }
+              },
+              "descendants": [],
+              "ancestors": [
+                {
+                  "tag": "svg",
+                  "transform": null,
+                  "viewBox": "0 0 720 300"
+                }
+              ]
+            },
+            "font": {
+              "family": "\"Arial Narrow\", \"Liberation Sans Narrow\", Arial, sans-serif",
+              "size": "9px",
+              "weight": "400"
+            },
+            "localCssTransform": "none"
+          },
+          "speedUnit": {
+            "inkRect": {
+              "x": 1112.729736328125,
+              "y": 635.8486328125,
+              "width": 23.875,
+              "height": 12
+            },
+            "svgInkRect": {
+              "x": 458.52191162109375,
+              "y": 196.85643005371094,
+              "width": 45.47807312011719,
+              "height": 22.858089447021484
+            },
+            "inkNormalized": {
+              "x": 0.6368361425736845,
+              "y": 0.6561817956349206,
+              "width": 0.06316398660658923,
+              "height": 0.0761904761904762
+            },
+            "anchorNormalized": {
+              "x": 0.700000004946495,
+              "y": 0.7133244937920912
+            },
+            "semanticGeometry": {
+              "self": {
+                "tag": "text",
+                "attributes": {
+                  "x": "504",
+                  "y": "214",
+                  "width": null,
+                  "height": null,
+                  "transform": null,
+                  "d": null,
+                  "points": null,
+                  "viewBox": null,
+                  "text-anchor": "end",
+                  "dominant-baseline": null
+                }
+              },
+              "descendants": [],
+              "ancestors": [
+                {
+                  "tag": "svg",
+                  "transform": null,
+                  "viewBox": "0 0 720 300"
+                }
+              ]
+            },
+            "font": {
+              "family": "\"Arial Narrow\", \"Liberation Sans Narrow\", Arial, sans-serif",
+              "size": "21px",
+              "weight": "400"
+            },
+            "localCssTransform": "none"
+          }
+        },
+        "cluster": {
+          "x": 872.015625,
+          "y": 532.5,
+          "width": 377.984375,
+          "height": 157.5
+        },
+        "dpr": 2,
+        "zoom": "0.525"
+      },
+      "diagnostics": {
+        "speedDigits": {
+          "inkNormalizedDelta": {
+            "x": 5.023677307480767e-8,
+            "y": 0.0000027901785714101734,
+            "width": 6.459013685011783e-8,
+            "height": -0.000012013268849198067
+          },
+          "anchorResidualDevicePixels": {
+            "x": 0.0000017509867019909614,
+            "y": 0.0009475453260496258
+          }
+        },
+        "gearValue": {
+          "inkNormalizedDelta": {
+            "x": 0.000007580968281739597,
+            "y": 0.006336030505952328,
+            "width": -0.00042018993901925955,
+            "height": -0.003809523809523818
+          },
+          "anchorResidualDevicePixels": {
+            "x": 9.348487829859142e-7,
+            "y": -0.004129711599947239
+          }
+        },
+        "fuelSegments": {
+          "inkNormalizedDelta": {
+            "x": 1.4353363742003467e-7,
+            "y": -0.00000511532738101117,
+            "width": 4.306009121490817e-8,
+            "height": -0.000002402653769842389
+          },
+          "anchorResidualDevicePixels": {
+            "x": 0,
+            "y": 0.006502151193899408
+          }
+        },
+        "fuelValue": {
+          "inkNormalizedDelta": {
+            "x": 0.000015299489632636387,
+            "y": 0.002526506696428621,
+            "width": -0.00003054156581036582,
+            "height": -0.001269841269841268
+          },
+          "anchorResidualDevicePixels": {
+            "x": 0.000004577791922828062,
+            "y": -0.004129711599947239
+          }
+        },
+        "rpmValue": {
+          "inkNormalizedDelta": {
+            "x": 0.00007101326710123868,
+            "y": -0.0031900266617063133,
+            "width": -0.0000711855074660428,
+            "height": 0.0069841269841269885
+          },
+          "anchorResidualDevicePixels": {
+            "x": 0.0000049190857564392065,
+            "y": -0.004910828050178617
+          }
+        },
+        "speedUnit": {
+          "inkNormalizedDelta": {
+            "x": 0.000059522203314066324,
+            "y": 0.0006262400793650702,
+            "width": -0.00005939302304040772,
+            "height": 0.000634920634920641
+          },
+          "anchorResidualDevicePixels": {
+            "x": 0.000003739395635520004,
+            "y": -0.0027844554912931363
+          }
+        }
+      },
+      "invariant": "SVG anchors, descendant geometry, font settings and local transforms stay exact; screen anchors and containment allow one device pixel for rendering quantization. Text ink metrics are diagnostic, not anchor invariants."
     }
   ],
-  "errors": []
+  "errors": [],
+  "comparisonBaseline": {
+    "head": "8b783d080511ad5b49939f7f6603bd5d86e9a659",
+    "sourceRun": 37255610983,
+    "note": "Actual historical Chromium captures; compare with this run metric and compact captures. Current PNGs remain marked historical in docs until reviewed."
+  }
 }

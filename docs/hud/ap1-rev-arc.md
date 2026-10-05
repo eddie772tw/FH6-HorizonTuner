@@ -1,6 +1,6 @@
 # AP1 Rev Arc：1999 Honda S2000 AP1 儀表原型
 
-> 弧度修訂中：使用者指出上方 RPM 弧表與外框曲率不一致。本輪共享曲線已實作，待新 CI 截圖與像素複查；本文以下的既有預覽與遠端證據仍屬修正前版本。其餘讀值區域暫時保留，不代表使用者已最終核准整個樣式。
+> 弧度修訂已完成遠端 renderer／launcher 與技術像素複查，正在等使用者 review；本頁預覽已替換為共享曲線修訂後的實際截圖。這不代表使用者已核准整個樣式，Windows／真實遊戲驗收仍保留。
 
 ## 原型與來源
 
@@ -21,6 +21,16 @@
 - **取捨**：不加入沒有可靠遙測的水溫、油溫、機油警示、里程表、方向燈或 OEM 商標
 
 標準 HUDCore 比例下，720 × 300 的設計面積顯示為 540 × 225 CSS px。沿用共用右下角 flex 容器與 30px 邊界；這個槽位假設用來**取代遊戲原生右下角儀表**。若同時顯示原生儀表，必須由玩家調整 HUD 比例或遊戲顯示設定。外殼以外保持透明，不宣稱適合每種遊戲 UI 配置。
+
+## 上方弧度修正
+
+原版 RPM 色帶採獨立拋物線、垂直厚度與垂直字標位移，框線則是非對稱 Bézier。原始取樣的內框間距約18.9–41.9設計單位，導致使用者指出的曲率失真；先前像素檢查沒有識別此結構問題。
+
+目前由 `arc-geometry.js` 定義一條低寬橢圓弧，色帶兩緣、刻度中心、內框和外框共用 unit normal offsets。分段沿色帶中心線等弧長取樣；厚度18、色帶上緣至內框間距36、框線寬10，包含兩端皆保持同一構造。Inkscape 原創 fascia 由相同幾何重新匯出。速度／檔位／燃油及其餘讀值 anchor、容器尺寸和遙測契約維持不變。
+
+![相同viewport裁切，左為修正前，右為共享曲線修訂](../assets/ap1-rev-arc/before-after.png)
+
+縮放驗證也已修正測試語意：gear 的 ink-bbox 正規化 y 在 DPR1／DPR2 分別差0.004431／0.006336，但 SVG anchor／font／局部 transform 完全相同，全部讀值的最大 screen-anchor residual 只有0.006503 device pixel。這些實測說明先前失敗是把字形範圍誤當成 anchor invariant，並非讀值位置移動。新測試保留 ink 差異診斷，另驗證語意幾何、螢幕 anchor、容納與兩端字標。
 
 ## 資料契約與生命週期
 
@@ -48,6 +58,7 @@
 重製外殼：
 
 ```sh
+node hud_overlay/ap1_rev_arc/tests/visual/export-fascia.mjs
 inkscape hud_overlay/ap1_rev_arc/assets/fascia.svg --export-type=png --export-filename=hud_overlay/ap1_rev_arc/assets/fascia.png --export-width=1440 --export-background-opacity=0
 magick hud_overlay/ap1_rev_arc/assets/fascia.png -strip -define png:compression-level=9 hud_overlay/ap1_rev_arc/assets/fascia.png
 ```
@@ -56,24 +67,26 @@ magick hud_overlay/ap1_rev_arc/assets/fascia.png -strip -define png:compression-
 
 使用技能：`halfmoon-design-system`、`telemetry-udp-protocol`、`pr-author-maintainer`。未修改 backend、共用生命週期或協定，沒有第三方產品相依新增。
 
-- Style-owned Vitest：34 項純資料／行為測試；涵蓋單位、R/N、空值、NaN、Infinity、速度超界、燃油、適應刻度、重播 timestamp、恢復、設定與 destroy
-- 完整 `pnpm -C frontend test`：157 個檔案通過／1 個略過，1139 個測試通過／1 個略過；`pnpm -C frontend build:web-hud` 與 `git diff --check` 通過。已確認 dist 包含新 HUD 且排除 tests
+- Style-owned Vitest：39 項純資料／行為測試；涵蓋單位、R/N、空值、NaN、Infinity、速度超界、燃油、適應刻度、重播 timestamp、恢復、設定與 destroy
+- 完整 `pnpm -C frontend test`：158 個檔案通過／1 個略過，1144 個測試通過／1 個略過；`pnpm -C frontend build:web-hud` 與 `git diff --check` 通過。已確認 dist 包含新 HUD 且排除 tests
 - 本地 Chromium 程序被執行環境的 UNIX socket `EPERM` 阻擋；require_escalated 亦相同。雲端瀏覽器至本地 fixture URL 遭 `ERR_BLOCKED_BY_CLIENT`，沒有改用其他 hostname 迴避
-- **遠端 Chromium 視覺與實際 launcher／Coordinator 檢查已通過**：Linux Chrome 154.0.8037.57、sandbox 啟用，驗證 head `8b783d080511ad5b49939f7f6603bd5d86e9a659`。[CI run 37255610983](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37255610983)／[artifact 11322980570](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37255610983/artifacts/11322980570)
-- 已獨立目視 DPR2 細節、十種狀態、720p／1440p 全幅與 launcher 倒車重連圖片：沒有發現裁切或文字重疊；不需變更 runtime。完整專案 CI 在此紀錄更新時仍執行中，應另看 PR checks，不能以視覺 job 取代全部 gate
+- **遠端 Chromium 視覺與實際 launcher／Coordinator 檢查已通過**：GitHub Actions Linux Chrome、sandbox 啟用，驗證 head `662d93432243ff0d18d758651ae208436722a24a`。[CI run 37258259085](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37258259085)／[artifact 11323397245](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37258259085/artifacts/11323397245)
+- 本輪已獨立目視 default／compact 的 DPR2 細節、十種狀態、720p 全幅及相同 viewport 的修正前後對照；上方色帶與框線在兩端也一致，沒有發現新增裁切或重疊。技術複查不代表使用者已核准。完整專案 CI 在此紀錄更新時仍執行中，應另看 PR checks，不能以視覺 job 取代全部 gate
 - Windows 原生透明 overlay、滑鼠穿透、真實 Forza 遊戲畫面與遊戲內安全區仍須平台實測
 
 ### 實際瀏覽器預覽與證據
 
 ![AP1 Rev Arc：實際 DPR2 Chromium 截圖細節](../assets/ap1-rev-arc/detail-metric.png)
 
+![AP1 Rev Arc：70% compact的實際DPR2截圖](../assets/ap1-rev-arc/detail-compact.png)
+
 ![AP1 Rev Arc：十種實際遙測與錯誤狀態](../assets/ap1-rev-arc/states.png)
 
-[720p 全幅透明 screenshot](../assets/ap1-rev-arc/metric-1280x720.png) 顯示預設右下位置。細節圖只裁切透明邊界；狀態 contact sheet 以實際截圖裁切後加標籤與深色檢視背景。三張 PNG 僅作無損壓縮，ImageMagick AE 比較均為 0。不是美術 mockup，也沒有遊戲背景。
+[720p 全幅透明 screenshot](../assets/ap1-rev-arc/metric-1280x720.png) 顯示預設右下位置。細節圖只裁切透明邊界；狀態 contact sheet 以實際截圖裁切後加標籤與深色檢視背景。hero／compact／full720p PNG 僅作無損壓縮，ImageMagick AE 比較均為 0。不是美術 mockup，也沒有遊戲背景。
 
-- [視覺／viewport 自動檢查](../assets/ap1-rev-arc/visual-evidence.json)：三種解析度、DPR2、單位、R/N、紅線、缺值、錯誤、暫停、斷線、重連、resize、配色與 destroy，errors 為空
+- [視覺／viewport 自動檢查](../assets/ap1-rev-arc/visual-evidence.json)：三種解析度、default／compact 的 DPR1／DPR2、單位、R/N、紅線、缺值、錯誤、暫停、斷線、重連、resize、配色與 destroy，errors 為空
 - [實際 launcher／Coordinator audit](../assets/ap1-rev-arc/launcher/host-audit.json)：含 smoothing 持續重播下的 signal loss、倒車重連、英制、顯隱、reload 與 destroy；errors 與 missing 均為空，頁面背景為透明
-- [研究、像素檢查與 artifact 來源](../assets/ap1-rev-arc/review-evidence.json)：記錄瀏覽器版本、head、CI 來源與限制。JSON 保留完整 artifact 的 screenshot 名稱；repo 僅收錄精選三張，其餘可從該 artifact 取得
+- [研究、像素檢查與 artifact 來源](../assets/ap1-rev-arc/review-evidence.json)：記錄瀏覽器版本、head、CI 來源與限制。JSON 保留完整 artifact 的 screenshot 名稱；repo 僅收錄精選預覽，其餘可從該 artifact 取得
 
 ### 可重製瀏覽器檢查
 

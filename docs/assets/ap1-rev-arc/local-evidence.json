@@ -6,11 +6,11 @@
   "reference_url": "https://www.honda.co.jp/factbook/auto/s2000/199904/image/037_001.gif",
   "product_code_test_gate": {
     "command": "pnpm -C frontend test",
-    "files_passed": 157,
+    "files_passed": 158,
     "files_skipped": 1,
-    "tests_passed": 1139,
+    "tests_passed": 1144,
     "tests_skipped": 1,
-    "style_cases": 34
+    "style_cases": 39
   },
   "build": {
     "command": "pnpm -C frontend build:web-hud",
@@ -30,8 +30,8 @@
     ],
     "channels": "RGBA",
     "corner_alpha": 0,
-    "bytes": 47491,
-    "pixel_review": "exported fascia viewed; not an actual browser HUD screenshot"
+    "bytes": 51509,
+    "pixel_review": "Shared-curve fascia exported with Inkscape and verified in actual remote browser captures"
   },
   "local_browser_review": {
     "result": "blocked",
@@ -44,8 +44,8 @@
   "base_commit": "a9335b158e658faa86bcfcbe4d36beb602f6c9c7",
   "dependency_install": "pnpm install --frozen-lockfile (passed on pinned base)",
   "remote_browser_review": {
-    "result": "passed",
+    "result": "passed technical review; user review pending",
     "evidence": "review-evidence.json",
-    "reviewed_head": "8b783d080511ad5b49939f7f6603bd5d86e9a659"
+    "reviewed_head": "662d93432243ff0d18d758651ae208436722a24a"
   }
 }
