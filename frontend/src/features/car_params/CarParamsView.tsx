@@ -317,7 +317,7 @@ const CarParamsView: React.FC<CarParamsViewProps> = ({ subTab: propSubTab, setSu
               </h2>
               {renderSaveStatus()}
               <div 
-                className="position-relative d-inline-block"
+                className="position-relative d-inline-flex"
                 onClick={() => setShowCalibPopover(prev => !prev)}
                 onMouseEnter={() => setShowCalibPopover(true)}
                 onMouseLeave={() => setShowCalibPopover(false)}

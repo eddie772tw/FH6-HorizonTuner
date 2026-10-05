@@ -202,8 +202,9 @@ const CustomCSSEditorPanel: React.FC = () => {
 
         <div className="d-flex flex-wrap gap-2">
           <span
+            className="d-inline-flex"
             title={isSaving ? t("Export is currently in progress") : undefined}
-            style={isSaving ? { display: 'inline-block', cursor: 'not-allowed' } : undefined}
+            style={isSaving ? { cursor: 'not-allowed' } : undefined}
           >
             <button
               type="button"

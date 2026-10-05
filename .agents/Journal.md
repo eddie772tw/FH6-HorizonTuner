@@ -1,5 +1,13 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-10-05 / 賽事紀錄與跨頁排版巡檢（Codex as Codex）
+
+- **來源／狀態**：`local`／`verified`；PR #481 使用者回報賽事頁尺寸、對齊與無法捲動。
+- **Learning**：AppShell 的 `overflow-hidden` 需要各工作區提供有界捲動容器。只移除 AnalysisView 的固定高度，會使分析與 Road library 一同被外層裁切；應在 SessionsWorkspace 統一承接捲動。行內 tooltip 包裝也會產生文字基線空間，包住按鈕時使用 `inline-flex`。
+- **Action**：賽事工具列分為狀態、選擇／分析與檔案操作；摘要卡片以 subgrid 對齊標題、徽章與數值區，圖表依寬度切換單／雙欄。補齊直線加速的共用按鈕與表面 token、修正 tooltip 包裝，手機設定抽屜使用全寬。
+- **Evidence**：既有 MoTeC 測試 CSV 透過 UI 匯入；320px 賽事工作區可捲至 Road 區底部，桌面同樣能抵達頁尾，兩者無水平溢出。1440px 四張摘要卡片的標題、徽章與數值區起點各自一致。即時、直線加速、調校第 1–3 步、HUD 及六種應用程式面板完成排版巡檢；第 4 步保留量測門檻，未以假資料繞過。Vitest 1,118 passed／1 skipped、frontend build 與 `git diff --check` 通過。
+- **Skills**：`ponytail`（full）、`halfmoon-design-system`、`huge-component-refactoring`、`pr-author-maintainer`、`pr-review-evaluation`。
+
 ## 2026-10-05 / 全站主題與分頁規則收攏（Codex as Codex）
 
 - **來源／狀態**：`local`／`verified`；依 PR #481 使用者回饋補齊跨頁一致性，遠端 Checks 按新提交另核對。

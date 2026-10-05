@@ -103,7 +103,7 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
             tabIndex={!hasCoreParams ? 0 : undefined}
             role={!hasCoreParams ? 'group' : undefined}
             aria-label={!hasCoreParams ? t('Please set basic vehicle parameters in Step 1 to proceed.') : undefined}
-            style={{ display: 'inline-block', cursor: !hasCoreParams ? 'not-allowed' : 'auto' }}
+            style={{ display: 'inline-flex', cursor: !hasCoreParams ? 'not-allowed' : 'auto' }}
           >
             <button
               type="button"

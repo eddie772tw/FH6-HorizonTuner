@@ -29,17 +29,6 @@ export interface AnalysisSessionToolbarProps {
   readonly onLatestAnalysis: () => void;
 }
 
-const selectStyle: React.CSSProperties = {
-  background: "var(--surface-1)",
-  color: "var(--text-primary)",
-  border: "1px solid var(--glass-border)",
-  padding: "0.4rem 0.6rem",
-  borderRadius: "4px",
-  fontSize: "0.85rem",
-  cursor: "pointer",
-  minWidth: "130px",
-};
-
 const AnalysisSessionToolbar: React.FC<AnalysisSessionToolbarProps> = ({
   t,
   isRecording,
@@ -67,8 +56,8 @@ const AnalysisSessionToolbar: React.FC<AnalysisSessionToolbarProps> = ({
   onLatestAnalysis,
 }) => (
   <>
-    <div className="workspace-toolbar" style={{ flexShrink: 0 }}>
-      <div style={{ minWidth: 0, overflowWrap: "anywhere" }}>
+    <div className="workspace-toolbar analysis-toolbar">
+      <div className="analysis-toolbar__status" role="status">
         <div style={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>
           {t("Status")}: {isRecording ? (
             <span className="text-danger fw-bold">
@@ -82,12 +71,12 @@ const AnalysisSessionToolbar: React.FC<AnalysisSessionToolbarProps> = ({
         </div>
       </div>
 
-      <div style={{ display: "flex", gap: "0.5rem", alignItems: "end", flexWrap: "wrap", minWidth: 0 }}>
-        <div style={{ display: "flex", flexDirection: "column", gap: "0.2rem" }}>
+      <div className="analysis-toolbar__selectors">
+        <label className="analysis-toolbar__session">
           <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>
             {t("Select Session")}:
           </span>
-          <select value={selectedFilename} onChange={event => onSelectSession(event.target.value)} style={selectStyle}>
+          <select className="form-select" value={selectedFilename} onChange={event => onSelectSession(event.target.value)}>
             <option value="current">{t("Current / Latest Session")}</option>
             {savedSessions.map(session => (
               <option key={session.filename} value={session.filename}>
@@ -96,12 +85,12 @@ const AnalysisSessionToolbar: React.FC<AnalysisSessionToolbarProps> = ({
               </option>
             ))}
           </select>
-        </div>
+        </label>
 
         {lapsList.length > 0 && (
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.2rem" }}>
+          <label>
             <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>{t("Primary Lap")}:</span>
-            <select value={primaryLap} onChange={event => onSelectPrimaryLap(parseInt(event.target.value, 10))} style={selectStyle}>
+            <select className="form-select" value={primaryLap} onChange={event => onSelectPrimaryLap(parseInt(event.target.value, 10))}>
               <option value={0}>{t("All Laps")}</option>
               {lapsList.map(lap => (
                 <option key={lap.lap_number} value={lap.lap_number}>
@@ -109,13 +98,13 @@ const AnalysisSessionToolbar: React.FC<AnalysisSessionToolbarProps> = ({
                 </option>
               ))}
             </select>
-          </div>
+          </label>
         )}
 
         {lapsList.length > 0 && (
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.2rem" }}>
+          <label>
             <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>{t("Compare Lap")}:</span>
-            <select value={compareLap} onChange={event => onSelectCompareLap(parseInt(event.target.value, 10))} style={selectStyle}>
+            <select className="form-select" value={compareLap} onChange={event => onSelectCompareLap(parseInt(event.target.value, 10))}>
               <option value={-1}>{t("None")}</option>
               {lapsList.map(lap => (
                 <option key={lap.lap_number} value={lap.lap_number}>
@@ -123,40 +112,42 @@ const AnalysisSessionToolbar: React.FC<AnalysisSessionToolbarProps> = ({
                 </option>
               ))}
             </select>
-          </div>
+          </label>
         )}
 
-        <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-          <button type="button" onClick={onLatestAnalysis} className="btn btn-sm btn-outline-secondary">
-            {t('Post-Race Analysis')}
+        <button type="button" onClick={onLatestAnalysis} className="btn btn-primary">
+          {t('Post-Race Analysis')}
+        </button>
+      </div>
+      <div className="analysis-toolbar__actions">
+        {getRuntimeCapabilities().localMotecLaunch && (
+          <button onClick={onOpenInMoTec} className="btn btn-outline-secondary" title={t("Launch session in local MoTeC i2 viewer")}>
+            {t("Open in MoTeC")}
           </button>
-          {getRuntimeCapabilities().localMotecLaunch && (
-            <button onClick={onOpenInMoTec} className="btn btn-sm btn-success" title={t("Launch session in local MoTeC i2 viewer")}>
-              {t("Open in MoTeC")}
-            </button>
-          )}
-          <span
-            title={isExporting ? t("Export is currently in progress") : undefined}
-            style={isExporting ? { display: 'inline-block', cursor: 'not-allowed' } : undefined}
-          >
-            <button onClick={onExportMoTec} disabled={isExporting} className="btn btn-sm btn-secondary" style={isExporting ? { pointerEvents: 'none' } : undefined}>
-              MoTeC CSV {t("Export")}
-            </button>
-          </span>
-          <input ref={fileInputRef} type="file" accept=".csv" style={{ display: "none" }} onChange={onImportFile} />
-          <button onClick={onOpenImport} className="btn btn-sm btn-primary" title={t("Import MoTeC CSV for analysis")}>
-            MoTeC CSV {t("Import")}
+        )}
+        <span
+          className="d-inline-flex"
+          title={isExporting ? t("Export is currently in progress") : undefined}
+          style={isExporting ? { cursor: 'not-allowed' } : undefined}
+        >
+          <button onClick={onExportMoTec} disabled={isExporting} className="btn btn-outline-secondary" style={isExporting ? { pointerEvents: 'none' } : undefined}>
+            MoTeC CSV {t("Export")}
           </button>
-          <span
-            title={isExporting ? t("Export is currently in progress") : t("Download pre-configured HorizonTuner MoTeC i2 workspace template")}
-            style={isExporting ? { display: 'inline-block', cursor: 'not-allowed' } : undefined}
-          >
-            <button onClick={onDownloadTemplate} disabled={isExporting} className="btn btn-sm btn-info" style={isExporting ? { pointerEvents: 'none' } : undefined}>
-              {t("Workspace Template")}
-            </button>
-          </span>
-          {isSavedSelection && <button onClick={onDeleteSession} className="btn btn-sm btn-danger">{t("Delete")}</button>}
-        </div>
+        </span>
+        <input ref={fileInputRef} type="file" accept=".csv" style={{ display: "none" }} onChange={onImportFile} />
+        <button onClick={onOpenImport} className="btn btn-outline-secondary" title={t("Import MoTeC CSV for analysis")}>
+          MoTeC CSV {t("Import")}
+        </button>
+        <span
+          className="d-inline-flex"
+          title={isExporting ? t("Export is currently in progress") : t("Download pre-configured HorizonTuner MoTeC i2 workspace template")}
+          style={isExporting ? { cursor: 'not-allowed' } : undefined}
+        >
+          <button onClick={onDownloadTemplate} disabled={isExporting} className="btn btn-outline-secondary" style={isExporting ? { pointerEvents: 'none' } : undefined}>
+            {t("Workspace Template")}
+          </button>
+        </span>
+        {isSavedSelection && <button onClick={onDeleteSession} className="btn btn-outline-danger">{t("Delete")}</button>}
       </div>
     </div>
 

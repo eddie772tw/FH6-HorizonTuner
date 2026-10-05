@@ -300,8 +300,8 @@ const LapDeltaCanvas: React.FC<LapDeltaCanvasProps> = ({
       }}
     >
       {/* Header with Legend & Hover Info */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.4rem" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "0.8rem" }}>
+      <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+        <div className="d-flex align-items-center flex-wrap gap-2">
           <span style={{ fontWeight: "bold", color: "var(--text-primary)", fontSize: "0.95rem" }}>
             {t("Speed & Input Delta")}
           </span>

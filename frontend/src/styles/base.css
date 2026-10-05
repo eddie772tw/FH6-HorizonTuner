@@ -1,4 +1,30 @@
-/* Swiss Micro-typography & Numeric Alignment Utilities */
+/* Session selection, actions and charts share a responsive layout. */
+.sessions-workspace { flex: 1; min-height: 0; overflow: auto; scrollbar-gutter: stable; }
+.sessions-workspace > * + * { margin-top: 16px; }
+.analysis-view { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.analysis-toolbar.workspace-toolbar { display: grid; gap: 12px; flex-shrink: 0; }
+.analysis-toolbar__status { min-width: 0; overflow-wrap: anywhere; }
+.analysis-toolbar__selectors { display: flex; align-items: end; flex-wrap: wrap; gap: 8px; }
+.analysis-toolbar__selectors label { display: flex; flex-direction: column; gap: 4px; flex: 1 1 12rem; min-width: 0; max-width: 24rem; }
+.analysis-toolbar__selectors .analysis-toolbar__session { flex-basis: 20rem; max-width: 32rem; }
+.analysis-toolbar :is(.btn, .form-select) { min-height: 2.5rem; font-size: 0.875rem; }
+.analysis-toolbar__actions { display: flex; align-items: stretch; flex-wrap: wrap; gap: 8px; }
+.analysis-toolbar__actions .btn { width: 100%; white-space: normal; }
+.analysis-toolbar__actions > .btn { width: auto; }
+.analysis-empty-state { display: flex; justify-content: center; align-items: center; min-height: 12rem; color: var(--text-secondary); text-align: center; }
+.analysis-charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 28rem), 1fr)); gap: 16px; }
+.analysis-summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr)); gap: 16px; }
+.analysis-summary-card { display: grid; grid-template-rows: subgrid; grid-row: span 2; gap: 12px; min-width: 0; }
+.analysis-summary-card__header { display: flex; flex-direction: column; align-items: start; justify-content: space-between; gap: 8px; }
+.analysis-summary-card .badge { max-width: 100%; white-space: normal; }
+@media (max-width: 575.98px) {
+  .analysis-toolbar__selectors label { flex-basis: 100%; max-width: none; }
+  .analysis-toolbar__selectors > .btn { width: 100%; }
+  .analysis-toolbar__actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .analysis-toolbar__actions > .btn { width: 100%; }
+}
+
+/* Numeric alignment stays stable across live updates and all themes. */
 .font-tabular,
 body,
 .telemetry-steer-gauge__readout,

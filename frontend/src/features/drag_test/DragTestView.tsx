@@ -342,7 +342,7 @@ const DragTestView: React.FC = () => {
           {status === 'idle' && (
             <div className="d-flex align-items-center gap-2">
               <div 
-                className="position-relative d-inline-block"
+                className="position-relative d-inline-flex"
                 onClick={() => setShowDragPopover(prev => !prev)}
                 onMouseEnter={() => setShowDragPopover(true)}
                 onMouseLeave={() => setShowDragPopover(false)}
@@ -408,7 +408,7 @@ const DragTestView: React.FC = () => {
                 )}
               </div>
 
-              <button className="btn-primary" onClick={handlePrepare} style={{ padding: '0.6rem 1.4rem', fontWeight: 600, borderRadius: '6px', cursor: 'pointer' }}>
+              <button className="btn btn-primary" onClick={handlePrepare}>
                 {t("Start Test")}
               </button>
             </div>
@@ -419,7 +419,7 @@ const DragTestView: React.FC = () => {
               <span className="pulse-text" style={{ color: '#ffcc00', fontWeight: 700, fontSize: '0.9rem' }}>
                 {t("Waiting for Launch...")}
               </span>
-              <button className="btn-secondary" onClick={handleClear} style={{ padding: '0.5rem 1rem', borderRadius: '6px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', color: 'white', cursor: 'pointer' }}>
+              <button className="btn btn-outline-secondary" onClick={handleClear}>
                 {t("Cancel")}
               </button>
             </div>
@@ -442,30 +442,28 @@ const DragTestView: React.FC = () => {
           {status === 'finished' && (
             <div className="drag-test-actions">
               <span
+                className="d-inline-flex"
                 title={isSaving ? t("Saving data in progress...") : undefined}
                 tabIndex={isSaving ? 0 : undefined}
                 role={isSaving ? "group" : undefined}
                 aria-label={isSaving ? t("Saving data in progress...") : undefined}
-                style={isSaving ? { cursor: 'not-allowed', display: 'inline-block' } : {}}
+                style={isSaving ? { cursor: 'not-allowed' } : {}}
               >
                 <button
-                  className="btn-primary"
+                  className="btn btn-primary"
                   onClick={handleSaveSession}
                   disabled={isSaving}
                   style={{
-                    padding: '0.6rem 1.2rem', fontWeight: 600, borderRadius: '6px',
-                    background: '#00ff66', border: 'none', color: '#111', cursor: isSaving ? 'not-allowed' : 'pointer',
-                    opacity: isSaving ? 0.5 : 1,
                     pointerEvents: isSaving ? 'none' : 'auto'
                   }}
                 >
                   {isSaving ? t("Saving...") : t("Save Test")}
                 </button>
               </span>
-              <button className="btn-primary" onClick={handlePrepare} style={{ padding: '0.6rem 1.2rem', fontWeight: 600, borderRadius: '6px', background: 'var(--primary)', border: 'none', color: 'white', cursor: 'pointer' }}>
+              <button className="btn btn-outline-secondary" onClick={handlePrepare}>
                 {t("New Test")}
               </button>
-              <button className="btn-secondary" onClick={handleClear} style={{ padding: '0.6rem 1.2rem', borderRadius: '6px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', color: 'white', cursor: 'pointer' }}>
+              <button className="btn btn-outline-secondary" onClick={handleClear}>
                 {t("Clear Data")}
               </button>
             </div>
@@ -509,7 +507,7 @@ const DragTestView: React.FC = () => {
             REC
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'center' }}>
-            <h4 style={{ margin: 0, fontSize: '1.3rem', color: 'white' }}>{t("Recording Acceleration Data...")}</h4>
+            <h4 style={{ margin: 0, fontSize: '1.3rem', color: 'var(--text-primary)' }}>{t("Recording Acceleration Data...")}</h4>
             <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
               {t("Do not release the throttle until you want to finish the test.")}
             </p>
@@ -517,7 +515,7 @@ const DragTestView: React.FC = () => {
           <div style={{ display: 'flex', gap: '2rem', marginTop: '1rem', background: 'rgba(255,255,255,0.05)', padding: '1rem 2rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)' }}>
             <div style={{ textAlign: 'center' }}>
               <div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>{t("Recorded Frames")}</div>
-              <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'white' }}>{pointsCount}</div>
+              <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-primary)' }}>{pointsCount}</div>
             </div>
             <div style={{ width: '1px', background: 'rgba(255,255,255,0.1)' }} />
             <div style={{ textAlign: 'center' }}>
@@ -574,7 +572,7 @@ const DragTestView: React.FC = () => {
                 {activeChart === 'speed_rpm' ? (
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={chartData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                      <CartesianGrid strokeDasharray="3 3" stroke="var(--divider)" />
                       <XAxis dataKey="time" type="number" name="Time" unit="s" stroke="var(--text-secondary)" tick={{fontSize: 11}} />
                       
                       {/* Left YAxis for Speed */}
@@ -584,7 +582,7 @@ const DragTestView: React.FC = () => {
                       <YAxis yAxisId="right" orientation="right" stroke="#ff003c" tick={{fontSize: 11}} label={{ value: 'RPM', angle: 90, position: 'insideRight', style: {textAnchor: 'middle', fill: '#ff003c', fontSize: 11, fontWeight: 600}, offset: 5 }} />
                       
                       <Tooltip 
-                        contentStyle={{ background: 'rgba(20,20,20,0.95)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '6px' }}
+                        contentStyle={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 'var(--panel-radius)' }}
                         labelFormatter={(label) => `${t("Time")}: ${Number(label).toFixed(3)}s`}
                       />
                       <Legend verticalAlign="top" height={36} wrapperStyle={{fontSize: 12}} />
@@ -606,11 +604,11 @@ const DragTestView: React.FC = () => {
                 ) : (
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={chartData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                      <CartesianGrid strokeDasharray="3 3" stroke="var(--divider)" />
                       <XAxis dataKey="time" type="number" name="Time" unit="s" stroke="var(--text-secondary)" tick={{fontSize: 11}} />
                       <YAxis stroke="var(--text-secondary)" tick={{fontSize: 11}} label={{ value: `${t("Slip Ratio")} (%)`, angle: -90, position: 'insideLeft', style: {textAnchor: 'middle', fill: 'var(--text-secondary)', fontSize: 11, fontWeight: 600}, offset: 5 }} />
                       <Tooltip 
-                        contentStyle={{ background: 'rgba(20,20,20,0.95)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '6px' }}
+                        contentStyle={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 'var(--panel-radius)' }}
                         labelFormatter={(label) => `${t("Time")}: ${Number(label).toFixed(3)}s`}
                       />
                       <Legend verticalAlign="top" height={36} wrapperStyle={{fontSize: 12}} />
@@ -642,21 +640,21 @@ const DragTestView: React.FC = () => {
                 compareAnalysis ? (
                   /* Comparison Table View */
                   <div style={{ overflowX: 'auto', marginTop: '0.4rem' }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem', textAlign: 'left', background: 'rgba(255,255,255,0.01)' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem', textAlign: 'left', background: 'var(--surface-1)' }}>
                       <thead>
-                        <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', color: 'var(--text-secondary)' }}>
+                        <tr style={{ borderBottom: '1px solid var(--glass-border)', color: 'var(--text-secondary)' }}>
                           <th style={{ padding: '0.5rem 0.4rem' }}>{t("Metrics")}</th>
                           <th style={{ padding: '0.5rem 0.4rem', color: '#00f0ff' }}>{t("Current Run")}</th>
                           <th style={{ padding: '0.5rem 0.4rem', color: '#ffaa00' }}>{t("Compared Run")}</th>
                         </tr>
                       </thead>
                       <tbody>
-                        <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                        <tr style={{ borderBottom: '1px solid var(--divider)' }}>
                           <td style={{ padding: '0.5rem 0.4rem', color: 'var(--text-secondary)' }}>{t("Car Model")}</td>
-                          <td style={{ padding: '0.5rem 0.4rem', fontWeight: 600, color: 'white' }}>{analysis.car_name}</td>
-                          <td style={{ padding: '0.5rem 0.4rem', fontWeight: 600, color: 'white' }}>{compareAnalysis.car_name}</td>
+                          <td style={{ padding: '0.5rem 0.4rem', fontWeight: 600, color: 'var(--text-primary)' }}>{analysis.car_name}</td>
+                          <td style={{ padding: '0.5rem 0.4rem', fontWeight: 600, color: 'var(--text-primary)' }}>{compareAnalysis.car_name}</td>
                         </tr>
-                        <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                        <tr style={{ borderBottom: '1px solid var(--divider)' }}>
                           <td style={{ padding: '0.5rem 0.4rem', color: 'var(--text-secondary)' }}>{t("Max Speed")}</td>
                           <td style={{ padding: '0.5rem 0.4rem', fontWeight: 600, color: '#00f0ff' }}>
                             {analysis.max_speed_kmh} km/h
@@ -671,12 +669,12 @@ const DragTestView: React.FC = () => {
                             </span>
                           </td>
                         </tr>
-                        <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                        <tr style={{ borderBottom: '1px solid var(--divider)' }}>
                           <td style={{ padding: '0.5rem 0.4rem', color: 'var(--text-secondary)' }}>{t("Test Duration")}</td>
-                          <td style={{ padding: '0.5rem 0.4rem', fontWeight: 600, color: 'white' }}>
+                          <td style={{ padding: '0.5rem 0.4rem', fontWeight: 600, color: 'var(--text-primary)' }}>
                             {analysis.duration} s
                           </td>
-                          <td style={{ padding: '0.5rem 0.4rem', fontWeight: 600, color: 'white' }}>
+                          <td style={{ padding: '0.5rem 0.4rem', fontWeight: 600, color: 'var(--text-primary)' }}>
                             {compareAnalysis.duration} s
                             <span style={{ 
                               fontSize: '0.75rem', marginLeft: '0.5rem',
@@ -686,7 +684,7 @@ const DragTestView: React.FC = () => {
                             </span>
                           </td>
                         </tr>
-                        <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                        <tr style={{ borderBottom: '1px solid var(--divider)' }}>
                           <td style={{ padding: '0.5rem 0.4rem', color: 'var(--text-secondary)' }}>{t("Avg Launch Slip")}</td>
                           <td style={{ padding: '0.5rem 0.4rem', fontWeight: 600, color: analysis.launch_slip_percent > 18 ? '#ff003c' : '#00ff00' }}>
                             {analysis.launch_slip_percent}%
@@ -695,10 +693,10 @@ const DragTestView: React.FC = () => {
                             {compareAnalysis.launch_slip_percent}%
                           </td>
                         </tr>
-                        <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                        <tr style={{ borderBottom: '1px solid var(--divider)' }}>
                           <td style={{ padding: '0.5rem 0.4rem', color: 'var(--text-secondary)' }}>{t("Drivetrain")}</td>
-                          <td style={{ padding: '0.5rem 0.4rem', fontWeight: 600, color: 'white' }}>{analysis.drivetrain}</td>
-                          <td style={{ padding: '0.5rem 0.4rem', fontWeight: 600, color: 'white' }}>{compareAnalysis.drivetrain}</td>
+                          <td style={{ padding: '0.5rem 0.4rem', fontWeight: 600, color: 'var(--text-primary)' }}>{analysis.drivetrain}</td>
+                          <td style={{ padding: '0.5rem 0.4rem', fontWeight: 600, color: 'var(--text-primary)' }}>{compareAnalysis.drivetrain}</td>
                         </tr>
                       </tbody>
                     </table>
@@ -706,39 +704,39 @@ const DragTestView: React.FC = () => {
                 ) : (
                   /* Standard Grid View */
                   <div className="drag-test-summary-grid">
-                    <div style={{ background: 'rgba(255,255,255,0.02)', padding: '0.6rem', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                    <div style={{ background: 'var(--surface-1)', padding: '0.6rem', borderRadius: '6px', border: '1px solid var(--glass-border)' }}>
                       <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{t("Max Speed")}</div>
                       <div style={{ fontSize: '1.2rem', fontWeight: 700, color: '#00f0ff' }}>
                         {analysis.max_speed_kmh} <span style={{ fontSize: '0.8rem' }}>{t("km/h")}</span>
                       </div>
                     </div>
-                    <div style={{ background: 'rgba(255,255,255,0.02)', padding: '0.6rem', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                    <div style={{ background: 'var(--surface-1)', padding: '0.6rem', borderRadius: '6px', border: '1px solid var(--glass-border)' }}>
                       <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{t("Test Duration")}</div>
-                      <div style={{ fontSize: '1.2rem', fontWeight: 700, color: 'white' }}>
+                      <div style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--text-primary)' }}>
                         {analysis.duration} <span style={{ fontSize: '0.8rem' }}>{t("s")}</span>
                       </div>
                     </div>
-                    <div style={{ background: 'rgba(255,255,255,0.02)', padding: '0.6rem', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                    <div style={{ background: 'var(--surface-1)', padding: '0.6rem', borderRadius: '6px', border: '1px solid var(--glass-border)' }}>
                       <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{t("Drivetrain")}</div>
                       <div style={{ fontSize: '1.2rem', fontWeight: 700, color: '#ffaa00' }}>
                         {analysis.drivetrain}
                       </div>
                     </div>
-                    <div style={{ background: 'rgba(255,255,255,0.02)', padding: '0.6rem', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                    <div style={{ background: 'var(--surface-1)', padding: '0.6rem', borderRadius: '6px', border: '1px solid var(--glass-border)' }}>
                       <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{t("Avg Launch Slip")}</div>
                       <div style={{ fontSize: '1.2rem', fontWeight: 700, color: analysis.launch_slip_percent > 18 ? '#ff003c' : '#00ff00' }}>
                         {analysis.launch_slip_percent}%
                       </div>
                     </div>
-                    <div style={{ background: 'rgba(255,255,255,0.02)', padding: '0.6rem', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                    <div style={{ background: 'var(--surface-1)', padding: '0.6rem', borderRadius: '6px', border: '1px solid var(--glass-border)' }}>
                       <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{t("Path Deviation")}</div>
                       <div style={{ fontSize: '1.2rem', fontWeight: 700, color: analysis.path_valid ? '#00ff00' : '#ff003c' }}>
                         {analysis.max_deviation_meters} <span style={{ fontSize: '0.8rem' }}>{t("m")}</span>
                       </div>
                     </div>
-                    <div style={{ background: 'rgba(255,255,255,0.02)', padding: '0.6rem', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                    <div style={{ background: 'var(--surface-1)', padding: '0.6rem', borderRadius: '6px', border: '1px solid var(--glass-border)' }}>
                       <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{t("Yaw Variance")}</div>
-                      <div style={{ fontSize: '1.2rem', fontWeight: 700, color: 'white' }}>
+                      <div style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--text-primary)' }}>
                         {(analysis.yaw_variance_rad * (180 / Math.PI)).toFixed(1)} <span style={{ fontSize: '0.8rem' }}>°</span>
                       </div>
                     </div>
@@ -775,9 +773,9 @@ const DragTestView: React.FC = () => {
                     {/* Shifts Details Table */}
                     {analysis.shifts && analysis.shifts.length > 0 && (
                       <div style={{ overflowX: 'auto', marginBottom: '0.5rem' }}>
-                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.75rem', textAlign: 'center', background: 'rgba(255,255,255,0.02)', borderRadius: '4px' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.75rem', textAlign: 'center', background: 'var(--surface-1)', borderRadius: '4px' }}>
                           <thead>
-                            <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', color: 'var(--text-secondary)' }}>
+                            <tr style={{ borderBottom: '1px solid var(--glass-border)', color: 'var(--text-secondary)' }}>
                               <th style={{ padding: '0.4rem' }}>{t("Shift")}</th>
                               <th style={{ padding: '0.4rem' }}>{t("Before RPM")}</th>
                               <th style={{ padding: '0.4rem' }}>{t("After RPM")}</th>
@@ -788,8 +786,8 @@ const DragTestView: React.FC = () => {
                           </thead>
                           <tbody>
                             {analysis.shifts.map((s, idx) => (
-                              <tr key={idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                                <td style={{ padding: '0.4rem', fontWeight: 600, color: 'white' }}>{s.from_gear} → {s.to_gear}</td>
+                              <tr key={idx} style={{ borderBottom: '1px solid var(--divider)' }}>
+                                <td style={{ padding: '0.4rem', fontWeight: 600, color: 'var(--text-primary)' }}>{s.from_gear} → {s.to_gear}</td>
                                 <td style={{ padding: '0.4rem' }}>{s.n_before}</td>
                                 <td style={{ padding: '0.4rem' }}>{s.n_after}</td>
                                 <td style={{ padding: '0.4rem', color: 'var(--text-secondary)' }}>-{s.rpm_drop}</td>
@@ -811,7 +809,7 @@ const DragTestView: React.FC = () => {
                         ))}
                       </div>
                     ) : (
-                      <p style={{ margin: 0, color: 'var(--text-secondary)', background: 'rgba(255,255,255,0.02)', padding: '0.6rem', borderRadius: '6px', textAlign: 'center' }}>
+                      <p style={{ margin: 0, color: 'var(--text-secondary)', background: 'var(--surface-1)', padding: '0.6rem', borderRadius: '6px', textAlign: 'center' }}>
                         {t("All gear ratios step smoothly. No significant RPM drops detected.")}
                       </p>
                     )}
