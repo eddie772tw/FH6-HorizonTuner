@@ -113,22 +113,28 @@ try {
       if (mode === 'single' || mode === 'twin') await inspectDials(mode);
     }
     // LCD text must fit matching physical windows, including real sibling separation.
-    const inspectLcd = async () => {
+    const inspectLcd = async name => {
       const lcds = await page.locator('.r34-lcd').evaluateAll(nodes => nodes.map(node => {
         const window = node.querySelector('.r34-lcd-window').getBoundingClientRect();
         const labels = [...node.querySelectorAll('text')].map(text => ({ text: text.textContent, rect: text.getBoundingClientRect() })).filter(item => item.rect.width > 0 && item.rect.height > 0);
         const tolerance = 1 / devicePixelRatio;
         const overlap = (a, b) => a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
-        return { id: node.id, width: window.width, height: window.height, texts: labels.map(item => item.text),
+        return { id: node.id, width: window.width, height: window.height, window: window.toJSON(), labels: labels.map(item => ({ text: item.text, rect: item.rect.toJSON() })),
           contained: labels.every(({ rect }) => rect.left >= window.left - tolerance && rect.right <= window.right + tolerance && rect.top >= window.top - tolerance && rect.bottom <= window.bottom + tolerance),
           separate: labels.every((item, index) => labels.slice(index + 1).every(other => !overlap(item.rect, other.rect))) };
       }));
+      report.checks.push({ name, viewport: [width, height], dpr, lcds });
+      if (!lcds.every(lcd => lcd.contained && lcd.separate)) {
+        for (const [suffix, locator] of [['context', page.locator('#r34Container')], ['tach', page.locator('#r34TachModule')], ['speed', page.locator('#r34SpeedModule')]]) {
+          const filename = 'lcd-failure-' + name + '-' + width + 'x' + height + '-dpr' + dpr + '-' + suffix + '.png';
+          await locator.screenshot({ path: path.join(out, filename), omitBackground: true }); report.screenshots.push(filename);
+        }
+      }
       assert(lcds.every(lcd => lcd.contained && lcd.separate), 'Visible LCD content must fit its window without sibling collisions');
       assert(Math.abs(lcds[0].width - lcds[1].width) < .01 && Math.abs(lcds[0].height - lcds[1].height) < .01, 'Both physical LCD windows must match');
-      report.checks.push({ lcds });
     };
     const saveLcd = async name => {
-      await inspectLcd(); await save('lcd-' + name);
+      await inspectLcd(name); await save('lcd-' + name);
       if (width === 1280 && dpr === 2) for (const dial of ['Tach', 'Speed']) {
         const filename = 'dial-' + dial.toLowerCase() + '-' + name + '-dpr2.png';
         await page.locator('#r34' + dial + 'Module').screenshot({ path: path.join(out, filename), omitBackground: true }); report.screenshots.push(filename);

@@ -66,7 +66,8 @@
 .r34-lap-history li { height: 20px; padding: 4px 3px; border: 1px solid var(--r34-ink); border-top: none; display: flex; justify-content: space-between; font-size: 8px; }
 .r34-lcd text { font-family: monospace; fill: var(--r34-lcd-ink); font-variant-numeric: tabular-nums; }
 .r34-lcd-timer { font-size: 16px; }
-.r34-lcd-pair { font-size: 12px; font-weight: 600; }
+/* Reserve a font-metric gap between the two 14-unit-spaced LCD baselines. */
+.r34-lcd-pair { font-size: 11px; font-weight: 600; }
 .r34-lcd-gear, .r34-lcd-speed { font-size: 17px; }
 #r34RevLamp { fill: transparent; }
 #r34RevLamp.active { fill: var(--r34-hot); }

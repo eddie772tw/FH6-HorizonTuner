@@ -11,8 +11,8 @@
         if (tach) {
             s += '<g id="r34TachTimerGroup" style="display:none">' + A.txt(108, 185, 'N/A', 16, 'var(--r34-lcd-ink)', 'id="r34TachTimer" class="r34-lcd-timer"') + '</g>';
             s += '<g id="r34TachPowerGroup" style="display:none">';
-            s += A.txt(108, 176, 'N/A HP', 12, 'var(--r34-lcd-ink)', 'id="r34LcdPower" class="r34-lcd-pair"');
-            s += A.txt(108, 190, 'N/A N·m', 12, 'var(--r34-lcd-ink)', 'id="r34LcdTorque" class="r34-lcd-pair"') + '</g>';
+            s += A.txt(108, 176, 'N/A HP', 11, 'var(--r34-lcd-ink)', 'id="r34LcdPower" class="r34-lcd-pair"');
+            s += A.txt(108, 190, 'N/A N·m', 11, 'var(--r34-lcd-ink)', 'id="r34LcdTorque" class="r34-lcd-pair"') + '</g>';
             s += A.txt(108, 185, 'N/A', 14, 'var(--r34-lcd-ink)', 'id="r34TachUnavailable" class="r34-lcd-timer"');
         } else {
             s += '<g id="r34GearGroup">' + A.txt(65, 185, '—', 17, 'var(--r34-lcd-ink)', 'id="r34Gear" class="r34-lcd-gear"') + '</g>';
