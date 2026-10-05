@@ -7,7 +7,7 @@ const ArcSteerGauge: React.FC<{ size?: number }> = React.memo(() => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const degTextRef = useRef<HTMLSpanElement>(null);
   const dirTextRef = useRef<HTMLSpanElement>(null);
-  const themeVars = useRef({ primary: '#00f0ff', isLight: false });
+  const themeVars = useRef({ primary: '#00f0ff', isLight: false, glowStrength: 1 });
   const { t } = useSettings();
 
   useEffect(() => {
@@ -21,11 +21,12 @@ const ArcSteerGauge: React.FC<{ size?: number }> = React.memo(() => {
       themeVars.current = {
         primary: style.getPropertyValue('--primary').trim() || '#00f0ff',
         isLight: document.documentElement.getAttribute('data-bs-theme') === 'light',
+        glowStrength: Number(style.getPropertyValue('--instrument-glow-strength').trim() || '1'),
       };
     };
     updateThemeVars();
     const themeObserver = new MutationObserver(updateThemeVars);
-    themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-bs-theme'] });
+    themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-bs-theme', 'data-bs-core', 'data-design-system', 'style'] });
 
     const resizeObserver = new ResizeObserver((entries) => {
       for (const entry of entries) {
@@ -79,7 +80,7 @@ const ArcSteerGauge: React.FC<{ size?: number }> = React.memo(() => {
         ctx.beginPath();
         ctx.moveTo(cx + innerR * Math.cos(tickAngle), cy + innerR * Math.sin(tickAngle));
         ctx.lineTo(cx + outerR * Math.cos(tickAngle), cy + outerR * Math.sin(tickAngle));
-        ctx.strokeStyle = isCenter ? 'rgba(0, 240, 255, 0.85)' : isLight ? 'rgba(0,0,0,0.25)' : 'rgba(255,255,255,0.25)';
+        ctx.strokeStyle = isCenter ? primaryHex : isLight ? 'rgba(0,0,0,0.25)' : 'rgba(255,255,255,0.25)';
         ctx.stroke();
       }
 
@@ -96,7 +97,7 @@ const ArcSteerGauge: React.FC<{ size?: number }> = React.memo(() => {
         ctx.lineWidth = 5 * dpr;
         ctx.strokeStyle = primaryHex;
         ctx.shadowColor = primaryHex;
-        ctx.shadowBlur = 8 * dpr;
+        ctx.shadowBlur = themeVars.current.glowStrength * 8 * dpr;
         ctx.stroke();
         ctx.shadowBlur = 0;
       }
@@ -109,7 +110,7 @@ const ArcSteerGauge: React.FC<{ size?: number }> = React.memo(() => {
       ctx.arc(dotX, dotY, 5.5 * dpr, 0, Math.PI * 2);
       ctx.fillStyle = primaryHex;
       ctx.shadowColor = primaryHex;
-      ctx.shadowBlur = 10 * dpr;
+      ctx.shadowBlur = themeVars.current.glowStrength * 10 * dpr;
       ctx.fill();
       ctx.shadowBlur = 0;
     };

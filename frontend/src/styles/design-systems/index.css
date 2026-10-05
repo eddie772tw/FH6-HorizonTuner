@@ -1,0 +1,3 @@
+/* Load each system once; data-design-system activates its scoped rules. */
+@import "./halfmoon.css";
+@import "./swiss.css";

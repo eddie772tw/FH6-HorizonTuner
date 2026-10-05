@@ -36,7 +36,7 @@ export function EvPowertrainStep({ enabled }: { enabled: boolean }) {
   };
   return <section className="d-flex flex-column gap-3">
     <div className="workspace-section">
-      <h3 className="workspace-section-heading">{t('EV measurement & gearing')} <span className="badge text-bg-secondary">{t('Foundation model')}</span></h3>
+      <h3 className="workspace-section-heading workspace-panel-header">{t('EV measurement & gearing')} <span className="badge text-bg-secondary">{t('Foundation model')}</span></h3>
       <p>{t('Record a separate full-throttle run in each fixed gear, from low RPM toward the motor limit. Do not shift during a run. Pause when finished, then calculate.')}</p>
       <p className="small text-body-secondary mb-0">{t('This model measures power bands and RPM-to-speed relationships. It does not yet optimize launch grip, shift points or lap time.')}</p>
     </div>

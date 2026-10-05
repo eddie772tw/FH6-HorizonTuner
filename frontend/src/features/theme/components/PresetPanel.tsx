@@ -1,5 +1,5 @@
 import React from 'react';
-import { useTheme } from '../../../context/ThemeContext';
+import { useTheme, normalizeThemeSettings } from '../../../context/ThemeContext';
 import { useSettings } from '../../../context/SettingsContext';
 
 interface Preset {
@@ -58,25 +58,22 @@ const PRESETS: Preset[] = [
     secondaryColor: '#ff584d',
     accentColor: '#ffb732',
   },
+  {
+    label: 'Swiss Signal',
+    primaryColor: '#e30613',
+    secondaryColor: '#f59e0b',
+    accentColor: '#2563eb',
+  },
+  {
+    label: 'Bauhaus Mono',
+    primaryColor: '#f1f5f9',
+    secondaryColor: '#ef4444',
+    accentColor: '#64748b',
+  },
 ];
 
-const presetBtnStyle: React.CSSProperties = {
-  background: 'var(--surface-1)',
-  border: '1px solid var(--glass-border)',
-  color: 'var(--text-primary)',
-  padding: '0.6rem 1rem',
-  borderRadius: '8px',
-  cursor: 'pointer',
-  fontSize: '0.85rem',
-  fontWeight: 500,
-  transition: 'all 0.2s ease',
-  display: 'flex',
-  alignItems: 'center',
-  gap: '0.6rem',
-};
-
 const PresetPanel: React.FC = () => {
-  const { updateThemeSettings } = useTheme();
+  const { themeSettings, updateThemeSettings } = useTheme();
   const { t } = useSettings();
 
   const applyPreset = (preset: Preset) => {
@@ -88,43 +85,38 @@ const PresetPanel: React.FC = () => {
   };
 
   return (
-    <div>
-      <h3 style={{ marginBottom: '0.5rem', color: 'var(--primary)', fontSize: '1.15rem' }}>
+    <section className="theme-presets" aria-labelledby="theme-presets-heading">
+      <h4 id="theme-presets-heading">
         {t('Color Presets')}
-      </h3>
-      <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>
+      </h4>
+      <p className="theme-help">
         {t('Applies accent color palettes (Primary, Secondary, Accent) without altering your current mode or core theme.')}
       </p>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
-        {PRESETS.map(preset => (
+      <div className="theme-presets-grid">
+        {PRESETS.map(rawPreset => {
+          const preset = { ...rawPreset, ...normalizeThemeSettings({ ...rawPreset, mode: themeSettings.mode }) };
+          return (
           <button
+            type="button"
             key={preset.label}
             id={`preset-${preset.label.replace(/\s+/g, '-').toLowerCase()}`}
             onClick={() => applyPreset(preset)}
-            className="cyber-btn-glow"
-            style={presetBtnStyle}
+            aria-pressed={themeSettings.primaryColor === preset.primaryColor
+              && themeSettings.secondaryColor === preset.secondaryColor
+              && themeSettings.accentColor === preset.accentColor}
+            className="theme-choice"
           >
-            {/* 3-Color Dots Swatch */}
-            <div style={{ display: 'flex', gap: '0.25rem', alignItems: 'center' }}>
-              <span style={{
-                display: 'inline-block', width: '10px', height: '10px',
-                borderRadius: '50%', background: preset.primaryColor,
-                boxShadow: `0 0 4px ${preset.primaryColor}`,
-              }} title="Primary" />
-              <span style={{
-                display: 'inline-block', width: '8px', height: '8px',
-                borderRadius: '50%', background: preset.secondaryColor,
-              }} title="Secondary" />
-              <span style={{
-                display: 'inline-block', width: '8px', height: '8px',
-                borderRadius: '50%', background: preset.accentColor,
-              }} title="Accent" />
-            </div>
+            <span className="theme-preset-swatches" aria-hidden="true">
+              <span style={{ background: preset.primaryColor }} />
+              <span style={{ background: preset.secondaryColor }} />
+              <span style={{ background: preset.accentColor }} />
+            </span>
             {t(preset.label)}
           </button>
-        ))}
+          );
+        })}
       </div>
-    </div>
+    </section>
   );
 };
 

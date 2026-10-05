@@ -1,81 +1,45 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTheme } from '../../../context/ThemeContext';
 import { useSettings } from '../../../context/SettingsContext';
+import PresetPanel from './PresetPanel';
 
 const ColorField: React.FC<{
-  id: string;
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-}> = ({ id, label, value, onChange }) => (
-  <div style={{
-    padding: '1rem',
-    borderRadius: '8px',
-    background: 'var(--surface-1)',
-    border: '1px solid var(--glass-border)',
-  }}>
-    <label htmlFor={`${id}-text`} style={{ fontSize: '0.95rem', fontWeight: 600, display: 'block', marginBottom: '0.6rem', color: 'var(--text-primary)' }}>
-      {label}
-    </label>
-    <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-      <input
-        id={`${id}-picker`}
-        type="color"
-        value={value}
-        onChange={e => onChange(e.target.value)}
-        style={{ background: 'none', border: 'none', cursor: 'pointer', width: '42px', height: '42px', borderRadius: '4px' }}
-      />
-      <input
-        id={`${id}-text`}
-        type="text"
-        value={value}
-        onChange={e => onChange(e.target.value)}
-        className="cyber-input"
-        style={{ width: '110px', textAlign: 'center', fontFamily: 'monospace' }}
-      />
-      {/* Live preview swatch */}
-      <div style={{
-        width: '32px', height: '32px', borderRadius: '6px',
-        background: value,
-        border: '1px solid var(--glass-border)',
-        boxShadow: `0 0 8px ${value}66`,
-        flexShrink: 0,
-      }} />
+  id: string; label: string; value: string; onChange: (value: string) => void;
+}> = ({ id, label, value, onChange }) => {
+  const [draft, setDraft] = useState(value);
+  const valid = /^#[\da-f]{6}$/i.test(draft);
+  useEffect(() => setDraft(value), [value]);
+  return <div className="theme-color-field">
+    <label htmlFor={`${id}-text`}>{label}</label>
+    <div className="theme-color-inputs">
+      <input id={`${id}-picker`} type="color" value={value} aria-label={label}
+        onChange={event => { setDraft(event.target.value); onChange(event.target.value); }} />
+      <input id={`${id}-text`} type="text" value={draft} className="form-control font-monospace"
+        spellCheck={false} autoComplete="off" maxLength={7} placeholder="#000000" aria-invalid={!valid}
+        onChange={event => {
+          setDraft(event.target.value);
+          if (/^#[\da-f]{6}$/i.test(event.target.value)) onChange(event.target.value);
+        }} onBlur={() => setDraft(value)} onKeyDown={event => { if (event.key === 'Escape') setDraft(value); }} />
     </div>
-  </div>
-);
+  </div>;
+};
 
 const ColorPickerPanel: React.FC = () => {
   const { themeSettings, updateThemeSettings } = useTheme();
   const { t } = useSettings();
-
-  return (
-    <div>
-      <h3 style={{ marginBottom: '1rem', color: 'var(--primary)', fontSize: '1.15rem' }}>
-        {t('Colors')}
-      </h3>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.2rem' }}>
-        <ColorField
-          id="color-primary"
-          label={t('Primary Color')}
-          value={themeSettings.primaryColor}
-          onChange={v => updateThemeSettings({ primaryColor: v })}
-        />
-        <ColorField
-          id="color-secondary"
-          label={t('Secondary Color')}
-          value={themeSettings.secondaryColor}
-          onChange={v => updateThemeSettings({ secondaryColor: v })}
-        />
-        <ColorField
-          id="color-accent"
-          label={t('Accent Color')}
-          value={themeSettings.accentColor}
-          onChange={v => updateThemeSettings({ accentColor: v })}
-        />
-      </div>
+  return <section className="theme-colors" aria-labelledby="theme-colors-heading">
+    <h3 id="theme-colors-heading">{t('Colors')}</h3>
+    <p className="theme-help">{t('Choose a swatch or enter a six-digit HEX color. Presets update all three colors together.')}</p>
+    <div className="theme-color-grid">
+      <ColorField id="color-primary" label={t('Primary Color')} value={themeSettings.primaryColor}
+        onChange={primaryColor => updateThemeSettings({ primaryColor })} />
+      <ColorField id="color-secondary" label={t('Secondary Color')} value={themeSettings.secondaryColor}
+        onChange={secondaryColor => updateThemeSettings({ secondaryColor })} />
+      <ColorField id="color-accent" label={t('Accent Color')} value={themeSettings.accentColor}
+        onChange={accentColor => updateThemeSettings({ accentColor })} />
     </div>
-  );
+    <PresetPanel />
+  </section>;
 };
 
 export default ColorPickerPanel;

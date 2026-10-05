@@ -46,10 +46,11 @@ export function HudSetupPanel({
         </div>
         <div className="d-flex align-items-center flex-wrap gap-2">
           <span
+            className="d-inline-flex"
             title={busy ? t('Please wait, HUD is currently launching or closing...') : capabilities.nativeWindow.detail}
             style={
               (disabled || busy || capabilities.nativeWindow.status === 'unsupported')
-                ? { display: 'inline-block', cursor: 'not-allowed' }
+                ? { cursor: 'not-allowed' }
                 : undefined
             }
           >
@@ -91,8 +92,8 @@ export function HudSetupPanel({
             </select>
           </div>
           <span
+            className="d-inline-flex"
             title={capabilities.reload.detail}
-            className="d-block"
             style={busy ? { cursor: 'not-allowed' } : undefined}
           >
             <button

@@ -1,0 +1,662 @@
+/* Session selection, actions and charts share a responsive layout. */
+.sessions-workspace { flex: 1; min-height: 0; overflow: auto; scrollbar-gutter: stable; }
+.sessions-workspace > * + * { margin-top: 16px; }
+.analysis-view { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.analysis-toolbar.workspace-toolbar { display: grid; gap: 12px; flex-shrink: 0; }
+.analysis-toolbar__status { min-width: 0; overflow-wrap: anywhere; }
+.analysis-toolbar__selectors { display: flex; align-items: end; flex-wrap: wrap; gap: 8px; }
+.analysis-toolbar__selectors label { display: flex; flex-direction: column; gap: 4px; flex: 1 1 12rem; min-width: 0; max-width: 24rem; }
+.analysis-toolbar__selectors .analysis-toolbar__session { flex-basis: 20rem; max-width: 32rem; }
+.analysis-toolbar :is(.btn, .form-select) { min-height: 2.5rem; font-size: 0.875rem; }
+.analysis-toolbar__actions { display: flex; align-items: stretch; flex-wrap: wrap; gap: 8px; }
+.analysis-toolbar__actions .btn { width: 100%; white-space: normal; }
+.analysis-toolbar__actions > .btn { width: auto; }
+.analysis-empty-state { display: flex; justify-content: center; align-items: center; min-height: 12rem; color: var(--text-secondary); text-align: center; }
+.analysis-charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 28rem), 1fr)); gap: 16px; }
+.analysis-summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr)); gap: 16px; }
+.analysis-summary-card { display: grid; grid-template-rows: subgrid; grid-row: span 2; gap: 12px; min-width: 0; }
+.analysis-summary-card__header { display: flex; flex-direction: column; align-items: start; justify-content: space-between; gap: 8px; }
+.analysis-summary-card .badge { max-width: 100%; white-space: normal; }
+@media (max-width: 575.98px) {
+  .analysis-toolbar__selectors label { flex-basis: 100%; max-width: none; }
+  .analysis-toolbar__selectors > .btn { width: 100%; }
+  .analysis-toolbar__actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .analysis-toolbar__actions > .btn { width: 100%; }
+}
+
+/* Numeric alignment stays stable across live updates and all themes. */
+.font-tabular,
+body,
+.telemetry-steer-gauge__readout,
+[class*="metric-value"],
+[class*="readout-value"] {
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: "tnum" 1, "lnum" 1;
+}
+
+.instrument-readout-label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: var(--readout-transform);
+  letter-spacing: var(--readout-tracking);
+  color: var(--text-secondary);
+}
+
+/* =============================================================================
+   (D) Base Layout & Halfmoon Native Class Integration
+   ============================================================================= */
+
+body {
+  margin: 0;
+  display: flex;
+  place-items: center;
+  min-width: 320px;
+  min-height: 100vh;
+  background: var(--bg-gradient);
+  color: var(--text-primary);
+  transition: background 0.4s ease, color 0.3s ease;
+  font-family: var(--bs-body-font-family);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  margin: 0;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  color: var(--text-primary);
+}
+
+#root {
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Halfmoon .card integration */
+.card, .halfmoon-card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+  border-radius: var(--panel-radius);
+  box-shadow: var(--glass-shadow);
+  color: var(--text-primary);
+}
+
+/* Halfmoon form-control integration */
+.form-control, .form-select {
+  background-color: var(--input-bg) !important;
+  color: var(--input-text) !important;
+  border-color: var(--glass-border) !important;
+  border-radius: var(--input-radius) !important;
+}
+.form-control:focus, .form-select:focus {
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 0.25rem var(--primary-glow) !important;
+}
+
+/* =============================================================================
+   (E) Global Element Overrides
+   ============================================================================= */
+
+select {
+  background: var(--input-bg);
+  color: var(--input-text);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--input-radius);
+  padding: 0.4rem 0.6rem;
+  font-family: var(--bs-body-font-family);
+  transition: border-color 0.2s ease, background 0.3s ease;
+}
+select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 8px var(--primary-glow);
+}
+
+hr {
+  border: 0;
+  border-top: 1px solid var(--divider);
+  margin: 0.75rem 0;
+}
+
+.glass-panel strong,
+.glass-panel label {
+  color: var(--text-primary);
+}
+
+/* Smooth transitions */
+* {
+  transition-property: background-color, border-color, color, box-shadow;
+  transition-duration: 0.25s;
+  transition-timing-function: ease;
+}
+canvas, [class*="recharts"], input[type="range"], input[type="color"] {
+  transition: none !important;
+}
+
+/* Navigation Bar Overflow Exception — Dropdown menus must pop out without clipping */
+.navbar,
+.navbar .container-fluid {
+  overflow: visible !important;
+}
+
+/* Prevent Horizontal Scrollbar Overflow Across Main View Containers */
+main .container-fluid {
+  max-width: 100% !important;
+  overflow-x: hidden !important;
+  box-sizing: border-box !important;
+}
+
+/* Keep steering readouts from resizing the pedal-input column. */
+.telemetry-driver-inputs {
+  display: grid !important;
+  grid-template-columns: minmax(0, 0.95fr) auto minmax(0, 1.05fr);
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: space-between;
+  min-width: 0;
+}
+
+.telemetry-steer-column,
+.telemetry-pedal-inputs {
+  min-width: 0;
+  width: 100%;
+}
+
+.telemetry-steer-gauge__readout {
+  width: 6.5rem;
+  max-width: 100%;
+  line-height: 1.1;
+}
+
+.telemetry-steer-gauge__direction,
+.telemetry-steer-gauge__readout > span:last-child {
+  display: inline-block;
+  width: 6ch;
+  white-space: nowrap;
+  text-align: center;
+}
+
+/* TelemetryView V1.5 card expansion and detail surface. */
+.telemetry-live-grid {
+  position: relative;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-rows: minmax(0, 4.2fr) minmax(0, 5.8fr);
+  min-height: 28rem;
+  height: 100%;
+}
+
+/* The desktop shell owns scrolling; off-screen portal drawers must not scroll the document. */
+html:has(.app-shell), body:has(.app-shell) {
+  overflow: clip;
+}
+body:has(.app-shell) {
+  position: fixed;
+  inset: 0;
+}
+
+.telemetry-view { min-height: 0; overflow: auto; scrollbar-gutter: stable; }
+.telemetry-vehicle-status { min-width: 0; max-width: 100%; }
+.live-workspace, .live-workspace-panel { min-height: 0; min-width: 0; }
+.telemetry-live-grid--focused { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); min-height: 0; }
+.telemetry-view--focused { overflow: hidden; }
+.telemetry-dynamics-summary { overflow-y: auto; }
+.telemetry-dynamics-summary > div { height: auto !important; min-height: 100%; }
+
+.telemetry-card-shell {
+  min-width: 0;
+  min-height: 0;
+}
+
+.telemetry-card-shell--expanded {
+  position: fixed;
+  inset: 1rem;
+  z-index: 1060;
+  padding: 1rem;
+  overflow: hidden;
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+  border-radius: var(--panel-radius);
+  box-shadow: var(--glass-shadow);
+}
+
+.telemetry-card-shell__body {
+  display: flex;
+  flex: 1 1 0%;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.telemetry-card-shell__header {
+  min-height: 29px;
+}
+
+.telemetry-card-shell--expanded .telemetry-card-shell__body {
+  overflow: auto;
+}
+
+.telemetry-card-shell__expand {
+  line-height: 1;
+  min-width: 2rem;
+}
+
+.telemetry-card-layout {
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.telemetry-card-layout--stack {
+  display: flex;
+  flex: 1 1 0%;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.telemetry-card-layout--split {
+  display: flex;
+  flex: 1 1 0%;
+  gap: 1rem;
+  align-items: stretch;
+}
+
+.telemetry-card-layout--grid {
+  display: grid;
+  flex: 1 1 0%;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.telemetry-card-layout__fixed,
+.telemetry-card-layout__fill,
+.telemetry-card-layout__radar {
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.telemetry-card-layout__fixed {
+  flex: 0 0 auto;
+}
+
+.telemetry-card-layout__fill {
+  flex: 1 1 0%;
+}
+
+.telemetry-card-layout--equal > .telemetry-card-layout__fill {
+  min-height: 0;
+}
+
+.telemetry-card-layout__radar {
+  display: flex;
+  flex: 0 0 42%;
+  align-items: center;
+  justify-content: center;
+}
+
+.telemetry-detail-view {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+  min-height: 100%;
+  padding-right: 0.25rem;
+}
+
+.telemetry-detail-view__metric-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 0.75rem;
+  align-content: start;
+}
+
+.telemetry-detail-view__corner-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.telemetry-detail-view__metric,
+.telemetry-detail-view__corner {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+  padding: 0.75rem;
+  background: var(--surface-1);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--input-radius);
+}
+
+.telemetry-detail-view__corner {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.telemetry-detail-view__corner h4 {
+  grid-column: 1 / -1;
+}
+
+.telemetry-detail-view__chart {
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.telemetry-detail-view__chart-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  min-width: 0;
+}
+
+.telemetry-detail-view__chart-canvas {
+  width: 100%;
+  height: 220px;
+  min-height: 220px;
+  min-width: 0;
+}
+
+.telemetry-detail-view__chart-tooltip {
+  position: absolute;
+  z-index: 2;
+  min-width: 150px;
+  max-width: calc(100% - 8px);
+  padding: 0.5rem 0.65rem;
+  pointer-events: none;
+  border-color: var(--primary);
+  box-shadow: var(--glass-shadow);
+}
+
+.telemetry-detail-view__chart-legend-swatch {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.telemetry-detail-view__empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 220px;
+  border: 1px dashed var(--glass-border);
+  border-radius: var(--input-radius);
+}
+
+@media (max-width: 900px) {
+  .telemetry-detail-view__chart-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .telemetry-detail-view__corner {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .telemetry-detail-view__corner-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .telemetry-detail-view__metric-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .telemetry-detail-view__metric-grid,
+  .telemetry-detail-view__chart-grid {
+    gap: 0.625rem;
+  }
+}
+
+.row {
+  max-width: 100% !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+/* Settings rows stay fluid when long translated labels or local endpoints are shown. */
+.settings-section,
+.settings-row,
+.settings-row > div:first-child,
+.min-width-0 {
+  min-width: 0;
+}
+
+.settings-section {
+  width: 100%;
+}
+
+.settings-grid > [class*='col-'] {
+  min-width: 0;
+}
+
+.settings-section-header {
+  padding-bottom: 0.75rem;
+  border-color: var(--divider-md) !important;
+}
+
+.settings-section-title {
+  font-size: var(--panel-heading-size, 0.95rem) !important;
+  line-height: 1.3;
+  letter-spacing: 0.025em;
+}
+
+.settings-row {
+  gap: 1rem;
+  border-color: var(--divider) !important;
+}
+
+.settings-section > .settings-row:last-child {
+  padding-bottom: 0 !important;
+  border-bottom: 0 !important;
+}
+
+.settings-item-label {
+  color: var(--text-primary);
+  font-size: 0.825rem;
+  line-height: 1.35;
+}
+
+.settings-item-description {
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  line-height: 1.45;
+}
+
+.settings-switch {
+  cursor: pointer;
+}
+
+.settings-control {
+  width: 170px;
+  max-width: 100%;
+  flex: 0 1 170px;
+}
+
+.settings-endpoint {
+  background: var(--surface-1);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--input-radius);
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.settings-endpoint code {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+@media (max-width: 1199.98px) {
+  .settings-row {
+    align-items: stretch !important;
+    flex-direction: column;
+  }
+
+  .settings-control {
+    width: 100%;
+    flex-basis: auto;
+  }
+}
+
+/* =============================================================================
+   (F) Glassmorphism Skin Layer
+   ============================================================================= */
+
+/* Standard Static Glass Panel — stable, non-floating */
+.glass-panel {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  border-radius: var(--panel-radius);
+  padding: var(--panel-padding);
+  transition: background 0.3s ease, border-color 0.2s ease, box-shadow 0.3s ease;
+}
+
+/* Interactive Cards — apply ONLY to cards that are clickable or expandable */
+.theme-sidebar {
+  --bs-offcanvas-width: min(440px, 100vw);
+}
+
+.terminal-sidebar {
+  --bs-offcanvas-width: min(560px, 100vw);
+}
+
+.glass-panel-interactive,
+.card-interactive {
+  cursor: pointer;
+  transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275),
+              border-color 0.2s ease,
+              box-shadow 0.25s ease !important;
+}
+
+.glass-panel-interactive:hover,
+.card-interactive:hover {
+  transform: translateY(-3px);
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 18px var(--primary-glow), var(--glass-shadow) !important;
+}
+
+/* Cyber Form Inputs */
+.cyber-input, .cyber-select {
+  background: var(--input-bg) !important;
+  border: 1px solid var(--glass-border) !important;
+  color: var(--input-text) !important;
+  padding: 0.5rem 0.8rem !important;
+  border-radius: var(--input-radius) !important;
+  font-family: var(--bs-body-font-family) !important;
+  font-size: 0.9rem !important;
+  outline: none !important;
+}
+.cyber-input:focus, .cyber-select:focus,
+.cyber-input:hover, .cyber-select:hover {
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 10px var(--primary-glow) !important;
+}
+
+/* Cyber Button Glow */
+.cyber-btn-glow {
+  position: relative;
+  overflow: hidden;
+}
+.cyber-btn-glow:hover {
+  box-shadow: 0 0 12px var(--primary-glow);
+  transform: scale(1.02);
+}
+
+/* Range Input Slider Theme Styles */
+input[type="range"] {
+  -webkit-appearance: none;
+  background: transparent;
+}
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 6px;
+  background: var(--surface-2);
+  border-radius: 3px;
+  border: 1px solid var(--glass-border);
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  height: 16px;
+  width: 16px;
+  border-radius: 50%;
+  background: var(--primary);
+  box-shadow: 0 0 8px var(--primary-glow);
+  margin-top: -5px;
+  cursor: pointer;
+}
+input[type="range"]::-moz-range-track {
+  height: 6px;
+  background: var(--surface-2);
+  border-radius: 3px;
+  border: 1px solid var(--glass-border);
+}
+input[type="range"]::-moz-range-thumb {
+  height: 16px;
+  width: 16px;
+  border-radius: 50%;
+  background: var(--primary);
+  box-shadow: 0 0 8px var(--primary-glow);
+  border: none;
+  cursor: pointer;
+}
+
+/* =============================================================================
+   (G) Scrollbar & Utilities
+   ============================================================================= */
+
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0,0,0,0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: rgba(0,0,0,0.05); }
+::-webkit-scrollbar-thumb { background: rgba(128,128,128,0.3); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(128,128,128,0.5); }
+
+/* Shared workspace rhythm, based on the compact Live dashboard. */
+.workspace-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  min-width: 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--divider);
+}
+
+.live-status-item { display: inline-flex; align-items: center; gap: 0.5rem; font-size: 1rem; font-weight: 600; }
+.live-status-dot { width: 0.75rem; height: 0.75rem; flex: 0 0 0.75rem; border-radius: 50%; }
+
+.telemetry-detail-backdrop { position: fixed; inset: 0; z-index: 1055; background: var(--bs-body-bg); opacity: 0.65; }
+.telemetry-card-shell__header { flex-wrap: wrap; }
+.workspace-section { min-width: 0; padding: 0.5rem; background: transparent; }
+.workspace-section-heading {
+  font-size: var(--panel-heading-size, 1rem);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+  padding-bottom: 0.25rem;
+  border-bottom: 1px solid var(--divider);
+}

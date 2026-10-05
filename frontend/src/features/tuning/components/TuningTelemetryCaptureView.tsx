@@ -75,11 +75,12 @@ const TuningTelemetryCaptureView: React.FC<TuningTelemetryCaptureViewProps> = ({
               <div className="d-flex gap-2 flex-wrap mt-2">
                 {!isCapturing ? <button className="btn btn-primary btn-sm" onClick={capture.start}>{t('Start Capture')}</button> : <button className="btn btn-danger btn-sm" onClick={() => capture.stop()}>{t('Stop Capture')}</button>}
                 <span
+                  className="d-inline-flex"
                   title={isCapturing ? t('Cannot clear while capturing') : undefined}
                   tabIndex={isCapturing ? 0 : undefined}
                   role={isCapturing ? 'group' : undefined}
                   aria-label={isCapturing ? t('Cannot clear while capturing') : undefined}
-                  style={isCapturing ? { cursor: 'not-allowed', display: 'inline-block' } : {}}
+                  style={isCapturing ? { cursor: 'not-allowed' } : {}}
                 >
                   <button className="btn btn-outline-secondary btn-sm" onClick={capture.clear} disabled={isCapturing} style={{ pointerEvents: isCapturing ? 'none' : 'auto' }}>{t('Clear')}</button>
                 </span>
@@ -107,20 +108,22 @@ const TuningTelemetryCaptureView: React.FC<TuningTelemetryCaptureViewProps> = ({
               <SummaryRow label={t('Non-monotonic timestamps')} value={summary.droppedTimestampCount} />
               <div className="d-flex gap-2 flex-wrap mt-3">
                 <span
+                  className="d-inline-flex"
                   title={(!activeCapture || activeCapture.samples.length === 0) ? t('No capture data available to download') : undefined}
                   tabIndex={(!activeCapture || activeCapture.samples.length === 0) ? 0 : undefined}
                   role={(!activeCapture || activeCapture.samples.length === 0) ? 'group' : undefined}
                   aria-label={(!activeCapture || activeCapture.samples.length === 0) ? t('No capture data available to download') : undefined}
-                  style={(!activeCapture || activeCapture.samples.length === 0) ? { cursor: 'not-allowed', display: 'inline-block' } : {}}
+                  style={(!activeCapture || activeCapture.samples.length === 0) ? { cursor: 'not-allowed' } : {}}
                 >
                   <button className="btn btn-outline-primary btn-sm" disabled={!activeCapture || activeCapture.samples.length === 0 || isSaving} style={{ pointerEvents: (!activeCapture || activeCapture.samples.length === 0) ? 'none' : 'auto' }} onClick={handleDownloadJson}>{t('Download JSON')}</button>
                 </span>
                 <span
+                  className="d-inline-flex"
                   title={(!activeCapture || activeCapture.samples.length === 0) ? t('No capture data available to download') : undefined}
                   tabIndex={(!activeCapture || activeCapture.samples.length === 0) ? 0 : undefined}
                   role={(!activeCapture || activeCapture.samples.length === 0) ? 'group' : undefined}
                   aria-label={(!activeCapture || activeCapture.samples.length === 0) ? t('No capture data available to download') : undefined}
-                  style={(!activeCapture || activeCapture.samples.length === 0) ? { cursor: 'not-allowed', display: 'inline-block' } : {}}
+                  style={(!activeCapture || activeCapture.samples.length === 0) ? { cursor: 'not-allowed' } : {}}
                 >
                   <button className="btn btn-outline-primary btn-sm" disabled={!activeCapture || activeCapture.samples.length === 0 || isSaving} style={{ pointerEvents: (!activeCapture || activeCapture.samples.length === 0) ? 'none' : 'auto' }} onClick={handleDownloadCsv}>{t('Download CSV')}</button>
                 </span>

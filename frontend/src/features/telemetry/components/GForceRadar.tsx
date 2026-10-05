@@ -85,7 +85,7 @@ const GForceRadar: React.FC<GForceRadarProps> = React.memo(({ size: propSize, re
     };
     updatePrimaryColor();
     const themeObserver = new MutationObserver(updatePrimaryColor);
-    themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-bs-theme'] });
+    themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-bs-theme', 'data-bs-core', 'style'] });
 
     const handleDraw = (e: any) => {
       const data = e.detail;
@@ -286,7 +286,7 @@ const GForceRadar: React.FC<GForceRadarProps> = React.memo(({ size: propSize, re
             top: '50%',
             left: '50%',
             backgroundColor: 'var(--primary)',
-            boxShadow: '0 0 12px var(--primary)',
+            boxShadow: 'var(--instrument-marker-shadow, 0 0 12px var(--primary))',
             transform: 'translate(-50%, -50%) translate(0px, 0px)',
             willChange: 'transform',
           }}

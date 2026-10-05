@@ -38,6 +38,11 @@ const TARGET_SELECTORS = [
   ['[data-bs-theme="light"]', 'Light mode root target'],
   ['[data-bs-core="modern"]', 'Modern core theme'],
   ['[data-bs-core="elegant"]', 'Elegant core theme'],
+  ['[data-bs-core="swiss"]', 'Swiss Technical'],
+  ['[data-bs-core="swiss-editorial"]', 'Swiss Editorial'],
+  ['[data-bs-core="swiss-contrast"]', 'Swiss Contrast'],
+  ['[data-design-system="halfmoon"]', 'Halfmoon design system'],
+  ['[data-design-system="swiss"]', 'Swiss design system'],
 ] as const;
 
 const CustomCSSEditorPanel: React.FC = () => {
@@ -201,8 +206,9 @@ const CustomCSSEditorPanel: React.FC = () => {
 
         <div className="d-flex flex-wrap gap-2">
           <span
+            className="d-inline-flex"
             title={isSaving ? t("Export is currently in progress") : undefined}
-            style={isSaving ? { display: 'inline-block', cursor: 'not-allowed' } : undefined}
+            style={isSaving ? { cursor: 'not-allowed' } : undefined}
           >
             <button
               type="button"

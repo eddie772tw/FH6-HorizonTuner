@@ -2,13 +2,16 @@
 
 本規範定義 FH6-HorizonTuner 前端視覺呈現、Halfmoon CSS 設計系統、版型穩定度與 React 元件架構原則。
 
+實作檔案與主題擴充／驗收入口見[主題與設計系統開發指南](../../docs/frontend/design-systems.md)；本文件維護架構護欄。
+
 ---
 
 ## 一、 雙層視覺架構 (Dual-Layer Architecture)
 
 1. **職責劃分**：
    - **Layer 1（核心基礎）**：採用 **Halfmoon CSS v2.0.2**，提供 Bootstrap 相容之語意標籤、響應式排版與按鈕/表單基底。
-   - **Layer 2（專案外觀）**：於 `src/App.css` 定義 Glassmorphism 賽車暗色/亮色主題皮膚與霓虹發光變數。
+   - **Layer 2（專案外觀）**：`src/App.css` 依序載入 `styles/themes.css`（中性 token 合約）、`base.css`、`components.css`、`navigation.css` 與 `design-systems/index.css`。Core Theme 同時決定整體配色、材質與元件細節；`context/themeCatalog.ts` 將 Default／Modern／Elegant 歸屬 Halfmoon、Swiss Technical／Editorial／Contrast 歸屬 Swiss。各系統模組以 `data-design-system` 限定 token 與元件外觀，頁面只保留結構；新增系統不需複製各頁 CSS。卡片標頭共用 `workspace-panel-header`，系統以 token 決定文字、底色及分界，避免逐頁判斷 core。
+   - **配色覆寫**：所有核心透過 `themeColorProperties` 將 Color Presets 同步至 Halfmoon 原生控制項與專案元件；配色不切換設計系統。功能警示色保持獨立。儀表效果消費系統 token，不在元件內判斷核心名稱。
 2. **禁止硬編碼色彩**：
    - 所有背景、文字、邊框與陰影一律使用 CSS 語意變數（例如 `var(--glass-bg)`, `var(--text-primary)`, `var(--surface-1)`, `var(--primary)`）。
    - 嚴禁在 inline style 或自訂樣式中寫死 `#000000` 或 `#ffffff`。
@@ -30,7 +33,7 @@
   - **非阻斷性全域通知**：使用 `useToast().addToast(...)` 於右上角固定位置彈出。
 
 ### 3. 防閃爍 (Anti-FOUC) 護欄
-- 頁面首幀透過 HTML `data-bs-theme` (dark/light) 與 `data-bs-core` (default/modern/elegant) 同步外觀模式，確保 React 掛載前第一幀樣式與 localStorage 完全一致。
+- 頁面首幀透過 HTML `data-bs-theme`、`data-bs-core` 與衍生的 `data-design-system` 同步外觀。`applyThemeEarly` 與 React 共用 `themeSettings.ts` 正規化設定及 `themeDocument.ts` 寫入入口。保留舊儲存／API 欄位 `halfmoonCore`，設計系統由 catalog 推導，不另存第二份狀態。
 
 ---
 
@@ -42,3 +45,4 @@
 
 ### 2. 60Hz 高頻繪圖效能隔絕
 - 所有 Canvas、圖表、滑桿控制項在 60Hz 遙測即時更新時，必須維持 `transition: none !important`，避免高頻數據流觸發動畫佇列堆疊導致介面遲鈍。
+- 即時儀表卡片與其開關提示不疊加 `backdrop-filter`，避免動態 Canvas 周圍建立多層模糊合成。Halfmoon 一般卡片外層維持透明排版容器、內層保留原材質；Swiss 外層使用實色細框。導覽列、抽屜等靜態表面依所屬系統使用材質 token。

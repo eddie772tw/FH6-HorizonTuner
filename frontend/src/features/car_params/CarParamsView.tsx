@@ -317,7 +317,7 @@ const CarParamsView: React.FC<CarParamsViewProps> = ({ subTab: propSubTab, setSu
               </h2>
               {renderSaveStatus()}
               <div 
-                className="position-relative d-inline-block"
+                className="position-relative d-inline-flex"
                 onClick={() => setShowCalibPopover(prev => !prev)}
                 onMouseEnter={() => setShowCalibPopover(true)}
                 onMouseLeave={() => setShowCalibPopover(false)}
@@ -389,7 +389,7 @@ const CarParamsView: React.FC<CarParamsViewProps> = ({ subTab: propSubTab, setSu
           </div>
 
           <div className="d-flex align-items-center gap-3">
-            <ul className="nav nav-pills gap-1">
+            <ul className="workspace-tabs nav">
               <li className="nav-item">
                 <button 
                   className={`nav-link btn-sm py-1 px-3 ${subTab === 'config' ? 'active fw-bold' : 'text-body-secondary'}`}

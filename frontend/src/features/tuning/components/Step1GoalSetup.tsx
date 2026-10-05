@@ -103,7 +103,7 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
             tabIndex={!hasCoreParams ? 0 : undefined}
             role={!hasCoreParams ? 'group' : undefined}
             aria-label={!hasCoreParams ? t('Please set basic vehicle parameters in Step 1 to proceed.') : undefined}
-            style={{ display: 'inline-block', cursor: !hasCoreParams ? 'not-allowed' : 'auto' }}
+            style={{ display: 'inline-flex', cursor: !hasCoreParams ? 'not-allowed' : 'auto' }}
           >
             <button
               type="button"
@@ -126,6 +126,7 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
 
       {/* Three-Column Layout */}
       <div
+        className="tuning-workflow__grid"
         style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(330px, 1fr))',
@@ -135,8 +136,8 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
       >
         {/* Column 1: Goal & Environment */}
         <div className="glass-panel p-3 d-flex flex-column gap-3">
-          <div className="border-bottom pb-2 d-flex justify-content-between align-items-center">
-            <span className="text-primary fw-bold fs-6">{t('Goal & Environment')}</span>
+          <div className="workspace-panel-header border-bottom pb-2 d-flex justify-content-between align-items-center gap-2 flex-wrap">
+            <span className="workspace-section-heading fw-bold fs-6">{t('Goal & Environment')}</span>
             <span className="badge text-bg-primary">{t('Setup Prior')}</span>
           </div>
 
@@ -213,8 +214,8 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
 
         {/* Column 2: Powertrain & Drivetrain */}
         <div className="glass-panel p-3 d-flex flex-column gap-3">
-          <div className="border-bottom pb-2 d-flex justify-content-between align-items-center">
-            <span className="text-primary fw-bold fs-6">{t('Core Physics & Drivetrain')}</span>
+          <div className="workspace-panel-header border-bottom pb-2 d-flex justify-content-between align-items-center gap-2 flex-wrap">
+            <span className="workspace-section-heading fw-bold fs-6">{t('Core Physics & Drivetrain')}</span>
             <span className="badge text-bg-secondary">{t('Vehicle Specs')}</span>
           </div>
 
@@ -363,8 +364,8 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
 
         {/* Column 3: Chassis Limits & Tires */}
         <div className="glass-panel p-3 d-flex flex-column gap-3">
-          <div className="border-bottom pb-2 d-flex justify-content-between align-items-center">
-            <span className="text-primary fw-bold fs-6">{t('Suspension & Tires')}</span>
+          <div className="workspace-panel-header border-bottom pb-2 d-flex justify-content-between align-items-center gap-2 flex-wrap">
+            <span className="workspace-section-heading fw-bold fs-6">{t('Suspension & Tires')}</span>
             <button
               type="button"
               onClick={applyDefaultLimits}

@@ -3,10 +3,10 @@ import { useTheme } from '../../context/ThemeContext';
 import { useSettings } from '../../context/SettingsContext';
 import AppearanceModePanel from './components/AppearanceModePanel';
 import ColorPickerPanel from './components/ColorPickerPanel';
-import PresetPanel from './components/PresetPanel';
 import CustomCSSEditorPanel from './components/CustomCSSEditorPanel';
 import { ModalPortal } from '../../components/common/ModalPortal';
 import { useModalFocus } from '../../hooks/useModalFocus';
+import './theme.css';
 
 interface ThemeViewProps {
   show: boolean;
@@ -67,12 +67,14 @@ const ThemeView: React.FC<ThemeViewProps> = ({ show, onClose }) => {
         </div>
 
         {/* Offcanvas Body */}
-        <div className="offcanvas-body p-0 overflow-y-auto">
-          <div className="settings-surface d-flex flex-column gap-4 p-4">
+        <div className="offcanvas-body px-4 py-3 overflow-y-auto">
+          <div className="settings-surface theme-settings d-flex flex-column gap-4">
             <AppearanceModePanel />
             <ColorPickerPanel />
-            <PresetPanel />
-            <CustomCSSEditorPanel />
+            <details className="theme-advanced">
+              <summary>{t('Advanced customization')}</summary>
+              <div className="pt-3"><CustomCSSEditorPanel /></div>
+            </details>
           </div>
         </div>
       </div>

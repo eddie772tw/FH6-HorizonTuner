@@ -17,11 +17,15 @@ mDNS discovery, Bluetooth Classic RFCOMM, and a native offline HUD cache are pla
 ## Modules
 
 - `:protocol-core` is a pure Kotlin/JVM module for transport abstractions, framing, telemetry decoding, connection liveness, and protocol tests. It maintains bi-directional synchronization with the upstream PadLink protocol (`ITransport`, 5-state `ConnectionStateMachine`, `HeartbeatWatchdog`, and pairing manager). It does not own tuning formulas.
-- `:theme` maps the shared visual tokens to Compose.
+- `:theme` currently provides Compose theme tokens; synchronization with desktop Core Theme, mode and Color Presets remains pending.
 - `:app` provides the Android 13+ Compose shell, WebView, connection validation, and the `connectedDevice` foreground service.
 - `frontend/companion` and `frontend/src/features/companion` provide the shared Companion page, five telemetry cards, and four-step remote workflow.
 
 The current workflow is four steps: **Goal & Setup**, **Chassis & Tires**, **Engine data & gearing**, and **Setup verification**.
+
+## Theme integration follow-up
+
+The WebView loads the desktop's shared CSS and theme bootstrap. Native Compose navigation, connection/offline screens, live theme synchronization and some WebView section tabs still require integration. [Issue #485](https://github.com/eddie772tw/FH6-HorizonTuner/issues/485) tracks this work alongside Companion feature completion, including Swiss Technical, Editorial and Contrast. Follow the [shared design-system guide](../docs/frontend/design-systems.md); desktop browser checks do not establish Android acceptance.
 
 ## Toolchain and validation
 
