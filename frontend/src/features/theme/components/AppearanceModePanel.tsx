@@ -24,6 +24,13 @@ const CORE_THEMES: { id: HalfmoonCore; label: string; description: string; swatc
     swatchPrimary: '#a07850',
     swatchBg: '#1c1a18',
   },
+  {
+    id: 'swiss',
+    label: 'Swiss Technical',
+    description: 'High-contrast grid with objective typography and matte instruments',
+    swatchPrimary: '#e30613',
+    swatchBg: '#0b0d12',
+  },
 ];
 
 const AppearanceModePanel: React.FC = () => {

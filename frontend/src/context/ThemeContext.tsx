@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { backendFetch } from '../services/backend';
 import { validateCSS } from '../utils/cssValidator';
 
-export type HalfmoonCore = 'default' | 'modern' | 'elegant';
+export type HalfmoonCore = 'default' | 'modern' | 'elegant' | 'swiss';
 
 export interface ThemeSettings {
   mode: 'dark' | 'light';
@@ -22,15 +22,15 @@ export const defaultThemeSettings: ThemeSettings = {
   customCSS: ''
 };
 
-const isHalfmoonCore = (value: unknown): value is HalfmoonCore => (
-  value === 'default' || value === 'modern' || value === 'elegant'
+export const isHalfmoonCore = (value: unknown): value is HalfmoonCore => (
+  value === 'default' || value === 'modern' || value === 'elegant' || value === 'swiss'
 );
 
 const isHexColor = (value: unknown): value is string => (
   typeof value === 'string' && /^#[\da-f]{6}$/i.test(value)
 );
 
-const normalizeThemeSettings = (
+export const normalizeThemeSettings = (
   candidate: Partial<ThemeSettings> | null | undefined,
   fallback: ThemeSettings = defaultThemeSettings,
 ): ThemeSettings => ({

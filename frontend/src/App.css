@@ -128,6 +128,55 @@
   --text-primary:#292219;
 }
 
+/* --- Swiss Technical (Matte Industrial / High-Contrast Precision Grid) --- */
+[data-bs-core="swiss"][data-bs-theme="dark"] {
+  --bg-gradient:    radial-gradient(ellipse at top right, #11141c, #07090d);
+  --glass-bg:       rgba(14, 17, 23, 0.95);
+  --glass-blur:     0px;
+  --glass-border:   rgba(255, 255, 255, 0.12);
+  --glass-shadow:   0 2px 8px rgba(0, 0, 0, 0.6);
+  --panel-radius:   4px;
+  --input-radius:   2px;
+  --surface-1:      rgba(22, 27, 36, 0.90);
+  --surface-2:      rgba(30, 37, 48, 0.80);
+  --surface-3:      rgba(255, 255, 255, 0.08);
+  --divider:        rgba(255, 255, 255, 0.12);
+  --divider-md:     rgba(255, 255, 255, 0.22);
+}
+[data-bs-core="swiss"][data-bs-theme="light"] {
+  --bg-gradient:    linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+  --glass-bg:       #ffffff;
+  --glass-blur:     0px;
+  --glass-border:   rgba(0, 0, 0, 0.15);
+  --glass-shadow:   0 1px 3px rgba(0, 0, 0, 0.08);
+  --panel-radius:   4px;
+  --input-radius:   2px;
+  --surface-1:      rgba(241, 245, 249, 0.95);
+  --surface-2:      rgba(226, 232, 240, 0.85);
+  --surface-3:      rgba(203, 213, 225, 0.60);
+  --divider:        rgba(0, 0, 0, 0.12);
+  --divider-md:     rgba(0, 0, 0, 0.20);
+  --text-primary:   #090d16;
+  --text-secondary: #475569;
+}
+
+/* Swiss Micro-typography & Numeric Alignment Utilities */
+.font-tabular,
+.telemetry-steer-gauge__readout,
+[class*="metric-value"],
+[class*="readout-value"] {
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: "tnum" 1, "lnum" 1;
+}
+
+.swiss-readout-label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
+}
+
 /* =============================================================================
    (D) Base Layout & Halfmoon Native Class Integration
    ============================================================================= */

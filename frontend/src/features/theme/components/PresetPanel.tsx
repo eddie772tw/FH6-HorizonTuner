@@ -58,6 +58,18 @@ const PRESETS: Preset[] = [
     secondaryColor: '#ff584d',
     accentColor: '#ffb732',
   },
+  {
+    label: 'Swiss Signal',
+    primaryColor: '#e30613',
+    secondaryColor: '#f59e0b',
+    accentColor: '#2563eb',
+  },
+  {
+    label: 'Bauhaus Mono',
+    primaryColor: '#f1f5f9',
+    secondaryColor: '#ef4444',
+    accentColor: '#64748b',
+  },
 ];
 
 const presetBtnStyle: React.CSSProperties = {
