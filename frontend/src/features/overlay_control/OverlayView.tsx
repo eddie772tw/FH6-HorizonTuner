@@ -187,7 +187,7 @@ const OverlayViewContent: React.FC = () => {
         onStyleChange={hudStyle => void updateConfig({ hudStyle })} onMonitorChange={handleMonitorChange}
         onReloadHud={() => void handleReloadHud()} onOpenUnitSettings={() => setShowUnitSettings(true)} />}
       layout={<HudLayoutPanel {...panelProps} onElementToggle={handleElementToggle} />}
-      advanced={<HudAdvancedPanel {...panelProps} audioDevices={audioDevices} loadingAudioDevices={loadingAudioDevices}
+      advanced={<HudAdvancedPanel {...panelProps} appUnits={settings.units} audioDevices={audioDevices} loadingAudioDevices={loadingAudioDevices}
         isWipActive={isWipActive} wipForced={wipForced}
         onAudioDeviceChange={deviceId => void handleAudioDeviceChange(deviceId)} onRefreshAudioDevices={() => void fetchAudioDevices()}
         onShowWipChange={handleToggleShowWipHuds} onElementToggle={handleElementToggle}

@@ -182,6 +182,11 @@ function formatHudTelemetry(raw) {
 
     return {
         ...raw, // Keep raw data accessible just in case
+        // Read-only source evidence for monitors/history. ws.js parses a fresh
+        // object per packet; interpolation copies display fields without
+        // mutating this reference. Consumers must not mutate or accumulate it.
+        // One reference per source sample, no per-render clone or extra queue.
+        sourceTelemetry: raw,
         isRaceOn,
         is_race_on: isRaceOn,
         timestamp_ms: raw.TimestampMS || 0,

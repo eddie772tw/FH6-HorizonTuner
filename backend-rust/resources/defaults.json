@@ -97,6 +97,23 @@
       }
     }
   },
+  "DEFAULT_STACK_ST8100_CONFIG": {
+    "stackSt8100Field1": "speed",
+    "stackSt8100Field2": "gear",
+    "stackSt8100Field3": "fuel",
+    "stackSt8100Field4": "tire_avg",
+    "stackSt8100Page": "live",
+    "stackSt8100TemperatureUnit": "c",
+    "stackSt8100Dial": "auto",
+    "stackSt8100ShiftEnabled": true,
+    "stackSt8100ShiftPercent": 90,
+    "stackSt8100FuelWarningEnabled": false,
+    "stackSt8100FuelWarningPercent": 10,
+    "stackSt8100TireWarningEnabled": false,
+    "stackSt8100TireWarningC": 120,
+    "stackSt8100BoostWarningEnabled": false,
+    "stackSt8100BoostWarningBar": 1.5
+  },
   "DEFAULT_HUD_CONFIG": {
     "enabled": false,
     "hudStyle": "vfd",

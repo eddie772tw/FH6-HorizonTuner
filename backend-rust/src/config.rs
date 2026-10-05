@@ -95,6 +95,80 @@ pub fn merge_settings(settings: &Value, patch: &Value) -> ApiResult<Value> {
     }
     Ok(next)
 }
+/// Stack owns only its namespaced keys. Absent inactive settings stay absent.
+fn normalize_stack_st8100(value: &mut Value) {
+    let active = value["hudStyle"] == "stack_st8100";
+    if !active
+        && !value
+            .as_object()
+            .is_some_and(|object| object.keys().any(|key| key.starts_with("stackSt8100")))
+    {
+        return;
+    }
+    let defaults = defaults("DEFAULT_STACK_ST8100_CONFIG");
+    let fields = [
+        "speed",
+        "gear",
+        "fuel",
+        "tire_avg",
+        "tire_max",
+        "boost",
+        "rpm",
+        "current_lap",
+        "last_lap",
+        "best_lap",
+        "lap",
+        "peak_rpm",
+        "peak_speed",
+    ];
+    for (key, fallback) in defaults.as_object().expect("Stack defaults object") {
+        if !active && value.get(key).is_none() {
+            continue;
+        }
+        let input = &value[key];
+        let normalized = match key.as_str() {
+            "stackSt8100Field1" | "stackSt8100Field2" | "stackSt8100Field3"
+            | "stackSt8100Field4" => input
+                .as_str()
+                .filter(|v| fields.contains(v))
+                .map(|v| json!(v)),
+            "stackSt8100Page" => input
+                .as_str()
+                .filter(|v| ["live", "peaks"].contains(v))
+                .map(|v| json!(v)),
+            "stackSt8100TemperatureUnit" => input
+                .as_str()
+                .filter(|v| ["c", "f"].contains(v))
+                .map(|v| json!(v)),
+            "stackSt8100Dial" => input
+                .as_str()
+                .filter(|v| ["auto", "0-3-8", "0-4-10", "0-6-13"].contains(v))
+                .map(|v| json!(v)),
+            "stackSt8100ShiftEnabled"
+            | "stackSt8100FuelWarningEnabled"
+            | "stackSt8100TireWarningEnabled"
+            | "stackSt8100BoostWarningEnabled" => input.as_bool().map(|v| json!(v)),
+            _ => {
+                let (min, max) = match key.as_str() {
+                    "stackSt8100ShiftPercent" => (50.0, 100.0),
+                    "stackSt8100FuelWarningPercent" => (1.0, 50.0),
+                    "stackSt8100TireWarningC" => (50.0, 200.0),
+                    "stackSt8100BoostWarningBar" => (0.1, 5.0),
+                    _ => continue,
+                };
+                input.as_f64().filter(|v| v.is_finite()).map(|v| {
+                    if v < min || v > max {
+                        json!(v.clamp(min, max))
+                    } else {
+                        input.clone()
+                    }
+                })
+            }
+        };
+        value[key] = normalized.unwrap_or_else(|| fallback.clone());
+    }
+}
+
 pub fn normalize_hud(data: &Value) -> Value {
     let mut value = if data.is_object() {
         data.clone()
@@ -144,6 +218,7 @@ pub fn normalize_hud(data: &Value) -> Value {
             value.as_object_mut().unwrap().entry(key).or_insert(v);
         }
     }
+    normalize_stack_st8100(&mut value);
     value
 }
 pub fn hud_for_frontend(data: &Value, settings: &Value) -> Value {
