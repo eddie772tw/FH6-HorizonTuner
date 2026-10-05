@@ -8,9 +8,9 @@
     "command": "pnpm -C frontend test",
     "files_passed": 160,
     "files_skipped": 1,
-    "tests_passed": 1195,
+    "tests_passed": 1202,
     "tests_skipped": 1,
-    "style_cases": 90
+    "style_cases": 97
   },
   "build": {
     "command": "pnpm -C frontend build:web-hud",
@@ -44,8 +44,8 @@
   "base_commit": "a9335b158e658faa86bcfcbe4d36beb602f6c9c7",
   "dependency_install": "pnpm install --frozen-lockfile (passed on pinned base)",
   "remote_browser_review": {
-    "result": "passed technical review; user review pending",
+    "result": "passed scoped technical review; final documentation-head CI pending publication; PR remains Ready",
     "evidence": "review-evidence.json",
-    "reviewed_head": "d6c74ba5af2f83df94ee4a45cadaaf086e524361"
+    "reviewed_head": "04b20fe7c54715ebae1477c104f23d89e6be641f"
   }
 }

@@ -1,8 +1,8 @@
 {
   "style": "ap1_rev_arc",
-  "revision": "inward RPM numerals, slender dense cells and major/minor graduations",
-  "base_head": "bff048522e4472ae1fdcb40ca006be6edaccc1a7",
-  "status": "implemented; local gates passed; new actual Chrome rendering and moire review pending",
+  "revision": "Entire120-cell RPM assembly lifted toward fixed fascia by shared normal offset24",
+  "base_head": "932bbae09e04226c016d8608679d74588c6d6526",
+  "status": "Actual Chrome renderer/launcher passed; current screenshots independently inspected; final documentation-head CI pending publication; PR remains Ready for Review",
   "reference_sources": [
     {
       "url": "https://www.honda.co.jp/factbook/auto/s2000/199904/046.html",
@@ -55,51 +55,272 @@
     "segments": 120,
     "exact_oem_cell_count": "not established and not asserted",
     "fill_fraction_of_pitch": 0.64,
-    "sampling": "equal arc length along original band middle, same normal-offset ellipse and bezel",
-    "numerals": "uniform inward normal offset; no relocation of adjacent readouts",
+    "sampling": "Separate equal-arc-length table on relocated RPM-band midline; original fascia table and ellipse remain fixed",
+    "numerals": "Same inward normal offset relative to relocated band; RPM unit follows left endpoint normal",
     "graduations": "major at adaptive1000-RPM multiples, minor at half major interval",
     "headroom": "one major interval beyond rounded engine maximum; all marks/labels/fill share scaleMaxRpm",
     "headroom_is_not": "OEM10000 calibration claim, changed engine maximum, or inferred redline",
-    "rpm_glow": "reduced only on RPM cells to avoid joining narrow gaps"
-  },
-  "estimated_compact_dpr1": {
-    "minimum_cell_width_device_pixels": 1.5493006987555908,
-    "minimum_gap_device_pixels": 0.8770041269434572,
-    "kind": "geometric estimate, not actual Chrome or moire acceptance"
+    "rpm_glow": "reduced only on RPM cells to avoid joining narrow gaps",
+    "upward_placement": {
+      "outward_normal_offset_design_units": 24,
+      "band_thickness_design_units": 18,
+      "nominal_gap_to_face_contour_design_units": 12,
+      "face_stroke_width_design_units": 4,
+      "nominal_gap_after_half_stroke_design_units": 10,
+      "construction": "Base ellipse plus common outward unit normal; no independent vertical shift or fascia movement",
+      "unit_anchor_before": {
+        "x": 109,
+        "y": 172
+      },
+      "unit_anchor_after": {
+        "x": 88.42833240374247,
+        "y": 159.63850768276387
+      },
+      "equal_arc_table": "RPM relocated band midpoint at offset33; original fascia table remains at offset9"
+    }
   },
   "local_verification": {
     "files_passed": 160,
     "files_skipped": 1,
-    "tests_passed": 1200,
+    "tests_passed": 1202,
     "tests_skipped": 1,
-    "style_cases": 95,
+    "style_cases": 97,
     "build_web_hud": "passed",
     "syntax_diff_body": "passed",
-    "fascia": "SVG regeneration unchanged; Inkscape raster re-export exactly matches committed PNG (ImageMagick AE=0)"
+    "fascia": "Current SVG regeneration remains byte-identical; fascia.svg/png exactly match932 source. Prior Inkscape re-export verification had AE=0"
   },
-  "planned_actual_checks": [
-    "Numbers and marks below band; no protected-readout or graduation overlap",
-    "Default/70%compact atDPR1/DPR2, including oblique end-cell width/gap",
-    "zero/redline/engine max/display headroom/overrange/highRPM/rounded maximum",
-    "Actual launcher and Coordinator with raw data and unchanged threshold ownership"
-  ],
   "preserved": [
-    "ellipse and both band-edge curves",
-    "fascia SVG/PNG",
+    "base ellipse and original fascia sampling/contours",
+    "fascia SVG/PNG bytes",
     "speed and gear anchors",
     "fixed speed-unit pair and centered VAC-above-BOOST pair",
-    "BOOST signed abs mapping and all paint",
+    "BOOST signed abs mapping and paint",
     "shared lifecycle/protocol and Ready PR status"
   ],
   "provenance": "No OEM image, logo or font shipped. Original HUD graphics remain repository MIT. Reference photos are research-only.",
   "limitations": [
-    "New actual Chrome review pending; current preview images are historical",
-    "Inkscape layout draft is a concept check, not browser acceptance",
-    "Native Windows, real network/game and safe-zone acceptance unperformed"
+    "Source visual job passed; final documentation-head CI must be checked separately after publication",
+    "No native Windows, real network/game, display-panel or moving-footage acceptance",
+    "No reviewer approval or merge implied; PR remains Ready for Review",
+    "OEM exact segment count and10000 calibration not established; chosen density/headroom/24-unit inset are HUD adaptations"
   ],
   "skills": [
     "halfmoon-design-system",
     "telemetry-udp-protocol",
     "pr-author-maintainer"
+  ],
+  "rendered_source_head": "04b20fe7c54715ebae1477c104f23d89e6be641f",
+  "remote": {
+    "source_head": "04b20fe7c54715ebae1477c104f23d89e6be641f",
+    "platform": "GitHub Actions Linux",
+    "browser": "Chrome154.0.8037.57",
+    "browser_version_log_job": 111689913769,
+    "sandbox": true,
+    "telemetry": "Synthetic direct frames and production-parser JSON through actual launcher/Coordinator; not real UDP/game capture",
+    "run_id": 37287538534,
+    "artifact_id": 11334872773,
+    "run_url": "https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37287538534",
+    "artifact_url": "https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37287538534/artifacts/11334872773",
+    "result": "passed",
+    "renderer_screenshots": 93,
+    "rpm_scenarios": 28,
+    "maximum_glow_scenarios": 4,
+    "fixed_label_scenarios": 28,
+    "launcher_samples": 38,
+    "renderer_errors": [],
+    "launcher_errors": [],
+    "launcher_missing": [],
+    "fixture_scope": "Real launcher and Coordinator code with fixture HTTP config/style discovery and fixture WebSocket; stored JSON originated from synthetic324-byte packets processed by production parser/serde_json, not a parser/backend execution inside this browser job"
+  },
+  "actual_metrics": {
+    "minimum_cell_width_device_pixels": 1.7249100053683428,
+    "minimum_cell_gap_device_pixels": 0.9730689151414837,
+    "minimum_numeral_to_band_normal_gap_design_units": 8.824763367805748,
+    "minimum_bezel_normal_gap_design_units": 11.999977486388715,
+    "minimum_gap_after_face_stroke_design_units": 9.999977486388715,
+    "nominal_three_sigma_glow_clearance_design_units": 6.399977486388716,
+    "glow_measurement_limit": "The 3-sigma value is a nominal geometric budget from the actual computed1.2px RPM drop-shadow blur, not a claim that a Gaussian has finite pixel support. All four actual maximum-glow screenshots were visually inspected for clipping/spill at crest and ends.",
+    "all_graduations_below_band": true,
+    "all_reported_collisions": [],
+    "compact_dpr1_rpm_cases": [
+      {
+        "scenario": "rpm-zero-compact-dpr1",
+        "actual_rpm": 0,
+        "engine_max_rpm": 9000,
+        "axis_max_rpm": 10000,
+        "lit_cells": 0,
+        "total_cells": 120,
+        "shift": ""
+      },
+      {
+        "scenario": "rpm-redline-compact-dpr1",
+        "actual_rpm": 8000,
+        "engine_max_rpm": 9000,
+        "axis_max_rpm": 10000,
+        "lit_cells": 96,
+        "total_cells": 120,
+        "shift": "SHIFT"
+      },
+      {
+        "scenario": "rpm-engine-max-compact-dpr1",
+        "actual_rpm": 9000,
+        "engine_max_rpm": 9000,
+        "axis_max_rpm": 10000,
+        "lit_cells": 108,
+        "total_cells": 120,
+        "shift": "SHIFT"
+      },
+      {
+        "scenario": "rpm-headroom-compact-dpr1",
+        "actual_rpm": 10000,
+        "engine_max_rpm": 9000,
+        "axis_max_rpm": 10000,
+        "lit_cells": 120,
+        "total_cells": 120,
+        "shift": "SHIFT"
+      },
+      {
+        "scenario": "rpm-overrange-compact-dpr1",
+        "actual_rpm": 11000,
+        "engine_max_rpm": 9000,
+        "axis_max_rpm": 10000,
+        "lit_cells": 120,
+        "total_cells": 120,
+        "shift": "SHIFT"
+      },
+      {
+        "scenario": "rpm-adaptive-high-compact-dpr1",
+        "actual_rpm": 11000,
+        "engine_max_rpm": 12000,
+        "axis_max_rpm": 14000,
+        "lit_cells": 95,
+        "total_cells": 120,
+        "shift": "SHIFT"
+      },
+      {
+        "scenario": "rpm-adaptive-rounded-compact-dpr1",
+        "actual_rpm": 9200,
+        "engine_max_rpm": 9500,
+        "axis_max_rpm": 11000,
+        "lit_cells": 101,
+        "total_cells": 120,
+        "shift": "SHIFT"
+      }
+    ],
+    "maximum_glow_cases": [
+      {
+        "scenario": "rpm-upper-glow-default-dpr1",
+        "filter": "drop-shadow(rgb(255, 177, 68) 0px 0px 1.2px)",
+        "clearance_after_face_stroke": 9.999977486388715,
+        "nominal_three_sigma_clearance": 6.399977486388716
+      },
+      {
+        "scenario": "rpm-upper-glow-compact-dpr1",
+        "filter": "drop-shadow(rgb(255, 177, 68) 0px 0px 1.2px)",
+        "clearance_after_face_stroke": 9.999977486388715,
+        "nominal_three_sigma_clearance": 6.399977486388716
+      },
+      {
+        "scenario": "rpm-upper-glow-default-dpr2",
+        "filter": "drop-shadow(rgb(255, 177, 68) 0px 0px 1.2px)",
+        "clearance_after_face_stroke": 9.999977486388715,
+        "nominal_three_sigma_clearance": 6.399977486388716
+      },
+      {
+        "scenario": "rpm-upper-glow-compact-dpr2",
+        "filter": "drop-shadow(rgb(255, 177, 68) 0px 0px 1.2px)",
+        "clearance_after_face_stroke": 9.999977486388715,
+        "nominal_three_sigma_clearance": 6.399977486388716
+      }
+    ]
+  },
+  "verified_actual_checks": [
+    "Numbers/marks below relocated band; no protected-readout or graduation overlap",
+    "Default/70%compact x DPR1/DPR2, including oblique end-cell width/gap",
+    "Four maximum-glow scenes with crest/end clearance checks and actual-pixel inspection",
+    "zero/redline/engine max/display headroom/overrange/highRPM/rounded maximum",
+    "Actual launcher and Coordinator with raw data and unchanged threshold ownership"
+  ],
+  "visual_review": {
+    "result": "passed scoped technical inspection",
+    "inspected": [
+      "metric/default and70%compact x DPR1/DPR2",
+      "maximum-glow default/compact x DPR1/DPR2",
+      "adaptive12000/rounded9500/zero compactDPR1",
+      "current caption comparison, historical932/current04b before-after, and nine-state sheet"
+    ],
+    "findings": [
+      "The entire RPM assembly now follows a24-design-unit outward normal offset; the fixed upper fascia stays unchanged at crest and both ends",
+      "Lower numerals, alternating major/minor marks and relocated left RPM unit remain clearly separated from the fixed speed/gear/auxiliary readouts",
+      "120 slender cells remain distinct in inspected default/70%compact DPR1/DPR2 screenshots; no broad moire, merged rail, top clipping or visible glow spill observed",
+      "All four maximum-glow screenshots (default/compact x DPR1/DPR2, intensity2) inspected; nominal geometric clearance is supported by actual pixels, not treated as a finite Gaussian bound",
+      "Engine/display-axis mapping unchanged:9000 engine maximum lights108/120 on10000 axis;10000 headroom and11000 overrange saturate fill;12000 maximum uses14000 axis",
+      "Current unit/mode comparison uses latest raised-RPM pixels; historical932 before/current04b after use matching metric telemetry"
+    ],
+    "moire_limit": "Still-frame review at inspected sizes, not every zoom level, display panel or moving game footage",
+    "runtime_changes_needed": false,
+    "reviewer_approval": "not implied"
+  },
+  "pixel_preservation": {
+    "evidence": "rpm-layout-preservation.json",
+    "reference_head": "932bbae09e04226c016d8608679d74588c6d6526",
+    "reference_visual_run": 37283549559,
+    "compared_pixels": 151785,
+    "differing_pixels": 0,
+    "scope": "Four matching metric default/compact DPR1/DPR2 frames only; not whole-image identity, all-scene identity or native-game acceptance",
+    "protected": [
+      "speedDigits",
+      "gearValue",
+      "speedUnit",
+      "speedUnitMph",
+      "boostSegments",
+      "boostTicks",
+      "boostValue",
+      "vacModeLabel",
+      "boostModeLabel"
+    ],
+    "excluded": "All moved RPM elements including rpmUnit; no whole-image identity claim"
+  },
+  "previews": {
+    "hero": "detail-metric.png",
+    "compact": "detail-compact.png",
+    "current_caption_comparison": "ap1-boost-scale-comparison.png",
+    "rpm_before_after": "rpm-before-after.png",
+    "rpm_before_after_heads": {
+      "historical": "932bbae09e04226c016d8608679d74588c6d6526",
+      "current": "04b20fe7c54715ebae1477c104f23d89e6be641f"
+    },
+    "states": "states.png",
+    "full_viewport": "metric-1280x720.png",
+    "derivation": "Actual screenshots without resampling; alpha-bound crops or montage with captions and review background;8-bit PNG",
+    "prior_arc_comparison": "before-after.png remains the earlier fuel-version arc comparison, not current RPM placement"
+  },
+  "source_head_ci": {
+    "head": "04b20fe7c54715ebae1477c104f23d89e6be641f",
+    "workflows": [
+      {
+        "name": "HUD AP1 Rev Arc Visual Review",
+        "id": 37287538534,
+        "result": "success"
+      },
+      {
+        "name": "CI Pipeline",
+        "id": 37287538420,
+        "result": "success"
+      },
+      {
+        "name": "Release Packaging Test",
+        "id": 37287538834,
+        "result": "success"
+      }
+    ],
+    "observed_at_utc": "2026-10-05T09:14:08Z",
+    "final_documentation_head": "pending publication; must be checked separately"
+  },
+  "moved": [
+    "RPM cells",
+    "RPM graduations",
+    "RPM numerals",
+    "left RPM unit"
   ]
 }
