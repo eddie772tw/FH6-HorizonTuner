@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 const dir = resolve(process.cwd(), '../hud_overlay/stack_st8100');
 function context() {
   const scope: any = {};
-  for (const name of ['stack-model.js', 'stack-monitor.js', 'stack-dot-matrix.js', 'stack-renderer.js']) runInNewContext(readFileSync(resolve(dir, name), 'utf8'), scope);
+  for (const name of ['stack-config.js', 'stack-model.js', 'stack-schedule.js', 'stack-monitor.js', 'stack-dot-matrix.js', 'stack-renderer.js']) runInNewContext(readFileSync(resolve(dir, name), 'utf8'), scope);
   return scope;
 }
 function canvas() {
@@ -29,9 +29,9 @@ describe('Stack renderer semantic outputs, not Canvas call counts or pixels', ()
     expect(target.dataset.lcd1).toBe('KM/H 144 | GEAR 4'); expect(target.getAttribute('aria-label')).toContain('TYRE C 100');
     S.configure(state, { stackSt8100Page: 'peaks' }); R.draw(renderer, state, 200, null);
     expect(target.dataset.lcd1).toBe('MAX RPM 6200 | MAX SPD 144');
-    S.configure(state, { stackSt8100FuelWarningEnabled: true });
-    for (let n = 0; n <= 600; n += 100) S.ingest(state, { ...raw, TimestampMS: 2000 + n, Fuel: .01 }, {}, 300 + n);
-    R.draw(renderer, state, 900, null); expect(target.dataset.lcd1).toBe('LOW FUEL'); expect(target.dataset.warning).toBe('fuel');
+    S.configure(state, { stackSt8100Alarms: [{enabled:true,metric:'boost',threshold:1.5}] });
+    for (let n = 0; n <= 600; n += 100) S.ingest(state, { ...raw, TimestampMS: 2000 + n, Boost: 29.0076 }, {}, 300 + n);
+    R.draw(renderer, state, 900, null); expect(target.dataset.lcd1).toBe('HIGH BOOST'); expect(target.dataset.warning).toBe('alarm');
     S.tick(state, 2500); R.draw(renderer, state, 2500, null); expect(target.dataset.status).toBe('NO SIGNAL');
     expect(target.getAttribute('aria-label')).not.toContain('6200'); expect(target.dataset.shift).toBe('false');
   });
@@ -50,7 +50,7 @@ describe('Stack renderer semantic outputs, not Canvas call counts or pixels', ()
     expect(() => { R.resize(renderer, NaN); R.draw(renderer, S.create(), 0, null); }).not.toThrow();
   });
   it('cleans timers and self-test RAF on host destroy and pagehide; config visibility works', () => {
-    const scope = context(), target = canvas(), container = { style: {} }, callbacks = new Map<string, Function[]>();
+    const scope = context(), target = canvas(), container = { style: {}, dataset: {} }, callbacks = new Map<string, Function[]>();
     const timers = new Set<number>(), rafs = new Set<number>(); let id = 0, definition: any;
     const root: any = {
       ...scope, devicePixelRatio: 2,

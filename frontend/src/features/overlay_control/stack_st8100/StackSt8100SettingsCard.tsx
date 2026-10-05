@@ -1,15 +1,12 @@
-import { useEffect, useId, useState } from 'react';
+import { useId } from 'react';
 import type { HudConfig } from '../hudConfig';
 import type { HudDisplayUnits } from '../HudUnitSettingsSidebar';
-import {
-  readStackSt8100Settings, STACK_ST8100_DIALS, STACK_ST8100_FIELDS, STACK_ST8100_LIMITS,
+import { readStackSt8100Settings, STACK_ST8100_DIALS, STACK_ST8100_FIELDS,
   type StackSt8100Dial, type StackSt8100Field, type StackSt8100Page,
-  type StackSt8100Settings, type StackSt8100TemperatureUnit,
-} from './config';
-import {
-  resolveStackSt8100BoostUnit, stackSt8100ThresholdToDisplay, parseStackSt8100ThresholdDraft,
-  type StackSt8100DisplayUnits,
-} from './units';
+  type StackSt8100Face, type StackSt8100TemperatureUnit } from './config';
+import { resolveStackSt8100DisplayUnits } from './units';
+import { StackSt8100ThresholdInput } from './StackSt8100ThresholdInput';
+import { StackSt8100AlarmSettings } from './StackSt8100AlarmSettings';
 
 interface StackSt8100SettingsCardProps {
   config: HudConfig;
@@ -17,78 +14,17 @@ interface StackSt8100SettingsCardProps {
   onChange: (patch: Partial<HudConfig>) => void;
   t: (key: string) => string;
 }
-
 const FIELD_SLOTS = [
   { key: 'stackSt8100Field1', label: 'LCD upper left' },
   { key: 'stackSt8100Field2', label: 'LCD upper right' },
   { key: 'stackSt8100Field3', label: 'LCD lower left' },
   { key: 'stackSt8100Field4', label: 'LCD lower right' },
 ] as const;
-const WARNINGS = [
-  { enabled: 'stackSt8100ShiftEnabled', threshold: 'stackSt8100ShiftPercent', label: 'Shift light', unit: '% max RPM' },
-  { enabled: 'stackSt8100FuelWarningEnabled', threshold: 'stackSt8100FuelWarningPercent', label: 'Low fuel warning', unit: '%' },
-  { enabled: 'stackSt8100TireWarningEnabled', threshold: 'stackSt8100TireWarningC', label: 'High tire temperature warning', unit: 'temperature' },
-  { enabled: 'stackSt8100BoostWarningEnabled', threshold: 'stackSt8100BoostWarningBar', label: 'High boost warning', unit: 'boostPressure' },
-] as const;
-
-function ThresholdRow({ warning, settings, units, id, onChange, t }: {
-  warning: (typeof WARNINGS)[number];
-  settings: StackSt8100Settings;
-  units: StackSt8100DisplayUnits;
-  id: string;
-  onChange: StackSt8100SettingsCardProps['onChange'];
-  t: StackSt8100SettingsCardProps['t'];
-}) {
-  const { enabled, threshold, label } = warning;
-  const limits = STACK_ST8100_LIMITS[threshold];
-  const display = (value: number) => stackSt8100ThresholdToDisplay(threshold, value, units);
-  const unit = warning.unit === 'temperature' ? (units.temperature === 'f' ? '°F' : '°C')
-    : warning.unit === 'boostPressure' ? (units.boostPressure === 'kpa' ? 'kPa' : units.boostPressure) : t(warning.unit);
-  const displayed = String(Number(display(settings[threshold]).toFixed(2)));
-  const [draft, setDraft] = useState(displayed);
-  useEffect(() => { setDraft(displayed); }, [displayed]);
-  const commit = () => {
-    // An untouched rounded PSI display must not alter the stored bar value.
-    if (draft === displayed) return;
-    const canonical = parseStackSt8100ThresholdDraft(threshold, draft, units);
-    if (canonical === null) { setDraft(displayed); return; }
-    setDraft(String(Number(display(canonical).toFixed(2))));
-    if (canonical !== settings[threshold]) onChange({ [threshold]: canonical });
-  };
-  return (
-    <div className="row g-2 align-items-center">
-      <div className="col-12 col-sm-6">
-        <label className="form-check form-switch m-0">
-          <input type="checkbox" className="form-check-input" checked={settings[enabled]}
-            onChange={event => onChange({ [enabled]: event.target.checked })} />
-          <span className="form-check-label fs-7">{t(label)}</span>
-        </label>
-      </div>
-      <div className="col-12 col-sm-6">
-        <label htmlFor={`${id}-${threshold}`} className="visually-hidden">{t(label)} {t('Threshold')} ({unit})</label>
-        <div className="input-group input-group-sm">
-          <input id={`${id}-${threshold}`} type="text" inputMode="decimal" className="form-control" disabled={!settings[enabled]}
-            aria-describedby={`${id}-${threshold}-range`} value={draft}
-            onChange={event => setDraft(event.currentTarget.value)} onBlur={commit}
-            onKeyDown={event => {
-              if (event.key === 'Enter') { event.preventDefault(); event.currentTarget.blur(); }
-              if (event.key === 'Escape') { event.preventDefault(); setDraft(displayed); }
-            }} />
-          <span className="input-group-text fs-8">{unit}</span>
-        </div>
-        <span id={`${id}-${threshold}-range`} className="visually-hidden">{t('Range')}: {Number(display(limits.min).toFixed(2))}–{Number(display(limits.max).toFixed(2))} {unit}</span>
-      </div>
-    </div>
-  );
-}
 
 export function StackSt8100SettingsCard({ config, appUnits, onChange, t }: StackSt8100SettingsCardProps) {
   const id = useId();
   const settings = readStackSt8100Settings(config);
-  const units: StackSt8100DisplayUnits = {
-    temperature: settings.stackSt8100TemperatureUnit,
-    boostPressure: resolveStackSt8100BoostUnit(config, appUnits),
-  };
+  const units = resolveStackSt8100DisplayUnits({ ...config, stackSt8100TemperatureUnit: settings.stackSt8100TemperatureUnit }, appUnits);
   return (
     <div role="group" aria-label={t('Stack ST8100 settings')} className="border-top pt-2 d-flex flex-column gap-3">
       <fieldset className="border-0 p-0 m-0">
@@ -99,6 +35,13 @@ export function StackSt8100SettingsCard({ config, appUnits, onChange, t }: Stack
             <select id={`${id}-dial`} className="form-select form-select-sm" value={settings.stackSt8100Dial}
               onChange={event => onChange({ stackSt8100Dial: event.target.value as StackSt8100Dial })}>
               {STACK_ST8100_DIALS.map(dial => <option key={dial} value={dial}>{dial === 'auto' ? t('Auto (engine maximum RPM)') : `${dial} × 1000 RPM`}</option>)}
+            </select>
+          </div>
+          <div className="col-12">
+            <label htmlFor={`${id}-face`} className="form-label fs-7 mb-1">{t('Dial face')}</label>
+            <select id={`${id}-face`} className="form-select form-select-sm" value={settings.stackSt8100Face}
+              onChange={event => onChange({ stackSt8100Face: event.target.value as StackSt8100Face })}>
+              <option value="black">{t('Black')}</option><option value="white">{t('White')}</option>
             </select>
           </div>
           <div className="col-6">
@@ -130,14 +73,20 @@ export function StackSt8100SettingsCard({ config, appUnits, onChange, t }: Stack
             </div>
           ))}
         </div>
-        <p className="text-body-secondary fs-8 mt-2 mb-0">{t('Speed and boost units follow HUD Unit Settings.')}</p>
+        <p className="text-body-secondary fs-8 mt-2 mb-0">{t('Speed, boost, power and torque units follow HUD Unit Settings.')}</p>
       </fieldset>
       <fieldset className="border-0 p-0 m-0 d-flex flex-column gap-2">
-        <legend className="fs-7 fw-semibold mb-1">{t('Shift light and warnings')}</legend>
-        {WARNINGS.map(warning => <ThresholdRow key={warning.enabled} warning={warning} settings={settings}
-          units={units} id={id} onChange={onChange} t={t} />)}
-        <p className="text-body-secondary fs-8 m-0">{t('Warning thresholds are illustrative and disabled by default. Choose values for your vehicle; these are not tuning recommendations.')}</p>
+        <legend className="fs-7 fw-semibold mb-1">{t('Shift light')}</legend>
+        <label className="form-check form-switch m-0">
+          <input type="checkbox" className="form-check-input" checked={settings.stackSt8100ShiftEnabled}
+            onChange={event => onChange({ stackSt8100ShiftEnabled: event.target.checked })} />
+          <span className="form-check-label fs-7">{t('Enabled')}</span>
+        </label>
+        <StackSt8100ThresholdInput id={`${id}-stackSt8100ShiftPercent`} metric="shift_percent" value={settings.stackSt8100ShiftPercent}
+          units={units} onChange={stackSt8100ShiftPercent => onChange({ stackSt8100ShiftPercent })} t={t} />
       </fieldset>
+      <StackSt8100AlarmSettings id={id} alarms={settings.stackSt8100Alarms} units={units}
+        onChange={stackSt8100Alarms => onChange({ stackSt8100Alarms })} t={t} />
     </div>
   );
 }

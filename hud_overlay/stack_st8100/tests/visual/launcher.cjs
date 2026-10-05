@@ -46,7 +46,7 @@ async function main() {
     await page.waitForTimeout(400); assert.equal((await capture('host-live')).lcd1, 'KM/H 180 | GEAR 4');
     await page.evaluate(() => { for (const key of ['CurrentEngineRpm','EngineMaxRpm','SpeedMetersPerSecond','Gear','Fuel','Boost','TireTemp']) delete window.raw[key]; });
     await page.waitForTimeout(400);
-    const missing = await capture('host-raw-missing'); assert.equal(missing.lcd1, 'KM/H -- | GEAR --'); assert.equal(missing.lcd2, 'FUEL % -- | TYRE C --'); assert.equal(missing.shift,'false');
+    const missing = await capture('host-raw-missing'); assert.equal(missing.lcd1, 'KM/H -- | GEAR --'); assert.equal(missing.lcd2, 'TIME 1:10.00 | TYRE C --'); assert.equal(missing.shift,'false');
     await page.evaluate(raw => { window.raw = { ...raw, TimestampMS:window.raw.TimestampMS + 16 }; }, raw);
     await page.waitForTimeout(300);
     await page.evaluate(() => clearInterval(window.feed)); await page.waitForTimeout(1800);

@@ -1,99 +1,112 @@
 # Stack ST8100 Inspired HUD
 
-## 定位與參考版本
+## 參考與適用玩家
 
-本樣式以 Stack ST8100 賽車儀表為辨識基礎：小型中央類比轉速錶、壓縮低轉速區、斜肩外殼、下方長條綠色兩列點陣 LCD。適合喜歡 club racing、trackday、Caterham／kit-car 與改裝賽車儀表的玩家；不是量產車原廠儀表，也不宣稱特定車款年式。
+以 Stack ST8100 的壓縮類比轉速錶、斜肩外殼、下方綠色兩列點陣 LCD 為基礎，適合 club racing、trackday、Caterham／kit-car 與改裝賽車玩家。這是 aftermarket 賽車儀表，不宣稱特定量產車年式。
 
-- [Stack 官方 ST8100 產品與型號表](https://www.stackltd.com/st8100.html)：0–3–8k、0–4–10k、0–6–13k 等實際黑底版本、類比錶、LCD、換檔燈、警報與 peak recall
-- [Stack 官方安裝照片](https://www.stackltd.com/images/Stack_st8100.jpg)：外殼、類比轉速錶、下方 LCD 的相對位置；照片白底款作為造型佐證，不是假稱本 HUD 是白底款
-- [原廠 ST54030-007 使用手冊](https://d32vzsop7y1h3k.cloudfront.net/c1afd2ffb4e5107d8445cfbdef36a55a.PDF)：印刷頁 4 的模組圖、6–9 的顯示層、10–13 的 peak／alarm、15 的換檔燈
-- [Stack 官方可設定顯示層升級](https://www.stackltd.com/configupgrade.html)：可配置的 LCD channel 與個別警報，支持本 HUD 的可選欄位方向；本實作不是完整六層硬體模擬
-- [黑底 0–4–10k 實物照片](https://saboulautosport.com/109071-large_default/tableau-de-bord-stack-st8100-0-4-10000.jpg)：已實際查看其壓縮刻度及外觀，僅供視覺研究；型號範圍仍以官方目錄為依據
+- [Stack 官方 ST8100 型號表](https://www.stackltd.com/st8100.html)：C/D 的 0–3–8k、F 的 0–4–10k、H/I 的 0–3–10.5k、P/Q 的 0–6–13k 等黑白盤面型號
+- [原廠 ST54030-007 使用手冊](https://d32vzsop7y1h3k.cloudfront.net/c1afd2ffb4e5107d8445cfbdef36a55a.PDF)：印刷頁 4 的模組圖、6–9 的顯示層、12–13 的警報、14 的圈速 popup、15 的換檔燈、18 的 lap popup 時間設定
+- [官方安裝照片](https://www.stackltd.com/images/Stack_st8100.jpg)及[黑底 0–4–10k 實物照片](https://saboulautosport.com/109071-large_default/tableau-de-bord-stack-st8100-0-4-10000.jpg)：已實際查看後重新繪製比例，不打包原照片
+- [官方 configurable upgrade](https://www.stackltd.com/configupgrade.html)：可選 channel／alarm 的參考方向，不宣稱完整六層硬體模擬
+- [官方 STACK 標誌外觀參考](https://www.stackltd.com/images/footerlogo.png)：右側 SVG 由程式重新繪製以識別原儀表，沒有複製下載的 logo 圖檔
 
-所有 Canvas 外殼、刻度、指針及 5×7 點陣字元均為原創程式；未打包商標圖樣、原廠照片、手冊、字型或第三方圖片。畫面小字 `ST8100 INSPIRED` 是文字說明，不是 Stack 商標圖樣。此樣式沒有原廠認證或合作關係。
+Canvas 外殼、刻度、指針與 5×7 點陣字元為原創程式。`assets/stack-wordmark.svg` 是重新繪製的 STACK 標誌識別；STACK 名稱與標誌仍屬其權利人，不主張擁有該商標、不另行宣稱商標授權，也不表示官方合作、認證或背書。
 
-## 實際瀏覽器預覽
+## 外觀與轉速
 
-以下為 sandboxed Google Chrome 執行真實 HUD／GUI 的截圖，非設計稿。來源 commit `a7d2ff3`、[Visual Review run 37280301294](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37280301294)，完整來源與檔案雜湊見 [provenance.json](../assets/stack-st8100/provenance.json)。
+- LCD 以外殼中心對齊；右側放置垂直三列 STACK SVG，不把 logo 空間算入 LCD 置中
+- 黑／白盤面可在 GUI 選擇並保存；警示燈及超轉燈的直徑為首版的 135%，不增加多餘尺寸滑桿
+- 量程提供 `0–3–8k`、`0–4–10k`、`0–3–10.5k`、`0–6–13k` 及預設 `Auto`
+- Auto 選擇能容納原始 `EngineMaxRpm` 的最小上限，例：10200 RPM 選 10.5k；超過 13k 仍保留最高原廠量程並顯示 `RPM > 上限`
+- 指針超過固定或自動量程時會限制在刻度尾端，但另有明確 overflow 文字，沒有把超範圍轉速假裝成較低讀值
+- 低轉段約占 35°、工作區約占 215°，是依實物觀察重新繪製的比例，不是原廠校準數據
+- 超轉燈的百分比始終乘上封包 `EngineMaxRpm`，不受所選量程影響；預設 90%，可設 50–100%。缺少有效 max RPM 時不產生超轉門檻，不使用共用 `max−1000` 估計紅線
+- Glow 調整指針／燈光；Custom Gauge Color 改指針，保留 LCD 綠底深字對比
 
-![ST8100 正常遙測，DPR 2](../assets/stack-st8100/preview.png)
+## LCD 即時欄位與計時
 
-![高胎溫警示，原始截圖裁切](../assets/stack-st8100/tire-warning.png)
+預設上列為速度／檔位，下列為比賽經過時間／四輪平均胎溫。四格可選：速度、檔位、平均／最高胎溫、增壓、RPM、功率、扭力、油門、煞車、當圈時間、比賽經過時間、上圈／最佳圈、已完成圈數及本 session 最高 RPM／速度。燃油餘量已移除，不留隱藏燃油警示。
 
-![繁體中文 HUD 設定](../assets/stack-st8100/settings/settings-narrow-zh-tw.png)
+所有時間來自封包：`CurrentLap` 為目前圈經過秒數，`CurrentRaceTime` 為遊戲回報的經過秒數；不是瀏覽器自己計時，也不從牆鐘補算。0／缺少的 BestLap、LastLap 與 RacePosition=0 顯示 N/A。
 
-## 使用方式
+`Peak values` 基礎頁顯示本次 session 最高 RPM、最高速度、最高增壓、最高單輪胎溫；不是逐圈 Memory，也不保存永久歷史。換車、已確認的新 session 或 HUD 重載會重設。
 
-1. 在 HUD 設定選擇 `Stack ST8100 Inspired`
-2. 展開進階設定，設定轉速範圍、LCD page、四個欄位、胎溫 °C／°F
-3. 速度與增壓單位使用既有「HUD Unit Settings」，支援跟隨 App 或 HUD 獨立單位
-4. 需要監控時，個別啟用低油量、高胎溫、高增壓警示，再輸入適合自己用途的門檻
+### 自動計時輪播
 
-預設 LCD 上列是速度／檔位，下列是油量百分比／四輪平均胎溫。四格可選速度、檔位、油量、平均／最高胎溫、增壓、RPM、當圈／上圈／最佳圈時間、已完成圈數、session 最高 RPM／速度。
+兩個連續有效原始封包的正值 `CurrentLap` 有前進，才確認正在計時；`IsRaceOn` 或初始零值本身不足。正常換圈（圈數 +1 或有效 LastLap 更新）保留計時狀態。持續收到封包，但 CurrentLap 3 秒未前進或缺失，就退出計時頁；不是持續把凍結計時當作進行中的比賽。
 
-`Peak values` page 顯示 session 最高 RPM、最高速度、最低油量、最高單輪胎溫。它只保存當次有效遙測的觀測值，不寫入永久歷史。換車、可確認的新比賽或 HUD 重新載入會清除。一般短暫暫停／斷訊不清除已觀測的峰值，但斷訊畫面不再顯示它們。
+計時頁四格為當圈／最佳圈／上圈／目前排名。每個畫面週期 2.5 秒：
 
-### 轉速與換檔燈
+- 無警示：基礎四格 → 計時四格 → 基礎四格
+- 有警示：基礎四格 → 警示 → 計時四格 → 警示
+- 不在進行中的計時：只使用基礎頁與需要的警示頁
 
-- `Auto` 依 `EngineMaxRpm` 選擇真實目錄的 0–3–8k、0–4–10k、0–6–13k 範圍；沒有引擎上限時使用 8k 盤面，但不偽造換檔門檻
-- 低轉速段約占 35°，其餘工作區約占 215°；這是依實物／手冊觀察重新繪製的視覺比例，不是原廠校準規格
-- 手動固定範圍或引擎超過 13k 時，指針會停在盤面上限，並另顯示 `RPM > 上限`，不將超範圍數值偽裝成低轉速
-- 換檔燈預設為回報 `EngineMaxRpm` 的 90%，可選 50–100%；不是共用 Coordinator 的 `maxRPM − 1000` 推估紅線，也不是車輛最佳換檔建議
-- 全域 Gauge、RPM、Speed、Gear、Boost、Center Info 元素開關皆生效；Center Info 關閉一般 LCD 欄位時，警示與遙測狀態仍保留
-- Glow 調整指針／燈光；Custom Gauge Color 只改指針色，保留 LCD 綠底深字的對比
+「基礎頁」使用玩家選擇的 Live 或 Peak page。計時頁只占一般資訊週期，不占用警示週期；當計時狀態消失，正在顯示的計時頁即回基礎頁，保留原週期截止時間。
 
-### 監控與警示互動
+### Last Lap popup 與優先序
 
-三種車況警示預設全關閉。預填的 10% 油量、120°C 胎溫、1.5 bar 增壓僅是可編輯示例，不是車種安全值或調校建議。
+新的已完成圈會顯示 2.5 秒圈速 popup。若有警示，它取代「下一次警示訊息週期」，不搶走中間的資訊頁，也不讓多警示輪播跳過一個指標。沒有警示時 popup 暫時插入，結束後恢復被打斷資訊頁的剩餘時間。
 
-啟用後，值必須持續越界至少 500ms，且有持續前進的 telemetry timestamp（相鄰有效樣本間隔小於 500ms）才會觸發。LCD 改顯示警示名稱及目前讀值，ALARM 燈常亮；不閃爍、不播放聲音。多重警示依「最高胎溫 → 增壓 → 油量」優先顯示，其他警示仍獨立追蹤。
+- 有圈數時使用完成圈 identity：連續兩圈 LastLap 數值完全相同，仍是兩次不同事件
+- 同一圈的延遲 LastLap 修正只更新尚待顯示／正在顯示的 popup，不重新開始計時，也不再跳出一次
+- 圈數缺失時退回使用有效 LastLap 數值變化；初始值和重複封包不產生 popup
+- 只保留一個最新待顯示事件；無警示 popup 期間若再來新圈，更新該 popup，仍沿用原截止時間
+- 第一次警示若在無警示 popup 中觸發，立即優先顯示警示；已經展示的 popup 不重新排隊
+- 暫停、過期、錯誤、設定重建、session 重設會清除 popup／計時基線，重連不補播舊圈速
 
-- 低油量：小於或等於門檻觸發；回升至門檻 +2 個百分點才解除
-- 高胎溫：四輪最高溫大於或等於門檻觸發；降至門檻 −5°C 才解除
-- 高增壓：大於或等於門檻觸發；降至門檻 −0.1 bar 才解除
+原廠手冊印刷頁 13 只說警報顯示類型／數值並可手動清除，未指定本需求的警報／即時頁交替頻率。頁 14、18 說 lap popup 時間可設定，沒有給固定預設秒數。因此上述 **2.5 秒是本 HUD 配合需求的互動設計，不是 OEM 固定時序聲明**。
 
-恢復正常後自動回到選定 LCD page，或可在 GUI 關閉該警示。切換設定會清除警示計時，再以新設定重新評估；不需要點擊 overlay，也不加入會和 HUD click-through 衝突的假硬體按鈕。
+## 三組通用遙測警示
 
-門檻輸入支援暫時清空、小數輸入；Enter／離開欄位才儲存，Escape 取消，空白／無效數字恢復原值。範圍：油量 1–50%、胎溫 50–200°C、增壓 0.1–5 bar。胎溫與增壓分別以 °C／bar 持久化，改成 °F／PSI／kPa 不會改變警示的物理門檻，也不會因顯示四捨五入而重寫原值。
+每組都有啟用、指標、高於／低於、自填門檻。可選 RPM、速度、平均胎溫、最高胎溫、增壓、功率、扭力、油門、煞車；允許多組選同一指標。三組預設皆關閉，預填值只是示例，不是安全值或調校建議。
 
-## 遙測真實性與狀態
+值持續越界至少 500ms，且相鄰有效樣本小於 500ms 才觸發。High 以 `>=` 觸發，降至 `threshold−hysteresis` 解除；Low 以 `<=` 觸發，升至 `threshold+hysteresis` 解除。缺少／錯誤型別／非有限感測值立即解除該組，不能用別的 alias 補 0。
 
-本 HUD 只使用已存在的 Forza 遙測。沒有油壓、油溫、水溫、電瓶電壓、燃油壓力、胎壓或煞車偏壓欄位，因此不顯示或合成這些原儀表 channel。
+| 指標 | 持久化單位 | hysteresis |
+| --- | --- | --- |
+| RPM | RPM | 150 RPM |
+| 速度 | km/h | 3 km/h |
+| 平均／最高胎溫 | °C | 5°C |
+| 增壓 | bar | 0.1 bar |
+| 功率 | kW | 5 kW |
+| 扭力 | N·m | 10 N·m |
+| 油門／煞車 | 百分比 | 2 個百分點 |
 
-| 讀值 | 來源與單位 |
-| --- | --- |
-| RPM／引擎上限／檔位 | 原始 `CurrentEngineRpm`、`EngineMaxRpm`、`Gear`；0=R、11=N、1–10=前進檔 |
-| 速度 | 原始 `SpeedMetersPerSecond` → km/h 或 mph |
-| 油量 | 原始 `Fuel` 0–1 → 0–100%；0 是實際空油量，不當作缺值 |
-| 增壓 | 原始 signed `Boost` PSI above atmospheric → bar／PSI／kPa；負值保留 |
-| 胎溫 | canonical `tire_temp_f`，或直接原始 `TireTemp`；必須完整四輪且每個值皆有限，才計算平均與最高溫 |
-| 圈速／圈數 | `CurrentLap`、`LastLap`、`BestLap` 秒數、`LapNumber` 已完成圈數；0 秒不適用時顯示 `--:--.--`，不自行推算計時 |
+觸發後 ALARM 燈一直反映「目前存在有效警示」，即使 LCD 當下顯示資訊或圈速也不熄滅；不閃爍，不播聲音。多警示按組別 1→2→3 循環，只有真正開始顯示某組訊息才前進，圈速替代週期不消耗它的順序。
 
-缺少原始感測欄位時顯示 `--`，不信任 Coordinator 為相容性補的 0 或 7000 RPM；缺少、非有限、錯誤型別的感測值不會觸發警示。某輪胎溫缺失時整組胎溫顯示 unavailable，不以其餘三輪假稱四輪平均。
+當前警示解除但其他組仍成立時，可改顯示下一組，沿用原警示週期截止時間。所有警示解除後的資訊週期有完整保護；反覆解除／重新觸發不能無限推遲資訊頁。第一次觸發仍立即優先顯示。
 
-Coordinator 的唯讀 `sourceTelemetry` 保留未平滑的原始封包；監控、換檔燈、LCD 數值及峰值使用此來源，避免外插尖峰被當成真實量測。只有類比指針跟隨既有 smoothing 視覺幀；不改變其他 HUD 的平滑行為。
+門檻支援空白／小數編輯草稿，Enter／離開欄位保存、Escape 取消，無效數字回復。更換指標會套用新指標示例值並先關閉該組，避免舊單位門檻誤套到新指標。單位由既有 HUD Unit Settings 控制，胎溫另選 °C／°F；更換顯示單位不改變 canonical 門檻，未編輯的四捨五入文字也不重寫門檻。
 
-`TimestampMS` 前進才證明新資料；重複／過期／重播的內插幀不延長 freshness。1.5 秒沒有前進 timestamp 顯示 `NO SIGNAL`，指針與換檔燈關閉，警示清除；`IsRaceOn=0` 顯示 `PAUSED`，錯誤顯示 `DATA ERROR`，缺少有效 timestamp／race state 顯示 `NO DATA`。新有效資料恢復正常。
+舊設定自動遷移：胎溫警示→第 1 組，增壓警示→第 2 組，保留其啟用／canonical 門檻；舊 Fuel 欄位改成 race elapsed，燃油警示與六個舊警示鍵清除。已有新三組設定時以新設定為準。其他 HUD 和未知第三方鍵不受影響。
 
-uint32 timestamp wrap 保持 session；單一逆序幀不回滾狀態。換車或「比賽時間歸零＋圈數歸零／曾暫停／已斷訊」等可確認重啟會清除峰值；若 timestamp 倒退，即使該封包看起來像新比賽，也必須至少兩個連續前進且車輛／比賽時間一致的新 epoch 封包才接受。缺少比賽資訊時，還要先確認斷訊，避免單一逆序封包重設 session。
+## 遙測來源與不中斷契約
 
-## 設定與模組邊界
+- 原始 `CurrentEngineRpm`、`EngineMaxRpm`、`Gear`（0=R、11=N、1–10=前進檔）
+- `SpeedMetersPerSecond`→km/h／mph；signed `Boost`（PSI above atmospheric）→bar／PSI／kPa，保留負值
+- `TireTemp`／canonical `tire_temp_f` 為 °F，完整四輪有限值才計算平均／最高，不以三輪冒充四輪
+- `PowerWatts`→kW／hp／PS、`TorqueNewtons`→N·m／lb-ft、`AccelInput`／`BrakeInput` 0–255→百分比
+- `CurrentLap`／`CurrentRaceTime`／`LastLap`／`BestLap`／`LapNumber`／`RacePosition` 全部由遊戲提供
 
-- GUI：`frontend/src/features/overlay_control/stack_st8100/`，完整 typed settings、嚴格 primitive 驗證、單位轉換與編輯 draft
-- HUD：`hud_overlay/stack_st8100/`，pure display model、monitor state machine、original dot font、Canvas renderer、HUDCore controller
-- 標準資料流：GUI runtime → BroadcastChannel／POST `/api/overlay/config` → Rust 原子持久化 → `hud:config` → Launcher → HUDCore
-- Stack namespace 設定只在 active style 補預設；切換其他樣式保留已存在設定，不侵入其他 HUD defaults，未知第三方設定保留
-- 新增 HUD 依現有動態 scanner；不建立另一份 launcher 靜態清單，不依賴未合併的 LFA／AP1 分支
+不合成油壓、油溫、水溫、電瓶電壓、燃油壓力、胎壓或煞車偏壓。Coordinator 的唯讀 `sourceTelemetry` 提供未平滑原始封包；LCD、警示、換檔燈、計時事件與峰值全部使用這個來源，只有指針使用既有 smoothing 視覺數據，外插尖峰不能成為永久峰值或警示證據。
 
-## 驗證與限制
+`TimestampMS` 前進才證明新資料。1.5 秒未前進→`NO SIGNAL`；`IsRaceOn=0`→`PAUSED`；錯誤→`DATA ERROR`；缺少有效 timestamp／race state→`NO DATA`。這些狀態停用指針／警示與 popup，不延續假讀數。uint32 wrap 保持 session；逆序的新 epoch 必須有第二個一致前進封包才接受，單一看似 race reset 的舊封包不回滾 peak／popup 狀態。
 
-採用 `halfmoon-design-system`、`huge-component-refactoring`、`modular-refactoring`、`telemetry-udp-protocol`、`cross-agent-collaboration`；遵循 `workspace`、`ui-architecture`、`testing-strategy`。
+## 設定、測試與實際預覽
 
-- 單元測試：`pnpm -C frontend exec vitest run ../hud_overlay/stack_st8100/tests/unit src/features/overlay_control/stack_st8100`
-- 完整前端 gate：`pnpm -C frontend test`、`FH6_PLATFORM=windows pnpm -C frontend build`、`FH6_PLATFORM=lan pnpm -C frontend build`
-- Rust 設定／持久化契約：`cargo test --locked --manifest-path backend-rust/Cargo.toml --test stack_st8100_config_contract`
-- 真實 Chrome fixture 畫面：`node hud_overlay/stack_st8100/tests/visual/render.mjs`
-- 真實 Launcher／Coordinator／smoothing：`node hud_overlay/stack_st8100/tests/visual/launcher.cjs`
-- 真實 GUI 鍵盤編輯／單位／持久化／主題與窄視窗：`node frontend/src/features/overlay_control/stack_st8100/tests/browser/verify.cjs`
+GUI ownership：`frontend/src/features/overlay_control/stack_st8100/`。HUD ownership：`hud_overlay/stack_st8100/`，含獨立 config、source model、monitor、bounded scheduler、dot font、renderer、controller。標準 GUI runtime→POST 原子保存／BroadcastChannel→Rust relay→Launcher→HUDCore 資料流不變。
 
-視覺工具使用獨立 Playwright 安裝及 `PLAYWRIGHT_MODULE_PATH`、`PLAYWRIGHT_CHANNEL=chrome`、`OUTPUT_DIR`，保持 `chromiumSandbox: true`。`.github/workflows/hud-stack-st8100-visual.yml` 在雲端 Chrome 產出實際 PNG 與 JSON 稽核，另驗證中日文字形。這些是可控 telemetry 的瀏覽器驗收，不能代表 FH6 遊戲、Windows 原生 click-through、螢幕選擇或透明度的實機驗收。實際 PNG 及 reviewed commit／run 證據由 PR 收錄。
+採用 `halfmoon-design-system`、`huge-component-refactoring`、`modular-refactoring`、`telemetry-udp-protocol`、`cross-agent-collaboration`，遵循 workspace／ui-architecture／testing-strategy，不加微觀 Canvas 呼叫次數測試。
+
+- `pnpm -C frontend exec vitest run ../hud_overlay/stack_st8100/tests/unit src/features/overlay_control/stack_st8100`
+- `pnpm -C frontend test`；Windows／LAN 的 `pnpm -C frontend build`
+- `cargo test --locked --manifest-path backend-rust/Cargo.toml --test stack_st8100_config_contract`
+- `node hud_overlay/stack_st8100/tests/visual/render.mjs`
+- `node hud_overlay/stack_st8100/tests/visual/launcher.cjs`
+- `node frontend/src/features/overlay_control/stack_st8100/tests/browser/verify.cjs`
+
+視覺工具使用獨立 Playwright、`PLAYWRIGHT_MODULE_PATH`、`PLAYWRIGHT_CHANNEL=chrome`、`OUTPUT_DIR`，保持 `chromiumSandbox: true`；雲端 workflow 產出黑白盤面／五種量程、警報／計時／圈速週期、missing states，以及真實 GUI 鍵盤編輯、單位、重載、六種主題與中日窄版截圖。這些不是 Windows 原生透明度、click-through、多螢幕或 FH6 遊戲實機驗收。
+
+現有 [preview.png](../assets/stack-st8100/preview.png)、[provenance.json](../assets/stack-st8100/provenance.json) 為修訂前 commit `a7d2ff3` 的歷史 Chrome 證據；不代表本次九點修訂。新的實際 PNG、reviewed commit／run 由 PR 更新，沒有把設計稿當作執行截圖。
+
+可選配的預測圈速、實體紅外線跨線、逐圈 Memory、Corner/straight/HOLD 只做研究並列入 PR，這次沒有新增其模擬實作；已授權實作範圍僅上述修訂與計時輪播。

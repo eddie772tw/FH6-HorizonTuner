@@ -4,12 +4,12 @@
     const M = root.StackModel, HOLD_MS = 500, SAMPLE_GAP_MS = 500;
     function alarm() { return { active: false, since: null }; }
     function clearAlarm(a) { a.active = false; a.since = null; }
-    function clearWarnings(s) { clearAlarm(s.fuelAlarm); clearAlarm(s.tireAlarm); clearAlarm(s.boostAlarm); s.warning = null; s.shift = false; }
-    function resetSession(s) { s.peakRpm = null; s.peakSpeed = null; s.peakTireC = null; s.minFuel = null; clearWarnings(s); }
+    function clearWarnings(s) { for (let i = 0; i < 3; i++) clearAlarm(s.alarms[i]); s.warning = null; s.shift = false; root.StackSchedule.reset(s.display); }
+    function resetSession(s) { s.peakRpm = null; s.peakSpeed = null; s.peakTireC = null; s.peakBoostBar = null; clearWarnings(s); }
     function create() {
         return { settings: M.config({}), visualRpm: null, latest: {}, candidate: {}, timestamp: null, seenAt: null, status: 'WAITING',
-            fuelAlarm: alarm(), tireAlarm: alarm(), boostAlarm: alarm(), warning: null, shift: false,
-            peakRpm: null, peakSpeed: null, peakTireC: null, minFuel: null, blocked: false, epochCandidate: null, epochAt: null, epochCar: null, epochRaceTime: null };
+            alarms: [alarm(), alarm(), alarm()], display: root.StackSchedule.create(), warning: null, shift: false,
+            peakRpm: null, peakSpeed: null, peakTireC: null, peakBoostBar: null, blocked: false, epochCandidate: null, epochAt: null, epochCar: null, epochRaceTime: null };
     }
     function check(a, enabled, value, threshold, hysteresis, low, now) {
         if (!enabled || value === null) { clearAlarm(a); return; }
@@ -25,6 +25,7 @@
         if (s.status === 'LIVE' && s.seenAt !== null && now - s.seenAt >= M.STALE_MS) {
             s.status = 'NO SIGNAL'; clearWarnings(s);
         }
+        if (s.status === 'LIVE') root.StackSchedule.advance(s.display, s.alarms, now);
         return s;
     }
     function ingest(s, data, payload, now) {
@@ -63,12 +64,17 @@
         if (f.rpm !== null) s.peakRpm = Math.max(s.peakRpm ?? f.rpm, f.rpm);
         if (f.speedKmh !== null) s.peakSpeed = Math.max(s.peakSpeed ?? f.speedKmh, f.speedKmh);
         if (f.tireMaxC !== null) s.peakTireC = Math.max(s.peakTireC ?? f.tireMaxC, f.tireMaxC);
-        if (f.fuel !== null) s.minFuel = Math.min(s.minFuel ?? f.fuel, f.fuel);
+        if (f.boostBar !== null) s.peakBoostBar = Math.max(s.peakBoostBar ?? f.boostBar, f.boostBar);
         const c = s.settings;
-        check(s.fuelAlarm, c.stackSt8100FuelWarningEnabled, f.fuel, c.stackSt8100FuelWarningPercent, 2, true, now);
-        check(s.tireAlarm, c.stackSt8100TireWarningEnabled, f.tireMaxC, c.stackSt8100TireWarningC, 5, false, now);
-        check(s.boostAlarm, c.stackSt8100BoostWarningEnabled, f.boostBar, c.stackSt8100BoostWarningBar, .1, false, now);
-        s.warning = s.tireAlarm.active ? 'tire' : s.boostAlarm.active ? 'boost' : s.fuelAlarm.active ? 'fuel' : null;
+        let hasAlarm = false;
+        for (let i = 0; i < 3; i++) {
+            const slot = c.stackSt8100Alarms[i], spec = M.METRICS[slot.metric];
+            check(s.alarms[i], slot.enabled, f[spec.property], slot.threshold, spec.hysteresis, slot.direction === 'low', now);
+            hasAlarm = hasAlarm || s.alarms[i].active;
+        }
+        s.warning = hasAlarm ? 'alarm' : null;
+        root.StackSchedule.ingest(s.display, f, now);
+        root.StackSchedule.advance(s.display, s.alarms, now);
         // EngineMaxRpm, never coordinator's estimated max-minus-1000 redline.
         const shiftAt = f.maxRpm === null ? null : f.maxRpm * c.stackSt8100ShiftPercent / 100;
         s.shift = c.stackSt8100ShiftEnabled && f.rpm !== null && shiftAt !== null && f.rpm >= shiftAt;

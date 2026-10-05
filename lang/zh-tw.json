@@ -1877,5 +1877,19 @@
   "Lap number": "圈數",
   "Peak RPM": "峰值轉速",
   "Peak speed": "峰值車速",
-  "Stack ST8100 settings": "Stack ST8100 設定"
+  "Stack ST8100 settings": "Stack ST8100 設定",
+  "Dial face": "錶面配色",
+  "Black": "黑色",
+  "White": "白色",
+  "Race elapsed time": "賽事經過時間",
+  "Speed, boost, power and torque units follow HUD Unit Settings.": "車速、增壓、功率與扭力單位依照 HUD 單位設定。",
+  "Alarm 1": "警報 1",
+  "Alarm 2": "警報 2",
+  "Alarm 3": "警報 3",
+  "Alarm metric": "警報數據",
+  "Trigger": "觸發條件",
+  "Above": "高於",
+  "Below": "低於",
+  "Changing an alarm metric resets its threshold and disables that alarm.": "變更警報數據會重設門檻並關閉該警報。",
+  "Alarm thresholds are examples, not tuning recommendations. All three alarms are disabled by default.": "警報門檻僅為示例，不是調校建議。三組警報預設皆為關閉。"
 }

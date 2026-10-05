@@ -1364,5 +1364,19 @@
   "Lap number": "周回数",
   "Peak RPM": "最高回転数",
   "Peak speed": "最高速度",
-  "Stack ST8100 settings": "Stack ST8100 設定"
+  "Stack ST8100 settings": "Stack ST8100 設定",
+  "Dial face": "文字盤の色",
+  "Black": "黒",
+  "White": "白",
+  "Race elapsed time": "レース経過時間",
+  "Speed, boost, power and torque units follow HUD Unit Settings.": "速度、過給圧、出力、トルクの単位は HUD 単位設定に従います。",
+  "Alarm 1": "アラーム 1",
+  "Alarm 2": "アラーム 2",
+  "Alarm 3": "アラーム 3",
+  "Alarm metric": "アラームの測定項目",
+  "Trigger": "作動条件",
+  "Above": "上回る",
+  "Below": "下回る",
+  "Changing an alarm metric resets its threshold and disables that alarm.": "測定項目を変更すると、しきい値がリセットされ、そのアラームは無効になります。",
+  "Alarm thresholds are examples, not tuning recommendations. All three alarms are disabled by default.": "アラームのしきい値は例示であり、推奨チューニング値ではありません。3 つのアラームは初期状態で無効です。"
 }

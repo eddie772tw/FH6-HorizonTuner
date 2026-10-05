@@ -24,6 +24,7 @@
     function configure(payload) {
         root.StackMonitor.configure(state, payload);
         container.style.display = state.settings.showGauge ? 'block' : 'none';
+        container.dataset.face = state.settings.stackSt8100Face;
         renderer.lastLCD = -Infinity; render(performance.now());
     }
     function stop() {

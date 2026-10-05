@@ -1414,5 +1414,19 @@
   "Lap number": "Lap number",
   "Peak RPM": "Peak RPM",
   "Peak speed": "Peak speed",
-  "Stack ST8100 settings": "Stack ST8100 settings"
+  "Stack ST8100 settings": "Stack ST8100 settings",
+  "Dial face": "Dial face",
+  "Black": "Black",
+  "White": "White",
+  "Race elapsed time": "Race elapsed time",
+  "Speed, boost, power and torque units follow HUD Unit Settings.": "Speed, boost, power and torque units follow HUD Unit Settings.",
+  "Alarm 1": "Alarm 1",
+  "Alarm 2": "Alarm 2",
+  "Alarm 3": "Alarm 3",
+  "Alarm metric": "Alarm metric",
+  "Trigger": "Trigger",
+  "Above": "Above",
+  "Below": "Below",
+  "Changing an alarm metric resets its threshold and disables that alarm.": "Changing an alarm metric resets its threshold and disables that alarm.",
+  "Alarm thresholds are examples, not tuning recommendations. All three alarms are disabled by default.": "Alarm thresholds are examples, not tuning recommendations. All three alarms are disabled by default."
 }

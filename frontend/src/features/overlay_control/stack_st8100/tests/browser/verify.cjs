@@ -86,7 +86,7 @@ async function main() {
     const savedAs = async expected => {
       await settings.waitForFunction(async expected => {
         const config = await (await fetch('/api/overlay/config')).json();
-        return Object.entries(expected).every(([key, value]) => config[key] === value);
+        return Object.entries(expected).every(([key, value]) => JSON.stringify(config[key]) === JSON.stringify(value));
       }, expected);
       await settings.waitForFunction(() => !document.querySelector('.hud-status')?.matches('[data-state="saving"],[data-state="loading"]'));
     };
@@ -119,60 +119,99 @@ async function main() {
     assert.equal(await card.count(), 0);
     await style.selectOption('stack_st8100'); await card.waitFor({ state: 'visible' });
     await savedAs(defaults.DEFAULT_STACK_ST8100_CONFIG);
-    await card.getByRole('combobox', { name: 'LCD upper left', exact: true }).selectOption('current_lap');
+    const alarm = number => card.getByRole('group', { name: 'Alarm ' + number, exact: true });
+    const savedAlarm = async (index, expected) => {
+      await settings.waitForFunction(async ({ index, expected }) => {
+        const config = await (await fetch('/api/overlay/config')).json();
+        return Object.entries(expected).every(([key, value]) => {
+          const actual = config.stackSt8100Alarms?.[index]?.[key];
+          return typeof value === 'number' ? typeof actual === 'number' && Math.abs(actual - value) <= 1e-9 : actual === value;
+        });
+      }, { index, expected });
+    };
+    assert.equal(await card.getByRole('group', { name: /^Alarm [123]$/ }).count(), 3);
+    const liveField = card.getByRole('combobox', { name: 'LCD upper left', exact: true });
+    for (const value of ['power', 'torque', 'throttle', 'brake', 'race_time']) {
+      await liveField.selectOption(value); await savedAs({ stackSt8100Field1: value });
+    }
+    assert.equal(await liveField.locator('option[value="fuel"]').count(), 0);
     await card.getByRole('combobox', { name: 'LCD upper right', exact: true }).selectOption('boost');
-    await card.getByRole('combobox', { name: 'LCD lower left', exact: true }).selectOption('peak_rpm');
-    await card.getByRole('combobox', { name: 'LCD lower right', exact: true }).selectOption('tire_max');
-    await card.getByRole('combobox', { name: 'Tachometer range', exact: true }).selectOption('0-4-10');
+    await card.getByRole('combobox', { name: 'LCD lower left', exact: true }).selectOption('power');
+    await card.getByRole('combobox', { name: 'LCD lower right', exact: true }).selectOption('torque');
+    for (const dial of ['auto', '0-3-8', '0-4-10', '0-6-13', '0-3-10.5']) {
+      await card.getByRole('combobox', { name: 'Tachometer range', exact: true }).selectOption(dial);
+      await savedAs({ stackSt8100Dial: dial });
+    }
+    await card.getByRole('combobox', { name: 'Dial face', exact: true }).selectOption('white');
     await card.getByRole('combobox', { name: 'LCD page', exact: true }).selectOption('peaks');
-    await savedAs({ stackSt8100Field1: 'current_lap', stackSt8100Field2: 'boost', stackSt8100Field3: 'peak_rpm', stackSt8100Field4: 'tire_max', stackSt8100Dial: '0-4-10', stackSt8100Page: 'peaks' });
-
-    for (const label of ['Low fuel warning', 'High tire temperature warning', 'High boost warning']) await card.getByRole('checkbox', { name: label, exact: true }).check();
-    await savedAs({ stackSt8100FuelWarningEnabled: true, stackSt8100TireWarningEnabled: true, stackSt8100BoostWarningEnabled: true });
+    await savedAs({ stackSt8100Face: 'white', stackSt8100Page: 'peaks' });
+    const metricDefaults = { rpm: 7000, speed: 200, tire_avg: 120, tire_max: 120, boost: 1.5, power: 300, torque: 500, throttle: 90, brake: 90 };
+    assert.equal(await alarm(3).getByRole('combobox', { name: 'Alarm metric', exact: true }).locator('option').count(), 9);
+    for (const metric of ['speed', 'rpm', 'tire_avg', 'tire_max', 'boost', 'power', 'torque', 'throttle', 'brake']) {
+      const threshold = metricDefaults[metric];
+      await alarm(3).getByRole('checkbox', { name: 'Enabled', exact: true }).check();
+      await alarm(3).getByRole('combobox', { name: 'Alarm metric', exact: true }).selectOption(metric);
+      await savedAlarm(2, { metric, threshold, enabled: false });
+    }
+    await alarm(3).getByRole('combobox', { name: 'Trigger', exact: true }).selectOption('low');
+    await savedAlarm(2, { metric: 'brake', direction: 'low' });
     const beforeDraft = saved.length;
-    await input('stackSt8100BoostWarningBar').focus();
-    await input('stackSt8100BoostWarningBar').press('ControlOrMeta+A'); await input('stackSt8100BoostWarningBar').press('Backspace');
-    assert.equal(await input('stackSt8100BoostWarningBar').inputValue(), '');
-    await input('stackSt8100BoostWarningBar').pressSequentially('2.25');
-    assert.equal(readConfig().stackSt8100BoostWarningBar, 1.5);
+    await input('alarm-2-threshold').focus();
+    await input('alarm-2-threshold').press('ControlOrMeta+A'); await input('alarm-2-threshold').press('Backspace');
+    assert.equal(await input('alarm-2-threshold').inputValue(), '');
+    await input('alarm-2-threshold').pressSequentially('2.25');
+    assert.equal(readConfig().stackSt8100Alarms[1].threshold, 1.5);
     assert.equal(saved.length, beforeDraft, 'Draft keystrokes must not POST config');
-    await input('stackSt8100BoostWarningBar').press('Enter'); await savedAs({ stackSt8100BoostWarningBar: 2.25 });
-    await type('stackSt8100FuelWarningPercent', '12', 'Tab'); await savedAs({ stackSt8100FuelWarningPercent: 12 });
-    await type('stackSt8100TireWarningC', '125', 'Enter'); await savedAs({ stackSt8100TireWarningC: 125 });
+    await input('alarm-2-threshold').press('Enter'); await savedAlarm(1, { threshold: 2.25, enabled: false });
+    await type('alarm-1-threshold', '125'); await savedAlarm(0, { threshold: 125 });
+    await type('alarm-3-threshold', '12', 'Tab'); await savedAlarm(2, { threshold: 12 });
     await type('stackSt8100ShiftPercent', '95', 'Tab'); await savedAs({ stackSt8100ShiftPercent: 95 });
     const beforeCancel = saved.length;
-    await type('stackSt8100BoostWarningBar', '4.2', 'Escape');
-    assert.equal(await input('stackSt8100BoostWarningBar').inputValue(), '2.25');
-    await input('stackSt8100BoostWarningBar').press('Tab');
-    await type('stackSt8100FuelWarningPercent', '', 'Tab');
-    await type('stackSt8100FuelWarningPercent', 'invalid', 'Enter');
+    await type('alarm-2-threshold', '4.2', 'Escape');
+    assert.equal(await input('alarm-2-threshold').inputValue(), '2.25');
+    await input('alarm-2-threshold').press('Tab');
+    await type('alarm-3-threshold', '', 'Tab'); await type('alarm-3-threshold', 'invalid');
     assert.equal(saved.length, beforeCancel, 'Cancelled, empty and invalid drafts must not save');
-    assert.equal(await input('stackSt8100FuelWarningPercent').inputValue(), '12');
-    checks.push('Keyboard decimal drafts, blur/Enter commit, Escape/empty/invalid rollback');
-
+    assert.equal(await input('alarm-3-threshold').inputValue(), '12');
+    for (const number of [1, 2, 3]) { await alarm(number).getByRole('checkbox', { name: 'Enabled', exact: true }).check(); await savedAlarm(number - 1, { enabled: true }); }
+    checks.push('Exactly three alarms, all nine metrics, safe metric changes, high/low triggers, keyboard drafts and rollback');
     await card.getByRole('combobox', { name: 'Tire temperature unit', exact: true }).selectOption('f');
-    await savedAs({ stackSt8100TemperatureUnit: 'f', stackSt8100TireWarningC: 125 });
-    assert.equal(await input('stackSt8100TireWarningC').inputValue(), '257');
-    await type('stackSt8100TireWarningC', '248'); await savedAs({ stackSt8100TireWarningC: 120 });
+    await savedAs({ stackSt8100TemperatureUnit: 'f' });
+    assert.equal(await input('alarm-1-threshold').inputValue(), '257');
+    await type('alarm-1-threshold', '248'); await savedAlarm(0, { threshold: 120 });
     await open('?imperial=1'); await card.waitFor({ state: 'visible' });
-    assert.equal(await input('stackSt8100BoostWarningBar').inputValue(), '32.63');
+    assert.equal(await input('alarm-2-threshold').inputValue(), '32.63');
     const beforeUnedited = saved.length;
-    await input('stackSt8100BoostWarningBar').focus(); await input('stackSt8100BoostWarningBar').press('Tab');
+    await input('alarm-2-threshold').focus(); await input('alarm-2-threshold').press('Tab');
     assert.equal(saved.length, beforeUnedited, 'Unedited rounded PSI must retain exact canonical bar');
-    assert.equal(readConfig().stackSt8100BoostWarningBar, 2.25);
+    assert.equal(readConfig().stackSt8100Alarms[1].threshold, 2.25);
+    await alarm(3).getByRole('combobox', { name: 'Alarm metric', exact: true }).selectOption('speed');
+    await savedAlarm(2, { metric: 'speed', enabled: false, threshold: 200 });
+    await type('alarm-3-threshold', '100'); await savedAlarm(2, { threshold: 160.9344 });
+    await alarm(3).getByRole('combobox', { name: 'Alarm metric', exact: true }).selectOption('power');
+    await savedAlarm(2, { metric: 'power', threshold: 300 });
+    await type('alarm-3-threshold', '1000'); await savedAlarm(2, { threshold: 745.7 });
+    await alarm(3).getByRole('combobox', { name: 'Alarm metric', exact: true }).selectOption('torque');
+    await savedAlarm(2, { metric: 'torque', threshold: 500 });
+    await type('alarm-3-threshold', '737.56'); await savedAlarm(2, { threshold: 1000 });
     await settings.getByRole('button', { name: 'HUD Unit Settings', exact: true }).click();
     await settings.locator('#hud-follow-global-units').uncheck();
     await settings.locator('#hud-boost-unit').selectOption('kpa');
+    await settings.locator('#hud-power-unit').selectOption('ps');
     await settings.getByRole('button', { name: 'Close Unit Settings', exact: true }).click();
-    assert.equal(await input('stackSt8100BoostWarningBar').inputValue(), '225');
-    await type('stackSt8100BoostWarningBar', '180'); await savedAs({ stackSt8100BoostWarningBar: 1.8 });
-    await settings.waitForFunction(() => window.fixtureBroadcasts.some(message => message.type === 'config' && message.data.stackSt8100BoostWarningBar === 1.8 && message.data.effectiveUnits.boostPressure === 'kpa'));
+    assert.equal(await input('alarm-2-threshold').inputValue(), '225');
+    await type('alarm-2-threshold', '180'); await savedAlarm(1, { threshold: 1.8 });
+    await alarm(3).getByRole('combobox', { name: 'Alarm metric', exact: true }).selectOption('power');
+    await savedAlarm(2, { metric: 'power', threshold: 300 });
+    assert.equal(await input('alarm-3-threshold').inputValue(), '407.89');
+    await type('alarm-3-threshold', '1359.62'); await savedAlarm(2, { threshold: 1000 });
+    await settings.waitForFunction(() => window.fixtureBroadcasts.some(message => message.type === 'config' && message.data.stackSt8100Alarms?.[1]?.threshold === 1.8 && message.data.effectiveUnits.boostPressure === 'kpa'));
     assert.equal(readConfig().effectiveUnits, undefined);
     assert.equal(readConfig().fixtureUnknownField.preserved, true);
-    checks.push('C/F and follow-app PSI/independent kPa preserve canonical C/bar and broadcast effective units');
+    checks.push('Canonical C/bar/kmh/kW/Nm survive C/F, mph, PSI/kPa, hp/PS and lb-ft edits');
     await open('?imperial=1'); await card.waitFor({ state: 'visible' });
-    assert.equal(await input('stackSt8100BoostWarningBar').inputValue(), '180');
-    assert.equal(await input('stackSt8100TireWarningC').inputValue(), '248');
+    assert.equal(await input('alarm-2-threshold').inputValue(), '180');
+    assert.equal(await input('alarm-1-threshold').inputValue(), '248');
     for (const theme of ['dark', 'light']) for (const core of ['default', 'modern', 'elegant']) {
       await settings.evaluate(({ theme, core }) => { document.documentElement.dataset.bsTheme = theme; document.documentElement.dataset.bsCore = core; }, { theme, core });
       await capture('settings-' + theme + '-' + core);
@@ -181,7 +220,8 @@ async function main() {
     await settings.setViewportSize({ width: 1440, height: 1100 });
     await style.selectOption('simple'); await card.waitFor({ state: 'detached' });
     await style.selectOption('stack_st8100'); await card.waitFor({ state: 'visible' });
-    await savedAs({ stackSt8100Page: 'peaks', stackSt8100BoostWarningBar: 1.8 });
+    await savedAs({ stackSt8100Page: 'peaks', stackSt8100Face: 'white' });
+    await savedAlarm(1, { threshold: 1.8 });
     const beforeResetCancel = saved.length;
     settings.once('dialog', dialog => dialog.dismiss());
     await settings.getByRole('button', { name: 'Reset HUD Settings', exact: true }).click();
