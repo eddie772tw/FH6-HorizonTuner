@@ -32,6 +32,7 @@
 #r34History { width: 150px; height: 166px; display: block; }
 .r34-axis-label { font: italic 9px Arial, sans-serif; display: flex; justify-content: space-between; padding-right: 4px; }
 .r34-dial { width: 171px; height: 202px; flex-shrink: 0; }
+.r34-page[data-mode="twin"] .r34-dial { width: 164px; height: 194px; }
 .r34-dial svg { width: 100%; height: 100%; overflow: visible; }
 .r34-dial text { fill: var(--r34-ink); font-family: Arial, sans-serif; font-style: italic; }
 .r34-dial .r34-mfd-number { font-size: 12px; }

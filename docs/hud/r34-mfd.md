@@ -49,7 +49,7 @@ Ver.II 常被泛稱為擴充「卡匣」，產品清單描述的是電路板、�
 
 Recorder 優先取 `data.sourceTelemetry` 的原始唯讀封包；否則接受直接 raw fixture。原始 `TimestampMS` 必須是 uint32。重複時間戳的插值畫面不能更新峰值、歷史或最後收訊時間；即使 interpolator 顯示 7,250 rpm，原始 7,000 rpm 峰值仍保持 7,000。接收間隔超過 1,500 ms 進入 STALE，隱藏即時指針／清空即時數字，歷史峰值與過去圈速仍標示為歷史。暫停、缺失／無效 IsRaceOn 或錯誤 payload 都停止記錄並清空即時讀數；只有明確 1／true 才是 live。RPM、油量、踏板及距離等超出有效物理範圍時顯示不可用，不以截斷製造合理值。切車或有圈數／race time 共同佐證的重新開始才重設；單一倒退時間戳視為封包重排並拒收，須在 stale／重設證據存在時取得兩個車輛與時鐘一致、相隔小於 500 ms 且向前推進的候選封包才接受新 epoch。uint32 正常溢位不當成重新開始。
 
-30 秒記憶採 301 個預先配置容量、最多 10 Hz 的環形取樣；畫面與文字採 30 Hz，沒有每幀新增 DOM 或重建靜態錶面。資料中斷產生的長間隔不連成假曲線。G／history Canvas 的 backing store 隨 HUD 最終 scale、DPR、ResizeObserver 與視窗／螢幕密度改變重新配置；每邊最多 2048 像素。邏輯幾何只在這些邊界量測並快取，隱藏／零尺寸不配置，30 Hz render 不讀取 DOM 尺寸；destroy 時移除 observer、media query 與 resize listener。
+30 秒記憶採 301 個預先配置容量、最多 10 Hz 的環形取樣；畫面與文字採 30 Hz，沒有每幀新增 DOM 或重建靜態錶面。資料中斷產生的長間隔不連成假曲線。G／history Canvas 的 backing store 隨 HUD 最終 scale、DPR、ResizeObserver 與視窗／螢幕密度改變重新配置；每邊最多 2048 像素。邏輯幾何只在這些邊界量測並快取，隱藏／零尺寸不配置，render loop 僅比較快取 DPR 數字以捕捉 media query 可能遺漏的返回轉換，不讀取 DOM 尺寸或在穩定畫格配置物件；destroy 時移除 observer、media query 與 resize listener。
 
 原始 MFD 的完整離線記錄／PC 分析並未實作，不能稱為原廠資料記錄器替代品。
 

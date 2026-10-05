@@ -61,7 +61,7 @@
         return s;
     }
     function mfdDialMarkup(id, label) {
-        var s = '<svg xmlns="' + NS + '" viewBox="0 0 172 202" aria-label="' + label + '">';
+        var s = '<svg xmlns="' + NS + '" viewBox="-8 0 188 202" aria-label="' + label + '">';
         s += text(86, 18, label, 'r34-mfd-number');
         s += '<path d="' + arc(86, 101, 62, 135, 405) + '" fill="none" stroke="var(--r34-metal)" stroke-width="18"/>';
         s += '<path id="' + id + '-sector" d="M86,101Z" fill="var(--r34-green)" opacity=".9"/>';

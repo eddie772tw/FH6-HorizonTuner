@@ -3,11 +3,12 @@
     var M = root.R34Model, state = M.createState(), config = {}, view = {};
     var renderer = new root.R34Renderer(document), displayUnits = M.units(config, {});
     var frameId = null, resizeId = null, destroyed = false, lastRender = -Infinity, currentScale = 1;
-    var observer = null, dprQuery = null;
+    var observer = null, dprQuery = null, appliedDpr = null;
     function resize() {
         if (resizeId !== null) cancelAnimationFrame(resizeId);
         resizeId = null; if (destroyed) return;
-        renderer.resizeCanvases(currentScale, root.devicePixelRatio || 1); lastRender = -Infinity;
+        appliedDpr = root.devicePixelRatio || 1;
+        renderer.resizeCanvases(currentScale, appliedDpr); lastRender = -Infinity;
     }
     function queueResize() { if (!destroyed && resizeId === null) resizeId = requestAnimationFrame(resize); }
     function watchDpr() {
@@ -24,6 +25,10 @@
     function frame(data, payload) { M.ingest(state, data, payload, performance.now()); }
     function render(now) {
         if (destroyed) return;
+        // Resolution-query events may miss a rapid return to an earlier DPR.
+        // This cached scalar check schedules a boundary resize; it reads no DOM
+        // dimensions and allocates nothing during unchanged animation frames.
+        if ((root.devicePixelRatio || 1) !== appliedDpr) queueResize();
         // Bounded 30 Hz text/graph cadence with cached logical canvas geometry.
         if (now - lastRender >= 1000 / 30) {
             M.snapshot(state, config, now, view, displayUnits); renderer.render(view, state, config); lastRender = now;

@@ -42,6 +42,18 @@ try {
       await frame({ LapNumber: mode === 'lap' ? 6 : 3 }); await save(mode);
       assert.equal(await page.locator('[data-mode]:not([hidden])').getAttribute('data-mode'), mode);
       if (mode === 'single' || mode === 'g') await inspectCanvas(mode === 'g' ? 'r34G' : 'r34History');
+      if (mode === 'single' || mode === 'twin') {
+        const labels = await page.locator('[data-mode="' + mode + '"] .r34-dial').evaluateAll(dials => dials.flatMap(dial => {
+          const bounds = dial.querySelector('svg').getBoundingClientRect();
+          const tolerance = 1 / devicePixelRatio;
+          return [...dial.querySelectorAll('text')].map(text => {
+            const b = text.getBoundingClientRect();
+            return { text: text.textContent, contained: b.left >= bounds.left - tolerance && b.right <= bounds.right + tolerance && b.top >= bounds.top - tolerance && b.bottom <= bounds.bottom + tolerance };
+          });
+        }));
+        assert(labels.every(label => label.contained), mode + ' gauge labels must fit their own dial viewport');
+        report.checks.push({ mode, dialLabels: labels });
+      }
     }
     const gMarker = async () => page.locator('#r34G').evaluate(canvas => {
       const pixels = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height).data;
@@ -74,7 +86,9 @@ try {
       await inspectCanvas('r34G');
       await cdp.send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: false });
       await page.waitForFunction(() => { const c = document.getElementById('r34G'), r = c.getBoundingClientRect(); return devicePixelRatio === 1 && Math.abs(c.width - r.width) <= 1; });
-      await cdp.detach(); report.checks.push('Live DPR change resizes canvas backing through production listeners');
+      await inspectCanvas('r34G');
+      await save('dpr-return-to-one');
+      await cdp.detach(); report.checks.push('Live DPR 1→2→1 preserves both upward and downward canvas backing changes');
     }
     await configure({ r34MfdMode: 'lap' }); await frame({ CarOrdinal: 3434, LapNumber: 0, CurrentRaceTime: 0 });
     assert.equal(await page.locator('#r34LapNumber').textContent(), '1');

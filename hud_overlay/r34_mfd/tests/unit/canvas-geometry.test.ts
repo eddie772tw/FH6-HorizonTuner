@@ -30,3 +30,12 @@ describe('R34 canvas backing geometry', () => {
     expect(C.geometry(300, 180, NaN, 0)).toEqual(C.geometry(300, 180, 1, 1));
   });
 });
+
+it('restores the original backing after an upward then downward DPR transition', () => {
+  const original = C.geometry(316, 182, .66, 1);
+  const high = C.geometry(316, 182, .66, 2);
+  const restored = C.geometry(316, 182, .66, 1);
+  expect(high.pixelWidth).toBeGreaterThan(original.pixelWidth);
+  expect(high.pixelHeight).toBeGreaterThan(original.pixelHeight);
+  expect(restored).toEqual(original);
+});
