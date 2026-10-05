@@ -26,7 +26,7 @@ function animate() {
     if (destroyed) return;
     const elapsed = (now - sweepStarted) / 850;
     if (elapsed >= 1) { stopSweep(); render(); return; }
-    // Cosmetic segment check only: speed, gear, fuel never become pretend values.
+    // Cosmetic segment check only: speed, gear, boost never become pretend values.
     const ratio = Math.sin(Math.PI * elapsed);
     renderer.render(state.snapshot(now), ratio);
     raf = requestAnimationFrame(tick);

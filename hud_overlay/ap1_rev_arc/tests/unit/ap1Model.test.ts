@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 // @ts-expect-error Standalone HUD modules intentionally have no TypeScript build dependency.
 import { createState, emptyFrame, gearLabel, normalizeFrame, segmentState, STALE_AFTER_MS, tachometerTicks } from '../../model.js';
 
-const sample = { timestamp_ms: 100, rpm: 7200, maxRpm: 9000, speed_kmh: 180, speed_mph: 112, gear: 4, fuel_ratio: .65 };
+const sample = { timestamp_ms: 100, rpm: 7200, maxRpm: 9000, speed_kmh: 180, speed_mph: 112, gear: 4, boost_bar: 1.3 };
 
 describe('AP1 canonical display boundary', () => {
   it.each([[0, 'R'], [11, 'N'], [1, '1'], [6, '6'], [10, '10'], [-1, '—'], [12, '—'], [1.5, '—'], [null, '—'], [undefined, '—'], ['4', '—']])('maps gear %s to %s', (input, output) => {
@@ -21,10 +21,10 @@ describe('AP1 canonical display boundary', () => {
     expect(normalizeFrame({ speed: 100, displayUnits: { speed: 'kmh' } }).speedText).toBe('100');
   });
   it.each([null, undefined, NaN, Infinity, '', false])('keeps invalid measurements unavailable: %s', value => {
-    const frame = normalizeFrame({ speed_kmh: value, rpm: value, fuel_ratio: value, maxRpm: value });
+    const frame = normalizeFrame({ speed_kmh: value, rpm: value, boost_bar: value, maxRpm: value });
     expect(frame.speedText).toBe('---');
     expect(frame.rpmRatio).toBeNull();
-    expect(frame.fuelRatio).toBeNull();
+    expect(frame.boost.value).toBeNull();
   });
   it('uses signed reverse speed magnitude in both units and honors max_rpm', () => {
     const reverse = { ...sample, gear: 0, speed_kmh: -16.2, speed_mph: -10.06, maxRpm: undefined, max_rpm: 8000 };
@@ -36,21 +36,21 @@ describe('AP1 canonical display boundary', () => {
     expect(normalizeFrame(sample, {}, { unit: 'mph' }).speedText).toBe('112');
     expect(normalizeFrame(sample, {}, { effectiveUnit: 'mph' }).speedText).toBe('112');
     expect(normalizeFrame(null, null, null).speedText).toBe('---');
-    expect(normalizeFrame({ ...sample, rpm: -1, maxRpm: -1, fuel_ratio: -1 }).rpmRatio).toBeNull();
+    expect(normalizeFrame({ ...sample, rpm: -1, maxRpm: -1, boost_bar: -1 }).rpmRatio).toBeNull();
   });
   it('distinguishes zero from missing and rejects overflowing speed', () => {
-    const zero = normalizeFrame({ ...sample, speed_kmh: 0, rpm: 0, fuel_ratio: 0 });
+    const zero = normalizeFrame({ ...sample, speed_kmh: 0, rpm: 0, boost_bar: 0 });
     expect(zero.speedText).toBe('0');
     expect(zero.rpmRatio).toBe(0);
-    expect(zero.fuelRatio).toBe(0);
+    expect(zero.boost.value).toBe(0);
     expect(normalizeFrame({ ...sample, speed_kmh: 1000 }).speedText).toBe('---');
-    expect(normalizeFrame({ ...sample, fuel_ratio: 65 }).fuelRatio).toBeNull();
+    expect(normalizeFrame({ ...sample, boost_bar: 3 }).boost.value).toBe(3);
   });
   it('does not infer unsupported raw values or invent a redline', () => {
     const frame = normalizeFrame({ SpeedMetersPerSecond: 40, CurrentEngineRpm: 5000, Fuel: 80, EngineMaxRpm: 9000 });
     expect(frame.speedText).toBe('---');
     expect(frame.rpmRatio).toBeNull();
-    expect(frame.fuelRatio).toBeNull();
+    expect(frame.boost.value).toBeNull();
     expect(frame.shift).toBe(false);
     expect(normalizeFrame(sample).redlineRpm).toBeNull();
   });
@@ -111,7 +111,7 @@ describe('AP1 telemetry lifecycle', () => {
     expect(state.snapshot(2).speedText).toBe('---');
     state.receive({ ...sample, timestamp_ms: 102, success: false }, {}, 3);
     expect(state.snapshot(4).status).toBe('DATA ERROR');
-    expect(state.snapshot(4).fuelRatio).toBeNull();
+    expect(state.snapshot(4).boost.value).toBeNull();
     state.receive({ ...sample, timestamp_ms: 103, isRaceOn: 0 }, {}, 5);
     expect(state.snapshot(6).status).toBe('SESSION PAUSED');
   });

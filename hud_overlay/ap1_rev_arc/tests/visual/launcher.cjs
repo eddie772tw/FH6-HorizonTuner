@@ -16,7 +16,7 @@ async function main() {
     showTelePedals: false, showPowerTorque: false, showTeleCompass: false,
   };
   const config = { hudStyle: style, scale: 1, unit: 'kmh', effectiveUnit: 'kmh',
-    effectiveUnits: { speed: 'kmh' }, enableSmoothing: true,
+    effectiveUnits: { speed: 'kmh', boostPressure: 'bar' }, enableSmoothing: true,
     useDefaultColors: true, glowIntensity: 1, elements };
   const types = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript',
     '.css': 'text/css', '.json': 'application/json', '.svg': 'image/svg+xml',
@@ -52,17 +52,22 @@ async function main() {
     }
     Socket.OPEN=1; window.WebSocket=Socket;
   });
+  const boostFixtures = JSON.parse(fs.readFileSync(path.join(__dirname, '../fixtures/boost-raw-json.json'), 'utf8'));
   const samples = [];
   async function record(name) {
     const frame = page.frames().find(f => f.url().includes('/'+style+'/index.html'));
     if (!frame) throw new Error('HUD was not dynamically discovered');
-    const state = await frame.evaluate(() => ({ text: document.body.innerText, readings: { speed: document.querySelector('#ap1Cluster')?.dataset.speed || document.querySelector('#lfaSpeed')?.textContent, gear: document.querySelector('#gearValue, #lfaGear')?.textContent, status: document.querySelector('#signalStatus, #lfaStatus')?.textContent }, body: getComputedStyle(document.body).backgroundColor,
+    const state = await frame.evaluate(() => ({ text: document.body.innerText, readings: { speed: document.querySelector('#ap1Cluster')?.dataset.speed || document.querySelector('#lfaSpeed')?.textContent, gear: document.querySelector('#gearValue, #lfaGear')?.textContent, status: document.querySelector('#signalStatus, #lfaStatus')?.textContent, boost: document.querySelector('#boostValue')?.textContent, boostRange: document.querySelector('#ap1Cluster')?.dataset.boostRange, footerRemoved: document.querySelectorAll('.ap1-signature, #rpmValue, #fuelValue').length === 0 }, body: getComputedStyle(document.body).backgroundColor,
       style: window.HUDCore.getActiveStyle().containerId,
       bounds: (() => { const e=document.getElementById(window.HUDCore.getActiveStyle().containerId); const b=e.getBoundingClientRect(); return {x:b.x,y:b.y,width:b.width,height:b.height,display:getComputedStyle(e).display}; })() }));
     await page.screenshot({ path: path.join(out,name+'.png'), omitBackground: true });
     samples.push({name,...state});
     const assert = require('node:assert/strict');
-    if (name === 'host-cruise') { assert.equal(state.readings.speed, '180'); assert.equal(state.readings.gear, '4'); }
+    if (name === 'host-cruise') { assert.equal(state.readings.speed, '180'); assert.equal(state.readings.gear, '4'); assert.equal(state.readings.boost, '1.00 bar'); }
+    const boostExpected = { 'host-boost-zero': '0.00 bar', 'host-boost-negative': '-0.50 bar', 'host-boost-missing': '-- bar', 'host-boost-overflow': '3.00 bar', 'host-boost-psi': '14.5 PSI', 'host-boost-kpa': '100 kPa' };
+    if (boostExpected[name]) assert.equal(state.readings.boost, boostExpected[name]);
+    if (name === 'host-boost-overflow') assert.equal(state.readings.boostRange, 'high');
+    assert.equal(state.readings.footerRemoved, true);
     if (name === 'host-stale-with-smoothing') { assert.match(state.readings.status, /SIGNAL/); assert.match(state.readings.speed, /^(---|—)$/); }
     if (name === 'host-reverse-reconnected') { assert.equal(state.readings.gear, 'R'); assert.equal(state.readings.speed, '16'); }
     if (name === 'host-imperial') assert.equal(state.readings.speed, '10');
@@ -77,14 +82,23 @@ async function main() {
     await page.waitForFunction(() => document.querySelector('#hud-iframe')?.contentWindow?.HUDCore?.getActiveStyle());
     await page.waitForTimeout(1800);
     await record('host-standby');
-    await page.evaluate(() => {
-      window.auditRaw={TimestampMS:1000, IsRaceOn:1, CarOrdinal:100, EngineMaxRpm:9000, EngineIdleRpm:900,
-        CurrentEngineRpm:6500, SpeedMetersPerSecond:50, Gear:4, Fuel:.68, AccelInput:180, BrakeInput:0,
-        TorqueNewtons:300, PowerWatts:200000, CurrentLap:34.21, BestLap:80.33};
+    await page.evaluate(rawFrame => {
+      window.auditRaw={...rawFrame};
       window.auditFeed=setInterval(()=>{window.auditRaw.TimestampMS+=16;window.dispatchEvent(new CustomEvent('telemetry',{detail:{...window.auditRaw}}));},16);
-    });
+    }, boostFixtures.cases[0].frame);
     await page.waitForTimeout(300);
     await record('host-cruise');
+    for (const [name, boost] of [['host-boost-zero', boostFixtures.cases[1].frame.Boost], ['host-boost-negative', boostFixtures.cases[2].frame.Boost], ['host-boost-missing', null], ['host-boost-overflow', 43.5114]]) {
+      await page.evaluate(value => { if (value === null) delete window.auditRaw.Boost; else window.auditRaw.Boost = value; }, boost);
+      await page.waitForTimeout(200); await record(name);
+    }
+    await page.evaluate(value => { window.auditRaw.Boost = value; }, boostFixtures.cases[0].frame.Boost);
+    for (const unit of ['psi','kpa']) {
+      await page.evaluate(({ config, unit }) => window.dispatchEvent(new CustomEvent('hud:config', { detail: { ...config, effectiveUnits: { speed: 'kmh', boostPressure: unit } } })), { config, unit });
+      await page.waitForTimeout(200); await record('host-boost-' + unit);
+    }
+    await page.evaluate(config => window.dispatchEvent(new CustomEvent('hud:config', { detail: config })), config);
+    await page.waitForTimeout(200);
     await page.evaluate(()=>clearInterval(window.auditFeed));
     await page.waitForTimeout(3100);
     await record('host-stale-with-smoothing');
@@ -94,7 +108,7 @@ async function main() {
     });
     await page.waitForTimeout(150);
     await record('host-reverse-reconnected');
-    await page.evaluate(config => window.dispatchEvent(new CustomEvent('hud:config',{detail:{...config,unit:'mph',effectiveUnit:'mph',effectiveUnits:{speed:'mph'}}})),config);
+    await page.evaluate(config => window.dispatchEvent(new CustomEvent('hud:config',{detail:{...config,unit:'mph',effectiveUnit:'mph',effectiveUnits:{speed:'mph',boostPressure:'psi'}}})),config);
     await page.waitForTimeout(150);
     await record('host-imperial');
     await page.setViewportSize({width:1280,height:720});

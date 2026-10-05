@@ -31,7 +31,7 @@ export function createRenderer(document, container) {
     const group = create('g', { transform: `translate(${i * 73} 0)` }, el('speedDigits'));
     return Object.fromEntries(Object.entries(GLYPHS).map(([key, points]) => [key, create('polygon', { points, class: 'ap1-digit' }, group)]));
   });
-  const fuel = Array.from({ length: 8 }, (_, i) => create('rect', { x: 565 + i * 12, y: 189 - i * .4, width: 9, height: 15 + i * .4, class: 'ap1-segment' }, el('fuelSegments')));
+  const boostBars = Array.from({ length: 9 }, (_, i) => create('rect', { x: 565 + i * 11, y: 189 - i * .35, width: 8, height: 15 + i * .35, class: 'ap1-segment' }, el('boostSegments')));
   let lastTickKey = '';
   let lastFrame = '';
   return {
@@ -49,23 +49,27 @@ export function createRenderer(document, container) {
       }
       const barState = segmentState(sweep ?? frame.rpmRatio, sweep === null ? frame.redlineRatio : null);
       bars.forEach((bar, i) => set(bar, 'class', `ap1-segment${barState[i].lit ? ' is-lit' : ''}${barState[i].hot ? ' is-hot' : ''}`));
-      const signature = `${frame.speedText}/${frame.gear}/${frame.unit}/${frame.rpm}/${frame.fuelRatio}/${frame.status}/${frame.shift}/${sweep !== null}`;
+      const signature = `${frame.speedText}/${frame.gear}/${frame.unit}/${frame.rpm}/${frame.boost.valueText}/${frame.boost.unit}/${frame.boost.ratio}/${frame.boost.overflow}/${frame.status}/${frame.shift}/${sweep !== null}`;
       if (signature === lastFrame) return;
       lastFrame = signature;
       const value = frame.speedText.padStart(3, ' ');
       digits.forEach((glyph, i) => Object.entries(glyph).forEach(([key, node]) => set(node, 'class', `ap1-digit${DIGITS[value[i]]?.includes(key) ? ' is-lit' : ''}`)));
       text('speedUnit', frame.unit === 'mph' ? 'mph' : 'km/h');
       text('gearValue', frame.gear);
-      text('fuelValue', frame.fuelRatio === null ? '--' : `${Math.round(frame.fuelRatio * 100)}%`);
-      fuel.forEach((bar, i) => set(bar, 'class', `ap1-segment${frame.fuelRatio !== null && i < Math.ceil(frame.fuelRatio * 8) ? ' is-lit' : ''}${frame.fuelRatio !== null && frame.fuelRatio <= .125 ? ' is-hot' : ''}`));
-      text('rpmValue', frame.rpm === null ? 'RPM ----' : `RPM ${Math.round(frame.rpm)}`);
+      text('boostValue', `${frame.boost.valueText} ${frame.boost.unitLabel}`);
+      text('boostMinLabel', frame.boost.minLabel);
+      text('boostMaxLabel', frame.boost.maxLabel);
+      boostBars.forEach((bar, i) => set(bar, 'class', `ap1-segment${frame.boost.ratio !== null && i < Math.ceil(frame.boost.ratio * 9) ? ' is-lit' : ''}`));
+      container.dataset.boost = frame.boost.valueText;
+      container.dataset.boostUnit = frame.boost.unitLabel;
+      container.dataset.boostRange = frame.boost.overflow || 'within';
       text('signalStatus', sweep !== null ? 'DISPLAY CHECK' : frame.status);
       text('shiftLamp', frame.shift && sweep === null ? 'SHIFT' : '');
       container.classList.toggle('is-unavailable', !frame.live && sweep === null);
       container.dataset.status = frame.status || 'LIVE';
       container.dataset.speed = frame.speedText;
       container.dataset.gear = frame.gear;
-      set(container, 'aria-label', `AP1 Rev Arc. ${frame.status || 'Live telemetry'}. Speed ${frame.speedText} ${frame.unit === 'mph' ? 'mph' : 'kilometres per hour'}. Gear ${frame.gear}. RPM ${frame.rpm ?? 'unavailable'}. Fuel ${frame.fuelRatio === null ? 'unavailable' : `${Math.round(frame.fuelRatio * 100)} percent`}`);
+      set(container, 'aria-label', `AP1 Rev Arc. ${frame.status || 'Live telemetry'}. Speed ${frame.speedText} ${frame.unit === 'mph' ? 'mph' : 'kilometres per hour'}. Gear ${frame.gear}. RPM ${frame.rpm ?? 'unavailable'}. Boost ${frame.boost.value === null ? 'unavailable' : `${frame.boost.valueText} ${frame.boost.unitLabel}`}${frame.boost.overflow ? ', outside displayed boost scale' : ''}`);
     },
   };
 }

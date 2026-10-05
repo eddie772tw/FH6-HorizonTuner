@@ -1,3 +1,4 @@
+import { emptyBoost, normalizeBoost } from './boost-model.js';
 // Display-only boundary. Units/redline are supplied by the shared Coordinator.
 export const STALE_AFTER_MS = 1500;
 export const SEGMENT_COUNT = 60;
@@ -38,22 +39,21 @@ export function normalizeFrame(data = {}, payload = {}, config = {}) {
   const maxRpm = maximum !== null && maximum > 0 ? maximum : null;
   const redline = finite(payload.redlineRpm ?? data.redlineRpm);
   const redlineRpm = maxRpm !== null && redline !== null && redline > 0 && redline <= maxRpm ? redline : null;
-  const fuel = finite(data.fuel_ratio);
-  const fuelRatio = fuel !== null && fuel >= 0 && fuel <= 1 ? fuel : null;
+  const boost = normalizeBoost(data, config, unit);
   const timestamp = nonnegative(data.timestamp_ms ?? data.TimestampMS);
   return {
     speedText, unit, rpm, maxRpm, redlineRpm,
     rpmRatio: rpm !== null && maxRpm !== null ? clamp(rpm / maxRpm, 0, 1) : null,
     redlineRatio: redlineRpm !== null ? redlineRpm / maxRpm : null,
     shift: rpm !== null && redlineRpm !== null && rpm >= redlineRpm,
-    gear: gearLabel(data.gear), fuelRatio, timestamp,
+    gear: gearLabel(data.gear), boost, timestamp,
     error: data.success === false || payload.success === false || Boolean(data.error),
     paused: (data.isRaceOn ?? data.is_race_on ?? data.IsRaceOn) === 0 || (data.isRaceOn ?? data.is_race_on ?? data.IsRaceOn) === false,
   };
 }
 
-export function emptyFrame(unit = 'kmh', status = 'WAITING FOR DATA') {
-  return { speedText: '---', gear: '—', unit, rpm: null, maxRpm: null, redlineRpm: null, rpmRatio: null, redlineRatio: null, fuelRatio: null, shift: false, status, live: false };
+export function emptyFrame(unit = 'kmh', status = 'WAITING FOR DATA', boostUnit = unit === 'mph' ? 'psi' : 'bar') {
+  return { speedText: '---', gear: '—', unit, rpm: null, maxRpm: null, redlineRpm: null, rpmRatio: null, redlineRatio: null, boost: emptyBoost(boostUnit), shift: false, status, live: false };
 }
 
 // Timestamp progression distinguishes real samples from Coordinator RAF replay.
@@ -82,11 +82,11 @@ export function createState() {
       }
     },
     snapshot(now = 0) {
-      if (destroyed) return emptyFrame(frame.unit, 'OFFLINE');
-      if (frame.error) return emptyFrame(frame.unit, 'DATA ERROR');
-      if (frame.paused) return emptyFrame(frame.unit, 'SESSION PAUSED');
-      if (frame.timestamp === null) return emptyFrame(frame.unit);
-      if (now - lastProgressAt >= STALE_AFTER_MS) return emptyFrame(frame.unit, 'SIGNAL LOST');
+      if (destroyed) return emptyFrame(frame.unit, 'OFFLINE', frame.boost.unit);
+      if (frame.error) return emptyFrame(frame.unit, 'DATA ERROR', frame.boost.unit);
+      if (frame.paused) return emptyFrame(frame.unit, 'SESSION PAUSED', frame.boost.unit);
+      if (frame.timestamp === null) return emptyFrame(frame.unit, 'WAITING FOR DATA', frame.boost.unit);
+      if (now - lastProgressAt >= STALE_AFTER_MS) return emptyFrame(frame.unit, 'SIGNAL LOST', frame.boost.unit);
       const partial = frame.speedText === '---' || frame.rpmRatio === null || frame.gear === '—';
       return { ...frame, live: true, status: partial ? 'PARTIAL DATA' : '' };
     },

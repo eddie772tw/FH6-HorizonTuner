@@ -31,7 +31,7 @@ try { browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PAT
 }
 const url = `http://127.0.0.1:${server.address().port}/ap1_rev_arc/index.html`;
 let stamp = 100;
-const sample = { speed_kmh: 188, speed_mph: 117, rpm: 7300, maxRpm: 9000, redlineRpm: 8000, gear: 4, fuel_ratio: .625, isRaceOn: 1 };
+const sample = { speed_kmh: 188, speed_mph: 117, rpm: 7300, maxRpm: 9000, redlineRpm: 8000, gear: 4, Boost: 17.40456, isRaceOn: 1 };
 const frame = (page, data = {}, meta = {}) => page.evaluate(({ data, meta, stamp }) => window.HUDCore.handleMessage('hud:frame', { data: { ...data, timestamp_ms: stamp }, ...meta }), { data: { ...sample, ...data }, meta, stamp: stamp++ });
 const inspectArcLayout = async page => page.evaluate(async () => {
   const { ARC, arcFrame } = await import('./arc-geometry.js');
@@ -51,7 +51,7 @@ const inspectArcLayout = async page => page.evaluate(async () => {
     tag: node.tagName,
     attributes: Object.fromEntries(geometricAttributes.map(key => [key, node.getAttribute(key)])),
   });
-  const readouts = Object.fromEntries(['speedDigits','gearValue','fuelSegments','fuelValue','rpmValue','speedUnit'].map(id => {
+  const readouts = Object.fromEntries(['speedDigits','gearValue','boostSegments','boostValue','boostMinLabel','boostMaxLabel','speedUnit'].map(id => {
     const node = document.getElementById(id);
     const b = rect(node.getBoundingClientRect());
     const box = rect(node.getBBox());
@@ -87,6 +87,9 @@ try {
     await page.evaluate(() => window.HUDCore.handleMessage('config', { data: { scale: 1, elements: { showGauge: true }, glowIntensity: .8 } }));
     await frame(page);
     assert.equal(await page.locator('#ap1Cluster').getAttribute('data-speed'), '188');
+    assert.equal(await page.locator('#boostValue').textContent(), '1.20 bar');
+    assert.equal(await page.locator('.ap1-signature, #rpmValue, #fuelValue').count(), 0);
+    assert.equal(await page.locator('body').innerText().then(text => text.includes('AP1 / REV ARC')), false);
     const bounds = await page.locator('#ap1Cluster').boundingBox();
     assert(bounds.x >= 0 && bounds.y >= 0 && bounds.x + bounds.width <= width && bounds.y + bounds.height <= height);
     await save(page, `metric-${width}x${height}-dpr${dpr}.png`);
@@ -138,16 +141,34 @@ try {
       await frame(page, {}, { isMetric: false });
       assert.equal(await page.locator('#ap1Cluster').getAttribute('data-speed'), '117');
       await save(page, 'imperial.png');
+      const boostCases = [
+        { name: 'boost-zero', data: { Boost: 0 }, text: '0.00 bar' },
+        { name: 'boost-negative', data: { Boost: -7.2519, boost_bar: 0, boost_psi: 0 }, text: '-0.50 bar' },
+        { name: 'boost-missing', data: { Boost: undefined, TimestampMS: 1, boost_bar: 0, boost_psi: 0 }, text: '-- bar' },
+        { name: 'boost-psi', data: { Boost: 14.5038, displayUnits: { boostPressure: 'psi' } }, text: '14.5 PSI' },
+        { name: 'boost-kpa', data: { Boost: 14.5038, displayUnits: { boostPressure: 'kpa' } }, text: '100 kPa' },
+        { name: 'boost-overflow', data: { Boost: 43.5114 }, text: '3.00 bar' },
+      ];
+      for (const scenario of boostCases) {
+        await frame(page, scenario.data);
+        await save(page, scenario.name + '.png');
+        assert.equal(await page.locator('#boostValue').textContent(), scenario.text);
+        const b = await page.locator('#boostValue').boundingBox(), c = await page.locator('#ap1Cluster').boundingBox();
+        assert(b.x >= c.x && b.x + b.width <= c.x + c.width, 'Boost value must remain contained: ' + scenario.name);
+        if (scenario.name === 'boost-missing') assert.equal(await page.locator('#boostSegments .is-lit').count(), 0);
+        if (scenario.name === 'boost-overflow') assert.equal(await page.locator('#ap1Cluster').getAttribute('data-boost-range'), 'high');
+        report.checks.push({ boostScenario: scenario.name, text: scenario.text });
+      }
       await frame(page, { gear: 0, speed_kmh: 24, rpm: 3400 });
       assert.equal(await page.locator('#gearValue').textContent(), 'R');
       await save(page, 'reverse.png');
       await frame(page, { gear: 11, speed_kmh: 0, rpm: 950 });
       assert.equal(await page.locator('#gearValue').textContent(), 'N');
       await save(page, 'neutral.png');
-      await frame(page, { rpm: 8500, fuel_ratio: .07 });
+      await frame(page, { rpm: 8500, Boost: 25 });
       assert.equal(await page.locator('#shiftLamp').textContent(), 'SHIFT');
       await save(page, 'redline.png');
-      await frame(page, { speed_kmh: null, rpm: null, gear: null, fuel_ratio: null });
+      await frame(page, { speed_kmh: null, rpm: null, gear: null, Boost: null });
       assert.equal(await page.locator('#signalStatus').textContent(), 'PARTIAL DATA');
       await save(page, 'missing.png');
       await frame(page, { success: false });

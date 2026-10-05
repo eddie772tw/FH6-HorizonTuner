@@ -15,12 +15,13 @@
 .ap1-unit { font-size: 13px; letter-spacing: .7px; }
 .ap1-label { font-size: 13px; letter-spacing: 1.5px; }
 .ap1-gear { font-size: 45px; font-weight: 600; }
-.ap1-value { font-size: 19px; letter-spacing: 2px; }
+.ap1-boost-value { font-size: 17px; letter-spacing: .4px; }
+.ap1-boost-scale { font-size: 10.5px; letter-spacing: .3px; }
+.ap1-boost-zero { fill: none; stroke: var(--ap1-primary); stroke-width: 1; opacity: .7; }
 .ap1-speed-unit { font-size: 21px; }
 .ap1-tick-label { font-size: 21px; font-weight: 600; }
 .ap1-divider { fill: none; stroke: var(--ap1-label); opacity: .25; }
 .ap1-status { font-size: 12px; letter-spacing: 2.4px; }
-.ap1-signature { font-size: 9px; fill: var(--ap1-label); letter-spacing: 1.7px; }
 .ap1-shift { font-size: 15px; letter-spacing: 2px; fill: var(--ap1-hot); font-weight: 700; }
 .ap1-segment { fill: var(--ap1-inactive); }
 .ap1-segment.is-lit { fill: var(--ap1-primary); filter: drop-shadow(0 0 calc(2px * var(--ap1-glow)) var(--ap1-primary)); }
@@ -28,4 +29,4 @@
 .ap1-redline-tick { fill: var(--ap1-hot); }
 .ap1-digit { fill: var(--ap1-inactive); opacity: .45; }
 .ap1-digit.is-lit { fill: var(--ap1-primary); opacity: 1; filter: drop-shadow(0 0 calc(2px * var(--ap1-glow)) var(--ap1-primary)); }
-.ap1-cluster.is-unavailable #rpmSegments, .ap1-cluster.is-unavailable #fuelSegments { opacity: .5; }
+.ap1-cluster.is-unavailable #rpmSegments, .ap1-cluster.is-unavailable #boostSegments { opacity: .5; }
