@@ -4,7 +4,7 @@
 
 ## 原型、方向與目前修改
 
-原型為 **2012 Lexus LFA 車主手冊的 Normal display**，保留已核准的厚金屬環、黑底白字、中央速度／檔位、0–10 轉速刻度及四弧側面輪廓。Normal display 是「主錶置中、沒有左側選單」的版面名稱，與 AUTO／NORMAL／SPORT 駕駛模式不同。
+原型為 **2012 Lexus LFA 車主手冊的 Normal display**，中央保留已核准的厚金屬環、黑底白字、速度／檔位與 0–10 轉速刻度，側面沿用目前四弧輪廓。Normal display 是「主錶置中、沒有左側選單」的版面名稱，與 AUTO／NORMAL／SPORT 駕駛模式不同。
 
 適合偏好真實量產超跑儀表、手排換檔與山路巡航的玩家。中央 material、geometry、PNG／SVG 原檔與刻度／指針繪圖維持原樣；此次依使用者明確要求，修改側錶資料含義，並允許中央原 LIVE 區域顯示排名與短暫單圈通知。
 
@@ -77,9 +77,15 @@ T_6820 圖本身標示 Issued 10/2009、中央 AUTO，不能當作 2012 年式�
 - 中央 PNG SHA-256：`3433460df37b91c67f09cfe7b3c99bacd6ad925db36b113042a95bc196422b22`
 - 中央 SVG SHA-256：`8570a31f672dac12bb94e198a91cb78576dd0b09b81c140dd4ae7ca68b924028`
 - 本機：**157 files passed／1 skipped；1,150 tests passed／1 skipped**，含 45 個 LFA 行為測試；`build:web-hud`、語法與 diff gate 通過
-- 新的 Chrome fixture／完整合成像素檢視仍待 CI。保留沒有排名／通知、中心 RPM7200／180km/h／4檔的 `detail-metric.png`，供和已核准版本比較；排名／完成圈／最佳圈另有獨立截圖
-- 視覺 runner 涵蓋 720p／1080p／1440p／DPR2，C/F、bar/psi/kPa、平均缺失／0、signed boost／0／missing、踏板端點與夾值、排名／計圈通知／逾時／重設、99:59.99 最大寬度、斷線重連與原有生命週期
+- **實際 Chrome 154.0.8037.57 renderer 與共用 launcher 通過**：[run 37264359295](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37264359295)，來源 `eac1b9e5bd360a3ca4e9359bd142b43de7c6a0f6`、artifact `11324929540`，維持 `chromiumSandbox:true`
+- 實際執行 1280×720、1920×1080、2560×1440 的 DPR1 與 1920×1080 DPR2。C/F、bar/psi/kPa、平均缺失／0、signed boost／0／missing、踏板端點與夾值、排名／計圈通知／逾時／重設、99:59.99 最大寬度、斷線重連與原有生命週期均通過；launcher 使用真正 coordinator、開啟 smoothing，驗證 parser JSON、過期清空、重連、設定、重載與 destroy
+- 已獨立查看實際截圖：新側錶、渦輪圖案、排名／LAP 3／BEST LAP、最大時間與缺失狀態可辨識，未觀察到標籤重疊或侵入中央圓。這是實作與視覺檢查結果，**最新修訂仍待使用者驗收**
+- 首輪 run `37263909153` 因 fixture 已切回 metric、卻只將 mph 設為非法值，錯把有效的 180 km/h 預期為空白而失敗。修正測試為兩個速度欄位皆非法；runtime 未改，重新執行本機 gate 與上述 Chrome gate 均通過
 - **Windows 原生 overlay、click-through、置頂與 Forza 實機未驗證**。右下槽位假設取代遊戲原生儀表，仍需檢查遊戲提示／字幕遮擋
+
+中央像素比較以 `ad4458ec975678055a0b8555e3b0c99f53191aba` 為參考，使用 840×556 的 DPR2 detail 截圖。在中心 (420, 277.5)、半徑 267 px 內，依像素中心到圓心距離逐一比較原始 RGBA，不使用容差、羽化 mask 或重新取樣。公制、英制、倒檔、空檔、紅線、高 RPM **六個相同條件各比較 223,942 像素，差異均為 0**。排名與通知屬明確要求的變更，不列入此相同比較。缺失／離線兩張因舊 fixture 為 mph、新 fixture 為 km/h，各有 504 像素差異，全部位於速度單位文字；不能當作相同條件或宣稱所有解析度逐位元一致。
+
+證據：[驗證摘要](../assets/lfa-center-ring/verification.json)、[renderer 報告](../assets/lfa-center-ring/evidence.json)、[launcher 報告](../assets/lfa-center-ring/launcher-report.json)、[中央像素比較](../assets/lfa-center-ring/telemetry-center-preservation.json)、[UDP／JSON 單位稽核](../assets/lfa-center-ring/json-unit-audit.json)。上述成功指向已驗證的 runtime head；補入本次文件與預覽後的最終文件 commit CI 仍待執行。
 
 採用技能：`halfmoon-design-system`、`telemetry-udp-protocol`、`pr-author-maintainer`。不修改後端、共用協定或其他 HUD。
 
@@ -93,10 +99,11 @@ git diff --check
 
 瀏覽器重現：以 isolated Playwright、正常啟用的 Chromium sandbox 執行 `tests/visual/render.mjs` 與 `launcher.cjs`；`PLAYWRIGHT_MODULE_PATH`、`OUTPUT_DIR`、選用 `PLAYWRIGHT_CHANNEL=chrome`。本機 socket／localhost 環境限制已確認，不透過停用 sandbox 繞過。
 
-## 上一版實際預覽（此次資料／計圈修訂尚未更新）
+## 本次實際 Chrome 預覽
 
-以下保留前次四弧輪廓版本；此版本的燃油／N/A 與時間文字並非本次新語義，待新 CI 實際截圖後由維護者替換。圖片是合成遙測 renderer，不是遊戲截圖。
+以下取自上述成功 CI 的真實 renderer。主圖與 720p 圖保留截圖像素；狀態圖僅縮小並加上標題排列，沒有重繪 HUD。全部使用合成遙測，**不是遊戲截圖**。目錄中舊 `fuel-empty.png`／`fuel-full.png` 僅為歷史證據，不代表目前已改為踏板的側錶。
 
-![上一版四弧側錶輪廓](../assets/lfa-center-ring/metric-detail.png)
-![上一版 renderer 狀態](../assets/lfa-center-ring/state-contact-sheet.png)
-![上一版 720p 位置](../assets/lfa-center-ring/metric-720p.png)
+![四輪平均胎溫、增壓與油門煞車的實際畫面](../assets/lfa-center-ring/metric-detail.png)
+![單位、負壓、零值、夾限與缺失資料](../assets/lfa-center-ring/state-contact-sheet.png)
+![排名、完成圈、最佳圈與最大時間寬度](../assets/lfa-center-ring/session-states.png)
+![1280×720 右下角實際位置](../assets/lfa-center-ring/metric-720p.png)

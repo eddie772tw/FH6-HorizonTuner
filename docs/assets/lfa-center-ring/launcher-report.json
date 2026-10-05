@@ -1,19 +1,29 @@
 {
   "style": "lfa_center_ring",
+  "parserFixtureProvenance": {
+    "source": "Actual unchanged backend-rust/src/telemetry/packet.rs parse_packet plus production serde_json serialization, offline synthetic 324-byte UDP packets",
+    "packetParserSha256": "c21772fd6a29f2b2e90328b777adbb2f4a46a6d9e96169f01ee6f70084389891",
+    "boostUnit": "PSI above atmospheric",
+    "tireUnit": "Fahrenheit per project contract",
+    "limitation": "Not a live network or game capture"
+  },
   "errors": [],
   "missing": [],
   "samples": [
     {
       "name": "host-standby",
-      "text": "—\nkm/h\n—\nGEAR\nWAITING\nN/A\nN/A\nN/A\n— °C\n—:—\nN/A\n×1000 r/min",
       "readings": {
         "speed": "—",
         "gear": "—",
         "status": "WAITING",
-        "fuel": "N/A"
+        "tire": "N/A",
+        "boost": "N/A",
+        "boostUnit": "bar",
+        "throttle": "N/A",
+        "brake": "N/A",
+        "lap": "—:—"
       },
       "body": "rgba(0, 0, 0, 0)",
-      "style": "lfaContainer",
       "bounds": {
         "x": 1470,
         "y": 772.5,
@@ -23,16 +33,239 @@
       }
     },
     {
-      "name": "host-cruise",
-      "text": "180\nkm/h\n4\nGEAR\nLIVE\nN/A\nN/A\nN/A\n— °C\n—:—\n68%\n×1000 r/min",
+      "name": "host-parser-positive",
       "readings": {
         "speed": "180",
         "gear": "4",
-        "status": "LIVE",
-        "fuel": "68%"
+        "status": "P3",
+        "tire": "95°C",
+        "boost": "1",
+        "boostUnit": "bar",
+        "throttle": "80%",
+        "brake": "20%",
+        "lap": "0:34.21"
       },
       "body": "rgba(0, 0, 0, 0)",
-      "style": "lfaContainer",
+      "bounds": {
+        "x": 1470,
+        "y": 772.5,
+        "width": 420,
+        "height": 277.5,
+        "display": "block"
+      }
+    },
+    {
+      "name": "host-parser-zero",
+      "readings": {
+        "speed": "180",
+        "gear": "4",
+        "status": "P3",
+        "tire": "95°C",
+        "boost": "0",
+        "boostUnit": "bar",
+        "throttle": "80%",
+        "brake": "20%",
+        "lap": "0:34.21"
+      },
+      "body": "rgba(0, 0, 0, 0)",
+      "bounds": {
+        "x": 1470,
+        "y": 772.5,
+        "width": 420,
+        "height": 277.5,
+        "display": "block"
+      }
+    },
+    {
+      "name": "host-parser-negative",
+      "readings": {
+        "speed": "180",
+        "gear": "4",
+        "status": "P3",
+        "tire": "95°C",
+        "boost": "-0.5",
+        "boostUnit": "bar",
+        "throttle": "80%",
+        "brake": "20%",
+        "lap": "0:34.21"
+      },
+      "body": "rgba(0, 0, 0, 0)",
+      "bounds": {
+        "x": 1470,
+        "y": 772.5,
+        "width": 420,
+        "height": 277.5,
+        "display": "block"
+      }
+    },
+    {
+      "name": "host-imperial-units",
+      "readings": {
+        "speed": "112",
+        "gear": "4",
+        "status": "P3",
+        "tire": "203°F",
+        "boost": "-7.3",
+        "boostUnit": "psi",
+        "throttle": "80%",
+        "brake": "20%",
+        "lap": "0:34.21"
+      },
+      "body": "rgba(0, 0, 0, 0)",
+      "bounds": {
+        "x": 1470,
+        "y": 772.5,
+        "width": 420,
+        "height": 277.5,
+        "display": "block"
+      }
+    },
+    {
+      "name": "host-independent-kpa",
+      "readings": {
+        "speed": "180",
+        "gear": "4",
+        "status": "P3",
+        "tire": "95°C",
+        "boost": "-50",
+        "boostUnit": "kPa",
+        "throttle": "80%",
+        "brake": "20%",
+        "lap": "0:34.21"
+      },
+      "body": "rgba(0, 0, 0, 0)",
+      "bounds": {
+        "x": 1470,
+        "y": 772.5,
+        "width": 420,
+        "height": 277.5,
+        "display": "block"
+      }
+    },
+    {
+      "name": "host-missing-boost-partial-tires",
+      "readings": {
+        "speed": "180",
+        "gear": "4",
+        "status": "P3",
+        "tire": "N/A",
+        "boost": "N/A",
+        "boostUnit": "kPa",
+        "throttle": "80%",
+        "brake": "20%",
+        "lap": "0:34.21"
+      },
+      "body": "rgba(0, 0, 0, 0)",
+      "bounds": {
+        "x": 1470,
+        "y": 772.5,
+        "width": 420,
+        "height": 277.5,
+        "display": "block"
+      }
+    },
+    {
+      "name": "host-zero-pedals",
+      "readings": {
+        "speed": "180",
+        "gear": "4",
+        "status": "P3",
+        "tire": "95°C",
+        "boost": "100",
+        "boostUnit": "kPa",
+        "throttle": "0%",
+        "brake": "0%",
+        "lap": "0:34.21"
+      },
+      "body": "rgba(0, 0, 0, 0)",
+      "bounds": {
+        "x": 1470,
+        "y": 772.5,
+        "width": 420,
+        "height": 277.5,
+        "display": "block"
+      }
+    },
+    {
+      "name": "host-full-pedals",
+      "readings": {
+        "speed": "180",
+        "gear": "4",
+        "status": "P3",
+        "tire": "95°C",
+        "boost": "100",
+        "boostUnit": "kPa",
+        "throttle": "100%",
+        "brake": "100%",
+        "lap": "0:34.21"
+      },
+      "body": "rgba(0, 0, 0, 0)",
+      "bounds": {
+        "x": 1470,
+        "y": 772.5,
+        "width": 420,
+        "height": 277.5,
+        "display": "block"
+      }
+    },
+    {
+      "name": "host-lap-completion",
+      "readings": {
+        "speed": "180",
+        "gear": "4",
+        "status": "LAP 3",
+        "tire": "95°C",
+        "boost": "100",
+        "boostUnit": "kPa",
+        "throttle": "80%",
+        "brake": "20%",
+        "lap": "0:00.00"
+      },
+      "body": "rgba(0, 0, 0, 0)",
+      "bounds": {
+        "x": 1470,
+        "y": 772.5,
+        "width": 420,
+        "height": 277.5,
+        "display": "block"
+      }
+    },
+    {
+      "name": "host-lap-notice-expired",
+      "readings": {
+        "speed": "180",
+        "gear": "4",
+        "status": "P2",
+        "tire": "95°C",
+        "boost": "100",
+        "boostUnit": "kPa",
+        "throttle": "80%",
+        "brake": "20%",
+        "lap": "0:00.00"
+      },
+      "body": "rgba(0, 0, 0, 0)",
+      "bounds": {
+        "x": 1470,
+        "y": 772.5,
+        "width": 420,
+        "height": 277.5,
+        "display": "block"
+      }
+    },
+    {
+      "name": "host-best-improvement",
+      "readings": {
+        "speed": "180",
+        "gear": "4",
+        "status": "BEST LAP",
+        "tire": "95°C",
+        "boost": "100",
+        "boostUnit": "kPa",
+        "throttle": "80%",
+        "brake": "20%",
+        "lap": "0:01.23"
+      },
+      "body": "rgba(0, 0, 0, 0)",
       "bounds": {
         "x": 1470,
         "y": 772.5,
@@ -43,15 +276,18 @@
     },
     {
       "name": "host-stale-with-smoothing",
-      "text": "—\nkm/h\n—\nGEAR\nNO SIGNAL\nN/A\nN/A\nN/A\n— °C\n—:—\nN/A\n×1000 r/min",
       "readings": {
         "speed": "—",
         "gear": "—",
         "status": "NO SIGNAL",
-        "fuel": "N/A"
+        "tire": "N/A",
+        "boost": "N/A",
+        "boostUnit": "kPa",
+        "throttle": "N/A",
+        "brake": "N/A",
+        "lap": "—:—"
       },
       "body": "rgba(0, 0, 0, 0)",
-      "style": "lfaContainer",
       "bounds": {
         "x": 1470,
         "y": 772.5,
@@ -62,15 +298,18 @@
     },
     {
       "name": "host-reverse-reconnected",
-      "text": "16\nkm/h\nR\nGEAR\nLIVE\nN/A\nN/A\nN/A\n— °C\n—:—\n68%\n×1000 r/min",
       "readings": {
         "speed": "16",
         "gear": "R",
-        "status": "LIVE",
-        "fuel": "68%"
+        "status": "P2",
+        "tire": "95°C",
+        "boost": "100",
+        "boostUnit": "kPa",
+        "throttle": "80%",
+        "brake": "20%",
+        "lap": "0:01.23"
       },
       "body": "rgba(0, 0, 0, 0)",
-      "style": "lfaContainer",
       "bounds": {
         "x": 1470,
         "y": 772.5,
@@ -81,15 +320,18 @@
     },
     {
       "name": "host-imperial",
-      "text": "10\nmph\nR\nGEAR\nLIVE\nN/A\nN/A\nN/A\n— °C\n—:—\n68%\n×1000 r/min",
       "readings": {
         "speed": "10",
         "gear": "R",
-        "status": "LIVE",
-        "fuel": "68%"
+        "status": "P2",
+        "tire": "203°F",
+        "boost": "14.5",
+        "boostUnit": "psi",
+        "throttle": "80%",
+        "brake": "20%",
+        "lap": "0:01.23"
       },
       "body": "rgba(0, 0, 0, 0)",
-      "style": "lfaContainer",
       "bounds": {
         "x": 1470,
         "y": 772.5,
@@ -100,15 +342,18 @@
     },
     {
       "name": "host-720p",
-      "text": "10\nmph\nR\nGEAR\nLIVE\nN/A\nN/A\nN/A\n— °C\n—:—\n68%\n×1000 r/min",
       "readings": {
         "speed": "10",
         "gear": "R",
-        "status": "LIVE",
-        "fuel": "68%"
+        "status": "P2",
+        "tire": "203°F",
+        "boost": "14.5",
+        "boostUnit": "psi",
+        "throttle": "80%",
+        "brake": "20%",
+        "lap": "0:01.23"
       },
       "body": "rgba(0, 0, 0, 0)",
-      "style": "lfaContainer",
       "bounds": {
         "x": 830,
         "y": 412.5,
@@ -119,15 +364,18 @@
     },
     {
       "name": "host-gauge-hidden",
-      "text": "",
       "readings": {
         "speed": "10",
         "gear": "R",
-        "status": "LIVE",
-        "fuel": "68%"
+        "status": "P2",
+        "tire": "203°F",
+        "boost": "14.5",
+        "boostUnit": "psi",
+        "throttle": "80%",
+        "brake": "20%",
+        "lap": "0:01.23"
       },
       "body": "rgba(0, 0, 0, 0)",
-      "style": "lfaContainer",
       "bounds": {
         "x": 0,
         "y": 0,
@@ -138,15 +386,18 @@
     },
     {
       "name": "host-gauge-restored",
-      "text": "16\nkm/h\nR\nGEAR\nLIVE\nN/A\nN/A\nN/A\n— °C\n—:—\n68%\n×1000 r/min",
       "readings": {
         "speed": "16",
         "gear": "R",
-        "status": "LIVE",
-        "fuel": "68%"
+        "status": "P2",
+        "tire": "203°F",
+        "boost": "1",
+        "boostUnit": "bar",
+        "throttle": "80%",
+        "brake": "20%",
+        "lap": "0:01.23"
       },
       "body": "rgba(0, 0, 0, 0)",
-      "style": "lfaContainer",
       "bounds": {
         "x": 830,
         "y": 412.5,
@@ -157,15 +408,18 @@
     },
     {
       "name": "host-style-reloaded",
-      "text": "16\nkm/h\nR\nGEAR\nLIVE\nN/A\nN/A\nN/A\n— °C\n—:—\n68%\n×1000 r/min",
       "readings": {
         "speed": "16",
         "gear": "R",
-        "status": "LIVE",
-        "fuel": "68%"
+        "status": "P2",
+        "tire": "95°C",
+        "boost": "1",
+        "boostUnit": "bar",
+        "throttle": "80%",
+        "brake": "20%",
+        "lap": "0:01.23"
       },
       "body": "rgba(0, 0, 0, 0)",
-      "style": "lfaContainer",
       "bounds": {
         "x": 830,
         "y": 412.5,
