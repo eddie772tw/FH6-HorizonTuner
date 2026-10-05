@@ -1,6 +1,6 @@
 (function (root) {
     'use strict';
-    var M = root.R34Model, I = root.R34Instruments;
+    var M = root.R34Model, I = root.R34Instruments, LCD = root.R34LcdFormat;
     var MODE_TITLES = { single: 'SINGLE · BOOST', twin: 'TWIN · BOOST / RPM', multi: 'MULTI MONITOR', g: 'G INDICATION', lap: 'LAP TIME' };
     var MODE_NOTES = { single: '30 s trace · session peak · pressure unit adapted', twin: 'Game mapping: boost / RPM · session peaks', multi: 'Seven game channels · original green-bar layout', g: 'Vehicle axes −X / Z ÷ 9.80665 · ±1.5 g', lap: 'Game timing · history begins when laps are observed' };
     function value(n, precision) { return n === null || !Number.isFinite(n) ? 'N/A' : n.toFixed(precision || 0); }
@@ -99,6 +99,7 @@
         nodes.r34SpeedNeedle.style.display = e.showSpeed === false ? 'none' : '';
         nodes.r34DigitalSpeedGroup.style.display = e.showSpeed === false ? 'none' : '';
         nodes.r34GearGroup.style.display = e.showGear === false ? 'none' : '';
+        nodes.r34LcdDivider.style.display = e.showGear === false || e.showSpeed === false ? 'none' : '';
         nodes.r34TachFace.style.display = e.showRPM === false ? 'none' : '';
         var color = config.useDefaultColors === false && /^#[0-9a-f]{6}$/i.test(config.customColor || '') ? config.customColor : '';
         nodes.r34Container.style.setProperty('--r34-green', color || '#77b95a');
@@ -119,7 +120,7 @@
         var physicalSpeed = view.speedKmh; // Analog face remains fixed kmh; LCD uses selected units.
         n.r34SpeedNeedle.setAttribute('transform', 'translate(108 108) rotate(' + I.speedAngle(physicalSpeed) + ')');
         n.r34SpeedNeedle.style.visibility = view.speed === null ? 'hidden' : 'visible';
-        this.text('r34Gear', view.gear); this.text('r34DigitalSpeed', value(view.speed));
+        this.text('r34Gear', view.gear); this.text('r34DigitalSpeed', LCD.number(view.speed));
         this.text('r34DigitalSpeedUnit', view.speedUnit);
         this.drawLcd(view, e);
         var speedOver = e.showSpeed !== false && physicalSpeed > I.SPEED_MAX, rpmOver = e.showRPM !== false && view.rpm > 10000;
@@ -162,9 +163,9 @@
             n.r34TachPowerGroup.style.display = mode === 'power' ? '' : 'none';
             n.r34TachUnavailable.style.display = mode === 'unavailable' ? '' : 'none';
         }
-        this.text('r34TachTimer', M.timerTime(view.timerSeconds));
-        this.text('r34LcdPower', value(elements.showPowerTorque === false ? null : view.power) + ' ' + view.powerUnit);
-        this.text('r34LcdTorque', value(elements.showPowerTorque === false ? null : view.torque) + ' ' + view.torqueUnit);
+        this.text('r34TachTimer', LCD.timer(view.timerSeconds));
+        this.text('r34LcdPower', LCD.reading(elements.showPowerTorque === false ? null : view.power, view.powerUnit));
+        this.text('r34LcdTorque', LCD.reading(elements.showPowerTorque === false ? null : view.torque, view.torqueUnit));
     };
     Renderer.prototype.drawMulti = function (v, e) {
         for (var i = 0; i < this.rows.length; i++) {

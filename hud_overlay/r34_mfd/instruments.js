@@ -4,8 +4,8 @@
     // Reference-photo visual geometry, not claimed factory calibration dimensions.
     var AUXILIARY_GEOMETRY = Object.freeze({
         face: Object.freeze({ cx: 60, cy: 60, radius: 54 }),
-        temperature: Object.freeze({ cx: 46, cy: 60, needleLength: 56, tickInner: 55, tickOuter: 61, start: 45, end: -45 }),
-        boost: Object.freeze({ cx: 74, cy: 60, needleLength: 56, tickInner: 55, tickOuter: 61, start: 135, end: 225 })
+        temperature: Object.freeze({ cx: 46, cy: 60, needleLength: 56, tickInner: 50, tickOuter: 61, start: 45, end: -45 }),
+        boost: Object.freeze({ cx: 74, cy: 60, needleLength: 56, tickInner: 50, tickOuter: 61, start: 135, end: 225 })
     });
     function point(cx, cy, r, angle) {
         var a = angle * Math.PI / 180;
@@ -78,7 +78,7 @@
     root.R34Instruments = {
         setAuxiliaryLabels: function (group, min, max) {
             var A = root.R34Artwork;
-            group.innerHTML = A.txt(47, 27, scaleLabel(max), 8) + A.txt(47, 103, scaleLabel(min), 8);
+            group.innerHTML = A.txt(50, 27, scaleLabel(max), 8) + A.txt(50, 103, scaleLabel(min), 8);
         },
         mfdDialMarkup: mfdDialMarkup, setDialLabels: setDialLabels, setHistoryLabels: setHistoryLabels,
         AUXILIARY_GEOMETRY: AUXILIARY_GEOMETRY, auxiliaryTransform: auxiliaryTransform,

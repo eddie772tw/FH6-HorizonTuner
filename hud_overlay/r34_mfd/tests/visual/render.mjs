@@ -116,21 +116,37 @@ try {
     const inspectLcd = async name => {
       const lcds = await page.locator('.r34-lcd').evaluateAll(nodes => nodes.map(node => {
         const window = node.querySelector('.r34-lcd-window').getBoundingClientRect();
-        const labels = [...node.querySelectorAll('text')].map(text => ({ text: text.textContent, rect: text.getBoundingClientRect() })).filter(item => item.rect.width > 0 && item.rect.height > 0);
+        const leaves = [...node.querySelectorAll('text, tspan')].filter(text => text.children.length === 0 && text.textContent.trim());
+        const labels = leaves.map(text => {
+          const rect = text.getBoundingClientRect();
+          if (rect.width <= 0 || rect.height <= 0) return null;
+          const font = getComputedStyle(text), matrix = text.getScreenCTM();
+          return { text: text.textContent, rect, font: [font.fontFamily, font.fontSize, font.fontWeight, font.fontVariantNumeric].join('/'),
+            baseline: text.getStartPositionOfChar(0).matrixTransform(matrix).y, xScale: matrix.a, yScale: matrix.d };
+        }).filter(Boolean);
+        const rows = [...node.querySelectorAll('text')].map(text => text.getBoundingClientRect()).filter(rect => rect.width > 0 && rect.height > 0);
         const tolerance = 1 / devicePixelRatio;
         const overlap = (a, b) => a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
-        return { id: node.id, width: window.width, height: window.height, window: window.toJSON(), labels: labels.map(item => ({ text: item.text, rect: item.rect.toJSON() })),
+        const fields = [...node.querySelectorAll('#r34TachTimer, #r34TachUnavailable, #r34LcdPower, #r34LcdTorque, #r34GearGroup, #r34DigitalSpeedGroup')].map(field => ({ id: field.id, rect: field.getBoundingClientRect() })).filter(field => field.rect.width > 0 && field.rect.height > 0);
+        const row = rows[0], leftMargin = row ? row.left - window.left : 0, rightMargin = row ? window.right - row.right : 0;
+        return { id: node.id, width: window.width, height: window.height, window: window.toJSON(), labels: labels.map(item => ({ ...item, rect: item.rect.toJSON() })), fields: fields.map(field => ({ id: field.id, rect: field.rect.toJSON() })), leftMargin, rightMargin,
           contained: labels.every(({ rect }) => rect.left >= window.left - tolerance && rect.right <= window.right + tolerance && rect.top >= window.top - tolerance && rect.bottom <= window.bottom + tolerance),
-          separate: labels.every((item, index) => labels.slice(index + 1).every(other => !overlap(item.rect, other.rect))) };
+          separate: fields.every((item, index) => fields.slice(index + 1).every(other => !overlap(item.rect, other.rect))),
+          singleLine: rows.length === 1 && labels.every(item => Math.abs(item.baseline - labels[0].baseline) <= tolerance),
+          balanced: leftMargin >= window.width * .015 && rightMargin >= window.width * .015 && Math.abs(leftMargin - rightMargin) <= tolerance };
       }));
-      report.checks.push({ name, viewport: [width, height], dpr, lcds });
-      if (!lcds.every(lcd => lcd.contained && lcd.separate)) {
+      const glyphs = lcds.flatMap(lcd => lcd.labels);
+      const uniform = glyphs.every(label => label.font === glyphs[0].font && Math.abs(label.xScale - glyphs[0].xScale) < .001 && Math.abs(label.yScale - glyphs[0].yScale) < .001);
+      report.checks.push({ name, viewport: [width, height], dpr, lcds, uniform });
+      if (!uniform || !lcds.every(lcd => lcd.contained && lcd.separate && lcd.singleLine && lcd.balanced)) {
         for (const [suffix, locator] of [['context', page.locator('#r34Container')], ['tach', page.locator('#r34TachModule')], ['speed', page.locator('#r34SpeedModule')]]) {
           const filename = 'lcd-failure-' + name + '-' + width + 'x' + height + '-dpr' + dpr + '-' + suffix + '.png';
           await locator.screenshot({ path: path.join(out, filename), omitBackground: true }); report.screenshots.push(filename);
         }
       }
       assert(lcds.every(lcd => lcd.contained && lcd.separate), 'Visible LCD content must fit its window without sibling collisions');
+      assert(uniform, 'Every LCD number, label and unit must share the same font, size and fixed glyph proportions');
+      assert(lcds.every(lcd => lcd.singleLine && lcd.balanced), 'Each LCD is one complete centered line with clear margins on both sides');
       assert(Math.abs(lcds[0].width - lcds[1].width) < .01 && Math.abs(lcds[0].height - lcds[1].height) < .01, 'Both physical LCD windows must match');
     };
     const saveLcd = async name => {
@@ -167,6 +183,17 @@ try {
       assert.equal(await page.locator('#r34LcdPower').textContent(), expected);
       assert.equal(await page.locator('#r34LcdTorque').textContent(), '299 lb·ft'); await saveLcd('power-' + unit);
     }
+    await configure({ effectiveUnits: { ...baseConfig.effectiveUnits, torque: 'lbft' } });
+    await frame({ CurrentLap: null, PowerWatts: -9999 * 745.7, TorqueNewtons: -9999 / .737562, Gear: 10, SpeedMetersPerSecond: 9999 / 3.6 });
+    assert.equal(await page.locator('#r34LcdPower').textContent(), '-9999 HP'); assert.equal(await page.locator('#r34LcdTorque').textContent(), '-9999 lb·ft');
+    assert.equal(await page.locator('#r34DigitalSpeed').textContent(), '9999'); assert.equal(await page.locator('#r34Gear').textContent(), '10'); await saveLcd('max-integer-digits');
+    await frame({ CurrentLap: null, PowerWatts: -1e300 * 745.7, TorqueNewtons: -1e300 / .737562, Gear: 10, SpeedMetersPerSecond: 1e9 });
+    assert.equal(await page.locator('#r34LcdPower').textContent(), '-1e300 HP'); assert.equal(await page.locator('#r34LcdTorque').textContent(), '-1e300 lb·ft');
+    assert.equal(await page.locator('#r34DigitalSpeed').textContent(), '3.6e9'); await saveLcd('extreme-scientific');
+    await configure({}); await frame({ CurrentLap: 35999.999 });
+    assert.equal(await page.locator('#r34TachTimer').textContent(), "599'59.999"); await saveLcd('long-timer');
+    await configure({ elements: { ...baseConfig.elements, showGear: false } }); await frame({}); await inspectLcd('speed-only-centered');
+    await configure({ elements: { ...baseConfig.elements, showSpeed: false } }); await frame({ Gear: 10 }); await inspectLcd('gear-only-centered');
     await configure({}); await frame({ CarOrdinal: 434, LapNumber: 0, CurrentLap: 82.5 });
     await frame({ CarOrdinal: 434, LapNumber: 1, CurrentLap: 0, LastLap: 82.5 });
     assert.equal(await page.locator('#r34TachLcd').getAttribute('data-lcd-mode'), 'timer');

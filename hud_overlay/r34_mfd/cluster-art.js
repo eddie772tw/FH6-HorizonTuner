@@ -5,22 +5,23 @@
     function open(label, size) { return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + size + ' ' + size + '" role="img" aria-label="' + label + '">'; }
     function lcd(tach) {
         var s = '<g id="' + (tach ? 'r34TachLcd' : 'r34SpeedLcd') + '" class="r34-lcd">';
-        // Identical physical windows; each inner content group has independent visibility.
-        s += A.rect(46, 162, 124, 34, '#0c1013', 'rx="6" stroke="#393e3d" stroke-width="1"');
-        s += A.rect(49, 165, 118, 28, 'url(#lcd)', 'rx="3" class="r34-lcd-window"');
+        // Identical wider, shallow windows stay inside the lower circular faces.
+        s += A.rect(38, 162, 140, 30, '#0c1013', 'rx="6" stroke="#393e3d" stroke-width="1"');
+        s += A.rect(41, 165, 134, 24, 'url(#lcd)', 'rx="3" class="r34-lcd-window"');
+        s += '<g class="r34-lcd-glyphs" transform="translate(108 0) scale(.8 1) translate(-108 0)">';
         if (tach) {
-            s += '<g id="r34TachTimerGroup" style="display:none">' + A.txt(108, 185, 'N/A', 16, 'var(--r34-lcd-ink)', 'id="r34TachTimer" class="r34-lcd-timer"') + '</g>';
-            s += '<g id="r34TachPowerGroup" style="display:none">';
-            s += A.txt(108, 176, 'N/A HP', 11, 'var(--r34-lcd-ink)', 'id="r34LcdPower" class="r34-lcd-pair"');
-            s += A.txt(108, 190, 'N/A N·m', 11, 'var(--r34-lcd-ink)', 'id="r34LcdTorque" class="r34-lcd-pair"') + '</g>';
-            s += A.txt(108, 185, 'N/A', 14, 'var(--r34-lcd-ink)', 'id="r34TachUnavailable" class="r34-lcd-timer"');
+            s += '<g id="r34TachTimerGroup" style="display:none">' + A.txt(108, 181, 'N/A', 12, 'var(--r34-lcd-ink)', 'id="r34TachTimer"') + '</g>';
+            s += '<g id="r34TachPowerGroup" style="display:none"><text x="108" y="181" text-anchor="middle" xml:space="preserve">';
+            s += '<tspan id="r34LcdPower">N/A HP</tspan><tspan> </tspan><tspan id="r34LcdTorque">N/A N·m</tspan></text></g>';
+            s += A.txt(108, 181, 'N/A', 12, 'var(--r34-lcd-ink)', 'id="r34TachUnavailable"');
         } else {
-            s += '<g id="r34GearGroup">' + A.txt(65, 185, '—', 17, 'var(--r34-lcd-ink)', 'id="r34Gear" class="r34-lcd-gear"') + '</g>';
-            s += '<g id="r34DigitalSpeedGroup">';
-            s += A.txt(108, 185, 'N/A', 17, 'var(--r34-lcd-ink)', 'id="r34DigitalSpeed" class="r34-lcd-speed"');
-            s += A.txt(148, 185, 'kmh', 8, 'var(--r34-lcd-ink)', 'id="r34DigitalSpeedUnit"') + '</g>';
+            // SVG centers the complete visible row, rather than unequal fixed slots.
+            s += '<text x="108" y="181" text-anchor="middle" xml:space="preserve" id="r34SpeedRow">';
+            s += '<tspan id="r34GearGroup"><tspan>G</tspan><tspan id="r34Gear">—</tspan></tspan>';
+            s += '<tspan id="r34LcdDivider"> </tspan><tspan id="r34DigitalSpeedGroup">';
+            s += '<tspan id="r34DigitalSpeed">N/A</tspan><tspan> </tspan><tspan id="r34DigitalSpeedUnit">kmh</tspan></tspan></text>';
         }
-        return s + '</g>';
+        return s + '</g></g>';
     }
     function main(kind) {
         var tach = kind === 'tach', cx = 108, cy = 108;
@@ -37,7 +38,7 @@
             if (major) {
                 var p = A.pt(cx, cy, tach ? 77 : 78, angle);
                 s += '<g class="r34-scale-numeral" data-value="' + v + '">';
-                s += A.digits(p[0], p[1], tach ? v / 1000 : v, tach ? (v < 3000 ? 10 : v === 3000 ? 11.5 : 17) : 12.25, '#e1e3df', tach ? 1.9 : 2.5, true, tach ? 1.12 : .86) + '</g>';
+                s += A.digits(p[0], p[1], tach ? v / 1000 : v, tach ? (v < 3000 ? 10 : v === 3000 ? 11.5 : 17) : 10.5, '#e1e3df', tach ? 1.9 : 2.5, true, tach ? 1.12 : .86) + '</g>';
             }
         }
         if (!tach) s += A.tick(cx, cy, 94, 102, 142, '#e1e3df', 1.4);
@@ -52,14 +53,15 @@
         var I = root.R34Instruments, geometry = I.AUXILIARY_GEOMETRY[kind], face = I.AUXILIARY_GEOMETRY.face;
         var s = open(temperature ? 'Four-wheel average tire temperature, offset pivot and right-side cold-to-hot sweep' : 'Boost pressure, offset pivot and left-side sweep', 120);
         s += A.dial(face.cx, face.cy, face.radius);
-        for (var n = 0; n <= 6; n++) {
-            s += A.tick(geometry.cx, geometry.cy, n % 3 === 0 ? geometry.tickInner : geometry.tickInner + 3,
-                geometry.tickOuter, I.auxiliaryAngle(kind, n / 6), '#d9dddd', n % 3 === 0 ? 1.7 : 1);
+        for (var n = 0; n <= 12; n++) {
+            var major = n % 6 === 0, quarter = n % 3 === 0;
+            s += A.tick(geometry.cx, geometry.cy, major ? geometry.tickInner : quarter ? geometry.tickInner + 5 : geometry.tickInner + 7,
+                geometry.tickOuter, I.auxiliaryAngle(kind, n / 12), '#d9dddd', major ? 2.4 : quarter ? 1.6 : 1.2);
         }
         if (temperature) {
             s += A.txt(50, 23, 'TIRE', 8.5, '#dce1df') + A.txt(50, 33, 'TEMP', 8.5, '#dce1df');
             s += '<g transform="translate(50 44) scale(.55)">' + A.coolant(0, 0) + '</g>';
-            s += A.txt(78, 24, 'H', 10) + A.txt(78, 105, 'C', 10);
+            s += A.txt(73, 24, 'H', 10) + A.txt(73, 105, 'C', 10);
         } else {
             s += A.txt(73, 29, 'BOOST', 9, '#dce1df');
             s += '<g id="r34BoostAuxLabels"></g>';
