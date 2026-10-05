@@ -1,5 +1,60 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-10-05 / Swiss 開發文件與 PR 送審整理（Codex as Codex）
+
+- **來源／狀態**：`local`／`verified`；使用者要求整理開發文件，將 PR #481 整理至 Ready to Review。
+- **Learning**：規格第一節已登錄新設計系統，不代表下方元件表同步完成。原文件仍將互動位移／光暈、徽章外觀與分頁底線寫成所有核心的固定規則；frontend README 也仍指向已淘汰的 `src/utils/tuningMath.ts`。開發入口、實作責任與元件表必須共同核對。
+- **Action**：新增 `docs/frontend/design-systems.md` 作為責任地圖、擴充與驗收入口；重寫 frontend README、串接中英文 README／文件索引、區分 2026-09-24 階段紀錄。規格升至 2.5.1，修正六核心、系統限定外觀、右側抽屜、焦點及 Halfmoon 即時卡片材質描述。Companion README 明示原生主題同步由 #485 追蹤。
+- **Evidence**：本輪僅修改 Markdown；變更文件的本地連結、13 個 canonical skill ID、技能 validator、tracked path case 與 `git diff --check` 通過。依 AGENTS 的純文件驗證分流不重跑產品測試；前端 1,131 passed／1 skipped、Rust 122 passed／3 ignored 與瀏覽器證據仍明確歸屬產品提交 `dcd9be9f`，新 HEAD 的 CI 另在 PR 記錄。
+- **Skills**：`ponytail`（full）、`halfmoon-design-system`、`pr-author-maintainer`、`agent-governance-audit`。保留既有未提交的 `frontend/src-tauri/Cargo.toml`，不納入文件提交。
+
+## 2026-10-05 / Swiss Editorial 與 Contrast 核心主題（Codex as Codex）
+
+- **來源／狀態**：`local`／`verified`；使用者核准規劃後，在 PR #481 新增 Swiss 的另外兩組 Core Theme。
+- **Learning**：核心選擇卡若以巢狀 `data-bs-theme` 顯示獨立預覽，Halfmoon 會在該節點重新設定原生主色；必須共用 `themeColorProperties`，才能讓預覽與正式控制項使用相同三色。核心差異由各預覽節點的 token 決定，避免外層核心 selector 汙染其他預覽。反差標頭只改標題及底色，按鈕／徽章／提示保留獨立表面，焦點線改用標頭文字色。
+- **Action**：catalog 登錄 `swiss-editorial`／`swiss-contrast`，保留 `swiss` ID 與 schema 2。Editorial 採暖紙色、2px 面板及閱讀標題；Contrast 採中性灰階、直角與反差標頭。共用 `workspace-panel-header` 套用即時、直線加速、調校、賽事摘要及設定；遙測標頭最小高度隨內距調整，使五張卡片對齊。外觀設定加入真實 CSS 元件預覽，更新三語文案、Cheatsheet 及規範。
+- **Evidence**：前端 157 files passed／1 skipped、1,131 tests passed／1 skipped；TypeScript／Vite build、Rust 122 passed／3 ignored（含文件測試）及 `git diff --check` 通過，build 與 Cargo 不並行。新增案例涵蓋兩核心首幀／React 歸屬、UI 選取、配色保留、JSON 往返及預覽配色映射。
+- **Browser**：六核心 × 日夜模式確認材質與原配色保留；Mono 日間黑／夜間白、Swiss Signal 與自訂配色正常。Editorial 重載保留。1440px 調校四步各 352px；Contrast 五張儀表標頭皆 45px。MoTeC 既有 fixture 經 UI 匯入後，四張摘要標頭等高且語意徽章可讀；320px 賽事捲到底、外觀與系統設定無水平溢出。反差標頭鍵盤焦點以深色線顯示在淺色標頭上。未啟動原生 HUD，Companion 原生同步仍由 #485 追蹤。
+- **Skills**：`ponytail`（full）、`halfmoon-design-system`、`pr-author-maintainer`、`agent-governance-audit`。
+
+## 2026-10-05 / Core Theme 的設計系統歸屬與外觀設定分組（Codex as Codex）
+
+- **來源／狀態**：`local`／`verified`；PR #481 依使用者補充重新定義 Core Theme，同時管理配色、材質與元件細節。
+- **Learning**：只分離配色 token，卻把 Swiss 徽章／分頁 selector 放在共用 CSS，仍會讓其他核心套上 Swiss 細節。使用 catalog 推導 `data-design-system`，以系統模組隔離元件 selector，首幀與 React 共用同一個 DOM 套用入口。保留 `halfmoonCore` 舊儲存欄位可避免無必要的 API／JSON 遷移。
+- **Action**：Halfmoon／Swiss 模組分開；Canvas 光暈改讀快取 token，移除核心名稱判斷。外觀設定依系統分組、三個色票搭配可編輯 HEX、Color Presets 納入系統色彩調配；CSS 編輯器與 Cheatsheet 預設折疊，既有 CSS 保持套用。外觀抽屜寬度使用既有上限，避免短翻譯讓 fit-content 擠成不必要的直列。
+- **Evidence**：新增 7 項整合案例涵蓋四核心首幀／React 對應、跨系統切換、舊 JSON 匯入、配色保留、UI 分組、預設折疊與 HEX 草稿。瀏覽器驗證 4 cores × 2 modes，Halfmoon 圓角／實色徽章與 Swiss 底線／細框徽章互相隔離；配色更新三欄且不換核心，重載保留設計系統；320px 無水平溢出，可捲至進階區塊並展開速查表。
+- **邊界**：Companion Android 原生外殼與跨層設計同步依使用者決定留待 #485；本次瀏覽器及合成資料驗證不代表實車或 Android 驗收。
+- **即時圖層修正**：使用者回報切回 Halfmoon 後，滑鼠移動會在儀表卡片角落出現毛玻璃覆蓋。DOM 確認五個 Canvas 卡片有 14px 背景模糊，開關提示另有第二層模糊；移除這兩處背景模糊，保留卡片底色、圓角與陰影，提示使用不透明模式底色。瀏覽器確認五卡與提示的 filter 均為 none；使用者再次實測回覆「目前沒有再出現」。此為實際改善證據，未宣稱已證明 Chromium 內部合成機制。
+- **Halfmoon 舊版參照**：再依使用者要求對照 PR base `22f9660f`，僅還原按鈕與卡片材質。移除套到 Halfmoon 的統一按鈕圓角／secondary outline 覆寫，恢復原生 `.btn` 尺寸與 cyber hover；把整片卡片、額外投影／邊框及內層強制圓角限定於 Swiss。Halfmoon 一般即時卡片外層恢復透明排版容器，既有 glass/card 容器繼續使用原始材質。分頁、配色連動、對齊與捲動修正維持。
+- **本地 Gate**：最終前端 157 files passed／1 skipped、1,125 tests passed／1 skipped；TypeScript／Vite build 與 `git diff --check` 通過。Rust 122 passed／3 ignored、文件測試通過；build 與 Cargo 未並行。瀏覽器複核 Swiss 2px 按鈕／1px 卡片與 Halfmoon 原生 4px 小按鈕／透明外層互不干擾。
+- **Skills**：`ponytail`（full）、`halfmoon-design-system`、`modular-refactoring`、`huge-component-refactoring`、`pr-author-maintainer`、`pr-review-evaluation`、`agent-governance-audit`。
+
+## 2026-10-05 / 賽事紀錄與跨頁排版巡檢（Codex as Codex）
+
+- **來源／狀態**：`local`／`verified`；PR #481 使用者回報賽事頁尺寸、對齊與無法捲動。
+- **Learning**：AppShell 的 `overflow-hidden` 需要各工作區提供有界捲動容器。只移除 AnalysisView 的固定高度，會使分析與 Road library 一同被外層裁切；應在 SessionsWorkspace 統一承接捲動。行內 tooltip 包裝也會產生文字基線空間，包住按鈕時使用 `inline-flex`。
+- **Action**：賽事工具列分為狀態、選擇／分析與檔案操作；摘要卡片以 subgrid 對齊標題、徽章與數值區，圖表依寬度切換單／雙欄。補齊直線加速的共用按鈕與表面 token、修正 tooltip 包裝，手機設定抽屜使用全寬。
+- **Evidence**：既有 MoTeC 測試 CSV 透過 UI 匯入；320px 賽事工作區可捲至 Road 區底部，桌面同樣能抵達頁尾，兩者無水平溢出。1440px 四張摘要卡片的標題、徽章與數值區起點各自一致。即時、直線加速、調校第 1–3 步、HUD 及六種應用程式面板完成排版巡檢；第 4 步保留量測門檻，未以假資料繞過。Vitest 1,118 passed／1 skipped、frontend build 與 `git diff --check` 通過。
+- **Skills**：`ponytail`（full）、`halfmoon-design-system`、`huge-component-refactoring`、`pr-author-maintainer`、`pr-review-evaluation`。
+
+## 2026-10-05 / 全站主題與分頁規則收攏（Codex as Codex）
+
+- **來源／狀態**：`local`／`verified`；依 PR #481 使用者回饋補齊跨頁一致性，遠端 Checks 按新提交另核對。
+- **Learning**：只更新 `--primary` 不會覆蓋 Halfmoon core 的原生 Primary/HSL、開關 SVG 與連結色，造成 Color Presets 部分失效。應由首幀與 React 共用 `themeColorProperties`，集中映射兩套變數。CSS 的核心差異也應透過 token 表達，不在每頁追加 Swiss selector。
+- **Action**：`App.css` 分流至 `styles/{themes,base,components,navigation}.css`；共用按鈕、徽章、面板、表單與分頁。一般分頁無編號、依內容寬度且最大 14rem；調校保留步驟編號與等寬全列，手機兩欄。Companion 同步使用共用樣式；功能性警示色獨立於品牌配色。
+- **Evidence**：4 cores × 日夜 × Swiss Signal／Bauhaus Mono 共 16 組瀏覽器檢查原生 Primary 與開關同步，另切換全部 10 組 preset。1440px 調校列寬 1408px、四步各 352px；390／320px 無頁面橫向溢出。方向鍵切換與 Portal Escape 焦點還原正常。瀏覽器使用隔離資料根目錄，未啟用原生 HUD 或真實遊戲量測。
+- **本地 Gate**：Vitest 1,118 passed／1 skipped；frontend build 通過；Cargo 122 passed／3 ignored，文件測試通過。前端 build 與 Cargo 循序執行，避免嵌入 hashed assets 時互相覆寫。
+- **Skills**：`ponytail`（full）、`halfmoon-design-system`、`huge-component-refactoring`、`modular-refactoring`、`pr-author-maintainer`、`pr-review-evaluation`、`agent-governance-audit`。
+
+## 2026-10-05 / Swiss Technical 三階段實作（Codex as Codex）
+
+- **來源／狀態**：`local`／`verified`；對應 #480、PR #481，遠端 CI 另按最終提交確認。
+- **Learning**：首幀與 React 必須共用配色正規化；Bauhaus Mono 的黑白主色需隨模式轉換。Canvas 僅監聽 `data-bs-theme` 會漏掉單獨更換配色或核心；主題／style 變更時更新快取，避免每幀讀 CSS。
+- **Action**：Swiss 實色表面、無模糊、1px 卡片邊框、8px 遙測節奏、16px 精靈網格、四步驟導覽；手機四輪單欄；沿用所有步驟門檻及 Portal。保留八組既有配色，新增 Swiss Signal／Bauhaus Mono，按鈕主色自動選取黑白文字。關閉 Swiss 的裝飾性 Canvas 光暈，保留物理警示色。
+- **Evidence**：Vitest 1,114 passed／1 skipped；frontend build 通過；Windows Cargo 122 passed／3 ignored。實際 Rust 後端＋Vite／瀏覽器驗證四款核心的日夜模式、Mono 重載、1440／390／320px 版型與 Portal Escape 焦點。合成 UDP 回放 1111→8888 RPM 寬度皆 46.546875px，11→88 km/h 皆 42px，Canvas transition 為 0s；不代表真實遊戲或原生裝置驗收。
+- **驗證順序**：Cargo 以 `include_bytes!` 嵌入 frontend/dist；不可同時執行會清換 hashed assets 的 Vite build 與 Cargo／doc-tests。此處先完成 frontend build，再跑 Cargo，已消除資源消失錯誤。
+- **Skills**：`ponytail`（full）、`halfmoon-design-system`、`huge-component-refactoring`、`portable-release-validation`、`pr-author-maintainer`、`pr-review-evaluation`、`agent-governance-audit`。
+
 ## 2026-10-05 / v1.7.1 候選收尾與 Rust SSOT 邊界（Codex as Codex）
 
 - **來源／狀態**：`local`／`verified`；另有固定 PR SHA 的 Windows Host Diagnostics 證據。

@@ -9,8 +9,8 @@ export const SessionsWorkspace: React.FC<WorkspaceProps & ValidationReviewSlotHo
   renderReviewSlot,
   onOpenSessions,
 }) => (
-  <>
+  <div className="sessions-workspace">
     <AnalysisView onLatestAnalysis={() => onOpenSessions({ kind: 'latest-analysis' })} />
     {reviewSlot && renderReviewSlot ? renderReviewSlot(reviewSlot) : null}
-  </>
+  </div>
 );

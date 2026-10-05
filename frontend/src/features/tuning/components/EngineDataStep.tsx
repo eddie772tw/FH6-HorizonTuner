@@ -33,7 +33,7 @@ export function EngineDataStep({ carId, profile, engine, gearing, enabled }: {
   }, [measured, capture]);
   const tireEvidence = capture && tireResult?.capture === capture ? tireResult.evidence : null;
   return <section className="d-flex flex-column gap-3">
-    <div className="workspace-section"><h3 className="workspace-section-heading">{t('Engine data & gearing')}</h3>
+    <div className="workspace-section"><h3 className="workspace-section-heading workspace-panel-header">{t('Engine data & gearing')}</h3>
       <p className="mb-0">{t('Engine limit and peak output RPM come from measured acceleration. Missing measurements do not use an estimated redline.')}</p>
     </div>
     <EngineObservationHistory entries={engine.archive} compatibleIds={engine.compatible.map(item => item.id)} reuse={engine.reuse} storageError={engine.storageError} />

@@ -148,7 +148,7 @@ const AnalysisView: React.FC<{ onLatestAnalysis: () => void }> = ({ onLatestAnal
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100%", gap: "1rem", overflowY: "auto", minWidth: 0 }}>
+    <div className="analysis-view">
       <AnalysisSessionToolbar
         onLatestAnalysis={onLatestAnalysis}
         t={t}

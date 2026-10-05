@@ -32,7 +32,7 @@ const TireRadar: React.FC<TireRadarProps> = React.memo(({ title, isLeft, tireIdx
   const ratioRef = useRef<HTMLSpanElement>(null);
   const prevCar = useRef<number | null>(null);
   const prevRace = useRef<number | null>(null);
-  const themeVars = useRef({ primary: '#00f0ff', isLight: false });
+  const themeVars = useRef({ primary: '#00f0ff', isLight: false, glowStrength: 1 });
   const bgCacheRef = useRef<{ canvas: OffscreenCanvas | null; isLosingGrip: boolean }>({ canvas: null, isLosingGrip: false });
   
   // 保存 DOM 的實體邏輯尺寸 (CSS 像素)
@@ -110,12 +110,13 @@ const TireRadar: React.FC<TireRadarProps> = React.memo(({ title, isLeft, tireIdx
       themeVars.current = {
         primary: style.getPropertyValue('--primary').trim() || '#00f0ff',
         isLight: document.documentElement.getAttribute('data-bs-theme') === 'light',
+        glowStrength: Number(style.getPropertyValue('--instrument-glow-strength').trim() || '1'),
       };
       bgCacheRef.current.canvas = null;
     };
     updateThemeVars();
     const themeObserver = new MutationObserver(updateThemeVars);
-    themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-bs-theme'] });
+    themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-bs-theme', 'data-bs-core', 'data-design-system', 'style'] });
 
     const getOrCreateBgCache = (scaledRadius: number, isLosingGrip: boolean): OffscreenCanvas | null => {
       const dpr = window.devicePixelRatio || 1;
@@ -282,7 +283,7 @@ const TireRadar: React.FC<TireRadarProps> = React.memo(({ title, isLeft, tireIdx
 
             ctx.beginPath();
             ctx.arc(dotCenterX, dotCenterY, 6 * dpr, 0, Math.PI * 2);
-            ctx.fillStyle = dotGlowColor;
+            ctx.fillStyle = themeVars.current.glowStrength === 0 ? 'transparent' : dotGlowColor;
             ctx.fill();
 
             ctx.beginPath();
@@ -400,7 +401,7 @@ const TireRadar: React.FC<TireRadarProps> = React.memo(({ title, isLeft, tireIdx
     >
       {/* 雷達圖區 (固定佔據 ~38% 寬度) */}
       <div className="d-flex flex-column align-items-center justify-content-center h-100 overflow-hidden" style={{ flex: '0 0 38%', maxWidth: '42%', minWidth: '40px' }}>
-        <div className="fw-bold text-body mb-1 fs-8 flex-shrink-0 text-truncate">{title}</div>
+        <div className="instrument-readout-label fw-bold text-body mb-1 fs-8 flex-shrink-0 text-truncate">{title}</div>
         <div className="w-100 flex-grow-1 position-relative d-flex align-items-center justify-content-center overflow-hidden" style={{ minHeight: 0 }}>
           <canvas ref={radarCanvasRef} className="position-absolute" />
         </div>

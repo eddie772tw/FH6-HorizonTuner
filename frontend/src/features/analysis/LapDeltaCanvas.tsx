@@ -300,8 +300,8 @@ const LapDeltaCanvas: React.FC<LapDeltaCanvasProps> = ({
       }}
     >
       {/* Header with Legend & Hover Info */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.4rem" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "0.8rem" }}>
+      <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+        <div className="d-flex align-items-center flex-wrap gap-2">
           <span style={{ fontWeight: "bold", color: "var(--text-primary)", fontSize: "0.95rem" }}>
             {t("Speed & Input Delta")}
           </span>
@@ -319,7 +319,7 @@ const LapDeltaCanvas: React.FC<LapDeltaCanvasProps> = ({
 
         {/* Hover Snapshot Badge */}
         {hoverInfo && (
-          <div style={{ fontSize: "0.8rem", color: "var(--text-primary)", background: "rgba(0,0,0,0.4)", padding: "0.2rem 0.6rem", borderRadius: "4px", border: "1px solid rgba(255,255,255,0.1)" }}>
+          <div style={{ fontSize: "0.8rem", color: "var(--text-primary)", background: "var(--surface-1)", padding: "0.2rem 0.6rem", borderRadius: "4px", border: "1px solid var(--glass-border)" }}>
             <span style={{ color: "var(--text-secondary)" }}>{hoverInfo.pct}% | </span>
             <span style={{ color: "#00ffaa" }}>{hoverInfo.primarySpeed} km/h </span>
             {hoverInfo.compareSpeed !== undefined && (

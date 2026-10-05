@@ -1,0 +1,47 @@
+/* Neutral token contract. Core palettes and component details belong to design-systems/. */
+:root {
+  --primary: #00f0ff;
+  --secondary: #ff003c;
+  --accent: #7000ff;
+  --on-primary: #000000;
+  --bs-body-font-family: 'Inter', system-ui, sans-serif;
+  --text-primary: var(--bs-body-color);
+  --text-secondary: var(--bs-secondary-color);
+  --bg-gradient: var(--bs-body-bg);
+  --glass-bg: var(--bs-body-bg);
+  --glass-border: var(--bs-border-color);
+  --glass-blur: 0px;
+  --glass-shadow: none;
+  --panel-radius: 4px;
+  --input-radius: 2px;
+  --input-bg: var(--glass-bg);
+  --input-text: var(--text-primary);
+  --surface-1: var(--bs-secondary-bg);
+  --surface-2: var(--bs-tertiary-bg);
+  --surface-3: var(--bs-secondary-bg);
+  --divider: var(--glass-border);
+  --divider-md: var(--glass-border);
+  --primary-glow: transparent;
+  --surface-filter: none;
+  --section-header-bg: var(--glass-bg);
+  --heading-color: var(--text-primary);
+  --heading-tracking: normal;
+  --heading-weight: 600;
+  --focus-color: var(--primary);
+  --form-focus-shadow: none;
+  --interactive-transform: none;
+  --interactive-shadow: none;
+  --choice-shadow: none;
+  --section-border: 1px solid var(--glass-border);
+  --section-bg: var(--glass-bg);
+  --section-padding: 16px;
+  --panel-padding: 16px;
+  --instrument-font-family: var(--bs-body-font-family);
+  --instrument-value-color: var(--text-primary);
+  --instrument-marker-shadow: none;
+  --instrument-glow-strength: 0;
+  --control-font-weight: 600;
+  --control-tracking: normal;
+  --readout-transform: none;
+  --readout-tracking: normal;
+}

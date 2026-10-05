@@ -1,123 +1,54 @@
 import React from 'react';
-import { useTheme, HalfmoonCore } from '../../../context/ThemeContext';
+import { useTheme } from '../../../context/ThemeContext';
+import { DESIGN_SYSTEMS, coreThemeEntries } from '../../../context/themeCatalog';
+import { themeColorProperties } from '../../../context/themeSettings';
 import { useSettings } from '../../../context/SettingsContext';
-
-const CORE_THEMES: { id: HalfmoonCore; label: string; description: string; swatchPrimary: string; swatchBg: string }[] = [
-  {
-    id: 'default',
-    label: 'Default',
-    description: 'Classic neutral tone with clean structure',
-    swatchPrimary: '#4dabf7',
-    swatchBg: '#1a1c23',
-  },
-  {
-    id: 'modern',
-    label: 'Modern',
-    description: 'Slate-tinted dark with navy blue accent',
-    swatchPrimary: '#3b5bdb',
-    swatchBg: '#1e2a3a',
-  },
-  {
-    id: 'elegant',
-    label: 'Elegant',
-    description: 'Warm earth tones with refined typography',
-    swatchPrimary: '#a07850',
-    swatchBg: '#1c1a18',
-  },
-];
 
 const AppearanceModePanel: React.FC = () => {
   const { themeSettings, updateThemeSettings } = useTheme();
   const { t } = useSettings();
-
-  return (
-    <div>
-      {/* Dark / Light toggle */}
-      <h3 style={{ marginBottom: '1rem', color: 'var(--primary)', fontSize: '1.15rem' }}>
-        {t('Appearance Mode')}
-      </h3>
-      <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem' }}>
-        {(['dark', 'light'] as const).map(mode => (
-          <button
-            key={mode}
-            id={`theme-mode-${mode}`}
-            onClick={() => updateThemeSettings({ mode })}
-            style={{
-              flex: 1,
-              padding: '0.8rem 1.2rem',
-              borderRadius: '8px',
-              border: themeSettings.mode === mode
-                ? '2px solid var(--primary)'
-                : '1px solid var(--glass-border)',
-              background: themeSettings.mode === mode
-                ? 'var(--surface-3)'
-                : 'var(--surface-1)',
-              color: 'var(--text-primary)',
-              fontWeight: 600,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '0.5rem',
-              boxShadow: themeSettings.mode === mode ? '0 0 12px var(--primary-glow)' : 'none',
-              transition: 'all 0.2s ease',
-            }}
-          >
-            {mode === 'dark' ? t('Dark Mode') : t('Light Mode')}
-          </button>
-        ))}
+  return <div className="theme-appearance">
+    <section aria-labelledby="theme-mode-heading">
+      <h3 id="theme-mode-heading">{t('Appearance Mode')}</h3>
+      <div className="theme-mode-options">
+        {(['dark', 'light'] as const).map(mode => <button key={mode} type="button"
+          id={`theme-mode-${mode}`} className="theme-choice"
+          aria-pressed={themeSettings.mode === mode} onClick={() => updateThemeSettings({ mode })}>
+          {t(mode === 'dark' ? 'Dark Mode' : 'Light Mode')}
+        </button>)}
       </div>
-
-      {/* Halfmoon Core Theme selector */}
-      <h3 style={{ marginBottom: '0.75rem', color: 'var(--primary)', fontSize: '1.15rem' }}>
-        {t('Core Theme')}
-      </h3>
-      <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>
-        {t('Selects the Halfmoon base theme that determines the default color palette and component style.')}
-      </p>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.9rem' }}>
-        {CORE_THEMES.map(theme => {
-          const isActive = themeSettings.halfmoonCore === theme.id;
-          return (
-            <button
-              key={theme.id}
-              id={`theme-core-${theme.id}`}
-              onClick={() => updateThemeSettings({ halfmoonCore: theme.id })}
-              className="glass-panel-interactive"
-              style={{
-                padding: '1rem',
-                borderRadius: '10px',
-                border: isActive ? '2px solid var(--primary)' : '1px solid var(--glass-border)',
-                background: isActive ? 'var(--surface-3)' : 'var(--surface-1)',
-                cursor: 'pointer',
-                textAlign: 'left',
-                boxShadow: isActive ? '0 0 10px var(--primary-glow)' : 'none',
-                transition: 'all 0.2s ease',
-              }}
-            >
-              {/* Color swatch preview */}
-              <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '0.6rem' }}>
-                <div style={{
-                  width: '24px', height: '24px', borderRadius: '50%',
-                  background: theme.swatchPrimary, border: '1px solid rgba(255,255,255,0.2)'
-                }} />
-                <div style={{
-                  width: '24px', height: '24px', borderRadius: '50%',
-                  background: theme.swatchBg, border: '1px solid rgba(255,255,255,0.2)'
-                }} />
-              </div>
-              <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.95rem' }}>
-                {theme.label}
-              </div>
-              <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
-                {theme.description}
-              </div>
-            </button>
-          );
-        })}
+    </section>
+    <section aria-labelledby="theme-core-heading">
+      <h3 id="theme-core-heading">{t('Core Theme')}</h3>
+      <p className="theme-help">{t('Choose the overall palette and component design. Color presets customize its accent colors.')}</p>
+      <div className="theme-system-groups">
+        {Object.entries(DESIGN_SYSTEMS).map(([systemId, system]) => <section key={systemId}
+          className="theme-system-group" aria-labelledby={`theme-system-${systemId}`}>
+          <h4 id={`theme-system-${systemId}`}>{system.label}</h4>
+          <div className="theme-core-options">
+            {coreThemeEntries.filter(([, core]) => core.designSystem === systemId).map(([id, core]) => <button
+              key={id} type="button" id={`theme-core-${id}`} className="theme-choice theme-core-choice"
+              aria-pressed={themeSettings.halfmoonCore === id} onClick={() => updateThemeSettings({ halfmoonCore: id })}>
+              {core.designSystem === 'swiss' ? <span className="theme-core-preview" aria-hidden="true"
+                data-design-system={core.designSystem} data-bs-core={id} data-bs-theme={themeSettings.mode}
+                style={themeColorProperties(themeSettings) as React.CSSProperties}>
+                <span className="workspace-panel-header">
+                  <span className="workspace-section-heading">Aa</span><span className="badge text-bg-primary">123</span>
+                </span>
+                <span className="theme-core-preview__body">
+                  <span>12.34</span><span className="btn btn-primary btn-sm">Aa</span>
+                </span>
+              </span> : <span className="theme-core-swatches" aria-hidden="true">
+                <span style={{ background: core.swatchPrimary }} /><span style={{ background: core.swatchBg }} />
+              </span>}
+              <span className="fw-semibold">{core.label}</span>
+              <span className="theme-help mb-0">{t(core.description)}</span>
+            </button>)}
+          </div>
+        </section>)}
       </div>
-    </div>
-  );
+    </section>
+  </div>;
 };
 
 export default AppearanceModePanel;
