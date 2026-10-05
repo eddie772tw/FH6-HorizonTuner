@@ -1,5 +1,13 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-10-05 / 懸吊歷史時間窗與靜止遙測一致性（Sol as Codex）
+
+- **Scope**：以 `main`／`v1.7.1` 的 `59e9e83` 為基準；採用 `ponytail`、`halfmoon-design-system`、`huge-component-refactoring`、`pr-author-maintainer`。
+- **Learning**：`telemetryEmitter` 由 `requestAnimationFrame` 驅動，不保證 60Hz。逐渲染幀覆寫 180 筆懸吊 ring buffer，卻使用固定 2500ms X 軸，會在 144Hz 只保留約 1243ms，曲線僅覆蓋右側一半。將新增歷史點限制為最多 60Hz，期間原地更新最新端點，能兼顧完整時間窗、即時讀數與固定記憶體。
+- **Stationary assessment**：懸吊、輪胎與 G 力原本在靜止時仍繪圖，另以 O(N) 逐筆平移時間戳凍結歷史；這不是停止繪圖的性能保護。移除三處速度門檻及胎溫直方圖的靜止樣本過濾，改為持續 O(1) 寫入固定容量 ring，讓輪胎變化、懸吊波形與 G 力歷史正常更新／老化。既有圖表開關、HUD 暫停與比賽／車輛重置仍適用。
+- **Evidence**：純歷史回歸 10 cases 涵蓋 30／60／120／144／165／240／360Hz、多次 wraparound、即時端點、恆定行程持續捲動與 reset。隔離瀏覽器回放實際三種 React 組件：144Hz 四輪曲線覆蓋率由 50% 恢復 100%，240Hz 由 30% 恢復 100%；靜止回放、停車後胎溫分佈／G 力標記、relative／absolute、亮暗主題及圖表開關皆檢查。最終前端 gate：`pnpm -C frontend run test` 156 files／1115 passed、1 skipped；`pnpm -C frontend run build` 與 `git diff --check` 通過。
+- **Boundary**：瀏覽器使用合成資料及模擬時鐘，不是實際 FH6、Tauri WebView 或發行 EXE 驗收；O(1) 寫入是程式路徑分析，不代表已測得整頁 FPS 改善。
+
 ## 2026-10-05 / Swiss 開發文件與 PR 送審整理（Codex as Codex）
 
 - **來源／狀態**：`local`／`verified`；使用者要求整理開發文件，將 PR #481 整理至 Ready to Review。
