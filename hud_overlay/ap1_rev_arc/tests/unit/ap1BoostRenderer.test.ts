@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 // @ts-expect-error HUD-native JavaScript is intentionally outside the TS build.
 import { createRenderer } from '../../renderer.js';
 // @ts-expect-error HUD-native JavaScript is intentionally outside the TS build.
-import { normalizeFrame } from '../../model.js';
+import { normalizeFrame, emptyFrame } from '../../model.js';
 
 function fixture() {
   const node = () => ({
@@ -13,14 +13,18 @@ function fixture() {
     replaceChildren() { this.children = []; },
     classList: { toggle() {} },
   });
-  const ids = Object.fromEntries(['rpmTicks','rpmSegments','speedDigits','boostSegments','speedUnit','gearValue','boostValue','boostModeLabel','boostTicks','signalStatus','shiftLamp'].map(id => [id, node()]));
+  const ids = Object.fromEntries(['rpmTicks','rpmSegments','speedDigits','boostSegments','speedUnit','speedUnitMph','gearValue','boostValue','boostModeLabel','vacModeLabel','boostTicks','signalStatus','shiftLamp'].map(id => [id, node()]));
+  // Fixed legends are seeded by HTML. Any renderer text replacement is a regression.
+  for (const [id, value] of Object.entries({ speedUnit: 'km/h', speedUnitMph: 'mph', boostModeLabel: 'BOOST', vacModeLabel: 'VAC' })) {
+    Object.defineProperty(ids[id], 'textContent', { get: () => value, set: () => { throw new Error('Fixed legend was replaced: ' + id); } });
+  }
   const container = node();
   const renderer = createRenderer({ getElementById: (id: string) => {
     if (!ids[id]) throw new Error('Renderer accessed an absent or removed readout: ' + id);
     return ids[id];
   }, createElementNS: node }, container);
   const render = (boost_bar: number | undefined) => renderer.render({ ...normalizeFrame({ rpm: 4500, maxRpm: 9000, speed_kmh: 100, gear: 4, boost_bar }), live: true, status: '' });
-  return { render, ids, container, lit: () => ids.boostSegments.children.filter((n: any) => n.attributes.class.includes('is-lit')), fillWidth: () => ids.boostSegments.children.filter((n: any) => n.attributes.class.includes('is-lit')).reduce((sum: number, n: any) => sum + Number(n.attributes.width), 0) };
+  return { render, renderer, ids, container, selected: (id: string) => ids[id].attributes['data-active'] === 'true', lit: () => ids.boostSegments.children.filter((n: any) => n.attributes.class.includes('is-lit')), fillWidth: () => ids.boostSegments.children.filter((n: any) => n.attributes.class.includes('is-lit')).reduce((sum: number, n: any) => sum + Number(n.attributes.width), 0) };
 }
 
 describe('AP1 boost rendering cache', () => {
@@ -32,16 +36,18 @@ describe('AP1 boost rendering cache', () => {
     expect(f.ids.boostValue.textContent).toBe(value);
     expect(f.fillWidth()).toBeGreaterThan(before);
   });
-  it('switches only the VAC caption and numeric sign while paint classes and scale stay identical', () => {
+  it('switches fixed caption selection and numeric sign while bar paint and scale stay identical', () => {
     const f = fixture();
     f.render(1 / 1024);
     const text = f.ids.boostValue.textContent, ratio = f.container.dataset.boostRatio;
-    expect(f.ids.boostModeLabel.textContent).toBe('BOOST');
+    expect(f.selected('boostModeLabel')).toBe(true);
+    expect(f.selected('vacModeLabel')).toBe(false);
     f.render(-1 / 1024);
     expect(f.ids.boostValue.textContent).toBe('-' + text);
     expect(f.container.dataset.boostRatio).toBe(ratio);
     expect(f.container.dataset.boostMode).toBe('vacuum');
-    expect(f.ids.boostModeLabel.textContent).toBe('VAC');
+    expect(f.selected('boostModeLabel')).toBe(false);
+    expect(f.selected('vacModeLabel')).toBe(true);
     expect(f.ids.boostValue.attributes.class).toBeUndefined();
     expect(f.lit().every((n: any) => n.attributes.class === 'ap1-segment is-lit')).toBe(true);
     expect(f.ids.boostTicks.children.filter((n: any) => n.attributes.class === 'ap1-boost-scale').map((n: any) => n.textContent)).toEqual(['0','0.5','1','2']);
@@ -52,7 +58,8 @@ describe('AP1 boost rendering cache', () => {
     const positive = f.lit().map((n: any) => ({ ...n.attributes }));
     f.render(-bar);
     expect(f.lit().map((n: any) => n.attributes)).toEqual(positive);
-    expect(f.ids.boostModeLabel.textContent).toBe('VAC');
+    expect(f.selected('boostModeLabel')).toBe(false);
+    expect(f.selected('vacModeLabel')).toBe(true);
     expect(f.ids.boostValue.textContent.startsWith('-')).toBe(true);
   });
   it('shows zero as empty neutral and missing as unavailable without fill', () => {
@@ -62,12 +69,40 @@ describe('AP1 boost rendering cache', () => {
     f.render(0);
     expect(f.fillWidth()).toBe(0);
     expect(f.container.dataset.boostMode).toBe('neutral');
-    expect(f.ids.boostModeLabel.textContent).toBe('BOOST');
+    expect(f.selected('boostModeLabel')).toBe(true);
+    expect(f.selected('vacModeLabel')).toBe(false);
     expect(f.ids.boostValue.textContent).toBe('0.00 bar');
     f.render(undefined);
     expect(f.fillWidth()).toBe(0);
     expect(f.container.dataset.boostMode).toBe('unavailable');
+    expect(f.selected('boostModeLabel')).toBe(false);
+    expect(f.selected('vacModeLabel')).toBe(false);
     expect(f.ids.boostValue.textContent).toBe('-- bar');
+  });
+  it('keeps both fixed speed legends and changes only the selected setting during unit switches', () => {
+    const f = fixture();
+    for (const unit of ['kmh', 'mph', 'kmh']) {
+      f.renderer.render({ ...normalizeFrame({ speed_kmh: 100, speed_mph: 62, boost_bar: .5 }, {}, { effectiveUnits: { speed: unit } }), live: true, status: '' });
+      expect(f.ids.speedUnit.textContent).toBe('km/h');
+      expect(f.ids.speedUnitMph.textContent).toBe('mph');
+      expect(f.selected('speedUnit')).toBe(unit === 'kmh');
+      expect(f.selected('speedUnitMph')).toBe(unit === 'mph');
+      expect(f.container.dataset.speed).toBe(unit === 'kmh' ? '100' : '62');
+    }
+  });
+  it.each(['WAITING FOR DATA', 'SIGNAL LOST', 'DATA ERROR', 'SESSION PAUSED'])('dims both boost legends while retaining the unit setting for %s', status => {
+    const f = fixture();
+    f.render(-.5);
+    f.renderer.render(emptyFrame('mph', status));
+    expect(f.selected('boostModeLabel')).toBe(false);
+    expect(f.selected('vacModeLabel')).toBe(false);
+    expect(f.ids.boostModeLabel.textContent).toBe('BOOST');
+    expect(f.ids.vacModeLabel.textContent).toBe('VAC');
+    expect(f.selected('speedUnitMph')).toBe(true);
+    expect(f.selected('speedUnit')).toBe(false);
+    expect(f.container.dataset.speed).toBe('---');
+    expect(f.ids.boostValue.textContent).toBe('-- PSI');
+    expect(f.fillWidth()).toBe(0);
   });
   it('updates overflow metadata independently of rounded display text', () => {
     const f = fixture();

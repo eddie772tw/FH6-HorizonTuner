@@ -1,0 +1,81 @@
+{
+  "style": "ap1_rev_arc",
+  "revision": "fixed stacked speed-unit and BOOST/VAC legends",
+  "base_head": "c5341c9056c7b8e4619f6d3ed82ebdaabf418d59",
+  "status": "implemented; full local frontend/build gates passed; new actual remote-render review pending",
+  "selection": {
+    "speed": [
+      "mph above unchanged km/h anchor",
+      "selected setting full opacity; other same RGB at reduced opacity",
+      "unit setting remains visible when speed is unavailable"
+    ],
+    "boost": [
+      "BOOST above VAC; both fixed above unchanged rail",
+      "positive and genuine zero select BOOST",
+      "negative including tiny negatives select VAC",
+      "missing, stale, paused and error dim both; no fill and -- reading"
+    ]
+  },
+  "unchanged": [
+    "RPM arc and fascia",
+    "speed digits and km/h anchor",
+    "gear, auxiliary rail, numeric and tick geometry",
+    "shared abs nonlinear mapping and signed numeric handling",
+    "positive/negative bar, numeric and tick paint",
+    "footer removals and telemetry lifecycle"
+  ],
+  "planned_remote_checks": {
+    "sizes": [
+      "default",
+      "70% compact"
+    ],
+    "dpr": [
+      1,
+      2
+    ],
+    "states": [
+      "metric-boost",
+      "imperial-boost",
+      "metric-vac",
+      "imperial-vac",
+      "zero",
+      "missing",
+      "stale"
+    ],
+    "invariants": [
+      "fixed text and DOM identity",
+      "same horizontal anchor and upper/lower order",
+      "no label overlap or collision with rail, speed digits or RPM",
+      "all legends contained; selected opacity and same RGB",
+      "real launcher/Coordinator smoothing stale and reconnect"
+    ]
+  },
+  "historical_visual_source": {
+    "head": "2d88a29993f6d0bc6b2b2c881ac7a55865cc2c70",
+    "run_id": 37268451649,
+    "artifact_id": 11327007457,
+    "note": "Existing PNGs depict earlier single legends, not this revision"
+  },
+  "limitations": [
+    "New remote renderer/launcher execution and pixel review pending",
+    "No native Windows, network/game acceptance or user approval",
+    "TN LCD is user design context, not independently hardware-verified here"
+  ],
+  "skills": [
+    "halfmoon-design-system",
+    "telemetry-udp-protocol",
+    "pr-author-maintainer"
+  ],
+  "local_verification": {
+    "style_cases_passed": 90,
+    "frontend_files_passed": 160,
+    "frontend_files_skipped": 1,
+    "frontend_tests_passed": 1195,
+    "frontend_tests_skipped": 1,
+    "build_web_hud": "passed; runtime matches source and tests excluded",
+    "syntax": "renderer and visual scripts passed node --check",
+    "pr_body_validation": "passed",
+    "protected_geometry": "Baseline comparison confirms unchanged main SVG nodes and km/h anchor; arc/model/controller/fascia unchanged",
+    "actual_new_browser_render": "pending remote CI; previous local Chromium execution blocker remains"
+  }
+}

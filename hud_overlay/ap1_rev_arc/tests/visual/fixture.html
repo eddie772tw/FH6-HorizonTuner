@@ -15,14 +15,16 @@ iframe { position: absolute; border: 0; transform-origin: top left; background: 
 </head><body>
 <h1>AP1 Rev Arc · browser review</h1>
 <div class="controls">
-<select id="scene"><option>metric</option><option>imperial</option><option>reverse</option><option>neutral</option><option>redline</option><option>missing</option><option>error</option><option>paused</option><option>signal-lost</option><option>rpm6000</option><option>custom</option><option>waiting</option><option>boost-positive-quarter</option><option>boost-positive-half</option><option>boost-positive-one</option><option>boost-positive-two</option><option>boost-zero</option><option>boost-negative</option><option>boost-negative-one</option><option>boost-negative-two</option><option>boost-missing</option><option>boost-psi</option><option>boost-kpa</option><option>boost-overflow</option></select>
+<select id="scene"><option>metric</option><option>imperial</option><option>imperial-vac</option><option>reverse</option><option>neutral</option><option>redline</option><option>missing</option><option>error</option><option>paused</option><option>signal-lost</option><option>rpm6000</option><option>custom</option><option>waiting</option><option>boost-positive-quarter</option><option>boost-positive-half</option><option>boost-positive-one</option><option>boost-positive-two</option><option>boost-zero</option><option>boost-negative</option><option>boost-negative-one</option><option>boost-negative-two</option><option>boost-missing</option><option>boost-psi</option><option>boost-kpa</option><option>boost-overflow</option></select>
 <select id="size"><option value="1280,720">1280 × 720</option><option value="1920,1080">1920 × 1080</option><option value="2560,1440">2560 × 1440</option></select>
+<select id="scale"><option value="1">Default</option><option value="0.7">70% compact</option></select>
 <button id="resize">Resize</button><button id="animate">Animate</button><button id="toggle">Hide / show</button><button id="reload">Reload</button><button id="destroy">Destroy</button>
 </div>
 <p id="result"></p><div id="stage"><iframe id="hud" title="Actual AP1 HUD iframe" src="../../index.html"></iframe></div>
 <p>This checkerboard is a review background outside the HUD iframe. Viewport geometry is real; the complete iframe is fit to this page for review. DPR is the browser’s actual devicePixelRatio. Synthetic timestamped telemetry only; no game/Windows native acceptance.</p>
 <script>
 const params = new URLSearchParams(location.search);
+const scale = document.querySelector('#scale');
 const scene = document.querySelector('#scene'); const size = document.querySelector('#size');
 const hud = document.querySelector('#hud'); const stage = document.querySelector('#stage'); const result = document.querySelector('#result');
 scene.value = params.get('state') || 'metric'; size.value = params.get('size') || '1280,720';
@@ -34,7 +36,7 @@ function setSize() {
   stage.style.width = width * fit + 'px'; stage.style.height = height * fit + 'px';
   result.textContent = `${scene.value} · ${width} × ${height} iframe · actual DPR ${devicePixelRatio} · review fit ${fit.toFixed(3)}`;
 }
-function configure() { send('config', { data: { scale: 1, glowIntensity: .8, useDefaultColors: scene.value !== 'custom', customColor: '#72d8ee', elements: { showGauge: !hidden } } }); }
+function configure() { send('config', { data: { scale: Number(scale.value), glowIntensity: .8, useDefaultColors: scene.value !== 'custom', customColor: '#72d8ee', elements: { showGauge: !hidden } } }); }
 function frame() {
   if (stopped || scene.value === 'waiting') return;
   const data = { timestamp_ms: scene.value === 'signal-lost' ? 999 : timestamp++, speed_kmh: 188, speed_mph: 117, rpm: 7300, maxRpm: 9000, redlineRpm: 8000, gear: 4, Boost: 17.40456, isRaceOn: 1 };
@@ -47,7 +49,7 @@ function frame() {
   const positiveBoost = { 'boost-positive-quarter': 3.62595, 'boost-positive-half': 7.2519, 'boost-positive-one': 14.5038, 'boost-positive-two': 29.0076 };
   if (scene.value in positiveBoost) data.Boost = positiveBoost[scene.value];
   if (scene.value === 'boost-zero') data.Boost = 0;
-  if (scene.value === 'boost-negative') data.Boost = -7.2519;
+  if (scene.value === 'boost-negative' || scene.value === 'imperial-vac') data.Boost = -7.2519;
   if (scene.value === 'boost-negative-one') data.Boost = -14.5038;
   if (scene.value === 'boost-negative-two') data.Boost = -29.0076;
   if (scene.value === 'boost-missing') data.Boost = null;
@@ -55,10 +57,11 @@ function frame() {
   if (scene.value === 'boost-psi') data.displayUnits = { boostPressure: 'psi' };
   if (scene.value === 'boost-kpa') data.displayUnits = { boostPressure: 'kpa' };
   if (scene.value === 'rpm6000') Object.assign(data,{ rpm: 4700, maxRpm: 6000, redlineRpm: 5000 });
-  send('hud:frame', { data, isMetric: scene.value !== 'imperial' });
+  send('hud:frame', { data, isMetric: !scene.value.startsWith('imperial') });
 }
-hud.addEventListener('load', () => { stopped = false; configure(); send('hud:init', { isMetric: scene.value !== 'imperial' }); frame(); });
+hud.addEventListener('load', () => { stopped = false; configure(); send('hud:init', { isMetric: !scene.value.startsWith('imperial') }); frame(); });
 scene.addEventListener('change', () => { setSize(); configure(); frame(); });
+scale.addEventListener('change', configure);
 size.addEventListener('change', setSize); window.addEventListener('resize', setSize);
 document.querySelector('#resize').onclick = () => { size.value = size.value === '1280,720' ? '1920,1080' : '1280,720'; setSize(); };
 document.querySelector('#animate').onclick = () => send('hud:animate');

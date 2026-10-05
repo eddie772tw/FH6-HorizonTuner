@@ -7,6 +7,7 @@
   --ap1-fallback-face: #0c120e;
   --ap1-fallback-rim: #383c32;
   --ap1-glow: 0.65;
+  --ap1-caption-inactive-opacity: .25;
 }
 .ap1-cluster { width: 720px; height: 300px; pointer-events: none; zoom: .75; transition: none; }
 .ap1-fascia, #ap1Display { position: absolute; inset: 0; width: 100%; height: 100%; }
@@ -19,6 +20,9 @@
 .ap1-boost-scale { font-size: 10.5px; letter-spacing: .3px; }
 .ap1-boost-mark { fill: none; stroke: currentColor; stroke-width: 1; opacity: .7; }
 .ap1-speed-unit { font-size: 21px; }
+.ap1-boost-caption { font-size: 11px; letter-spacing: 1.2px; }
+.ap1-choice-label { opacity: var(--ap1-caption-inactive-opacity); transition: none; }
+.ap1-choice-label[data-active="true"] { opacity: 1; }
 .ap1-tick-label { font-size: 21px; font-weight: 600; }
 .ap1-divider { fill: none; stroke: var(--ap1-label); opacity: .25; }
 .ap1-status { font-size: 12px; letter-spacing: 2.4px; }

@@ -1,6 +1,7 @@
 const http = require('node:http');
 const fs = require('node:fs');
 const path = require('node:path');
+const { inspectLabels, assertLabels } = require('./label-checks.cjs');
 const { chromium } = require(process.env.PLAYWRIGHT_MODULE_PATH || 'playwright');
 
 async function main() {
@@ -57,11 +58,13 @@ async function main() {
   async function record(name) {
     const frame = page.frames().find(f => f.url().includes('/'+style+'/index.html'));
     if (!frame) throw new Error('HUD was not dynamically discovered');
-    const state = await frame.evaluate(() => ({ text: document.body.innerText, readings: { speed: document.querySelector('#ap1Cluster')?.dataset.speed || document.querySelector('#lfaSpeed')?.textContent, gear: document.querySelector('#gearValue, #lfaGear')?.textContent, status: document.querySelector('#signalStatus, #lfaStatus')?.textContent, boost: document.querySelector('#boostValue')?.textContent, boostRange: document.querySelector('#ap1Cluster')?.dataset.boostRange, boostMode: document.querySelector('#ap1Cluster')?.dataset.boostMode, boostRatio: document.querySelector('#ap1Cluster')?.dataset.boostRatio, boostCaption: document.querySelector('#boostModeLabel')?.textContent, footerRemoved: document.querySelectorAll('.ap1-signature, #rpmValue, #fuelValue').length === 0 }, body: getComputedStyle(document.body).backgroundColor,
+    const state = await frame.evaluate(() => ({ text: document.body.innerText, readings: { speed: document.querySelector('#ap1Cluster')?.dataset.speed || document.querySelector('#lfaSpeed')?.textContent, gear: document.querySelector('#gearValue, #lfaGear')?.textContent, status: document.querySelector('#signalStatus, #lfaStatus')?.textContent, boost: document.querySelector('#boostValue')?.textContent, boostRange: document.querySelector('#ap1Cluster')?.dataset.boostRange, boostMode: document.querySelector('#ap1Cluster')?.dataset.boostMode, boostRatio: document.querySelector('#ap1Cluster')?.dataset.boostRatio, boostCaption: document.querySelector('.ap1-boost-caption[data-active="true"]')?.textContent || null, footerRemoved: document.querySelectorAll('.ap1-signature, #rpmValue, #fuelValue').length === 0 }, body: getComputedStyle(document.body).backgroundColor,
       style: window.HUDCore.getActiveStyle().containerId,
       bounds: (() => { const e=document.getElementById(window.HUDCore.getActiveStyle().containerId); const b=e.getBoundingClientRect(); return {x:b.x,y:b.y,width:b.width,height:b.height,display:getComputedStyle(e).display}; })() }));
     await page.screenshot({ path: path.join(out,name+'.png'), omitBackground: true });
-    samples.push({name,...state});
+    const labels = await frame.evaluate(inspectLabels);
+    samples.push({name,...state,labels});
+    assertLabels(labels, { unit: labels.speedUnit, boostMode: state.readings.boostMode });
     const assert = require('node:assert/strict');
     if (name === 'host-cruise') { assert.equal(state.readings.speed, '180'); assert.equal(state.readings.gear, '4'); assert.equal(state.readings.boost, '1.00 bar'); }
     const boostExpected = { 'host-boost-quarter': '0.25 bar', 'host-boost-half': '0.50 bar', 'host-boost-one': '1.00 bar', 'host-boost-two': '2.00 bar', 'host-boost-zero': '0.00 bar', 'host-boost-negative': '-0.50 bar', 'host-boost-negative-one': '-1.00 bar', 'host-boost-negative-two': '-2.00 bar', 'host-boost-missing': '-- bar', 'host-boost-overflow': '3.00 bar', 'host-boost-psi': '14.5 PSI', 'host-boost-kpa': '100 kPa' };
@@ -74,7 +77,7 @@ async function main() {
     assert.equal(state.readings.footerRemoved, true);
     if (name === 'host-stale-with-smoothing') { assert.match(state.readings.status, /SIGNAL/); assert.match(state.readings.speed, /^(---|—)$/); }
     if (name === 'host-reverse-reconnected') { assert.equal(state.readings.gear, 'R'); assert.equal(state.readings.speed, '16'); }
-    if (name === 'host-imperial') assert.equal(state.readings.speed, '10');
+    if (name === 'host-imperial') { assert.equal(state.readings.speed, '10'); assert.equal(labels.speedUnit, 'mph'); }
     if (name === 'host-gauge-hidden') assert.equal(state.bounds.display, 'none');
     else if (name === 'host-gauge-restored') assert.notEqual(state.bounds.display, 'none');
     if (name === 'host-720p') { assert(state.bounds.x >= 0 && state.bounds.y >= 0); assert(state.bounds.x + state.bounds.width <= 1280 && state.bounds.y + state.bounds.height <= 720); }
@@ -124,6 +127,25 @@ async function main() {
     await page.evaluate(config=>window.dispatchEvent(new CustomEvent('hud:config',{detail:config})),config);
     await page.waitForTimeout(100);
     await record('host-gauge-restored');
+    for (const scale of [1, .7]) {
+      for (const [label, unit, boost, mode] of [['metric-boost','kmh',7.2519,'boost'], ['imperial-vac','mph',-7.2519,'vacuum'], ['zero','kmh',0,'neutral'], ['missing','mph',null,'unavailable']]) {
+        await page.evaluate(({config,scale,unit,boost}) => {
+          if (boost === null) delete window.auditRaw.Boost; else window.auditRaw.Boost = boost;
+          window.dispatchEvent(new CustomEvent('hud:config', { detail: { ...config, scale, unit, effectiveUnit: unit, effectiveUnits: { speed: unit, boostPressure: 'bar' } } }));
+        }, {config,scale,unit,boost});
+        await page.waitForTimeout(150);
+        const frame = await record('host-labels-' + label + '-' + (scale === 1 ? 'default' : 'compact'));
+        assertLabels(await frame.evaluate(inspectLabels), {unit,boostMode:mode});
+      }
+      await page.evaluate(() => clearInterval(window.auditFeed));
+      await page.waitForTimeout(3100);
+      const staleFrame = await record('host-labels-stale-' + (scale === 1 ? 'default' : 'compact'));
+      assertLabels(await staleFrame.evaluate(inspectLabels), {unit:'mph',boostMode:'unavailable'});
+      const assert = require('node:assert/strict');
+      assert.equal(await staleFrame.locator('#signalStatus').textContent(), 'SIGNAL LOST');
+      await page.evaluate(() => { window.auditFeed = setInterval(() => { window.auditRaw.TimestampMS += 16; window.dispatchEvent(new CustomEvent('telemetry', { detail: {...window.auditRaw} })); },16); });
+    }
+    await page.evaluate(config => window.dispatchEvent(new CustomEvent('hud:config', {detail:config})), config);
     await page.evaluate(config=>window.dispatchEvent(new CustomEvent('hud:config',{detail:{...config,hudStyle:'simple'}})),config);
     await page.waitForTimeout(250);
     await page.evaluate(config=>window.dispatchEvent(new CustomEvent('hud:config',{detail:config})),config);

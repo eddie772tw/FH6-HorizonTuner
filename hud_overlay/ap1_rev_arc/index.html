@@ -19,8 +19,10 @@
         <text class="ap1-gear" id="gearValue" x="126" y="245" text-anchor="middle">—</text>
         <path class="ap1-divider" d="M168 192V245 M541 176V245"/>
         <g id="speedDigits" transform="translate(236 128)"></g>
-        <text class="ap1-speed-unit" id="speedUnit" x="504" y="214" text-anchor="end">km/h</text>
-        <text class="ap1-label" id="boostModeLabel" x="575" y="178">BOOST</text>
+        <text class="ap1-speed-unit ap1-choice-label" id="speedUnitMph" x="504" y="188" text-anchor="end" data-active="false">mph</text>
+        <text class="ap1-speed-unit ap1-choice-label" id="speedUnit" x="504" y="214" text-anchor="end" data-active="true">km/h</text>
+        <text class="ap1-boost-caption ap1-choice-label" id="boostModeLabel" x="575" y="162" data-active="false">BOOST</text>
+        <text class="ap1-boost-caption ap1-choice-label" id="vacModeLabel" x="575" y="178" data-active="false">VAC</text>
         <g id="boostSegments"></g>
         <g id="boostTicks"></g>
         <text class="ap1-boost-value" id="boostValue" x="617" y="245" text-anchor="middle">-- bar</text>

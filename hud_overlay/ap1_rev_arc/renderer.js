@@ -60,10 +60,13 @@ export function createRenderer(document, container) {
       lastFrame = signature;
       const value = frame.speedText.padStart(3, ' ');
       digits.forEach((glyph, i) => Object.entries(glyph).forEach(([key, node]) => set(node, 'class', `ap1-digit${DIGITS[value[i]]?.includes(key) ? ' is-lit' : ''}`)));
-      text('speedUnit', frame.unit === 'mph' ? 'mph' : 'km/h');
+      // Fixed LCD legends never change text or position; only selection opacity changes.
+      set(el('speedUnit'), 'data-active', frame.unit !== 'mph');
+      set(el('speedUnitMph'), 'data-active', frame.unit === 'mph');
       text('gearValue', frame.gear);
       text('boostValue', `${frame.boost.valueText} ${frame.boost.unitLabel}`);
-      text('boostModeLabel', frame.boost.modeLabel);
+      set(el('boostModeLabel'), 'data-active', frame.boost.mode === 'boost' || frame.boost.mode === 'neutral');
+      set(el('vacModeLabel'), 'data-active', frame.boost.mode === 'vacuum');
       const scaleKey = frame.boost.unit;
       if (scaleKey !== lastBoostScaleKey) {
         lastBoostScaleKey = scaleKey;
@@ -91,6 +94,7 @@ export function createRenderer(document, container) {
       container.classList.toggle('is-unavailable', !frame.live && sweep === null);
       container.dataset.status = frame.status || 'LIVE';
       container.dataset.speed = frame.speedText;
+      container.dataset.speedUnit = frame.unit;
       container.dataset.gear = frame.gear;
       set(container, 'aria-label', `AP1 Rev Arc. ${frame.status || 'Live telemetry'}. Speed ${frame.speedText} ${frame.unit === 'mph' ? 'mph' : 'kilometres per hour'}. Gear ${frame.gear}. RPM ${frame.rpm ?? 'unavailable'}. ${frame.boost.mode === 'vacuum' ? 'Vacuum' : 'Boost'} ${frame.boost.value === null ? 'unavailable' : `${frame.boost.valueText} ${frame.boost.unitLabel}`}${frame.boost.overflow ? ', outside displayed boost scale' : ''}`);
     },

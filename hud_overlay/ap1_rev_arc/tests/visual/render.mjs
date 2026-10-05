@@ -8,6 +8,7 @@ import path from 'node:path';
 import assert from 'node:assert/strict';
 const require = createRequire(import.meta.url);
 const { chromium } = require(process.env.PLAYWRIGHT_MODULE_PATH || 'playwright');
+const { inspectLabels, assertLabels } = require('./label-checks.cjs');
 const root = path.resolve(fileURLToPath(new URL('../../../', import.meta.url)));
 const out = process.env.OUTPUT_DIR || process.env.AP1_VISUAL_OUTPUT || path.join(root, '../docs/assets/ap1-rev-arc');
 await mkdir(out, { recursive: true });
@@ -34,7 +35,7 @@ let stamp = 100;
 const sample = { speed_kmh: 188, speed_mph: 117, rpm: 7300, maxRpm: 9000, redlineRpm: 8000, gear: 4, Boost: 17.40456, isRaceOn: 1 };
 const frame = (page, data = {}, meta = {}) => page.evaluate(({ data, meta, stamp }) => window.HUDCore.handleMessage('hud:frame', { data: { ...data, timestamp_ms: stamp }, ...meta }), { data: { ...sample, ...data }, meta, stamp: stamp++ });
 const boostPaint = async page => page.evaluate(() => {
-  const selectors = { bar: '#boostSegments .is-lit', caption: '#boostModeLabel', value: '#boostValue', tick: '#boostTicks text', marker: '#boostTicks path' };
+  const selectors = { bar: '#boostSegments .is-lit', value: '#boostValue', tick: '#boostTicks text', marker: '#boostTicks path' };
   return Object.fromEntries(Object.entries(selectors).map(([key, selector]) => {
     const node = document.querySelector(selector);
     if (!node) return [key, null];
@@ -60,7 +61,7 @@ const inspectArcLayout = async page => page.evaluate(async () => {
     tag: node.tagName,
     attributes: Object.fromEntries(geometricAttributes.map(key => [key, node.getAttribute(key)])),
   });
-  const readouts = Object.fromEntries(['speedDigits','gearValue','boostSegments','boostValue','boostTicks','boostModeLabel','speedUnit'].map(id => {
+  const readouts = Object.fromEntries(['speedDigits','gearValue','boostSegments','boostValue','boostTicks','boostModeLabel','vacModeLabel','speedUnit','speedUnitMph'].map(id => {
     const node = document.getElementById(id);
     const b = rect(node.getBoundingClientRect());
     const box = rect(node.getBBox());
@@ -145,6 +146,47 @@ try {
       }
       await page.evaluate(() => window.HUDCore.handleMessage('config', { data: { scale: 1, glowIntensity: .8, elements: { showGauge: true } } }));
       await frame(page);
+      for (const scale of [1, .7]) {
+        await page.evaluate(scale => window.HUDCore.handleMessage('config', { data: { scale, glowIntensity: .8, elements: { showGauge: true } } }), scale);
+        const states = [
+          { name: 'metric-boost', unit: 'kmh', mode: 'boost', data: { Boost: 7.2519 } },
+          { name: 'imperial-boost', unit: 'mph', mode: 'boost', data: { Boost: 7.2519 } },
+          { name: 'metric-vac', unit: 'kmh', mode: 'vacuum', data: { Boost: -7.2519 } },
+          { name: 'imperial-vac', unit: 'mph', mode: 'vacuum', data: { Boost: -7.2519 } },
+          { name: 'zero', unit: 'kmh', mode: 'neutral', data: { Boost: 0 } },
+          { name: 'missing', unit: 'mph', mode: 'unavailable', data: { Boost: null, speed_kmh: null, speed_mph: null } },
+        ];
+        let anchors;
+        for (const scenario of states) {
+          await frame(page, scenario.data, { isMetric: scenario.unit === 'kmh' });
+          const labels = await page.evaluate(inspectLabels);
+          const name = `labels-${scenario.name}-${scale === 1 ? 'default' : 'compact'}-dpr${dpr}`;
+          await save(page, name + '.png');
+          report.checks.push({ labelScenario: name, ...labels });
+          assertLabels(labels, { unit: scenario.unit, boostMode: scenario.mode });
+          const currentAnchors = Object.fromEntries(Object.entries(labels.labels).map(([id, label]) => [id, label.anchor]));
+          if (anchors) assert.deepEqual(currentAnchors, anchors, 'Unit/mode changes must not move fixed legends');
+          anchors = currentAnchors;
+          if (scenario.name === 'missing') assert.equal(labels.speed, '---');
+        }
+        await page.evaluate(() => {
+          const packet = { data: { timestamp_ms: 777, speed_kmh: 100, speed_mph: 62, rpm: 7000, maxRpm: 9000, gear: 4, Boost: -7.2519 }, isMetric: false };
+          window.HUDCore.handleMessage('hud:frame', packet);
+          window.fixtureLabelReplay = setInterval(() => window.HUDCore.handleMessage('hud:frame', packet), 30);
+        });
+        await page.waitForTimeout(1800);
+        const stale = await page.evaluate(inspectLabels);
+        const staleName = `labels-stale-${scale === 1 ? 'default' : 'compact'}-dpr${dpr}`;
+        await save(page, staleName + '.png');
+        report.checks.push({ labelScenario: staleName, ...stale });
+        assertLabels(stale, { unit: 'mph', boostMode: 'unavailable' });
+        assert.equal(stale.speed, '---');
+        assert.equal(await page.locator('#signalStatus').textContent(), 'SIGNAL LOST');
+        await page.evaluate(() => clearInterval(window.fixtureLabelReplay));
+        await frame(page);
+      }
+      await page.evaluate(() => window.HUDCore.handleMessage('config', { data: { scale: 1, glowIntensity: .8, elements: { showGauge: true } } }));
+      await frame(page);
     }
     if (width === 1280 && dpr === 1) {
       await frame(page, {}, { isMetric: false });
@@ -189,12 +231,14 @@ try {
         const expectedTicks = { bar: ['0','0.5','1','2'], PSI: ['0','7.3','14.5','29'], kPa: ['0','50','100','200'] };
         assert.deepEqual(tickLabels, expectedTicks[unit]);
         const paint = await boostPaint(page);
+        const labels = await page.evaluate(inspectLabels);
+        assertLabels(labels, { unit: 'kmh', boostMode: mode });
         if (mode === 'vacuum') {
-          assert.equal(await page.locator('#boostModeLabel').textContent(), 'VAC');
-          assert.deepEqual(paint, positivePaint, 'Both signs must have identical RGBA, opacity, glow and text/tick paint');
+          assert.equal(await page.locator('#vacModeLabel').getAttribute('data-active'), 'true');
+          assert.deepEqual(paint, positivePaint, 'Both signs must preserve identical bar, value and tick paint; fixed legend selection is checked separately');
           assert((await page.locator('#boostValue').textContent()).startsWith('-'), 'VAC must retain the numeric minus sign');
         }
-        report.checks.push({ boostScenario: scenario.name, text: scenario.text, mode, ratio, tickLabels, color, paint });
+        report.checks.push({ boostScenario: scenario.name, text: scenario.text, mode, ratio, tickLabels, color, paint, labels });
       }
       await frame(page, { gear: 0, speed_kmh: 24, rpm: 3400 });
       assert.equal(await page.locator('#gearValue').textContent(), 'R');
