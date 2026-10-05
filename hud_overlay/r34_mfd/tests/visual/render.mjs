@@ -68,6 +68,52 @@ try {
       assert(dials.every(dial => dial.siblingOverlap.every(label => !label.panel && !label.legends.length)), mode + ' scale labels and units must not overlap sibling PEAK panels or other legends');
       report.checks.push({ mode, dialReadability: dials });
     };
+    const inspectFrameInset = async () => {
+      const frames = await page.locator('#r34TachModule, #r34SpeedModule').evaluateAll(modules => modules.map(module => {
+        const frame = module.querySelector('.r34-lcd-frame'), face = module.querySelector('.r34-face-shell circle[fill="url(#face)"]');
+        const frameMatrix = frame.getScreenCTM(), faceMatrix = face.getScreenCTM();
+        const scale = Math.hypot(faceMatrix.a, faceMatrix.b), frameScale = Math.max(Math.hypot(frameMatrix.a, frameMatrix.b), Math.hypot(frameMatrix.c, frameMatrix.d));
+        const center = new DOMPoint(face.cx.baseVal.value, face.cy.baseVal.value).matrixTransform(faceMatrix);
+        const radius = face.r.baseVal.value * scale, safeRadius = radius - window.R34Instruments.LCD_GEOMETRY.safeInset * scale;
+        const localStroke = parseFloat(getComputedStyle(frame).strokeWidth), stroke = localStroke * frameScale;
+        const box = frame.getBBox(), corners = [];
+        // Expand each local x/y edge by half the stroke before projecting all four corners.
+        for (const x of [box.x - localStroke / 2, box.x + box.width + localStroke / 2]) for (const y of [box.y - localStroke / 2, box.y + box.height + localStroke / 2]) {
+          const point = new DOMPoint(x, y).matrixTransform(frameMatrix);
+          corners.push({ x: point.x, y: point.y, paintedRadius: Math.hypot(point.x - center.x, point.y - center.y) });
+        }
+        const effects = [];
+        for (let node = frame; node; node = node.parentElement) {
+          const style = getComputedStyle(node);
+          for (const property of ['filter', 'boxShadow', 'clipPath', 'maskImage']) if (style[property] && style[property] !== 'none') effects.push({ node: node.id || node.tagName, property, value: style[property] });
+        }
+        const outer = frame.getBoundingClientRect();
+        const painted = { left: outer.left - stroke / 2, right: outer.right + stroke / 2, top: outer.top - stroke / 2, bottom: outer.bottom + stroke / 2 };
+        const maximum = module.id === 'r34TachModule' ? 10000 : 300;
+        const gaps = [...module.querySelectorAll('.r34-scale-numeral')].filter(label => [0, maximum].includes(Number(label.dataset.value))).map(label => {
+          const b = label.getBoundingClientRect();
+          // Frobenius norm conservatively includes each original glyph's skew/scale.
+          const padding = Math.max(...[...label.querySelectorAll('path')].map(path => {
+            const m = path.getScreenCTM(); return parseFloat(getComputedStyle(path).strokeWidth) * Math.hypot(m.a, m.b, m.c, m.d) / 2;
+          }));
+          const dx = Math.max(painted.left - b.right - padding, b.left - padding - painted.right, 0);
+          const dy = Math.max(painted.top - b.bottom - padding, b.top - padding - painted.bottom, 0);
+          return { value: Number(label.dataset.value), clearance: Math.hypot(dx, dy) };
+        });
+        return { id: module.id, radius, safeRadius, stroke, corners, effects, gaps,
+          contained: corners.every(corner => corner.paintedRadius < safeRadius),
+          clearLabels: gaps.every(gap => gap.clearance >= stroke),
+          circular: Math.abs(scale - Math.hypot(faceMatrix.c, faceMatrix.d)) < .001 };
+      }));
+      const viewport = page.viewportSize();
+      report.checks.push({ frameInset: frames, viewport, dpr });
+      if (!frames.every(frame => frame.contained && frame.circular && !frame.effects.length && frame.clearLabels)) {
+        const filename = 'frame-inset-failure-' + viewport.width + 'x' + viewport.height + '-dpr' + dpr + '.png';
+        await page.screenshot({ path: path.join(out, filename), omitBackground: true }); report.screenshots.push(filename);
+      }
+      assert(frames.every(frame => frame.contained && frame.circular && !frame.effects.length), 'The actual full LCD frame and stroke must remain inset within the circular face, without shadows or clipping substitutes');
+      assert(frames.every(frame => frame.clearLabels), 'Lower scale numerals and their strokes must retain a visible gap from the LCD frame');
+    };
     await configure({}); await save('waiting');
     const inspectLayout = async () => {
       const layout = await page.evaluate(() => {
@@ -82,6 +128,7 @@ try {
         assert(layout.boxes[3].right < layout.boxes[0].x && layout.boxes[1].right < layout.boxes[2].x, 'Temperature is outside left; boost is outside right');
         assert(layout.boxes[2].right < layout.boxes[4].x, 'Right auxiliary must not overlap the MFD');
       }
+      if (!layout.clusterHidden) await inspectFrameInset();
       const screen = layout.boxes.at(-1); assert(Math.abs(screen.width / screen.height - 270 / 152) < .01);
       report.checks.push({ layout });
     };
@@ -121,7 +168,7 @@ try {
           const rect = text.getBoundingClientRect();
           if (rect.width <= 0 || rect.height <= 0) return null;
           const font = getComputedStyle(text), matrix = text.getScreenCTM();
-          return { text: text.textContent, rect, font: [font.fontFamily, font.fontSize, font.fontWeight, font.fontVariantNumeric].join('/'),
+          return { text: text.textContent, rect, font: [font.fontFamily, font.fontSize, font.fontWeight, font.fontVariantNumeric, font.wordSpacing].join('/'),
             baseline: text.getStartPositionOfChar(0).matrixTransform(matrix).y, xScale: matrix.a, yScale: matrix.d };
         }).filter(Boolean);
         const rows = [...node.querySelectorAll('text')].map(text => text.getBoundingClientRect()).filter(rect => rect.width > 0 && rect.height > 0);
@@ -150,7 +197,7 @@ try {
       assert(Math.abs(lcds[0].width - lcds[1].width) < .01 && Math.abs(lcds[0].height - lcds[1].height) < .01, 'Both physical LCD windows must match');
     };
     const saveLcd = async name => {
-      await inspectLcd(name); await save('lcd-' + name);
+      await inspectLcd(name); await inspectFrameInset(); await save('lcd-' + name);
       if (width === 1280 && dpr === 2) for (const dial of ['Tach', 'Speed']) {
         const filename = 'dial-' + dial.toLowerCase() + '-' + name + '-dpr2.png';
         await page.locator('#r34' + dial + 'Module').screenshot({ path: path.join(out, filename), omitBackground: true }); report.screenshots.push(filename);

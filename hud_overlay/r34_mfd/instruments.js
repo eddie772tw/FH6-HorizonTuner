@@ -2,6 +2,12 @@
 (function (root) {
     'use strict';
     // Reference-photo visual geometry, not claimed factory calibration dimensions.
+    var MAIN_FACE = Object.freeze({ cx: 108, cy: 108, radius: 105 });
+    var LCD_GEOMETRY = Object.freeze({
+        outer: Object.freeze({ x: 43, y: 161, width: 130, height: 23, radius: 4, stroke: 1 }),
+        inner: Object.freeze({ x: 46, y: 164, width: 124, height: 17, radius: 2 }),
+        baseline: 176.5, safeInset: 4
+    });
     var AUXILIARY_GEOMETRY = Object.freeze({
         face: Object.freeze({ cx: 60, cy: 60, radius: 54 }),
         temperature: Object.freeze({ cx: 46, cy: 60, needleLength: 56, tickInner: 50, tickOuter: 61, start: 45, end: -45 }),
@@ -81,7 +87,7 @@
             group.innerHTML = A.txt(50, 27, scaleLabel(max), 8) + A.txt(50, 103, scaleLabel(min), 8);
         },
         mfdDialMarkup: mfdDialMarkup, setDialLabels: setDialLabels, setHistoryLabels: setHistoryLabels,
-        AUXILIARY_GEOMETRY: AUXILIARY_GEOMETRY, auxiliaryTransform: auxiliaryTransform,
+        MAIN_FACE: MAIN_FACE, LCD_GEOMETRY: LCD_GEOMETRY, AUXILIARY_GEOMETRY: AUXILIARY_GEOMETRY, auxiliaryTransform: auxiliaryTransform,
         SPEED_MAX: 300, tachAngle: tachAngle, speedAngle: speedAngle, auxiliaryAngle: auxiliaryAngle, sector: sector
     };
     if (typeof module !== 'undefined' && module.exports) module.exports = root.R34Instruments;

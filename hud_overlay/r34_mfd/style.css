@@ -64,7 +64,7 @@
 .r34-lap-history > div { display: flex; justify-content: space-between; border: 1px solid var(--r34-ink); padding: 4px; }
 .r34-lap-history ol { list-style: none; padding: 0; margin: 0; }
 .r34-lap-history li { height: 20px; padding: 4px 3px; border: 1px solid var(--r34-ink); border-top: none; display: flex; justify-content: space-between; font-size: 8px; }
-.r34-lcd text, .r34-lcd tspan { font-family: monospace; font-size: 12px; font-weight: 600; fill: var(--r34-lcd-ink); font-variant-numeric: tabular-nums; white-space: pre; }
+.r34-lcd text, .r34-lcd tspan { font-family: monospace; font-size: 12px; font-weight: 600; fill: var(--r34-lcd-ink); font-variant-numeric: tabular-nums; white-space: pre; word-spacing: -3px; }
 #r34RevLamp { fill: transparent; }
 #r34RevLamp.active { fill: var(--r34-hot); }
 .r34-scale-note { position: absolute; width: 160px; min-height: 24px; white-space: pre-line; color: var(--r34-amber); font: 9px/11px Arial, sans-serif; text-align: center; transform-origin: top left; }

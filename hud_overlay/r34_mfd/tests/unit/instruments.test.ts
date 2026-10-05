@@ -22,6 +22,20 @@ describe('reference-grounded dial geometry', () => {
     expect(I.speedAngle(150)).toBeCloseTo((I.speedAngle(0) + I.speedAngle(300)) / 2);
     expect(I.speedAngle(360)).toBe(I.speedAngle(300)); expect(I.speedAngle(-1)).toBe(I.speedAngle(0));
   });
+  it('physically insets the full LCD frame and stroke, with content inside its border', () => {
+    const face = I.MAIN_FACE, { outer, inner, baseline, safeInset } = I.LCD_GEOMETRY;
+    expect(safeInset).toBeGreaterThanOrEqual(outer.stroke * 4);
+    for (const x of [outer.x - outer.stroke / 2, outer.x + outer.width + outer.stroke / 2]) for (const y of [outer.y - outer.stroke / 2, outer.y + outer.height + outer.stroke / 2]) {
+      const paintedRadius = Math.hypot(x - face.cx, y - face.cy);
+      expect(paintedRadius).toBeLessThan(face.radius - safeInset);
+    }
+    expect(inner.x).toBeGreaterThan(outer.x + outer.stroke / 2);
+    expect(inner.y).toBeGreaterThan(outer.y + outer.stroke / 2);
+    expect(inner.x + inner.width).toBeLessThan(outer.x + outer.width - outer.stroke / 2);
+    expect(inner.y + inner.height).toBeLessThan(outer.y + outer.height - outer.stroke / 2);
+    expect(inner.x + inner.width / 2).toBe(face.cx);
+    expect(baseline).toBeGreaterThan(inner.y); expect(baseline).toBeLessThan(inner.y + inner.height);
+  });
   it('uses mirrored, visibly off-center pivots shared by artwork and live needle transforms', () => {
     const { face, temperature, boost } = I.AUXILIARY_GEOMETRY;
     expect(temperature.cx).toBeLessThan(face.cx); expect(boost.cx).toBeGreaterThan(face.cx);

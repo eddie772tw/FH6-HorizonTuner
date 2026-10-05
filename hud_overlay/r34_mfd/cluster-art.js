@@ -4,19 +4,20 @@
     var A = root.R34Artwork;
     function open(label, size) { return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + size + ' ' + size + '" role="img" aria-label="' + label + '">'; }
     function lcd(tach) {
+        var geometry = root.R34Instruments.LCD_GEOMETRY, outer = geometry.outer, inner = geometry.inner;
         var s = '<g id="' + (tach ? 'r34TachLcd' : 'r34SpeedLcd') + '" class="r34-lcd">';
-        // Identical wider, shallow windows stay inside the lower circular faces.
-        s += A.rect(38, 162, 140, 30, '#0c1013', 'rx="6" stroke="#393e3d" stroke-width="1"');
-        s += A.rect(41, 165, 134, 24, 'url(#lcd)', 'rx="3" class="r34-lcd-window"');
+        // Every outer bounding corner, including stroke, is inset from the face. No clipping or shadow.
+        s += A.rect(outer.x, outer.y, outer.width, outer.height, '#0c1013', 'rx="' + outer.radius + '" stroke="#393e3d" stroke-width="' + outer.stroke + '" class="r34-lcd-frame"');
+        s += A.rect(inner.x, inner.y, inner.width, inner.height, 'url(#lcd)', 'rx="' + inner.radius + '" class="r34-lcd-window"');
         s += '<g class="r34-lcd-glyphs" transform="translate(108 0) scale(.8 1) translate(-108 0)">';
         if (tach) {
-            s += '<g id="r34TachTimerGroup" style="display:none">' + A.txt(108, 181, 'N/A', 12, 'var(--r34-lcd-ink)', 'id="r34TachTimer"') + '</g>';
-            s += '<g id="r34TachPowerGroup" style="display:none"><text x="108" y="181" text-anchor="middle" xml:space="preserve">';
+            s += '<g id="r34TachTimerGroup" style="display:none">' + A.txt(108, geometry.baseline, 'N/A', 12, 'var(--r34-lcd-ink)', 'id="r34TachTimer"') + '</g>';
+            s += '<g id="r34TachPowerGroup" style="display:none"><text x="108" y="' + geometry.baseline + '" text-anchor="middle" xml:space="preserve">';
             s += '<tspan id="r34LcdPower">N/A HP</tspan><tspan> </tspan><tspan id="r34LcdTorque">N/A N·m</tspan></text></g>';
-            s += A.txt(108, 181, 'N/A', 12, 'var(--r34-lcd-ink)', 'id="r34TachUnavailable"');
+            s += A.txt(108, geometry.baseline, 'N/A', 12, 'var(--r34-lcd-ink)', 'id="r34TachUnavailable"');
         } else {
             // SVG centers the complete visible row, rather than unequal fixed slots.
-            s += '<text x="108" y="181" text-anchor="middle" xml:space="preserve" id="r34SpeedRow">';
+            s += '<text x="108" y="' + geometry.baseline + '" text-anchor="middle" xml:space="preserve" id="r34SpeedRow">';
             s += '<tspan id="r34GearGroup"><tspan>G</tspan><tspan id="r34Gear">—</tspan></tspan>';
             s += '<tspan id="r34LcdDivider"> </tspan><tspan id="r34DigitalSpeedGroup">';
             s += '<tspan id="r34DigitalSpeed">N/A</tspan><tspan> </tspan><tspan id="r34DigitalSpeedUnit">kmh</tspan></tspan></text>';
@@ -24,9 +25,9 @@
         return s + '</g></g>';
     }
     function main(kind) {
-        var tach = kind === 'tach', cx = 108, cy = 108;
+        var tach = kind === 'tach', face = root.R34Instruments.MAIN_FACE, cx = face.cx, cy = face.cy;
         var s = open(tach ? 'Symmetric compressed-low-range 10000 rpm R34 scale' : 'Nür 300 kmh analog speed scale', 216);
-        s += A.dial(cx, cy, 105);
+        s += '<g class="r34-face-shell">' + A.dial(cx, cy, face.radius) + '</g>';
         s += '<g id="' + (tach ? 'r34TachFace' : 'r34SpeedFace') + '">';
         var limit = tach ? 10000 : root.R34Instruments.SPEED_MAX, step = tach ? 200 : 10;
         for (var v = 0; v <= limit; v += step) {

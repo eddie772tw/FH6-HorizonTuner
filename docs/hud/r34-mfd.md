@@ -64,7 +64,7 @@ Ver.II 常被泛稱為擴充「卡匣」，產品清單描述的是電路板、�
 
 ## 雙 LCD 可用性與共用控制
 
-兩個 LCD 都只顯示**單行**，馬力與扭力同時並列，沒有輪播。實體窗一致並稍加寬／減低，仍在主錶下半空白區內；所有數字、G 檔位標籤、單位、計時及 N/A 統一為 12px semibold monospace，固定相同的 0.8 水平字形比例，不按單一欄位縮字。整條可見文字（包括標籤與單位）共同置中，保留左右邊界；隱藏檔位或速度時，剩餘整行重新置中。單位與欄位之間的空白明確保留。
+兩個 LCD 都只顯示**單行**，馬力與扭力同時並列，沒有輪播。兩個實體窗一致，外框改為較窄、較短並上移的真正內嵌形狀。以 105 單位的實際圓形錶面為準，外框各軸擴張半個描邊寬度後，四角最遠約 100.71，保留約 4.29 單位間隙，亦小於預留安全半徑 101；這是 HUD 繪圖幾何，並非原廠尺寸。外框沒有陰影，不以遮罩或裁切藏起突出部分；低端 0／10／300 字形與描邊也保留間隔。所有數字、G 檔位標籤、單位、計時及 N/A 統一為 12px semibold monospace，固定相同的 0.8 水平字形比例，不按單一欄位縮字。整條可見文字（包括標籤與單位）共同置中，保留左右邊界；隱藏檔位或速度時，剩餘整行重新置中。單位與欄位之間的空白明確保留，採全行一致的較緊詞間距，字級與字形比例不因內嵌修改而縮小。
 
 LCD 普通數值保留四位整數（含負號可五字元）；超過此顯示位數，改用明示 `e` 指數且保留正負與單位的科學記號，最多六字元數值，不截尾或限制成假的最大值。此壓縮只負責顯示，不改原始數字、單位轉換或類比比例；正常車速／輸出不受影響。極端長秒數先在毫秒換算安全範圍外攔下，再顯示科學記號加 `s`，避免 Infinity／NaN 計時字串；一般長圈時仍保留分／秒／毫秒格式。
 
@@ -103,7 +103,7 @@ Recorder 優先取 `data.sourceTelemetry` 的原始唯讀封包；否則接受�
 - `cargo test --locked --manifest-path backend-rust/Cargo.toml --test config_contract`：頁面與新增溫度單位的 POST／disk／restart／relay
 - `pnpm -C frontend run test`、Windows 及 LAN 前端 build、`git diff --check`：aggregate gates
 - `hud_overlay/r34_mfd/tests/visual/fixture.html`：人工操作真實 iframe，僅使用合成封包
-- `PLAYWRIGHT_CHANNEL=chrome PLAYWRIGHT_MODULE_PATH=/path/to/playwright OUTPUT_DIR=/tmp/r34-preview node hud_overlay/r34_mfd/tests/visual/render.mjs`：720p／1080p 透明全畫面、五頁 DPR1／DPR2 MFD 裁切、雙主錶 DPR2 原生裁切（計時、HP＋扭力、rollover0、mph＋檔位、缺值）、負壓、C/F、部分缺胎溫、stale、鏡像偏心掃動、低段字形間隙、LCD 單行共同字型／整行左右平衡／各欄位邊界／互不重疊／四位帶符號最大數字／明示科學記號、透明間隙像素、1440p／ultrawide／矮視窗及 compact
+- `PLAYWRIGHT_CHANNEL=chrome PLAYWRIGHT_MODULE_PATH=/path/to/playwright OUTPUT_DIR=/tmp/r34-preview node hud_overlay/r34_mfd/tests/visual/render.mjs`：720p／1080p 透明全畫面、五頁 DPR1／DPR2 MFD 裁切、雙主錶 DPR2 原生裁切（計時、HP＋扭力、rollover0、mph＋檔位、缺值）、負壓、C/F、部分缺胎溫、stale、鏡像偏心掃動、低段字形間隙、LCD 外框四角及描邊對實際圓形錶面的安全內嵌／低端字形描邊間隔／無陰影或裁切替代／單行共同字型／整行左右平衡／各欄位邊界／互不重疊／四位帶符號最大數字／明示科學記號、透明間隙像素、1440p／ultrawide／矮視窗及 compact
 - 同上執行 `launcher.mjs`：真正 Launcher／Coordinator 與持續遙測下 C/F config 更新、類比 kmh 不變且數位 mph 跟隨、原始缺值與 stale replay
 - 同上執行 `frontend/src/features/overlay_control/r34_mfd/tests/browser/verify.cjs`：真實五頁選單、day/night、cluster、單位繼承／獨立 C/F 保存重載、reset、六主題、窄版繁中／日文
 
