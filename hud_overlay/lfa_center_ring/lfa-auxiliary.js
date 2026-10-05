@@ -32,6 +32,8 @@
     function normalize(data) {
         return {
             tireF: averageTireF(data.tire_temp_f), boostPsi: boostPsi(data),
+            tireWheelsF: Array.isArray(data.tire_temp_f) && data.tire_temp_f.length === 4
+                ? [0, 1, 2, 3].map(i => finite(data.tire_temp_f[i])) : [null, null, null, null],
             throttle: pedal(data, 'throttle', 'AccelInput'), brake: pedal(data, 'brake', 'BrakeInput'),
             temperatureUnit: ['C', 'F'].includes(data.displayUnits?.temperature) ? data.displayUnits.temperature : null,
             boostUnit: unit(data.displayUnits?.boostPressure) || unit(data.boost_unit),
@@ -58,6 +60,8 @@
         const boostUnit = a.boostUnit || settings.boostUnit || (metric ? 'bar' : 'psi');
         const tireC = a.tireF === null ? null : (a.tireF - 32) * 5 / 9;
         const tireValue = temperatureUnit === 'F' ? a.tireF : tireC;
+        const tireWheels = (a.tireWheelsF || [null, null, null, null]).map(value => value === null ? null : temperatureUnit === 'F' ? value : (value - 32) * 5 / 9);
+        const tireWheelTexts = tireWheels.map(value => value === null ? '--' : compact(Math.round(value), 0));
         const temperatureTicks = [20, 60, 100, 140].map(v => String(temperatureUnit === 'F' ? v * 9 / 5 + 32 : v));
         const boostBar = a.boostPsi === null ? null : a.boostPsi / PSI_PER_BAR;
         const boostValue = a.boostPsi === null ? null : fromPsi(a.boostPsi, boostUnit);
@@ -67,6 +71,7 @@
         const boostText = a.boostPsi < 0 && roundedBoost === '0' ? '-' + (0).toFixed(boostDigits) : roundedBoost;
         return {
             tireValue, tireText: compact(tireValue, 1), temperatureUnit: '°' + temperatureUnit,
+            tireWheels, tireWheelTexts, tireWheelsText: tireWheelTexts.join('/') + ' °' + temperatureUnit,
             temperatureTicks, tireFraction: tireC === null ? null : clamp((tireC - 20) / 120),
             tireBand: tireC === null ? 'unavailable' : tireC < 75 ? 'cold' : tireC > 105 ? 'hot' : 'normal',
             boostValue, boostText, boostUnit: boostUnit === 'kpa' ? 'kPa' : boostUnit,

@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 const path = resolve(process.cwd(), '../hud_overlay/lfa_center_ring');
 function load() {
   const scope: any = {};
-  for (const file of ['lfa-auxiliary.js', 'lfa-session.js', 'lfa-expansion.js', 'lfa-model.js']) runInNewContext(readFileSync(resolve(path, file), 'utf8'), scope);
+  for (const file of ['lfa-auxiliary.js', 'lfa-session.js', 'lfa-expansion.js', 'lfa-panel-layout.js', 'lfa-model.js']) runInNewContext(readFileSync(resolve(path, file), 'utf8'), scope);
   return scope.LfaModel;
 }
 const sample = { timestamp_ms: 100, rpm: 7200, maxRpm: 9000, redlineRpm: 8000, speed_kmh: 180, speed_mph: 111.85, gear: 4, throttle: .8, brake: 0 };
@@ -139,6 +139,7 @@ describe('LFA lifecycle through registered HUDCore hooks', () => {
     const listeners = new Map<string, Set<Function>>();
     const pending = new Map<number, Function>();
     const renders: any[] = [];
+    const mediaCalls: any[] = []; let mediaView: any = { available: false }, mediaChanged: Function = () => {};
     const window: any = {
       performance: { now: () => now },
       requestAnimationFrame: (fn: Function) => { pending.set(++nextRaf, fn); return nextRaf; },
@@ -146,12 +147,17 @@ describe('LFA lifecycle through registered HUDCore hooks', () => {
       addEventListener: (name: string, fn: Function) => { if (!listeners.has(name)) listeners.set(name, new Set()); listeners.get(name)!.add(fn); },
       removeEventListener: (name: string, fn: Function) => listeners.get(name)?.delete(fn),
       HUDCore: { registerStyle: (_id: string, def: any) => { hooks = def; }, init: () => {} },
+      LfaMedia: { create: (options: any) => { mediaChanged = options.onChange; return {
+        setEnabled: (enabled: boolean) => mediaCalls.push(['enabled', enabled]), view: () => mediaView,
+        accept: (snapshot: any) => { mediaCalls.push(['snapshot', snapshot]); mediaView = snapshot; mediaChanged(); },
+        destroy: () => mediaCalls.push(['destroy']),
+      }; } },
       LfaRenderer: { create: () => ({ palette: () => {}, resize: () => {}, visibility: () => {}, render: (view: any, check: any, settings: any, motion: any) => renders.push({ view, check, settings, motion: { ...motion } }) }) },
     };
     const scope = { window, document: {} };
-    for (const file of ['lfa-auxiliary.js', 'lfa-session.js', 'lfa-expansion.js', 'lfa-model.js']) runInNewContext(readFileSync(resolve(path, file), 'utf8'), scope);
+    for (const file of ['lfa-auxiliary.js', 'lfa-session.js', 'lfa-expansion.js', 'lfa-panel-layout.js', 'lfa-model.js']) runInNewContext(readFileSync(resolve(path, file), 'utf8'), scope);
     runInNewContext(readFileSync(resolve(path, 'lfa-controller.js'), 'utf8'), scope);
-    return { hooks, renders, pending, listeners, tick: (time: number) => { now = time; const jobs = [...pending.values()]; pending.clear(); jobs.forEach((fn) => fn(time)); }, event: (type: string, event: any = {}) => listeners.get(type)?.forEach((fn) => fn(event)) };
+    return { hooks, renders, pending, listeners, mediaCalls, tick: (time: number) => { now = time; const jobs = [...pending.values()]; pending.clear(); jobs.forEach((fn) => fn(time)); }, event: (type: string, event: any = {}) => listeners.get(type)?.forEach((fn) => fn(event)) };
   }
   it('shows a labelled display check without fabricating telemetry and resumes fresh live data', () => {
     const c = controller(); c.hooks.onAnimate(); c.tick(200);
@@ -175,6 +181,21 @@ describe('LFA lifecycle through registered HUDCore hooks', () => {
     c.hooks.onScale(); expect(c.renders.at(-1).motion.progress).toBe(closing.progress);
     c.hooks.onInit({ lfaManualExpand: true }); expect(c.renders.at(-1).motion.progress).toBe(closing.progress);
     c.tick(1000); expect(c.renders.at(-1).motion).toMatchObject({ progress: 1, settled: true });
+  });
+  it('gates the media service and gives a confirmed race content priority over live media', () => {
+    const c = controller();
+    expect(c.mediaCalls.at(-1)).toEqual(['enabled', false]);
+    c.hooks.onInit({ lfaAutoExpand: true }); expect(c.mediaCalls.at(-1)).toEqual(['enabled', true]);
+    c.hooks.onMedia({ available: true, title: 'Track', status: 'paused' });
+    expect(c.renders.at(-1).view.expandedPage).toBe('media'); expect(c.renders.at(-1).motion.target).toBe(true);
+    c.hooks.onFrame({ ...sample, CurrentLap: 1 }, {}); c.tick(500);
+    c.hooks.onFrame({ ...sample, timestamp_ms: 101, CurrentLap: 1.5 }, {}); c.tick(510);
+    expect(c.renders.at(-1).view.expandedPage).toBe('race');
+    c.tick(4000); expect(c.renders.at(-1).view.expandedPage).toBe('media');
+    c.hooks.onMedia({ available: false }); expect(c.renders.at(-1).view.expandedPage).toBe('telemetry'); expect(c.renders.at(-1).motion.target).toBe(false);
+    c.hooks.onInit({ lfaManualExpand: true }); expect(c.renders.at(-1).motion.target).toBe(true);
+    c.hooks.onElementsChange({ showGauge: false }); expect(c.mediaCalls.at(-1)).toEqual(['enabled', false]);
+    c.event('pagehide'); expect(c.mediaCalls.at(-1)).toEqual(['destroy']);
   });
   it.each(['pagehide', 'hud:destroy'])('releases the render loop and listeners on %s', (event) => {
     const c = controller(); c.hooks.onAnimate();

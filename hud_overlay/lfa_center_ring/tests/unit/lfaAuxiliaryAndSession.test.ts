@@ -4,7 +4,7 @@ import { runInNewContext } from 'node:vm';
 import { describe, expect, it } from 'vitest';
 const directory = resolve(process.cwd(), '../hud_overlay/lfa_center_ring');
 const scope: any = {};
-for (const file of ['lfa-auxiliary.js', 'lfa-session.js', 'lfa-expansion.js', 'lfa-model.js']) runInNewContext(readFileSync(resolve(directory, file), 'utf8'), scope);
+for (const file of ['lfa-auxiliary.js', 'lfa-session.js', 'lfa-expansion.js', 'lfa-panel-layout.js', 'lfa-model.js']) runInNewContext(readFileSync(resolve(directory, file), 'utf8'), scope);
 const M = scope.LfaModel, A = scope.LfaAuxiliary, R = scope.LfaSession;
 const base = { timestamp_ms: 100, rpm: 7200, maxRpm: 9000, redlineRpm: 8000, speed_kmh: 180, speed_mph: 111.85, gear: 4, throttle: .8, brake: .2, tire_temp_f: [176, 194, 212, 230], boost_psi: 14.5038 };
 function view(patch: any = {}, config: any = {}) { const s = M.newState(); s.settings = M.config(config); M.ingest(s, { ...base, ...patch }, {}, 0); return M.view(s, 1); }
@@ -21,6 +21,21 @@ describe('LFA measured auxiliary gauges', () => {
     for (const values of [undefined, [], [176, 194, 212], [176, 194, 212, 230, 240], [176, null, 212, 230], [176, '194', 212, 230], [176, NaN, 212, 230], [176, Infinity, 212, 230], sparse]) expect(view({ tire_temp_f: values }).auxiliary.tireText).toBe('N/A');
     expect(view({ tire_temp_f: undefined, TireTemp: [0, 0, 0, 0] }).auxiliary.tireText).toBe('N/A');
     expect(A.averageTireF([0, 0, 0, 0])).toBe(0);
+  });
+  it('keeps FL/FR/RL/RR slots and one unit while leaving the normal average contract unchanged', () => {
+    expect(view().auxiliary).toMatchObject({ tireText: '95', tireWheels: [80,90,100,110], tireWheelsText: '80/90/100/110 °C' });
+    expect(view({}, { effectiveUnits: { temperature: 'F' } }).auxiliary.tireWheelsText).toBe('176/194/212/230 °F');
+    const redistributed = view({ tire_temp_f: [230,212,194,176] }).auxiliary;
+    expect(redistributed.tireText).toBe(view().auxiliary.tireText); expect(redistributed.tireWheelsText).toBe('110/100/90/80 °C');
+    expect(view({ tire_temp_f: [176,null,212,230] }).auxiliary).toMatchObject({ tireText: 'N/A', tireWheelTexts: ['80','--','100','110'], tireWheelsText: '80/--/100/110 °C' });
+    expect(view({ tire_temp_f: [NaN,32,'50',Infinity] }).auxiliary.tireWheelsText).toBe('--/0/--/-- °C');
+    for (const input of [undefined, [32,32,32], [32,32,32,32,32]]) expect(view({ tire_temp_f: input }).auxiliary.tireWheelsText).toBe('--/--/--/-- °C');
+  });
+  it('uses readable integer wheel temperatures with unchanged display capacity and honest missing slots', () => {
+    const config = { effectiveUnits: { temperature: 'F' } };
+    expect(view({ tire_temp_f: [9999,9999,9999,9999] }, config).auxiliary.tireWheelsText).toBe('9999/9999/9999/9999 °F');
+    expect(view({ tire_temp_f: [-999,-999,-999,-999] }, config).auxiliary.tireWheelsText).toBe('-999/-999/-999/-999 °F');
+    expect(view({ tire_temp_f: [-1000,10000,null,72.4] }, config).auxiliary.tireWheelsText).toBe('LO/HI/--/72 °F');
   });
   it('honors explicit temperature units and documents metric fallback without double conversion', () => {
     expect(view({}, { effectiveUnits: { temperature: 'F' } }).auxiliary).toMatchObject({ tireValue: 203, tireText: '203', temperatureUnit: '°F', temperatureTicks: ['68', '140', '212', '284'] });
@@ -176,9 +191,11 @@ describe('LFA reported laps and rank', () => {
 describe('LFA auxiliary and session DOM projection', () => {
   it('renders signed/unit values, pedal percentages, lap/rank and clears all active fills when stale', () => {
     const nodes: Record<string, any> = {};
-    const element = (id: string) => nodes[id] ||= { textContent: '', dataset: {}, style: { setProperty: () => {} }, attrs: {}, setAttribute(name: string, value: string) { this.attrs[name] = value; }, getContext: () => null, getTotalLength: () => 100, getPointAtLength: (length: number) => ({ x: length, y: length }) };
-    const window: any = { LfaSession: R, getComputedStyle: () => ({ getPropertyValue: () => '#edf7fa' }) };
+    const element = (id: string) => nodes[id] ||= { textContent: '', dataset: {}, style: { setProperty: () => {} }, attrs: {}, setAttribute(name: string, value: string) { this.attrs[name] = value; }, getAttribute(name: string) { return this.attrs[name]; }, getBBox: () => ({x:0,y:150,width:20,height:12}), getContext: () => null, getTotalLength: () => 100, getPointAtLength: (length: number) => ({ x: length, y: length }) };
+    const window: any = { LfaSession: R, LfaPanelLayout: scope.LfaPanelLayout, LfaMediaRenderer: { create: () => ({ render() {}, destroy() {} }) }, getComputedStyle: () => ({ getPropertyValue: () => '#edf7fa' }) };
     runInNewContext(readFileSync(resolve(directory, 'lfa-renderer.js'), 'utf8'), { window });
+    element('lfaExpandedRingBoundary').attrs = { cx: '376', cy: '185', r: '180' };
+    for (const name of ['Throttle','Brake']) element('lfaExpanded' + name + 'Track').attrs = { y: '274', height: '6' };
     const renderer = window.LfaRenderer.create({ getElementById: element }, M), s = session(); renderer.palette(s.state.settings);
     renderer.render(s.feed({ Boost: -7.2519 }), null, s.state.settings);
     expect(nodes.lfaTire.textContent).toBe('95°C'); expect(nodes.lfaBoost.textContent).toBe('-0.5'); expect(nodes.lfaBoostUnit.textContent).toBe('bar');
@@ -189,6 +206,8 @@ describe('LFA auxiliary and session DOM projection', () => {
     expect(nodes.lfaContainer.dataset).toMatchObject({ expanded: 'true', expansionSettled: 'true', expansionProgress: '1' });
     expect(nodes.lfaExpandedCurrent.textContent).toBe('0:34.21'); expect(nodes.lfaExpandedLast.textContent).toBe('1:31.00'); expect(nodes.lfaExpandedBest.textContent).toBe('1:28.00');
     expect(nodes.lfaExpandedBoost.textContent).toBe('-0.5 bar'); expect(nodes.lfaExpandedBoostLabel.textContent).toBe('VAC'); expect(nodes.lfaCollapsedReadings.attrs['aria-hidden']).toBe('true');
+    renderer.render(s.feed({ tire_temp_f: [230,212,194,176] }), null, s.state.settings, { progress: 1, target: true, settled: true });
+    expect(nodes.lfaTire.textContent).toBe('95°C'); expect(nodes.lfaExpandedTire.textContent).toBe('110/100/90/80 °C');
     for (const [Boost, label, negative, fraction] of [[0, '', 'false', 0], [7.2519, '', 'false', .375], [null, '', 'false', 0], [-7.2519, 'VAC', 'true', .5]]) {
       renderer.render(s.feed({ Boost }), null, s.state.settings);
       expect(nodes.lfaBoostMode.textContent).toBe(label); expect(nodes.lfaBoostFill.dataset.negative).toBe(negative);

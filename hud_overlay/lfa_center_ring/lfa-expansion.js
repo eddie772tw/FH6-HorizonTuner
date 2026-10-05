@@ -39,6 +39,11 @@
         const racing = confirmed(state, nowMs);
         return settings?.lfaManualExpand === true || (settings?.lfaAutoExpand === true && racing);
     }
+    function layoutPolicy(settings, racing, mediaAvailable) {
+        const race = racing === true, media = mediaAvailable === true;
+        return { expanded: settings?.lfaManualExpand === true || (settings?.lfaAutoExpand === true && (race || media)),
+            page: race ? 'race' : media ? 'media' : 'telemetry' };
+    }
     function order(previous, next) {
         if (previous === next) return 0;
         // A genuine uint32 rollover remains fresh; delayed pre-wrap packets do not.
@@ -181,5 +186,5 @@
         }
         return motion;
     }
-    root.LfaExpansion = { ENTRY_MS, TIMING_GRACE_MS, STALE_MS, createRace, ingestRace, confirmed, target, createMotion, advanceMotion };
+    root.LfaExpansion = { ENTRY_MS, TIMING_GRACE_MS, STALE_MS, createRace, ingestRace, confirmed, target, layoutPolicy, createMotion, advanceMotion };
 })(typeof window === 'undefined' ? globalThis : window);

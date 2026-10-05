@@ -40,9 +40,15 @@ export async function verifyExpansion({ browser, origin, out, summary }) {
         try {
           const surface = asset.querySelector('#expandedSurface'), ring = asset.querySelector('#expandedRingCutout');
           const circle = { x: ring.cx.baseVal.value, y: ring.cy.baseVal.value, r: ring.r.baseVal.value };
-          const texts = [...document.querySelectorAll('#lfaExpandedPane text')].filter(node => node.textContent).map(node => {
+          const texts = [...document.querySelectorAll('#lfaExpandedPane text')].filter(node => node.textContent && node.getClientRects().length && getComputedStyle(node).visibility !== 'hidden').map(node => {
             const b = node.getBBox(); return { text: node.textContent, bounds: { x: b.x, y: b.y, width: b.width, height: b.height } };
           });
+          for (const id of ['lfaExpandedThrottleTrack','lfaExpandedBrakeTrack']) {
+            const b = document.getElementById(id).getBBox(); texts.push({ text: id, bounds: { x: b.x, y: b.y, width: b.width, height: b.height } });
+          }
+          const anchors = Object.fromEntries(['Current','Last','Best','Tire','Boost','Throttle','Brake'].map(name => [name, Number(document.getElementById('lfaExpanded'+name).getAttribute('x'))]));
+          const boundary = document.getElementById('lfaExpandedRingBoundary');
+          const sameBoundary = boundary.cx.baseVal.value === circle.x && boundary.cy.baseVal.value === circle.y && boundary.r.baseVal.value === circle.r;
           const overlaps = [], outsideSurface = [], ringIntersections = [];
           const progress = Number(document.getElementById('lfaContainer').dataset.expansionProgress);
           for (let i = 0; i < texts.length; i++) {
@@ -61,12 +67,14 @@ export async function verifyExpansion({ browser, origin, out, summary }) {
             const nearest = { x: Math.max(left, Math.min(right, circle.x)), y: Math.max(top, Math.min(bottom, circle.y)) };
             if (Math.hypot(nearest.x - circle.x, nearest.y - circle.y) <= circle.r) ringIntersections.push(text);
           }
-          return { progress, checkedTextCount: texts.length, clearanceDesignUnits: 2, texts, overlaps, outsideSurface, ringIntersections };
+          return { progress, checkedTextCount: texts.length-2, checkedElementCount: texts.length, clearanceDesignUnits: 2, sameBoundary, anchors, texts, overlaps, outsideSurface, ringIntersections };
         } finally { asset.remove(); }
       }, surfaceSource);
       assert.deepEqual(report.overlaps, [], 'Expanded labels and readings must not overlap');
       assert.deepEqual(report.outsideSurface, [], 'Every expanded text bbox must stay inside the actual curved fascia with clearance');
       assert.deepEqual(report.ringIntersections, [], 'Expanded text must stay outside the settled shifted-ring cutout');
+      assert.equal(report.sameBoundary, true, 'Anchor geometry uses the actual exported ring cutout');
+      assert.ok(report.anchors.Current > report.anchors.Best && report.anchors.Brake > report.anchors.Throttle && report.anchors.Throttle > report.anchors.Best, 'Whole-glyph right anchors follow the ring arc');
       // During motion the moving ring may intentionally cover the panel; it
       // does not excuse text leaking outside the visible fascia's left outline.
       return report;
@@ -92,6 +100,34 @@ export async function verifyExpansion({ browser, origin, out, summary }) {
       await page.screenshot({ path: path.join(out, `expanded-${width}x${height}-dpr${dpr}${displayScale === 1 ? '' : '-compact'}.png`) });
       await feed({ CurrentLap: 5999.99, LastLap: 5999.99, BestLap: 5999.99, boost_psi: -998.99 * 14.5038 });
       await capture('maximum-width');
+      await config({ effectiveUnits: { temperature: 'F', boostPressure: 'bar' } });
+      await feed({ tire_temp_f: [176,194,212,230] });
+      const normalAverage = await frame.locator('#lfaTire').textContent();
+      await feed({ tire_temp_f: [230,212,194,176] });
+      assert.equal(await frame.locator('#lfaTire').textContent(), normalAverage);
+      assert.equal(await frame.locator('#lfaExpandedTire').textContent(), '230/212/194/176 °F'); await capture('four-tires-same-average');
+      for (const [tires, expected, name] of [
+        [[9999,9999,9999,9999],'9999/9999/9999/9999 °F','four-tires-maximum'],
+        [[-999,-999,-999,-999],'-999/-999/-999/-999 °F','four-tires-negative'],
+        [[176,null,212,230],'176/--/212/230 °F','four-tires-partial'],
+      ]) {
+        await feed({ tire_temp_f: tires }); assert.equal(await frame.locator('#lfaExpandedTire').textContent(), expected); await capture(name);
+      }
+      let trackWidths;
+      for (const [throttle, brake, name] of [[0,0,'pedals-zero'],[.801,.801,'pedals-fractional'],[.804,.804,'pedals-same-rounded-percent'],[1,1,'pedals-full'],[2,-1,'pedals-clamped'],[null,null,'pedals-unavailable']]) {
+        await feed({ throttle, brake });
+        const bars = await frame.evaluate(() => ['Throttle','Brake'].map(name => {
+          const track=document.getElementById('lfaExpanded'+name+'Track'), fill=document.getElementById('lfaExpanded'+name+'Fill'), number=document.getElementById('lfaExpanded'+name).getBBox();
+          return { width:track.width.baseVal.value, fill:fill.width.baseVal.value, unavailable:fill.style.visibility==='hidden', valueWidth:number.width };
+        }));
+        for (let i=0;i<2;i++) {
+          const value=[throttle,brake][i]; assert.ok(bars[i].width > bars[i].valueWidth);
+          assert.ok(Math.abs(bars[i].fill/bars[i].width-(value===null?0:Math.max(0,Math.min(1,value))))<1e-6);
+          assert.equal(bars[i].unavailable,value===null);
+          if (trackWidths) assert.ok(Math.abs(bars[i].width-trackWidths[i])<.01, 'Percentage reservation keeps the full-scale track fixed');
+        }
+        trackWidths=bars.map(bar=>bar.width); await capture(name);
+      }
       for (const unit of ['bar', 'psi', 'kpa']) {
         await config({ effectiveUnits: { boostPressure: unit, temperature: 'F' } });
         for (const value of [-.00001, -.5, -998.9, 9998.9, -1e12, 1e12, null]) {

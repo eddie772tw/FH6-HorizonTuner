@@ -3,6 +3,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const assert = require('node:assert/strict');
 const { chromium } = require(process.env.PLAYWRIGHT_MODULE_PATH || 'playwright');
+const { verifyMedia } = require('./media.cjs');
 
 async function main() {
   const repo = path.resolve(__dirname, '../../../..');
@@ -21,6 +22,11 @@ async function main() {
   const types = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.svg': 'image/svg+xml', '.png': 'image/png', '.otf': 'font/otf', '.ttf': 'font/ttf' };
   const server = http.createServer((req, res) => {
     const u = new URL(req.url, 'http://localhost');
+    if (u.pathname === '/api/runtime' || u.pathname === '/api/overlay/system_media') {
+      res.setHeader('Content-Type', 'application/json');
+      return res.end(JSON.stringify(u.pathname === '/api/runtime' ? { platform: 'windows', capabilities: { systemMedia: true } }
+        : { success: true, has_media: false, state: 'unavailable', source: 'winrt' }));
+    }
     if (u.pathname === '/api/hud/styles') {
       res.setHeader('Content-Type', 'application/json');
       return res.end(JSON.stringify({ styles: fs.readdirSync(root).filter(n => fs.existsSync(path.join(root,n,'index.html'))).map(id => ({ id, source: 'builtin', urlPrefix: '/hud' })) }));
@@ -115,6 +121,7 @@ async function main() {
     await frame.evaluate(()=>window.postMessage({type:'hud:destroy'},'*')); await page.waitForTimeout(500);
     samples.push({name:'destroy',remainingBodyChildren:await frame.evaluate(()=>document.body.childElementCount)});
     assert.equal(samples.at(-1).remainingBodyChildren,0);assert.deepEqual(errors,[]);assert.deepEqual(missing,[]);
+    await verifyMedia({ browser, origin: 'http://127.0.0.1:' + server.address().port, config, raw: parser.samples[0].parsedJson, out });
   } catch (error) { errors.push(String(error)); throw error; } finally {
     fs.writeFileSync(path.join(out,'host-audit.json'),JSON.stringify({style,parserFixtureProvenance:parser.provenance,errors,missing,samples},null,2));
     await browser.close();await new Promise(r=>server.close(r));

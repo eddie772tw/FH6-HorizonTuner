@@ -7,12 +7,18 @@
     const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)');
     let motion = expansion.createMotion(false), expansionConfigured = false;
     let raf = null, destroyed = false, checkStart = null;
+    const media = window.LfaMedia.create({ fetch: window.fetch?.bind(window), now: () => window.performance.now(),
+        setTimeout: window.setTimeout?.bind(window), clearTimeout: window.clearTimeout?.bind(window), AbortController: window.AbortController,
+        onChange: () => paint(window.performance.now()) });
     function paint(now) {
         if (destroyed) return;
         let check = checkStart === null ? null : Math.min(1, (now - checkStart) / 750);
         if (check === 1) { check = null; checkStart = null; }
         const view = model.view(state, now);
-        expansion.advanceMotion(motion, view.expansionTarget, now, reducedMotion?.matches === true);
+        view.media = media.view(now);
+        const policy = expansion.layoutPolicy(state.settings, view.confirmedRace, view.media.available);
+        view.expandedPage = policy.page;
+        expansion.advanceMotion(motion, policy.expanded, now, reducedMotion?.matches === true);
         if (state.settings.showGauge) renderer.render(view, check, state.settings, motion);
     }
     function loop(now) {
@@ -23,6 +29,7 @@
     function configure(payload) {
         if (destroyed) return;
         state.settings = model.config(payload, state.settings);
+        media.setEnabled(state.settings.showGauge && (state.settings.lfaManualExpand || state.settings.lfaAutoExpand));
         if (!expansionConfigured && ['lfaManualExpand', 'lfaAutoExpand'].some(key => Object.prototype.hasOwnProperty.call(payload, key))) {
             // First persisted expansion config is the starting layout, not a user-toggle animation.
             motion = expansion.createMotion(model.view(state, window.performance.now()).expansionTarget);
@@ -46,6 +53,7 @@
         window.removeEventListener('pagehide', destroy);
         window.removeEventListener('message', lifecycle);
         reducedMotion?.removeEventListener?.('change', motionPreferenceChanged);
+        media.destroy(); renderer.destroy?.();
         state.latest = null;
     }
     function lifecycle(event) {
@@ -62,6 +70,7 @@
             if (model.view(state, window.performance.now()).live) checkStart = null;
         },
         onAnimate: () => { if (!destroyed) checkStart = window.performance.now(); },
+        onMedia: snapshot => { if (!destroyed) media.accept(snapshot); },
         onScale: resize,
     });
     window.addEventListener('message', lifecycle);

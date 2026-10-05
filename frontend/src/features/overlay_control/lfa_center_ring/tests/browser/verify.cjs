@@ -29,6 +29,8 @@ async function main() {
     configureServer(server) {
       server.middlewares.use((req, res, next) => {
         const pathname = new URL(req.url, 'http://localhost').pathname;
+        if (pathname === '/api/runtime') return json(res, { platform: 'windows', capabilities: { systemMedia: true } });
+        if (pathname === '/api/overlay/system_media') return json(res, { success: true, has_media: false, state: 'unavailable', source: 'winrt' });
         if (pathname === '/api/overlay/config') {
           if (req.method !== 'POST') return json(res, readConfig());
           let body = '';
@@ -91,7 +93,7 @@ async function main() {
     });
     const settingsPath = '/src/features/overlay_control/lfa_center_ring/tests/browser/index.html';
     const manual = settings.getByRole('switch', { name: 'Manually Expand LFA Ring', exact: true });
-    const automatic = settings.getByRole('switch', { name: 'Automatically Expand During Races', exact: true });
+    const automatic = settings.getByRole('switch', { name: 'Automatically Expand for Races or Media', exact: true });
     const style = settings.getByRole('combobox', { name: 'Speedometer Settings', exact: true });
     const card = settings.getByRole('group', { name: 'LFA Ring Expansion', exact: true });
     async function openSettings() {

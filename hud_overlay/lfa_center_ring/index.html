@@ -8,25 +8,51 @@
     <link rel="stylesheet" href="lfa.css">
     <link rel="stylesheet" href="lfa-side-gauges.css">
     <link rel="stylesheet" href="lfa-expansion.css">
+    <link rel="stylesheet" href="lfa-media.css">
 </head>
 <body>
     <div class="hud-root-wrapper">
         <section id="lfaContainer" class="hud-gauge-container lfa-cluster" aria-label="Center ring driving telemetry">
-            <svg id="lfaExpandedPane" class="lfa-expanded-pane" viewBox="0 0 560 370" aria-label="Expanded session telemetry" aria-hidden="true" style="display:none">
-                <image href="assets/expanded-pane.png" width="560" height="370"/>
-                <text class="lfa-expanded-heading" x="132" y="70">LAP DATA</text>
+            <svg id="lfaExpandedPane" class="lfa-expanded-pane" viewBox="0 0 560 370" aria-label="Expanded telemetry and media" aria-hidden="true" style="display:none">
+                <defs><circle id="lfaExpandedRingBoundary" cx="376" cy="185" r="180"/></defs>
+                <text id="lfaExpandedPedalCapacity" class="lfa-expanded-pedal" x="188" y="281" visibility="hidden" aria-hidden="true">100%</text>
+                <image id="lfaExpandedFascia" href="assets/expanded-pane.png" width="560" height="370"/>
+                <g id="lfaTelemetryPage">
+                <text id="lfaExpandedHeading" class="lfa-expanded-heading" x="132" y="70">TELEMETRY</text>
                 <text class="lfa-expanded-label" x="56" y="109">CURRENT</text>
                 <text id="lfaExpandedCurrent" class="lfa-expanded-current" x="188" y="110">—:—</text>
                 <text class="lfa-expanded-label" x="45" y="145">LAST</text>
                 <text id="lfaExpandedLast" class="lfa-expanded-time" x="188" y="146">—:—</text>
                 <text class="lfa-expanded-label" x="36" y="181">BEST</text>
                 <text id="lfaExpandedBest" class="lfa-expanded-time" x="188" y="182">—:—</text>
-                <text class="lfa-expanded-label" x="36" y="217">TIRE 4W</text>
-                <text id="lfaExpandedTire" class="lfa-expanded-value" x="188" y="218">N/A</text>
+                <text class="lfa-expanded-label" x="36" y="207">TIRES</text>
+                <text id="lfaExpandedTire" class="lfa-expanded-tires" x="188" y="224" aria-label="Tyre temperatures, front left / front right / rear left / rear right">--/--/--/-- °C</text>
                 <text id="lfaExpandedBoostLabel" class="lfa-expanded-label" x="43" y="253">BOOST</text>
                 <text id="lfaExpandedBoost" class="lfa-expanded-boost" x="188" y="254">N/A</text>
-                <text class="lfa-expanded-label" x="65" y="280">THR</text><text id="lfaExpandedThrottle" class="lfa-expanded-pedal" x="188" y="281">N/A</text>
-                <text class="lfa-expanded-label" x="82" y="308">BRK</text><text id="lfaExpandedBrake" class="lfa-expanded-pedal" x="188" y="309">N/A</text>
+                <text id="lfaExpandedThrottleLabel" class="lfa-expanded-label" x="65" y="280">THR</text><text id="lfaExpandedThrottle" class="lfa-expanded-pedal" x="188" y="281">N/A</text>
+                <rect id="lfaExpandedThrottleTrack" class="lfa-expanded-pedal-track" y="274" height="6"/><rect id="lfaExpandedThrottleFill" class="lfa-expanded-pedal-fill" y="274" height="6"/>
+                <text id="lfaExpandedBrakeLabel" class="lfa-expanded-label" x="82" y="308">BRK</text><text id="lfaExpandedBrake" class="lfa-expanded-pedal" x="188" y="309">N/A</text>
+                <rect id="lfaExpandedBrakeTrack" class="lfa-expanded-pedal-track" y="302" height="6"/><rect id="lfaExpandedBrakeFill" class="lfa-expanded-pedal-fill lfa-expanded-brake-fill" y="302" height="6"/>
+                </g>
+                <g id="lfaMediaPage" aria-label="Read-only system media" style="display:none">
+                    <text class="lfa-expanded-heading" x="132" y="70">MUSIC</text>
+                    <foreignObject x="88" y="86" width="96" height="96">
+                        <div xmlns="http://www.w3.org/1999/xhtml" class="lfa-media-cover">
+                            <img id="lfaMediaArt" alt="" hidden/>
+                            <div id="lfaMediaArtFallback" class="lfa-media-art-fallback" aria-label="Artwork unavailable">
+                                <svg viewBox="0 0 96 96" aria-hidden="true"><path d="M37 65V31L68 24V58M37 39L68 32"/><ellipse cx="29" cy="66" rx="8" ry="5"/><ellipse cx="60" cy="59" rx="8" ry="5"/></svg>
+                            </div>
+                        </div>
+                    </foreignObject>
+                    <foreignObject x="42" y="193" width="146" height="36"><div xmlns="http://www.w3.org/1999/xhtml" id="lfaMediaTitle" class="lfa-media-title"></div></foreignObject>
+                    <foreignObject x="45" y="233" width="143" height="17"><div xmlns="http://www.w3.org/1999/xhtml" id="lfaMediaArtist" class="lfa-media-artist"></div></foreignObject>
+                    <foreignObject x="50" y="252" width="138" height="16"><div xmlns="http://www.w3.org/1999/xhtml" id="lfaMediaAlbum" class="lfa-media-album"></div></foreignObject>
+                    <path class="lfa-media-progress-track" d="M66 278H187"/>
+                    <path id="lfaMediaProgress" class="lfa-media-progress" d="M66 278H187" pathLength="100"/>
+                    <text id="lfaMediaPosition" class="lfa-media-time" x="74" y="297">—:—</text>
+                    <text id="lfaMediaDuration" class="lfa-media-time lfa-media-duration" x="188" y="297">—:—</text>
+                    <text id="lfaMediaStatus" class="lfa-media-status" x="140" y="315">MEDIA</text>
+                </g>
             </svg>
             <img id="lfaCollapsedFascia" class="lfa-side-fascia" src="assets/side-crescents.png" alt="" draggable="false">
             <div id="lfaMovingCenter" class="lfa-moving-center">
@@ -78,7 +104,10 @@
     <script src="lfa-auxiliary.js"></script>
     <script src="lfa-session.js"></script>
     <script src="lfa-expansion.js"></script>
+    <script src="lfa-media.js"></script>
     <script src="lfa-model.js"></script>
+    <script src="lfa-panel-layout.js"></script>
+    <script src="lfa-media-renderer.js"></script>
     <script src="lfa-renderer.js"></script>
     <script src="lfa-controller.js"></script>
 </body>

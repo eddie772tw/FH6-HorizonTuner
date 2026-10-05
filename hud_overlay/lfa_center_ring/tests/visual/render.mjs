@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
 import assert from 'node:assert/strict';
 import { verifyExpansion } from './expansion.mjs';
+import { verifyAuxiliaryIcons } from './auxiliary-icons.mjs';
 const require = createRequire(import.meta.url);
 const { chromium } = require(process.env.PLAYWRIGHT_MODULE_PATH || 'playwright');
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../..');
@@ -15,6 +16,11 @@ const fixture = `<!doctype html><meta charset="UTF-8"><style>*{box-sizing:border
 const server = http.createServer(async (req, res) => {
   try {
     const name = decodeURIComponent(new URL(req.url, 'http://localhost').pathname);
+    if (name === '/api/runtime' || name === '/api/overlay/system_media') {
+      res.setHeader('content-type', 'application/json');
+      res.end(JSON.stringify(name === '/api/runtime' ? { platform: 'windows', capabilities: { systemMedia: true } }
+        : { success: true, has_media: false, state: 'unavailable', source: 'winrt' })); return;
+    }
     if (name === '/fixture') { res.setHeader('content-type', 'text/html'); res.end(fixture); return; }
     const file = path.resolve(root, '.' + name);
     if (!file.startsWith(root + path.sep)) { res.writeHead(403).end(); return; }
@@ -163,6 +169,7 @@ try {
     await context.close();
   }
   await verifyExpansion({ browser, origin, out, summary });
+  await verifyAuxiliaryIcons({ browser, origin, out, summary });
   summary.passed = true;
 } catch (error) {
   summary.error = error.stack || String(error);

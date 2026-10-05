@@ -1,0 +1,16 @@
+/* Read-only media fits the existing curved panel; metadata never becomes markup. */
+.lfa-media-cover { width: 96px; height: 96px; box-sizing: border-box; border: 1px solid var(--lfa-line); background: var(--lfa-surface); }
+.lfa-media-cover img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.lfa-media-cover img[hidden], .lfa-media-art-fallback[hidden] { display: none; }
+.lfa-media-art-fallback { width: 100%; height: 100%; }
+.lfa-media-art-fallback svg { width: 100%; height: 100%; fill: none; stroke: var(--lfa-secondary); stroke-width: 2px; }
+.lfa-media-title, .lfa-media-artist, .lfa-media-album { box-sizing: border-box; margin: 0; width: 100%; color: var(--lfa-primary); font-family: Arial, sans-serif; overflow: hidden; }
+.lfa-media-title { height: 36px; font-size: 14px; line-height: 17px; font-weight: 600; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.lfa-media-artist { font-size: 11px; line-height: 15px; white-space: nowrap; text-overflow: ellipsis; }
+.lfa-media-album { color: var(--lfa-secondary); font-size: 10px; line-height: 14px; white-space: nowrap; text-overflow: ellipsis; }
+.lfa-media-progress-track, .lfa-media-progress { fill: none; stroke-width: 2px; stroke: var(--lfa-track); }
+.lfa-media-progress { stroke: var(--lfa-primary); stroke-dasharray: 0 100; }
+.lfa-media-time { fill: var(--lfa-secondary); font-size: 10px; }
+.lfa-media-duration { text-anchor: end; }
+.lfa-media-status { fill: var(--lfa-secondary); font-size: 9px; text-anchor: middle; letter-spacing: 1px; }
+#lfaMediaStatus[data-stale="true"] { fill: var(--lfa-amber); }

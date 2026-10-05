@@ -19,16 +19,16 @@ export function LfaExpansionSettingsCard({ config, onChange, t }: LfaExpansionSe
         <label htmlFor={`${id}-manual`} className="form-check-label fs-7">{t('Manually Expand LFA Ring')}</label>
       </div>
       <p id={`${id}-manual-help`} className="text-body-secondary fs-8 mt-1 mb-2">
-        {t('Keeps the ring expanded. When off, automatic race detection can still keep it expanded.')}
+        {t('Keeps the ring expanded. When off, automatic race or media detection can still keep it expanded.')}
       </p>
       <div className="form-check form-switch py-1 m-0">
         <input id={`${id}-auto`} type="checkbox" role="switch" className="form-check-input"
           checked={config.lfaAutoExpand === true} aria-describedby={`${id}-auto-help`}
           onChange={event => onChange({ lfaAutoExpand: event.target.checked })} />
-        <label htmlFor={`${id}-auto`} className="form-check-label fs-7">{t('Automatically Expand During Races')}</label>
+        <label htmlFor={`${id}-auto`} className="form-check-label fs-7">{t('Automatically Expand for Races or Media')}</label>
       </div>
       <p id={`${id}-auto-help`} className="text-body-secondary fs-8 mt-1 mb-0">
-        {t('Expands when lap timing is detected and restores after it ends or the signal is lost, unless manual expansion is on.')}
+        {t('Shows lap data during a confirmed race; otherwise shows active system media. Restores when neither is available, unless manual expansion is on.')}
       </p>
     </div>
   );

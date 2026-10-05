@@ -5,16 +5,20 @@
     function create(document, model) {
         const get = (id) => document.getElementById(id);
         const container = get('lfaContainer');
+        const mediaRenderer = root.LfaMediaRenderer.create(document);
         const scaleCanvas = get('lfaScale'), needleCanvas = get('lfaNeedle');
         const dial = scaleCanvas.getContext('2d'), needle = needleCanvas.getContext('2d');
         const nodes = {};
         ['Speed', 'SpeedUnit', 'Gear', 'Status', 'Tire', 'TireFill', 'TireGauge', 'Boost', 'BoostUnit', 'BoostMode', 'BoostFill', 'BoostGauge', 'Throttle', 'ThrottleFill', 'ThrottleGauge', 'Brake', 'BrakeFill', 'BrakeGauge', 'LapTime', 'SelfCheck'].forEach((n) => { nodes[n] = get('lfa' + n); });
         for (const name of ['Tire', 'Boost']) for (let i = 0; i < 4; i++) nodes[name + 'Tick' + i] = get('lfa' + name + 'Tick' + i);
         for (let i = 0; i < 4; i++) nodes['BoostMark' + i] = get('lfaBoostMark' + i);
-        ['MovingCenter', 'CollapsedFascia', 'CollapsedReadings', 'ExpandedPane', 'ExpandedCurrent', 'ExpandedLast', 'ExpandedBest', 'ExpandedTire', 'ExpandedBoost', 'ExpandedBoostLabel', 'ExpandedThrottle', 'ExpandedBrake'].forEach(name => { nodes[name] = get('lfa' + name); });
+        ['MovingCenter', 'CollapsedFascia', 'CollapsedReadings', 'ExpandedPane', 'ExpandedFascia', 'ExpandedHeading', 'ExpandedRingBoundary', 'TelemetryPage', 'MediaPage', 'ExpandedCurrent', 'ExpandedLast', 'ExpandedBest', 'ExpandedTire', 'ExpandedBoost', 'ExpandedBoostLabel', 'ExpandedThrottle', 'ExpandedBrake'].forEach(name => { nodes[name] = get('lfa' + name); });
+        for (const pedal of ['Throttle', 'Brake']) for (const suffix of ['Label', 'Track', 'Fill']) nodes['Expanded' + pedal + suffix] = get('lfaExpanded' + pedal + suffix);
+        nodes.ExpandedPedalCapacity = get('lfaExpandedPedalCapacity');
         let colors, dialKey = '', lastNeedle = '', ratio = 2;
         let boostTicksKey = '';
         let layoutKey = '';
+        let panelMeasureKey = '';
         function setText(name, value) { if (nodes[name].textContent !== value) nodes[name].textContent = value; }
         function palette(settings) {
             const css = root.getComputedStyle(container);
@@ -29,6 +33,7 @@
                 canvas.width = Math.round(W * ratio); canvas.height = Math.round(H * ratio);
             });
             dialKey = ''; lastNeedle = '';
+            panelMeasureKey = '';
         }
         function prepare(ctx) {
             if (!ctx) return false;
@@ -96,7 +101,8 @@
         }
         function expandedLayout(v, motion) {
             const progress = motion?.progress ?? 0, target = motion?.target === true, settled = motion?.settled !== false;
-            const key = [progress, target, settled].join(':');
+            const page = v.expandedPage || 'telemetry';
+            const key = [progress, target, settled, page].join(':');
             if (key !== layoutKey) {
                 layoutKey = key;
                 // No transform/compositor layer remains on the settled approved collapsed face.
@@ -113,17 +119,47 @@
                 container.dataset.expanded = String(target);
                 container.dataset.expansionSettled = String(settled);
                 container.dataset.expansionProgress = String(progress);
+                container.dataset.expandedPage = page;
+                nodes.TelemetryPage.style.display = page === 'media' ? 'none' : '';
+                nodes.MediaPage.style.display = page === 'media' ? '' : 'none';
+                nodes.ExpandedFascia.setAttribute('href', page === 'media' ? 'assets/media-pane.png' : 'assets/expanded-pane.png');
             }
+            mediaRenderer.render(v.media, progress > 0 && page === 'media');
             if (progress === 0) return;
+            if (page === 'media') return;
+            setText('ExpandedHeading', page === 'race' ? 'LAP DATA' : 'TELEMETRY');
             const a = v.auxiliary;
             setText('ExpandedCurrent', v.lapText);
             setText('ExpandedLast', root.LfaSession.formatLap(v.race.lastLap));
             setText('ExpandedBest', root.LfaSession.formatLap(v.race.bestLap));
-            setText('ExpandedTire', a.tireText === 'N/A' ? 'N/A' : a.tireText + a.temperatureUnit);
+            setText('ExpandedTire', a.tireWheelsText);
             setText('ExpandedBoost', a.boostText === 'N/A' ? 'N/A' : a.boostText + ' ' + a.boostUnit);
             setText('ExpandedBoostLabel', a.boostNegative ? 'VAC' : 'BOOST');
             nodes.ExpandedBoost.dataset.negative = nodes.ExpandedBoostLabel.dataset.negative = String(a.boostNegative);
             setText('ExpandedThrottle', a.throttleText); setText('ExpandedBrake', a.brakeText);
+            positionPanelValues(a);
+        }
+        function positionPanelValues(auxiliary) {
+            const values = ['ExpandedCurrent', 'ExpandedLast', 'ExpandedBest', 'ExpandedTire', 'ExpandedBoost', 'ExpandedThrottle', 'ExpandedBrake'];
+            const key = values.map(name => nodes[name].textContent).join('|') + ':' + auxiliary.throttle + ':' + auxiliary.brake;
+            if (key === panelMeasureKey) return;
+            panelMeasureKey = key;
+            const ring = nodes.ExpandedRingBoundary;
+            const circle = { x: Number(ring.getAttribute('cx')), y: Number(ring.getAttribute('cy')), radius: Number(ring.getAttribute('r')) };
+            const percentCapacity = nodes.ExpandedPedalCapacity.getBBox().width;
+            for (const name of values) {
+                const bounds = nodes[name].getBBox();
+                nodes[name].setAttribute('x', root.LfaPanelLayout.rightEdge(circle, bounds.y, bounds.y + bounds.height));
+            }
+            for (const [name, value] of [['Throttle', auxiliary.throttle], ['Brake', auxiliary.brake]]) {
+                const label = nodes['Expanded' + name + 'Label'].getBBox(), bounds = nodes['Expanded' + name].getBBox();
+                const track = nodes['Expanded' + name + 'Track'], fill = nodes['Expanded' + name + 'Fill'];
+                const reservedBounds = { x: bounds.x, y: bounds.y, width: Math.max(bounds.width, percentCapacity), height: bounds.height };
+                const geometry = root.LfaPanelLayout.pedalGeometry(circle, label, reservedBounds, Number(track.getAttribute('y')), Number(track.getAttribute('height')), value);
+                track.setAttribute('x', geometry.left); track.setAttribute('width', geometry.width);
+                fill.setAttribute('x', geometry.left); fill.setAttribute('width', geometry.fillWidth);
+                fill.style.visibility = geometry.available ? '' : 'hidden';
+            }
         }
         function render(v, check, settings, motion) {
             drawScale(v); drawNeedle(v, check, settings);
@@ -152,7 +188,7 @@
             container.dataset.state = v.shift ? 'warning' : v.live ? 'live' : 'offline';
         }
         function visibility(show) { container.style.display = show ? 'block' : 'none'; }
-        return { palette, resize, render, visibility };
+        return { palette, resize, render, visibility, destroy: mediaRenderer.destroy };
     }
     root.LfaRenderer = { create };
 })(window);

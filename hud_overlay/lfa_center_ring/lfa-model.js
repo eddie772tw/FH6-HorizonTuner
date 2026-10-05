@@ -103,8 +103,9 @@
         const source = live ? f : frame({}, {}, state.settings);
         const dial = scale(source.maxRpm);
         const shift = live && source.rpm !== null && source.redline !== null && source.rpm >= source.redline;
+        const confirmedRace = root.LfaExpansion.confirmed(state.expansion, now);
         return { ...source, status, live, shift, dial,
-            expansionTarget: root.LfaExpansion.target(state.expansion, state.settings, now),
+            confirmedRace, expansionTarget: root.LfaExpansion.layoutPolicy(state.settings, confirmedRace, false).expanded,
             needle: live && source.rpm !== null ? angle(source.rpm, dial.maximum) : null,
             speedText: source.speed === null ? '—' : String(Math.round(source.speed)),
             rpmText: source.rpm === null ? '—' : Math.round(source.rpm).toLocaleString('en-US'),
