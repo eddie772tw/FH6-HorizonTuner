@@ -106,7 +106,7 @@ export const UpdateSettingsCard: React.FC = () => {
         <div className="settings-row d-flex justify-content-between align-items-center pt-1">
           <div className="d-flex flex-column min-width-0">
             <span className="fs-7 text-body-secondary">
-              {t('Endpoint')}: <code className="fs-7 text-primary">GitHub Releases (Ed25519 Signed)</code>
+              {t('Endpoint')}: <code className="fs-7 text-primary">{t('GitHub Releases (Ed25519 Signed)')}</code>
             </span>
             {availableUpdate && (
               <span className="fs-7 text-warning fw-bold mt-1">

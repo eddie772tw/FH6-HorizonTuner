@@ -1315,4 +1315,8 @@
   "Desktop frontend": "デスクトップフロントエンド",
   "App error": "アプリ エラー",
   "Frontend error": "フロントエンド エラー"
+,
+  "Endpoint": "エンドポイント",
+  "GitHub Releases (Ed25519 Signed)": "GitHub Releases (Ed25519 署名付き)",
+  "P05 / P50 / P95": "P05 / P50 / P95"
 }

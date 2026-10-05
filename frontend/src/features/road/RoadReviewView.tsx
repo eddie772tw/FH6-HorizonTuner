@@ -96,7 +96,7 @@ function SavedObservations({ summary, documents }: { summary: RoadSummary; docum
       <p className="small">{t('Temperatures describe this run. Near-compression is not proof of bottoming. No pressure or tire compound was inferred.')}</p>
       <p className="small">{t('Telemetry gaps')}: {fmt(summary.observations.quality.gapSeconds)} s · {t('End reason')}: {t(summary.recording.endReason)}</p>
       <ul>{summary.observations.laps.map(lap => <li key={lap.lapNumber}>{t('Lap')} {lap.lapNumber}: {fmt(lap.lapTimeSeconds, 3)} s · {t(lap.complete ? 'Complete observed lap' : 'Partial or unconfirmed lap')}</li>)}</ul>
-      {summary.observations.channels && <div className="table-responsive"><table className="table table-sm"><thead><tr><th>{t('Telemetry channel')}</th><th>{t('Mean')}</th><th>P05 / P50 / P95</th><th>{t('Observed driving')} s</th></tr></thead><tbody>
+      {summary.observations.channels && <div className="table-responsive"><table className="table table-sm"><thead><tr><th>{t('Telemetry channel')}</th><th>{t('Mean')}</th><th>{t('P05 / P50 / P95')}</th><th>{t('Observed driving')} s</th></tr></thead><tbody>
         {Object.entries(summary.observations.channels).map(([key, value]) => <tr key={key}><th>{t(key)}</th><td>{fmt(value.mean, 3)}</td><td>{fmt(value.p05, 3)} / {fmt(value.p50, 3)} / {fmt(value.p95, 3)}</td><td>{fmt(value.observedSeconds)}</td></tr>)}
       </tbody></table><p className="small">{t('Raw units: speed m/s, power W, torque Nm, acceleration m/s², angular velocity rad/s, controls in game input units. Gaps do not count toward observed duration.')}</p></div>}
     </details>

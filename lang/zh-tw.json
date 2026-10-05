@@ -1828,4 +1828,8 @@
   "Desktop frontend": "桌面端介面",
   "App error": "應用程式錯誤",
   "Frontend error": "介面錯誤"
+,
+  "Endpoint": "端點",
+  "GitHub Releases (Ed25519 Signed)": "GitHub Releases (Ed25519 簽名)",
+  "P05 / P50 / P95": "P05 / P50 / P95"
 }
