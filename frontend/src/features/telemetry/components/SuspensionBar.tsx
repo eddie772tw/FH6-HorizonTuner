@@ -75,7 +75,13 @@ const SuspensionBar: React.FC<SuspensionBarProps> = React.memo(({ title, isLeft,
   }, []);
 
   useEffect(() => {
-    const primaryColor = '#00f0ff';
+    let primaryColor = '#00f0ff';
+    const updateTheme = () => {
+      primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#00f0ff';
+    };
+    updateTheme();
+    const themeObserver = new MutationObserver(updateTheme);
+    themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-bs-theme', 'data-bs-core', 'style'] });
 
     const drawBackground = (ctx: CanvasRenderingContext2D, w: number, h: number) => {
       ctx.clearRect(0, 0, w, h);
@@ -201,12 +207,15 @@ const SuspensionBar: React.FC<SuspensionBarProps> = React.memo(({ title, isLeft,
       }
     };
     telemetryEmitter.addEventListener('update', handleUpdate);
-    return () => telemetryEmitter.removeEventListener('update', handleUpdate);
+    return () => {
+      themeObserver.disconnect();
+      telemetryEmitter.removeEventListener('update', handleUpdate);
+    };
   }, [tireIdx, renderHistoryTrace, displayMode]);
 
   return (
     <div ref={containerRef} className="p-2 rounded-3 border d-flex flex-column justify-content-between h-100 overflow-hidden" style={{ background: 'var(--surface-1)', borderColor: 'var(--glass-border) !important' }}>
-      <div className={`fw-bold text-body mb-1 fs-8 ${isLeft ? 'text-start' : 'text-end'}`}>{title}</div>
+      <div className={`swiss-readout-label fw-bold text-body mb-1 fs-8 ${isLeft ? 'text-start' : 'text-end'}`}>{title}</div>
       <div className={`d-flex gap-2 align-items-center flex-grow-1 ${isLeft ? 'flex-row' : 'flex-row-reverse'}`} style={{ height: '42px', minHeight: '38px' }}>
         <div className="position-relative h-100 border rounded-pill overflow-hidden flex-shrink-0" style={{ width: '20px', background: 'var(--surface-2)', borderColor: 'var(--glass-border) !important' }}>
           <div className="position-absolute" style={{ top: '50%', left: 0, right: 0, height: '1px', background: 'var(--divider)', zIndex: 2 }} />

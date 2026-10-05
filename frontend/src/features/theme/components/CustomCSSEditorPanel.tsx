@@ -38,6 +38,7 @@ const TARGET_SELECTORS = [
   ['[data-bs-theme="light"]', 'Light mode root target'],
   ['[data-bs-core="modern"]', 'Modern core theme'],
   ['[data-bs-core="elegant"]', 'Elegant core theme'],
+  ['[data-bs-core="swiss"]', 'Swiss core theme'],
 ] as const;
 
 const CustomCSSEditorPanel: React.FC = () => {

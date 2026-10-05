@@ -1,5 +1,14 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-10-05 / Swiss Technical 三階段實作（Codex as Codex）
+
+- **來源／狀態**：`local`／`verified`；對應 #480、PR #481，遠端 CI 另按最終提交確認。
+- **Learning**：首幀與 React 必須共用配色正規化；Bauhaus Mono 的黑白主色需隨模式轉換。Canvas 僅監聽 `data-bs-theme` 會漏掉單獨更換配色或核心；主題／style 變更時更新快取，避免每幀讀 CSS。
+- **Action**：Swiss 實色表面、無模糊、1px 卡片邊框、8px 遙測節奏、16px 精靈網格、四步驟導覽；手機四輪單欄；沿用所有步驟門檻及 Portal。保留八組既有配色，新增 Swiss Signal／Bauhaus Mono，按鈕主色自動選取黑白文字。關閉 Swiss 的裝飾性 Canvas 光暈，保留物理警示色。
+- **Evidence**：Vitest 1,114 passed／1 skipped；frontend build 通過；Windows Cargo 122 passed／3 ignored。實際 Rust 後端＋Vite／瀏覽器驗證四款核心的日夜模式、Mono 重載、1440／390／320px 版型與 Portal Escape 焦點。合成 UDP 回放 1111→8888 RPM 寬度皆 46.546875px，11→88 km/h 皆 42px，Canvas transition 為 0s；不代表真實遊戲或原生裝置驗收。
+- **驗證順序**：Cargo 以 `include_bytes!` 嵌入 frontend/dist；不可同時執行會清換 hashed assets 的 Vite build 與 Cargo／doc-tests。此處先完成 frontend build，再跑 Cargo，已消除資源消失錯誤。
+- **Skills**：`ponytail`（full）、`halfmoon-design-system`、`huge-component-refactoring`、`portable-release-validation`、`pr-author-maintainer`、`pr-review-evaluation`、`agent-governance-audit`。
+
 ## 2026-10-05 / v1.7.1 候選收尾與 Rust SSOT 邊界（Codex as Codex）
 
 - **來源／狀態**：`local`／`verified`；另有固定 PR SHA 的 Windows Host Diagnostics 證據。

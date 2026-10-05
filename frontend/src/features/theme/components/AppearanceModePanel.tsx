@@ -48,6 +48,7 @@ const AppearanceModePanel: React.FC = () => {
           <button
             key={mode}
             id={`theme-mode-${mode}`}
+            aria-pressed={themeSettings.mode === mode}
             onClick={() => updateThemeSettings({ mode })}
             style={{
               flex: 1,
@@ -89,6 +90,7 @@ const AppearanceModePanel: React.FC = () => {
             <button
               key={theme.id}
               id={`theme-core-${theme.id}`}
+              aria-pressed={isActive}
               onClick={() => updateThemeSettings({ halfmoonCore: theme.id })}
               className="glass-panel-interactive"
               style={{

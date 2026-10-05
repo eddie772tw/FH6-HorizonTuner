@@ -126,6 +126,7 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
 
       {/* Three-Column Layout */}
       <div
+        className="tuning-workflow__grid"
         style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(330px, 1fr))',

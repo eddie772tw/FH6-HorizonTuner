@@ -30,7 +30,7 @@
   - **非阻斷性全域通知**：使用 `useToast().addToast(...)` 於右上角固定位置彈出。
 
 ### 3. 防閃爍 (Anti-FOUC) 護欄
-- 頁面首幀透過 HTML `data-bs-theme` (dark/light) 與 `data-bs-core` (default/modern/elegant) 同步外觀模式，確保 React 掛載前第一幀樣式與 localStorage 完全一致。
+- 頁面首幀透過 HTML `data-bs-theme` (dark/light) 與 `data-bs-core` (default/modern/elegant/swiss) 同步外觀模式；`applyThemeEarly` 與 React 共用 `context/themeSettings.ts` 正規化設定，確保首幀與 localStorage 一致。
 
 ---
 

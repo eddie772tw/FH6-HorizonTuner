@@ -117,6 +117,7 @@ export const Step2ChassisTuner: React.FC<Step2ChassisTunerProps> = ({
 
       {/* Three-Column Unified Layout */}
       <div
+        className="tuning-workflow__grid"
         style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))',

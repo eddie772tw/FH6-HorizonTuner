@@ -1,15 +1,19 @@
+import { normalizeThemeSettings, primaryForeground } from '../context/themeSettings';
+
 /** Shared startup path; no React state or backend request before first paint. */
 export function applyThemeEarly(): void {
+  let saved;
   try {
     const raw = localStorage.getItem('themeSettings');
-    const saved = raw ? JSON.parse(raw) : null;
-    document.documentElement.setAttribute('data-bs-theme', saved?.mode || 'dark');
-    document.documentElement.setAttribute('data-bs-core', saved?.halfmoonCore || 'default');
-    if (saved?.primaryColor) document.documentElement.style.setProperty('--primary', saved.primaryColor);
-    if (saved?.secondaryColor) document.documentElement.style.setProperty('--secondary', saved.secondaryColor);
-    if (saved?.accentColor) document.documentElement.style.setProperty('--accent', saved.accentColor);
-  } catch {
-    document.documentElement.setAttribute('data-bs-theme', 'dark');
-    document.documentElement.setAttribute('data-bs-core', 'default');
-  }
+    saved = raw ? JSON.parse(raw) : null;
+  } catch { /* Invalid or unavailable storage uses the same defaults as React. */ }
+  const theme = normalizeThemeSettings(saved);
+  document.documentElement.setAttribute('data-bs-theme', theme.mode);
+  document.documentElement.setAttribute('data-bs-core', theme.halfmoonCore);
+  document.documentElement.style.setProperty('--primary', theme.primaryColor);
+  document.documentElement.style.setProperty('--secondary', theme.secondaryColor);
+  document.documentElement.style.setProperty('--accent', theme.accentColor);
+  document.documentElement.style.setProperty('--on-primary', primaryForeground(theme.primaryColor));
+  document.documentElement.style.setProperty('--primary-glow', theme.halfmoonCore === 'swiss'
+    ? 'transparent' : `color-mix(in srgb, ${theme.primaryColor} 25%, transparent)`);
 }

@@ -1,5 +1,5 @@
 import React from 'react';
-import { useTheme } from '../../../context/ThemeContext';
+import { useTheme, normalizeThemeSettings } from '../../../context/ThemeContext';
 import { useSettings } from '../../../context/SettingsContext';
 
 interface Preset {
@@ -88,7 +88,7 @@ const presetBtnStyle: React.CSSProperties = {
 };
 
 const PresetPanel: React.FC = () => {
-  const { updateThemeSettings } = useTheme();
+  const { themeSettings, updateThemeSettings } = useTheme();
   const { t } = useSettings();
 
   const applyPreset = (preset: Preset) => {
@@ -108,11 +108,16 @@ const PresetPanel: React.FC = () => {
         {t('Applies accent color palettes (Primary, Secondary, Accent) without altering your current mode or core theme.')}
       </p>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
-        {PRESETS.map(preset => (
+        {PRESETS.map(rawPreset => {
+          const preset = { ...rawPreset, ...normalizeThemeSettings({ ...rawPreset, mode: themeSettings.mode }) };
+          return (
           <button
             key={preset.label}
             id={`preset-${preset.label.replace(/\s+/g, '-').toLowerCase()}`}
             onClick={() => applyPreset(preset)}
+            aria-pressed={themeSettings.primaryColor === preset.primaryColor
+              && themeSettings.secondaryColor === preset.secondaryColor
+              && themeSettings.accentColor === preset.accentColor}
             className="cyber-btn-glow"
             style={presetBtnStyle}
           >
@@ -134,7 +139,8 @@ const PresetPanel: React.FC = () => {
             </div>
             {t(preset.label)}
           </button>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

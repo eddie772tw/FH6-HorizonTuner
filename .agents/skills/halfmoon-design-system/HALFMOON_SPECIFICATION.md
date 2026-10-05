@@ -1,6 +1,6 @@
 # FH6-HorizonTuner 前端 Halfmoon CSS 視覺設計與組件規格書 (Halfmoon Specification)
 
-> **文件版本**：2.1.0  
+> **文件版本**：2.2.0
 > **參考標準**：[Halfmoon CSS v2.0.2 官方文件 (gethalfmoon.com/docs)](https://www.gethalfmoon.com/docs/) + Bootstrap 5 相容語意層  
 > ** Agent 遵循與維護宣告**：所有 AI Agent 在開發、重構或維護前端 UI 組件與 Halfmoon CSS 樣式時，**必須嚴格遵循並主動維護本規格書**與 [halfmoon-design-system](SKILL.md) 技能標準。
 > **目標與任務**：定義與規範 FH6-HorizonTuner 專案在實際前端開發時套用 Halfmoon CSS 所有 Components、Layout、Helpers 與 Utilities 的特定規格、參數、語意 Token、視覺行為與使用時機。
@@ -25,6 +25,12 @@ FH6-HorizonTuner 前端採用 **雙層視覺設計架構 (Two-Layer Visual Archi
 
 ### 1.1 主態與主題切換機制 (Theme & Core Attributes)
 
+新增核心 `swiss`（Swiss Technical）沿用 Layer 2，保留既有 default、modern、elegant 與八組配色；另加入 Swiss Signal 與 Bauhaus Mono。`context/themeSettings.ts` 是載入、匯入、React 更新及首幀設定的共同正規化入口；Bauhaus Mono 以完整三色組識別，日間主色為黑、夜間為淺白，其他自訂配色不改寫。
+
+Swiss 的 `--bg-gradient` 為實色（夜間 `#0b0d12`、日間 `#f8fafc`），`--glass-shadow: none`、`--glass-blur: 0px`；主要面板直接使用 `backdrop-filter: none`。`--on-primary` 依主色相對亮度選取黑或白，供實色按鈕文字使用。焦點使用清楚的 outline。全域數字採 `tabular-nums lining-nums`；Swiss 採 Inter／系統無襯線字型。
+
+遙測沿用五張卡片及四輪順序，以 8px 間距、1px 邊框分組；窄畫面改為可捲動堆疊，手機上的四輪區塊改為單欄。調校沿用四個獨立步驟，以 `tuning-workflow__steps` 與 `tuning-workflow__grid` 套用階層及 16px 網格間距。樣式不改寫步驟解鎖、量測、調校公式或 Portal 行為。
+
 透過 HTML 根元素 (`<html>`) 的二元屬性實作動態主題切換：
 
 * **`data-bs-theme`** (外觀模式)：
@@ -34,16 +40,13 @@ FH6-HorizonTuner 前端採用 **雙層視覺設計架構 (Two-Layer Visual Archi
   - `default`（經典青藍 Slate 經典調校風格）
   - `modern`（深靛藍 Navy 現代競賽風格）
   - `elegant`（暖沙 Espresso 典雅精緻風格）
+  - `swiss`（消光表面、髮絲邊框、工程數字排版）
 
 #### 首幀防閃爍 (Anti-FOUC) 腳本
-位於 `src/main.tsx` 頂部，於 React DOM 掛載前同步寫入 `data-bs-theme` 與 `data-bs-core`：
+由 `src/app/applyThemeEarly.ts` 於 React DOM 掛載前同步寫入模式、核心及正規化配色，桌面、Lite 與 Companion 共用：
 ```typescript
-(function applyThemeEarly() {
-  const saved = JSON.parse(localStorage.getItem('themeSettings') || '{}');
-  document.documentElement.setAttribute('data-bs-theme', saved.mode || 'dark');
-  document.documentElement.setAttribute('data-bs-core', saved.halfmoonCore || 'default');
-  if (saved.primaryColor) document.documentElement.style.setProperty('--primary', saved.primaryColor);
-})();
+import { applyThemeEarly } from './app/applyThemeEarly';
+applyThemeEarly();
 ```
 
 ### 1.2 全域 CSS 設計權杖表 (Design Tokens)

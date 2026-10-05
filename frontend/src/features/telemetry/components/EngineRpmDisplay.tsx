@@ -14,7 +14,7 @@ const EngineRpmDisplay: React.FC = React.memo(() => {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   
-  const themeVars = useRef({ primary: '#00f0ff', secondary: '#ffaa00', isLight: false });
+  const themeVars = useRef({ primary: '#00f0ff', secondary: '#ffaa00', isLight: false, isSwiss: false });
   const lastFlashRef = useRef(false);
   const lastFlashTimeRef = useRef(0);
 
@@ -26,13 +26,14 @@ const EngineRpmDisplay: React.FC = React.memo(() => {
       themeVars.current = {
         primary: style.getPropertyValue('--primary').trim() || '#00f0ff',
         secondary: style.getPropertyValue('--secondary').trim() || '#ffaa00',
-        isLight: document.documentElement.getAttribute('data-bs-theme') === 'light'
+        isLight: document.documentElement.getAttribute('data-bs-theme') === 'light',
+        isSwiss: document.documentElement.getAttribute('data-bs-core') === 'swiss',
       };
     };
 
     updateThemeVars();
     const observer = new MutationObserver(updateThemeVars);
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-bs-theme'] });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-bs-theme', 'data-bs-core', 'style'] });
 
     if (speedUnitRef.current) speedUnitRef.current.innerText = convertSpeed(0).label;
 
@@ -71,7 +72,7 @@ const EngineRpmDisplay: React.FC = React.memo(() => {
       const segWidth = (w - (numSegments - 1) * gap) / numSegments;
       const activeSegs = Math.round(rpmPercent * numSegments);
 
-      const { primary, secondary, isLight } = themeVars.current;
+      const { primary, secondary, isLight, isSwiss } = themeVars.current;
 
       const now = performance.now();
       if (now - lastFlashTimeRef.current > 100) {
@@ -105,11 +106,11 @@ const EngineRpmDisplay: React.FC = React.memo(() => {
           if (isShiftAlert && segRatio >= 0.85) {
             ctx.fillStyle = lastFlashRef.current ? '#ffffff' : '#ff003c';
             ctx.shadowColor = '#ff003c';
-            ctx.shadowBlur = 10 * dpr;
+            ctx.shadowBlur = isSwiss ? 0 : 10 * dpr;
           } else {
             ctx.fillStyle = activeColor;
             ctx.shadowColor = activeColor;
-            ctx.shadowBlur = 6 * dpr;
+            ctx.shadowBlur = isSwiss ? 0 : 6 * dpr;
           }
           ctx.fill();
           ctx.shadowBlur = 0;
@@ -160,7 +161,7 @@ const EngineRpmDisplay: React.FC = React.memo(() => {
       <div className="d-flex justify-content-between align-items-center mb-1">
         <span className="text-body-secondary fw-bold text-uppercase fs-8" style={{ letterSpacing: '0.5px' }}>{t("ENGINE & TRANSMISSION")}</span>
         <span ref={shiftBadgeRef} className="badge bg-danger text-white font-monospace opacity-0 animate-pulse" style={{ transition: 'opacity 0.15s ease-in-out', fontSize: '0.65rem', letterSpacing: '0.5px' }}>
-          SHIFT ⚡
+          SHIFT
         </span>
       </div>
 

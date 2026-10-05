@@ -3,8 +3,9 @@ import {
   defaultThemeSettings,
   isHalfmoonCore,
   normalizeThemeSettings,
+  primaryForeground,
   type ThemeSettings,
-} from './ThemeContext';
+} from './themeSettings';
 
 describe('ThemeContext - Swiss Style and Core Theme support', () => {
   it('validates swiss as a recognized HalfmoonCore value', () => {
@@ -31,10 +32,36 @@ describe('ThemeContext - Swiss Style and Core Theme support', () => {
 
   it('falls back to default halfmoonCore when invalid core theme is provided', () => {
     const candidate = {
-      halfmoonCore: 'non-existent-core' as any,
+      halfmoonCore: 'non-existent-core',
     };
 
+    // @ts-expect-error Settings imported from JSON can contain an unknown core.
     const normalized = normalizeThemeSettings(candidate);
     expect(normalized.halfmoonCore).toBe('default');
+  });
+
+  it('keeps Mono legible across mode changes, saved settings and JSON round trips', () => {
+    const mono = { ...defaultThemeSettings, halfmoonCore: 'swiss' as const,
+      primaryColor: '#f1f5f9', secondaryColor: '#ef4444', accentColor: '#64748b' };
+    const light = normalizeThemeSettings({ ...mono, mode: 'light' });
+    expect(light.primaryColor).toBe('#000000');
+    expect(normalizeThemeSettings(JSON.parse(JSON.stringify(light)))).toEqual(light);
+    expect(normalizeThemeSettings({ ...light, mode: 'dark' })).toEqual(mono);
+    expect(normalizeThemeSettings({ ...mono, primaryColor: '#F1F5F9', mode: 'light' })).toEqual(light);
+  });
+
+  it('preserves legacy/custom palettes and fills partial imports from current settings', () => {
+    const custom = { ...defaultThemeSettings, halfmoonCore: 'elegant' as const,
+      primaryColor: '#f1f5f9', secondaryColor: '#123456', customCSS: '.card { padding: 8px; }' };
+    expect(normalizeThemeSettings({ mode: 'light' }, custom)).toEqual({ ...custom, mode: 'light' });
+    expect(normalizeThemeSettings({ primaryColor: 'invalid' }, custom)).toEqual(custom);
+    expect(normalizeThemeSettings(null)).toEqual(defaultThemeSettings);
+  });
+
+  it.each([
+    ['#e30613', '#ffffff'], ['#000000', '#ffffff'],
+    ['#f1f5f9', '#000000'], ['#00f0ff', '#000000'],
+  ])('chooses readable text for primary fill %s', (color, foreground) => {
+    expect(primaryForeground(color)).toBe(foreground);
   });
 });
