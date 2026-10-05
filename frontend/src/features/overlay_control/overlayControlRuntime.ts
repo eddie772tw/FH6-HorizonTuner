@@ -1,6 +1,7 @@
 import { DEFAULT_HUD_CONFIG, type HudConfig, type HudElements } from './hudConfig';
 import { normalizeS650HmiConfig } from './s650/config';
 import { normalizeClassicJdmConfig } from './classic_jdm/config';
+import { normalizeR34MfdConfig } from './r34_mfd/config';
 import { normalizeStackSt8100Config } from './stack_st8100/config';
 import { normalizeLfaExpansionConfig } from './lfa_center_ring/config';
 import type { HudDisplayUnits } from './HudUnitSettingsSidebar';
@@ -57,6 +58,10 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
+function normalizeTemperatureUnit(value: unknown): HudDisplayUnits['temperature'] {
+  return value === 'F' ? 'F' : 'C';
+}
+
 function withoutDerivedChannelFields(record: Record<string, unknown>): Record<string, unknown> {
   return Object.fromEntries(Object.entries(record).filter(([key]) => !DERIVED_CHANNEL_FIELDS.has(key)));
 }
@@ -76,7 +81,11 @@ async function responseIsSuccessful(response: ResponseLike, action: string): Pro
 
 export function normalizeHudRuntimeConfig(input: unknown): HudConfigRecord {
   const raw = isRecord(input) ? withoutDerivedChannelFields(input) : {};
-  const normalized = normalizeStackSt8100Config(normalizeLfaExpansionConfig(normalizeClassicJdmConfig(normalizeS650HmiConfig(raw as {
+  const normalized = normalizeR34MfdConfig(
+    normalizeStackSt8100Config(
+      normalizeLfaExpansionConfig(
+        normalizeClassicJdmConfig(
+          normalizeS650HmiConfig(raw as {
     hudStyle?: string;
     s650Theme?: unknown;
     s650CenterWidget?: unknown;
@@ -86,11 +95,16 @@ export function normalizeHudRuntimeConfig(input: unknown): HudConfigRecord {
     classicJdmAux2?: unknown;
     classicJdmDefiTheme?: unknown;
     [key: string]: unknown;
-  }))));
+  })))));
+  const configuredUnits = isRecord(normalized.units) ? normalized.units : {};
   return {
     ...DEFAULT_HUD_CONFIG,
     ...normalized,
-    units: { ...DEFAULT_HUD_CONFIG.units, ...(isRecord(normalized.units) ? normalized.units : {}) },
+    units: {
+      ...DEFAULT_HUD_CONFIG.units,
+      ...configuredUnits,
+      temperature: normalizeTemperatureUnit(configuredUnits.temperature),
+    },
     elements: { ...DEFAULT_HUD_CONFIG.elements, ...(isRecord(normalized.elements) ? normalized.elements : {}) },
   } as HudConfigRecord;
 }
@@ -135,6 +149,7 @@ export function createOverlayControlRuntime(
     boostPressure: 'bar',
     torque: 'nm',
     power: 'hp',
+    temperature: 'C',
   };
   const listeners = new Set<() => void>();
 
@@ -316,7 +331,7 @@ export function createOverlayControlRuntime(
       setSnapshot({ config, status: 'ready', error: null, pendingWrites: 0 });
     },
     setEffectiveUnits(units) {
-      effectiveUnits = units;
+      effectiveUnits = { ...units, temperature: normalizeTemperatureUnit(units.temperature) };
       publish();
     },
     publishConfig() {

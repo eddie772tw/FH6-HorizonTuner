@@ -12,14 +12,129 @@ fn python_settings_and_hud_outputs_are_preserved() {
     }
     for case in cases["hud"].as_array().unwrap() {
         assert_eq!(config::normalize_hud(&case["input"]), case["normalized"]);
+        // Keep the frozen Python-era fields unchanged; temperature is an
+        // additive display-unit contract, covered separately below.
+        let mut frontend = case["frontend"].clone();
+        frontend["units"]["temperature"] = json!("C");
+        frontend["effectiveUnits"]["temperature"] = json!("C");
         assert_eq!(
             config::hud_for_frontend(&case["input"], &case["settings"]),
-            case["frontend"]
+            frontend
         );
     }
     for case in cases["units"].as_array().unwrap() {
         assert_eq!(config::normalize_units(&case["input"]), case["expected"]);
     }
+}
+
+#[test]
+fn hud_temperature_projection_accepts_only_celsius_or_fahrenheit() {
+    for (temperature, expected) in [
+        (Value::Null, "C"),
+        (json!(""), "C"),
+        (json!("c"), "C"),
+        (json!("f"), "C"),
+        (json!("°F"), "C"),
+        (json!("K"), "C"),
+        (json!(true), "C"),
+        (json!(32), "C"),
+        (json!({}), "C"),
+        (json!([]), "C"),
+        (json!("C"), "C"),
+        (json!("F"), "F"),
+    ] {
+        let hud = json!({
+            "followAppUnits": false,
+            "units": {"speed":"mph","boostPressure":"psi","torque":"lbft","power":"kw","temperature":temperature}
+        });
+        let projected = config::hud_for_frontend(&hud, &json!({"units":{"temperature":"F"}}));
+        let expected_units = json!({"speed":"mph","boostPressure":"psi","torque":"lbft","power":"kw","temperature":expected});
+        assert_eq!(projected["units"], expected_units);
+        assert_eq!(projected["effectiveUnits"], expected_units);
+        assert_eq!(projected["effectiveUnit"], "mph");
+
+        let inherited = config::hud_for_frontend(
+            &json!({"followAppUnits":true,"units":{"temperature":"F"}}),
+            &json!({"units":{"temperature":temperature}}),
+        );
+        assert_eq!(inherited["units"]["temperature"], "F");
+        assert_eq!(inherited["effectiveUnits"]["temperature"], expected);
+    }
+    let legacy = config::hud_for_frontend(&json!({}), &json!({}));
+    assert_eq!(legacy["units"]["temperature"], "C");
+    assert_eq!(legacy["effectiveUnits"]["temperature"], "C");
+    let missing_app_temperature = config::hud_for_frontend(
+        &json!({"followAppUnits":true,"units":{"temperature":"F"}}),
+        &json!({}),
+    );
+    assert_eq!(
+        missing_app_temperature["effectiveUnits"]["temperature"],
+        "C"
+    );
+}
+
+#[test]
+fn hud_temperature_survives_restart_and_tracks_app_changes_only_when_inherited() {
+    let directory = tempfile::tempdir().unwrap();
+    let service = ConfigService::new(directory.path()).unwrap();
+    assert_eq!(service.hud()["units"]["temperature"], "C");
+    assert_eq!(service.hud()["effectiveUnits"]["temperature"], "C");
+    let mut receiver = service.overlay.subscribe();
+    let independent = json!({
+        "hudStyle":"r34_mfd", "followAppUnits":false,
+        "units":{"speed":"mph","boostPressure":"psi","torque":"lbft","power":"kw","temperature":"F"},
+        "effectiveUnit":"kmh", "effectiveUnits":{"temperature":"C"}, "futureKey":42
+    });
+    service
+        .handle("POST", "/api/overlay/config", &independent)
+        .unwrap()
+        .unwrap();
+    let relayed = receiver.try_recv().unwrap();
+    assert_eq!(relayed["data"]["effectiveUnits"], independent["units"]);
+    let persisted = storage::read_json(&directory.path().join("hud_config.json")).unwrap();
+    assert_eq!(persisted["units"], independent["units"]);
+    assert_eq!(persisted["futureKey"], 42);
+    assert!(persisted.get("effectiveUnit").is_none());
+    assert!(persisted.get("effectiveUnits").is_none());
+
+    let restarted = ConfigService::new(directory.path()).unwrap();
+    let mut receiver = restarted.overlay.subscribe();
+    let mut readback = restarted.hud();
+    assert_eq!(readback["effectiveUnits"], independent["units"]);
+    readback["followAppUnits"] = json!(true);
+    restarted
+        .handle("POST", "/api/overlay/config", &readback)
+        .unwrap()
+        .unwrap();
+    let inherited = receiver.try_recv().unwrap();
+    assert_eq!(inherited["data"]["units"]["temperature"], "F");
+    assert_eq!(inherited["data"]["effectiveUnits"]["temperature"], "C");
+
+    for (speed, temperature) in [("mph", "F"), ("kmh", "C")] {
+        restarted
+            .handle("POST", "/api/settings", &json!({"units":{"speed":speed}}))
+            .unwrap()
+            .unwrap();
+        let updated = receiver.try_recv().unwrap();
+        assert_eq!(
+            updated["data"]["effectiveUnits"]["temperature"],
+            temperature
+        );
+        assert_eq!(updated["data"]["units"]["temperature"], "F");
+    }
+    readback["followAppUnits"] = json!(false);
+    restarted
+        .handle("POST", "/api/overlay/config", &readback)
+        .unwrap()
+        .unwrap();
+    let independent_again = receiver.try_recv().unwrap();
+    assert_eq!(
+        independent_again["data"]["effectiveUnits"],
+        independent["units"]
+    );
+    let persisted = storage::read_json(&directory.path().join("hud_config.json")).unwrap();
+    assert_eq!(persisted["units"]["temperature"], "F");
+    assert!(persisted.get("effectiveUnits").is_none());
 }
 #[test]
 fn settings_save_read_restart_and_backup_recovery() {
@@ -249,4 +364,42 @@ fn symlinks_and_dangling_junctions_cannot_escape_storage() {
         b"private"
     );
     assert!(!fixture.path().join("missing-outside").exists());
+}
+
+#[test]
+fn r34_settings_normalize_persist_restart_and_relay_without_touching_other_styles() {
+    let invalid = json!({"hudStyle":"r34_mfd","r34MfdMode":"bad","r34ShowCluster":"false","r34Lighting":12,"futureKey":42});
+    let normalized = config::normalize_hud(&invalid);
+    assert_eq!(normalized["r34MfdMode"], "single");
+    assert_eq!(normalized["r34ShowCluster"], true);
+    assert_eq!(normalized["r34Lighting"], "night");
+    assert_eq!(normalized["futureKey"], 42);
+    let other = json!({"hudStyle":"vfd","r34MfdMode":"future"});
+    assert_eq!(config::normalize_hud(&other), other);
+    for mode in ["single", "twin", "multi", "g", "lap"] {
+        let directory = tempfile::tempdir().unwrap();
+        let service = ConfigService::new(directory.path()).unwrap();
+        let mut receiver = service.overlay.subscribe();
+        let requested = json!({"hudStyle":"r34_mfd","r34MfdMode":mode,"r34ShowCluster":false,"r34Lighting":"day","futureKey":42});
+        service
+            .handle("POST", "/api/overlay/config", &requested)
+            .unwrap()
+            .unwrap();
+        let relayed = receiver.try_recv().unwrap();
+        assert_eq!(relayed["type"], "hud:config");
+        assert_eq!(relayed["data"]["r34MfdMode"], mode);
+        assert_eq!(relayed["data"]["r34ShowCluster"], false);
+        assert_eq!(relayed["data"]["r34Lighting"], "day");
+        let persisted = storage::read_json(&directory.path().join("hud_config.json")).unwrap();
+        assert_eq!(persisted["r34MfdMode"], mode);
+        assert_eq!(persisted["futureKey"], 42);
+        let restarted = ConfigService::new(directory.path()).unwrap();
+        let readback = restarted
+            .handle("GET", "/api/overlay/config", &Value::Null)
+            .unwrap()
+            .unwrap();
+        assert_eq!(readback["r34MfdMode"], mode);
+        assert_eq!(readback["r34Lighting"], "day");
+        assert_eq!(readback["r34ShowCluster"], false);
+    }
 }

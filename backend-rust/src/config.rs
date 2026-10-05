@@ -284,6 +284,19 @@ pub fn normalize_hud(data: &Value) -> Value {
             value[key] = json!(value[key].as_bool().unwrap_or(false));
         }
     }
+    if style == "r34_mfd" {
+        if !["single", "twin", "multi", "g", "lap"]
+            .contains(&value["r34MfdMode"].as_str().unwrap_or(""))
+        {
+            value["r34MfdMode"] = json!("single");
+        }
+        if !value["r34ShowCluster"].is_boolean() {
+            value["r34ShowCluster"] = json!(true);
+        }
+        if !["day", "night"].contains(&value["r34Lighting"].as_str().unwrap_or("")) {
+            value["r34Lighting"] = json!("night");
+        }
+    }
     value
 }
 pub fn hud_for_frontend(data: &Value, settings: &Value) -> Value {
@@ -306,6 +319,7 @@ pub fn hud_for_frontend(data: &Value, settings: &Value) -> Value {
         ("boostPressure", &["bar", "psi", "kpa"][..], "bar"),
         ("torque", &["nm", "lbft"][..], "nm"),
         ("power", &["kw", "hp", "ps"][..], "hp"),
+        ("temperature", &["C", "F"][..], "C"),
     ] {
         let configured = hud["units"]
             .get(key)
@@ -331,6 +345,11 @@ pub fn hud_for_frontend(data: &Value, settings: &Value) -> Value {
                 units[key] = v.clone();
             }
         }
+        units["temperature"] = json!(if settings["units"]["temperature"] == "F" {
+            "F"
+        } else {
+            "C"
+        });
     }
     hud["effectiveUnit"] = units["speed"].clone();
     hud["effectiveUnits"] = units;

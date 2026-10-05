@@ -1,0 +1,300 @@
+{
+  "scope": "Real React settings and runtime, disk-backed HTTP fixture; not native/game acceptance",
+  "screenshots": [
+    {
+      "name": "controls-day",
+      "viewport": 1440,
+      "fits": true,
+      "controls": [
+        {
+          "label": "R34 MFD mode",
+          "left": 492,
+          "right": 940,
+          "width": 448
+        },
+        {
+          "label": "R34 show instrument cluster",
+          "left": 492,
+          "right": 520,
+          "width": 28
+        },
+        {
+          "label": "R34 instrument lighting",
+          "left": 492,
+          "right": 940,
+          "width": 448
+        }
+      ]
+    },
+    {
+      "name": "controls-night",
+      "viewport": 1440,
+      "fits": true,
+      "controls": [
+        {
+          "label": "R34 MFD mode",
+          "left": 492,
+          "right": 940,
+          "width": 448
+        },
+        {
+          "label": "R34 show instrument cluster",
+          "left": 492,
+          "right": 520,
+          "width": 28
+        },
+        {
+          "label": "R34 instrument lighting",
+          "left": 492,
+          "right": 940,
+          "width": 448
+        }
+      ]
+    },
+    {
+      "name": "temperature-independent-f"
+    },
+    {
+      "name": "settings-dark-default",
+      "viewport": 1440,
+      "fits": true,
+      "controls": [
+        {
+          "label": "R34 MFD mode",
+          "left": 492,
+          "right": 940,
+          "width": 448
+        },
+        {
+          "label": "R34 show instrument cluster",
+          "left": 492,
+          "right": 520,
+          "width": 28
+        },
+        {
+          "label": "R34 instrument lighting",
+          "left": 492,
+          "right": 940,
+          "width": 448
+        }
+      ]
+    },
+    {
+      "name": "settings-dark-modern",
+      "viewport": 1440,
+      "fits": true,
+      "controls": [
+        {
+          "label": "R34 MFD mode",
+          "left": 492,
+          "right": 940,
+          "width": 448
+        },
+        {
+          "label": "R34 show instrument cluster",
+          "left": 492,
+          "right": 520,
+          "width": 28
+        },
+        {
+          "label": "R34 instrument lighting",
+          "left": 492,
+          "right": 940,
+          "width": 448
+        }
+      ]
+    },
+    {
+      "name": "settings-dark-elegant",
+      "viewport": 1440,
+      "fits": true,
+      "controls": [
+        {
+          "label": "R34 MFD mode",
+          "left": 492,
+          "right": 940,
+          "width": 448
+        },
+        {
+          "label": "R34 show instrument cluster",
+          "left": 492,
+          "right": 520,
+          "width": 28
+        },
+        {
+          "label": "R34 instrument lighting",
+          "left": 492,
+          "right": 940,
+          "width": 448
+        }
+      ]
+    },
+    {
+      "name": "settings-light-default",
+      "viewport": 1440,
+      "fits": true,
+      "controls": [
+        {
+          "label": "R34 MFD mode",
+          "left": 492,
+          "right": 940,
+          "width": 448
+        },
+        {
+          "label": "R34 show instrument cluster",
+          "left": 492,
+          "right": 520,
+          "width": 28
+        },
+        {
+          "label": "R34 instrument lighting",
+          "left": 492,
+          "right": 940,
+          "width": 448
+        }
+      ]
+    },
+    {
+      "name": "settings-light-modern",
+      "viewport": 1440,
+      "fits": true,
+      "controls": [
+        {
+          "label": "R34 MFD mode",
+          "left": 492,
+          "right": 940,
+          "width": 448
+        },
+        {
+          "label": "R34 show instrument cluster",
+          "left": 492,
+          "right": 520,
+          "width": 28
+        },
+        {
+          "label": "R34 instrument lighting",
+          "left": 492,
+          "right": 940,
+          "width": 448
+        }
+      ]
+    },
+    {
+      "name": "settings-light-elegant",
+      "viewport": 1440,
+      "fits": true,
+      "controls": [
+        {
+          "label": "R34 MFD mode",
+          "left": 492,
+          "right": 940,
+          "width": 448
+        },
+        {
+          "label": "R34 show instrument cluster",
+          "left": 492,
+          "right": 520,
+          "width": 28
+        },
+        {
+          "label": "R34 instrument lighting",
+          "left": 492,
+          "right": 940,
+          "width": 448
+        }
+      ]
+    },
+    {
+      "name": "settings-narrow",
+      "viewport": 390,
+      "fits": true,
+      "controls": [
+        {
+          "label": "R34 MFD mode",
+          "left": 20,
+          "right": 362,
+          "width": 342
+        },
+        {
+          "label": "R34 show instrument cluster",
+          "left": 20,
+          "right": 48,
+          "width": 28
+        },
+        {
+          "label": "R34 instrument lighting",
+          "left": 20,
+          "right": 362,
+          "width": 342
+        }
+      ]
+    },
+    {
+      "name": "settings-narrow-zh-tw",
+      "viewport": 390,
+      "fits": true,
+      "controls": [
+        {
+          "label": "R34 MFD 模式",
+          "left": 20,
+          "right": 362,
+          "width": 342
+        },
+        {
+          "label": "顯示 R34 傳統儀表",
+          "left": 20,
+          "right": 48,
+          "width": 28
+        },
+        {
+          "label": "R34 儀表照明",
+          "left": 20,
+          "right": 362,
+          "width": 342
+        }
+      ],
+      "glyphs": {
+        "family": "Noto Sans CJK TC",
+        "nonempty": true,
+        "distinct": true
+      }
+    },
+    {
+      "name": "settings-narrow-ja-jp",
+      "viewport": 390,
+      "fits": true,
+      "controls": [
+        {
+          "label": "R34 MFD モード",
+          "left": 20,
+          "right": 362,
+          "width": 342
+        },
+        {
+          "label": "R34 アナログメーターを表示",
+          "left": 20,
+          "right": 48,
+          "width": 28
+        },
+        {
+          "label": "R34 メーター照明",
+          "left": 20,
+          "right": 362,
+          "width": 342
+        }
+      ],
+      "glyphs": {
+        "family": "Noto Sans CJK JP",
+        "nonempty": true,
+        "distinct": true
+      }
+    }
+  ],
+  "checks": [
+    "All five modes, day/night, cluster control, disk persistence, effective-unit separation, BroadcastChannel and reload",
+    "Temperature app inheritance, independent C/F control, disk persistence, reload and derived-unit separation",
+    "Style round-trip, reset cancel and confirmed defaults"
+  ],
+  "errors": [],
+  "save_count": 16
+}

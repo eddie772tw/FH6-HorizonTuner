@@ -1,0 +1,54 @@
+{
+  "renderer_source_commit": "bafc4169e9faa6ca1d58152b5434a2220b338870",
+  "workflow_run": "https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37337874687",
+  "files": [
+    {
+      "path": "docs/assets/r34-mfd/preview.png",
+      "sha256": "e6b77add4d88d6649de7f6216887bf93354f48af518753bcba38256f027e3604"
+    },
+    {
+      "path": "docs/assets/r34-mfd/preview-normal.png",
+      "sha256": "50f4fc0642d402cdfe9e923b626807cd6fae73e3f7272a35e13a5793ab080795"
+    },
+    {
+      "path": "docs/assets/r34-mfd/over-scale-kpa.png",
+      "sha256": "284b6b556d92887faeb31abce0be7b62736d5519380a93db48a741517b73c672"
+    },
+    {
+      "path": "docs/assets/r34-mfd/imperial-vacuum.png",
+      "sha256": "5b74d8eb6eac772245047e1f4fbd151ae991595e2be82289ee9caee01c4710bd"
+    },
+    {
+      "path": "docs/assets/r34-mfd/stale.png",
+      "sha256": "89f448fc2a95d6167be7e94934fdc0a10cd2b660cf2ba8e9e0ea0df399c7b482"
+    },
+    {
+      "path": "docs/assets/r34-mfd/missing-one-tire.png",
+      "sha256": "af84b8525819efe79316d7a43f59f685ad2bc8ee281218bba9e568653045cd17"
+    },
+    {
+      "path": "docs/assets/r34-mfd/settings/settings-dark-default.png",
+      "sha256": "ebd98763329c58d217f4a37041e567fa3228b6af9c35f140a7b7711a7eacfd8c"
+    },
+    {
+      "path": "docs/assets/r34-mfd/settings/settings-narrow-zh-tw.png",
+      "sha256": "ec66b5bab12a82688bdaddc0c4299eb519d1021b37359d713db9f4f8fb97b8db"
+    },
+    {
+      "path": "docs/assets/r34-mfd/settings/settings-narrow-ja-jp.png",
+      "sha256": "8e7c96cc965ed188ebb955992981fe7d53af349864728ad7a71ab0e704f63815"
+    },
+    {
+      "path": "docs/assets/r34-mfd/settings/temperature-independent-f.png",
+      "sha256": "b191880a90dc83b366dd23ae0f1a34b88181649e166228ef1c2be62ff582f182"
+    },
+    {
+      "path": "docs/assets/r34-mfd/mfd-modes.png",
+      "sha256": "107f8e203d5caf4f27cb5e905611571f4a77bb4965065ba557cb1c60a76cb9d4"
+    },
+    {
+      "path": "docs/assets/r34-mfd/lcd-readouts.png",
+      "sha256": "f2c706494be3df2dc4964ccf151ed438c7a6b943437e2ff3f17f31d57f00ebd3"
+    }
+  ]
+}

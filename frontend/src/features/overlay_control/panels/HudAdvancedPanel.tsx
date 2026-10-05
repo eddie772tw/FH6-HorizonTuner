@@ -1,4 +1,5 @@
 import { useId } from 'react';
+import { R34MfdSettingsCard } from '../r34_mfd/R34MfdSettingsCard';
 import type { HudDisplayUnits } from '../HudUnitSettingsSidebar';
 import { STACK_ST8100_STYLE_ID } from '../stack_st8100/config';
 import { StackSt8100SettingsCard } from '../stack_st8100/StackSt8100SettingsCard';
@@ -103,6 +104,7 @@ function StyleSettings({ config, appUnits, onConfigPatch, isWipActive, wipForced
       {config.hudStyle === STACK_ST8100_STYLE_ID && <StackSt8100SettingsCard config={config} appUnits={appUnits} onChange={onConfigPatch} t={t} />}
       {config.hudStyle === CLASSIC_JDM_STYLE_ID && <ClassicJdmSettingsCard config={config} onChange={onConfigPatch} t={t} />}
       {config.hudStyle === LFA_CENTER_RING_STYLE_ID && <LfaExpansionSettingsCard config={config} onChange={onConfigPatch} t={t} />}
+      {config.hudStyle === 'r34_mfd' && <R34MfdSettingsCard config={config} onChange={onConfigPatch} t={t} />}
       {config.hudStyle === 'vfd' && (
         <div className="border-top pt-2 d-flex flex-column gap-3">
           <div>

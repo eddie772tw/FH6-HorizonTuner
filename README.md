@@ -42,6 +42,7 @@ Road #462 修正採版本化 [launch envelope v3](docs/tuning/aego-road-launch-v
   - **實車測試圈遙測特徵驅動 (Race Evidence)**：徹底捨棄原先的手動輪胎抓地力係數輸入，改由真實操駕之輪胎載荷與遙測特徵自動觀察並驅動定位角度與胎壓求解。
   - **多元賽事模型與底盤支援**：新增 Road 前驅 (FWD) 底盤與全電/混合動力 (AEGO) 前後軸扭力分配；獨立拆分混合路面拉力 (Rally) 與大衝程越野 (Cross Country) 基準；實測轉速區間衍生甩尾 (Drift) 設定與全齒比；支援完整直線加速 (Drag) 變速箱各檔齒比梯度與終點時速推導。公式研究、來源與限制見[調校開發入口](docs/tuning/README.md)。
 * **客製化賽車儀表覆蓋層與雙前端客戶端 (Racing HUD Overlay & Full/Lite Clients)**:
+  - **Skyline R34 MFD**：1999 V·spec 原廠雙段轉速錶與五種 NISMO Ver.II 風格 MFD 模式，真實遊戲遙測、峰值記憶與已觀察圈速紀錄。[原型與資料契約](docs/hud/r34-mfd.md)。
   - **全新 Classic JDM 儀表群組**：高對比度復古白底轉速儀表盤、超轉換檔提示燈、雙計程儀與渦輪壓力表，提供沉浸式 90 年代日系經典性能車儀表視覺。
   - **街機多聯錶版面 (Arcade Multi-Gauge Layout) 與 1080p 響應縮放**：支援多聯錶並排顯示，統一所有 HUD 儀表的座標錨點與自適應等比縮放機制。
   - **[Stack ST8100 Inspired](docs/hud/stack-st8100.md)**：原創壓縮類比轉速錶與綠色點陣 LCD，支援四格遙測欄位、session 峰值、可設定車況警示及真正 GUI 設定；不模擬不存在的引擎感測器。

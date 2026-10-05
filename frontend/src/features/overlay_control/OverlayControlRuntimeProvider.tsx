@@ -95,8 +95,9 @@ export const OverlayControlRuntimeProvider: React.FC<{ children: React.ReactNode
       boostPressure: settings.units.boostPressure,
       torque: settings.units.torque,
       power: settings.units.power,
+      temperature: settings.units.temperature,
     });
-  }, [runtime, settings.units.boostPressure, settings.units.power, settings.units.speed, settings.units.torque]);
+  }, [runtime, settings.units.boostPressure, settings.units.power, settings.units.speed, settings.units.torque, settings.units.temperature]);
 
   return <OverlayControlRuntimeContext.Provider value={runtime}>{children}</OverlayControlRuntimeContext.Provider>;
 };

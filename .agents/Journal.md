@@ -78,6 +78,25 @@
 - **Evidence**：前端 1,105 passed／1 skipped；Windows／LAN build 通過；audit 0；Rust full 與 no-default-features 通過；Windows Host Diagnostics 7 passed；EV 真實 HTTP 回放、保存／重啟、六種主題與繁中／英文成功。最後候選 SHA 的 CI 與 artifact 另按 [驗收紀錄](../docs/releases/v1.7.1-acceptance.md) 核對，不能用這些歷史結果代替。
 - **Skills**：`portable-release-validation`、`pr-author-maintainer`、`pr-review-evaluation`、`physics-tuning-math`、`modular-refactoring`、`agent-governance-audit`、`github-security-audit`、`ponytail`。
 
+## 2026-10-05 / R34 原型比例與實際HUD畫面的分層驗證（Bagley as Codex）
+
+- **來源／狀態**：原廠型錄／實物圖片比較，加上固定source `bed166f` 的sandboxed Chrome CI；不是原生Windows或FH6實機驗收。
+- **Learning**：沒有文字裁切、模式能切換，不代表車輛原型外觀已成立。本次以高解析Nissan型錄、OEM儀表、完整右駕座艙與NISMO實物照，重驗銀色連續面板、儀表／MFD左右位置、低寬機殼和搖桿比例；不得拿320km/h改裝表或JGTC賽車推定原廠V·spec。透視照片只能支持HUD設計比例，不能宣稱工廠工程尺寸。
+- **Action／Evidence**：先比較原創靜態SVG正視圖與照片，再以[Visual run37295509701](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37295509701)檢查真正五模式、透明背景、DPR／單位／缺值及控制顯隱；靜態樣稿不冒充runtime。隱藏速度時，獨立overscale註記也須一起隱藏，已加browser regression。
+- **Boundary／Skills**：原型油壓／水溫仍N/A且無假針，只有遊戲真實欄位；`halfmoon-design-system`、`huge-component-refactoring`、`modular-refactoring`、`pr-author-maintainer`。詳見[R34設計文件](../docs/hud/r34-mfd.md)。
+
+## 2026-10-05 / R34 分離錶盤與溫度單位契約（Bagley as Codex）
+
+- **Learning**：app 的一般單位設定會依 speed 正規化整組公制／英制；browser fixture 若只把 temperature 改成 F、卻保留 kmh，會在 hydration 回到 C。測試應使用現有 `applyGeneralUnitSystem`，再等待真正的 effectiveUnits broadcast；HUD 獨立 C/F 設定則走既有持久化管線。
+- **Action／Evidence**：使用者選定 S650 式分離定位及 Nür300 固定 kmh。HUDCore 校準保持不變，viewport root 取消整體 zoom，由純 layout 函式對獨立錶盤／MFD做寬高 fit；加入矮寬視窗、DPR、固定 kmh、四輪原始胎溫齊全與 C/F 幾何不變契約。修正檔位開關誤藏 REV 燈。
+- **Boundary**：[Visual run37305964564](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37305964564) 真正 Chrome HUD／Launcher／GUI 全部成功；原型照片估角是 HUD 視覺適配，不是工廠校準。完整驗證及來源見 [R34設計文件](../docs/hud/r34-mfd.md)，不代表 Windows／遊戲實測。
+
+## 2026-10-05 / R34 雙 LCD 與壓縮刻度的字形邊界（Bagley as Codex）
+
+- **Learning**：SVG小字在靜態圖可辨識，不代表Chrome的字型邊界不相交。壓縮RPM低段須在固定刻度幾何之外調整數字尺寸，browser檢查亦須計入變換後的stroke；雙行LCD要保留實際字型metric間隙，不能只比較font-size與baseline距離。
+- **Action／Evidence**：保留0／10、3／9對稱與等距低段；加入偏心軸共用幾何、類比kmh／數位單位分離、雙LCD包含／相鄰文字檢查，失敗時先保存bounds與截圖。CurrentLap初始0不可當有效計時，只有已觀察rollover可取得固定3秒零值期限；重複封包不延長。
+- **Boundary**：[Visual run37325254056](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37325254056)通過真正HUD／Launcher／設定驗證；無計時的功率／扭力保持獨立缺值，BestLap／LastLap的0仍不可用。來源及限制見[R34設計文件](../docs/hud/r34-mfd.md)，不是原生Windows或遊戲實測。
+
 ## 歷史摘要 / v1.6 以前開發經驗與跨架構演進核心紀錄（Pre-v1.6 Architecture Archive & Core Learnings）
 
 - **來源／狀態**：`archive`／`verified`；本條目為 v1.6 以前（2026-08-11 ~ 2026-09-15）跨版本開發經驗、歷史踩坑與架構演進之單一收攏精簡摘要（SSOT 封存）。

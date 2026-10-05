@@ -8,6 +8,7 @@ export interface HudDisplayUnits {
   boostPressure: UnitSettings['boostPressure'];
   torque: UnitSettings['torque'];
   power: UnitSettings['power'];
+  temperature: UnitSettings['temperature'];
 }
 
 interface HudUnitSettingsSidebarProps {
@@ -127,6 +128,19 @@ export const HudUnitSettingsSidebar: React.FC<HudUnitSettingsSidebarProps> = ({
                 <option value="hp">hp</option>
                 <option value="kw">kW</option>
                 <option value="ps">PS</option>
+              </select>
+            </div>
+            <div className="col-6 col-lg-3">
+              <label className="form-label fs-7" htmlFor="hud-temperature-unit">{t("Temperature")}</label>
+              <select
+                id="hud-temperature-unit"
+                className="form-select form-select-sm"
+                disabled={followGlobal}
+                value={displayed.temperature === 'F' ? 'F' : 'C'}
+                onChange={event => update('temperature', event.target.value as HudDisplayUnits['temperature'])}
+              >
+                <option value="C">°C</option>
+                <option value="F">°F</option>
               </select>
             </div>
           </div>

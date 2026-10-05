@@ -1,5 +1,6 @@
 import type { S650CenterWidget, S650HmiTheme } from './s650/config';
 import type { ClassicJdmAuxGauge, ClassicJdmDefiTheme, ClassicJdmTachStyle } from './classic_jdm/config';
+import type { R34MfdMode, R34Lighting } from './r34_mfd/config';
 import type { StackSt8100Settings } from './stack_st8100/config';
 import type { HudDisplayUnits } from './HudUnitSettingsSidebar';
 import { DEFAULT_LFA_AUTO_EXPAND, DEFAULT_LFA_MANUAL_EXPAND } from './lfa_center_ring/config';
@@ -48,6 +49,9 @@ export interface HudConfig extends Partial<StackSt8100Settings> {
   classicJdmAux1?: ClassicJdmAuxGauge;
   classicJdmAux2?: ClassicJdmAuxGauge;
   classicJdmDefiTheme?: ClassicJdmDefiTheme;
+  r34MfdMode?: R34MfdMode;
+  r34ShowCluster?: boolean;
+  r34Lighting?: R34Lighting;
   /** LFA only: manual expansion overrides automatic race detection. */
   lfaManualExpand?: boolean;
   /** LFA only: expand while confirmed lap timing is present. */
@@ -100,6 +104,9 @@ export const DEFAULT_HUD_CONFIG: HudConfig = {
   classicJdmAux1: 'tire_temp_4w',
   classicJdmAux2: 'tire_temp_rear',
   classicJdmDefiTheme: 'amber',
+  r34MfdMode: 'single',
+  r34ShowCluster: true,
+  r34Lighting: 'night',
   lfaManualExpand: DEFAULT_LFA_MANUAL_EXPAND,
   lfaAutoExpand: DEFAULT_LFA_AUTO_EXPAND,
   audioDeviceId: 'default',
@@ -108,7 +115,7 @@ export const DEFAULT_HUD_CONFIG: HudConfig = {
   unit: 'kmh',
   followAppUnits: true,
   enableSmoothing: true,
-  units: { speed: 'kmh', boostPressure: 'bar', torque: 'nm', power: 'hp' },
+  units: { speed: 'kmh', boostPressure: 'bar', torque: 'nm', power: 'hp', temperature: 'C' },
   telemetryOpacity: 0.65,
   telemetryGRadarScale: 1.0,
   telemetryGRadarAlignment: 'center',
