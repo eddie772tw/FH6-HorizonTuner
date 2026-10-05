@@ -18,7 +18,7 @@
 .lfa-divider { position: absolute; top: 184px; left: 219px; width: 122px; height: 1px; background: var(--lfa-line); }
 .lfa-gear { position: absolute; top: 188px; left: 240px; width: 80px; font-size: 47px; line-height: 48px; font-weight: 600; }
 .lfa-gear-label { position: absolute; top: 238px; left: 240px; width: 80px; font-size: 10px; letter-spacing: 2px; color: var(--lfa-secondary); }
-.lfa-status { position: absolute; top: 261px; left: 221px; width: 118px; font-size: 12px; line-height: 20px; letter-spacing: 1px; color: var(--lfa-primary); background: var(--lfa-surface); border: 1px solid var(--lfa-line); }
+.lfa-status { position: absolute; top: 253px; left: 232px; width: 96px; font-size: 12px; line-height: 20px; letter-spacing: 1px; color: var(--lfa-primary); background: var(--lfa-surface); border: 1px solid var(--lfa-line); }
 .lfa-wing { position: absolute; top: 141px; width: 70px; text-align: center; font-size: 29px; line-height: 36px; }
 .lfa-wing-left { left: 26px; }
 .lfa-wing-right { right: 26px; }

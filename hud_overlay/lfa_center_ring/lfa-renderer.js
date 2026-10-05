@@ -41,17 +41,18 @@
             if (key === dialKey || !prepare(dial)) return;
             dialKey = key;
             dial.textAlign = 'center'; dial.textBaseline = 'middle';
+            const extendedScale = v.dial.maximum > 10000;
             for (let i = 0; i <= 50; i++) {
                 const value = v.dial.maximum * i / 50;
                 const a = model.angle(value, v.dial.maximum);
                 const hot = v.redline !== null && value >= v.redline;
-                line(dial, a, i % 5 === 0 ? 133 : 139, 145, i % 5 === 0 ? 2 : .8, hot ? colors.red : colors.secondary);
+                line(dial, a, i % 5 === 0 && !extendedScale ? 133 : 139, 145, i % 5 === 0 ? 2 : .8, hot ? colors.red : colors.secondary);
             }
             if (v.redline !== null) {
                 dial.beginPath(); dial.arc(CX, CY, 149, model.angle(v.redline, v.dial.maximum), model.angle(v.dial.maximum, v.dial.maximum));
                 dial.lineWidth = 5; dial.strokeStyle = colors.red; dial.stroke();
             }
-            dial.font = '500 24px Arial, sans-serif';
+            dial.font = '500 ' + (extendedScale ? 20 : 24) + 'px Arial, sans-serif';
             v.dial.ticks.forEach((value) => {
                 const a = model.angle(value, v.dial.maximum);
                 const label = Number((value / 1000).toFixed(1)).toString();
