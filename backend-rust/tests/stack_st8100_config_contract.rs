@@ -107,7 +107,7 @@ fn stack_post_disk_relay_restart_units_and_reset_round_trip() {
         .unwrap();
     let mut receiver = service.overlay.subscribe();
     let custom = json!({"hudStyle":"stack_st8100","enabled":true,"followAppUnits":true,
-        "units":{"speed":"kmh","boostPressure":"bar","power":"kw","torque":"nm"},
+        "units":{"speed":"kmh","boostPressure":"bar","power":"kw","torque":"nm","temperature":"C"},
         "stackSt8100Face":"white","stackSt8100Dial":"0-3-10.5","stackSt8100Page":"peaks","stackSt8100TemperatureUnit":"f",
         "stackSt8100Field1":"power","stackSt8100Field2":"torque","stackSt8100Field3":"race_time","stackSt8100Field4":"throttle",
         "stackSt8100Alarms":[{"metric":"speed","enabled":true,"direction":"high","threshold":180},
