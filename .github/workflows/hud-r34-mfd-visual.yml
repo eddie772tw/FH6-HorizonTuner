@@ -4,6 +4,8 @@ on:
     branches: [main]
     paths:
       - 'hud_overlay/r34_mfd/**'
+      - 'docs/assets/r34-mfd/**'
+      - 'docs/hud/r34-mfd.md'
       - 'hud_overlay/shared/**'
       - 'frontend/src/features/overlay_control/**'
       - 'lang/**'

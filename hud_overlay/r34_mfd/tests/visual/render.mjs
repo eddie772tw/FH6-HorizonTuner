@@ -21,7 +21,15 @@ try {
       const filename = `${name}-${width}x${height}-dpr${dpr}.png`; await page.screenshot({ path: path.join(out, filename), omitBackground: true }); report.screenshots.push(filename);
       const bounds = await page.locator('#r34Container').boundingBox(); assert(bounds && bounds.x >= 0 && bounds.y >= 0 && bounds.x + bounds.width <= width && bounds.y + bounds.height <= height);
       assert.equal(await page.evaluate(() => getComputedStyle(document.body).backgroundColor), 'rgba(0, 0, 0, 0)');
-      report.checks.push({ name, viewport: [width, height], dpr, bounds });
+      const status = await page.locator('#r34StreamStatus').evaluate(node => {
+        if (!node.textContent.trim()) return null;
+        const b = node.getBoundingClientRect();
+        const cluster = document.getElementById('r34Cluster');
+        const owner = (cluster.hidden ? document.getElementById('r34Mfd') : cluster).getBoundingClientRect();
+        return { text: node.textContent, clear: b.top >= owner.bottom, fits: b.left >= 0 && b.right <= innerWidth && b.bottom <= innerHeight };
+      });
+      if (status) assert(status.clear && status.fits, 'Stream status must fit in clear space below the physical case');
+      report.checks.push({ name, viewport: [width, height], dpr, bounds, status });
     };
     const inspectCanvas = async id => {
       const geometry = await page.locator('#' + id).evaluate(canvas => {
@@ -34,7 +42,30 @@ try {
       assert(Math.abs(geometry.width / geometry.height - geometry.logicalWidth / geometry.logicalHeight) < .01, id + ' logical aspect must survive HUD scaling');
       report.checks.push({ canvas: id, ...geometry }); return geometry;
     };
+    const inspectDials = async mode => {
+      const dials = await page.locator('[data-mode="' + mode + '"] .r34-dial').evaluateAll(elements => elements.map(dial => {
+        const bounds = dial.querySelector('svg').getBoundingClientRect();
+        const panel = dial.querySelector('.r34-peak-panel').getBoundingClientRect();
+        const tolerance = 1 / devicePixelRatio;
+        const overlaps = (a, b) => a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+        const legends = [...dial.querySelectorAll('[id$="-labels"] text, [id$="-unit"]')];
+        return {
+          labels: [...dial.querySelectorAll('text')].map(text => {
+            const b = text.getBoundingClientRect();
+            return { text: text.textContent, contained: b.left >= bounds.left - tolerance && b.right <= bounds.right + tolerance && b.top >= bounds.top - tolerance && b.bottom <= bounds.bottom + tolerance };
+          }),
+          siblingOverlap: legends.map(text => {
+            const b = text.getBoundingClientRect();
+            return { text: text.textContent, panel: overlaps(b, panel), legends: legends.filter(other => other !== text && overlaps(b, other.getBoundingClientRect())).map(other => other.textContent) };
+          }),
+        };
+      }));
+      assert(dials.every(dial => dial.labels.every(label => label.contained)), mode + ' gauge labels must fit their own dial viewport');
+      assert(dials.every(dial => dial.siblingOverlap.every(label => !label.panel && !label.legends.length)), mode + ' scale labels and units must not overlap sibling PEAK panels or other legends');
+      report.checks.push({ mode, dialReadability: dials });
+    };
     await configure({}); await save('waiting');
+    await inspectDials('single');
     await inspectCanvas('r34History');
     for (const mode of ['single', 'twin', 'multi', 'g', 'lap']) {
       await configure({ r34MfdMode: mode });
@@ -42,18 +73,7 @@ try {
       await frame({ LapNumber: mode === 'lap' ? 6 : 3 }); await save(mode);
       assert.equal(await page.locator('[data-mode]:not([hidden])').getAttribute('data-mode'), mode);
       if (mode === 'single' || mode === 'g') await inspectCanvas(mode === 'g' ? 'r34G' : 'r34History');
-      if (mode === 'single' || mode === 'twin') {
-        const labels = await page.locator('[data-mode="' + mode + '"] .r34-dial').evaluateAll(dials => dials.flatMap(dial => {
-          const bounds = dial.querySelector('svg').getBoundingClientRect();
-          const tolerance = 1 / devicePixelRatio;
-          return [...dial.querySelectorAll('text')].map(text => {
-            const b = text.getBoundingClientRect();
-            return { text: text.textContent, contained: b.left >= bounds.left - tolerance && b.right <= bounds.right + tolerance && b.top >= bounds.top - tolerance && b.bottom <= bounds.bottom + tolerance };
-          });
-        }));
-        assert(labels.every(label => label.contained), mode + ' gauge labels must fit their own dial viewport');
-        report.checks.push({ mode, dialLabels: labels });
-      }
+      if (mode === 'single' || mode === 'twin') await inspectDials(mode);
     }
     const gMarker = async () => page.locator('#r34G').evaluate(canvas => {
       const pixels = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height).data;
@@ -97,9 +117,9 @@ try {
     assert.equal(await page.locator('#r34LapList li:first-child span:first-child').textContent(), '1');
     await save('first-completed-lap');
     await configure({ r34MfdMode: 'single', r34Lighting: 'day' }); await frame({}); await save('day');
-    await configure({ r34MfdMode: 'single', effectiveUnits: { speed: 'mph', boostPressure: 'psi' } }); await frame({ Boost: -7.2519, Gear: 0 }); await save('imperial-vacuum');
+    await configure({ r34MfdMode: 'single', effectiveUnits: { speed: 'mph', boostPressure: 'psi' } }); await frame({ Boost: -7.2519, Gear: 0 }); await save('imperial-vacuum'); await inspectDials('single');
     assert.equal(await page.locator('#r34Single-value').textContent(), '-7.3'); assert.equal(await page.locator('#r34Gear').textContent(), 'R');
-    await configure({ r34MfdMode: 'single', effectiveUnits: { speed: 'kmh', boostPressure: 'kpa' } }); await frame({ Boost: 43.5114, CurrentEngineRpm: 12000, SpeedMetersPerSecond: 100 }); await save('over-scale-kpa');
+    await configure({ r34MfdMode: 'single', effectiveUnits: { speed: 'kmh', boostPressure: 'kpa' } }); await frame({ Boost: 43.5114, CurrentEngineRpm: 12000, SpeedMetersPerSecond: 100 }); await save('over-scale-kpa'); await inspectDials('single');
     assert.equal(await page.locator('#r34Single-value').textContent(), '300'); assert.match(await page.locator('#r34DigitalSpeed').textContent(), /360.*OVER SCALE/);
     await configure({}); await frame({ Boost: null, CurrentEngineRpm: null, SpeedMetersPerSecond: null, Fuel: null, Gear: null }); await save('missing');
     assert.equal(await page.locator('#r34Single-value').textContent(), 'N/A');

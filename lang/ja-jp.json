@@ -26,7 +26,7 @@
   "R34 instrument lighting": "R34 メーター照明",
   "R34 night lighting": "夜間照明",
   "R34 day lighting": "昼間表示",
-  "R34 telemetry adaptation note": "1999 V·spec メーターと NISMO MFD Ver.II を基にした表示。モードはこの設定で変更し、ベゼルキーは装飾です。油温、水温、油圧、前輪トルク配分はゲームから取得できず、利用可能な値のみ正しい名称で表示します。",
+  "1999 V-spec cluster with NISMO MFD Ver.II design. Change modes here; bezel keys are decorative. No game coolant, oil pressure, oil temperature or front torque split is invented. Live channels use their actual names.": "1999 V·spec メーターと NISMO MFD Ver.II を基にした表示。モードはこの設定で変更し、ベゼルキーは装飾です。油温、水温、油圧、前輪トルク配分はゲームから取得できず、利用可能な値のみ正しい名称で表示します。",
   "Developer": "開発者向け",
   "Not checked": "未確認",
   "Check Failed": "確認に失敗しました",

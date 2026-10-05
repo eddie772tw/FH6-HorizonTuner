@@ -67,6 +67,6 @@
 .r34-lap-history ol { list-style: none; }
 .r34-lap-history li { height: 25px; padding: 5px 3px; border: 1px solid var(--r34-grid); border-top: none; display: flex; justify-content: space-between; font-size: 9px; }
 .r34-lap-history small { display: block; font-size: 8px; margin-top: 8px; color: var(--r34-dim); }
-.r34-stream-status { position: absolute; bottom: 4px; left: 254px; color: var(--r34-amber); font: 9px Arial, sans-serif; letter-spacing: 1px; }
+.r34-stream-status { position: absolute; bottom: -16px; left: 0; width: 675px; height: 12px; line-height: 12px; text-align: center; white-space: nowrap; color: var(--r34-amber); font: 9px Arial, sans-serif; letter-spacing: 1px; }
 .r34-cockpit[data-cluster="hidden"] { width: 442px; }
-.r34-cockpit[data-cluster="hidden"] .r34-stream-status { left: 14px; bottom: -17px; }
+.r34-cockpit[data-cluster="hidden"] .r34-stream-status { width: 442px; }

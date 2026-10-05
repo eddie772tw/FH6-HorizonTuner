@@ -57,8 +57,12 @@ async function main() {
     }, expected);
     const card = () => page.getByRole('group', { name: 'R34 MFD settings', exact: true });
     const style = () => page.getByRole('combobox', { name: 'Speedometer Settings', exact: true });
+    const helper = "1999 V-spec cluster with NISMO MFD Ver.II design. Change modes here; bezel keys are decorative. No game coolant, oil pressure, oil temperature or front torque split is invented. Live channels use their actual names.";
     const capture = async (name, target = card()) => {
       await target.scrollIntoViewIfNeeded();
+      const expectedHelper = name.endsWith('zh-tw') || name.endsWith('ja-jp')
+        ? JSON.parse(fs.readFileSync(path.join(repo, 'lang', name.endsWith('zh-tw') ? 'zh-tw.json' : 'ja-jp.json'), 'utf8'))[helper] : helper;
+      assert.equal((await target.locator('p').textContent()).trim(), expectedHelper, 'Settings helper must be the complete localized sentence');
       const layout = await target.evaluate(element => {
         const bounds = element.getBoundingClientRect();
         const controls = [...element.querySelectorAll('select,input')].map(node => { const r = node.getBoundingClientRect(); return { label: node.labels?.[0]?.textContent, left: r.left, right: r.right, width: r.width }; });

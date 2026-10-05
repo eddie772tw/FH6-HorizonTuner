@@ -65,4 +65,6 @@ Recorder 優先取 `data.sourceTelemetry` 的原始唯讀封包；否則接受�
 - 同上執行 `frontend/src/features/overlay_control/r34_mfd/tests/browser/verify.cjs`：真實 OverlayView 控制、五模式／day-night／cluster、disk-backed HTTP、reload／reset／切換返回、六種 Halfmoon 主題及窄版繁中／日文含字形驗證
 - 同上執行 `launcher.mjs`：真實 Launcher → Coordinator → sourceTelemetry → HUDCore 流程、模式 relay、缺失 boost、stale replay、切換返回
 
+讀數可見性檢查除了 viewport 包含性，也直接比較刻度／單位與同層 PEAK 面板的幾何重疊；bar、psi、kPa 與 RPM 最大刻度都必須完整可讀。狀態提示放在機殼下方的透明留白，設定頁則驗證完整英語原文與繁中／日文翻譯，不接受顯示短 lookup key。
+
 視覺 workflow 使用 GitHub Actions 的 Google Chrome 並維持 `chromiumSandbox: true`，輸出 720p／1080p／DPR 2 的實際 HTML／SVG／Canvas 截圖與 JSON 證據。不得用停用 sandbox 迴避本地環境限制。這些是 Chrome fixture，仍不是 Windows 原生透明 click-through 或真實遊戲驗收；完成狀態以該 PR 的實際結果為準。

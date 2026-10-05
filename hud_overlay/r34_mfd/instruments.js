@@ -61,18 +61,18 @@
         return s;
     }
     function mfdDialMarkup(id, label) {
-        var s = '<svg xmlns="' + NS + '" viewBox="-8 0 188 202" aria-label="' + label + '">';
+        var s = '<svg xmlns="' + NS + '" viewBox="-8 0 188 228" aria-label="' + label + '">';
         s += text(86, 18, label, 'r34-mfd-number');
         s += '<path d="' + arc(86, 101, 62, 135, 405) + '" fill="none" stroke="var(--r34-metal)" stroke-width="18"/>';
         s += '<path id="' + id + '-sector" d="M86,101Z" fill="var(--r34-green)" opacity=".9"/>';
         for (var i = 0; i <= 25; i++) s += line(86, 101, 54, i % 5 === 0 ? 71 : 63, 135 + i / 25 * 270, 'var(--r34-ink)', 1.1);
         s += '<g id="' + id + '-labels"></g>';
-        s += '<path d="M103,132 L164,127 L161,169 L121,189 L103,173Z" fill="var(--r34-teal)" opacity=".85"/>';
+        s += '<path class="r34-peak-panel" d="M96,176 L174,170 L171,212 L116,224 L96,209Z" fill="var(--r34-teal)" opacity=".85"/>';
         s += '<path id="' + id + '-needle" d="M-10,-2 L62,0 L-10,2Z" fill="var(--r34-needle)" transform="translate(86 101) rotate(135)"/>';
         s += '<circle cx="86" cy="101" r="15" fill="var(--r34-metal)" stroke="var(--r34-dim)"/>';
-        s += text(132, 148, '—', 'r34-digital').replace('<text ', '<text id="' + id + '-value" ');
-        s += text(132, 161, 'PEAK', 'r34-mfd-number') + text(132, 176, '—', 'r34-mfd-number').replace('<text ', '<text id="' + id + '-peak" ');
-        s += text(45, 190, 'bar', 'r34-mfd-number').replace('<text ', '<text id="' + id + '-unit" ') + '</svg>';
+        s += text(135, 187, '—', 'r34-digital').replace('<text ', '<text id="' + id + '-value" ');
+        s += text(135, 201, 'PEAK', 'r34-mfd-number') + text(135, 215, '—', 'r34-mfd-number').replace('<text ', '<text id="' + id + '-peak" ');
+        s += text(45, 214, 'bar', 'r34-mfd-number').replace('<text ', '<text id="' + id + '-unit" ') + '</svg>';
         return s;
     }
     function setDialLabels(group, min, max) {
