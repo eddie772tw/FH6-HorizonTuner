@@ -79,7 +79,7 @@ async function main() {
     }, parser.samples[0].parsedJson);
     await page.waitForTimeout(300);
     await record('host-parser-positive', {speed:'180',gear:'4',status:'PI N/A',tire:'95°C',boost:'1',boostUnit:'bar',boostMode:'',throttle:'80%',brake:'20%',lap:'0:34.21'});
-    await patch({CurrentLap:34.8});
+    await page.waitForTimeout(200); await patch({CurrentLap:34.8}); // Positive progression after the400ms race-confirmation window.
     await page.evaluate(config => window.dispatchEvent(new CustomEvent('hud:config', { detail: { ...config, lfaManualExpand: true } })), config);
     await page.waitForTimeout(800); await record('host-manual-expanded', {expanded:'true',expansionSettled:'true',expandedCurrent:'0:34.80'});
     await page.evaluate(config => window.dispatchEvent(new CustomEvent('hud:config', { detail: config })), config);
