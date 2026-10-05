@@ -16,7 +16,7 @@ description: 稽核與修復 .agents、Journal、Jules 原始日誌、skill 索�
 3. 搜尋大小寫衝突（例如 `.Jules`/`.jules`）、過時專案路徑、`file:///`、失效 references 與重複的規則。
 4. 檢查社群健康與安全檔案（如 `SECURITY.md`、`README.md`、`LICENSE`）之連結有效性與版本一致性。
 5. 檢查文件語言邊界：agent 文件以中文為主；`.jules/*.md` 保留 Jules 原始英文，不翻譯。
-6. 檢查測試健康度與分流：確認 `tests/` 僅保留產品核心單元測試，開發/治理腳本測試位於 `scripts/tests/`，無正則測試 YAML 或 Canvas 微觀座標斷言等過度測試反模式。
+6. 檢查測試健康度與分流：確認產品契約位於 `backend-rust/tests/` 與前端 Vitest，凍結 TS characterization 位於 `frontend/test-reference/tuning/`；`tests/` 保留 golden fixtures 與選用 Python 發行／相容案例，開發/治理腳本測試位於 `scripts/tests/`，無正則測試 YAML 或 Canvas 微觀座標斷言等過度測試反模式。
 7. 比對 `.jules`、Journal、AGENTS 與 rules：只有已在本地驗證且可重現的結論，才能從 Journal 升格為永久規則或 skill。
 8. 執行相關 skill validator、`git diff --check`，並記錄發現、修正與仍待處理項目。
 

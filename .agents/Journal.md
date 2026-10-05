@@ -1,5 +1,13 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-10-05 / v1.7.1 候選收尾與 Rust SSOT 邊界（Codex as Codex）
+
+- **來源／狀態**：`local`／`verified`；另有固定 PR SHA 的 Windows Host Diagnostics 證據。
+- **Learning**：Vite `generateBundle` 的 renderedLength 只能觀察 tree shaking 後結果，無法攔住已被消除的錯誤 dependency。guard 改在原始 TS transform／resolution 階段檢查，並以真實建置驗證未使用的直接匯入、re-export、dynamic import 與舊路徑。純型別抽離不改變 Rust 算法 owner；runtime defaults 不得混入型別檔。
+- **Action**：43 個產品型別抽離、62 個凍結模型／測試移出 src；刪除未掛載組件與未使用 helper；Vite 8.3.2；移除 Halfmoon 未使用的 CSS 建置 CLI 及其弱點鏈。EV smoke 改接獨立 Rust HTTP，保留原始 Taycan 回放並驗證重啟持久化。SQLite 仍在資料根目錄，Diagnostics 依 v1.7 既有合約修正，不進行使用者資料遷移。
+- **Evidence**：前端 1,105 passed／1 skipped；Windows／LAN build 通過；audit 0；Rust full 與 no-default-features 通過；Windows Host Diagnostics 7 passed；EV 真實 HTTP 回放、保存／重啟、六種主題與繁中／英文成功。最後候選 SHA 的 CI 與 artifact 另按 [驗收紀錄](../docs/releases/v1.7.1-acceptance.md) 核對，不能用這些歷史結果代替。
+- **Skills**：`portable-release-validation`、`pr-author-maintainer`、`pr-review-evaluation`、`physics-tuning-math`、`modular-refactoring`、`agent-governance-audit`、`github-security-audit`、`ponytail`。
+
 ## 歷史摘要 / v1.6 以前開發經驗與跨架構演進核心紀錄（Pre-v1.6 Architecture Archive & Core Learnings）
 
 - **來源／狀態**：`archive`／`verified`；本條目為 v1.6 以前（2026-08-11 ~ 2026-09-15）跨版本開發經驗、歷史踩坑與架構演進之單一收攏精簡摘要（SSOT 封存）。
@@ -75,7 +83,7 @@
 
 ### 2026-10-01 / #462 Road 模型修正（Bagley as Dot）
 
-- 使用 physics-tuning-math、modular-refactoring、pr-author-maintainer；使用者授權納入PR460。逐commit固定輸入重播定位972e9c2首次引入高扭力退化；397/412、EV445、446後续limiter修補不是固定輸入公式變更來源。
+- 使用 physics-tuning-math、modular-refactoring、pr-author-maintainer；使用者授權納入PR460。逐commit固定輸入重播定位972e9c2首次引入高扭力退化；397/412、EV445、446後續limiter修補不是固定輸入公式變更來源。
 - v3以兩個既有先驗的較短齒比作工程啟發式；明確不把traction上限說成物理下限，不宣稱最佳起步。保留低功率、v4量測、共同網格與無解；新增後端運動學診斷。
 - Road正式推薦升v2；歷史v1依凍結gearing v2驗證。舊goldens不改，新基線分檔；歷史與新模型都須經相同資格及保存檢查。
 - 實車資料仍未補齊；因果、矩陣、候選輸出及界限見docs/tuning/aego-road-launch-v3.md。沒有合併／發行或關閉462。

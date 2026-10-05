@@ -1,5 +1,12 @@
 # FH6-HorizonTuner MCP setup
 
+## Formal tuning owner (v1.7.1)
+
+Use `calculate_tuning_workflow` for desktop-equivalent recommendations. Its request uses `tuning-workflow-result/v1`, the complete profile, goal, season, car identity and qualified evidence (`saved-engine` with `observationId`, or `saved-ev` with `evidenceId`). Original captures can also be replayed by the same Rust library. Bare peak values do not establish measured readiness. This read-only tool preserves saved state; persistence requires backend-issued evidence through the application API.
+
+Older quick solver tools retain `legacy-mcp/v1` / `tuning-dev/v1` compatibility and are not interchangeable with the formal workflow or `legacy-cli/v1`. See the [responsibility contract](../contracts/tuning_responsibilities.md).
+
+
 FH6-HorizonTuner exposes a localhost, read-only MCP server from the running
 FastAPI backend. The MCP endpoint is Streamable HTTP at `/mcp`, so MCP calls
 share the same process and live telemetry snapshot as the application.
