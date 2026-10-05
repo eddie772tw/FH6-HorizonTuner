@@ -521,7 +521,7 @@ impl Backend for App {
                 let client = crate::companion_usb_runtime::packaged_client(&self.config.root)?;
                 let devices = client
                     .list_devices()
-                    .map_err(|e| ApiError::new(503, &e.to_string()))?;
+                    .map_err(|e| ApiError::unavailable("USB list devices", e))?;
                 return Ok(ApiResponse::json(json!({"devices": devices})));
             }
             ("POST", "/api/companion/usb/connect") => {
@@ -534,7 +534,7 @@ impl Backend for App {
                 let port = self.companion.get_status(None).port;
                 let result = client
                     .connect(serial, port)
-                    .map_err(|e| ApiError::new(503, &e.to_string()))?;
+                    .map_err(|e| ApiError::unavailable("USB connect", e))?;
                 return Ok(ApiResponse::json(serde_json::to_value(result)?));
             }
             ("GET", "/api/companion/workflow") => {
@@ -725,7 +725,7 @@ impl Backend for App {
                     .unwrap_or("default");
                 self.native
                     .set_audio_device(device)
-                    .map_err(|e| ApiError::new(500, e.to_string()))?;
+                    .map_err(|e| ApiError::internal("Audio device selection", e))?;
                 json!({"message":"Audio capture device set successfully","device_id":device,"success":true})
             }
             ("GET", "/api/overlay/audio_spectrum") => self.native.audio_spectrum(),

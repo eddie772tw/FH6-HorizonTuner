@@ -14,6 +14,15 @@ pub struct ApiError {
 pub type ApiResult<T> = Result<T, ApiError>;
 
 impl ApiError {
+    /// Log native details locally while keeping operational failures off the wire.
+    pub fn internal(operation: &str, error: impl std::fmt::Display) -> Self {
+        eprintln!("{operation}: {error}");
+        Self::new(500, "Internal Server Error")
+    }
+    pub fn unavailable(operation: &str, error: impl std::fmt::Display) -> Self {
+        eprintln!("{operation}: {error}");
+        Self::new(503, "Service Unavailable")
+    }
     pub fn new(status: u16, detail: impl Into<String>) -> Self {
         Self {
             status,

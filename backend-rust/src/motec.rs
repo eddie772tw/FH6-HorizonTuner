@@ -102,7 +102,7 @@ pub fn export(metadata: &Value, points: &[Value]) -> ApiResult<Vec<u8>> {
     let mut record = |row: Vec<String>| {
         writer
             .write_record(row)
-            .map_err(|e| ApiError::new(500, e.to_string()))
+            .map_err(|e| ApiError::internal("MoTeC CSV export", e))
     };
     for row in [
         vec!["Format", "MoTeC CSV Log File", "Version", "1.00"],
@@ -147,7 +147,7 @@ pub fn export(metadata: &Value, points: &[Value]) -> ApiResult<Vec<u8>> {
     drop(record);
     let mut bytes = writer
         .into_inner()
-        .map_err(|e| ApiError::new(500, e.to_string()))?;
+        .map_err(|e| ApiError::internal("MoTeC CSV export", e))?;
     bytes.extend_from_slice(b"\r\n");
     let mut writer = csv::WriterBuilder::new()
         .flexible(true)
@@ -156,7 +156,7 @@ pub fn export(metadata: &Value, points: &[Value]) -> ApiResult<Vec<u8>> {
     let mut record = |row: Vec<String>| {
         writer
             .write_record(row)
-            .map_err(|e| ApiError::new(500, e.to_string()))
+            .map_err(|e| ApiError::internal("MoTeC CSV export", e))
     };
     let columns: Value =
         serde_json::from_str(include_str!("../resources/motec-columns.json")).unwrap();
@@ -231,7 +231,7 @@ pub fn export(metadata: &Value, points: &[Value]) -> ApiResult<Vec<u8>> {
     drop(record);
     writer
         .into_inner()
-        .map_err(|e| ApiError::new(500, e.to_string()))
+        .map_err(|e| ApiError::internal("MoTeC CSV export", e))
 }
 pub fn import(bytes: &[u8]) -> ApiResult<(Value, Vec<Value>)> {
     let mut reader = csv::ReaderBuilder::new()
