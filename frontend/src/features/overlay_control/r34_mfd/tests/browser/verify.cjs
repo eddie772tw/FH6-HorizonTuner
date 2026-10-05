@@ -13,8 +13,11 @@ async function main() {
   fs.writeFileSync(configPath, JSON.stringify({ ...defaults.DEFAULT_HUD_CONFIG, hudStyle: 'simple', fixtureUnknownField: 42,
     elements: { ...defaults.DEFAULT_HUD_CONFIG.elements, showTeleMaster: false } }));
   const read = () => JSON.parse(fs.readFileSync(configPath, 'utf8'));
+  const appSettingsPath = path.join(out, 'fixture-app-settings.json');
+  fs.writeFileSync(appSettingsPath, JSON.stringify(defaults.DEFAULT_SETTINGS));
+  const readAppSettings = () => JSON.parse(fs.readFileSync(appSettingsPath, 'utf8'));
   let appUnitPresets;
-  const report = { scope: 'Real React settings and runtime, disk-backed HTTP fixture; not native/game acceptance', saves: [], screenshots: [], checks: [], errors: [] };
+  const report = { scope: 'Real React settings and runtime, disk-backed HTTP fixture; not native/game acceptance', saves: [], themeSaves: [], screenshots: [], checks: [], errors: [] };
   const json = (res, body, status = 200) => { res.writeHead(status, { 'content-type': 'application/json' }); res.end(JSON.stringify(body)); };
   const api = { name: 'r34-browser-fixture-api', configureServer(server) { server.middlewares.use((req, res, next) => {
     const name = new URL(req.url, 'http://localhost').pathname;
@@ -26,8 +29,14 @@ async function main() {
       }); return;
     }
     if (name === '/api/settings') {
+      if (req.method === 'POST') {
+        let body = ''; req.on('data', chunk => { body += chunk; }); req.on('end', () => {
+          try { const patch = JSON.parse(body), settings = { ...readAppSettings(), ...patch }; fs.writeFileSync(appSettingsPath, JSON.stringify(settings)); report.themeSaves.push(settings.theme); json(res, settings); }
+          catch (error) { json(res, { success: false, error: String(error) }, 400); }
+        }); return;
+      }
       const query = new URL(req.headers.referer || 'http://localhost').searchParams;
-      return json(res, { ...defaults.DEFAULT_SETTINGS, language: query.get('language') || 'en-us', units: appUnitPresets[query.get('temperature') === 'F' ? 'imperial' : 'metric'] });
+      return json(res, { ...readAppSettings(), language: query.get('language') || 'en-us', units: appUnitPresets[query.get('temperature') === 'F' ? 'imperial' : 'metric'] });
     }
     if (name === '/api/languages') return json(res, [{ code: 'en-us', name: 'English' }, { code: 'zh-tw', name: '繁體中文' }, { code: 'ja-jp', name: '日本語' }]);
     if (name.startsWith('/api/languages/')) { const code = name.split('/').pop(); return json(res, ['en-us', 'zh-tw', 'ja-jp'].includes(code) ? JSON.parse(fs.readFileSync(path.join(repo, 'lang', code + '.json'), 'utf8')) : {}); }
@@ -58,7 +67,7 @@ async function main() {
     const open = async query => {
       await page.goto(origin + '/src/features/overlay_control/r34_mfd/tests/browser/index.html' + (query || ''));
       await page.locator('details.hud-advanced-settings > summary').click();
-      await page.waitForFunction(() => !document.querySelector('select[id$="-style"]')?.disabled);
+      await page.waitForFunction(() => !document.querySelector('select[id$="-style"]')?.disabled && Boolean(window.r34FixtureTheme));
     };
     const savedAs = async expected => page.waitForFunction(async values => {
       const config = await (await fetch('/api/overlay/config')).json(); return Object.entries(values).every(([key, value]) => config[key] === value);
@@ -74,7 +83,8 @@ async function main() {
       const layout = await target.evaluate(element => {
         const bounds = element.getBoundingClientRect();
         const controls = [...element.querySelectorAll('select,input')].map(node => { const r = node.getBoundingClientRect(); return { label: node.labels?.[0]?.textContent, left: r.left, right: r.right, width: r.width }; });
-        return { viewport: innerWidth, fits: bounds.left >= 0 && bounds.right <= innerWidth && element.scrollWidth <= element.clientWidth + 1, controls };
+        const root = document.documentElement;
+        return { theme: { mode: root.dataset.bsTheme, core: root.dataset.bsCore, designSystem: root.dataset.designSystem }, viewport: innerWidth, fits: bounds.left >= 0 && bounds.right <= innerWidth && element.scrollWidth <= element.clientWidth + 1, controls };
       });
       assert(layout.fits && layout.controls.every(control => control.label && control.width > 0 && control.left >= 0 && control.right <= layout.viewport), name + ' clipped settings');
       await target.screenshot({ path: path.join(out, name + '.png') }); report.screenshots.push({ name, ...layout });
@@ -111,10 +121,25 @@ async function main() {
     assert.equal(read().effectiveUnits, undefined);
     await unitPanel().getByRole('button', { name: 'Close Unit Settings', exact: true }).click();
     report.checks.push('Temperature app inheritance, independent C/F control, disk persistence, reload and derived-unit separation');
-    for (const theme of ['dark', 'light']) for (const core of ['default', 'modern', 'elegant']) {
-      await page.evaluate(({ theme, core }) => { document.documentElement.dataset.bsTheme = theme; document.documentElement.dataset.bsCore = core; }, { theme, core });
-      await capture('settings-' + theme + '-' + core);
+    const cores = await page.evaluate(() => window.r34FixtureTheme.entries);
+    report.themeCatalog = cores;
+    const themeApplied = async expected => page.waitForFunction(async ({ mode, core, designSystem }) => {
+      const root = document.documentElement.dataset, current = window.r34FixtureTheme?.current;
+      const stored = JSON.parse(localStorage.getItem('themeSettings') || '{}');
+      const persisted = (await (await fetch('/api/settings')).json()).theme;
+      return root.bsTheme === mode && root.bsCore === core && root.designSystem === designSystem &&
+        current?.mode === mode && current.halfmoonCore === core && stored.mode === mode && stored.halfmoonCore === core &&
+        persisted?.mode === mode && persisted.halfmoonCore === core;
+    }, expected);
+    for (const mode of ['dark', 'light']) for (const { core, designSystem } of cores) {
+      await page.evaluate(({ mode, core }) => window.r34FixtureTheme.update({ mode, halfmoonCore: core }), { mode, core });
+      await themeApplied({ mode, core, designSystem });
+      await capture('settings-' + mode + '-' + core);
     }
+    const lastTheme = { mode: 'light', ...cores.at(-1) };
+    await open(); await card().waitFor({ state: 'visible' }); await themeApplied(lastTheme);
+    await capture('settings-theme-reloaded');
+    report.checks.push('Every catalog core in both modes through ThemeProvider, including derived design-system attributes, localStorage, disk persistence and reload');
     await page.setViewportSize({ width: 390, height: 844 }); await capture('settings-narrow'); await page.setViewportSize({ width: 1440, height: 1100 });
     await style().selectOption('simple'); await card().waitFor({ state: 'detached' }); await style().selectOption('r34_mfd'); await card().waitFor({ state: 'visible' });
     await savedAs({ r34MfdMode: 'lap', r34ShowCluster: false });
