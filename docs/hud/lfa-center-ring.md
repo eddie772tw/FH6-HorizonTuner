@@ -14,7 +14,7 @@
 - 右側中央：封包回報的目前單圈經過時間，沒有資料時保留 `—:—`
 - 中央原 LIVE 區：有效排名 `P#`；完成單圈／最佳單圈改善時短暫提示，之後回到排名或 LIVE
 
-## 展開／還原機構（Chrome 驗證待完成）
+## 展開／還原機構
 
 已查看 [2012 官方手冊 Normal／Menu 圖，印刷116／PDF118頁](https://assets.sia.toyota.com/publications/en/om-s/OM77006U/pdf/OM77006U.pdf#page=118)，以及 [Lexus 日本官方 LFA 手冊，印刷98／PDF100頁](https://manual.lexus.jp/pdf/lfa/LFA_OM_JP_M77001J_1_1012.pdf#page=100)。[官方年份索引](https://manual.lexus.jp/lfa/) 對應2010年12月至2012年12月。兩者都顯示主錶環連同畫面右移、左方出現選單；英文手冊印刷144–145頁另有單圈資訊版面。這是 **Menu display 機構**，不把 SPORT 或日本版 Circuit Mode 誤當相同功能；本 HUD 自動依單圈訊號切換是原創適配。
 
@@ -27,7 +27,7 @@
 - timestamp停止真正前進3秒後自動收合；讀數仍在1.5秒失效。短斷流重連不抖動，重播／倒序不刷新確認時鐘，時代或車輛變更靜默重建基準。短暫error只啟動緩衝，不立即收合；有效圈時的pause或缺少速度／RPM不單獨改變布局，讀數安全規則仍清空內容
 - 手動ON可在失聯時維持展開，但內容仍清空。本功能是有界的單圈訊號推論，並非完美比賽旗標
 
-`tests/visual/expansion.mjs` 用可控制時鐘產生收合、展開、中間幀與還原證據，並測試真實螢幕右移、快速反轉、reduced-motion、resize、初始0／換圈／缺失／斷線。設定頁另有真實OverlayView→BroadcastChannel→Launcher整合測試。新功能的Chrome像素審查尚待CI，既有預覽不代表展開版已驗收。
+`tests/visual/expansion.mjs` 用可控制時鐘產生收合、展開、中間幀與還原證據，並測試真實螢幕右移、快速反轉、reduced-motion、resize、初始0／換圈／缺失／斷線。設定頁另有真實OverlayView→BroadcastChannel→Launcher整合測試。Chrome展開／還原與設定頁功能整合已通過，並已查看實際HUD像素；中日文字型已在補齊CI字型的獨立重跑後實際查看，繁體中文／日文可讀且未溢出。
 
 ## 精確資料與單位契約
 
@@ -88,22 +88,24 @@ T_6820 圖本身標示 Issued 10/2009、中央 AUTO，不能當作 2012 年式�
 
 ## 尺寸、中央保留與驗證狀態
 
-560×370 設計座標、0.75 預設縮放，約 420×277.5 CSS px，沿用右下 30 px 邊界。四弧輪廓與半徑 180 的外部合成 mask 保持原樣；原中央 PNG／SVG 雜湊、`lfa.css`、`drawScale()`／`drawNeedle()` 已確認與此次基底 `48a3d5e4bc27bc36d75cddba75cbf989fd2b2857` 相同。只有原 LIVE 字串按使用者要求更新，geometry／material 不變。
+560×370設計座標，預設0.75縮放、420×277.5 CSS px，右下30px邊界。展開維持同一占位，中央實際右移72 CSS px。中央PNG／SVG、`lfa.css`、`drawScale()`／`drawNeedle()`與展開前`bbf64fbd`逐byte一致。
 
-- 中央 PNG SHA-256：`3433460df37b91c67f09cfe7b3c99bacd6ad925db36b113042a95bc196422b22`
-- 中央 SVG SHA-256：`8570a31f672dac12bb94e198a91cb78576dd0b09b81c140dd4ae7ca68b924028`
-- 本機：**160 files passed／1 skipped；1,208 tests passed／1 skipped**，含 81 個 LFA 行為測試；`build:web-hud`、語法與 diff gate 通過
-- 最新右上增壓比例修訂已完成本機與實際 Chrome 驗證。僅移除右上舊固定刻度、按弧長投影切換刻度，渦輪圖示下移並縮至 80%，數字／單位／VAC 區塊移至 x481、y148／160／172 以避開 VAC 中段標籤；其餘三弧與中央未改。側面 PNG 與前版逐像素比對，改動只在右上區域
-- **實際 Chrome 154.0.8037.57 renderer 與共用 launcher 通過**：[run 37266656967](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37266656967)，來源 `5c5b8f63c735a0e55a826a263db53199958dd6ce`、artifact `11326489095`，維持 `chromiumSandbox:true`
-- 實際執行 1280×720、1920×1080、2560×1440 的 DPR1 與 1920×1080 DPR2。C/F、bar/psi/kPa、平均缺失／0、signed boost／0／missing、踏板端點與夾值、排名／計圈通知／逾時／重設、99:59.99 最大寬度、斷線重連與原有生命週期均通過；launcher 使用真正 coordinator、開啟 smoothing，驗證 parser JSON、過期清空、重連、設定、重載與 destroy
-- 新增正增壓 0.25／0.5／1／2 bar 與 −0.5 VAC 比較，實際弧長刻度、模式切換、藍色負壓、零／缺失與文字不重疊檢查均通過；也涵蓋 bar／psi／kPa 長字串搭配 99:59.99。已查看 +0.5、−0.5 與 PSI VAC 實際像素，刻度、圖示、數字、單位與 VAC 清楚分離。這是實作與視覺檢查結果，**最新修訂仍待使用者驗收**
-- 比例修訂首輪 run `37266270934` 的真實文字 bounds 檢查抓到 VAC 0.25 刻度與 −0.5 讀數相撞。保留該斷言，僅移動右上讀數區塊並擴充長字串／單圈時間檢查；上述新 run 已通過
-- 首輪 run `37263909153` 因 fixture 已切回 metric、卻只將 mph 設為非法值，錯把有效的 180 km/h 預期為空白而失敗。修正測試為兩個速度欄位皆非法；runtime 未改，重新執行本機 gate 與上述 Chrome gate 均通過
-- **Windows 原生 overlay、click-through、置頂與 Forza 實機未驗證**。右下槽位假設取代遊戲原生儀表，仍需檢查遊戲提示／字幕遮擋
+- 中央PNG SHA-256：`3433460df37b91c67f09cfe7b3c99bacd6ad925db36b113042a95bc196422b22`
+- 中央SVG SHA-256：`8570a31f672dac12bb94e198a91cb78576dd0b09b81c140dd4ae7ca68b924028`
+- 本機前端：**1,208 tests passed／1 skipped；160 files passed／1 skipped**，含81個LFA測試；`build:web-hud`、JS語法與diff gate通過
+- 本機Rust：`config_contract` **9/9通過**；完整套件123通過／1失敗／2忽略。唯一失敗`companion::tests::test_qr_payload_generation_and_pairing`在`src/companion.rs:378`檢查非空LAN IP，在未修改基底`bbf64fbd`也同樣重現；**不宣稱本機完整Rust全綠**
+- 實際CI來源：`f3dd06b7f17b3c12867648780d0622dcb8525b9f`。[CI Pipeline 37272049454](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37272049454)（含Rust backend／Agent CLI contracts）與[Release Packaging Test 37272049845](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37272049845)均成功
+- **Chrome154.0.8037.57 renderer／展開／launcher／設定頁功能測試成功**：[run37272049555](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37272049555)，artifact`11328657701`，`chromiumSandbox:true`
+- 設定頁字型重跑另有來源：`5a5daee04b1124089bb79f3c03ea03da3a6f83e5`、[run37273120011](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37273120011)、artifact`11328991695`。只補CI字型／測試環境，HUD runtime不變；已實際看過窄版繁體中文／日文，字形探測通過且沒有溢出、page errors或失敗response
+- 正常及展開套件各執行1280×720、1920×1080、2560×1440 DPR1與1920×1080 DPR2。涵蓋模式優先順序、初始0、正圈時增長、固定正值、換圈、pause／partial／error恢復、失聯、重連、快速反轉、reduced-motion、resize、初次持久化布局與原有單位／生命週期；真實OverlayView→BroadcastChannel→Launcher驗證兩個開關及持久化／重載／reset
+- 已查看收合／展開／開合中間幀／最大99:59.99／極端signed boost／手動失聯畫面及720p／1440p位置。穩定布局未見重疊；過渡時主錶遮住左面板部分文字是移動機構的預期效果。**最新使用者驗收仍待完成**
+- 首輪展開run37271654474的fixture把114ms的RAF畫面與120ms的config更新相比，誤判連續性。修正為同一時刻先更新舊目標、再反轉，嚴格比較clock／progress／transform／螢幕位置完全相同；runtime未改。重複的空runner步驟已移除
 
-前次資料／計圈修訂 `eac1b9e` 的中央像素比較以 `ad4458ec975678055a0b8555e3b0c99f53191aba` 為參考，使用 840×556 的 DPR2 detail 截圖。在中心 (420, 277.5)、半徑 267 px 內，依像素中心到圓心距離逐一比較原始 RGBA，不使用容差、羽化 mask 或重新取樣。公制、英制、倒檔、空檔、紅線、高 RPM **六個相同條件各比較 223,942 像素，差異均為 0**。排名與通知屬明確要求的變更，不列入此相同比較。缺失／離線兩張因舊 fixture 為 mph、新 fixture 為 km/h，各有 504 像素差異，全部位於速度單位文字；不能當作相同條件或宣稱所有解析度逐位元一致。這份歷史比較不冒充本次增壓比例修訂的重新量測。
+本次`f3dd06b`對照`5c5b8f6`：公制、英制、倒檔、空檔、紅線、高RPM、缺失、失聯**八個相同DPR2狀態，各223,942個中央像素差異為0**。四個完整viewport的中央圓亦差異為0（DPR1各55,974，DPR2為223,942像素）。方法為像素中心落在幾何圓內時比較原始RGBA，不重採樣、無容差或羽化；detail圓心(420,277.5)、半徑267px。1080p DPR2完整畫面的圓外另有14個不同像素，**不宣稱所有整張PNG逐位元一致，也不推論未測狀態／解析度**。
 
-證據：[驗證摘要](../assets/lfa-center-ring/verification.json)、[renderer 報告](../assets/lfa-center-ring/evidence.json)、[launcher 報告](../assets/lfa-center-ring/launcher-report.json)、[中央像素比較](../assets/lfa-center-ring/telemetry-center-preservation.json)、[UDP／JSON 單位稽核](../assets/lfa-center-ring/json-unit-audit.json)。上述成功指向已驗證的 runtime head；補入本次文件與預覽後的最終文件 commit CI 仍待執行。
+證據：[驗證摘要](../assets/lfa-center-ring/verification.json)、[renderer／展開報告](../assets/lfa-center-ring/evidence.json)、[launcher報告](../assets/lfa-center-ring/launcher-report.json)、[本次中央像素比較](../assets/lfa-center-ring/expansion-center-preservation.json)、[預覽來源](../assets/lfa-center-ring/expansion-preview-provenance.json)、[UDP／JSON單位稽核](../assets/lfa-center-ring/json-unit-audit.json)。這些成功結果對應上列實際runtime head；最終文件／預覽commit的CI仍待執行。
+
+**Windows原生overlay、click-through、置頂與Forza實機未驗證**。右下槽位假設取代遊戲原生儀表，仍需實機檢查提示／字幕遮擋。
 
 採用技能：`halfmoon-design-system`、`telemetry-udp-protocol`、`modular-refactoring`、`pr-author-maintainer`。展開設定另有前端／後端設定欄位與持久化支援；不修改UDP協定、共用launcher或其他HUD。
 
@@ -118,14 +120,24 @@ git diff --check
 
 瀏覽器重現：以 isolated Playwright、正常啟用的 Chromium sandbox 執行 `tests/visual/render.mjs` 與 `launcher.cjs`；`PLAYWRIGHT_MODULE_PATH`、`OUTPUT_DIR`、選用 `PLAYWRIGHT_CHANNEL=chrome`。本機 socket／localhost 環境限制已確認，不透過停用 sandbox 繞過。
 
-## 已驗證收合版 Chrome 預覽（展開版待CI）
+## 實際Chrome預覽
 
 以下取自上述成功 CI 的真實 renderer，呈現新的非等比例／VAC 量尺。主圖與 720p 圖保留截圖像素；比較／狀態圖僅縮小並加上標題排列，沒有重繪 HUD。全部使用合成遙測，**不是遊戲截圖**。目錄中舊 `fuel-empty.png`／`fuel-full.png` 僅為歷史證據，不代表目前已改為踏板的側錶。
 
-![四輪平均胎溫、增壓與油門煞車的實際畫面](../assets/lfa-center-ring/metric-detail.png)
+![收合布局](../assets/lfa-center-ring/metric-detail.png)
+![展開後的左側單圈／遙測面板](../assets/lfa-center-ring/expanded-detail.png)
+![真實收合、開啟中、展開與還原中畫面](../assets/lfa-center-ring/expansion-transitions.png)
 ![正增壓0.5／1bar、負壓VAC−0.5bar與零值比較](../assets/lfa-center-ring/lfa-boost-scale-comparison.png)
 ![單位、負壓、零值、夾限與缺失資料](../assets/lfa-center-ring/state-contact-sheet.png)
 ![排名、完成圈、最佳圈與最大時間寬度](../assets/lfa-center-ring/session-states.png)
 ![1280×720 右下角實際位置](../assets/lfa-center-ring/metric-720p.png)
 
 本輪5c5b8f63對照eac1b9e的八個相同DPR2狀態，中央圓223,942像素及右上區域以外430,500像素均為0差異；新證據見 `docs/assets/lfa-center-ring/boost-scale-preservation.json`。此為精確RGBA比對，沒有容差或重新取樣。
+
+## 實際HUD設定頁
+
+以下繁體中文卡片來自上列`5a5daee`設定頁重跑，與HUD預覽的`f3dd06b`來源分開記錄。
+
+![窄版繁體中文手動／自動展開設定](../assets/lfa-center-ring/settings/settings-narrow-zh-tw.png)
+
+其他語言：[英文](../assets/lfa-center-ring/settings/settings-dark-default.png)、[日文](../assets/lfa-center-ring/settings/settings-narrow-ja-jp.png)，以及[實際設定頁稽核](../assets/lfa-center-ring/settings/settings-audit.json)。

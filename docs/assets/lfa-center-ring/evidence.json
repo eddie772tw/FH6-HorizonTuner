@@ -202,5 +202,667 @@
     }
   ],
   "passed": true,
-  "error": null
+  "error": null,
+  "expansion": [
+    {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "dpr": 1,
+      "samples": [
+        {
+          "name": "collapsed",
+          "target": false,
+          "settled": true,
+          "progress": 0,
+          "x": 983.75,
+          "transform": "none",
+          "bounds": {
+            "x": 830,
+            "y": 412.5,
+            "width": 420,
+            "height": 277.5
+          }
+        },
+        {
+          "name": "opening-150ms",
+          "target": true,
+          "settled": false,
+          "progress": 0.5752757805000364,
+          "x": 1025.169921875,
+          "transform": "matrix(1, 0, 0, 1, 55.2265, 0)",
+          "bounds": {
+            "x": 830,
+            "y": 412.5,
+            "width": 420,
+            "height": 277.5
+          }
+        },
+        {
+          "name": "manual",
+          "target": true,
+          "settled": true,
+          "progress": 1,
+          "x": 1055.75,
+          "transform": "matrix(1, 0, 0, 1, 96, 0)",
+          "bounds": {
+            "x": 830,
+            "y": 412.5,
+            "width": 420,
+            "height": 277.5
+          }
+        },
+        {
+          "name": "maximum-width",
+          "target": true,
+          "settled": true,
+          "progress": 1,
+          "x": 1055.75,
+          "transform": "matrix(1, 0, 0, 1, 96, 0)",
+          "bounds": {
+            "x": 830,
+            "y": 412.5,
+            "width": 420,
+            "height": 277.5
+          }
+        },
+        {
+          "name": "closing-150ms",
+          "target": false,
+          "settled": false,
+          "progress": 0.41694092592629295,
+          "x": 1013.769775390625,
+          "transform": "matrix(1, 0, 0, 1, 40.0263, 0)",
+          "bounds": {
+            "x": 830,
+            "y": 412.5,
+            "width": 420,
+            "height": 277.5
+          }
+        },
+        {
+          "name": "auto-initial-zero",
+          "target": false,
+          "settled": true,
+          "progress": 0,
+          "x": 983.75,
+          "transform": "none",
+          "bounds": {
+            "x": 830,
+            "y": 412.5,
+            "width": 420,
+            "height": 277.5
+          }
+        },
+        {
+          "name": "auto-race",
+          "target": true,
+          "settled": true,
+          "progress": 1,
+          "x": 1055.75,
+          "transform": "matrix(1, 0, 0, 1, 96, 0)",
+          "bounds": {
+            "x": 830,
+            "y": 412.5,
+            "width": 420,
+            "height": 277.5
+          }
+        },
+        {
+          "name": "missing-collapse",
+          "target": false,
+          "settled": true,
+          "progress": 0,
+          "x": 983.75,
+          "transform": "none",
+          "bounds": {
+            "x": 830,
+            "y": 412.5,
+            "width": 420,
+            "height": 277.5
+          }
+        },
+        {
+          "name": "stale-collapse",
+          "target": false,
+          "settled": true,
+          "progress": 0,
+          "x": 983.75,
+          "transform": "none",
+          "bounds": {
+            "x": 830,
+            "y": 412.5,
+            "width": 420,
+            "height": 277.5
+          }
+        },
+        {
+          "name": "manual-without-data",
+          "target": true,
+          "settled": true,
+          "progress": 1,
+          "x": 1055.75,
+          "transform": "matrix(1, 0, 0, 1, 96, 0)",
+          "bounds": {
+            "x": 830,
+            "y": 412.5,
+            "width": 420,
+            "height": 277.5
+          }
+        },
+        {
+          "name": "persisted-manual",
+          "target": true,
+          "settled": true,
+          "progress": 1,
+          "x": 1055.75,
+          "transform": "matrix(1, 0, 0, 1, 96, 0)",
+          "bounds": {
+            "x": 830,
+            "y": 412.5,
+            "width": 420,
+            "height": 277.5
+          }
+        }
+      ],
+      "errors": [],
+      "passed": true
+    },
+    {
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "dpr": 1,
+      "samples": [
+        {
+          "name": "collapsed",
+          "target": false,
+          "settled": true,
+          "progress": 0,
+          "x": 1623.75,
+          "transform": "none",
+          "bounds": {
+            "x": 1470,
+            "y": 772.5,
+            "width": 420,
+            "height": 277.5
+          }
+        },
+        {
+          "name": "opening-150ms",
+          "target": true,
+          "settled": false,
+          "progress": 0.5634024724628883,
+          "x": 1664.31494140625,
+          "transform": "matrix(1, 0, 0, 1, 54.0866, 0)",
+          "bounds": {
+            "x": 1470,
+            "y": 772.5,
+            "width": 420,
+            "height": 277.5
+          }
+        },
+        {
+          "name": "manual",
+          "target": true,
+          "settled": true,
+          "progress": 1,
+          "x": 1695.75,
+          "transform": "matrix(1, 0, 0, 1, 96, 0)",
+          "bounds": {
+            "x": 1470,
+            "y": 772.5,
+            "width": 420,
+            "height": 277.5
+          }
+        },
+        {
+          "name": "maximum-width",
+          "target": true,
+          "settled": true,
+          "progress": 1,
+          "x": 1695.75,
+          "transform": "matrix(1, 0, 0, 1, 96, 0)",
+          "bounds": {
+            "x": 1470,
+            "y": 772.5,
+            "width": 420,
+            "height": 277.5
+          }
+        },
+        {
+          "name": "closing-150ms",
+          "target": false,
+          "settled": false,
+          "progress": 0.4286555698962693,
+          "x": 1654.6131591796875,
+          "transform": "matrix(1, 0, 0, 1, 41.1509, 0)",
+          "bounds": {
+            "x": 1470,
+            "y": 772.5,
+            "width": 420,
+            "height": 277.5
+          }
+        },
+        {
+          "name": "auto-initial-zero",
+          "target": false,
+          "settled": true,
+          "progress": 0,
+          "x": 1623.75,
+          "transform": "none",
+          "bounds": {
+            "x": 1470,
+            "y": 772.5,
+            "width": 420,
+            "height": 277.5
+          }
+        },
+        {
+          "name": "auto-race",
+          "target": true,
+          "settled": true,
+          "progress": 1,
+          "x": 1695.75,
+          "transform": "matrix(1, 0, 0, 1, 96, 0)",
+          "bounds": {
+            "x": 1470,
+            "y": 772.5,
+            "width": 420,
+            "height": 277.5
+          }
+        },
+        {
+          "name": "missing-collapse",
+          "target": false,
+          "settled": true,
+          "progress": 0,
+          "x": 1623.75,
+          "transform": "none",
+          "bounds": {
+            "x": 1470,
+            "y": 772.5,
+            "width": 420,
+            "height": 277.5
+          }
+        },
+        {
+          "name": "stale-collapse",
+          "target": false,
+          "settled": true,
+          "progress": 0,
+          "x": 1623.75,
+          "transform": "none",
+          "bounds": {
+            "x": 1470,
+            "y": 772.5,
+            "width": 420,
+            "height": 277.5
+          }
+        },
+        {
+          "name": "manual-without-data",
+          "target": true,
+          "settled": true,
+          "progress": 1,
+          "x": 1695.75,
+          "transform": "matrix(1, 0, 0, 1, 96, 0)",
+          "bounds": {
+            "x": 1470,
+            "y": 772.5,
+            "width": 420,
+            "height": 277.5
+          }
+        },
+        {
+          "name": "persisted-manual",
+          "target": true,
+          "settled": true,
+          "progress": 1,
+          "x": 1695.75,
+          "transform": "matrix(1, 0, 0, 1, 96, 0)",
+          "bounds": {
+            "x": 1470,
+            "y": 772.5,
+            "width": 420,
+            "height": 277.5
+          }
+        }
+      ],
+      "errors": [],
+      "passed": true
+    },
+    {
+      "viewport": {
+        "width": 2560,
+        "height": 1440
+      },
+      "dpr": 1,
+      "samples": [
+        {
+          "name": "collapsed",
+          "target": false,
+          "settled": true,
+          "progress": 0,
+          "x": 2263.75,
+          "transform": "none",
+          "bounds": {
+            "x": 2110,
+            "y": 1132.5,
+            "width": 420,
+            "height": 277.5
+          }
+        },
+        {
+          "name": "opening-150ms",
+          "target": true,
+          "settled": false,
+          "progress": 0.5752757805000364,
+          "x": 2305.169921875,
+          "transform": "matrix(1, 0, 0, 1, 55.2265, 0)",
+          "bounds": {
+            "x": 2110,
+            "y": 1132.5,
+            "width": 420,
+            "height": 277.5
+          }
+        },
+        {
+          "name": "manual",
+          "target": true,
+          "settled": true,
+          "progress": 1,
+          "x": 2335.75,
+          "transform": "matrix(1, 0, 0, 1, 96, 0)",
+          "bounds": {
+            "x": 2110,
+            "y": 1132.5,
+            "width": 420,
+            "height": 277.5
+          }
+        },
+        {
+          "name": "maximum-width",
+          "target": true,
+          "settled": true,
+          "progress": 1,
+          "x": 2335.75,
+          "transform": "matrix(1, 0, 0, 1, 96, 0)",
+          "bounds": {
+            "x": 2110,
+            "y": 1132.5,
+            "width": 420,
+            "height": 277.5
+          }
+        },
+        {
+          "name": "closing-150ms",
+          "target": false,
+          "settled": false,
+          "progress": 0.41694092592629295,
+          "x": 2293.769775390625,
+          "transform": "matrix(1, 0, 0, 1, 40.0263, 0)",
+          "bounds": {
+            "x": 2110,
+            "y": 1132.5,
+            "width": 420,
+            "height": 277.5
+          }
+        },
+        {
+          "name": "auto-initial-zero",
+          "target": false,
+          "settled": true,
+          "progress": 0,
+          "x": 2263.75,
+          "transform": "none",
+          "bounds": {
+            "x": 2110,
+            "y": 1132.5,
+            "width": 420,
+            "height": 277.5
+          }
+        },
+        {
+          "name": "auto-race",
+          "target": true,
+          "settled": true,
+          "progress": 1,
+          "x": 2335.75,
+          "transform": "matrix(1, 0, 0, 1, 96, 0)",
+          "bounds": {
+            "x": 2110,
+            "y": 1132.5,
+            "width": 420,
+            "height": 277.5
+          }
+        },
+        {
+          "name": "missing-collapse",
+          "target": false,
+          "settled": true,
+          "progress": 0,
+          "x": 2263.75,
+          "transform": "none",
+          "bounds": {
+            "x": 2110,
+            "y": 1132.5,
+            "width": 420,
+            "height": 277.5
+          }
+        },
+        {
+          "name": "stale-collapse",
+          "target": false,
+          "settled": true,
+          "progress": 0,
+          "x": 2263.75,
+          "transform": "none",
+          "bounds": {
+            "x": 2110,
+            "y": 1132.5,
+            "width": 420,
+            "height": 277.5
+          }
+        },
+        {
+          "name": "manual-without-data",
+          "target": true,
+          "settled": true,
+          "progress": 1,
+          "x": 2335.75,
+          "transform": "matrix(1, 0, 0, 1, 96, 0)",
+          "bounds": {
+            "x": 2110,
+            "y": 1132.5,
+            "width": 420,
+            "height": 277.5
+          }
+        },
+        {
+          "name": "persisted-manual",
+          "target": true,
+          "settled": true,
+          "progress": 1,
+          "x": 2335.75,
+          "transform": "matrix(1, 0, 0, 1, 96, 0)",
+          "bounds": {
+            "x": 2110,
+            "y": 1132.5,
+            "width": 420,
+            "height": 277.5
+          }
+        }
+      ],
+      "errors": [],
+      "passed": true
+    },
+    {
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "dpr": 2,
+      "samples": [
+        {
+          "name": "collapsed",
+          "target": false,
+          "settled": true,
+          "progress": 0,
+          "x": 1623.75,
+          "transform": "none",
+          "bounds": {
+            "x": 1470,
+            "y": 772.5,
+            "width": 420,
+            "height": 277.5
+          }
+        },
+        {
+          "name": "opening-150ms",
+          "target": true,
+          "settled": false,
+          "progress": 0.5752757805000364,
+          "x": 1665.169921875,
+          "transform": "matrix(1, 0, 0, 1, 55.2265, 0)",
+          "bounds": {
+            "x": 1470,
+            "y": 772.5,
+            "width": 420,
+            "height": 277.5
+          }
+        },
+        {
+          "name": "manual",
+          "target": true,
+          "settled": true,
+          "progress": 1,
+          "x": 1695.75,
+          "transform": "matrix(1, 0, 0, 1, 96, 0)",
+          "bounds": {
+            "x": 1470,
+            "y": 772.5,
+            "width": 420,
+            "height": 277.5
+          }
+        },
+        {
+          "name": "maximum-width",
+          "target": true,
+          "settled": true,
+          "progress": 1,
+          "x": 1695.75,
+          "transform": "matrix(1, 0, 0, 1, 96, 0)",
+          "bounds": {
+            "x": 1470,
+            "y": 772.5,
+            "width": 420,
+            "height": 277.5
+          }
+        },
+        {
+          "name": "closing-150ms",
+          "target": false,
+          "settled": false,
+          "progress": 0.41694092592629295,
+          "x": 1653.769775390625,
+          "transform": "matrix(1, 0, 0, 1, 40.0263, 0)",
+          "bounds": {
+            "x": 1470,
+            "y": 772.5,
+            "width": 420,
+            "height": 277.5
+          }
+        },
+        {
+          "name": "auto-initial-zero",
+          "target": false,
+          "settled": true,
+          "progress": 0,
+          "x": 1623.75,
+          "transform": "none",
+          "bounds": {
+            "x": 1470,
+            "y": 772.5,
+            "width": 420,
+            "height": 277.5
+          }
+        },
+        {
+          "name": "auto-race",
+          "target": true,
+          "settled": true,
+          "progress": 1,
+          "x": 1695.75,
+          "transform": "matrix(1, 0, 0, 1, 96, 0)",
+          "bounds": {
+            "x": 1470,
+            "y": 772.5,
+            "width": 420,
+            "height": 277.5
+          }
+        },
+        {
+          "name": "missing-collapse",
+          "target": false,
+          "settled": true,
+          "progress": 0,
+          "x": 1623.75,
+          "transform": "none",
+          "bounds": {
+            "x": 1470,
+            "y": 772.5,
+            "width": 420,
+            "height": 277.5
+          }
+        },
+        {
+          "name": "stale-collapse",
+          "target": false,
+          "settled": true,
+          "progress": 0,
+          "x": 1623.75,
+          "transform": "none",
+          "bounds": {
+            "x": 1470,
+            "y": 772.5,
+            "width": 420,
+            "height": 277.5
+          }
+        },
+        {
+          "name": "manual-without-data",
+          "target": true,
+          "settled": true,
+          "progress": 1,
+          "x": 1695.75,
+          "transform": "matrix(1, 0, 0, 1, 96, 0)",
+          "bounds": {
+            "x": 1470,
+            "y": 772.5,
+            "width": 420,
+            "height": 277.5
+          }
+        },
+        {
+          "name": "persisted-manual",
+          "target": true,
+          "settled": true,
+          "progress": 1,
+          "x": 1695.75,
+          "transform": "matrix(1, 0, 0, 1, 96, 0)",
+          "bounds": {
+            "x": 1470,
+            "y": 772.5,
+            "width": 420,
+            "height": 277.5
+          }
+        }
+      ],
+      "errors": [],
+      "passed": true
+    }
+  ]
 }

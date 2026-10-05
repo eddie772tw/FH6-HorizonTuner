@@ -1,0 +1,41 @@
+{
+  "sourceCommit": "5a5daee04b1124089bb79f3c03ea03da3a6f83e5",
+  "workflowRunId": "37273120011",
+  "artifactId": "11328991695",
+  "workflow": "HUD LFA Center Ring Visual Review",
+  "runner": "frontend/src/features/overlay_control/lfa_center_ring/tests/browser/verify.cjs",
+  "review": {
+    "date": "2026-10-05",
+    "screenshotsInspected": [
+      "settings-dark-default.png",
+      "settings-dark-modern.png",
+      "settings-dark-elegant.png",
+      "settings-light-default.png",
+      "settings-light-modern.png",
+      "settings-light-elegant.png",
+      "settings-narrow.png",
+      "settings-narrow-zh-tw.png",
+      "settings-narrow-ja-jp.png"
+    ],
+    "result": "accepted",
+    "findings": [
+      "Two separate accessible switches and readable help in all six light/dark and core variants",
+      "Narrow English, Traditional Chinese and Japanese cards are readable without overflow or missing-glyph boxes",
+      "Eleven real settings-page to Launcher expansion checks passed",
+      "No page errors or failed HTTP responses; localized font and distinct-glyph raster checks passed"
+    ],
+    "boundary": "Actual React OverlayView, config runtime, Launcher and LFA renderer in sandboxed Chromium; controlled HTTP persistence and synthetic telemetry. Real Rust persistence is separately covered by config_contract. This is not native desktop or in-game verification."
+  },
+  "sha256": {
+    "settings-dark-default.png": "ca760e9a727bcba972b3e56bda03151bc9cb87985ccc5a9301f8f425438b3f29",
+    "settings-dark-modern.png": "4e79bcc274bb0138ded5943474f72c1851d35723d10a4a6c6eaccdd0de98ce36",
+    "settings-dark-elegant.png": "3a24c0036a304bb037af5d8ea6b67e0fc5ff26a01a76e4c2f22134ea53cb9bba",
+    "settings-light-default.png": "e29aba4afa6d1e45fa981a1dacc0a7bb03ddb35c5a86f8f94dc9ddc6588f856f",
+    "settings-light-modern.png": "00ef851257a209ab4fdf7d8a47a4823c2233277ec85bc6db09999ae7ae994d70",
+    "settings-light-elegant.png": "3ddcd1393a15f480d306de47a0464d2c0ec5a88f30fe8dfd5969b9954d54716f",
+    "settings-narrow.png": "a53c77ea3fbc629e48180ee72e37bc3f9c9976516d6a5b4be4c99139290be759",
+    "settings-narrow-zh-tw.png": "1d092a134b07d84051a6001fcc2307c1fedc22898dd2ab617b76e1bb4183e778",
+    "settings-narrow-ja-jp.png": "95a9fb3fdb73cb07fcb85e374f0a8a9f9846d9bf4c4ed79374faeaf16c5feada",
+    "settings-audit.json": "bfe0efb1bc185c7ab4c5b5d2f66ab93cc3050174e2dcca32b6657bab1b578089"
+  }
+}

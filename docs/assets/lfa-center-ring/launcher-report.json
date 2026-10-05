@@ -24,7 +24,10 @@
         "boostVisible": "0",
         "throttle": "N/A",
         "brake": "N/A",
-        "lap": "—:—"
+        "lap": "—:—",
+        "expanded": "false",
+        "expansionSettled": "true",
+        "expandedCurrent": "—:—"
       },
       "body": "rgba(0, 0, 0, 0)",
       "bounds": {
@@ -49,7 +52,66 @@
         "boostVisible": "1",
         "throttle": "80%",
         "brake": "20%",
-        "lap": "0:34.21"
+        "lap": "0:34.21",
+        "expanded": "false",
+        "expansionSettled": "true",
+        "expandedCurrent": "—:—"
+      },
+      "body": "rgba(0, 0, 0, 0)",
+      "bounds": {
+        "x": 1470,
+        "y": 772.5,
+        "width": 420,
+        "height": 277.5,
+        "display": "block"
+      }
+    },
+    {
+      "name": "host-manual-expanded",
+      "readings": {
+        "speed": "180",
+        "gear": "4",
+        "status": "P3",
+        "tire": "95°C",
+        "boost": "1",
+        "boostUnit": "bar",
+        "boostMode": "",
+        "boostFraction": 0.75,
+        "boostVisible": "1",
+        "throttle": "80%",
+        "brake": "20%",
+        "lap": "0:34.21",
+        "expanded": "true",
+        "expansionSettled": "true",
+        "expandedCurrent": "0:34.21"
+      },
+      "body": "rgba(0, 0, 0, 0)",
+      "bounds": {
+        "x": 1470,
+        "y": 772.5,
+        "width": 420,
+        "height": 277.5,
+        "display": "block"
+      }
+    },
+    {
+      "name": "host-manual-restored",
+      "readings": {
+        "speed": "180",
+        "gear": "4",
+        "status": "P3",
+        "tire": "95°C",
+        "boost": "1",
+        "boostUnit": "bar",
+        "boostMode": "",
+        "boostFraction": 0.75,
+        "boostVisible": "1",
+        "throttle": "80%",
+        "brake": "20%",
+        "lap": "0:34.21",
+        "expanded": "false",
+        "expansionSettled": "true",
+        "expandedCurrent": "0:34.21"
       },
       "body": "rgba(0, 0, 0, 0)",
       "bounds": {
@@ -74,7 +136,10 @@
         "boostVisible": "1",
         "throttle": "80%",
         "brake": "20%",
-        "lap": "0:34.21"
+        "lap": "0:34.21",
+        "expanded": "false",
+        "expansionSettled": "true",
+        "expandedCurrent": "0:34.21"
       },
       "body": "rgba(0, 0, 0, 0)",
       "bounds": {
@@ -99,7 +164,10 @@
         "boostVisible": "1",
         "throttle": "80%",
         "brake": "20%",
-        "lap": "0:34.21"
+        "lap": "0:34.21",
+        "expanded": "false",
+        "expansionSettled": "true",
+        "expandedCurrent": "0:34.21"
       },
       "body": "rgba(0, 0, 0, 0)",
       "bounds": {
@@ -124,7 +192,10 @@
         "boostVisible": "1",
         "throttle": "80%",
         "brake": "20%",
-        "lap": "0:34.21"
+        "lap": "0:34.21",
+        "expanded": "false",
+        "expansionSettled": "true",
+        "expandedCurrent": "0:34.21"
       },
       "body": "rgba(0, 0, 0, 0)",
       "bounds": {
@@ -149,7 +220,10 @@
         "boostVisible": "1",
         "throttle": "80%",
         "brake": "20%",
-        "lap": "0:34.21"
+        "lap": "0:34.21",
+        "expanded": "false",
+        "expansionSettled": "true",
+        "expandedCurrent": "0:34.21"
       },
       "body": "rgba(0, 0, 0, 0)",
       "bounds": {
@@ -174,7 +248,10 @@
         "boostVisible": "1",
         "throttle": "80%",
         "brake": "20%",
-        "lap": "0:34.21"
+        "lap": "0:34.21",
+        "expanded": "false",
+        "expansionSettled": "true",
+        "expandedCurrent": "0:34.21"
       },
       "body": "rgba(0, 0, 0, 0)",
       "bounds": {
@@ -199,7 +276,10 @@
         "boostVisible": "1",
         "throttle": "80%",
         "brake": "20%",
-        "lap": "0:34.21"
+        "lap": "0:34.21",
+        "expanded": "false",
+        "expansionSettled": "true",
+        "expandedCurrent": "0:34.21"
       },
       "body": "rgba(0, 0, 0, 0)",
       "bounds": {
@@ -224,7 +304,10 @@
         "boostVisible": "1",
         "throttle": "80%",
         "brake": "20%",
-        "lap": "0:34.21"
+        "lap": "0:34.21",
+        "expanded": "false",
+        "expansionSettled": "true",
+        "expandedCurrent": "0:34.21"
       },
       "body": "rgba(0, 0, 0, 0)",
       "bounds": {
@@ -249,7 +332,10 @@
         "boostVisible": "1",
         "throttle": "80%",
         "brake": "20%",
-        "lap": "0:34.21"
+        "lap": "0:34.21",
+        "expanded": "false",
+        "expansionSettled": "true",
+        "expandedCurrent": "0:34.21"
       },
       "body": "rgba(0, 0, 0, 0)",
       "bounds": {
@@ -274,7 +360,10 @@
         "boostVisible": "1",
         "throttle": "80%",
         "brake": "20%",
-        "lap": "0:34.21"
+        "lap": "0:34.21",
+        "expanded": "false",
+        "expansionSettled": "true",
+        "expandedCurrent": "0:34.21"
       },
       "body": "rgba(0, 0, 0, 0)",
       "bounds": {
@@ -299,7 +388,10 @@
         "boostVisible": "0",
         "throttle": "80%",
         "brake": "20%",
-        "lap": "0:34.21"
+        "lap": "0:34.21",
+        "expanded": "false",
+        "expansionSettled": "true",
+        "expandedCurrent": "0:34.21"
       },
       "body": "rgba(0, 0, 0, 0)",
       "bounds": {
@@ -324,7 +416,10 @@
         "boostVisible": "1",
         "throttle": "0%",
         "brake": "0%",
-        "lap": "0:34.21"
+        "lap": "0:34.21",
+        "expanded": "false",
+        "expansionSettled": "true",
+        "expandedCurrent": "0:34.21"
       },
       "body": "rgba(0, 0, 0, 0)",
       "bounds": {
@@ -349,7 +444,10 @@
         "boostVisible": "1",
         "throttle": "100%",
         "brake": "100%",
-        "lap": "0:34.21"
+        "lap": "0:34.21",
+        "expanded": "false",
+        "expansionSettled": "true",
+        "expandedCurrent": "0:34.21"
       },
       "body": "rgba(0, 0, 0, 0)",
       "bounds": {
@@ -374,7 +472,10 @@
         "boostVisible": "1",
         "throttle": "80%",
         "brake": "20%",
-        "lap": "0:00.00"
+        "lap": "0:00.00",
+        "expanded": "false",
+        "expansionSettled": "true",
+        "expandedCurrent": "0:34.21"
       },
       "body": "rgba(0, 0, 0, 0)",
       "bounds": {
@@ -399,7 +500,10 @@
         "boostVisible": "1",
         "throttle": "80%",
         "brake": "20%",
-        "lap": "0:00.00"
+        "lap": "0:00.00",
+        "expanded": "false",
+        "expansionSettled": "true",
+        "expandedCurrent": "0:34.21"
       },
       "body": "rgba(0, 0, 0, 0)",
       "bounds": {
@@ -424,7 +528,10 @@
         "boostVisible": "1",
         "throttle": "80%",
         "brake": "20%",
-        "lap": "0:01.23"
+        "lap": "0:01.23",
+        "expanded": "false",
+        "expansionSettled": "true",
+        "expandedCurrent": "0:34.21"
       },
       "body": "rgba(0, 0, 0, 0)",
       "bounds": {
@@ -449,7 +556,10 @@
         "boostVisible": "0",
         "throttle": "N/A",
         "brake": "N/A",
-        "lap": "—:—"
+        "lap": "—:—",
+        "expanded": "false",
+        "expansionSettled": "true",
+        "expandedCurrent": "0:34.21"
       },
       "body": "rgba(0, 0, 0, 0)",
       "bounds": {
@@ -474,7 +584,10 @@
         "boostVisible": "1",
         "throttle": "80%",
         "brake": "20%",
-        "lap": "0:01.23"
+        "lap": "0:01.23",
+        "expanded": "false",
+        "expansionSettled": "true",
+        "expandedCurrent": "0:34.21"
       },
       "body": "rgba(0, 0, 0, 0)",
       "bounds": {
@@ -499,7 +612,10 @@
         "boostVisible": "1",
         "throttle": "80%",
         "brake": "20%",
-        "lap": "0:01.23"
+        "lap": "0:01.23",
+        "expanded": "false",
+        "expansionSettled": "true",
+        "expandedCurrent": "0:34.21"
       },
       "body": "rgba(0, 0, 0, 0)",
       "bounds": {
@@ -524,7 +640,10 @@
         "boostVisible": "1",
         "throttle": "80%",
         "brake": "20%",
-        "lap": "0:01.23"
+        "lap": "0:01.23",
+        "expanded": "false",
+        "expansionSettled": "true",
+        "expandedCurrent": "0:34.21"
       },
       "body": "rgba(0, 0, 0, 0)",
       "bounds": {
@@ -549,7 +668,10 @@
         "boostVisible": "1",
         "throttle": "80%",
         "brake": "20%",
-        "lap": "0:01.23"
+        "lap": "0:01.23",
+        "expanded": "false",
+        "expansionSettled": "true",
+        "expandedCurrent": "0:34.21"
       },
       "body": "rgba(0, 0, 0, 0)",
       "bounds": {
@@ -574,7 +696,10 @@
         "boostVisible": "1",
         "throttle": "80%",
         "brake": "20%",
-        "lap": "0:01.23"
+        "lap": "0:01.23",
+        "expanded": "false",
+        "expansionSettled": "true",
+        "expandedCurrent": "0:34.21"
       },
       "body": "rgba(0, 0, 0, 0)",
       "bounds": {
@@ -599,7 +724,10 @@
         "boostVisible": "1",
         "throttle": "80%",
         "brake": "20%",
-        "lap": "0:01.23"
+        "lap": "0:01.23",
+        "expanded": "false",
+        "expansionSettled": "true",
+        "expandedCurrent": "—:—"
       },
       "body": "rgba(0, 0, 0, 0)",
       "bounds": {
