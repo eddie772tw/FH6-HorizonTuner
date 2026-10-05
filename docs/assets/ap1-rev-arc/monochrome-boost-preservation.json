@@ -1,0 +1,176 @@
+{
+  "referenceHead": "a995df88fc8c4d4b4e6989c61a03e8c8a249cb6b",
+  "revisionHead": "2d88a29993f6d0bc6b2b2c881ac7a55865cc2c70",
+  "protectedRegion": "Exact RGBA comparison in1280x720 DPR2 720x300design container, excluding only rightaux x540..700,y162..250; footer included.",
+  "comparedPixels": 454320,
+  "differingPixels": 0,
+  "halfBarPixelComparison": {
+    "description": "Actual+.5 and\u2212.5 PNG pixels in bar/glow designrectangle x563..665,y184..207 at defaultDPR1",
+    "comparedPixels": 1309,
+    "differingPixels": 0
+  },
+  "positiveNegativePaintChecks": [
+    {
+      "positive": "boost-positive-half",
+      "negative": "boost-negative",
+      "positiveRatio": "0.375",
+      "negativeRatio": "0.375",
+      "paintEqual": true,
+      "paint": {
+        "bar": {
+          "fill": "rgb(255, 177, 68)",
+          "stroke": "none",
+          "color": "rgb(255, 177, 68)",
+          "opacity": "1",
+          "fillOpacity": "1",
+          "filter": "drop-shadow(rgb(255, 177, 68) 0px 0px 1.6px)",
+          "textShadow": "none"
+        },
+        "caption": {
+          "fill": "rgb(255, 177, 68)",
+          "stroke": "none",
+          "color": "rgb(255, 177, 68)",
+          "opacity": "1",
+          "fillOpacity": "1",
+          "filter": "none",
+          "textShadow": "none"
+        },
+        "value": {
+          "fill": "rgb(255, 177, 68)",
+          "stroke": "none",
+          "color": "rgb(255, 177, 68)",
+          "opacity": "1",
+          "fillOpacity": "1",
+          "filter": "none",
+          "textShadow": "none"
+        },
+        "tick": {
+          "fill": "rgb(255, 177, 68)",
+          "stroke": "none",
+          "color": "rgb(255, 177, 68)",
+          "opacity": "1",
+          "fillOpacity": "1",
+          "filter": "none",
+          "textShadow": "none"
+        },
+        "marker": {
+          "fill": "none",
+          "stroke": "rgb(255, 177, 68)",
+          "color": "rgb(255, 177, 68)",
+          "opacity": "0.7",
+          "fillOpacity": "1",
+          "filter": "none",
+          "textShadow": "none"
+        }
+      }
+    },
+    {
+      "positive": "boost-positive-one",
+      "negative": "boost-negative-one",
+      "positiveRatio": "0.75",
+      "negativeRatio": "0.75",
+      "paintEqual": true,
+      "paint": {
+        "bar": {
+          "fill": "rgb(255, 177, 68)",
+          "stroke": "none",
+          "color": "rgb(255, 177, 68)",
+          "opacity": "1",
+          "fillOpacity": "1",
+          "filter": "drop-shadow(rgb(255, 177, 68) 0px 0px 1.6px)",
+          "textShadow": "none"
+        },
+        "caption": {
+          "fill": "rgb(255, 177, 68)",
+          "stroke": "none",
+          "color": "rgb(255, 177, 68)",
+          "opacity": "1",
+          "fillOpacity": "1",
+          "filter": "none",
+          "textShadow": "none"
+        },
+        "value": {
+          "fill": "rgb(255, 177, 68)",
+          "stroke": "none",
+          "color": "rgb(255, 177, 68)",
+          "opacity": "1",
+          "fillOpacity": "1",
+          "filter": "none",
+          "textShadow": "none"
+        },
+        "tick": {
+          "fill": "rgb(255, 177, 68)",
+          "stroke": "none",
+          "color": "rgb(255, 177, 68)",
+          "opacity": "1",
+          "fillOpacity": "1",
+          "filter": "none",
+          "textShadow": "none"
+        },
+        "marker": {
+          "fill": "none",
+          "stroke": "rgb(255, 177, 68)",
+          "color": "rgb(255, 177, 68)",
+          "opacity": "0.7",
+          "fillOpacity": "1",
+          "filter": "none",
+          "textShadow": "none"
+        }
+      }
+    },
+    {
+      "positive": "boost-positive-two",
+      "negative": "boost-negative-two",
+      "positiveRatio": "1",
+      "negativeRatio": "1",
+      "paintEqual": true,
+      "paint": {
+        "bar": {
+          "fill": "rgb(255, 177, 68)",
+          "stroke": "none",
+          "color": "rgb(255, 177, 68)",
+          "opacity": "1",
+          "fillOpacity": "1",
+          "filter": "drop-shadow(rgb(255, 177, 68) 0px 0px 1.6px)",
+          "textShadow": "none"
+        },
+        "caption": {
+          "fill": "rgb(255, 177, 68)",
+          "stroke": "none",
+          "color": "rgb(255, 177, 68)",
+          "opacity": "1",
+          "fillOpacity": "1",
+          "filter": "none",
+          "textShadow": "none"
+        },
+        "value": {
+          "fill": "rgb(255, 177, 68)",
+          "stroke": "none",
+          "color": "rgb(255, 177, 68)",
+          "opacity": "1",
+          "fillOpacity": "1",
+          "filter": "none",
+          "textShadow": "none"
+        },
+        "tick": {
+          "fill": "rgb(255, 177, 68)",
+          "stroke": "none",
+          "color": "rgb(255, 177, 68)",
+          "opacity": "1",
+          "fillOpacity": "1",
+          "filter": "none",
+          "textShadow": "none"
+        },
+        "marker": {
+          "fill": "none",
+          "stroke": "rgb(255, 177, 68)",
+          "color": "rgb(255, 177, 68)",
+          "opacity": "0.7",
+          "fillOpacity": "1",
+          "filter": "none",
+          "textShadow": "none"
+        }
+      }
+    }
+  ]
+}

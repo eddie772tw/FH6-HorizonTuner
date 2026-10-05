@@ -5,13 +5,16 @@
   "samples": [
     {
       "name": "host-standby",
-      "text": "×1000 r/min\nGEAR\n—\nkm/h\nBOOST\n-1\n0\n+2\n-- bar\nWAITING FOR DATA",
+      "text": "×1000 r/min\nGEAR\n—\nkm/h\nBOOST\n0\n0.5\n1\n2\n-- bar\nWAITING FOR DATA",
       "readings": {
         "speed": "---",
         "gear": "—",
         "status": "WAITING FOR DATA",
         "boost": "-- bar",
         "boostRange": "within",
+        "boostMode": "unavailable",
+        "boostRatio": "",
+        "boostCaption": "BOOST",
         "footerRemoved": true
       },
       "body": "rgba(0, 0, 0, 0)",
@@ -26,13 +29,112 @@
     },
     {
       "name": "host-cruise",
-      "text": "0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n×1000 r/min\nGEAR\n4\nkm/h\nBOOST\n-1\n0\n+2\n1.00 bar",
+      "text": "0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n×1000 r/min\nGEAR\n4\nkm/h\nBOOST\n0\n0.5\n1\n2\n1.00 bar",
       "readings": {
         "speed": "180",
         "gear": "4",
         "status": "",
         "boost": "1.00 bar",
         "boostRange": "within",
+        "boostMode": "boost",
+        "boostRatio": "0.7500000067594506",
+        "boostCaption": "BOOST",
+        "footerRemoved": true
+      },
+      "body": "rgba(0, 0, 0, 0)",
+      "style": "ap1Cluster",
+      "bounds": {
+        "x": 1350,
+        "y": 825,
+        "width": 540,
+        "height": 225,
+        "display": "block"
+      }
+    },
+    {
+      "name": "host-boost-quarter",
+      "text": "0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n×1000 r/min\nGEAR\n4\nkm/h\nBOOST\n0\n0.5\n1\n2\n0.25 bar",
+      "readings": {
+        "speed": "180",
+        "gear": "4",
+        "status": "",
+        "boost": "0.25 bar",
+        "boostRange": "within",
+        "boostMode": "boost",
+        "boostRatio": "0.1875",
+        "boostCaption": "BOOST",
+        "footerRemoved": true
+      },
+      "body": "rgba(0, 0, 0, 0)",
+      "style": "ap1Cluster",
+      "bounds": {
+        "x": 1350,
+        "y": 825,
+        "width": 540,
+        "height": 225,
+        "display": "block"
+      }
+    },
+    {
+      "name": "host-boost-half",
+      "text": "0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n×1000 r/min\nGEAR\n4\nkm/h\nBOOST\n0\n0.5\n1\n2\n0.50 bar",
+      "readings": {
+        "speed": "180",
+        "gear": "4",
+        "status": "",
+        "boost": "0.50 bar",
+        "boostRange": "within",
+        "boostMode": "boost",
+        "boostRatio": "0.375",
+        "boostCaption": "BOOST",
+        "footerRemoved": true
+      },
+      "body": "rgba(0, 0, 0, 0)",
+      "style": "ap1Cluster",
+      "bounds": {
+        "x": 1350,
+        "y": 825,
+        "width": 540,
+        "height": 225,
+        "display": "block"
+      }
+    },
+    {
+      "name": "host-boost-one",
+      "text": "0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n×1000 r/min\nGEAR\n4\nkm/h\nBOOST\n0\n0.5\n1\n2\n1.00 bar",
+      "readings": {
+        "speed": "180",
+        "gear": "4",
+        "status": "",
+        "boost": "1.00 bar",
+        "boostRange": "within",
+        "boostMode": "boost",
+        "boostRatio": "0.75",
+        "boostCaption": "BOOST",
+        "footerRemoved": true
+      },
+      "body": "rgba(0, 0, 0, 0)",
+      "style": "ap1Cluster",
+      "bounds": {
+        "x": 1350,
+        "y": 825,
+        "width": 540,
+        "height": 225,
+        "display": "block"
+      }
+    },
+    {
+      "name": "host-boost-two",
+      "text": "0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n×1000 r/min\nGEAR\n4\nkm/h\nBOOST\n0\n0.5\n1\n2\n2.00 bar",
+      "readings": {
+        "speed": "180",
+        "gear": "4",
+        "status": "",
+        "boost": "2.00 bar",
+        "boostRange": "within",
+        "boostMode": "boost",
+        "boostRatio": "1",
+        "boostCaption": "BOOST",
         "footerRemoved": true
       },
       "body": "rgba(0, 0, 0, 0)",
@@ -47,13 +149,16 @@
     },
     {
       "name": "host-boost-zero",
-      "text": "0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n×1000 r/min\nGEAR\n4\nkm/h\nBOOST\n-1\n0\n+2\n0.00 bar",
+      "text": "0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n×1000 r/min\nGEAR\n4\nkm/h\nBOOST\n0\n0.5\n1\n2\n0.00 bar",
       "readings": {
         "speed": "180",
         "gear": "4",
         "status": "",
         "boost": "0.00 bar",
         "boostRange": "within",
+        "boostMode": "neutral",
+        "boostRatio": "0",
+        "boostCaption": "BOOST",
         "footerRemoved": true
       },
       "body": "rgba(0, 0, 0, 0)",
@@ -68,13 +173,64 @@
     },
     {
       "name": "host-boost-negative",
-      "text": "0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n×1000 r/min\nGEAR\n4\nkm/h\nBOOST\n-1\n0\n+2\n-0.50 bar",
+      "text": "0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n×1000 r/min\nGEAR\n4\nkm/h\nVAC\n0\n0.5\n1\n2\n-0.50 bar",
       "readings": {
         "speed": "180",
         "gear": "4",
         "status": "",
         "boost": "-0.50 bar",
         "boostRange": "within",
+        "boostMode": "vacuum",
+        "boostRatio": "0.37500001013917594",
+        "boostCaption": "VAC",
+        "footerRemoved": true
+      },
+      "body": "rgba(0, 0, 0, 0)",
+      "style": "ap1Cluster",
+      "bounds": {
+        "x": 1350,
+        "y": 825,
+        "width": 540,
+        "height": 225,
+        "display": "block"
+      }
+    },
+    {
+      "name": "host-boost-negative-one",
+      "text": "0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n×1000 r/min\nGEAR\n4\nkm/h\nVAC\n0\n0.5\n1\n2\n-1.00 bar",
+      "readings": {
+        "speed": "180",
+        "gear": "4",
+        "status": "",
+        "boost": "-1.00 bar",
+        "boostRange": "within",
+        "boostMode": "vacuum",
+        "boostRatio": "0.75",
+        "boostCaption": "VAC",
+        "footerRemoved": true
+      },
+      "body": "rgba(0, 0, 0, 0)",
+      "style": "ap1Cluster",
+      "bounds": {
+        "x": 1350,
+        "y": 825,
+        "width": 540,
+        "height": 225,
+        "display": "block"
+      }
+    },
+    {
+      "name": "host-boost-negative-two",
+      "text": "0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n×1000 r/min\nGEAR\n4\nkm/h\nVAC\n0\n0.5\n1\n2\n-2.00 bar",
+      "readings": {
+        "speed": "180",
+        "gear": "4",
+        "status": "",
+        "boost": "-2.00 bar",
+        "boostRange": "within",
+        "boostMode": "vacuum",
+        "boostRatio": "1",
+        "boostCaption": "VAC",
         "footerRemoved": true
       },
       "body": "rgba(0, 0, 0, 0)",
@@ -89,13 +245,16 @@
     },
     {
       "name": "host-boost-missing",
-      "text": "0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n×1000 r/min\nGEAR\n4\nkm/h\nBOOST\n-1\n0\n+2\n-- bar",
+      "text": "0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n×1000 r/min\nGEAR\n4\nkm/h\nBOOST\n0\n0.5\n1\n2\n-- bar",
       "readings": {
         "speed": "180",
         "gear": "4",
         "status": "",
         "boost": "-- bar",
         "boostRange": "within",
+        "boostMode": "unavailable",
+        "boostRatio": "",
+        "boostCaption": "BOOST",
         "footerRemoved": true
       },
       "body": "rgba(0, 0, 0, 0)",
@@ -110,13 +269,16 @@
     },
     {
       "name": "host-boost-overflow",
-      "text": "0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n×1000 r/min\nGEAR\n4\nkm/h\nBOOST\n-1\n0\n+2\n3.00 bar",
+      "text": "0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n×1000 r/min\nGEAR\n4\nkm/h\nBOOST\n0\n0.5\n1\n2\n3.00 bar",
       "readings": {
         "speed": "180",
         "gear": "4",
         "status": "",
         "boost": "3.00 bar",
         "boostRange": "high",
+        "boostMode": "boost",
+        "boostRatio": "1",
+        "boostCaption": "BOOST",
         "footerRemoved": true
       },
       "body": "rgba(0, 0, 0, 0)",
@@ -131,13 +293,16 @@
     },
     {
       "name": "host-boost-psi",
-      "text": "0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n×1000 r/min\nGEAR\n4\nkm/h\nBOOST\n-14.5\n0\n+29\n14.5 PSI",
+      "text": "0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n×1000 r/min\nGEAR\n4\nkm/h\nBOOST\n0\n7.3\n14.5\n29\n14.5 PSI",
       "readings": {
         "speed": "180",
         "gear": "4",
         "status": "",
         "boost": "14.5 PSI",
         "boostRange": "within",
+        "boostMode": "boost",
+        "boostRatio": "0.7500000067594506",
+        "boostCaption": "BOOST",
         "footerRemoved": true
       },
       "body": "rgba(0, 0, 0, 0)",
@@ -152,13 +317,16 @@
     },
     {
       "name": "host-boost-kpa",
-      "text": "0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n×1000 r/min\nGEAR\n4\nkm/h\nBOOST\n-100\n0\n+200\n100 kPa",
+      "text": "0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n×1000 r/min\nGEAR\n4\nkm/h\nBOOST\n0\n50\n100\n200\n100 kPa",
       "readings": {
         "speed": "180",
         "gear": "4",
         "status": "",
         "boost": "100 kPa",
         "boostRange": "within",
+        "boostMode": "boost",
+        "boostRatio": "0.7500000067594506",
+        "boostCaption": "BOOST",
         "footerRemoved": true
       },
       "body": "rgba(0, 0, 0, 0)",
@@ -173,13 +341,16 @@
     },
     {
       "name": "host-stale-with-smoothing",
-      "text": "×1000 r/min\nGEAR\n—\nkm/h\nBOOST\n-1\n0\n+2\n-- bar\nSIGNAL LOST",
+      "text": "×1000 r/min\nGEAR\n—\nkm/h\nBOOST\n0\n0.5\n1\n2\n-- bar\nSIGNAL LOST",
       "readings": {
         "speed": "---",
         "gear": "—",
         "status": "SIGNAL LOST",
         "boost": "-- bar",
         "boostRange": "within",
+        "boostMode": "unavailable",
+        "boostRatio": "",
+        "boostCaption": "BOOST",
         "footerRemoved": true
       },
       "body": "rgba(0, 0, 0, 0)",
@@ -194,13 +365,16 @@
     },
     {
       "name": "host-reverse-reconnected",
-      "text": "0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n×1000 r/min\nGEAR\nR\nkm/h\nBOOST\n-1\n0\n+2\n1.00 bar",
+      "text": "0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n×1000 r/min\nGEAR\nR\nkm/h\nBOOST\n0\n0.5\n1\n2\n1.00 bar",
       "readings": {
         "speed": "16",
         "gear": "R",
         "status": "",
         "boost": "1.00 bar",
         "boostRange": "within",
+        "boostMode": "boost",
+        "boostRatio": "0.7500000067594506",
+        "boostCaption": "BOOST",
         "footerRemoved": true
       },
       "body": "rgba(0, 0, 0, 0)",
@@ -215,13 +389,16 @@
     },
     {
       "name": "host-imperial",
-      "text": "0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n×1000 r/min\nGEAR\nR\nmph\nBOOST\n-14.5\n0\n+29\n14.5 PSI",
+      "text": "0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n×1000 r/min\nGEAR\nR\nmph\nBOOST\n0\n7.3\n14.5\n29\n14.5 PSI",
       "readings": {
         "speed": "10",
         "gear": "R",
         "status": "",
         "boost": "14.5 PSI",
         "boostRange": "within",
+        "boostMode": "boost",
+        "boostRatio": "0.7500000067594506",
+        "boostCaption": "BOOST",
         "footerRemoved": true
       },
       "body": "rgba(0, 0, 0, 0)",
@@ -236,13 +413,16 @@
     },
     {
       "name": "host-720p",
-      "text": "0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n×1000 r/min\nGEAR\nR\nmph\nBOOST\n-14.5\n0\n+29\n14.5 PSI",
+      "text": "0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n×1000 r/min\nGEAR\nR\nmph\nBOOST\n0\n7.3\n14.5\n29\n14.5 PSI",
       "readings": {
         "speed": "10",
         "gear": "R",
         "status": "",
         "boost": "14.5 PSI",
         "boostRange": "within",
+        "boostMode": "boost",
+        "boostRatio": "0.7500000067594506",
+        "boostCaption": "BOOST",
         "footerRemoved": true
       },
       "body": "rgba(0, 0, 0, 0)",
@@ -264,6 +444,9 @@
         "status": "",
         "boost": "1.00 bar",
         "boostRange": "within",
+        "boostMode": "boost",
+        "boostRatio": "0.7500000067594506",
+        "boostCaption": "BOOST",
         "footerRemoved": true
       },
       "body": "rgba(0, 0, 0, 0)",
@@ -278,13 +461,16 @@
     },
     {
       "name": "host-gauge-restored",
-      "text": "0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n×1000 r/min\nGEAR\nR\nkm/h\nBOOST\n-1\n0\n+2\n1.00 bar",
+      "text": "0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n×1000 r/min\nGEAR\nR\nkm/h\nBOOST\n0\n0.5\n1\n2\n1.00 bar",
       "readings": {
         "speed": "16",
         "gear": "R",
         "status": "",
         "boost": "1.00 bar",
         "boostRange": "within",
+        "boostMode": "boost",
+        "boostRatio": "0.7500000067594506",
+        "boostCaption": "BOOST",
         "footerRemoved": true
       },
       "body": "rgba(0, 0, 0, 0)",
@@ -299,13 +485,16 @@
     },
     {
       "name": "host-style-reloaded",
-      "text": "0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n×1000 r/min\nGEAR\nR\nkm/h\nBOOST\n-1\n0\n+2\n1.00 bar",
+      "text": "0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n×1000 r/min\nGEAR\nR\nkm/h\nBOOST\n0\n0.5\n1\n2\n1.00 bar",
       "readings": {
         "speed": "16",
         "gear": "R",
         "status": "",
         "boost": "1.00 bar",
         "boostRange": "within",
+        "boostMode": "boost",
+        "boostRatio": "0.7500000067594506",
+        "boostCaption": "BOOST",
         "footerRemoved": true
       },
       "body": "rgba(0, 0, 0, 0)",

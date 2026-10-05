@@ -1,6 +1,6 @@
 # AP1 Rev Arc：1999 Honda S2000 AP1 儀表原型
 
-> 最新單色要求取代先前深淺色VAC方案：兩個正負方向使用完全相同的琥珀RGBA、亮度、glow與文字色，並共用f(abs(bar))及刻度；負壓以實際負號和VAC文字辨識。新實際CI圖仍待產生，既有預覽不是本次驗收。此為使用者提出的單色LCD設計方向，本輪未另外查證TN硬體規格。
+> 最新單色要求取代先前深淺色VAC方案：兩個正負方向使用完全相同的琥珀RGBA、亮度、glow與文字色，並共用f(abs(bar))及刻度；負壓以實際負號和VAC文字辨識。本輪已通過實際GitHub Actions Chrome 154 renderer／launcher檢查，並獨立檢視下方新預覽；最終文件head的CI仍待完成，使用者review尚未完成。此為使用者提出的單色LCD設計方向，本輪未另外查證TN硬體規格。
 
 ## 原型與來源
 
@@ -26,7 +26,7 @@
 
 原版 RPM 色帶採獨立拋物線、垂直厚度與垂直字標位移，框線則是非對稱 Bézier。原始取樣的內框間距約18.9–41.9設計單位，導致使用者指出的曲率失真；先前像素檢查沒有識別此結構問題。
 
-目前由 `arc-geometry.js` 定義一條低寬橢圓弧，色帶兩緣、刻度中心、內框和外框共用 unit normal offsets。分段沿色帶中心線等弧長取樣；厚度18、色帶上緣至內框間距36、框線寬10，包含兩端皆保持同一構造。Inkscape 原創 fascia 由相同幾何重新匯出。上次弧度修正保留了速度／檔位等讀值位置；本次另依明確要求替換右側燃油區，容器與上弧幾何不變。
+目前由 `arc-geometry.js` 定義一條低寬橢圓弧，色帶兩緣、刻度中心、內框和外框共用 unit normal offsets。分段沿色帶中心線等弧長取樣；厚度18、色帶上緣至內框間距36、框線寬10，包含兩端皆保持同一構造。Inkscape 原創 fascia 由相同幾何重新匯出。上次弧度修正保留了速度／檔位等讀值位置；後續依明確要求替換右側燃油區；本輪單色增壓修正繼續保留容器與上弧幾何。
 
 以下是**歷史弧度修正對照**，兩側仍為當時的燃油版本；用來解釋上弧／外框修正，不是最新BOOST外觀。
 
@@ -55,14 +55,13 @@
 - Coordinator的aliases會把負值或缺值壓成0。因此有原始 `Boost` 時，以其嚴格有限值為準；無效／null／undefined不回退aliases。保留raw標記的Coordinator frame若缺少Boost，仍顯示缺值
 - canonical-only可讀 `boost_psi`、`boost_bar`、`boost_kpa`，或帶明確 `boost_unit`／`displayUnits.boostPressure` 的generic boost；明確但不支援的單位（例如Pa）不會被重新解讀
 - 可見單位為bar、PSI或kPa。採frame pressure metadata，其次設定值／metric fallback；PSI↔bar使用14.5038、PSI↔kPa使用6.89476、bar↔kPa使用100
-- 正增壓0–1bar佔75%色帶，1–2bar佔餘下25%。0／0.5／1／2bar刻度分別位於0／37.5／75／100%；PSI與kPa採等價物理值。分段支援部分填色，不以整格ceil近似百分比
-- 正負值共用相同的絕對值映射：0–1bar magnitude使用75%長度、1–2bar使用餘下25%，所以±0.5同為37.5%、±1同為75%、±2滿條。兩方向刻度皆為0／0.5／1／2，位置0／37.5／75／100%；沒有隱藏VAC換量程或負壓專區
+- 正負值共用相同的絕對值映射：0–1bar magnitude使用75%長度、1–2bar使用餘下25%，所以±0.5同為37.5%、±1同為75%、±2滿條。兩方向刻度皆為0／0.5／1／2，位置0／37.5／75／100%；PSI與kPa採等價物理值，部分segment精確填色，不以整格ceil近似百分比；沒有隱藏VAC換量程或負壓專區
 - 負值只以signed數字與明確`VAC`文字辨識；正負的bar、caption、數字與刻度使用同一CSS琥珀色與glow，沒有不同亮度、opacity或色相。使用者的單色LCD／TN說明在此作為設計要求，不宣稱本輪已外部查證硬體類型
 - 真實0為空條neutral模式；缺值為`--`且空條。只有填色clamp，超量程數值不截斷。bar顯示2位小數、PSI1位、kPa整數；微小有限負值即使四捨五入到0仍保留負號（例如`-0.00 bar`），真正的IEEE負零視為neutral。極大值用科學記號防止溢出版面
 - `AP1 / REV ARC`與右下動態RPM文字的SVG節點／CSS均已移除；並未移動速度或檔位，也沒有變更共享上弧或fascia資產
 - `tests/fixtures/boost-raw-json.json`保存3筆由合成324-byte封包經未修改production parser／serde_json得到的JSON。這是資料路徑回歸fixture，不是真實遊戲或網路實測
 
-本輪共用單色絕對值映射驗證計畫與數值breakpoint另記錄於 [nonlinear-boost-revision-evidence.json](../assets/ap1-rev-arc/nonlinear-boost-revision-evidence.json)。視覺fixture包含+0.25／±0.5／±1／±2／零、微小負值與VAC單位切換，並精確比較正負的RGBA、opacity、filter／glow、文字與刻度paint是否相同。這些fixture須待實際CI執行，不能由本地測試推定畫面已驗收。
+本輪共用單色絕對值映射的實際驗證與數值breakpoint記錄於 [nonlinear-boost-revision-evidence.json](../assets/ap1-rev-arc/nonlinear-boost-revision-evidence.json)。視覺fixture包含+0.25／±0.5／±1／±2／零、微小負值與VAC單位切換，並精確比較正負的RGBA、opacity、filter／glow、文字與刻度paint是否相同。這些fixture已在本輪實際GitHub Actions Chrome執行通過；±0.5／±1／±2的ratio分別為0.375／0.75／1，正負paint完全相同。
 
 ## 原創資產與授權
 
@@ -87,24 +86,29 @@ magick hud_overlay/ap1_rev_arc/assets/fascia.png -strip -define png:compression-
 - Style-owned Vitest：85 項純資料／行為測試；涵蓋單位、R/N、空值、NaN、Infinity、速度超界、signed BOOST／單位／缺值／量程、同字串快取邊界、適應刻度、重播 timestamp、恢復、設定與 destroy
 - 完整 `pnpm -C frontend test`：160 個檔案通過／1 個略過，1190 個測試通過／1 個略過；`pnpm -C frontend build:web-hud` 與 `git diff --check` 通過。已確認 dist 包含新 HUD 且排除 tests
 - 本地 Chromium 程序被執行環境的 UNIX socket `EPERM` 阻擋；require_escalated 亦相同。雲端瀏覽器至本地 fixture URL 遭 `ERR_BLOCKED_BY_CLIENT`，沒有改用其他 hostname 迴避
-- **前版線性BOOST版本的renderer／實際launcher＋Coordinator檢查已通過**：GitHub Actions Linux Chrome 154，sandbox啟用，合成遙測；source head `a995df88fc8c4d4b4e6989c61a03e8c8a249cb6b`。[CI run 37263377297](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37263377297)／[artifact 11325665121](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37263377297/artifacts/11325665121)
-- 前版線性BOOST已獨立目視hero與九狀態集：positive／zero／negative／missing／獨立PSI／kPa／overflow／signal lost／compact可辨識，兩個底框字樣已移除。技術複查不代表使用者核准；本輪非線性／VAC仍待新的CI與像素複查，請另看本次head的PR checks
-- [要求範圍外的版面保留檢查](../assets/ap1-rev-arc/boost-layout-preservation.json)：與`662d934`實際DPR2截圖作exact RGBA比較，只排除指定右側aux區及底框文字區；416,143個比較像素中0個不同，沒有重取樣或容差
+- **本輪單色BOOST renderer／實際launcher＋Coordinator檢查通過**：GitHub Actions Linux Chrome 154，sandbox啟用，合成遙測；source head `2d88a29993f6d0bc6b2b2c881ac7a55865cc2c70`。[CI run 37268451649](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37268451649)／[artifact 11327007457](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37268451649/artifacts/11327007457)
+- 已獨立查看實際hero／compact與+0.5／+1／−0.5／零、−1／−2、VAC PSI／kPa、微小負值、缺值與負向超量程：相同絕對值的正負讀值具有同長度、同琥珀外觀，負號與VAC清楚；刻度與數字沒有可見重疊。自動化另外精確比較bar／caption／value／tick／marker的computed paint，而非僅靠目視判定同色
+- renderer的errors與launcher的errors／missing均為空；真實launcher在smoothing啟用下正確處理raw PSI正負、缺值、斷線重播與恢復。這些輸入仍是合成資料；技術複查不代表使用者核准。最終文件head的CI仍待完成，應另看該head的PR checks
+- [本輪單色BOOST像素保留證據](../assets/ap1-rev-arc/monochrome-boost-preservation.json)：實際+0.5／−0.5截圖的bar與glow區域1,309個RGBA像素完全相同；與`a995df88`相比，右側aux區外（含底框）的454,320個像素中0個不同。此為原始renderer像素的exact比較
+- [歷史BOOST替換的版面保留檢查](../assets/ap1-rev-arc/boost-layout-preservation.json)：比較`662d934`與`a995df88`的實際DPR2截圖，只排除當時指定的右側aux區及底框文字區；416,143個像素中0個不同。這是較早燃油改BOOST的證據，不冒充本輪單色修正的pixel-diff結果
 - Windows 原生透明 overlay、滑鼠穿透、真實 Forza 遊戲畫面與遊戲內安全區仍須平台實測
 
-### 前版線性BOOST實際瀏覽器預覽與證據（非線性更新待新圖）
+### 本輪單色BOOST實際瀏覽器預覽與證據
 
-![AP1 Rev Arc：實際 DPR2 Chromium 截圖細節](../assets/ap1-rev-arc/detail-metric.png)
+![AP1 Rev Arc：本輪單色BOOST實際DPR2 Chrome截圖細節](../assets/ap1-rev-arc/detail-metric.png)
 
 ![AP1 Rev Arc：70% compact的實際DPR2截圖](../assets/ap1-rev-arc/detail-compact.png)
 
-![AP1 Rev Arc：九種BOOST／缺值／單位／compact狀態](../assets/ap1-rev-arc/states.png)
+![單色絕對值映射：+0.5／+1／−0.5／零的實際Chrome截圖](../assets/ap1-rev-arc/ap1-boost-scale-comparison.png)
 
-[720p 全幅透明 screenshot](../assets/ap1-rev-arc/metric-1280x720.png) 顯示預設右下位置。細節圖只裁切透明邊界；狀態 contact sheet 以實際截圖裁切後加標籤與深色檢視背景。hero與compact保留實際renderer像素，720p保留完整viewport；狀態集只是裁切與排列。圖片為GitHub Actions Chrome 154的實際renderer輸出與合成遙測，不是美術mockup或遊戲截圖。
+[本輪BOOST／VAC／缺值／單位狀態集](../assets/ap1-rev-arc/states.png)
+
+[720p 全幅透明 screenshot](../assets/ap1-rev-arc/metric-1280x720.png) 顯示預設右下位置。細節圖只裁切透明邊界；比較圖與狀態contact sheet使用同一次CI的實際截圖裁切、排列並加標籤與檢視背景。hero與compact保留實際renderer像素，720p保留完整viewport；比較圖與狀態集不改寫HUD像素或合成儀表讀值。圖片為GitHub Actions Chrome 154的實際renderer輸出與合成遙測，不是美術mockup或遊戲截圖。
 
 - [視覺／viewport 自動檢查](../assets/ap1-rev-arc/visual-evidence.json)：三種解析度、default／compact 的 DPR1／DPR2、單位、R/N、紅線、缺值、錯誤、暫停、斷線、重連、resize、配色與 destroy，errors 為空
 - [實際 launcher／Coordinator audit](../assets/ap1-rev-arc/launcher/host-audit.json)：含 smoothing 持續重播下的 signal loss、倒車重連、英制、顯隱、reload 與 destroy；errors 與 missing 均為空，頁面背景為透明
-- [前版線性BOOST驗證與artifact來源](../assets/ap1-rev-arc/boost-revision-evidence.json)：記錄瀏覽器、source head、run／artifact、像素範圍保留結果與限制。完整截圖可從本輪artifact取得；先前弧度研究證據仍作歷史記錄保留
+- [本輪單色BOOST驗證與artifact來源](../assets/ap1-rev-arc/nonlinear-boost-revision-evidence.json)：記錄source head、run／artifact、對稱映射、同paint結果、獨立像素檢視與限制。完整截圖可從本輪artifact取得
+- [前版線性BOOST歷史驗證](../assets/ap1-rev-arc/boost-revision-evidence.json)及先前弧度研究證據保留為歷史記錄；深淺VAC方案已被本輪單色要求取代
 
 ### 可重製瀏覽器檢查
 

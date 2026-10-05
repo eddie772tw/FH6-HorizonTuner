@@ -1,15 +1,15 @@
 {
   "style": "ap1_rev_arc",
-  "revision": "signed boost and footer removal",
-  "reviewed_head": "a995df88fc8c4d4b4e6989c61a03e8c8a249cb6b",
+  "revision": "monochrome nonlinear absolute boost",
+  "reviewed_head": "2d88a29993f6d0bc6b2b2c881ac7a55865cc2c70",
   "reviewed_on": "2026-10-05",
   "browser": "Chrome via PLAYWRIGHT_CHANNEL=chrome",
   "platform": "Linux (GitHub Actions)",
   "chromium_sandbox": true,
-  "run_id": 37263377297,
-  "artifact_id": 11325665121,
-  "run_url": "https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37263377297",
-  "artifact_url": "https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37263377297/artifacts/11325665121",
+  "run_id": 37268451649,
+  "artifact_id": 11327007457,
+  "run_url": "https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37268451649",
+  "artifact_url": "https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37268451649/artifacts/11327007457",
   "visual_job": "passed",
   "general_ci": "pending at this documentation update; check current PR status separately",
   "user_review": "pending; this evidence does not imply user approval",
@@ -17,7 +17,8 @@
     "visual-evidence.json",
     "launcher/host-audit.json",
     "boost-layout-preservation.json",
-    "json-unit-audit.json"
+    "json-unit-audit.json",
+    "monochrome-boost-preservation.json"
   ],
   "visual_inspection": {
     "result": "passed scoped technical review",
@@ -28,11 +29,12 @@
       "full720p"
     ],
     "findings": [
-      "BOOST replaces fuel with signed numerical value and visible bar/PSI/kPa unit",
-      "Zero, vacuum and missing states are distinguishable",
-      "Both requested footer labels are absent",
-      "Protected RPM curve/bezel/speed/gear region exact RGBA unchanged across416143 pixels at1280x720 DPR2",
-      "No new text clipping or overlap observed in inspected states"
+      "Both signs use identical amber paint, opacity and glow with f(abs(bar))",
+      "+.5 and\u2212.5 have identical actual bar-region pixels and37.5% fill",
+      "Positive0..1bar uses75% of rail;1..2 usesremaining25%",
+      "VAC caption and numeric minus distinguish negative readings without color/brightness differences",
+      "Protected RPM/bezel/speed/gear/footer pixels unchanged",
+      "No clipping or overlap seen in reviewed metric, vacuum,zero,missing,units andcompact states"
     ],
     "runtime_changes_needed": false
   },
@@ -77,6 +79,10 @@
       "before_head": "8b783d080511ad5b49939f7f6603bd5d86e9a659",
       "after_head": "662d93432243ff0d18d758651ae208436722a24a",
       "historical_only": "Prior shared-arc comparison, fuel version, not current BOOST display"
+    },
+    {
+      "file": "ap1-boost-scale-comparison.png",
+      "derivation": "Four actual PNG crops, labeled;8-bit web PNG"
     }
   ],
   "lossless_recompression_AE": 0,

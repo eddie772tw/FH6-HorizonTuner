@@ -1,16 +1,18 @@
 ### Summary of Changes
 
-**最新單色更新（待新CI／使用者review）**：依使用者補充的單色LCD方向，取消VAC深淺色差異。正負共用同一琥珀RGBA、brightness、glow、文字／刻度paint及f(abs(bar))：0–1bar magnitude佔75%，1–2bar佔25%；±0.5同為37.5%、±1同為75%、±2滿條，刻度統一0／0.5／1／2。負壓保留負號與VAC文字。TN硬體說明只作為使用者設計背景，本輪未外部查證。下方歷史圖不代表本次單色版驗收。
+**最新單色更新（實際Chrome／launcher通過，待使用者review）**：依使用者補充的單色LCD方向，取消VAC深淺色差異。正負共用同一琥珀RGBA、brightness、glow、文字／刻度paint及f(abs(bar))：0–1bar magnitude佔75%，1–2bar佔25%；±0.5同為37.5%、±1同為75%、±2滿條，刻度統一0／0.5／1／2。負壓保留負號與VAC文字。TN硬體說明只作為使用者設計背景，本輪未外部查證。下方為本輪實際CI截圖，技術複查不代表使用者核准。
 
 本 PR 的 `ap1_rev_arc` 以1999 Honda S2000 AP1 琥珀數位儀表為原型，面向喜歡JDM／高轉數位儀表與簡潔道路HUD的玩家。
 
-本輪依使用者明確要求：**右側燃油區改為 BOOST，底下顯示實際數值與單位；移除左下 AP1 / REV ARC 及右下 RPM 文字**。保留先前修正的共享上弧、外框、速度和檔位位置，不修改LFA或共用backend／協定。
+本PR亦依使用者先前明確要求：**右側燃油區改為 BOOST，底下顯示實際數值與單位；移除左下 AP1 / REV ARC 及右下 RPM 文字**。保留先前修正的共享上弧、外框、速度和檔位位置，不修改LFA或共用backend／協定。
 
-前版線性BOOST曾通過實際GitHub Actions Chrome154 renderer／launcher；下圖為該歷史合成遙測版本。本輪單色程式gate已重跑，等待新實際CI圖與review。任何版本均未宣稱Windows／遊戲實測或使用者核准。
+本輪source `2d88a29993f6d0bc6b2b2c881ac7a55865cc2c70` 已通過sandbox啟用的GitHub Actions Linux Chrome 154 renderer／實際launcher＋Coordinator檢查，並完成獨立像素複查。圖片使用合成遙測；Windows／遊戲驗收尚未進行，最終文件head的CI仍待完成。
 
-![前版線性BOOST：歷史Chrome154 DPR2截圖](RAW_PREFIX/docs/assets/ap1-rev-arc/detail-metric.png)
+![本輪單色BOOST：實際Chrome154 DPR2截圖](RAW_PREFIX/docs/assets/ap1-rev-arc/detail-metric.png)
 
-![前版線性BOOST歷史狀態（本輪非線性新圖待CI）](RAW_PREFIX/docs/assets/ap1-rev-arc/states.png)
+![同一絕對值映射：+0.5／+1／−0.5／零的實際Chrome比較](RAW_PREFIX/docs/assets/ap1-rev-arc/ap1-boost-scale-comparison.png)
+
+[本輪狀態集](RAW_PREFIX/docs/assets/ap1-rev-arc/states.png) · [Compact預覽](RAW_PREFIX/docs/assets/ap1-rev-arc/detail-compact.png) · [720p全幅](RAW_PREFIX/docs/assets/ap1-rev-arc/metric-1280x720.png)
 
 ### Key Modifications
 
@@ -28,21 +30,23 @@
 - **Frontend Tests:** `pnpm -C frontend test` →160 files passed、1 skipped；1190 tests passed、1 skipped；AP1樣式85 cases
 - **Frontend Build:** `pnpm -C frontend build:web-hud` →pass；新boost model加入runtime，tests排除
 - **Syntax / Whitespace:** `node --check`與`git diff --check` →pass
-- **Historical Linear BOOST Browser Review:** sandbox啟用的GitHub Actions Linux Chrome 154，合成遙測；renderer＋actual launcher／Coordinator PASS。source head `a995df88fc8c4d4b4e6989c61a03e8c8a249cb6b`；[run37263377297](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37263377297)／[artifact11325665121](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37263377297/artifacts/11325665121)
-- **Pixel Preservation:** 比較`662d934`與本輪實際DPR2 PNG，只排除要求修改的右aux／底框區；416,143個比較像素中0個不同，無重取樣／容差。新hero與九狀態已獨立目視，BOOST數字／單位與缺值清楚，底框兩字樣消失
-- **Current Nonlinear CI / Approval:** 非線性／VAC更新的新CI及實際圖仍待完成；技術檢查不代表使用者核准。`before-after.png`保留為較早燃油版的歷史弧度比較，不是最新BOOST外觀
+- **Current Monochrome Browser Review:** GitHub Actions Linux Chrome 154、sandbox啟用、合成遙測；renderer＋actual launcher／Coordinator PASS。source `2d88a29993f6d0bc6b2b2c881ac7a55865cc2c70`；[run37268451649](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37268451649)／[artifact11327007457](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37268451649/artifacts/11327007457)
+- **Actual Render Findings:** 獨立查看hero／compact與+0.5／+1／−0.5／零、−1／−2、VAC PSI／kPa、tiny negative、missing及negative overflow；同琥珀外觀、共同刻度與VAC／負號清楚，未見重疊。computed paint精確相同；±0.5／±1／±2的ratio為0.375／0.75／1。renderer errors及launcher errors／missing皆為空
+- **Current Pixel Preservation:** 實際+0.5／−0.5 bar與glow區域1,309個RGBA像素完全相同；`a995df88`→`2d88a299`右aux區外（含底框）454,320個像素中0個不同，詳見`monochrome-boost-preservation.json`
+- **Historical Pixel Preservation:** `662d934`→`a995df88`燃油改BOOST時，指定aux／底框區外416,143像素中0個不同。此歷史比較不冒充本輪單色pixel-diff；`before-after.png`也是較早燃油版的弧度修正對照
+- **Final CI / Approval:** 本輪source的visual CI通過；最終文件head的CI仍待完成，使用者review尚未完成。技術檢查不代表Windows／遊戲實測或使用者核准
 - **Native Platform:** Windows透明overlay、滑鼠穿透、真實遊戲及安全區未驗收；此HUD預期取代原生右下儀表
 - **Scope:** 無backend、shared coordinator、共享生命週期、LFA或相依套件變更
 
 ### Living Changelog & Review Iterations
 
-- 2026-10-05（Bagley as Codex）：最新使用者單色要求取代深淺VAC方案；刪除VAC專屬色彩／glow，兩方向共用絕對值分段函式與刻度。新增±0.5／±1／±2對稱性、同paint及負號測試，等待新實際渲染
+- 2026-10-05（Bagley as Codex）：最新使用者單色要求取代深淺VAC方案；刪除VAC專屬色彩／glow，兩方向共用絕對值分段函式與刻度。新增±0.5／±1／±2對稱性、同paint及負號測試；本輪Chrome／launcher實際CI通過，完成獨立像素複查與新比較預覽
 
-- 2026-10-05（Bagley as Codex）：新增正壓75%／25%分段映射及全條VAC magnitude；暖暗琥珀＋VAC文字，支援部分cell、動態unit ticks、zero／missing／tiny-negative／cache／monotonic回歸。新圖待實際CI，舊圖明確標為歷史
+- 2026-10-05（Bagley as Codex，已被最新要求取代的歷史方案）：曾使用正壓75%／25%分段映射與獨立VAC量程／深琥珀色；本輪已移除該差異，不作為目前預覽或交付
 
 - 2026-10-05（Bagley as Codex）：研究官方AP1座艙照片，完成原創fascia與HUD
 - 2026-10-05（Bagley as Codex）：依使用者弧度回饋改為共用法線與等弧長幾何；獨立檢視實際遠端前後截圖
-- 2026-10-05（Bagley as Codex）：本輪將燃油改BOOST並移除底框文字；遵循官方PSI與實際JSON路徑，補signed／zero／missing／units／overflow與快取邊界；本輪實際CI圖像複查通過，0像素範圍外變動，更新hero與狀態圖
+- 2026-10-05（Bagley as Codex）：較早一輪將燃油改BOOST並移除底框文字；遵循官方PSI與實際JSON路徑，補signed／zero／missing／units／overflow與快取邊界；該輪實際CI圖像複查通過，0像素範圍外變動
 
 ### Related Issues / References
 
@@ -50,7 +54,7 @@
 - [Honda 1999.04 Fact Book / Interior](https://www.honda.co.jp/factbook/auto/s2000/199904/046.html)（原型為日本上市初期1999 Honda S2000 AP1）
 - [實際查看的官方座艙參考圖](https://www.honda.co.jp/factbook/auto/s2000/199904/image/037_001.gif)（僅研究，未封裝）
 - 原型／BOOST契約：`docs/hud/ap1-rev-arc.md`
-- 本輪記錄：`docs/assets/ap1-rev-arc/boost-revision-evidence.json`
+- 本輪記錄：`docs/assets/ap1-rev-arc/nonlinear-boost-revision-evidence.json`；較早燃油改BOOST的歷史記錄：`boost-revision-evidence.json`
 - 原創程式、七段字形與Inkscape資產依repository MIT license；未封裝OEM照片、Logo或字型，無Honda官方背書
 - Skills：`halfmoon-design-system`、`telemetry-udp-protocol`、`pr-author-maintainer`
 

@@ -8,9 +8,9 @@
     "command": "pnpm -C frontend test",
     "files_passed": 160,
     "files_skipped": 1,
-    "tests_passed": 1167,
+    "tests_passed": 1190,
     "tests_skipped": 1,
-    "style_cases": 62
+    "style_cases": 85
   },
   "build": {
     "command": "pnpm -C frontend build:web-hud",
@@ -46,6 +46,6 @@
   "remote_browser_review": {
     "result": "passed technical review; user review pending",
     "evidence": "review-evidence.json",
-    "reviewed_head": "a995df88fc8c4d4b4e6989c61a03e8c8a249cb6b"
+    "reviewed_head": "2d88a29993f6d0bc6b2b2c881ac7a55865cc2c70"
   }
 }
