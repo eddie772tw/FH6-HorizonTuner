@@ -1,0 +1,96 @@
+{
+  "style": "ap1_rev_arc",
+  "revision": "piecewise positive boost and full-rail warm-amber VAC",
+  "base_head": "f1f78ed21e156ea97674cdfd374ecb763d7bdedc",
+  "status": "implemented; new remote visual and user review pending",
+  "positive": {
+    "segments": [
+      {
+        "bar": [
+          0,
+          1
+        ],
+        "rail": [
+          0,
+          0.75
+        ]
+      },
+      {
+        "bar": [
+          1,
+          2
+        ],
+        "rail": [
+          0.75,
+          1
+        ]
+      }
+    ],
+    "tick_bar": [
+      0,
+      0.5,
+      1,
+      2
+    ],
+    "tick_positions": [
+      0,
+      0.375,
+      0.75,
+      1
+    ]
+  },
+  "vacuum": {
+    "fill": "linear absolute pressure magnitude0..1bar across whole rail",
+    "tick_magnitude_bar": [
+      0,
+      0.25,
+      0.5,
+      1
+    ],
+    "tick_positions": [
+      0,
+      0.25,
+      0.5,
+      1
+    ],
+    "label": "VAC",
+    "color": "#c18439 warm dark amber; not blue",
+    "signed_numeric": true
+  },
+  "states": {
+    "zero": "neutral, empty rail",
+    "missing": "-- with unit, empty rail",
+    "overflow": "fill bounded, numeric value unbounded",
+    "tiny_negative": "minus retained when rounded to zero; actual negative zero neutral"
+  },
+  "tests": {
+    "style_cases": 80,
+    "frontend_passed": 1185,
+    "frontend_skipped": 1,
+    "files_passed": 160,
+    "files_skipped": 1
+  },
+  "preserved": [
+    "RPM arc and bezel geometry",
+    "speed and gear",
+    "footer removals",
+    "raw PSI source and missing-data contract"
+  ],
+  "visual_plan": {
+    "parent_comparison": [
+      "boost-positive-half.png",
+      "boost-positive-one.png",
+      "boost-negative.png",
+      "boost-zero.png"
+    ],
+    "other_fixtures": [
+      "boost-positive-quarter.png",
+      "boost-positive-two.png",
+      "boost-vac-psi.png",
+      "boost-vac-kpa.png",
+      "boost-tiny-negative.png"
+    ],
+    "automatic": "piecewise ratios, unit tick values, warm RGB ordering, lower luminance than positive boost, black-background readability, actual launcher mapping"
+  },
+  "limitations": "No new actual browser screenshots yet. Existing previews are the prior linear version. Windows/game acceptance and user approval remain unclaimed."
+}

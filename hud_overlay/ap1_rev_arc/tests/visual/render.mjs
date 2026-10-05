@@ -51,7 +51,7 @@ const inspectArcLayout = async page => page.evaluate(async () => {
     tag: node.tagName,
     attributes: Object.fromEntries(geometricAttributes.map(key => [key, node.getAttribute(key)])),
   });
-  const readouts = Object.fromEntries(['speedDigits','gearValue','boostSegments','boostValue','boostMinLabel','boostMaxLabel','speedUnit'].map(id => {
+  const readouts = Object.fromEntries(['speedDigits','gearValue','boostSegments','boostValue','boostTicks','boostModeLabel','speedUnit'].map(id => {
     const node = document.getElementById(id);
     const b = rect(node.getBoundingClientRect());
     const box = rect(node.getBBox());
@@ -141,10 +141,18 @@ try {
       await frame(page, {}, { isMetric: false });
       assert.equal(await page.locator('#ap1Cluster').getAttribute('data-speed'), '117');
       await save(page, 'imperial.png');
+      const positiveColor = await page.locator('#boostSegments .is-lit').first().evaluate(node => getComputedStyle(node).fill);
       const boostCases = [
-        { name: 'boost-zero', data: { Boost: 0 }, text: '0.00 bar' },
-        { name: 'boost-negative', data: { Boost: -7.2519, boost_bar: 0, boost_psi: 0 }, text: '-0.50 bar' },
-        { name: 'boost-missing', data: { Boost: undefined, TimestampMS: 1, boost_bar: 0, boost_psi: 0 }, text: '-- bar' },
+        { name: 'boost-positive-quarter', data: { Boost: 3.62595 }, text: '0.25 bar', ratio: .1875, mode: 'boost' },
+        { name: 'boost-positive-half', data: { Boost: 7.2519 }, text: '0.50 bar', ratio: .375, mode: 'boost' },
+        { name: 'boost-positive-one', data: { Boost: 14.5038 }, text: '1.00 bar', ratio: .75, mode: 'boost' },
+        { name: 'boost-positive-two', data: { Boost: 29.0076 }, text: '2.00 bar', ratio: 1, mode: 'boost' },
+        { name: 'boost-zero', data: { Boost: 0 }, text: '0.00 bar', ratio: 0, mode: 'neutral' },
+        { name: 'boost-negative', data: { Boost: -7.2519, boost_bar: 0, boost_psi: 0 }, text: '-0.50 bar', ratio: .5, mode: 'vacuum' },
+        { name: 'boost-vac-psi', data: { Boost: -7.2519, displayUnits: { boostPressure: 'psi' } }, text: '-7.3 PSI', ratio: .5, mode: 'vacuum' },
+        { name: 'boost-vac-kpa', data: { Boost: -7.2519, displayUnits: { boostPressure: 'kpa' } }, text: '-50 kPa', ratio: .5, mode: 'vacuum' },
+        { name: 'boost-tiny-negative', data: { Boost: -.0145038 }, text: '-0.00 bar', ratio: .001, mode: 'vacuum' },
+        { name: 'boost-missing', data: { Boost: undefined, TimestampMS: 1, boost_bar: 0, boost_psi: 0 }, text: '-- bar', mode: 'unavailable' },
         { name: 'boost-psi', data: { Boost: 14.5038, displayUnits: { boostPressure: 'psi' } }, text: '14.5 PSI' },
         { name: 'boost-kpa', data: { Boost: 14.5038, displayUnits: { boostPressure: 'kpa' } }, text: '100 kPa' },
         { name: 'boost-overflow', data: { Boost: 43.5114 }, text: '3.00 bar' },
@@ -157,7 +165,28 @@ try {
         assert(b.x >= c.x && b.x + b.width <= c.x + c.width, 'Boost value must remain contained: ' + scenario.name);
         if (scenario.name === 'boost-missing') assert.equal(await page.locator('#boostSegments .is-lit').count(), 0);
         if (scenario.name === 'boost-overflow') assert.equal(await page.locator('#ap1Cluster').getAttribute('data-boost-range'), 'high');
-        report.checks.push({ boostScenario: scenario.name, text: scenario.text });
+        const mode = await page.locator('#ap1Cluster').getAttribute('data-boost-mode');
+        const ratio = await page.locator('#ap1Cluster').getAttribute('data-boost-ratio');
+        const tickLabels = await page.locator('#boostTicks text').allTextContents();
+        const color = await page.evaluate(() => { const node = document.querySelector('#boostSegments .is-lit'); return node ? getComputedStyle(node).fill : null; });
+        if (scenario.mode) assert.equal(mode, scenario.mode);
+        if (scenario.ratio !== undefined) assert(Math.abs(Number(ratio) - scenario.ratio) < 1e-10, 'Piecewise boost fill must match physical pressure: ' + scenario.name);
+        if (mode === 'neutral' || mode === 'unavailable') assert.equal(await page.locator('#boostSegments .is-lit').count(), 0);
+        const unit = await page.locator('#ap1Cluster').getAttribute('data-boost-unit');
+        const expectedTicks = mode === 'vacuum'
+          ? { bar: ['0','0.25','0.5','1'], PSI: ['0','3.6','7.3','14.5'], kPa: ['0','25','50','100'] }
+          : { bar: ['0','0.5','1','2'], PSI: ['0','7.3','14.5','29'], kPa: ['0','50','100','200'] };
+        assert.deepEqual(tickLabels, expectedTicks[unit]);
+        if (mode === 'vacuum') {
+          assert.equal(await page.locator('#boostModeLabel').textContent(), 'VAC');
+          const rgb = color.match(/[0-9.]+/g).slice(0,3).map(Number);
+          const positiveRgb = positiveColor.match(/[0-9.]+/g).slice(0,3).map(Number);
+          const luminance = values => values.map(v => { const c = v / 255; return c <= .04045 ? c / 12.92 : ((c + .055) / 1.055) ** 2.4; }).reduce((sum,v,i) => sum + v * [.2126,.7152,.0722][i],0);
+          assert(rgb[0] > rgb[1] && rgb[1] > rgb[2], 'AP1 vacuum must be warm amber, never blue');
+          assert(luminance(rgb) < luminance(positiveRgb), 'Vacuum amber must be darker than positive boost');
+          assert((luminance(rgb) + .05) / .05 >= 4.5, 'Vacuum amber must remain readable on black');
+        }
+        report.checks.push({ boostScenario: scenario.name, text: scenario.text, mode, ratio, tickLabels, color });
       }
       await frame(page, { gear: 0, speed_kmh: 24, rpm: 3400 });
       assert.equal(await page.locator('#gearValue').textContent(), 'R');

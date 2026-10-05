@@ -1,6 +1,6 @@
 # AP1 Rev Arc：1999 Honda S2000 AP1 儀表原型
 
-> 本輪 BOOST／底框文字更新已完成 GitHub Actions Chrome 154 的實際 renderer／launcher 檢查與圖片複查；本頁 hero、compact、狀態集和720p已換成新版本。遙測是合成fixture，並非Windows原生或遊戲實測，也不代表使用者已核准；最終文件commit的CI仍待完成。
+> 本輪改為非線性BOOST與全條VAC：0–1bar使用75%長度，1–2bar使用餘下25%；負壓用整條顯示絕對值並以暖暗琥珀＋VAC文字辨識。新實際CI圖待產生，本頁既有hero／狀態仍是前版線性BOOST的歷史圖；共享RPM弧、速度／檔位及已移除底框字樣維持不變。
 
 ## 原型與來源
 
@@ -55,9 +55,13 @@
 - Coordinator的aliases會把負值或缺值壓成0。因此有原始 `Boost` 時，以其嚴格有限值為準；無效／null／undefined不回退aliases。保留raw標記的Coordinator frame若缺少Boost，仍顯示缺值
 - canonical-only可讀 `boost_psi`、`boost_bar`、`boost_kpa`，或帶明確 `boost_unit`／`displayUnits.boostPressure` 的generic boost；明確但不支援的單位（例如Pa）不會被重新解讀
 - 可見單位為bar、PSI或kPa。採frame pressure metadata，其次設定值／metric fallback；PSI↔bar使用14.5038、PSI↔kPa使用6.89476、bar↔kPa使用100
-- 刻度為−1…2bar及等價pressure範圍，零標記在色帶1/3位置。只有bar幾何clamp；底下數值保留signed實值與單位，過量程仍顯示實值。0.00bar與缺值`-- bar`明確不同。bar顯示2位小數、PSI1位、kPa整數，極大值用科學記號防止溢出版面
+- 正增壓0–1bar佔75%色帶，1–2bar佔餘下25%。0／0.5／1／2bar刻度分別位於0／37.5／75／100%；PSI與kPa採等價物理值。分段支援部分填色，不以整格ceil近似百分比
+- 負增壓切換為明確`VAC`模式，重用整條色帶，依0–1bar絕對值線性填色；0／0.25／0.5／1的magnitude刻度在0／25／50／100%，沒有獨立負壓區。數值仍保留負號，使用暖暗琥珀`#c18439`，正壓採亮琥珀；不使用藍色，也不只依靠顏色區分
+- 真實0為空條neutral模式；缺值為`--`且空條。只有填色clamp，超量程數值不截斷。bar顯示2位小數、PSI1位、kPa整數；微小有限負值即使四捨五入到0仍保留負號（例如`-0.00 bar`），真正的IEEE負零視為neutral。極大值用科學記號防止溢出版面
 - `AP1 / REV ARC`與右下動態RPM文字的SVG節點／CSS均已移除；並未移動速度或檔位，也沒有變更共享上弧或fascia資產
 - `tests/fixtures/boost-raw-json.json`保存3筆由合成324-byte封包經未修改production parser／serde_json得到的JSON。這是資料路徑回歸fixture，不是真實遊戲或網路實測
+
+本輪非線性驗證計畫與數值breakpoint另記錄於 [nonlinear-boost-revision-evidence.json](../assets/ap1-rev-arc/nonlinear-boost-revision-evidence.json)。視覺fixture已增加+0.25／+0.5／+1／+2／−0.5／零、微小負值與VAC單位切換，並驗證暖暗琥珀的顏色順序、低於正壓亮度及黑底可讀性。這些fixture須待實際CI執行，不能由本地測試推定畫面已驗收。
 
 ## 原創資產與授權
 
@@ -79,15 +83,15 @@ magick hud_overlay/ap1_rev_arc/assets/fascia.png -strip -define png:compression-
 
 使用技能：`halfmoon-design-system`、`telemetry-udp-protocol`、`pr-author-maintainer`。未修改 backend、共用生命週期或協定，沒有第三方產品相依新增。
 
-- Style-owned Vitest：62 項純資料／行為測試；涵蓋單位、R/N、空值、NaN、Infinity、速度超界、signed BOOST／單位／缺值／量程、同字串快取邊界、適應刻度、重播 timestamp、恢復、設定與 destroy
-- 完整 `pnpm -C frontend test`：160 個檔案通過／1 個略過，1167 個測試通過／1 個略過；`pnpm -C frontend build:web-hud` 與 `git diff --check` 通過。已確認 dist 包含新 HUD 且排除 tests
+- Style-owned Vitest：80 項純資料／行為測試；涵蓋單位、R/N、空值、NaN、Infinity、速度超界、signed BOOST／單位／缺值／量程、同字串快取邊界、適應刻度、重播 timestamp、恢復、設定與 destroy
+- 完整 `pnpm -C frontend test`：160 個檔案通過／1 個略過，1185 個測試通過／1 個略過；`pnpm -C frontend build:web-hud` 與 `git diff --check` 通過。已確認 dist 包含新 HUD 且排除 tests
 - 本地 Chromium 程序被執行環境的 UNIX socket `EPERM` 阻擋；require_escalated 亦相同。雲端瀏覽器至本地 fixture URL 遭 `ERR_BLOCKED_BY_CLIENT`，沒有改用其他 hostname 迴避
-- **本輪BOOST版本的renderer／實際launcher＋Coordinator檢查已通過**：GitHub Actions Linux Chrome 154，sandbox啟用，合成遙測；source head `a995df88fc8c4d4b4e6989c61a03e8c8a249cb6b`。[CI run 37263377297](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37263377297)／[artifact 11325665121](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37263377297/artifacts/11325665121)
-- 已獨立目視本輪BOOST hero與九狀態集：positive／zero／negative／missing／獨立PSI／kPa／overflow／signal lost／compact可辨識，兩個底框字樣已移除。技術複查不代表使用者核准；最終文件commit的完整CI仍待完成，請另看PR checks
+- **前版線性BOOST版本的renderer／實際launcher＋Coordinator檢查已通過**：GitHub Actions Linux Chrome 154，sandbox啟用，合成遙測；source head `a995df88fc8c4d4b4e6989c61a03e8c8a249cb6b`。[CI run 37263377297](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37263377297)／[artifact 11325665121](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37263377297/artifacts/11325665121)
+- 前版線性BOOST已獨立目視hero與九狀態集：positive／zero／negative／missing／獨立PSI／kPa／overflow／signal lost／compact可辨識，兩個底框字樣已移除。技術複查不代表使用者核准；本輪非線性／VAC仍待新的CI與像素複查，請另看本次head的PR checks
 - [要求範圍外的版面保留檢查](../assets/ap1-rev-arc/boost-layout-preservation.json)：與`662d934`實際DPR2截圖作exact RGBA比較，只排除指定右側aux區及底框文字區；416,143個比較像素中0個不同，沒有重取樣或容差
 - Windows 原生透明 overlay、滑鼠穿透、真實 Forza 遊戲畫面與遊戲內安全區仍須平台實測
 
-### 本輪BOOST實際瀏覽器預覽與證據
+### 前版線性BOOST實際瀏覽器預覽與證據（非線性更新待新圖）
 
 ![AP1 Rev Arc：實際 DPR2 Chromium 截圖細節](../assets/ap1-rev-arc/detail-metric.png)
 
@@ -99,7 +103,7 @@ magick hud_overlay/ap1_rev_arc/assets/fascia.png -strip -define png:compression-
 
 - [視覺／viewport 自動檢查](../assets/ap1-rev-arc/visual-evidence.json)：三種解析度、default／compact 的 DPR1／DPR2、單位、R/N、紅線、缺值、錯誤、暫停、斷線、重連、resize、配色與 destroy，errors 為空
 - [實際 launcher／Coordinator audit](../assets/ap1-rev-arc/launcher/host-audit.json)：含 smoothing 持續重播下的 signal loss、倒車重連、英制、顯隱、reload 與 destroy；errors 與 missing 均為空，頁面背景為透明
-- [本輪BOOST驗證與artifact來源](../assets/ap1-rev-arc/boost-revision-evidence.json)：記錄瀏覽器、source head、run／artifact、像素範圍保留結果與限制。完整截圖可從本輪artifact取得；先前弧度研究證據仍作歷史記錄保留
+- [前版線性BOOST驗證與artifact來源](../assets/ap1-rev-arc/boost-revision-evidence.json)：記錄瀏覽器、source head、run／artifact、像素範圍保留結果與限制。完整截圖可從本輪artifact取得；先前弧度研究證據仍作歷史記錄保留
 
 ### 可重製瀏覽器檢查
 

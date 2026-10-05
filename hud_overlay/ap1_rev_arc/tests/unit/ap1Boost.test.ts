@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 // @ts-expect-error HUD-native JavaScript is intentionally outside the TS build.
-import { normalizeBoost, PSI_PER_BAR, KPA_PER_PSI } from '../../boost-model.js';
+import { normalizeBoost, boostGaugeRatio, boostScaleTicks, PSI_PER_BAR, KPA_PER_PSI } from '../../boost-model.js';
 // @ts-expect-error HUD-native JavaScript is intentionally outside the TS build.
 import { createState } from '../../model.js';
 
@@ -15,7 +15,8 @@ describe('AP1 boost source and display contract', () => {
     expect(normalizeBoost({ Boost: PSI_PER_BAR }).valueText).toBe('1.00');
     expect(normalizeBoost({ Boost: -PSI_PER_BAR / 2, boost_bar: 0 }).valueText).toBe('-0.50');
     expect(normalizeBoost({ Boost: 0 }).valueText).toBe('0.00');
-    expect(normalizeBoost({ Boost: 0 }).ratio).toBeCloseTo(1 / 3);
+    expect(normalizeBoost({ Boost: 0 }).ratio).toBe(0);
+    expect(normalizeBoost({ Boost: 0 }).mode).toBe('neutral');
     expect(normalizeBoost({}).valueText).toBe('--');
     expect(normalizeBoost({}).ratio).toBeNull();
   });
@@ -28,7 +29,7 @@ describe('AP1 boost source and display contract', () => {
   it('accepts canonical-only typed values without magnitude guessing', () => {
     expect(normalizeBoost({ boost_psi: PSI_PER_BAR }).bar).toBeCloseTo(1);
     expect(normalizeBoost({ boost_bar: -.75 }).bar).toBe(-.75);
-    expect(normalizeBoost({ boost_kpa: -100 }).ratio).toBe(0);
+    expect(normalizeBoost({ boost_kpa: -100 }).ratio).toBe(1);
     expect(normalizeBoost({ boost: 100, boost_unit: 'kPa' }).valueText).toBe('100');
     expect(normalizeBoost({ boost: 10, displayUnits: { boostPressure: 'psi' } }).valueText).toBe('10.0');
     expect(normalizeBoost({ boost: 14.5 }).value).toBeNull();
@@ -48,13 +49,22 @@ describe('AP1 boost source and display contract', () => {
   it('clamps the signed geometry only and preserves actual out-of-range numbers', () => {
     const low = normalizeBoost({ boost_bar: -2 });
     const high = normalizeBoost({ boost_bar: 3 });
-    expect(low.ratio).toBe(0);
+    expect(low.ratio).toBe(1);
     expect(low.valueText).toBe('-2.00');
     expect(low.overflow).toBe('low');
     expect(high.ratio).toBe(1);
     expect(high.valueText).toBe('3.00');
     expect(high.overflow).toBe('high');
     expect(normalizeBoost({ boost_bar: 1e8 }).valueText).toContain('e+');
+  });
+  it.each([['bar','-0.00'],['psi','-0.0'],['kpa','-0']])('retains tiny negative source sign in %s but treats actual negative zero as neutral', (unit, expected) => {
+    const tiny = normalizeBoost({ boost_bar: -.001 }, { effectiveUnits: { boostPressure: unit } });
+    expect(tiny.valueText).toBe(expected);
+    expect(tiny.mode).toBe('vacuum');
+    const zero = normalizeBoost({ boost_bar: -0 }, { effectiveUnits: { boostPressure: unit } });
+    expect(zero.valueText.startsWith('-')).toBe(false);
+    expect(zero.mode).toBe('neutral');
+    expect(zero.ratio).toBe(0);
   });
   it('keeps authored units while clearing stale or missing boost and restoring fresh zero', () => {
     const state = createState();
@@ -67,5 +77,44 @@ describe('AP1 boost source and display contract', () => {
     expect(state.snapshot(1701).boost.valueText).toBe('0.0');
     state.receive({ timestamp_ms: 3, TimestampMS: 3, boost_psi: 0 }, {}, 1800);
     expect(state.snapshot(1801).boost.value).toBeNull();
+  });
+});
+
+
+describe('AP1 nonlinear boost and full-rail vacuum mapping', () => {
+  it.each([[0,0],[.25,.1875],[.5,.375],[1,.75],[1.5,.875],[2,1],[3,1]])('maps positive %sbar to the requested fraction %s', (bar, ratio) => {
+    expect(boostGaugeRatio(bar)).toBe(ratio);
+  });
+  it.each([-.25,-.5,-1,-2])('uses the whole rail for vacuum magnitude %sbar', bar => {
+    const boost = normalizeBoost({ boost_bar: bar });
+    expect(boost.ratio).toBe(Math.min(1, Math.abs(bar)));
+    expect(boost.mode).toBe('vacuum');
+    expect(boost.modeLabel).toBe('VAC');
+    expect(boost.value).toBe(bar);
+  });
+  it('is monotonic within each mode and continuous at the positive breakpoint', () => {
+    for (let i = 0; i < 200; i++) {
+      expect(boostGaugeRatio(i / 100)).toBeLessThanOrEqual(boostGaugeRatio((i + 1) / 100));
+      expect(boostGaugeRatio(-i / 100)).toBeLessThanOrEqual(boostGaugeRatio(-(i + 1) / 100));
+    }
+    expect(boostGaugeRatio(1 - 1e-8)).toBeCloseTo(.75, 7);
+    expect(boostGaugeRatio(1 + 1e-8)).toBeCloseTo(.75, 7);
+    expect(boostGaugeRatio(null)).toBeNull();
+  });
+  it('keeps fill fractions and tick positions invariant across units', () => {
+    for (const bar of [-.5,0,.25,.5,1,2]) {
+      const expected = boostGaugeRatio(bar);
+      for (const data of [{ boost_bar: bar }, { boost_psi: bar * PSI_PER_BAR }, { boost_kpa: bar * 100 }]) {
+        for (const unit of ['bar','psi','kpa']) {
+          expect(normalizeBoost(data, { effectiveUnits: { boostPressure: unit } }).ratio).toBeCloseTo(expected, 12);
+        }
+      }
+    }
+    for (const unit of ['bar','psi','kpa']) {
+      expect(boostScaleTicks(unit, 'boost').map((tick: any) => tick.position)).toEqual([0,.375,.75,1]);
+      expect(boostScaleTicks(unit, 'vacuum').map((tick: any) => tick.position)).toEqual([0,.25,.5,1]);
+    }
+    expect(boostScaleTicks('kpa','boost').map((tick: any) => tick.label)).toEqual(['0','50','100','200']);
+    expect(boostScaleTicks('bar','vacuum').map((tick: any) => tick.label)).toEqual(['0','0.25','0.5','1']);
   });
 });

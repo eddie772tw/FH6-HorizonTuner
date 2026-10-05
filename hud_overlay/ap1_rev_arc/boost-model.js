@@ -38,17 +38,38 @@ function readBoost(data) {
 function numberText(value, unit) {
   const decimals = unit === 'bar' ? 2 : unit === 'psi' ? 1 : 0;
   const rounded = Number(value.toFixed(decimals));
-  const fixed = (rounded === 0 ? 0 : rounded).toFixed(decimals);
+  const fixed = rounded === 0
+    ? (value < 0 ? '-' : '') + (0).toFixed(decimals)
+    : rounded.toFixed(decimals);
   // Keep unusually large real readings visible without overflowing the panel.
   return fixed.length <= 7 ? fixed : value.toExponential(0);
+}
+
+// Positive pressure deliberately devotes 75% of the rail to the first bar.
+// Vacuum reuses the entire rail as a separate magnitude scale, never a zone.
+export function boostGaugeRatio(bar) {
+  if (finite(bar) === null) return null;
+  if (bar === 0) return 0;
+  if (bar < 0) return Math.min(1, Math.abs(bar));
+  return Math.min(1, bar <= 1 ? .75 * bar : .75 + .25 * (bar - 1));
+}
+
+export function boostScaleTicks(unit, mode) {
+  const vacuum = mode === 'vacuum';
+  const values = vacuum ? [0, .25, .5, 1] : [0, .5, 1, 2];
+  const positions = vacuum ? [0, .25, .5, 1] : [0, .375, .75, 1];
+  return values.map((bar, i) => {
+    const value = unit === 'psi' ? bar * PSI_PER_BAR : unit === 'kpa' ? bar * 100 : bar;
+    const label = String(Number(value.toFixed(unit === 'psi' ? 1 : unit === 'kpa' ? 0 : 2)));
+    return { bar, position: positions[i], label };
+  });
 }
 
 export function emptyBoost(unit = 'bar') {
   return {
     bar: null, value: null, ratio: null, overflow: null, unit,
     unitLabel: unit === 'psi' ? 'PSI' : unit === 'kpa' ? 'kPa' : 'bar',
-    valueText: '--', minLabel: unit === 'psi' ? '-14.5' : unit === 'kpa' ? '-100' : '-1',
-    maxLabel: unit === 'psi' ? '+29' : unit === 'kpa' ? '+200' : '+2',
+    valueText: '--', mode: 'unavailable', modeLabel: 'BOOST', ticks: boostScaleTicks(unit, 'boost'),
   };
 }
 
@@ -68,9 +89,10 @@ export function normalizeBoost(data = {}, config = {}, speedUnit = 'kmh') {
   }
   const value = finite(converted);
   if (value === null) return display;
+  const mode = bar < 0 ? 'vacuum' : bar === 0 ? 'neutral' : 'boost';
   return {
-    ...display, bar, value,
-    ratio: Math.max(0, Math.min(1, (bar - BOOST_RANGE.minBar) / (BOOST_RANGE.maxBar - BOOST_RANGE.minBar))),
+    ...display, bar, value, mode, modeLabel: mode === 'vacuum' ? 'VAC' : 'BOOST',
+    ticks: boostScaleTicks(unit, mode), ratio: boostGaugeRatio(bar),
     overflow: bar < BOOST_RANGE.minBar ? 'low' : bar > BOOST_RANGE.maxBar ? 'high' : null,
     valueText: numberText(value, unit),
   };

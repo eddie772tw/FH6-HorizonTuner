@@ -31,7 +31,13 @@ export function createRenderer(document, container) {
     const group = create('g', { transform: `translate(${i * 73} 0)` }, el('speedDigits'));
     return Object.fromEntries(Object.entries(GLYPHS).map(([key, points]) => [key, create('polygon', { points, class: 'ap1-digit' }, group)]));
   });
-  const boostBars = Array.from({ length: 9 }, (_, i) => create('rect', { x: 565 + i * 11, y: 189 - i * .35, width: 8, height: 15 + i * .35, class: 'ap1-segment' }, el('boostSegments')));
+  const boostRail = { start: 565, end: 661 };
+  const boostBars = Array.from({ length: 9 }, (_, i) => {
+    const attrs = { x: boostRail.start + i * 11, y: 189 - i * .35, width: 8, height: 15 + i * .35, class: 'ap1-segment' };
+    create('rect', attrs, el('boostSegments'));
+    return { x: attrs.x, width: attrs.width, active: create('rect', { ...attrs, width: 0 }, el('boostSegments')) };
+  });
+  let lastBoostScaleKey = '';
   let lastTickKey = '';
   let lastFrame = '';
   return {
@@ -49,7 +55,7 @@ export function createRenderer(document, container) {
       }
       const barState = segmentState(sweep ?? frame.rpmRatio, sweep === null ? frame.redlineRatio : null);
       bars.forEach((bar, i) => set(bar, 'class', `ap1-segment${barState[i].lit ? ' is-lit' : ''}${barState[i].hot ? ' is-hot' : ''}`));
-      const signature = `${frame.speedText}/${frame.gear}/${frame.unit}/${frame.rpm}/${frame.boost.valueText}/${frame.boost.unit}/${frame.boost.ratio}/${frame.boost.overflow}/${frame.status}/${frame.shift}/${sweep !== null}`;
+      const signature = `${frame.speedText}/${frame.gear}/${frame.unit}/${frame.rpm}/${frame.boost.valueText}/${frame.boost.unit}/${frame.boost.ratio}/${frame.boost.overflow}/${frame.boost.mode}/${frame.status}/${frame.shift}/${sweep !== null}`;
       if (signature === lastFrame) return;
       lastFrame = signature;
       const value = frame.speedText.padStart(3, ' ');
@@ -57,11 +63,32 @@ export function createRenderer(document, container) {
       text('speedUnit', frame.unit === 'mph' ? 'mph' : 'km/h');
       text('gearValue', frame.gear);
       text('boostValue', `${frame.boost.valueText} ${frame.boost.unitLabel}`);
-      text('boostMinLabel', frame.boost.minLabel);
-      text('boostMaxLabel', frame.boost.maxLabel);
-      boostBars.forEach((bar, i) => set(bar, 'class', `ap1-segment${frame.boost.ratio !== null && i < Math.ceil(frame.boost.ratio * 9) ? ' is-lit' : ''}`));
+      const vacuum = frame.boost.mode === 'vacuum';
+      text('boostModeLabel', frame.boost.modeLabel);
+      set(el('boostModeLabel'), 'class', 'ap1-label' + (vacuum ? ' ap1-boost-vacuum' : ''));
+      set(el('boostValue'), 'class', 'ap1-boost-value' + (vacuum ? ' ap1-boost-vacuum' : ''));
+      set(el('boostTicks'), 'class', vacuum ? 'ap1-boost-vacuum' : '');
+      const scaleKey = (vacuum ? 'vacuum' : 'boost') + ':' + frame.boost.unit;
+      if (scaleKey !== lastBoostScaleKey) {
+        lastBoostScaleKey = scaleKey;
+        el('boostTicks').replaceChildren();
+        for (const tick of frame.boost.ticks) {
+          const x = boostRail.start + tick.position * (boostRail.end - boostRail.start);
+          create('path', { d: 'M' + x + ' 206V211', class: 'ap1-boost-mark' }, el('boostTicks'));
+          const label = create('text', { x, y: 221, 'text-anchor': 'middle', class: 'ap1-boost-scale' }, el('boostTicks'));
+          label.textContent = tick.label;
+        }
+      }
+      const fillEnd = boostRail.start + (frame.boost.ratio ?? 0) * (boostRail.end - boostRail.start);
+      boostBars.forEach(bar => {
+        const width = Math.max(0, Math.min(bar.width, fillEnd - bar.x));
+        set(bar.active, 'width', width);
+        set(bar.active, 'class', 'ap1-segment' + (width > 0 ? ' is-lit' : '') + (vacuum ? ' is-vacuum' : ''));
+      });
       container.dataset.boost = frame.boost.valueText;
       container.dataset.boostUnit = frame.boost.unitLabel;
+      container.dataset.boostMode = frame.boost.mode;
+      container.dataset.boostRatio = frame.boost.ratio === null ? '' : String(frame.boost.ratio);
       container.dataset.boostRange = frame.boost.overflow || 'within';
       text('signalStatus', sweep !== null ? 'DISPLAY CHECK' : frame.status);
       text('shiftLamp', frame.shift && sweep === null ? 'SHIFT' : '');
@@ -69,7 +96,7 @@ export function createRenderer(document, container) {
       container.dataset.status = frame.status || 'LIVE';
       container.dataset.speed = frame.speedText;
       container.dataset.gear = frame.gear;
-      set(container, 'aria-label', `AP1 Rev Arc. ${frame.status || 'Live telemetry'}. Speed ${frame.speedText} ${frame.unit === 'mph' ? 'mph' : 'kilometres per hour'}. Gear ${frame.gear}. RPM ${frame.rpm ?? 'unavailable'}. Boost ${frame.boost.value === null ? 'unavailable' : `${frame.boost.valueText} ${frame.boost.unitLabel}`}${frame.boost.overflow ? ', outside displayed boost scale' : ''}`);
+      set(container, 'aria-label', `AP1 Rev Arc. ${frame.status || 'Live telemetry'}. Speed ${frame.speedText} ${frame.unit === 'mph' ? 'mph' : 'kilometres per hour'}. Gear ${frame.gear}. RPM ${frame.rpm ?? 'unavailable'}. ${frame.boost.mode === 'vacuum' ? 'Vacuum' : 'Boost'} ${frame.boost.value === null ? 'unavailable' : `${frame.boost.valueText} ${frame.boost.unitLabel}`}${frame.boost.overflow ? ', outside displayed boost scale' : ''}`);
     },
   };
 }

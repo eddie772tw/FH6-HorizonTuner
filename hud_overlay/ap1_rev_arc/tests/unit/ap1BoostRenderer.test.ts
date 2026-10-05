@@ -13,24 +13,52 @@ function fixture() {
     replaceChildren() { this.children = []; },
     classList: { toggle() {} },
   });
-  const ids = Object.fromEntries(['rpmTicks','rpmSegments','speedDigits','boostSegments','speedUnit','gearValue','boostValue','boostMinLabel','boostMaxLabel','signalStatus','shiftLamp'].map(id => [id, node()]));
+  const ids = Object.fromEntries(['rpmTicks','rpmSegments','speedDigits','boostSegments','speedUnit','gearValue','boostValue','boostModeLabel','boostTicks','signalStatus','shiftLamp'].map(id => [id, node()]));
   const container = node();
   const renderer = createRenderer({ getElementById: (id: string) => {
     if (!ids[id]) throw new Error('Renderer accessed an absent or removed readout: ' + id);
     return ids[id];
   }, createElementNS: node }, container);
-  const render = (boost_bar: number) => renderer.render({ ...normalizeFrame({ rpm: 4500, maxRpm: 9000, speed_kmh: 100, gear: 4, boost_bar }), live: true, status: '' });
-  return { render, ids, container, lit: () => ids.boostSegments.children.filter((n: any) => n.attributes.class.includes('is-lit')).length };
+  const render = (boost_bar: number | undefined) => renderer.render({ ...normalizeFrame({ rpm: 4500, maxRpm: 9000, speed_kmh: 100, gear: 4, boost_bar }), live: true, status: '' });
+  return { render, ids, container, lit: () => ids.boostSegments.children.filter((n: any) => n.attributes.class.includes('is-lit')), fillWidth: () => ids.boostSegments.children.filter((n: any) => n.attributes.class.includes('is-lit')).reduce((sum: number, n: any) => sum + Number(n.attributes.width), 0) };
 }
 
 describe('AP1 boost rendering cache', () => {
-  it('updates the bar across a zero boundary even when rounded value text stays identical', () => {
+  it('updates partial-cell fill even when rounded value text stays identical', () => {
     const f = fixture();
-    f.render(-.0001);
-    const before = f.lit(), value = f.ids.boostValue.textContent;
-    f.render(.0001);
+    f.render(.2499);
+    const before = f.fillWidth(), value = f.ids.boostValue.textContent;
+    f.render(.2501);
     expect(f.ids.boostValue.textContent).toBe(value);
-    expect(f.lit()).toBeGreaterThan(before);
+    expect(f.fillWidth()).toBeGreaterThan(before);
+  });
+  it('switches VAC label, warm color role and magnitude ticks at the same fill ratio', () => {
+    const f = fixture();
+    f.render(1 / 1024);
+    const text = f.ids.boostValue.textContent, ratio = f.container.dataset.boostRatio;
+    expect(f.ids.boostModeLabel.textContent).toBe('BOOST');
+    f.render(-3 / 4096);
+    expect(f.ids.boostValue.textContent).toBe('-' + text);
+    expect(f.container.dataset.boostRatio).toBe(ratio);
+    expect(f.container.dataset.boostMode).toBe('vacuum');
+    expect(f.ids.boostModeLabel.textContent).toBe('VAC');
+    expect(f.ids.boostValue.attributes.class).toContain('ap1-boost-vacuum');
+    expect(f.lit().every((n: any) => n.attributes.class.includes('is-vacuum'))).toBe(true);
+    expect(f.ids.boostTicks.children.filter((n: any) => n.attributes.class === 'ap1-boost-scale').map((n: any) => n.textContent)).toEqual(['0','0.25','0.5','1']);
+  });
+  it('shows zero as empty neutral and missing as unavailable without fill', () => {
+    const f = fixture();
+    f.render(-.5);
+    expect(f.lit().length).toBeGreaterThan(0);
+    f.render(0);
+    expect(f.fillWidth()).toBe(0);
+    expect(f.container.dataset.boostMode).toBe('neutral');
+    expect(f.ids.boostModeLabel.textContent).toBe('BOOST');
+    expect(f.ids.boostValue.textContent).toBe('0.00 bar');
+    f.render(undefined);
+    expect(f.fillWidth()).toBe(0);
+    expect(f.container.dataset.boostMode).toBe('unavailable');
+    expect(f.ids.boostValue.textContent).toBe('-- bar');
   });
   it('updates overflow metadata independently of rounded display text', () => {
     const f = fixture();
