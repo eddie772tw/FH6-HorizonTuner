@@ -25,12 +25,12 @@ export function AppMenu({ onOpen }: { onOpen: (surface: AppSurface) => void }) {
     document.addEventListener('pointerdown', closeOutside);
     return () => document.removeEventListener('pointerdown', closeOutside);
   }, [open]);
-  return <div className="position-relative" ref={menuRef} onKeyDown={event => {
+  return <div className="position-relative d-flex align-items-center" ref={menuRef} onKeyDown={event => {
     if (event.key === 'Escape') { setOpen(false); triggerRef.current?.focus(); }
   }}>
     <button ref={triggerRef} type="button" className="btn btn-outline-secondary btn-sm" aria-expanded={open}
       aria-controls="app-menu-items" onClick={() => setOpen(value => !value)}>{t('App Menu')}</button>
-    {open && <div id="app-menu-items" className="dropdown-menu show end-0 shadow glass-panel" aria-label={t('App Menu')}>
+    {open && <div id="app-menu-items" className="dropdown-menu show top-100 end-0 mt-2 shadow glass-panel" aria-label={t('App Menu')}>
       {surfaces.map(surface => <button key={surface.id} type="button" className="dropdown-item"
         onClick={() => openSurface(surface.id)}>{t(surface.label)}</button>)}
       <hr className="dropdown-divider" />
