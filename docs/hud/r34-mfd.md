@@ -111,8 +111,8 @@ Chrome fixture 保持 `chromiumSandbox:true`，不以停用 sandbox 繞過本地
 
 ## 本輪實際渲染預覽
 
-`docs/assets/r34-mfd/` 已更新為 `2cc0248` 的真正 Chrome runtime 圖片：[Visual run37325254056](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37325254056)。216 項 HUD 檢查、168 張 HUD 畫面、8 項 Launcher 檢查、12 張設定圖及 3 項設定流程檢查皆無錯誤。保留透明 720p／1080p 完整定位；雙 LCD 與五模式拼版只排列原生 DPR2 裁切，沒有重繪或放大。詳見同目錄 `provenance.json` 的原始檔名與 SHA256。
+`docs/assets/r34-mfd/` 已更新為 `7827a80` 的真正 Chrome runtime 圖片：[Visual run37332115596](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37332115596)。240 項 HUD 檢查、186 張 HUD 畫面、8 項 Launcher 檢查、12 張設定圖及 3 項設定流程檢查皆無錯誤。保留透明 720p／1080p 完整定位；雙 LCD 與五模式拼版只排列原生 DPR2 裁切，逐格像素比對一致，沒有重繪或放大。詳見同目錄 `provenance.json` 的原始檔名與 SHA256。
 
-本輪將功率／扭力兩行字由12px調整為11px，讓1080p的實際字型邊界保有間隙；未放寬LCD包含／相鄰文字碰撞斷言。低段RPM刻度未動，2／3字形含筆畫後在720p保留約1.25px、1080p約1.56px間隙。真正PNG的錶間與外部區域alpha為0；未發現額外儀表矩形背景，也未刪除合法的錶面／LCD／MFD底色。
+最新 LCD 改為相同的較寬、較淺窗框；所有字元使用同一 12px 半粗等寬字與固定 0.8 橫向比例，整行置中，不依個別欄位縮放。實際 Chrome 檢查包含共同字型、單行 baseline、左右邊界／平衡、四位帶符號數字、單欄顯隱、缺值、長計時及明示科學記號。速度數字12.25→10.5，位置及300kmh量程不動；兩個子錶由7條增加至13條刻線，保留主／中／次刻線層次及偏心軸。獨立檢視確認720p字體較緊湊但可讀，1080p及DPR2均無裁切／碰撞。
 
-`5c7a770`之前的中央文字與居中小錶，以及更早的外殼版，均已被本輪雙LCD／偏心指針修訂取代。舊圖只保留於Git歷史，不作為本輪完成證據。Windows原生overlay與FH6遊戲仍未實測。
+低段RPM刻度未動，2／3字形含筆畫後在720p保留約1.25px、1080p約1.56px間隙。真正PNG的錶間與外部區域alpha為0；未發現額外儀表矩形背景，也未刪除合法的錶面／LCD／MFD底色。前一版兩行輸出LCD已被本輪單行修訂取代；舊圖只保留於Git歷史，不作為本輪完成證據。Windows原生overlay與FH6遊戲仍未實測。
