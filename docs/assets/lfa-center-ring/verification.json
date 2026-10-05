@@ -1,10 +1,10 @@
 {
   "date": "2026-10-05",
   "style": "lfa_center_ring",
-  "sourceHead": "f3dd06b7f17b3c12867648780d0622dcb8525b9f",
-  "githubRunId": 37272049555,
-  "githubArtifactId": 11328657701,
-  "githubRunUrl": "https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37272049555",
+  "sourceHead": "c4a5abeef26642ecafc63439dac5c8ca73a99a02",
+  "githubRunId": 37276468705,
+  "githubArtifactId": 11329914689,
+  "githubRunUrl": "https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37276468705",
   "browser": "154.0.8037.57",
   "chromiumSandbox": true,
   "localUnitGate": {
@@ -25,437 +25,28 @@
     "failure": "companion::tests::test_qr_payload_generation_and_pairing, src/companion.rs:378: !qr.lan_ips.is_empty()",
     "baselineReproduction": "Same failure reproduced on unchanged bbf64fbd14406bf42e88e016bde83eb04540f887 in this restricted environment; do not claim a locally green full Rust suite"
   },
-  "actualRenderAndLauncherGate": "passed",
-  "regularViewportConfigurations": 4,
-  "expansionViewportConfigurations": 4,
-  "expandedFootprint": "560x370 design units, +96px central translation; 72 CSS px at default0.75 zoom",
-  "motion": "Approximately600ms critically damped; preserved position/velocity on reversal; reduced motion immediate",
-  "racePolicy": "400ms advancing-positive CurrentLap confirmation; initialzero never enters;2s invalid/no-contextzero grace;3s genuine timestamp silence;manual override",
-  "settingsFunctionalGate": "passed in actual OverlayView->BroadcastChannel->Launcher fixture",
-  "settingsLocalizedVisualGate": "Passed after CI-only CJK-font installation: actual narrow zh-TW and ja-JP screenshots inspected, readable without overflow; glyph probe true; errors/failedResponses empty",
-  "centerPreservation": {
-    "evidence": "expansion-center-preservation.json",
-    "matchedDetailStates": 8,
-    "detailPixelsComparedAcrossEightStates": 1791536,
-    "detailCentralDifferingPixels": 0,
-    "matchedFullViewports": 4,
-    "fullViewportCentralPixelsComparedAcrossFourCaptures": 391864,
-    "fullViewportCentralDifferingPixels": 0,
-    "allTwelveComparedCentralDisksExactMatch": true,
-    "allTwelveWholePngPixelArraysExactMatch": false,
-    "qualification": "8 個 detail 與 4 個完整 viewport 的指定中央圓皆精確 RGBA 零差異。1080p DPR2 完整 PNG 的圓外有 14 個不同像素；其餘 11 張的完整影像像素相同。此結論僅限列出的匹配輸入，不推論其他解析度、狀態或原生遊戲。"
-  },
-  "previewDerivation": "Synthetic telemetry in real Chrome; not game capture. Intermediate frames partially occlude side data behind the moving ring. All output PNGs are 8-bit.",
-  "previewFiles": [
-    {
-      "file": "metric-detail.png",
-      "source": "detail-metric.png",
-      "processing": "Lossless PNG recompression and metadata removal; actual screenshot pixels preserved",
-      "sha256": "e5660c2ff62621bb05ead4d209d1efd377b7e1d08e53acde7bbb110653e379a9"
-    },
-    {
-      "file": "metric-720p.png",
-      "source": "metric-1280x720-dpr1.png",
-      "processing": "Lossless PNG recompression and metadata removal; actual screenshot pixels preserved",
-      "sha256": "f3ac098ab31e51601c8dfd66f601ff13e0ef4739a0b43a4efaf8580c52a89bea"
-    },
-    {
-      "file": "expanded-detail.png",
-      "source": "detail-expansion-manual.png",
-      "processing": "Lossless PNG recompression and metadata removal; actual screenshot pixels preserved",
-      "sha256": "a95611ef2aecd8da837dd6d630c14b4b6602e2a61ada233b2be418b435ff22fb"
-    },
-    {
-      "file": "expanded-720p.png",
-      "source": "expanded-1280x720-dpr1.png",
-      "processing": "Lossless PNG recompression and metadata removal; actual screenshot pixels preserved",
-      "sha256": "66828f2d8799c9d4c45a4127bc96a9ba26ee6708350f20cb08c252c4bdfab69f"
-    },
-    {
-      "file": "expansion-transitions.png",
-      "sources": [
-        {
-          "file": "detail-expansion-collapsed.png",
-          "label": "Collapsed / target OFF"
-        },
-        {
-          "file": "detail-expansion-opening-150ms.png",
-          "label": "Opening / clock +150 ms"
-        },
-        {
-          "file": "detail-expansion-manual.png",
-          "label": "Expanded / settled"
-        },
-        {
-          "file": "detail-expansion-closing-150ms.png",
-          "label": "Closing / clock +150 ms / width stress test"
-        }
-      ],
-      "processing": "Actual screenshots downscaled and arranged with labels; no HUD redraw",
-      "sha256": "a31156c9cd7a899af6e30daa5ab2f2bc0ab0408709f6c1260f3a438f0fae4180"
-    },
-    {
-      "file": "state-contact-sheet.png",
-      "sources": [
-        {
-          "file": "detail-aux-psi-fahrenheit.png",
-          "label": "Independent Fahrenheit / PSI"
-        },
-        {
-          "file": "detail-aux-kpa.png",
-          "label": "Independent Celsius / kPa"
-        },
-        {
-          "file": "detail-aux-negative-boost.png",
-          "label": "Negative boost / VAC"
-        },
-        {
-          "file": "detail-aux-zero.png",
-          "label": "Valid zero readings"
-        },
-        {
-          "file": "detail-aux-partial-missing.png",
-          "label": "Partial tyres / boost unavailable"
-        },
-        {
-          "file": "detail-aux-clamped-arcs.png",
-          "label": "Bounded arcs / actual numbers"
-        },
-        {
-          "file": "detail-neutral.png",
-          "label": "Neutral"
-        },
-        {
-          "file": "detail-redline.png",
-          "label": "SHIFT priority"
-        },
-        {
-          "file": "detail-no-signal.png",
-          "label": "Stale telemetry / unavailable"
-        }
-      ],
-      "processing": "Actual screenshots downscaled and arranged with labels; no HUD redraw",
-      "sha256": "0070ac6b68824c5c975bbc4cf70bc82629f6b8f2f7e3b62606f7f90d9a6e6866"
-    },
-    {
-      "file": "session-states.png",
-      "sources": [
-        {
-          "file": "detail-rank-lap.png",
-          "label": "Rank / reported current lap"
-        },
-        {
-          "file": "detail-lap-notice.png",
-          "label": "Lap completion notice"
-        },
-        {
-          "file": "detail-best-notice.png",
-          "label": "Best-lap improvement"
-        },
-        {
-          "file": "detail-lap-max-width.png",
-          "label": "Maximum supported lap-time width"
-        }
-      ],
-      "processing": "Actual screenshots downscaled and arranged with labels; no HUD redraw",
-      "sha256": "6dfb464d9f2a944b82049985c42b25c5e82e02d48b9088a43bba044689aebc34"
-    },
-    {
-      "file": "lfa-boost-scale-comparison.png",
-      "sources": [
-        {
-          "file": "detail-boost-half.png",
-          "label": "+0.5 bar / 37.5% arc"
-        },
-        {
-          "file": "detail-boost-one.png",
-          "label": "+1 bar / 75% arc"
-        },
-        {
-          "file": "detail-boost-vacuum-half.png",
-          "label": "-0.5 bar / 50% blue VAC arc"
-        },
-        {
-          "file": "detail-boost-zero.png",
-          "label": "Zero / empty neutral arc"
-        }
-      ],
-      "processing": "Actual screenshots downscaled and arranged with labels; no HUD redraw",
-      "sha256": "959c7f1f0dd1d89b64f08e692c8a343e1df21d8f9dd27915080e17b246216016"
-    }
-  ],
-  "evidenceFiles": [
-    {
-      "file": "evidence.json",
-      "sha256": "745cb0d073f4c95e52b566b8cf2cafb9b05ee475d8b58383c75bfd0b515f2bf5"
-    },
-    {
-      "file": "launcher-report.json",
-      "sha256": "4aa077fcd0e54eca0ac0d02b2c3228bed98201c3ec618391c641e6a0c81258cc"
-    },
-    {
-      "file": "expansion-center-preservation.json",
-      "sha256": "3fa850fd595b0a7407d6e84340efa7773598a58dcb2ff4da5ba5a47d22941157"
-    },
-    {
-      "file": "expansion-preview-provenance.json",
-      "sha256": "9f6cc8b5169dafd93d8b3dd6ac88458cfb963d666c5b6c194a9f6bb3b14008bc"
-    }
-  ],
-  "review": "Viewed settled collapsed/expanded, opening/closing intermediate frames, maximum-width99:59.99/large signedboost, no-data manual mode and720p/1440p full placement. No settled text overlaps or clipping observed; moving ring intentionally occludes pane during travel.",
-  "initialExpansionFixtureFailure": "Run37271654474 compared RAF114ms state with config120ms state. Corrected test paints both directions at the exact same clock instant and asserts equality of time/progress/transform/screen x; runtime unchanged. Removed redundant no-op direct invocation of exported runner.",
-  "windowsNativeOverlayAndGameAcceptance": "not performed",
-  "userVisualApproval": "pending",
-  "finalDocumentationCommitCi": "pending",
-  "priorNonlinearRevision": {
-    "date": "2026-10-05",
-    "style": "lfa_center_ring",
-    "sourceHead": "5c5b8f63c735a0e55a826a263db53199958dd6ce",
-    "githubRunId": 37266656967,
-    "githubArtifactId": 11326489095,
-    "githubRunUrl": "https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37266656967",
-    "browser": "154.0.8037.57",
-    "chromiumSandbox": true,
-    "localUnitGate": {
-      "filesPassed": 157,
-      "filesSkipped": 1,
-      "testsPassed": 1154,
-      "testsSkipped": 1,
-      "styleTests": 49
-    },
-    "actualRenderAndLauncherGate": "passed",
-    "positiveScale": "0..1bar maps0..75%;1..2bar maps75..100%",
-    "vacuumScale": "abs0..1bar maps0..100%, blue VAC with signed numeric and dynamic magnitude ticks",
-    "previewDerivation": "Hero/720p copied from actual CI captures; comparison and state sheets are resized labeled actual screenshots",
-    "pixelPreservation": "boost-scale-preservation.json",
-    "layoutFix": "Actual first nonlinear run caught VAC0.25 tick/readout overlap. Shifted only upper-right readout x481,y148/160/172; genuine overlap test retained and expanded to longest units/time. New run passes.",
-    "windowsNativeAndGameAcceptance": "not performed",
-    "userVisualApproval": "pending",
-    "priorTelemetryRevision": {
-      "date": "2026-10-05",
-      "style": "lfa_center_ring",
-      "sourceHead": "eac1b9e5bd360a3ca4e9359bd142b43de7c6a0f6",
-      "githubRunId": 37264359295,
-      "githubArtifactId": 11324929540,
-      "githubRunUrl": "https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37264359295",
-      "browser": "154.0.8037.57",
-      "chromiumSandbox": true,
-      "localUnitGate": {
-        "filesPassed": 157,
-        "filesSkipped": 1,
-        "testsPassed": 1150,
-        "testsSkipped": 1,
-        "styleTests": 45
-      },
-      "buildWebHud": "passed",
-      "actualRenderAndLauncherGate": "passed",
-      "previewDerivation": "Hero and720p copied byte-for-byte from real CI output; state sheets are labeled half-size actual detail captures.",
-      "centerPreservation": "telemetry-center-preservation.json: six matched central states AE0; missing/offline differ only intentional fixture speed-unit selection. No claim of same pixels in mismatched states.",
-      "reviewResult": "Viewed real metric/units/boost signed-zero-missing/pedals/rank/lap-notices/max-width/partial/stale captures; no label overlap or center intrusion observed. Final user visual review pending.",
-      "initialCiFailure": "46ff863f first visual fixture failed because invalid mph was tested in metric mode. Corrected fixture invalidates both channels; production runtime unchanged.",
-      "jsonUnitAudit": "json-unit-audit.json",
-      "windowsNativeOverlayAndGameAcceptance": "not performed",
-      "historicalPriorSideRevision": {
-        "date": "2026-10-05",
-        "style": "lfa_center_ring",
-        "verifiedBase": "a9335b158e658faa86bcfcbe4d36beb602f6c9c7",
-        "sourceHead": "ad4458ec975678055a0b8555e3b0c99f53191aba",
-        "githubRunId": "37258540232",
-        "githubRunUrl": "https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37258540232",
-        "githubArtifactId": "11323881665",
-        "localUnitGate": {
-          "filesPassed": 156,
-          "filesSkipped": 1,
-          "testsPassed": 1134,
-          "testsSkipped": 1,
-          "styleTests": 29
-        },
-        "buildWebHud": "passed",
-        "officialReferencePixelsViewed": "OM77006U printed p.116 / PDF p.118",
-        "originalHousingPixelsViewed": true,
-        "fullHudPixelsViewed": true,
-        "chromiumGate": "passed for side revision in GitHub Actions; actual screenshots independently reviewed",
-        "browser": "154.0.8037.57",
-        "chromiumSandbox": true,
-        "viewportConfigurations": [
-          {
-            "viewport": {
-              "width": 1280,
-              "height": 720
-            },
-            "dpr": 1,
-            "errors": []
-          },
-          {
-            "viewport": {
-              "width": 1920,
-              "height": 1080
-            },
-            "dpr": 1,
-            "errors": []
-          },
-          {
-            "viewport": {
-              "width": 2560,
-              "height": 1440
-            },
-            "dpr": 1,
-            "errors": []
-          },
-          {
-            "viewport": {
-              "width": 1920,
-              "height": 1080
-            },
-            "dpr": 2,
-            "errors": []
-          }
-        ],
-        "launcherGate": {
-          "errors": [],
-          "missing": [],
-          "samples": 10,
-          "destroy": {
-            "name": "destroy",
-            "remainingBodyChildren": 0
-          }
-        },
-        "evidenceFiles": {
-          "evidence.json": {
-            "sha256": "742fc4a6c35cbfe0068a71c4dee38af95183e899dec31927ea0d96b147184131",
-            "verbatimArtifactCopy": true
-          },
-          "launcher-report.json": {
-            "sha256": "586dbb9446040a6563092a913046aa871f17a6160601fbc9921d5f6ff9aae9bb",
-            "verbatimArtifactCopy": true
-          },
-          "central-preservation.json": {
-            "sha256": "7630226edfde1684d54c0de840b38145f7d1ebd269229dab32d8d28194d1c176",
-            "description": "Exact RGBA center comparison generated independently from both original CI artifact sets"
-          }
-        },
-        "previewFiles": {
-          "metric-detail.png": {
-            "sha256": "d157eec02e3c14ac3e0e49ee1648d7908447046518d81607283b98740d4e5dca",
-            "processing": "PNG metadata removed and lossless compression; actual screenshot pixels preserved"
-          },
-          "metric-720p.png": {
-            "sha256": "695c414161a768178e4ff44e0c5831205426cf1ee7d1dae065ef7cf3f71c94bd",
-            "processing": "PNG metadata removed and lossless compression; actual screenshot pixels preserved"
-          },
-          "fuel-empty.png": {
-            "sha256": "43439a4099e7c54843538260b80ca5a87b36816cb5f8961f7401133cbed7fde5",
-            "processing": "PNG metadata removed and lossless compression; actual screenshot pixels preserved"
-          },
-          "fuel-full.png": {
-            "sha256": "8c9827520780b41d86fe07a745d695c666535298b238f5f21d537db0cdc6530a",
-            "processing": "PNG metadata removed and lossless compression; actual screenshot pixels preserved"
-          },
-          "state-contact-sheet.png": {
-            "sha256": "133e7e9737e91aef77651f2fb30a77355172b2b807c152575c4f288742d07fbe",
-            "processing": "Six actual screenshots downscaled and arranged with captions; no HUD redraw"
-          }
-        },
-        "visualReview": "Viewed all key metric/imperial/R/N/SHIFT/missing/stale/high-RPM/fuel0/fuel100 screenshots and full720p/1080p/1440p. Four curved side scales match the researched structure, unsupported sensors are clearly N/A, fuel endpoints are distinct, no label overlaps or clipping observed. Approved central source assets/styles unchanged; exact pixel evidence scoped above.",
-        "localBrowserBlocker": "standalone Chromium UNIX socket EPERM; cloud browser localhost ERR_BLOCKED_BY_CLIENT",
-        "windowsNativeOverlayAndGameAcceptance": "not performed",
-        "sideRevision": {
-          "baseHead": "dfad352be6728fca43e443a8610aa447a6c59472",
-          "status": "implemented and checked; ready for user review, not user-approved",
-          "officialPhotosViewed": [
-            "https://media.lexus.co.uk/wp-content/uploads/sites/3/2011/10/T_6820-scaled.jpg",
-            "https://media.lexus.co.uk/wp-content/uploads/sites/3/2011/10/T_6833-scaled.jpg",
-            "https://media.lexus.co.uk/wp-content/uploads/sites/3/2012/12/DSC_4040-scaled.jpg"
-          ],
-          "additionalPhotosViewed": [
-            "https://www.motortrend.com/uploads/sites/5/2012/07/2012-Lexus-LFA-Tach.jpg",
-            "https://upload.wikimedia.org/wikipedia/commons/f/f7/Lexus_LFA_speedometer_view_01.jpg"
-          ],
-          "referenceCaution": "T_6820 says Issued 10/2009 and AUTO; MotorTrend close-up has SPORT center. Only side geometry adopted; 2012 model scope remains OM77006U.",
-          "centralPngSha256": "3433460df37b91c67f09cfe7b3c99bacd6ad925db36b113042a95bc196422b22",
-          "centralSvgSha256": "8570a31f672dac12bb94e198a91cb78576dd0b09b81c140dd4ae7ca68b924028",
-          "centralAssetsAndCssAndDrawFunctionsUnchanged": true,
-          "localUnitGate": {
-            "filesPassed": 156,
-            "filesSkipped": 1,
-            "testsPassed": 1134,
-            "testsSkipped": 1,
-            "styleTests": 29
-          },
-          "buildWebHud": "passed",
-          "sourceHead": "ad4458ec975678055a0b8555e3b0c99f53191aba",
-          "centralPixelPreservation": {
-            "referenceHead": "93085acd2ff238650dd9e2ac6c552e224ebdd060",
-            "detailViewport": "1920x1080 at DPR2",
-            "detailDimensions": "840x556",
-            "circleCenter": {
-              "x": 420,
-              "y": 277.5
-            },
-            "radiusPixels": 267,
-            "geometricCriterion": "For each exact RGBA pixel at center (x+0.5,y+0.5), compare iff squared distance to (420,277.5) <=267^2. No tolerance, mask feathering, color-space conversion or reduced radius.",
-            "allEightMatchingDetailStatesDifferingPixels": 0,
-            "nearestChangedPixel": {
-              "x": 589,
-              "y": 70,
-              "distanceFromCircleCenter": 267.54298720018807,
-              "oldRgba": [
-                21,
-                33,
-                40,
-                255
-              ],
-              "newRgba": [
-                20,
-                32,
-                39,
-                255
-              ]
-            },
-            "outsideAntialiasNote": "Soft-antialiased masks include fractional coverage outside their nominal circle; ImageMagick soft radius267 mask AE1 is outside the geometric approved disk.",
-            "additionalFullViewportResults": [
-              {
-                "file": "metric-1280x720-dpr1.png",
-                "radiusPixels": 133.5,
-                "differingPixels": 466
-              },
-              {
-                "file": "metric-1920x1080-dpr1.png",
-                "radiusPixels": 133.5,
-                "differingPixels": 478
-              },
-              {
-                "file": "metric-2560x1440-dpr1.png",
-                "radiusPixels": 133.5,
-                "differingPixels": 0
-              },
-              {
-                "file": "metric-1920x1080-dpr2.png",
-                "radiusPixels": 267,
-                "differingPixels": 0
-              }
-            ],
-            "additionalFullViewportCaution": "DPR1 720p/1080p full captures show small color differences despite unchanged central source and visibly unchanged geometry. Cause not established; do not claim byte identity at every viewport."
-          }
-        }
-      }
-    }
-  },
   "exactHeadCi": {
-    "sourceHead": "f3dd06b7f17b3c12867648780d0622dcb8525b9f",
     "pipeline": {
-      "run": 37272049454,
-      "conclusion": "success",
-      "rustBackendAgentCliJob": 111640997768
+      "run": 37276468674,
+      "conclusion": "success"
     },
     "releasePackaging": {
-      "run": 37272049845,
+      "run": 37276468980,
       "conclusion": "success"
     },
     "visual": {
-      "run": 37272049555,
+      "run": 37276468705,
       "conclusion": "success"
     }
+  },
+  "expandedPanelReflow": {
+    "diagnosis": "Old stacked timing blocks and fixed footer columns ignored narrowing curved fascia.84 bright80% glyph pixels lay outside leftboundary, maximum10.96 designpx.",
+    "typography": "CURRENT18px;LAST/BEST16px;aux15px;labels10px;row layout informed by OEMmanualp124/p145, not OEMpixel measurement",
+    "geometryTests": "Real SVG text bbox+2 designunits; every perimeter sampled against actual exported fascia SVG fill; shifted-ring cutout andtext overlap tested",
+    "defaultAndCompactConfigurations": 6,
+    "containmentEvidence": "panel-reflow-verification.json",
+    "previewEvidence": "panel-reflow-preview-provenance.json",
+    "unitScreenshotNote": "Numeric-unit geometry cases passed. Existing screenshots ended atN/A; tiny fixture capture correction awaits final rerender andasserts actual value+unit includingHI/LO."
   },
   "settingsSource": {
     "sourceHead": "5a5daee04b1124089bb79f3c03ea03da3a6f83e5",
@@ -469,5 +60,482 @@
       "settings/settings-narrow-zh-tw.png",
       "settings/settings-narrow-ja-jp.png"
     ]
+  },
+  "settingsLocalizedVisualGate": "Passed after CI-only CJK-font installation: actual narrow zh-TW and ja-JP screenshots inspected, readable without overflow; glyph probe true; errors/failedResponses empty",
+  "windowsNativeOverlayAndGameAcceptance": "not performed",
+  "userVisualApproval": "pending",
+  "finalDocumentationCommitCi": "pending",
+  "priorExpansionRevision": {
+    "date": "2026-10-05",
+    "style": "lfa_center_ring",
+    "sourceHead": "f3dd06b7f17b3c12867648780d0622dcb8525b9f",
+    "githubRunId": 37272049555,
+    "githubArtifactId": 11328657701,
+    "githubRunUrl": "https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37272049555",
+    "browser": "154.0.8037.57",
+    "chromiumSandbox": true,
+    "localUnitGate": {
+      "filesPassed": 160,
+      "filesSkipped": 1,
+      "testsPassed": 1208,
+      "testsSkipped": 1,
+      "styleTests": 81
+    },
+    "buildWebHud": "passed",
+    "localBackend": {
+      "configContractPassed": 9,
+      "fullSuite": {
+        "passed": 123,
+        "failed": 1,
+        "ignored": 2
+      },
+      "failure": "companion::tests::test_qr_payload_generation_and_pairing, src/companion.rs:378: !qr.lan_ips.is_empty()",
+      "baselineReproduction": "Same failure reproduced on unchanged bbf64fbd14406bf42e88e016bde83eb04540f887 in this restricted environment; do not claim a locally green full Rust suite"
+    },
+    "actualRenderAndLauncherGate": "passed",
+    "regularViewportConfigurations": 4,
+    "expansionViewportConfigurations": 4,
+    "expandedFootprint": "560x370 design units, +96px central translation; 72 CSS px at default0.75 zoom",
+    "motion": "Approximately600ms critically damped; preserved position/velocity on reversal; reduced motion immediate",
+    "racePolicy": "400ms advancing-positive CurrentLap confirmation; initialzero never enters;2s invalid/no-contextzero grace;3s genuine timestamp silence;manual override",
+    "settingsFunctionalGate": "passed in actual OverlayView->BroadcastChannel->Launcher fixture",
+    "settingsLocalizedVisualGate": "Passed after CI-only CJK-font installation: actual narrow zh-TW and ja-JP screenshots inspected, readable without overflow; glyph probe true; errors/failedResponses empty",
+    "centerPreservation": {
+      "evidence": "expansion-center-preservation.json",
+      "matchedDetailStates": 8,
+      "detailPixelsComparedAcrossEightStates": 1791536,
+      "detailCentralDifferingPixels": 0,
+      "matchedFullViewports": 4,
+      "fullViewportCentralPixelsComparedAcrossFourCaptures": 391864,
+      "fullViewportCentralDifferingPixels": 0,
+      "allTwelveComparedCentralDisksExactMatch": true,
+      "allTwelveWholePngPixelArraysExactMatch": false,
+      "qualification": "8 個 detail 與 4 個完整 viewport 的指定中央圓皆精確 RGBA 零差異。1080p DPR2 完整 PNG 的圓外有 14 個不同像素；其餘 11 張的完整影像像素相同。此結論僅限列出的匹配輸入，不推論其他解析度、狀態或原生遊戲。"
+    },
+    "previewDerivation": "Synthetic telemetry in real Chrome; not game capture. Intermediate frames partially occlude side data behind the moving ring. All output PNGs are 8-bit.",
+    "previewFiles": [
+      {
+        "file": "metric-detail.png",
+        "source": "detail-metric.png",
+        "processing": "Lossless PNG recompression and metadata removal; actual screenshot pixels preserved",
+        "sha256": "e5660c2ff62621bb05ead4d209d1efd377b7e1d08e53acde7bbb110653e379a9"
+      },
+      {
+        "file": "metric-720p.png",
+        "source": "metric-1280x720-dpr1.png",
+        "processing": "Lossless PNG recompression and metadata removal; actual screenshot pixels preserved",
+        "sha256": "f3ac098ab31e51601c8dfd66f601ff13e0ef4739a0b43a4efaf8580c52a89bea"
+      },
+      {
+        "file": "expanded-detail.png",
+        "source": "detail-expansion-manual.png",
+        "processing": "Lossless PNG recompression and metadata removal; actual screenshot pixels preserved",
+        "sha256": "a95611ef2aecd8da837dd6d630c14b4b6602e2a61ada233b2be418b435ff22fb"
+      },
+      {
+        "file": "expanded-720p.png",
+        "source": "expanded-1280x720-dpr1.png",
+        "processing": "Lossless PNG recompression and metadata removal; actual screenshot pixels preserved",
+        "sha256": "66828f2d8799c9d4c45a4127bc96a9ba26ee6708350f20cb08c252c4bdfab69f"
+      },
+      {
+        "file": "expansion-transitions.png",
+        "sources": [
+          {
+            "file": "detail-expansion-collapsed.png",
+            "label": "Collapsed / target OFF"
+          },
+          {
+            "file": "detail-expansion-opening-150ms.png",
+            "label": "Opening / clock +150 ms"
+          },
+          {
+            "file": "detail-expansion-manual.png",
+            "label": "Expanded / settled"
+          },
+          {
+            "file": "detail-expansion-closing-150ms.png",
+            "label": "Closing / clock +150 ms / width stress test"
+          }
+        ],
+        "processing": "Actual screenshots downscaled and arranged with labels; no HUD redraw",
+        "sha256": "a31156c9cd7a899af6e30daa5ab2f2bc0ab0408709f6c1260f3a438f0fae4180"
+      },
+      {
+        "file": "state-contact-sheet.png",
+        "sources": [
+          {
+            "file": "detail-aux-psi-fahrenheit.png",
+            "label": "Independent Fahrenheit / PSI"
+          },
+          {
+            "file": "detail-aux-kpa.png",
+            "label": "Independent Celsius / kPa"
+          },
+          {
+            "file": "detail-aux-negative-boost.png",
+            "label": "Negative boost / VAC"
+          },
+          {
+            "file": "detail-aux-zero.png",
+            "label": "Valid zero readings"
+          },
+          {
+            "file": "detail-aux-partial-missing.png",
+            "label": "Partial tyres / boost unavailable"
+          },
+          {
+            "file": "detail-aux-clamped-arcs.png",
+            "label": "Bounded arcs / actual numbers"
+          },
+          {
+            "file": "detail-neutral.png",
+            "label": "Neutral"
+          },
+          {
+            "file": "detail-redline.png",
+            "label": "SHIFT priority"
+          },
+          {
+            "file": "detail-no-signal.png",
+            "label": "Stale telemetry / unavailable"
+          }
+        ],
+        "processing": "Actual screenshots downscaled and arranged with labels; no HUD redraw",
+        "sha256": "0070ac6b68824c5c975bbc4cf70bc82629f6b8f2f7e3b62606f7f90d9a6e6866"
+      },
+      {
+        "file": "session-states.png",
+        "sources": [
+          {
+            "file": "detail-rank-lap.png",
+            "label": "Rank / reported current lap"
+          },
+          {
+            "file": "detail-lap-notice.png",
+            "label": "Lap completion notice"
+          },
+          {
+            "file": "detail-best-notice.png",
+            "label": "Best-lap improvement"
+          },
+          {
+            "file": "detail-lap-max-width.png",
+            "label": "Maximum supported lap-time width"
+          }
+        ],
+        "processing": "Actual screenshots downscaled and arranged with labels; no HUD redraw",
+        "sha256": "6dfb464d9f2a944b82049985c42b25c5e82e02d48b9088a43bba044689aebc34"
+      },
+      {
+        "file": "lfa-boost-scale-comparison.png",
+        "sources": [
+          {
+            "file": "detail-boost-half.png",
+            "label": "+0.5 bar / 37.5% arc"
+          },
+          {
+            "file": "detail-boost-one.png",
+            "label": "+1 bar / 75% arc"
+          },
+          {
+            "file": "detail-boost-vacuum-half.png",
+            "label": "-0.5 bar / 50% blue VAC arc"
+          },
+          {
+            "file": "detail-boost-zero.png",
+            "label": "Zero / empty neutral arc"
+          }
+        ],
+        "processing": "Actual screenshots downscaled and arranged with labels; no HUD redraw",
+        "sha256": "959c7f1f0dd1d89b64f08e692c8a343e1df21d8f9dd27915080e17b246216016"
+      }
+    ],
+    "evidenceFiles": [
+      {
+        "file": "evidence.json",
+        "sha256": "745cb0d073f4c95e52b566b8cf2cafb9b05ee475d8b58383c75bfd0b515f2bf5"
+      },
+      {
+        "file": "launcher-report.json",
+        "sha256": "4aa077fcd0e54eca0ac0d02b2c3228bed98201c3ec618391c641e6a0c81258cc"
+      },
+      {
+        "file": "expansion-center-preservation.json",
+        "sha256": "3fa850fd595b0a7407d6e84340efa7773598a58dcb2ff4da5ba5a47d22941157"
+      },
+      {
+        "file": "expansion-preview-provenance.json",
+        "sha256": "9f6cc8b5169dafd93d8b3dd6ac88458cfb963d666c5b6c194a9f6bb3b14008bc"
+      }
+    ],
+    "review": "Viewed settled collapsed/expanded, opening/closing intermediate frames, maximum-width99:59.99/large signedboost, no-data manual mode and720p/1440p full placement. No settled text overlaps or clipping observed; moving ring intentionally occludes pane during travel.",
+    "initialExpansionFixtureFailure": "Run37271654474 compared RAF114ms state with config120ms state. Corrected test paints both directions at the exact same clock instant and asserts equality of time/progress/transform/screen x; runtime unchanged. Removed redundant no-op direct invocation of exported runner.",
+    "windowsNativeOverlayAndGameAcceptance": "not performed",
+    "userVisualApproval": "pending",
+    "finalDocumentationCommitCi": "pending",
+    "priorNonlinearRevision": {
+      "date": "2026-10-05",
+      "style": "lfa_center_ring",
+      "sourceHead": "5c5b8f63c735a0e55a826a263db53199958dd6ce",
+      "githubRunId": 37266656967,
+      "githubArtifactId": 11326489095,
+      "githubRunUrl": "https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37266656967",
+      "browser": "154.0.8037.57",
+      "chromiumSandbox": true,
+      "localUnitGate": {
+        "filesPassed": 157,
+        "filesSkipped": 1,
+        "testsPassed": 1154,
+        "testsSkipped": 1,
+        "styleTests": 49
+      },
+      "actualRenderAndLauncherGate": "passed",
+      "positiveScale": "0..1bar maps0..75%;1..2bar maps75..100%",
+      "vacuumScale": "abs0..1bar maps0..100%, blue VAC with signed numeric and dynamic magnitude ticks",
+      "previewDerivation": "Hero/720p copied from actual CI captures; comparison and state sheets are resized labeled actual screenshots",
+      "pixelPreservation": "boost-scale-preservation.json",
+      "layoutFix": "Actual first nonlinear run caught VAC0.25 tick/readout overlap. Shifted only upper-right readout x481,y148/160/172; genuine overlap test retained and expanded to longest units/time. New run passes.",
+      "windowsNativeAndGameAcceptance": "not performed",
+      "userVisualApproval": "pending",
+      "priorTelemetryRevision": {
+        "date": "2026-10-05",
+        "style": "lfa_center_ring",
+        "sourceHead": "eac1b9e5bd360a3ca4e9359bd142b43de7c6a0f6",
+        "githubRunId": 37264359295,
+        "githubArtifactId": 11324929540,
+        "githubRunUrl": "https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37264359295",
+        "browser": "154.0.8037.57",
+        "chromiumSandbox": true,
+        "localUnitGate": {
+          "filesPassed": 157,
+          "filesSkipped": 1,
+          "testsPassed": 1150,
+          "testsSkipped": 1,
+          "styleTests": 45
+        },
+        "buildWebHud": "passed",
+        "actualRenderAndLauncherGate": "passed",
+        "previewDerivation": "Hero and720p copied byte-for-byte from real CI output; state sheets are labeled half-size actual detail captures.",
+        "centerPreservation": "telemetry-center-preservation.json: six matched central states AE0; missing/offline differ only intentional fixture speed-unit selection. No claim of same pixels in mismatched states.",
+        "reviewResult": "Viewed real metric/units/boost signed-zero-missing/pedals/rank/lap-notices/max-width/partial/stale captures; no label overlap or center intrusion observed. Final user visual review pending.",
+        "initialCiFailure": "46ff863f first visual fixture failed because invalid mph was tested in metric mode. Corrected fixture invalidates both channels; production runtime unchanged.",
+        "jsonUnitAudit": "json-unit-audit.json",
+        "windowsNativeOverlayAndGameAcceptance": "not performed",
+        "historicalPriorSideRevision": {
+          "date": "2026-10-05",
+          "style": "lfa_center_ring",
+          "verifiedBase": "a9335b158e658faa86bcfcbe4d36beb602f6c9c7",
+          "sourceHead": "ad4458ec975678055a0b8555e3b0c99f53191aba",
+          "githubRunId": "37258540232",
+          "githubRunUrl": "https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37258540232",
+          "githubArtifactId": "11323881665",
+          "localUnitGate": {
+            "filesPassed": 156,
+            "filesSkipped": 1,
+            "testsPassed": 1134,
+            "testsSkipped": 1,
+            "styleTests": 29
+          },
+          "buildWebHud": "passed",
+          "officialReferencePixelsViewed": "OM77006U printed p.116 / PDF p.118",
+          "originalHousingPixelsViewed": true,
+          "fullHudPixelsViewed": true,
+          "chromiumGate": "passed for side revision in GitHub Actions; actual screenshots independently reviewed",
+          "browser": "154.0.8037.57",
+          "chromiumSandbox": true,
+          "viewportConfigurations": [
+            {
+              "viewport": {
+                "width": 1280,
+                "height": 720
+              },
+              "dpr": 1,
+              "errors": []
+            },
+            {
+              "viewport": {
+                "width": 1920,
+                "height": 1080
+              },
+              "dpr": 1,
+              "errors": []
+            },
+            {
+              "viewport": {
+                "width": 2560,
+                "height": 1440
+              },
+              "dpr": 1,
+              "errors": []
+            },
+            {
+              "viewport": {
+                "width": 1920,
+                "height": 1080
+              },
+              "dpr": 2,
+              "errors": []
+            }
+          ],
+          "launcherGate": {
+            "errors": [],
+            "missing": [],
+            "samples": 10,
+            "destroy": {
+              "name": "destroy",
+              "remainingBodyChildren": 0
+            }
+          },
+          "evidenceFiles": {
+            "evidence.json": {
+              "sha256": "742fc4a6c35cbfe0068a71c4dee38af95183e899dec31927ea0d96b147184131",
+              "verbatimArtifactCopy": true
+            },
+            "launcher-report.json": {
+              "sha256": "586dbb9446040a6563092a913046aa871f17a6160601fbc9921d5f6ff9aae9bb",
+              "verbatimArtifactCopy": true
+            },
+            "central-preservation.json": {
+              "sha256": "7630226edfde1684d54c0de840b38145f7d1ebd269229dab32d8d28194d1c176",
+              "description": "Exact RGBA center comparison generated independently from both original CI artifact sets"
+            }
+          },
+          "previewFiles": {
+            "metric-detail.png": {
+              "sha256": "d157eec02e3c14ac3e0e49ee1648d7908447046518d81607283b98740d4e5dca",
+              "processing": "PNG metadata removed and lossless compression; actual screenshot pixels preserved"
+            },
+            "metric-720p.png": {
+              "sha256": "695c414161a768178e4ff44e0c5831205426cf1ee7d1dae065ef7cf3f71c94bd",
+              "processing": "PNG metadata removed and lossless compression; actual screenshot pixels preserved"
+            },
+            "fuel-empty.png": {
+              "sha256": "43439a4099e7c54843538260b80ca5a87b36816cb5f8961f7401133cbed7fde5",
+              "processing": "PNG metadata removed and lossless compression; actual screenshot pixels preserved"
+            },
+            "fuel-full.png": {
+              "sha256": "8c9827520780b41d86fe07a745d695c666535298b238f5f21d537db0cdc6530a",
+              "processing": "PNG metadata removed and lossless compression; actual screenshot pixels preserved"
+            },
+            "state-contact-sheet.png": {
+              "sha256": "133e7e9737e91aef77651f2fb30a77355172b2b807c152575c4f288742d07fbe",
+              "processing": "Six actual screenshots downscaled and arranged with captions; no HUD redraw"
+            }
+          },
+          "visualReview": "Viewed all key metric/imperial/R/N/SHIFT/missing/stale/high-RPM/fuel0/fuel100 screenshots and full720p/1080p/1440p. Four curved side scales match the researched structure, unsupported sensors are clearly N/A, fuel endpoints are distinct, no label overlaps or clipping observed. Approved central source assets/styles unchanged; exact pixel evidence scoped above.",
+          "localBrowserBlocker": "standalone Chromium UNIX socket EPERM; cloud browser localhost ERR_BLOCKED_BY_CLIENT",
+          "windowsNativeOverlayAndGameAcceptance": "not performed",
+          "sideRevision": {
+            "baseHead": "dfad352be6728fca43e443a8610aa447a6c59472",
+            "status": "implemented and checked; ready for user review, not user-approved",
+            "officialPhotosViewed": [
+              "https://media.lexus.co.uk/wp-content/uploads/sites/3/2011/10/T_6820-scaled.jpg",
+              "https://media.lexus.co.uk/wp-content/uploads/sites/3/2011/10/T_6833-scaled.jpg",
+              "https://media.lexus.co.uk/wp-content/uploads/sites/3/2012/12/DSC_4040-scaled.jpg"
+            ],
+            "additionalPhotosViewed": [
+              "https://www.motortrend.com/uploads/sites/5/2012/07/2012-Lexus-LFA-Tach.jpg",
+              "https://upload.wikimedia.org/wikipedia/commons/f/f7/Lexus_LFA_speedometer_view_01.jpg"
+            ],
+            "referenceCaution": "T_6820 says Issued 10/2009 and AUTO; MotorTrend close-up has SPORT center. Only side geometry adopted; 2012 model scope remains OM77006U.",
+            "centralPngSha256": "3433460df37b91c67f09cfe7b3c99bacd6ad925db36b113042a95bc196422b22",
+            "centralSvgSha256": "8570a31f672dac12bb94e198a91cb78576dd0b09b81c140dd4ae7ca68b924028",
+            "centralAssetsAndCssAndDrawFunctionsUnchanged": true,
+            "localUnitGate": {
+              "filesPassed": 156,
+              "filesSkipped": 1,
+              "testsPassed": 1134,
+              "testsSkipped": 1,
+              "styleTests": 29
+            },
+            "buildWebHud": "passed",
+            "sourceHead": "ad4458ec975678055a0b8555e3b0c99f53191aba",
+            "centralPixelPreservation": {
+              "referenceHead": "93085acd2ff238650dd9e2ac6c552e224ebdd060",
+              "detailViewport": "1920x1080 at DPR2",
+              "detailDimensions": "840x556",
+              "circleCenter": {
+                "x": 420,
+                "y": 277.5
+              },
+              "radiusPixels": 267,
+              "geometricCriterion": "For each exact RGBA pixel at center (x+0.5,y+0.5), compare iff squared distance to (420,277.5) <=267^2. No tolerance, mask feathering, color-space conversion or reduced radius.",
+              "allEightMatchingDetailStatesDifferingPixels": 0,
+              "nearestChangedPixel": {
+                "x": 589,
+                "y": 70,
+                "distanceFromCircleCenter": 267.54298720018807,
+                "oldRgba": [
+                  21,
+                  33,
+                  40,
+                  255
+                ],
+                "newRgba": [
+                  20,
+                  32,
+                  39,
+                  255
+                ]
+              },
+              "outsideAntialiasNote": "Soft-antialiased masks include fractional coverage outside their nominal circle; ImageMagick soft radius267 mask AE1 is outside the geometric approved disk.",
+              "additionalFullViewportResults": [
+                {
+                  "file": "metric-1280x720-dpr1.png",
+                  "radiusPixels": 133.5,
+                  "differingPixels": 466
+                },
+                {
+                  "file": "metric-1920x1080-dpr1.png",
+                  "radiusPixels": 133.5,
+                  "differingPixels": 478
+                },
+                {
+                  "file": "metric-2560x1440-dpr1.png",
+                  "radiusPixels": 133.5,
+                  "differingPixels": 0
+                },
+                {
+                  "file": "metric-1920x1080-dpr2.png",
+                  "radiusPixels": 267,
+                  "differingPixels": 0
+                }
+              ],
+              "additionalFullViewportCaution": "DPR1 720p/1080p full captures show small color differences despite unchanged central source and visibly unchanged geometry. Cause not established; do not claim byte identity at every viewport."
+            }
+          }
+        }
+      }
+    },
+    "exactHeadCi": {
+      "sourceHead": "f3dd06b7f17b3c12867648780d0622dcb8525b9f",
+      "pipeline": {
+        "run": 37272049454,
+        "conclusion": "success",
+        "rustBackendAgentCliJob": 111640997768
+      },
+      "releasePackaging": {
+        "run": 37272049845,
+        "conclusion": "success"
+      },
+      "visual": {
+        "run": 37272049555,
+        "conclusion": "success"
+      }
+    },
+    "settingsSource": {
+      "sourceHead": "5a5daee04b1124089bb79f3c03ea03da3a6f83e5",
+      "githubRunId": 37273120011,
+      "githubArtifactId": 11328991695,
+      "githubRunUrl": "https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37273120011",
+      "runtimeRelationship": "Same HUD runtime as f3dd06b; subsequent change is CI font/test environment only",
+      "evidence": "settings/settings-audit.json",
+      "images": [
+        "settings/settings-dark-default.png",
+        "settings/settings-narrow-zh-tw.png",
+        "settings/settings-narrow-ja-jp.png"
+      ]
+    }
   }
 }

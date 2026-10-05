@@ -4,23 +4,29 @@
 
 已完成四輪平均胎溫、非等比例增壓／VAC、油門／煞車、即時單圈／排名／圈速提示，以及手動／自動展開。原中央PNG／SVG、CSS、刻度／指針繪圖保留；移動時不縮放。**實際Chrome及設定頁功能整合已通過，仍待使用者視覺驗收與Windows／遊戲實機驗收**。
 
+展開面板已重新排版為七列，修正下方踏板文字超出弧形外框；字級與列距參考原車Menu／lap-list畫面。以下主要展開圖已替換為此次實際Chrome結果，舊版只保留在明確標示歷史的before/after比較。
+
 ### Actual Renderer Previews
 
-以下取自成功的 [Chrome run37272049555](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37272049555)，來源`f3dd06b7f17b3c12867648780d0622dcb8525b9f`、artifact`11328657701`。HUD使用合成遙測，**不是遊戲截圖**；狀態圖只縮小並排列真實截圖，沒有重繪儀表。
+以下取自成功的 [Chrome run37276468705](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37276468705)，來源`c4a5abeef26642ecafc63439dac5c8ca73a99a02`、artifact`11329914689`。HUD使用合成遙測，**不是遊戲截圖**；狀態圖只縮小並排列真實截圖，沒有重繪儀表。
 
 ![收合布局](RAW_PREFIX/docs/assets/lfa-center-ring/metric-detail.png)
 
-![展開後的單圈與遙測布局](RAW_PREFIX/docs/assets/lfa-center-ring/expanded-detail.png)
+![目前修正後的展開面板](RAW_PREFIX/docs/assets/lfa-center-ring/expanded-detail.png)
+
+![歷史未通過布局與目前修正後布局對照](RAW_PREFIX/docs/assets/lfa-center-ring/expanded-before-after.png)
 
 ![收合、開啟中、展開、還原中的實際畫面](RAW_PREFIX/docs/assets/lfa-center-ring/expansion-transitions.png)
 
 ![實際窄版繁體中文HUD設定頁：手動與自動展開](RAW_PREFIX/docs/assets/lfa-center-ring/settings/settings-narrow-zh-tw.png)
 
-設定頁圖片來自字型補齊重跑的`5a5daee04b1124089bb79f3c03ea03da3a6f83e5`、[run37273120011](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37273120011)、artifact`11328991695`，與上方`f3dd06b` HUD素材分開記錄；兩者HUD runtime相同。
+設定頁圖片來自字型補齊重跑的`5a5daee04b1124089bb79f3c03ea03da3a6f83e5`、[run37273120011](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37273120011)、artifact`11328991695`，與上方`c4a5abe` HUD素材分開記錄；設定頁此後未改，本次僅調整展開面板。
 
-更多：[增壓／VAC比較](RAW_PREFIX/docs/assets/lfa-center-ring/lfa-boost-scale-comparison.png)、[單位與失效狀態](RAW_PREFIX/docs/assets/lfa-center-ring/state-contact-sheet.png)、[單圈通知](RAW_PREFIX/docs/assets/lfa-center-ring/session-states.png)、[收合720p](RAW_PREFIX/docs/assets/lfa-center-ring/metric-720p.png)、[展開720p](RAW_PREFIX/docs/assets/lfa-center-ring/expanded-720p.png)。補齊CI字型後已實際查看繁體中文與日文：可讀、無溢出，字形探測通過且沒有page errors／失敗response。[英文設定](RAW_PREFIX/docs/assets/lfa-center-ring/settings/settings-dark-default.png)／[日文設定](RAW_PREFIX/docs/assets/lfa-center-ring/settings/settings-narrow-ja-jp.png)。
+更多：[目前預設／compact／最大值／缺失面板](RAW_PREFIX/docs/assets/lfa-center-ring/expanded-layout-states.png)、[增壓／VAC比較](RAW_PREFIX/docs/assets/lfa-center-ring/lfa-boost-scale-comparison.png)、[單位與失效狀態](RAW_PREFIX/docs/assets/lfa-center-ring/state-contact-sheet.png)、[單圈通知](RAW_PREFIX/docs/assets/lfa-center-ring/session-states.png)、[收合720p](RAW_PREFIX/docs/assets/lfa-center-ring/metric-720p.png)、[展開720p](RAW_PREFIX/docs/assets/lfa-center-ring/expanded-720p.png)。補齊CI字型後已實際查看繁體中文與日文：可讀、無溢出，字形探測通過且沒有page errors／失敗response。[英文設定](RAW_PREFIX/docs/assets/lfa-center-ring/settings/settings-dark-default.png)／[日文設定](RAW_PREFIX/docs/assets/lfa-center-ring/settings/settings-narrow-ja-jp.png)。
 
 ### Key Modifications
+
+- **展開面板重排**：CURRENT／LAST／BEST使用同列label/value，THR／BRK改成隨下緣曲線縮排的獨立列。CURRENT18px、其他圈時16px、輔助值15px、標籤10px；並非只縮小全部文字。舊80%實際有84個亮字像素超出fascia，原文字互斥測試漏掉容器邊界；本次使用真正SVG輪廓補足
 
 - **展開機構**：固定560×370設計占位，中央整體右移96設計px（預設72 CSS px）；左方顯示封包的CURRENT／LAST／BEST LAP及既有胎溫／增壓／踏板。約600ms臨界阻尼，反轉保留位置／速度，reduced-motion立即切換，resize不重設，首次持久化手動ON直接採用展開布局。位移與時間是HUD設計，非原車量測
 - **兩個設定**：`lfaManualExpand`／`lfaAutoExpand`為嚴格boolean、預設false。手動ON優先；手動OFF可由已確認的自動模式維持展開。前端與Rust設定契約、持久化／重載／reset及三語說明一致；shared通訊與UDP不改
@@ -33,17 +39,20 @@
 
 - **Frontend:** `pnpm -C frontend test`：**1,208 passed／1 skipped，160 files passed／1 skipped**，含81個LFA行為測試；`build:web-hud`、JS語法、PR-body格式及`git diff --check`通過
 - **Rust:** `config_contract` **9/9通過**；本機完整套件123通過／1失敗／2忽略。唯一`companion::tests::test_qr_payload_generation_and_pairing`在`src/companion.rs:378`要求非空LAN IP，同一失敗已在未修改基底`bbf64fbd`重現；**不宣稱本機完整Rust全綠**
-- **Exact-head CI:** `f3dd06b7f17b3c12867648780d0622dcb8525b9f`的[CI Pipeline37272049454](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37272049454)（含Rust backend／Agent CLI contracts）、[Release Packaging37272049845](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37272049845)、[Chrome Visual37272049555](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37272049555)均SUCCESS；最終文件／預覽commit另待CI
+- **Exact-head CI:** `c4a5abeef26642ecafc63439dac5c8ca73a99a02`的[CI Pipeline37276468674](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37276468674)（含Rust backend／Agent CLI contracts）、[Release Packaging37276468980](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37276468980)、[Chrome Visual37276468705](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37276468705)均SUCCESS；最終文件／預覽commit另待CI
 - **Actual browser coverage:** Chrome154.0.8037.57、`chromiumSandbox:true`；720p／1080p／1440p DPR1與1080p DPR2，正常與展開套件均通過。涵蓋實際右移、快速反轉、reduced-motion、resize、初始0／換圈／固定圈時／缺失／失聯／重連、最大寬度。真正launcher／coordinator及OverlayView→BroadcastChannel→Launcher驗證設定與生命週期
-- **Exact central preservation:** 對照`5c5b8f6`，八個匹配DPR2 detail中央圓各**0/223,942像素差異**；四個完整viewport的中央圓也全數0差異。原始RGBA、像素中心幾何圓判定，無容差／羽化／重採樣。1080p DPR2完整PNG圓外有14個不同像素；不宣稱所有整張圖片或未測狀態都相同。中央素材／CSS／drawScale／drawNeedle逐byte未改
+- **Expanded containment:** 實際rendered bbox加2設計px留白，逐邊採樣檢查原始fascia SVG填色形狀、shifted-ring cutout和文字互斥；預設4配置加compact0.8的720p DPR1／1080p DPR2全數通過。覆蓋99:59.99、各boost單位長signed數字、HI／LO、N/A、最大踏板與過渡幀。另補小幅fixture修正，單位PNG改在有限值時截取且驗證數字／單位，重跑待CI
+- **Exact central preservation:** 本次對照`f3dd06b`，八個匹配DPR2 detail中央圓各**0/223,942像素差異**；四個完整viewport的中央圓也全數0差異。原始RGBA、像素中心幾何圓判定，無容差／羽化／重採樣。1080p DPR2完整PNG圓外有14個不同像素；不宣稱所有整張圖片或未測狀態都相同。中央素材／CSS／drawScale／drawNeedle逐byte未改
 
-證據：[renderer／展開報告](RAW_PREFIX/docs/assets/lfa-center-ring/evidence.json)、[launcher](RAW_PREFIX/docs/assets/lfa-center-ring/launcher-report.json)、[中央比較](RAW_PREFIX/docs/assets/lfa-center-ring/expansion-center-preservation.json)、[預覽來源](RAW_PREFIX/docs/assets/lfa-center-ring/expansion-preview-provenance.json)、[單位稽核](RAW_PREFIX/docs/assets/lfa-center-ring/json-unit-audit.json)、[驗證摘要](RAW_PREFIX/docs/assets/lfa-center-ring/verification.json)。
+證據：[renderer／展開報告](RAW_PREFIX/docs/assets/lfa-center-ring/evidence.json)、[launcher](RAW_PREFIX/docs/assets/lfa-center-ring/launcher-report.json)、[本次曲面與像素比較](RAW_PREFIX/docs/assets/lfa-center-ring/panel-reflow-verification.json)、[本次預覽來源](RAW_PREFIX/docs/assets/lfa-center-ring/panel-reflow-preview-provenance.json)、[單位稽核](RAW_PREFIX/docs/assets/lfa-center-ring/json-unit-audit.json)、[驗證摘要](RAW_PREFIX/docs/assets/lfa-center-ring/verification.json)。
 
 目前主GUI未傳遞獨立溫度單位：有明確effectiveUnits.temperature則採用，否則依HUD公英制回退。Boost依官方UDP→真正Rust parser→JSON websocket→coordinator路徑的PSI；不套用無關frontend／binary通道的Pa converter，也不猜單位。合成parser／launcher驗證不是live websocket或實際遊戲驗收。
 
 **Windows原生overlay、click-through、置頂與Forza實機未驗證**。右下槽位假設取代遊戲原生儀表，仍需實機檢查提示／字幕遮擋。
 
 ### Living Changelog & Review Iterations
+
+- 2026-10-05（Bagley as Codex）：依使用者指出的展開越界，重排為七列並依曲線縮排底部踏板；加入真實fascia／ring cutout內含檢查、compact和最長值案例，run37276468705通過；主要展開／過渡預覽已替換，歷史布局只出現在標明before的比較圖
 
 - 2026-10-05（Bagley as Codex）：建立官方Normal display原型；依實車照片將側錶重建為四弧，保留使用者肯定的中央
 - 2026-10-05（Bagley as Codex）：加入平均胎溫、signed boost、踏板、圈時／排名／通知；首輪invalid-speed fixture誤用單位，修正測試後通過

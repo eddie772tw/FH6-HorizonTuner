@@ -11,7 +11,7 @@ export async function verifyExpansion({ browser, origin, out, summary }) {
     page.on('pageerror', error => errors.push(error.message));
     await page.clock.install({ time: new Date('2026-10-05T00:00:00Z') });
     await page.clock.pauseAt(new Date('2026-10-05T00:00:01Z'));
-    let frame, stamp = 100, race = {}, samples = [], surfaceSource;
+    let frame, stamp = 100, race = {}, samples = [], unitChecks = [], surfaceSource;
     const send = (type, data = {}) => frame.evaluate(({ type, data }) => window.HUDCore.handleMessage(type, data), { type, data });
     const config = data => send('config', { data: { isMetric: true, scale: displayScale, elements: { showGauge: true }, ...data } });
     async function feed(patch = {}, elapsed = 100) {
@@ -97,9 +97,16 @@ export async function verifyExpansion({ browser, origin, out, summary }) {
         for (const value of [-.00001, -.5, -998.9, 9998.9, -1e12, 1e12, null]) {
           const psi = value === null ? null : unit === 'bar' ? value * 14.5038 : unit === 'kpa' ? value / 6.89476 : value;
           await feed({ CurrentLap: 5999.99, LastLap: 5999.99, BestLap: 5999.99, Boost: psi, throttle: 1, brake: 1, tire_temp_f: [-998.9,-998.9,-998.9,-998.9] });
-          await noOverlap();
+          const suffix = unit === 'kpa' ? 'kPa' : unit;
+          const number = value === -1e12 ? 'LO' : value === 1e12 ? 'HI' : value === -.00001 ? (unit === 'bar' ? '-0.00' : '-0.0') : String(value);
+          const expected = value === null ? 'N/A' : number + ' ' + suffix;
+          const actual = await frame.locator('#lfaExpandedBoost').textContent();
+          assert.equal(actual, expected, 'Valid signed boost must show its value/unit; only actual missing data is N/A');
+          const panelBounds = await noOverlap();
+          unitChecks.push({ unit: suffix, inputDisplayValue: value, expected, actual, panelBounds });
+          if (value === -998.9) await capture('units-' + unit);
+          if (value === -.5) await capture('units-common-' + unit);
         }
-        await capture('units-' + unit);
       }
       await feed({ CurrentLap: undefined, LastLap: undefined, BestLap: undefined, Boost: null, throttle: null, brake: null, tire_temp_f: [null,null,null,null] });
       await capture('unavailable-readings');
@@ -183,10 +190,10 @@ export async function verifyExpansion({ browser, origin, out, summary }) {
       assert.equal((await layout()).progress, 1); assert.equal((await layout()).settled, true); await capture('persisted-manual');
       await send('hud:destroy'); await page.clock.runFor(32); assert.equal(await frame.locator('#lfaContainer').count(), 0);
       assert.deepEqual(errors, []);
-      summary.expansion.push({ viewport: { width, height }, dpr, scale: displayScale, samples, errors, passed: true });
+      summary.expansion.push({ viewport: { width, height }, dpr, scale: displayScale, samples, unitChecks, errors, passed: true });
     } catch (error) {
       await page.screenshot({ path: path.join(out, 'expansion-failure.png') }).catch(() => {});
-      summary.expansion.push({ viewport: { width, height }, dpr, scale: displayScale, samples, errors, passed: false, error: String(error) });
+      summary.expansion.push({ viewport: { width, height }, dpr, scale: displayScale, samples, unitChecks, errors, passed: false, error: String(error) });
       throw error;
     } finally { await context.close(); }
   }

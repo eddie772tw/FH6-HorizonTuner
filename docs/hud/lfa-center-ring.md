@@ -16,6 +16,8 @@
 
 ## 展開／還原機構
 
+最新排版修訂只改展開面板：參考手冊印刷124／145頁的單列label/value與接近的字級比例，將三個雙層圈時區和並排踏板改為七列。CURRENT18px、LAST／BEST16px、輔助值15px、標籤10px；THR／BRK依底部弧線逐列縮排。這些是HUD設計字級，非OEM像素量測。之前的80%文字有84個亮字像素越過左側曲線，最大約10.96設計px；只測文字互不重疊不足以保證容器內含，本次加入真正曲面邊界檢查。
+
 已查看 [2012 官方手冊 Normal／Menu 圖，印刷116／PDF118頁](https://assets.sia.toyota.com/publications/en/om-s/OM77006U/pdf/OM77006U.pdf#page=118)，以及 [Lexus 日本官方 LFA 手冊，印刷98／PDF100頁](https://manual.lexus.jp/pdf/lfa/LFA_OM_JP_M77001J_1_1012.pdf#page=100)。[官方年份索引](https://manual.lexus.jp/lfa/) 對應2010年12月至2012年12月。兩者都顯示主錶環連同畫面右移、左方出現選單；英文手冊印刷144–145頁另有單圈資訊版面。這是 **Menu display 機構**，不把 SPORT 或日本版 Circuit Mode 誤當相同功能；本 HUD 自動依單圈訊號切換是原創適配。
 
 - 固定560×370占位，整個中央組件從x280平移至x376，即+96設計px／預設72 CSS px。錶環、指針、速度／檔位／狀態同步移動，不縮放；還原後移除transform，避免永久改變收合畫面的合成方式
@@ -94,16 +96,18 @@ T_6820 圖本身標示 Issued 10/2009、中央 AUTO，不能當作 2012 年式�
 - 中央SVG SHA-256：`8570a31f672dac12bb94e198a91cb78576dd0b09b81c140dd4ae7ca68b924028`
 - 本機前端：**1,208 tests passed／1 skipped；160 files passed／1 skipped**，含81個LFA測試；`build:web-hud`、JS語法與diff gate通過
 - 本機Rust：`config_contract` **9/9通過**；完整套件123通過／1失敗／2忽略。唯一失敗`companion::tests::test_qr_payload_generation_and_pairing`在`src/companion.rs:378`檢查非空LAN IP，在未修改基底`bbf64fbd`也同樣重現；**不宣稱本機完整Rust全綠**
-- 實際CI來源：`f3dd06b7f17b3c12867648780d0622dcb8525b9f`。[CI Pipeline 37272049454](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37272049454)（含Rust backend／Agent CLI contracts）與[Release Packaging Test 37272049845](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37272049845)均成功
-- **Chrome154.0.8037.57 renderer／展開／launcher／設定頁功能測試成功**：[run37272049555](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37272049555)，artifact`11328657701`，`chromiumSandbox:true`
+- 實際CI來源：`c4a5abeef26642ecafc63439dac5c8ca73a99a02`。[CI Pipeline 37276468674](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37276468674)（含Rust backend／Agent CLI contracts）與[Release Packaging Test 37276468980](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37276468980)均成功
+- **Chrome154.0.8037.57 renderer／展開／launcher／設定頁功能測試成功**：[run37276468705](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37276468705)，artifact`11329914689`，`chromiumSandbox:true`
 - 設定頁字型重跑另有來源：`5a5daee04b1124089bb79f3c03ea03da3a6f83e5`、[run37273120011](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37273120011)、artifact`11328991695`。只補CI字型／測試環境，HUD runtime不變；已實際看過窄版繁體中文／日文，字形探測通過且沒有溢出、page errors或失敗response
-- 正常及展開套件各執行1280×720、1920×1080、2560×1440 DPR1與1920×1080 DPR2。涵蓋模式優先順序、初始0、正圈時增長、固定正值、換圈、pause／partial／error恢復、失聯、重連、快速反轉、reduced-motion、resize、初次持久化布局與原有單位／生命週期；真實OverlayView→BroadcastChannel→Launcher驗證兩個開關及持久化／重載／reset
+- 正常套件與展開預設比例執行1280×720、1920×1080、2560×1440 DPR1與1920×1080 DPR2；展開另測compact0.8的720p DPR1與1080p DPR2。涵蓋模式優先順序、初始0、正圈時增長、固定正值、換圈、pause／partial／error恢復、失聯、重連、快速反轉、reduced-motion、resize、初次持久化布局與原有單位／生命週期；真實OverlayView→BroadcastChannel→Launcher驗證兩個開關及持久化／重載／reset
 - 已查看收合／展開／開合中間幀／最大99:59.99／極端signed boost／手動失聯畫面及720p／1440p位置。穩定布局未見重疊；過渡時主錶遮住左面板部分文字是移動機構的預期效果。**最新使用者驗收仍待完成**
 - 首輪展開run37271654474的fixture把114ms的RAF畫面與120ms的config更新相比，誤判連續性。修正為同一時刻先更新舊目標、再反轉，嚴格比較clock／progress／transform／螢幕位置完全相同；runtime未改。重複的空runner步驟已移除
 
-本次`f3dd06b`對照`5c5b8f6`：公制、英制、倒檔、空檔、紅線、高RPM、缺失、失聯**八個相同DPR2狀態，各223,942個中央像素差異為0**。四個完整viewport的中央圓亦差異為0（DPR1各55,974，DPR2為223,942像素）。方法為像素中心落在幾何圓內時比較原始RGBA，不重採樣、無容差或羽化；detail圓心(420,277.5)、半徑267px。1080p DPR2完整畫面的圓外另有14個不同像素，**不宣稱所有整張PNG逐位元一致，也不推論未測狀態／解析度**。
+本次`c4a5abe`對照修訂前`f3dd06b`：公制、英制、倒檔、空檔、紅線、高RPM、缺失、失聯**八個相同DPR2狀態，各223,942個中央像素差異為0**。四個完整viewport的中央圓亦差異為0（DPR1各55,974，DPR2為223,942像素）。方法為像素中心落在幾何圓內時比較原始RGBA，不重採樣、無容差或羽化；detail圓心(420,277.5)、半徑267px。1080p DPR2完整畫面的圓外另有14個不同像素，**不宣稱所有整張PNG逐位元一致，也不推論未測狀態／解析度**。
 
-證據：[驗證摘要](../assets/lfa-center-ring/verification.json)、[renderer／展開報告](../assets/lfa-center-ring/evidence.json)、[launcher報告](../assets/lfa-center-ring/launcher-report.json)、[本次中央像素比較](../assets/lfa-center-ring/expansion-center-preservation.json)、[預覽來源](../assets/lfa-center-ring/expansion-preview-provenance.json)、[UDP／JSON單位稽核](../assets/lfa-center-ring/json-unit-audit.json)。這些成功結果對應上列實際runtime head；最終文件／預覽commit的CI仍待執行。
+曲面驗證以每個實際SVG文字bbox外加2設計px留白，沿邊界逐點檢查原始fascia SVG filled path，並檢查右移主錶cutout與文字互相重疊。六種viewport／DPR／scale配置均通過，涵蓋99:59.99、bar／psi／kPa長signed數字、HI／LO／N/A與過渡幀。移動主錶遮住文字仍是預期動作，不能以此豁免左側越界。數字單位cases已通過幾何檢查；另補fixture使單位截圖取自有限數值並嚴格驗證實際字串，該小幅測試重跑尚待CI。
+
+證據：[驗證摘要](../assets/lfa-center-ring/verification.json)、[renderer／展開報告](../assets/lfa-center-ring/evidence.json)、[launcher報告](../assets/lfa-center-ring/launcher-report.json)、[本次曲面內含與像素比較](../assets/lfa-center-ring/panel-reflow-verification.json)、[本次預覽來源](../assets/lfa-center-ring/panel-reflow-preview-provenance.json)、[UDP／JSON單位稽核](../assets/lfa-center-ring/json-unit-audit.json)。這些成功結果對應上列實際runtime head；最終文件／預覽commit的CI仍待執行。
 
 **Windows原生overlay、click-through、置頂與Forza實機未驗證**。右下槽位假設取代遊戲原生儀表，仍需實機檢查提示／字幕遮擋。
 
@@ -125,18 +129,20 @@ git diff --check
 以下取自上述成功 CI 的真實 renderer，呈現新的非等比例／VAC 量尺。主圖與 720p 圖保留截圖像素；比較／狀態圖僅縮小並加上標題排列，沒有重繪 HUD。全部使用合成遙測，**不是遊戲截圖**。目錄中舊 `fuel-empty.png`／`fuel-full.png` 僅為歷史證據，不代表目前已改為踏板的側錶。
 
 ![收合布局](../assets/lfa-center-ring/metric-detail.png)
-![展開後的左側單圈／遙測面板](../assets/lfa-center-ring/expanded-detail.png)
+![目前修正後的展開面板](../assets/lfa-center-ring/expanded-detail.png)
+![歷史未通過布局與目前修正後布局對照](../assets/lfa-center-ring/expanded-before-after.png)
+![目前預設／compact／最大值／缺失的實際畫面](../assets/lfa-center-ring/expanded-layout-states.png)
 ![真實收合、開啟中、展開與還原中畫面](../assets/lfa-center-ring/expansion-transitions.png)
 ![正增壓0.5／1bar、負壓VAC−0.5bar與零值比較](../assets/lfa-center-ring/lfa-boost-scale-comparison.png)
 ![單位、負壓、零值、夾限與缺失資料](../assets/lfa-center-ring/state-contact-sheet.png)
 ![排名、完成圈、最佳圈與最大時間寬度](../assets/lfa-center-ring/session-states.png)
 ![1280×720 右下角實際位置](../assets/lfa-center-ring/metric-720p.png)
 
-本輪5c5b8f63對照eac1b9e的八個相同DPR2狀態，中央圓223,942像素及右上區域以外430,500像素均為0差異；新證據見 `docs/assets/lfa-center-ring/boost-scale-preservation.json`。此為精確RGBA比對，沒有容差或重新取樣。
+歷史非等比例修訂5c5b8f63對照eac1b9e的八個相同DPR2狀態，中央圓223,942像素及右上區域以外430,500像素均為0差異；新證據見 `docs/assets/lfa-center-ring/boost-scale-preservation.json`。此為精確RGBA比對，沒有容差或重新取樣。
 
 ## 實際HUD設定頁
 
-以下繁體中文卡片來自上列`5a5daee`設定頁重跑，與HUD預覽的`f3dd06b`來源分開記錄。
+以下繁體中文卡片來自上列`5a5daee`設定頁重跑，與本次HUD預覽的`c4a5abe`來源分開記錄，設定頁本身未改。
 
 ![窄版繁體中文手動／自動展開設定](../assets/lfa-center-ring/settings/settings-narrow-zh-tw.png)
 
