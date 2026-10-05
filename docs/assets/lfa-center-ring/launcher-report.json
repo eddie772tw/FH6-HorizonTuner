@@ -15,7 +15,7 @@
       "readings": {
         "speed": "—",
         "gear": "—",
-        "status": "WAITING",
+        "status": "Pending......",
         "tire": "N/A",
         "boost": "N/A",
         "boostUnit": "bar",
@@ -43,7 +43,7 @@
       "readings": {
         "speed": "180",
         "gear": "4",
-        "status": "P3",
+        "status": "PI N/A",
         "tire": "95°C",
         "boost": "1",
         "boostUnit": "bar",
@@ -80,10 +80,10 @@
         "boostVisible": "1",
         "throttle": "80%",
         "brake": "20%",
-        "lap": "0:34.21",
+        "lap": "0:34.80",
         "expanded": "true",
         "expansionSettled": "true",
-        "expandedCurrent": "0:34.21"
+        "expandedCurrent": "0:34.80"
       },
       "body": "rgba(0, 0, 0, 0)",
       "bounds": {
@@ -108,10 +108,10 @@
         "boostVisible": "1",
         "throttle": "80%",
         "brake": "20%",
-        "lap": "0:34.21",
+        "lap": "0:34.80",
         "expanded": "false",
         "expansionSettled": "true",
-        "expandedCurrent": "0:34.21"
+        "expandedCurrent": "0:34.80"
       },
       "body": "rgba(0, 0, 0, 0)",
       "bounds": {
@@ -136,10 +136,10 @@
         "boostVisible": "1",
         "throttle": "80%",
         "brake": "20%",
-        "lap": "0:34.21",
+        "lap": "0:34.80",
         "expanded": "false",
         "expansionSettled": "true",
-        "expandedCurrent": "0:34.21"
+        "expandedCurrent": "0:34.80"
       },
       "body": "rgba(0, 0, 0, 0)",
       "bounds": {
@@ -164,10 +164,10 @@
         "boostVisible": "1",
         "throttle": "80%",
         "brake": "20%",
-        "lap": "0:34.21",
+        "lap": "0:34.80",
         "expanded": "false",
         "expansionSettled": "true",
-        "expandedCurrent": "0:34.21"
+        "expandedCurrent": "0:34.80"
       },
       "body": "rgba(0, 0, 0, 0)",
       "bounds": {
@@ -192,10 +192,10 @@
         "boostVisible": "1",
         "throttle": "80%",
         "brake": "20%",
-        "lap": "0:34.21",
+        "lap": "0:34.80",
         "expanded": "false",
         "expansionSettled": "true",
-        "expandedCurrent": "0:34.21"
+        "expandedCurrent": "0:34.80"
       },
       "body": "rgba(0, 0, 0, 0)",
       "bounds": {
@@ -220,10 +220,10 @@
         "boostVisible": "1",
         "throttle": "80%",
         "brake": "20%",
-        "lap": "0:34.21",
+        "lap": "0:34.80",
         "expanded": "false",
         "expansionSettled": "true",
-        "expandedCurrent": "0:34.21"
+        "expandedCurrent": "0:34.80"
       },
       "body": "rgba(0, 0, 0, 0)",
       "bounds": {
@@ -248,10 +248,10 @@
         "boostVisible": "1",
         "throttle": "80%",
         "brake": "20%",
-        "lap": "0:34.21",
+        "lap": "0:34.80",
         "expanded": "false",
         "expansionSettled": "true",
-        "expandedCurrent": "0:34.21"
+        "expandedCurrent": "0:34.80"
       },
       "body": "rgba(0, 0, 0, 0)",
       "bounds": {
@@ -276,10 +276,10 @@
         "boostVisible": "1",
         "throttle": "80%",
         "brake": "20%",
-        "lap": "0:34.21",
+        "lap": "0:34.80",
         "expanded": "false",
         "expansionSettled": "true",
-        "expandedCurrent": "0:34.21"
+        "expandedCurrent": "0:34.80"
       },
       "body": "rgba(0, 0, 0, 0)",
       "bounds": {
@@ -304,10 +304,10 @@
         "boostVisible": "1",
         "throttle": "80%",
         "brake": "20%",
-        "lap": "0:34.21",
+        "lap": "0:34.80",
         "expanded": "false",
         "expansionSettled": "true",
-        "expandedCurrent": "0:34.21"
+        "expandedCurrent": "0:34.80"
       },
       "body": "rgba(0, 0, 0, 0)",
       "bounds": {
@@ -332,10 +332,10 @@
         "boostVisible": "1",
         "throttle": "80%",
         "brake": "20%",
-        "lap": "0:34.21",
+        "lap": "0:34.80",
         "expanded": "false",
         "expansionSettled": "true",
-        "expandedCurrent": "0:34.21"
+        "expandedCurrent": "0:34.80"
       },
       "body": "rgba(0, 0, 0, 0)",
       "bounds": {
@@ -360,10 +360,10 @@
         "boostVisible": "1",
         "throttle": "80%",
         "brake": "20%",
-        "lap": "0:34.21",
+        "lap": "0:34.80",
         "expanded": "false",
         "expansionSettled": "true",
-        "expandedCurrent": "0:34.21"
+        "expandedCurrent": "0:34.80"
       },
       "body": "rgba(0, 0, 0, 0)",
       "bounds": {
@@ -388,10 +388,10 @@
         "boostVisible": "0",
         "throttle": "80%",
         "brake": "20%",
-        "lap": "0:34.21",
+        "lap": "0:34.80",
         "expanded": "false",
         "expansionSettled": "true",
-        "expandedCurrent": "0:34.21"
+        "expandedCurrent": "0:34.80"
       },
       "body": "rgba(0, 0, 0, 0)",
       "bounds": {
@@ -416,10 +416,10 @@
         "boostVisible": "1",
         "throttle": "0%",
         "brake": "0%",
-        "lap": "0:34.21",
+        "lap": "0:34.80",
         "expanded": "false",
         "expansionSettled": "true",
-        "expandedCurrent": "0:34.21"
+        "expandedCurrent": "0:34.80"
       },
       "body": "rgba(0, 0, 0, 0)",
       "bounds": {
@@ -444,10 +444,10 @@
         "boostVisible": "1",
         "throttle": "100%",
         "brake": "100%",
-        "lap": "0:34.21",
+        "lap": "0:34.80",
         "expanded": "false",
         "expansionSettled": "true",
-        "expandedCurrent": "0:34.21"
+        "expandedCurrent": "0:34.80"
       },
       "body": "rgba(0, 0, 0, 0)",
       "bounds": {
@@ -475,7 +475,7 @@
         "lap": "0:00.00",
         "expanded": "false",
         "expansionSettled": "true",
-        "expandedCurrent": "0:34.21"
+        "expandedCurrent": "0:34.80"
       },
       "body": "rgba(0, 0, 0, 0)",
       "bounds": {
@@ -503,7 +503,7 @@
         "lap": "0:00.00",
         "expanded": "false",
         "expansionSettled": "true",
-        "expandedCurrent": "0:34.21"
+        "expandedCurrent": "0:34.80"
       },
       "body": "rgba(0, 0, 0, 0)",
       "bounds": {
@@ -531,7 +531,7 @@
         "lap": "0:01.23",
         "expanded": "false",
         "expansionSettled": "true",
-        "expandedCurrent": "0:34.21"
+        "expandedCurrent": "0:34.80"
       },
       "body": "rgba(0, 0, 0, 0)",
       "bounds": {
@@ -547,7 +547,7 @@
       "readings": {
         "speed": "—",
         "gear": "—",
-        "status": "NO SIGNAL",
+        "status": "Pending......",
         "tire": "N/A",
         "boost": "N/A",
         "boostUnit": "kPa",
@@ -559,7 +559,7 @@
         "lap": "—:—",
         "expanded": "false",
         "expansionSettled": "true",
-        "expandedCurrent": "0:34.21"
+        "expandedCurrent": "0:34.80"
       },
       "body": "rgba(0, 0, 0, 0)",
       "bounds": {
@@ -575,7 +575,7 @@
       "readings": {
         "speed": "16",
         "gear": "R",
-        "status": "P2",
+        "status": "PI N/A",
         "tire": "95°C",
         "boost": "100",
         "boostUnit": "kPa",
@@ -587,7 +587,7 @@
         "lap": "0:01.23",
         "expanded": "false",
         "expansionSettled": "true",
-        "expandedCurrent": "0:34.21"
+        "expandedCurrent": "0:34.80"
       },
       "body": "rgba(0, 0, 0, 0)",
       "bounds": {
@@ -603,7 +603,7 @@
       "readings": {
         "speed": "10",
         "gear": "R",
-        "status": "P2",
+        "status": "PI N/A",
         "tire": "203°F",
         "boost": "14.5",
         "boostUnit": "psi",
@@ -615,7 +615,7 @@
         "lap": "0:01.23",
         "expanded": "false",
         "expansionSettled": "true",
-        "expandedCurrent": "0:34.21"
+        "expandedCurrent": "0:34.80"
       },
       "body": "rgba(0, 0, 0, 0)",
       "bounds": {
@@ -631,7 +631,7 @@
       "readings": {
         "speed": "10",
         "gear": "R",
-        "status": "P2",
+        "status": "PI N/A",
         "tire": "203°F",
         "boost": "14.5",
         "boostUnit": "psi",
@@ -643,7 +643,7 @@
         "lap": "0:01.23",
         "expanded": "false",
         "expansionSettled": "true",
-        "expandedCurrent": "0:34.21"
+        "expandedCurrent": "0:34.80"
       },
       "body": "rgba(0, 0, 0, 0)",
       "bounds": {
@@ -659,7 +659,7 @@
       "readings": {
         "speed": "10",
         "gear": "R",
-        "status": "P2",
+        "status": "PI N/A",
         "tire": "203°F",
         "boost": "14.5",
         "boostUnit": "psi",
@@ -671,7 +671,7 @@
         "lap": "0:01.23",
         "expanded": "false",
         "expansionSettled": "true",
-        "expandedCurrent": "0:34.21"
+        "expandedCurrent": "0:34.80"
       },
       "body": "rgba(0, 0, 0, 0)",
       "bounds": {
@@ -687,7 +687,7 @@
       "readings": {
         "speed": "16",
         "gear": "R",
-        "status": "P2",
+        "status": "PI N/A",
         "tire": "203°F",
         "boost": "1",
         "boostUnit": "bar",
@@ -699,7 +699,7 @@
         "lap": "0:01.23",
         "expanded": "false",
         "expansionSettled": "true",
-        "expandedCurrent": "0:34.21"
+        "expandedCurrent": "0:34.80"
       },
       "body": "rgba(0, 0, 0, 0)",
       "bounds": {
@@ -715,7 +715,7 @@
       "readings": {
         "speed": "16",
         "gear": "R",
-        "status": "P2",
+        "status": "PI N/A",
         "tire": "95°C",
         "boost": "1",
         "boostUnit": "bar",

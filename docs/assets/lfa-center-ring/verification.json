@@ -1,18 +1,21 @@
 {
   "date": "2026-10-05",
   "style": "lfa_center_ring",
-  "sourceHead": "b9a514366c56342b740b48cdb338855b4f2ff917",
-  "githubRunId": 37284549662,
-  "githubArtifactId": 11333404277,
-  "githubRunUrl": "https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37284549662",
+  "sourceHead": "30a34d8fc5eb914362a89de32f04dcd8d7bafc4e",
+  "githubRunId": 37293719948,
+  "githubArtifactId": 11337474460,
+  "githubRunUrl": "https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37293719948",
   "browser": "154.0.8037.57",
   "chromiumSandbox": true,
   "localUnitGate": {
-    "filesPassed": 163,
+    "filesPassed": 164,
     "filesSkipped": 1,
-    "testsPassed": 1273,
+    "testsPassed": 1292,
     "testsSkipped": 1,
-    "styleTests": 146
+    "styleTests": 165,
+    "newStatusRegressions": 19,
+    "command": "pnpm -C frontend test --maxWorkers=2",
+    "interruptedEarlierRuns": "Two obsolete pre-freeze gates interrupted exit130 during shared host load; not cited as passed or failed checks"
   },
   "buildWebHud": "passed",
   "localBackendHistorical": {
@@ -28,15 +31,15 @@
   "currentRevisionBackendChanges": false,
   "exactHeadCi": {
     "visual": {
-      "run": 37284549662,
-      "conclusion": "success"
-    },
-    "releasePackaging": {
-      "run": 37284549880,
+      "run": 37293719948,
       "conclusion": "success"
     },
     "pipeline": {
-      "run": 37284549159,
+      "run": 37293719829,
+      "conclusion": "success"
+    },
+    "releasePackaging": {
+      "run": 37293720186,
       "conclusion": "success"
     }
   },
@@ -66,20 +69,43 @@
       9,
       9,
       9
+    ],
+    "statusConfigurations": 4,
+    "statusSamplesPerConfiguration": [
+      27,
+      27,
+      27,
+      27
     ]
   },
   "mediaPolicy": "manual || (auto && (confirmedRace || media.available)); page race > media > telemetry; cached grace <=3s explicitly STALE; readonly existing endpoints; no controls",
   "expandedData": "Circle-derived whole-glyph anchors; FL/FR/RL/RR slash order with common C/F and missing slot; solid continuous pedal bars with distinct zero/unavailable",
   "titleCorrection": "Actual first passed outer-bounds run exposed a third-line CJK sliver in fixed36px title. Corrected to max34px =2x17px and SVGhost34px, measured innerHTMLbounds; rerender inspected at defaultDPR2/compactDPR1 with two complete lines and clear artist gap.",
-  "centerPreservationEvidence": "media-center-preservation.json",
+  "centerPreservationEvidence": "status-center-preservation.json",
   "previewProvenance": "media-preview-provenance.json",
   "rendererEvidence": "evidence.json",
   "launcherEvidence": "launcher-report.json",
   "mediaEvidence": "media-report.json",
   "settingsEvidence": "settings/settings-audit.json",
-  "historicalEvidence": "panel-reflow-* and expansion-* describe earlier revisions only. Current previews all use sourceHead above.",
+  "historicalEvidence": "media-center-preservation.json and earlier panel/expansion proofs describe prior revisions only. Current scoped comparison is status-center-preservation.json.",
   "windowsNativeOverlayAndGameAcceptance": "not performed",
   "windowsNativeSystemMediaAcceptance": "not performed; controlled provider endpoint + events through actual launcher",
   "userVisualApproval": "pending",
-  "finalDocumentationCommitCi": "pending"
+  "finalDocumentationCommitCi": "pending",
+  "githubStatusArtifactId": 11337504212,
+  "statusEvidence": "status-report.json",
+  "statusPolicy": "Pending first after1500ms without ordered UDP timestamp advancement; error/pause/SHIFT/active notice/race priorities retained; otherwise3s monotonic PI, catalog name, crosXover, LIVE; same96px field",
+  "restartLimitation": "The shared frame payload has no source receipt epoch. Same-car free-roam low-counter restart is bounded inference after stale>=1500ms, prior>=2000, next<=1000, same valid ordinal, old/new lap and race clock0; second advancing sample within1500ms and delta<=elapsed+1000ms. An intentionally replayed matching restart stream cannot be perfectly distinguished.",
+  "fixtureCorrections": [
+    "Separate1.5s UDP stale from2s race exit grace; assert both LIVE during grace and PI after exit",
+    "Send positive host lap progression after400ms confirmation window",
+    "Acknowledge real HUDCore.onFrame raw timestamp before advancing paint; no direct model injection or runtime relaxation"
+  ],
+  "centerPreservationResult": {
+    "comparisons": 13,
+    "zeroOutsideHalfOpenStatusBox": 12,
+    "pendingBoundaryPixelsRetained": 144,
+    "boundary": "pixel centers exactly at status bottom y413.5, row413, x348..491",
+    "evidence": "status-center-preservation.json"
+  }
 }

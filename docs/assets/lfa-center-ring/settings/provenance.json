@@ -1,7 +1,7 @@
 {
-  "sourceHead": "b9a514366c56342b740b48cdb338855b4f2ff917",
-  "run": 37284549662,
-  "artifact": 11333404277,
+  "sourceHead": "30a34d8fc5eb914362a89de32f04dcd8d7bafc4e",
+  "run": 37293719948,
+  "artifact": 11337474460,
   "settingsAudit": "settings-audit.json",
   "captures": [
     {
@@ -43,7 +43,7 @@
     {
       "file": "settings/settings-light-default.png",
       "source": "settings/settings-light-default.png",
-      "sha256": "d72c91530bce14ce8c7f8e1512f48ca4abab0ced100a2c8b966c00cf82cf21ef",
+      "sha256": "3a0ae59664a5a2733f1bdc1249f383dc542e331f471be81157c5a19f4215bd1f",
       "originalRgbaPixelsPreserved": true
     },
     {

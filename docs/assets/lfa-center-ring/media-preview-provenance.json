@@ -1,43 +1,43 @@
 {
-  "sourceHead": "b9a514366c56342b740b48cdb338855b4f2ff917",
-  "run": 37284549662,
-  "artifact": 11333404277,
+  "sourceHead": "30a34d8fc5eb914362a89de32f04dcd8d7bafc4e",
+  "run": 37293719948,
+  "artifact": 11337474460,
   "previewProcessing": "Actual Chrome screenshots. Single views retain all RGBA pixels; sheets only scale and label screenshots. Synthetic telemetry/media, not game captures. All PNGs are 8-bit.",
   "previews": [
     {
       "file": "metric-detail.png",
       "source": "detail-metric.png",
-      "sha256": "a91fdba403eb11581627f1263cdb4d1d98ff2f52b11b7e08d374459d772e0fbc",
+      "sha256": "6539a56e79f783df50a2c8c5f18fcb076439edfb37402d305a10867959fff778",
       "originalRgbaPixelsPreserved": true
     },
     {
       "file": "metric-720p.png",
       "source": "metric-1280x720-dpr1.png",
-      "sha256": "463b060549d8542ca0ac6034e58a5b528ca71d0fa64af359e2386b76801796b1",
+      "sha256": "9cf31a848bf77b5726f0d9af59212febb8ff4c7d54a135b12eb1b0be32d5716b",
       "originalRgbaPixelsPreserved": true
     },
     {
       "file": "expanded-detail.png",
       "source": "detail-expansion-manual.png",
-      "sha256": "9e11486698f7ff8d6ec1659a5bc3f73d61dff6b6be37790586c99ec0d7a89c94",
+      "sha256": "c60fc85c95d1c389a81d65fc1420038368bee3584a43e91f608c33941872e88d",
       "originalRgbaPixelsPreserved": true
     },
     {
       "file": "expanded-720p.png",
       "source": "expanded-1280x720-dpr1.png",
-      "sha256": "11bc8e42c5a7221b020d31d16a832c092f952b7cd014e064e7d303ebb2cde74c",
+      "sha256": "fb83b68fd47255ff1a99e62a0eafcbc869ce90e695966cfe770a557ae3facb0b",
       "originalRgbaPixelsPreserved": true
     },
     {
       "file": "media-detail.png",
       "source": "launcher/media-playing-1920x1080-dpr2-scale1.png",
-      "sha256": "641e30e9926361f0a07d2a0ef4e7921b647d741da48be060ecc8df33559feb78",
+      "sha256": "61653be95ee50dc9b52f1d72b39820696469130d0357de3aaf93783f752ef969",
       "originalRgbaPixelsPreserved": true
     },
     {
       "file": "race-detail.png",
       "source": "launcher/media-race-priority-1920x1080-dpr2-scale1.png",
-      "sha256": "6710e557de345f3d9c7eadd3f89c02c0767b2039561c9afdbcf7839e31312865",
+      "sha256": "49449ac13918da4bd4b170045905abc5ada5ff325cc2090db877eef2bc1b990e",
       "originalRgbaPixelsPreserved": true
     },
     {
@@ -60,7 +60,7 @@
           "label": "Closing / +150 ms"
         }
       ],
-      "sha256": "f0812a431d826425df121358ae2a0a55971c4b313b50045e4b29c5963efea55c",
+      "sha256": "31779a1b50bf6928e57a9b4d857c2f9fb31ddf4da051693c3858e501d5c93041",
       "processing": "Downscaled and labelled actual screenshots"
     },
     {
@@ -76,7 +76,7 @@
           "label": "CURRENT / curved anchors and solid pedals"
         }
       ],
-      "sha256": "f7552738efd4be1d1bf9b6b45d6e4e70bf44ad09de87f9549e5bb7458624178a",
+      "sha256": "9dd9d5a57731507dff458c45fc0deda35a351fac21e341e7ce93b7abe4521c7d",
       "processing": "Downscaled and labelled actual screenshots"
     },
     {
@@ -107,7 +107,7 @@
           "label": "Unavailable pedals / no fabricated zero"
         }
       ],
-      "sha256": "38ff456bee8f764562fe4f2f441a92a36d354a135fee17e831ecefec0f1b3ca5",
+      "sha256": "e7dc50a9749794860e6d1a24bc8665fe95750f9000f82d09cbc1d28096f92fe7",
       "processing": "Downscaled and labelled actual screenshots"
     },
     {
@@ -150,7 +150,7 @@
           "label": "Stale telemetry / unavailable"
         }
       ],
-      "sha256": "6f4d81098146c9c55cdd3b5c6bd8736eb7974af51c2ab2d02378df6fa59a0fdf",
+      "sha256": "da0a515172d5f5a7aa8af2781fe3ced6e11e5d69e25d8a524b170d96a76e0c28",
       "processing": "Downscaled and labelled actual screenshots"
     },
     {
@@ -173,7 +173,7 @@
           "label": "Maximum supported lap time"
         }
       ],
-      "sha256": "aa0fa182976b40029aab8d11bb64a761a760b6613124ca158a5f8a31622cdb43",
+      "sha256": "be74a631e4a86c8baf6baa38eef91978cad84035fe0f3321822ed22157af7e5c",
       "processing": "Downscaled and labelled actual screenshots"
     },
     {
@@ -196,7 +196,7 @@
           "label": "Zero / neutral empty arc"
         }
       ],
-      "sha256": "9a6d41240600a7784a8b37e312ee50699302bd07f4bc82a09c26c4130eb07b05",
+      "sha256": "a6746deac11d64bb48f7e96e773be1cedaf4d841a22012ea08011f1b7ac1e773",
       "processing": "Downscaled and labelled actual screenshots"
     },
     {
@@ -219,7 +219,7 @@
           "label": "Media lost / manual holds telemetry"
         }
       ],
-      "sha256": "4dba0aed082fc9cab9ac2b831812e95d9d43703be86157938e62e6232e99cd0e",
+      "sha256": "587906cc75b46bf6f945b05e7455b0586798077c81cc06a3ad4d7a7a8ce81a04",
       "processing": "Downscaled and labelled actual screenshots"
     },
     {
@@ -250,7 +250,7 @@
           "label": "Compact 720p / native screenshot resolution"
         }
       ],
-      "sha256": "fd91cb3766cb7650bababcaeb79da90c95e8db96a223338554f8d9cd4e39eebb",
+      "sha256": "2ab5e1473c2c46b7b66c03f369e443fef8dd526ec4f6ef573e2561a2d847d667",
       "processing": "Downscaled and labelled actual screenshots"
     },
     {
@@ -292,7 +292,7 @@
     {
       "file": "settings/settings-light-default.png",
       "source": "settings/settings-light-default.png",
-      "sha256": "d72c91530bce14ce8c7f8e1512f48ca4abab0ced100a2c8b966c00cf82cf21ef",
+      "sha256": "3a0ae59664a5a2733f1bdc1249f383dc542e331f471be81157c5a19f4215bd1f",
       "originalRgbaPixelsPreserved": true
     },
     {
@@ -306,6 +306,40 @@
       "source": "settings/settings-light-elegant.png",
       "sha256": "12f08101d0d203ea679e93bfdd67e68225eccc508d19ba7cb7f10d27dc5e0b27",
       "originalRgbaPixelsPreserved": true
+    },
+    {
+      "file": "status-carousel-connection.png",
+      "sources": [
+        {
+          "file": "launcher/status-pi-1920x1080-dpr2-scale1.png",
+          "label": "PI class + score"
+        },
+        {
+          "file": "launcher/status-model-1920x1080-dpr2-scale1.png",
+          "label": "Current catalog model"
+        },
+        {
+          "file": "launcher/status-brand-1920x1080-dpr2-scale1.png",
+          "label": "Static crosXover"
+        },
+        {
+          "file": "launcher/status-live-1920x1080-dpr2-scale1.png",
+          "label": "Fresh UDP / LIVE"
+        },
+        {
+          "file": "launcher/status-long-model-expanded-1920x1080-dpr2-scale1.png",
+          "label": "Long name / bounded ellipsis"
+        },
+        {
+          "file": "launcher/status-udp-stopped-media-alive-1920x1080-dpr2-scale1.png",
+          "label": "UDP stopped / Pending......"
+        }
+      ],
+      "sourceHead": "30a34d8fc5eb914362a89de32f04dcd8d7bafc4e",
+      "artifact": 11337504212,
+      "processing": "Only downscale and label actual screenshots; no UI redraw",
+      "sha256": "63c3e93d97aa82c05781a3e45d6663f5f88bd680e7d58adc8a61f7d3bbeb3969"
     }
-  ]
+  ],
+  "statusArtifact": 11337504212
 }

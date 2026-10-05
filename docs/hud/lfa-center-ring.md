@@ -12,7 +12,7 @@
 - 左下／右下：油門／煞車 0–100%，沒有舊燃油／機油圖示，保留 THR／BRK 文字與百分比
 - 右上：常用正增壓區放大的非等比例量尺，負壓改以藍色 VAC 共用弧條，保留 signed 數字、渦輪圖示與 bar／psi／kPa 單位
 - 右側中央：封包回報的目前單圈經過時間，沒有資料時保留 `—:—`
-- 中央原 LIVE 區：有效排名 `P#`；完成單圈／最佳單圈改善時短暫提示，之後回到排名或 LIVE
+- 中央原LIVE區：閒置時輪播PI、車名、crosXover與LIVE；比賽保留排名／圈速通知，無新鮮UDP優先顯示Pending......
 
 ## 展開／還原機構
 
@@ -43,6 +43,17 @@
 - 短暫沒有媒體或provider錯誤，在最後有效health起最多3秒保留明確琥珀色`STALE / ...`，不冒充新鮮播放；過期後清空。固定paused事件不重複保活，GET health可確認仍有效
 
 第一輪功能／外框測試通過後，實際長CJK截圖仍抓到第三行字形細縫：36px容器比兩行17px多2px。修正為34px並加入HTML文字本身與SVG host內含、兩行高度回歸，沒有縮小字級或移除metadata。最終像素已另外重跑檢查。
+
+## 中央狀態輪播與UDP連線
+
+只更新既有96設計px狀態框。非比賽且資料有效時，每3秒以monotonic clock輪播 **PI等級＋分數 → 車款名稱 → `crosXover` → LIVE**。一般字級維持12px；長車名與`Pending......`使用11px，車名在原框內省略，不擴張中央幾何。輪播遇到高優先狀態暫停，重新連線或換車從PI項目開始，不顯示上一輛車的資料。
+
+- 優先順序：**沒有新鮮UDP的`Pending......` → 新鮮錯誤／暫停／無資料 → SHIFT → 有效BEST LAP／LAP通知 → 已確認比賽的排名或LIVE → 閒置輪播**。比賽結束時尚未到期的圈速提示先顯示完，不被輪播搶走
+- PI來自原始`CarClass`／`CarPerformanceIndex`，只接受整數。官方FH6範圍為class0–7、PI100–999；專案對應D／C／B／A／S1／S2／R／X。class0/D有效，score0、字串、缺失或越界為`PI N/A`，不由預設零alias捏造資料或猜等級
+- 車名不在目前JSON telemetry中；`app.rs`只把CarName加入Discord presence的clone。樣式每次載入最多讀取一次既有同源GET `/api/cars/database`，4秒timeout，使用目前有效原始`CarOrdinal`對應`display_name`，或catalog本身year/make/model。未知為`CAR N/A`，無外部服務／猜車名；timeout與destroy隔離晚到結果，換車後只查新ordinal。fixture的2010 Lexus LFA名稱直接來自目前遊戲catalog，與2012儀表設計原型分開
+- 連線只由有效、有序uint32 `TimestampMS`真正前進更新。Coordinator的RAF重播、WebSocket仍開啟、media事件／GET health或catalog回覆都不能保活；初始0需後續前進才能離開Pending。1.5秒沒有真正前進即清空車輛身份、停輪播並優先顯示`Pending......`
+- 一般短／長斷流只要原counter繼續遞增就立即恢復，真正uint32 wrap也接受。若counter倒退，需車輛／圈數與race-clock重設佐證，再收到1.5秒內第二個合理遞增counter才確認新epoch，並清空退休race／notice基準
+- 同車自由行兩端lap與race-clock皆0的重啟例外：已失聯至少1.5秒、舊counter至少2000ms、新counter至多1000ms且同一有效ordinal，才建立低counter候選；第二包需在1.5秒內遞增且增量≤經過時間＋1000ms。孤立／普通倒序或相同timestamp不保活。**現有HUD payload沒有接收來源epoch，因此刻意重播且完全符合這種低counter重啟模式的串流無法與真重啟完美區分**；這是有界恢復推論，不宣稱能辨識所有重播
 
 ## 精確資料與單位契約
 
@@ -81,7 +92,7 @@
 
 ## 計圈通知與生命週期
 
-中央狀態優先順序：**資料失效／錯誤／暫停 → SHIFT → BEST LAP／LAP n → P# → LIVE**。不擴大已核准的 96 px 中央狀態框。
+中央狀態以UDP freshness為第一優先；新鮮時保留錯誤／暫停、SHIFT與圈速通知，已確認比賽顯示排名，其餘才輪播。不擴大已核准的 96 px 中央狀態框。
 
 - 首包只建立 baseline，不對既有 LastLap／BestLap 慶祝
 - LapNumber 正常遞增，或已建立 baseline 的 LastLap 更新，可顯示完成通知；CurrentLap 每幀增加不算新圈
@@ -108,16 +119,19 @@ T_6820 圖本身標示 Issued 10/2009、中央 AUTO，不能當作 2012 年式�
 
 - 中央PNG SHA-256：`3433460df37b91c67f09cfe7b3c99bacd6ad925db36b113042a95bc196422b22`
 - 中央SVG SHA-256：`8570a31f672dac12bb94e198a91cb78576dd0b09b81c140dd4ae7ca68b924028`
-- 本機前端：**1,273 tests passed／1 skipped；163 files passed／1 skipped**，含146個LFA測試；`build:web-hud`、JS語法與diff gate通過
+- 本機前端：**1,292 tests passed／1 skipped；164 files passed／1 skipped**，含165個LFA測試（本次新增19個）；`build:web-hud`、JS語法與diff gate通過
 - 本機Rust為前次設定擴充的歷史驗證：`config_contract` **9/9通過**；完整套件123通過／1失敗／2忽略。唯一`companion::tests::test_qr_payload_generation_and_pairing`要求非空LAN IP，同一失敗在未修改基底`bbf64fbd`重現；不宣稱本機完整Rust全綠。本次media／排版未修改Rust
-- 本次實際Chrome來源 **`b9a514366c56342b740b48cdb338855b4f2ff917`**：[Visual run37284549662](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37284549662)，artifact`11333404277`，`chromiumSandbox:true`。renderer、展開、圖示、真正Launcher／Coordinator媒體整合與OverlayView設定測試均成功
+- 本次實際Chrome來源 **`30a34d8fc5eb914362a89de32f04dcd8d7bafc4e`**：[Visual run37293719948](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37293719948)，base artifact`11337474460`、status artifact`11337504212`，`chromiumSandbox:true`。renderer、展開、圖示、真正Launcher／Coordinator媒體整合與OverlayView設定測試均成功
 - 正常套件4配置；展開6配置各28個畫面與21個單位cases，含720p／1080p／1440p DPR1、1080p DPR2與compact。實際文字bbox外加2px逐邊驗證fascia輪廓、主錶cutout與文字互斥，亦檢查實心踏板軌道。涵蓋99:59.99、長signed boost、HI／LO／N/A、四個9999°F／−999°F、缺失輪位、同平均值換分布、相同四捨五入百分比但ratio改變
 - 正常圖示20個case涵蓋default／compact、DPR1／2及C／F／bar／kPa／VAC／N/A。首輪140°F刻度碰到胎溫圖示，已只調整原創圖示位置，保留嚴格留白檢查
 - 媒體4個default／compact DPR1／2配置各9個實際畫面：paused health、比賽接管／回媒體／消失、manual保留、stale提示、長Unicode、缺失duration、超出duration、圖片延遲／失敗、停止輪詢與destroy均通過。這是受控provider endpoint與事件，**不是Windows原生媒體session驗收**
+- 新增真正Launcher狀態驗證：default／compact、DPR1／2共4配置，各27個狀態全部通過；覆蓋四個輪播項、已知長車名、D100／invalid PI、media／socket仍活著但UDP停止、重播／倒序、重連／重啟、grace期間LIVE及之後PI、比賽與圈速通知。均記錄實際onFrame TimestampMS、接受結果及clock
 - 已實際查看上述HUD與窄版繁體中文／日文設定截圖。設定頁文字已改為「比賽或媒體時自動展開」，無缺字／溢出；功能11項檢查、page errors與failed responses為空
-- 中央原PNG／SVG、`lfa.css`、刻度／指針繪圖與核准基底保持一致。對照`13a00e9`與`5c5b8f6`，各八個匹配DPR2中央圓均為0／223,942像素差異，四個完整viewport中央圓也皆為0差異。精確RGBA圓形比較的基底、像素數與結果見[中央保留證據](../assets/lfa-center-ring/media-center-preservation.json)，僅對列出的相同輸入／解析度成立；不宣稱整張PNG或未測狀態都相同
+- 中央原PNG／SVG、`lfa.css`、刻度／指針繪圖與核准基底保持一致。對照前一版`b9a5143`，八個正常detail、四個完整viewport與一個展開detail，中央圓**僅排除舊／新96px狀態框矩形（半開區間）**後，12張為0像素差異；Pending／no-signal保留144個差異，全部為狀態框正下邊界y=413.5上的一列border像素（x348–491、row413），對應新的琥珀色邊框。沒有擴大遮罩把這列藏掉。狀態框是刻意變更，另行計數，不沿用舊整個中央圓零差異宣稱。[本次精確遮罩與RGBA結果](../assets/lfa-center-ring/status-center-preservation.json)列出每張圖的實際bbox、像素數與差異；無容差、羽化、額外padding或重採樣
 
-證據：[驗證摘要](../assets/lfa-center-ring/verification.json)、[renderer／展開／圖示](../assets/lfa-center-ring/evidence.json)、[launcher](../assets/lfa-center-ring/launcher-report.json)、[媒體整合](../assets/lfa-center-ring/media-report.json)、[本次預覽來源](../assets/lfa-center-ring/media-preview-provenance.json)、[UDP／JSON單位稽核](../assets/lfa-center-ring/json-unit-audit.json)。舊reflow／expansion證據保留為歷史，當前預覽與上述來源一致；最終文件／預覽commit另待CI。
+本次fixture另修正三個實際CI發現：1.5s UDP失效不等於2s race-grace已結束，現在分別嚴格驗證grace內LIVE與退出後PI；host正圈時增長原先早於400ms，已延後使其真正確認比賽；paused browser clock推進32ms不足以代表跨iframe postMessage已接收並paint，現在等真正onFrame收到指定原始timestamp再推進一個paint frame。這些修正沒有放寬runtime freshness或既有狀態斷言。
+
+證據：[狀態輪播／連線報告](../assets/lfa-center-ring/status-report.json)、[驗證摘要](../assets/lfa-center-ring/verification.json)、[renderer／展開／圖示](../assets/lfa-center-ring/evidence.json)、[launcher](../assets/lfa-center-ring/launcher-report.json)、[媒體整合](../assets/lfa-center-ring/media-report.json)、[本次預覽來源](../assets/lfa-center-ring/media-preview-provenance.json)、[UDP／JSON單位稽核](../assets/lfa-center-ring/json-unit-audit.json)。舊reflow／expansion證據保留為歷史，當前預覽與上述來源一致；來源30a34d8的[CI Pipeline37293719829](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37293719829)與[Release Packaging37293720186](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37293720186)亦已成功；最終文件／預覽commit另待CI。
 
 **Windows原生overlay、系統媒體、click-through、置頂與Forza實機，以及最新使用者視覺驗收仍未完成**。右下槽位假設取代遊戲原生儀表，仍需實機檢查提示／字幕遮擋。
 
@@ -138,6 +152,7 @@ git diff --check
 
 以下全部為本次成功Chrome的真實截圖，使用合成遙測／媒體，**不是遊戲截圖**。單張主圖保留像素；比較圖僅縮放、排列並加標題，沒有重繪HUD。舊fuel圖和舊版JSON只屬歷史證據。
 
+![目前狀態輪播、長車名與UDP失聯](../assets/lfa-center-ring/status-carousel-connection.png)
 ![目前收合布局與辨識度改善的圖示](../assets/lfa-center-ring/metric-detail.png)
 ![目前展開：弧形數值錨點、四輪胎溫、實心踏板](../assets/lfa-center-ring/expanded-detail.png)
 ![目前媒體、比賽接管、回到媒體與手動fallback](../assets/lfa-center-ring/media-race-comparison.png)

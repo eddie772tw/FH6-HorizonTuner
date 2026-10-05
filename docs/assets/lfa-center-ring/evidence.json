@@ -16,6 +16,13 @@
         "width": 420,
         "height": 277.5
       },
+      "statusBox": {
+        "x": 1004,
+        "y": 602.25,
+        "width": 72,
+        "height": 17
+      },
+      "preservationScope": "Compare matching prior center pixels outside the exact rendered statusBox; identity/carousel is the only permitted central change",
       "tests": [
         "init",
         "config",
@@ -65,6 +72,13 @@
         "width": 420,
         "height": 277.5
       },
+      "statusBox": {
+        "x": 1644,
+        "y": 962.25,
+        "width": 72,
+        "height": 17
+      },
+      "preservationScope": "Compare matching prior center pixels outside the exact rendered statusBox; identity/carousel is the only permitted central change",
       "tests": [
         "init",
         "config",
@@ -114,6 +128,13 @@
         "width": 420,
         "height": 277.5
       },
+      "statusBox": {
+        "x": 2284,
+        "y": 1322.25,
+        "width": 72,
+        "height": 17
+      },
+      "preservationScope": "Compare matching prior center pixels outside the exact rendered statusBox; identity/carousel is the only permitted central change",
       "tests": [
         "init",
         "config",
@@ -163,6 +184,13 @@
         "width": 420,
         "height": 277.5
       },
+      "statusBox": {
+        "x": 1644,
+        "y": 962.25,
+        "width": 72,
+        "height": 17
+      },
+      "preservationScope": "Compare matching prior center pixels outside the exact rendered statusBox; identity/carousel is the only permitted central change",
       "tests": [
         "init",
         "config",
@@ -214,6 +242,12 @@
       "samples": [
         {
           "name": "collapsed",
+          "statusBox": {
+            "x": 1004,
+            "y": 602.25,
+            "width": 72,
+            "height": 17
+          },
           "target": false,
           "settled": true,
           "progress": 0,
@@ -229,11 +263,17 @@
         },
         {
           "name": "opening-150ms",
+          "statusBox": {
+            "x": 1045.1368408203125,
+            "y": 602.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": false,
-          "progress": 0.5752757805000364,
-          "x": 1025.169921875,
-          "transform": "matrix(1, 0, 0, 1, 55.2265, 0)",
+          "progress": 0.5713444301037307,
+          "x": 1024.8868408203125,
+          "transform": "matrix(1, 0, 0, 1, 54.8491, 0)",
           "bounds": {
             "x": 830,
             "y": 412.5,
@@ -241,7 +281,7 @@
             "height": 277.5
           },
           "panelBounds": {
-            "progress": 0.5752757805000364,
+            "progress": 0.5713444301037307,
             "checkedTextCount": 15,
             "checkedElementCount": 17,
             "clearanceDesignUnits": 2,
@@ -417,6 +457,12 @@
         },
         {
           "name": "manual",
+          "statusBox": {
+            "x": 1076,
+            "y": 602.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -605,6 +651,12 @@
         },
         {
           "name": "maximum-width",
+          "statusBox": {
+            "x": 1076,
+            "y": 602.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -793,6 +845,12 @@
         },
         {
           "name": "four-tires-same-average",
+          "statusBox": {
+            "x": 1076,
+            "y": 602.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -981,6 +1039,12 @@
         },
         {
           "name": "four-tires-maximum",
+          "statusBox": {
+            "x": 1076,
+            "y": 602.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -1169,6 +1233,12 @@
         },
         {
           "name": "four-tires-negative",
+          "statusBox": {
+            "x": 1076,
+            "y": 602.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -1357,6 +1427,12 @@
         },
         {
           "name": "four-tires-partial",
+          "statusBox": {
+            "x": 1076,
+            "y": 602.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -1545,6 +1621,12 @@
         },
         {
           "name": "pedals-zero",
+          "statusBox": {
+            "x": 1076,
+            "y": 602.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -1733,6 +1815,12 @@
         },
         {
           "name": "pedals-fractional",
+          "statusBox": {
+            "x": 1076,
+            "y": 602.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -1921,6 +2009,12 @@
         },
         {
           "name": "pedals-same-rounded-percent",
+          "statusBox": {
+            "x": 1076,
+            "y": 602.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -2109,6 +2203,12 @@
         },
         {
           "name": "pedals-full",
+          "statusBox": {
+            "x": 1076,
+            "y": 602.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -2297,6 +2397,12 @@
         },
         {
           "name": "pedals-clamped",
+          "statusBox": {
+            "x": 1076,
+            "y": 602.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -2485,6 +2591,12 @@
         },
         {
           "name": "pedals-unavailable",
+          "statusBox": {
+            "x": 1076,
+            "y": 602.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -2673,6 +2785,12 @@
         },
         {
           "name": "units-common-bar",
+          "statusBox": {
+            "x": 1076,
+            "y": 602.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -2861,6 +2979,12 @@
         },
         {
           "name": "units-bar",
+          "statusBox": {
+            "x": 1076,
+            "y": 602.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -3049,6 +3173,12 @@
         },
         {
           "name": "units-common-psi",
+          "statusBox": {
+            "x": 1076,
+            "y": 602.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -3237,6 +3367,12 @@
         },
         {
           "name": "units-psi",
+          "statusBox": {
+            "x": 1076,
+            "y": 602.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -3425,6 +3561,12 @@
         },
         {
           "name": "units-common-kpa",
+          "statusBox": {
+            "x": 1076,
+            "y": 602.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -3613,6 +3755,12 @@
         },
         {
           "name": "units-kpa",
+          "statusBox": {
+            "x": 1076,
+            "y": 602.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -3801,6 +3949,12 @@
         },
         {
           "name": "unavailable-readings",
+          "statusBox": {
+            "x": 1076,
+            "y": 602.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -3989,11 +4143,17 @@
         },
         {
           "name": "closing-150ms",
+          "statusBox": {
+            "x": 1035.43505859375,
+            "y": 602.25,
+            "width": 72,
+            "height": 17
+          },
           "target": false,
           "settled": false,
-          "progress": 0.43261335129139533,
-          "x": 1014.898193359375,
-          "transform": "matrix(1, 0, 0, 1, 41.5309, 0)",
+          "progress": 0.4365975275371117,
+          "x": 1015.18505859375,
+          "transform": "matrix(1, 0, 0, 1, 41.9134, 0)",
           "bounds": {
             "x": 830,
             "y": 412.5,
@@ -4001,7 +4161,7 @@
             "height": 277.5
           },
           "panelBounds": {
-            "progress": 0.43261335129139533,
+            "progress": 0.4365975275371117,
             "checkedTextCount": 15,
             "checkedElementCount": 17,
             "clearanceDesignUnits": 2,
@@ -4177,6 +4337,12 @@
         },
         {
           "name": "auto-initial-zero",
+          "statusBox": {
+            "x": 1004,
+            "y": 602.25,
+            "width": 72,
+            "height": 17
+          },
           "target": false,
           "settled": true,
           "progress": 0,
@@ -4192,6 +4358,12 @@
         },
         {
           "name": "auto-race",
+          "statusBox": {
+            "x": 1076,
+            "y": 602.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -4380,6 +4552,12 @@
         },
         {
           "name": "missing-collapse",
+          "statusBox": {
+            "x": 1004,
+            "y": 602.25,
+            "width": 72,
+            "height": 17
+          },
           "target": false,
           "settled": true,
           "progress": 0,
@@ -4395,6 +4573,12 @@
         },
         {
           "name": "stale-collapse",
+          "statusBox": {
+            "x": 1004,
+            "y": 602.25,
+            "width": 72,
+            "height": 17
+          },
           "target": false,
           "settled": true,
           "progress": 0,
@@ -4410,6 +4594,12 @@
         },
         {
           "name": "manual-without-data",
+          "statusBox": {
+            "x": 1076,
+            "y": 602.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -4598,6 +4788,12 @@
         },
         {
           "name": "persisted-manual",
+          "statusBox": {
+            "x": 1076,
+            "y": 602.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -8580,6 +8776,12 @@
       "samples": [
         {
           "name": "collapsed",
+          "statusBox": {
+            "x": 1644,
+            "y": 962.25,
+            "width": 72,
+            "height": 17
+          },
           "target": false,
           "settled": true,
           "progress": 0,
@@ -8595,6 +8797,12 @@
         },
         {
           "name": "opening-150ms",
+          "statusBox": {
+            "x": 1685.419921875,
+            "y": 962.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": false,
           "progress": 0.5752757805000364,
@@ -8783,6 +8991,12 @@
         },
         {
           "name": "manual",
+          "statusBox": {
+            "x": 1716,
+            "y": 962.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -8971,6 +9185,12 @@
         },
         {
           "name": "maximum-width",
+          "statusBox": {
+            "x": 1716,
+            "y": 962.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -9159,6 +9379,12 @@
         },
         {
           "name": "four-tires-same-average",
+          "statusBox": {
+            "x": 1716,
+            "y": 962.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -9347,6 +9573,12 @@
         },
         {
           "name": "four-tires-maximum",
+          "statusBox": {
+            "x": 1716,
+            "y": 962.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -9535,6 +9767,12 @@
         },
         {
           "name": "four-tires-negative",
+          "statusBox": {
+            "x": 1716,
+            "y": 962.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -9723,6 +9961,12 @@
         },
         {
           "name": "four-tires-partial",
+          "statusBox": {
+            "x": 1716,
+            "y": 962.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -9911,6 +10155,12 @@
         },
         {
           "name": "pedals-zero",
+          "statusBox": {
+            "x": 1716,
+            "y": 962.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -10099,6 +10349,12 @@
         },
         {
           "name": "pedals-fractional",
+          "statusBox": {
+            "x": 1716,
+            "y": 962.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -10287,6 +10543,12 @@
         },
         {
           "name": "pedals-same-rounded-percent",
+          "statusBox": {
+            "x": 1716,
+            "y": 962.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -10475,6 +10737,12 @@
         },
         {
           "name": "pedals-full",
+          "statusBox": {
+            "x": 1716,
+            "y": 962.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -10663,6 +10931,12 @@
         },
         {
           "name": "pedals-clamped",
+          "statusBox": {
+            "x": 1716,
+            "y": 962.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -10851,6 +11125,12 @@
         },
         {
           "name": "pedals-unavailable",
+          "statusBox": {
+            "x": 1716,
+            "y": 962.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -11039,6 +11319,12 @@
         },
         {
           "name": "units-common-bar",
+          "statusBox": {
+            "x": 1716,
+            "y": 962.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -11227,6 +11513,12 @@
         },
         {
           "name": "units-bar",
+          "statusBox": {
+            "x": 1716,
+            "y": 962.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -11415,6 +11707,12 @@
         },
         {
           "name": "units-common-psi",
+          "statusBox": {
+            "x": 1716,
+            "y": 962.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -11603,6 +11901,12 @@
         },
         {
           "name": "units-psi",
+          "statusBox": {
+            "x": 1716,
+            "y": 962.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -11791,6 +12095,12 @@
         },
         {
           "name": "units-common-kpa",
+          "statusBox": {
+            "x": 1716,
+            "y": 962.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -11979,6 +12289,12 @@
         },
         {
           "name": "units-kpa",
+          "statusBox": {
+            "x": 1716,
+            "y": 962.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -12167,6 +12483,12 @@
         },
         {
           "name": "unavailable-readings",
+          "statusBox": {
+            "x": 1716,
+            "y": 962.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -12355,6 +12677,12 @@
         },
         {
           "name": "closing-150ms",
+          "statusBox": {
+            "x": 1675.148193359375,
+            "y": 962.25,
+            "width": 72,
+            "height": 17
+          },
           "target": false,
           "settled": false,
           "progress": 0.43261335129139533,
@@ -12543,6 +12871,12 @@
         },
         {
           "name": "auto-initial-zero",
+          "statusBox": {
+            "x": 1644,
+            "y": 962.25,
+            "width": 72,
+            "height": 17
+          },
           "target": false,
           "settled": true,
           "progress": 0,
@@ -12558,6 +12892,12 @@
         },
         {
           "name": "auto-race",
+          "statusBox": {
+            "x": 1716,
+            "y": 962.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -12746,6 +13086,12 @@
         },
         {
           "name": "missing-collapse",
+          "statusBox": {
+            "x": 1644,
+            "y": 962.25,
+            "width": 72,
+            "height": 17
+          },
           "target": false,
           "settled": true,
           "progress": 0,
@@ -12761,6 +13107,12 @@
         },
         {
           "name": "stale-collapse",
+          "statusBox": {
+            "x": 1644,
+            "y": 962.25,
+            "width": 72,
+            "height": 17
+          },
           "target": false,
           "settled": true,
           "progress": 0,
@@ -12776,6 +13128,12 @@
         },
         {
           "name": "manual-without-data",
+          "statusBox": {
+            "x": 1716,
+            "y": 962.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -12964,6 +13322,12 @@
         },
         {
           "name": "persisted-manual",
+          "statusBox": {
+            "x": 1716,
+            "y": 962.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -16946,6 +17310,12 @@
       "samples": [
         {
           "name": "collapsed",
+          "statusBox": {
+            "x": 2284,
+            "y": 1322.25,
+            "width": 72,
+            "height": 17
+          },
           "target": false,
           "settled": true,
           "progress": 0,
@@ -16961,11 +17331,17 @@
         },
         {
           "name": "opening-150ms",
+          "statusBox": {
+            "x": 2325.700927734375,
+            "y": 1322.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": false,
-          "progress": 0.5752757805000364,
-          "x": 2305.169921875,
-          "transform": "matrix(1, 0, 0, 1, 55.2265, 0)",
+          "progress": 0.5791806698559416,
+          "x": 2305.450927734375,
+          "transform": "matrix(1, 0, 0, 1, 55.6013, 0)",
           "bounds": {
             "x": 2110,
             "y": 1132.5,
@@ -16973,7 +17349,7 @@
             "height": 277.5
           },
           "panelBounds": {
-            "progress": 0.5752757805000364,
+            "progress": 0.5791806698559416,
             "checkedTextCount": 15,
             "checkedElementCount": 17,
             "clearanceDesignUnits": 2,
@@ -17149,6 +17525,12 @@
         },
         {
           "name": "manual",
+          "statusBox": {
+            "x": 2356,
+            "y": 1322.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -17337,6 +17719,12 @@
         },
         {
           "name": "maximum-width",
+          "statusBox": {
+            "x": 2356,
+            "y": 1322.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -17525,6 +17913,12 @@
         },
         {
           "name": "four-tires-same-average",
+          "statusBox": {
+            "x": 2356,
+            "y": 1322.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -17713,6 +18107,12 @@
         },
         {
           "name": "four-tires-maximum",
+          "statusBox": {
+            "x": 2356,
+            "y": 1322.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -17901,6 +18301,12 @@
         },
         {
           "name": "four-tires-negative",
+          "statusBox": {
+            "x": 2356,
+            "y": 1322.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -18089,6 +18495,12 @@
         },
         {
           "name": "four-tires-partial",
+          "statusBox": {
+            "x": 2356,
+            "y": 1322.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -18277,6 +18689,12 @@
         },
         {
           "name": "pedals-zero",
+          "statusBox": {
+            "x": 2356,
+            "y": 1322.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -18465,6 +18883,12 @@
         },
         {
           "name": "pedals-fractional",
+          "statusBox": {
+            "x": 2356,
+            "y": 1322.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -18653,6 +19077,12 @@
         },
         {
           "name": "pedals-same-rounded-percent",
+          "statusBox": {
+            "x": 2356,
+            "y": 1322.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -18841,6 +19271,12 @@
         },
         {
           "name": "pedals-full",
+          "statusBox": {
+            "x": 2356,
+            "y": 1322.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -19029,6 +19465,12 @@
         },
         {
           "name": "pedals-clamped",
+          "statusBox": {
+            "x": 2356,
+            "y": 1322.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -19217,6 +19659,12 @@
         },
         {
           "name": "pedals-unavailable",
+          "statusBox": {
+            "x": 2356,
+            "y": 1322.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -19405,6 +19853,12 @@
         },
         {
           "name": "units-common-bar",
+          "statusBox": {
+            "x": 2356,
+            "y": 1322.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -19593,6 +20047,12 @@
         },
         {
           "name": "units-bar",
+          "statusBox": {
+            "x": 2356,
+            "y": 1322.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -19781,6 +20241,12 @@
         },
         {
           "name": "units-common-psi",
+          "statusBox": {
+            "x": 2356,
+            "y": 1322.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -19969,6 +20435,12 @@
         },
         {
           "name": "units-psi",
+          "statusBox": {
+            "x": 2356,
+            "y": 1322.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -20157,6 +20629,12 @@
         },
         {
           "name": "units-common-kpa",
+          "statusBox": {
+            "x": 2356,
+            "y": 1322.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -20345,6 +20823,12 @@
         },
         {
           "name": "units-kpa",
+          "statusBox": {
+            "x": 2356,
+            "y": 1322.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -20533,6 +21017,12 @@
         },
         {
           "name": "unavailable-readings",
+          "statusBox": {
+            "x": 2356,
+            "y": 1322.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -20721,11 +21211,17 @@
         },
         {
           "name": "closing-150ms",
+          "statusBox": {
+            "x": 2314.86328125,
+            "y": 1322.25,
+            "width": 72,
+            "height": 17
+          },
           "target": false,
           "settled": false,
-          "progress": 0.43261335129139533,
-          "x": 2294.898193359375,
-          "transform": "matrix(1, 0, 0, 1, 41.5309, 0)",
+          "progress": 0.4286555698962693,
+          "x": 2294.61328125,
+          "transform": "matrix(1, 0, 0, 1, 41.1509, 0)",
           "bounds": {
             "x": 2110,
             "y": 1132.5,
@@ -20733,7 +21229,7 @@
             "height": 277.5
           },
           "panelBounds": {
-            "progress": 0.43261335129139533,
+            "progress": 0.4286555698962693,
             "checkedTextCount": 15,
             "checkedElementCount": 17,
             "clearanceDesignUnits": 2,
@@ -20909,6 +21405,12 @@
         },
         {
           "name": "auto-initial-zero",
+          "statusBox": {
+            "x": 2284,
+            "y": 1322.25,
+            "width": 72,
+            "height": 17
+          },
           "target": false,
           "settled": true,
           "progress": 0,
@@ -20924,6 +21426,12 @@
         },
         {
           "name": "auto-race",
+          "statusBox": {
+            "x": 2356,
+            "y": 1322.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -21112,6 +21620,12 @@
         },
         {
           "name": "missing-collapse",
+          "statusBox": {
+            "x": 2284,
+            "y": 1322.25,
+            "width": 72,
+            "height": 17
+          },
           "target": false,
           "settled": true,
           "progress": 0,
@@ -21127,6 +21641,12 @@
         },
         {
           "name": "stale-collapse",
+          "statusBox": {
+            "x": 2284,
+            "y": 1322.25,
+            "width": 72,
+            "height": 17
+          },
           "target": false,
           "settled": true,
           "progress": 0,
@@ -21142,6 +21662,12 @@
         },
         {
           "name": "manual-without-data",
+          "statusBox": {
+            "x": 2356,
+            "y": 1322.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -21330,6 +21856,12 @@
         },
         {
           "name": "persisted-manual",
+          "statusBox": {
+            "x": 2356,
+            "y": 1322.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -25312,6 +25844,12 @@
       "samples": [
         {
           "name": "collapsed",
+          "statusBox": {
+            "x": 1644,
+            "y": 962.25,
+            "width": 72,
+            "height": 17
+          },
           "target": false,
           "settled": true,
           "progress": 0,
@@ -25327,11 +25865,17 @@
         },
         {
           "name": "opening-150ms",
+          "statusBox": {
+            "x": 1688.667724609375,
+            "y": 962.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": false,
-          "progress": 0.5713444301037307,
-          "x": 1664.8868408203125,
-          "transform": "matrix(1, 0, 0, 1, 54.8491, 0)",
+          "progress": 0.6203850724157562,
+          "x": 1668.417724609375,
+          "transform": "matrix(1, 0, 0, 1, 59.557, 0)",
           "bounds": {
             "x": 1470,
             "y": 772.5,
@@ -25339,7 +25883,7 @@
             "height": 277.5
           },
           "panelBounds": {
-            "progress": 0.5713444301037307,
+            "progress": 0.6203850724157562,
             "checkedTextCount": 15,
             "checkedElementCount": 17,
             "clearanceDesignUnits": 2,
@@ -25515,6 +26059,12 @@
         },
         {
           "name": "manual",
+          "statusBox": {
+            "x": 1716,
+            "y": 962.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -25703,6 +26253,12 @@
         },
         {
           "name": "maximum-width",
+          "statusBox": {
+            "x": 1716,
+            "y": 962.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -25891,6 +26447,12 @@
         },
         {
           "name": "four-tires-same-average",
+          "statusBox": {
+            "x": 1716,
+            "y": 962.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -26079,6 +26641,12 @@
         },
         {
           "name": "four-tires-maximum",
+          "statusBox": {
+            "x": 1716,
+            "y": 962.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -26267,6 +26835,12 @@
         },
         {
           "name": "four-tires-negative",
+          "statusBox": {
+            "x": 1716,
+            "y": 962.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -26455,6 +27029,12 @@
         },
         {
           "name": "four-tires-partial",
+          "statusBox": {
+            "x": 1716,
+            "y": 962.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -26643,6 +27223,12 @@
         },
         {
           "name": "pedals-zero",
+          "statusBox": {
+            "x": 1716,
+            "y": 962.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -26831,6 +27417,12 @@
         },
         {
           "name": "pedals-fractional",
+          "statusBox": {
+            "x": 1716,
+            "y": 962.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -27019,6 +27611,12 @@
         },
         {
           "name": "pedals-same-rounded-percent",
+          "statusBox": {
+            "x": 1716,
+            "y": 962.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -27207,6 +27805,12 @@
         },
         {
           "name": "pedals-full",
+          "statusBox": {
+            "x": 1716,
+            "y": 962.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -27395,6 +27999,12 @@
         },
         {
           "name": "pedals-clamped",
+          "statusBox": {
+            "x": 1716,
+            "y": 962.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -27583,6 +28193,12 @@
         },
         {
           "name": "pedals-unavailable",
+          "statusBox": {
+            "x": 1716,
+            "y": 962.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -27771,6 +28387,12 @@
         },
         {
           "name": "units-common-bar",
+          "statusBox": {
+            "x": 1716,
+            "y": 962.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -27959,6 +28581,12 @@
         },
         {
           "name": "units-bar",
+          "statusBox": {
+            "x": 1716,
+            "y": 962.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -28147,6 +28775,12 @@
         },
         {
           "name": "units-common-psi",
+          "statusBox": {
+            "x": 1716,
+            "y": 962.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -28335,6 +28969,12 @@
         },
         {
           "name": "units-psi",
+          "statusBox": {
+            "x": 1716,
+            "y": 962.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -28523,6 +29163,12 @@
         },
         {
           "name": "units-common-kpa",
+          "statusBox": {
+            "x": 1716,
+            "y": 962.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -28711,6 +29357,12 @@
         },
         {
           "name": "units-kpa",
+          "statusBox": {
+            "x": 1716,
+            "y": 962.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -28899,6 +29551,12 @@
         },
         {
           "name": "unavailable-readings",
+          "statusBox": {
+            "x": 1716,
+            "y": 962.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -29087,11 +29745,17 @@
         },
         {
           "name": "closing-150ms",
+          "statusBox": {
+            "x": 1671.8544921875,
+            "y": 962.25,
+            "width": 72,
+            "height": 17
+          },
           "target": false,
           "settled": false,
-          "progress": 0.4365975275371117,
-          "x": 1655.18505859375,
-          "transform": "matrix(1, 0, 0, 1, 41.9134, 0)",
+          "progress": 0.3868682107239273,
+          "x": 1651.6044921875,
+          "transform": "matrix(1, 0, 0, 1, 37.1393, 0)",
           "bounds": {
             "x": 1470,
             "y": 772.5,
@@ -29099,7 +29763,7 @@
             "height": 277.5
           },
           "panelBounds": {
-            "progress": 0.4365975275371117,
+            "progress": 0.3868682107239273,
             "checkedTextCount": 15,
             "checkedElementCount": 17,
             "clearanceDesignUnits": 2,
@@ -29275,6 +29939,12 @@
         },
         {
           "name": "auto-initial-zero",
+          "statusBox": {
+            "x": 1644,
+            "y": 962.25,
+            "width": 72,
+            "height": 17
+          },
           "target": false,
           "settled": true,
           "progress": 0,
@@ -29290,6 +29960,12 @@
         },
         {
           "name": "auto-race",
+          "statusBox": {
+            "x": 1716,
+            "y": 962.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -29478,6 +30154,12 @@
         },
         {
           "name": "missing-collapse",
+          "statusBox": {
+            "x": 1644,
+            "y": 962.25,
+            "width": 72,
+            "height": 17
+          },
           "target": false,
           "settled": true,
           "progress": 0,
@@ -29493,6 +30175,12 @@
         },
         {
           "name": "stale-collapse",
+          "statusBox": {
+            "x": 1644,
+            "y": 962.25,
+            "width": 72,
+            "height": 17
+          },
           "target": false,
           "settled": true,
           "progress": 0,
@@ -29508,6 +30196,12 @@
         },
         {
           "name": "manual-without-data",
+          "statusBox": {
+            "x": 1716,
+            "y": 962.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -29696,6 +30390,12 @@
         },
         {
           "name": "persisted-manual",
+          "statusBox": {
+            "x": 1716,
+            "y": 962.25,
+            "width": 72,
+            "height": 17
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -33678,6 +34378,12 @@
       "samples": [
         {
           "name": "collapsed",
+          "statusBox": {
+            "x": 1053.1875,
+            "y": 619.796875,
+            "width": 57.59375,
+            "height": 14
+          },
           "target": false,
           "settled": true,
           "progress": 0,
@@ -33693,6 +34399,12 @@
         },
         {
           "name": "opening-150ms",
+          "statusBox": {
+            "x": 1086.54833984375,
+            "y": 619.796875,
+            "width": 57.59375,
+            "height": 14
+          },
           "target": true,
           "settled": false,
           "progress": 0.5791806698559416,
@@ -33881,6 +34593,12 @@
         },
         {
           "name": "manual",
+          "statusBox": {
+            "x": 1110.7874755859375,
+            "y": 619.796875,
+            "width": 57.59375,
+            "height": 14
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -34069,6 +34787,12 @@
         },
         {
           "name": "maximum-width",
+          "statusBox": {
+            "x": 1110.7874755859375,
+            "y": 619.796875,
+            "width": 57.59375,
+            "height": 14
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -34257,6 +34981,12 @@
         },
         {
           "name": "four-tires-same-average",
+          "statusBox": {
+            "x": 1110.7874755859375,
+            "y": 619.796875,
+            "width": 57.59375,
+            "height": 14
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -34445,6 +35175,12 @@
         },
         {
           "name": "four-tires-maximum",
+          "statusBox": {
+            "x": 1110.7874755859375,
+            "y": 619.796875,
+            "width": 57.59375,
+            "height": 14
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -34633,6 +35369,12 @@
         },
         {
           "name": "four-tires-negative",
+          "statusBox": {
+            "x": 1110.7874755859375,
+            "y": 619.796875,
+            "width": 57.59375,
+            "height": 14
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -34821,6 +35563,12 @@
         },
         {
           "name": "four-tires-partial",
+          "statusBox": {
+            "x": 1110.7874755859375,
+            "y": 619.796875,
+            "width": 57.59375,
+            "height": 14
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -35009,6 +35757,12 @@
         },
         {
           "name": "pedals-zero",
+          "statusBox": {
+            "x": 1110.7874755859375,
+            "y": 619.796875,
+            "width": 57.59375,
+            "height": 14
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -35197,6 +35951,12 @@
         },
         {
           "name": "pedals-fractional",
+          "statusBox": {
+            "x": 1110.7874755859375,
+            "y": 619.796875,
+            "width": 57.59375,
+            "height": 14
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -35385,6 +36145,12 @@
         },
         {
           "name": "pedals-same-rounded-percent",
+          "statusBox": {
+            "x": 1110.7874755859375,
+            "y": 619.796875,
+            "width": 57.59375,
+            "height": 14
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -35573,6 +36339,12 @@
         },
         {
           "name": "pedals-full",
+          "statusBox": {
+            "x": 1110.7874755859375,
+            "y": 619.796875,
+            "width": 57.59375,
+            "height": 14
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -35761,6 +36533,12 @@
         },
         {
           "name": "pedals-clamped",
+          "statusBox": {
+            "x": 1110.7874755859375,
+            "y": 619.796875,
+            "width": 57.59375,
+            "height": 14
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -35949,6 +36727,12 @@
         },
         {
           "name": "pedals-unavailable",
+          "statusBox": {
+            "x": 1110.7874755859375,
+            "y": 619.796875,
+            "width": 57.59375,
+            "height": 14
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -36137,6 +36921,12 @@
         },
         {
           "name": "units-common-bar",
+          "statusBox": {
+            "x": 1110.7874755859375,
+            "y": 619.796875,
+            "width": 57.59375,
+            "height": 14
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -36325,6 +37115,12 @@
         },
         {
           "name": "units-bar",
+          "statusBox": {
+            "x": 1110.7874755859375,
+            "y": 619.796875,
+            "width": 57.59375,
+            "height": 14
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -36513,6 +37309,12 @@
         },
         {
           "name": "units-common-psi",
+          "statusBox": {
+            "x": 1110.7874755859375,
+            "y": 619.796875,
+            "width": 57.59375,
+            "height": 14
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -36701,6 +37503,12 @@
         },
         {
           "name": "units-psi",
+          "statusBox": {
+            "x": 1110.7874755859375,
+            "y": 619.796875,
+            "width": 57.59375,
+            "height": 14
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -36889,6 +37697,12 @@
         },
         {
           "name": "units-common-kpa",
+          "statusBox": {
+            "x": 1110.7874755859375,
+            "y": 619.796875,
+            "width": 57.59375,
+            "height": 14
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -37077,6 +37891,12 @@
         },
         {
           "name": "units-kpa",
+          "statusBox": {
+            "x": 1110.7874755859375,
+            "y": 619.796875,
+            "width": 57.59375,
+            "height": 14
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -37265,6 +38085,12 @@
         },
         {
           "name": "unavailable-readings",
+          "statusBox": {
+            "x": 1110.7874755859375,
+            "y": 619.796875,
+            "width": 57.59375,
+            "height": 14
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -37453,6 +38279,12 @@
         },
         {
           "name": "closing-150ms",
+          "statusBox": {
+            "x": 1077.8780517578125,
+            "y": 619.796875,
+            "width": 57.59375,
+            "height": 14
+          },
           "target": false,
           "settled": false,
           "progress": 0.4286555698962693,
@@ -37641,6 +38473,12 @@
         },
         {
           "name": "auto-initial-zero",
+          "statusBox": {
+            "x": 1053.1875,
+            "y": 619.796875,
+            "width": 57.59375,
+            "height": 14
+          },
           "target": false,
           "settled": true,
           "progress": 0,
@@ -37656,6 +38494,12 @@
         },
         {
           "name": "auto-race",
+          "statusBox": {
+            "x": 1110.7874755859375,
+            "y": 619.796875,
+            "width": 57.59375,
+            "height": 14
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -37844,6 +38688,12 @@
         },
         {
           "name": "missing-collapse",
+          "statusBox": {
+            "x": 1053.1875,
+            "y": 619.796875,
+            "width": 57.59375,
+            "height": 14
+          },
           "target": false,
           "settled": true,
           "progress": 0,
@@ -37859,6 +38709,12 @@
         },
         {
           "name": "stale-collapse",
+          "statusBox": {
+            "x": 1053.1875,
+            "y": 619.796875,
+            "width": 57.59375,
+            "height": 14
+          },
           "target": false,
           "settled": true,
           "progress": 0,
@@ -37874,6 +38730,12 @@
         },
         {
           "name": "manual-without-data",
+          "statusBox": {
+            "x": 1110.7874755859375,
+            "y": 619.796875,
+            "width": 57.59375,
+            "height": 14
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -38062,6 +38924,12 @@
         },
         {
           "name": "persisted-manual",
+          "statusBox": {
+            "x": 1110.7874755859375,
+            "y": 619.796875,
+            "width": 57.59375,
+            "height": 14
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -42044,6 +42912,12 @@
       "samples": [
         {
           "name": "collapsed",
+          "statusBox": {
+            "x": 1693.1875,
+            "y": 979.796875,
+            "width": 57.59375,
+            "height": 14
+          },
           "target": false,
           "settled": true,
           "progress": 0,
@@ -42059,11 +42933,17 @@
         },
         {
           "name": "opening-150ms",
+          "statusBox": {
+            "x": 1726.54833984375,
+            "y": 979.796875,
+            "width": 57.59375,
+            "height": 14
+          },
           "target": true,
           "settled": false,
-          "progress": 0.5713444301037307,
-          "x": 1709.909423828125,
-          "transform": "matrix(1, 0, 0, 1, 54.8491, 0)",
+          "progress": 0.5791806698559416,
+          "x": 1710.36083984375,
+          "transform": "matrix(1, 0, 0, 1, 55.6013, 0)",
           "bounds": {
             "x": 1554,
             "y": 828,
@@ -42071,7 +42951,7 @@
             "height": 222
           },
           "panelBounds": {
-            "progress": 0.5713444301037307,
+            "progress": 0.5791806698559416,
             "checkedTextCount": 15,
             "checkedElementCount": 17,
             "clearanceDesignUnits": 2,
@@ -42247,6 +43127,12 @@
         },
         {
           "name": "manual",
+          "statusBox": {
+            "x": 1750.7874755859375,
+            "y": 979.796875,
+            "width": 57.59375,
+            "height": 14
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -42435,6 +43321,12 @@
         },
         {
           "name": "maximum-width",
+          "statusBox": {
+            "x": 1750.7874755859375,
+            "y": 979.796875,
+            "width": 57.59375,
+            "height": 14
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -42623,6 +43515,12 @@
         },
         {
           "name": "four-tires-same-average",
+          "statusBox": {
+            "x": 1750.7874755859375,
+            "y": 979.796875,
+            "width": 57.59375,
+            "height": 14
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -42811,6 +43709,12 @@
         },
         {
           "name": "four-tires-maximum",
+          "statusBox": {
+            "x": 1750.7874755859375,
+            "y": 979.796875,
+            "width": 57.59375,
+            "height": 14
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -42999,6 +43903,12 @@
         },
         {
           "name": "four-tires-negative",
+          "statusBox": {
+            "x": 1750.7874755859375,
+            "y": 979.796875,
+            "width": 57.59375,
+            "height": 14
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -43187,6 +44097,12 @@
         },
         {
           "name": "four-tires-partial",
+          "statusBox": {
+            "x": 1750.7874755859375,
+            "y": 979.796875,
+            "width": 57.59375,
+            "height": 14
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -43375,6 +44291,12 @@
         },
         {
           "name": "pedals-zero",
+          "statusBox": {
+            "x": 1750.7874755859375,
+            "y": 979.796875,
+            "width": 57.59375,
+            "height": 14
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -43563,6 +44485,12 @@
         },
         {
           "name": "pedals-fractional",
+          "statusBox": {
+            "x": 1750.7874755859375,
+            "y": 979.796875,
+            "width": 57.59375,
+            "height": 14
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -43751,6 +44679,12 @@
         },
         {
           "name": "pedals-same-rounded-percent",
+          "statusBox": {
+            "x": 1750.7874755859375,
+            "y": 979.796875,
+            "width": 57.59375,
+            "height": 14
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -43939,6 +44873,12 @@
         },
         {
           "name": "pedals-full",
+          "statusBox": {
+            "x": 1750.7874755859375,
+            "y": 979.796875,
+            "width": 57.59375,
+            "height": 14
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -44127,6 +45067,12 @@
         },
         {
           "name": "pedals-clamped",
+          "statusBox": {
+            "x": 1750.7874755859375,
+            "y": 979.796875,
+            "width": 57.59375,
+            "height": 14
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -44315,6 +45261,12 @@
         },
         {
           "name": "pedals-unavailable",
+          "statusBox": {
+            "x": 1750.7874755859375,
+            "y": 979.796875,
+            "width": 57.59375,
+            "height": 14
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -44503,6 +45455,12 @@
         },
         {
           "name": "units-common-bar",
+          "statusBox": {
+            "x": 1750.7874755859375,
+            "y": 979.796875,
+            "width": 57.59375,
+            "height": 14
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -44691,6 +45649,12 @@
         },
         {
           "name": "units-bar",
+          "statusBox": {
+            "x": 1750.7874755859375,
+            "y": 979.796875,
+            "width": 57.59375,
+            "height": 14
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -44879,6 +45843,12 @@
         },
         {
           "name": "units-common-psi",
+          "statusBox": {
+            "x": 1750.7874755859375,
+            "y": 979.796875,
+            "width": 57.59375,
+            "height": 14
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -45067,6 +46037,12 @@
         },
         {
           "name": "units-psi",
+          "statusBox": {
+            "x": 1750.7874755859375,
+            "y": 979.796875,
+            "width": 57.59375,
+            "height": 14
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -45255,6 +46231,12 @@
         },
         {
           "name": "units-common-kpa",
+          "statusBox": {
+            "x": 1750.7874755859375,
+            "y": 979.796875,
+            "width": 57.59375,
+            "height": 14
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -45443,6 +46425,12 @@
         },
         {
           "name": "units-kpa",
+          "statusBox": {
+            "x": 1750.7874755859375,
+            "y": 979.796875,
+            "width": 57.59375,
+            "height": 14
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -45631,6 +46619,12 @@
         },
         {
           "name": "unavailable-readings",
+          "statusBox": {
+            "x": 1750.7874755859375,
+            "y": 979.796875,
+            "width": 57.59375,
+            "height": 14
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -45819,11 +46813,17 @@
         },
         {
           "name": "closing-150ms",
+          "statusBox": {
+            "x": 1717.8780517578125,
+            "y": 979.796875,
+            "width": 57.59375,
+            "height": 14
+          },
           "target": false,
           "settled": false,
-          "progress": 0.4365975275371117,
-          "x": 1702.14794921875,
-          "transform": "matrix(1, 0, 0, 1, 41.9134, 0)",
+          "progress": 0.4286555698962693,
+          "x": 1701.6905517578125,
+          "transform": "matrix(1, 0, 0, 1, 41.1509, 0)",
           "bounds": {
             "x": 1554,
             "y": 828,
@@ -45831,7 +46831,7 @@
             "height": 222
           },
           "panelBounds": {
-            "progress": 0.4365975275371117,
+            "progress": 0.4286555698962693,
             "checkedTextCount": 15,
             "checkedElementCount": 17,
             "clearanceDesignUnits": 2,
@@ -46007,6 +47007,12 @@
         },
         {
           "name": "auto-initial-zero",
+          "statusBox": {
+            "x": 1693.1875,
+            "y": 979.796875,
+            "width": 57.59375,
+            "height": 14
+          },
           "target": false,
           "settled": true,
           "progress": 0,
@@ -46022,6 +47028,12 @@
         },
         {
           "name": "auto-race",
+          "statusBox": {
+            "x": 1750.7874755859375,
+            "y": 979.796875,
+            "width": 57.59375,
+            "height": 14
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -46210,6 +47222,12 @@
         },
         {
           "name": "missing-collapse",
+          "statusBox": {
+            "x": 1693.1875,
+            "y": 979.796875,
+            "width": 57.59375,
+            "height": 14
+          },
           "target": false,
           "settled": true,
           "progress": 0,
@@ -46225,6 +47243,12 @@
         },
         {
           "name": "stale-collapse",
+          "statusBox": {
+            "x": 1693.1875,
+            "y": 979.796875,
+            "width": 57.59375,
+            "height": 14
+          },
           "target": false,
           "settled": true,
           "progress": 0,
@@ -46240,6 +47264,12 @@
         },
         {
           "name": "manual-without-data",
+          "statusBox": {
+            "x": 1750.7874755859375,
+            "y": 979.796875,
+            "width": 57.59375,
+            "height": 14
+          },
           "target": true,
           "settled": true,
           "progress": 1,
@@ -46428,6 +47458,12 @@
         },
         {
           "name": "persisted-manual",
+          "statusBox": {
+            "x": 1750.7874755859375,
+            "y": 979.796875,
+            "width": 57.59375,
+            "height": 14
+          },
           "target": true,
           "settled": true,
           "progress": 1,
