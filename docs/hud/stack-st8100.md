@@ -107,6 +107,8 @@ GUI ownership：`frontend/src/features/overlay_control/stack_st8100/`。HUD owne
 
 視覺工具使用獨立 Playwright、`PLAYWRIGHT_MODULE_PATH`、`PLAYWRIGHT_CHANNEL=chrome`、`OUTPUT_DIR`，保持 `chromiumSandbox: true`；雲端 workflow 產出黑白盤面／五種量程、警報／計時／圈速週期、missing states，以及真實 GUI 鍵盤編輯、單位、重載、六種主題與中日窄版截圖。這些不是 Windows 原生透明度、click-through、多螢幕或 FH6 遊戲實機驗收。
 
-現有 [preview.png](../assets/stack-st8100/preview.png)、[provenance.json](../assets/stack-st8100/provenance.json) 為修訂前 commit `a7d2ff3` 的歷史 Chrome 證據；不代表本次九點修訂。新的實際 PNG、reviewed commit／run 由 PR 更新，沒有把設計稿當作執行截圖。
+[黑底預覽](../assets/stack-st8100/preview.png)、[白底預覽](../assets/stack-st8100/white-face.png)、警示／計時／上圈時間與完整設定 PNG 均來自 source `60dfae6a8dbb55b1b809b0bda1ef229c4f71d80d` 的 [Visual run37291320148](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37291320148)。已實際查看並獨立複審；[provenance.json](../assets/stack-st8100/provenance.json) 保存來源 artifact 與個別 PNG 雜湊。設定頁先在原始 viewport（窄版390×844）逐項捲動，驗證31個內容目標／22個控制項的垂直可見、hit-test與focus；完整卡片圖保留相同寬度，使用明列的較高viewport，沒有改動產品CSS隱藏遮擋物。六主題及英／繁中／日文皆完成，舊的裁切證據不再沿用。
+
+造型仍明確屬於 ST8100-inspired：相較實物，轉速盤比例、工作區刻度密度、Arial數字及全大寫LCD是HUD適配，不能宣稱精確復刻。原廠照片與商標外觀僅供參考查證。
 
 可選配的預測圈速、實體紅外線跨線、逐圈 Memory、Corner/straight/HOLD 只做研究並列入 PR，這次沒有新增其模擬實作；已授權實作範圍僅上述修訂與計時輪播。

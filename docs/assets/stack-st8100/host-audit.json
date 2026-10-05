@@ -2,26 +2,38 @@
   "checks": [
     {
       "name": "host-live",
+      "phase": "info",
+      "page": "base",
+      "face": "black",
+      "alarmSlot": "",
       "status": "LIVE",
       "warning": "",
       "shift": "false",
       "dial": "0-3-8",
       "rpm": "6400",
       "lcd1": "KM/H 180 | GEAR 4",
-      "lcd2": "FUEL % 70 | TYRE C 98"
+      "lcd2": "TIME 1:10.00 | TYRE C 98"
     },
     {
       "name": "host-raw-missing",
+      "phase": "info",
+      "page": "base",
+      "face": "black",
+      "alarmSlot": "",
       "status": "LIVE",
       "warning": "",
       "shift": "false",
       "dial": "0-3-8",
       "rpm": "--",
       "lcd1": "KM/H -- | GEAR --",
-      "lcd2": "FUEL % -- | TYRE C --"
+      "lcd2": "TIME 1:10.00 | TYRE C --"
     },
     {
       "name": "host-stale-with-smoothing",
+      "phase": "info",
+      "page": "base",
+      "face": "black",
+      "alarmSlot": "",
       "status": "NO SIGNAL",
       "warning": "",
       "shift": "false",
@@ -32,43 +44,59 @@
     },
     {
       "name": "host-restarted",
+      "phase": "info",
+      "page": "base",
+      "face": "black",
+      "alarmSlot": "",
       "status": "LIVE",
       "warning": "",
       "shift": "false",
       "dial": "0-3-8",
       "rpm": "6400",
       "lcd1": "KM/H 180 | GEAR 4",
-      "lcd2": "FUEL % 70 | TYRE C 98"
+      "lcd2": "TIME 0:00.01 | TYRE C 98"
     },
     {
       "name": "host-imperial",
+      "phase": "info",
+      "page": "base",
+      "face": "black",
+      "alarmSlot": "",
       "status": "LIVE",
       "warning": "",
       "shift": "false",
       "dial": "0-3-8",
       "rpm": "6400",
       "lcd1": "MPH 112 | GEAR 4",
-      "lcd2": "FUEL % 70 | TYRE C 98"
+      "lcd2": "TIME 0:00.01 | TYRE C 98"
     },
     {
       "name": "host-720p",
+      "phase": "info",
+      "page": "base",
+      "face": "black",
+      "alarmSlot": "",
       "status": "LIVE",
       "warning": "",
       "shift": "false",
       "dial": "0-3-8",
       "rpm": "6400",
       "lcd1": "MPH 112 | GEAR 4",
-      "lcd2": "FUEL % 70 | TYRE C 98"
+      "lcd2": "TIME 0:00.01 | TYRE C 98"
     },
     {
       "name": "host-style-return",
+      "phase": "info",
+      "page": "base",
+      "face": "black",
+      "alarmSlot": "",
       "status": "LIVE",
       "warning": "",
       "shift": "false",
       "dial": "0-3-8",
       "rpm": "6400",
       "lcd1": "KM/H 180 | GEAR 4",
-      "lcd2": "FUEL % 70 | TYRE C 98"
+      "lcd2": "TIME 0:00.01 | TYRE C 98"
     }
   ],
   "errors": [],
