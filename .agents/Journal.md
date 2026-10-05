@@ -70,6 +70,12 @@
 - **Action／Evidence**：先比較原創靜態SVG正視圖與照片，再以[Visual run37295509701](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37295509701)檢查真正五模式、透明背景、DPR／單位／缺值及控制顯隱；靜態樣稿不冒充runtime。隱藏速度時，獨立overscale註記也須一起隱藏，已加browser regression。
 - **Boundary／Skills**：原型油壓／水溫仍N/A且無假針，只有遊戲真實欄位；`halfmoon-design-system`、`huge-component-refactoring`、`modular-refactoring`、`pr-author-maintainer`。詳見[R34設計文件](../docs/hud/r34-mfd.md)。
 
+## 2026-10-05 / R34 分離錶盤與溫度單位契約（Bagley as Codex）
+
+- **Learning**：app 的一般單位設定會依 speed 正規化整組公制／英制；browser fixture 若只把 temperature 改成 F、卻保留 kmh，會在 hydration 回到 C。測試應使用現有 `applyGeneralUnitSystem`，再等待真正的 effectiveUnits broadcast；HUD 獨立 C/F 設定則走既有持久化管線。
+- **Action／Evidence**：使用者選定 S650 式分離定位及 Nür300 固定 kmh。HUDCore 校準保持不變，viewport root 取消整體 zoom，由純 layout 函式對獨立錶盤／MFD做寬高 fit；加入矮寬視窗、DPR、固定 kmh、四輪原始胎溫齊全與 C/F 幾何不變契約。修正檔位開關誤藏 REV 燈。
+- **Boundary**：[Visual run37305964564](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37305964564) 真正 Chrome HUD／Launcher／GUI 全部成功；原型照片估角是 HUD 視覺適配，不是工廠校準。完整驗證及來源見 [R34設計文件](../docs/hud/r34-mfd.md)，不代表 Windows／遊戲實測。
+
 ## 歷史摘要 / v1.6 以前開發經驗與跨架構演進核心紀錄（Pre-v1.6 Architecture Archive & Core Learnings）
 
 - **來源／狀態**：`archive`／`verified`；本條目為 v1.6 以前（2026-08-11 ~ 2026-09-15）跨版本開發經驗、歷史踩坑與架構演進之單一收攏精簡摘要（SSOT 封存）。

@@ -9,10 +9,10 @@
       ],
       "dpr": 1,
       "bounds": {
-        "x": 405.203125,
-        "y": 419.40625,
-        "width": 844.796875,
-        "height": 270.59375
+        "x": 0,
+        "y": 0,
+        "width": 1280,
+        "height": 720
       },
       "status": {
         "text": "WAITING FOR TELEMETRY",
@@ -21,10 +21,57 @@
       }
     },
     {
-      "physicalLayout": {
-        "mfdOnLeft": true,
-        "caseAspect": 2.0492916747525713,
-        "screenAspect": 1.7763239875389407
+      "layout": {
+        "boxes": [
+          {
+            "id": "r34TachModule",
+            "x": 382,
+            "y": 513.59375,
+            "right": 564.390625,
+            "bottom": 695.984375,
+            "width": 182.390625,
+            "height": 182.390625
+          },
+          {
+            "id": "r34SpeedModule",
+            "x": 715.59375,
+            "y": 513.59375,
+            "right": 897.984375,
+            "bottom": 695.984375,
+            "width": 182.390625,
+            "height": 182.390625
+          },
+          {
+            "id": "r34BoostModule",
+            "x": 278,
+            "y": 532.796875,
+            "right": 364.390625,
+            "bottom": 619.1875,
+            "width": 86.390625,
+            "height": 86.390625
+          },
+          {
+            "id": "r34TempModule",
+            "x": 915.59375,
+            "y": 532.796875,
+            "right": 1001.984375,
+            "bottom": 619.1875,
+            "width": 86.390625,
+            "height": 86.390625
+          },
+          {
+            "id": "r34Mfd",
+            "x": 1026,
+            "y": 566.515625,
+            "right": 1256,
+            "bottom": 695.984375,
+            "width": 230,
+            "height": 129.46875
+          }
+        ],
+        "clusterHidden": false,
+        "width": 1280,
+        "height": 720
       }
     },
     {
@@ -115,10 +162,10 @@
     },
     {
       "canvas": "r34History",
-      "pixelWidth": 67,
-      "pixelHeight": 72,
-      "width": 66.65625,
-      "height": 71.9375,
+      "pixelWidth": 86,
+      "pixelHeight": 93,
+      "width": 86.0369873046875,
+      "height": 92.85186767578125,
       "logicalWidth": 101,
       "logicalHeight": 109,
       "dpr": 1
@@ -131,19 +178,19 @@
       ],
       "dpr": 1,
       "bounds": {
-        "x": 405.203125,
-        "y": 419.40625,
-        "width": 844.796875,
-        "height": 270.59375
+        "x": 0,
+        "y": 0,
+        "width": 1280,
+        "height": 720
       },
       "status": null
     },
     {
       "canvas": "r34History",
-      "pixelWidth": 67,
-      "pixelHeight": 72,
-      "width": 66.65625,
-      "height": 71.9375,
+      "pixelWidth": 86,
+      "pixelHeight": 93,
+      "width": 86.0369873046875,
+      "height": 92.85186767578125,
       "logicalWidth": 101,
       "logicalHeight": 109,
       "dpr": 1
@@ -242,10 +289,10 @@
       ],
       "dpr": 1,
       "bounds": {
-        "x": 405.203125,
-        "y": 419.40625,
-        "width": 844.796875,
-        "height": 270.59375
+        "x": 0,
+        "y": 0,
+        "width": 1280,
+        "height": 720
       },
       "status": null
     },
@@ -428,10 +475,10 @@
       ],
       "dpr": 1,
       "bounds": {
-        "x": 405.203125,
-        "y": 419.40625,
-        "width": 844.796875,
-        "height": 270.59375
+        "x": 0,
+        "y": 0,
+        "width": 1280,
+        "height": 720
       },
       "status": null
     },
@@ -443,19 +490,19 @@
       ],
       "dpr": 1,
       "bounds": {
-        "x": 405.203125,
-        "y": 419.40625,
-        "width": 844.796875,
-        "height": 270.59375
+        "x": 0,
+        "y": 0,
+        "width": 1280,
+        "height": 720
       },
       "status": null
     },
     {
       "canvas": "r34G",
-      "pixelWidth": 169,
-      "pixelHeight": 83,
-      "width": 168.953125,
-      "height": 83.15625,
+      "pixelWidth": 218,
+      "pixelHeight": 107,
+      "width": 218.0740966796875,
+      "height": 107.3333740234375,
       "logicalWidth": 256,
       "logicalHeight": 126,
       "dpr": 1
@@ -468,49 +515,385 @@
       ],
       "dpr": 1,
       "bounds": {
-        "x": 405.203125,
-        "y": 419.40625,
-        "width": 844.796875,
-        "height": 270.59375
+        "x": 0,
+        "y": 0,
+        "width": 1280,
+        "height": 720
       },
       "status": null
     },
     {
+      "name": "temperature-c",
+      "viewport": [
+        1280,
+        720
+      ],
+      "dpr": 1,
+      "bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 1280,
+        "height": 720
+      },
+      "status": null
+    },
+    {
+      "name": "temperature-f",
+      "viewport": [
+        1280,
+        720
+      ],
+      "dpr": 1,
+      "bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 1280,
+        "height": 720
+      },
+      "status": null
+    },
+    {
+      "name": "missing-one-tire",
+      "viewport": [
+        1280,
+        720
+      ],
+      "dpr": 1,
+      "bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 1280,
+        "height": 720
+      },
+      "status": null
+    },
+    {
+      "name": "zero-fahrenheit-input",
+      "viewport": [
+        1280,
+        720
+      ],
+      "dpr": 1,
+      "bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 1280,
+        "height": 720
+      },
+      "status": null
+    },
+    {
+      "name": "negative-tire-temperature",
+      "viewport": [
+        1280,
+        720
+      ],
+      "dpr": 1,
+      "bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 1280,
+        "height": 720
+      },
+      "status": null
+    },
+    {
+      "name": "sweep-min",
+      "viewport": [
+        1280,
+        720
+      ],
+      "dpr": 1,
+      "bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 1280,
+        "height": 720
+      },
+      "status": null
+    },
+    {
+      "name": "sweep-mid",
+      "viewport": [
+        1280,
+        720
+      ],
+      "dpr": 1,
+      "bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 1280,
+        "height": 720
+      },
+      "status": null
+    },
+    {
+      "name": "sweep-max",
+      "viewport": [
+        1280,
+        720
+      ],
+      "dpr": 1,
+      "bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 1280,
+        "height": 720
+      },
+      "status": null
+    },
+    {
+      "layout": {
+        "boxes": [
+          {
+            "id": "r34TachModule",
+            "x": 382,
+            "y": 513.59375,
+            "right": 564.390625,
+            "bottom": 695.984375,
+            "width": 182.390625,
+            "height": 182.390625
+          },
+          {
+            "id": "r34SpeedModule",
+            "x": 715.59375,
+            "y": 513.59375,
+            "right": 897.984375,
+            "bottom": 695.984375,
+            "width": 182.390625,
+            "height": 182.390625
+          },
+          {
+            "id": "r34BoostModule",
+            "x": 278,
+            "y": 532.796875,
+            "right": 364.390625,
+            "bottom": 619.1875,
+            "width": 86.390625,
+            "height": 86.390625
+          },
+          {
+            "id": "r34TempModule",
+            "x": 915.59375,
+            "y": 532.796875,
+            "right": 1001.984375,
+            "bottom": 619.1875,
+            "width": 86.390625,
+            "height": 86.390625
+          },
+          {
+            "id": "r34Mfd",
+            "x": 1026,
+            "y": 566.515625,
+            "right": 1256,
+            "bottom": 695.984375,
+            "width": 230,
+            "height": 129.46875
+          }
+        ],
+        "clusterHidden": false,
+        "width": 1280,
+        "height": 720
+      }
+    },
+    {
       "canvas": "r34History",
-      "pixelWidth": 67,
-      "pixelHeight": 72,
-      "width": 66.65625,
-      "height": 71.9375,
+      "pixelWidth": 86,
+      "pixelHeight": 93,
+      "width": 86.0369873046875,
+      "height": 92.85186767578125,
       "logicalWidth": 101,
       "logicalHeight": 109,
       "dpr": 1
     },
     {
+      "layout": {
+        "boxes": [
+          {
+            "id": "r34TachModule",
+            "x": 396.953125,
+            "y": 568.3125,
+            "right": 524.625,
+            "bottom": 695.984375,
+            "width": 127.671875,
+            "height": 127.671875
+          },
+          {
+            "id": "r34SpeedModule",
+            "x": 755.359375,
+            "y": 568.3125,
+            "right": 883.03125,
+            "bottom": 695.984375,
+            "width": 127.671875,
+            "height": 127.671875
+          },
+          {
+            "id": "r34BoostModule",
+            "x": 324.15625,
+            "y": 581.75,
+            "right": 384.625,
+            "bottom": 642.21875,
+            "width": 60.46875,
+            "height": 60.46875
+          },
+          {
+            "id": "r34TempModule",
+            "x": 895.359375,
+            "y": 581.75,
+            "right": 955.828125,
+            "bottom": 642.21875,
+            "width": 60.46875,
+            "height": 60.46875
+          },
+          {
+            "id": "r34Mfd",
+            "x": 1095,
+            "y": 605.359375,
+            "right": 1256,
+            "bottom": 695.984375,
+            "width": 161,
+            "height": 90.625
+          }
+        ],
+        "clusterHidden": false,
+        "width": 1280,
+        "height": 720
+      }
+    },
+    {
       "canvas": "r34History",
-      "pixelWidth": 47,
-      "pixelHeight": 50,
-      "width": 46.65625,
-      "height": 50.34375,
+      "pixelWidth": 60,
+      "pixelHeight": 65,
+      "width": 60.225830078125,
+      "height": 64.99627685546875,
       "logicalWidth": 101,
       "logicalHeight": 109,
       "dpr": 1
+    },
+    {
+      "layout": {
+        "boxes": [
+          {
+            "id": "r34TachModule",
+            "x": 382,
+            "y": 513.59375,
+            "right": 564.390625,
+            "bottom": 695.984375,
+            "width": 182.390625,
+            "height": 182.390625
+          },
+          {
+            "id": "r34SpeedModule",
+            "x": 715.59375,
+            "y": 513.59375,
+            "right": 897.984375,
+            "bottom": 695.984375,
+            "width": 182.390625,
+            "height": 182.390625
+          },
+          {
+            "id": "r34BoostModule",
+            "x": 278,
+            "y": 532.796875,
+            "right": 364.390625,
+            "bottom": 619.1875,
+            "width": 86.390625,
+            "height": 86.390625
+          },
+          {
+            "id": "r34TempModule",
+            "x": 915.59375,
+            "y": 532.796875,
+            "right": 1001.984375,
+            "bottom": 619.1875,
+            "width": 86.390625,
+            "height": 86.390625
+          },
+          {
+            "id": "r34Mfd",
+            "x": 1026,
+            "y": 566.515625,
+            "right": 1256,
+            "bottom": 695.984375,
+            "width": 230,
+            "height": 129.46875
+          }
+        ],
+        "clusterHidden": false,
+        "width": 1280,
+        "height": 720
+      }
     },
     {
       "canvas": "r34G",
-      "pixelWidth": 169,
-      "pixelHeight": 83,
-      "width": 168.953125,
-      "height": 83.15625,
+      "pixelWidth": 218,
+      "pixelHeight": 107,
+      "width": 218.0740966796875,
+      "height": 107.3333740234375,
       "logicalWidth": 256,
       "logicalHeight": 126,
       "dpr": 1
     },
     {
+      "layout": {
+        "boxes": [
+          {
+            "id": "r34TachModule",
+            "x": 396.953125,
+            "y": 568.3125,
+            "right": 524.625,
+            "bottom": 695.984375,
+            "width": 127.671875,
+            "height": 127.671875
+          },
+          {
+            "id": "r34SpeedModule",
+            "x": 755.359375,
+            "y": 568.3125,
+            "right": 883.03125,
+            "bottom": 695.984375,
+            "width": 127.671875,
+            "height": 127.671875
+          },
+          {
+            "id": "r34BoostModule",
+            "x": 324.15625,
+            "y": 581.75,
+            "right": 384.625,
+            "bottom": 642.21875,
+            "width": 60.46875,
+            "height": 60.46875
+          },
+          {
+            "id": "r34TempModule",
+            "x": 895.359375,
+            "y": 581.75,
+            "right": 955.828125,
+            "bottom": 642.21875,
+            "width": 60.46875,
+            "height": 60.46875
+          },
+          {
+            "id": "r34Mfd",
+            "x": 1095,
+            "y": 605.359375,
+            "right": 1256,
+            "bottom": 695.984375,
+            "width": 161,
+            "height": 90.625
+          }
+        ],
+        "clusterHidden": false,
+        "width": 1280,
+        "height": 720
+      }
+    },
+    {
       "canvas": "r34G",
-      "pixelWidth": 118,
-      "pixelHeight": 58,
-      "width": 118.265625,
-      "height": 58.203125,
+      "pixelWidth": 153,
+      "pixelHeight": 75,
+      "width": 152.65185546875,
+      "height": 75.13336181640625,
       "logicalWidth": 256,
       "logicalHeight": 126,
       "dpr": 1
@@ -519,34 +902,34 @@
       "gMarker": {
         "full": {
           "visible": true,
-          "x": 0.32840236686390534,
-          "y": 0.572289156626506,
-          "resolution": 83
+          "x": 0.32798165137614677,
+          "y": 0.5734579439252336,
+          "resolution": 107
         },
         "compact": {
           "visible": true,
-          "x": 0.326271186440678,
-          "y": 0.5689655172413793,
-          "resolution": 58
+          "x": 0.32679738562091504,
+          "y": 0.5710144927536233,
+          "resolution": 75
         }
       }
     },
     {
       "canvas": "r34G",
-      "pixelWidth": 338,
-      "pixelHeight": 166,
-      "width": 168.953125,
-      "height": 83.15625,
+      "pixelWidth": 436,
+      "pixelHeight": 215,
+      "width": 218.0740966796875,
+      "height": 107.3333740234375,
       "logicalWidth": 256,
       "logicalHeight": 126,
       "dpr": 2
     },
     {
       "canvas": "r34G",
-      "pixelWidth": 169,
-      "pixelHeight": 83,
-      "width": 168.953125,
-      "height": 83.15625,
+      "pixelWidth": 218,
+      "pixelHeight": 107,
+      "width": 218.0740966796875,
+      "height": 107.3333740234375,
       "logicalWidth": 256,
       "logicalHeight": 126,
       "dpr": 1
@@ -559,10 +942,10 @@
       ],
       "dpr": 1,
       "bounds": {
-        "x": 405.203125,
-        "y": 419.40625,
-        "width": 844.796875,
-        "height": 270.59375
+        "x": 0,
+        "y": 0,
+        "width": 1280,
+        "height": 720
       },
       "status": null
     },
@@ -575,10 +958,10 @@
       ],
       "dpr": 1,
       "bounds": {
-        "x": 405.203125,
-        "y": 419.40625,
-        "width": 844.796875,
-        "height": 270.59375
+        "x": 0,
+        "y": 0,
+        "width": 1280,
+        "height": 720
       },
       "status": null
     },
@@ -590,10 +973,10 @@
       ],
       "dpr": 1,
       "bounds": {
-        "x": 405.203125,
-        "y": 419.40625,
-        "width": 844.796875,
-        "height": 270.59375
+        "x": 0,
+        "y": 0,
+        "width": 1280,
+        "height": 720
       },
       "status": null
     },
@@ -605,10 +988,10 @@
       ],
       "dpr": 1,
       "bounds": {
-        "x": 405.203125,
-        "y": 419.40625,
-        "width": 844.796875,
-        "height": 270.59375
+        "x": 0,
+        "y": 0,
+        "width": 1280,
+        "height": 720
       },
       "status": null
     },
@@ -706,10 +1089,10 @@
       ],
       "dpr": 1,
       "bounds": {
-        "x": 405.203125,
-        "y": 419.40625,
-        "width": 844.796875,
-        "height": 270.59375
+        "x": 0,
+        "y": 0,
+        "width": 1280,
+        "height": 720
       },
       "status": null
     },
@@ -807,10 +1190,10 @@
       ],
       "dpr": 1,
       "bounds": {
-        "x": 405.203125,
-        "y": 419.40625,
-        "width": 844.796875,
-        "height": 270.59375
+        "x": 0,
+        "y": 0,
+        "width": 1280,
+        "height": 720
       },
       "status": null
     },
@@ -822,10 +1205,10 @@
       ],
       "dpr": 1,
       "bounds": {
-        "x": 405.203125,
-        "y": 419.40625,
-        "width": 844.796875,
-        "height": 270.59375
+        "x": 0,
+        "y": 0,
+        "width": 1280,
+        "height": 720
       },
       "status": null
     },
@@ -837,13 +1220,13 @@
       ],
       "dpr": 1,
       "bounds": {
-        "x": 405.203125,
-        "y": 419.40625,
-        "width": 844.796875,
-        "height": 270.59375
+        "x": 0,
+        "y": 0,
+        "width": 1280,
+        "height": 720
       },
       "status": {
-        "text": "GAME PAUSED · LIVE VALUES UNAVAILABLE",
+        "text": "PAUSED · N/A",
         "clear": true,
         "fits": true
       }
@@ -856,13 +1239,13 @@
       ],
       "dpr": 1,
       "bounds": {
-        "x": 405.203125,
-        "y": 419.40625,
-        "width": 844.796875,
-        "height": 270.59375
+        "x": 0,
+        "y": 0,
+        "width": 1280,
+        "height": 720
       },
       "status": {
-        "text": "TELEMETRY STALE · LIVE VALUES UNAVAILABLE",
+        "text": "STALE · N/A",
         "clear": true,
         "fits": true
       }
@@ -875,10 +1258,79 @@
       ],
       "dpr": 1,
       "bounds": {
-        "x": 1019,
-        "y": 577.28125,
-        "width": 231,
-        "height": 112.71875
+        "x": 0,
+        "y": 0,
+        "width": 1280,
+        "height": 720
+      },
+      "status": null
+    },
+    {
+      "layout": {
+        "boxes": [
+          {
+            "id": "r34TachModule",
+            "x": 0,
+            "y": 0,
+            "right": 0,
+            "bottom": 0,
+            "width": 0,
+            "height": 0
+          },
+          {
+            "id": "r34SpeedModule",
+            "x": 0,
+            "y": 0,
+            "right": 0,
+            "bottom": 0,
+            "width": 0,
+            "height": 0
+          },
+          {
+            "id": "r34BoostModule",
+            "x": 0,
+            "y": 0,
+            "right": 0,
+            "bottom": 0,
+            "width": 0,
+            "height": 0
+          },
+          {
+            "id": "r34TempModule",
+            "x": 0,
+            "y": 0,
+            "right": 0,
+            "bottom": 0,
+            "width": 0,
+            "height": 0
+          },
+          {
+            "id": "r34Mfd",
+            "x": 1095,
+            "y": 605.359375,
+            "right": 1256,
+            "bottom": 695.984375,
+            "width": 161,
+            "height": 90.625
+          }
+        ],
+        "clusterHidden": true,
+        "width": 1280,
+        "height": 720
+      }
+    },
+    {
+      "name": "gear-hidden-rev-active",
+      "viewport": [
+        1280,
+        720
+      ],
+      "dpr": 1,
+      "bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 1280,
+        "height": 720
       },
       "status": null
     },
@@ -890,12 +1342,780 @@
       ],
       "dpr": 1,
       "bounds": {
-        "x": 405.203125,
-        "y": 419.40625,
-        "width": 844.796875,
-        "height": 270.59375
+        "x": 0,
+        "y": 0,
+        "width": 1280,
+        "height": 720
       },
       "status": null
+    },
+    {
+      "layout": {
+        "boxes": [
+          {
+            "id": "r34TachModule",
+            "x": 915.4375,
+            "y": 1208.46875,
+            "right": 1106.953125,
+            "bottom": 1399.984375,
+            "width": 191.515625,
+            "height": 191.515625
+          },
+          {
+            "id": "r34SpeedModule",
+            "x": 1453.03125,
+            "y": 1208.46875,
+            "right": 1644.546875,
+            "bottom": 1399.984375,
+            "width": 191.515625,
+            "height": 191.515625
+          },
+          {
+            "id": "r34BoostModule",
+            "x": 806.234375,
+            "y": 1228.625,
+            "right": 896.953125,
+            "bottom": 1319.34375,
+            "width": 90.71875,
+            "height": 90.71875
+          },
+          {
+            "id": "r34TempModule",
+            "x": 1663.03125,
+            "y": 1228.625,
+            "right": 1753.75,
+            "bottom": 1319.34375,
+            "width": 90.71875,
+            "height": 90.71875
+          },
+          {
+            "id": "r34Mfd",
+            "x": 2254,
+            "y": 1250.25,
+            "right": 2520,
+            "bottom": 1399.984375,
+            "width": 266,
+            "height": 149.734375
+          }
+        ],
+        "clusterHidden": false,
+        "width": 2560,
+        "height": 1440
+      }
+    },
+    {
+      "canvas": "r34History",
+      "pixelWidth": 100,
+      "pixelHeight": 107,
+      "width": 99.503662109375,
+      "height": 107.38525390625,
+      "logicalWidth": 101,
+      "logicalHeight": 109,
+      "dpr": 1
+    },
+    {
+      "layout": {
+        "boxes": [
+          {
+            "id": "r34TachModule",
+            "x": 759.1875,
+            "y": 1126.390625,
+            "right": 1032.78125,
+            "bottom": 1399.984375,
+            "width": 273.59375,
+            "height": 273.59375
+          },
+          {
+            "id": "r34SpeedModule",
+            "x": 1527.1875,
+            "y": 1126.390625,
+            "right": 1800.78125,
+            "bottom": 1399.984375,
+            "width": 273.59375,
+            "height": 273.59375
+          },
+          {
+            "id": "r34BoostModule",
+            "x": 603.1875,
+            "y": 1155.1875,
+            "right": 732.78125,
+            "bottom": 1284.78125,
+            "width": 129.59375,
+            "height": 129.59375
+          },
+          {
+            "id": "r34TempModule",
+            "x": 1827.1875,
+            "y": 1155.1875,
+            "right": 1956.78125,
+            "bottom": 1284.78125,
+            "width": 129.59375,
+            "height": 129.59375
+          },
+          {
+            "id": "r34Mfd",
+            "x": 2140,
+            "y": 1186.0625,
+            "right": 2520,
+            "bottom": 1399.984375,
+            "width": 380,
+            "height": 213.921875
+          }
+        ],
+        "clusterHidden": false,
+        "width": 2560,
+        "height": 1440
+      }
+    },
+    {
+      "canvas": "r34History",
+      "pixelWidth": 142,
+      "pixelHeight": 153,
+      "width": 142.148193359375,
+      "height": 153.4073486328125,
+      "logicalWidth": 101,
+      "logicalHeight": 109,
+      "dpr": 1
+    },
+    {
+      "layout": {
+        "boxes": [
+          {
+            "id": "r34TachModule",
+            "x": 813.5,
+            "y": 1017.40625,
+            "right": 1196.078125,
+            "bottom": 1399.984375,
+            "width": 382.578125,
+            "height": 382.578125
+          },
+          {
+            "id": "r34SpeedModule",
+            "x": 1363.890625,
+            "y": 1017.40625,
+            "right": 1746.46875,
+            "bottom": 1399.984375,
+            "width": 382.578125,
+            "height": 382.578125
+          },
+          {
+            "id": "r34BoostModule",
+            "x": 595.359375,
+            "y": 1057.671875,
+            "right": 776.578125,
+            "bottom": 1238.890625,
+            "width": 181.21875,
+            "height": 181.21875
+          },
+          {
+            "id": "r34TempModule",
+            "x": 1783.390625,
+            "y": 1057.671875,
+            "right": 1964.609375,
+            "bottom": 1238.890625,
+            "width": 181.21875,
+            "height": 181.21875
+          },
+          {
+            "id": "r34Mfd",
+            "x": 1988.625,
+            "y": 1100.84375,
+            "right": 2519.984375,
+            "bottom": 1399.984375,
+            "width": 531.359375,
+            "height": 299.140625
+          }
+        ],
+        "clusterHidden": false,
+        "width": 2560,
+        "height": 1440
+      }
+    },
+    {
+      "canvas": "r34History",
+      "pixelWidth": 199,
+      "pixelHeight": 215,
+      "width": 198.77197265625,
+      "height": 214.516357421875,
+      "logicalWidth": 101,
+      "logicalHeight": 109,
+      "dpr": 1
+    },
+    {
+      "layout": {
+        "boxes": [
+          {
+            "id": "r34TachModule",
+            "x": 0,
+            "y": 0,
+            "right": 0,
+            "bottom": 0,
+            "width": 0,
+            "height": 0
+          },
+          {
+            "id": "r34SpeedModule",
+            "x": 0,
+            "y": 0,
+            "right": 0,
+            "bottom": 0,
+            "width": 0,
+            "height": 0
+          },
+          {
+            "id": "r34BoostModule",
+            "x": 0,
+            "y": 0,
+            "right": 0,
+            "bottom": 0,
+            "width": 0,
+            "height": 0
+          },
+          {
+            "id": "r34TempModule",
+            "x": 0,
+            "y": 0,
+            "right": 0,
+            "bottom": 0,
+            "width": 0,
+            "height": 0
+          },
+          {
+            "id": "r34Mfd",
+            "x": 1760,
+            "y": 972.140625,
+            "right": 2520,
+            "bottom": 1399.984375,
+            "width": 760,
+            "height": 427.84375
+          }
+        ],
+        "clusterHidden": true,
+        "width": 2560,
+        "height": 1440
+      }
+    },
+    {
+      "canvas": "r34G",
+      "pixelWidth": 721,
+      "pixelHeight": 355,
+      "width": 720.5926513671875,
+      "height": 354.66668701171875,
+      "logicalWidth": 256,
+      "logicalHeight": 126,
+      "dpr": 1
+    },
+    {
+      "layout": {
+        "boxes": [
+          {
+            "id": "r34TachModule",
+            "x": 1355.4375,
+            "y": 1208.46875,
+            "right": 1546.953125,
+            "bottom": 1399.984375,
+            "width": 191.515625,
+            "height": 191.515625
+          },
+          {
+            "id": "r34SpeedModule",
+            "x": 1893.03125,
+            "y": 1208.46875,
+            "right": 2084.546875,
+            "bottom": 1399.984375,
+            "width": 191.515625,
+            "height": 191.515625
+          },
+          {
+            "id": "r34BoostModule",
+            "x": 1246.234375,
+            "y": 1228.625,
+            "right": 1336.953125,
+            "bottom": 1319.34375,
+            "width": 90.71875,
+            "height": 90.71875
+          },
+          {
+            "id": "r34TempModule",
+            "x": 2103.03125,
+            "y": 1228.625,
+            "right": 2193.75,
+            "bottom": 1319.34375,
+            "width": 90.71875,
+            "height": 90.71875
+          },
+          {
+            "id": "r34Mfd",
+            "x": 3134,
+            "y": 1250.25,
+            "right": 3400,
+            "bottom": 1399.984375,
+            "width": 266,
+            "height": 149.734375
+          }
+        ],
+        "clusterHidden": false,
+        "width": 3440,
+        "height": 1440
+      }
+    },
+    {
+      "canvas": "r34History",
+      "pixelWidth": 100,
+      "pixelHeight": 107,
+      "width": 99.503662109375,
+      "height": 107.38525390625,
+      "logicalWidth": 101,
+      "logicalHeight": 109,
+      "dpr": 1
+    },
+    {
+      "layout": {
+        "boxes": [
+          {
+            "id": "r34TachModule",
+            "x": 1199.1875,
+            "y": 1126.390625,
+            "right": 1472.78125,
+            "bottom": 1399.984375,
+            "width": 273.59375,
+            "height": 273.59375
+          },
+          {
+            "id": "r34SpeedModule",
+            "x": 1967.1875,
+            "y": 1126.390625,
+            "right": 2240.78125,
+            "bottom": 1399.984375,
+            "width": 273.59375,
+            "height": 273.59375
+          },
+          {
+            "id": "r34BoostModule",
+            "x": 1043.1875,
+            "y": 1155.1875,
+            "right": 1172.78125,
+            "bottom": 1284.78125,
+            "width": 129.59375,
+            "height": 129.59375
+          },
+          {
+            "id": "r34TempModule",
+            "x": 2267.1875,
+            "y": 1155.1875,
+            "right": 2396.78125,
+            "bottom": 1284.78125,
+            "width": 129.59375,
+            "height": 129.59375
+          },
+          {
+            "id": "r34Mfd",
+            "x": 3020,
+            "y": 1186.0625,
+            "right": 3400,
+            "bottom": 1399.984375,
+            "width": 380,
+            "height": 213.921875
+          }
+        ],
+        "clusterHidden": false,
+        "width": 3440,
+        "height": 1440
+      }
+    },
+    {
+      "canvas": "r34History",
+      "pixelWidth": 142,
+      "pixelHeight": 153,
+      "width": 142.148193359375,
+      "height": 153.4073486328125,
+      "logicalWidth": 101,
+      "logicalHeight": 109,
+      "dpr": 1
+    },
+    {
+      "layout": {
+        "boxes": [
+          {
+            "id": "r34TachModule",
+            "x": 1084.703125,
+            "y": 878.96875,
+            "right": 1605.71875,
+            "bottom": 1399.984375,
+            "width": 521.015625,
+            "height": 521.015625
+          },
+          {
+            "id": "r34SpeedModule",
+            "x": 1834.25,
+            "y": 878.96875,
+            "right": 2355.265625,
+            "bottom": 1399.984375,
+            "width": 521.015625,
+            "height": 521.015625
+          },
+          {
+            "id": "r34BoostModule",
+            "x": 787.640625,
+            "y": 933.8125,
+            "right": 1034.4375,
+            "bottom": 1180.609375,
+            "width": 246.796875,
+            "height": 246.796875
+          },
+          {
+            "id": "r34TempModule",
+            "x": 2405.546875,
+            "y": 933.8125,
+            "right": 2652.34375,
+            "bottom": 1180.609375,
+            "width": 246.796875,
+            "height": 246.796875
+          },
+          {
+            "id": "r34Mfd",
+            "x": 2676.34375,
+            "y": 992.609375,
+            "right": 3399.984375,
+            "bottom": 1399.984375,
+            "width": 723.640625,
+            "height": 407.375
+          }
+        ],
+        "clusterHidden": false,
+        "width": 3440,
+        "height": 1440
+      }
+    },
+    {
+      "canvas": "r34History",
+      "pixelWidth": 271,
+      "pixelHeight": 292,
+      "width": 270.6962890625,
+      "height": 292.1373291015625,
+      "logicalWidth": 101,
+      "logicalHeight": 109,
+      "dpr": 1
+    },
+    {
+      "layout": {
+        "boxes": [
+          {
+            "id": "r34TachModule",
+            "x": 0,
+            "y": 0,
+            "right": 0,
+            "bottom": 0,
+            "width": 0,
+            "height": 0
+          },
+          {
+            "id": "r34SpeedModule",
+            "x": 0,
+            "y": 0,
+            "right": 0,
+            "bottom": 0,
+            "width": 0,
+            "height": 0
+          },
+          {
+            "id": "r34BoostModule",
+            "x": 0,
+            "y": 0,
+            "right": 0,
+            "bottom": 0,
+            "width": 0,
+            "height": 0
+          },
+          {
+            "id": "r34TempModule",
+            "x": 0,
+            "y": 0,
+            "right": 0,
+            "bottom": 0,
+            "width": 0,
+            "height": 0
+          },
+          {
+            "id": "r34Mfd",
+            "x": 2640,
+            "y": 972.140625,
+            "right": 3400,
+            "bottom": 1399.984375,
+            "width": 760,
+            "height": 427.84375
+          }
+        ],
+        "clusterHidden": true,
+        "width": 3440,
+        "height": 1440
+      }
+    },
+    {
+      "canvas": "r34G",
+      "pixelWidth": 721,
+      "pixelHeight": 355,
+      "width": 720.5927734375,
+      "height": 354.66668701171875,
+      "logicalWidth": 256,
+      "logicalHeight": 126,
+      "dpr": 1
+    },
+    {
+      "layout": {
+        "boxes": [
+          {
+            "id": "r34TachModule",
+            "x": 1676.953125,
+            "y": 208.3125,
+            "right": 1804.625,
+            "bottom": 335.984375,
+            "width": 127.671875,
+            "height": 127.671875
+          },
+          {
+            "id": "r34SpeedModule",
+            "x": 2035.359375,
+            "y": 208.3125,
+            "right": 2163.03125,
+            "bottom": 335.984375,
+            "width": 127.671875,
+            "height": 127.671875
+          },
+          {
+            "id": "r34BoostModule",
+            "x": 1604.15625,
+            "y": 221.75,
+            "right": 1664.625,
+            "bottom": 282.21875,
+            "width": 60.46875,
+            "height": 60.46875
+          },
+          {
+            "id": "r34TempModule",
+            "x": 2175.359375,
+            "y": 221.75,
+            "right": 2235.828125,
+            "bottom": 282.21875,
+            "width": 60.46875,
+            "height": 60.46875
+          },
+          {
+            "id": "r34Mfd",
+            "x": 3655,
+            "y": 245.359375,
+            "right": 3816,
+            "bottom": 335.984375,
+            "width": 161,
+            "height": 90.625
+          }
+        ],
+        "clusterHidden": false,
+        "width": 3840,
+        "height": 360
+      }
+    },
+    {
+      "canvas": "r34History",
+      "pixelWidth": 60,
+      "pixelHeight": 65,
+      "width": 60.22607421875,
+      "height": 64.99627685546875,
+      "logicalWidth": 101,
+      "logicalHeight": 109,
+      "dpr": 1
+    },
+    {
+      "layout": {
+        "boxes": [
+          {
+            "id": "r34TachModule",
+            "x": 1572.796875,
+            "y": 153.59375,
+            "right": 1755.1875,
+            "bottom": 335.984375,
+            "width": 182.390625,
+            "height": 182.390625
+          },
+          {
+            "id": "r34SpeedModule",
+            "x": 2084.796875,
+            "y": 153.59375,
+            "right": 2267.1875,
+            "bottom": 335.984375,
+            "width": 182.390625,
+            "height": 182.390625
+          },
+          {
+            "id": "r34BoostModule",
+            "x": 1468.796875,
+            "y": 172.796875,
+            "right": 1555.1875,
+            "bottom": 259.1875,
+            "width": 86.390625,
+            "height": 86.390625
+          },
+          {
+            "id": "r34TempModule",
+            "x": 2284.796875,
+            "y": 172.796875,
+            "right": 2371.1875,
+            "bottom": 259.1875,
+            "width": 86.390625,
+            "height": 86.390625
+          },
+          {
+            "id": "r34Mfd",
+            "x": 3586,
+            "y": 206.515625,
+            "right": 3816,
+            "bottom": 335.984375,
+            "width": 230,
+            "height": 129.46875
+          }
+        ],
+        "clusterHidden": false,
+        "width": 3840,
+        "height": 360
+      }
+    },
+    {
+      "canvas": "r34History",
+      "pixelWidth": 86,
+      "pixelHeight": 93,
+      "width": 86.037109375,
+      "height": 92.85185241699219,
+      "logicalWidth": 101,
+      "logicalHeight": 109,
+      "dpr": 1
+    },
+    {
+      "layout": {
+        "boxes": [
+          {
+            "id": "r34TachModule",
+            "x": 1326.09375,
+            "y": 24,
+            "right": 1638.09375,
+            "bottom": 336,
+            "width": 312,
+            "height": 312
+          },
+          {
+            "id": "r34SpeedModule",
+            "x": 2201.890625,
+            "y": 24,
+            "right": 2513.890625,
+            "bottom": 336,
+            "width": 312,
+            "height": 312
+          },
+          {
+            "id": "r34BoostModule",
+            "x": 1148.203125,
+            "y": 56.828125,
+            "right": 1295.984375,
+            "bottom": 204.609375,
+            "width": 147.78125,
+            "height": 147.78125
+          },
+          {
+            "id": "r34TempModule",
+            "x": 2544,
+            "y": 56.828125,
+            "right": 2691.78125,
+            "bottom": 204.609375,
+            "width": 147.78125,
+            "height": 147.78125
+          },
+          {
+            "id": "r34Mfd",
+            "x": 3422.578125,
+            "y": 114.515625,
+            "right": 3815.984375,
+            "bottom": 335.984375,
+            "width": 393.40625,
+            "height": 221.46875
+          }
+        ],
+        "clusterHidden": false,
+        "width": 3840,
+        "height": 360
+      }
+    },
+    {
+      "canvas": "r34History",
+      "pixelWidth": 147,
+      "pixelHeight": 159,
+      "width": 147.168701171875,
+      "height": 158.82554626464844,
+      "logicalWidth": 101,
+      "logicalHeight": 109,
+      "dpr": 1
+    },
+    {
+      "layout": {
+        "boxes": [
+          {
+            "id": "r34TachModule",
+            "x": 0,
+            "y": 0,
+            "right": 0,
+            "bottom": 0,
+            "width": 0,
+            "height": 0
+          },
+          {
+            "id": "r34SpeedModule",
+            "x": 0,
+            "y": 0,
+            "right": 0,
+            "bottom": 0,
+            "width": 0,
+            "height": 0
+          },
+          {
+            "id": "r34BoostModule",
+            "x": 0,
+            "y": 0,
+            "right": 0,
+            "bottom": 0,
+            "width": 0,
+            "height": 0
+          },
+          {
+            "id": "r34TempModule",
+            "x": 0,
+            "y": 0,
+            "right": 0,
+            "bottom": 0,
+            "width": 0,
+            "height": 0
+          },
+          {
+            "id": "r34Mfd",
+            "x": 3356,
+            "y": 77.03125,
+            "right": 3816,
+            "bottom": 335.984375,
+            "width": 460,
+            "height": 258.953125
+          }
+        ],
+        "clusterHidden": true,
+        "width": 3840,
+        "height": 360
+      }
+    },
+    {
+      "canvas": "r34G",
+      "pixelWidth": 436,
+      "pixelHeight": 215,
+      "width": 436.148193359375,
+      "height": 214.66665649414062,
+      "logicalWidth": 256,
+      "logicalHeight": 126,
+      "dpr": 1
     },
     {
       "name": "waiting",
@@ -905,10 +2125,10 @@
       ],
       "dpr": 1,
       "bounds": {
-        "x": 1045.203125,
-        "y": 779.40625,
-        "width": 844.796875,
-        "height": 270.59375
+        "x": 0,
+        "y": 0,
+        "width": 1920,
+        "height": 1080
       },
       "status": {
         "text": "WAITING FOR TELEMETRY",
@@ -917,10 +2137,57 @@
       }
     },
     {
-      "physicalLayout": {
-        "mfdOnLeft": true,
-        "caseAspect": 2.0492916747525713,
-        "screenAspect": 1.7763239875389407
+      "layout": {
+        "boxes": [
+          {
+            "id": "r34TachModule",
+            "x": 526,
+            "y": 822,
+            "right": 754,
+            "bottom": 1050,
+            "width": 228,
+            "height": 228
+          },
+          {
+            "id": "r34SpeedModule",
+            "x": 1166,
+            "y": 822,
+            "right": 1394,
+            "bottom": 1050,
+            "width": 228,
+            "height": 228
+          },
+          {
+            "id": "r34BoostModule",
+            "x": 396,
+            "y": 846,
+            "right": 504,
+            "bottom": 954,
+            "width": 108,
+            "height": 108
+          },
+          {
+            "id": "r34TempModule",
+            "x": 1416,
+            "y": 846,
+            "right": 1524,
+            "bottom": 954,
+            "width": 108,
+            "height": 108
+          },
+          {
+            "id": "r34Mfd",
+            "x": 1570,
+            "y": 869.84375,
+            "right": 1890,
+            "bottom": 1049.984375,
+            "width": 320,
+            "height": 180.140625
+          }
+        ],
+        "clusterHidden": false,
+        "width": 1920,
+        "height": 1080
       }
     },
     {
@@ -1011,10 +2278,10 @@
     },
     {
       "canvas": "r34History",
-      "pixelWidth": 67,
-      "pixelHeight": 72,
-      "width": 66.65625,
-      "height": 71.9375,
+      "pixelWidth": 120,
+      "pixelHeight": 129,
+      "width": 119.7037353515625,
+      "height": 129.18524169921875,
       "logicalWidth": 101,
       "logicalHeight": 109,
       "dpr": 1
@@ -1027,19 +2294,19 @@
       ],
       "dpr": 1,
       "bounds": {
-        "x": 1045.203125,
-        "y": 779.40625,
-        "width": 844.796875,
-        "height": 270.59375
+        "x": 0,
+        "y": 0,
+        "width": 1920,
+        "height": 1080
       },
       "status": null
     },
     {
       "canvas": "r34History",
-      "pixelWidth": 67,
-      "pixelHeight": 72,
-      "width": 66.65625,
-      "height": 71.9375,
+      "pixelWidth": 120,
+      "pixelHeight": 129,
+      "width": 119.7037353515625,
+      "height": 129.18524169921875,
       "logicalWidth": 101,
       "logicalHeight": 109,
       "dpr": 1
@@ -1138,10 +2405,10 @@
       ],
       "dpr": 1,
       "bounds": {
-        "x": 1045.203125,
-        "y": 779.40625,
-        "width": 844.796875,
-        "height": 270.59375
+        "x": 0,
+        "y": 0,
+        "width": 1920,
+        "height": 1080
       },
       "status": null
     },
@@ -1324,10 +2591,10 @@
       ],
       "dpr": 1,
       "bounds": {
-        "x": 1045.203125,
-        "y": 779.40625,
-        "width": 844.796875,
-        "height": 270.59375
+        "x": 0,
+        "y": 0,
+        "width": 1920,
+        "height": 1080
       },
       "status": null
     },
@@ -1339,19 +2606,19 @@
       ],
       "dpr": 1,
       "bounds": {
-        "x": 1045.203125,
-        "y": 779.40625,
-        "width": 844.796875,
-        "height": 270.59375
+        "x": 0,
+        "y": 0,
+        "width": 1920,
+        "height": 1080
       },
       "status": null
     },
     {
       "canvas": "r34G",
-      "pixelWidth": 169,
-      "pixelHeight": 83,
-      "width": 168.953125,
-      "height": 83.15625,
+      "pixelWidth": 303,
+      "pixelHeight": 149,
+      "width": 303.407470703125,
+      "height": 149.33331298828125,
       "logicalWidth": 256,
       "logicalHeight": 126,
       "dpr": 1
@@ -1364,49 +2631,385 @@
       ],
       "dpr": 1,
       "bounds": {
-        "x": 1045.203125,
-        "y": 779.40625,
-        "width": 844.796875,
-        "height": 270.59375
+        "x": 0,
+        "y": 0,
+        "width": 1920,
+        "height": 1080
       },
       "status": null
     },
     {
+      "name": "temperature-c",
+      "viewport": [
+        1920,
+        1080
+      ],
+      "dpr": 1,
+      "bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 1920,
+        "height": 1080
+      },
+      "status": null
+    },
+    {
+      "name": "temperature-f",
+      "viewport": [
+        1920,
+        1080
+      ],
+      "dpr": 1,
+      "bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 1920,
+        "height": 1080
+      },
+      "status": null
+    },
+    {
+      "name": "missing-one-tire",
+      "viewport": [
+        1920,
+        1080
+      ],
+      "dpr": 1,
+      "bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 1920,
+        "height": 1080
+      },
+      "status": null
+    },
+    {
+      "name": "zero-fahrenheit-input",
+      "viewport": [
+        1920,
+        1080
+      ],
+      "dpr": 1,
+      "bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 1920,
+        "height": 1080
+      },
+      "status": null
+    },
+    {
+      "name": "negative-tire-temperature",
+      "viewport": [
+        1920,
+        1080
+      ],
+      "dpr": 1,
+      "bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 1920,
+        "height": 1080
+      },
+      "status": null
+    },
+    {
+      "name": "sweep-min",
+      "viewport": [
+        1920,
+        1080
+      ],
+      "dpr": 1,
+      "bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 1920,
+        "height": 1080
+      },
+      "status": null
+    },
+    {
+      "name": "sweep-mid",
+      "viewport": [
+        1920,
+        1080
+      ],
+      "dpr": 1,
+      "bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 1920,
+        "height": 1080
+      },
+      "status": null
+    },
+    {
+      "name": "sweep-max",
+      "viewport": [
+        1920,
+        1080
+      ],
+      "dpr": 1,
+      "bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 1920,
+        "height": 1080
+      },
+      "status": null
+    },
+    {
+      "layout": {
+        "boxes": [
+          {
+            "id": "r34TachModule",
+            "x": 526,
+            "y": 822,
+            "right": 754,
+            "bottom": 1050,
+            "width": 228,
+            "height": 228
+          },
+          {
+            "id": "r34SpeedModule",
+            "x": 1166,
+            "y": 822,
+            "right": 1394,
+            "bottom": 1050,
+            "width": 228,
+            "height": 228
+          },
+          {
+            "id": "r34BoostModule",
+            "x": 396,
+            "y": 846,
+            "right": 504,
+            "bottom": 954,
+            "width": 108,
+            "height": 108
+          },
+          {
+            "id": "r34TempModule",
+            "x": 1416,
+            "y": 846,
+            "right": 1524,
+            "bottom": 954,
+            "width": 108,
+            "height": 108
+          },
+          {
+            "id": "r34Mfd",
+            "x": 1570,
+            "y": 869.84375,
+            "right": 1890,
+            "bottom": 1049.984375,
+            "width": 320,
+            "height": 180.140625
+          }
+        ],
+        "clusterHidden": false,
+        "width": 1920,
+        "height": 1080
+      }
+    },
+    {
       "canvas": "r34History",
-      "pixelWidth": 67,
-      "pixelHeight": 72,
-      "width": 66.65625,
-      "height": 71.9375,
+      "pixelWidth": 120,
+      "pixelHeight": 129,
+      "width": 119.7037353515625,
+      "height": 129.18524169921875,
       "logicalWidth": 101,
       "logicalHeight": 109,
       "dpr": 1
     },
     {
+      "layout": {
+        "boxes": [
+          {
+            "id": "r34TachModule",
+            "x": 656.1875,
+            "y": 890.390625,
+            "right": 815.78125,
+            "bottom": 1049.984375,
+            "width": 159.59375,
+            "height": 159.59375
+          },
+          {
+            "id": "r34SpeedModule",
+            "x": 1104.1875,
+            "y": 890.390625,
+            "right": 1263.78125,
+            "bottom": 1049.984375,
+            "width": 159.59375,
+            "height": 159.59375
+          },
+          {
+            "id": "r34BoostModule",
+            "x": 565.1875,
+            "y": 907.1875,
+            "right": 640.78125,
+            "bottom": 982.78125,
+            "width": 75.59375,
+            "height": 75.59375
+          },
+          {
+            "id": "r34TempModule",
+            "x": 1279.1875,
+            "y": 907.1875,
+            "right": 1354.78125,
+            "bottom": 982.78125,
+            "width": 75.59375,
+            "height": 75.59375
+          },
+          {
+            "id": "r34Mfd",
+            "x": 1666,
+            "y": 923.890625,
+            "right": 1890,
+            "bottom": 1049.984375,
+            "width": 224,
+            "height": 126.09375
+          }
+        ],
+        "clusterHidden": false,
+        "width": 1920,
+        "height": 1080
+      }
+    },
+    {
       "canvas": "r34History",
-      "pixelWidth": 47,
-      "pixelHeight": 50,
-      "width": 46.65625,
-      "height": 50.34375,
+      "pixelWidth": 84,
+      "pixelHeight": 90,
+      "width": 83.7926025390625,
+      "height": 90.4295654296875,
       "logicalWidth": 101,
       "logicalHeight": 109,
       "dpr": 1
+    },
+    {
+      "layout": {
+        "boxes": [
+          {
+            "id": "r34TachModule",
+            "x": 526,
+            "y": 822,
+            "right": 754,
+            "bottom": 1050,
+            "width": 228,
+            "height": 228
+          },
+          {
+            "id": "r34SpeedModule",
+            "x": 1166,
+            "y": 822,
+            "right": 1394,
+            "bottom": 1050,
+            "width": 228,
+            "height": 228
+          },
+          {
+            "id": "r34BoostModule",
+            "x": 396,
+            "y": 846,
+            "right": 504,
+            "bottom": 954,
+            "width": 108,
+            "height": 108
+          },
+          {
+            "id": "r34TempModule",
+            "x": 1416,
+            "y": 846,
+            "right": 1524,
+            "bottom": 954,
+            "width": 108,
+            "height": 108
+          },
+          {
+            "id": "r34Mfd",
+            "x": 1570,
+            "y": 869.84375,
+            "right": 1890,
+            "bottom": 1049.984375,
+            "width": 320,
+            "height": 180.140625
+          }
+        ],
+        "clusterHidden": false,
+        "width": 1920,
+        "height": 1080
+      }
     },
     {
       "canvas": "r34G",
-      "pixelWidth": 169,
-      "pixelHeight": 83,
-      "width": 168.953125,
-      "height": 83.15625,
+      "pixelWidth": 303,
+      "pixelHeight": 149,
+      "width": 303.407470703125,
+      "height": 149.33331298828125,
       "logicalWidth": 256,
       "logicalHeight": 126,
       "dpr": 1
     },
     {
+      "layout": {
+        "boxes": [
+          {
+            "id": "r34TachModule",
+            "x": 656.1875,
+            "y": 890.390625,
+            "right": 815.78125,
+            "bottom": 1049.984375,
+            "width": 159.59375,
+            "height": 159.59375
+          },
+          {
+            "id": "r34SpeedModule",
+            "x": 1104.1875,
+            "y": 890.390625,
+            "right": 1263.78125,
+            "bottom": 1049.984375,
+            "width": 159.59375,
+            "height": 159.59375
+          },
+          {
+            "id": "r34BoostModule",
+            "x": 565.1875,
+            "y": 907.1875,
+            "right": 640.78125,
+            "bottom": 982.78125,
+            "width": 75.59375,
+            "height": 75.59375
+          },
+          {
+            "id": "r34TempModule",
+            "x": 1279.1875,
+            "y": 907.1875,
+            "right": 1354.78125,
+            "bottom": 982.78125,
+            "width": 75.59375,
+            "height": 75.59375
+          },
+          {
+            "id": "r34Mfd",
+            "x": 1666,
+            "y": 923.890625,
+            "right": 1890,
+            "bottom": 1049.984375,
+            "width": 224,
+            "height": 126.09375
+          }
+        ],
+        "clusterHidden": false,
+        "width": 1920,
+        "height": 1080
+      }
+    },
+    {
       "canvas": "r34G",
-      "pixelWidth": 118,
-      "pixelHeight": 58,
-      "width": 118.265625,
-      "height": 58.203125,
+      "pixelWidth": 212,
+      "pixelHeight": 105,
+      "width": 212.38525390625,
+      "height": 104.53326416015625,
       "logicalWidth": 256,
       "logicalHeight": 126,
       "dpr": 1
@@ -1415,15 +3018,15 @@
       "gMarker": {
         "full": {
           "visible": true,
-          "x": 0.32840236686390534,
-          "y": 0.572289156626506,
-          "resolution": 83
+          "x": 0.3287532834916145,
+          "y": 0.575811532666758,
+          "resolution": 149
         },
         "compact": {
           "visible": true,
-          "x": 0.326271186440678,
-          "y": 0.5689655172413793,
-          "resolution": 58
+          "x": 0.3278301886792453,
+          "y": 0.5742063492063492,
+          "resolution": 105
         }
       }
     },
@@ -1435,10 +3038,10 @@
       ],
       "dpr": 1,
       "bounds": {
-        "x": 1045.203125,
-        "y": 779.40625,
-        "width": 844.796875,
-        "height": 270.59375
+        "x": 0,
+        "y": 0,
+        "width": 1920,
+        "height": 1080
       },
       "status": null
     },
@@ -1450,10 +3053,10 @@
       ],
       "dpr": 1,
       "bounds": {
-        "x": 1045.203125,
-        "y": 779.40625,
-        "width": 844.796875,
-        "height": 270.59375
+        "x": 0,
+        "y": 0,
+        "width": 1920,
+        "height": 1080
       },
       "status": null
     },
@@ -1465,10 +3068,10 @@
       ],
       "dpr": 1,
       "bounds": {
-        "x": 1045.203125,
-        "y": 779.40625,
-        "width": 844.796875,
-        "height": 270.59375
+        "x": 0,
+        "y": 0,
+        "width": 1920,
+        "height": 1080
       },
       "status": null
     },
@@ -1566,10 +3169,10 @@
       ],
       "dpr": 1,
       "bounds": {
-        "x": 1045.203125,
-        "y": 779.40625,
-        "width": 844.796875,
-        "height": 270.59375
+        "x": 0,
+        "y": 0,
+        "width": 1920,
+        "height": 1080
       },
       "status": null
     },
@@ -1667,10 +3270,10 @@
       ],
       "dpr": 1,
       "bounds": {
-        "x": 1045.203125,
-        "y": 779.40625,
-        "width": 844.796875,
-        "height": 270.59375
+        "x": 0,
+        "y": 0,
+        "width": 1920,
+        "height": 1080
       },
       "status": null
     },
@@ -1682,10 +3285,10 @@
       ],
       "dpr": 1,
       "bounds": {
-        "x": 1045.203125,
-        "y": 779.40625,
-        "width": 844.796875,
-        "height": 270.59375
+        "x": 0,
+        "y": 0,
+        "width": 1920,
+        "height": 1080
       },
       "status": null
     },
@@ -1697,13 +3300,13 @@
       ],
       "dpr": 1,
       "bounds": {
-        "x": 1045.203125,
-        "y": 779.40625,
-        "width": 844.796875,
-        "height": 270.59375
+        "x": 0,
+        "y": 0,
+        "width": 1920,
+        "height": 1080
       },
       "status": {
-        "text": "GAME PAUSED · LIVE VALUES UNAVAILABLE",
+        "text": "PAUSED · N/A",
         "clear": true,
         "fits": true
       }
@@ -1716,13 +3319,13 @@
       ],
       "dpr": 1,
       "bounds": {
-        "x": 1045.203125,
-        "y": 779.40625,
-        "width": 844.796875,
-        "height": 270.59375
+        "x": 0,
+        "y": 0,
+        "width": 1920,
+        "height": 1080
       },
       "status": {
-        "text": "TELEMETRY STALE · LIVE VALUES UNAVAILABLE",
+        "text": "STALE · N/A",
         "clear": true,
         "fits": true
       }
@@ -1735,10 +3338,79 @@
       ],
       "dpr": 1,
       "bounds": {
-        "x": 1659,
-        "y": 937.28125,
-        "width": 231,
-        "height": 112.71875
+        "x": 0,
+        "y": 0,
+        "width": 1920,
+        "height": 1080
+      },
+      "status": null
+    },
+    {
+      "layout": {
+        "boxes": [
+          {
+            "id": "r34TachModule",
+            "x": 0,
+            "y": 0,
+            "right": 0,
+            "bottom": 0,
+            "width": 0,
+            "height": 0
+          },
+          {
+            "id": "r34SpeedModule",
+            "x": 0,
+            "y": 0,
+            "right": 0,
+            "bottom": 0,
+            "width": 0,
+            "height": 0
+          },
+          {
+            "id": "r34BoostModule",
+            "x": 0,
+            "y": 0,
+            "right": 0,
+            "bottom": 0,
+            "width": 0,
+            "height": 0
+          },
+          {
+            "id": "r34TempModule",
+            "x": 0,
+            "y": 0,
+            "right": 0,
+            "bottom": 0,
+            "width": 0,
+            "height": 0
+          },
+          {
+            "id": "r34Mfd",
+            "x": 1666,
+            "y": 923.890625,
+            "right": 1890,
+            "bottom": 1049.984375,
+            "width": 224,
+            "height": 126.09375
+          }
+        ],
+        "clusterHidden": true,
+        "width": 1920,
+        "height": 1080
+      }
+    },
+    {
+      "name": "gear-hidden-rev-active",
+      "viewport": [
+        1920,
+        1080
+      ],
+      "dpr": 1,
+      "bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 1920,
+        "height": 1080
       },
       "status": null
     },
@@ -1750,10 +3422,10 @@
       ],
       "dpr": 1,
       "bounds": {
-        "x": 1045.203125,
-        "y": 779.40625,
-        "width": 844.796875,
-        "height": 270.59375
+        "x": 0,
+        "y": 0,
+        "width": 1920,
+        "height": 1080
       },
       "status": null
     },
@@ -1765,10 +3437,10 @@
       ],
       "dpr": 2,
       "bounds": {
-        "x": 405.203125,
-        "y": 419.40625,
-        "width": 844.796875,
-        "height": 270.59375
+        "x": 0,
+        "y": 0,
+        "width": 1280,
+        "height": 720
       },
       "status": {
         "text": "WAITING FOR TELEMETRY",
@@ -1777,10 +3449,57 @@
       }
     },
     {
-      "physicalLayout": {
-        "mfdOnLeft": true,
-        "caseAspect": 2.0492916747525713,
-        "screenAspect": 1.7763239875389407
+      "layout": {
+        "boxes": [
+          {
+            "id": "r34TachModule",
+            "x": 382,
+            "y": 513.59375,
+            "right": 564.390625,
+            "bottom": 695.984375,
+            "width": 182.390625,
+            "height": 182.390625
+          },
+          {
+            "id": "r34SpeedModule",
+            "x": 715.59375,
+            "y": 513.59375,
+            "right": 897.984375,
+            "bottom": 695.984375,
+            "width": 182.390625,
+            "height": 182.390625
+          },
+          {
+            "id": "r34BoostModule",
+            "x": 278,
+            "y": 532.796875,
+            "right": 364.390625,
+            "bottom": 619.1875,
+            "width": 86.390625,
+            "height": 86.390625
+          },
+          {
+            "id": "r34TempModule",
+            "x": 915.59375,
+            "y": 532.796875,
+            "right": 1001.984375,
+            "bottom": 619.1875,
+            "width": 86.390625,
+            "height": 86.390625
+          },
+          {
+            "id": "r34Mfd",
+            "x": 1026,
+            "y": 566.515625,
+            "right": 1256,
+            "bottom": 695.984375,
+            "width": 230,
+            "height": 129.46875
+          }
+        ],
+        "clusterHidden": false,
+        "width": 1280,
+        "height": 720
       }
     },
     {
@@ -1871,10 +3590,10 @@
     },
     {
       "canvas": "r34History",
-      "pixelWidth": 133,
-      "pixelHeight": 144,
-      "width": 66.65625,
-      "height": 71.9375,
+      "pixelWidth": 172,
+      "pixelHeight": 186,
+      "width": 86.0369873046875,
+      "height": 92.85186767578125,
       "logicalWidth": 101,
       "logicalHeight": 109,
       "dpr": 2
@@ -1887,19 +3606,19 @@
       ],
       "dpr": 2,
       "bounds": {
-        "x": 405.203125,
-        "y": 419.40625,
-        "width": 844.796875,
-        "height": 270.59375
+        "x": 0,
+        "y": 0,
+        "width": 1280,
+        "height": 720
       },
       "status": null
     },
     {
       "canvas": "r34History",
-      "pixelWidth": 133,
-      "pixelHeight": 144,
-      "width": 66.65625,
-      "height": 71.9375,
+      "pixelWidth": 172,
+      "pixelHeight": 186,
+      "width": 86.0369873046875,
+      "height": 92.85186767578125,
       "logicalWidth": 101,
       "logicalHeight": 109,
       "dpr": 2
@@ -1998,10 +3717,10 @@
       ],
       "dpr": 2,
       "bounds": {
-        "x": 405.203125,
-        "y": 419.40625,
-        "width": 844.796875,
-        "height": 270.59375
+        "x": 0,
+        "y": 0,
+        "width": 1280,
+        "height": 720
       },
       "status": null
     },
@@ -2184,10 +3903,10 @@
       ],
       "dpr": 2,
       "bounds": {
-        "x": 405.203125,
-        "y": 419.40625,
-        "width": 844.796875,
-        "height": 270.59375
+        "x": 0,
+        "y": 0,
+        "width": 1280,
+        "height": 720
       },
       "status": null
     },
@@ -2199,19 +3918,19 @@
       ],
       "dpr": 2,
       "bounds": {
-        "x": 405.203125,
-        "y": 419.40625,
-        "width": 844.796875,
-        "height": 270.59375
+        "x": 0,
+        "y": 0,
+        "width": 1280,
+        "height": 720
       },
       "status": null
     },
     {
       "canvas": "r34G",
-      "pixelWidth": 338,
-      "pixelHeight": 166,
-      "width": 168.953125,
-      "height": 83.15625,
+      "pixelWidth": 436,
+      "pixelHeight": 215,
+      "width": 218.0740966796875,
+      "height": 107.3333740234375,
       "logicalWidth": 256,
       "logicalHeight": 126,
       "dpr": 2
@@ -2224,49 +3943,385 @@
       ],
       "dpr": 2,
       "bounds": {
-        "x": 405.203125,
-        "y": 419.40625,
-        "width": 844.796875,
-        "height": 270.59375
+        "x": 0,
+        "y": 0,
+        "width": 1280,
+        "height": 720
       },
       "status": null
     },
     {
+      "name": "temperature-c",
+      "viewport": [
+        1280,
+        720
+      ],
+      "dpr": 2,
+      "bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 1280,
+        "height": 720
+      },
+      "status": null
+    },
+    {
+      "name": "temperature-f",
+      "viewport": [
+        1280,
+        720
+      ],
+      "dpr": 2,
+      "bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 1280,
+        "height": 720
+      },
+      "status": null
+    },
+    {
+      "name": "missing-one-tire",
+      "viewport": [
+        1280,
+        720
+      ],
+      "dpr": 2,
+      "bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 1280,
+        "height": 720
+      },
+      "status": null
+    },
+    {
+      "name": "zero-fahrenheit-input",
+      "viewport": [
+        1280,
+        720
+      ],
+      "dpr": 2,
+      "bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 1280,
+        "height": 720
+      },
+      "status": null
+    },
+    {
+      "name": "negative-tire-temperature",
+      "viewport": [
+        1280,
+        720
+      ],
+      "dpr": 2,
+      "bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 1280,
+        "height": 720
+      },
+      "status": null
+    },
+    {
+      "name": "sweep-min",
+      "viewport": [
+        1280,
+        720
+      ],
+      "dpr": 2,
+      "bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 1280,
+        "height": 720
+      },
+      "status": null
+    },
+    {
+      "name": "sweep-mid",
+      "viewport": [
+        1280,
+        720
+      ],
+      "dpr": 2,
+      "bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 1280,
+        "height": 720
+      },
+      "status": null
+    },
+    {
+      "name": "sweep-max",
+      "viewport": [
+        1280,
+        720
+      ],
+      "dpr": 2,
+      "bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 1280,
+        "height": 720
+      },
+      "status": null
+    },
+    {
+      "layout": {
+        "boxes": [
+          {
+            "id": "r34TachModule",
+            "x": 382,
+            "y": 513.59375,
+            "right": 564.390625,
+            "bottom": 695.984375,
+            "width": 182.390625,
+            "height": 182.390625
+          },
+          {
+            "id": "r34SpeedModule",
+            "x": 715.59375,
+            "y": 513.59375,
+            "right": 897.984375,
+            "bottom": 695.984375,
+            "width": 182.390625,
+            "height": 182.390625
+          },
+          {
+            "id": "r34BoostModule",
+            "x": 278,
+            "y": 532.796875,
+            "right": 364.390625,
+            "bottom": 619.1875,
+            "width": 86.390625,
+            "height": 86.390625
+          },
+          {
+            "id": "r34TempModule",
+            "x": 915.59375,
+            "y": 532.796875,
+            "right": 1001.984375,
+            "bottom": 619.1875,
+            "width": 86.390625,
+            "height": 86.390625
+          },
+          {
+            "id": "r34Mfd",
+            "x": 1026,
+            "y": 566.515625,
+            "right": 1256,
+            "bottom": 695.984375,
+            "width": 230,
+            "height": 129.46875
+          }
+        ],
+        "clusterHidden": false,
+        "width": 1280,
+        "height": 720
+      }
+    },
+    {
       "canvas": "r34History",
-      "pixelWidth": 133,
-      "pixelHeight": 144,
-      "width": 66.65625,
-      "height": 71.9375,
+      "pixelWidth": 172,
+      "pixelHeight": 186,
+      "width": 86.0369873046875,
+      "height": 92.85186767578125,
       "logicalWidth": 101,
       "logicalHeight": 109,
       "dpr": 2
     },
     {
+      "layout": {
+        "boxes": [
+          {
+            "id": "r34TachModule",
+            "x": 396.953125,
+            "y": 568.3125,
+            "right": 524.625,
+            "bottom": 695.984375,
+            "width": 127.671875,
+            "height": 127.671875
+          },
+          {
+            "id": "r34SpeedModule",
+            "x": 755.359375,
+            "y": 568.3125,
+            "right": 883.03125,
+            "bottom": 695.984375,
+            "width": 127.671875,
+            "height": 127.671875
+          },
+          {
+            "id": "r34BoostModule",
+            "x": 324.15625,
+            "y": 581.75,
+            "right": 384.625,
+            "bottom": 642.21875,
+            "width": 60.46875,
+            "height": 60.46875
+          },
+          {
+            "id": "r34TempModule",
+            "x": 895.359375,
+            "y": 581.75,
+            "right": 955.828125,
+            "bottom": 642.21875,
+            "width": 60.46875,
+            "height": 60.46875
+          },
+          {
+            "id": "r34Mfd",
+            "x": 1095,
+            "y": 605.359375,
+            "right": 1256,
+            "bottom": 695.984375,
+            "width": 161,
+            "height": 90.625
+          }
+        ],
+        "clusterHidden": false,
+        "width": 1280,
+        "height": 720
+      }
+    },
+    {
       "canvas": "r34History",
-      "pixelWidth": 93,
-      "pixelHeight": 101,
-      "width": 46.65625,
-      "height": 50.34375,
+      "pixelWidth": 120,
+      "pixelHeight": 130,
+      "width": 60.225830078125,
+      "height": 64.99627685546875,
       "logicalWidth": 101,
       "logicalHeight": 109,
       "dpr": 2
+    },
+    {
+      "layout": {
+        "boxes": [
+          {
+            "id": "r34TachModule",
+            "x": 382,
+            "y": 513.59375,
+            "right": 564.390625,
+            "bottom": 695.984375,
+            "width": 182.390625,
+            "height": 182.390625
+          },
+          {
+            "id": "r34SpeedModule",
+            "x": 715.59375,
+            "y": 513.59375,
+            "right": 897.984375,
+            "bottom": 695.984375,
+            "width": 182.390625,
+            "height": 182.390625
+          },
+          {
+            "id": "r34BoostModule",
+            "x": 278,
+            "y": 532.796875,
+            "right": 364.390625,
+            "bottom": 619.1875,
+            "width": 86.390625,
+            "height": 86.390625
+          },
+          {
+            "id": "r34TempModule",
+            "x": 915.59375,
+            "y": 532.796875,
+            "right": 1001.984375,
+            "bottom": 619.1875,
+            "width": 86.390625,
+            "height": 86.390625
+          },
+          {
+            "id": "r34Mfd",
+            "x": 1026,
+            "y": 566.515625,
+            "right": 1256,
+            "bottom": 695.984375,
+            "width": 230,
+            "height": 129.46875
+          }
+        ],
+        "clusterHidden": false,
+        "width": 1280,
+        "height": 720
+      }
     },
     {
       "canvas": "r34G",
-      "pixelWidth": 338,
-      "pixelHeight": 166,
-      "width": 168.953125,
-      "height": 83.15625,
+      "pixelWidth": 436,
+      "pixelHeight": 215,
+      "width": 218.0740966796875,
+      "height": 107.3333740234375,
       "logicalWidth": 256,
       "logicalHeight": 126,
       "dpr": 2
     },
     {
+      "layout": {
+        "boxes": [
+          {
+            "id": "r34TachModule",
+            "x": 396.953125,
+            "y": 568.3125,
+            "right": 524.625,
+            "bottom": 695.984375,
+            "width": 127.671875,
+            "height": 127.671875
+          },
+          {
+            "id": "r34SpeedModule",
+            "x": 755.359375,
+            "y": 568.3125,
+            "right": 883.03125,
+            "bottom": 695.984375,
+            "width": 127.671875,
+            "height": 127.671875
+          },
+          {
+            "id": "r34BoostModule",
+            "x": 324.15625,
+            "y": 581.75,
+            "right": 384.625,
+            "bottom": 642.21875,
+            "width": 60.46875,
+            "height": 60.46875
+          },
+          {
+            "id": "r34TempModule",
+            "x": 895.359375,
+            "y": 581.75,
+            "right": 955.828125,
+            "bottom": 642.21875,
+            "width": 60.46875,
+            "height": 60.46875
+          },
+          {
+            "id": "r34Mfd",
+            "x": 1095,
+            "y": 605.359375,
+            "right": 1256,
+            "bottom": 695.984375,
+            "width": 161,
+            "height": 90.625
+          }
+        ],
+        "clusterHidden": false,
+        "width": 1280,
+        "height": 720
+      }
+    },
+    {
       "canvas": "r34G",
-      "pixelWidth": 237,
-      "pixelHeight": 116,
-      "width": 118.265625,
-      "height": 58.203125,
+      "pixelWidth": 305,
+      "pixelHeight": 150,
+      "width": 152.65185546875,
+      "height": 75.13336181640625,
       "logicalWidth": 256,
       "logicalHeight": 126,
       "dpr": 2
@@ -2275,15 +4330,15 @@
       "gMarker": {
         "full": {
           "visible": true,
-          "x": 0.32868868104600113,
-          "y": 0.5758356004663817,
-          "resolution": 166
+          "x": 0.3291612057667103,
+          "y": 0.5756810631229236,
+          "resolution": 215
         },
         "compact": {
           "visible": true,
-          "x": 0.32832725452334977,
-          "y": 0.5737872589129165,
-          "resolution": 116
+          "x": 0.3285573770491803,
+          "y": 0.5749333333333333,
+          "resolution": 150
         }
       }
     },
@@ -2295,10 +4350,10 @@
       ],
       "dpr": 2,
       "bounds": {
-        "x": 405.203125,
-        "y": 419.40625,
-        "width": 844.796875,
-        "height": 270.59375
+        "x": 0,
+        "y": 0,
+        "width": 1280,
+        "height": 720
       },
       "status": null
     },
@@ -2310,10 +4365,10 @@
       ],
       "dpr": 2,
       "bounds": {
-        "x": 405.203125,
-        "y": 419.40625,
-        "width": 844.796875,
-        "height": 270.59375
+        "x": 0,
+        "y": 0,
+        "width": 1280,
+        "height": 720
       },
       "status": null
     },
@@ -2325,10 +4380,10 @@
       ],
       "dpr": 2,
       "bounds": {
-        "x": 405.203125,
-        "y": 419.40625,
-        "width": 844.796875,
-        "height": 270.59375
+        "x": 0,
+        "y": 0,
+        "width": 1280,
+        "height": 720
       },
       "status": null
     },
@@ -2426,10 +4481,10 @@
       ],
       "dpr": 2,
       "bounds": {
-        "x": 405.203125,
-        "y": 419.40625,
-        "width": 844.796875,
-        "height": 270.59375
+        "x": 0,
+        "y": 0,
+        "width": 1280,
+        "height": 720
       },
       "status": null
     },
@@ -2527,10 +4582,10 @@
       ],
       "dpr": 2,
       "bounds": {
-        "x": 405.203125,
-        "y": 419.40625,
-        "width": 844.796875,
-        "height": 270.59375
+        "x": 0,
+        "y": 0,
+        "width": 1280,
+        "height": 720
       },
       "status": null
     },
@@ -2542,10 +4597,10 @@
       ],
       "dpr": 2,
       "bounds": {
-        "x": 405.203125,
-        "y": 419.40625,
-        "width": 844.796875,
-        "height": 270.59375
+        "x": 0,
+        "y": 0,
+        "width": 1280,
+        "height": 720
       },
       "status": null
     },
@@ -2557,13 +4612,13 @@
       ],
       "dpr": 2,
       "bounds": {
-        "x": 405.203125,
-        "y": 419.40625,
-        "width": 844.796875,
-        "height": 270.59375
+        "x": 0,
+        "y": 0,
+        "width": 1280,
+        "height": 720
       },
       "status": {
-        "text": "GAME PAUSED · LIVE VALUES UNAVAILABLE",
+        "text": "PAUSED · N/A",
         "clear": true,
         "fits": true
       }
@@ -2576,13 +4631,13 @@
       ],
       "dpr": 2,
       "bounds": {
-        "x": 405.203125,
-        "y": 419.40625,
-        "width": 844.796875,
-        "height": 270.59375
+        "x": 0,
+        "y": 0,
+        "width": 1280,
+        "height": 720
       },
       "status": {
-        "text": "TELEMETRY STALE · LIVE VALUES UNAVAILABLE",
+        "text": "STALE · N/A",
         "clear": true,
         "fits": true
       }
@@ -2595,10 +4650,79 @@
       ],
       "dpr": 2,
       "bounds": {
-        "x": 1019,
-        "y": 577.28125,
-        "width": 231,
-        "height": 112.71875
+        "x": 0,
+        "y": 0,
+        "width": 1280,
+        "height": 720
+      },
+      "status": null
+    },
+    {
+      "layout": {
+        "boxes": [
+          {
+            "id": "r34TachModule",
+            "x": 0,
+            "y": 0,
+            "right": 0,
+            "bottom": 0,
+            "width": 0,
+            "height": 0
+          },
+          {
+            "id": "r34SpeedModule",
+            "x": 0,
+            "y": 0,
+            "right": 0,
+            "bottom": 0,
+            "width": 0,
+            "height": 0
+          },
+          {
+            "id": "r34BoostModule",
+            "x": 0,
+            "y": 0,
+            "right": 0,
+            "bottom": 0,
+            "width": 0,
+            "height": 0
+          },
+          {
+            "id": "r34TempModule",
+            "x": 0,
+            "y": 0,
+            "right": 0,
+            "bottom": 0,
+            "width": 0,
+            "height": 0
+          },
+          {
+            "id": "r34Mfd",
+            "x": 1095,
+            "y": 605.359375,
+            "right": 1256,
+            "bottom": 695.984375,
+            "width": 161,
+            "height": 90.625
+          }
+        ],
+        "clusterHidden": true,
+        "width": 1280,
+        "height": 720
+      }
+    },
+    {
+      "name": "gear-hidden-rev-active",
+      "viewport": [
+        1280,
+        720
+      ],
+      "dpr": 2,
+      "bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 1280,
+        "height": 720
       },
       "status": null
     },
@@ -2610,43 +4734,95 @@
       ],
       "dpr": 2,
       "bounds": {
-        "x": 405.203125,
-        "y": 419.40625,
-        "width": 844.796875,
-        "height": 270.59375
+        "x": 0,
+        "y": 0,
+        "width": 1280,
+        "height": 720
       },
       "status": null
     }
   ],
   "screenshots": [
     "waiting-1280x720-dpr1.png",
+    "mfd-waiting-dpr1.png",
     "single-1280x720-dpr1.png",
-    "detail-single-dpr1.png",
+    "mfd-single-dpr1.png",
+    "context-single-dpr1.png",
     "twin-1280x720-dpr1.png",
-    "detail-twin-dpr1.png",
+    "mfd-twin-dpr1.png",
+    "context-twin-dpr1.png",
     "multi-1280x720-dpr1.png",
-    "detail-multi-dpr1.png",
+    "mfd-multi-dpr1.png",
+    "context-multi-dpr1.png",
     "g-1280x720-dpr1.png",
-    "detail-g-dpr1.png",
+    "mfd-g-dpr1.png",
+    "context-g-dpr1.png",
     "lap-1280x720-dpr1.png",
-    "detail-lap-dpr1.png",
+    "mfd-lap-dpr1.png",
+    "context-lap-dpr1.png",
+    "temperature-c-1280x720-dpr1.png",
+    "mfd-temperature-c-dpr1.png",
+    "temperature-f-1280x720-dpr1.png",
+    "mfd-temperature-f-dpr1.png",
+    "missing-one-tire-1280x720-dpr1.png",
+    "mfd-missing-one-tire-dpr1.png",
+    "zero-fahrenheit-input-1280x720-dpr1.png",
+    "mfd-zero-fahrenheit-input-dpr1.png",
+    "negative-tire-temperature-1280x720-dpr1.png",
+    "mfd-negative-tire-temperature-dpr1.png",
+    "sweep-min-1280x720-dpr1.png",
+    "mfd-sweep-min-dpr1.png",
+    "sweep-mid-1280x720-dpr1.png",
+    "mfd-sweep-mid-dpr1.png",
+    "sweep-max-1280x720-dpr1.png",
+    "mfd-sweep-max-dpr1.png",
     "dpr-return-to-one-1280x720-dpr1.png",
+    "mfd-dpr-return-to-one-dpr1.png",
     "first-completed-lap-1280x720-dpr1.png",
+    "mfd-first-completed-lap-dpr1.png",
     "day-1280x720-dpr1.png",
+    "mfd-day-dpr1.png",
     "imperial-vacuum-1280x720-dpr1.png",
+    "mfd-imperial-vacuum-dpr1.png",
     "over-scale-kpa-1280x720-dpr1.png",
+    "mfd-over-scale-kpa-dpr1.png",
     "overscale-common-readouts-hidden-1280x720-dpr1.png",
+    "mfd-overscale-common-readouts-hidden-dpr1.png",
     "missing-1280x720-dpr1.png",
+    "mfd-missing-dpr1.png",
     "paused-1280x720-dpr1.png",
+    "mfd-paused-dpr1.png",
     "stale-1280x720-dpr1.png",
+    "mfd-stale-dpr1.png",
     "compact-mfd-only-custom-1280x720-dpr1.png",
+    "mfd-compact-mfd-only-custom-dpr1.png",
+    "gear-hidden-rev-active-1280x720-dpr1.png",
+    "mfd-gear-hidden-rev-active-dpr1.png",
     "new-car-neutral-1280x720-dpr1.png",
+    "mfd-new-car-neutral-dpr1.png",
+    "responsive-2560x1440-scale0.7.png",
+    "responsive-2560x1440-scale1.png",
+    "responsive-2560x1440-scale2.png",
+    "responsive-3440x1440-scale0.7.png",
+    "responsive-3440x1440-scale1.png",
+    "responsive-3440x1440-scale2.png",
+    "responsive-3840x360-scale0.7.png",
+    "responsive-3840x360-scale1.png",
+    "responsive-3840x360-scale2.png",
     "waiting-1920x1080-dpr1.png",
     "single-1920x1080-dpr1.png",
     "twin-1920x1080-dpr1.png",
     "multi-1920x1080-dpr1.png",
     "g-1920x1080-dpr1.png",
     "lap-1920x1080-dpr1.png",
+    "temperature-c-1920x1080-dpr1.png",
+    "temperature-f-1920x1080-dpr1.png",
+    "missing-one-tire-1920x1080-dpr1.png",
+    "zero-fahrenheit-input-1920x1080-dpr1.png",
+    "negative-tire-temperature-1920x1080-dpr1.png",
+    "sweep-min-1920x1080-dpr1.png",
+    "sweep-mid-1920x1080-dpr1.png",
+    "sweep-max-1920x1080-dpr1.png",
     "first-completed-lap-1920x1080-dpr1.png",
     "day-1920x1080-dpr1.png",
     "imperial-vacuum-1920x1080-dpr1.png",
@@ -2656,18 +4832,32 @@
     "paused-1920x1080-dpr1.png",
     "stale-1920x1080-dpr1.png",
     "compact-mfd-only-custom-1920x1080-dpr1.png",
+    "gear-hidden-rev-active-1920x1080-dpr1.png",
     "new-car-neutral-1920x1080-dpr1.png",
     "waiting-1280x720-dpr2.png",
     "single-1280x720-dpr2.png",
-    "detail-single-dpr2.png",
+    "mfd-single-dpr2.png",
+    "context-single-dpr2.png",
     "twin-1280x720-dpr2.png",
-    "detail-twin-dpr2.png",
+    "mfd-twin-dpr2.png",
+    "context-twin-dpr2.png",
     "multi-1280x720-dpr2.png",
-    "detail-multi-dpr2.png",
+    "mfd-multi-dpr2.png",
+    "context-multi-dpr2.png",
     "g-1280x720-dpr2.png",
-    "detail-g-dpr2.png",
+    "mfd-g-dpr2.png",
+    "context-g-dpr2.png",
     "lap-1280x720-dpr2.png",
-    "detail-lap-dpr2.png",
+    "mfd-lap-dpr2.png",
+    "context-lap-dpr2.png",
+    "temperature-c-1280x720-dpr2.png",
+    "temperature-f-1280x720-dpr2.png",
+    "missing-one-tire-1280x720-dpr2.png",
+    "zero-fahrenheit-input-1280x720-dpr2.png",
+    "negative-tire-temperature-1280x720-dpr2.png",
+    "sweep-min-1280x720-dpr2.png",
+    "sweep-mid-1280x720-dpr2.png",
+    "sweep-max-1280x720-dpr2.png",
     "first-completed-lap-1280x720-dpr2.png",
     "day-1280x720-dpr2.png",
     "imperial-vacuum-1280x720-dpr2.png",
@@ -2677,6 +4867,7 @@
     "paused-1280x720-dpr2.png",
     "stale-1280x720-dpr2.png",
     "compact-mfd-only-custom-1280x720-dpr2.png",
+    "gear-hidden-rev-active-1280x720-dpr2.png",
     "new-car-neutral-1280x720-dpr2.png"
   ],
   "errors": []

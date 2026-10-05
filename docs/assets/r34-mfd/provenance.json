@@ -1,68 +1,81 @@
 {
-  "renderer_source_commit": "bed166f290621675c445defe8b42c15e451217fa",
-  "workflow_run": "https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37295509701",
-  "artifact_id": 11338960330,
-  "artifact_sha256": "80d33bdb5ff2d44ce134820b4a2db85096d90bfa56123c87f8b601b214ce6681",
-  "runtime": "Actual production HUD/GUI in sandboxed Google Chrome with synthetic telemetry. Not static art proof, Windows native or FH6 game acceptance.",
+  "renderer_source_commit": "a3d87ea0c172057b560807e1100b88cb55d8b413",
+  "workflow_run": "https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37305964564",
+  "artifact_id": 11343427427,
+  "artifact_sha256": "04e0787cd4824bc7e4dd14818eb4a894f0d821ea921505e1e77be038082fefdd",
+  "runtime": "Actual production HUD/GUI in sandboxed Google Chrome with synthetic telemetry. Not a static artwork proof, native Windows or FH6 game acceptance.",
   "files": [
     {
       "path": "docs/assets/r34-mfd/preview.png",
-      "source": "detail-single-dpr2.png",
+      "source": "single-1920x1080-dpr1.png",
       "transform": "Unchanged actual-render PNG",
-      "sha256": "c1d3e63130647bb6afb3074db4c50549de80ae4ba7fccd3656018f6d91ccdfe4"
+      "sha256": "bff476486d6d54eac3f903b56c4a218a6313bff5c6270bd7bd02fdc4a6c1f892"
     },
     {
       "path": "docs/assets/r34-mfd/preview-normal.png",
-      "source": "detail-single-dpr1.png",
+      "source": "single-1280x720-dpr1.png",
       "transform": "Unchanged actual-render PNG",
-      "sha256": "8d596192348a907bce251b4be2b1d512f644b12853943f49ce4ff6d18346f695"
+      "sha256": "6d4495c5f44be11494f28037e470ec4019f25877bd901f5971f9fbed0d4b4b74"
     },
     {
       "path": "docs/assets/r34-mfd/over-scale-kpa.png",
       "source": "over-scale-kpa-1280x720-dpr2.png",
-      "transform": "Trim transparent viewport margins only",
-      "sha256": "4bdf0bbef75397894bc0f3e2a0f78dd89e0f1966b0772e46c9572368cb8f76b9"
+      "transform": "Unchanged actual-render PNG",
+      "sha256": "d7546cc3ee2b3c342c706941f8828c651a31c0777cc48716d301fe1cb17c2a2a"
     },
     {
       "path": "docs/assets/r34-mfd/imperial-vacuum.png",
       "source": "imperial-vacuum-1280x720-dpr2.png",
-      "transform": "Trim transparent viewport margins only",
-      "sha256": "0ad984cf88669d3c4ebaa7130c8db16168a75df91f991de0c7be6d0c714090a2"
+      "transform": "Unchanged actual-render PNG",
+      "sha256": "83a8796c99e5a0232bbc42e96383addb25952c3f93e80a80c9bf46de02cec1f7"
     },
     {
       "path": "docs/assets/r34-mfd/stale.png",
       "source": "stale-1280x720-dpr2.png",
-      "transform": "Trim transparent viewport margins only",
-      "sha256": "6e1244905a97501e7ac40992293cd99629ac3c493c3e21471e6358db55f9bd93"
+      "transform": "Unchanged actual-render PNG",
+      "sha256": "65c257d946b9f1be43dec4160b633c95127db8e19767366cc1cb889c89b2acbf"
+    },
+    {
+      "path": "docs/assets/r34-mfd/missing-one-tire.png",
+      "source": "missing-one-tire-1280x720-dpr2.png",
+      "transform": "Unchanged actual-render PNG",
+      "sha256": "1d3172ecf31bb9575bc14b550e1adad9ef3f78963605105a25a0d811eda7ec88"
     },
     {
       "path": "docs/assets/r34-mfd/settings/settings-dark-default.png",
       "source": "settings/settings-dark-default.png",
       "transform": "Unchanged actual-render PNG",
-      "sha256": "fb2fde504af4f9e1c2351b5c66dfe719eeabdb1b91c8d1badf3f0c86eb5b4bc7"
+      "sha256": "ebd98763329c58d217f4a37041e567fa3228b6af9c35f140a7b7711a7eacfd8c"
     },
     {
       "path": "docs/assets/r34-mfd/settings/settings-narrow-zh-tw.png",
       "source": "settings/settings-narrow-zh-tw.png",
       "transform": "Unchanged actual-render PNG",
-      "sha256": "c47b59f636a9b34d962289ddeb31f6d1e2795d2e3d182a08b2deef4a3382a03c"
+      "sha256": "ec66b5bab12a82688bdaddc0c4299eb519d1021b37359d713db9f4f8fb97b8db"
     },
     {
       "path": "docs/assets/r34-mfd/settings/settings-narrow-ja-jp.png",
       "source": "settings/settings-narrow-ja-jp.png",
       "transform": "Unchanged actual-render PNG",
-      "sha256": "bb3a5c477d76b66f266d2bce407ed47ebd5c23279511d18dfce5101e1db2f4fa"
+      "sha256": "58bd11ddcdd8ea141725c65e5f81c2fe3ab659bf194b7542bd71de93281f5110"
+    },
+    {
+      "path": "docs/assets/r34-mfd/settings/temperature-independent-f.png",
+      "source": "settings/temperature-independent-f.png",
+      "transform": "Unchanged actual-render PNG",
+      "sha256": "b191880a90dc83b366dd23ae0f1a34b88181649e166228ef1c2be62ff582f182"
     },
     {
       "path": "docs/assets/r34-mfd/mfd-modes.png",
       "sources": [
-        "detail-twin-dpr2.png",
-        "detail-multi-dpr2.png",
-        "detail-g-dpr2.png",
-        "detail-lap-dpr2.png"
+        "mfd-single-dpr2.png",
+        "mfd-twin-dpr2.png",
+        "mfd-multi-dpr2.png",
+        "mfd-g-dpr2.png",
+        "mfd-lap-dpr2.png"
       ],
-      "transform": "Crop actual MFD region and arrange vertically TWIN, MULTI, G, LAP; preserve pixels, add12px gutters",
-      "sha256": "102d3ba67a073f4f261bbfc1f476f8d6ad44e09b14c2f200342684e7d4b5e645"
+      "transform": "Arrange five direct DPR2 MFD screenshots vertically, SINGLE/TWIN/MULTI/G/LAP; no rescaling or content retouching, 12px transparent gutters",
+      "sha256": "2eb76bc4e610d8ce6df62ba3688a63edc2ab8de2cb4794975c73bbeb06fcea69"
     }
   ]
 }

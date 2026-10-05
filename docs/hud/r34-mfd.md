@@ -4,7 +4,7 @@
 
 本款採 **R34／V·spec 10,000 rpm 雙段轉速錶**，搭配 **2002 Nür 300 速度錶面**與 **NISMO MFD Ver.II** 畫面語彙。這是依使用者要求的 HUD 佈局適配，不冒稱整組原裝座艙，也不是 R35 或 NISMO 320 儀表。
 
-**全部速度讀數刻意固定為 kmh**：由原始 `SpeedMetersPerSecond × 3.6` 取得，全球 mph 設定不改變數字、錶面或指針。原件印字是 `km/h`，本 HUD 依使用者明確要求改為字面 `kmh`；已註記於受支援的 `author.json.description`。300 以上保留真實數字與 OVER SCALE，只有指針停在最大刻度；缺失仍是 N/A。里程窗顯示遊戲 session distance（km），不是車輛累計里程。
+**全部速度讀數刻意固定為 kmh**：由原始 `SpeedMetersPerSecond × 3.6` 取得，全域 mph 設定不改變數字、錶面或指針。原件印字是 `km/h`，本 HUD 依使用者明確要求改為字面 `kmh`；已註記於受支援的 `author.json.description`。300 以上保留真實數字與 OVER SCALE，只有指針停在最大刻度；缺失仍是 N/A。里程窗顯示遊戲 session distance（km），不是車輛累計里程。
 
 Nür 面板為 0～300、每 20 標號、每 10 刻線，數字較緊湊粗實。兩張原件照片支持約 250° 的視覺弧形，0 附近另有相近參考刻線；無工廠工程圖可證實其精確低速校準，因此本 HUD 使用穩定的線性 0～300 視覺映射，不把照片估角冒稱工廠尺寸或電子校準曲線。V·spec 轉速錶保留型錄明載的 3,000 rpm 以下每千轉 15°、以上每千轉 30°。
 
@@ -96,6 +96,8 @@ Recorder 優先取 `data.sourceTelemetry` 的原始唯讀封包；否則接受�
 
 Chrome fixture 保持 `chromiumSandbox:true`，不以停用 sandbox 繞過本地限制。靜態構圖不能取代真正 HTML／SVG／Canvas 像素驗證；Chrome 證據也不是 Windows 原生透明 click-through 或遊戲實測。
 
-## 先前外殼版本
+## 實際渲染預覽
 
-`docs/assets/r34-mfd/` 目前保存的 `bed166f` 圖片屬於已被本次無外框／Nür300 方向取代的歷史版本，不能作為新佈局完成證據。新的透明 runtime 圖與來源紀錄將在本次視覺 CI 通過並實際審閱後更新。
+`docs/assets/r34-mfd/` 已更新為 `a3d87ea` 的真正 Chrome runtime 圖片：[Visual run37305964564](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37305964564)。160 項 HUD 檢查、126 張 HUD 畫面、8 項 Launcher 檢查、12 張設定圖及 3 項設定流程檢查皆無錯誤。保留透明 720p／1080p 完整定位；五模式拼版直接排列 DPR2 的 MFD 截圖，沒有重繪或放大。詳見同目錄 `provenance.json` 的原始檔名與 SHA256。
+
+先前外殼版 `bed166f`／`9fd8947` 已被本次無框／Nür300 方向取代，舊圖只存在 Git 歷史中，不作為新布局證據。設定 fixture 使用 app 真正的英制單位預設；單獨送出 kmh＋F 會被 app 既有整組單位正規化成 C，不能拿不一致的 fixture 判定 HUD 繼承失效。
