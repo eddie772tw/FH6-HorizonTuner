@@ -64,7 +64,7 @@ try {
           const point = fill.getPointAtLength(length * f), mark = get('BoostMark' + i);
           return Math.hypot(point.x - Number(mark.getAttribute('x1')), point.y - Number(mark.getAttribute('y1')));
         });
-        const readings = ['BoostTick0', 'BoostTick1', 'BoostTick2', 'BoostTick3', 'Boost', 'BoostUnit', 'BoostMode'].filter(id => get(id).textContent).map(id => ({ id, bounds: get(id).getBBox() }));
+        const readings = ['BoostTick0', 'BoostTick1', 'BoostTick2', 'BoostTick3', 'Boost', 'BoostUnit', 'BoostMode', 'LapTime'].filter(id => get(id).textContent).map(id => ({ id, bounds: get(id).getBBox() }));
         const overlaps = [];
         for (let i = 0; i < readings.length; i++) for (let j = i + 1; j < readings.length; j++) {
           const a = readings[i].bounds, b = readings[j].bounds;
@@ -99,6 +99,10 @@ try {
       await boostState(fraction, bar < 0, bar < 0 ? ['0', '0.25', '0.5', '1'] : ['0', '0.5', '1', '2']);
       await detail('boost-' + name);
     }
+    for (const bar of [-998.99, 9998.99]) {
+      await reading({ boost_psi: bar * 14.5038, CurrentLap: 5999.99 });
+      await boostState(1, bar < 0);
+    }
     await reading({ boost_psi: undefined }); await boostState(null, false); await detail('boost-unavailable');
     await send(frame, 'config', { data: { isMetric: false, useDefaultColors: false, customColor: '#93d9ed', glowIntensity: 0, scale: 1 } });
     await reading({ displayUnits: { speed: 'mph' } }); assert.equal(await text(frame, 'Speed'), '112'); assert.equal(await text(frame, 'SpeedUnit'), 'mph');
@@ -112,9 +116,11 @@ try {
     await send(frame, 'config', { data: { isMetric: true, effectiveUnits: { temperature: 'F', boostPressure: 'psi' } } });
     await reading(); assert.equal(await text(frame, 'Tire'), '203°F'); assert.equal(await text(frame, 'BoostUnit'), 'psi'); assert.equal(await text(frame, 'Boost'), '14.5'); await boostState(.75, false, ['0', '7.3', '14.5', '29']); await detail('aux-psi-fahrenheit');
     await reading({ Boost: -7.2519 }); await boostState(.5, true, ['0', '3.6', '7.3', '14.5']); await detail('boost-vacuum-psi');
+    for (const psi of [-998.9, 9998.9]) { await reading({ Boost: psi, CurrentLap: 5999.99 }); await boostState(1, psi < 0); }
     await send(frame, 'config', { data: { effectiveUnits: { temperature: 'C', boostPressure: 'kpa' } } });
     await reading(); assert.equal(await text(frame, 'Boost'), '100'); assert.equal(await text(frame, 'BoostUnit'), 'kPa'); await boostState(.75, false, ['0', '50', '100', '200']); await detail('aux-kpa');
     await reading({ Boost: -7.2519, boost_psi: 0 }); assert.equal(await text(frame, 'Boost'), '-50'); await boostState(.5, true, ['0', '25', '50', '100']); await detail('aux-negative-boost');
+    for (const kpa of [-998.9, 9998.9]) { await reading({ Boost: kpa / 6.89476, CurrentLap: 5999.99 }); await boostState(1, kpa < 0); }
     await reading({ Boost: 0, throttle: 0, brake: 0, tire_temp_f: [32, 32, 32, 32] });
     assert.equal(await text(frame, 'Boost'), '0'); assert.equal(await text(frame, 'Throttle'), '0%'); assert.equal(await text(frame, 'Brake'), '0%'); assert.equal(await text(frame, 'Tire'), '0°C'); await detail('aux-zero');
     await reading({ tire_temp_f: [176, null, 212, 230], boost_psi: undefined }); assert.equal(await text(frame, 'Tire'), 'N/A'); assert.equal(await text(frame, 'Boost'), 'N/A'); await detail('aux-partial-missing');
