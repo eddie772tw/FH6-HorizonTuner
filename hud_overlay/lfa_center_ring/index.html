@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en" data-bs-theme="dark" data-bs-core="default">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>LFA Center Ring · HorizonTuner</title>
+    <link rel="stylesheet" href="../shared/hud-base.css">
+    <link rel="stylesheet" href="lfa.css">
+</head>
+<body>
+    <div class="hud-root-wrapper">
+        <section id="lfaContainer" class="hud-gauge-container lfa-cluster" aria-label="Center ring driving telemetry">
+            <img class="lfa-housing" src="assets/center-ring.png" alt="" draggable="false">
+            <canvas id="lfaScale" width="1120" height="740" aria-hidden="true"></canvas>
+            <canvas id="lfaNeedle" width="1120" height="740" aria-hidden="true"></canvas>
+            <div class="lfa-readouts">
+                <div id="lfaSpeed" class="lfa-speed">—</div>
+                <div id="lfaSpeedUnit" class="lfa-speed-unit">km/h</div>
+                <div class="lfa-divider"></div>
+                <div id="lfaGear" class="lfa-gear">—</div>
+                <div class="lfa-gear-label">GEAR</div>
+                <div id="lfaStatus" class="lfa-status" role="status">WAITING</div>
+            </div>
+            <div class="lfa-wing lfa-wing-left"><span class="lfa-wing-label">THROTTLE</span><span id="lfaThrottle">—</span><span class="lfa-percent">%</span><div class="lfa-pedal-track"><i id="lfaThrottleBar"></i></div><span class="lfa-wing-foot">INPUT</span></div>
+            <div class="lfa-wing lfa-wing-right"><span class="lfa-wing-label">BRAKE</span><span id="lfaBrake">—</span><span class="lfa-percent">%</span><div class="lfa-pedal-track"><i id="lfaBrakeBar"></i></div><span class="lfa-wing-foot">INPUT</span></div>
+            <div class="lfa-scale-unit">×1000 r/min</div>
+            <div id="lfaSelfCheck" class="lfa-self-check" hidden>DISPLAY CHECK</div>
+        </section>
+    </div>
+    <script src="../shared/hud-core.js"></script>
+    <script src="lfa-model.js"></script>
+    <script src="lfa-renderer.js"></script>
+    <script src="lfa-controller.js"></script>
+</body>
+</html>

@@ -26,6 +26,7 @@ export const HUD_DISPLAY_NAMES: Record<string, string> = {
   vfd: 'Retro VFD',
   drift: 'Drift HUD',
   s650_hmi: 'Ford Mustang HMI',
+  lfa_center_ring: 'LFA Center Ring',
   advanced: 'Advanced Racing Arc',
   fm4ui: 'Forza Motorsport 4',
   gt7: 'Gran Turismo 7',

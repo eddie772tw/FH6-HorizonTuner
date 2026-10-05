@@ -1,0 +1,13 @@
+{
+  "date": "2026-10-05",
+  "style": "lfa_center_ring",
+  "verifiedBase": "a9335b158e658faa86bcfcbe4d36beb602f6c9c7",
+  "localUnitGate": {"filesPassed": 156, "filesSkipped": 1, "testsPassed": 1129, "testsSkipped": 1, "styleTests": 24},
+  "buildWebHud": "passed",
+  "officialReferencePixelsViewed": "OM77006U printed p.116 / PDF p.118",
+  "originalHousingPixelsViewed": true,
+  "fullHudPixelsViewed": false,
+  "chromiumGate": "pending GitHub Actions artifacts",
+  "localBrowserBlocker": "standalone Chromium UNIX socket EPERM; cloud browser localhost ERR_BLOCKED_BY_CLIENT",
+  "windowsNativeOverlayAndGameAcceptance": "not performed"
+}
