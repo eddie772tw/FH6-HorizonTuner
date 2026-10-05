@@ -3,8 +3,9 @@ import react from "@vitejs/plugin-react";
 import { execSync } from "child_process";
 import fs from "fs";
 import path from "path";
+import { backendTuningBoundary } from './tooling/backendTuningBoundary';
 
-// In dev mode, the Python backend sidecar may not be running.
+// In dev mode, the Rust backend sidecar may not be running.
 // Serve hud_overlay/ files directly for /hud/* requests instead of proxying.
 const HUD_OVERLAY_DIR = path.resolve(import.meta.dirname, "../hud_overlay");
 
@@ -173,7 +174,7 @@ if (!['windows', 'lan'].includes(platform)) throw new Error('FH6_PLATFORM must b
 const includesHud = platform === 'windows';
 
 export default defineConfig(async () => ({
-  plugins: [react(), ...(includesHud ? [hudStaticPlugin()] : []), {
+  plugins: [react(), backendTuningBoundary(), ...(includesHud ? [hudStaticPlugin()] : []), {
     name: 'verify-platform-isolation',
     generateBundle() {
       if (!includesHud) {

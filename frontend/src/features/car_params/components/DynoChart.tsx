@@ -163,15 +163,10 @@ export const DynoChart: React.FC<DynoChartProps> = ({
               );
             }
 
-            const currentGear = telemetryData.Gear || 0;
             const currentRpm = telemetryData.CurrentEngineRpm || 0;
             const maxRpm = telemetryData.EngineMaxRpm || 8000;
-            const accel = telemetryData.AccelInput || 0;
-            const handbrake = telemetryData.HandBrakeInput || 0;
-            const targetGear = settings.dyno_test_gear ?? 4;
-            
-            // Launch Control active check
-            const isLaunching = currentGear === 1 && handbrake > 50 && accel > 200;
+            const targetGear = telemetryData.DynoGuidance?.targetGear ?? 4;
+            const isLaunching = telemetryData.DynoGuidance?.launch;
             if (isLaunching) {
               return (
                 <div style={{
@@ -195,17 +190,7 @@ export const DynoChart: React.FC<DynoChartProps> = ({
               );
             }
 
-            // Slip check
-            const drivetrain = carParams.drivetrain || "RWD";
-            const slipRatios = telemetryData.TireSlipRatio || [0,0,0,0];
-            let isSlipped = false;
-            if (settings.dyno_filter_slip ?? true) {
-              if (drivetrain === "RWD" && (Math.abs(slipRatios[2]!) > 0.10 || Math.abs(slipRatios[3]!) > 0.10)) isSlipped = true;
-              else if (drivetrain === "FWD" && (Math.abs(slipRatios[0]!) > 0.10 || Math.abs(slipRatios[1]!) > 0.10)) isSlipped = true;
-              // Performance Optimization: Unrolled AWD slip check to eliminate .some() iteration and closure allocations on every telemetry frame
-              else if (drivetrain === "AWD" && (Math.abs(slipRatios[0]!) > 0.10 || Math.abs(slipRatios[1]!) > 0.10 || Math.abs(slipRatios[2]!) > 0.10 || Math.abs(slipRatios[3]!) > 0.10)) isSlipped = true;
-            }
-
+            const isSlipped = telemetryData.DynoGuidance?.slipped;
             if (isSlipped && testState === 'recording') {
               return (
                 <div style={{

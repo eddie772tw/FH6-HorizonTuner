@@ -273,8 +273,11 @@ def get_repeat_count():
 @pytest.mark.skipif(
     sys.platform != "win32", reason="Portable lifecycle is Windows-specific"
 )
-def test_executable_bootstrap_and_config_interaction(tmp_path):
-    sidecar_path, standalone_exe = find_executable_paths()
+@pytest.mark.parametrize("edition", ["full", "lite"])
+def test_executable_bootstrap_and_config_interaction(tmp_path, edition):
+    _, standalone_exe = find_executable_paths()
+    if edition == "lite":
+        standalone_exe = find_lite_executable_path()
 
     target_exe = standalone_exe if os.path.exists(standalone_exe) else None
 
@@ -284,7 +287,6 @@ def test_executable_bootstrap_and_config_interaction(tmp_path):
     repeat_count = get_repeat_count()
 
     for i in range(repeat_count):
-        run_label = f"bootstrap_run_{i}"
         test_data_dir = tmp_path / f"test_data_root_{i}"
         test_data_dir.mkdir(parents=True, exist_ok=True)
         custom_hud_dir = test_data_dir / "hud_overlay" / "portable_custom_hud"
@@ -293,131 +295,151 @@ def test_executable_bootstrap_and_config_interaction(tmp_path):
             "<html><body>Portable custom HUD</body></html>", encoding="utf-8"
         )
 
-        stdout_path = str(tmp_path / f"stdout_bootstrap_{i}.txt")
-        stderr_path = str(tmp_path / f"stderr_bootstrap_{i}.txt")
-        environment = os.environ.copy()
-        environment["TELEMETRY_IP"] = "127.0.0.1"
-        environment["TELEMETRY_PORT"] = str(get_available_udp_port())
+        # A pre-existing sessions directory belongs to the user; it is not the DB root.
+        legacy_file = test_data_dir / "sessions" / "legacy-export.json"
+        legacy_file.parent.mkdir()
+        legacy_file.write_text('{"preserve":true}', encoding="utf-8")
 
-        cmd = [target_exe, "--data-dir", str(test_data_dir)]
+        for boot in range(2):
+            run_label = f"bootstrap_{edition}_{i}_boot_{boot}"
+            (test_data_dir / "logs" / "web_port.txt").unlink(missing_ok=True)
+            stdout_path = str(tmp_path / f"stdout_{run_label}.txt")
+            stderr_path = str(tmp_path / f"stderr_{run_label}.txt")
+            environment = os.environ.copy()
+            environment["TELEMETRY_IP"] = "127.0.0.1"
+            environment["TELEMETRY_PORT"] = str(get_available_udp_port())
 
-        with (
-            open(stdout_path, "w", encoding="utf-8") as stdout_f,
-            open(stderr_path, "w", encoding="utf-8") as stderr_f,
-        ):
-            proc = subprocess.Popen(
-                cmd,
-                stdout=stdout_f,
-                stderr=stderr_f,
-                stdin=subprocess.PIPE,
-                text=True,
-                env=environment,
-            )
+            cmd = [target_exe, "--data-dir", str(test_data_dir)]
 
-        settings_file = test_data_dir / "settings.json"
-        startup_deadline = time.monotonic() + get_readiness_timeout()
-
-        try:
-            while not settings_file.exists() and time.monotonic() < startup_deadline:
-                if proc.poll() is not None:
-                    break
-                time.sleep(0.25)
-
-            assert settings_file.exists(), (
-                "settings.json was not created in --data-dir. "
-                f"backend log: {test_data_dir / 'logs' / 'backend.log'}"
-            )
-            with open(settings_file, "r", encoding="utf-8") as f:
-                settings = json.load(f)
-                assert "units" in settings, "settings.json is missing 'units' key"
-                assert "telemetry_port" in settings, (
-                    "settings.json is missing 'telemetry_port'"
+            with (
+                open(stdout_path, "w", encoding="utf-8") as stdout_f,
+                open(stderr_path, "w", encoding="utf-8") as stderr_f,
+            ):
+                proc = subprocess.Popen(
+                    cmd,
+                    stdout=stdout_f,
+                    stderr=stderr_f,
+                    stdin=subprocess.PIPE,
+                    text=True,
+                    env=environment,
                 )
 
-            lang_dir = test_data_dir / "lang"
-            assert lang_dir.exists(), "lang directory was not created"
-            lang_files = list(lang_dir.glob("*.json"))
-            assert len(lang_files) > 0, (
-                "lang directory does not contain bootstrapped language files"
-            )
+            settings_file = test_data_dir / "settings.json"
+            startup_deadline = time.monotonic() + get_readiness_timeout()
 
-            assert (test_data_dir / "car_params").exists(), (
-                "car_params directory missing"
-            )
-            assert (test_data_dir / "hud_overlay").exists(), (
-                "hud_overlay directory missing"
-            )
-
-            port_file = test_data_dir / "logs" / "web_port.txt"
-            while not port_file.exists() and time.monotonic() < startup_deadline:
-                time.sleep(0.1)
-            assert port_file.exists(), "sidecar did not publish its HTTP port"
-            backend_port = port_file.read_text(encoding="utf-8").strip()
-
-            with wait_for_http_get(
-                f"http://127.0.0.1:{backend_port}/api/hud/styles", startup_deadline
-            ) as response:
-                styles = json.loads(response.read().decode("utf-8"))["styles"]
-            custom_style = next(
-                style for style in styles if style["id"] == "portable_custom_hud"
-            )
-            assert custom_style["source"] == "user"
-            assert custom_style["urlPrefix"] == "/hud_user"
-
-            with urllib.request.urlopen(
-                f"http://127.0.0.1:{backend_port}/hud_user/portable_custom_hud/index.html",
-                timeout=5,
-            ) as response:
-                assert b"Portable custom HUD" in response.read()
-            assert (test_data_dir / "tunings").exists(), "tunings directory missing"
-            assert (test_data_dir / "drag_sessions").exists(), (
-                "drag_sessions directory missing"
-            )
-            assert (test_data_dir / "user_configs").exists(), (
-                "user_configs directory missing"
-            )
-
-            sessions_dir = test_data_dir / "sessions"
-            assert sessions_dir.exists(), "sessions directory missing"
-            db_file = sessions_dir / "telemetry_sessions.db"
-            assert db_file.exists(), (
-                "SQLite database telemetry_sessions.db was not created"
-            )
-
-            conn = sqlite3.connect(str(db_file))
-            cursor = conn.cursor()
-            cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
-            tables = [row[0] for row in cursor.fetchall()]
-            conn.close()
-            assert "sessions" in tables, "sessions table missing in SQLite DB"
-
-            logs_dir = test_data_dir / "logs"
-            assert logs_dir.exists(), "logs directory missing"
-            log_file = logs_dir / "backend.log"
-            assert log_file.exists(), "backend.log missing"
-            with open(log_file, "r", encoding="utf-8") as f:
-                log_content = f.read()
-                assert len(log_content) > 0, "backend.log is empty"
-
-        except Exception:
-            collect_diagnostics(
-                target_exe,
-                proc,
-                test_data_dir,
-                cmd,
-                run_label,
-                stdout_path,
-                stderr_path,
-            )
-            raise
-        finally:
-            if proc.stdin is not None and not proc.stdin.closed:
-                proc.stdin.close()
             try:
-                proc.wait(timeout=5.0)
-            except subprocess.TimeoutExpired:
-                proc.kill()
-                proc.wait(timeout=5.0)
+                while (
+                    not settings_file.exists() and time.monotonic() < startup_deadline
+                ):
+                    if proc.poll() is not None:
+                        break
+                    time.sleep(0.25)
+
+                assert settings_file.exists(), (
+                    "settings.json was not created in --data-dir. "
+                    f"backend log: {test_data_dir / 'logs' / 'backend.log'}"
+                )
+                with open(settings_file, "r", encoding="utf-8") as f:
+                    settings = json.load(f)
+                    assert "units" in settings, "settings.json is missing 'units' key"
+                    assert "telemetry_port" in settings, (
+                        "settings.json is missing 'telemetry_port'"
+                    )
+
+                lang_dir = test_data_dir / "lang"
+                assert lang_dir.exists(), "lang directory was not created"
+                lang_files = list(lang_dir.glob("*.json"))
+                assert len(lang_files) > 0, (
+                    "lang directory does not contain bootstrapped language files"
+                )
+
+                assert (test_data_dir / "car_params").exists(), (
+                    "car_params directory missing"
+                )
+                assert (test_data_dir / "hud_overlay").exists(), (
+                    "hud_overlay directory missing"
+                )
+
+                port_file = test_data_dir / "logs" / "web_port.txt"
+                while not port_file.exists() and time.monotonic() < startup_deadline:
+                    time.sleep(0.1)
+                assert port_file.exists(), "sidecar did not publish its HTTP port"
+                backend_port = port_file.read_text(encoding="utf-8").strip()
+
+                with wait_for_http_get(
+                    f"http://127.0.0.1:{backend_port}/api/hud/styles", startup_deadline
+                ) as response:
+                    styles = json.loads(response.read().decode("utf-8"))["styles"]
+                custom_style = next(
+                    style for style in styles if style["id"] == "portable_custom_hud"
+                )
+                assert custom_style["source"] == "user"
+                assert custom_style["urlPrefix"] == "/hud_user"
+
+                with urllib.request.urlopen(
+                    f"http://127.0.0.1:{backend_port}/hud_user/portable_custom_hud/index.html",
+                    timeout=5,
+                ) as response:
+                    assert b"Portable custom HUD" in response.read()
+                assert (test_data_dir / "tunings").exists(), "tunings directory missing"
+                assert (test_data_dir / "drag_sessions").exists(), (
+                    "drag_sessions directory missing"
+                )
+                assert (test_data_dir / "user_configs").exists(), (
+                    "user_configs directory missing"
+                )
+
+                sessions_dir = test_data_dir / "sessions"
+                assert sessions_dir.exists(), "sessions directory missing"
+                db_file = test_data_dir / "telemetry_sessions.db"
+                assert db_file.exists(), (
+                    "SQLite database telemetry_sessions.db was not created"
+                )
+
+                conn = sqlite3.connect(str(db_file))
+                cursor = conn.cursor()
+                cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
+                tables = [row[0] for row in cursor.fetchall()]
+                conn.close()
+                assert "sessions" in tables, "sessions table missing in SQLite DB"
+
+                settings_url = f"http://127.0.0.1:{backend_port}/api/settings"
+                if boot == 0:
+                    request = urllib.request.Request(
+                        settings_url,
+                        data=json.dumps({"language": "ja-jp"}).encode("utf-8"),
+                        headers={"Content-Type": "application/json"},
+                        method="POST",
+                    )
+                    with urllib.request.urlopen(request, timeout=5) as response:
+                        assert response.status == 200
+                else:
+                    with urllib.request.urlopen(settings_url, timeout=5) as response:
+                        assert json.load(response)["language"] == "ja-jp"
+                    assert settings["language"] == "ja-jp"
+                assert legacy_file.read_text(encoding="utf-8") == '{"preserve":true}'
+
+                logs_dir = test_data_dir / "logs"
+                assert logs_dir.exists(), "logs directory missing"
+                log_file = logs_dir / "backend.log"
+                assert log_file.exists(), "backend.log missing"
+                with open(log_file, "r", encoding="utf-8") as f:
+                    log_content = f.read()
+                    assert len(log_content) > 0, "backend.log is empty"
+
+            except Exception:
+                collect_diagnostics(
+                    target_exe,
+                    proc,
+                    test_data_dir,
+                    cmd,
+                    run_label,
+                    stdout_path,
+                    stderr_path,
+                )
+                raise
+            finally:
+                close_portable_process(proc)
 
 
 @pytest.mark.host_diagnostics

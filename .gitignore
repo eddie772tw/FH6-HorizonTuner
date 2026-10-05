@@ -135,3 +135,4 @@ id_rsa*
 /.agents/ORIGINAL_REQUEST.md
 /.agents/PROJECT.md
 /.agents/TEST_INFRA.md
+/backend/car_params

@@ -1,13 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { captureSaveRequest } from '../captureDownload';
 import { useFileSave } from '../../../hooks/useFileSave';
 import { useSettings } from '../../../context/SettingsContext';
 import { LiveDynoCurveCanvas } from './LiveDynoCurveCanvas';
-import {
-  getTuningMeasurementReadiness,
-  TUNING_MEASUREMENT_MIN_ACCEPTED_MS,
-  getTuningMeasurementMinBins,
-} from '../tuningMeasurement';
 import { canFinishAdditionalMeasurement } from '../tuneSessionController';
 import { useTuneSession } from '../TuneSessionProvider';
 import { guidanceText } from '../measurementGuidance';
@@ -17,19 +12,13 @@ export function TuningMeasurementStep({ carId, enabled }: { carId: string; enabl
   const { save, isSaving } = useFileSave();
   const session = useTuneSession();
   const measurement = session.engineMeasurement;
-  const [now, setNow] = useState(() => performance.now());
 
   useEffect(() => {
     session.engineMeasurement.ensureStarted(enabled);
   }, [enabled, session.engineMeasurement]);
 
-  useEffect(() => {
-    const timer = window.setInterval(() => setNow(performance.now()), 1000 / 5);
-    return () => window.clearInterval(timer);
-  }, []);
-
   const state = measurement.state;
-  const readiness = getTuningMeasurementReadiness(state, now);
+  const readiness = measurement.readiness;
   const complete = enabled && measurement.phase === 'complete' && state.status !== 'blocked' && state.carId === carId;
   const canFinishExtra = enabled
     && canFinishAdditionalMeasurement(measurement.phase, measurement.autoFinish, measurement.sampleCount,
@@ -37,8 +26,8 @@ export function TuningMeasurementStep({ carId, enabled }: { carId: string; enabl
     && !['car-mismatch', 'identity-incomplete'].includes(state.guidance);
   const guidance = measurement.phase === 'invalidated' ? 'identity-changed'
     : measurement.phase === 'complete' ? 'ready'
-      : ['timestamp-stalled', 'rpm-coverage-low', 'rpm-coverage-high', 'bins-insufficient'].includes(readiness.guidance)
-        ? readiness.guidance : state.guidance;
+      : ['timestamp-stalled', 'rpm-coverage-low', 'rpm-coverage-high', 'bins-insufficient'].includes(readiness?.guidance ?? '')
+        ? readiness!.guidance : state.guidance;
 
   return (
     <section className="glass-panel p-4" style={{ color: 'var(--text-primary)' }}>
@@ -60,12 +49,12 @@ export function TuningMeasurementStep({ carId, enabled }: { carId: string; enabl
         <li>{t('Engine limit received')}: {state.engineMaxRpm ? `${Math.round(state.engineMaxRpm)} RPM` : t('Waiting')}
           {state.effectiveRedline ? ` · ${t('Effective limit')}: ${Math.round(state.effectiveRedline)} RPM` : ''}
         </li>
-        <li>{t('Clean acceleration data')}: {(state.acceptedMs / 1000).toFixed(1)} / {TUNING_MEASUREMENT_MIN_ACCEPTED_MS / 1000} {t('seconds')}</li>
-        <li>{t('Low rev range')}: {t(readiness.lowRpmCoverage ? 'Collected' : 'Still needed')}</li>
-        <li>{t('High rev range')}: {t(readiness.highRpmCoverage ? 'Collected' : 'Still needed')}
-          {readiness.cutoffDetected ? ` (${t('Cutoff detected')})` : readiness.powerDropoffDetected ? ` (${t('Powerband roll-off')})` : ''}
+        <li>{t('Clean acceleration data')}: {(state.acceptedMs / 1000).toFixed(1)} / {readiness ? readiness.minimumAcceptedMs / 1000 : '—'} {t('seconds')}</li>
+        <li>{t('Low rev range')}: {t(readiness?.lowRpmCoverage ? 'Collected' : 'Still needed')}</li>
+        <li>{t('High rev range')}: {t(readiness?.highRpmCoverage ? 'Collected' : 'Still needed')}
+          {readiness?.cutoffDetected ? ` (${t('Cutoff detected')})` : readiness?.powerDropoffDetected ? ` (${t('Powerband roll-off')})` : ''}
         </li>
-        <li>{t('Rev range coverage')}: {readiness.binCount} / {getTuningMeasurementMinBins(state)} {t('required sample bands')}</li>
+        <li>{t('Rev range coverage')}: {readiness?.binCount} / {readiness?.minimumBins ?? '—'} {t('required sample bands')}</li>
         {state.powerbandStartRpm && state.powerbandEndRpm && (
           <li>{t('Observed powerband')}: {Math.round(state.powerbandStartRpm)} - {Math.round(state.powerbandEndRpm)} RPM</li>
         )}

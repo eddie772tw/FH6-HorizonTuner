@@ -1,8 +1,8 @@
 import type { CarParams } from '../../context/CarParamsContext';
-import type { Season, ChassisTuningResult, StaticTireAlignResult } from '../../utils/tuningMath';
-import type { TuningMeasurementState } from '../tuning/tuningMeasurement';
+import type { Season, ChassisTuningResult, StaticTireAlignResult } from '../../domain/tuning/types';
+import type { TuningMeasurementState } from '../../domain/tuning/types';
 import type { WorkflowReadiness } from '../tuning/tuningWorkflow';
-import type { WorkflowGearingResult } from '../tuning/measurementTuningProfile';
+import type { WorkflowGearingResult } from '../../domain/tuning/types';
 import { canOpenTuningStep, serializeWorkflowProfile } from '../tuning/tuningWorkflow';
 
 export interface CompanionSnapshot {
@@ -14,6 +14,7 @@ export interface CompanionSnapshot {
   results: { chassis: ChassisTuningResult | null; alignment: StaticTireAlignResult | null; gearing: WorkflowGearingResult | null };
   engine: { phase: string; sampleCount: number; state: TuningMeasurementState | null };
   readiness: WorkflowReadiness;
+  calculationStatus?: 'pending' | 'error' | 'ready';
 }
 export interface CompanionAck { id: string; status: 'pending' | 'applied' | 'rejected'; error?: string }
 export interface CompanionState {

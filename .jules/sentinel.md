@@ -31,3 +31,7 @@
 **Vulnerability:** A potential SQL injection vulnerability existed when dynamically building `PRAGMA table_info` and `ALTER TABLE` queries in `backend/telemetry_sqlite.py`. The `table`, `name`, and `definition` variables were concatenated directly into the query strings without validation.
 **Learning:** SQLite cannot parameterize table or column names, nor PRAGMA arguments. If these identifiers become derived from untrusted input, direct interpolation leads to SQL injection.
 **Prevention:** Always strictly validate dynamic table, column names, and schemas against an alphanumeric regex allowlist (e.g., `^[a-zA-Z0-9_]+$`) before executing dynamic DDL or PRAGMA statements.
+## 2024-05-31 - [Prevent Information Leakage in API Errors]
+**Vulnerability:** Raw exception details (`e.to_string()`) were being passed directly to `ApiError::new()` and subsequently leaked to the client in HTTP responses.
+**Learning:** Returning raw exceptions can expose sensitive internal system details, filesystem paths, or architectural context to potential attackers.
+**Prevention:** Always log the detailed exception internally (e.g., using `eprintln!`) and return a sanitized, generic message (e.g., "Internal Server Error" or "Service Unavailable") to the client.

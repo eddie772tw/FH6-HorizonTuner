@@ -1,6 +1,6 @@
 # Tuning telemetry and MCP integration evaluation
 
-> 歷史文件：保留原撰寫日期、方案與驗證紀錄，不代表目前功能或進度。後續工作請先查閱[文件索引](../../README.md)；本區的分類與閱讀原則見[歷史索引](../README.md)。
+> 歷史文件：保留原撰寫日期、方案與驗證紀錄，不代表目前功能或進度。後續工作請先查閱[文件索引](../../../README.md)；本區的分類與閱讀原則見[歷史索引](../README.md)。
 
 Date: 2026-08-13 (Updated: 2026-08-14)
 Branch: `codex/tuning-dev-mode`

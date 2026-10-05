@@ -8,7 +8,7 @@ description: 當新增、修改車輛物理計算（懸吊、彈簧、防傾桿 
 ## 核心原則
 
 1. **單一真理 (Single Source of Truth)**：
-   - 正式調校純函數集中在 `backend-rust/src/tuning/` 與對齊的 `frontend/src/utils/tuningMath.ts`，診斷入口為 `tuningDiagnosis.ts`；Rust／TypeScript 透過 `tests/fixtures/tuning_golden_fixtures.json` 保持數值契約。
+   - 正式調校與數值診斷純函數集中在 `backend-rust/src/tuning/`；v1.7.1 取代 #430 雙端 SSOT。既有 TS 模型隔離於 `frontend/test-reference/tuning/`，以凍結 fixtures 鎖定輸出；產品純型別位於 `frontend/src/domain/tuning/types.ts`，不能新增前端計算或 fallback；桌面、Companion、API 與離線 CLI 共用 Rust owner。
    - **絕不**在 React UI 組件重複硬編碼物理計算公式。`legacy_cli.rs` 與 MCP quick solver 僅保留既有 `tuning-dev/v1` 相容輸出，不作為新公式入口。
 
 2. **純函數無副作用 (Pure Functions)**：
@@ -41,6 +41,7 @@ description: 當新增、修改車輛物理計算（懸吊、彈簧、防傾桿 
 | **壓縮阻尼 ($D_{bmp}$)** | $D_{reb} \times 0.60$ | $D_{reb} \times 0.50$ | $D_{reb} \times 0.40$ | 前 $4.0$ / 後 $10.0$ |
 
 ### 2. AEGO 齒比算牌與二次修正核心
+- 下列為凍結模型速查；Road 現行 owner 與版本以 [Launch v3](../../../docs/tuning/aego-road-launch-v3.md) 為準，不能依此表新增前端公式。
 - **`calculateAEGOGearing`** 支援 Road, Drift, Rally, Drag 四種 profile。
 - **Drag 4-Speed Meta**：極速採 $vDragTop = 410.0 \times (hp/kg)^{0.30} \times (1 + 0.12 \times aeroEfficiency)$。
 - **Secondary Correction**：支援 `simulatedTopSpeed` 與 `softMaxSpeed` 時速上限鎖定，動態計算頂檔與閉環重分佈中間檔位。
@@ -49,6 +50,8 @@ description: 當新增、修改車輛物理計算（懸吊、彈簧、防傾桿 
 - 當 UI 下壓力數值未指定 ($\le 0$) 時，以車重 20% (lbs) 結合驅動偏置 (RWD 0.82, FWD/AWD 1.05) 自動導出前後軸下壓力。
 
 ### 4. Agent CLI 調校算牌工具 (`fh6-agent`)
+
+正式入口是 `fh6-agent.bat solve workflow --args-file workflow-request.json --data-dir <資料目錄> --json`，與桌面及 MCP `calculate_tuning_workflow` 使用相同 Rust owner；量測推薦需 saved-engine／saved-ev 證據或可重播的原始 capture，不能用裸峰值代替。以下 chassis／gearing／full 指令僅為 `legacy-cli/v1` 相容契約，不能作為新模型或正式驗收入口。
 - Agent 可直接使用 `fh6-agent.bat solve chassis --weight <kg> --bias <%> --drive <AWD|RWD|FWD> --goal <road|drift|rally|drag> --json` 進行離線極速算牌。
 - 支援 `--export-applied-setup` 產出前端 Step 5 `AppliedSetupTable` 規格物件。
 - 支援 `fh6-agent.bat solve gearing --max-rpm <rpm> --peak-hp-rpm <rpm> --top-speed <kmh> --gears <count> --json` 進行 AEGO 齒比計算。
@@ -58,6 +61,6 @@ description: 當新增、修改車輛物理計算（懸吊、彈簧、防傾桿 
 
 ## 驗證 SOP
 
-- 修改物理算牌公式後，必須於 `tuningMath.test.ts` 新增/更新單元測試案例。
+- 修改正式公式後，必須於 `backend-rust/tests/` 補充對應 Rust 契約；歷史 TypeScript characterization tests 不得跟著新模型重寫預期值。新版本另建有來源的新基準。
 - 執行測試指令：`cmd /c "pnpm -C frontend run test"`。
 - Rust 後端與 CLI 驗證指令：`cargo test --locked --manifest-path backend-rust/Cargo.toml`；相關公式契約另確認 `tests/fixtures/tuning_golden_fixtures.json` 與前端 Vitest。

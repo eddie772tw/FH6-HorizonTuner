@@ -55,5 +55,5 @@ Rust 後端及 Agent CLI 的主驗證入口為 `cargo test --locked --manifest-p
   cmd /c "pnpm -C frontend run test"
 
   # 單檔聚焦極速測試
-  cmd /c "pnpm -C frontend exec vitest run src/utils/tuningMath.test.ts"
+  cmd /c "pnpm -C frontend exec vitest run test-reference/tuning/utils/tuningMath.test.ts"
   ```

@@ -1,5 +1,6 @@
+import { getWorkflowReadiness } from "../../../test-reference/tuning/features/tuning/legacyWorkflowReadiness";
 import { describe, expect, it } from 'vitest';
-import { canOpenTuningStep, getWorkflowReadiness, nextTuningStep, resolveTuningStep, restoreWorkflowStep, serializeWorkflowProfile, TUNING_WORKFLOW_STEPS, updateWorkflowProfile } from './tuningWorkflow';
+import { canOpenTuningStep, nextTuningStep, resolveTuningStep, restoreWorkflowStep, serializeWorkflowProfile, TUNING_WORKFLOW_STEPS, updateWorkflowProfile } from './tuningWorkflow';
 
 const profile = { weight: 1200, weight_distribution: 50, maxHp: 200 };
 describe('recommended workflow and independent data gates', () => {

@@ -1,4 +1,4 @@
-import type { TuningMeasurementGuidance } from './tuningMeasurement';
+import type { TuningMeasurementGuidance } from '../../domain/tuning/types';
 
 export const guidanceText: Record<TuningMeasurementGuidance, string> = {
   collecting: 'Keep accelerating smoothly in one gear.',

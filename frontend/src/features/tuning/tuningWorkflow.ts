@@ -1,4 +1,4 @@
-import type { TuningCarParams } from '../../utils/tuningMath';
+import type { TuningCarParams } from '../../domain/tuning/types';
 
 /** Recommended navigation order. Access follows data requirements, not visited pages. */
 export const TUNING_WORKFLOW_STEPS = [
@@ -51,16 +51,6 @@ export function serializeWorkflowProfile(profile: (TuningCarParams & { dyno_curv
 /** Apply an interactive workflow edit to the full persisted profile. */
 export function updateWorkflowProfile<T extends object, K extends keyof T>(profile: T | null, field: K, value: T[K]): T | null {
   return profile ? { ...profile, [field]: value } : null;
-}
-
-export function getWorkflowReadiness(profileReady: boolean,
-  params: Pick<TuningCarParams, 'weight' | 'weight_distribution' | 'maxHp' | 'isElectric'> | null,
-  measuredEngine: boolean, gearingAvailable = measuredEngine): WorkflowReadiness {
-  const mechanical = Boolean(profileReady && params && Number.isFinite(params.weight) && params.weight > 0 &&
-    Number.isFinite(params.weight_distribution) && params.weight_distribution > 0 && params.weight_distribution < 100);
-  const engineInputs = mechanical && Boolean(params && (params.isElectric || (Number.isFinite(params.maxHp) && params.maxHp > 0)));
-  return { mechanical, engineInputs, measuredEngine: engineInputs && measuredEngine,
-    gearingAvailable: engineInputs && measuredEngine && gearingAvailable };
 }
 
 export function canOpenTuningStep(step: number, readiness: WorkflowReadiness): boolean {

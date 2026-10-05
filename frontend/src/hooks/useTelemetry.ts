@@ -4,6 +4,7 @@ import { getRuntimeCapabilities } from '../services/runtimeCapabilities';
 import { FrameInterpolator } from "../utils/frameInterpolator";
 
 export interface TelemetryData {
+  DynoGuidance?: { launch: boolean; gearCorrect: boolean; waiting: boolean; start: boolean; stop: boolean; completed: boolean; slipped: boolean; targetGear: number };
   TelemetrySchema?: string;
   DrivetrainType?: number;
   AngularVelocityX?: number;

@@ -1,3 +1,4 @@
+import { useLocalCalculation } from '../tuning/useLocalCalculation';
 import React from 'react';
 import { useCarParams, CarParams } from '../../context/CarParamsContext';
 import { useSettings } from '../../context/SettingsContext';
@@ -67,43 +68,15 @@ const CarParamsView: React.FC<CarParamsViewProps> = ({ subTab: propSubTab, setSu
     loadActiveGearing();
   }, [carId]);
 
-  // Recommend best gear (closest to 1.00)
-  const recommendedGear = React.useMemo(() => {
-    if (!gearingData || !gearingData.gears || !carParams) return null;
-    const numGears = carParams.adjustability?.gears || 6;
-    let bestGearIdx = 3; // Default to 4th gear
-    let minDiff = 999;
-    
-    for (let i = 0; i < Math.min(gearingData.gears.length, numGears); i++) {
-      const ratio = gearingData.gears[i];
-      const diff = Math.abs(ratio - 1.0);
-      if (diff < minDiff) {
-        minDiff = diff;
-        bestGearIdx = i;
-      }
-    }
-    return {
-      gear: bestGearIdx + 1,
-      ratio: gearingData.gears[bestGearIdx]
-    };
-  }, [gearingData, carParams]);
+  const recommendedGear = useLocalCalculation<{ gear: number; ratio: number }>('/api/tuning/dyno-gear', gearingData && carParams ? { gearing: gearingData, gears: carParams.adjustability?.gears } : null);
 
   // Guided Dyno Run state machine
   React.useEffect(() => {
     if (!telemetryData || !settings.dyno_recording) return;
-    const currentGear = telemetryData.Gear || 0;
-    const currentRpm = telemetryData.CurrentEngineRpm || 0;
-    const maxRpm = telemetryData.EngineMaxRpm || 8000;
-    const accel = telemetryData.AccelInput || 0;
-    const brake = telemetryData.BrakeInput || 0;
-    const handbrake = telemetryData.HandBrakeInput || 0;
-    const clutch = telemetryData.ClutchInput || 0;
-    
-    const targetGear = settings.dyno_test_gear ?? 4;
-    const isGearCorrect = targetGear === 0 || currentGear === targetGear;
-    
-    // Launch Control active check
-    const isLaunching = currentGear === 1 && handbrake > 50 && accel > 200;
+    const guidance = telemetryData.DynoGuidance;
+    if (!guidance) return;
+    const isGearCorrect = guidance.gearCorrect;
+    const isLaunching = guidance.launch;
     if (isLaunching) {
       // Pause or reset state machine during launch control
       if (testState === 'recording') {
@@ -114,26 +87,23 @@ const CarParamsView: React.FC<CarParamsViewProps> = ({ subTab: propSubTab, setSu
     }
 
     if (testState === 'ready') {
-      if (isGearCorrect && currentRpm > 0 && currentRpm < 2500 && accel < 50 && brake === 0 && handbrake === 0) {
+      if (guidance.waiting) {
         setTestState('waiting');
       }
     } else if (testState === 'waiting') {
       if (!isGearCorrect) {
         setTestState('ready');
-      } else if (accel >= 250 && currentRpm >= 2000 && brake === 0 && handbrake === 0 && clutch === 0) {
+      } else if (guidance.start) {
         setTestState('recording');
         const timestampMs = Number(telemetryData.TimestampMS);
         setRunStartTimestampMs(Number.isFinite(timestampMs) ? timestampMs : null);
       }
     } else if (testState === 'recording') {
-      const shouldStop = !isGearCorrect || accel < 200 || brake > 0 || handbrake > 0 || clutch > 50;
-      const isRedline = currentRpm >= maxRpm - 250;
-      
-      if (shouldStop || isRedline) {
+      if (guidance.stop) {
         if (runStartTimestampMs !== null) {
           const timestampMs = Number(telemetryData.TimestampMS);
           const duration = (timestampMs - runStartTimestampMs) / 1000;
-          if (duration >= 0 && (currentRpm >= maxRpm * 0.82 || isRedline)) {
+          if (duration >= 0 && guidance.completed) {
             setTestState('completed');
             setRunDuration(duration);
           } else {
@@ -145,7 +115,7 @@ const CarParamsView: React.FC<CarParamsViewProps> = ({ subTab: propSubTab, setSu
         setRunStartTimestampMs(null);
       }
     } else if (testState === 'completed') {
-      if (isGearCorrect && currentRpm > 0 && currentRpm < 2500 && accel < 50 && brake === 0 && handbrake === 0) {
+      if (guidance.waiting) {
         setTestState('waiting');
       }
     }

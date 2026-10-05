@@ -1,12 +1,8 @@
+import { unavailableReadiness } from '../tuning/useWorkflowCalculation';
 import { useEffect, useRef, useState } from 'react';
 import { useCarParams } from '../../context/CarParamsContext';
-import { useTelemetry } from '../../hooks/useTelemetry';
 import { backendFetch } from '../../services/backend';
-import { calculateChassisTuning, calculateStaticTireAlignment } from '../../utils/tuningMath';
 import { useTuneSession } from '../tuning/TuneSessionProvider';
-import { calculateWizardMeasuredGearing } from '../tuning/measurementTuningProfile';
-import { selectedEngineObservationMatchesLiveTelemetry } from '../tuning/tuneSessionController';
-import { getWorkflowReadiness } from '../tuning/tuningWorkflow';
 import { companionProfileKey, validateCompanionCommand, type CompanionAck, type CompanionCommand, type CompanionSnapshot, type CompanionSeason } from './companionProtocol';
 import { companionUuid } from './companionUuid';
 
@@ -14,9 +10,8 @@ import { companionUuid } from './companionUuid';
 export function CompanionHostBridge() {
   const car = useCarParams();
   const session = useTuneSession();
-  const { data } = useTelemetry();
-  const latest = useRef({ car, session, data });
-  latest.current = { car, session, data };
+  const latest = useRef({ car, session });
+  latest.current = { car, session };
   const [clientId] = useState(companionUuid);
   const completed = useRef(new Map<string, CompanionAck>());
 
@@ -25,27 +20,23 @@ export function CompanionHostBridge() {
     let timer: ReturnType<typeof setTimeout>;
     const controller = new AbortController();
     const snapshot = (): CompanionSnapshot => {
-      const { car: current, session: tune, data: frame } = latest.current;
+      const { car: current, session: tune } = latest.current;
       const profile = !current.isLoading && current.loadedCarId === current.carId ? tune.profile : null;
       const { goal, season, step } = tune.workflow;
-      const prepared = selectedEngineObservationMatchesLiveTelemetry(current.carId, tune.engine.current, frame) ? tune.engine.current : null;
-      const gearing = calculateWizardMeasuredGearing(goal, profile?.adjustability.gears || 6, profile, prepared ? {
-        engineMaxRpm: prepared.engineMaxRpm!, peakPowerRpm: prepared.observedPeakPower!.rpm,
-        peakTorqueRpm: prepared.observedPeakTorque!.rpm,
-      } : null, tune.evMeasurement.result);
       return {
         carId: current.carId, carName: current.carName, profile,
         profileKey: companionProfileKey(current.carId, current.carParams, tune.identityGeneration),
         workflow: { goal, season, step },
         results: {
-          chassis: profile ? calculateChassisTuning(goal, profile) : null,
-          alignment: profile ? calculateStaticTireAlignment(goal, season, profile) : null,
-          gearing,
+          chassis: tune.result?.chassis ?? null,
+          alignment: tune.result?.alignment ?? null,
+          gearing: tune.result?.gearing ?? null,
         },
         engine: profile?.isElectric
           ? { phase: tune.evMeasurement.phase, sampleCount: tune.evMeasurement.sampleCount, state: null }
           : { phase: tune.engineMeasurement.phase, sampleCount: tune.engineMeasurement.sampleCount, state: tune.engineMeasurement.state },
-        readiness: getWorkflowReadiness(Boolean(profile), profile, Boolean(gearing)),
+        readiness: tune.result?.readiness ?? unavailableReadiness,
+        calculationStatus: tune.calculationStatus,
       };
     };
     const apply = async (command: CompanionCommand) => {

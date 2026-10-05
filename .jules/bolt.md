@@ -112,3 +112,14 @@ Additionally, attempting to optimize 60Hz telemetry data copying in `FrameInterp
 **Learning:** In high-frequency frontend canvas rendering loops (e.g., drawing telemetry charts with hundreds of points), performing style lookups or evaluating expensive regular expressions for every data point or chart line severely increases CPU overhead.
 **Action:** Extract and cache resolved styling properties (like colors) outside the per-point data loops. Implement fast-path string checks (e.g., `.startsWith('#')`) to bypass expensive regex and `getComputedStyle` operations when standard hex or rgb values are used.
 
+
+## 2024-11-26 - Eliminating Chained Array Methods in High-Frequency Paths
+**Learning:** In high-frequency frontend loops (e.g., telemetry frame processing), using `.slice()` combined with iteration methods like `.every()` or `.some()` (e.g., `arr.slice(0, 4).every(fn)`) allocates intermediate arrays and creates closure overhead, generating significant GC pressure.
+**Action:** Unroll these higher-order function chains into single-pass or explicit logical OR/AND checks with direct index access (e.g., `!fn(arr[0]) || !fn(arr[1])...`) to minimize Garbage Collection (GC) pressure.
+
+## 2026-10-01 - Caching DOM getComputedStyle in Canvas render loop
+**Learning:** `getComputedStyle` is an extremely expensive DOM operation because it triggers layout recalculations and style resolutions. Calling it inside a 60Hz canvas render loop (like `renderCompass`) causes massive CPU overhead and layout thrashing, severely degrading performance.
+**Action:** Extract and cache the resolved style result using a module-level variable or attaching it to the `canvas` instance directly (e.g., `canvas._cachedPrimaryColor`). Only compute the value once per instance rather than every frame to avoid layout penalties.
+## 2026-10-03 - Avoiding Modulo Arithmetic for Order-Independent History Traversal
+**Learning:** In high-frequency render loops (e.g., `GForceRadar`), maintaining fixed-size histories using circular buffers (via an `offsetRef`) requires modulo traversal `(offset + i) % len` to process entries chronologically. However, for operations that are order-independent, such as searching for a maximum or minimum value, this modulo arithmetic adds unnecessary overhead.
+**Action:** When iterating over a circular buffer for order-independent operations, use a direct linear loop (e.g., `arr[i]`) instead of chronological modulo logic. This eliminates mathematical overhead inside the hot loop and speeds up execution significantly (e.g., ~2.4x faster in benchmarks).

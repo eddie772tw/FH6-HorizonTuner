@@ -177,6 +177,20 @@ impl RoadService {
             .ok_or_else(|| {
                 ApiError::invalid("The recommendation requires a saved engine observation")
             })?;
+        if matches!(
+            recommendation["formulaVersion"].as_str(),
+            Some(
+                "rust/ice-measured-workflow-v1"
+                    | "rust/ice-measured-workflow-v2"
+                    | "rust/ev-measured-workflow-v1"
+            )
+        ) {
+            // Only already-qualified immutable metadata is loaded here. No capture replay.
+            return crate::tuning::evidence::EvidenceService {
+                store: self.store.clone(),
+            }
+            .verify_recommendation(recommendation, identity);
+        }
         let observation = snapshot
             .get("engineObservation")
             .and_then(Value::as_object)

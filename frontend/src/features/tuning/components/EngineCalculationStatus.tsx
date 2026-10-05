@@ -1,5 +1,5 @@
-import type { EngineCalculationSummary } from '../engineCalculation';
-import type { GearingResult } from '../../../utils/tuningMath';
+import type { EngineCalculationSummary } from '../../../domain/tuning/types';
+import type { GearingResult } from '../../../domain/tuning/types';
 import { guidanceText } from '../measurementGuidance';
 
 /** Archive readability, analysis readiness and solver feasibility are separate states. */

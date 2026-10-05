@@ -99,8 +99,14 @@ pub fn validate_request(kind: &str, body: &Value) -> ApiResult<()> {
             }
             if let Some(r) = o.get("recommendation").filter(|v| !v.is_null()) {
                 let rec = as_obj(r)?;
-                if !["tuningMath/measured-workflow-v1", "ev/measured-workflow-v1"]
-                    .contains(&text(rec, "formulaVersion", 80)?.as_str())
+                if ![
+                    "tuningMath/measured-workflow-v1",
+                    "ev/measured-workflow-v1",
+                    "rust/ice-measured-workflow-v1",
+                    "rust/ice-measured-workflow-v2",
+                    "rust/ev-measured-workflow-v1",
+                ]
+                .contains(&text(rec, "formulaVersion", 80)?.as_str())
                 {
                     return Err(ApiError::invalid("Unsupported recommendation formula"));
                 }
@@ -241,7 +247,10 @@ pub fn validate_request(kind: &str, body: &Value) -> ApiResult<()> {
                 ));
             }
             let identity = child(data, "identity")?;
-            if identity.get("ordinal").map(Value::to_string)
+            if identity
+                .get("ordinal")
+                .and_then(Value::as_f64)
+                .map(|v| v.to_string())
                 != item.get("carId").and_then(Value::as_str).map(str::to_owned)
             {
                 return Err(ApiError::invalid(

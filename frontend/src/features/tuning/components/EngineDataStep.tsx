@@ -1,14 +1,15 @@
 import type { CarParams } from '../../../context/CarParamsContext';
 import { useSettings } from '../../../context/SettingsContext';
-import type { GearingResult } from '../../../utils/tuningMath';
+import type { GearingResult } from '../../../domain/tuning/types';
 import type { useEngineMeasurementArchive } from '../useEngineMeasurementArchive';
 import { TuningMeasurementStep } from './TuningMeasurementStep';
 import { EngineObservationHistory } from './EngineObservationHistory';
 import { GearingTuner } from './GearingTuner';
 import { LegacyTuningHistory } from './LegacyTuningHistory';
-import { observeTireEvidence } from '../tireEvidence';
+import type { TireEvidenceResult } from '../../../domain/tuning/types';
+import { backendFetch } from '../../../services/backend';
 import { TireEvidencePanel } from './TireEvidencePanel';
-import { useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import { useTuneSession } from '../TuneSessionProvider';
 import { EngineCalculationStatus } from './EngineCalculationStatus';
 
@@ -20,9 +21,17 @@ export function EngineDataStep({ carId, profile, engine, gearing, enabled }: {
   const { engineMeasurement } = useTuneSession();
   const measured = engine.current;
   const calculation = engine.calculation;
-  const tireEvidence = useMemo(() => measured && engine.observation?.capture ? observeTireEvidence(engine.observation.capture.samples, {
-    carOrdinal: measured.identity!.ordinal, performanceIndex: measured.identity!.performanceIndex, carClass: measured.identity!.carClass,
-  }) : null, [measured, engine.observation?.id, engine.observation?.capture]);
+  const [tireResult, setTireResult] = useState<{ capture: unknown; evidence: TireEvidenceResult } | null>(null);
+  const capture = engine.observation?.capture;
+  useEffect(() => {
+    if (!measured?.identity || !capture) return;
+    const controller = new AbortController(); let active = true;
+    void backendFetch('/api/tuning/tire-evidence', { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: controller.signal,
+      body: JSON.stringify({ samples: capture.samples, identity: { carOrdinal: measured.identity.ordinal, performanceIndex: measured.identity.performanceIndex, carClass: measured.identity.carClass } })
+    }).then(async response => { if (!response.ok) throw new Error(); const evidence = await response.json() as TireEvidenceResult; if (active) setTireResult({ capture, evidence }); }).catch(() => {});
+    return () => { active = false; controller.abort(); };
+  }, [measured, capture]);
+  const tireEvidence = capture && tireResult?.capture === capture ? tireResult.evidence : null;
   return <section className="d-flex flex-column gap-3">
     <div className="workspace-section"><h3 className="workspace-section-heading">{t('Engine data & gearing')}</h3>
       <p className="mb-0">{t('Engine limit and peak output RPM come from measured acceleration. Missing measurements do not use an estimated redline.')}</p>

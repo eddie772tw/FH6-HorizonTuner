@@ -1,0 +1,33 @@
+{
+  "synthetic": true,
+  "profile": {
+    "weight": 1400,
+    "weight_distribution": 50,
+    "drivetrain": "AWD",
+    "maxHp": 1387.939272200741,
+    "maxTorque": 1323.3977695167287,
+    "maxHpRpm": 9023.778268980559,
+    "maxTorqueRpm": 6000,
+    "aeroEfficiency": 0.5,
+    "rearTireWidth": 245,
+    "rearTireAspect": 40,
+    "rearTireRim": 18
+  },
+  "numGears": 7,
+  "maxRpm": 10000,
+  "note": "Executed unchanged TypeScript from the recorded commits, Node 24.19.0 stripTypeScriptTypes. Synthetic characterization only; not a real vehicle. Normal tests must not regenerate.",
+  "cases": [
+    {"sha":"cd96d86f017fa43f4f3d429155a08aa77dc74bac","ref":"cd96d86","result":{"finalDrive":3.99,"gears":[3.64,2.53,1.82,1.35,1.04,0.82,0.67]},"alternate":{"finalDrive":3.89,"gears":[3.64,2.53,1.82,1.35,1.04,0.82,0.67]}},
+    {"sha":"844ad1befab41ef06d6d5e4c669fe0982fccea72","ref":"844ad1b","result":{"finalDrive":3.99,"gears":[3.64,2.53,1.82,1.35,1.04,0.82,0.67]},"alternate":{"finalDrive":3.89,"gears":[3.64,2.53,1.82,1.35,1.04,0.82,0.67]}},
+    {"sha":"14f5a1dd30cc4f5bd8d2d7302f74cc788ddbfe49","ref":"14f5a1d","result":{"finalDrive":3.99,"gears":[3.64,2.53,1.82,1.35,1.04,0.82,0.67]},"alternate":{"finalDrive":3.89,"gears":[3.64,2.53,1.82,1.35,1.04,0.82,0.67]}},
+    {"sha":"9018a579c7f635f4c95200b23b97bbead32ec52e","ref":"9018a57","result":{"finalDrive":3.99,"gears":[3.64,2.53,1.82,1.35,1.04,0.82,0.67]},"alternate":{"finalDrive":3.89,"gears":[3.64,2.53,1.82,1.35,1.04,0.82,0.67]}},
+    {"sha":"aa40431896b29ab68bb34ab6d33cace659ee817f","ref":"aa40431","result":{"finalDrive":3.99,"gears":[3.64,2.53,1.82,1.35,1.04,0.82,0.67]},"alternate":{"finalDrive":3.89,"gears":[3.64,2.53,1.82,1.35,1.04,0.82,0.67]}},
+    {"sha":"c87f05c6cf5b88104f7bc94a0209951a232b3b96","ref":"c87f05c","result":{"finalDrive":3.99,"gears":[3.64,2.53,1.82,1.35,1.04,0.82,0.67]},"alternate":{"finalDrive":3.89,"gears":[3.64,2.53,1.82,1.35,1.04,0.82,0.67]}},
+    {"sha":"c87f05c6cf5b88104f7bc94a0209951a232b3b96","ref":"972e9c2^","result":{"finalDrive":3.99,"gears":[3.64,2.53,1.82,1.35,1.04,0.82,0.67]},"alternate":{"finalDrive":3.89,"gears":[3.64,2.53,1.82,1.35,1.04,0.82,0.67]}},
+    {"sha":"972e9c2f9a7a3b0bd53c873a024ace64e6815354","ref":"972e9c2","result":{"finalDrive":3.78,"gears":[1,0.94,0.89,0.84,0.8,0.75,0.71]},"alternate":{"finalDrive":3.78,"gears":[1,0.94,0.88,0.83,0.78,0.73,0.69]}},
+    {"sha":"3a187d2e0024e60ebb3f20a00cb38a72eca88be9","ref":"3a187d2","result":{"finalDrive":3.78,"gears":[1,0.94,0.89,0.84,0.8,0.75,0.71]},"alternate":{"finalDrive":3.78,"gears":[1,0.94,0.88,0.83,0.78,0.73,0.69]}},
+    {"sha":"0fc20cf95750904c6010ddb7028d084098b46ce5","ref":"0fc20cf","result":{"finalDrive":3.78,"gears":[1,0.94,0.89,0.84,0.8,0.75,0.71]},"alternate":{"finalDrive":3.78,"gears":[1,0.94,0.88,0.83,0.78,0.73,0.69]}},
+    {"sha":"8f26f6061cdb94145844e0f88c79b86492123679","ref":"8f26f60","result":{"finalDrive":3.78,"gears":[1,0.94,0.89,0.84,0.8,0.75,0.71]},"alternate":{"finalDrive":3.78,"gears":[1,0.94,0.88,0.83,0.78,0.73,0.69]}},
+    {"sha":"ca195c7fbceceeaecea41c9861fecfa65f52b0a4","ref":"ca195c7","result":{"finalDrive":3.78,"gears":[1,0.94,0.89,0.84,0.8,0.75,0.71]},"alternate":{"finalDrive":3.78,"gears":[1,0.94,0.88,0.83,0.78,0.73,0.69]}}
+  ]
+}

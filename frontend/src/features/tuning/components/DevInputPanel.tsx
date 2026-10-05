@@ -1,6 +1,6 @@
 import React from 'react';
 import { CarParams } from '../../../context/CarParamsContext';
-import { DevRaceGoal, DevSurface } from '../../../utils/tuningMath_dev';
+import type { DevRaceGoal, DevSurface } from '../../../domain/tuning/types';
 
 export const goalSurfaces: Record<DevRaceGoal, DevSurface[]> = {
   Road: ['tarmac'],

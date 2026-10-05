@@ -13,7 +13,7 @@ import {
   shouldPreserveIdleIdentityHydration,
   type TuneAsyncToken,
 } from './tuneSessionController';
-import { createTuningMeasurement } from './tuningMeasurement';
+import { createTuningMeasurement } from "../../../test-reference/tuning/features/tuning/tuningMeasurement";
 
 const token = (generation = 0): TuneAsyncToken => ({
   generation,

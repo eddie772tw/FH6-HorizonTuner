@@ -1,6 +1,11 @@
 packages:
   - 'frontend'
 
+# We consume Halfmoon's published CSS; its own CSS build CLI is unused.
+# Removing this edge also removes the vulnerable chokidar > braces chain.
+overrides:
+  'halfmoon@2.0.2>csso-cli': '-'
+
 allowBuilds:
   '0': esbuild
   esbuild: true

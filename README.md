@@ -1,4 +1,9 @@
 # FH6-HorizonTuner 🏎️
+
+v1.7.1：桌面與 Companion 共用 Rust 完整調校結果；ICE/EV 量測、齒比、readiness、能力過濾與推薦均由後端計算，CLI/MCP workflow 共用同一 library。PR #460 已合併；#462 仍開放待原始輸入釐清及實車驗收。詳見 [責任契約](docs/contracts/tuning_responsibilities.md)。
+
+Road #462 修正採版本化 [launch envelope v3](docs/tuning/aego-road-launch-v3.md)，保留低功率與歷史模型；工程先驗不等於實車最佳起步。
+
 > **Forza Horizon 6 Real-Time Telemetry Analyzer, Vehicle Tuning Workbench & Custom Racing Dashboard Overlay**
 > **《極限競速：地平線 6》即時遙測分析、車輛調校工作台與賽車客製化儀表覆蓋層**
 
@@ -57,7 +62,7 @@
   - 後端 SQLite 遙測歷程資料庫自動記錄。
   - 支援一鍵匯出專業賽車數據分析軟體 **MoTeC i2** 標準 `.ld` 格式檔案。
 * **Localhost 唯讀 MCP Server (Model Context Protocol)**:
-  - 由執行中的 Rust backend 提供 Streamable HTTP MCP endpoint（`/mcp`），提供 26 個專屬唯讀工具與 5 類 Resource URI；MCP 與 telemetry 共用同一個 backend process。
+  - 由執行中的 Rust backend 提供 Streamable HTTP MCP endpoint（`/mcp`），提供 27 個專屬唯讀工具與 5 類 Resource URI；MCP 與 telemetry 共用同一個 backend process。
   - 支援 AI Agent（Claude Desktop、Cursor、Cline 等）結構化查詢即時遙測（對齊 `TelemetryView`）、歷史單圈、A/B 跑圈差異比對、車輛規格與調校求解器。
   - MCP 標準 `initialize` 回應會自動提供 Agent-facing 配置與使用說明；Settings 僅顯示目前 endpoint 與連線狀態，不再要求複製 JSON/CLI 設定。首次連線仍須由客戶端完成一次性 endpoint bootstrap。
 * **OTA 自動更新與版本管理 (Over-The-Air Update & Release Management)**:
@@ -74,7 +79,7 @@
 
 ## 專案架構 / Project Architecture
 
-前端由共用 `AppShell` 管理工作區與應用程式選單：Full 提供即時、調校、賽事紀錄、HUD，Lite 提供即時與 HUD。一次只掛載目前工作區；Tune、Road、Sessions 與 HUD 的長生命週期狀態由各功能 provider 持有，避免切頁中斷量測或清空未保存草稿。全域選單提供設定、外觀、診斷、更新與關於。此分支仍在 IA 分階段遷移，面板拆分及完整原生驗收進度見 [Shell 交接](docs/frontend/ia-refactor-20260913/handoffs/shell-20260914.md)。
+前端由共用 `AppShell` 管理工作區與應用程式選單：Full 提供即時、調校、賽事紀錄、HUD，Lite 提供即時與 HUD。一次只掛載目前工作區；Tune、Road、Sessions 與 HUD 的長生命週期狀態由各功能 provider 持有，避免切頁中斷量測或清空未保存草稿。全域選單提供設定、外觀、診斷、更新與關於。早期 IA 遷移與原生驗收的歷史紀錄見 [Shell 交接](docs/archive/frontend/ia-refactor-20260913/handoffs/shell-20260914.md)。
 
 ```text
 FH6-HorizonTuner/
@@ -108,7 +113,8 @@ FH6-HorizonTuner/
 │   ├── src/domain/tuning/    # 純函數調校 domain（輪胎、載荷轉移、懸吊、齒比與差速器）
 │   │   ├── chassis/          # 懸吊與 Phase 4B 四輪載荷轉移估算
 │   │   └── tires/            # 摩擦橢圓、輪胎幾何與垂直剛度先驗
-│   ├── src/utils/           # 純函數計算庫 (tuningMath.ts, tuningDiagnosis.ts 等)
+│   ├── src/utils/           # 顯示與傳輸工具；調校決策由 Rust 擁有
+│   ├── test-reference/tuning/ # 凍結 TS 模型與歷史特徵測試
 │   └── src-tauri/           # Tauri 視窗與 Full/Lite 打包設定
 ├── hud_overlay/             # HTML5 Canvas 客製化賽車儀表覆蓋層
 │   ├── index.html           # HUD 載入與 Viewport 渲染入口
@@ -244,7 +250,7 @@ cd frontend && pnpm run test
 前端測試涵蓋下列代表性領域；測試檔案與案例數會隨版本變動：
 | 測試檔案 | 覆蓋範圍 |
 | :--- | :--- |
-| `tuningMath.test.ts` | AEGO 齒輪比 / 彈簧 / ARB / 阻尼器 / 下壓力 / 車高與輪胎對齊等 29 個測試案例 |
+| `frontend/test-reference/tuning/` | 凍結歷史數值測試；正式 Rust 產品契約位於 `backend-rust/tests/` |
 | `tuningDiagnosis.test.ts` | 底盤遙測即時問題與動態調校診斷邏輯測試 |
 | `loadTransfer.test.ts` / `tireGeometry.test.ts` | Phase 4B 四輪估計垂直載荷、載荷轉移與輪胎幾何先驗 |
 | `driftMath.test.ts` | 甩尾分數與甩尾角度計算邏輯測試 |
@@ -288,7 +294,7 @@ cd frontend && pnpm run test
 - [ ] Rust 後端／CLI 已通過 `cargo test --locked --manifest-path backend-rust/Cargo.toml`
 - [ ] 前端單元測試已全數通過 (`cmd /c "pnpm -C frontend run test"`)
 - [ ] 若新增 API 路由或後端核心邏輯，已補充對應的 Rust Cargo 契約測試
-- [ ] 若修改了 `tuningMath.ts` / `tuningDiagnosis.ts` 等前端計算邏輯，已補充對應的 Vitest 單元測試
+- [ ] 若修改 Rust 調校決策，已補充 Rust 契約；前端型別／流程變更通過 Vitest 與 production boundary build。
 - [ ] 若本次任務包含重大架構變更、核心模組增修或 API 重構，已同步維護並更新 `README.md` 與 `README.en.md`
 - [ ] 若修改了 UI 元件或前端邏輯，已在本地驗證功能運作正常
 - [ ] 若新增了多語言鍵值，已同步更新 `lang/zh-tw.json` 與 `lang/ja-jp.json`
@@ -336,7 +342,7 @@ cd frontend && pnpm run test
 | :--- | :--- |
 | **Lint** | uv 管理的 `ruff check`／`ruff format --check` 檢查 Python 工具，以及 Cargo fmt 檢查 Rust |
 | **Test (Backend)** | Rust Cargo 產品契約測試（含 no-HUD 建置）；CI 另執行凍結的 Python 遷移相容與發行驗證案例，並非 Python 後端 |
-| **Test (Frontend)** | 執行 `cd frontend && pnpm run test` 前端 Vitest 單元測試（涵蓋 `tuningMath.ts` 等物理計算純函數） |
+| **Test (Frontend)** | 執行 `cd frontend && pnpm run test` 前端 Vitest（UI 契約、凍結參考與建置邊界） |
 
 > [!IMPORTANT]
 > CI workflow 是目前 gate 的準據。依變更範圍在本地執行 Cargo、Vitest 與 build；Python 相容／發行案例與 Ruff 也由 CI 執行，Python 產品維護工作只限其對應範圍。
@@ -430,3 +436,5 @@ If a diagnostics run fails, the workflow uploads a diagnostic artifact (retained
 To sign off on a new release candidate, you must ensure:
 1. **One successful automated diagnostics run** via GitHub Actions.
 2. **Manual Release Build smoke testing** performed on a clean Windows environment.
+
+v1.7.1 候選版驗收、證據限制與清理清單見[驗收紀錄](docs/releases/v1.7.1-acceptance.md)。本次不發布正式 tag、Release 或 OTA manifest。
