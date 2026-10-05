@@ -1,18 +1,18 @@
 ### Summary of Changes
 
-**最新雙字標更新（新實際CI／像素複查待完成）**：mph固定於原km/h上方，BOOST固定於VAC上方；四個SVG文字節點持續存在，依設定或真實增壓方向切換同色opacity。正壓／真正零點亮BOOST；負值點亮VAC；缺值／stale兩者皆暗。保留km/h anchor、速度字形、RPM上弧、色帶、abs分段比例與負號處理。下方圖片是前版單字標的歷史實際截圖，尚未代表本次修正。
+**最新雙字標更新（實際Chrome／launcher通過，待使用者review）**：mph固定於原km/h上方，BOOST固定於VAC上方；四個SVG文字節點持續存在，依設定或真實增壓方向切換同色opacity。正壓／真正零點亮BOOST；負值點亮VAC；缺值／stale兩者皆暗。保留km/h anchor、速度字形、RPM上弧、色帶、abs分段比例與負號處理。下方圖片為本輪實際Chrome的合成遙測截圖，已完成獨立技術複查。
 
 本 PR 的 `ap1_rev_arc` 以1999 Honda S2000 AP1 琥珀數位儀表為原型，面向喜歡JDM／高轉數位儀表與簡潔道路HUD的玩家。
 
 本PR亦依使用者先前明確要求：**右側燃油區改為 BOOST，底下顯示實際數值與單位；移除左下 AP1 / REV ARC 及右下 RPM 文字**。保留先前修正的共享上弧、外框、速度和檔位位置，不修改LFA或共用backend／協定。
 
-前版單色source `2d88a29993f6d0bc6b2b2c881ac7a55865cc2c70` 已通過sandbox啟用的GitHub Actions Linux Chrome 154 renderer／實際launcher＋Coordinator檢查，並完成獨立像素複查。圖片使用合成遙測；Windows／遊戲驗收尚未進行，本輪雙字標的實際CI與預覽仍待完成。
+本輪雙字標source `888ea8ba9af69e65f95f96874d3563dacf620680` 已通過sandbox啟用的GitHub Actions Linux Chrome 154 renderer／實際launcher＋Coordinator檢查，並完成獨立像素複查。圖片使用合成遙測；Windows／遊戲驗收尚未進行，最終文件head的CI與使用者review仍待完成。
 
-![歷史單字標BOOST：實際Chrome154 DPR2截圖](RAW_PREFIX/docs/assets/ap1-rev-arc/detail-metric.png)
+![本輪固定雙字標：實際Chrome154 DPR2截圖](RAW_PREFIX/docs/assets/ap1-rev-arc/detail-metric.png)
 
-![歷史單字標的絕對值映射比較：本輪選中狀態新圖待CI](RAW_PREFIX/docs/assets/ap1-rev-arc/ap1-boost-scale-comparison.png)
+![本輪選中狀態：metric／imperial × BOOST／VAC實際Chrome截圖](RAW_PREFIX/docs/assets/ap1-rev-arc/ap1-boost-scale-comparison.png)
 
-[歷史狀態集](RAW_PREFIX/docs/assets/ap1-rev-arc/states.png) · [歷史Compact預覽](RAW_PREFIX/docs/assets/ap1-rev-arc/detail-compact.png) · [歷史720p全幅](RAW_PREFIX/docs/assets/ap1-rev-arc/metric-1280x720.png)
+[本輪compact／zero／missing／stale狀態集](RAW_PREFIX/docs/assets/ap1-rev-arc/states.png) · [Compact預覽](RAW_PREFIX/docs/assets/ap1-rev-arc/detail-compact.png) · [720p全幅](RAW_PREFIX/docs/assets/ap1-rev-arc/metric-1280x720.png)
 
 ### Key Modifications
 
@@ -34,17 +34,18 @@
 - **Frontend Tests:** `pnpm -C frontend test` →160 files passed、1 skipped；1195 tests passed、1 skipped；AP1樣式90 cases
 - **Frontend Build:** `pnpm -C frontend build:web-hud` →pass；新boost model加入runtime，tests排除
 - **Syntax / Whitespace:** `node --check`與`git diff --check` →pass
-- **Historical Monochrome Browser Review:** GitHub Actions Linux Chrome 154、sandbox啟用、合成遙測；renderer＋actual launcher／Coordinator PASS。source `2d88a29993f6d0bc6b2b2c881ac7a55865cc2c70`；[run37268451649](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37268451649)／[artifact11327007457](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37268451649/artifacts/11327007457)
-- **Historical Render Findings:** 獨立查看hero／compact與+0.5／+1／−0.5／零、−1／−2、VAC PSI／kPa、tiny negative、missing及negative overflow；同琥珀外觀、共同刻度與VAC／負號清楚，未見重疊。該版computed paint精確相同；±0.5／±1／±2的ratio為0.375／0.75／1。renderer errors及launcher errors／missing皆為空
-- **Historical Monochrome Pixel Preservation:** 實際+0.5／−0.5 bar與glow區域1,309個RGBA像素完全相同；`a995df88`→`2d88a299`右aux區外（含底框）454,320個像素中0個不同，詳見`monochrome-boost-preservation.json`
-- **Historical Pixel Preservation:** `662d934`→`a995df88`燃油改BOOST時，指定aux／底框區外416,143像素中0個不同。此歷史比較不冒充本輪單色pixel-diff；`before-after.png`也是較早燃油版的弧度修正對照
-- **Final CI / Approval:** 前版單色source的visual CI通過；本輪雙字標尚待新CI與像素複查，使用者review尚未完成。技術檢查不代表Windows／遊戲實測或使用者核准
+- **Current Dual-Label Browser Review:** GitHub Actions Linux Chrome 154.0.8037.57、sandbox啟用、合成遙測；renderer＋actual launcher／Coordinator PASS。source `888ea8ba9af69e65f95f96874d3563dacf620680`；[run37271674297](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37271674297)／[artifact11328239382](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37271674297/artifacts/11328239382)
+- **Actual Render Findings:** 61張renderer截圖、28組雙字標情境、32筆launcher樣本；errors／missing為空。已獨立查看default／70%compact的metric／imperial × BOOST／VAC，以及zero／missing／stale；兩個固定字標可見、選中狀態正確，未見字標／色帶／數字重疊
+- **Scoped Pixel Comparison:** 相對`2d88a299`只排除新／舊字標ink-box聯集與1 device pixel邊緣。default DPR2為0／476,857差異、compact DPR2為0／233,439、compact DPR1為0／58,441。default DPR1有64／119,025個差異集中左外殼邊緣；完整保留記錄，未擴張遮罩或宣稱全圖相同。詳見`dual-label-preservation.json`
+- **Unit Precedence Probe:** 補充唯讀model probe確認目前設定優先於舊frame單位metadata；stale保留設定字標而數值為`---`，不匹配的generic speed不改標單位。此probe不算新增Vitest case
+- **Historical Evidence:** `before-after.png`仍是較早燃油版的弧度修正對照；舊單色／燃油改BOOST JSON只作歷史證據
+- **Final CI / Approval:** 本輪source visual CI與像素複查通過；最終文件head的CI仍待完成，使用者review尚未完成。技術檢查不代表Windows／遊戲實測或使用者核准
 - **Native Platform:** Windows透明overlay、滑鼠穿透、真實遊戲及安全區未驗收；此HUD預期取代原生右下儀表
 - **Scope:** 無backend、shared coordinator、共享生命週期、LFA或相依套件變更
 
 ### Living Changelog & Review Iterations
 
-- 2026-10-05（Bagley as Codex）：依最新要求將mph／km/h與BOOST／VAC改為上下固定字標，同色opacity呈現設定／模式。保留km/h與其餘主讀值位置；新增固定節點、missing／stale與default／compact相對版面回歸，新實際CI圖待完成
+- 2026-10-05（Bagley as Codex）：依最新要求將mph／km/h與BOOST／VAC改為上下固定字標，同色opacity呈現設定／模式。保留km/h與其餘主讀值位置；新增固定節點、missing／stale與default／compact相對版面回歸；本輪實際Chrome／launcher通過，更新hero、選中狀態比較與範圍限定pixel proof
 
 - 2026-10-05（Bagley as Codex）：最新使用者單色要求取代深淺VAC方案；刪除VAC專屬色彩／glow，兩方向共用絕對值分段函式與刻度。新增±0.5／±1／±2對稱性、同paint及負號測試；本輪Chrome／launcher實際CI通過，完成獨立像素複查與新比較預覽
 
