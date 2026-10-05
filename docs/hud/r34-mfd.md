@@ -4,16 +4,16 @@
 
 本款採 **R34／V·spec 10,000 rpm 雙段轉速錶**，搭配 **2002 Nür 300 速度錶面**與 **NISMO MFD Ver.II** 畫面語彙。這是依使用者要求的 HUD 佈局適配，不冒稱整組原裝座艙，也不是 R35 或 NISMO 320 儀表。
 
-**全部速度讀數刻意固定為 kmh**：由原始 `SpeedMetersPerSecond × 3.6` 取得，全域 mph 設定不改變數字、錶面或指針。原件印字是 `km/h`，本 HUD 依使用者明確要求改為字面 `kmh`；已註記於受支援的 `author.json.description`。300 以上保留真實數字與 OVER SCALE，只有指針停在最大刻度；缺失仍是 N/A。里程窗顯示遊戲 session distance（km），不是車輛累計里程。
+**類比速度錶面與指針刻意固定為 kmh**：由原始 `SpeedMetersPerSecond × 3.6` 取得，全域 mph 設定不改變此錶面或指針。速度錶下方 LCD 則顯示檔位與**依選定單位換算的數位速度**。原件印字是 `km/h`，類比錶面依使用者要求改為字面 `kmh`；這個僅限類比錶面的例外已註記於受支援的 `author.json.description`。300 kmh 以上保留真實數位換算值與 OVER SCALE，只有類比指針停在最大刻度；缺失仍是 N/A，不採用 Coordinator 補零 alias。原有里程窗已由新 LCD 內容取代。
 
-Nür 面板為 0～300、每 20 標號、每 10 刻線，數字較緊湊粗實。兩張原件照片支持約 250° 的視覺弧形，0 附近另有相近參考刻線；無工廠工程圖可證實其精確低速校準，因此本 HUD 使用穩定的線性 0～300 視覺映射，不把照片估角冒稱工廠尺寸或電子校準曲線。V·spec 轉速錶保留型錄明載的 3,000 rpm 以下每千轉 15°、以上每千轉 30°。
+Nür 面板為 0～300、每 20 標號、每 10 刻線，數字較緊湊粗實。兩張原件照片支持約 250° 的視覺弧形，0 附近另有相近參考刻線；無工廠工程圖可證實其精確低速校準，因此本 HUD 使用穩定的線性 0～300 視覺映射，不把照片估角冒稱工廠尺寸或電子校準曲線。本輪轉速錶依使用者提供的 Nür 實物照片與明確要求，採 0→3,000 rpm 的等距壓縮視覺映射（150°→180°、每千轉 10°），再以每千轉 30° 遞增至 10,000 rpm 的 390°。因此 0／10 與 3／9 刻度成對左右對稱。低段只繪主刻線，0～3 數字縮小以保留可見間隙；主刻線位置與指針映射不因字形調整而改動。這是本次 HUD 的參考圖適配，不宣稱為原廠電子校準；先前以 1999 型錄 15° 低段描述此 HUD 的說法已不適用。
 
 ## 獨立定位與固定子錶
 
-- 中下方：轉速左、速度右；檔位與數位 kmh 放在兩錶之間，取消外框與資訊卡片
-- 兩個外側子錶：左側固定 BOOST；右側固定四輪平均 TIRE TEMP。沒有自訂資料來源或角度選項
+- 中下方：轉速左、速度右，各自底部有外形一致的 LCD；兩錶之間的懸浮檔位／速度純文字已移除
+- 兩個外側子錶：左側固定四輪平均 TIRE TEMP，右側固定 BOOST。沒有自訂資料來源或角度選項
 - 右下角：獨立 MFD 螢幕。取消遮光罩、銀色連續飾板、外殼、搖桿、裝飾按鍵與不可用的油壓內嵌錶
-- 兩支子錶指針都只在左半部掃動：低值左下、半量正左、高值左上。胎溫採 C/H（冷／熱）及溫度計圖示，另明示 TIRE TEMP、真實數值與 °C／°F，並非水溫
+- 兩個小錶採鏡像偏心軸：左胎溫軸心向左偏移，C→H 由右下掃至右上；右增壓軸心向右偏移，低→高由左下掃至左上。刻線與指針共用同一偏移中心，不把指針放在錶盤圓心。偏移約為半徑的 26%，是照片支持的 HUD 比例，非工廠尺寸。胎溫保留 C/H、溫度計、TIRE TEMP 與真實 °C／°F 數字，並非水溫
 - 純函式 `layout.js` 使用 viewport、HUDCore 的使用者縮放與可用空間計算各獨立元件。先同時檢查寬、高，再限制至可容納的尺寸；右子錶與 MFD 保留間隔。720p、1080p、1440p、超寬、3840×360 矮視窗及 compact／放大倍率均有幾何契約
 - 隱藏儀表組時，MFD 保持獨立右下定位，不留下原機殼尺寸的空位。產品背景透明；靜態提案中的道路背景與標註不包含於產品
 
@@ -50,7 +50,7 @@ Ver.II 常被泛稱為擴充「卡匣」，產品清單描述的是電路板、�
 | G | 矩形交叉格線與活動點 | 車體 −X／Z 加速度 ÷9.80665，±1.5 g 視窗，保留超界數字 |
 | LAP | 目前／最佳／上圈、五列紀錄 | 目前圈數=已完成圈數+1；只記錄真正觀察到的相鄰圈數推進 |
 
-`r34ShowCluster` 控制四個核心錶盤與中間讀數，`r34Lighting` 控制 day／night。Custom Gauge Color 只改變 MFD 資料色；紅色指針與 REV 安全色保留。REV 取真實 RPM/redline，獨立於是否顯示檔位。
+`r34ShowCluster` 控制四個核心錶盤與其 LCD，`r34Lighting` 控制 day／night。Custom Gauge Color 只改變 MFD 資料色；紅色指針與 REV 安全色保留。REV 取真實 RPM/redline，獨立於是否顯示檔位。
 
 ## 四輪平均胎溫與單位
 
@@ -58,15 +58,24 @@ Ver.II 常被泛稱為擴充「卡匣」，產品清單描述的是電路板、�
 
 `meanTireTemperatureC` 必須收到**剛好四個有限數字**，先算全四輪平均 °F，再一次轉成 canonical °C。缺少、null、字串、NaN 或 Infinity 任一輪均是 N/A，不計算部分平均，也不使用 Coordinator 補零的外層 alias。原始 0°F 與負值有效；例如 [32,68,104,140] 得30°C／86°F，而四個0°F得−17.78°C。
 
-右子錶與 MULTI 的 **TIRE TEMP** 共用同一平均與比例。顯示量程固定 canonical **0～150°C（32～302°F）**，這是顯示範圍，不是冷卻水數值或輪胎安全門檻。切換 C/F 不改變指針或綠條位置；超界只限制幾何，數字仍保留負值或較高溫度。
+左子錶與 MULTI 的 **TIRE TEMP** 共用同一平均與比例。顯示量程固定 canonical **0～150°C（32～302°F）**，這是顯示範圍，不是冷卻水數值或輪胎安全門檻。切換 C/F 不改變指針或綠條位置；超界只限制幾何，數字仍保留負值或較高溫度。
 
 使用既有 **HUD Unit Settings → Temperature**，可以跟隨 app 溫度偏好或獨立保存 C/F；沒有新增 R34 專用重複單位控制。缺失／無效溫度偏好回到 C，不能從 mph 猜測 Fahrenheit。effectiveUnits 仍是 renderer-only 衍生欄位，不寫入持久設定。
+
+## 雙 LCD 可用性與共用控制
+
+- 速度 LCD：檔位與數位速度／單位；跟隨現有 HUD 或 app 的速度偏好，類比 Nür300 仍固定 kmh
+- 轉速 LCD：有可用原始 CurrentLap 秒數時顯示即時圈時計時；沒有計時時顯示當前 PowerWatts 與 TorqueNewtons。預設 HP／N·m，保留既有 HP／PS／kW、N·m／lb·ft 偏好，沒有第二個固定單位例外或自訂編輯器。兩個輸出欄位獨立缺值、保留真實零值與負值
+- 正數 CurrentLap 可直接證明可用計時。初始／預設 0 不表示比賽正在計時；只有已接受原始封包從有效正值進入相鄰圈數增加，且接收與來源時間間隔均小於 1,500 ms，才允許該次 rollover 的 0。零值延續最多自該事件接收時刻起固定 **3 秒**，新鮮的同圈 0 或重複／重排封包都不能延長期限；後續正值恢復正常計時
+- 缺失／無效 CurrentLap、暫停、錯誤、stale、切車或 session reset 立即清除連續性。非 live 時 LCD 顯示不可用，不回退到舊的馬力／扭力。上述零值門檻是 HUD 的資料可用性啟發式，並非聲稱遊戲提供了可確定判斷起終點的事件
+- 可用即時計時的 0 與 BestLap／LastLap 分開格式化；後兩者的 0 仍為不可用，不建立假的已完成圈速
+- 共用 showGear／showSpeed 分別控制速度 LCD 內的檔位與數位速度；showRPM 控制轉速刻度、指針及 REV，不隱藏其他資料的 LCD。showPowerTorque 控制無計時時的輸出值，但不遮掉可用計時。REV 獨立於檔位顯示
 
 ## 資料誠實與狀態
 
 | 顯示 | 原始來源／轉換 |
 | --- | --- |
-| 速度、里程窗 | SpeedMetersPerSecond×3.6，固定 kmh；DistanceTraveled÷1000，session km |
+| 類比／數位速度 | 同一原始 SpeedMetersPerSecond；類比固定 ×3.6 kmh，LCD 依選定 kmh／mph 換算 |
 | RPM／REV | CurrentEngineRpm；共用 payload redlineRpm |
 | Boost | 原始有限 Boost（PSI），保留負壓，拒絕補零／截負 aliases |
 | 胎溫 | 四個 raw TireTemp °F 的嚴格平均→canonical °C→顯示 °C／°F |
@@ -86,18 +95,20 @@ Recorder 優先取 `data.sourceTelemetry` 的原始唯讀封包；否則接受�
 
 採用 skills：`halfmoon-design-system`、`huge-component-refactoring`、`modular-refactoring`。沒有改 UDP 解碼或其他 HUD 的繪圖程式。
 
-- `pnpm -C frontend exec vitest run ../hud_overlay/r34_mfd/tests/unit src/features/overlay_control/r34_mfd`：狀態／刻度／固定 kmh／嚴格四輪平均／C-F 比例／左半掃動／responsive 純函式
+- `pnpm -C frontend exec vitest run ../hud_overlay/r34_mfd/tests/unit src/features/overlay_control/r34_mfd`：狀態／對稱刻度／類比固定 kmh 與數位單位／timer 零值期限／嚴格四輪平均／C-F 比例／鏡像偏心掃動／responsive 純函式
 - `cargo test --locked --manifest-path backend-rust/Cargo.toml --test config_contract`：頁面與新增溫度單位的 POST／disk／restart／relay
 - `pnpm -C frontend run test`、Windows 及 LAN 前端 build、`git diff --check`：aggregate gates
 - `hud_overlay/r34_mfd/tests/visual/fixture.html`：人工操作真實 iframe，僅使用合成封包
-- `PLAYWRIGHT_CHANNEL=chrome PLAYWRIGHT_MODULE_PATH=/path/to/playwright OUTPUT_DIR=/tmp/r34-preview node hud_overlay/r34_mfd/tests/visual/render.mjs`：720p／1080p 透明全畫面、五頁 DPR1 MFD 裁切、DPR2、負壓、C/F、部分缺胎溫、stale、最小／中間／最大左掃動、1440p／ultrawide／矮視窗及 compact
-- 同上執行 `launcher.mjs`：真正 Launcher／Coordinator 與持續遙測下 C/F config 更新、固定 kmh、原始缺值與 stale replay
+- `PLAYWRIGHT_CHANNEL=chrome PLAYWRIGHT_MODULE_PATH=/path/to/playwright OUTPUT_DIR=/tmp/r34-preview node hud_overlay/r34_mfd/tests/visual/render.mjs`：720p／1080p 透明全畫面、五頁 DPR1／DPR2 MFD 裁切、雙主錶 DPR2 原生裁切（計時、HP＋扭力、rollover0、mph＋檔位、缺值）、負壓、C/F、部分缺胎溫、stale、鏡像偏心掃動、低段字形間隙、LCD 內容邊界／互不重疊、透明間隙像素、1440p／ultrawide／矮視窗及 compact
+- 同上執行 `launcher.mjs`：真正 Launcher／Coordinator 與持續遙測下 C/F config 更新、類比 kmh 不變且數位 mph 跟隨、原始缺值與 stale replay
 - 同上執行 `frontend/src/features/overlay_control/r34_mfd/tests/browser/verify.cjs`：真實五頁選單、day/night、cluster、單位繼承／獨立 C/F 保存重載、reset、六主題、窄版繁中／日文
 
 Chrome fixture 保持 `chromiumSandbox:true`，不以停用 sandbox 繞過本地限制。靜態構圖不能取代真正 HTML／SVG／Canvas 像素驗證；Chrome 證據也不是 Windows 原生透明 click-through 或遊戲實測。
 
-## 實際渲染預覽
+## 前一版實際渲染預覽（本輪雙 LCD 修正前）
 
-`docs/assets/r34-mfd/` 已更新為 `a3d87ea` 的真正 Chrome runtime 圖片：[Visual run37305964564](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37305964564)。160 項 HUD 檢查、126 張 HUD 畫面、8 項 Launcher 檢查、12 張設定圖及 3 項設定流程檢查皆無錯誤。保留透明 720p／1080p 完整定位；五模式拼版直接排列 DPR2 的 MFD 截圖，沒有重繪或放大。詳見同目錄 `provenance.json` 的原始檔名與 SHA256。
+以下保存的是雙 LCD／偏心小錶修正前的歷史證據，不能作為本輪效果驗收；本輪須在新 Head 的 Chrome 工作流程完成後替換圖片與 PR Body。
+
+`docs/assets/r34-mfd/` 目前仍為 `a3d87ea` 的真正 Chrome runtime 圖片：[Visual run37305964564](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37305964564)。160 項 HUD 檢查、126 張 HUD 畫面、8 項 Launcher 檢查、12 張設定圖及 3 項設定流程檢查皆無錯誤。保留透明 720p／1080p 完整定位；五模式拼版直接排列 DPR2 的 MFD 截圖，沒有重繪或放大。詳見同目錄 `provenance.json` 的原始檔名與 SHA256。
 
 先前外殼版 `bed166f`／`9fd8947` 已被本次無框／Nür300 方向取代，舊圖只存在 Git 歷史中，不作為新布局證據。設定 fixture 使用 app 真正的英制單位預設；單獨送出 kmh＋F 會被 app 既有整組單位正規化成 C，不能拿不一致的 fixture 判定 HUD 繼承失效。

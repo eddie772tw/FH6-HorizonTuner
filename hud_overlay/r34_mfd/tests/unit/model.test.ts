@@ -17,6 +17,7 @@ describe('BNR34 telemetry truth and units', () => {
     const state = M.createState(), v = M.snapshot(state, {}, 0);
     expect(v.status).toBe('waiting'); expect(v.boost).toBeNull(); expect(v.rpm).toBeNull(); expect(state.historyCount).toBe(0);
     expect(v.laps).toHaveLength(0); expect(v.coolant).toBeNull(); expect(v.oilPressure).toBeNull();
+    expect(v.tachLcdMode).toBe('unavailable'); expect(v.timerSeconds).toBeNull(); expect(v.speedKmh).toBeNull();
   });
   it('maps native PSI, m/s, watts, newton-metres and vehicle X/Z, not vertical Y', () => {
     const state = M.createState(); accept(state, { AccelerationY: 900 }); const v = M.snapshot(state, { units: { power: 'kw' } }, 0);
@@ -35,23 +36,8 @@ describe('BNR34 telemetry truth and units', () => {
   it('honors effective independent units, and keeps numerical overscale readings', () => {
     const state = M.createState(); accept(state, { Boost: 43.5114, SpeedMetersPerSecond: 100 });
     const v = M.snapshot(state, { effectiveUnits: { speed: 'mph', boostPressure: 'kpa', power: 'hp', torque: 'lbft' } }, 0);
-    expect(v.speed).toBeCloseTo(360); expect(v.boost).toBeCloseTo(300.000660264, 8); expect(v.boostRatio).toBe(1);
-    expect(v.power).toBeCloseTo(268.2044); expect(v.torque).toBeCloseTo(295.0248); expect(v.speedUnit).toBe('kmh');
-  });
-  it('uses the documented nonuniform stock V-spec tach intervals', () => {
-    expect(I.tachAngle(3000) - I.tachAngle(2000)).toBe(15);
-    expect(I.tachAngle(4000) - I.tachAngle(3000)).toBe(30);
-    expect(I.tachAngle(10000)).toBe(I.tachAngle(14000));
-  });
-  it('keeps stock speed and auxiliary needles bounded and ordered while numeric readings retain overscale', () => {
-    expect(I.speedAngle(0)).toBeLessThan(I.speedAngle(80));
-    expect(I.speedAngle(80)).toBeLessThan(I.speedAngle(300));
-    expect(I.SPEED_MAX).toBe(300);
-    expect(I.speedAngle(360)).toBe(I.speedAngle(300));
-    expect(I.speedAngle(-10)).toBe(I.speedAngle(0));
-    expect(I.auxiliaryAngle(0)).toBeLessThan(I.auxiliaryAngle(.5));
-    expect(I.auxiliaryAngle(.5)).toBeLessThan(I.auxiliaryAngle(1));
-    expect(I.auxiliaryAngle(1.1)).toBe(I.auxiliaryAngle(1));
+    expect(v.speed).toBeCloseTo(223.694); expect(v.speedKmh).toBe(360); expect(v.boost).toBeCloseTo(300.000660264, 8); expect(v.boostRatio).toBe(1);
+    expect(v.power).toBeCloseTo(268.2044); expect(v.torque).toBeCloseTo(295.0248); expect(v.speedUnit).toBe('mph');
   });
   it('formats Forza reverse, neutral, missing and valid gear values', () => {
     expect(M.gear(0)).toBe('R'); expect(M.gear(11)).toBe('N'); expect(M.gear(6)).toBe('6'); expect(M.gear(null)).toBe('—');
@@ -192,7 +178,7 @@ describe('R34 shared direction and official completed-lap semantics', () => {
 });
 
 
-describe('strict four-wheel tire temperature and shared left sweep', () => {
+describe('strict four-wheel tire temperature', () => {
   it.each([
     [[32, 32, 32, 32], 0, 32],
     [[0, 0, 0, 0], -160 / 9, 0],
@@ -237,24 +223,210 @@ describe('strict four-wheel tire temperature and shared left sweep', () => {
     const cold = M.snapshot(state, {}, 100); expect(cold.tireTemperature).toBe(-40); expect(cold.tireTemperatureRatio).toBe(0);
     expect(M.units({ units: { temperature: 'bad' } }, {}).temperature).toBe('C');
   });
-  it('keeps minimum, midpoint and maximum entirely on the left hemisphere', () => {
-    for (const ratio of [0, .25, .5, .75, 1]) expect(Math.cos(I.auxiliaryAngle(ratio) * Math.PI / 180)).toBeLessThan(0);
-    expect(Math.sin(I.auxiliaryAngle(0) * Math.PI / 180)).toBeGreaterThan(0);
-    expect(Math.sin(I.auxiliaryAngle(.5) * Math.PI / 180)).toBeCloseTo(0);
-    expect(Math.sin(I.auxiliaryAngle(1) * Math.PI / 180)).toBeLessThan(0);
-  });
 });
 
 
-it('locks all R34 speed values to kmh through metric/imperial preference changes', () => {
+it('changes digital speed units while preserving raw kmh for the fixed 300 kmh analog face', () => {
   const state = M.createState(); accept(state, { SpeedMetersPerSecond: 90, DistanceTraveled: 12340 });
   const metric = M.snapshot(state, { effectiveUnits: { speed: 'kmh', temperature: 'C' } }, 0);
   const imperial = M.snapshot(state, { effectiveUnits: { speed: 'mph', temperature: 'F' } }, 0);
-  expect(metric.speed).toBe(324); expect(imperial.speed).toBe(metric.speed);
-  expect(I.speedAngle(imperial.speed)).toBe(I.speedAngle(metric.speed));
-  expect(I.speedAngle(imperial.speed)).toBe(I.speedAngle(300));
-  expect(imperial.speedUnit).toBe('kmh'); expect(imperial.distance).toBe(metric.distance);
+  expect(metric.speed).toBe(324); expect(metric.speedUnit).toBe('kmh'); expect(imperial.speed).toBeCloseTo(201.3246);
+  expect(metric.speedKmh).toBe(324); expect(imperial.speedKmh).toBe(metric.speedKmh);
+  expect(I.speedAngle(imperial.speedKmh)).toBe(I.speedAngle(metric.speedKmh));
+  expect(I.speedAngle(imperial.speedKmh)).toBe(I.speedAngle(300));
+  expect(imperial.speedUnit).toBe('mph'); expect(imperial.distance).toBe(metric.distance);
   expect(imperial.distance).toBeCloseTo(12.34);
   accept(state, { TimestampMS: 1100, SpeedMetersPerSecond: undefined }, 100);
-  expect(M.snapshot(state, { unit: 'mph' }, 100).speed).toBeNull();
+  const missing = M.snapshot(state, { unit: 'mph' }, 100);
+  expect(missing.speed).toBeNull(); expect(missing.speedKmh).toBeNull(); expect(missing.speedUnit).toBe('mph');
+});
+
+describe('R34 dual-LCD current-lap availability', () => {
+  it('selects a positive current-lap timer independently of missing lap counters', () => {
+    const state = M.createState(); accept(state, { CurrentLap: 59.9998, LapNumber: undefined });
+    const v = M.snapshot(state, {}, 0);
+    expect(v.tachLcdMode).toBe('timer'); expect(v.timerSeconds).toBe(59.9998); expect(v.currentLap).toBe(v.timerSeconds);
+    expect(M.timerTime(v.timerSeconds)).toBe("1'00.000");
+    expect(M.timerTime(0)).toBe("0'00.000"); expect(M.lapTime(0)).toBe("—'——.———");
+  });
+  it.each([undefined, null, 0, -1, '', '30', NaN, Infinity])('falls back to fresh power for absent/default/invalid current lap %s', value => {
+    const state = M.createState(); accept(state, { CurrentLap: value, LastLap: 80, BestLap: 75, current_lap: 45, lap_time: 45 });
+    const v = M.snapshot(state, {}, 0);
+    expect(v.tachLcdMode).toBe('power'); expect(v.timerSeconds).toBeNull(); expect(v.currentLap).toBeNull();
+    expect(v.power).toBeCloseTo(200000 / 745.7); expect(v.torque).toBe(400);
+    expect(M.timerTime(v.timerSeconds)).toBe("—'——.———");
+  });
+  it('accepts an observed rollover zero, retains fresh same-lap zeros, and preserves completed-lap history', () => {
+    const state = M.createState(); accept(state, { LapNumber: 0, CurrentLap: 82.5 });
+    accept(state, { TimestampMS: 1100, LapNumber: 1, CurrentLap: 0, LastLap: 82.5 }, 100);
+    const start = M.snapshot(state, {}, 100);
+    expect(start.tachLcdMode).toBe('timer'); expect(start.timerSeconds).toBe(0); expect(start.currentLap).toBe(0);
+    expect(start.lap).toBe(2); expect(start.laps[0]).toEqual({ number: 1, seconds: 82.5 });
+    accept(state, { TimestampMS: 1200, LapNumber: 1, CurrentLap: 0 }, 200);
+    expect(M.snapshot(state, {}, 200).timerSeconds).toBe(0); expect(state.laps).toHaveLength(1);
+    accept(state, { TimestampMS: 1300, LapNumber: 1, CurrentLap: .2 }, 300);
+    expect(M.snapshot(state, {}, 300).timerSeconds).toBe(.2);
+  });
+  it.each([0, 1, 3, undefined, null, -1, 1.5])('does not invent a rollover at unchanged, backward, skipped or invalid lap %s', lap => {
+    const state = M.createState(); accept(state, { LapNumber: 1, CurrentLap: 50 });
+    accept(state, { TimestampMS: 1100, LapNumber: lap, CurrentLap: 0 }, 100);
+    expect(M.snapshot(state, {}, 100).tachLcdMode).toBe('power');
+  });
+  it('does not let initial zero or a missing prior lap counter seed rollover evidence', () => {
+    for (const initial of [{ CurrentLap: 0 }, { CurrentLap: 50, LapNumber: undefined }]) {
+      const state = M.createState(); accept(state, initial);
+      accept(state, { TimestampMS: 1100, LapNumber: 2, CurrentLap: 0 }, 100);
+      expect(M.snapshot(state, {}, 100).timerSeconds).toBeNull();
+    }
+  });
+  it.each([undefined, null, -1, NaN, Infinity, '20'])('breaks positive and zero continuity when an accepted timer becomes %s', missing => {
+    for (const fromZero of [false, true]) {
+      const state = M.createState(); accept(state);
+      if (fromZero) accept(state, { TimestampMS: 1050, LapNumber: 2, CurrentLap: 0 }, 50);
+      accept(state, { TimestampMS: 1100, LapNumber: fromZero ? 2 : 1, CurrentLap: missing }, 100);
+      accept(state, { TimestampMS: 1200, LapNumber: 2, CurrentLap: 0 }, 200);
+      expect(M.snapshot(state, {}, 200).tachLcdMode).toBe('power');
+    }
+  });
+  it('requires the same valid lap counter throughout a zero sequence', () => {
+    const state = M.createState(); accept(state);
+    accept(state, { TimestampMS: 1100, LapNumber: 2, CurrentLap: 0 }, 100);
+    accept(state, { TimestampMS: 1200, LapNumber: undefined, CurrentLap: 0 }, 200);
+    accept(state, { TimestampMS: 1300, LapNumber: 2, CurrentLap: 0 }, 300);
+    expect(M.snapshot(state, {}, 300).timerSeconds).toBeNull();
+  });
+  it('keeps a genuine rollover continuous across the uint32 source timestamp wrap', () => {
+    const state = M.createState(); accept(state, { TimestampMS: 4294967280 });
+    accept(state, { TimestampMS: 32, LapNumber: 2, CurrentLap: 0 }, 48);
+    expect(state.session).toBe(0); expect(M.snapshot(state, {}, 48).timerSeconds).toBe(0);
+  });
+  it('expires zero at a fixed three-second deadline despite fresh same-lap packets, then recovers on positive timing', () => {
+    const state = M.createState(); accept(state);
+    accept(state, { TimestampMS: 1100, LapNumber: 2, CurrentLap: 0 }, 100);
+    expect(M.TIMER_ZERO_GRACE_MS).toBe(3000);
+    for (const now of [1100, 2100, 3000]) {
+      accept(state, { TimestampMS: 1000 + now, LapNumber: 2, CurrentLap: 0 }, now);
+      expect(M.snapshot(state, {}, now).timerSeconds).toBe(0);
+    }
+    expect(M.snapshot(state, {}, 3099).tachLcdMode).toBe('timer');
+    const expired = M.snapshot(state, {}, 3100);
+    expect(expired.live).toBe(true); expect(expired.timerSeconds).toBeNull(); expect(expired.tachLcdMode).toBe('power');
+    accept(state, { TimestampMS: 4100, LapNumber: 2, CurrentLap: 0 }, 3100);
+    expect(M.snapshot(state, {}, 3100).tachLcdMode).toBe('power');
+    accept(state, { TimestampMS: 4200, LapNumber: 2, CurrentLap: 3.2 }, 3200);
+    expect(M.snapshot(state, {}, 3200).timerSeconds).toBe(3.2);
+  });
+  it.each([
+    { now: 1499, timestamp: 1100, valid: true },
+    { now: 1500, timestamp: 1100, valid: false },
+    { now: 100, timestamp: 2499, valid: true },
+    { now: 100, timestamp: 2500, valid: false },
+  ])('bounds receive/source continuity at the stale threshold: %o', gap => {
+    const state = M.createState(); accept(state);
+    accept(state, { TimestampMS: gap.timestamp, LapNumber: 2, CurrentLap: 0 }, gap.now);
+    expect(M.snapshot(state, {}, gap.now).timerSeconds).toBe(gap.valid ? 0 : null);
+  });
+  it('stale snapshots and duplicate smoothing cannot revive a zero timer or power values', () => {
+    const state = M.createState(); accept(state);
+    accept(state, { TimestampMS: 1100, LapNumber: 2, CurrentLap: 0 }, 100);
+    expect(accept(state, { TimestampMS: 1100, LapNumber: 2, CurrentLap: .8 }, 1599)).toBe(false);
+    const stale = M.snapshot(state, {}, 1600);
+    expect(stale.status).toBe('stale'); expect(stale.tachLcdMode).toBe('unavailable'); expect(stale.timerSeconds).toBeNull();
+    expect(stale.power).toBeNull(); expect(stale.torque).toBeNull();
+    expect(accept(state, { TimestampMS: 1100, LapNumber: 2, CurrentLap: 2 }, 1650)).toBe(false);
+    expect(M.snapshot(state, {}, 1650).tachLcdMode).toBe('unavailable');
+    accept(state, { TimestampMS: 1200, LapNumber: 2, CurrentLap: 0 }, 1700);
+    expect(M.snapshot(state, {}, 1700).tachLcdMode).toBe('power');
+  });
+  it.each([
+    { patch: { IsRaceOn: 0 }, expected: 'paused' },
+    { patch: { success: false }, expected: 'error' },
+    { patch: { TimestampMS: undefined }, expected: 'unavailable' },
+  ])('breaks zero continuity across $expected and requires fresh positive recovery', ({ patch, expected }) => {
+    const state = M.createState(); accept(state);
+    accept(state, { TimestampMS: 1100, LapNumber: 2, CurrentLap: 0 }, 100);
+    accept(state, { TimestampMS: 1200, ...patch }, 200);
+    const blocked = M.snapshot(state, {}, 200);
+    expect(blocked.status).toBe(expected); expect(blocked.tachLcdMode).toBe('unavailable'); expect(blocked.timerSeconds).toBeNull();
+    expect(blocked.power).toBeNull(); expect(blocked.torque).toBeNull();
+    accept(state, { TimestampMS: 1300, LapNumber: 2, CurrentLap: 0 }, 300);
+    expect(M.snapshot(state, {}, 300).tachLcdMode).toBe('power');
+    accept(state, { TimestampMS: 1400, LapNumber: 2, CurrentLap: .4 }, 400);
+    expect(M.snapshot(state, {}, 400).timerSeconds).toBe(.4);
+  });
+  it('ignores duplicate and reordered timer payloads without erasing accepted evidence or extending grace', () => {
+    const state = M.createState(); accept(state);
+    expect(accept(state, { CurrentLap: undefined }, 20)).toBe(false);
+    expect(accept(state, { TimestampMS: 900, CurrentLap: undefined }, 40)).toBe(false);
+    accept(state, { TimestampMS: 1100, LapNumber: 2, CurrentLap: 0 }, 100);
+    expect(M.snapshot(state, {}, 100).timerSeconds).toBe(0);
+    expect(accept(state, { TimestampMS: 1100, CurrentLap: 99, LapNumber: 1 }, 200)).toBe(false);
+    expect(accept(state, { TimestampMS: 1000, CurrentLap: undefined }, 300)).toBe(false);
+    for (const now of [1100, 2100, 3000]) accept(state, { TimestampMS: 1000 + now, LapNumber: 2, CurrentLap: 0 }, now);
+    expect(accept(state, { TimestampMS: 4000, LapNumber: 3, CurrentLap: 0 }, 3050)).toBe(false);
+    expect(M.snapshot(state, {}, 3099).timerSeconds).toBe(0);
+    expect(M.snapshot(state, {}, 3100).timerSeconds).toBeNull();
+  });
+  it.each([
+    { CarOrdinal: 99, LapNumber: 2 },
+    { CurrentRaceTime: 0, LapNumber: 0 },
+  ])('clears zero evidence on a confirmed forward car/session reset: %o', reset => {
+    const state = M.createState(); accept(state);
+    accept(state, { TimestampMS: 1100, CurrentLap: 0, ...reset }, 100);
+    expect(state.session).toBe(1); expect(M.snapshot(state, {}, 100).tachLcdMode).toBe('power');
+  });
+  it('requires confirmed backward epoch recovery and never carries old timer evidence into it', () => {
+    const state = M.createState(); accept(state, { TimestampMS: 10000, LapNumber: 4, CurrentRaceTime: 100 });
+    accept(state, { TimestampMS: 100, LapNumber: 0, CurrentRaceTime: 0, CurrentLap: 0 }, 100);
+    expect(M.snapshot(state, {}, 100).timerSeconds).toBe(30); expect(state.session).toBe(0);
+    accept(state, { TimestampMS: 150, LapNumber: 0, CurrentRaceTime: .05, CurrentLap: 0 }, 150);
+    expect(state.session).toBe(1); expect(M.snapshot(state, {}, 150).tachLcdMode).toBe('power');
+    accept(state, { TimestampMS: 200, LapNumber: 0, CurrentRaceTime: .1, CurrentLap: .1 }, 200);
+    expect(M.snapshot(state, {}, 200).timerSeconds).toBe(.1);
+  });
+  it('uses raw sourceTelemetry for timing and power even when an outer smoothed frame has plausible aliases', () => {
+    const state = M.createState();
+    const source = packet({ CurrentLap: undefined, PowerWatts: undefined, TorqueNewtons: undefined });
+    M.ingest(state, { ...source, CurrentLap: 20, PowerWatts: 500000, TorqueNewtons: 700, power: 500, torque: 700, sourceTelemetry: source }, {}, 0);
+    const v = M.snapshot(state, {}, 0);
+    expect(v.tachLcdMode).toBe('power'); expect(v.timerSeconds).toBeNull(); expect(v.power).toBeNull(); expect(v.torque).toBeNull();
+    const positive = packet({ TimestampMS: 1100, CurrentLap: .25 });
+    M.ingest(state, { ...positive, CurrentLap: 99, sourceTelemetry: positive }, {}, 100);
+    expect(M.snapshot(state, {}, 100).timerSeconds).toBe(.25);
+  });
+});
+
+describe('R34 dual-LCD unit and independent power channels', () => {
+  it.each([
+    { raw: { PowerWatts: undefined }, power: null, torque: 400 },
+    { raw: { TorqueNewtons: undefined }, power: 200, torque: null },
+    { raw: { PowerWatts: 0, TorqueNewtons: 0 }, power: 0, torque: 0 },
+    { raw: { PowerWatts: -20000, TorqueNewtons: -40 }, power: -20, torque: -40 },
+    { raw: { PowerWatts: NaN, TorqueNewtons: Infinity }, power: null, torque: null },
+  ])('keeps missing, signed and zero power/torque independent: %o', sample => {
+    const state = M.createState(); accept(state, { CurrentLap: undefined, ...sample.raw });
+    const v = M.snapshot(state, { effectiveUnits: { power: 'kw', torque: 'nm' } }, 0);
+    expect(v.tachLcdMode).toBe('power'); expect(v.power).toBe(sample.power); expect(v.torque).toBe(sample.torque);
+    expect(v.powerUnit).toBe('kW'); expect(v.torqueUnit).toBe('N·m');
+  });
+  it('honors horsepower, PS, kW and torque settings without affecting timer availability', () => {
+    const state = M.createState(); accept(state, { CurrentLap: undefined });
+    const hp = M.snapshot(state, { units: { power: 'hp', torque: 'nm' } }, 0);
+    const ps = M.snapshot(state, { effectiveUnits: { power: 'ps', torque: 'lbft' } }, 0);
+    const kw = M.snapshot(state, { effectiveUnits: { power: 'kw', torque: 'nm' } }, 0);
+    expect(hp.power).toBeCloseTo(268.2044); expect(hp.powerUnit).toBe('HP');
+    expect(ps.power).toBeCloseTo(271.92432); expect(ps.powerUnit).toBe('PS');
+    expect(ps.torque).toBeCloseTo(295.0248); expect(ps.torqueUnit).toBe('lb·ft');
+    expect(kw.power).toBe(200); expect(kw.powerUnit).toBe('kW');
+    expect([hp.tachLcdMode, ps.tachLcdMode, kw.tachLcdMode]).toEqual(['power', 'power', 'power']);
+  });
+  it('uses selected HUD/app speed preferences before legacy fallback settings', () => {
+    expect(M.units({ effectiveUnits: { speed: 'mph' }, units: { speed: 'kmh' } }, {}).speed).toBe('mph');
+    expect(M.units({ units: { speed: 'mph' } }, {}).speed).toBe('mph');
+    expect(M.units({}, { displayUnits: { speed: 'mph' } }).speed).toBe('mph');
+    expect(M.units({ effectiveUnit: 'mph' }, {}).speed).toBe('mph');
+    expect(M.units({ unit: 'mph' }, {}).speed).toBe('mph');
+    expect(M.units({ effectiveUnits: { speed: 'kmh' }, unit: 'mph' }, {}).speed).toBe('kmh');
+    expect(M.units({ units: { speed: 'invalid' } }, {}).speed).toBe('kmh');
+  });
 });

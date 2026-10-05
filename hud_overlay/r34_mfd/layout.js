@@ -22,10 +22,10 @@
         return {
             width: w, height: h, scale: scale, margin: margin,
             tach: box(cx - offset, cy, radius), speed: box(cx + offset, cy, radius),
-            boost: box(cx - offset - 190 * scale, cy - 36 * scale, smallRadius),
-            temperature: box(cx + offset + 190 * scale, cy - 36 * scale, smallRadius),
+            temperature: box(cx - offset - 190 * scale, cy - 36 * scale, smallRadius),
+            boost: box(cx + offset + 190 * scale, cy - 36 * scale, smallRadius),
             screen: { x: w - margin - screenWidth, y: h - margin - screenHeight, width: screenWidth, height: screenHeight },
-            readouts: { x: cx, y: cy, scale: scale },
+            note: { x: cx, y: cy, scale: scale },
             status: { x: cx, y: Math.min(h - 14, h - margin + 13 * scale) }
         };
     }

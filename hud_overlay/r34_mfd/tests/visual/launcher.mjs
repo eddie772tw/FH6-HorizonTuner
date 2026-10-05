@@ -13,7 +13,7 @@ try {
   await page.goto(origin + '/hud/index.html'); await page.waitForFunction(() => document.querySelector('#hud-iframe')?.contentWindow?.R34Hud);
   let frame = page.frames().find(f => f.url().includes('/r34_mfd/index.html')); assert(frame);
   await page.evaluate(sample => { window.fixtureRaw = sample; window.fixtureFeed = setInterval(() => { window.fixtureRaw.TimestampMS += 16; window.dispatchEvent(new CustomEvent('telemetry', { detail: { ...window.fixtureRaw } })); }, 16); }, rawSample);
-  await page.waitForTimeout(250); assert.equal(await frame.locator('#r34Single-value').textContent(), '1.20'); assert.equal(await frame.locator('#r34DigitalSpeed').textContent(), '162 kmh');
+  await page.waitForTimeout(250); assert.equal(await frame.locator('#r34Single-value').textContent(), '1.20'); assert.equal(await frame.locator('#r34DigitalSpeed').textContent(), '162');
   await page.screenshot({ path: path.join(out, 'host-live.png'), omitBackground: true });
   const metricNeedle = await frame.locator('#r34SpeedNeedle').getAttribute('transform');
   const metricTempNeedle = await frame.locator('#r34TempNeedle').getAttribute('transform');
@@ -22,9 +22,10 @@ try {
   assert.equal(await frame.locator('#r34TempValue').textContent(), '210.0');
   assert.equal(await frame.locator('#r34SpeedNeedle').getAttribute('transform'), metricNeedle);
   assert.equal(await frame.locator('#r34TempNeedle').getAttribute('transform'), metricTempNeedle);
-  assert.equal(await frame.locator('#r34DigitalSpeed').textContent(), '162 kmh');
-  await page.screenshot({ path: path.join(out, 'host-imperial-speed-locked.png'), omitBackground: true });
-  report.checks.push('Live config C/F updates while raw telemetry flows; speed and temperature geometry remain invariant');
+  assert.equal(await frame.locator('#r34DigitalSpeed').textContent(), '101');
+  assert.equal(await frame.locator('#r34DigitalSpeedUnit').textContent(), 'mph');
+  await page.screenshot({ path: path.join(out, 'host-imperial-analog-locked.png'), omitBackground: true });
+  report.checks.push('Live config C/F updates while raw telemetry flows; digital speed follows mph while analog speed and temperature geometry remain invariant');
   for (const mode of ['multi', 'g', 'lap', 'twin', 'single']) {
     await page.evaluate(config => window.dispatchEvent(new CustomEvent('hud:config', { detail: config })), { ...baseConfig, r34MfdMode: mode });
     await page.waitForTimeout(100); assert.equal(await frame.locator('[data-mode]:not([hidden])').getAttribute('data-mode'), mode); report.checks.push('host mode ' + mode);

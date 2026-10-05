@@ -16,10 +16,10 @@ describe('independent lower-center instruments and corner MFD', () => {
     for (const scale of [.7, 1, 1.5, 2, 3]) {
       const g = L.layout(width, height, scale);
       for (const key of ['tach', 'speed', 'boost', 'temperature', 'screen']) inside(g[key], width, height);
-      expect(g.boost.x + g.boost.width).toBeLessThan(g.tach.x);
+      expect(g.temperature.x + g.temperature.width).toBeLessThan(g.tach.x);
       expect(g.tach.x + g.tach.width).toBeLessThan(g.speed.x);
-      expect(g.speed.x + g.speed.width).toBeLessThan(g.temperature.x);
-      expect(g.temperature.x + g.temperature.width).toBeLessThan(g.screen.x);
+      expect(g.speed.x + g.speed.width).toBeLessThan(g.boost.x);
+      expect(g.boost.x + g.boost.width).toBeLessThan(g.screen.x);
       expect(g.status.y + 12).toBeLessThanOrEqual(height);
       expect(g.screen.width / g.screen.height).toBeCloseTo(270 / 152);
       expect(g.screen.x + g.screen.width).toBeCloseTo(width - g.margin);

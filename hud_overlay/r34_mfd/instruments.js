@@ -1,6 +1,12 @@
 /* Period scale geometry and one-time SVG assembly; live readings never rebuild artwork. */
 (function (root) {
     'use strict';
+    // Reference-photo visual geometry, not claimed factory calibration dimensions.
+    var AUXILIARY_GEOMETRY = Object.freeze({
+        face: Object.freeze({ cx: 60, cy: 60, radius: 54 }),
+        temperature: Object.freeze({ cx: 46, cy: 60, needleLength: 56, tickInner: 55, tickOuter: 61, start: 45, end: -45 }),
+        boost: Object.freeze({ cx: 74, cy: 60, needleLength: 56, tickInner: 55, tickOuter: 61, start: 135, end: 225 })
+    });
     function point(cx, cy, r, angle) {
         var a = angle * Math.PI / 180;
         return [cx + Math.cos(a) * r, cy + Math.sin(a) * r];
@@ -11,11 +17,18 @@
     }
     function tachAngle(rpm) {
         rpm = root.R34Model.clamp(rpm || 0, 0, 10000);
-        return 135 + (rpm <= 3000 ? rpm / 1000 * 15 : 45 + (rpm - 3000) / 1000 * 30);
+        return 150 + (rpm <= 3000 ? rpm / 1000 * 10 : 30 + (rpm - 3000) / 1000 * 30);
     }
     // Nür photographs establish the markings and approximate250° arc; this is a HUD visual mapping, not factory calibration.
     function speedAngle(kmh) { return 145 + root.R34Model.clamp(kmh || 0, 0, 300) / 300 * 250; }
-    function auxiliaryAngle(ratio) { return 120 + root.R34Model.clamp(ratio || 0, 0, 1) * 120; }
+    function auxiliaryAngle(kind, ratio) {
+        var geometry = AUXILIARY_GEOMETRY[kind];
+        return geometry.start + root.R34Model.clamp(ratio || 0, 0, 1) * (geometry.end - geometry.start);
+    }
+    function auxiliaryTransform(kind, ratio) {
+        var geometry = AUXILIARY_GEOMETRY[kind];
+        return 'translate(' + geometry.cx + ' ' + geometry.cy + ') rotate(' + auxiliaryAngle(kind, ratio) + ')';
+    }
     function mfdDialMarkup(id, label) {
         var A = root.R34Artwork;
         var s = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 144 152" role="img" aria-label="' + label + '">';
@@ -65,9 +78,10 @@
     root.R34Instruments = {
         setAuxiliaryLabels: function (group, min, max) {
             var A = root.R34Artwork;
-            group.innerHTML = A.txt(41, 28, scaleLabel(max), 8) + A.txt(41, 96, scaleLabel(min), 8);
+            group.innerHTML = A.txt(47, 27, scaleLabel(max), 8) + A.txt(47, 103, scaleLabel(min), 8);
         },
         mfdDialMarkup: mfdDialMarkup, setDialLabels: setDialLabels, setHistoryLabels: setHistoryLabels,
+        AUXILIARY_GEOMETRY: AUXILIARY_GEOMETRY, auxiliaryTransform: auxiliaryTransform,
         SPEED_MAX: 300, tachAngle: tachAngle, speedAngle: speedAngle, auxiliaryAngle: auxiliaryAngle, sector: sector
     };
     if (typeof module !== 'undefined' && module.exports) module.exports = root.R34Instruments;

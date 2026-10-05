@@ -6,7 +6,7 @@
     function value(n, precision) { return n === null || !Number.isFinite(n) ? 'N/A' : n.toFixed(precision || 0); }
     function Renderer(doc) {
         this.doc = doc; this.mode = ''; this.unit = ''; this.lastStatus = ''; this.historySequence = -1; this.historyLive = null;
-        this.palette = {}; this.nodes = {}; this.rows = []; this.lapRows = [];
+        this.palette = {}; this.nodes = {}; this.rows = []; this.lapRows = []; this.lcdMode = '';
         doc.getElementById('r34Paints').innerHTML = root.R34Artwork.defs;
         doc.getElementById('r34TachModule').innerHTML = root.R34ClusterArt.main('tach');
         doc.getElementById('r34SpeedModule').innerHTML = root.R34ClusterArt.main('speed');
@@ -47,11 +47,8 @@
             style.width = box.width + 'px'; style.height = box.height + 'px';
         }
         n.r34Screen.style.transform = 'scale(' + g.screen.width / 270 + ')';
-        n.r34Readouts.style.left = g.readouts.x - 80 * g.scale + 'px';
-        n.r34Readouts.style.top = g.readouts.y - 20 * g.scale + 'px';
-        n.r34Readouts.style.transform = 'scale(' + g.scale + ')';
-        n.r34ClusterNote.style.left = g.readouts.x - 80 * g.scale + 'px';
-        n.r34ClusterNote.style.top = g.readouts.y + 76 * g.scale + 'px';
+        n.r34ClusterNote.style.left = g.note.x - 80 * g.scale + 'px';
+        n.r34ClusterNote.style.top = g.note.y + 76 * g.scale + 'px';
         n.r34ClusterNote.style.transform = 'scale(' + g.scale + ')';
         n.r34StreamStatus.style.left = (shown ? g.status.x : g.screen.x + g.screen.width / 2) + 'px';
         n.r34StreamStatus.style.top = Math.min(height - 14, g.status.y) + 'px';
@@ -119,14 +116,14 @@
         n.r34Container.dataset.status = view.status;
         n.r34TachNeedle.setAttribute('transform', 'translate(108 108) rotate(' + I.tachAngle(view.rpm) + ')');
         n.r34TachNeedle.style.visibility = view.rpm === null ? 'hidden' : 'visible';
-        var physicalSpeed = view.speed; // Fixed kmh from the raw m/s adapter.
+        var physicalSpeed = view.speedKmh; // Analog face remains fixed kmh; LCD uses selected units.
         n.r34SpeedNeedle.setAttribute('transform', 'translate(108 108) rotate(' + I.speedAngle(physicalSpeed) + ')');
         n.r34SpeedNeedle.style.visibility = view.speed === null ? 'hidden' : 'visible';
-        this.text('r34Gear', view.gear); this.text('r34DigitalSpeed', value(view.speed) + ' ' + view.speedUnit);
-        this.text('r34Distance', view.distance === null ? '—' : view.distance.toFixed(1));
+        this.text('r34Gear', view.gear); this.text('r34DigitalSpeed', value(view.speed));
+        this.text('r34DigitalSpeedUnit', view.speedUnit);
+        this.drawLcd(view, e);
         var speedOver = e.showSpeed !== false && physicalSpeed > I.SPEED_MAX, rpmOver = e.showRPM !== false && view.rpm > 10000;
         this.text('r34ClusterNote', (speedOver ? 'SPEED OVER SCALE' : '') + (rpmOver ? (speedOver ? '\n' : '') + 'RPM OVER SCALE: ' + Math.round(view.rpm) : ''));
-        this.text('r34DistanceUnit', 'km');
         n.r34RevLamp.classList.toggle('active', view.live && view.rpm !== null && view.redline !== null && view.rpm >= view.redline && e.showRPM !== false);
         if (this.unit !== view.boostSpec.unit) {
             this.unit = view.boostSpec.unit;
@@ -139,9 +136,9 @@
             this.text('r34Single-unit', view.boostSpec.unit); this.text('r34TwinB-unit', view.boostSpec.unit); this.historySequence = -1;
         }
         var boost = e.showBoost === false ? null : view.boost, boostRatio = e.showBoost === false ? null : view.boostRatio;
-        n.r34BoostNeedle.setAttribute('transform', 'translate(60 60) rotate(' + I.auxiliaryAngle(boostRatio) + ')');
+        n.r34BoostNeedle.setAttribute('transform', I.auxiliaryTransform('boost', boostRatio));
         n.r34BoostNeedle.style.visibility = boost === null ? 'hidden' : 'visible';
-        n.r34TempNeedle.setAttribute('transform', 'translate(60 60) rotate(' + I.auxiliaryAngle(view.tireTemperatureRatio) + ')');
+        n.r34TempNeedle.setAttribute('transform', I.auxiliaryTransform('temperature', view.tireTemperatureRatio));
         n.r34TempNeedle.style.visibility = view.tireTemperature === null ? 'hidden' : 'visible';
         this.text('r34BoostValue', value(boost, view.boostSpec.decimals));
         this.text('r34TempValue', value(view.tireTemperature, 1));
@@ -155,6 +152,19 @@
         } else if (this.mode === 'multi') this.drawMulti(view, e);
         else if (this.mode === 'g') this.drawG(view);
         else this.drawLap(view);
+    };
+    Renderer.prototype.drawLcd = function (view, elements) {
+        var mode = view.tachLcdMode, n = this.nodes;
+        if (mode !== this.lcdMode) {
+            this.lcdMode = mode;
+            n.r34TachLcd.setAttribute('data-lcd-mode', mode);
+            n.r34TachTimerGroup.style.display = mode === 'timer' ? '' : 'none';
+            n.r34TachPowerGroup.style.display = mode === 'power' ? '' : 'none';
+            n.r34TachUnavailable.style.display = mode === 'unavailable' ? '' : 'none';
+        }
+        this.text('r34TachTimer', M.timerTime(view.timerSeconds));
+        this.text('r34LcdPower', value(elements.showPowerTorque === false ? null : view.power) + ' ' + view.powerUnit);
+        this.text('r34LcdTorque', value(elements.showPowerTorque === false ? null : view.torque) + ' ' + view.torqueUnit);
     };
     Renderer.prototype.drawMulti = function (v, e) {
         for (var i = 0; i < this.rows.length; i++) {
@@ -203,7 +213,7 @@
     };
     Renderer.prototype.drawLap = function (v) {
         this.text('r34LapNumber', v.lap === null ? '—' : String(v.lap));
-        this.text('r34CurrentLap', M.lapTime(v.currentLap)); this.text('r34BestLap', M.lapTime(v.bestLap)); this.text('r34LastLap', M.lapTime(v.lastLap));
+        this.text('r34CurrentLap', M.timerTime(v.currentLap)); this.text('r34BestLap', M.lapTime(v.bestLap)); this.text('r34LastLap', M.lapTime(v.lastLap));
         for (var i = 0; i < 5; i++) {
             var row = this.lapRows[i], lap = v.laps[i];
             row.children[0].textContent = lap ? String(lap.number) : '—'; row.children[1].textContent = lap ? M.lapTime(lap.seconds) : "—'——.———";

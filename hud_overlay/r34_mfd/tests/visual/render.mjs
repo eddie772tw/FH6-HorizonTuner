@@ -79,12 +79,24 @@ try {
       assert(visible.every(b => b.x >= 0 && b.y >= 0 && b.right <= layout.width + .01 && b.bottom <= layout.height + .01), 'Independent islands must fit the viewport');
       if (!layout.clusterHidden) {
         assert(layout.boxes[0].right < layout.boxes[1].x, 'R34 main dials preserve tach-left/speed-right and a clear center');
-        assert(layout.boxes[3].right < layout.boxes[4].x, 'Right auxiliary must not overlap the MFD');
+        assert(layout.boxes[3].right < layout.boxes[0].x && layout.boxes[1].right < layout.boxes[2].x, 'Temperature is outside left; boost is outside right');
+        assert(layout.boxes[2].right < layout.boxes[4].x, 'Right auxiliary must not overlap the MFD');
       }
       const screen = layout.boxes.at(-1); assert(Math.abs(screen.width / screen.height - 270 / 152) < .01);
       report.checks.push({ layout });
     };
     await inspectLayout();
+    const compressedSpacing = await page.locator('#r34TachFace .r34-scale-numeral').evaluateAll(nodes => {
+      const labels = nodes.filter(node => Number(node.dataset.value) <= 3000).map(node => {
+        const box = node.getBoundingClientRect();
+        const glyph = node.querySelector('path'), matrix = glyph.getScreenCTM();
+        const stroke = Number(getComputedStyle(glyph).strokeWidth.replace('px', '')) * Math.hypot(matrix.c, matrix.d);
+        return { value: Number(node.dataset.value), top: box.top - stroke / 2, bottom: box.bottom + stroke / 2 };
+      });
+      return labels.slice(1).map((label, index) => ({ low: labels[index].value, high: label.value, physicalGap: (labels[index].top - label.bottom) * devicePixelRatio }));
+    });
+    assert(compressedSpacing.every(pair => pair.physicalGap > .4), 'Compressed 0–3 glyph strokes need a real visible gap without changing the equal tick mapping');
+    report.checks.push({ compressedSpacing });
     await inspectDials('single');
     await inspectCanvas('r34History');
     for (const mode of ['single', 'twin', 'multi', 'g', 'lap']) {
@@ -100,6 +112,83 @@ try {
       if (mode === 'single' || mode === 'g') await inspectCanvas(mode === 'g' ? 'r34G' : 'r34History');
       if (mode === 'single' || mode === 'twin') await inspectDials(mode);
     }
+    // LCD text must fit matching physical windows, including real sibling separation.
+    const inspectLcd = async () => {
+      const lcds = await page.locator('.r34-lcd').evaluateAll(nodes => nodes.map(node => {
+        const window = node.querySelector('.r34-lcd-window').getBoundingClientRect();
+        const labels = [...node.querySelectorAll('text')].map(text => ({ text: text.textContent, rect: text.getBoundingClientRect() })).filter(item => item.rect.width > 0 && item.rect.height > 0);
+        const tolerance = 1 / devicePixelRatio;
+        const overlap = (a, b) => a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+        return { id: node.id, width: window.width, height: window.height, texts: labels.map(item => item.text),
+          contained: labels.every(({ rect }) => rect.left >= window.left - tolerance && rect.right <= window.right + tolerance && rect.top >= window.top - tolerance && rect.bottom <= window.bottom + tolerance),
+          separate: labels.every((item, index) => labels.slice(index + 1).every(other => !overlap(item.rect, other.rect))) };
+      }));
+      assert(lcds.every(lcd => lcd.contained && lcd.separate), 'Visible LCD content must fit its window without sibling collisions');
+      assert(Math.abs(lcds[0].width - lcds[1].width) < .01 && Math.abs(lcds[0].height - lcds[1].height) < .01, 'Both physical LCD windows must match');
+      report.checks.push({ lcds });
+    };
+    const saveLcd = async name => {
+      await inspectLcd(); await save('lcd-' + name);
+      if (width === 1280 && dpr === 2) for (const dial of ['Tach', 'Speed']) {
+        const filename = 'dial-' + dial.toLowerCase() + '-' + name + '-dpr2.png';
+        await page.locator('#r34' + dial + 'Module').screenshot({ path: path.join(out, filename), omitBackground: true }); report.screenshots.push(filename);
+      }
+    };
+    await configure({}); await frame({ CurrentLap: 67.321 });
+    assert.equal(await page.locator('#r34TachLcd').getAttribute('data-lcd-mode'), 'timer');
+    assert.equal(await page.locator('#r34TachTimer').textContent(), "1'07.321");
+    assert.equal(await page.locator('#r34Readouts').count(), 0, 'The floating central gear/speed strip is removed');
+    await saveLcd('live-timer');
+    if (width === 1280 && dpr === 1) {
+      const alpha = await page.evaluate(async base64 => {
+        const img = new Image(); img.src = 'data:image/png;base64,' + base64; await img.decode();
+        const canvas = document.createElement('canvas'); canvas.width = img.width; canvas.height = img.height;
+        const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0);
+        const a = document.getElementById('r34TachModule').getBoundingClientRect(), b = document.getElementById('r34SpeedModule').getBoundingClientRect();
+        const x = Math.ceil(a.right + 1), y = Math.ceil(Math.max(a.top, b.top)), w = Math.floor(b.left - a.right - 2), h = Math.floor(Math.min(a.bottom, b.bottom) - y);
+        const gap = ctx.getImageData(x, y, w, h).data;
+        return { gapTransparent: gap.every((value, index) => index % 4 !== 3 || value === 0), outerTransparent: ctx.getImageData(0, 0, 1, 1).data[3] === 0 };
+      }, (await page.screenshot({ omitBackground: true })).toString('base64'));
+      assert(alpha.gapTransparent && alpha.outerTransparent, 'Actual pixels outside the faces remain transparent, without an assembly rectangle'); report.checks.push({ alpha });
+    }
+    await frame({ CurrentLap: null });
+    assert.equal(await page.locator('#r34TachLcd').getAttribute('data-lcd-mode'), 'power');
+    assert.equal(await page.locator('#r34LcdPower').textContent(), '288 HP');
+    assert.equal(await page.locator('#r34LcdTorque').textContent(), '405 N·m');
+    await saveLcd('power-torque');
+    for (const [unit, expected] of [['kw', '215 kW'], ['ps', '292 PS']]) {
+      await configure({ effectiveUnits: { ...baseConfig.effectiveUnits, power: unit, torque: 'lbft' } }); await frame({ CurrentLap: null });
+      assert.equal(await page.locator('#r34LcdPower').textContent(), expected);
+      assert.equal(await page.locator('#r34LcdTorque').textContent(), '299 lb·ft'); await saveLcd('power-' + unit);
+    }
+    await configure({}); await frame({ CarOrdinal: 434, LapNumber: 0, CurrentLap: 82.5 });
+    await frame({ CarOrdinal: 434, LapNumber: 1, CurrentLap: 0, LastLap: 82.5 });
+    assert.equal(await page.locator('#r34TachLcd').getAttribute('data-lcd-mode'), 'timer');
+    assert.equal(await page.locator('#r34TachTimer').textContent(), "0'00.000"); await saveLcd('rollover-zero');
+    if (width === 1280 && dpr === 1) {
+      for (let index = 0; index < 16; index++) { await page.waitForTimeout(200); await frame({ CarOrdinal: 434, LapNumber: 1, CurrentLap: 0 }); }
+      assert.equal(await page.locator('#r34TachLcd').getAttribute('data-lcd-mode'), 'power');
+      await frame({ CarOrdinal: 434, LapNumber: 1, CurrentLap: 3.4 });
+      assert.equal(await page.locator('#r34TachLcd').getAttribute('data-lcd-mode'), 'timer');
+      report.checks.push('Fresh sustained zero expires after the original three-second rollover grace; later positive timing resumes');
+    }
+    await configure({ effectiveUnits: { ...baseConfig.effectiveUnits, speed: 'mph' } }); await frame({ CurrentLap: null });
+    assert.equal(await page.locator('#r34DigitalSpeed').textContent(), '101'); assert.equal(await page.locator('#r34DigitalSpeedUnit').textContent(), 'mph');
+    assert.equal(await page.locator('#r34Gear').textContent(), '4'); await saveLcd('mph-gear');
+    await configure({}); await frame({ CurrentLap: null, PowerWatts: null, TorqueNewtons: null, SpeedMetersPerSecond: null, Gear: null });
+    assert.equal(await page.locator('#r34LcdPower').textContent(), 'N/A HP'); assert.equal(await page.locator('#r34LcdTorque').textContent(), 'N/A N·m');
+    assert.equal(await page.locator('#r34DigitalSpeed').textContent(), 'N/A'); await saveLcd('missing-fields');
+    await frame({ CurrentLap: null, PowerWatts: -7457, TorqueNewtons: null });
+    assert.equal(await page.locator('#r34LcdPower').textContent(), '-10 HP'); assert.equal(await page.locator('#r34LcdTorque').textContent(), 'N/A N·m');
+    await frame({ CurrentLap: null, PowerWatts: null, TorqueNewtons: -15 });
+    assert.equal(await page.locator('#r34LcdPower').textContent(), 'N/A HP'); assert.equal(await page.locator('#r34LcdTorque').textContent(), '-15 N·m');
+    await configure({ elements: { ...baseConfig.elements, showRPM: false, showSpeed: false, showGear: true, showPowerTorque: false } }); await frame({ CurrentEngineRpm: 8500 });
+    assert.equal(await page.locator('#r34TachTimerGroup').isVisible(), true); assert.equal(await page.locator('#r34GearGroup').isVisible(), true);
+    assert.equal(await page.locator('#r34DigitalSpeedGroup').isVisible(), false); assert.equal(await page.locator('#r34RevLamp').evaluate(n => n.classList.contains('active')), false);
+    await frame({ CurrentLap: null }); assert.equal(await page.locator('#r34LcdPower').textContent(), 'N/A HP'); assert.equal(await page.locator('#r34LcdTorque').textContent(), 'N/A N·m');
+    await configure({}); await frame({ success: false });
+    assert.equal(await page.locator('#r34TachLcd').getAttribute('data-lcd-mode'), 'unavailable');
+    assert.equal(await page.locator('#r34LcdPower').textContent(), 'N/A HP'); assert.equal(await page.locator('#r34TachTimer').textContent(), "—'——.———");
     await configure({ r34MfdMode: 'multi' }); await frame({ TireTemp: [32, 68, 104, 140] });
     assert.equal(await page.locator('#r34TempValue').textContent(), '30.0');
     assert.equal(await page.locator('#r34Multi .r34-multi-row:last-child label').textContent(), 'TIRE TEMP');
@@ -126,9 +215,11 @@ try {
     for (const [name, boost, tire] of [['min', -.5, 32], ['mid', .75, 167], ['max', 2, 302]]) {
       await configure({ r34MfdMode: 'single' }); await frame({ Boost: boost * 14.5038, TireTemp: [tire, tire, tire, tire] });
       const directions = await page.locator('#r34BoostNeedle, #r34TempNeedle').evaluateAll(nodes => nodes.map(node => {
-        const matrix = node.transform.baseVal.consolidate().matrix; return { x: matrix.a, y: matrix.b };
+        const matrix = node.transform.baseVal.consolidate().matrix; return { id: node.id, x: matrix.a, y: matrix.b, pivotX: matrix.e, pivotY: matrix.f, faceCenter: node.ownerSVGElement.viewBox.baseVal.width / 2 };
       }));
-      assert(directions.every(d => d.x < 0 && (name === 'min' ? d.y > 0 : name === 'max' ? d.y < 0 : Math.abs(d.y) < .001)), 'Both auxiliary needles must use the same left hemisphere');
+      assert(directions.every(d => (d.id === 'r34TempNeedle' ? d.x > 0 && d.pivotX < d.faceCenter : d.x < 0 && d.pivotX > d.faceCenter) && (name === 'min' ? d.y > 0 : name === 'max' ? d.y < 0 : Math.abs(d.y) < .001)), 'Mirrored offset pivots: left temperature sweeps right; right boost sweeps left');
+      assert(Math.abs(directions[0].pivotX + directions[1].pivotX - directions[0].faceCenter * 2) < .001 && directions[0].pivotY === directions[1].pivotY, 'Both auxiliary pivots mirror the same face center');
+      report.checks.push({ sweep: name, directions });
       await save('sweep-' + name);
     }
     const gMarker = async () => page.locator('#r34G').evaluate(canvas => {
@@ -178,7 +269,8 @@ try {
     const fixedSpeedNeedle = await page.locator('#r34SpeedNeedle').getAttribute('transform');
     const fixedSpeedFace = await page.locator('#r34SpeedFace').innerHTML();
     await configure({ r34MfdMode: 'single', effectiveUnits: { speed: 'mph', boostPressure: 'psi' } }); await frame({ Boost: -7.2519, Gear: 0 }); await save('imperial-vacuum'); await inspectDials('single');
-    assert.equal(await page.locator('#r34DigitalSpeed').textContent(), '162 kmh');
+    assert.equal(await page.locator('#r34DigitalSpeed').textContent(), '101');
+    assert.equal(await page.locator('#r34DigitalSpeedUnit').textContent(), 'mph');
     assert.equal(await page.locator('#r34SpeedNeedle').getAttribute('transform'), fixedSpeedNeedle);
     assert.equal(await page.locator('#r34SpeedFace').innerHTML(), fixedSpeedFace);
     assert.equal(await page.locator('#r34SpeedFace text').textContent(), 'kmh');
@@ -202,10 +294,14 @@ try {
     assert.match(await page.locator('#r34ClusterNote').textContent(), /SPEED OVER SCALE/);
     await configure({}); await frame({ Boost: null, CurrentEngineRpm: null, SpeedMetersPerSecond: null, Fuel: null, Gear: null, TireTemp: null }); await save('missing');
     assert.equal(await page.locator('#r34Single-value').textContent(), 'N/A');
-    assert.equal(await page.locator('#r34DigitalSpeed').textContent(), 'N/A kmh');
+    assert.equal(await page.locator('#r34DigitalSpeed').textContent(), 'N/A');
     await frame({ IsRaceOn: 0 }); await save('paused'); assert.equal(await page.locator('#r34Status').textContent(), 'PAUSED');
+    assert.equal(await page.locator('#r34TachLcd').getAttribute('data-lcd-mode'), 'unavailable');
+    assert.equal(await page.locator('#r34LcdPower').textContent(), 'N/A HP');
     await frame({}); await page.waitForTimeout(1700); await save('stale'); assert.equal(await page.locator('#r34Single-value').textContent(), 'N/A');
     assert.equal(await page.locator('#r34TempValue').textContent(), 'N/A');
+    assert.equal(await page.locator('#r34TachLcd').getAttribute('data-lcd-mode'), 'unavailable');
+    assert.equal(await page.locator('#r34LcdTorque').textContent(), 'N/A N·m');
     await configure({ r34ShowCluster: false, r34MfdMode: 'multi', scale: .7, useDefaultColors: false, customColor: '#70c9df' }); await frame({}); await save('compact-mfd-only-custom');
     assert.equal(await page.locator('#r34Cluster').isVisible(), false); await inspectLayout();
     await configure({ elements: { ...baseConfig.elements, showGear: false, showRPM: true } }); await frame({ CurrentEngineRpm: 8500 });

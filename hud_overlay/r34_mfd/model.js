@@ -2,7 +2,7 @@
 (function (root) {
     'use strict';
     var MODES = ['single', 'twin', 'multi', 'g', 'lap'];
-    var STALE_MS = 1500, CAPACITY = 301, SAMPLE_MS = 100, WINDOW_MS = 30000;
+    var STALE_MS = 1500, TIMER_ZERO_GRACE_MS = 3000, CAPACITY = 301, SAMPLE_MS = 100, WINDOW_MS = 30000;
     function finite(value) { return typeof value === 'number' && Number.isFinite(value) ? value : null; }
     function clamp(value, min, max) { return Math.max(min, Math.min(max, value)); }
     function normalizeConfig(config) {
@@ -28,11 +28,12 @@
         if (value === 11) return 'N';
         return Number.isInteger(value) && value >= 1 && value <= 10 ? String(value) : '—';
     }
-    function lapTime(seconds) {
-        if (finite(seconds) === null || seconds <= 0) return "—'——.———";
+    function timerTime(seconds) {
+        if (finite(seconds) === null || seconds < 0) return "—'——.———";
         var ms = Math.round(seconds * 1000);
         return Math.floor(ms / 60000) + "'" + String(Math.floor(ms / 1000) % 60).padStart(2, '0') + '.' + String(ms % 1000).padStart(3, '0');
     }
+    function lapTime(seconds) { return seconds === 0 ? "—'——.———" : timerTime(seconds); }
     function ratio(value, min, max) { return finite(value) === null ? null : clamp((value - min) / (max - min), 0, 1); }
     function boostUnit(unit) {
         return unit === 'psi' ? { unit: 'psi', factor: 1, min: -7.2519, max: 29.0076, decimals: 1 }
@@ -42,8 +43,7 @@
     function units(config, data) {
         var supplied = config.effectiveUnits || data.displayUnits || config.units || {};
         return {
-            // Nür speed face is intentionally fixed to kmh, independent of global speed units.
-            speed: 'kmh',
+            speed: (supplied.speed || config.effectiveUnit || config.unit) === 'mph' ? 'mph' : 'kmh',
             boost: boostUnit(supplied.boostPressure),
             temperature: supplied.temperature === 'F' ? 'F' : 'C',
             power: ['kw', 'ps'].indexOf(supplied.power) >= 0 ? supplied.power : 'hp',
@@ -56,6 +56,7 @@
             status: 'waiting', blocked: false, sequence: 0, session: 0,
             epochTimestamp: null, epochAt: null, epochCar: null, epochRaceTime: null,
             peakBoostPsi: null, peakRpm: null, lastLapNumber: null, laps: [],
+            timerSeconds: null, timerLapNumber: null, timerZeroUntil: null,
             historyTime: new Float64Array(CAPACITY), historyBoost: new Float64Array(CAPACITY),
             historyCount: 0, historyHead: 0, nextSampleAt: null, elapsed: 0
         };
@@ -63,6 +64,7 @@
     function reset(state) {
         state.peakBoostPsi = null; state.peakRpm = null;
         state.laps.length = 0; state.lastLapNumber = null;
+        clearTimer(state);
         state.historyCount = 0; state.historyHead = 0; state.nextSampleAt = null; state.elapsed = 0;
         state.session++;
     }
@@ -80,17 +82,30 @@
     function clearEpoch(state) {
         state.epochTimestamp = null; state.epochAt = null; state.epochCar = null; state.epochRaceTime = null;
     }
+    function clearTimer(state) { state.timerSeconds = null; state.timerLapNumber = null; state.timerZeroUntil = null; }
+    function updateTimer(state, data, lap, continuous, now) {
+        var seconds = physical(data, 'CurrentLap');
+        // Raw zero is commonly a default. It is genuine only at an observed
+        // lap rollover from a positive timer, then on consecutive same-lap zeros
+        // within the fixed grace period. Receive/source gaps are availability heuristics.
+        var rollover = state.timerSeconds > 0 && state.timerLapNumber !== null && lap === state.timerLapNumber + 1;
+        var validZero = seconds === 0 && continuous && lap !== null &&
+            (rollover || (state.timerSeconds === 0 && lap === state.timerLapNumber && now < state.timerZeroUntil));
+        state.timerZeroUntil = validZero ? (rollover ? now + TIMER_ZERO_GRACE_MS : state.timerZeroUntil) : null;
+        state.timerSeconds = seconds > 0 || validZero ? seconds : null;
+        state.timerLapNumber = state.timerSeconds === null ? null : lap;
+    }
     function ingest(state, envelope, payload, now) {
         envelope = envelope || {}; payload = payload || {};
         var data = envelope.sourceTelemetry && typeof envelope.sourceTelemetry === 'object' ? envelope.sourceTelemetry : envelope;
         if (envelope.success === false || envelope.error || payload.success === false || payload.error || data.success === false || data.error) {
-            state.status = 'error'; state.blocked = true; clearEpoch(state); return false;
+            state.status = 'error'; state.blocked = true; clearEpoch(state); clearTimer(state); return false;
         }
-        if (data.IsRaceOn === 0 || data.IsRaceOn === false) { state.status = 'paused'; state.blocked = true; clearEpoch(state); return false; }
+        if (data.IsRaceOn === 0 || data.IsRaceOn === false) { state.status = 'paused'; state.blocked = true; clearEpoch(state); clearTimer(state); return false; }
         var timestamp = finite(data.TimestampMS), car = finite(data.CarOrdinal);
         var raceTime = physical(data, 'CurrentRaceTime'), lap = physical(data, 'LapNumber');
         if ((data.IsRaceOn !== 1 && data.IsRaceOn !== true) || timestamp === null || !Number.isInteger(timestamp) || timestamp < 0 || timestamp > 4294967295) {
-            state.status = 'unavailable'; state.blocked = true; clearEpoch(state); return false;
+            state.status = 'unavailable'; state.blocked = true; clearEpoch(state); clearTimer(state); return false;
         }
         var delta = state.timestamp === null ? 1 : (timestamp - state.timestamp + 4294967296) % 4294967296;
         var carChanged = state.car !== null && car !== null && car !== state.car;
@@ -113,6 +128,7 @@
         state.epochTimestamp = null; state.epochAt = null; state.epochCar = null; state.epochRaceTime = null;
         if (carChanged || restarted) { reset(state); delta = 0; }
         var first = state.timestamp === null;
+        updateTimer(state, data, lap, !first && !state.blocked && !stale && delta < STALE_MS, now);
         state.timestamp = timestamp; if (car !== null) state.car = car; if (raceTime !== null) state.raceTime = raceTime;
         state.receivedAt = now; state.data = data;
         var redline = finite(payload.redlineRpm), maxRpm = finite(data.EngineMaxRpm);
@@ -149,7 +165,8 @@
         config = config || {};
         var data = state.data, currentStatus = status(state, now), live = currentStatus === 'live';
         var u = displayUnits || units(config, data);
-        var speed = convert(data, live, 'SpeedMetersPerSecond', 3.6);
+        var speedKmh = convert(data, live, 'SpeedMetersPerSecond', 3.6);
+        var speed = u.speed === 'mph' ? convert(data, live, 'SpeedMetersPerSecond', 2.23694) : speedKmh;
         var fuel = read(data, live, 'Fuel'); if (fuel !== null) fuel *= 100;
         var tireTemperatureC = live ? meanTireTemperatureC(data.TireTemp) : null;
         var throttle = convert(data, live, 'AccelInput', 100 / 255), brake = convert(data, live, 'BrakeInput', 100 / 255);
@@ -160,7 +177,8 @@
         out.sequence = state.sequence;
         out.session = state.session;
         out.speed = speed;
-        out.speedUnit = 'kmh';
+        out.speedKmh = speedKmh;
+        out.speedUnit = u.speed;
         out.rpm = rpm;
         out.gear = live ? gear(data.Gear) : '—';
         out.fuel = fuel;
@@ -186,15 +204,17 @@
         out.longitudinalG = convert(data, live, 'AccelerationZ', 1 / 9.80665);
         out.completedLaps = read(data, live, 'LapNumber');
         out.lap = out.completedLaps === null ? null : out.completedLaps + 1;
-        out.currentLap = read(data, live, 'CurrentLap');
+        out.timerSeconds = live && (state.timerSeconds !== 0 || now < state.timerZeroUntil) ? state.timerSeconds : null;
+        out.tachLcdMode = !live ? 'unavailable' : out.timerSeconds !== null ? 'timer' : 'power';
+        out.currentLap = out.timerSeconds;
         out.bestLap = read(data, live, 'BestLap');
         out.lastLap = read(data, live, 'LastLap');
         out.laps = state.laps;
-        out.distance = convert(data, live, 'DistanceTraveled', 0.001);
+        out.distance = convert(data, live, 'DistanceTraveled', 0.001); // Retained km API; no longer displayed by the cluster.
         return out;
     }
-    root.R34Model = { MODES: MODES, STALE_MS: STALE_MS, CAPACITY: CAPACITY, WINDOW_MS: WINDOW_MS,
-        finite: finite, clamp: clamp, ratio: ratio, meanTireTemperatureC: meanTireTemperatureC, normalizeConfig: normalizeConfig, gear: gear, lapTime: lapTime,
+    root.R34Model = { MODES: MODES, STALE_MS: STALE_MS, TIMER_ZERO_GRACE_MS: TIMER_ZERO_GRACE_MS, CAPACITY: CAPACITY, WINDOW_MS: WINDOW_MS,
+        finite: finite, clamp: clamp, ratio: ratio, meanTireTemperatureC: meanTireTemperatureC, normalizeConfig: normalizeConfig, gear: gear, lapTime: lapTime, timerTime: timerTime,
         boostUnit: boostUnit, units: units, createState: createState, reset: reset, ingest: ingest, snapshot: snapshot, status: status };
     if (typeof module !== 'undefined' && module.exports) module.exports = root.R34Model;
 })(typeof window !== 'undefined' ? window : globalThis);

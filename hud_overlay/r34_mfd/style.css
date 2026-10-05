@@ -64,13 +64,12 @@
 .r34-lap-history > div { display: flex; justify-content: space-between; border: 1px solid var(--r34-ink); padding: 4px; }
 .r34-lap-history ol { list-style: none; padding: 0; margin: 0; }
 .r34-lap-history li { height: 20px; padding: 4px 3px; border: 1px solid var(--r34-ink); border-top: none; display: flex; justify-content: space-between; font-size: 8px; }
-.r34-readouts { position: absolute; width: 160px; height: 96px; transform-origin: top left; text-align: center; }
-.r34-gear { position: absolute; left: 0; top: 0; width: 100%; display: block; height: 40px; line-height: 40px; }
-.r34-gear strong { font: 32px/40px Arial, sans-serif; }
-#r34RevLamp { position: absolute; width: 5px; height: 5px; left: 110px; top: 18px; border-radius: 50%; background: transparent; }
-#r34RevLamp.active { background: var(--r34-hot); }
-#r34DigitalSpeedGroup { position: absolute; top: 48px; left: 0; width: 100%; display: block; }
-#r34DigitalSpeed { font: 22px/26px Arial, sans-serif; white-space: nowrap; }
+.r34-lcd text { font-family: monospace; fill: var(--r34-lcd-ink); font-variant-numeric: tabular-nums; }
+.r34-lcd-timer { font-size: 16px; }
+.r34-lcd-pair { font-size: 12px; font-weight: 600; }
+.r34-lcd-gear, .r34-lcd-speed { font-size: 17px; }
+#r34RevLamp { fill: transparent; }
+#r34RevLamp.active { fill: var(--r34-hot); }
 .r34-scale-note { position: absolute; width: 160px; min-height: 24px; white-space: pre-line; color: var(--r34-amber); font: 9px/11px Arial, sans-serif; text-align: center; transform-origin: top left; }
 .r34-stream-status { position: absolute; height: 12px; line-height: 12px; transform: translateX(-50%); text-align: center; white-space: nowrap; color: var(--r34-amber); font: 9px Arial, sans-serif; letter-spacing: .4px; }
-.r34-cockpit[data-cluster="hidden"] .r34-readouts, .r34-cockpit[data-cluster="hidden"] .r34-scale-note { display: none; }
+.r34-cockpit[data-cluster="hidden"] .r34-scale-note { display: none; }

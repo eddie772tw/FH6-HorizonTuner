@@ -1,4 +1,4 @@
 {
   "author": "HorizonTuner · Bagley as Codex",
-  "description": "R34 / V-spec tachometer layout adaptation with a Nür 300 kmh speed face, fixed boost and four-wheel average tire-temperature auxiliaries, and five NISMO MFD Ver.II-inspired pages. Speed is intentionally fixed to kmh regardless of global mph settings. Original core-dial artwork; unavailable telemetry stays N/A. Change pages in HUD Advanced Settings."
+  "description": "R34 / V-spec tachometer layout adapted to the supplied Nür reference, with a Nür 300 analog speed face and matching LCDs. Only the analog speed face and needle are fixed to literal kmh; digital speed follows selected kmh/mph units. Tach LCD shows available lap timing, otherwise current power and torque in selected units (HP by default). Left tire-temperature and right boost gauges use mirrored off-center pivots. Five NISMO MFD Ver.II-inspired pages; original core artwork and honest N/A for unavailable telemetry. Change pages in HUD Advanced Settings."
 }
