@@ -5,11 +5,12 @@
   "samples": [
     {
       "name": "host-standby",
-      "text": "—\nkm/h\n—\nGEAR\nWAITING\nTHROTTLE\n—%\nINPUT\nBRAKE\n—%\nINPUT\n×1000 r/min",
+      "text": "—\nkm/h\n—\nGEAR\nWAITING\nN/A\nN/A\nN/A\n— °C\n—:—\nN/A\n×1000 r/min",
       "readings": {
         "speed": "—",
         "gear": "—",
-        "status": "WAITING"
+        "status": "WAITING",
+        "fuel": "N/A"
       },
       "body": "rgba(0, 0, 0, 0)",
       "style": "lfaContainer",
@@ -23,11 +24,12 @@
     },
     {
       "name": "host-cruise",
-      "text": "180\nkm/h\n4\nGEAR\nLIVE\nTHROTTLE\n71%\nINPUT\nBRAKE\n0%\nINPUT\n×1000 r/min",
+      "text": "180\nkm/h\n4\nGEAR\nLIVE\nN/A\nN/A\nN/A\n— °C\n—:—\n68%\n×1000 r/min",
       "readings": {
         "speed": "180",
         "gear": "4",
-        "status": "LIVE"
+        "status": "LIVE",
+        "fuel": "68%"
       },
       "body": "rgba(0, 0, 0, 0)",
       "style": "lfaContainer",
@@ -41,11 +43,12 @@
     },
     {
       "name": "host-stale-with-smoothing",
-      "text": "—\nkm/h\n—\nGEAR\nNO SIGNAL\nTHROTTLE\n—%\nINPUT\nBRAKE\n—%\nINPUT\n×1000 r/min",
+      "text": "—\nkm/h\n—\nGEAR\nNO SIGNAL\nN/A\nN/A\nN/A\n— °C\n—:—\nN/A\n×1000 r/min",
       "readings": {
         "speed": "—",
         "gear": "—",
-        "status": "NO SIGNAL"
+        "status": "NO SIGNAL",
+        "fuel": "N/A"
       },
       "body": "rgba(0, 0, 0, 0)",
       "style": "lfaContainer",
@@ -59,11 +62,12 @@
     },
     {
       "name": "host-reverse-reconnected",
-      "text": "16\nkm/h\nR\nGEAR\nLIVE\nTHROTTLE\n71%\nINPUT\nBRAKE\n0%\nINPUT\n×1000 r/min",
+      "text": "16\nkm/h\nR\nGEAR\nLIVE\nN/A\nN/A\nN/A\n— °C\n—:—\n68%\n×1000 r/min",
       "readings": {
         "speed": "16",
         "gear": "R",
-        "status": "LIVE"
+        "status": "LIVE",
+        "fuel": "68%"
       },
       "body": "rgba(0, 0, 0, 0)",
       "style": "lfaContainer",
@@ -77,11 +81,12 @@
     },
     {
       "name": "host-imperial",
-      "text": "10\nmph\nR\nGEAR\nLIVE\nTHROTTLE\n71%\nINPUT\nBRAKE\n0%\nINPUT\n×1000 r/min",
+      "text": "10\nmph\nR\nGEAR\nLIVE\nN/A\nN/A\nN/A\n— °C\n—:—\n68%\n×1000 r/min",
       "readings": {
         "speed": "10",
         "gear": "R",
-        "status": "LIVE"
+        "status": "LIVE",
+        "fuel": "68%"
       },
       "body": "rgba(0, 0, 0, 0)",
       "style": "lfaContainer",
@@ -95,11 +100,12 @@
     },
     {
       "name": "host-720p",
-      "text": "10\nmph\nR\nGEAR\nLIVE\nTHROTTLE\n71%\nINPUT\nBRAKE\n0%\nINPUT\n×1000 r/min",
+      "text": "10\nmph\nR\nGEAR\nLIVE\nN/A\nN/A\nN/A\n— °C\n—:—\n68%\n×1000 r/min",
       "readings": {
         "speed": "10",
         "gear": "R",
-        "status": "LIVE"
+        "status": "LIVE",
+        "fuel": "68%"
       },
       "body": "rgba(0, 0, 0, 0)",
       "style": "lfaContainer",
@@ -117,7 +123,8 @@
       "readings": {
         "speed": "10",
         "gear": "R",
-        "status": "LIVE"
+        "status": "LIVE",
+        "fuel": "68%"
       },
       "body": "rgba(0, 0, 0, 0)",
       "style": "lfaContainer",
@@ -131,11 +138,12 @@
     },
     {
       "name": "host-gauge-restored",
-      "text": "16\nkm/h\nR\nGEAR\nLIVE\nTHROTTLE\n71%\nINPUT\nBRAKE\n0%\nINPUT\n×1000 r/min",
+      "text": "16\nkm/h\nR\nGEAR\nLIVE\nN/A\nN/A\nN/A\n— °C\n—:—\n68%\n×1000 r/min",
       "readings": {
         "speed": "16",
         "gear": "R",
-        "status": "LIVE"
+        "status": "LIVE",
+        "fuel": "68%"
       },
       "body": "rgba(0, 0, 0, 0)",
       "style": "lfaContainer",
@@ -149,11 +157,12 @@
     },
     {
       "name": "host-style-reloaded",
-      "text": "16\nkm/h\nR\nGEAR\nLIVE\nTHROTTLE\n71%\nINPUT\nBRAKE\n0%\nINPUT\n×1000 r/min",
+      "text": "16\nkm/h\nR\nGEAR\nLIVE\nN/A\nN/A\nN/A\n— °C\n—:—\n68%\n×1000 r/min",
       "readings": {
         "speed": "16",
         "gear": "R",
-        "status": "LIVE"
+        "status": "LIVE",
+        "fuel": "68%"
       },
       "body": "rgba(0, 0, 0, 0)",
       "style": "lfaContainer",

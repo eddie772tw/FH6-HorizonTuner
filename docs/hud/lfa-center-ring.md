@@ -10,7 +10,7 @@
 
 ## 實際瀏覽器預覽
 
-本次依使用者回饋重建兩側子錶，中央錶面保持已核准版本。以下暫留 commit `93085acd2ff238650dd9e2ac6c552e224ebdd060` 的上一版實際截圖，作為中央保留基準，**尚未呈現此次側錶修訂**；新 browser gate、截圖與中央圓形區域比對待補。所有截圖輸入為測試 fixture，不是 Forza 遊戲截圖。
+本次依使用者回饋只重建兩側子錶。以下是 commit `ad4458ec975678055a0b8555e3b0c99f53191aba` 的新實際截圖；browser gate 與獨立像素檢視已完成。**新側錶已實作並檢查，等待使用者視覺回饋，尚未獲使用者核准**。所有截圖輸入為合成遙測 fixture，不是 Forza 遊戲截圖。
 
 ![公制中央環儀表細節](../assets/lfa-center-ring/metric-detail.png)
 
@@ -19,6 +19,8 @@
 ![1280×720 完整 viewport 與右下角位置](../assets/lfa-center-ring/metric-720p.png)
 
 狀態拼圖僅縮小並排列實際截圖，未重新繪製儀表；其他預覽只移除 metadata 並最佳化 PNG 壓縮。原始 artifact 保留全部尺寸與狀態。
+
+另存 [燃油 0%](../assets/lfa-center-ring/fuel-empty.png) 與 [燃油 100%](../assets/lfa-center-ring/fuel-full.png) 實際截圖：真實空油箱與 N/A 使用不同標示，缺失資料不會偽裝成 0%。
 
 ## 官方視覺來源與授權
 
@@ -48,7 +50,10 @@
 - 新增 `side-crescents.svg`／PNG 作獨立側面圖層；中央半徑 180 設計像素內透明
 - 以同心半徑 180 的外層裁切隱藏舊圖的過大側翼，這是唯一必要的邊界合成調整；中心仍為 `(280,185)`，尺寸與縮放未變
 - 已驗證中央 PNG SHA-256：`3433460df37b91c67f09cfe7b3c99bacd6ad925db36b113042a95bc196422b22`；SVG：`8570a31f672dac12bb94e198a91cb78576dd0b09b81c140dd4ae7ca68b924028`
-- 待新 CI 實際截圖回來後，以包含核准金屬環的中央圓形遮罩和原圖進行像素比較，不把需要改變的側翼算入中央差異
+- 已和 `93085ac` 的八個同狀態 DPR2 detail 截圖逐像素比較。840×556 圖內，以 `(420,277.5)` 為圓心、**半徑 267 px**，涵蓋原 177 設計像素錶環及 1 px 外線、經 0.75 縮放與 DPR2。所有納入的 RGBA 像素均完全相等，八組 **AE=0**
+- 精確納入條件：像素中心 `(x+0.5,y+0.5)` 至圓心的平方距離 `≤267²`；不使用容差、羽化、灰階轉換或縮小半徑。最近差異點 `(589,70)` 距離 **267.543 px**，已在該圓外；RGB 僅由 `(21,33,40)` 變成 `(20,32,39)`
+- 使用抗鋸齒的軟圓形遮罩會在名義半徑外仍有部分覆蓋，故 ImageMagick 軟遮罩可計到 1 個圓外側面邊界像素；這不等於核准金屬環內有差異。保留原合成 mask，未以改半徑來掩飾差異
+- 額外完整 viewport 比較：1440p DPR1／1080p DPR2 的中央圓亦 AE=0；720p／1080p DPR1 完整圖分別有 **466／478 個輕微色值差異**，主要為金屬環左側稀疏像素，另有一個狀態框附近像素；視覺幾何未變，成因尚未確定，因此不宣稱所有解析度的截圖逐位元相同。原始比對結果見 [central-preservation.json](../assets/lfa-center-ring/central-preservation.json)
 
 沒有打包、裁切、描圖或重新散布官方照片、手冊圖片、商標、OEM 字體或原車面板貼圖。Lexus／LFA 名稱僅用於原型辨識，不代表合作或官方產品。`assets/center-ring.svg`／`center-ring.png`、CSS 與程式均為本 PR 原創內容，沿用 repository 的 MIT license。
 
@@ -110,13 +115,13 @@ node hud_overlay/lfa_center_ring/tests/visual/render.mjs
 
 runner 以真正的 HUDCore dispatcher 檢查 1280×720、1920×1080、2560×1440、1920×1080 DPR2，涵蓋初始化、設定、公英制、倒車、空檔、高轉速、紅線、缺失／非法值、錯誤、暫停、重播 timestamp 逾時、重連、隱藏恢復、resize、動畫與 destroy；成功或失敗都輸出 `evidence.json`，有頁面時保留失敗畫面。完整 viewport 與主要狀態 PNG 供人工檢視，不採逐像素／Canvas 呼叫次數斷言。
 
-本機無法啟動獨立 Chromium（UNIX socket EPERM），雲端瀏覽器開啟本機 fixture 被 ERR_BLOCKED_BY_CLIENT 阻擋；因此改由正常 GitHub Actions 執行，不停用 sandbox。**此次側錶修訂的 browser gate 與新截圖仍待完成；以下為上一版已核准中央的歷史證據，不當成新側錶通過證明**：
+本機無法啟動獨立 Chromium（UNIX socket EPERM），雲端瀏覽器開啟本機 fixture 被 ERR_BLOCKED_BY_CLIENT 阻擋；因此改由正常 GitHub Actions 執行，不停用 sandbox。**此次四側錶修訂的 browser fixture 與真正 launcher＋coordinator gate 均通過，實際截圖已獨立檢視**：
 
-- [GitHub Actions run 37256008636](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37256008636)，原始碼 head `93085acd2ff238650dd9e2ac6c552e224ebdd060`，artifact ID `11322413248`
+- [GitHub Actions run 37258540232](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37258540232)，原始碼 head `ad4458ec975678055a0b8555e3b0c99f53191aba`，artifact ID `11323881665`
 - 使用 GitHub runner 預先安裝的 Chrome **154.0.8037.57**，Playwright `chromiumSandbox: true`；沒有新增產品相依套件
 - [完整 fixture 報告](../assets/lfa-center-ring/evidence.json)：四組 viewport／DPR 配置全部完成，`passed: true`，每組 `errors: []`
-- [真正 launcher 報告](../assets/lfa-center-ring/launcher-report.json)：動態發現、raw telemetry → coordinator、smoothing 重播後失效、帶負號倒車重連、公英制、720p、隱藏恢復、樣式重載及 destroy 完成；`errors: []`、`missing: []`
-- 已實際檢視公英制、R／N、SHIFT、部分資料、NO SIGNAL、高轉速與完整 720p／1080p／1440p 圖片；依第一輪像素修正狀態框碰到刻度 1 的問題，以及高轉速長標籤與主刻度碰撞，第二輪截圖確認消除
+- [真正 launcher 報告](../assets/lfa-center-ring/launcher-report.json)：動態發現、raw telemetry → coordinator、smoothing 重播後失效、帶負號倒車重連、公英制、720p、隱藏恢復、樣式重載及 destroy 完成；`errors: []`、`missing: []`。新增 raw Fuel → 68% 與失效後 N/A 斷言
+- 已實際檢視公英制、R／N、SHIFT、部分資料、NO SIGNAL、高轉速、燃油 0%／100% 與完整 720p／1080p／1440p 圖片；側錶分區／刻度／圖示與已研究照片的四弧量尺一致，沒有觀察到文字重疊或裁切。固定 N/A 與缺失燃油不會產生虛構填條
 - [驗證摘要與來源](../assets/lfa-center-ring/verification.json) 記錄來源 commit、run、artifact 與本機測試結果
 
 以上是 Linux Chromium／Chrome 合成遙測與 launcher 驗證，**不等同 Windows 原生 overlay 或 Forza 實機驗收**。

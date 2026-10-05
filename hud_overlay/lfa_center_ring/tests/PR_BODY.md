@@ -1,73 +1,69 @@
 ### Summary of Changes
 
-新增 `lfa_center_ring` HUD，以 **2012 Lexus LFA 車主手冊的 Normal display** 為原型：厚金屬中央錶環、黑底白字、0–10 環形轉速刻度、上方數位速度與中央檔位，搭配克制的窄側翼。
+新增 `lfa_center_ring` HUD，以 **2012 Lexus LFA 車主手冊的 Normal display** 為原型：厚金屬中央錶環、黑底白字、0–10 轉速刻度、上方數位速度與中央檔位。
 
-設計方向是精密、簡潔的量產超跑儀表，適合喜歡真實車輛儀表、手排換檔與山路巡航，希望降低賽車資料面板資訊密度的玩家。Normal 指手冊的主儀表版面，不宣稱遊戲有原車駕駛模式。
+依使用者最新回饋，這次**只重建兩側子錶**。已核准中央的原始 PNG／SVG、中央 CSS、讀數位置與刻度／指針繪圖保留；移除過大的踏板百分比卡片，改為實車的四個弧形子錶。側錶已完成實作、遠端瀏覽器檢查與獨立像素檢視，**等待使用者視覺回饋，尚未獲使用者核准**。
 
-### Side-Gauge Revision Status
-
-依使用者最新回饋，只重建兩側子錶。已補看 Lexus UK 正面／斜角實車照片、MotorTrend 2012 近照及 C Ling Fan 攝影作品，改回冷卻液／油溫／燃油／油壓四個曲線量尺；沒有資料的溫度與壓力顯示 N/A，只有 canonical fuel_ratio 驅動燃油條。已核准中央 PNG／SVG、CSS、刻度／指針繪圖與讀數位置保留不變。**本次新側錶的遠端截圖與中央圓形區域像素比對待完成；以下是上一版中央核准基準，不代表側錶修訂已通過。**
-
-來源：Lexus UK T_6820 照片本身標示 Issued 10/2009、中央 AUTO；MotorTrend 2012 近照中央是 SPORT。只採用一致的側錶結構，2012 年式範圍仍以官方 OM77006U 為準。詳見 docs/hud/lfa-center-ring.md。
+整體風格為精密、克制的量產超跑儀表，適合喜歡真實車輛儀表、手排換檔與山路巡航，希望降低賽車資料面板資訊密度的玩家。Normal 指手冊的主錶置中版面，不宣稱遊戲有原車駕駛模式。
 
 ### Actual Renderer Previews
 
-以下為 source head `93085acd2ff238650dd9e2ac6c552e224ebdd060` 的真正 Chrome renderer 截圖。使用合成遙測 fixture，**不是 Forza 遊戲截圖，也不是效果示意圖**。
+以下為 source head `ad4458ec975678055a0b8555e3b0c99f53191aba` 的真正 Chrome renderer 截圖。使用合成遙測 fixture，**不是 Forza 遊戲截圖，也不是效果示意圖**。
 
-**公制儀表細節**
+**新版四弧側錶與保留的中央錶面**
 
-![LFA Center Ring 實際公制儀表截圖](RAW_PREFIX/docs/assets/lfa-center-ring/metric-detail.png)
+![LFA Center Ring 側錶修訂後的實際公制儀表截圖](RAW_PREFIX/docs/assets/lfa-center-ring/metric-detail.png)
 
-**換檔警示、倒車、空檔、部分資料、斷線與 16,000 rpm 量尺**
+**換檔警示、倒車、空檔、部分資料、斷線與高轉速**
 
-![LFA Center Ring 六種真實 renderer 狀態](RAW_PREFIX/docs/assets/lfa-center-ring/state-contact-sheet.png)
+![LFA Center Ring 側錶修訂後的六種 renderer 狀態](RAW_PREFIX/docs/assets/lfa-center-ring/state-contact-sheet.png)
 
 **1280×720 完整 viewport**
 
-![LFA Center Ring 720p 右下角完整構圖](RAW_PREFIX/docs/assets/lfa-center-ring/metric-720p.png)
+![LFA Center Ring 側錶修訂後的 720p 右下角構圖](RAW_PREFIX/docs/assets/lfa-center-ring/metric-720p.png)
 
-狀態拼圖僅縮小／排列實際截圖；未重新繪製儀表。完整 viewport 與 detail 圖只移除 metadata 並最佳化 PNG 壓縮。
+狀態拼圖僅縮小／排列實際截圖，未重新繪製儀表；其他預覽只移除 metadata 並最佳化 PNG 壓縮。另保留燃油 0%／100% 的實際截圖供驗證。
 
 ### Key Modifications
 
-- **原創外觀**：Inkscape 1.4 製作 SVG 並匯出透明金屬環 PNG，ImageMagick 7 最佳化；靜態材質、Canvas 刻度／指針與 DOM 讀數分層
-- **誠實遙測**：公英制速度、R／N／1–10 檔位、RPM 與 coordinator 紅線；側面保留四子錶原型，只有燃油讀取 canonical fuel_ratio，冷卻液／機油溫度／壓力清楚標記 N/A
-- **跨車種量尺**：刻度始終代表真實 `×1000 r/min`；高轉速車重新標示量尺，不把其他引擎硬套為 LFA 轉速
-- **資料失效**：以 timestamp 變化辨識新封包，避免 coordinator RAF 重播延長過期讀數；缺失、錯誤、暫停與斷線清空顯示，新封包可恢復
-- **生命週期**：沿用 HUDCore 設定、縮放與顯隱；DISPLAY CHECK 不產生虛構車速／檔位；destroy／pagehide 取消 RAF 與本樣式監聽器
-- **整合範圍**：新增單一 dropdown 顯示名稱；未修改 shared 協定、HUDCore、coordinator 或後端
-- **可維護性**：29 個新樣式行為測試、可重現 browser fixtures、實際 launcher audit，以及原型／來源／限制文件
+- **以更多實車照片重建側錶**：Lexus UK 官方正面／斜角照、MotorTrend 2012 近照與 C Ling Fan 攝影作品都可見四個上下分區、沿外緣彎曲的量尺。新側面採細曲線、短內向刻度、通用手繪圖示與中段溫度／時鐘空隙，移除舊的直壁亮框、巨大百分比與水平條
+- **量測誠實性**：左下 `fuel_ratio` 驅動燃油弧條與百分比，保留真實 0%／100%。冷卻液、機油溫度與油壓沒有可靠資料，明確顯示 N/A 且沒有讀值填條；環境溫度／車輛時鐘顯示空值，不以胎溫或踏板替代感測器
+- **保留已核准中央**：中央 PNG／SVG 雜湊、中央 CSS、讀數位置、`drawScale()` 與 `drawNeedle()` 保持一致。唯一必要的邊界合成為半徑 180 的外層裁切，隱藏原圖舊側翼；新側面 PNG 在該中央區內透明
+- **獨立原創圖層**：新增 Inkscape 匯出的 `side-crescents.svg`／PNG 與側錶 CSS；沒有匯入 OEM 貼圖、照片或商標，未改 HUDCore、coordinator、UDP 協定或後端
+- **生命週期與失效保護**：沿用 timestamp 變化檢測，smoothing 重播不延長資料有效期；燃油隨缺失、錯誤、暫停與斷線顯示 N/A；新封包恢復。既有公英制、R／N、紅線、resize、顯隱、動畫與 destroy 契約保留
 
 ### Pre-Commit & Local Verification
 
-- **Frontend Tests:** `pnpm -C frontend test`，156 files passed／1 skipped；1,134 tests passed／1 skipped，含 29 個 LFA 行為測試
-- **Frontend Build:** `pnpm -C frontend run build:web-hud` 通過；新 HUD 檔案已打包，tests 與本 PR body 不隨產品散布
-- **Syntax / Whitespace:** 新增 JS 的 `node --check` 與 `git diff --check` 通過
-- **Remote Browser Gate:** [GitHub Actions run 37256008636](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37256008636) 通過；artifact ID `11322413248`；Chrome `154.0.8037.57`，`chromiumSandbox: true`
-- **Renderer Fixtures:** 1280×720、1920×1080、2560×1440、1920×1080 DPR2 全部通過；涵蓋 init/config、公英制、R／N、紅線、高轉速、缺失／非法值、錯誤、暫停、重播 timestamp 逾時、重連、顯隱、resize、動畫與 destroy；四組均 `errors: []`
-- **Real Launcher / Coordinator:** 動態探索、raw telemetry、smoothing 持續重播後逾時、帶負號倒車重連、公英制、720p、隱藏恢復、樣式重載與 destroy 通過；`errors: []`、`missing: []`
-- **Pixel Review:** 已實際檢視主要狀態及 720p 圖片；修正狀態框碰到刻度 1、高轉速長標籤碰到主刻度，以及 fixture UTF-8 caption 問題，第二輪截圖確認消除
-- **Evidence:** `docs/assets/lfa-center-ring/evidence.json` 與 `launcher-report.json` 為 artifact 原始 JSON；`verification.json` 記錄來源與 SHA-256
+- **Frontend Tests:** `pnpm -C frontend test`，156 files passed／1 skipped；**1,134 tests passed／1 skipped**，含 29 個 LFA 行為測試
+- **Frontend Build:** `pnpm -C frontend run build:web-hud` 通過；新側錶 CSS／PNG／SVG 已打包，tests 與本 PR body 不隨產品散布
+- **Syntax / Whitespace:** JS `node --check`、repository PR-body validator 與 `git diff --check` 通過
+- **Remote Browser Gate:** [run 37258540232](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37258540232) 通過；head `ad4458ec975678055a0b8555e3b0c99f53191aba`、artifact `11323881665`；Chrome `154.0.8037.57`、`chromiumSandbox: true`
+- **Renderer Fixtures:** 720p／1080p／1440p／1080p DPR2 通過，新增 fuel 0／50／100／缺失／非法值與 unsupported N/A 檢查；保留公英制、R／N、紅線、缺失／錯誤／暫停、重播 timestamp 逾時、重連、顯隱、resize、動畫、destroy，四組 `errors: []`
+- **Real Launcher / Coordinator:** 動態探索、raw telemetry、smoothing 失效、倒車重連、公英制、720p、隱藏恢復、樣式重載與 destroy 通過；新增 raw Fuel → 68% 與 stale → N/A 斷言；`errors: []`、`missing: []`
+- **Pixel Review:** 已實際檢視新側錶的主要狀態、燃油端點與 720p／1080p／1440p 圖片，未觀察到文字重疊或裁切
+- **中央保留證據**：八張同狀態 DPR2 detail，以 `(420,277.5)`／半徑 **267 px** 的完整核准中央圓逐 RGBA 比較，均 AE=0；採像素中心的幾何判定，沒有容差、羽化或縮小半徑。最近改變的像素位於圓外 267.543 px，RGB 差 1。720p／1080p DPR1 全圖仍有 466／478 個輕微色值差異，成因未確定；不宣稱所有解析度逐位元相同。原中央素材、樣式與幾何保持一致
+- **Evidence:** `docs/assets/lfa-center-ring/evidence.json`、`launcher-report.json` 為原始 artifact JSON；`central-preservation.json` 保留完整比較結果，`verification.json` 記錄來源及 SHA-256
 
-本機曾受 Chromium UNIX socket EPERM 與雲端瀏覽器 localhost 存取限制，因此 browser 驗證使用正常 GitHub Actions runner，沒有停用 sandbox。以上不等同 Windows 原生 overlay、click-through、置頂或 Forza 實機驗收，這些仍未驗證。
+本機 Chromium／localhost 存取受環境限制，因此 browser 驗證使用正常 GitHub Actions runner，沒有停用 sandbox。以上不等同 Windows 原生 overlay、click-through、置頂或 Forza 實機驗收，這些仍未驗證。
 
-預設約 420 × 277.5 CSS px、右下 30 px 邊界，**假設取代遊戲原生右下儀表**；仍需實機檢查右側提示、字幕與自訂 HUD 比例。
+預設約 420 × 277.5 CSS px、右下 30 px 邊界，**假設取代遊戲原生右下儀表**；仍需實機檢查提示、字幕與自訂 HUD 比例。
 
 ### Living Changelog & Review Iterations
 
-- 2026-10-05（Bagley as Codex）：完成官方 Normal display 像素核對、原創金屬環資產與獨立 HUD 實作
-- 2026-10-05（Bagley as Codex）：加入重播 timestamp 逾時、帶正負號倒車速度、缺失／錯誤處理與生命週期測試
-- 2026-10-05（Bagley as Codex）：更新至 main `a9335b158e658faa86bcfcbe4d36beb602f6c9c7`，完整前端測試與 web HUD build 通過
-- 2026-10-05（Bagley as Codex）：根據實際遠端截圖修正刻度／狀態框間距；source head `93085acd2ff238650dd9e2ac6c552e224ebdd060` 的兩項 browser gate 通過並完成像素複核
+- 2026-10-05（Bagley as Codex）：完成官方 Normal display 研究、原創金屬環及初版 renderer
+- 2026-10-05（Bagley as Codex）：依第一輪實際截圖修正中央狀態框與刻度間距，中央獲使用者肯定
+- 2026-10-05（Bagley as Codex）：依使用者指定只修兩側；補看多張實車照片，重建四弧量尺，加入誠實 N/A 與 canonical 燃油條
+- 2026-10-05（Bagley as Codex）：側錶修訂的本機 gate、遠端 renderer／launcher gate 與獨立像素檢視完成，等待使用者評閱新版側錶
 
 ### Related Issues / References
 
-- 使用者要求：每個新 HUD 獨立 PR，說明原型、設計方向、整體風格、適合玩家並內嵌實際 PNG 預覽
-- [Lexus USA：2012 Lexus LFA 官方圖庫](https://pressroom.lexus.com/album/2012-lexus-lfa/)
-- [官方 OM77006U：印刷第 116 頁／PDF 第 118 頁](https://assets.sia.toyota.com/publications/en/om-s/OM77006U/pdf/OM77006U.pdf#page=118)，已實際檢視 Normal display 圖片。圖庫縮圖於開發環境回傳 AccessDenied，未冒稱已看見其中照片
-- 詳細文件：`docs/hud/lfa-center-ring.md`
-- **授權**：所有新增圖形、CSS 與程式為原創，沿用 repository MIT license；不散布 OEM 圖片、商標、字體或貼圖。Lexus／LFA 名稱僅用於原型辨識，不代表官方合作
-- 採用技能：`halfmoon-design-system`、`telemetry-udp-protocol`、`pr-author-maintainer`
+- 使用者要求：每個 HUD 獨立 PR，說明原型、方向、風格及適合玩家，並內嵌實際 PNG 預覽；本次只修改 LFA 左右子錶
+- [2012 官方 OM77006U，印刷第 116 頁／PDF 第 118 頁](https://assets.sia.toyota.com/publications/en/om-s/OM77006U/pdf/OM77006U.pdf#page=118)：2012 年式及 Normal display 範圍
+- [Lexus UK 官方內裝圖庫](https://media.lexus.co.uk/images/lfa-interior/)／[T_6820 正面照](https://media.lexus.co.uk/wp-content/uploads/sites/3/2011/10/T_6820-scaled.jpg)／[T_6833 斜角近照](https://media.lexus.co.uk/wp-content/uploads/sites/3/2011/10/T_6833-scaled.jpg)／[DSC_4040 實車內裝](https://media.lexus.co.uk/wp-content/uploads/sites/3/2012/12/DSC_4040-scaled.jpg)
+- [MotorTrend 2012 近照](https://www.motortrend.com/uploads/sites/5/2012/07/2012-Lexus-LFA-Tach.jpg)／[C Ling Fan 實車攝影與來源](https://commons.wikimedia.org/wiki/File:Lexus_LFA_speedometer_view_01.jpg)
+- **模式／年份區分**：T_6820 本身標示 Issued 10/2009、中央 AUTO，不能當作 2012 年式證據；MotorTrend 近照中央是 SPORT 白底。本次只採一致的側錶結構，保留使用者已核准的中央黑底與金屬環
+- **授權**：新增圖形與程式為原創，沿用 repository MIT。來源照片僅供研究，未打包／裁切散布／描圖。Lexus／LFA 名稱僅用於原型辨識，不代表官方合作
+- 詳細文件：`docs/hud/lfa-center-ring.md`；採用技能：`halfmoon-design-system`、`telemetry-udp-protocol`、`pr-author-maintainer`
 
 ---
 Author / Maintainer: Bagley as Codex
