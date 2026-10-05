@@ -1,92 +1,54 @@
 {
-  "renderer_source_commit": "7827a80bb7e9e865d3c706013290bf311e68a756",
-  "workflow_run": "https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37332115596",
-  "artifact_id": 11353829483,
-  "artifact_sha256": "2cdea3148e2d55711e46ad3bf238a58e01f7d24699ac0ad428387d11ea32e942",
-  "runtime": "Actual production HUD/GUI in sandboxed Google Chrome with synthetic telemetry. Not static art proof, native Windows or FH6 game acceptance.",
+  "renderer_source_commit": "bafc4169e9faa6ca1d58152b5434a2220b338870",
+  "workflow_run": "https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37337874687",
   "files": [
     {
       "path": "docs/assets/r34-mfd/preview.png",
-      "source": "single-1920x1080-dpr1.png",
-      "transform": "Unchanged actual-render PNG",
-      "sha256": "7883f165312c14439da0f6d3a9516e5f12e59db8c11bdd599d12b53f548775a8"
+      "sha256": "e6b77add4d88d6649de7f6216887bf93354f48af518753bcba38256f027e3604"
     },
     {
       "path": "docs/assets/r34-mfd/preview-normal.png",
-      "source": "single-1280x720-dpr1.png",
-      "transform": "Unchanged actual-render PNG",
-      "sha256": "0ca3a00bed17b6ac688ff3815e5e172545e0a2e8dfb7274477404fc7bd851243"
+      "sha256": "50f4fc0642d402cdfe9e923b626807cd6fae73e3f7272a35e13a5793ab080795"
     },
     {
       "path": "docs/assets/r34-mfd/over-scale-kpa.png",
-      "source": "over-scale-kpa-1280x720-dpr2.png",
-      "transform": "Unchanged actual-render PNG",
-      "sha256": "e62a7bd1dd321d3c53d57dc7b57ea923b45f50de9dbf75af0712f4814e26f670"
+      "sha256": "284b6b556d92887faeb31abce0be7b62736d5519380a93db48a741517b73c672"
     },
     {
       "path": "docs/assets/r34-mfd/imperial-vacuum.png",
-      "source": "imperial-vacuum-1280x720-dpr2.png",
-      "transform": "Unchanged actual-render PNG",
-      "sha256": "17ccb1fb5c20db29cb3957679d44c085289c0a863d566ad62dc612ce2ab7f53a"
+      "sha256": "5b74d8eb6eac772245047e1f4fbd151ae991595e2be82289ee9caee01c4710bd"
     },
     {
       "path": "docs/assets/r34-mfd/stale.png",
-      "source": "stale-1280x720-dpr2.png",
-      "transform": "Unchanged actual-render PNG",
-      "sha256": "a078c041b149f5784dfa2bd8f571ae3dc32dbf6eca1c1a03ddb5d710d09d59aa"
+      "sha256": "89f448fc2a95d6167be7e94934fdc0a10cd2b660cf2ba8e9e0ea0df399c7b482"
     },
     {
       "path": "docs/assets/r34-mfd/missing-one-tire.png",
-      "source": "missing-one-tire-1280x720-dpr2.png",
-      "transform": "Unchanged actual-render PNG",
-      "sha256": "118251b85f49f7b67b4ff488a3083e366aa3382e64984577da3aecdd15c6e8b6"
+      "sha256": "af84b8525819efe79316d7a43f59f685ad2bc8ee281218bba9e568653045cd17"
     },
     {
       "path": "docs/assets/r34-mfd/settings/settings-dark-default.png",
-      "source": "settings/settings-dark-default.png",
-      "transform": "Unchanged actual-render PNG",
       "sha256": "ebd98763329c58d217f4a37041e567fa3228b6af9c35f140a7b7711a7eacfd8c"
     },
     {
       "path": "docs/assets/r34-mfd/settings/settings-narrow-zh-tw.png",
-      "source": "settings/settings-narrow-zh-tw.png",
-      "transform": "Unchanged actual-render PNG",
       "sha256": "ec66b5bab12a82688bdaddc0c4299eb519d1021b37359d713db9f4f8fb97b8db"
     },
     {
       "path": "docs/assets/r34-mfd/settings/settings-narrow-ja-jp.png",
-      "source": "settings/settings-narrow-ja-jp.png",
-      "transform": "Unchanged actual-render PNG",
-      "sha256": "58bd11ddcdd8ea141725c65e5f81c2fe3ab659bf194b7542bd71de93281f5110"
+      "sha256": "8e7c96cc965ed188ebb955992981fe7d53af349864728ad7a71ab0e704f63815"
     },
     {
       "path": "docs/assets/r34-mfd/settings/temperature-independent-f.png",
-      "source": "settings/temperature-independent-f.png",
-      "transform": "Unchanged actual-render PNG",
       "sha256": "b191880a90dc83b366dd23ae0f1a34b88181649e166228ef1c2be62ff582f182"
     },
     {
       "path": "docs/assets/r34-mfd/mfd-modes.png",
-      "sources": [
-        "mfd-single-dpr2.png",
-        "mfd-twin-dpr2.png",
-        "mfd-multi-dpr2.png",
-        "mfd-g-dpr2.png",
-        "mfd-lap-dpr2.png"
-      ],
-      "transform": "Arrange five direct DPR2 MFD screenshots vertically, SINGLE/TWIN/MULTI/G/LAP; no rescaling or retouching; 12px transparent gutters",
       "sha256": "107f8e203d5caf4f27cb5e905611571f4a77bb4965065ba557cb1c60a76cb9d4"
     },
     {
       "path": "docs/assets/r34-mfd/lcd-readouts.png",
-      "sources": [
-        "dial-tach-live-timer-dpr2.png",
-        "dial-speed-live-timer-dpr2.png",
-        "dial-tach-power-torque-dpr2.png",
-        "dial-speed-mph-gear-dpr2.png"
-      ],
-      "transform": "Arrange four direct DPR2 dial screenshots; top row live timer and metric speed, bottom row HP/torque fallback and imperial speed; no rescaling or retouching; transparent gutters",
-      "sha256": "92cf7d14a4cc47b97a547d3cc40cde3bebf46c4a4cfdf2628e7c4560c9c1e092"
+      "sha256": "f2c706494be3df2dc4964ccf151ed438c7a6b943437e2ff3f17f31d57f00ebd3"
     }
   ]
 }
