@@ -15,8 +15,9 @@ const server = createServer(async (req, res) => {
   try {
     const target = path.resolve(root, '.' + decodeURIComponent(new URL(req.url, 'http://localhost').pathname));
     if (!target.startsWith(root + path.sep)) { res.writeHead(403); res.end(); return; }
+    const bytes = await readFile(target);
     res.writeHead(200, { 'content-type': mime[path.extname(target)] || 'application/octet-stream' });
-    res.end(await readFile(target));
+    res.end(bytes);
   } catch { res.writeHead(404); res.end(); }
 });
 await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
