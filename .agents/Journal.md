@@ -63,6 +63,13 @@
 - **Evidence**：前端 1,105 passed／1 skipped；Windows／LAN build 通過；audit 0；Rust full 與 no-default-features 通過；Windows Host Diagnostics 7 passed；EV 真實 HTTP 回放、保存／重啟、六種主題與繁中／英文成功。最後候選 SHA 的 CI 與 artifact 另按 [驗收紀錄](../docs/releases/v1.7.1-acceptance.md) 核對，不能用這些歷史結果代替。
 - **Skills**：`portable-release-validation`、`pr-author-maintainer`、`pr-review-evaluation`、`physics-tuning-math`、`modular-refactoring`、`agent-governance-audit`、`github-security-audit`、`ponytail`。
 
+## 2026-10-05 / R34 原型比例與實際HUD畫面的分層驗證（Bagley as Codex）
+
+- **來源／狀態**：原廠型錄／實物圖片比較，加上固定source `bed166f` 的sandboxed Chrome CI；不是原生Windows或FH6實機驗收。
+- **Learning**：沒有文字裁切、模式能切換，不代表車輛原型外觀已成立。本次以高解析Nissan型錄、OEM儀表、完整右駕座艙與NISMO實物照，重驗銀色連續面板、儀表／MFD左右位置、低寬機殼和搖桿比例；不得拿320km/h改裝表或JGTC賽車推定原廠V·spec。透視照片只能支持HUD設計比例，不能宣稱工廠工程尺寸。
+- **Action／Evidence**：先比較原創靜態SVG正視圖與照片，再以[Visual run37295509701](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37295509701)檢查真正五模式、透明背景、DPR／單位／缺值及控制顯隱；靜態樣稿不冒充runtime。隱藏速度時，獨立overscale註記也須一起隱藏，已加browser regression。
+- **Boundary／Skills**：原型油壓／水溫仍N/A且無假針，只有遊戲真實欄位；`halfmoon-design-system`、`huge-component-refactoring`、`modular-refactoring`、`pr-author-maintainer`。詳見[R34設計文件](../docs/hud/r34-mfd.md)。
+
 ## 歷史摘要 / v1.6 以前開發經驗與跨架構演進核心紀錄（Pre-v1.6 Architecture Archive & Core Learnings）
 
 - **來源／狀態**：`archive`／`verified`；本條目為 v1.6 以前（2026-08-11 ~ 2026-09-15）跨版本開發經驗、歷史踩坑與架構演進之單一收攏精簡摘要（SSOT 封存）。

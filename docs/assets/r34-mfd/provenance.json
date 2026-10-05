@@ -1,0 +1,68 @@
+{
+  "renderer_source_commit": "bed166f290621675c445defe8b42c15e451217fa",
+  "workflow_run": "https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37295509701",
+  "artifact_id": 11338960330,
+  "artifact_sha256": "80d33bdb5ff2d44ce134820b4a2db85096d90bfa56123c87f8b601b214ce6681",
+  "runtime": "Actual production HUD/GUI in sandboxed Google Chrome with synthetic telemetry. Not static art proof, Windows native or FH6 game acceptance.",
+  "files": [
+    {
+      "path": "docs/assets/r34-mfd/preview.png",
+      "source": "detail-single-dpr2.png",
+      "transform": "Unchanged actual-render PNG",
+      "sha256": "c1d3e63130647bb6afb3074db4c50549de80ae4ba7fccd3656018f6d91ccdfe4"
+    },
+    {
+      "path": "docs/assets/r34-mfd/preview-normal.png",
+      "source": "detail-single-dpr1.png",
+      "transform": "Unchanged actual-render PNG",
+      "sha256": "8d596192348a907bce251b4be2b1d512f644b12853943f49ce4ff6d18346f695"
+    },
+    {
+      "path": "docs/assets/r34-mfd/over-scale-kpa.png",
+      "source": "over-scale-kpa-1280x720-dpr2.png",
+      "transform": "Trim transparent viewport margins only",
+      "sha256": "4bdf0bbef75397894bc0f3e2a0f78dd89e0f1966b0772e46c9572368cb8f76b9"
+    },
+    {
+      "path": "docs/assets/r34-mfd/imperial-vacuum.png",
+      "source": "imperial-vacuum-1280x720-dpr2.png",
+      "transform": "Trim transparent viewport margins only",
+      "sha256": "0ad984cf88669d3c4ebaa7130c8db16168a75df91f991de0c7be6d0c714090a2"
+    },
+    {
+      "path": "docs/assets/r34-mfd/stale.png",
+      "source": "stale-1280x720-dpr2.png",
+      "transform": "Trim transparent viewport margins only",
+      "sha256": "6e1244905a97501e7ac40992293cd99629ac3c493c3e21471e6358db55f9bd93"
+    },
+    {
+      "path": "docs/assets/r34-mfd/settings/settings-dark-default.png",
+      "source": "settings/settings-dark-default.png",
+      "transform": "Unchanged actual-render PNG",
+      "sha256": "fb2fde504af4f9e1c2351b5c66dfe719eeabdb1b91c8d1badf3f0c86eb5b4bc7"
+    },
+    {
+      "path": "docs/assets/r34-mfd/settings/settings-narrow-zh-tw.png",
+      "source": "settings/settings-narrow-zh-tw.png",
+      "transform": "Unchanged actual-render PNG",
+      "sha256": "c47b59f636a9b34d962289ddeb31f6d1e2795d2e3d182a08b2deef4a3382a03c"
+    },
+    {
+      "path": "docs/assets/r34-mfd/settings/settings-narrow-ja-jp.png",
+      "source": "settings/settings-narrow-ja-jp.png",
+      "transform": "Unchanged actual-render PNG",
+      "sha256": "bb3a5c477d76b66f266d2bce407ed47ebd5c23279511d18dfce5101e1db2f4fa"
+    },
+    {
+      "path": "docs/assets/r34-mfd/mfd-modes.png",
+      "sources": [
+        "detail-twin-dpr2.png",
+        "detail-multi-dpr2.png",
+        "detail-g-dpr2.png",
+        "detail-lap-dpr2.png"
+      ],
+      "transform": "Crop actual MFD region and arrange vertically TWIN, MULTI, G, LAP; preserve pixels, add12px gutters",
+      "sha256": "102d3ba67a073f4f261bbfc1f476f8d6ad44e09b14c2f200342684e7d4b5e645"
+    }
+  ]
+}

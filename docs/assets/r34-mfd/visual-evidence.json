@@ -1,0 +1,2683 @@
+{
+  "runtime": "Actual HUD in sandboxed Chrome; synthetic telemetry; not native Windows or game acceptance",
+  "checks": [
+    {
+      "name": "waiting",
+      "viewport": [
+        1280,
+        720
+      ],
+      "dpr": 1,
+      "bounds": {
+        "x": 405.203125,
+        "y": 419.40625,
+        "width": 844.796875,
+        "height": 270.59375
+      },
+      "status": {
+        "text": "WAITING FOR TELEMETRY",
+        "clear": true,
+        "fits": true
+      }
+    },
+    {
+      "physicalLayout": {
+        "mfdOnLeft": true,
+        "caseAspect": 2.0492916747525713,
+        "screenAspect": 1.7763239875389407
+      }
+    },
+    {
+      "mode": "single",
+      "dialReadability": [
+        {
+          "labels": [
+            {
+              "text": "-0.5",
+              "contained": true
+            },
+            {
+              "text": "0",
+              "contained": true
+            },
+            {
+              "text": "0.5",
+              "contained": true
+            },
+            {
+              "text": "1",
+              "contained": true
+            },
+            {
+              "text": "1.5",
+              "contained": true
+            },
+            {
+              "text": "2",
+              "contained": true
+            },
+            {
+              "text": "N/A",
+              "contained": true
+            },
+            {
+              "text": "PEAK",
+              "contained": true
+            },
+            {
+              "text": "N/A",
+              "contained": true
+            },
+            {
+              "text": "bar",
+              "contained": true
+            }
+          ],
+          "siblingOverlap": [
+            {
+              "text": "-0.5",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "0",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "0.5",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "1",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "1.5",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "2",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "bar",
+              "panel": false,
+              "legends": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "canvas": "r34History",
+      "pixelWidth": 67,
+      "pixelHeight": 72,
+      "width": 66.65625,
+      "height": 71.9375,
+      "logicalWidth": 101,
+      "logicalHeight": 109,
+      "dpr": 1
+    },
+    {
+      "name": "single",
+      "viewport": [
+        1280,
+        720
+      ],
+      "dpr": 1,
+      "bounds": {
+        "x": 405.203125,
+        "y": 419.40625,
+        "width": 844.796875,
+        "height": 270.59375
+      },
+      "status": null
+    },
+    {
+      "canvas": "r34History",
+      "pixelWidth": 67,
+      "pixelHeight": 72,
+      "width": 66.65625,
+      "height": 71.9375,
+      "logicalWidth": 101,
+      "logicalHeight": 109,
+      "dpr": 1
+    },
+    {
+      "mode": "single",
+      "dialReadability": [
+        {
+          "labels": [
+            {
+              "text": "-0.5",
+              "contained": true
+            },
+            {
+              "text": "0",
+              "contained": true
+            },
+            {
+              "text": "0.5",
+              "contained": true
+            },
+            {
+              "text": "1",
+              "contained": true
+            },
+            {
+              "text": "1.5",
+              "contained": true
+            },
+            {
+              "text": "2",
+              "contained": true
+            },
+            {
+              "text": "1.20",
+              "contained": true
+            },
+            {
+              "text": "PEAK",
+              "contained": true
+            },
+            {
+              "text": "1.40",
+              "contained": true
+            },
+            {
+              "text": "bar",
+              "contained": true
+            }
+          ],
+          "siblingOverlap": [
+            {
+              "text": "-0.5",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "0",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "0.5",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "1",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "1.5",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "2",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "bar",
+              "panel": false,
+              "legends": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "twin",
+      "viewport": [
+        1280,
+        720
+      ],
+      "dpr": 1,
+      "bounds": {
+        "x": 405.203125,
+        "y": 419.40625,
+        "width": 844.796875,
+        "height": 270.59375
+      },
+      "status": null
+    },
+    {
+      "mode": "twin",
+      "dialReadability": [
+        {
+          "labels": [
+            {
+              "text": "-0.5",
+              "contained": true
+            },
+            {
+              "text": "0",
+              "contained": true
+            },
+            {
+              "text": "0.5",
+              "contained": true
+            },
+            {
+              "text": "1",
+              "contained": true
+            },
+            {
+              "text": "1.5",
+              "contained": true
+            },
+            {
+              "text": "2",
+              "contained": true
+            },
+            {
+              "text": "1.20",
+              "contained": true
+            },
+            {
+              "text": "PEAK",
+              "contained": true
+            },
+            {
+              "text": "1.40",
+              "contained": true
+            },
+            {
+              "text": "bar",
+              "contained": true
+            }
+          ],
+          "siblingOverlap": [
+            {
+              "text": "-0.5",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "0",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "0.5",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "1",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "1.5",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "2",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "bar",
+              "panel": false,
+              "legends": []
+            }
+          ]
+        },
+        {
+          "labels": [
+            {
+              "text": "0",
+              "contained": true
+            },
+            {
+              "text": "2",
+              "contained": true
+            },
+            {
+              "text": "4",
+              "contained": true
+            },
+            {
+              "text": "6",
+              "contained": true
+            },
+            {
+              "text": "8",
+              "contained": true
+            },
+            {
+              "text": "10",
+              "contained": true
+            },
+            {
+              "text": "RPM",
+              "contained": true
+            },
+            {
+              "text": "6.8",
+              "contained": true
+            },
+            {
+              "text": "PEAK",
+              "contained": true
+            },
+            {
+              "text": "6.8",
+              "contained": true
+            },
+            {
+              "text": "x1000 rpm",
+              "contained": true
+            }
+          ],
+          "siblingOverlap": [
+            {
+              "text": "0",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "2",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "4",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "6",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "8",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "10",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "x1000 rpm",
+              "panel": false,
+              "legends": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "multi",
+      "viewport": [
+        1280,
+        720
+      ],
+      "dpr": 1,
+      "bounds": {
+        "x": 405.203125,
+        "y": 419.40625,
+        "width": 844.796875,
+        "height": 270.59375
+      },
+      "status": null
+    },
+    {
+      "name": "g",
+      "viewport": [
+        1280,
+        720
+      ],
+      "dpr": 1,
+      "bounds": {
+        "x": 405.203125,
+        "y": 419.40625,
+        "width": 844.796875,
+        "height": 270.59375
+      },
+      "status": null
+    },
+    {
+      "canvas": "r34G",
+      "pixelWidth": 169,
+      "pixelHeight": 83,
+      "width": 168.953125,
+      "height": 83.15625,
+      "logicalWidth": 256,
+      "logicalHeight": 126,
+      "dpr": 1
+    },
+    {
+      "name": "lap",
+      "viewport": [
+        1280,
+        720
+      ],
+      "dpr": 1,
+      "bounds": {
+        "x": 405.203125,
+        "y": 419.40625,
+        "width": 844.796875,
+        "height": 270.59375
+      },
+      "status": null
+    },
+    {
+      "canvas": "r34History",
+      "pixelWidth": 67,
+      "pixelHeight": 72,
+      "width": 66.65625,
+      "height": 71.9375,
+      "logicalWidth": 101,
+      "logicalHeight": 109,
+      "dpr": 1
+    },
+    {
+      "canvas": "r34History",
+      "pixelWidth": 47,
+      "pixelHeight": 50,
+      "width": 46.65625,
+      "height": 50.34375,
+      "logicalWidth": 101,
+      "logicalHeight": 109,
+      "dpr": 1
+    },
+    {
+      "canvas": "r34G",
+      "pixelWidth": 169,
+      "pixelHeight": 83,
+      "width": 168.953125,
+      "height": 83.15625,
+      "logicalWidth": 256,
+      "logicalHeight": 126,
+      "dpr": 1
+    },
+    {
+      "canvas": "r34G",
+      "pixelWidth": 118,
+      "pixelHeight": 58,
+      "width": 118.265625,
+      "height": 58.203125,
+      "logicalWidth": 256,
+      "logicalHeight": 126,
+      "dpr": 1
+    },
+    {
+      "gMarker": {
+        "full": {
+          "visible": true,
+          "x": 0.32840236686390534,
+          "y": 0.572289156626506,
+          "resolution": 83
+        },
+        "compact": {
+          "visible": true,
+          "x": 0.326271186440678,
+          "y": 0.5689655172413793,
+          "resolution": 58
+        }
+      }
+    },
+    {
+      "canvas": "r34G",
+      "pixelWidth": 338,
+      "pixelHeight": 166,
+      "width": 168.953125,
+      "height": 83.15625,
+      "logicalWidth": 256,
+      "logicalHeight": 126,
+      "dpr": 2
+    },
+    {
+      "canvas": "r34G",
+      "pixelWidth": 169,
+      "pixelHeight": 83,
+      "width": 168.953125,
+      "height": 83.15625,
+      "logicalWidth": 256,
+      "logicalHeight": 126,
+      "dpr": 1
+    },
+    {
+      "name": "dpr-return-to-one",
+      "viewport": [
+        1280,
+        720
+      ],
+      "dpr": 1,
+      "bounds": {
+        "x": 405.203125,
+        "y": 419.40625,
+        "width": 844.796875,
+        "height": 270.59375
+      },
+      "status": null
+    },
+    "Live DPR 1→2→1 preserves both upward and downward canvas backing changes",
+    {
+      "name": "first-completed-lap",
+      "viewport": [
+        1280,
+        720
+      ],
+      "dpr": 1,
+      "bounds": {
+        "x": 405.203125,
+        "y": 419.40625,
+        "width": 844.796875,
+        "height": 270.59375
+      },
+      "status": null
+    },
+    {
+      "name": "day",
+      "viewport": [
+        1280,
+        720
+      ],
+      "dpr": 1,
+      "bounds": {
+        "x": 405.203125,
+        "y": 419.40625,
+        "width": 844.796875,
+        "height": 270.59375
+      },
+      "status": null
+    },
+    {
+      "name": "imperial-vacuum",
+      "viewport": [
+        1280,
+        720
+      ],
+      "dpr": 1,
+      "bounds": {
+        "x": 405.203125,
+        "y": 419.40625,
+        "width": 844.796875,
+        "height": 270.59375
+      },
+      "status": null
+    },
+    {
+      "mode": "single",
+      "dialReadability": [
+        {
+          "labels": [
+            {
+              "text": "-7.3",
+              "contained": true
+            },
+            {
+              "text": "0",
+              "contained": true
+            },
+            {
+              "text": "7.3",
+              "contained": true
+            },
+            {
+              "text": "14.5",
+              "contained": true
+            },
+            {
+              "text": "21.8",
+              "contained": true
+            },
+            {
+              "text": "29",
+              "contained": true
+            },
+            {
+              "text": "-7.3",
+              "contained": true
+            },
+            {
+              "text": "PEAK",
+              "contained": true
+            },
+            {
+              "text": "17.4",
+              "contained": true
+            },
+            {
+              "text": "psi",
+              "contained": true
+            }
+          ],
+          "siblingOverlap": [
+            {
+              "text": "-7.3",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "0",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "7.3",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "14.5",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "21.8",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "29",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "psi",
+              "panel": false,
+              "legends": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "over-scale-kpa",
+      "viewport": [
+        1280,
+        720
+      ],
+      "dpr": 1,
+      "bounds": {
+        "x": 405.203125,
+        "y": 419.40625,
+        "width": 844.796875,
+        "height": 270.59375
+      },
+      "status": null
+    },
+    {
+      "mode": "single",
+      "dialReadability": [
+        {
+          "labels": [
+            {
+              "text": "-50",
+              "contained": true
+            },
+            {
+              "text": "0",
+              "contained": true
+            },
+            {
+              "text": "50",
+              "contained": true
+            },
+            {
+              "text": "100",
+              "contained": true
+            },
+            {
+              "text": "150",
+              "contained": true
+            },
+            {
+              "text": "200",
+              "contained": true
+            },
+            {
+              "text": "300",
+              "contained": true
+            },
+            {
+              "text": "PEAK",
+              "contained": true
+            },
+            {
+              "text": "300",
+              "contained": true
+            },
+            {
+              "text": "kPa",
+              "contained": true
+            }
+          ],
+          "siblingOverlap": [
+            {
+              "text": "-50",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "0",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "50",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "100",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "150",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "200",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "kPa",
+              "panel": false,
+              "legends": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "overscale-common-readouts-hidden",
+      "viewport": [
+        1280,
+        720
+      ],
+      "dpr": 1,
+      "bounds": {
+        "x": 405.203125,
+        "y": 419.40625,
+        "width": 844.796875,
+        "height": 270.59375
+      },
+      "status": null
+    },
+    {
+      "name": "missing",
+      "viewport": [
+        1280,
+        720
+      ],
+      "dpr": 1,
+      "bounds": {
+        "x": 405.203125,
+        "y": 419.40625,
+        "width": 844.796875,
+        "height": 270.59375
+      },
+      "status": null
+    },
+    {
+      "name": "paused",
+      "viewport": [
+        1280,
+        720
+      ],
+      "dpr": 1,
+      "bounds": {
+        "x": 405.203125,
+        "y": 419.40625,
+        "width": 844.796875,
+        "height": 270.59375
+      },
+      "status": {
+        "text": "GAME PAUSED · LIVE VALUES UNAVAILABLE",
+        "clear": true,
+        "fits": true
+      }
+    },
+    {
+      "name": "stale",
+      "viewport": [
+        1280,
+        720
+      ],
+      "dpr": 1,
+      "bounds": {
+        "x": 405.203125,
+        "y": 419.40625,
+        "width": 844.796875,
+        "height": 270.59375
+      },
+      "status": {
+        "text": "TELEMETRY STALE · LIVE VALUES UNAVAILABLE",
+        "clear": true,
+        "fits": true
+      }
+    },
+    {
+      "name": "compact-mfd-only-custom",
+      "viewport": [
+        1280,
+        720
+      ],
+      "dpr": 1,
+      "bounds": {
+        "x": 1019,
+        "y": 577.28125,
+        "width": 231,
+        "height": 112.71875
+      },
+      "status": null
+    },
+    {
+      "name": "new-car-neutral",
+      "viewport": [
+        1280,
+        720
+      ],
+      "dpr": 1,
+      "bounds": {
+        "x": 405.203125,
+        "y": 419.40625,
+        "width": 844.796875,
+        "height": 270.59375
+      },
+      "status": null
+    },
+    {
+      "name": "waiting",
+      "viewport": [
+        1920,
+        1080
+      ],
+      "dpr": 1,
+      "bounds": {
+        "x": 1045.203125,
+        "y": 779.40625,
+        "width": 844.796875,
+        "height": 270.59375
+      },
+      "status": {
+        "text": "WAITING FOR TELEMETRY",
+        "clear": true,
+        "fits": true
+      }
+    },
+    {
+      "physicalLayout": {
+        "mfdOnLeft": true,
+        "caseAspect": 2.0492916747525713,
+        "screenAspect": 1.7763239875389407
+      }
+    },
+    {
+      "mode": "single",
+      "dialReadability": [
+        {
+          "labels": [
+            {
+              "text": "-0.5",
+              "contained": true
+            },
+            {
+              "text": "0",
+              "contained": true
+            },
+            {
+              "text": "0.5",
+              "contained": true
+            },
+            {
+              "text": "1",
+              "contained": true
+            },
+            {
+              "text": "1.5",
+              "contained": true
+            },
+            {
+              "text": "2",
+              "contained": true
+            },
+            {
+              "text": "N/A",
+              "contained": true
+            },
+            {
+              "text": "PEAK",
+              "contained": true
+            },
+            {
+              "text": "N/A",
+              "contained": true
+            },
+            {
+              "text": "bar",
+              "contained": true
+            }
+          ],
+          "siblingOverlap": [
+            {
+              "text": "-0.5",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "0",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "0.5",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "1",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "1.5",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "2",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "bar",
+              "panel": false,
+              "legends": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "canvas": "r34History",
+      "pixelWidth": 67,
+      "pixelHeight": 72,
+      "width": 66.65625,
+      "height": 71.9375,
+      "logicalWidth": 101,
+      "logicalHeight": 109,
+      "dpr": 1
+    },
+    {
+      "name": "single",
+      "viewport": [
+        1920,
+        1080
+      ],
+      "dpr": 1,
+      "bounds": {
+        "x": 1045.203125,
+        "y": 779.40625,
+        "width": 844.796875,
+        "height": 270.59375
+      },
+      "status": null
+    },
+    {
+      "canvas": "r34History",
+      "pixelWidth": 67,
+      "pixelHeight": 72,
+      "width": 66.65625,
+      "height": 71.9375,
+      "logicalWidth": 101,
+      "logicalHeight": 109,
+      "dpr": 1
+    },
+    {
+      "mode": "single",
+      "dialReadability": [
+        {
+          "labels": [
+            {
+              "text": "-0.5",
+              "contained": true
+            },
+            {
+              "text": "0",
+              "contained": true
+            },
+            {
+              "text": "0.5",
+              "contained": true
+            },
+            {
+              "text": "1",
+              "contained": true
+            },
+            {
+              "text": "1.5",
+              "contained": true
+            },
+            {
+              "text": "2",
+              "contained": true
+            },
+            {
+              "text": "1.20",
+              "contained": true
+            },
+            {
+              "text": "PEAK",
+              "contained": true
+            },
+            {
+              "text": "1.40",
+              "contained": true
+            },
+            {
+              "text": "bar",
+              "contained": true
+            }
+          ],
+          "siblingOverlap": [
+            {
+              "text": "-0.5",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "0",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "0.5",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "1",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "1.5",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "2",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "bar",
+              "panel": false,
+              "legends": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "twin",
+      "viewport": [
+        1920,
+        1080
+      ],
+      "dpr": 1,
+      "bounds": {
+        "x": 1045.203125,
+        "y": 779.40625,
+        "width": 844.796875,
+        "height": 270.59375
+      },
+      "status": null
+    },
+    {
+      "mode": "twin",
+      "dialReadability": [
+        {
+          "labels": [
+            {
+              "text": "-0.5",
+              "contained": true
+            },
+            {
+              "text": "0",
+              "contained": true
+            },
+            {
+              "text": "0.5",
+              "contained": true
+            },
+            {
+              "text": "1",
+              "contained": true
+            },
+            {
+              "text": "1.5",
+              "contained": true
+            },
+            {
+              "text": "2",
+              "contained": true
+            },
+            {
+              "text": "1.20",
+              "contained": true
+            },
+            {
+              "text": "PEAK",
+              "contained": true
+            },
+            {
+              "text": "1.40",
+              "contained": true
+            },
+            {
+              "text": "bar",
+              "contained": true
+            }
+          ],
+          "siblingOverlap": [
+            {
+              "text": "-0.5",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "0",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "0.5",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "1",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "1.5",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "2",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "bar",
+              "panel": false,
+              "legends": []
+            }
+          ]
+        },
+        {
+          "labels": [
+            {
+              "text": "0",
+              "contained": true
+            },
+            {
+              "text": "2",
+              "contained": true
+            },
+            {
+              "text": "4",
+              "contained": true
+            },
+            {
+              "text": "6",
+              "contained": true
+            },
+            {
+              "text": "8",
+              "contained": true
+            },
+            {
+              "text": "10",
+              "contained": true
+            },
+            {
+              "text": "RPM",
+              "contained": true
+            },
+            {
+              "text": "6.8",
+              "contained": true
+            },
+            {
+              "text": "PEAK",
+              "contained": true
+            },
+            {
+              "text": "6.8",
+              "contained": true
+            },
+            {
+              "text": "x1000 rpm",
+              "contained": true
+            }
+          ],
+          "siblingOverlap": [
+            {
+              "text": "0",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "2",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "4",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "6",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "8",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "10",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "x1000 rpm",
+              "panel": false,
+              "legends": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "multi",
+      "viewport": [
+        1920,
+        1080
+      ],
+      "dpr": 1,
+      "bounds": {
+        "x": 1045.203125,
+        "y": 779.40625,
+        "width": 844.796875,
+        "height": 270.59375
+      },
+      "status": null
+    },
+    {
+      "name": "g",
+      "viewport": [
+        1920,
+        1080
+      ],
+      "dpr": 1,
+      "bounds": {
+        "x": 1045.203125,
+        "y": 779.40625,
+        "width": 844.796875,
+        "height": 270.59375
+      },
+      "status": null
+    },
+    {
+      "canvas": "r34G",
+      "pixelWidth": 169,
+      "pixelHeight": 83,
+      "width": 168.953125,
+      "height": 83.15625,
+      "logicalWidth": 256,
+      "logicalHeight": 126,
+      "dpr": 1
+    },
+    {
+      "name": "lap",
+      "viewport": [
+        1920,
+        1080
+      ],
+      "dpr": 1,
+      "bounds": {
+        "x": 1045.203125,
+        "y": 779.40625,
+        "width": 844.796875,
+        "height": 270.59375
+      },
+      "status": null
+    },
+    {
+      "canvas": "r34History",
+      "pixelWidth": 67,
+      "pixelHeight": 72,
+      "width": 66.65625,
+      "height": 71.9375,
+      "logicalWidth": 101,
+      "logicalHeight": 109,
+      "dpr": 1
+    },
+    {
+      "canvas": "r34History",
+      "pixelWidth": 47,
+      "pixelHeight": 50,
+      "width": 46.65625,
+      "height": 50.34375,
+      "logicalWidth": 101,
+      "logicalHeight": 109,
+      "dpr": 1
+    },
+    {
+      "canvas": "r34G",
+      "pixelWidth": 169,
+      "pixelHeight": 83,
+      "width": 168.953125,
+      "height": 83.15625,
+      "logicalWidth": 256,
+      "logicalHeight": 126,
+      "dpr": 1
+    },
+    {
+      "canvas": "r34G",
+      "pixelWidth": 118,
+      "pixelHeight": 58,
+      "width": 118.265625,
+      "height": 58.203125,
+      "logicalWidth": 256,
+      "logicalHeight": 126,
+      "dpr": 1
+    },
+    {
+      "gMarker": {
+        "full": {
+          "visible": true,
+          "x": 0.32840236686390534,
+          "y": 0.572289156626506,
+          "resolution": 83
+        },
+        "compact": {
+          "visible": true,
+          "x": 0.326271186440678,
+          "y": 0.5689655172413793,
+          "resolution": 58
+        }
+      }
+    },
+    {
+      "name": "first-completed-lap",
+      "viewport": [
+        1920,
+        1080
+      ],
+      "dpr": 1,
+      "bounds": {
+        "x": 1045.203125,
+        "y": 779.40625,
+        "width": 844.796875,
+        "height": 270.59375
+      },
+      "status": null
+    },
+    {
+      "name": "day",
+      "viewport": [
+        1920,
+        1080
+      ],
+      "dpr": 1,
+      "bounds": {
+        "x": 1045.203125,
+        "y": 779.40625,
+        "width": 844.796875,
+        "height": 270.59375
+      },
+      "status": null
+    },
+    {
+      "name": "imperial-vacuum",
+      "viewport": [
+        1920,
+        1080
+      ],
+      "dpr": 1,
+      "bounds": {
+        "x": 1045.203125,
+        "y": 779.40625,
+        "width": 844.796875,
+        "height": 270.59375
+      },
+      "status": null
+    },
+    {
+      "mode": "single",
+      "dialReadability": [
+        {
+          "labels": [
+            {
+              "text": "-7.3",
+              "contained": true
+            },
+            {
+              "text": "0",
+              "contained": true
+            },
+            {
+              "text": "7.3",
+              "contained": true
+            },
+            {
+              "text": "14.5",
+              "contained": true
+            },
+            {
+              "text": "21.8",
+              "contained": true
+            },
+            {
+              "text": "29",
+              "contained": true
+            },
+            {
+              "text": "-7.3",
+              "contained": true
+            },
+            {
+              "text": "PEAK",
+              "contained": true
+            },
+            {
+              "text": "17.4",
+              "contained": true
+            },
+            {
+              "text": "psi",
+              "contained": true
+            }
+          ],
+          "siblingOverlap": [
+            {
+              "text": "-7.3",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "0",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "7.3",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "14.5",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "21.8",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "29",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "psi",
+              "panel": false,
+              "legends": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "over-scale-kpa",
+      "viewport": [
+        1920,
+        1080
+      ],
+      "dpr": 1,
+      "bounds": {
+        "x": 1045.203125,
+        "y": 779.40625,
+        "width": 844.796875,
+        "height": 270.59375
+      },
+      "status": null
+    },
+    {
+      "mode": "single",
+      "dialReadability": [
+        {
+          "labels": [
+            {
+              "text": "-50",
+              "contained": true
+            },
+            {
+              "text": "0",
+              "contained": true
+            },
+            {
+              "text": "50",
+              "contained": true
+            },
+            {
+              "text": "100",
+              "contained": true
+            },
+            {
+              "text": "150",
+              "contained": true
+            },
+            {
+              "text": "200",
+              "contained": true
+            },
+            {
+              "text": "300",
+              "contained": true
+            },
+            {
+              "text": "PEAK",
+              "contained": true
+            },
+            {
+              "text": "300",
+              "contained": true
+            },
+            {
+              "text": "kPa",
+              "contained": true
+            }
+          ],
+          "siblingOverlap": [
+            {
+              "text": "-50",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "0",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "50",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "100",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "150",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "200",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "kPa",
+              "panel": false,
+              "legends": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "overscale-common-readouts-hidden",
+      "viewport": [
+        1920,
+        1080
+      ],
+      "dpr": 1,
+      "bounds": {
+        "x": 1045.203125,
+        "y": 779.40625,
+        "width": 844.796875,
+        "height": 270.59375
+      },
+      "status": null
+    },
+    {
+      "name": "missing",
+      "viewport": [
+        1920,
+        1080
+      ],
+      "dpr": 1,
+      "bounds": {
+        "x": 1045.203125,
+        "y": 779.40625,
+        "width": 844.796875,
+        "height": 270.59375
+      },
+      "status": null
+    },
+    {
+      "name": "paused",
+      "viewport": [
+        1920,
+        1080
+      ],
+      "dpr": 1,
+      "bounds": {
+        "x": 1045.203125,
+        "y": 779.40625,
+        "width": 844.796875,
+        "height": 270.59375
+      },
+      "status": {
+        "text": "GAME PAUSED · LIVE VALUES UNAVAILABLE",
+        "clear": true,
+        "fits": true
+      }
+    },
+    {
+      "name": "stale",
+      "viewport": [
+        1920,
+        1080
+      ],
+      "dpr": 1,
+      "bounds": {
+        "x": 1045.203125,
+        "y": 779.40625,
+        "width": 844.796875,
+        "height": 270.59375
+      },
+      "status": {
+        "text": "TELEMETRY STALE · LIVE VALUES UNAVAILABLE",
+        "clear": true,
+        "fits": true
+      }
+    },
+    {
+      "name": "compact-mfd-only-custom",
+      "viewport": [
+        1920,
+        1080
+      ],
+      "dpr": 1,
+      "bounds": {
+        "x": 1659,
+        "y": 937.28125,
+        "width": 231,
+        "height": 112.71875
+      },
+      "status": null
+    },
+    {
+      "name": "new-car-neutral",
+      "viewport": [
+        1920,
+        1080
+      ],
+      "dpr": 1,
+      "bounds": {
+        "x": 1045.203125,
+        "y": 779.40625,
+        "width": 844.796875,
+        "height": 270.59375
+      },
+      "status": null
+    },
+    {
+      "name": "waiting",
+      "viewport": [
+        1280,
+        720
+      ],
+      "dpr": 2,
+      "bounds": {
+        "x": 405.203125,
+        "y": 419.40625,
+        "width": 844.796875,
+        "height": 270.59375
+      },
+      "status": {
+        "text": "WAITING FOR TELEMETRY",
+        "clear": true,
+        "fits": true
+      }
+    },
+    {
+      "physicalLayout": {
+        "mfdOnLeft": true,
+        "caseAspect": 2.0492916747525713,
+        "screenAspect": 1.7763239875389407
+      }
+    },
+    {
+      "mode": "single",
+      "dialReadability": [
+        {
+          "labels": [
+            {
+              "text": "-0.5",
+              "contained": true
+            },
+            {
+              "text": "0",
+              "contained": true
+            },
+            {
+              "text": "0.5",
+              "contained": true
+            },
+            {
+              "text": "1",
+              "contained": true
+            },
+            {
+              "text": "1.5",
+              "contained": true
+            },
+            {
+              "text": "2",
+              "contained": true
+            },
+            {
+              "text": "N/A",
+              "contained": true
+            },
+            {
+              "text": "PEAK",
+              "contained": true
+            },
+            {
+              "text": "N/A",
+              "contained": true
+            },
+            {
+              "text": "bar",
+              "contained": true
+            }
+          ],
+          "siblingOverlap": [
+            {
+              "text": "-0.5",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "0",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "0.5",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "1",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "1.5",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "2",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "bar",
+              "panel": false,
+              "legends": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "canvas": "r34History",
+      "pixelWidth": 133,
+      "pixelHeight": 144,
+      "width": 66.65625,
+      "height": 71.9375,
+      "logicalWidth": 101,
+      "logicalHeight": 109,
+      "dpr": 2
+    },
+    {
+      "name": "single",
+      "viewport": [
+        1280,
+        720
+      ],
+      "dpr": 2,
+      "bounds": {
+        "x": 405.203125,
+        "y": 419.40625,
+        "width": 844.796875,
+        "height": 270.59375
+      },
+      "status": null
+    },
+    {
+      "canvas": "r34History",
+      "pixelWidth": 133,
+      "pixelHeight": 144,
+      "width": 66.65625,
+      "height": 71.9375,
+      "logicalWidth": 101,
+      "logicalHeight": 109,
+      "dpr": 2
+    },
+    {
+      "mode": "single",
+      "dialReadability": [
+        {
+          "labels": [
+            {
+              "text": "-0.5",
+              "contained": true
+            },
+            {
+              "text": "0",
+              "contained": true
+            },
+            {
+              "text": "0.5",
+              "contained": true
+            },
+            {
+              "text": "1",
+              "contained": true
+            },
+            {
+              "text": "1.5",
+              "contained": true
+            },
+            {
+              "text": "2",
+              "contained": true
+            },
+            {
+              "text": "1.20",
+              "contained": true
+            },
+            {
+              "text": "PEAK",
+              "contained": true
+            },
+            {
+              "text": "1.40",
+              "contained": true
+            },
+            {
+              "text": "bar",
+              "contained": true
+            }
+          ],
+          "siblingOverlap": [
+            {
+              "text": "-0.5",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "0",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "0.5",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "1",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "1.5",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "2",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "bar",
+              "panel": false,
+              "legends": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "twin",
+      "viewport": [
+        1280,
+        720
+      ],
+      "dpr": 2,
+      "bounds": {
+        "x": 405.203125,
+        "y": 419.40625,
+        "width": 844.796875,
+        "height": 270.59375
+      },
+      "status": null
+    },
+    {
+      "mode": "twin",
+      "dialReadability": [
+        {
+          "labels": [
+            {
+              "text": "-0.5",
+              "contained": true
+            },
+            {
+              "text": "0",
+              "contained": true
+            },
+            {
+              "text": "0.5",
+              "contained": true
+            },
+            {
+              "text": "1",
+              "contained": true
+            },
+            {
+              "text": "1.5",
+              "contained": true
+            },
+            {
+              "text": "2",
+              "contained": true
+            },
+            {
+              "text": "1.20",
+              "contained": true
+            },
+            {
+              "text": "PEAK",
+              "contained": true
+            },
+            {
+              "text": "1.40",
+              "contained": true
+            },
+            {
+              "text": "bar",
+              "contained": true
+            }
+          ],
+          "siblingOverlap": [
+            {
+              "text": "-0.5",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "0",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "0.5",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "1",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "1.5",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "2",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "bar",
+              "panel": false,
+              "legends": []
+            }
+          ]
+        },
+        {
+          "labels": [
+            {
+              "text": "0",
+              "contained": true
+            },
+            {
+              "text": "2",
+              "contained": true
+            },
+            {
+              "text": "4",
+              "contained": true
+            },
+            {
+              "text": "6",
+              "contained": true
+            },
+            {
+              "text": "8",
+              "contained": true
+            },
+            {
+              "text": "10",
+              "contained": true
+            },
+            {
+              "text": "RPM",
+              "contained": true
+            },
+            {
+              "text": "6.8",
+              "contained": true
+            },
+            {
+              "text": "PEAK",
+              "contained": true
+            },
+            {
+              "text": "6.8",
+              "contained": true
+            },
+            {
+              "text": "x1000 rpm",
+              "contained": true
+            }
+          ],
+          "siblingOverlap": [
+            {
+              "text": "0",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "2",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "4",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "6",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "8",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "10",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "x1000 rpm",
+              "panel": false,
+              "legends": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "multi",
+      "viewport": [
+        1280,
+        720
+      ],
+      "dpr": 2,
+      "bounds": {
+        "x": 405.203125,
+        "y": 419.40625,
+        "width": 844.796875,
+        "height": 270.59375
+      },
+      "status": null
+    },
+    {
+      "name": "g",
+      "viewport": [
+        1280,
+        720
+      ],
+      "dpr": 2,
+      "bounds": {
+        "x": 405.203125,
+        "y": 419.40625,
+        "width": 844.796875,
+        "height": 270.59375
+      },
+      "status": null
+    },
+    {
+      "canvas": "r34G",
+      "pixelWidth": 338,
+      "pixelHeight": 166,
+      "width": 168.953125,
+      "height": 83.15625,
+      "logicalWidth": 256,
+      "logicalHeight": 126,
+      "dpr": 2
+    },
+    {
+      "name": "lap",
+      "viewport": [
+        1280,
+        720
+      ],
+      "dpr": 2,
+      "bounds": {
+        "x": 405.203125,
+        "y": 419.40625,
+        "width": 844.796875,
+        "height": 270.59375
+      },
+      "status": null
+    },
+    {
+      "canvas": "r34History",
+      "pixelWidth": 133,
+      "pixelHeight": 144,
+      "width": 66.65625,
+      "height": 71.9375,
+      "logicalWidth": 101,
+      "logicalHeight": 109,
+      "dpr": 2
+    },
+    {
+      "canvas": "r34History",
+      "pixelWidth": 93,
+      "pixelHeight": 101,
+      "width": 46.65625,
+      "height": 50.34375,
+      "logicalWidth": 101,
+      "logicalHeight": 109,
+      "dpr": 2
+    },
+    {
+      "canvas": "r34G",
+      "pixelWidth": 338,
+      "pixelHeight": 166,
+      "width": 168.953125,
+      "height": 83.15625,
+      "logicalWidth": 256,
+      "logicalHeight": 126,
+      "dpr": 2
+    },
+    {
+      "canvas": "r34G",
+      "pixelWidth": 237,
+      "pixelHeight": 116,
+      "width": 118.265625,
+      "height": 58.203125,
+      "logicalWidth": 256,
+      "logicalHeight": 126,
+      "dpr": 2
+    },
+    {
+      "gMarker": {
+        "full": {
+          "visible": true,
+          "x": 0.32868868104600113,
+          "y": 0.5758356004663817,
+          "resolution": 166
+        },
+        "compact": {
+          "visible": true,
+          "x": 0.32832725452334977,
+          "y": 0.5737872589129165,
+          "resolution": 116
+        }
+      }
+    },
+    {
+      "name": "first-completed-lap",
+      "viewport": [
+        1280,
+        720
+      ],
+      "dpr": 2,
+      "bounds": {
+        "x": 405.203125,
+        "y": 419.40625,
+        "width": 844.796875,
+        "height": 270.59375
+      },
+      "status": null
+    },
+    {
+      "name": "day",
+      "viewport": [
+        1280,
+        720
+      ],
+      "dpr": 2,
+      "bounds": {
+        "x": 405.203125,
+        "y": 419.40625,
+        "width": 844.796875,
+        "height": 270.59375
+      },
+      "status": null
+    },
+    {
+      "name": "imperial-vacuum",
+      "viewport": [
+        1280,
+        720
+      ],
+      "dpr": 2,
+      "bounds": {
+        "x": 405.203125,
+        "y": 419.40625,
+        "width": 844.796875,
+        "height": 270.59375
+      },
+      "status": null
+    },
+    {
+      "mode": "single",
+      "dialReadability": [
+        {
+          "labels": [
+            {
+              "text": "-7.3",
+              "contained": true
+            },
+            {
+              "text": "0",
+              "contained": true
+            },
+            {
+              "text": "7.3",
+              "contained": true
+            },
+            {
+              "text": "14.5",
+              "contained": true
+            },
+            {
+              "text": "21.8",
+              "contained": true
+            },
+            {
+              "text": "29",
+              "contained": true
+            },
+            {
+              "text": "-7.3",
+              "contained": true
+            },
+            {
+              "text": "PEAK",
+              "contained": true
+            },
+            {
+              "text": "17.4",
+              "contained": true
+            },
+            {
+              "text": "psi",
+              "contained": true
+            }
+          ],
+          "siblingOverlap": [
+            {
+              "text": "-7.3",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "0",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "7.3",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "14.5",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "21.8",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "29",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "psi",
+              "panel": false,
+              "legends": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "over-scale-kpa",
+      "viewport": [
+        1280,
+        720
+      ],
+      "dpr": 2,
+      "bounds": {
+        "x": 405.203125,
+        "y": 419.40625,
+        "width": 844.796875,
+        "height": 270.59375
+      },
+      "status": null
+    },
+    {
+      "mode": "single",
+      "dialReadability": [
+        {
+          "labels": [
+            {
+              "text": "-50",
+              "contained": true
+            },
+            {
+              "text": "0",
+              "contained": true
+            },
+            {
+              "text": "50",
+              "contained": true
+            },
+            {
+              "text": "100",
+              "contained": true
+            },
+            {
+              "text": "150",
+              "contained": true
+            },
+            {
+              "text": "200",
+              "contained": true
+            },
+            {
+              "text": "300",
+              "contained": true
+            },
+            {
+              "text": "PEAK",
+              "contained": true
+            },
+            {
+              "text": "300",
+              "contained": true
+            },
+            {
+              "text": "kPa",
+              "contained": true
+            }
+          ],
+          "siblingOverlap": [
+            {
+              "text": "-50",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "0",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "50",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "100",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "150",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "200",
+              "panel": false,
+              "legends": []
+            },
+            {
+              "text": "kPa",
+              "panel": false,
+              "legends": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "overscale-common-readouts-hidden",
+      "viewport": [
+        1280,
+        720
+      ],
+      "dpr": 2,
+      "bounds": {
+        "x": 405.203125,
+        "y": 419.40625,
+        "width": 844.796875,
+        "height": 270.59375
+      },
+      "status": null
+    },
+    {
+      "name": "missing",
+      "viewport": [
+        1280,
+        720
+      ],
+      "dpr": 2,
+      "bounds": {
+        "x": 405.203125,
+        "y": 419.40625,
+        "width": 844.796875,
+        "height": 270.59375
+      },
+      "status": null
+    },
+    {
+      "name": "paused",
+      "viewport": [
+        1280,
+        720
+      ],
+      "dpr": 2,
+      "bounds": {
+        "x": 405.203125,
+        "y": 419.40625,
+        "width": 844.796875,
+        "height": 270.59375
+      },
+      "status": {
+        "text": "GAME PAUSED · LIVE VALUES UNAVAILABLE",
+        "clear": true,
+        "fits": true
+      }
+    },
+    {
+      "name": "stale",
+      "viewport": [
+        1280,
+        720
+      ],
+      "dpr": 2,
+      "bounds": {
+        "x": 405.203125,
+        "y": 419.40625,
+        "width": 844.796875,
+        "height": 270.59375
+      },
+      "status": {
+        "text": "TELEMETRY STALE · LIVE VALUES UNAVAILABLE",
+        "clear": true,
+        "fits": true
+      }
+    },
+    {
+      "name": "compact-mfd-only-custom",
+      "viewport": [
+        1280,
+        720
+      ],
+      "dpr": 2,
+      "bounds": {
+        "x": 1019,
+        "y": 577.28125,
+        "width": 231,
+        "height": 112.71875
+      },
+      "status": null
+    },
+    {
+      "name": "new-car-neutral",
+      "viewport": [
+        1280,
+        720
+      ],
+      "dpr": 2,
+      "bounds": {
+        "x": 405.203125,
+        "y": 419.40625,
+        "width": 844.796875,
+        "height": 270.59375
+      },
+      "status": null
+    }
+  ],
+  "screenshots": [
+    "waiting-1280x720-dpr1.png",
+    "single-1280x720-dpr1.png",
+    "detail-single-dpr1.png",
+    "twin-1280x720-dpr1.png",
+    "detail-twin-dpr1.png",
+    "multi-1280x720-dpr1.png",
+    "detail-multi-dpr1.png",
+    "g-1280x720-dpr1.png",
+    "detail-g-dpr1.png",
+    "lap-1280x720-dpr1.png",
+    "detail-lap-dpr1.png",
+    "dpr-return-to-one-1280x720-dpr1.png",
+    "first-completed-lap-1280x720-dpr1.png",
+    "day-1280x720-dpr1.png",
+    "imperial-vacuum-1280x720-dpr1.png",
+    "over-scale-kpa-1280x720-dpr1.png",
+    "overscale-common-readouts-hidden-1280x720-dpr1.png",
+    "missing-1280x720-dpr1.png",
+    "paused-1280x720-dpr1.png",
+    "stale-1280x720-dpr1.png",
+    "compact-mfd-only-custom-1280x720-dpr1.png",
+    "new-car-neutral-1280x720-dpr1.png",
+    "waiting-1920x1080-dpr1.png",
+    "single-1920x1080-dpr1.png",
+    "twin-1920x1080-dpr1.png",
+    "multi-1920x1080-dpr1.png",
+    "g-1920x1080-dpr1.png",
+    "lap-1920x1080-dpr1.png",
+    "first-completed-lap-1920x1080-dpr1.png",
+    "day-1920x1080-dpr1.png",
+    "imperial-vacuum-1920x1080-dpr1.png",
+    "over-scale-kpa-1920x1080-dpr1.png",
+    "overscale-common-readouts-hidden-1920x1080-dpr1.png",
+    "missing-1920x1080-dpr1.png",
+    "paused-1920x1080-dpr1.png",
+    "stale-1920x1080-dpr1.png",
+    "compact-mfd-only-custom-1920x1080-dpr1.png",
+    "new-car-neutral-1920x1080-dpr1.png",
+    "waiting-1280x720-dpr2.png",
+    "single-1280x720-dpr2.png",
+    "detail-single-dpr2.png",
+    "twin-1280x720-dpr2.png",
+    "detail-twin-dpr2.png",
+    "multi-1280x720-dpr2.png",
+    "detail-multi-dpr2.png",
+    "g-1280x720-dpr2.png",
+    "detail-g-dpr2.png",
+    "lap-1280x720-dpr2.png",
+    "detail-lap-dpr2.png",
+    "first-completed-lap-1280x720-dpr2.png",
+    "day-1280x720-dpr2.png",
+    "imperial-vacuum-1280x720-dpr2.png",
+    "over-scale-kpa-1280x720-dpr2.png",
+    "overscale-common-readouts-hidden-1280x720-dpr2.png",
+    "missing-1280x720-dpr2.png",
+    "paused-1280x720-dpr2.png",
+    "stale-1280x720-dpr2.png",
+    "compact-mfd-only-custom-1280x720-dpr2.png",
+    "new-car-neutral-1280x720-dpr2.png"
+  ],
+  "errors": []
+}

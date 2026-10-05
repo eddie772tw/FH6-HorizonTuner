@@ -78,3 +78,9 @@ Recorder 優先取 `data.sourceTelemetry` 的原始唯讀封包；否則接受�
 讀數可見性檢查除了 viewport 包含性，也直接比較刻度／單位與同層 PEAK 面板的幾何重疊；bar、psi、kPa 與 RPM 最大刻度都必須完整可讀。狀態提示放在機殼下方的透明留白，設定頁則驗證完整英語原文與繁中／日文翻譯，不接受顯示短 lookup key。
 
 視覺 workflow 使用 GitHub Actions 的 Google Chrome 並維持 `chromiumSandbox: true`，輸出 720p／1080p／DPR 2 的實際 HTML／SVG／Canvas 截圖與 JSON 證據。不得用停用 sandbox 迴避本地環境限制。這些是 Chrome fixture，仍不是 Windows 原生透明 click-through 或真實遊戲驗收；完成狀態以該 PR 的實際結果為準。
+
+## 保存的實際重建畫面
+
+`bed166f290621675c445defe8b42c15e451217fa` 的 [Visual run37295509701](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37295509701) 已產出並通過94項HUD檢查、59張HUD圖、7項Launcher檢查及11張設定圖。獨立review逐張比較五模式DPR1／2與OEM／NISMO參考，並查看單位、overscale、缺值／斷訊、day／night、custom color與隱藏讀值；無新增actionable findings。
+
+[完整runtime預覽](../assets/r34-mfd/preview.png)、[正常大小](../assets/r34-mfd/preview-normal.png)及[MFD四模式](../assets/r34-mfd/mfd-modes.png)皆來自真正HTML／SVG／Canvas，不是先前的靜態美術樣稿。拼版由原始MFD區域垂直排列TWIN／MULTI／G／LAP，僅裁切與加留白，沒有重繪儀表像素。來源與雜湊見[provenance](../assets/r34-mfd/provenance.json)。正常約845px構圖的主讀值清楚，次要MFD刻度及機殼小字需近看；可依遊戲畫面使用既有HUD scale調整，不聲稱工廠尺寸或實機操作驗收。

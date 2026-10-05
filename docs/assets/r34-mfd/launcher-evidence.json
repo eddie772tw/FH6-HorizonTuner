@@ -1,0 +1,12 @@
+{
+  "checks": [
+    "host mode multi",
+    "host mode g",
+    "host mode lap",
+    "host mode twin",
+    "host mode single",
+    "real Coordinator stale replay and missing raw Boost",
+    "style switch-back keeps configuration and clears recording"
+  ],
+  "errors": []
+}
