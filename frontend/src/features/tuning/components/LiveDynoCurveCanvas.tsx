@@ -1,6 +1,6 @@
 import { memo, useEffect, useRef } from 'react';
 import { useSettings } from '../../../context/SettingsContext';
-import type { TuningMeasurementState } from '../tuningMeasurement';
+import type { TuningMeasurementState } from '../../../domain/tuning/types';
 
 /** Draw the session-owned accepted summary, including after leaving/re-entering Tune. */
 export const LiveDynoCurveCanvas = memo(function LiveDynoCurveCanvas({ state, height = 180 }: {

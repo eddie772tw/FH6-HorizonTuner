@@ -4,7 +4,7 @@ import {
   convertDisplayedSpringToCanonical,
   convertDisplayedHeightToCanonical
 } from './AppliedSetupTable';
-import { AppliedTuningSetup } from '../../../utils/tuningDiagnosis';
+import { AppliedTuningSetup } from "../../../../test-reference/tuning/utils/tuningDiagnosis";
 
 describe('AppliedSetupTable Component Contract', () => {
   it('應正確導出 AppliedSetupTable 組件並符合 TypeScript 契約', () => {

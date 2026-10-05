@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import type { CarParams } from '../../context/CarParamsContext';
-import type { Season, MeasuredEngineInputs, ChassisTuningResult, StaticTireAlignResult } from '../../utils/tuningMath';
+import type { Season, MeasuredEngineInputs, ChassisTuningResult, StaticTireAlignResult } from '../../domain/tuning/types';
 import type { EvGearingInput } from '../../domain/tuning/ev/types';
-import type { WorkflowGearingResult } from './measurementTuningProfile';
-import type { WorkflowRecommendation } from './workflowSnapshot';
+import type { WorkflowGearingResult } from '../../domain/tuning/types';
+import type { WorkflowRecommendation } from '../../domain/tuning/types';
 import type { WorkflowReadiness } from './tuningWorkflow';
 import { CalculationSequence } from './mechanicalCalculation';
 import { backendFetch } from '../../services/backend';

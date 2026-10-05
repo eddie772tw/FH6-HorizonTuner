@@ -2,9 +2,9 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { createElement } from 'react';
 import { describe, expect, it } from 'vitest';
 import { EngineCalculationStatus } from './EngineCalculationStatus';
-import type { EngineCalculationSummary } from '../engineCalculation';
-import { createTuningMeasurement } from '../tuningMeasurement';
-import { engineCalculationSummary } from '../engineCalculation';
+import type { EngineCalculationSummary } from "../../../../test-reference/tuning/features/tuning/engineCalculation";
+import { createTuningMeasurement } from "../../../../test-reference/tuning/features/tuning/tuningMeasurement";
+import { engineCalculationSummary } from "../../../../test-reference/tuning/features/tuning/engineCalculation";
 
 const ready: EngineCalculationSummary = { analysisVersion: 'engine-loaded-sweep/v4',
   observationId: 'test', status: 'ready', reason: 'ready', acceptedMs: 7000,

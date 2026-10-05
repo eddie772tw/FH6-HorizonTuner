@@ -1,6 +1,6 @@
 import React from 'react';
 import { useSettings } from '../../../context/SettingsContext';
-import { AppliedTuningSetup } from '../../../utils/tuningDiagnosis';
+import type { AppliedTuningSetup } from '../../../domain/tuning/types';
 
 export interface AppliedSetupTableProps {
   setup: AppliedTuningSetup;

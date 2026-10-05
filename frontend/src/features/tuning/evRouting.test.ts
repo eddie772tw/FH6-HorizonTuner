@@ -1,16 +1,16 @@
-import { getWorkflowReadiness } from './legacyWorkflowReadiness';
+import { getWorkflowReadiness } from "../../../test-reference/tuning/features/tuning/legacyWorkflowReadiness";
 import { describe, expect, it } from 'vitest';
-import { calculateAEGOGearing, calculateMeasuredGearing, type TuningCarParams } from '../../utils/tuningMath';
-import { calculateWizardMeasuredGearing } from './measurementTuningProfile';
+import { calculateAEGOGearing, calculateMeasuredGearing, type TuningCarParams } from "../../../test-reference/tuning/utils/tuningMath";
+import { calculateWizardMeasuredGearing } from "../../../test-reference/tuning/features/tuning/measurementTuningProfile";
 import { resolveTuningStep } from './tuningWorkflow';
-import { engineDependencyKey } from './engineMeasurementArchive';
+import { engineDependencyKey } from "../../../test-reference/tuning/features/tuning/engineMeasurementArchive";
 import { evDependencyKey } from './evSession';
 import type { CarParams } from '../../context/CarParamsContext';
 import golden from '../../../../tests/fixtures/ev_golden_fixtures.json';
 import type { EvGearingResult } from '../../domain/tuning/ev/types';
 import { validateCompanionCommand, type CompanionSnapshot } from '../companion/companionProtocol';
-import { workflowRecommendation } from './workflowSnapshot';
-import { calculateChassisTuning, calculateStaticTireAlignment } from '../../utils/tuningMath';
+import { workflowRecommendation } from "../../../test-reference/tuning/features/tuning/workflowSnapshot";
+import { calculateChassisTuning, calculateStaticTireAlignment } from "../../../test-reference/tuning/utils/tuningMath";
 
 const ev = { weight: 2200, weight_distribution: 50, maxHp: 0, isElectric: true } as CarParams;
 const measured = { engineMaxRpm: 17000, peakPowerRpm: 6000, peakTorqueRpm: 3000 };

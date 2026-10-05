@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import type { CarParams } from '../../context/CarParamsContext';
 import { mergeDynoPollResult } from '../../context/CarParamsContext';
 import { serializeWorkflowProfile } from './tuningWorkflow';
-import { workflowRecommendation } from './workflowSnapshot';
-import { calculateChassisTuning, calculateStaticTireAlignment, calculateMeasuredGearing } from '../../utils/tuningMath';
+import { workflowRecommendation } from "../../../test-reference/tuning/features/tuning/workflowSnapshot";
+import { calculateChassisTuning, calculateStaticTireAlignment, calculateMeasuredGearing } from "../../../test-reference/tuning/utils/tuningMath";
 
 describe('Road AWD override snapshots', () => {
   it('survives save-shaped JSON and dyno refresh, and reaches the applied centre setting', () => {

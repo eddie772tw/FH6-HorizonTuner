@@ -1,6 +1,6 @@
 import { backendFetch } from '../../services/backend';
 import type { TuningCaptureSample } from '../../domain/tuning/telemetryCapture';
-import type { TuningMeasurementReadiness, TuningMeasurementState } from './tuningMeasurement';
+import type { TuningMeasurementReadiness, TuningMeasurementState } from '../../domain/tuning/types';
 export interface EngineBatchResult {
   state: TuningMeasurementState;
   readiness: TuningMeasurementReadiness & { minimumAcceptedMs: number; minimumBins: number };

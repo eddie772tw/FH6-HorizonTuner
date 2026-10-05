@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
-import type { TuningCarParams } from '../../utils/tuningMath';
-import type { TuningMeasurementState } from './tuningMeasurement';
+import type { TuningCarParams } from '../../domain/tuning/types';
+import type { TuningMeasurementState } from '../../domain/tuning/types';
 import { engineDependencyKey, type EngineObservation } from './engineObservationIdentity';
 import type { TuningCaptureFile } from '../../domain/tuning/telemetryCapture';
 import { backendFetch } from '../../services/backend';
 import { validateEngineCapture } from './engineCaptureReadback';
-import type { EngineCalculationSummary } from './engineCalculation';
+import type { EngineCalculationSummary } from '../../domain/tuning/types';
 import { isCurrentEngineObservationSaveToken, type EngineObservationSaveToken } from './tuneSessionController';
 
 const STORAGE_KEY = 'tuning-engine-observations/v1';

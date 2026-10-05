@@ -1,12 +1,12 @@
 import type { CarParams } from '../../../context/CarParamsContext';
 import { useSettings } from '../../../context/SettingsContext';
-import type { GearingResult } from '../../../utils/tuningMath';
+import type { GearingResult } from '../../../domain/tuning/types';
 import type { useEngineMeasurementArchive } from '../useEngineMeasurementArchive';
 import { TuningMeasurementStep } from './TuningMeasurementStep';
 import { EngineObservationHistory } from './EngineObservationHistory';
 import { GearingTuner } from './GearingTuner';
 import { LegacyTuningHistory } from './LegacyTuningHistory';
-import type { TireEvidenceResult } from '../tireEvidence';
+import type { TireEvidenceResult } from '../../../domain/tuning/types';
 import { backendFetch } from '../../../services/backend';
 import { TireEvidencePanel } from './TireEvidencePanel';
 import { useEffect, useState } from 'react';

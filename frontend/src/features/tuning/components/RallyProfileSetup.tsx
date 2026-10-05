@@ -1,6 +1,6 @@
 import React from 'react';
 import { useSettings } from '../../../context/SettingsContext';
-import type { RallyProfile } from '../../../utils/tuningMath';
+import type { RallyProfile } from '../../../domain/tuning/types';
 
 interface Props {
   value?: RallyProfile;

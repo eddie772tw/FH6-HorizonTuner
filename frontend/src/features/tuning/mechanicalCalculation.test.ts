@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { CalculationSequence, mechanicalRequestKey, requestMechanical } from './mechanicalCalculation';
 import { backendFetch } from '../../services/backend';
-import type { TuningCarParams } from '../../utils/tuningMath';
+import type { TuningCarParams } from "../../../test-reference/tuning/utils/tuningMath";
 vi.mock('../../services/backend', () => ({ backendFetch: vi.fn() }));
 const profile: TuningCarParams = { weight: 1350, weight_distribution: 54, drivetrain: 'AWD', maxHp: 300 };
 describe('authoritative mechanical boundary', () => {

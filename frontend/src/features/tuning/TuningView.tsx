@@ -2,7 +2,7 @@ import { RoadWorkflowView } from '../road/RoadWorkflowView';
 import { useEffect, useMemo, useState } from 'react';
 import { useCarParams } from '../../context/CarParamsContext';
 import { ScopedUnitSettingsProvider, useSettings } from '../../context/SettingsContext';
-import { type Season } from '../../utils/tuningMath';
+import type { Season } from '../../domain/tuning/types';
 import { UnitSettingsSidebar } from '../../components/UnitSettingsSidebar';
 import { createUnitPreference, loadUnitPreference, resolveUnitPreference, type UnitPreferenceOverride } from '../../utils/gameUnitSettings';
 import { Step1GoalSetup } from './components/Step1GoalSetup';

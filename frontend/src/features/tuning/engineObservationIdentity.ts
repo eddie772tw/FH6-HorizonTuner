@@ -1,5 +1,5 @@
-import type { TuningCarParams } from '../../utils/tuningMath';
-import type { TuningMeasurementState } from './tuningMeasurement';
+import type { TuningCarParams } from '../../domain/tuning/types';
+import type { TuningMeasurementState } from '../../domain/tuning/types';
 import type { TuningCaptureFile } from '../../domain/tuning/telemetryCapture';
 
 export interface EngineObservation {

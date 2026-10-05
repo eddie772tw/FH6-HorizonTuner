@@ -3,7 +3,7 @@ import { useSettings } from '../../context/SettingsContext';
 import { useRoadWorkflow } from './useRoadWorkflow';
 import { documentsOf, type RoadWorkflow } from './roadTypes';
 import { RoadPrepare } from './RoadPrepare';
-import type { WorkflowRecommendation } from '../tuning/workflowSnapshot';
+import type { WorkflowRecommendation } from '../../domain/tuning/types';
 import { verificationState } from '../tuning/tuningWorkflow';
 import { RoadRunPanel } from './RoadRunPanel';
 import { RoadResults } from './RoadResults';

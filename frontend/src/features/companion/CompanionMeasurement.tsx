@@ -1,4 +1,4 @@
-import type { TuningMeasurementState } from '../tuning/tuningMeasurement';
+import type { TuningMeasurementState } from '../../domain/tuning/types';
 import type { CompanionCommand } from './companionProtocol';
 
 type Props = { measurement: { phase: string; sampleCount: number; state: TuningMeasurementState | null }; disabled: boolean; onCommand: (command: Omit<CompanionCommand, 'id' | 'carId' | 'profileKey'>) => Promise<boolean> };

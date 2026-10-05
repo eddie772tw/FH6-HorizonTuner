@@ -1,14 +1,9 @@
 import React, { useMemo } from 'react';
 import { useCarParams } from '../../context/CarParamsContext';
 import { useSettings } from '../../context/SettingsContext';
-import type { TuningCapabilityContract } from '../../domain/tuning/contracts';
+import type { TuningCapabilityContract } from '../../domain/tuning/types';
 import { useLocalCalculation } from './useLocalCalculation';
-import {
-  type DevRaceGoal,
-  type DevSurface,
-  type DevTuningInput,
-  type DevTuningOutput,
-} from '../../utils/tuningMath_dev';
+import type { DevRaceGoal, DevSurface, DevTuningInput, DevTuningOutput } from '../../domain/tuning/types';
 import CapabilityContractPanel from './components/CapabilityContractPanel';
 import DevInputPanel from './components/DevInputPanel';
 import DevOutputPanel from './components/DevOutputPanel';
