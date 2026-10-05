@@ -1,6 +1,6 @@
 {
   "checks": [
-    "Live config C/F updates while raw telemetry flows; speed and temperature geometry remain invariant",
+    "Live config C/F updates while raw telemetry flows; digital speed follows mph while analog speed and temperature geometry remain invariant",
     "host mode multi",
     "host mode g",
     "host mode lap",

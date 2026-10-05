@@ -105,10 +105,10 @@ Recorder 優先取 `data.sourceTelemetry` 的原始唯讀封包；否則接受�
 
 Chrome fixture 保持 `chromiumSandbox:true`，不以停用 sandbox 繞過本地限制。靜態構圖不能取代真正 HTML／SVG／Canvas 像素驗證；Chrome 證據也不是 Windows 原生透明 click-through 或遊戲實測。
 
-## 前一版實際渲染預覽（本輪雙 LCD 修正前）
+## 本輪實際渲染預覽
 
-以下保存的是雙 LCD／偏心小錶修正前的歷史證據，不能作為本輪效果驗收；本輪須在新 Head 的 Chrome 工作流程完成後替換圖片與 PR Body。
+`docs/assets/r34-mfd/` 已更新為 `2cc0248` 的真正 Chrome runtime 圖片：[Visual run37325254056](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37325254056)。216 項 HUD 檢查、168 張 HUD 畫面、8 項 Launcher 檢查、12 張設定圖及 3 項設定流程檢查皆無錯誤。保留透明 720p／1080p 完整定位；雙 LCD 與五模式拼版只排列原生 DPR2 裁切，沒有重繪或放大。詳見同目錄 `provenance.json` 的原始檔名與 SHA256。
 
-`docs/assets/r34-mfd/` 目前仍為 `a3d87ea` 的真正 Chrome runtime 圖片：[Visual run37305964564](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37305964564)。160 項 HUD 檢查、126 張 HUD 畫面、8 項 Launcher 檢查、12 張設定圖及 3 項設定流程檢查皆無錯誤。保留透明 720p／1080p 完整定位；五模式拼版直接排列 DPR2 的 MFD 截圖，沒有重繪或放大。詳見同目錄 `provenance.json` 的原始檔名與 SHA256。
+本輪將功率／扭力兩行字由12px調整為11px，讓1080p的實際字型邊界保有間隙；未放寬LCD包含／相鄰文字碰撞斷言。低段RPM刻度未動，2／3字形含筆畫後在720p保留約1.25px、1080p約1.56px間隙。真正PNG的錶間與外部區域alpha為0；未發現額外儀表矩形背景，也未刪除合法的錶面／LCD／MFD底色。
 
-先前外殼版 `bed166f`／`9fd8947` 已被本次無框／Nür300 方向取代，舊圖只存在 Git 歷史中，不作為新布局證據。設定 fixture 使用 app 真正的英制單位預設；單獨送出 kmh＋F 會被 app 既有整組單位正規化成 C，不能拿不一致的 fixture 判定 HUD 繼承失效。
+`5c7a770`之前的中央文字與居中小錶，以及更早的外殼版，均已被本輪雙LCD／偏心指針修訂取代。舊圖只保留於Git歷史，不作為本輪完成證據。Windows原生overlay與FH6遊戲仍未實測。

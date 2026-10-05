@@ -76,6 +76,12 @@
 - **Action／Evidence**：使用者選定 S650 式分離定位及 Nür300 固定 kmh。HUDCore 校準保持不變，viewport root 取消整體 zoom，由純 layout 函式對獨立錶盤／MFD做寬高 fit；加入矮寬視窗、DPR、固定 kmh、四輪原始胎溫齊全與 C/F 幾何不變契約。修正檔位開關誤藏 REV 燈。
 - **Boundary**：[Visual run37305964564](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37305964564) 真正 Chrome HUD／Launcher／GUI 全部成功；原型照片估角是 HUD 視覺適配，不是工廠校準。完整驗證及來源見 [R34設計文件](../docs/hud/r34-mfd.md)，不代表 Windows／遊戲實測。
 
+## 2026-10-05 / R34 雙 LCD 與壓縮刻度的字形邊界（Bagley as Codex）
+
+- **Learning**：SVG小字在靜態圖可辨識，不代表Chrome的字型邊界不相交。壓縮RPM低段須在固定刻度幾何之外調整數字尺寸，browser檢查亦須計入變換後的stroke；雙行LCD要保留實際字型metric間隙，不能只比較font-size與baseline距離。
+- **Action／Evidence**：保留0／10、3／9對稱與等距低段；加入偏心軸共用幾何、類比kmh／數位單位分離、雙LCD包含／相鄰文字檢查，失敗時先保存bounds與截圖。CurrentLap初始0不可當有效計時，只有已觀察rollover可取得固定3秒零值期限；重複封包不延長。
+- **Boundary**：[Visual run37325254056](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37325254056)通過真正HUD／Launcher／設定驗證；無計時的功率／扭力保持獨立缺值，BestLap／LastLap的0仍不可用。來源及限制見[R34設計文件](../docs/hud/r34-mfd.md)，不是原生Windows或遊戲實測。
+
 ## 歷史摘要 / v1.6 以前開發經驗與跨架構演進核心紀錄（Pre-v1.6 Architecture Archive & Core Learnings）
 
 - **來源／狀態**：`archive`／`verified`；本條目為 v1.6 以前（2026-08-11 ~ 2026-09-15）跨版本開發經驗、歷史踩坑與架構演進之單一收攏精簡摘要（SSOT 封存）。
