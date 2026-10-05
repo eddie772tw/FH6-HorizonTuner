@@ -1,18 +1,18 @@
 ### Summary of Changes
 
-**最新字標換序與對齊（待新實際CI／像素複查）**：依使用者要求改為VAC在上、BOOST在下，兩個固定caption以同一middle anchor置中於既有色帶上方，保留原baseline間距。選中／暗態、mph／km/h、速度字形、RPM上弧、色帶與abs映射均不改動。使用者已授權完成此輪調整與驗證後解除draft、交付review；下方仍為換序前的歷史圖片。
+**最新字標換序與對齊（實際Chrome／launcher與像素複查通過）**：依使用者要求改為VAC在上、BOOST在下，兩個固定caption以同一middle anchor置中於既有色帶上方，保留原baseline間距。選中／暗態、mph／km/h、速度字形、RPM上弧、色帶與abs映射均不改動。使用者已授權完成此輪調整與驗證後解除draft、交付review；下方已更新為本輪VAC在上、BOOST在下的實際Chrome截圖。
 
 本 PR 的 `ap1_rev_arc` 以1999 Honda S2000 AP1 琥珀數位儀表為原型，面向喜歡JDM／高轉數位儀表與簡潔道路HUD的玩家。
 
 本PR亦依使用者先前明確要求：**右側燃油區改為 BOOST，底下顯示實際數值與單位；移除左下 AP1 / REV ARC 及右下 RPM 文字**。保留先前修正的共享上弧、外框、速度和檔位位置，不修改LFA或共用backend／協定。
 
-前版雙字標source `888ea8ba9af69e65f95f96874d3563dacf620680` 已通過sandbox啟用的GitHub Actions Linux Chrome 154 renderer／實際launcher＋Coordinator檢查，並完成獨立像素複查。圖片使用合成遙測；Windows／遊戲驗收尚未進行，本輪換序後實際CI與最終head checks仍待完成。
+本輪換序source `d6c74ba5af2f83df94ee4a45cadaaf086e524361` 已通過sandbox啟用的GitHub Actions Linux Chrome 154 renderer／實際launcher＋Coordinator檢查，並完成獨立像素複查。圖片使用合成遙測；Windows／遊戲驗收尚未進行，本輪換序後實際Chrome通過，最終文件head checks與Ready for Review狀態切換仍待完成。
 
-![換序前雙字標：歷史實際Chrome154 DPR2截圖](RAW_PREFIX/docs/assets/ap1-rev-arc/detail-metric.png)
+![VAC在上、BOOST在下：實際Chrome154 DPR2截圖](RAW_PREFIX/docs/assets/ap1-rev-arc/detail-metric.png)
 
-![換序前選中狀態：VAC在上版本待新CI圖](RAW_PREFIX/docs/assets/ap1-rev-arc/ap1-boost-scale-comparison.png)
+![VAC在上：metric／imperial × BOOST／VAC實際截圖](RAW_PREFIX/docs/assets/ap1-rev-arc/ap1-boost-scale-comparison.png)
 
-[換序前狀態集](RAW_PREFIX/docs/assets/ap1-rev-arc/states.png) · [換序前Compact預覽](RAW_PREFIX/docs/assets/ap1-rev-arc/detail-compact.png) · [換序前720p全幅](RAW_PREFIX/docs/assets/ap1-rev-arc/metric-1280x720.png)
+[本輪狀態集](RAW_PREFIX/docs/assets/ap1-rev-arc/states.png) · [Compact預覽](RAW_PREFIX/docs/assets/ap1-rev-arc/detail-compact.png) · [720p全幅](RAW_PREFIX/docs/assets/ap1-rev-arc/metric-1280x720.png)
 
 ### Key Modifications
 
@@ -29,6 +29,9 @@
 - **回歸證據**：三筆合成324-byte封包經未修改production parser／serde_json得到的JSON，納入純模型測試與實際launcher輸入。這不是實際UDP或遊戲驗收
 - **視覺fixture**：新增positive／zero／negative／missing（含共用層補0）／PSI／kPa／overflow與footer absence；保留default／compact、DPR、reload／destroy與smoothing斷線回歸
 
+- **本輪實際換序驗證**：source `d6c74ba5af2f83df94ee4a45cadaaf086e524361`，sandbox啟用，Chrome154.0.8037.57；[run37275496032](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37275496032)／[artifact11330051871](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37275496032/artifacts/11330051871)。61張截圖、28組固定字標情境、32筆launcher樣本通過；已實際查看default／compact的正負零、缺值與stale，順序與對齊正確
+- **本輪像素保留**：對照`888ea8ba`，只排除兩個模式字標的新／舊ink範圍及1device pixel邊緣，四個default／compact × DPR1／2場景合計897,347像素中0變動；速度單位、數字、色帶、刻度、上弧與外框均納入比較。詳見`caption-order-preservation.json`
+
 ### Pre-Commit & Local Verification
 
 - **Frontend Tests:** `pnpm -C frontend test` →160 files passed、1 skipped；1195 tests passed、1 skipped；AP1樣式90 cases
@@ -39,13 +42,13 @@
 - **Historical Scoped Pixel Comparison:** 相對`2d88a299`只排除新／舊字標ink-box聯集與1 device pixel邊緣。default DPR2為0／476,857差異、compact DPR2為0／233,439、compact DPR1為0／58,441。default DPR1有64／119,025個差異集中左外殼邊緣；完整保留記錄，未擴張遮罩或宣稱全圖相同。詳見`dual-label-preservation.json`
 - **Unit Precedence Probe:** 補充唯讀model probe確認目前設定優先於舊frame單位metadata；stale保留設定字標而數值為`---`，不匹配的generic speed不改標單位。此probe不算新增Vitest case
 - **Historical Evidence:** `before-after.png`仍是較早燃油版的弧度修正對照；舊單色／燃油改BOOST JSON只作歷史證據
-- **Final CI / Approval:** 本輪VAC／BOOST換序與置中調整待新實際CI與像素複查；完成驗證後依使用者明確要求解除draft、交付review。此流程不代表已完成Windows／遊戲實測或reviewer核准
+- **Final CI / Approval:** 本輪VAC／BOOST換序與置中調整的實際Chrome與像素複查已通過；最終文件head CI仍待完成；完成驗證後依使用者明確要求解除draft、交付review。此流程不代表已完成Windows／遊戲實測或reviewer核准
 - **Native Platform:** Windows透明overlay、滑鼠穿透、真實遊戲及安全區未驗收；此HUD預期取代原生右下儀表
 - **Scope:** 無backend、shared coordinator、共享生命週期、LFA或相依套件變更
 
 ### Living Changelog & Review Iterations
 
-- 2026-10-05（Bagley as Codex）：依使用者最後調整將VAC置上、BOOST置下，兩字標置中於既有色帶；更新default／compact、DPR1／DPR2的相對順序與中心對齊檢查，等待實際CI圖
+- 2026-10-05（Bagley as Codex）：依使用者最後調整將VAC置上、BOOST置下，兩字標置中於既有色帶；更新default／compact、DPR1／DPR2的相對順序與中心對齊檢查，實際Chrome／launcher通過並更新預覽
 
 - 2026-10-05（Bagley as Codex）：依最新要求將mph／km/h與BOOST／VAC改為上下固定字標，同色opacity呈現設定／模式。保留km/h與其餘主讀值位置；新增固定節點、missing／stale與default／compact相對版面回歸；本輪實際Chrome／launcher通過，更新hero、選中狀態比較與範圍限定pixel proof
 

@@ -46,6 +46,6 @@
   "remote_browser_review": {
     "result": "passed technical review; user review pending",
     "evidence": "review-evidence.json",
-    "reviewed_head": "888ea8ba9af69e65f95f96874d3563dacf620680"
+    "reviewed_head": "d6c74ba5af2f83df94ee4a45cadaaf086e524361"
   }
 }

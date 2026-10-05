@@ -1,6 +1,6 @@
 # AP1 Rev Arc：1999 Honda S2000 AP1 儀表原型
 
-> 最新調整將固定字標改為VAC在上、BOOST在下，兩者置中對齊既有增壓色帶；保留字標間距、選中／暗態語意及其餘版面。新實際CI圖待完成，下方圖片為調整前的BOOST在上版本。使用者已要求完成此輪調整與驗證後將PR解除draft、交付review；此要求不等同已完成Windows／遊戲驗收。單色LCD／TN仍只作為使用者設計背景。
+> 最新調整將固定字標改為VAC在上、BOOST在下，兩者置中對齊既有增壓色帶；保留字標間距、選中／暗態語意及其餘版面。新實際Chrome／launcher及像素複查通過，下方圖片已更新為VAC在上的版本。使用者已要求完成此輪調整與驗證後將PR解除draft、交付review；此要求不等同已完成Windows／遊戲驗收。單色LCD／TN仍只作為使用者設計背景。
 
 ## 原型與來源
 
@@ -28,7 +28,7 @@
 - `VAC`在上、`BOOST`在下，兩個固定caption以相同middle anchor置中於既有色帶上方；正壓與真正零點亮BOOST，有限負壓點亮VAC，缺值／錯誤／暫停／stale兩者皆暗。沒有以替換字串或增刪節點切換模式
 - 缺少速度或訊號時可保留速度單位的設定提示，但數值仍為破折號與真實狀態。缺少增壓維持`--`和空條，不把缺值視為零壓
 - 只切換兩對caption的opacity；bar、數值、刻度、glow保持原來的單色行為，abs分段映射、微小負號及±0.5／±1／±2對稱性皆未改動
-- 新增default／70%compact、DPR1／DPR2的固定節點、上下相對位置、容納、色帶／速度／RPM避讓、metric／imperial切換，以及positive／negative／zero／missing／stale fixtures。直接renderer與實際launcher共用測試helper；前版實際CI的28組雙字標情境通過；本輪已更新VAC／BOOST順序與色帶置中assertions，待新的default／compact × DPR1／DPR2渲染
+- 新增default／70%compact、DPR1／DPR2的固定節點、上下相對位置、容納、色帶／速度／RPM避讓、metric／imperial切換，以及positive／negative／zero／missing／stale fixtures。直接renderer與實際launcher共用測試helper；前版實際CI的28組雙字標情境通過；本輪VAC／BOOST順序與色帶置中assertions已通過新的default／compact × DPR1／DPR2渲染
 - 本輪記錄：[caption-order-revision-evidence.json](../assets/ap1-rev-arc/caption-order-revision-evidence.json)；前版雙字標證據保留於`dual-label-revision-evidence.json`
 
 ## 上方弧度修正
@@ -95,22 +95,25 @@ magick hud_overlay/ap1_rev_arc/assets/fascia.png -strip -define png:compression-
 - Style-owned Vitest：90 項純資料／行為測試；涵蓋單位、R/N、空值、NaN、Infinity、速度超界、signed BOOST／單位／缺值／量程、同字串快取邊界、適應刻度、重播 timestamp、恢復、設定與 destroy
 - 完整 `pnpm -C frontend test`：160 個檔案通過／1 個略過，1195 個測試通過／1 個略過；`pnpm -C frontend build:web-hud` 與 `git diff --check` 通過。已確認 dist 包含新 HUD 且排除 tests
 - 本地 Chromium 程序被執行環境的 UNIX socket `EPERM` 阻擋；require_escalated 亦相同。雲端瀏覽器至本地 fixture URL 遭 `ERR_BLOCKED_BY_CLIENT`，沒有改用其他 hostname 迴避
-- **前版雙字標renderer／實際launcher＋Coordinator通過**：GitHub Actions Linux Chrome 154.0.8037.57、sandbox啟用、合成遙測；source `888ea8ba9af69e65f95f96874d3563dacf620680`。[CI run 37271674297](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37271674297)／[artifact 11328239382](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37271674297/artifacts/11328239382)
+- **歷史雙字標renderer／實際launcher＋Coordinator通過**：GitHub Actions Linux Chrome 154.0.8037.57、sandbox啟用、合成遙測；source `888ea8ba9af69e65f95f96874d3563dacf620680`。[CI run 37271674297](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37271674297)／[artifact 11328239382](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37271674297/artifacts/11328239382)
 - 前版實際產出61張renderer截圖、28組default／70%compact × DPR1／DPR2雙字標情境與32筆launcher audit樣本；renderer errors及launcher errors／missing皆為空。已獨立查看metric／imperial × BOOST／VAC，以及zero／missing／stale的default／compact畫面：字標與數字清楚，選中狀態正確，沒有可見重疊
 - [前版範圍限定像素比較](../assets/ap1-rev-arc/dual-label-preservation.json)：相對`2d88a299`，只排除兩組舊／新字標ink-box聯集及1 device pixel邊緣。default DPR2為0／476,857變動；compact DPR2為0／233,439；compact DPR1為0／58,441。default DPR1另保留64／119,025個範圍外差異，集中左側外殼邊緣；未擴張遮罩隱藏差異，也不宣稱全部像素相同。fascia與弧線source未變，差異原因未另行證明
 - 單位優先序另以唯讀model probe確認：設定mph覆蓋上一幀km/h metadata，有typed mph時正確顯示；stale仍為`---`，不匹配的generic speed不會被改標單位。這是補充執行證據，沒有冒充新增的Vitest regression
-- 本輪VAC／BOOST換序與置中調整待新實際CI與像素複查；完成驗證後依使用者要求解除draft交付review。最終head的CI仍應另行核對
+- 本輪VAC／BOOST換序與置中調整的實際Chrome與像素複查已通過；最終文件head CI仍待完成；完成驗證後依使用者要求解除draft交付review。最終head的CI仍應另行核對
 - Windows 原生透明 overlay、滑鼠穿透、真實 Forza 遊戲畫面與遊戲內安全區仍須平台實測
 
-### 換序前雙字標Chrome預覽（VAC在上版本待新圖）
+- **本輪實際換序驗證**：source `d6c74ba5af2f83df94ee4a45cadaaf086e524361`，sandbox啟用，Chrome154.0.8037.57；[run37275496032](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37275496032)／[artifact11330051871](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37275496032/artifacts/11330051871)。61張截圖、28組固定字標情境、32筆launcher樣本通過；已實際查看default／compact的正負零、缺值與stale，順序與對齊正確
+- **本輪像素保留**：對照`888ea8ba`，只排除兩個模式字標的新／舊ink範圍及1device pixel邊緣，四個default／compact × DPR1／2場景合計897,347像素中0變動；速度單位、數字、色帶、刻度、上弧與外框均納入比較。詳見`caption-order-preservation.json`
 
-![AP1 Rev Arc：換序前雙字標實際DPR2 Chrome截圖細節](../assets/ap1-rev-arc/detail-metric.png)
+### 本輪VAC在上Chrome預覽
+
+![AP1 Rev Arc：VAC在上實際DPR2 Chrome截圖細節](../assets/ap1-rev-arc/detail-metric.png)
 
 ![AP1 Rev Arc：70% compact的實際DPR2截圖](../assets/ap1-rev-arc/detail-compact.png)
 
 ![固定字標選中狀態：metric／imperial × BOOST／VAC](../assets/ap1-rev-arc/ap1-boost-scale-comparison.png)
 
-[換序前compact／zero／missing／stale狀態集](../assets/ap1-rev-arc/states.png)
+[本輪compact／zero／missing／stale狀態集](../assets/ap1-rev-arc/states.png)
 
 [720p 全幅透明 screenshot](../assets/ap1-rev-arc/metric-1280x720.png) 顯示預設右下位置。細節圖只裁切透明邊界；比較圖與狀態contact sheet使用同一次CI的實際截圖裁切、排列並加標籤與檢視背景。hero與compact保留實際renderer像素，720p保留完整viewport；比較圖與狀態集不重取樣；僅將透明區合成至檢視背景，不重畫或改造儀表讀值。圖片為GitHub Actions Chrome 154的實際renderer輸出與合成遙測，不是美術mockup或遊戲截圖。
 

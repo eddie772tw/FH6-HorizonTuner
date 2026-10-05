@@ -1,106 +1,36 @@
 {
-  "style": "ap1_rev_arc",
-  "revision": "fixed stacked speed-unit and BOOST/VAC labels",
-  "reviewed_head": "888ea8ba9af69e65f95f96874d3563dacf620680",
-  "reviewed_on": "2026-10-05",
-  "platform": "GitHub Actions Linux",
-  "browser": "Chrome 154.0.8037.57",
-  "chromium_sandbox": true,
-  "telemetry": "synthetic direct-render and production-parser JSON fixtures through actual launcher/Coordinator",
-  "run_id": 37271674297,
-  "artifact_id": 11328239382,
-  "run_url": "https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37271674297",
-  "artifact_url": "https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37271674297/artifacts/11328239382",
-  "visual_job": "passed",
-  "renderer_errors": [],
-  "launcher_errors": [],
-  "launcher_missing": [],
-  "renderer_screenshots": 61,
-  "paired_label_scenarios": 28,
-  "launcher_samples": 32,
-  "general_ci": "Final documentation-head checks pending; inspect current PR status separately",
-  "user_review": "pending; no approval implied",
-  "automated_evidence": [
-    "visual-evidence.json",
-    "launcher/host-audit.json",
-    "dual-label-revision-evidence.json",
-    "dual-label-preservation.json"
-  ],
-  "visual_inspection": {
-    "result": "passed scoped technical inspection",
-    "inspected": [
-      "metric/imperial by BOOST/VAC, default and 70% compact DPR2",
-      "zero/missing/stale, default and 70% compact DPR2",
-      "actual DPR1 four-state comparison and nine-state compact/status contact sheet",
-      "hero and compact detail crops"
-    ],
-    "findings": [
-      "Both fixed speed labels stay visible, with mph above the unchanged km/h anchor",
-      "All metric/imperial by BOOST/VAC combinations show the correct selection with the same RGB and opacity-only dimming",
-      "Zero selects BOOST with an empty rail; missing/stale dim both boost legends while retaining the selected speed-unit setting",
-      "Default and 70% compact show no visible overlap between paired labels, rail, speed digits or RPM band",
-      "Bar, numeric and tick paint remain equal across signs; absolute piecewise mapping and negative numeric signs preserved"
-    ],
-    "runtime_changes_needed": false,
-    "user_approval": "not received or implied"
+  "revision": "VAC above BOOST, shared centered rail anchor",
+  "reviewed_head": "d6c74ba5af2f83df94ee4a45cadaaf086e524361",
+  "remote": {
+    "source_head": "d6c74ba5af2f83df94ee4a45cadaaf086e524361",
+    "run_id": 37275496032,
+    "artifact_id": 11330051871,
+    "run_url": "https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37275496032",
+    "artifact_url": "https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37275496032/artifacts/11330051871",
+    "browser": "Chrome154.0.8037.57",
+    "platform": "GitHub Actions Linux",
+    "sandbox": true,
+    "screenshots": 61,
+    "paired_label_scenarios": 28,
+    "launcher_samples": 32,
+    "result": "passed"
   },
-  "pixel_comparison": {
-    "evidence": "dual-label-preservation.json",
-    "reference_head": "2d88a29993f6d0bc6b2b2c881ac7a55865cc2c70",
-    "scope": "Default and 70% compact, DPR1 and DPR2, identical synthetic frame. This does not claim every scene or native-game rendering is pixel-identical.",
-    "default_dpr2": {
-      "compared_pixels": 476857,
-      "differing_pixels": 0
-    },
-    "compact_dpr2": {
-      "compared_pixels": 233439,
-      "differing_pixels": 0
-    },
-    "compact_dpr1": {
-      "compared_pixels": 58441,
-      "differing_pixels": 0
-    },
-    "default_dpr1": {
-      "compared_pixels": 119025,
-      "differing_pixels": 64,
-      "location": "far-left outer fascia edge, screen x741..771/y514..553",
-      "interpretation": "No source fascia/arc change and no visible structural defect; cross-run raster difference retained without asserting a proven cause"
-    }
-  },
-  "curated_previews": [
-    {
-      "file": "detail-metric.png",
-      "source": "metric-1280x720-dpr2.png",
-      "derivation": "Alpha-bound crop; exact RGBA crop comparison passed"
-    },
-    {
-      "file": "detail-compact.png",
-      "source": "compact-1280x720-dpr2.png",
-      "derivation": "Alpha-bound crop; exact RGBA crop comparison passed"
-    },
-    {
-      "file": "metric-1280x720.png",
-      "source": "metric-1280x720-dpr1.png",
-      "derivation": "Full viewport; exact RGBA comparison passed"
-    },
-    {
-      "file": "ap1-boost-scale-comparison.png",
-      "derivation": "Four actual default-DPR1 metric/imperial by BOOST/VAC crops, unscaled; labelled 8-bit PNG"
-    },
-    {
-      "file": "states.png",
-      "derivation": "Nine actual compact/zero/missing/stale crops, unscaled; labelled 8-bit PNG"
-    }
+  "pixel_comparison": "caption-order-preservation.json",
+  "visual_findings": [
+    "VAC above BOOST, both centered over the same unchanged rail",
+    "Default and70% compact, DPR1/DPR2 contain both captions without overlap",
+    "Metric/imperial and positive/negative/zero/missing/stale active/dim selection preserved",
+    "Four matching renders show0 differing pixels outside only old/new mode-caption ink rectangles"
   ],
-  "historical_assets": [
-    "before-after.png: old fuel-version arc revision, not current BOOST",
-    "monochrome-boost-preservation.json: prior single-caption comparison"
+  "limitations": [
+    "Final documentation-head CI and ready-for-review transition pending",
+    "Windows native/game acceptance unperformed; review readiness is not reviewer approval"
   ],
-  "scope_limitations": [
-    "Final documentation-head CI and user review pending",
-    "No native Windows, actual network/game acceptance or user approval",
-    "TN LCD is user design context, not independently hardware-verified here",
-    "Exact cross-run pixel identity does not hold for 64 default-DPR1 outer-fascia-edge pixels; no expanded mask or tolerance hides them"
-  ],
-  "audit_json_derivation": "Only JSON whitespace compacted; parsed values exactly equal original run artifact, no nested historical metadata added"
+  "previews": [
+    "detail-metric.png",
+    "detail-compact.png",
+    "ap1-boost-scale-comparison.png",
+    "states.png",
+    "metric-1280x720.png"
+  ]
 }
