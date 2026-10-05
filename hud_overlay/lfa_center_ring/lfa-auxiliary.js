@@ -44,6 +44,14 @@
         if (value < -999) return 'LO';
         return String(Number(value.toFixed(digits)));
     }
+    function boostScale(bar) {
+        const available = finite(bar) !== null, negative = available && bar < 0;
+        // Both the fill and major graduations use this physical-bar mapping.
+        // Vacuum reuses the whole curve with a separate, explicit magnitude scale.
+        const fraction = value => negative ? clamp(value) : value <= 1 ? clamp(value) * .75 : .75 + clamp(value - 1) * .25;
+        const ticks = negative ? [0, .25, .5, 1] : [0, .5, 1, 2];
+        return { fraction: available ? fraction(Math.abs(bar)) : null, negative, ticks, tickFractions: ticks.map(fraction) };
+    }
     function display(snapshot, settings) {
         const a = snapshot || normalize({}), metric = a.metric ?? settings.isMetric;
         const temperatureUnit = a.temperatureUnit || settings.temperatureUnit || (metric ? 'C' : 'F');
@@ -53,19 +61,21 @@
         const temperatureTicks = [20, 60, 100, 140].map(v => String(temperatureUnit === 'F' ? v * 9 / 5 + 32 : v));
         const boostBar = a.boostPsi === null ? null : a.boostPsi / PSI_PER_BAR;
         const boostValue = a.boostPsi === null ? null : fromPsi(a.boostPsi, boostUnit);
-        // Classic JDM convention: vacuum -1..0 bar gets 35%, boost 0..2 gets 65%.
-        const boostFraction = boostBar === null ? null : boostBar <= 0 ? clamp(boostBar + 1) * .35 : .35 + clamp(boostBar / 2) * .65;
+        const scale = boostScale(boostBar);
+        const boostDigits = boostUnit === 'bar' ? 2 : 1;
+        const roundedBoost = compact(boostValue, boostDigits);
+        const boostText = a.boostPsi < 0 && roundedBoost === '0' ? '-' + (0).toFixed(boostDigits) : roundedBoost;
         return {
             tireValue, tireText: compact(tireValue, 1), temperatureUnit: '°' + temperatureUnit,
             temperatureTicks, tireFraction: tireC === null ? null : clamp((tireC - 20) / 120),
             tireBand: tireC === null ? 'unavailable' : tireC < 75 ? 'cold' : tireC > 105 ? 'hot' : 'normal',
-            boostValue, boostText: compact(boostValue, boostUnit === 'bar' ? 2 : 1), boostUnit: boostUnit === 'kpa' ? 'kPa' : boostUnit,
-            boostTicks: [-1, 0, 1, 2].map(v => compact(fromPsi(v * PSI_PER_BAR, boostUnit), boostUnit === 'bar' ? 0 : 1)),
-            boostFraction, boostNegative: boostBar !== null && boostBar < 0,
+            boostValue, boostText, boostUnit: boostUnit === 'kpa' ? 'kPa' : boostUnit,
+            boostTicks: scale.ticks.map(v => compact(fromPsi(v * PSI_PER_BAR, boostUnit), boostUnit === 'bar' ? 2 : 1)),
+            boostFraction: scale.fraction, boostNegative: scale.negative, boostTickFractions: scale.tickFractions,
             throttle: a.throttle, brake: a.brake,
             throttleText: a.throttle === null ? 'N/A' : Math.round(a.throttle * 100) + '%',
             brakeText: a.brake === null ? 'N/A' : Math.round(a.brake * 100) + '%',
         };
     }
-    root.LfaAuxiliary = { averageTireF, boostPsi, normalize, display, unit };
+    root.LfaAuxiliary = { averageTireF, boostPsi, boostScale, normalize, display, unit };
 })(typeof window === 'undefined' ? globalThis : window);

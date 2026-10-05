@@ -30,5 +30,7 @@
     opacity: 0;
 }
 .lfa-brake-fill { stroke: var(--lfa-red); }
+.lfa-boost-marks { stroke: var(--lfa-secondary); stroke-width: 1.1px; }
+.lfa-vacuum-label { fill: var(--lfa-cold, #8fcee5); }
 #lfaTireFill[data-band="cold"], #lfaBoostFill[data-negative="true"] { stroke: var(--lfa-cold, #8fcee5); }
 #lfaTireFill[data-band="hot"] { stroke: var(--lfa-red); }

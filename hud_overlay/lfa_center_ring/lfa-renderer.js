@@ -8,9 +8,11 @@
         const scaleCanvas = get('lfaScale'), needleCanvas = get('lfaNeedle');
         const dial = scaleCanvas.getContext('2d'), needle = needleCanvas.getContext('2d');
         const nodes = {};
-        ['Speed', 'SpeedUnit', 'Gear', 'Status', 'Tire', 'TireFill', 'TireGauge', 'Boost', 'BoostUnit', 'BoostFill', 'BoostGauge', 'Throttle', 'ThrottleFill', 'ThrottleGauge', 'Brake', 'BrakeFill', 'BrakeGauge', 'LapTime', 'SelfCheck'].forEach((n) => { nodes[n] = get('lfa' + n); });
+        ['Speed', 'SpeedUnit', 'Gear', 'Status', 'Tire', 'TireFill', 'TireGauge', 'Boost', 'BoostUnit', 'BoostMode', 'BoostFill', 'BoostGauge', 'Throttle', 'ThrottleFill', 'ThrottleGauge', 'Brake', 'BrakeFill', 'BrakeGauge', 'LapTime', 'SelfCheck'].forEach((n) => { nodes[n] = get('lfa' + n); });
         for (const name of ['Tire', 'Boost']) for (let i = 0; i < 4; i++) nodes[name + 'Tick' + i] = get('lfa' + name + 'Tick' + i);
+        for (let i = 0; i < 4; i++) nodes['BoostMark' + i] = get('lfaBoostMark' + i);
         let colors, dialKey = '', lastNeedle = '', ratio = 2;
+        let boostTicksKey = '';
         function setText(name, value) { if (nodes[name].textContent !== value) nodes[name].textContent = value; }
         function palette(settings) {
             const css = root.getComputedStyle(container);
@@ -77,6 +79,19 @@
             needle.beginPath(); needle.moveTo(150, 0); needle.lineTo(100, -2.1); needle.lineTo(100, 2.1); needle.closePath(); needle.fill();
             needle.restore();
         }
+        function positionBoostTicks(fractions) {
+            const key = fractions.join(':');
+            if (key === boostTicksKey) return;
+            boostTicksKey = key;
+            const length = nodes.BoostFill.getTotalLength();
+            fractions.forEach((fraction, i) => {
+                const point = nodes.BoostFill.getPointAtLength(length * fraction), mark = nodes['BoostMark' + i];
+                mark.setAttribute('x1', point.x); mark.setAttribute('y1', point.y);
+                mark.setAttribute('x2', point.x - 9); mark.setAttribute('y2', point.y);
+                nodes['BoostTick' + i].setAttribute('x', point.x - 12);
+                nodes['BoostTick' + i].setAttribute('y', point.y + 4);
+            });
+        }
         function render(v, check, settings) {
             drawScale(v); drawNeedle(v, check, settings);
             setText('Speed', v.speedText); setText('SpeedUnit', v.speedUnit); setText('Gear', v.gear);
@@ -84,6 +99,8 @@
             const a = v.auxiliary;
             setText('Tire', a.tireText === 'N/A' ? 'N/A' : a.tireText + a.temperatureUnit);
             setText('Boost', a.boostText); setText('BoostUnit', a.boostUnit);
+            setText('BoostMode', a.boostNegative ? 'VAC' : '');
+            positionBoostTicks(a.boostTickFractions);
             setText('Throttle', a.throttleText); setText('Brake', a.brakeText); setText('LapTime', v.lapText);
             for (let i = 0; i < 4; i++) {
                 setText('TireTick' + i, a.temperatureTicks[i] + (i === 3 ? a.temperatureUnit : ''));
@@ -94,6 +111,7 @@
                 nodes[name + 'Fill'].style.opacity = fraction === null ? '0' : '1';
                 nodes[name + 'Gauge'].setAttribute('aria-label', fraction === null ? name + ' unavailable' : name + ' ' + value);
             }
+            if (a.boostNegative) nodes.BoostGauge.setAttribute('aria-label', 'Vacuum ' + a.boostText + ' ' + a.boostUnit);
             nodes.TireFill.dataset.band = a.tireBand;
             nodes.BoostFill.dataset.negative = String(a.boostNegative);
             nodes.SelfCheck.hidden = check === null;

@@ -34,7 +34,7 @@ describe('LFA measured auxiliary gauges', () => {
   });
   it('preserves signed raw PSI and valid zero instead of clamped coordinator aliases', () => {
     expect(view({ Boost: -7.2519, boost_psi: 0, boost_bar: 0 }).auxiliary).toMatchObject({ boostValue: -.5, boostText: '-0.5', boostUnit: 'bar', boostNegative: true });
-    expect(view({ Boost: 0 }).auxiliary).toMatchObject({ boostValue: 0, boostText: '0', boostFraction: .35 });
+    expect(view({ Boost: 0 }).auxiliary).toMatchObject({ boostValue: 0, boostText: '0', boostFraction: 0, boostNegative: false });
     expect(view({ Boost: 14.5038 }).auxiliary.boostValue).toBeCloseTo(1);
   });
   it('never fabricates boost from default-zero aliases when a raw signal is absent or invalid', () => {
@@ -52,9 +52,39 @@ describe('LFA measured auxiliary gauges', () => {
     expect(view({}, { effectiveUnits: { boostPressure: 'kpa' } }).auxiliary).toMatchObject({ boostText: '100', boostUnit: 'kPa' });
     expect(view({ displayUnits: { boostPressure: 'bar' } }, { effectiveUnits: { boostPressure: 'psi' } }).auxiliary.boostUnit).toBe('bar');
   });
-  it('keeps unclamped signed boost text while bounding the −1…2bar arc', () => {
-    expect(view({ boost_psi: -29.0076 }).auxiliary).toMatchObject({ boostText: '-2', boostFraction: 0 });
+  it('keeps unclamped signed boost text while bounding both positive and vacuum arc geometry', () => {
+    expect(view({ boost_psi: -29.0076 }).auxiliary).toMatchObject({ boostText: '-2', boostFraction: 1, boostNegative: true });
     expect(view({ boost_psi: 72.519 }).auxiliary).toMatchObject({ boostText: '5', boostFraction: 1 });
+  });
+  it('retains the sign of tiny vacuum readings that round to zero in every display unit', () => {
+    for (const [boostPressure, text] of [['bar', '-0.00'], ['psi', '-0.0'], ['kpa', '-0.0']]) {
+      expect(view({ Boost: -.00001 }, { effectiveUnits: { boostPressure } }).auxiliary).toMatchObject({ boostText: text, boostNegative: true });
+      for (const Boost of [0, -0]) expect(view({ Boost }, { effectiveUnits: { boostPressure } }).auxiliary).toMatchObject({ boostText: '0', boostNegative: false, boostFraction: 0 });
+    }
+  });
+  it('expands 0–1bar to 75% with continuous monotonic positive mapping and aligned major ticks', () => {
+    for (const [bar, fraction] of [[0, 0], [.25, .1875], [.5, .375], [1, .75], [1.5, .875], [2, 1], [5, 1]]) expect(A.boostScale(bar).fraction).toBe(fraction);
+    expect(A.boostScale(1)).toMatchObject({ ticks: [0, .5, 1, 2], tickFractions: [0, .375, .75, 1], negative: false });
+    expect(A.boostScale(1 - 1e-8).fraction).toBeCloseTo(.75, 7);
+    expect(A.boostScale(1 + 1e-8).fraction).toBeCloseTo(.75, 7);
+    const fractions = Array.from({ length: 251 }, (_, i) => A.boostScale(i / 100).fraction);
+    expect(fractions.every((f, i) => i === 0 || f >= fractions[i - 1])).toBe(true);
+  });
+  it('uses the full shared arc for linear vacuum magnitude with its own truthful ticks', () => {
+    for (const [bar, fraction] of [[-.25, .25], [-.5, .5], [-1, 1], [-2, 1]]) expect(A.boostScale(bar)).toMatchObject({ fraction, negative: true, ticks: [0, .25, .5, 1], tickFractions: [0, .25, .5, 1] });
+    for (const invalid of [null, undefined, NaN, Infinity, -Infinity, '1']) expect(A.boostScale(invalid)).toMatchObject({ fraction: null, negative: false });
+    expect(A.boostScale(-0)).toMatchObject({ fraction: 0, negative: false });
+  });
+  it('keeps physical arc fractions invariant across bar, psi and kPa displays and source units', () => {
+    for (const bar of [-1, -.5, 0, .25, .5, 1, 2, 5]) {
+      const fraction = A.boostScale(bar).fraction;
+      for (const boostPressure of ['bar', 'psi', 'kpa']) expect(view({ Boost: bar * 14.5038 }, { effectiveUnits: { boostPressure } }).auxiliary.boostFraction).toBeCloseTo(fraction);
+      for (const data of [{ boost_bar: bar }, { boost_psi: bar * 14.5038 }, { boost_kpa: bar * 14.5038 * 6.89476 }]) expect(A.display(A.normalize(data), M.config({})).boostFraction).toBeCloseTo(fraction);
+    }
+    expect(view().auxiliary.boostTicks).toEqual(['0', '0.5', '1', '2']);
+    expect(view({}, { effectiveUnits: { boostPressure: 'psi' } }).auxiliary.boostTicks).toEqual(['0', '7.3', '14.5', '29']);
+    expect(view({}, { effectiveUnits: { boostPressure: 'kpa' } }).auxiliary.boostTicks).toEqual(['0', '50', '100', '200']);
+    expect(view({ Boost: -7.2519 }).auxiliary.boostTicks).toEqual(['0', '0.25', '0.5', '1']);
   });
   it('uses both pedal ratios, retaining genuine zero and clamping valid finite extremes', () => {
     expect(view({ throttle: 0, brake: 0 }).auxiliary).toMatchObject({ throttleText: '0%', brakeText: '0%', throttle: 0, brake: 0 });
@@ -132,15 +162,24 @@ describe('LFA reported laps and rank', () => {
 describe('LFA auxiliary and session DOM projection', () => {
   it('renders signed/unit values, pedal percentages, lap/rank and clears all active fills when stale', () => {
     const nodes: Record<string, any> = {};
-    const element = (id: string) => nodes[id] ||= { textContent: '', dataset: {}, style: { setProperty: () => {} }, attrs: {}, setAttribute(name: string, value: string) { this.attrs[name] = value; }, getContext: () => null };
+    const element = (id: string) => nodes[id] ||= { textContent: '', dataset: {}, style: { setProperty: () => {} }, attrs: {}, setAttribute(name: string, value: string) { this.attrs[name] = value; }, getContext: () => null, getTotalLength: () => 100, getPointAtLength: (length: number) => ({ x: length, y: length }) };
     const window: any = { getComputedStyle: () => ({ getPropertyValue: () => '#edf7fa' }) };
     runInNewContext(readFileSync(resolve(directory, 'lfa-renderer.js'), 'utf8'), { window });
     const renderer = window.LfaRenderer.create({ getElementById: element }, M), s = session(); renderer.palette(s.state.settings);
     renderer.render(s.feed({ Boost: -7.2519 }), null, s.state.settings);
     expect(nodes.lfaTire.textContent).toBe('95°C'); expect(nodes.lfaBoost.textContent).toBe('-0.5'); expect(nodes.lfaBoostUnit.textContent).toBe('bar');
     expect(nodes.lfaThrottle.textContent).toBe('80%'); expect(nodes.lfaBrake.textContent).toBe('20%'); expect(nodes.lfaLapTime.textContent).toBe('0:34.21'); expect(nodes.lfaStatus.textContent).toBe('P3');
+    expect(nodes.lfaBoostMode.textContent).toBe('VAC'); expect(nodes.lfaBoostFill.dataset.negative).toBe('true');
+    expect(nodes.lfaBoostGauge.attrs['aria-label']).toBe('Vacuum -0.5 bar');
+    for (const [Boost, label, negative, fraction] of [[0, '', 'false', 0], [7.2519, '', 'false', .375], [null, '', 'false', 0], [-7.2519, 'VAC', 'true', .5]]) {
+      renderer.render(s.feed({ Boost }), null, s.state.settings);
+      expect(nodes.lfaBoostMode.textContent).toBe(label); expect(nodes.lfaBoostFill.dataset.negative).toBe(negative);
+      expect(parseFloat(nodes.lfaBoostFill.style.strokeDasharray) / 100).toBe(fraction);
+      expect(nodes.lfaBoostFill.style.opacity).toBe(Boost === null ? '0' : '1');
+    }
     renderer.render(M.view(s.state, 1600), null, s.state.settings);
     for (const name of ['Tire', 'Boost', 'Throttle', 'Brake']) expect(nodes['lfa' + name + 'Fill'].style.opacity).toBe('0');
     expect(nodes.lfaLapTime.textContent).toBe('—:—'); expect(nodes.lfaStatus.textContent).toBe('NO SIGNAL');
+    expect(nodes.lfaBoostMode.textContent).toBe(''); expect(nodes.lfaBoostFill.dataset.negative).toBe('false');
   });
 });

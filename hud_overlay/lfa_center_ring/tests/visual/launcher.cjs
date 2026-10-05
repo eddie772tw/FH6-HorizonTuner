@@ -45,7 +45,8 @@ async function main() {
     const state = await frame.evaluate(() => {
       const text = id => document.getElementById('lfa' + id)?.textContent;
       const e = document.getElementById(window.HUDCore.getActiveStyle().containerId), b = e.getBoundingClientRect();
-      return { readings: { speed:text('Speed'),gear:text('Gear'),status:text('Status'),tire:text('Tire'),boost:text('Boost'),boostUnit:text('BoostUnit'),throttle:text('Throttle'),brake:text('Brake'),lap:text('LapTime') },
+      const fill = document.getElementById('lfaBoostFill');
+      return { readings: { speed:text('Speed'),gear:text('Gear'),status:text('Status'),tire:text('Tire'),boost:text('Boost'),boostUnit:text('BoostUnit'),boostMode:text('BoostMode'),boostFraction:parseFloat(fill.style.strokeDasharray)/100,boostVisible:fill.style.opacity,throttle:text('Throttle'),brake:text('Brake'),lap:text('LapTime') },
         body:getComputedStyle(document.body).backgroundColor, bounds:{x:b.x,y:b.y,width:b.width,height:b.height,display:getComputedStyle(e).display} };
     });
     await page.screenshot({ path: path.join(out,name+'.png'), omitBackground: true }); samples.push({name,...state});
@@ -68,15 +69,19 @@ async function main() {
       window.auditFeed=setInterval(()=>{window.auditRaw.TimestampMS+=16;window.dispatchEvent(new CustomEvent('telemetry',{detail:{...window.auditRaw}}));},16);
     }, parser.samples[0].parsedJson);
     await page.waitForTimeout(300);
-    await record('host-parser-positive', {speed:'180',gear:'4',status:'P3',tire:'95°C',boost:'1',boostUnit:'bar',throttle:'80%',brake:'20%',lap:'0:34.21'});
-    await patch({Boost:parser.samples[1].parsedJson.Boost}); await record('host-parser-zero', {boost:'0'});
-    await patch({Boost:parser.samples[2].parsedJson.Boost}); await record('host-parser-negative', {boost:'-0.5'});
+    await record('host-parser-positive', {speed:'180',gear:'4',status:'P3',tire:'95°C',boost:'1',boostUnit:'bar',boostMode:'',throttle:'80%',brake:'20%',lap:'0:34.21'});
+    for (const [bar, boostFraction] of [[.25,.1875],[.5,.375],[1,.75],[2,1]]) {
+      await patch({Boost:bar*14.5038}); await record('host-nonlinear-boost-'+bar, {boost:String(bar),boostFraction,boostMode:''});
+    }
+    await patch({Boost:parser.samples[1].parsedJson.Boost}); await record('host-parser-zero', {boost:'0',boostFraction:0,boostMode:''});
+    await patch({Boost:-7.2519}); await record('host-vacuum-half', {boost:'-0.5',boostFraction:.5,boostMode:'VAC'});
+    await patch({Boost:parser.samples[2].parsedJson.Boost}); await record('host-parser-negative', {boost:'-0.5',boostMode:'VAC'});
     await units({speed:'mph',boostPressure:'psi',temperature:'F'});
     await record('host-imperial-units', {speed:'112',tire:'203°F',boost:'-7.3',boostUnit:'psi'});
     await units({speed:'kmh',boostPressure:'kpa',temperature:'C'});
     await record('host-independent-kpa', {tire:'95°C',boost:'-50',boostUnit:'kPa'});
     await page.evaluate(()=>{delete window.auditRaw.Boost;window.auditRaw.TireTemp=[176,null,212,230];}); await page.waitForTimeout(200);
-    await record('host-missing-boost-partial-tires', {boost:'N/A',tire:'N/A'});
+    await record('host-missing-boost-partial-tires', {boost:'N/A',tire:'N/A',boostFraction:0,boostVisible:'0',boostMode:''});
     await patch({Boost:14.5038,TireTemp:[176,194,212,230],AccelInput:0,BrakeInput:0});
     await record('host-zero-pedals', {throttle:'0%',brake:'0%'});
     await patch({AccelInput:255,BrakeInput:255}); await record('host-full-pedals', {throttle:'100%',brake:'100%'});

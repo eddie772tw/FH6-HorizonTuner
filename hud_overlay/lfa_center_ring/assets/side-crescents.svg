@@ -22,7 +22,6 @@
     </g>
     <g fill="none" stroke="#8fa1a9" stroke-width="1.1">
       <path d="M31 159h9M40.4 119h8M57.3 81.1h8M82 48h8"/>
-      <path d="M529 159h-9M518.9 117h-8M501.9 80h-8M478 48h-8"/>
       <path d="M31 214h11M40 237h6M54 262h6M74 288h6M102 314h11"/>
       <path d="M529 214h-11M520 237h-6M506 262h-6M486 288h-6M458 314h-11"/>
     </g>
@@ -34,6 +33,6 @@
       <g text-anchor="end"><text x="515" y="218">100</text><text x="444" y="318">0</text></g>
     </g>
     <use href="#tireIcon" transform="translate(84 110)"/>
-    <use href="#turboIcon" transform="translate(477 104)"/>
+    <use href="#turboIcon" transform="translate(474 118) scale(.8)"/>
   </g>
 </svg>

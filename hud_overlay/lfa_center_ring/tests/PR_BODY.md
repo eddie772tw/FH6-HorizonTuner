@@ -4,7 +4,11 @@
 
 依使用者最新要求，左上與左側中央改為四輪平均胎溫；左右下弧改為油門／煞車百分比、移除舊圖示；右上改為 signed boost 與原創渦輪圖案。右側中央顯示封包回報的本圈經過時間；原 LIVE 區改為有效排名及短暫的完成圈／最佳圈通知。**中央素材、geometry、CSS、刻度／指針繪圖及四弧輪廓保留**。
 
-### Actual Renderer Previews
+最新追加修訂僅調整右上增壓量尺：正增壓 0–1 bar 佔弧長 75%、1–2 bar 佔 25%；負壓用同一弧條的藍色 VAC 顯示。填充與刻度同步按弧長切換，保留負號與實際數值。**本機 gate 已通過，新 Chrome 視覺驗證待 CI**。
+
+### Actual Renderer Previews — Prior Boost Scale
+
+以下圖片尚為前版增壓量尺；待新 CI 取得實際非等比例／VAC 畫面後替換，不能視為本次比例修訂的像素驗收。
 
 以下為新版 **Chrome 154.0.8037.57 真實 renderer** 截圖，取自成功的 [run 37264359295](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37264359295)，來源 `eac1b9e5bd360a3ca4e9359bd142b43de7c6a0f6`、artifact `11324929540`。主圖與 720p 圖保留截圖像素；狀態圖只縮小並排列實際畫面。所有圖片均為合成遙測 fixture，**不是遊戲截圖**。本次資料與計圈修訂已實作並檢查，仍待使用者視覺驗收。
 
@@ -21,19 +25,20 @@
 - **平均胎溫**：canonical `tire_temp_f` 必須有四個有限 number，全部有效才做算術平均；不補零、不做部分平均。明確標示 TIRE 4W，C/F 可用時遵循設定，否則沿用 HUD 公英制 fallback
 - **踏板**：有限 throttle／brake ratio 夾 0–1，顯示 0–100%；真實0與缺失N/A區分，保留數字、THR／BRK，沒有舊燃油／油壓圖示
 - **增壓**：官方 UDP／JSON 原始 Boost 為 PSI above atmospheric，保留正／負／0；不讓 coordinator 補零或正值夾限 aliases 掩蓋缺失／負壓。支援 bar／psi／kPa 獨立單位，原創渦輪圖示；只夾弧條，不把數字夾成量尺端點
-- **量尺**：胎溫20–140°C（68–284°F）；增壓−1…2bar、負壓弧段35%／正壓65%，依既有 Classic JDM 約定；數字保留實際讀值
+- **量尺**：胎溫20–140°C（68–284°F）不變；正增壓0–1bar佔75%弧長、1–2bar佔25%。0／0.5／1／2刻度實際位於0／37.5／75／100%弧長，bar／psi／kPa物理比例相同
+- **VAC**：負壓幅值0–1bar線性使用整條藍色弧，顯示VAC；刻度同步變為0／0.25／0.5／1幅值、位置0／25／50／100%。數字仍帶負號，微小負值保留-0.00或-0.0；真實0空弧、缺失N/A無填充。只有圖形夾限，signed數字不夾限
 - **計圈與排名**：CurrentLap 使用秒，接受0、缺失保留 `—:—`，不做時間外推；最大99:59.99，超出時不擠破側錶。有效正整數排名顯示P#；有真實完成圈或最佳時間改善才通知3秒，同時發生優先BEST LAP
 - **狀態優先順序**：失效／錯誤／暫停 → SHIFT → BEST LAP／LAP n → P# → LIVE。首次baseline、重連、重播、倒序或重設不產生假慶祝，通知不會因重播而延長
 - **中央保留**：原PNG／SVG SHA-256、`lfa.css`、`drawScale()`／`drawNeedle()` 未變。相同中心讀值、沒有排名／通知的六個DPR2狀態，完整中央圓內逐像素比較均為零差異；rank/notice 是使用者明確允許的文字更新
 
 ### Pre-Commit & Local Verification
 
-- **Frontend Tests:** `pnpm -C frontend test`，**1,150 tests passed／1 skipped；157 files passed／1 skipped**，含45個LFA行為測試
+- **Frontend Tests:** `pnpm -C frontend test`，**1,154 tests passed／1 skipped；157 files passed／1 skipped**，含49個LFA行為測試
 - **Frontend Build:** `pnpm -C frontend run build:web-hud` 通過；新模組已打包，tests／fixture／PR body不隨產品散布
 - **Syntax / Whitespace:** 新JS、兩個browser runner的`node --check`及`git diff --check`通過
 - **Parser／JSON Provenance:** style-owned `tests/fixtures/udp-parser-samples.json` 取自未修改的真正Rust parser與production JSON serialization：+14.5038／0／−7.2519PSI，四輪203°F平均＝95°C，踏板204／51＝80%／20%，CurrentLap34.21／LapNumber2／P3
-- **Actual Browser Gate:** 上述GitHub Actions Chrome renderer與launcher均通過，`chromiumSandbox:true`；1280×720／1920×1080／2560×1440 DPR1及1920×1080 DPR2無錯誤。涵蓋C/F與bar/psi/kPa、正負零缺失boost、胎溫部分缺失、踏板夾限、排名／圈通知／重設／最大時間寬度與原生命週期；launcher以真正coordinator、開啟smoothing接收上述parser JSON，亦通過過期清空／重連／設定／重載／destroy
-- **Pixel Review:** 已查看實際單位、負壓、零值、缺失、圈通知與最大寬度截圖，未見標籤重疊或侵入中央圓。對照`ad4458e`的840×556 DPR2截圖，以圓心(420,277.5)、半徑267px、像素中心落在圓內為條件逐一比較原始RGBA；metric／imperial／reverse／neutral／redline／high-RPM六個狀態，各223,942像素均為AE0，沒有容差或重新取樣。missing／no-signal因舊fixture為mph、新fixture為km/h，各504個單位文字像素不同，並非相同條件；不宣稱所有解析度逐位元一致
+- **Previous Browser Gate (new boost scale pending):** 上述GitHub Actions Chrome renderer與launcher均通過，`chromiumSandbox:true`；1280×720／1920×1080／2560×1440 DPR1及1920×1080 DPR2無錯誤。涵蓋C/F與bar/psi/kPa、正負零缺失boost、胎溫部分缺失、踏板夾限、排名／圈通知／重設／最大時間寬度與原生命週期；launcher以真正coordinator、開啟smoothing接收上述parser JSON，亦通過過期清空／重連／設定／重載／destroy
+- **Previous Pixel Review (new boost scale pending):** 已查看實際單位、負壓、零值、缺失、圈通知與最大寬度截圖，未見標籤重疊或侵入中央圓。對照`ad4458e`的840×556 DPR2截圖，以圓心(420,277.5)、半徑267px、像素中心落在圓內為條件逐一比較原始RGBA；metric／imperial／reverse／neutral／redline／high-RPM六個狀態，各223,942像素均為AE0，沒有容差或重新取樣。missing／no-signal因舊fixture為mph、新fixture為km/h，各504個單位文字像素不同，並非相同條件；不宣稱所有解析度逐位元一致
 - **Evidence:** [renderer](RAW_PREFIX/docs/assets/lfa-center-ring/evidence.json)、[launcher](RAW_PREFIX/docs/assets/lfa-center-ring/launcher-report.json)、[中央保留比較](RAW_PREFIX/docs/assets/lfa-center-ring/telemetry-center-preservation.json)、[UDP／JSON單位稽核](RAW_PREFIX/docs/assets/lfa-center-ring/json-unit-audit.json)、[驗證摘要](RAW_PREFIX/docs/assets/lfa-center-ring/verification.json)
 
 上述成功結果對應已驗證的runtime head；補入本次文件與預覽後的最終文件commit CI仍待執行。
@@ -45,6 +50,8 @@ frontend另一個Pa converter與binary packing通道有既存單位解讀差異�
 Windows原生overlay、click-through、置頂與Forza實機仍未驗證。預設420×277.5 CSS px、右下30px槽位假設取代遊戲原生儀表，仍需實機檢查提示／字幕遮擋。
 
 ### Living Changelog & Review Iterations
+
+- 2026-10-05（Bagley as Codex）：依最新要求只調整右上正增壓非等比例刻度與藍色VAC模式，刻度和填充共用弧長映射；移除舊固定刻度、微調渦輪圖示，新增單調性／轉折／單位不變／微小負值／模式切換測試與實際Chrome scenarios。本機測試與build通過，新Chrome證據待取得
 
 - 2026-10-05（Bagley as Codex）：建立官方Normal display原型與原創中央素材，依截圖修正字距並保留獲使用者肯定的中央
 - 2026-10-05（Bagley as Codex）：補看多張實車照片，將側面重建為四弧量尺

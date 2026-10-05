@@ -56,6 +56,31 @@ try {
     async function detail(name) {
       if (width === 1920 && dpr === 2) await frame.locator('#lfaContainer').screenshot({ path: path.join(out, `detail-${name}.png`), omitBackground: true });
     }
+    async function boostState(fraction, negative, labels) {
+      const state = await frame.evaluate(() => {
+        const get = id => document.getElementById('lfa' + id), fill = get('BoostFill'), length = fill.getTotalLength();
+        const fractions = fill.dataset.negative === 'true' ? [0, .25, .5, 1] : [0, .375, .75, 1];
+        const errors = fractions.map((f, i) => {
+          const point = fill.getPointAtLength(length * f), mark = get('BoostMark' + i);
+          return Math.hypot(point.x - Number(mark.getAttribute('x1')), point.y - Number(mark.getAttribute('y1')));
+        });
+        const readings = ['BoostTick0', 'BoostTick1', 'BoostTick2', 'BoostTick3', 'Boost', 'BoostUnit', 'BoostMode'].filter(id => get(id).textContent).map(id => ({ id, bounds: get(id).getBBox() }));
+        const overlaps = [];
+        for (let i = 0; i < readings.length; i++) for (let j = i + 1; j < readings.length; j++) {
+          const a = readings[i].bounds, b = readings[j].bounds;
+          if (a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y) overlaps.push([readings[i].id, readings[j].id]);
+        }
+        return { fraction: parseFloat(fill.style.strokeDasharray) / 100, opacity: fill.style.opacity, negative: fill.dataset.negative, mode: get('BoostMode').textContent,
+          stroke: getComputedStyle(fill).stroke, vacuumColor: getComputedStyle(get('BoostMode')).fill, ticks: fractions.map((_, i) => get('BoostTick' + i).textContent), errors, overlaps };
+      });
+      assert.ok(Math.abs(state.fraction - (fraction ?? 0)) < 1e-6);
+      assert.equal(state.opacity, fraction === null ? '0' : '1');
+      assert.equal(state.negative, String(negative)); assert.equal(state.mode, negative ? 'VAC' : '');
+      if (negative) assert.equal(state.stroke, state.vacuumColor); else assert.notEqual(state.stroke, state.vacuumColor);
+      if (labels) assert.deepEqual(state.ticks, labels);
+      assert.ok(state.errors.every(error => error < .001), 'Major marks follow the same arc-length mapping as the fill');
+      assert.deepEqual(state.overlaps, [], 'Upper-right text must not overlap');
+    }
     await reading(); assert.equal(await text(frame, 'Speed'), '180'); assert.equal(await text(frame, 'Tire'), '95°C');
     assert.equal(await text(frame, 'Boost'), '1'); assert.equal(await text(frame, 'Throttle'), '80%'); assert.equal(await text(frame, 'Brake'), '20%');
     const rect = await frame.locator('#lfaContainer').boundingBox();
@@ -69,6 +94,12 @@ try {
       await reading({ rpm: 8400, gear: 5, throttle: 1 }); assert.equal(await text(frame, 'Status'), 'SHIFT');
       await frame.locator('#lfaContainer').screenshot({ path: path.join(out, 'detail-redline.png'), omitBackground: true });
     }
+    for (const [bar, fraction, name] of [[.25, .1875, 'quarter'], [.5, .375, 'half'], [1, .75, 'one'], [2, 1, 'two'], [-.5, .5, 'vacuum-half'], [0, 0, 'zero']]) {
+      await reading({ boost_psi: bar * 14.5038 });
+      await boostState(fraction, bar < 0, bar < 0 ? ['0', '0.25', '0.5', '1'] : ['0', '0.5', '1', '2']);
+      await detail('boost-' + name);
+    }
+    await reading({ boost_psi: undefined }); await boostState(null, false); await detail('boost-unavailable');
     await send(frame, 'config', { data: { isMetric: false, useDefaultColors: false, customColor: '#93d9ed', glowIntensity: 0, scale: 1 } });
     await reading({ displayUnits: { speed: 'mph' } }); assert.equal(await text(frame, 'Speed'), '112'); assert.equal(await text(frame, 'SpeedUnit'), 'mph');
     await detail('imperial');
@@ -79,10 +110,11 @@ try {
     await reading({ rpm: 15000, maxRpm: 16000, redlineRpm: 15000 }); assert.equal(await text(frame, 'Status'), 'SHIFT');
     await detail('high-rpm');
     await send(frame, 'config', { data: { isMetric: true, effectiveUnits: { temperature: 'F', boostPressure: 'psi' } } });
-    await reading(); assert.equal(await text(frame, 'Tire'), '203°F'); assert.equal(await text(frame, 'BoostUnit'), 'psi'); assert.equal(await text(frame, 'Boost'), '14.5'); await detail('aux-psi-fahrenheit');
+    await reading(); assert.equal(await text(frame, 'Tire'), '203°F'); assert.equal(await text(frame, 'BoostUnit'), 'psi'); assert.equal(await text(frame, 'Boost'), '14.5'); await boostState(.75, false, ['0', '7.3', '14.5', '29']); await detail('aux-psi-fahrenheit');
+    await reading({ Boost: -7.2519 }); await boostState(.5, true, ['0', '3.6', '7.3', '14.5']); await detail('boost-vacuum-psi');
     await send(frame, 'config', { data: { effectiveUnits: { temperature: 'C', boostPressure: 'kpa' } } });
-    await reading(); assert.equal(await text(frame, 'Boost'), '100'); assert.equal(await text(frame, 'BoostUnit'), 'kPa'); await detail('aux-kpa');
-    await reading({ Boost: -7.2519, boost_psi: 0 }); assert.equal(await text(frame, 'Boost'), '-50'); await detail('aux-negative-boost');
+    await reading(); assert.equal(await text(frame, 'Boost'), '100'); assert.equal(await text(frame, 'BoostUnit'), 'kPa'); await boostState(.75, false, ['0', '50', '100', '200']); await detail('aux-kpa');
+    await reading({ Boost: -7.2519, boost_psi: 0 }); assert.equal(await text(frame, 'Boost'), '-50'); await boostState(.5, true, ['0', '25', '50', '100']); await detail('aux-negative-boost');
     await reading({ Boost: 0, throttle: 0, brake: 0, tire_temp_f: [32, 32, 32, 32] });
     assert.equal(await text(frame, 'Boost'), '0'); assert.equal(await text(frame, 'Throttle'), '0%'); assert.equal(await text(frame, 'Brake'), '0%'); assert.equal(await text(frame, 'Tire'), '0°C'); await detail('aux-zero');
     await reading({ tire_temp_f: [176, null, 212, 230], boost_psi: undefined }); assert.equal(await text(frame, 'Tire'), 'N/A'); assert.equal(await text(frame, 'Boost'), 'N/A'); await detail('aux-partial-missing');
@@ -120,7 +152,7 @@ try {
     await reading(); assert.equal(await frame.locator('#lfaSelfCheck').isVisible(), false);
     await send(frame, 'hud:destroy'); await page.waitForTimeout(50); assert.equal(await frame.locator('#lfaContainer').count(), 0);
     assert.deepEqual(errors, []);
-    summary.scenarios.push({ viewport: { width, height }, dpr, rect, tests: ['init', 'config', 'metric', 'imperial', 'reverse', 'neutral', 'redline', '16000-rpm-scale', 'four-tire-average-C-F', 'boost-bar-psi-kPa', 'signed-zero-missing-boost', 'pedal-percent-clamps', 'partial-tire-unavailable', 'rank-reported-lap', 'lap-and-best-notices', 'notice-expiry-reset', 'lap-max-width-overflow', 'missing', 'invalid', 'error', 'pause', 'replayed-timestamp-stale', 'reconnect', 'visibility', 'resize', 'animate', 'destroy', 'dpr-backing-store', 'transparent-outside'], errors });
+    summary.scenarios.push({ viewport: { width, height }, dpr, rect, tests: ['init', 'config', 'metric', 'imperial', 'reverse', 'neutral', 'redline', '16000-rpm-scale', 'four-tire-average-C-F', 'boost-bar-psi-kPa', 'nonlinear-positive-boost', 'vacuum-magnitude-scale-and-blue-label', 'arc-length-major-marks', 'upper-right-text-no-overlap', 'signed-zero-missing-boost', 'pedal-percent-clamps', 'partial-tire-unavailable', 'rank-reported-lap', 'lap-and-best-notices', 'notice-expiry-reset', 'lap-max-width-overflow', 'missing', 'invalid', 'error', 'pause', 'replayed-timestamp-stale', 'reconnect', 'visibility', 'resize', 'animate', 'destroy', 'dpr-backing-store', 'transparent-outside'], errors });
     await context.close();
   }
   summary.passed = true;
