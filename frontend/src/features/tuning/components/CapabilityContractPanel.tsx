@@ -1,5 +1,5 @@
 import React from 'react';
-import { TuningCapabilityContract } from '../../../domain/tuning/contracts';
+import type { TuningCapabilityContract } from '../../../domain/tuning/types';
 
 interface CapabilityContractPanelProps {
   contract: TuningCapabilityContract;

@@ -1,5 +1,5 @@
 import { backendFetch } from '../../services/backend';
-import type { ChassisTuningResult, StaticTireAlignResult, Season, TuningCarParams } from '../../utils/tuningMath';
+import type { ChassisTuningResult, StaticTireAlignResult, Season, TuningCarParams } from '../../domain/tuning/types';
 
 export interface MechanicalResult {
   schemaVersion: 'tuning-mechanical/v1';

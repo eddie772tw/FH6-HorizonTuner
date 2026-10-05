@@ -4,7 +4,7 @@ import { RoadWorkflowView } from '../../road/RoadWorkflowView';
 import { backendFetch } from '../../../services/backend';
 import { captureSaveRequest } from '../captureDownload';
 import { useFileSave } from '../../../hooks/useFileSave';
-import type { WorkflowRecommendation } from '../workflowSnapshot';
+import type { WorkflowRecommendation } from '../../../domain/tuning/types';
 
 interface SavedCompatibility { id: string; discipline: string; createdAt: number; recommendation: WorkflowRecommendation }
 

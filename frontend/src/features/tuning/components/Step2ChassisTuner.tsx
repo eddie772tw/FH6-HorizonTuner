@@ -1,11 +1,7 @@
 import React, { useState } from 'react';
 import { useSettings } from '../../../context/SettingsContext';
 import { CarParams } from '../../../context/CarParamsContext';
-import {
-  ChassisTuningResult,
-  StaticTireAlignResult,
-  Season,
-} from '../../../utils/tuningMath';
+import type { ChassisTuningResult, StaticTireAlignResult, Season } from '../../../domain/tuning/types';
 
 interface Step2ChassisTunerProps {
   selectedRaceGoal: string;

@@ -1,4 +1,4 @@
-import type { TuningCarParams } from '../../utils/tuningMath';
+import type { TuningCarParams } from '../../domain/tuning/types';
 
 /** Recommended navigation order. Access follows data requirements, not visited pages. */
 export const TUNING_WORKFLOW_STEPS = [

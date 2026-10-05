@@ -1,4 +1,4 @@
-import { getWorkflowReadiness } from './legacyWorkflowReadiness';
+import { getWorkflowReadiness } from "../../../test-reference/tuning/features/tuning/legacyWorkflowReadiness";
 import { describe, expect, it } from 'vitest';
 import { canOpenTuningStep, nextTuningStep, resolveTuningStep, restoreWorkflowStep, serializeWorkflowProfile, TUNING_WORKFLOW_STEPS, updateWorkflowProfile } from './tuningWorkflow';
 

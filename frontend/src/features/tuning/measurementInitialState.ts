@@ -1,4 +1,4 @@
-import type { TuningMeasurementState } from './tuningMeasurement';
+import type { TuningMeasurementState } from '../../domain/tuning/types';
 
 // Empty transport state only. Evidence qualification is owned by Rust.
 export function createTuningMeasurement(carId: string): TuningMeasurementState {

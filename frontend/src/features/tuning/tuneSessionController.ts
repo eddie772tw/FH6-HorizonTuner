@@ -1,6 +1,6 @@
 import type { TuningCaptureMetadata } from '../../domain/tuning/telemetryCapture';
 import type { TelemetryData } from '../../hooks/useTelemetry';
-import type { TuningMeasurementState } from './tuningMeasurement';
+import type { TuningMeasurementState } from '../../domain/tuning/types';
 
 /**
  * Identity fields that make a Tune measurement unsafe to reuse. `profileKey`

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useSettings } from '../../../context/SettingsContext';
-import type { EngineObservation } from '../engineMeasurementArchive';
+import type { EngineObservation } from '../../../domain/tuning/types';
 import { savedCaptureSaveRequest } from '../captureDownload';
 import { useFileSave } from '../../../hooks/useFileSave';
 

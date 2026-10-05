@@ -4,7 +4,7 @@ import { useSettings } from '../../../context/SettingsContext';
 import { RallyProfileSetup } from './RallyProfileSetup';
 import { CarParams } from '../../../context/CarParamsContext';
 import { DragGearingSetup } from './DragGearingSetup';
-import { Season } from '../../../utils/tuningMath';
+import type { Season } from '../../../domain/tuning/types';
 import { DecimalInput } from '../../../components/common/DecimalInput';
 import { DriftModeGuidance } from './DriftModeGuidance';
 import { EvModeSwitch } from '../../car_params/components/EvModeSwitch';

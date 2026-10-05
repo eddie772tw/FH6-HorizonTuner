@@ -1,5 +1,5 @@
 import React from 'react';
-import { DevTuningOutput } from '../../../utils/tuningMath_dev';
+import type { DevTuningOutput } from '../../../domain/tuning/types';
 
 interface DevOutputPanelProps {
   output: DevTuningOutput;

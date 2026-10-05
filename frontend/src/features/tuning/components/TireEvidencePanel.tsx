@@ -1,5 +1,5 @@
 import { useSettings } from '../../../context/SettingsContext';
-import type { TireEvidenceResult } from '../tireEvidence';
+import type { TireEvidenceResult } from '../../../domain/tuning/types';
 
 export function TireEvidencePanel({ evidence }: { evidence: TireEvidenceResult | null }) {
   const { t, settings, convertTemp } = useSettings();
