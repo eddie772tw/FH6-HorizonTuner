@@ -6,11 +6,11 @@
   "reference_url": "https://www.honda.co.jp/factbook/auto/s2000/199904/image/037_001.gif",
   "product_code_test_gate": {
     "command": "pnpm -C frontend test",
-    "files_passed": 158,
+    "files_passed": 160,
     "files_skipped": 1,
-    "tests_passed": 1144,
+    "tests_passed": 1167,
     "tests_skipped": 1,
-    "style_cases": 39
+    "style_cases": 62
   },
   "build": {
     "command": "pnpm -C frontend build:web-hud",
@@ -46,6 +46,6 @@
   "remote_browser_review": {
     "result": "passed technical review; user review pending",
     "evidence": "review-evidence.json",
-    "reviewed_head": "662d93432243ff0d18d758651ae208436722a24a"
+    "reviewed_head": "a995df88fc8c4d4b4e6989c61a03e8c8a249cb6b"
   }
 }

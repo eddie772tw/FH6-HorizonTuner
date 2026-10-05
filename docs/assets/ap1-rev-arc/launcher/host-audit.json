@@ -5,11 +5,14 @@
   "samples": [
     {
       "name": "host-standby",
-      "text": "×1000 r/min\nGEAR\n—\nkm/h\nFUEL\nE\nF\n--\nWAITING FOR DATA\nAP1 / REV ARC\nRPM ----",
+      "text": "×1000 r/min\nGEAR\n—\nkm/h\nBOOST\n-1\n0\n+2\n-- bar\nWAITING FOR DATA",
       "readings": {
         "speed": "---",
         "gear": "—",
-        "status": "WAITING FOR DATA"
+        "status": "WAITING FOR DATA",
+        "boost": "-- bar",
+        "boostRange": "within",
+        "footerRemoved": true
       },
       "body": "rgba(0, 0, 0, 0)",
       "style": "ap1Cluster",
@@ -23,11 +26,140 @@
     },
     {
       "name": "host-cruise",
-      "text": "0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n×1000 r/min\nGEAR\n4\nkm/h\nFUEL\nE\nF\n68%\nAP1 / REV ARC\nRPM 6500",
+      "text": "0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n×1000 r/min\nGEAR\n4\nkm/h\nBOOST\n-1\n0\n+2\n1.00 bar",
       "readings": {
         "speed": "180",
         "gear": "4",
-        "status": ""
+        "status": "",
+        "boost": "1.00 bar",
+        "boostRange": "within",
+        "footerRemoved": true
+      },
+      "body": "rgba(0, 0, 0, 0)",
+      "style": "ap1Cluster",
+      "bounds": {
+        "x": 1350,
+        "y": 825,
+        "width": 540,
+        "height": 225,
+        "display": "block"
+      }
+    },
+    {
+      "name": "host-boost-zero",
+      "text": "0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n×1000 r/min\nGEAR\n4\nkm/h\nBOOST\n-1\n0\n+2\n0.00 bar",
+      "readings": {
+        "speed": "180",
+        "gear": "4",
+        "status": "",
+        "boost": "0.00 bar",
+        "boostRange": "within",
+        "footerRemoved": true
+      },
+      "body": "rgba(0, 0, 0, 0)",
+      "style": "ap1Cluster",
+      "bounds": {
+        "x": 1350,
+        "y": 825,
+        "width": 540,
+        "height": 225,
+        "display": "block"
+      }
+    },
+    {
+      "name": "host-boost-negative",
+      "text": "0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n×1000 r/min\nGEAR\n4\nkm/h\nBOOST\n-1\n0\n+2\n-0.50 bar",
+      "readings": {
+        "speed": "180",
+        "gear": "4",
+        "status": "",
+        "boost": "-0.50 bar",
+        "boostRange": "within",
+        "footerRemoved": true
+      },
+      "body": "rgba(0, 0, 0, 0)",
+      "style": "ap1Cluster",
+      "bounds": {
+        "x": 1350,
+        "y": 825,
+        "width": 540,
+        "height": 225,
+        "display": "block"
+      }
+    },
+    {
+      "name": "host-boost-missing",
+      "text": "0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n×1000 r/min\nGEAR\n4\nkm/h\nBOOST\n-1\n0\n+2\n-- bar",
+      "readings": {
+        "speed": "180",
+        "gear": "4",
+        "status": "",
+        "boost": "-- bar",
+        "boostRange": "within",
+        "footerRemoved": true
+      },
+      "body": "rgba(0, 0, 0, 0)",
+      "style": "ap1Cluster",
+      "bounds": {
+        "x": 1350,
+        "y": 825,
+        "width": 540,
+        "height": 225,
+        "display": "block"
+      }
+    },
+    {
+      "name": "host-boost-overflow",
+      "text": "0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n×1000 r/min\nGEAR\n4\nkm/h\nBOOST\n-1\n0\n+2\n3.00 bar",
+      "readings": {
+        "speed": "180",
+        "gear": "4",
+        "status": "",
+        "boost": "3.00 bar",
+        "boostRange": "high",
+        "footerRemoved": true
+      },
+      "body": "rgba(0, 0, 0, 0)",
+      "style": "ap1Cluster",
+      "bounds": {
+        "x": 1350,
+        "y": 825,
+        "width": 540,
+        "height": 225,
+        "display": "block"
+      }
+    },
+    {
+      "name": "host-boost-psi",
+      "text": "0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n×1000 r/min\nGEAR\n4\nkm/h\nBOOST\n-14.5\n0\n+29\n14.5 PSI",
+      "readings": {
+        "speed": "180",
+        "gear": "4",
+        "status": "",
+        "boost": "14.5 PSI",
+        "boostRange": "within",
+        "footerRemoved": true
+      },
+      "body": "rgba(0, 0, 0, 0)",
+      "style": "ap1Cluster",
+      "bounds": {
+        "x": 1350,
+        "y": 825,
+        "width": 540,
+        "height": 225,
+        "display": "block"
+      }
+    },
+    {
+      "name": "host-boost-kpa",
+      "text": "0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n×1000 r/min\nGEAR\n4\nkm/h\nBOOST\n-100\n0\n+200\n100 kPa",
+      "readings": {
+        "speed": "180",
+        "gear": "4",
+        "status": "",
+        "boost": "100 kPa",
+        "boostRange": "within",
+        "footerRemoved": true
       },
       "body": "rgba(0, 0, 0, 0)",
       "style": "ap1Cluster",
@@ -41,11 +173,14 @@
     },
     {
       "name": "host-stale-with-smoothing",
-      "text": "×1000 r/min\nGEAR\n—\nkm/h\nFUEL\nE\nF\n--\nSIGNAL LOST\nAP1 / REV ARC\nRPM ----",
+      "text": "×1000 r/min\nGEAR\n—\nkm/h\nBOOST\n-1\n0\n+2\n-- bar\nSIGNAL LOST",
       "readings": {
         "speed": "---",
         "gear": "—",
-        "status": "SIGNAL LOST"
+        "status": "SIGNAL LOST",
+        "boost": "-- bar",
+        "boostRange": "within",
+        "footerRemoved": true
       },
       "body": "rgba(0, 0, 0, 0)",
       "style": "ap1Cluster",
@@ -59,11 +194,14 @@
     },
     {
       "name": "host-reverse-reconnected",
-      "text": "0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n×1000 r/min\nGEAR\nR\nkm/h\nFUEL\nE\nF\n68%\nAP1 / REV ARC\nRPM 1400",
+      "text": "0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n×1000 r/min\nGEAR\nR\nkm/h\nBOOST\n-1\n0\n+2\n1.00 bar",
       "readings": {
         "speed": "16",
         "gear": "R",
-        "status": ""
+        "status": "",
+        "boost": "1.00 bar",
+        "boostRange": "within",
+        "footerRemoved": true
       },
       "body": "rgba(0, 0, 0, 0)",
       "style": "ap1Cluster",
@@ -77,11 +215,14 @@
     },
     {
       "name": "host-imperial",
-      "text": "0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n×1000 r/min\nGEAR\nR\nmph\nFUEL\nE\nF\n68%\nAP1 / REV ARC\nRPM 1400",
+      "text": "0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n×1000 r/min\nGEAR\nR\nmph\nBOOST\n-14.5\n0\n+29\n14.5 PSI",
       "readings": {
         "speed": "10",
         "gear": "R",
-        "status": ""
+        "status": "",
+        "boost": "14.5 PSI",
+        "boostRange": "within",
+        "footerRemoved": true
       },
       "body": "rgba(0, 0, 0, 0)",
       "style": "ap1Cluster",
@@ -95,11 +236,14 @@
     },
     {
       "name": "host-720p",
-      "text": "0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n×1000 r/min\nGEAR\nR\nmph\nFUEL\nE\nF\n68%\nAP1 / REV ARC\nRPM 1400",
+      "text": "0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n×1000 r/min\nGEAR\nR\nmph\nBOOST\n-14.5\n0\n+29\n14.5 PSI",
       "readings": {
         "speed": "10",
         "gear": "R",
-        "status": ""
+        "status": "",
+        "boost": "14.5 PSI",
+        "boostRange": "within",
+        "footerRemoved": true
       },
       "body": "rgba(0, 0, 0, 0)",
       "style": "ap1Cluster",
@@ -117,7 +261,10 @@
       "readings": {
         "speed": "16",
         "gear": "R",
-        "status": ""
+        "status": "",
+        "boost": "1.00 bar",
+        "boostRange": "within",
+        "footerRemoved": true
       },
       "body": "rgba(0, 0, 0, 0)",
       "style": "ap1Cluster",
@@ -131,11 +278,14 @@
     },
     {
       "name": "host-gauge-restored",
-      "text": "0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n×1000 r/min\nGEAR\nR\nkm/h\nFUEL\nE\nF\n68%\nAP1 / REV ARC\nRPM 1400",
+      "text": "0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n×1000 r/min\nGEAR\nR\nkm/h\nBOOST\n-1\n0\n+2\n1.00 bar",
       "readings": {
         "speed": "16",
         "gear": "R",
-        "status": ""
+        "status": "",
+        "boost": "1.00 bar",
+        "boostRange": "within",
+        "footerRemoved": true
       },
       "body": "rgba(0, 0, 0, 0)",
       "style": "ap1Cluster",
@@ -149,11 +299,14 @@
     },
     {
       "name": "host-style-reloaded",
-      "text": "0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n×1000 r/min\nGEAR\nR\nkm/h\nFUEL\nE\nF\n68%\nAP1 / REV ARC\nRPM 1400",
+      "text": "0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n×1000 r/min\nGEAR\nR\nkm/h\nBOOST\n-1\n0\n+2\n1.00 bar",
       "readings": {
         "speed": "16",
         "gear": "R",
-        "status": ""
+        "status": "",
+        "boost": "1.00 bar",
+        "boostRange": "within",
+        "footerRemoved": true
       },
       "body": "rgba(0, 0, 0, 0)",
       "style": "ap1Cluster",

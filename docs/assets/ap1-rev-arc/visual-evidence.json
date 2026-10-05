@@ -4,6 +4,12 @@
     "metric-1280x720-dpr1.png",
     "compact-1280x720-dpr1.png",
     "imperial.png",
+    "boost-zero.png",
+    "boost-negative.png",
+    "boost-missing.png",
+    "boost-psi.png",
+    "boost-kpa.png",
+    "boost-overflow.png",
     "reverse.png",
     "neutral.png",
     "redline.png",
@@ -562,23 +568,23 @@
             },
             "localCssTransform": "none"
           },
-          "fuelSegments": {
+          "boostSegments": {
             "inkRect": {
               "x": 1133.75,
               "y": 604.6500244140625,
-              "width": 69.75,
+              "width": 72,
               "height": 13.3499755859375
             },
             "svgInkRect": {
               "x": 565,
               "y": 186.1999969482422,
-              "width": 93,
+              "width": 96,
               "height": 17.800018310546875
             },
             "inkNormalized": {
               "x": 0.7847222222222222,
               "y": 0.6206667751736111,
-              "width": 0.12916666666666668,
+              "width": 0.13333333333333333,
               "height": 0.05933322482638889
             },
             "anchorNormalized": {
@@ -607,7 +613,7 @@
                   "attributes": {
                     "x": "565",
                     "y": "189",
-                    "width": "9",
+                    "width": "8",
                     "height": "15",
                     "transform": null,
                     "d": null,
@@ -620,10 +626,10 @@
                 {
                   "tag": "rect",
                   "attributes": {
-                    "x": "577",
-                    "y": "188.6",
-                    "width": "9",
-                    "height": "15.4",
+                    "x": "576",
+                    "y": "188.65",
+                    "width": "8",
+                    "height": "15.35",
                     "transform": null,
                     "d": null,
                     "points": null,
@@ -635,10 +641,10 @@
                 {
                   "tag": "rect",
                   "attributes": {
-                    "x": "589",
-                    "y": "188.2",
-                    "width": "9",
-                    "height": "15.8",
+                    "x": "587",
+                    "y": "188.3",
+                    "width": "8",
+                    "height": "15.7",
                     "transform": null,
                     "d": null,
                     "points": null,
@@ -650,10 +656,10 @@
                 {
                   "tag": "rect",
                   "attributes": {
-                    "x": "601",
-                    "y": "187.8",
-                    "width": "9",
-                    "height": "16.2",
+                    "x": "598",
+                    "y": "187.95",
+                    "width": "8",
+                    "height": "16.05",
                     "transform": null,
                     "d": null,
                     "points": null,
@@ -665,10 +671,10 @@
                 {
                   "tag": "rect",
                   "attributes": {
-                    "x": "613",
-                    "y": "187.4",
-                    "width": "9",
-                    "height": "16.6",
+                    "x": "609",
+                    "y": "187.6",
+                    "width": "8",
+                    "height": "16.4",
                     "transform": null,
                     "d": null,
                     "points": null,
@@ -680,10 +686,10 @@
                 {
                   "tag": "rect",
                   "attributes": {
-                    "x": "625",
-                    "y": "187",
-                    "width": "9",
-                    "height": "17",
+                    "x": "620",
+                    "y": "187.25",
+                    "width": "8",
+                    "height": "16.75",
                     "transform": null,
                     "d": null,
                     "points": null,
@@ -695,10 +701,10 @@
                 {
                   "tag": "rect",
                   "attributes": {
-                    "x": "637",
-                    "y": "186.6",
-                    "width": "9",
-                    "height": "17.4",
+                    "x": "631",
+                    "y": "186.9",
+                    "width": "8",
+                    "height": "17.1",
                     "transform": null,
                     "d": null,
                     "points": null,
@@ -710,9 +716,24 @@
                 {
                   "tag": "rect",
                   "attributes": {
-                    "x": "649",
+                    "x": "642",
+                    "y": "186.55",
+                    "width": "8",
+                    "height": "17.45",
+                    "transform": null,
+                    "d": null,
+                    "points": null,
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "rect",
+                  "attributes": {
+                    "x": "653",
                     "y": "186.2",
-                    "width": "9",
+                    "width": "8",
                     "height": "17.8",
                     "transform": null,
                     "d": null,
@@ -738,24 +759,24 @@
             },
             "localCssTransform": "none"
           },
-          "fuelValue": {
+          "boostValue": {
             "inkRect": {
-              "x": 1156.234375,
-              "y": 635.75,
-              "width": 33.03125,
-              "height": 16
+              "x": 1148.15625,
+              "y": 636.75,
+              "width": 49.639404296875,
+              "height": 15
             },
             "svgInkRect": {
-              "x": 594.9791870117188,
-              "y": 227.6666717529297,
-              "width": 44.04166793823242,
-              "height": 21.33333396911621
+              "x": 584.2083740234375,
+              "y": 229,
+              "width": 66.185791015625,
+              "height": 20
             },
             "inkNormalized": {
-              "x": 0.8263599537037037,
-              "y": 0.7588888888888888,
-              "width": 0.061168981481481484,
-              "height": 0.07111111111111111
+              "x": 0.811400462962963,
+              "y": 0.7633333333333333,
+              "width": 0.09192482277199074,
+              "height": 0.06666666666666667
             },
             "anchorNormalized": {
               "x": 0.8569444444444444,
@@ -788,47 +809,47 @@
             },
             "font": {
               "family": "\"Arial Narrow\", \"Liberation Sans Narrow\", Arial, sans-serif",
-              "size": "19px",
+              "size": "17px",
               "weight": "400"
             },
             "localCssTransform": "none"
           },
-          "rpmValue": {
+          "boostMinLabel": {
             "inkRect": {
-              "x": 1165.15625,
-              "y": 656.25,
-              "width": 42.09375,
-              "height": 7
+              "x": 1130.0234375,
+              "y": 623.75,
+              "width": 7.453125,
+              "height": 9
             },
             "svgInkRect": {
-              "x": 606.875,
-              "y": 255,
-              "width": 56.125,
-              "height": 9.333333969116211
+              "x": 560.03125,
+              "y": 211.6666717529297,
+              "width": 9.9375,
+              "height": 12
             },
             "inkNormalized": {
-              "x": 0.8428819444444444,
-              "y": 0.85,
-              "width": 0.07795138888888889,
-              "height": 0.03111111111111111
+              "x": 0.7778211805555556,
+              "y": 0.7055555555555556,
+              "width": 0.013802083333333333,
+              "height": 0.04
             },
             "anchorNormalized": {
-              "x": 0.9208333333333333,
-              "y": 0.8766666666666667
+              "x": 0.7847222222222222,
+              "y": 0.7366666666666667
             },
             "semanticGeometry": {
               "self": {
                 "tag": "text",
                 "attributes": {
-                  "x": "663",
-                  "y": "263",
+                  "x": "565",
+                  "y": "221",
                   "width": null,
                   "height": null,
                   "transform": null,
                   "d": null,
                   "points": null,
                   "viewBox": null,
-                  "text-anchor": "end",
+                  "text-anchor": "middle",
                   "dominant-baseline": null
                 }
               },
@@ -843,7 +864,62 @@
             },
             "font": {
               "family": "\"Arial Narrow\", \"Liberation Sans Narrow\", Arial, sans-serif",
-              "size": "9px",
+              "size": "10.5px",
+              "weight": "400"
+            },
+            "localCssTransform": "none"
+          },
+          "boostMaxLabel": {
+            "inkRect": {
+              "x": 1200.2890625,
+              "y": 623.75,
+              "width": 9.421875,
+              "height": 9
+            },
+            "svgInkRect": {
+              "x": 653.71875,
+              "y": 211.6666717529297,
+              "width": 12.5625,
+              "height": 12
+            },
+            "inkNormalized": {
+              "x": 0.9079427083333333,
+              "y": 0.7055555555555556,
+              "width": 0.017447916666666667,
+              "height": 0.04
+            },
+            "anchorNormalized": {
+              "x": 0.9166666666666666,
+              "y": 0.7366666666666667
+            },
+            "semanticGeometry": {
+              "self": {
+                "tag": "text",
+                "attributes": {
+                  "x": "660",
+                  "y": "221",
+                  "width": null,
+                  "height": null,
+                  "transform": null,
+                  "d": null,
+                  "points": null,
+                  "viewBox": null,
+                  "text-anchor": "middle",
+                  "dominant-baseline": null
+                }
+              },
+              "descendants": [],
+              "ancestors": [
+                {
+                  "tag": "svg",
+                  "transform": null,
+                  "viewBox": "0 0 720 300"
+                }
+              ]
+            },
+            "font": {
+              "family": "\"Arial Narrow\", \"Liberation Sans Narrow\", Arial, sans-serif",
+              "size": "10.5px",
               "weight": "400"
             },
             "localCssTransform": "none"
@@ -1438,23 +1514,23 @@
             },
             "localCssTransform": "none"
           },
-          "fuelSegments": {
+          "boostSegments": {
             "inkRect": {
               "x": 1168.62841796875,
               "y": 630.2542114257812,
-              "width": 48.822998046875,
+              "width": 50.3978271484375,
               "height": 9.3446044921875
             },
             "svgInkRect": {
               "x": 565,
               "y": 186.1999969482422,
-              "width": 93,
-              "height": 17.800003051757812
+              "width": 96,
+              "height": 17.800018310546875
             },
             "inkNormalized": {
               "x": 0.7847223657558596,
               "y": 0.6206616598462301,
-              "width": 0.1291667097267579,
+              "width": 0.13333309650283162,
               "height": 0.05933082217261905
             },
             "anchorNormalized": {
@@ -1483,7 +1559,7 @@
                   "attributes": {
                     "x": "565",
                     "y": "189",
-                    "width": "9",
+                    "width": "8",
                     "height": "15",
                     "transform": null,
                     "d": null,
@@ -1496,10 +1572,10 @@
                 {
                   "tag": "rect",
                   "attributes": {
-                    "x": "577",
-                    "y": "188.6",
-                    "width": "9",
-                    "height": "15.4",
+                    "x": "576",
+                    "y": "188.65",
+                    "width": "8",
+                    "height": "15.35",
                     "transform": null,
                     "d": null,
                     "points": null,
@@ -1511,10 +1587,10 @@
                 {
                   "tag": "rect",
                   "attributes": {
-                    "x": "589",
-                    "y": "188.2",
-                    "width": "9",
-                    "height": "15.8",
+                    "x": "587",
+                    "y": "188.3",
+                    "width": "8",
+                    "height": "15.7",
                     "transform": null,
                     "d": null,
                     "points": null,
@@ -1526,10 +1602,10 @@
                 {
                   "tag": "rect",
                   "attributes": {
-                    "x": "601",
-                    "y": "187.8",
-                    "width": "9",
-                    "height": "16.2",
+                    "x": "598",
+                    "y": "187.95",
+                    "width": "8",
+                    "height": "16.05",
                     "transform": null,
                     "d": null,
                     "points": null,
@@ -1541,10 +1617,10 @@
                 {
                   "tag": "rect",
                   "attributes": {
-                    "x": "613",
-                    "y": "187.4",
-                    "width": "9",
-                    "height": "16.6",
+                    "x": "609",
+                    "y": "187.6",
+                    "width": "8",
+                    "height": "16.4",
                     "transform": null,
                     "d": null,
                     "points": null,
@@ -1556,10 +1632,10 @@
                 {
                   "tag": "rect",
                   "attributes": {
-                    "x": "625",
-                    "y": "187",
-                    "width": "9",
-                    "height": "17",
+                    "x": "620",
+                    "y": "187.25",
+                    "width": "8",
+                    "height": "16.75",
                     "transform": null,
                     "d": null,
                     "points": null,
@@ -1571,10 +1647,10 @@
                 {
                   "tag": "rect",
                   "attributes": {
-                    "x": "637",
-                    "y": "186.6",
-                    "width": "9",
-                    "height": "17.4",
+                    "x": "631",
+                    "y": "186.9",
+                    "width": "8",
+                    "height": "17.1",
                     "transform": null,
                     "d": null,
                     "points": null,
@@ -1586,9 +1662,24 @@
                 {
                   "tag": "rect",
                   "attributes": {
-                    "x": "649",
+                    "x": "642",
+                    "y": "186.55",
+                    "width": "8",
+                    "height": "17.45",
+                    "transform": null,
+                    "d": null,
+                    "points": null,
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "rect",
+                  "attributes": {
+                    "x": "653",
                     "y": "186.2",
-                    "width": "9",
+                    "width": "8",
                     "height": "17.8",
                     "transform": null,
                     "d": null,
@@ -1614,24 +1705,24 @@
             },
             "localCssTransform": "none"
           },
-          "fuelValue": {
+          "boostValue": {
             "inkRect": {
-              "x": 1184.37255859375,
-              "y": 652.1229248046875,
-              "width": 23.109375,
-              "height": 11
+              "x": 1178.73974609375,
+              "y": 653.1229248046875,
+              "width": 34.375,
+              "height": 10
             },
             "svgInkRect": {
-              "x": 594.9901733398438,
-              "y": 227.85643005371094,
-              "width": 44.01968002319336,
-              "height": 20.9532470703125
+              "x": 584.2605590820312,
+              "y": 229.76126098632812,
+              "width": 65.47889709472656,
+              "height": 19.04840660095215
             },
             "inkNormalized": {
-              "x": 0.8263752531933364,
-              "y": 0.7595106336805556,
-              "width": 0.06113843991567112,
-              "height": 0.06984126984126984
+              "x": 0.8114730168244388,
+              "y": 0.7658598400297619,
+              "width": 0.09094291265346617,
+              "height": 0.06349206349206349
             },
             "anchorNormalized": {
               "x": 0.856944450499975,
@@ -1664,47 +1755,47 @@
             },
             "font": {
               "family": "\"Arial Narrow\", \"Liberation Sans Narrow\", Arial, sans-serif",
-              "size": "19px",
+              "size": "17px",
               "weight": "400"
             },
             "localCssTransform": "none"
           },
-          "rpmValue": {
+          "boostMinLabel": {
             "inkRect": {
-              "x": 1190.638671875,
-              "y": 666.5725708007812,
-              "width": 29.4375,
-              "height": 4.99993896484375
+              "x": 1166.01904296875,
+              "y": 643.5234375,
+              "width": 5.21875,
+              "height": 6
             },
             "svgInkRect": {
-              "x": 606.92626953125,
-              "y": 255.38064575195312,
-              "width": 56.07374954223633,
-              "height": 9.524203300476074
+              "x": 560.029541015625,
+              "y": 211.47579956054688,
+              "width": 9.940887451171875,
+              "height": 11.429044723510742
             },
             "inkNormalized": {
-              "x": 0.8429529577115457,
-              "y": 0.8512544177827381,
-              "width": 0.07788020338142285,
-              "height": 0.031745644221230156
+              "x": 0.7778189719317101,
+              "y": 0.7049107142857143,
+              "width": 0.013806787648298954,
+              "height": 0.0380952380952381
             },
             "anchorNormalized": {
-              "x": 0.9208333398403294,
-              "y": 0.8766510767363487
+              "x": 0.7847222277674002,
+              "y": 0.736656862784128
             },
             "semanticGeometry": {
               "self": {
                 "tag": "text",
                 "attributes": {
-                  "x": "663",
-                  "y": "263",
+                  "x": "565",
+                  "y": "221",
                   "width": null,
                   "height": null,
                   "transform": null,
                   "d": null,
                   "points": null,
                   "viewBox": null,
-                  "text-anchor": "end",
+                  "text-anchor": "middle",
                   "dominant-baseline": null
                 }
               },
@@ -1719,7 +1810,62 @@
             },
             "font": {
               "family": "\"Arial Narrow\", \"Liberation Sans Narrow\", Arial, sans-serif",
-              "size": "9px",
+              "size": "10.5px",
+              "weight": "400"
+            },
+            "localCssTransform": "none"
+          },
+          "boostMaxLabel": {
+            "inkRect": {
+              "x": 1215.2044677734375,
+              "y": 643.5234375,
+              "width": 6.59375,
+              "height": 6
+            },
+            "svgInkRect": {
+              "x": 653.719970703125,
+              "y": 211.47579956054688,
+              "width": 12.560043334960938,
+              "height": 11.429044723510742
+            },
+            "inkNormalized": {
+              "x": 0.9079445222396759,
+              "y": 0.7049107142857143,
+              "width": 0.0174445041544376,
+              "height": 0.0380952380952381
+            },
+            "anchorNormalized": {
+              "x": 0.9166666731442196,
+              "y": 0.736656862784128
+            },
+            "semanticGeometry": {
+              "self": {
+                "tag": "text",
+                "attributes": {
+                  "x": "660",
+                  "y": "221",
+                  "width": null,
+                  "height": null,
+                  "transform": null,
+                  "d": null,
+                  "points": null,
+                  "viewBox": null,
+                  "text-anchor": "middle",
+                  "dominant-baseline": null
+                }
+              },
+              "descendants": [],
+              "ancestors": [
+                {
+                  "tag": "svg",
+                  "transform": null,
+                  "viewBox": "0 0 720 300"
+                }
+              ]
+            },
+            "font": {
+              "family": "\"Arial Narrow\", \"Liberation Sans Narrow\", Arial, sans-serif",
+              "size": "10.5px",
               "weight": "400"
             },
             "localCssTransform": "none"
@@ -1814,11 +1960,11 @@
             "y": -0.0020648557999736195
           }
         },
-        "fuelSegments": {
+        "boostSegments": {
           "inkNormalizedDelta": {
             "x": 1.4353363742003467e-7,
             "y": -0.00000511532738101117,
-            "width": 4.306009121490817e-8,
+            "width": -2.368305017097505e-7,
             "height": -0.000002402653769842389
           },
           "anchorResidualDevicePixels": {
@@ -1826,28 +1972,40 @@
             "y": 0.003251075596949704
           }
         },
-        "fuelValue": {
+        "boostValue": {
           "inkNormalizedDelta": {
-            "x": 0.000015299489632636387,
-            "y": 0.0006217447916667673,
-            "width": -0.00003054156581036582,
-            "height": -0.001269841269841268
+            "x": 0.00007255386147586584,
+            "y": 0.002526506696428621,
+            "width": -0.0009819101185245677,
+            "height": -0.003174603174603177
           },
           "anchorResidualDevicePixels": {
             "x": 0.000002288895961414031,
             "y": -0.0020648557999736195
           }
         },
-        "rpmValue": {
+        "boostMinLabel": {
           "inkNormalizedDelta": {
-            "x": 0.00007101326710123868,
-            "y": 0.0012544177827381597,
-            "width": -0.0000711855074660428,
-            "height": 0.0006345331101190455
+            "x": -0.0000022086238454788187,
+            "y": -0.0006448412698413231,
+            "width": 0.000004704314965620765,
+            "height": -0.0019047619047619022
           },
           "anchorResidualDevicePixels": {
-            "x": 0.0000024595428782196033,
-            "y": -0.0024554140250893086
+            "x": 0.0000020959906343407525,
+            "y": -0.001544111499842682
+          }
+        },
+        "boostMaxLabel": {
+          "inkNormalizedDelta": {
+            "x": 0.0000018139063425737234,
+            "y": -0.0006448412698413231,
+            "width": -0.000003412512229065967,
+            "height": -0.0019047619047619022
+          },
+          "anchorResidualDevicePixels": {
+            "x": 0.000002448413798979837,
+            "y": -0.001544111499842682
           }
         },
         "speedUnit": {
@@ -1864,6 +2022,30 @@
         }
       },
       "invariant": "SVG anchors, descendant geometry, font settings and local transforms stay exact; screen anchors and containment allow one device pixel for rendering quantization. Text ink metrics are diagnostic, not anchor invariants."
+    },
+    {
+      "boostScenario": "boost-zero",
+      "text": "0.00 bar"
+    },
+    {
+      "boostScenario": "boost-negative",
+      "text": "-0.50 bar"
+    },
+    {
+      "boostScenario": "boost-missing",
+      "text": "-- bar"
+    },
+    {
+      "boostScenario": "boost-psi",
+      "text": "14.5 PSI"
+    },
+    {
+      "boostScenario": "boost-kpa",
+      "text": "100 kPa"
+    },
+    {
+      "boostScenario": "boost-overflow",
+      "text": "3.00 bar"
     },
     "imperial, reverse, neutral, redline, missing, error, paused, 6000 RPM scale, frozen-timestamp disconnect, reconnect, resize, visibility, custom color, destroy",
     {
@@ -2436,23 +2618,23 @@
             },
             "localCssTransform": "none"
           },
-          "fuelSegments": {
+          "boostSegments": {
             "inkRect": {
               "x": 1133.75,
               "y": 604.6500244140625,
-              "width": 69.75,
+              "width": 72,
               "height": 13.3499755859375
             },
             "svgInkRect": {
               "x": 565,
               "y": 186.1999969482422,
-              "width": 93,
+              "width": 96,
               "height": 17.800018310546875
             },
             "inkNormalized": {
               "x": 0.7847222222222222,
               "y": 0.6206667751736111,
-              "width": 0.12916666666666668,
+              "width": 0.13333333333333333,
               "height": 0.05933322482638889
             },
             "anchorNormalized": {
@@ -2481,7 +2663,7 @@
                   "attributes": {
                     "x": "565",
                     "y": "189",
-                    "width": "9",
+                    "width": "8",
                     "height": "15",
                     "transform": null,
                     "d": null,
@@ -2494,10 +2676,10 @@
                 {
                   "tag": "rect",
                   "attributes": {
-                    "x": "577",
-                    "y": "188.6",
-                    "width": "9",
-                    "height": "15.4",
+                    "x": "576",
+                    "y": "188.65",
+                    "width": "8",
+                    "height": "15.35",
                     "transform": null,
                     "d": null,
                     "points": null,
@@ -2509,10 +2691,10 @@
                 {
                   "tag": "rect",
                   "attributes": {
-                    "x": "589",
-                    "y": "188.2",
-                    "width": "9",
-                    "height": "15.8",
+                    "x": "587",
+                    "y": "188.3",
+                    "width": "8",
+                    "height": "15.7",
                     "transform": null,
                     "d": null,
                     "points": null,
@@ -2524,10 +2706,10 @@
                 {
                   "tag": "rect",
                   "attributes": {
-                    "x": "601",
-                    "y": "187.8",
-                    "width": "9",
-                    "height": "16.2",
+                    "x": "598",
+                    "y": "187.95",
+                    "width": "8",
+                    "height": "16.05",
                     "transform": null,
                     "d": null,
                     "points": null,
@@ -2539,10 +2721,10 @@
                 {
                   "tag": "rect",
                   "attributes": {
-                    "x": "613",
-                    "y": "187.4",
-                    "width": "9",
-                    "height": "16.6",
+                    "x": "609",
+                    "y": "187.6",
+                    "width": "8",
+                    "height": "16.4",
                     "transform": null,
                     "d": null,
                     "points": null,
@@ -2554,10 +2736,10 @@
                 {
                   "tag": "rect",
                   "attributes": {
-                    "x": "625",
-                    "y": "187",
-                    "width": "9",
-                    "height": "17",
+                    "x": "620",
+                    "y": "187.25",
+                    "width": "8",
+                    "height": "16.75",
                     "transform": null,
                     "d": null,
                     "points": null,
@@ -2569,10 +2751,10 @@
                 {
                   "tag": "rect",
                   "attributes": {
-                    "x": "637",
-                    "y": "186.6",
-                    "width": "9",
-                    "height": "17.4",
+                    "x": "631",
+                    "y": "186.9",
+                    "width": "8",
+                    "height": "17.1",
                     "transform": null,
                     "d": null,
                     "points": null,
@@ -2584,9 +2766,24 @@
                 {
                   "tag": "rect",
                   "attributes": {
-                    "x": "649",
+                    "x": "642",
+                    "y": "186.55",
+                    "width": "8",
+                    "height": "17.45",
+                    "transform": null,
+                    "d": null,
+                    "points": null,
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "rect",
+                  "attributes": {
+                    "x": "653",
                     "y": "186.2",
-                    "width": "9",
+                    "width": "8",
                     "height": "17.8",
                     "transform": null,
                     "d": null,
@@ -2612,24 +2809,24 @@
             },
             "localCssTransform": "none"
           },
-          "fuelValue": {
+          "boostValue": {
             "inkRect": {
-              "x": 1156.234375,
+              "x": 1148.15625,
               "y": 636.75,
-              "width": 33.03125,
-              "height": 16
+              "width": 49.639404296875,
+              "height": 15
             },
             "svgInkRect": {
-              "x": 594.9791870117188,
+              "x": 584.2083740234375,
               "y": 229,
-              "width": 44.04166793823242,
-              "height": 21.33333396911621
+              "width": 66.185791015625,
+              "height": 20
             },
             "inkNormalized": {
-              "x": 0.8263599537037037,
+              "x": 0.811400462962963,
               "y": 0.7633333333333333,
-              "width": 0.061168981481481484,
-              "height": 0.07111111111111111
+              "width": 0.09192482277199074,
+              "height": 0.06666666666666667
             },
             "anchorNormalized": {
               "x": 0.8569444444444444,
@@ -2662,47 +2859,47 @@
             },
             "font": {
               "family": "\"Arial Narrow\", \"Liberation Sans Narrow\", Arial, sans-serif",
-              "size": "19px",
+              "size": "17px",
               "weight": "400"
             },
             "localCssTransform": "none"
           },
-          "rpmValue": {
+          "boostMinLabel": {
             "inkRect": {
-              "x": 1165.15625,
-              "y": 657.25,
-              "width": 42.09375,
-              "height": 7
+              "x": 1130.0234375,
+              "y": 623.75,
+              "width": 7.453125,
+              "height": 9
             },
             "svgInkRect": {
-              "x": 606.875,
-              "y": 256.3333435058594,
-              "width": 56.125,
-              "height": 9.333333969116211
+              "x": 560.03125,
+              "y": 211.6666717529297,
+              "width": 9.9375,
+              "height": 12
             },
             "inkNormalized": {
-              "x": 0.8428819444444444,
-              "y": 0.8544444444444445,
-              "width": 0.07795138888888889,
-              "height": 0.03111111111111111
+              "x": 0.7778211805555556,
+              "y": 0.7055555555555556,
+              "width": 0.013802083333333333,
+              "height": 0.04
             },
             "anchorNormalized": {
-              "x": 0.9208333333333333,
-              "y": 0.8766666666666667
+              "x": 0.7847222222222222,
+              "y": 0.7366666666666667
             },
             "semanticGeometry": {
               "self": {
                 "tag": "text",
                 "attributes": {
-                  "x": "663",
-                  "y": "263",
+                  "x": "565",
+                  "y": "221",
                   "width": null,
                   "height": null,
                   "transform": null,
                   "d": null,
                   "points": null,
                   "viewBox": null,
-                  "text-anchor": "end",
+                  "text-anchor": "middle",
                   "dominant-baseline": null
                 }
               },
@@ -2717,7 +2914,62 @@
             },
             "font": {
               "family": "\"Arial Narrow\", \"Liberation Sans Narrow\", Arial, sans-serif",
-              "size": "9px",
+              "size": "10.5px",
+              "weight": "400"
+            },
+            "localCssTransform": "none"
+          },
+          "boostMaxLabel": {
+            "inkRect": {
+              "x": 1200.2890625,
+              "y": 623.75,
+              "width": 9.421875,
+              "height": 9
+            },
+            "svgInkRect": {
+              "x": 653.71875,
+              "y": 211.6666717529297,
+              "width": 12.5625,
+              "height": 12
+            },
+            "inkNormalized": {
+              "x": 0.9079427083333333,
+              "y": 0.7055555555555556,
+              "width": 0.017447916666666667,
+              "height": 0.04
+            },
+            "anchorNormalized": {
+              "x": 0.9166666666666666,
+              "y": 0.7366666666666667
+            },
+            "semanticGeometry": {
+              "self": {
+                "tag": "text",
+                "attributes": {
+                  "x": "660",
+                  "y": "221",
+                  "width": null,
+                  "height": null,
+                  "transform": null,
+                  "d": null,
+                  "points": null,
+                  "viewBox": null,
+                  "text-anchor": "middle",
+                  "dominant-baseline": null
+                }
+              },
+              "descendants": [],
+              "ancestors": [
+                {
+                  "tag": "svg",
+                  "transform": null,
+                  "viewBox": "0 0 720 300"
+                }
+              ]
+            },
+            "font": {
+              "family": "\"Arial Narrow\", \"Liberation Sans Narrow\", Arial, sans-serif",
+              "size": "10.5px",
               "weight": "400"
             },
             "localCssTransform": "none"
@@ -3312,23 +3564,23 @@
             },
             "localCssTransform": "none"
           },
-          "fuelSegments": {
+          "boostSegments": {
             "inkRect": {
               "x": 1168.62841796875,
               "y": 630.2542114257812,
-              "width": 48.822998046875,
+              "width": 50.3978271484375,
               "height": 9.3446044921875
             },
             "svgInkRect": {
               "x": 565,
               "y": 186.1999969482422,
-              "width": 93,
-              "height": 17.800003051757812
+              "width": 96,
+              "height": 17.800018310546875
             },
             "inkNormalized": {
               "x": 0.7847223657558596,
               "y": 0.6206616598462301,
-              "width": 0.1291667097267579,
+              "width": 0.13333309650283162,
               "height": 0.05933082217261905
             },
             "anchorNormalized": {
@@ -3357,7 +3609,7 @@
                   "attributes": {
                     "x": "565",
                     "y": "189",
-                    "width": "9",
+                    "width": "8",
                     "height": "15",
                     "transform": null,
                     "d": null,
@@ -3370,10 +3622,10 @@
                 {
                   "tag": "rect",
                   "attributes": {
-                    "x": "577",
-                    "y": "188.6",
-                    "width": "9",
-                    "height": "15.4",
+                    "x": "576",
+                    "y": "188.65",
+                    "width": "8",
+                    "height": "15.35",
                     "transform": null,
                     "d": null,
                     "points": null,
@@ -3385,10 +3637,10 @@
                 {
                   "tag": "rect",
                   "attributes": {
-                    "x": "589",
-                    "y": "188.2",
-                    "width": "9",
-                    "height": "15.8",
+                    "x": "587",
+                    "y": "188.3",
+                    "width": "8",
+                    "height": "15.7",
                     "transform": null,
                     "d": null,
                     "points": null,
@@ -3400,10 +3652,10 @@
                 {
                   "tag": "rect",
                   "attributes": {
-                    "x": "601",
-                    "y": "187.8",
-                    "width": "9",
-                    "height": "16.2",
+                    "x": "598",
+                    "y": "187.95",
+                    "width": "8",
+                    "height": "16.05",
                     "transform": null,
                     "d": null,
                     "points": null,
@@ -3415,10 +3667,10 @@
                 {
                   "tag": "rect",
                   "attributes": {
-                    "x": "613",
-                    "y": "187.4",
-                    "width": "9",
-                    "height": "16.6",
+                    "x": "609",
+                    "y": "187.6",
+                    "width": "8",
+                    "height": "16.4",
                     "transform": null,
                     "d": null,
                     "points": null,
@@ -3430,10 +3682,10 @@
                 {
                   "tag": "rect",
                   "attributes": {
-                    "x": "625",
-                    "y": "187",
-                    "width": "9",
-                    "height": "17",
+                    "x": "620",
+                    "y": "187.25",
+                    "width": "8",
+                    "height": "16.75",
                     "transform": null,
                     "d": null,
                     "points": null,
@@ -3445,10 +3697,10 @@
                 {
                   "tag": "rect",
                   "attributes": {
-                    "x": "637",
-                    "y": "186.6",
-                    "width": "9",
-                    "height": "17.4",
+                    "x": "631",
+                    "y": "186.9",
+                    "width": "8",
+                    "height": "17.1",
                     "transform": null,
                     "d": null,
                     "points": null,
@@ -3460,9 +3712,24 @@
                 {
                   "tag": "rect",
                   "attributes": {
-                    "x": "649",
+                    "x": "642",
+                    "y": "186.55",
+                    "width": "8",
+                    "height": "17.45",
+                    "transform": null,
+                    "d": null,
+                    "points": null,
+                    "viewBox": null,
+                    "text-anchor": null,
+                    "dominant-baseline": null
+                  }
+                },
+                {
+                  "tag": "rect",
+                  "attributes": {
+                    "x": "653",
                     "y": "186.2",
-                    "width": "9",
+                    "width": "8",
                     "height": "17.8",
                     "transform": null,
                     "d": null,
@@ -3488,24 +3755,24 @@
             },
             "localCssTransform": "none"
           },
-          "fuelValue": {
+          "boostValue": {
             "inkRect": {
-              "x": 1184.37255859375,
+              "x": 1178.73974609375,
               "y": 653.1229248046875,
-              "width": 23.109375,
-              "height": 11
+              "width": 34.375,
+              "height": 10
             },
             "svgInkRect": {
-              "x": 594.9901733398438,
+              "x": 584.2605590820312,
               "y": 229.76126098632812,
-              "width": 44.01968002319336,
-              "height": 20.9532470703125
+              "width": 65.47889709472656,
+              "height": 19.04840660095215
             },
             "inkNormalized": {
-              "x": 0.8263752531933364,
+              "x": 0.8114730168244388,
               "y": 0.7658598400297619,
-              "width": 0.06113843991567112,
-              "height": 0.06984126984126984
+              "width": 0.09094291265346617,
+              "height": 0.06349206349206349
             },
             "anchorNormalized": {
               "x": 0.856944450499975,
@@ -3538,47 +3805,47 @@
             },
             "font": {
               "family": "\"Arial Narrow\", \"Liberation Sans Narrow\", Arial, sans-serif",
-              "size": "19px",
+              "size": "17px",
               "weight": "400"
             },
             "localCssTransform": "none"
           },
-          "rpmValue": {
+          "boostMinLabel": {
             "inkRect": {
-              "x": 1190.638671875,
-              "y": 666.5725708007812,
-              "width": 29.4375,
+              "x": 1166.01904296875,
+              "y": 644.5234375,
+              "width": 5.21875,
               "height": 6
             },
             "svgInkRect": {
-              "x": 606.92626953125,
-              "y": 255.38064575195312,
-              "width": 56.07374954223633,
+              "x": 560.029541015625,
+              "y": 213.38064575195312,
+              "width": 9.940887451171875,
               "height": 11.429044723510742
             },
             "inkNormalized": {
-              "x": 0.8429529577115457,
-              "y": 0.8512544177827381,
-              "width": 0.07788020338142285,
+              "x": 0.7778189719317101,
+              "y": 0.7112599206349206,
+              "width": 0.013806787648298954,
               "height": 0.0380952380952381
             },
             "anchorNormalized": {
-              "x": 0.9208333398403294,
-              "y": 0.8766510767363487
+              "x": 0.7847222277674002,
+              "y": 0.736656862784128
             },
             "semanticGeometry": {
               "self": {
                 "tag": "text",
                 "attributes": {
-                  "x": "663",
-                  "y": "263",
+                  "x": "565",
+                  "y": "221",
                   "width": null,
                   "height": null,
                   "transform": null,
                   "d": null,
                   "points": null,
                   "viewBox": null,
-                  "text-anchor": "end",
+                  "text-anchor": "middle",
                   "dominant-baseline": null
                 }
               },
@@ -3593,7 +3860,62 @@
             },
             "font": {
               "family": "\"Arial Narrow\", \"Liberation Sans Narrow\", Arial, sans-serif",
-              "size": "9px",
+              "size": "10.5px",
+              "weight": "400"
+            },
+            "localCssTransform": "none"
+          },
+          "boostMaxLabel": {
+            "inkRect": {
+              "x": 1215.2044677734375,
+              "y": 644.5234375,
+              "width": 6.59375,
+              "height": 6
+            },
+            "svgInkRect": {
+              "x": 653.719970703125,
+              "y": 213.38064575195312,
+              "width": 12.560043334960938,
+              "height": 11.429044723510742
+            },
+            "inkNormalized": {
+              "x": 0.9079445222396759,
+              "y": 0.7112599206349206,
+              "width": 0.0174445041544376,
+              "height": 0.0380952380952381
+            },
+            "anchorNormalized": {
+              "x": 0.9166666731442196,
+              "y": 0.736656862784128
+            },
+            "semanticGeometry": {
+              "self": {
+                "tag": "text",
+                "attributes": {
+                  "x": "660",
+                  "y": "221",
+                  "width": null,
+                  "height": null,
+                  "transform": null,
+                  "d": null,
+                  "points": null,
+                  "viewBox": null,
+                  "text-anchor": "middle",
+                  "dominant-baseline": null
+                }
+              },
+              "descendants": [],
+              "ancestors": [
+                {
+                  "tag": "svg",
+                  "transform": null,
+                  "viewBox": "0 0 720 300"
+                }
+              ]
+            },
+            "font": {
+              "family": "\"Arial Narrow\", \"Liberation Sans Narrow\", Arial, sans-serif",
+              "size": "10.5px",
               "weight": "400"
             },
             "localCssTransform": "none"
@@ -3688,11 +4010,11 @@
             "y": -0.004129711599947239
           }
         },
-        "fuelSegments": {
+        "boostSegments": {
           "inkNormalizedDelta": {
             "x": 1.4353363742003467e-7,
             "y": -0.00000511532738101117,
-            "width": 4.306009121490817e-8,
+            "width": -2.368305017097505e-7,
             "height": -0.000002402653769842389
           },
           "anchorResidualDevicePixels": {
@@ -3700,28 +4022,40 @@
             "y": 0.006502151193899408
           }
         },
-        "fuelValue": {
+        "boostValue": {
           "inkNormalizedDelta": {
-            "x": 0.000015299489632636387,
+            "x": 0.00007255386147586584,
             "y": 0.002526506696428621,
-            "width": -0.00003054156581036582,
-            "height": -0.001269841269841268
+            "width": -0.0009819101185245677,
+            "height": -0.003174603174603177
           },
           "anchorResidualDevicePixels": {
             "x": 0.000004577791922828062,
             "y": -0.004129711599947239
           }
         },
-        "rpmValue": {
+        "boostMinLabel": {
           "inkNormalizedDelta": {
-            "x": 0.00007101326710123868,
-            "y": -0.0031900266617063133,
-            "width": -0.0000711855074660428,
-            "height": 0.0069841269841269885
+            "x": -0.0000022086238454788187,
+            "y": 0.005704365079365004,
+            "width": 0.000004704314965620765,
+            "height": -0.0019047619047619022
           },
           "anchorResidualDevicePixels": {
-            "x": 0.0000049190857564392065,
-            "y": -0.004910828050178617
+            "x": 0.000004191981268681505,
+            "y": -0.003088222999685364
+          }
+        },
+        "boostMaxLabel": {
+          "inkNormalizedDelta": {
+            "x": 0.0000018139063425737234,
+            "y": 0.005704365079365004,
+            "width": -0.000003412512229065967,
+            "height": -0.0019047619047619022
+          },
+          "anchorResidualDevicePixels": {
+            "x": 0.000004896827597959674,
+            "y": -0.003088222999685364
           }
         },
         "speedUnit": {
@@ -3742,8 +4076,8 @@
   ],
   "errors": [],
   "comparisonBaseline": {
-    "head": "8b783d080511ad5b49939f7f6603bd5d86e9a659",
-    "sourceRun": 37255610983,
+    "head": "662d93432243ff0d18d758651ae208436722a24a",
+    "sourceRun": 37258259085,
     "note": "Actual historical Chromium captures; compare with this run metric and compact captures. Current PNGs remain marked historical in docs until reviewed."
   }
 }

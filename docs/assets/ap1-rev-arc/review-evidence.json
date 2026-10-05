@@ -1,36 +1,38 @@
 {
   "style": "ap1_rev_arc",
-  "revision": "shared-normal upper arc",
-  "reviewed_head": "662d93432243ff0d18d758651ae208436722a24a",
+  "revision": "signed boost and footer removal",
+  "reviewed_head": "a995df88fc8c4d4b4e6989c61a03e8c8a249cb6b",
   "reviewed_on": "2026-10-05",
   "browser": "Chrome via PLAYWRIGHT_CHANNEL=chrome",
   "platform": "Linux (GitHub Actions)",
   "chromium_sandbox": true,
-  "run_id": 37258259085,
-  "artifact_id": 11323397245,
-  "run_url": "https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37258259085",
-  "artifact_url": "https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37258259085/artifacts/11323397245",
+  "run_id": 37263377297,
+  "artifact_id": 11325665121,
+  "run_url": "https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37263377297",
+  "artifact_url": "https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37263377297/artifacts/11325665121",
   "visual_job": "passed",
   "general_ci": "pending at this documentation update; check current PR status separately",
   "user_review": "pending; this evidence does not imply user approval",
   "automated_evidence": [
     "visual-evidence.json",
-    "launcher/host-audit.json"
+    "launcher/host-audit.json",
+    "boost-layout-preservation.json",
+    "json-unit-audit.json"
   ],
   "visual_inspection": {
     "result": "passed scoped technical review",
     "inspected": [
       "default DPR2 detail",
-      "70% compact DPR2 detail",
-      "all ten state crops",
-      "same-viewport before/after",
+      "70% compact",
+      "nine auxiliary/stale state crops",
       "full720p"
     ],
     "findings": [
-      "Upper RPM band and bezel now follow the same curve through both shoulders",
-      "Both endpoint labels remain contained at default and compact scales",
-      "No new text clipping or overlap observed in the inspected states",
-      "Speed/gear/fuel/readout anchors preserved; no broader restyling"
+      "BOOST replaces fuel with signed numerical value and visible bar/PSI/kPa unit",
+      "Zero, vacuum and missing states are distinguishable",
+      "Both requested footer labels are absent",
+      "Protected RPM curve/bezel/speed/gear region exact RGBA unchanged across416143 pixels at1280x720 DPR2",
+      "No new text clipping or overlap observed in inspected states"
     ],
     "runtime_changes_needed": false
   },
@@ -62,7 +64,7 @@
     },
     {
       "file": "states.png",
-      "derivation": "Ten actual screenshot crops arranged without resampling on a labelled review background"
+      "derivation": "Nine actual screenshot crops arranged on labelled review background"
     },
     {
       "file": "metric-1280x720.png",
@@ -73,7 +75,8 @@
       "file": "before-after.png",
       "derivation": "Old/new actual720p captures, identical540x225 crop at x710,y465; placed side by side with labels, no resampling",
       "before_head": "8b783d080511ad5b49939f7f6603bd5d86e9a659",
-      "after_head": "662d93432243ff0d18d758651ae208436722a24a"
+      "after_head": "662d93432243ff0d18d758651ae208436722a24a",
+      "historical_only": "Prior shared-arc comparison, fuel version, not current BOOST display"
     }
   ],
   "lossless_recompression_AE": 0,

@@ -1,6 +1,6 @@
 # AP1 Rev Arc：1999 Honda S2000 AP1 儀表原型
 
-> 本輪更新：右側燃油區已改為 BOOST 數值／單位，兩側底框文字已移除；共享上弧及速度／檔位位置不變。新的實際 CI 圖片待產生，以下既有預覽仍是燃油版本的歷史證據，不代表本輪 BOOST 外觀已驗收。
+> 本輪 BOOST／底框文字更新已完成 GitHub Actions Chrome 154 的實際 renderer／launcher 檢查與圖片複查；本頁 hero、compact、狀態集和720p已換成新版本。遙測是合成fixture，並非Windows原生或遊戲實測，也不代表使用者已核准；最終文件commit的CI仍待完成。
 
 ## 原型與來源
 
@@ -28,7 +28,9 @@
 
 目前由 `arc-geometry.js` 定義一條低寬橢圓弧，色帶兩緣、刻度中心、內框和外框共用 unit normal offsets。分段沿色帶中心線等弧長取樣；厚度18、色帶上緣至內框間距36、框線寬10，包含兩端皆保持同一構造。Inkscape 原創 fascia 由相同幾何重新匯出。上次弧度修正保留了速度／檔位等讀值位置；本次另依明確要求替換右側燃油區，容器與上弧幾何不變。
 
-![相同viewport裁切，左為修正前，右為共享曲線修訂](../assets/ap1-rev-arc/before-after.png)
+以下是**歷史弧度修正對照**，兩側仍為當時的燃油版本；用來解釋上弧／外框修正，不是最新BOOST外觀。
+
+![歷史弧度對照：燃油版本，非最新BOOST預覽](../assets/ap1-rev-arc/before-after.png)
 
 縮放驗證也已修正測試語意：gear 的 ink-bbox 正規化 y 在 DPR1／DPR2 分別差0.004431／0.006336，但 SVG anchor／font／局部 transform 完全相同，全部讀值的最大 screen-anchor residual 只有0.006503 device pixel。這些實測說明先前失敗是把字形範圍誤當成 anchor invariant，並非讀值位置移動。新測試保留 ink 差異診斷，另驗證語意幾何、螢幕 anchor、容納與兩端字標。
 
@@ -80,23 +82,24 @@ magick hud_overlay/ap1_rev_arc/assets/fascia.png -strip -define png:compression-
 - Style-owned Vitest：62 項純資料／行為測試；涵蓋單位、R/N、空值、NaN、Infinity、速度超界、signed BOOST／單位／缺值／量程、同字串快取邊界、適應刻度、重播 timestamp、恢復、設定與 destroy
 - 完整 `pnpm -C frontend test`：160 個檔案通過／1 個略過，1167 個測試通過／1 個略過；`pnpm -C frontend build:web-hud` 與 `git diff --check` 通過。已確認 dist 包含新 HUD 且排除 tests
 - 本地 Chromium 程序被執行環境的 UNIX socket `EPERM` 阻擋；require_escalated 亦相同。雲端瀏覽器至本地 fixture URL 遭 `ERR_BLOCKED_BY_CLIENT`，沒有改用其他 hostname 迴避
-- **先前共享弧線版本的遠端 Chromium 視覺與實際 launcher／Coordinator 檢查已通過**：GitHub Actions Linux Chrome、sandbox 啟用，驗證 head `662d93432243ff0d18d758651ae208436722a24a`。[CI run 37258259085](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37258259085)／[artifact 11323397245](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37258259085/artifacts/11323397245)
-- 本輪已獨立目視 default／compact 的 DPR2 細節、十種狀態、720p 全幅及相同 viewport 的修正前後對照；上方色帶與框線在兩端也一致，沒有發現新增裁切或重疊。技術複查不代表使用者已核准。完整專案 CI 在此紀錄更新時仍執行中，應另看 PR checks，不能以視覺 job 取代全部 gate
+- **本輪BOOST版本的renderer／實際launcher＋Coordinator檢查已通過**：GitHub Actions Linux Chrome 154，sandbox啟用，合成遙測；source head `a995df88fc8c4d4b4e6989c61a03e8c8a249cb6b`。[CI run 37263377297](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37263377297)／[artifact 11325665121](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37263377297/artifacts/11325665121)
+- 已獨立目視本輪BOOST hero與九狀態集：positive／zero／negative／missing／獨立PSI／kPa／overflow／signal lost／compact可辨識，兩個底框字樣已移除。技術複查不代表使用者核准；最終文件commit的完整CI仍待完成，請另看PR checks
+- [要求範圍外的版面保留檢查](../assets/ap1-rev-arc/boost-layout-preservation.json)：與`662d934`實際DPR2截圖作exact RGBA比較，只排除指定右側aux區及底框文字區；416,143個比較像素中0個不同，沒有重取樣或容差
 - Windows 原生透明 overlay、滑鼠穿透、真實 Forza 遊戲畫面與遊戲內安全區仍須平台實測
 
-### 先前實際瀏覽器預覽與證據（BOOST更新待新圖）
+### 本輪BOOST實際瀏覽器預覽與證據
 
 ![AP1 Rev Arc：實際 DPR2 Chromium 截圖細節](../assets/ap1-rev-arc/detail-metric.png)
 
 ![AP1 Rev Arc：70% compact的實際DPR2截圖](../assets/ap1-rev-arc/detail-compact.png)
 
-![AP1 Rev Arc：十種實際遙測與錯誤狀態](../assets/ap1-rev-arc/states.png)
+![AP1 Rev Arc：九種BOOST／缺值／單位／compact狀態](../assets/ap1-rev-arc/states.png)
 
-[720p 全幅透明 screenshot](../assets/ap1-rev-arc/metric-1280x720.png) 顯示預設右下位置。細節圖只裁切透明邊界；狀態 contact sheet 以實際截圖裁切後加標籤與深色檢視背景。hero／compact／full720p PNG 僅作無損壓縮，ImageMagick AE 比較均為 0。不是美術 mockup，也沒有遊戲背景。
+[720p 全幅透明 screenshot](../assets/ap1-rev-arc/metric-1280x720.png) 顯示預設右下位置。細節圖只裁切透明邊界；狀態 contact sheet 以實際截圖裁切後加標籤與深色檢視背景。hero與compact保留實際renderer像素，720p保留完整viewport；狀態集只是裁切與排列。圖片為GitHub Actions Chrome 154的實際renderer輸出與合成遙測，不是美術mockup或遊戲截圖。
 
 - [視覺／viewport 自動檢查](../assets/ap1-rev-arc/visual-evidence.json)：三種解析度、default／compact 的 DPR1／DPR2、單位、R/N、紅線、缺值、錯誤、暫停、斷線、重連、resize、配色與 destroy，errors 為空
 - [實際 launcher／Coordinator audit](../assets/ap1-rev-arc/launcher/host-audit.json)：含 smoothing 持續重播下的 signal loss、倒車重連、英制、顯隱、reload 與 destroy；errors 與 missing 均為空，頁面背景為透明
-- [研究、像素檢查與 artifact 來源](../assets/ap1-rev-arc/review-evidence.json)：記錄瀏覽器版本、head、CI 來源與限制。JSON 保留完整 artifact 的 screenshot 名稱；repo 僅收錄精選預覽，其餘可從該 artifact 取得
+- [本輪BOOST驗證與artifact來源](../assets/ap1-rev-arc/boost-revision-evidence.json)：記錄瀏覽器、source head、run／artifact、像素範圍保留結果與限制。完整截圖可從本輪artifact取得；先前弧度研究證據仍作歷史記錄保留
 
 ### 可重製瀏覽器檢查
 
@@ -106,6 +109,6 @@ magick hud_overlay/ap1_rev_arc/assets/fascia.png -strip -define png:compression-
 PLAYWRIGHT_MODULE_PATH=/path/to/playwright CHROMIUM_PATH=/path/to/chromium OUTPUT_DIR=/tmp/ap1-evidence node hud_overlay/ap1_rev_arc/tests/visual/render.mjs
 ```
 
-輸出 1280×720、1920×1080、2560×1440、DPR 2，以及 metric／imperial／R／N／redline／missing／低轉速車／signal lost／resize／自訂色等 PNG 與 `visual-evidence.json`。失敗也保留 JSON；不以執行腳本存在代替驗收通過。`tests/visual/fixture.html` 是可操作的相同來源 iframe 檢查頁，透過實際 HUDCore 訊息餵資料。兩個 fixture 都放在 `tests` 內，由既有 copy-hud 打包器排除。
+輸出 1280×720、1920×1080、2560×1440、DPR 2，以及 metric／imperial／R／N／redline／missing／低轉速車／signal lost／resize／自訂色／BOOST正負零與缺值／獨立單位／過量程等 PNG 與 `visual-evidence.json`。失敗也保留 JSON；不以執行腳本存在代替驗收通過。`tests/visual/fixture.html` 是可操作的相同來源 iframe 檢查頁，透過實際 HUDCore 訊息餵資料。兩個 fixture 都放在 `tests` 內，由既有 copy-hud 打包器排除。
 
 Author / Maintainer: Bagley as Codex

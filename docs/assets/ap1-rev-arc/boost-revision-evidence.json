@@ -2,7 +2,7 @@
   "style": "ap1_rev_arc",
   "revision": "signed boost auxiliary gauge and footer removal",
   "base_head": "2d006f498a521bbda124ab3dab4e42b37257c71e",
-  "status": "implemented; new remote visual and user review pending",
+  "status": "remote renderer and actual launcher checks passed; actual screenshots independently reviewed; user approval not implied",
   "source": {
     "documentation": "https://support.forza.net/hc/en-us/articles/51744149102611-Forza-Horizon-6-Data-Out-Documentation",
     "raw_field": "Boost",
@@ -43,5 +43,49 @@
     "files_passed": 160,
     "files_skipped": 1
   },
-  "next_evidence": "Updated direct-render and real-launcher fixtures include positive/zero/negative/missing/unit switches/overflow/footer absence; actual CI screenshots pending"
+  "next_evidence": "Final documentation-commit CI remains pending; Windows/native-game/network acceptance remains unverified",
+  "rendered_source_head": "a995df88fc8c4d4b4e6989c61a03e8c8a249cb6b",
+  "remote": {
+    "platform": "GitHub Actions Linux",
+    "browser": "Chrome 154",
+    "chromium_sandbox": true,
+    "telemetry": "synthetic direct-render and production-parser JSON fixtures through actual launcher/Coordinator",
+    "run_id": 37263377297,
+    "artifact_id": 11325665121,
+    "run_url": "https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37263377297",
+    "artifact_url": "https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37263377297/artifacts/11325665121",
+    "result": "passed"
+  },
+  "visual_review": {
+    "result": "passed scoped technical review",
+    "inspected": [
+      "actual BOOST hero",
+      "nine-state contact sheet"
+    ],
+    "findings": [
+      "Positive/zero/negative/missing readings remain distinct",
+      "PSI and kPa labels and numeric values visible",
+      "Out-of-range3bar displayed without numeric clamping",
+      "Compact and signal-loss states legible",
+      "Both requested footer strings absent"
+    ],
+    "user_approval": "not received or implied"
+  },
+  "layout_preservation": {
+    "evidence": "boost-layout-preservation.json",
+    "reference_head": "662d93432243ff0d18d758651ae208436722a24a",
+    "revision_head": "a995df88fc8c4d4b4e6989c61a03e8c8a249cb6b",
+    "method": "exact RGBA, no resampling/tolerance; exclude only requested right auxiliary and footer text regions",
+    "compared_pixels": 416143,
+    "differing_pixels": 0
+  },
+  "previews": {
+    "current": [
+      "detail-metric.png",
+      "detail-compact.png",
+      "states.png",
+      "metric-1280x720.png"
+    ],
+    "historical_arc_comparison": "before-after.png is the earlier fuel-version arc comparison, not the latest BOOST preview"
+  }
 }
