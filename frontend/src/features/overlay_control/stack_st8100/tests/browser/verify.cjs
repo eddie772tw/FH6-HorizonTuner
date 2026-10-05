@@ -202,10 +202,25 @@ async function main() {
     await open('?imperial=1'); await card.waitFor({ state: 'visible' });
     assert.equal(await input('alarm-2-threshold').inputValue(), '180');
     assert.equal(await input('alarm-1-threshold').inputValue(), '248');
-    for (const theme of ['dark', 'light']) for (const core of ['default', 'modern', 'elegant']) {
-      await settings.evaluate(({ theme, core }) => { document.documentElement.dataset.bsTheme = theme; document.documentElement.dataset.bsCore = core; }, { theme, core });
+    // Follow the production catalog and root-attribute owner after design-system changes.
+    const cores = await settings.evaluate(async () => {
+      const { CORE_THEMES } = await import('/src/context/themeCatalog.ts');
+      return Object.entries(CORE_THEMES).map(([core, definition]) => ({ core, designSystem: definition.designSystem }));
+    });
+    const applyTheme = async (theme, core) => settings.evaluate(async ({ theme, core }) => {
+      const { applyThemeToDocument } = await import('/src/context/themeDocument.ts');
+      const { defaultThemeSettings, normalizeThemeSettings } = await import('/src/context/themeSettings.ts');
+      applyThemeToDocument(normalizeThemeSettings({ ...defaultThemeSettings, mode: theme, halfmoonCore: core }));
+    }, { theme, core });
+    for (const theme of ['dark', 'light']) for (const { core, designSystem } of cores) {
+      await applyTheme(theme, core);
+      assert.equal(await settings.locator('html').getAttribute('data-design-system'), designSystem);
+      assert.equal(await settings.locator('html').getAttribute('data-bs-core'), core);
+      assert.equal(await settings.locator('html').getAttribute('data-bs-theme'), theme);
       await capture('settings-' + theme + '-' + core);
     }
+    // Preserve the pre-existing narrow/localization capture theme after the expanded matrix.
+    await applyTheme('light', 'elegant');
     await settings.setViewportSize({ width: 390, height: 844 }); await capture('settings-narrow');
     await settings.setViewportSize({ width: 1440, height: 1100 });
     await style.selectOption('simple'); await card.waitFor({ state: 'detached' });
