@@ -103,7 +103,7 @@ try {
     await send(frame, 'hud:frame', { data: { timestamp_ms: ++stamp, rpm: 3000 } }); await page.waitForTimeout(40);
     assert.equal(await text(frame, 'Speed'), '—'); assert.equal(await text(frame, 'Gear'), '—'); assert.equal(await text(frame, 'Tire'), 'N/A');
     await detail('missing');
-    await reading({ rpm: Infinity, speed_mph: 1e12, gear: 99, throttle: null, brake: NaN });
+    await reading({ rpm: Infinity, speed_kmh: 1e12, speed_mph: 1e12, gear: 99, throttle: null, brake: NaN });
     assert.equal(await text(frame, 'Speed'), '—'); assert.equal(await text(frame, 'Gear'), '—');
     await reading({ success: false }); assert.equal(await text(frame, 'Status'), 'DATA ERROR'); assert.equal(await text(frame, 'Speed'), '—');
     await reading({ isRaceOn: 0 }); assert.equal(await text(frame, 'Status'), 'PAUSED');
