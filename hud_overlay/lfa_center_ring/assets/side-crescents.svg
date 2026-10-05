@@ -41,7 +41,7 @@
       <text x="44" y="218">100</text><text x="116" y="318">0</text>
       <g text-anchor="end"><text x="515" y="218">100</text><text x="444" y="318">0</text></g>
     </g>
-    <use href="#tireIcon" transform="translate(84 110)"/>
+    <use href="#tireIcon" transform="translate(89 110)"/>
     <use href="#turboIcon" transform="translate(474 118) scale(.8)"/>
   </g>
 </svg>

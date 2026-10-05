@@ -17,7 +17,7 @@
 
 - 輪胎：以外側胎壁、內側輪轂、五輻線條與右側溫度計共同表達胎溫；原有 `TIRE 4W` 與四輪平均值保持不變。沒有 TPMS 驚嘆號、胎壓警告或單輪定位含義。
 - 渦輪：單一渦殼接切線出口，中央圓形進氣口搭配三葉轉子，去除舊圖案密集交叉線與不易辨認的管路。
-- 二者維持原有中性色與放置位置。輪胎 stroke 為 1.7 設計單位；渦輪為 2.1，再經原有 0.8 比例呈現為 1.68，讓最終線條重量一致。
+- 二者維持原有中性色。輪胎圖示向右移動 5 設計單位，避開華氏 `140` 刻度；渦輪位置不變。輪胎 stroke 為 1.7 設計單位；渦輪為 2.1，再經原有 0.8 比例呈現為 1.68，讓最終線條重量一致。
 - 無 OEM 標誌、照片貼圖、描圖或新增品牌素材。
 
 ## 匯出與驗證
@@ -29,7 +29,7 @@ inkscape hud_overlay/lfa_center_ring/assets/side-crescents.svg --export-width=11
 magick /tmp/lfa-side-export.png -strip -define png:color-type=6 hud_overlay/lfa_center_ring/assets/side-crescents.png
 ```
 
-與本次變更前 PNG 的逐像素 RGBA 比較：3,122 個像素改變，全部位於兩個圖示區域；圖示區域之外為 0 像素差異。沒有用重新取樣或容差豁免背景、曲線或中央區域。
+與本次變更前 PNG 的逐像素 RGBA 比較：2,905 個像素改變，全部位於兩個圖示區域；圖示區域之外為 0 像素差異。沒有用重新取樣或容差豁免背景、曲線或中央區域。後續華氏留白修正相對 `13a00e9` 改變 1,907 個像素，全部位於輪胎圖示，其他區域同樣為 0 差異。
 
 獨立的實際瀏覽器驗證位於 `hud_overlay/lfa_center_ring/tests/visual/auxiliary-icons.mjs`，由既有 `render.mjs` 呼叫：
 
@@ -38,6 +38,8 @@ magick /tmp/lfa-side-export.png -strip -define png:color-type=6 hud_overlay/lfa_
 - 使用來源 SVG 的圖示幾何對照即時 SVG 文字 bbox，保留 2 設計單位餘裕，檢查文字重疊、fascia 邊界與中央遮罩
 - 原有胎溫／增壓資料契約仍由 `lfaAuxiliaryAndSession.test.ts` 驗證；沒有增加低階 Canvas 呼叫次數或硬編碼像素座標的單元斷言
 
-本地已通過 `node --check`、`git diff --check` 與前端 Vitest：162 個檔案通過、1 個略過；1,268 個測試通過、1 個略過。實際 Chromium 圖示檢查及人工預設／compact 像素檢視須以本次合併程式碼的 CI artifact 為準，不能以放大的 SVG 預覽取代。
+本地已通過 `node --check`、`git diff --check` 與前端 Vitest：163 個檔案通過、1 個略過；1,273 個測試通過、1 個略過。實際 Chromium 圖示檢查及人工預設／compact 像素檢視須以本次合併程式碼的 CI artifact 為準，不能以放大的 SVG 預覽取代。
+
+第一次實際 Chrome 驗證 [run 37282149947](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37282149947)（`13a00e9`）的攝氏正常模式通過，但華氏 `140` 刻度與輪胎圖示的 2 單位留白檢查未通過；人工檢視同一批原尺寸 metric／imperial PNG 也確認左側擁擠。修正只把輪胎圖示右移，保留所有刻度、字型、中央圓與原驗證門檻；須重跑 CI 確認四種比例／DPR 下的最終留白。
 
 本次採用技能：`halfmoon-design-system`、`cross-agent-collaboration`。圖示原創幾何和來源授權的辨別屬於此素材的局部決策，不新增全域架構規則。

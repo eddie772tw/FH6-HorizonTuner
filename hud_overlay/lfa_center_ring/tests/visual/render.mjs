@@ -177,7 +177,16 @@ try {
   process.exitCode = 1;
 } finally {
   await writeFile(path.join(out, 'evidence.json'), JSON.stringify(summary, null, 2) + '\n');
-  console.log(JSON.stringify(summary, null, 2));
+  console.log(JSON.stringify({
+    passed: summary.passed,
+    error: summary.error,
+    scenarioCounts: {
+      regular: summary.scenarios.length,
+      expansion: summary.expansion?.length ?? 0,
+      auxiliaryIcons: summary.auxiliaryIcons?.reduce((count, run) => count + run.checks.length, 0) ?? 0,
+    },
+    evidence: path.join(out, 'evidence.json'),
+  }, null, 2));
   if (browser) await browser.close();
   await new Promise((r) => server.close(r));
 }
