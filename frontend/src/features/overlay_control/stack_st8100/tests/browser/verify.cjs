@@ -6,6 +6,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { pathToFileURL } = require('node:url');
 const { chromium } = require(process.env.PLAYWRIGHT_MODULE_PATH || 'playwright');
+const { captureSettingsPage } = require('./capture-settings.cjs');
 
 async function main() {
   const repo = path.resolve(__dirname, '../../../../../../..');
@@ -102,18 +103,7 @@ async function main() {
       await field.press(finish);
     };
     const capture = async (name, target = card) => {
-      await target.scrollIntoViewIfNeeded();
-      const state = await target.evaluate(element => {
-        const b = element.getBoundingClientRect();
-        const controls = [...element.querySelectorAll('input,select')].map(input => {
-          const r = input.getBoundingClientRect();
-          return { label: input.labels?.[0]?.textContent, width: r.width, left: r.left, right: r.right };
-        });
-        return { width: b.width, viewportWidth: innerWidth, fits: b.left >= 0 && b.right <= innerWidth && element.scrollWidth <= element.clientWidth + 1, controls };
-      });
-      assert(state.fits, name + ' overflows viewport');
-      assert(state.controls.every(control => control.label && control.width > 0 && control.left >= 0 && control.right <= state.viewportWidth), name + ' control clipping or missing label');
-      await target.screenshot({ path: path.join(out, name + '.png') }); samples.push({ name, ...state });
+      samples.push(await captureSettingsPage({ page: settings, target, name, out }));
     };
     await open();
     assert.equal(await card.count(), 0);
@@ -259,7 +249,7 @@ async function main() {
     throw error;
   } finally {
     fs.writeFileSync(path.join(out, 'settings-audit.json'), JSON.stringify({
-      scope: 'Actual React HUD controls and runtime, controlled disk-backed HTTP fixture; no native/game validation',
+      scope: 'Actual React HUD controls/runtime and nested-scroll reachability at original viewports; complete-card PNGs at the recorded taller same-width viewport; controlled HTTP fixture, no native/game validation',
       errors, failedResponses, samples, checks, saved,
     }, null, 2));
     await browser?.close(); await server.close();
