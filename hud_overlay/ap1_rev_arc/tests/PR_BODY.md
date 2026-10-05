@@ -1,5 +1,7 @@
 ### Summary of Changes
 
+**目前修訂狀態：** 依使用者指出的上方 RPM 弧表／外框曲率不一致，已改為單一橢圓弧、共享 unit normal offset 與色帶中心線等弧長分段。原本獨立拋物線與非對稱 Bézier 的取樣最近間距約18.9–41.9設計單位；修訂版上緣至內框法線間距固定36。速度、檔位、燃油與其他讀值 anchor／容器位置不變。新增5個幾何 invariant tests，Style共39 cases；全量158 files／1144 tests passed，1 skipped，build:web-hud pass。本輪等待新的 actual CI 截圖與使用者 review；下方舊預覽／遠端 run 屬修正前歷史紀錄，不代表此次弧度修正已驗收或使用者已核准整個樣式。
+
 新增 `ap1_rev_arc` HUD 原型，以 **1999 Honda S2000 AP1 日本上市初期的琥珀數位儀表**為明確研究對象，回應先從具有辨識度的真實車款儀表發展新樣式的方向。
 
 整體採低寬煙燻黑儀表罩、密集琥珀 LCD 分段、上拱轉速帶與中央大型速度；左下新增適合遊戲的低調檔位，右下呈現有實際資料的燃油。目標是喜歡 1990 年代末 Honda/JDM、高轉自然進氣與簡潔道路駕駛 HUD 的玩家。
@@ -32,6 +34,8 @@
 - **Backend / Python:** 未修改，不以不相關測試取代前端 gate
 
 ### Living Changelog & Review Iterations
+
+- 2026-10-05（Bagley as Codex）：使用者指出弧表與外框曲率不一致。先前像素檢查漏掉此結構問題；本輪以 arc-geometry.js 同時產生 RPM 色帶、刻度與框線，重新匯出原創 fascia。加入 compact／default、DPR1／DPR2、兩端文字容納與讀值相對位置的 CI 檢查；既有實際截圖保留供前後對照，等待新產物複查
 
 - 2026-10-05（Bagley as Codex）：以官方 1999 Fact Book 研究原型並實際查看座艙圖片；完成原創外殼、遙測與生命週期
 - 2026-10-05（Bagley as Codex）：依獨立檢查補上 timestamp replay 斷線偵測、負值倒車、max_rpm、null payload/config、legacy unit fallback；擴充純行為測試

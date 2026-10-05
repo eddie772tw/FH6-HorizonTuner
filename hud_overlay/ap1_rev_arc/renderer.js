@@ -1,4 +1,5 @@
 import { SEGMENT_COUNT, segmentState, tachometerTicks } from './model.js';
+import { ARC, arcPoint, arcSegment } from './arc-geometry.js';
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const DIGITS = { '0': 'ab cdef'.replaceAll(' ', ''), '1': 'bc', '2': 'abdeg', '3': 'abcdg', '4': 'bcfg', '5': 'acdfg', '6': 'acdefg', '7': 'abc', '8': 'abcdefg', '9': 'abcdfg', '-': 'g', ' ': '' };
 // Original seven-segment glyphs, no redistributed instrument font.
@@ -11,7 +12,6 @@ const GLYPHS = {
   f: '3,8 9,14 9,36 3,42 0,36 0,12',
   g: '10,39 48,39 54,45 48,51 10,51 4,45',
 };
-const point = ratio => ({ x: 77 + ratio * 574, y: 157 - 87 * 4 * ratio * (1 - ratio) });
 
 export function createRenderer(document, container) {
   const el = id => document.getElementById(id);
@@ -24,9 +24,8 @@ export function createRenderer(document, container) {
   const set = (node, key, value) => { if (node.getAttribute(key) !== String(value)) node.setAttribute(key, String(value)); };
   const text = (id, value) => { const node = el(id); if (node.textContent !== value) node.textContent = value; };
   const bars = Array.from({ length: SEGMENT_COUNT }, (_, i) => {
-    const left = point(i / SEGMENT_COUNT);
-    const right = point((i + .72) / SEGMENT_COUNT);
-    return create('polygon', { points: `${left.x},${left.y} ${right.x},${right.y} ${right.x},${right.y - 18} ${left.x},${left.y - 18}`, class: 'ap1-segment' }, el('rpmSegments'));
+    const points = arcSegment(i, SEGMENT_COUNT).map(p => `${p.x},${p.y}`).join(' ');
+    return create('polygon', { points, class: 'ap1-segment' }, el('rpmSegments'));
   });
   const digits = Array.from({ length: 3 }, (_, i) => {
     const group = create('g', { transform: `translate(${i * 73} 0)` }, el('speedDigits'));
@@ -42,9 +41,9 @@ export function createRenderer(document, container) {
         lastTickKey = tickKey;
         el('rpmTicks').replaceChildren();
         for (const tick of tachometerTicks(frame.maxRpm)) {
-          const p = point(tick.ratio);
+          const p = arcPoint(tick.ratio, ARC.labelCenter);
           const hot = frame.redlineRpm !== null && tick.rpm >= frame.redlineRpm;
-          const node = create('text', { x: p.x + 2, y: p.y - 27, 'text-anchor': 'middle', class: `ap1-tick-label${hot ? ' ap1-redline-tick' : ''}` }, el('rpmTicks'));
+          const node = create('text', { x: p.x, y: p.y, 'text-anchor': 'middle', 'dominant-baseline': 'central', class: `ap1-tick-label${hot ? ' ap1-redline-tick' : ''}` }, el('rpmTicks'));
           node.textContent = tick.label;
         }
       }

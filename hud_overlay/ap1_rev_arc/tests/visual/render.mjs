@@ -2,7 +2,7 @@
 // Optional PLAYWRIGHT_MODULE_PATH and CHROMIUM_PATH; no project dependency added.
 import { createRequire } from 'node:module';
 import { createServer } from 'node:http';
-import { readFile, mkdir, writeFile } from 'node:fs/promises';
+import { readFile, mkdir, writeFile, copyFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import assert from 'node:assert/strict';
@@ -33,6 +33,23 @@ const url = `http://127.0.0.1:${server.address().port}/ap1_rev_arc/index.html`;
 let stamp = 100;
 const sample = { speed_kmh: 188, speed_mph: 117, rpm: 7300, maxRpm: 9000, redlineRpm: 8000, gear: 4, fuel_ratio: .625, isRaceOn: 1 };
 const frame = (page, data = {}, meta = {}) => page.evaluate(({ data, meta, stamp }) => window.HUDCore.handleMessage('hud:frame', { data: { ...data, timestamp_ms: stamp }, ...meta }), { data: { ...sample, ...data }, meta, stamp: stamp++ });
+const inspectArcLayout = async page => page.evaluate(async () => {
+  const { ARC, arcFrame } = await import('./arc-geometry.js');
+  const labels = Array.from(document.querySelectorAll('#rpmTicks text'));
+  const labelClearances = labels.map((node, i) => {
+    const { point, normal } = arcFrame(i / (labels.length - 1));
+    const b = node.getBBox();
+    const corners = [[b.x,b.y],[b.x+b.width,b.y],[b.x,b.y+b.height],[b.x+b.width,b.y+b.height]];
+    const distances = corners.map(([x,y]) => (x-point.x)*normal.x + (y-point.y)*normal.y);
+    return { text: node.textContent, bandGap: Math.min(...distances) - ARC.bandTop, bezelGap: ARC.faceEdge - Math.max(...distances) };
+  });
+  const cluster = document.querySelector('#ap1Cluster').getBoundingClientRect();
+  const readouts = Object.fromEntries(['speedDigits','gearValue','fuelSegments','fuelValue','rpmValue','speedUnit'].map(id => {
+    const b = document.getElementById(id).getBoundingClientRect();
+    return [id, { x: (b.x-cluster.x)/cluster.width, y: (b.y-cluster.y)/cluster.height, width: b.width/cluster.width, height: b.height/cluster.height }];
+  }));
+  return { labelClearances, readouts };
+});
 const save = async (page, name) => {
   await page.screenshot({ path: path.join(out, name), omitBackground: true });
   report.screenshots.push(name);
@@ -51,6 +68,24 @@ try {
     assert(bounds.x >= 0 && bounds.y >= 0 && bounds.x + bounds.width <= width && bounds.y + bounds.height <= height);
     await save(page, `metric-${width}x${height}-dpr${dpr}.png`);
     report.checks.push({ viewport: [width, height], dpr, bounds, metric: '188 km/h' });
+    if (width === 1280) {
+      const normalLayout = await inspectArcLayout(page);
+      for (const label of normalLayout.labelClearances) {
+        assert(label.bandGap > 0 && label.bezelGap > 0, 'RPM label must fit between band and bezel: ' + label.text);
+      }
+      await page.evaluate(() => window.HUDCore.handleMessage('config', { data: { scale: .7, glowIntensity: .8, elements: { showGauge: true } } }));
+      await frame(page);
+      const compactLayout = await inspectArcLayout(page);
+      for (const [id, normal] of Object.entries(normalLayout.readouts)) {
+        for (const key of ['x','y','width','height']) {
+          assert(Math.abs(normal[key] - compactLayout.readouts[id][key]) < .001, 'Compact scaling must preserve readout positions: ' + id);
+        }
+      }
+      await save(page, 'compact-1280x720-dpr' + dpr + '.png');
+      report.checks.push({ arcRevision: 'one shared normal-offset curve', dpr, normalLayout, compactLayout });
+      await page.evaluate(() => window.HUDCore.handleMessage('config', { data: { scale: 1, glowIntensity: .8, elements: { showGauge: true } } }));
+      await frame(page);
+    }
     if (width === 1280 && dpr === 1) {
       await frame(page, {}, { isMetric: false });
       assert.equal(await page.locator('#ap1Cluster').getAttribute('data-speed'), '117');
@@ -103,6 +138,11 @@ try {
     }
     await context.close();
   }
+  // Preserve the actual pre-revision browser baseline beside the new captures.
+  await copyFile(path.join(root, '../docs/assets/ap1-rev-arc/metric-1280x720.png'), path.join(out, 'before-arc-revision-1280x720.png'));
+  await copyFile(path.join(root, '../docs/assets/ap1-rev-arc/detail-metric.png'), path.join(out, 'before-arc-revision-detail.png'));
+  const baselineEvidence = JSON.parse(await readFile(path.join(root, '../docs/assets/ap1-rev-arc/review-evidence.json'), 'utf8'));
+  report.comparisonBaseline = { head: baselineEvidence.reviewed_head, sourceRun: baselineEvidence.run_id, note: 'Actual historical Chromium captures; compare with this run metric and compact captures. Current PNGs remain marked historical in docs until reviewed.' };
   assert.deepEqual(report.errors, []);
   await writeFile(path.join(out, 'visual-evidence.json'), JSON.stringify(report, null, 2) + '\n');
   console.log(JSON.stringify(report, null, 2));
