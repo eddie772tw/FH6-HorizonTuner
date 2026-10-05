@@ -78,7 +78,7 @@ AEGO Road now uses qualified moving-sweep bin averages and jointly allocates fir
 
 ## Project Architecture
 
-The shared `AppShell` owns workspace navigation and the application menu. Full provides Live, Tune, Sessions, and HUD; Lite provides Live and HUD. Only the active workspace mounts. Feature providers own the longer-lived Tune, Road, Sessions, and HUD state so navigation can preserve measurements and unsaved drafts. The application menu contains Settings, Appearance, Diagnostics, Updates, and About. This branch is undergoing a staged IA migration; panel decomposition and native acceptance status are recorded in the [Shell handoff](docs/frontend/ia-refactor-20260913/handoffs/shell-20260914.md).
+The shared `AppShell` owns workspace navigation and the application menu. Full provides Live, Tune, Sessions, and HUD; Lite provides Live and HUD. Only the active workspace mounts. Feature providers own the longer-lived Tune, Road, Sessions, and HUD state so navigation can preserve measurements and unsaved drafts. The application menu contains Settings, Appearance, Diagnostics, Updates, and About. Historical panel decomposition and native acceptance records are preserved in the archived [Shell handoff](docs/archive/frontend/ia-refactor-20260913/handoffs/shell-20260914.md).
 
 ```text
 FH6-HorizonTuner/
@@ -112,7 +112,8 @@ FH6-HorizonTuner/
 │   ├── src/domain/tuning/    # Pure tuning domain (tires, load transfer, chassis, gearing, differential)
 │   │   ├── chassis/          # Suspension and Phase 4B four-wheel load-transfer estimates
 │   │   └── tires/            # Friction ellipse, tire geometry, and vertical-stiffness priors
-│   ├── src/utils/           # Pure calculation utilities (tuningMath.ts, tuningDiagnosis.ts, etc.)
+│   ├── src/utils/           # Display and transport utilities; tuning decisions belong to Rust
+│   ├── test-reference/tuning/ # Frozen TS models and characterization tests
 │   └── src-tauri/           # Tauri window & Full/Lite packaging configuration
 ├── hud_overlay/             # HTML5 Canvas custom racing HUD overlays
 │   ├── index.html           # HUD launcher & Viewport renderer entry
@@ -227,7 +228,7 @@ cmd /c "pnpm -C frontend run test"
 Representative frontend test areas are listed below; file and case counts change over time:
 | Test File | Coverage Area |
 | :--- | :--- |
-| `tuningMath.test.ts` | 29 test cases covering AEGO gear ratios, springs, ARBs, damping, downforce & alignment |
+| `frontend/test-reference/tuning/` | Frozen historical numerical tests; Rust product contracts live in `backend-rust/tests/` |
 | `tuningDiagnosis.test.ts` | Real-time telemetry diagnosis and chassis problem detection logic |
 | `loadTransfer.test.ts` / `tireGeometry.test.ts` | Phase 4B four-wheel normal-load estimates, load transfer, and tire-geometry priors |
 | `driftMath.test.ts` | Drift scoring and dynamic slip angle math |
@@ -267,7 +268,7 @@ Before submitting a Pull Request, please verify the following:
 - [ ] Code passes `uv run --no-project --python .venv\Scripts\python.exe ruff check .`
 - [ ] Rust backend / CLI contract tests pass with `cargo test --locked --manifest-path backend-rust/Cargo.toml`
 - [ ] If new API routes or core logic were added, corresponding unit tests have been written
-- [ ] If `tuningMath.ts` / `tuningDiagnosis.ts` pure logic was updated, corresponding Vitest unit tests have been added
+- [ ] Changes to Rust tuning decisions include Rust contract tests; frontend type or flow changes pass Vitest and the production boundary build.
 - [ ] If significant architectural changes or core modules were added, `README.md` & `README.en.md` have been updated
 - [ ] If UI components or frontend logic were modified, functionality has been locally verified
 - [ ] If new translation keys were added, both `lang/zh-tw.json` and `lang/ja-jp.json` have been updated
@@ -299,7 +300,7 @@ The project uses GitHub Actions for automated quality control. Every push to `ma
 | :--- | :--- |
 | **Lint** | uv-managed Ruff checks for Python tools and Cargo fmt for Rust |
 | **Test (Backend)** | Rust Cargo product contract tests (including no-HUD build); CI also runs frozen Python migration-compatibility and release-validation cases, not a Python backend |
-| **Test (Frontend)** | `cd frontend && pnpm run test` Vitest suite execution (covers `tuningMath.ts` & UI logic) |
+| **Test (Frontend)** | `cd frontend && pnpm run test` Vitest for UI contracts, frozen references, and build boundaries |
 
 > [!IMPORTANT]
 > The current CI workflows define the required gates. Run Cargo, Vitest, and build checks for the changed scope; CI also runs the frozen Python compatibility/release cases and Ruff checks.
@@ -353,3 +354,5 @@ In the game, set **Data Out IP Address** to `127.0.0.1` and **Data Out Port** to
 
 In a Release Build, the Rust HTTP service first attempts to bind `8001`. If another process owns that port, it falls back to an available dynamic TCP port. The actual bound port is written to `logs/web_port.txt` under the data directory after binding succeeds, and the frontend uses that value directly. Forza UDP telemetry still listens on `8000` by default. When fallback occurs, the application displays a Settings/MCP popover so the current endpoint can be confirmed before a client's one-time endpoint bootstrap. After the first connection, a compatible Agent receives configuration guidance through the standard MCP `initialize` response; MCP does not define a cross-client API for injecting the initial URL.
 After the Tauri sidecar reports ready, the frontend configures that actual port through a centralized transport contract. REST and WebSocket calls do not rely on global `fetch` or `WebSocket` interception, so HUD assets and other non-backend connections are never rewritten.
+
+v1.7.1 candidate acceptance, evidence limits and cleanup inventory: [acceptance ledger](docs/releases/v1.7.1-acceptance.md). This work does not publish a tag, Release or OTA manifest.

@@ -7,7 +7,7 @@
 
 ---
 
-## 1. v1.7.1 後端唯一 owner（遷移中）
+## 1. v1.7.1 後端唯一 owner
 
 經使用者明確授權，此方向取代 #430 的 Twin SSOT 與 #428 的 WASM 討論。所有會影響產品建議的公式、資格、預設、限制、readiness 與數值診斷必須有 Rust owner；UI 保留草稿、流程、格式、顯示單位轉換與版面。
 
@@ -31,7 +31,7 @@
 | `legacy-mcp/v1` | 舊 MCP quick chassis；Drift 公式不同於 CLI，獨立凍結 |
 | `legacy-desktop-experimental/v1` | 實驗 UI 呼叫 Rust developer model；保留既有 48 組 fixture 與 `tuning-dev/v1` output schema |
 
-TypeScript 舊純模型僅作凍結測試參考；未掛載的 Step5TelemetryCalibration 舊診斷不是產品路徑，不可重新掛載而繞過 Rust owner。圖表 RPM／速度軸幾何與真正顯示單位轉換屬顯示用途，不產生設定建議。
+TypeScript 舊純模型已隔離於 `frontend/test-reference/tuning/`；產品純型別位於 `frontend/src/domain/tuning/types.ts`，只描述資料形狀，不包含公式、數值預設、資格或 readiness 判定。未掛載的 Step5TelemetryCalibration／DiagnosisPanel 已移除。Vite 在 tree shaking 前阻擋直接、間接與動態 runtime dependency，錯誤包含 importer 與 target。圖表 RPM／速度軸幾何與真正顯示單位轉換屬顯示用途，不產生設定建議。
 
 PR #460 經使用者授權與全量驗證已合併入 main（v1.7.1）。
 

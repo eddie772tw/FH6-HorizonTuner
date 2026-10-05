@@ -41,7 +41,7 @@
 cargo run --locked --manifest-path backend-rust/Cargo.toml --bin fh6-agent -- <subcommand> [options]
 ```
 
-所有結果均為可閱讀的 JSON，`--json` 保留為相容旗標。`solve` 維持舊版 `tuning-dev/v1` 的數值與匯出契約，並非正式 Rust／TypeScript 調校核心的等價替代；輸出仍標記未校準。`telemetry diagnose` 需要實際 live sample 或明確的 `--tire-temps`，缺值會回報錯誤，不再使用虛構的 85°C。齒數限制為 1–10，輸入必須為有限值，Preset 路徑不可跳出資料目錄。
+所有結果均為可閱讀的 JSON，`--json` 保留為相容旗標。`solve workflow` 是正式 Rust 工作流入口，與桌面／Companion／MCP 共用 owner；`solve chassis/gearing/full` 才是舊版 `tuning-dev/v1` 相容契約，輸出仍標記未校準。`telemetry diagnose` 需要實際 live sample 或明確的 `--tire-temps`，缺值會回報錯誤，不再使用虛構的 85°C。齒數限制為 1–10，輸入必須為有限值，Preset 路徑不可跳出資料目錄。
 
 ---
 
@@ -113,7 +113,15 @@ cargo run --locked --manifest-path backend-rust/Cargo.toml --bin fh6-agent -- <s
 
 ### 4. 調校算牌核心 (`solve`)
 
-完全對齊前端 `tuningMath.ts` 與後端 MCP 服務之純物理純函數算牌演算法。
+正式工作流：
+
+```powershell
+.\fh6-agent.bat solve workflow --args-file workflow-request.json --data-dir <資料目錄> --json
+```
+
+JSON request 使用 `schemaVersion: "tuning-workflow-result/v1"`，包含 `goal`、`season`、完整 `profile`、`inputSnapshot.carId` 與 `evidence`。本地已存 ICE 證據使用 `{"kind":"saved-engine","observationId":"..."}`；EV 使用 `{"kind":"saved-ev","evidenceId":"..."}`。亦可傳完整 `engine-capture`／`ev-capture` 原始資料，由相同 Rust library 重播資格；不能只填 RPM／功率峰值宣稱 measured。
+
+CLI 與 MCP 是唯讀分析入口；正式保存由桌面／後端 API 確認 backend-issued evidenceId。下面三個子命令保留 `legacy-cli/v1` 數值與舊匯出 schema；不等同正式 workflow，也不與 legacy MCP quick solver 混用。
 
 #### (1) 底盤物理算牌 (`solve chassis`)
 計算前後防傾桿 (ARB)、前後彈簧磅數（lbs/in 與 kgf/mm）、車高建議、前後回彈/壓縮阻尼、定位角度與差速器配置。
@@ -125,7 +133,7 @@ cargo run --locked --manifest-path backend-rust/Cargo.toml --bin fh6-agent -- <s
 # 自動從車輛資料庫帶入車重與配重
 .\fh6-agent.bat solve chassis --car-id 302 --goal drift --json
 
-# 匯出前端 Step 5 AppliedSetupTable 相容格式
+# 匯出歷史 AppliedSetupTable 相容格式
 .\fh6-agent.bat solve chassis --weight 1350 --bias 54 --drive RWD --export-applied-setup --json
 ```
 
@@ -232,8 +240,8 @@ Always append `--json` to retrieve structured, machine-readable output.
 Standard Tuning Workflow:
 1. Inspect connection: `.\fh6-agent.bat status --json`
 2. Search vehicle baseline: `.\fh6-agent.bat cars search "<car_name>" --json`
-3. Generate initial tuning setup: `.\fh6-agent.bat solve chassis --car-id <id> --goal <road|drift|rally|drag> --json`
-4. Calculate gearing: `.\fh6-agent.bat solve gearing --max-rpm <rpm> --peak-hp-rpm <rpm> --top-speed <speed> --json`
-5. Save full tune to preset: `.\fh6-agent.bat solve full --car-id <id> --goal road --save agent_v1 --json`
-6. Check telemetry & closed-loop diagnosis: `.\fh6-agent.bat telemetry diagnose --json`
+3. Obtain the complete profile and saved evidence ID or original capture; never invent hidden inputs.
+4. Calculate the formal recommendation: `.\fh6-agent.bat solve workflow --args-file workflow-request.json --data-dir <data-root> --json`
+5. Review readiness and qualified evidence before saving through the application.
+6. Inspect live telemetry (legacy diagnostic contract): `.\fh6-agent.bat telemetry diagnose --json`
 ```

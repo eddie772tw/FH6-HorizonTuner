@@ -17,11 +17,11 @@ v1.7.1：正式調校公式、資格審查與數值診斷之唯一 owner 已全�
 | 正式調校核心 (Rust SSOT) | [backend-rust/src/tuning/](../../backend-rust/src/tuning/) | 物理懸吊、彈簧、ARB、阻尼、AEGO 齒比求解器與資格判定 |
 | 前端調校介面 | [TuningView.tsx](../../frontend/src/features/tuning/TuningView.tsx) | 既有使用者流程、草稿管理與 Rust API 渲染對接 |
 | 開發者調校介面 | [TuningView_dev.tsx](../../frontend/src/features/tuning/TuningView_dev.tsx)、[domain/tuning](../../frontend/src/domain/tuning/) | 開發者輔助流程；計算結果以 Rust 調校端點為唯一準據 |
-| CLI 工具 | [agent_cli.rs](../../backend-rust/src/agent_cli.rs)、[legacy_cli.rs](../../backend-rust/src/tuning/legacy_cli.rs) | Rust 保留舊 CLI 數值，不等同正式調校核心 |
-| MCP 求解器 | [tools.rs](../../backend-rust/src/mcp/tools.rs)、[service.rs](../../backend-rust/src/mcp/service.rs) | Rust MCP 工具介面與快速求解器，不能僅因名稱相同就假定共用正式 solver |
+| CLI 工具 | [agent_cli.rs](../../backend-rust/src/agent_cli.rs)、[legacy_cli.rs](../../backend-rust/src/tuning/legacy_cli.rs) | `solve workflow --args-file` 使用正式 Rust workflow；`solve chassis/gearing/full` 保留 legacy-cli/v1 數值 |
+| MCP 求解器 | [tools.rs](../../backend-rust/src/mcp/tools.rs)、[service.rs](../../backend-rust/src/mcp/service.rs) | `calculate_tuning_workflow` 使用正式 owner；quick solver 維持獨立 legacy-mcp/v1 |
 | 遙測採樣 | [TuningTelemetryCaptureView.tsx](../../frontend/src/features/tuning/components/TuningTelemetryCaptureView.tsx)、[telemetryCapture.ts](../../frontend/src/domain/tuning/telemetryCapture.ts) | 錄製介面、資料契約與匯出內容 |
 
-此表描述現況，不是授權新增平行計算實作。既有實作與治理中的單一來源目標仍須分開看待；未經比對，不宣稱一般模式、開發者模式、CLI 與 MCP 已有數值一致性保證。
+桌面、Companion、workflow CLI／MCP 共用正式 owner；實驗模式與 legacy 指令維持自己的版本契約。產品純型別位於 `frontend/src/domain/tuning/types.ts`，凍結模型與測試位於 `frontend/test-reference/tuning/`。本次收尾的驗收範圍見 [v1.7.1 候選驗收](../releases/v1.7.1-acceptance.md)。
 
 ## 驗證與接續順序
 

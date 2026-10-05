@@ -1,6 +1,6 @@
 # EV 測量與 AEGO 基礎模型
 
-狀態：本地實作與回放驗證。Issue #435；CVT / #434 暫不納入。分支 `codex/aego-ev-foundation-435`，起點 `10a1ad2`。
+狀態：v1.7.1 基礎模型與正式 Rust owner 已落地。2026-10-05 以既有 Taycan 實機資料完成 Rust HTTP／瀏覽器回放與後端重啟持久化驗收；真實單速車款與新的遊戲內 UI 操作仍未追加驗收。Issue #435；CVT / #434 與新的 EV 最佳化暫不納入。
 
 ## 使用方式與範圍
 
@@ -17,20 +17,20 @@
 
 **檔位數與可調能力相互獨立**：每檔的 `gearAdjustable` 及 `finalDriveAdjustable` 預設 false。鎖定或未知比值不會列為步驟 4 待套用的設定，亦不會以 0、1 或慣用比值補齊。模型本版只改變終傳候選；各檔可調標記用來保護驗證清單，不表示已實作各檔齒比最佳化。未知終傳無法進行終傳變更預覽；已知且可調的終傳可依實測 k 映射推算，即使個別齒比被鎖定且未顯示，也無須猜測其數值。
 
-EV 設定隨車輛參數保存。量測在本次程式工作階段內跨頁保留，最多 30,000 個 decoded WebSocket frames；需在重新收集、變更設定或關閉程式前匯出 `ev-capture/v1`。本版不把 EV scan 寫入 `engine-observation/v1`，也沒有 EV 歷史量測匯入功能。Companion 讀到相同 EV 計算結果，但量測操作須使用電腦端 EV 控制；其傳統引擎量測命令會明確拒絕。
+EV 設定隨車輛參數保存。未提交的量測在目前工作階段跨頁保留，最多 30,000 個 decoded WebSocket frames；計算時原始 frames 經 `/api/tuning/ev-evidence` 資格審核並不可變保存。正式建議使用 evidenceId，可隨 Road workflow 保存，重啟後由 Rust 重播驗證。未提交的收集狀態不承諾重啟恢復；需要時可匯出 `ev-capture/v1`。EV 不寫入 ICE `engine-observation/v1`，目前沒有 EV 歷史量測匯入 UI。Companion 讀到相同 EV 計算結果，但量測操作須使用電腦端 EV 控制；其傳統引擎量測命令會明確拒絕。
 
-## 平行模組
+## 正式模組
 
 | 職責 | 傳統引擎 | EV |
 | --- | --- | --- |
-| 量測 | `features/tuning/tuningMeasurement.ts` | `domain/tuning/ev/measurement.ts` |
+| 量測 owner | `backend-rust/src/tuning/measurement.rs` | `backend-rust/src/tuning/ev_measurement.rs` |
 | runtime | `TuneSessionProvider.engineMeasurement` | 獨立 `useEvMeasurementSession` |
 | 量測結構 | `engine-observation/v1` | `ev-measurement/v1`、`ev-capture/v1` |
-| TS 計算 | `utils/tuningMath.ts` | `domain/tuning/ev/solver.ts` |
+| 前端型別 | `domain/tuning/types.ts` | `domain/tuning/ev/types.ts` |
 | Rust 計算 | `backend-rust/src/tuning/gearing.rs` | `backend-rust/src/tuning/ev.rs` |
-| 驗證快照 | `tuningMath/measured-workflow-v1` | `ev/measured-workflow-v1` |
+| 新推薦快照 | `rust/ice-measured-workflow-v2`（Road）／v1（其他 ICE） | `rust/ev-measured-workflow-v1` |
 
-`calculateWizardMeasuredGearing` 只負責選擇模型。EV 無有效結果就返回 unavailable，不把 EV 資料轉成 ICE peak inputs。直接呼叫的舊 TS/Rust gearing solver 也會拒絕 EV profile；驗證快照拒絕車輛模式與計算結果模式不一致的輸入。底盤與輪胎估算維持共用。
+`/api/tuning/workflow` 由 Rust 選擇正式模型；TypeScript 舊模型僅在 `frontend/test-reference/tuning/` 保存歷史測試。EV 無有效結果就返回 unavailable，不把 EV 資料轉成 ICE peak inputs。直接呼叫的舊 TS/Rust gearing solver 也會拒絕 EV profile；驗證快照拒絕車輛模式與計算結果模式不一致的輸入。底盤與輪胎估算維持共用。
 
 切換車輛、模式、動力參數、量測時齒比配置或可調能力會清除 EV 結果；car ordinal、PI、class 改變或時間戳回退會中止收集。背景 dyno polling 不會覆寫 EV 設定。畫面更新至多每 200 ms，量測使用插值之前的 decoded frames，無額外 UDP listener。傳統參數頁的延遲自動儲存會使用該次編輯的 snapshot，避免 EV 開關寫回前一版值；保存失敗不會啟動量測。
 
@@ -66,6 +66,8 @@ boundarySpeedKmh = observedBoundaryRpm / (k * scale)
 
 ## 驗證
 
+2026-10-05：`verify_ev_browser.cjs` 已以實際 Rust HTTP 取代 mock，另驗證保存後關閉／重啟後端的文件與 evidence 重算一致；驗收紀錄見 [v1.7.1](../releases/v1.7.1-acceptance.md)。以下數字與初始 mock 瀏覽器方法是 2026-09-27 基礎模型交接的歷史證據，不能當成目前候選 SHA 的結果。
+
 - 原有前端基線：1,004 tests。
 - 前端最終：1,030 tests / 145 files、TypeScript 與 production build 通過。
 - Rust 完整 gate：87 passed / 3 ignored；Cargo fmt 通過。三個 ignored 為既有選用測試，未作為通過項目計數。
@@ -85,6 +87,8 @@ node scripts/verify_ev_browser.cjs
 Windows 全量 Rust 平行編譯曾受系統 commit memory 限制而失敗；單工重試通過，未更動系統分頁檔或既有遊戲／開發服務。
 
 ## 實作交接
+
+以下保留 2026-09-27 的歷史交接；現行維護入口為 [調校開發入口](../tuning/README.md)。
 
 - Task / Status：Issue #435 EV 基礎模型，`done`（實作與本地驗證範圍）。
 - Owner：Codex 主代理持有全部寫入；Luna 只讀研究與最後審查。已補上其指出的快照模式一致性檢查，含雙向回歸測試。
