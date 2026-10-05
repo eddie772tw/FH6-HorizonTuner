@@ -1,6 +1,7 @@
 import { DEFAULT_HUD_CONFIG, type HudConfig, type HudElements } from './hudConfig';
 import { normalizeS650HmiConfig } from './s650/config';
 import { normalizeClassicJdmConfig } from './classic_jdm/config';
+import { normalizeStackSt8100Config } from './stack_st8100/config';
 import { normalizeLfaExpansionConfig } from './lfa_center_ring/config';
 import type { HudDisplayUnits } from './HudUnitSettingsSidebar';
 
@@ -75,7 +76,7 @@ async function responseIsSuccessful(response: ResponseLike, action: string): Pro
 
 export function normalizeHudRuntimeConfig(input: unknown): HudConfigRecord {
   const raw = isRecord(input) ? withoutDerivedChannelFields(input) : {};
-  const normalized = normalizeLfaExpansionConfig(normalizeClassicJdmConfig(normalizeS650HmiConfig(raw as {
+  const normalized = normalizeStackSt8100Config(normalizeLfaExpansionConfig(normalizeClassicJdmConfig(normalizeS650HmiConfig(raw as {
     hudStyle?: string;
     s650Theme?: unknown;
     s650CenterWidget?: unknown;
@@ -85,7 +86,7 @@ export function normalizeHudRuntimeConfig(input: unknown): HudConfigRecord {
     classicJdmAux2?: unknown;
     classicJdmDefiTheme?: unknown;
     [key: string]: unknown;
-  })));
+  }))));
   return {
     ...DEFAULT_HUD_CONFIG,
     ...normalized,

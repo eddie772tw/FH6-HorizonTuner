@@ -1,0 +1,28 @@
+:root {
+    --stack-shell: #16191a;
+    --stack-edge: #323738;
+    --stack-inset: #545c5a;
+    --stack-white-face: #e7e7df;
+    --stack-white-tick: #202523;
+    --stack-white-muted: #45504b;
+    --stack-face: #090d0d;
+    --stack-tick: #e6e8dc;
+    --stack-muted: #9baba2;
+    --stack-needle: #e73e37;
+    --stack-hub: #141e21;
+    --stack-recess: #030808;
+    --stack-lcd: #a6c74d;
+    --stack-lcd-edge: #26321d;
+    --stack-ink: #1d320a;
+    --stack-dot: #91b341;
+    --stack-alarm: #ff6137;
+    --stack-shift: #f2e8a5;
+    --stack-lamp-off: #243232;
+    --hud-default-color: var(--stack-lcd);
+}
+.stack-container { width: 640px; height: 380px; pointer-events: none; }
+.stack-container, .stack-container canvas { transition: none !important; }
+.stack-container canvas { width: 640px; height: 380px; display: block; }
+
+.stack-wordmark { position: absolute; left: 572px; top: 275px; width: 40px; height: 66px; color: var(--stack-tick); }
+.stack-container[data-face="white"] .stack-wordmark { color: var(--stack-white-tick); }

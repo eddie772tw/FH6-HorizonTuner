@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { createState } from '../../model.js';
 
 function harness() {
-  const source = readFileSync(resolve(process.cwd(), '../hud_overlay/ap1_rev_arc/controller.js'), 'utf8').replace(/^import .*;\n/gm, '');
+  const source = readFileSync(resolve(process.cwd(), '../hud_overlay/ap1_rev_arc/controller.js'), 'utf8').replace(/^import .*;\r?\n/gm, '');
   const listeners = new Map<string, (event?: any) => void>();
   const render = vi.fn();
   let hooks: any;

@@ -1,0 +1,5131 @@
+{
+  "format": "condensed-browser-evidence/v1",
+  "source_audit_sha256": "a73a38b51303befe3070845a693acbd5e2ac86aa37a9cdb9b94d9ba92ce99d21",
+  "source_artifact_id": 11337220472,
+  "scope": "Actual React HUD controls/runtime and nested-scroll reachability at original viewports; complete-card PNGs at the recorded taller same-width viewport; controlled HTTP fixture, no native/game validation",
+  "note": "Condensed from the actual runner audit; preserves every checked target and result while omitting repetitive ancestor geometry and full fixture save payloads. Complete original audit is in the referenced artifact.",
+  "errors": [],
+  "failedResponses": [],
+  "checks": [
+    "Exactly three alarms, all nine metrics, safe metric changes, high/low triggers, keyboard drafts and rollback",
+    "Canonical C/bar/kmh/kW/Nm survive C/F, mph, PSI/kPa, hp/PS and lb-ft edits",
+    "Persisted reload, style round-trip, reset cancellation and confirmed defaults"
+  ],
+  "saved_config_count": 60,
+  "samples": [
+    {
+      "name": "settings-dark-default",
+      "width": 448,
+      "height": 1271,
+      "fits": true,
+      "verticalFits": true,
+      "sourceViewport": {
+        "width": 1440,
+        "height": 1100
+      },
+      "captureViewport": {
+        "width": 1440,
+        "height": 1431
+      },
+      "note": "All items reached in the original viewport; full-card PNG uses the recorded taller viewport with the same width and unchanged product styling.",
+      "controls": [
+        {
+          "id": "_r_g_-dial",
+          "tag": "SELECT",
+          "label": "Tachometer range",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-face",
+          "tag": "SELECT",
+          "label": "Dial face",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-page",
+          "tag": "SELECT",
+          "label": "LCD page",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-temperature",
+          "tag": "SELECT",
+          "label": "Tire temperature unit",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-stackSt8100Field1",
+          "tag": "SELECT",
+          "label": "LCD upper left",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-stackSt8100Field2",
+          "tag": "SELECT",
+          "label": "LCD upper right",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-stackSt8100Field3",
+          "tag": "SELECT",
+          "label": "LCD lower left",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-stackSt8100Field4",
+          "tag": "SELECT",
+          "label": "LCD lower right",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "INPUT",
+          "label": "Enabled",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-stackSt8100ShiftPercent",
+          "tag": "INPUT",
+          "label": "Threshold (% max RPM)",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "INPUT",
+          "label": "Enabled",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-alarm-1-metric",
+          "tag": "SELECT",
+          "label": "Alarm metric",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-alarm-1-direction",
+          "tag": "SELECT",
+          "label": "Trigger",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-alarm-1-threshold",
+          "tag": "INPUT",
+          "label": "Threshold (°F)",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "INPUT",
+          "label": "Enabled",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-alarm-2-metric",
+          "tag": "SELECT",
+          "label": "Alarm metric",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-alarm-2-direction",
+          "tag": "SELECT",
+          "label": "Trigger",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-alarm-2-threshold",
+          "tag": "INPUT",
+          "label": "Threshold (kPa)",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "INPUT",
+          "label": "Enabled",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-alarm-3-metric",
+          "tag": "SELECT",
+          "label": "Alarm metric",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-alarm-3-direction",
+          "tag": "SELECT",
+          "label": "Trigger",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-alarm-3-threshold",
+          "tag": "INPUT",
+          "label": "Threshold (PS)",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        }
+      ],
+      "reachability": [
+        {
+          "id": null,
+          "tag": "LEGEND",
+          "label": "Stack ST8100 display",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-dial",
+          "tag": "SELECT",
+          "label": "Tachometer range",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-face",
+          "tag": "SELECT",
+          "label": "Dial face",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-page",
+          "tag": "SELECT",
+          "label": "LCD page",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-temperature",
+          "tag": "SELECT",
+          "label": "Tire temperature unit",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": null,
+          "tag": "LEGEND",
+          "label": "Live LCD fields",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-stackSt8100Field1",
+          "tag": "SELECT",
+          "label": "LCD upper left",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-stackSt8100Field2",
+          "tag": "SELECT",
+          "label": "LCD upper right",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-stackSt8100Field3",
+          "tag": "SELECT",
+          "label": "LCD lower left",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-stackSt8100Field4",
+          "tag": "SELECT",
+          "label": "LCD lower right",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": null,
+          "tag": "P",
+          "label": "Speed, boost, power and torque units follow HUD Unit Settings.",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "LEGEND",
+          "label": "Shift light",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "INPUT",
+          "label": "Enabled",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-stackSt8100ShiftPercent",
+          "tag": "INPUT",
+          "label": "Threshold (% max RPM)",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": null,
+          "tag": "LEGEND",
+          "label": "Alarm 1",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "INPUT",
+          "label": "Enabled",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-alarm-1-metric",
+          "tag": "SELECT",
+          "label": "Alarm metric",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-alarm-1-direction",
+          "tag": "SELECT",
+          "label": "Trigger",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-alarm-1-threshold",
+          "tag": "INPUT",
+          "label": "Threshold (°F)",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": null,
+          "tag": "LEGEND",
+          "label": "Alarm 2",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "INPUT",
+          "label": "Enabled",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-alarm-2-metric",
+          "tag": "SELECT",
+          "label": "Alarm metric",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-alarm-2-direction",
+          "tag": "SELECT",
+          "label": "Trigger",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-alarm-2-threshold",
+          "tag": "INPUT",
+          "label": "Threshold (kPa)",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": null,
+          "tag": "LEGEND",
+          "label": "Alarm 3",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "INPUT",
+          "label": "Enabled",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-alarm-3-metric",
+          "tag": "SELECT",
+          "label": "Alarm metric",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-alarm-3-direction",
+          "tag": "SELECT",
+          "label": "Trigger",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-alarm-3-threshold",
+          "tag": "INPUT",
+          "label": "Threshold (PS)",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": null,
+          "tag": "P",
+          "label": "Changing an alarm metric resets its threshold and disables that alarm.",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "P",
+          "label": "Alarm thresholds are examples, not tuning recommendations. All three alarms are disabled by default.",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        }
+      ],
+      "sections": []
+    },
+    {
+      "name": "settings-dark-modern",
+      "width": 448,
+      "height": 1271,
+      "fits": true,
+      "verticalFits": true,
+      "sourceViewport": {
+        "width": 1440,
+        "height": 1100
+      },
+      "captureViewport": {
+        "width": 1440,
+        "height": 1431
+      },
+      "note": "All items reached in the original viewport; full-card PNG uses the recorded taller viewport with the same width and unchanged product styling.",
+      "controls": [
+        {
+          "id": "_r_g_-dial",
+          "tag": "SELECT",
+          "label": "Tachometer range",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-face",
+          "tag": "SELECT",
+          "label": "Dial face",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-page",
+          "tag": "SELECT",
+          "label": "LCD page",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-temperature",
+          "tag": "SELECT",
+          "label": "Tire temperature unit",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-stackSt8100Field1",
+          "tag": "SELECT",
+          "label": "LCD upper left",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-stackSt8100Field2",
+          "tag": "SELECT",
+          "label": "LCD upper right",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-stackSt8100Field3",
+          "tag": "SELECT",
+          "label": "LCD lower left",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-stackSt8100Field4",
+          "tag": "SELECT",
+          "label": "LCD lower right",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "INPUT",
+          "label": "Enabled",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-stackSt8100ShiftPercent",
+          "tag": "INPUT",
+          "label": "Threshold (% max RPM)",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "INPUT",
+          "label": "Enabled",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-alarm-1-metric",
+          "tag": "SELECT",
+          "label": "Alarm metric",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-alarm-1-direction",
+          "tag": "SELECT",
+          "label": "Trigger",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-alarm-1-threshold",
+          "tag": "INPUT",
+          "label": "Threshold (°F)",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "INPUT",
+          "label": "Enabled",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-alarm-2-metric",
+          "tag": "SELECT",
+          "label": "Alarm metric",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-alarm-2-direction",
+          "tag": "SELECT",
+          "label": "Trigger",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-alarm-2-threshold",
+          "tag": "INPUT",
+          "label": "Threshold (kPa)",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "INPUT",
+          "label": "Enabled",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-alarm-3-metric",
+          "tag": "SELECT",
+          "label": "Alarm metric",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-alarm-3-direction",
+          "tag": "SELECT",
+          "label": "Trigger",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-alarm-3-threshold",
+          "tag": "INPUT",
+          "label": "Threshold (PS)",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        }
+      ],
+      "reachability": [
+        {
+          "id": null,
+          "tag": "LEGEND",
+          "label": "Stack ST8100 display",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-dial",
+          "tag": "SELECT",
+          "label": "Tachometer range",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-face",
+          "tag": "SELECT",
+          "label": "Dial face",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-page",
+          "tag": "SELECT",
+          "label": "LCD page",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-temperature",
+          "tag": "SELECT",
+          "label": "Tire temperature unit",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": null,
+          "tag": "LEGEND",
+          "label": "Live LCD fields",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-stackSt8100Field1",
+          "tag": "SELECT",
+          "label": "LCD upper left",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-stackSt8100Field2",
+          "tag": "SELECT",
+          "label": "LCD upper right",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-stackSt8100Field3",
+          "tag": "SELECT",
+          "label": "LCD lower left",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-stackSt8100Field4",
+          "tag": "SELECT",
+          "label": "LCD lower right",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": null,
+          "tag": "P",
+          "label": "Speed, boost, power and torque units follow HUD Unit Settings.",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "LEGEND",
+          "label": "Shift light",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "INPUT",
+          "label": "Enabled",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-stackSt8100ShiftPercent",
+          "tag": "INPUT",
+          "label": "Threshold (% max RPM)",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": null,
+          "tag": "LEGEND",
+          "label": "Alarm 1",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "INPUT",
+          "label": "Enabled",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-alarm-1-metric",
+          "tag": "SELECT",
+          "label": "Alarm metric",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-alarm-1-direction",
+          "tag": "SELECT",
+          "label": "Trigger",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-alarm-1-threshold",
+          "tag": "INPUT",
+          "label": "Threshold (°F)",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": null,
+          "tag": "LEGEND",
+          "label": "Alarm 2",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "INPUT",
+          "label": "Enabled",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-alarm-2-metric",
+          "tag": "SELECT",
+          "label": "Alarm metric",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-alarm-2-direction",
+          "tag": "SELECT",
+          "label": "Trigger",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-alarm-2-threshold",
+          "tag": "INPUT",
+          "label": "Threshold (kPa)",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": null,
+          "tag": "LEGEND",
+          "label": "Alarm 3",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "INPUT",
+          "label": "Enabled",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-alarm-3-metric",
+          "tag": "SELECT",
+          "label": "Alarm metric",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-alarm-3-direction",
+          "tag": "SELECT",
+          "label": "Trigger",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-alarm-3-threshold",
+          "tag": "INPUT",
+          "label": "Threshold (PS)",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": null,
+          "tag": "P",
+          "label": "Changing an alarm metric resets its threshold and disables that alarm.",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "P",
+          "label": "Alarm thresholds are examples, not tuning recommendations. All three alarms are disabled by default.",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        }
+      ],
+      "sections": []
+    },
+    {
+      "name": "settings-dark-elegant",
+      "width": 448,
+      "height": 1271,
+      "fits": true,
+      "verticalFits": true,
+      "sourceViewport": {
+        "width": 1440,
+        "height": 1100
+      },
+      "captureViewport": {
+        "width": 1440,
+        "height": 1431
+      },
+      "note": "All items reached in the original viewport; full-card PNG uses the recorded taller viewport with the same width and unchanged product styling.",
+      "controls": [
+        {
+          "id": "_r_g_-dial",
+          "tag": "SELECT",
+          "label": "Tachometer range",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-face",
+          "tag": "SELECT",
+          "label": "Dial face",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-page",
+          "tag": "SELECT",
+          "label": "LCD page",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-temperature",
+          "tag": "SELECT",
+          "label": "Tire temperature unit",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-stackSt8100Field1",
+          "tag": "SELECT",
+          "label": "LCD upper left",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-stackSt8100Field2",
+          "tag": "SELECT",
+          "label": "LCD upper right",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-stackSt8100Field3",
+          "tag": "SELECT",
+          "label": "LCD lower left",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-stackSt8100Field4",
+          "tag": "SELECT",
+          "label": "LCD lower right",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "INPUT",
+          "label": "Enabled",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-stackSt8100ShiftPercent",
+          "tag": "INPUT",
+          "label": "Threshold (% max RPM)",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "INPUT",
+          "label": "Enabled",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-alarm-1-metric",
+          "tag": "SELECT",
+          "label": "Alarm metric",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-alarm-1-direction",
+          "tag": "SELECT",
+          "label": "Trigger",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-alarm-1-threshold",
+          "tag": "INPUT",
+          "label": "Threshold (°F)",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "INPUT",
+          "label": "Enabled",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-alarm-2-metric",
+          "tag": "SELECT",
+          "label": "Alarm metric",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-alarm-2-direction",
+          "tag": "SELECT",
+          "label": "Trigger",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-alarm-2-threshold",
+          "tag": "INPUT",
+          "label": "Threshold (kPa)",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "INPUT",
+          "label": "Enabled",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-alarm-3-metric",
+          "tag": "SELECT",
+          "label": "Alarm metric",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-alarm-3-direction",
+          "tag": "SELECT",
+          "label": "Trigger",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-alarm-3-threshold",
+          "tag": "INPUT",
+          "label": "Threshold (PS)",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        }
+      ],
+      "reachability": [
+        {
+          "id": null,
+          "tag": "LEGEND",
+          "label": "Stack ST8100 display",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-dial",
+          "tag": "SELECT",
+          "label": "Tachometer range",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-face",
+          "tag": "SELECT",
+          "label": "Dial face",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-page",
+          "tag": "SELECT",
+          "label": "LCD page",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-temperature",
+          "tag": "SELECT",
+          "label": "Tire temperature unit",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": null,
+          "tag": "LEGEND",
+          "label": "Live LCD fields",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-stackSt8100Field1",
+          "tag": "SELECT",
+          "label": "LCD upper left",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-stackSt8100Field2",
+          "tag": "SELECT",
+          "label": "LCD upper right",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-stackSt8100Field3",
+          "tag": "SELECT",
+          "label": "LCD lower left",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-stackSt8100Field4",
+          "tag": "SELECT",
+          "label": "LCD lower right",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": null,
+          "tag": "P",
+          "label": "Speed, boost, power and torque units follow HUD Unit Settings.",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "LEGEND",
+          "label": "Shift light",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "INPUT",
+          "label": "Enabled",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-stackSt8100ShiftPercent",
+          "tag": "INPUT",
+          "label": "Threshold (% max RPM)",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": null,
+          "tag": "LEGEND",
+          "label": "Alarm 1",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "INPUT",
+          "label": "Enabled",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-alarm-1-metric",
+          "tag": "SELECT",
+          "label": "Alarm metric",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-alarm-1-direction",
+          "tag": "SELECT",
+          "label": "Trigger",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-alarm-1-threshold",
+          "tag": "INPUT",
+          "label": "Threshold (°F)",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": null,
+          "tag": "LEGEND",
+          "label": "Alarm 2",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "INPUT",
+          "label": "Enabled",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-alarm-2-metric",
+          "tag": "SELECT",
+          "label": "Alarm metric",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-alarm-2-direction",
+          "tag": "SELECT",
+          "label": "Trigger",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-alarm-2-threshold",
+          "tag": "INPUT",
+          "label": "Threshold (kPa)",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": null,
+          "tag": "LEGEND",
+          "label": "Alarm 3",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "INPUT",
+          "label": "Enabled",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-alarm-3-metric",
+          "tag": "SELECT",
+          "label": "Alarm metric",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-alarm-3-direction",
+          "tag": "SELECT",
+          "label": "Trigger",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-alarm-3-threshold",
+          "tag": "INPUT",
+          "label": "Threshold (PS)",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": null,
+          "tag": "P",
+          "label": "Changing an alarm metric resets its threshold and disables that alarm.",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "P",
+          "label": "Alarm thresholds are examples, not tuning recommendations. All three alarms are disabled by default.",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        }
+      ],
+      "sections": []
+    },
+    {
+      "name": "settings-light-default",
+      "width": 448,
+      "height": 1271,
+      "fits": true,
+      "verticalFits": true,
+      "sourceViewport": {
+        "width": 1440,
+        "height": 1100
+      },
+      "captureViewport": {
+        "width": 1440,
+        "height": 1431
+      },
+      "note": "All items reached in the original viewport; full-card PNG uses the recorded taller viewport with the same width and unchanged product styling.",
+      "controls": [
+        {
+          "id": "_r_g_-dial",
+          "tag": "SELECT",
+          "label": "Tachometer range",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-face",
+          "tag": "SELECT",
+          "label": "Dial face",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-page",
+          "tag": "SELECT",
+          "label": "LCD page",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-temperature",
+          "tag": "SELECT",
+          "label": "Tire temperature unit",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-stackSt8100Field1",
+          "tag": "SELECT",
+          "label": "LCD upper left",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-stackSt8100Field2",
+          "tag": "SELECT",
+          "label": "LCD upper right",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-stackSt8100Field3",
+          "tag": "SELECT",
+          "label": "LCD lower left",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-stackSt8100Field4",
+          "tag": "SELECT",
+          "label": "LCD lower right",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "INPUT",
+          "label": "Enabled",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-stackSt8100ShiftPercent",
+          "tag": "INPUT",
+          "label": "Threshold (% max RPM)",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "INPUT",
+          "label": "Enabled",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-alarm-1-metric",
+          "tag": "SELECT",
+          "label": "Alarm metric",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-alarm-1-direction",
+          "tag": "SELECT",
+          "label": "Trigger",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-alarm-1-threshold",
+          "tag": "INPUT",
+          "label": "Threshold (°F)",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "INPUT",
+          "label": "Enabled",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-alarm-2-metric",
+          "tag": "SELECT",
+          "label": "Alarm metric",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-alarm-2-direction",
+          "tag": "SELECT",
+          "label": "Trigger",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-alarm-2-threshold",
+          "tag": "INPUT",
+          "label": "Threshold (kPa)",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "INPUT",
+          "label": "Enabled",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-alarm-3-metric",
+          "tag": "SELECT",
+          "label": "Alarm metric",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-alarm-3-direction",
+          "tag": "SELECT",
+          "label": "Trigger",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-alarm-3-threshold",
+          "tag": "INPUT",
+          "label": "Threshold (PS)",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        }
+      ],
+      "reachability": [
+        {
+          "id": null,
+          "tag": "LEGEND",
+          "label": "Stack ST8100 display",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-dial",
+          "tag": "SELECT",
+          "label": "Tachometer range",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-face",
+          "tag": "SELECT",
+          "label": "Dial face",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-page",
+          "tag": "SELECT",
+          "label": "LCD page",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-temperature",
+          "tag": "SELECT",
+          "label": "Tire temperature unit",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": null,
+          "tag": "LEGEND",
+          "label": "Live LCD fields",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-stackSt8100Field1",
+          "tag": "SELECT",
+          "label": "LCD upper left",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-stackSt8100Field2",
+          "tag": "SELECT",
+          "label": "LCD upper right",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-stackSt8100Field3",
+          "tag": "SELECT",
+          "label": "LCD lower left",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-stackSt8100Field4",
+          "tag": "SELECT",
+          "label": "LCD lower right",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": null,
+          "tag": "P",
+          "label": "Speed, boost, power and torque units follow HUD Unit Settings.",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "LEGEND",
+          "label": "Shift light",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "INPUT",
+          "label": "Enabled",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-stackSt8100ShiftPercent",
+          "tag": "INPUT",
+          "label": "Threshold (% max RPM)",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": null,
+          "tag": "LEGEND",
+          "label": "Alarm 1",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "INPUT",
+          "label": "Enabled",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-alarm-1-metric",
+          "tag": "SELECT",
+          "label": "Alarm metric",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-alarm-1-direction",
+          "tag": "SELECT",
+          "label": "Trigger",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-alarm-1-threshold",
+          "tag": "INPUT",
+          "label": "Threshold (°F)",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": null,
+          "tag": "LEGEND",
+          "label": "Alarm 2",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "INPUT",
+          "label": "Enabled",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-alarm-2-metric",
+          "tag": "SELECT",
+          "label": "Alarm metric",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-alarm-2-direction",
+          "tag": "SELECT",
+          "label": "Trigger",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-alarm-2-threshold",
+          "tag": "INPUT",
+          "label": "Threshold (kPa)",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": null,
+          "tag": "LEGEND",
+          "label": "Alarm 3",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "INPUT",
+          "label": "Enabled",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-alarm-3-metric",
+          "tag": "SELECT",
+          "label": "Alarm metric",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-alarm-3-direction",
+          "tag": "SELECT",
+          "label": "Trigger",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-alarm-3-threshold",
+          "tag": "INPUT",
+          "label": "Threshold (PS)",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": null,
+          "tag": "P",
+          "label": "Changing an alarm metric resets its threshold and disables that alarm.",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "P",
+          "label": "Alarm thresholds are examples, not tuning recommendations. All three alarms are disabled by default.",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        }
+      ],
+      "sections": []
+    },
+    {
+      "name": "settings-light-modern",
+      "width": 448,
+      "height": 1271,
+      "fits": true,
+      "verticalFits": true,
+      "sourceViewport": {
+        "width": 1440,
+        "height": 1100
+      },
+      "captureViewport": {
+        "width": 1440,
+        "height": 1431
+      },
+      "note": "All items reached in the original viewport; full-card PNG uses the recorded taller viewport with the same width and unchanged product styling.",
+      "controls": [
+        {
+          "id": "_r_g_-dial",
+          "tag": "SELECT",
+          "label": "Tachometer range",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-face",
+          "tag": "SELECT",
+          "label": "Dial face",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-page",
+          "tag": "SELECT",
+          "label": "LCD page",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-temperature",
+          "tag": "SELECT",
+          "label": "Tire temperature unit",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-stackSt8100Field1",
+          "tag": "SELECT",
+          "label": "LCD upper left",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-stackSt8100Field2",
+          "tag": "SELECT",
+          "label": "LCD upper right",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-stackSt8100Field3",
+          "tag": "SELECT",
+          "label": "LCD lower left",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-stackSt8100Field4",
+          "tag": "SELECT",
+          "label": "LCD lower right",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "INPUT",
+          "label": "Enabled",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-stackSt8100ShiftPercent",
+          "tag": "INPUT",
+          "label": "Threshold (% max RPM)",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "INPUT",
+          "label": "Enabled",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-alarm-1-metric",
+          "tag": "SELECT",
+          "label": "Alarm metric",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-alarm-1-direction",
+          "tag": "SELECT",
+          "label": "Trigger",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-alarm-1-threshold",
+          "tag": "INPUT",
+          "label": "Threshold (°F)",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "INPUT",
+          "label": "Enabled",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-alarm-2-metric",
+          "tag": "SELECT",
+          "label": "Alarm metric",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-alarm-2-direction",
+          "tag": "SELECT",
+          "label": "Trigger",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-alarm-2-threshold",
+          "tag": "INPUT",
+          "label": "Threshold (kPa)",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "INPUT",
+          "label": "Enabled",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-alarm-3-metric",
+          "tag": "SELECT",
+          "label": "Alarm metric",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-alarm-3-direction",
+          "tag": "SELECT",
+          "label": "Trigger",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-alarm-3-threshold",
+          "tag": "INPUT",
+          "label": "Threshold (PS)",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        }
+      ],
+      "reachability": [
+        {
+          "id": null,
+          "tag": "LEGEND",
+          "label": "Stack ST8100 display",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-dial",
+          "tag": "SELECT",
+          "label": "Tachometer range",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-face",
+          "tag": "SELECT",
+          "label": "Dial face",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-page",
+          "tag": "SELECT",
+          "label": "LCD page",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-temperature",
+          "tag": "SELECT",
+          "label": "Tire temperature unit",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": null,
+          "tag": "LEGEND",
+          "label": "Live LCD fields",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-stackSt8100Field1",
+          "tag": "SELECT",
+          "label": "LCD upper left",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-stackSt8100Field2",
+          "tag": "SELECT",
+          "label": "LCD upper right",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-stackSt8100Field3",
+          "tag": "SELECT",
+          "label": "LCD lower left",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-stackSt8100Field4",
+          "tag": "SELECT",
+          "label": "LCD lower right",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": null,
+          "tag": "P",
+          "label": "Speed, boost, power and torque units follow HUD Unit Settings.",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "LEGEND",
+          "label": "Shift light",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "INPUT",
+          "label": "Enabled",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-stackSt8100ShiftPercent",
+          "tag": "INPUT",
+          "label": "Threshold (% max RPM)",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": null,
+          "tag": "LEGEND",
+          "label": "Alarm 1",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "INPUT",
+          "label": "Enabled",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-alarm-1-metric",
+          "tag": "SELECT",
+          "label": "Alarm metric",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-alarm-1-direction",
+          "tag": "SELECT",
+          "label": "Trigger",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-alarm-1-threshold",
+          "tag": "INPUT",
+          "label": "Threshold (°F)",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": null,
+          "tag": "LEGEND",
+          "label": "Alarm 2",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "INPUT",
+          "label": "Enabled",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-alarm-2-metric",
+          "tag": "SELECT",
+          "label": "Alarm metric",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-alarm-2-direction",
+          "tag": "SELECT",
+          "label": "Trigger",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-alarm-2-threshold",
+          "tag": "INPUT",
+          "label": "Threshold (kPa)",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": null,
+          "tag": "LEGEND",
+          "label": "Alarm 3",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "INPUT",
+          "label": "Enabled",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-alarm-3-metric",
+          "tag": "SELECT",
+          "label": "Alarm metric",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-alarm-3-direction",
+          "tag": "SELECT",
+          "label": "Trigger",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-alarm-3-threshold",
+          "tag": "INPUT",
+          "label": "Threshold (PS)",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": null,
+          "tag": "P",
+          "label": "Changing an alarm metric resets its threshold and disables that alarm.",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "P",
+          "label": "Alarm thresholds are examples, not tuning recommendations. All three alarms are disabled by default.",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        }
+      ],
+      "sections": []
+    },
+    {
+      "name": "settings-light-elegant",
+      "width": 448,
+      "height": 1271,
+      "fits": true,
+      "verticalFits": true,
+      "sourceViewport": {
+        "width": 1440,
+        "height": 1100
+      },
+      "captureViewport": {
+        "width": 1440,
+        "height": 1431
+      },
+      "note": "All items reached in the original viewport; full-card PNG uses the recorded taller viewport with the same width and unchanged product styling.",
+      "controls": [
+        {
+          "id": "_r_g_-dial",
+          "tag": "SELECT",
+          "label": "Tachometer range",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-face",
+          "tag": "SELECT",
+          "label": "Dial face",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-page",
+          "tag": "SELECT",
+          "label": "LCD page",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-temperature",
+          "tag": "SELECT",
+          "label": "Tire temperature unit",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-stackSt8100Field1",
+          "tag": "SELECT",
+          "label": "LCD upper left",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-stackSt8100Field2",
+          "tag": "SELECT",
+          "label": "LCD upper right",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-stackSt8100Field3",
+          "tag": "SELECT",
+          "label": "LCD lower left",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-stackSt8100Field4",
+          "tag": "SELECT",
+          "label": "LCD lower right",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "INPUT",
+          "label": "Enabled",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-stackSt8100ShiftPercent",
+          "tag": "INPUT",
+          "label": "Threshold (% max RPM)",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "INPUT",
+          "label": "Enabled",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-alarm-1-metric",
+          "tag": "SELECT",
+          "label": "Alarm metric",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-alarm-1-direction",
+          "tag": "SELECT",
+          "label": "Trigger",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-alarm-1-threshold",
+          "tag": "INPUT",
+          "label": "Threshold (°F)",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "INPUT",
+          "label": "Enabled",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-alarm-2-metric",
+          "tag": "SELECT",
+          "label": "Alarm metric",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-alarm-2-direction",
+          "tag": "SELECT",
+          "label": "Trigger",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-alarm-2-threshold",
+          "tag": "INPUT",
+          "label": "Threshold (kPa)",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "INPUT",
+          "label": "Enabled",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-alarm-3-metric",
+          "tag": "SELECT",
+          "label": "Alarm metric",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-alarm-3-direction",
+          "tag": "SELECT",
+          "label": "Trigger",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-alarm-3-threshold",
+          "tag": "INPUT",
+          "label": "Threshold (PS)",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        }
+      ],
+      "reachability": [
+        {
+          "id": null,
+          "tag": "LEGEND",
+          "label": "Stack ST8100 display",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-dial",
+          "tag": "SELECT",
+          "label": "Tachometer range",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-face",
+          "tag": "SELECT",
+          "label": "Dial face",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-page",
+          "tag": "SELECT",
+          "label": "LCD page",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-temperature",
+          "tag": "SELECT",
+          "label": "Tire temperature unit",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": null,
+          "tag": "LEGEND",
+          "label": "Live LCD fields",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-stackSt8100Field1",
+          "tag": "SELECT",
+          "label": "LCD upper left",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-stackSt8100Field2",
+          "tag": "SELECT",
+          "label": "LCD upper right",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-stackSt8100Field3",
+          "tag": "SELECT",
+          "label": "LCD lower left",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-stackSt8100Field4",
+          "tag": "SELECT",
+          "label": "LCD lower right",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": null,
+          "tag": "P",
+          "label": "Speed, boost, power and torque units follow HUD Unit Settings.",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "LEGEND",
+          "label": "Shift light",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "INPUT",
+          "label": "Enabled",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-stackSt8100ShiftPercent",
+          "tag": "INPUT",
+          "label": "Threshold (% max RPM)",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": null,
+          "tag": "LEGEND",
+          "label": "Alarm 1",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "INPUT",
+          "label": "Enabled",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-alarm-1-metric",
+          "tag": "SELECT",
+          "label": "Alarm metric",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-alarm-1-direction",
+          "tag": "SELECT",
+          "label": "Trigger",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-alarm-1-threshold",
+          "tag": "INPUT",
+          "label": "Threshold (°F)",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": null,
+          "tag": "LEGEND",
+          "label": "Alarm 2",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "INPUT",
+          "label": "Enabled",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-alarm-2-metric",
+          "tag": "SELECT",
+          "label": "Alarm metric",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-alarm-2-direction",
+          "tag": "SELECT",
+          "label": "Trigger",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-alarm-2-threshold",
+          "tag": "INPUT",
+          "label": "Threshold (kPa)",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": null,
+          "tag": "LEGEND",
+          "label": "Alarm 3",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "INPUT",
+          "label": "Enabled",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-alarm-3-metric",
+          "tag": "SELECT",
+          "label": "Alarm metric",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-alarm-3-direction",
+          "tag": "SELECT",
+          "label": "Trigger",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-alarm-3-threshold",
+          "tag": "INPUT",
+          "label": "Threshold (PS)",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": null,
+          "tag": "P",
+          "label": "Changing an alarm metric resets its threshold and disables that alarm.",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "P",
+          "label": "Alarm thresholds are examples, not tuning recommendations. All three alarms are disabled by default.",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        }
+      ],
+      "sections": []
+    },
+    {
+      "name": "settings-narrow",
+      "width": 342,
+      "height": 1305.5,
+      "fits": true,
+      "verticalFits": true,
+      "sourceViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "captureViewport": {
+        "width": 390,
+        "height": 1466
+      },
+      "note": "All items reached in the original viewport; full-card PNG uses the recorded taller viewport with the same width and unchanged product styling.",
+      "controls": [
+        {
+          "id": "_r_g_-dial",
+          "tag": "SELECT",
+          "label": "Tachometer range",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-face",
+          "tag": "SELECT",
+          "label": "Dial face",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-page",
+          "tag": "SELECT",
+          "label": "LCD page",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-temperature",
+          "tag": "SELECT",
+          "label": "Tire temperature unit",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-stackSt8100Field1",
+          "tag": "SELECT",
+          "label": "LCD upper left",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-stackSt8100Field2",
+          "tag": "SELECT",
+          "label": "LCD upper right",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-stackSt8100Field3",
+          "tag": "SELECT",
+          "label": "LCD lower left",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-stackSt8100Field4",
+          "tag": "SELECT",
+          "label": "LCD lower right",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "INPUT",
+          "label": "Enabled",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-stackSt8100ShiftPercent",
+          "tag": "INPUT",
+          "label": "Threshold (% max RPM)",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "INPUT",
+          "label": "Enabled",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-alarm-1-metric",
+          "tag": "SELECT",
+          "label": "Alarm metric",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-alarm-1-direction",
+          "tag": "SELECT",
+          "label": "Trigger",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-alarm-1-threshold",
+          "tag": "INPUT",
+          "label": "Threshold (°F)",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "INPUT",
+          "label": "Enabled",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-alarm-2-metric",
+          "tag": "SELECT",
+          "label": "Alarm metric",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-alarm-2-direction",
+          "tag": "SELECT",
+          "label": "Trigger",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-alarm-2-threshold",
+          "tag": "INPUT",
+          "label": "Threshold (kPa)",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "INPUT",
+          "label": "Enabled",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-alarm-3-metric",
+          "tag": "SELECT",
+          "label": "Alarm metric",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-alarm-3-direction",
+          "tag": "SELECT",
+          "label": "Trigger",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-alarm-3-threshold",
+          "tag": "INPUT",
+          "label": "Threshold (PS)",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        }
+      ],
+      "reachability": [
+        {
+          "id": null,
+          "tag": "LEGEND",
+          "label": "Stack ST8100 display",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-dial",
+          "tag": "SELECT",
+          "label": "Tachometer range",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-face",
+          "tag": "SELECT",
+          "label": "Dial face",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-page",
+          "tag": "SELECT",
+          "label": "LCD page",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-temperature",
+          "tag": "SELECT",
+          "label": "Tire temperature unit",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": null,
+          "tag": "LEGEND",
+          "label": "Live LCD fields",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-stackSt8100Field1",
+          "tag": "SELECT",
+          "label": "LCD upper left",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-stackSt8100Field2",
+          "tag": "SELECT",
+          "label": "LCD upper right",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-stackSt8100Field3",
+          "tag": "SELECT",
+          "label": "LCD lower left",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-stackSt8100Field4",
+          "tag": "SELECT",
+          "label": "LCD lower right",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": null,
+          "tag": "P",
+          "label": "Speed, boost, power and torque units follow HUD Unit Settings.",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "LEGEND",
+          "label": "Shift light",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "INPUT",
+          "label": "Enabled",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-stackSt8100ShiftPercent",
+          "tag": "INPUT",
+          "label": "Threshold (% max RPM)",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": null,
+          "tag": "LEGEND",
+          "label": "Alarm 1",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "INPUT",
+          "label": "Enabled",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-alarm-1-metric",
+          "tag": "SELECT",
+          "label": "Alarm metric",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-alarm-1-direction",
+          "tag": "SELECT",
+          "label": "Trigger",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-alarm-1-threshold",
+          "tag": "INPUT",
+          "label": "Threshold (°F)",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": null,
+          "tag": "LEGEND",
+          "label": "Alarm 2",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "INPUT",
+          "label": "Enabled",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-alarm-2-metric",
+          "tag": "SELECT",
+          "label": "Alarm metric",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-alarm-2-direction",
+          "tag": "SELECT",
+          "label": "Trigger",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-alarm-2-threshold",
+          "tag": "INPUT",
+          "label": "Threshold (kPa)",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": null,
+          "tag": "LEGEND",
+          "label": "Alarm 3",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "INPUT",
+          "label": "Enabled",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-alarm-3-metric",
+          "tag": "SELECT",
+          "label": "Alarm metric",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-alarm-3-direction",
+          "tag": "SELECT",
+          "label": "Trigger",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-alarm-3-threshold",
+          "tag": "INPUT",
+          "label": "Threshold (PS)",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": null,
+          "tag": "P",
+          "label": "Changing an alarm metric resets its threshold and disables that alarm.",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "P",
+          "label": "Alarm thresholds are examples, not tuning recommendations. All three alarms are disabled by default.",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        }
+      ],
+      "sections": [
+        {
+          "file": "settings-narrow-viewport-display.png",
+          "viewport": {
+            "width": 390,
+            "height": 844
+          },
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true
+        },
+        {
+          "file": "settings-narrow-viewport-alarm-1.png",
+          "viewport": {
+            "width": 390,
+            "height": 844
+          },
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true
+        },
+        {
+          "file": "settings-narrow-viewport-alarm-2.png",
+          "viewport": {
+            "width": 390,
+            "height": 844
+          },
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true
+        },
+        {
+          "file": "settings-narrow-viewport-alarm-3.png",
+          "viewport": {
+            "width": 390,
+            "height": 844
+          },
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true
+        }
+      ]
+    },
+    {
+      "name": "settings-narrow-zh-tw",
+      "width": 342,
+      "height": 1242.5,
+      "fits": true,
+      "verticalFits": true,
+      "sourceViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "captureViewport": {
+        "width": 390,
+        "height": 1403
+      },
+      "note": "All items reached in the original viewport; full-card PNG uses the recorded taller viewport with the same width and unchanged product styling.",
+      "controls": [
+        {
+          "id": "_r_g_-dial",
+          "tag": "SELECT",
+          "label": "轉速錶量程",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-face",
+          "tag": "SELECT",
+          "label": "錶面配色",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-page",
+          "tag": "SELECT",
+          "label": "LCD 頁面",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-temperature",
+          "tag": "SELECT",
+          "label": "胎溫單位",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-stackSt8100Field1",
+          "tag": "SELECT",
+          "label": "LCD 左上",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-stackSt8100Field2",
+          "tag": "SELECT",
+          "label": "LCD 右上",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-stackSt8100Field3",
+          "tag": "SELECT",
+          "label": "LCD 左下",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-stackSt8100Field4",
+          "tag": "SELECT",
+          "label": "LCD 右下",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "INPUT",
+          "label": "啟用",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-stackSt8100ShiftPercent",
+          "tag": "INPUT",
+          "label": "門檻 (% 最高轉速)",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "INPUT",
+          "label": "啟用",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-alarm-1-metric",
+          "tag": "SELECT",
+          "label": "警報數據",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-alarm-1-direction",
+          "tag": "SELECT",
+          "label": "觸發條件",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-alarm-1-threshold",
+          "tag": "INPUT",
+          "label": "門檻 (°C)",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "INPUT",
+          "label": "啟用",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-alarm-2-metric",
+          "tag": "SELECT",
+          "label": "警報數據",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-alarm-2-direction",
+          "tag": "SELECT",
+          "label": "觸發條件",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-alarm-2-threshold",
+          "tag": "INPUT",
+          "label": "門檻 (bar)",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "INPUT",
+          "label": "啟用",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-alarm-3-metric",
+          "tag": "SELECT",
+          "label": "警報數據",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-alarm-3-direction",
+          "tag": "SELECT",
+          "label": "觸發條件",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-alarm-3-threshold",
+          "tag": "INPUT",
+          "label": "門檻 (RPM)",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        }
+      ],
+      "reachability": [
+        {
+          "id": null,
+          "tag": "LEGEND",
+          "label": "Stack ST8100 顯示",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-dial",
+          "tag": "SELECT",
+          "label": "轉速錶量程",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-face",
+          "tag": "SELECT",
+          "label": "錶面配色",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-page",
+          "tag": "SELECT",
+          "label": "LCD 頁面",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-temperature",
+          "tag": "SELECT",
+          "label": "胎溫單位",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": null,
+          "tag": "LEGEND",
+          "label": "即時 LCD 欄位",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-stackSt8100Field1",
+          "tag": "SELECT",
+          "label": "LCD 左上",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-stackSt8100Field2",
+          "tag": "SELECT",
+          "label": "LCD 右上",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-stackSt8100Field3",
+          "tag": "SELECT",
+          "label": "LCD 左下",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-stackSt8100Field4",
+          "tag": "SELECT",
+          "label": "LCD 右下",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": null,
+          "tag": "P",
+          "label": "車速、增壓、功率與扭力單位依照 HUD 單位設定。",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "LEGEND",
+          "label": "換檔燈",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "INPUT",
+          "label": "啟用",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-stackSt8100ShiftPercent",
+          "tag": "INPUT",
+          "label": "門檻 (% 最高轉速)",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": null,
+          "tag": "LEGEND",
+          "label": "警報 1",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "INPUT",
+          "label": "啟用",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-alarm-1-metric",
+          "tag": "SELECT",
+          "label": "警報數據",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-alarm-1-direction",
+          "tag": "SELECT",
+          "label": "觸發條件",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-alarm-1-threshold",
+          "tag": "INPUT",
+          "label": "門檻 (°C)",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": null,
+          "tag": "LEGEND",
+          "label": "警報 2",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "INPUT",
+          "label": "啟用",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-alarm-2-metric",
+          "tag": "SELECT",
+          "label": "警報數據",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-alarm-2-direction",
+          "tag": "SELECT",
+          "label": "觸發條件",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-alarm-2-threshold",
+          "tag": "INPUT",
+          "label": "門檻 (bar)",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": null,
+          "tag": "LEGEND",
+          "label": "警報 3",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "INPUT",
+          "label": "啟用",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-alarm-3-metric",
+          "tag": "SELECT",
+          "label": "警報數據",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-alarm-3-direction",
+          "tag": "SELECT",
+          "label": "觸發條件",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-alarm-3-threshold",
+          "tag": "INPUT",
+          "label": "門檻 (RPM)",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": null,
+          "tag": "P",
+          "label": "變更警報數據會重設門檻並關閉該警報。",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "P",
+          "label": "警報門檻僅為示例，不是調校建議。三組警報預設皆為關閉。",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        }
+      ],
+      "sections": [
+        {
+          "file": "settings-narrow-zh-tw-viewport-display.png",
+          "viewport": {
+            "width": 390,
+            "height": 844
+          },
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true
+        },
+        {
+          "file": "settings-narrow-zh-tw-viewport-alarm-1.png",
+          "viewport": {
+            "width": 390,
+            "height": 844
+          },
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true
+        },
+        {
+          "file": "settings-narrow-zh-tw-viewport-alarm-2.png",
+          "viewport": {
+            "width": 390,
+            "height": 844
+          },
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true
+        },
+        {
+          "file": "settings-narrow-zh-tw-viewport-alarm-3.png",
+          "viewport": {
+            "width": 390,
+            "height": 844
+          },
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true
+        }
+      ],
+      "glyphs": {
+        "family": "Noto Sans CJK TC",
+        "probes": [
+          "胎",
+          "溫",
+          "轉"
+        ],
+        "nonempty": true,
+        "distinct": true
+      }
+    },
+    {
+      "name": "settings-narrow-ja-jp",
+      "width": 342,
+      "height": 1305.5,
+      "fits": true,
+      "verticalFits": true,
+      "sourceViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "captureViewport": {
+        "width": 390,
+        "height": 1466
+      },
+      "note": "All items reached in the original viewport; full-card PNG uses the recorded taller viewport with the same width and unchanged product styling.",
+      "controls": [
+        {
+          "id": "_r_g_-dial",
+          "tag": "SELECT",
+          "label": "回転計レンジ",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-face",
+          "tag": "SELECT",
+          "label": "文字盤の色",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-page",
+          "tag": "SELECT",
+          "label": "LCD ページ",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-temperature",
+          "tag": "SELECT",
+          "label": "タイヤ温度の単位",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-stackSt8100Field1",
+          "tag": "SELECT",
+          "label": "LCD 左上",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-stackSt8100Field2",
+          "tag": "SELECT",
+          "label": "LCD 右上",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-stackSt8100Field3",
+          "tag": "SELECT",
+          "label": "LCD 左下",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-stackSt8100Field4",
+          "tag": "SELECT",
+          "label": "LCD 右下",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "INPUT",
+          "label": "有効",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-stackSt8100ShiftPercent",
+          "tag": "INPUT",
+          "label": "しきい値 (% 最高回転数)",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "INPUT",
+          "label": "有効",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-alarm-1-metric",
+          "tag": "SELECT",
+          "label": "アラームの測定項目",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-alarm-1-direction",
+          "tag": "SELECT",
+          "label": "作動条件",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-alarm-1-threshold",
+          "tag": "INPUT",
+          "label": "しきい値 (°C)",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "INPUT",
+          "label": "有効",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-alarm-2-metric",
+          "tag": "SELECT",
+          "label": "アラームの測定項目",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-alarm-2-direction",
+          "tag": "SELECT",
+          "label": "作動条件",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-alarm-2-threshold",
+          "tag": "INPUT",
+          "label": "しきい値 (bar)",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "INPUT",
+          "label": "有効",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-alarm-3-metric",
+          "tag": "SELECT",
+          "label": "アラームの測定項目",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-alarm-3-direction",
+          "tag": "SELECT",
+          "label": "作動条件",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-alarm-3-threshold",
+          "tag": "INPUT",
+          "label": "しきい値 (RPM)",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        }
+      ],
+      "reachability": [
+        {
+          "id": null,
+          "tag": "LEGEND",
+          "label": "Stack ST8100 表示",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-dial",
+          "tag": "SELECT",
+          "label": "回転計レンジ",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-face",
+          "tag": "SELECT",
+          "label": "文字盤の色",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-page",
+          "tag": "SELECT",
+          "label": "LCD ページ",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-temperature",
+          "tag": "SELECT",
+          "label": "タイヤ温度の単位",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": null,
+          "tag": "LEGEND",
+          "label": "現在値の LCD 項目",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": "_r_g_-stackSt8100Field1",
+          "tag": "SELECT",
+          "label": "LCD 左上",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-stackSt8100Field2",
+          "tag": "SELECT",
+          "label": "LCD 右上",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-stackSt8100Field3",
+          "tag": "SELECT",
+          "label": "LCD 左下",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-stackSt8100Field4",
+          "tag": "SELECT",
+          "label": "LCD 右下",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": null,
+          "tag": "P",
+          "label": "速度、過給圧、出力、トルクの単位は HUD 単位設定に従います。",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "LEGEND",
+          "label": "シフトランプ",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "INPUT",
+          "label": "有効",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-stackSt8100ShiftPercent",
+          "tag": "INPUT",
+          "label": "しきい値 (% 最高回転数)",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": null,
+          "tag": "LEGEND",
+          "label": "アラーム 1",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "INPUT",
+          "label": "有効",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-alarm-1-metric",
+          "tag": "SELECT",
+          "label": "アラームの測定項目",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-alarm-1-direction",
+          "tag": "SELECT",
+          "label": "作動条件",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-alarm-1-threshold",
+          "tag": "INPUT",
+          "label": "しきい値 (°C)",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": null,
+          "tag": "LEGEND",
+          "label": "アラーム 2",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "INPUT",
+          "label": "有効",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-alarm-2-metric",
+          "tag": "SELECT",
+          "label": "アラームの測定項目",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-alarm-2-direction",
+          "tag": "SELECT",
+          "label": "作動条件",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-alarm-2-threshold",
+          "tag": "INPUT",
+          "label": "しきい値 (bar)",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": null,
+          "tag": "LEGEND",
+          "label": "アラーム 3",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "INPUT",
+          "label": "有効",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-alarm-3-metric",
+          "tag": "SELECT",
+          "label": "アラームの測定項目",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-alarm-3-direction",
+          "tag": "SELECT",
+          "label": "作動条件",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": "_r_g_-alarm-3-threshold",
+          "tag": "INPUT",
+          "label": "しきい値 (RPM)",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": true
+        },
+        {
+          "id": null,
+          "tag": "P",
+          "label": "測定項目を変更すると、しきい値がリセットされ、そのアラームは無効になります。",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        },
+        {
+          "id": null,
+          "tag": "P",
+          "label": "アラームのしきい値は例示であり、推奨チューニング値ではありません。3 つのアラームは初期状態で無効です。",
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true,
+          "focused": false
+        }
+      ],
+      "sections": [
+        {
+          "file": "settings-narrow-ja-jp-viewport-display.png",
+          "viewport": {
+            "width": 390,
+            "height": 844
+          },
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true
+        },
+        {
+          "file": "settings-narrow-ja-jp-viewport-alarm-1.png",
+          "viewport": {
+            "width": 390,
+            "height": 844
+          },
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true
+        },
+        {
+          "file": "settings-narrow-ja-jp-viewport-alarm-2.png",
+          "viewport": {
+            "width": 390,
+            "height": 844
+          },
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true
+        },
+        {
+          "file": "settings-narrow-ja-jp-viewport-alarm-3.png",
+          "viewport": {
+            "width": 390,
+            "height": 844
+          },
+          "visible": true,
+          "horizontallyVisible": true,
+          "verticallyVisible": true,
+          "unobscured": true
+        }
+      ],
+      "glyphs": {
+        "family": "Noto Sans CJK JP",
+        "probes": [
+          "タ",
+          "イ",
+          "ヤ"
+        ],
+        "nonempty": true,
+        "distinct": true
+      }
+    }
+  ]
+}

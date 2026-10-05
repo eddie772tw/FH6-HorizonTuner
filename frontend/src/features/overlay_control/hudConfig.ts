@@ -1,5 +1,6 @@
 import type { S650CenterWidget, S650HmiTheme } from './s650/config';
 import type { ClassicJdmAuxGauge, ClassicJdmDefiTheme, ClassicJdmTachStyle } from './classic_jdm/config';
+import type { StackSt8100Settings } from './stack_st8100/config';
 import type { HudDisplayUnits } from './HudUnitSettingsSidebar';
 import { DEFAULT_LFA_AUTO_EXPAND, DEFAULT_LFA_MANUAL_EXPAND } from './lfa_center_ring/config';
 
@@ -35,7 +36,7 @@ export interface MonitorOption {
   is_primary: boolean;
 }
 
-export interface HudConfig {
+export interface HudConfig extends Partial<StackSt8100Settings> {
   enabled: boolean;
   hudStyle: string;
   s650Theme?: S650HmiTheme;

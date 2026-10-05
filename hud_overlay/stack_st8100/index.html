@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Stack ST8100 Inspired HUD</title>
+    <link rel="stylesheet" href="../shared/hud-base.css">
+    <link rel="stylesheet" href="stack.css">
+</head>
+<body>
+    <div class="hud-root-wrapper">
+        <div id="stackContainer" class="hud-gauge-container stack-container">
+            <canvas id="stackCanvas" width="640" height="380" role="img" aria-label="ST8100 inspired analog tachometer and telemetry LCD"></canvas>
+            <svg class="stack-wordmark" viewBox="0 0 96 156" aria-label="STACK trademark"><use href="assets/stack-wordmark.svg#mark" /></svg>
+        </div>
+    </div>
+    <script src="../shared/hud-core.js"></script>
+    <script src="stack-config.js"></script>
+    <script src="stack-model.js"></script>
+    <script src="stack-schedule.js"></script>
+    <script src="stack-monitor.js"></script>
+    <script src="stack-dot-matrix.js"></script>
+    <script src="stack-renderer.js"></script>
+    <script src="stack-controller.js"></script>
+</body>
+</html>
