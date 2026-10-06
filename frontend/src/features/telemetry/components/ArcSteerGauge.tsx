@@ -14,6 +14,7 @@ const ArcSteerGauge: React.FC<{ size?: number }> = React.memo(() => {
     const canvas = canvasRef.current;
     const container = containerRef.current;
     if (!canvas || !container) return;
+    let lastSteer = 0;
 
     // 策略 A：快取 CSS 主題色值，避免每幀 getComputedStyle
     const updateThemeVars = () => {
@@ -25,7 +26,7 @@ const ArcSteerGauge: React.FC<{ size?: number }> = React.memo(() => {
       };
     };
     updateThemeVars();
-    const themeObserver = new MutationObserver(updateThemeVars);
+    const themeObserver = new MutationObserver(() => { updateThemeVars(); drawGauge(lastSteer); });
     themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-bs-theme', 'data-bs-core', 'data-design-system', 'style'] });
 
     const resizeObserver = new ResizeObserver((entries) => {
@@ -35,7 +36,7 @@ const ArcSteerGauge: React.FC<{ size?: number }> = React.memo(() => {
           const dpr = window.devicePixelRatio || 1;
           canvas.width = Math.floor(width * dpr);
           canvas.height = Math.floor(height * dpr);
-          drawGauge(0);
+          drawGauge(lastSteer);
         }
       }
     });
@@ -121,7 +122,7 @@ const ArcSteerGauge: React.FC<{ size?: number }> = React.memo(() => {
 
       const steerRaw = (liveData.SteerInput || 0) / 127;
       const clampedSteer = Math.max(-1, Math.min(1, steerRaw));
-
+      lastSteer = clampedSteer;
       drawGauge(clampedSteer);
 
       if (degTextRef.current) {
