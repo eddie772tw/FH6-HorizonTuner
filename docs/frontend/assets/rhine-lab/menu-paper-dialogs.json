@@ -1,0 +1,92 @@
+[
+  {
+    "horizontalOverflow": false,
+    "inert": true,
+    "name": "系統設定",
+    "rect": {
+      "height": 751.99658203125,
+      "width": 948.1423950195312,
+      "x": 237.0399475097656,
+      "y": 32.00175094604492
+    },
+    "viewport": [
+      1422,
+      800
+    ]
+  },
+  {
+    "horizontalOverflow": false,
+    "inert": true,
+    "name": "外觀",
+    "rect": {
+      "height": 751.99658203125,
+      "width": 863.9931030273438,
+      "x": 279.1145935058594,
+      "y": 32.00175094604492
+    },
+    "viewport": [
+      1422,
+      800
+    ]
+  },
+  {
+    "horizontalOverflow": false,
+    "inert": true,
+    "name": "Companion App",
+    "rect": {
+      "height": 751.99658203125,
+      "width": 960.0000610351562,
+      "x": 231.11111450195312,
+      "y": 31.632081985473633
+    },
+    "viewport": [
+      1422,
+      800
+    ]
+  },
+  {
+    "horizontalOverflow": false,
+    "inert": true,
+    "name": "MCP",
+    "rect": {
+      "height": 686.3194580078125,
+      "width": 800.0000610351562,
+      "x": 311.1111145019531,
+      "y": 64.84029388427734
+    },
+    "viewport": [
+      1422,
+      800
+    ]
+  },
+  {
+    "horizontalOverflow": false,
+    "inert": true,
+    "name": "診斷",
+    "rect": {
+      "height": 261.076416015625,
+      "width": 927.9861450195312,
+      "x": 247.1180725097656,
+      "y": 277.4618225097656
+    },
+    "viewport": [
+      1422,
+      800
+    ]
+  },
+  {
+    "horizontalOverflow": false,
+    "inert": true,
+    "name": "關於",
+    "rect": {
+      "height": 607.8472290039062,
+      "width": 607.9861450195312,
+      "x": 407.1180725097656,
+      "y": 104.07640838623048
+    },
+    "viewport": [
+      1422,
+      800
+    ]
+  }
+]

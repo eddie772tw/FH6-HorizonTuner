@@ -1,5 +1,17 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-10-06 / Rhine Lab 純 2D 設計系統與對話框生命週期（Codex as Codex）
+
+- **來源／狀態**：`local`／`verified`；使用者核准第三設計系統計畫，實作期間再確認完整移除實驗 3D，保留全部 2D 設計。採用 `ponytail`（full，外部）、`halfmoon-design-system`、`modular-refactoring`、`huge-component-refactoring`、`agent-governance-audit`；Windows 互動驗收另使用 `computer-use:computer-use`。
+- **Learning**：原生 `inert` 會在延後執行的焦點 effect 之前清除原觸發按鈕的焦點。AppDialog 必須在隔離背景前保存該元素，退出時保持隔離，卸載先還原 inert 再還原焦點；只依 transform 的 transitionend 無法涵蓋自訂 CSS／零動效，需依 computed transition duration／delay 提供完成一次的保護。
+- **Action**：新增 `rhine`／`rhine-lab`、七 Core 明暗首幀契約、獨立預覽 class、六個主選單紙頁面板、刻度與短暫動畫。ArcSteerGauge 在主題變更時重繪快取數值，解決無新封包時沿用舊色問題，不增加每幀 CSS 查詢。素材使用既有 `/assets/` 路由，保留 MiSans 原始 400／600 分片、雜湊與分開的字體／工具授權；不修改來源專案。
+- **Scope decision**：不透明工作面板遮住大部分 3D 效果，使用者判斷實用性不足後確認移除。刪除場景、依賴、模型、偏好讀寫、開關及文件，沒有只隱藏 UI。下一階段以閱讀編排區別 Swiss Editorial，以檔案／儀器工作台區別 Rhine；共用對話框及預覽品質改善回饋各系統。
+- **Evidence**：最終前端 188 files／1,697 tests passed、各 1 skipped；TypeScript／Vite、frozen workspace install、素材雜湊、技能 validator 與 `git diff --check` 通過。Edge 七 Core 明暗矩陣、五種寬度的設定視窗與 Escape 焦點還原通過；Windows WebView2 154.0.4258.53 取得 1280×720 淺色儀表實際畫面。
+- **Boundary**：使用者停止電腦操作後不再繼續 UI 驗收。完整 p95 基準比較、明暗錄影、200% 縮放、OS reduced motion、草稿／Session 狀態組合、release EXE、Android 及真實遊戲仍未驗收；詳見 [Rhine 驗收紀錄](../docs/frontend/rhine-lab-validation.md)。
+- **PR 階段補驗**：後續繼續分階段 commit 與 PR 交付，新增 `pr-author-maintainer`、`pr-review-evaluation`；嘗試 `cross-agent-collaboration`／`codex-antigravity-bridge` 時發現 agy 未安裝，尚未取得外部審查。Git blob 雜湊複核找出文字檔自動換行問題，匯入器與 `.gitattributes` 固定 LF 後，382 項 index 雜湊全部符合。明暗實際設定畫面找出共用 CSS 後載入覆蓋 Rhine 單欄規則，已提高限定 selector 優先序並驗證。合成資料錄製 26 筆的已選 Session 跨三系統切換，ID／資料及底部閱讀位置保留。
+
+- **使用者追加要求**：六個主選單 surface 統一桌面紙頁，共用 useDialogTransition 並維持常態掛載。五張遙測卡片的 Canvas 改用快取 CSS token、主題／resize 時重畫現有資料；補回 SuspensionBar 漏失 update 訂閱。新增生命週期、token 與懸吊讀值回歸；最終 188 files／1,697 tests passed、各 1 skipped。使用者指派 Sol 子代理完成五卡唯讀設計研究，本輪實作與下一階段建議分開記錄。
+
 ## 2026-10-06 / HUD 樣式並行合併後單位型別契約修復（Gemini as Antigravity）
 
 - **Scope**：主分支合併 PR #474、#473、#482、#483 及 #486 後的主線 CI 修復。採用 `modular-refactoring`、`pr-review-evaluation`。

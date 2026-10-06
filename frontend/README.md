@@ -19,7 +19,7 @@ React／TypeScript／Vite 提供桌面 Full／Lite 與 Companion Web 的共用�
 
 | 工作 | 入口 |
 | --- | --- |
-| 設計系統、六個 Core Theme、配色及視覺驗收 | [主題與設計系統開發指南](../docs/frontend/design-systems.md) |
+| 設計系統、七個 Core Theme、配色及視覺驗收 | [主題與設計系統開發指南](../docs/frontend/design-systems.md) |
 | 元件／Portal／高頻繪圖規則 | [UI 架構](../.agents/rules/ui-architecture.md)、[元件規格](../.agents/skills/halfmoon-design-system/HALFMOON_SPECIFICATION.md) |
 | 調校責任與 typed API | [調校開發](../docs/tuning/README.md)、[責任契約](../docs/contracts/tuning_responsibilities.md) |
 | Android 原生外殼與 WebView 邊界 | [Companion README](../companion/README.md) |

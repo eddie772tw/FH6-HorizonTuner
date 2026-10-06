@@ -1,6 +1,6 @@
 # 主題與設計系統開發指南
 
-本指南說明 Halfmoon／Swiss 的實作入口與變更驗收方式。元件約束以 [UI 架構規則](../../.agents/rules/ui-architecture.md)及[設計規格](../../.agents/skills/halfmoon-design-system/HALFMOON_SPECIFICATION.md)為準；具日期的版型研究與 Journal 保留當時的背景及驗證結果。
+本指南說明 Halfmoon／Swiss／Rhine 的實作入口與變更驗收方式。元件約束以 [UI 架構規則](../../.agents/rules/ui-architecture.md)及[設計規格](../../.agents/skills/halfmoon-design-system/HALFMOON_SPECIFICATION.md)為準；具日期的版型研究與 Journal 保留當時的背景及驗證結果。
 
 ## 核心、設計系統與配色的責任
 
@@ -14,14 +14,15 @@ Core Theme 決定表面、字體層級與元件細節；其所屬設計系統由
 | Swiss | `swiss` | Swiss Technical：冷色消光表面、工程數值層級 |
 | Swiss | `swiss-editorial` | Swiss Editorial：暖紙色／暖炭色、較舒展的標題 |
 | Swiss | `swiss-contrast` | Swiss Contrast：中性黑白、直角與反差標頭 |
+| Rhine | `rhine-lab` | Rhine Lab：紙面檔案工作台、MiSans、刻度導覽 |
 
-六個核心皆支援日夜模式及十組配色預設。`swiss` 是既有 Swiss Technical 的持久化 ID；Swiss Editorial 是獨立核心，不能與 Technical 的淺色模式混為一談。Bauhaus Mono 以完整三色組識別，模式切換時調整黑白主色；其他自訂配色維持原值。成功、警告與錯誤仍使用功能語意色。
+七個核心皆支援日夜模式及十一組配色預設。`swiss` 是既有 Swiss Technical 的持久化 ID；Swiss Editorial 是獨立核心，不能與 Technical 的淺色模式混為一談。Bauhaus Mono 與 Rhine Lab 配色以完整三色組識別，模式切換時調整黑白主色；其他自訂配色維持原值。成功、警告與錯誤仍使用功能語意色。
 
 ## 設定與 CSS 路徑
 
 | 入口 | 責任 |
 | --- | --- |
-| [themeSettings.ts](../../frontend/src/context/themeSettings.ts) | 設定正規化、有效 Core ID／HEX、Mono 模式轉換、`themeColorProperties` 配色映射 |
+| [themeSettings.ts](../../frontend/src/context/themeSettings.ts) | 設定正規化、有效 Core ID／HEX、Mono／Rhine 模式轉換、`themeColorProperties` 配色映射 |
 | [themeDocument.ts](../../frontend/src/context/themeDocument.ts) | 統一寫入 `data-bs-theme`、`data-bs-core`、`data-design-system` 與顏色變數 |
 | [applyThemeEarly.ts](../../frontend/src/app/applyThemeEarly.ts) | React 掛載前套用本機設定，避免首幀閃爍 |
 | [ThemeContext.tsx](../../frontend/src/context/ThemeContext.tsx) | React 更新、localStorage、後端設定同步、自訂 CSS 與 JSON 匯入匯出 |
@@ -30,7 +31,7 @@ Core Theme 決定表面、字體層級與元件細節；其所屬設計系統由
 | [base.css](../../frontend/src/styles/base.css) | 頁面結構、間距、捲動、數值排版及高頻元素例外 |
 | [components.css](../../frontend/src/styles/components.css) | 讓共用元件消費 token；不依核心名稱分支 |
 | [navigation.css](../../frontend/src/styles/navigation.css) | 分頁結構、寬度、響應式與焦點 |
-| [design-systems/index.css](../../frontend/src/styles/design-systems/index.css) | 靜態載入 Halfmoon／Swiss 模組，各自限定 `data-design-system` |
+| [design-systems/index.css](../../frontend/src/styles/design-systems/index.css) | 靜態載入 Halfmoon／Swiss／Rhine 模組，各自限定 `data-design-system` |
 | [features/theme](../../frontend/src/features/theme/ThemeView.tsx) | 外觀設定、核心預覽、三色色票／HEX、配色預設及進階 CSS |
 
 保留 `themeSettings` localStorage key、後端 `theme` 設定、`halfmoonCore` 欄位與 JSON schema 2。設計系統是衍生值，不另存一份可與核心矛盾的狀態。新增核心不需要變更 API 或遷移現有主題。
@@ -39,11 +40,13 @@ Core Theme 決定表面、字體層級與元件細節；其所屬設計系統由
 
 ## 共用元件的使用邊界
 
-- **分頁**：主導覽與無順序子分頁使用 `.workspace-tabs`，不加編號，依內容寬度且上限 14rem。調校 Step 1–4 使用 `.tuning-workflow__steps`，保留編號、桌面四欄滿列與手機兩欄。Halfmoon 使用實色作用中樣式，Swiss 使用底線；步驟資格與鍵盤操作不由 CSS 改寫。
+- **分頁**：主導覽與無順序子分頁使用 `.workspace-tabs`，不加編號，依內容寬度且上限 14rem。調校 Step 1–4 使用 `.tuning-workflow__steps`，保留編號、桌面四欄滿列與手機兩欄。Halfmoon 使用實色作用中樣式，Swiss 使用底線，Rhine 使用刻度與展開底線；步驟資格與鍵盤操作不由 CSS 改寫。
 - **面板標頭**：沿用 `.workspace-panel-header` 及既有標題 hook。`--panel-heading-*` 定義標題、成對底色／文字、內距與分隔線。Contrast 只反轉標頭及標題；控制項、徽章、提示保有自己的表面，焦點線也須在反差背景上可辨識。
 - **按鈕、徽章與輸入**：使用現有語意類別，讓系統模組決定圓角、細框與材質。頁面不直接加入核心選擇器或複製固定色值。
-- **高頻畫面**：Canvas／圖表／range／color inputs 保留無 transition 的例外。繪圖效果讀取快取 token，不在繪圖循環查 DOM 或判斷核心名稱。即時卡片與開關提示不疊加背景模糊；Halfmoon 的其他靜態玻璃面板保留原材質。
+- **高頻畫面**：Canvas／圖表／range／color inputs 保留無 transition／animation 的例外。繪圖效果讀取快取 token，不在繪圖循環查 DOM 或判斷核心名稱。即時卡片與開關提示不疊加背景模糊；Halfmoon 的其他靜態玻璃面板保留原材質。
 - **覆蓋層與捲動**：抽屜／對話框沿用 `ModalPortal`；頁面容器需保留可達的捲動區，尤其 Sessions 分析與下方 Road 紀錄。反差標頭不能改變按鈕順序、遮住提示或裁切長標籤。
+
+Rhine 的 2D 版面與短暫動畫適用 Full／Lite 共用前端；設定、外觀、診斷、Companion、MCP 與關於在 1024px 以上統一為置中紙頁，窄畫面沿用抽屜。共用 useDialogTransition 以實際 transition 時長提供關閉保護，退出期間持續限制焦點。切換主題不得重新掛載工作區。素材及驗收邊界見 [Rhine Lab 實作與驗收](rhine-lab.md)。
 
 ## 新增核心或設計系統
 
@@ -68,11 +71,12 @@ git diff --check
 
 | 瀏覽器檢查 | 驗收重點 |
 | --- | --- |
-| 六核心 × 日夜、跨系統往返 | 表面／圓角／分頁正確；Halfmoon 材質保留；三色不重設 |
-| Swiss Signal、Bauhaus Mono、既有及自訂配色 | 按鈕、開關、連結、圖表及核心預覽同步；語意警示色獨立 |
+| 七核心 × 日夜、跨系統往返 | 表面／圓角／分頁正確；Halfmoon 材質保留；三色不重設 |
+| Rhine Lab、Swiss Signal、Bauhaus Mono、既有及自訂配色 | 按鈕、開關、連結、圖表及核心預覽同步；語意警示色獨立 |
 | 重新載入、JSON 匯入／匯出 | 核心、模式、三色與合法自訂 CSS 保留；首幀與 React 一致 |
 | 即時／直線加速／調校／賽事／HUD 設定／系統設定 | 標頭操作與徽章對齊；Contrast 焦點可見；Halfmoon 滑鼠提示無角落模糊 |
-| 320px 與桌面寬度、長標籤及有資料狀態 | 無頁面水平溢出；可到達頁尾；一般分頁限寬、調校滿列；賽事匯入可用既有 [MoTeC fixture](../../backend-rust/tests/fixtures/motec.csv) |
+| 320／768／1024／1280×720／1920×1080、200% 縮放、長標籤及有資料狀態 | 無頁面水平溢出；可到達頁尾；一般分頁限寬、調校滿列；賽事匯入可用既有 [MoTeC fixture](../../backend-rust/tests/fixtures/motec.csv) |
+| Rhine 動效 | reduced motion 直接到終態；高頻畫面及祖先容器排除入場動畫；刻度與底線不引起版面位移 |
 | 對話框與進階區 | Escape／焦點還原、Portal 邊界及捲動正常；CSS 編輯器預設折疊 |
 
 送審時在 PR 列出最終範圍、文件入口、驗證的產品提交 SHA、實際頁面／資料／viewport、CI 連結與已知缺口。文件提交如沿用前一產品提交的測試，需明示程式碼樹未變，不能將舊 CI 寫成新 HEAD 的結果。保持 PR 非 Draft，盤點頂層 review 與行內討論；Ready to Review 表示材料已可供審查，核准仍由 Reviewer 決定。
