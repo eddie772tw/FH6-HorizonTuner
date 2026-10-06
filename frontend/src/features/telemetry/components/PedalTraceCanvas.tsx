@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { telemetryEmitter } from '../../../hooks/useTelemetry';
-import { readCanvasTheme, observeCanvasTheme, drawTraceGrid } from '../../../utils/canvasTheme';
+import { readCanvasTheme, observeCanvasTheme, drawTraceGrid, TRACE_PAD_TOP, TRACE_PAD_BOTTOM } from '../../../utils/canvasTheme';
 import { useSettings } from '../../../context/SettingsContext';
 
 // --- COMPONENT: PedalTraceCanvas ---
@@ -103,8 +103,8 @@ const PedalTraceCanvas: React.FC<PedalTraceCanvasProps> = React.memo(({ height =
           const dpr = window.devicePixelRatio || 1;
           ctx.clearRect(0, 0, w, h);
 
-          const padTop = 26 * dpr;
-          const padBottom = 12 * dpr;
+          const padTop = TRACE_PAD_TOP * dpr;
+          const padBottom = TRACE_PAD_BOTTOM * dpr;
           const plotH = Math.max(10, h - padTop - padBottom);
 
           drawTraceGrid(ctx, w, h, dpr, theme);
@@ -168,7 +168,7 @@ const PedalTraceCanvas: React.FC<PedalTraceCanvasProps> = React.memo(({ height =
       }}
     >
       <canvas ref={canvasRef} className="w-100 h-100 d-block" />
-      <div className="telemetry-trace-legend position-absolute top-0 start-0 end-0 p-2 d-flex justify-content-between align-items-center pointer-events-none" style={{ background: 'linear-gradient(to bottom, var(--surface-1), transparent)' }}>
+      <div className="telemetry-trace-legend position-absolute top-0 start-0 end-0 px-2 py-1 d-flex justify-content-between align-items-center pointer-events-none" style={{ background: 'linear-gradient(to bottom, var(--surface-1), transparent)' }}>
         <div className="d-flex align-items-center gap-3 fs-8">
           <div className="d-flex align-items-center gap-1">
             <span className="d-inline-block rounded-circle" style={{ width: '8px', height: '8px', background: 'var(--instrument-throttle, #00ff66)' }} />

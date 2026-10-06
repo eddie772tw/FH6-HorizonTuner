@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, expect, it } from 'vitest';
-import { observeCanvasTheme, readCanvasTheme } from './canvasTheme';
+import { observeCanvasTheme, readCanvasTheme, drawTraceGrid, TRACE_PAD_TOP, TRACE_PAD_BOTTOM } from './canvasTheme';
 
 afterEach(() => {
   document.documentElement.removeAttribute('style');
@@ -50,4 +50,22 @@ it('keeps flat instruments and steady alerts independent of ruled geometry', asy
   await Promise.resolve();
   expect(drawingTheme).toMatchObject({ flat: false, alertFlash: true, linear: false });
   stop();
+});
+
+it('provides trace padding headroom that clears the legend and renders trace grid', () => {
+  expect(TRACE_PAD_TOP).toBeGreaterThanOrEqual(30);
+  expect(TRACE_PAD_BOTTOM).toBeGreaterThanOrEqual(10);
+
+  const mockCtx = {
+    strokeStyle: '',
+    lineWidth: 1,
+    setLineDash: () => {},
+    beginPath: () => {},
+    moveTo: () => {},
+    lineTo: () => {},
+    stroke: () => {},
+  } as unknown as CanvasRenderingContext2D;
+
+  const theme = readCanvasTheme();
+  expect(() => drawTraceGrid(mockCtx, 300, 140, 1, theme)).not.toThrow();
 });

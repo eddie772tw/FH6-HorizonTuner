@@ -64,22 +64,26 @@ export function useCanvasTheme() {
   return theme;
 }
 
+export const TRACE_PAD_TOP = 32;
+export const TRACE_PAD_BOTTOM = 12;
+
 /** The same plotting area and data scale; paper instruments use solid ruled guides. */
 export function drawTraceGrid(ctx: CanvasRenderingContext2D, w: number, h: number, dpr: number, theme: CanvasTheme) {
-  const bottom = h - 12 * dpr;
-  const plotH = Math.max(10, h - 38 * dpr);
+  const padTop = TRACE_PAD_TOP * dpr;
+  const bottom = h - TRACE_PAD_BOTTOM * dpr;
+  const plotH = Math.max(10, h - padTop - TRACE_PAD_BOTTOM * dpr);
   ctx.strokeStyle = theme.grid;
   ctx.lineWidth = dpr;
   ctx.setLineDash(theme.linear ? [] : [4 * dpr, 4 * dpr]);
   ctx.beginPath();
-  for (let i = 0; i < 4; i++) {
+  for (let i = 0; i <= 4; i++) {
     const y = bottom - plotH * i / 4;
     ctx.moveTo(0, y); ctx.lineTo(w, y);
   }
   if (theme.linear) {
     for (let i = 1; i < 4; i++) {
       const x = w * i / 4;
-      ctx.moveTo(x, 26 * dpr); ctx.lineTo(x, bottom);
+      ctx.moveTo(x, padTop); ctx.lineTo(x, bottom);
     }
   }
   ctx.stroke();

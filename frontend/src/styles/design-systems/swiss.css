@@ -292,6 +292,7 @@
 :where([data-design-system="swiss"]) .telemetry-trace-legend {
   background: var(--surface-1) !important;
   border-bottom: 1px solid var(--glass-border);
+  line-height: 1.25;
 }
 :where([data-design-system="swiss"]) .telemetry-trace-legend .telemetry-power-label { color: var(--primary) !important; }
 :where([data-design-system="swiss"]) .telemetry-trace-legend .telemetry-torque-label { color: var(--secondary) !important; }

@@ -148,7 +148,7 @@
 :where([data-design-system="rhine"]) .telemetry-card-shell { border: 1px solid var(--glass-border); }
 :where([data-design-system="rhine"]) .telemetry-card-shell :is(.text-secondary, .text-info) { color: var(--text-secondary) !important; }
 :where([data-design-system="rhine"]) :is(.telemetry-instrument-panel, .telemetry-trace-panel, .telemetry-driver-inputs, .telemetry-pedal-inputs .border) { border-radius: var(--panel-radius) !important; }
-:where([data-design-system="rhine"]) .telemetry-trace-legend { background: var(--surface-1) !important; border-bottom: 1px solid var(--glass-border); }
+:where([data-design-system="rhine"]) .telemetry-trace-legend { background: var(--surface-1) !important; border-bottom: 1px solid var(--glass-border); line-height: 1.25; }
 :where([data-design-system="rhine"]) .telemetry-torque-marker { border-radius: 0 !important; }
 :where([data-design-system="rhine"]) .telemetry-trace-legend .telemetry-power-label { color: var(--primary) !important; }
 :where([data-design-system="rhine"]) .telemetry-trace-legend .telemetry-torque-label { color: var(--secondary) !important; }

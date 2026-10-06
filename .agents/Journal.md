@@ -523,3 +523,20 @@
   4. 同步更新 `README.md` 與 `README.en.md` 核心功能與專案架構樹。
 - **Evidence**：`scripts/validate_version_consistency.py` 輸出 `Application version contract OK: 11.45.18`；後端測試 335 passed, 8 deselected；前端測試 108 files / 752 tests 通過；Vite 生產建置 726 modules 通過；Ruff check/format 通過；`git diff --check` 通過。
 - **Skills**：`portable-release-validation`、`modular-refactoring`。
+
+## 2026-10-06 / Rhine Lab 主題 Live Telemetry Traces 100% 數值覆蓋問題修復（Gemini as Antigravity）
+
+- **來源／狀態**：`local`／`verified`；修復 Rhine Lab 與 Swiss 主題下，遙測卡片 Live Telemetry Traces 之 INPUT WAVEFORM（油門/煞車）數值點在 100% 時因圖例表面 (`.telemetry-trace-legend`) 不透明背景覆蓋而隱沒之問題。
+- **Learning**：
+  1. **實色圖例遮擋高頻波形頂部極值之幾何失效**：Rhine Lab 與 Swiss 為呈現平直紙面與儀表檔案欄風格，將 `.telemetry-trace-legend` 樣式設定為實色 `var(--surface-1)` 及底邊框。但在既有 `PedalTraceCanvas` 與 `PowerTorqueCanvas` 中，繪圖頂部內距硬編碼為 `padTop = 26 * dpr`，而圖例使用 `p-2`（上下 8px 內距）加上文字行高，高度達 35px。使得輸入在 100%（以及 >91%）時之波形頂部數值點落在 `Y = 26px`，完全隱沒於實色圖例下方。
+  2. **圖例緊湊化與繪圖幾何 SSOT 契約解耦**：
+     - 於 `canvasTheme.ts` 建立統一幾何常數 `TRACE_PAD_TOP = 32` 與 `TRACE_PAD_BOTTOM = 12`，並重構 `drawTraceGrid` 的格線範圍與垂直線起點（`padTop`），同時補齊 100% 水平格線（`i <= 4`）。
+     - 將圖例 padding 調整為 `px-2 py-1` 並賦予 `line-height: 1.25`，將圖例高度壓縮至約 25px，使 100% 波形值（Y = 32px）與圖例底邊保留安全間距，完全避免被實色圖例遮擋。
+     - 在標準 140px 面板高度下，繪圖有效高度 `plotH = 96px` 為 4 的整數倍（每格剛好 24px），同時消除了先前 102 / 4 = 25.5px 造成的亞像素抗鋸齒模糊問題。
+- **Action**：
+  1. 修改 `canvasTheme.ts`：導出 `TRACE_PAD_TOP` (32) 與 `TRACE_PAD_BOTTOM` (12)，重構 `drawTraceGrid` 包含 100% 水平線與對齊垂直線。
+  2. 修改 `PedalTraceCanvas.tsx` 與 `PowerTorqueCanvas.tsx`：引入 `TRACE_PAD_TOP` / `TRACE_PAD_BOTTOM`，圖例改為 `px-2 py-1`。
+  3. 修改 `rhine.css` 與 `swiss.css`：為 `.telemetry-trace-legend` 補充 `line-height: 1.25` 鎖定圖例高度。
+  4. 擴充 `canvasTheme.test.ts` 驗證常數餘量契約與格線無異常繪製。
+- **Evidence**：`git diff --check` 通過；`pnpm -C frontend exec vitest run src/utils/canvasTheme.test.ts` 5 passed；前端全量測試 189 test files / 1702 tests 全數通過。
+- **Skills**：`halfmoon-design-system`。
