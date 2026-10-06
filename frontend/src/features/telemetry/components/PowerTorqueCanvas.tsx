@@ -20,6 +20,7 @@ const PowerTorqueCanvas: React.FC<PowerTorqueCanvasProps> = React.memo(({ height
 
   const maxPowerObservedRef = useRef<number>(100);
   const maxTorqueObservedRef = useRef<number>(100);
+  const lastMaxRpm = useRef(8500);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -38,7 +39,6 @@ const PowerTorqueCanvas: React.FC<PowerTorqueCanvasProps> = React.memo(({ height
 
     let theme = readCanvasTheme();
     const stopThemeObserver = observeCanvasTheme(() => { theme = readCanvasTheme(); draw(); });
-    let lastMaxRpm = 8500;
 
     const resizeObserver = new ResizeObserver((entries) => {
       for (const entry of entries) {
@@ -86,7 +86,7 @@ const PowerTorqueCanvas: React.FC<PowerTorqueCanvasProps> = React.memo(({ height
       const rawRpm = liveData.CurrentEngineRpm || 0;
       const rawPower = convertPower(liveData.PowerWatts || 0).value;
       const rawTorque = convertTorque(liveData.TorqueNewtons || 0).value;
-      lastMaxRpm = Math.max(7000, liveData.EngineMaxRpm || 8500);
+      lastMaxRpm.current = Math.max(7000, liveData.EngineMaxRpm || 8500);
 
       if (rawRpm > 300) {
         if (rawPower > maxPowerObservedRef.current) maxPowerObservedRef.current = rawPower;
@@ -113,7 +113,7 @@ const PowerTorqueCanvas: React.FC<PowerTorqueCanvasProps> = React.memo(({ height
 
     const draw = () => {
       if (!enabled) return;
-      const maxRpm = lastMaxRpm;
+      const maxRpm = lastMaxRpm.current;
       const ctx = canvas.getContext('2d');
       if (!ctx || canvas.width === 0 || canvas.height === 0) return;
 

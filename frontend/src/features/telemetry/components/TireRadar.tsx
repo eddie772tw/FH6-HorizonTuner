@@ -25,6 +25,7 @@ const TireRadar: React.FC<TireRadarProps> = React.memo(({ title, isLeft, tireIdx
   const radarCanvasRef = useRef<HTMLCanvasElement>(null);
   const tempCanvasRef = useRef<HTMLCanvasElement>(null);
   const hist = useRef<{ temp: number, ratio: number, angle: number, time: number }[]>([]);
+  const latestSample = useRef({ temp: 0, ratio: 0, angle: 0, time: 0 });
   const offsetRef = useRef(0);
   const tempLabelRef = useRef<HTMLSpanElement>(null);
 
@@ -107,7 +108,6 @@ const TireRadar: React.FC<TireRadarProps> = React.memo(({ title, isLeft, tireIdx
     const displayLimit = 1.5;
 
     let theme = readCanvasTheme();
-    let cTemp = 0, cRatio = 0, cAngle = 0, lastTime = performance.now();
     bgCacheRef.current.canvas = null;
     const stopThemeObserver = observeCanvasTheme(() => {
       theme = readCanvasTheme();
@@ -171,13 +171,15 @@ const TireRadar: React.FC<TireRadarProps> = React.memo(({ title, isLeft, tireIdx
       if (liveData.IsRaceOn !== 1) return;
 
       const now = performance.now();
-      lastTime = now;
-      cTemp = 0; cRatio = 0; cAngle = 0;
+      const sample = latestSample.current;
+      sample.time = now;
+      sample.temp = 0; sample.ratio = 0; sample.angle = 0;
       if (liveData.TireTemp && liveData.TireSlipRatio && liveData.TireSlipAngle) {
-        cTemp = liveData.TireTemp[tireIdx];
-        cRatio = liveData.TireSlipRatio[tireIdx];
-        cAngle = liveData.TireSlipAngle[tireIdx];
+        sample.temp = liveData.TireTemp[tireIdx];
+        sample.ratio = liveData.TireSlipRatio[tireIdx];
+        sample.angle = liveData.TireSlipAngle[tireIdx];
       }
+      const { temp: cTemp, ratio: cRatio, angle: cAngle } = sample;
 
       if (renderCharts) {
         // [PERF] Use O(1) circular buffer instead of O(N) Array.shift() in the render loop.
@@ -209,7 +211,7 @@ const TireRadar: React.FC<TireRadarProps> = React.memo(({ title, isLeft, tireIdx
     };
 
     const draw = () => {
-      const now = lastTime;
+      const { temp: cTemp, ratio: cRatio, angle: cAngle, time: now } = latestSample.current;
       // 1. Radar Canvas 繪製 (純動態對齊 Buffer 尺寸)
       const rCanvas = radarCanvasRef.current;
       if (rCanvas && rCanvas.width > 0) {

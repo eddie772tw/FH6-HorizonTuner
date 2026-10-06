@@ -11,6 +11,7 @@
 - **PR 階段補驗**：後續繼續分階段 commit 與 PR 交付，新增 `pr-author-maintainer`、`pr-review-evaluation`；嘗試 `cross-agent-collaboration`／`codex-antigravity-bridge` 時發現 agy 未安裝，尚未取得外部審查。Git blob 雜湊複核找出文字檔自動換行問題，匯入器與 `.gitattributes` 固定 LF 後，382 項 index 雜湊全部符合。明暗實際設定畫面找出共用 CSS 後載入覆蓋 Rhine 單欄規則，已提高限定 selector 優先序並驗證。合成資料錄製 26 筆的已選 Session 跨三系統切換，ID／資料及底部閱讀位置保留。
 
 - **使用者追加要求**：六個主選單 surface 統一桌面紙頁，共用 useDialogTransition 並維持常態掛載。五張遙測卡片的 Canvas 改用快取 CSS token、主題／resize 時重畫現有資料；補回 SuspensionBar 漏失 update 訂閱。新增生命週期、token 與懸吊讀值回歸；最終 188 files／1,697 tests passed、各 1 skipped。使用者指派 Sol 子代理完成五卡唯讀設計研究，本輪實作與下一階段建議分開記錄。
+- **獨立核對修正**：Sol 重現停止封包後輪胎 renderCharts 關閉／開啟，effect local 樣本歸零但 DOM 讀值保留。最新原始樣本與時間須以 ref 保存；同樣修正 RPM／alert 與散點轉速上限，避免 settings converter identity 變更重啟 effect 時丟資料。新增單一資料保留／單位重繪回歸；前端 189 files／1,698 tests passed、各 1 skipped，TypeScript／Vite 通過。
 
 ## 2026-10-06 / HUD 樣式並行合併後單位型別契約修復（Gemini as Antigravity）
 

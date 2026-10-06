@@ -17,13 +17,13 @@ const EngineRpmDisplay: React.FC = React.memo(() => {
   
   const lastFlashRef = useRef(false);
   const lastFlashTimeRef = useRef(0);
+  const latestSample = useRef({ rpm: 0, maxRpm: 8000, alert: false });
 
   const { t, convertSpeed } = useSettings();
 
   useEffect(() => {
-    let lastRpm = 0, lastMaxRpm = 8000, lastAlert = false;
     let theme = readCanvasTheme();
-    const stopThemeObserver = observeCanvasTheme(() => { theme = readCanvasTheme(); drawRpmGauge(lastRpm, lastMaxRpm, lastAlert); });
+    const stopThemeObserver = observeCanvasTheme(() => { theme = readCanvasTheme(); drawRpmGauge(); });
 
     if (speedUnitRef.current) speedUnitRef.current.innerText = convertSpeed(0).label;
 
@@ -38,13 +38,14 @@ const EngineRpmDisplay: React.FC = React.memo(() => {
           const dpr = window.devicePixelRatio || 1;
           canvas.width = Math.floor(width * dpr);
           canvas.height = Math.floor(height * dpr);
-          drawRpmGauge(lastRpm, lastMaxRpm, lastAlert);
+          drawRpmGauge();
         }
       }
     });
     resizeObserver.observe(container);
 
-    const drawRpmGauge = (currentRpm: number, maxRpm: number, isShiftAlert: boolean) => {
+    const drawRpmGauge = () => {
+      const { rpm: currentRpm, maxRpm, alert: isShiftAlert } = latestSample.current;
       if (!canvas || canvas.width === 0 || canvas.height === 0) return;
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
@@ -135,8 +136,10 @@ const EngineRpmDisplay: React.FC = React.memo(() => {
         shiftBadgeRef.current.style.opacity = isRedlineAlert ? '1' : '0';
       }
 
-      lastRpm = currentRpm; lastMaxRpm = maxRpm; lastAlert = isRedlineAlert;
-      drawRpmGauge(currentRpm, maxRpm, isRedlineAlert);
+      latestSample.current.rpm = currentRpm;
+      latestSample.current.maxRpm = maxRpm;
+      latestSample.current.alert = isRedlineAlert;
+      drawRpmGauge();
     };
 
     telemetryEmitter.addEventListener('update', handleUpdate);

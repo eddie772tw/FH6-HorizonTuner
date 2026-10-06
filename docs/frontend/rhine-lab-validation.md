@@ -6,7 +6,7 @@
 
 | 檢查 | 結果 |
 | --- | --- |
-| `pnpm -C frontend run test` | 188 files passed、1 skipped；1,697 tests passed、1 skipped |
+| `pnpm -C frontend run test` | 189 files passed、1 skipped；1,698 tests passed、1 skipped |
 | `pnpm -C frontend run build` | TypeScript 與 Vite 通過，含 Full／Lite／Companion 入口 |
 | `pnpm install --frozen-lockfile --ignore-scripts` | 通過；不新增執行期相依 |
 | `git diff --check` | 通過 |
@@ -34,6 +34,8 @@
 
 五卡 Canvas 已以隔離後端 600 個合成封包驗證：RPM／方向、踏板、動力散點、胎況與懸吊皆收到資料；懸吊顯示 0.20 至 0.80 的合成變化範圍。套用 Rhine 三色後無需再發送封包即可重畫；附[淺色](assets/rhine-lab/canvas-light.jpg)與[暗色](assets/rhine-lab/canvas-dark.jpg)。五卡逐元素研究由使用者指定的 Sol 子代理完成，見[設計研究](rhine-telemetry-design.md)。
 
+Sol 獨立核對找出停用／重啟輪胎圖表會重設 effect 區域樣本，造成 Canvas 與保留讀值矛盾。最新輪胎樣本及原始時間、RPM／alert、散點轉速上限已改存 ref；重新訂閱後從同一份資料重畫。回歸測試涵蓋收到 230°F／1.1 ratio／1.2 angle 後停止封包，關閉／開啟圖表並切換至 Celsius，仍顯示 110°C 與原抓地讀值。
+
 ## 對比與包體
 
 基礎色值的 WCAG 對比計算見 [contrast.json](assets/rhine-lab/contrast.json)：淺色三種表面上的輔助文字最低 **4.63:1**、主要文字最低 **15.50:1**；深色分別最低 **5.60:1**、**9.58:1**。必要控制項邊界在六種表面最低 **3.60:1**。這不代表任意使用者自訂三色都達標，也不取代完整畫面無障礙稽核。
@@ -42,17 +44,19 @@
 
 | 類別 | 基準 | Rhine 2D |
 | --- | ---: | ---: |
-| JavaScript | 1,188,233 bytes | 1,189,195 bytes |
+| JavaScript | 1,188,233 bytes | 1,189,447 bytes |
 | CSS | 433,596 bytes | 743,420 bytes |
 | WOFF2 | 0 bytes | 12,197,248 bytes |
 | GLB | 0 bytes | 0 bytes |
-| 全部前端檔案 | 1,629,549 bytes | 14,388,135 bytes |
+| 全部前端檔案 | 1,629,549 bytes | 14,388,387 bytes |
 
-JavaScript 僅增加 962 bytes；主要增量為計畫保留的 MiSans 原始分片與 unicode-range CSS。字體使用 `font-display: swap` 與系統回退。
+JavaScript 增加 1,214 bytes；主要增量為計畫保留的 MiSans 原始分片與 unicode-range CSS。字體使用 `font-display: swap` 與系統回退。
 
 ## 效能與尚未完成的情境
 
 本機 Edge 154、1422×800、相同合成 UDP 資料（324 bytes、約 60Hz、4500 RPM／120 km/h）的一次 10 秒 Rhine 2D Live 量測取得 601 個 frame interval，p50 16.7ms、p95 16.8ms。量測程式只存在忽略的 `scratch/rhine-evidence/`，不隨產品出貨。尚未完成對原基準版的同機 Live／Sessions 重複比較，因此**未宣告 p95 退化 ≤10% 的完整效能門檻通過**。合成封包不是真實遊戲證據。
+
+後續 2124×978 的配對診斷中，Rhine 與基準版本分別只取得 56／58 幀，兩者 p95 均約 1016ms，雖然頁面的 hidden 標記為 false。這組環境沒有維持正常畫面更新頻率，不能用來判定主題效能差異；需在確實顯示於前景的視窗重做同資料比較。
 
 前一輪互動畫面驗收曾因使用者按 Escape 停止；後續 PR 交付階段已補驗明暗設定與 Session 切換。下列項目仍待實際操作：
 

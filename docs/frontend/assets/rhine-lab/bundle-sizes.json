@@ -32,13 +32,13 @@
     "rhine": {
       "all": {
         "files": 411,
-        "bytes": 14388135,
-        "gzip": 12800504
+        "bytes": 14388387,
+        "gzip": 12800550
       },
       "js": {
         "files": 17,
-        "bytes": 1189195,
-        "gzip": 341042
+        "bytes": 1189447,
+        "gzip": 341089
       },
       "css": {
         "files": 6,
