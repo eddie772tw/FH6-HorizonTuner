@@ -69,9 +69,9 @@ const VerticalInputBar: React.FC<VerticalInputBarProps> = React.memo(({ label, s
       
       <div className="position-relative flex-grow-1 w-100 border rounded-2 overflow-hidden" style={{ background: 'var(--surface-2)', borderColor: 'var(--glass-border) !important' }}>
         {/* Track Guidelines (25%, 50%, 75%) */}
-        <div className="position-absolute w-100 pointer-events-none" style={{ top: '25%', height: '1px', background: 'rgba(255,255,255,0.06)' }} />
-        <div className="position-absolute w-100 pointer-events-none" style={{ top: '50%', height: '1px', background: 'rgba(255,255,255,0.08)' }} />
-        <div className="position-absolute w-100 pointer-events-none" style={{ top: '75%', height: '1px', background: 'rgba(255,255,255,0.06)' }} />
+        <div className="position-absolute w-100 pointer-events-none" style={{ top: '25%', height: '1px', background: 'var(--instrument-grid, rgba(255,255,255,0.06))' }} />
+        <div className="position-absolute w-100 pointer-events-none" style={{ top: '50%', height: '1px', background: 'var(--instrument-tick, rgba(255,255,255,0.08))' }} />
+        <div className="position-absolute w-100 pointer-events-none" style={{ top: '75%', height: '1px', background: 'var(--instrument-grid, rgba(255,255,255,0.06))' }} />
 
         {/* Dynamic Level Fill */}
         <div
@@ -80,7 +80,7 @@ const VerticalInputBar: React.FC<VerticalInputBarProps> = React.memo(({ label, s
           style={{
             height: '0%',
             background: color,
-            boxShadow: `var(--instrument-marker-shadow, 0 0 10px ${color}a0)`,
+            boxShadow: `var(--instrument-marker-shadow, 0 0 10px color-mix(in srgb, ${color} 63%, transparent))`,
             transition: 'height 0.04s ease-out'
           }}
         />

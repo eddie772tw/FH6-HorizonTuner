@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { telemetryEmitter } from '../../../hooks/useTelemetry';
+import { readCanvasTheme, observeCanvasTheme } from '../canvasTheme';
 import { useSettings } from '../../../context/SettingsContext';
 import { calculateGPointOffset, calculateRadarDiameter } from '../../../utils/gforceRadarMath';
 
@@ -22,7 +23,6 @@ const GForceRadar: React.FC<GForceRadarProps> = React.memo(({ size: propSize, re
   const sizeRef = useRef<number>(propSize || 170);
   const prevCar = useRef<number | null>(null);
   const prevRace = useRef<number | null>(null);
-  const primaryColorRef = useRef('#00f0ff');
   const { t } = useSettings();
 
   useEffect(() => {
@@ -78,14 +78,8 @@ const GForceRadar: React.FC<GForceRadarProps> = React.memo(({ size: propSize, re
   }, [propSize]);
 
   useEffect(() => {
-    // 快取 --primary 主題色
-    const updatePrimaryColor = () => {
-      const style = getComputedStyle(document.documentElement);
-      primaryColorRef.current = style.getPropertyValue('--primary').trim() || '#00f0ff';
-    };
-    updatePrimaryColor();
-    const themeObserver = new MutationObserver(updatePrimaryColor);
-    themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-bs-theme', 'data-bs-core', 'style'] });
+    let theme = readCanvasTheme();
+    const stopThemeObserver = observeCanvasTheme(() => { theme = readCanvasTheme(); drawMarkers(); });
 
     const handleDraw = (e: any) => {
       const data = e.detail;
@@ -152,12 +146,7 @@ const GForceRadar: React.FC<GForceRadarProps> = React.memo(({ size: propSize, re
     let lastMarkerTime = 0;
     let rafId: number;
 
-    const drawMarkers = (now: number) => {
-      rafId = requestAnimationFrame(drawMarkers);
-
-      if (now - lastMarkerTime < 200) return;
-      lastMarkerTime = now;
-
+    const drawMarkers = () => {
       const mCanvas = markerCanvasRef.current;
       if (!mCanvas || mCanvas.width === 0) return;
 
@@ -201,22 +190,29 @@ const GForceRadar: React.FC<GForceRadarProps> = React.memo(({ size: propSize, re
 
       const markers = [maxLatL, maxLatR, maxLonB, maxLonA, maxL_B, maxL_A, maxR_B, maxR_A];
 
-      ctx.fillStyle = 'rgba(150, 150, 150, 0.7)';
+      ctx.fillStyle = theme.marker;
       for (const p of markers) {
         const offset = calculateGPointOffset(p.lat, p.lon, radius, 3);
         const cx = (radius + offset.dx) * dpr;
         const cy = (radius + offset.dy) * dpr;
         ctx.beginPath();
-        ctx.arc(cx, cy, 3 * dpr, 0, Math.PI * 2);
+        if (theme.linear) ctx.rect(cx - 2.5 * dpr, cy - 2.5 * dpr, 5 * dpr, 5 * dpr);
+        else ctx.arc(cx, cy, 3 * dpr, 0, Math.PI * 2);
         ctx.fill();
       }
     };
 
-    rafId = requestAnimationFrame(drawMarkers);
+    const tickMarkers = (now: number) => {
+      rafId = requestAnimationFrame(tickMarkers);
+      if (now - lastMarkerTime < 200) return;
+      lastMarkerTime = now;
+      drawMarkers();
+    };
+    rafId = requestAnimationFrame(tickMarkers);
 
     return () => {
       telemetryEmitter.removeEventListener('update', handleDraw);
-      themeObserver.disconnect();
+      stopThemeObserver();
       cancelAnimationFrame(rafId);
     };
   }, [renderRadar]);

@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { telemetryEmitter } from '../../../hooks/useTelemetry';
+import { readCanvasTheme, observeCanvasTheme, drawTraceGrid } from '../canvasTheme';
 import { useSettings } from '../../../context/SettingsContext';
 
 // --- COMPONENT: PedalTraceCanvas ---
@@ -16,8 +17,6 @@ const PedalTraceCanvas: React.FC<PedalTraceCanvasProps> = React.memo(({ height =
   const lastTimeRef = useRef(performance.now());
   const prevCar = useRef<number | null>(null);
   const prevRace = useRef<number | null>(null);
-  const isLightRef = useRef(false);
-  const glowStrengthRef = useRef(1);
   const { t } = useSettings();
 
   useEffect(() => {
@@ -35,14 +34,8 @@ const PedalTraceCanvas: React.FC<PedalTraceCanvasProps> = React.memo(({ height =
     const container = containerRef.current;
     if (!canvas || !container) return;
 
-    // 策略 A：快取 isLight 主題屬性
-    const updateIsLight = () => {
-      isLightRef.current = document.documentElement.getAttribute('data-bs-theme') === 'light';
-      glowStrengthRef.current = Number(getComputedStyle(document.documentElement).getPropertyValue('--instrument-glow-strength').trim() || '1');
-    };
-    updateIsLight();
-    const themeObserver = new MutationObserver(updateIsLight);
-    themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-bs-theme', 'data-bs-core', 'data-design-system', 'style'] });
+    let theme = readCanvasTheme();
+    const stopThemeObserver = observeCanvasTheme(() => { theme = readCanvasTheme(); draw(); });
 
     const resizeObserver = new ResizeObserver((entries) => {
       for (const entry of entries) {
@@ -51,6 +44,7 @@ const PedalTraceCanvas: React.FC<PedalTraceCanvasProps> = React.memo(({ height =
           const dpr = window.devicePixelRatio || 1;
           canvas.width = Math.floor(width * dpr);
           canvas.height = Math.floor(height * dpr);
+          draw();
         }
       }
     });
@@ -97,7 +91,12 @@ const PedalTraceCanvas: React.FC<PedalTraceCanvasProps> = React.memo(({ height =
         offsetRef.current = (idx + 1) % 300;
       }
 
-      if (canvas && hist.current.length > 0 && canvas.width > 0 && canvas.height > 0) {
+      draw();
+    };
+
+    const draw = () => {
+      if (!enabled) return;
+      if (canvas.width > 0 && canvas.height > 0) {
         const ctx = canvas.getContext('2d');
         if (ctx) {
           const w = canvas.width, h = canvas.height;
@@ -108,21 +107,7 @@ const PedalTraceCanvas: React.FC<PedalTraceCanvasProps> = React.memo(({ height =
           const padBottom = 12 * dpr;
           const plotH = Math.max(10, h - padTop - padBottom);
 
-          // Dashed Guidelines (0% baseline, 25%, 50%, 75%)（使用快取的 isLight）
-          ctx.strokeStyle = isLightRef.current ? 'rgba(15, 23, 42, 0.08)' : 'rgba(255, 255, 255, 0.06)';
-          ctx.lineWidth = 1 * dpr;
-          ctx.setLineDash([4 * dpr, 4 * dpr]);
-          ctx.beginPath();
-          const y0 = h - padBottom;
-          const y25 = h - padBottom - plotH * 0.25;
-          const y50 = h - padBottom - plotH * 0.50;
-          const y75 = h - padBottom - plotH * 0.75;
-          ctx.moveTo(0, y0); ctx.lineTo(w, y0);
-          ctx.moveTo(0, y25); ctx.lineTo(w, y25);
-          ctx.moveTo(0, y50); ctx.lineTo(w, y50);
-          ctx.moveTo(0, y75); ctx.lineTo(w, y75);
-          ctx.stroke();
-          ctx.setLineDash([]);
+          drawTraceGrid(ctx, w, h, dpr, theme);
 
           const len = hist.current.length;
           const stepX = (w - 12 * dpr) / 299;
@@ -138,9 +123,9 @@ const PedalTraceCanvas: React.FC<PedalTraceCanvasProps> = React.memo(({ height =
             else ctx.lineTo(px, py);
           }
           ctx.lineWidth = 2.2 * dpr;
-          ctx.strokeStyle = '#00ff66';
+          ctx.strokeStyle = theme.throttle;
           ctx.shadowColor = 'rgba(0, 255, 102, 0.5)';
-          ctx.shadowBlur = glowStrengthRef.current * 4 * dpr;
+          ctx.shadowBlur = theme.glowStrength * 4 * dpr;
           ctx.stroke();
           ctx.shadowBlur = 0;
 
@@ -154,9 +139,9 @@ const PedalTraceCanvas: React.FC<PedalTraceCanvasProps> = React.memo(({ height =
             else ctx.lineTo(px, py);
           }
           ctx.lineWidth = 2.2 * dpr;
-          ctx.strokeStyle = '#ff0055';
+          ctx.strokeStyle = theme.brake;
           ctx.shadowColor = 'rgba(255, 0, 85, 0.5)';
-          ctx.shadowBlur = glowStrengthRef.current * 4 * dpr;
+          ctx.shadowBlur = theme.glowStrength * 4 * dpr;
           ctx.stroke();
           ctx.shadowBlur = 0;
         }
@@ -166,7 +151,7 @@ const PedalTraceCanvas: React.FC<PedalTraceCanvasProps> = React.memo(({ height =
     telemetryEmitter.addEventListener('update', handleUpdate);
     return () => {
       resizeObserver.disconnect();
-      themeObserver.disconnect();
+      stopThemeObserver();
       telemetryEmitter.removeEventListener('update', handleUpdate);
     };
   }, [enabled]);
@@ -174,7 +159,7 @@ const PedalTraceCanvas: React.FC<PedalTraceCanvasProps> = React.memo(({ height =
   return (
     <div
       ref={containerRef}
-      className="position-relative w-100 rounded-3 border overflow-hidden flex-grow-1"
+      className="telemetry-trace-panel position-relative w-100 rounded-3 border overflow-hidden flex-grow-1"
       style={{
         height: typeof height === 'number' ? `${height}px` : height,
         minHeight: typeof height === 'number' ? `${height}px` : undefined,
@@ -183,14 +168,14 @@ const PedalTraceCanvas: React.FC<PedalTraceCanvasProps> = React.memo(({ height =
       }}
     >
       <canvas ref={canvasRef} className="w-100 h-100 d-block" />
-      <div className="position-absolute top-0 start-0 end-0 p-2 d-flex justify-content-between align-items-center pointer-events-none" style={{ background: 'linear-gradient(to bottom, var(--surface-1), transparent)' }}>
+      <div className="telemetry-trace-legend position-absolute top-0 start-0 end-0 p-2 d-flex justify-content-between align-items-center pointer-events-none" style={{ background: 'linear-gradient(to bottom, var(--surface-1), transparent)' }}>
         <div className="d-flex align-items-center gap-3 fs-8">
           <div className="d-flex align-items-center gap-1">
-            <span className="d-inline-block rounded-circle" style={{ width: '8px', height: '8px', background: '#00ff66' }} />
+            <span className="d-inline-block rounded-circle" style={{ width: '8px', height: '8px', background: 'var(--instrument-throttle, #00ff66)' }} />
             <span className="font-monospace fw-bold text-success">{t("THROTTLE")}</span>
           </div>
           <div className="d-flex align-items-center gap-1">
-            <span className="d-inline-block rounded-circle" style={{ width: '8px', height: '8px', background: '#ff0055' }} />
+            <span className="d-inline-block rounded-circle" style={{ width: '8px', height: '8px', background: 'var(--instrument-brake, #ff0055)' }} />
             <span className="font-monospace fw-bold text-danger">{t("BRAKE")}</span>
           </div>
         </div>
