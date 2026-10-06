@@ -30,11 +30,15 @@
 
 ![Rhine Lab 淺色在 Windows WebView2 的實際畫面](assets/rhine-lab/webview-live-light.png)
 
-新增的六個主選單紙頁面板均已透過 Edge 開啟、Escape 關閉並檢查背景 inert；沒有水平溢出。外觀／診斷保持掛載，共用關閉保護。附[外觀暗色畫面](assets/rhine-lab/appearance-dark.jpg)。寬度與關閉驗證仍需在窄画面及 WebView2 複核。
+新增的六個主選單紙頁面板均已透過 Edge 開啟、Escape 關閉並檢查背景 inert；沒有水平溢出。重新量測 transition 完成後的尺寸，設定寬 1040px、外觀 864px、診斷 928px、Companion 960px、MCP 800px、關於 608px（小數四捨五入），在 1422×800 內容區保留至少 24px 邊距，見 [menu-paper-dialogs.json](assets/rhine-lab/menu-paper-dialogs.json)。外觀／診斷保持掛載，共用關閉保護。附[外觀暗色畫面](assets/rhine-lab/appearance-dark.jpg)。寬度與關閉驗證仍需在窄畫面及 WebView2 複核。
 
 五卡 Canvas 已以隔離後端 600 個合成封包驗證：RPM／方向、踏板、動力散點、胎況與懸吊皆收到資料；懸吊顯示 0.20 至 0.80 的合成變化範圍。套用 Rhine 三色後無需再發送封包即可重畫；附[淺色](assets/rhine-lab/canvas-light.jpg)與[暗色](assets/rhine-lab/canvas-dark.jpg)。五卡逐元素研究由使用者指定的 Sol 子代理完成，見[設計研究](rhine-telemetry-design.md)。
 
 Sol 獨立核對找出停用／重啟輪胎圖表會重設 effect 區域樣本，造成 Canvas 與保留讀值矛盾。最新輪胎樣本及原始時間、RPM／alert、散點轉速上限已改存 ref；重新訂閱後從同一份資料重畫。回歸測試涵蓋收到 230°F／1.1 ratio／1.2 angle 後停止封包，關閉／開啟圖表並切換至 Celsius，仍顯示 110°C 與原抓地讀值。
+
+Sol 已在 `1ead368749cd7ea31086c15af4d59df286e951b9` 重新執行原 P2 情境，另核對原始樣本時間、RPM 9000／上限 10000／alert、動力圖上限 10000 與既有歷史均保留。這是 React／jsdom 的資料生命週期複驗，不替代原生畫面驗收。
+
+字體載入失敗：隔離靜態伺服器讓全部 WOFF2 請求回傳 HTTP 404，server log 確認 regular／demibold 分片確實請求失敗。Edge 的 Rhine 繁中遙測與設定仍使用系統回退字體可讀；設定可開啟、Escape 關閉，背景 inert 還原，未出現水平溢出。附[字體失敗時的設定畫面](assets/rhine-lab/font-fallback.png)。此項只涵蓋瀏覽器、目前可見文字及字體失敗，不代表離線 API、三語完整字形或 WebView2 已驗收。
 
 ## 對比與包體
 
@@ -61,7 +65,7 @@ JavaScript 增加 1,214 bytes；主要增量為計畫保留的 MiSans 原始分�
 前一輪互動畫面驗收曾因使用者按 Escape 停止；後續 PR 交付階段已補驗明暗設定與 Session 切換。下列項目仍待實際操作：
 
 - 2D 動畫短錄影；目前留存明暗瀏覽器設定與淺色原生截圖。
-- 200% 縮放、OS reduced motion、離線／字體載入失敗及三語完整字形。
+- 200% 縮放、OS reduced motion、離線、三語完整字形及 WebView2 字體失敗；Edge 繁中可見畫面的字體失敗回退已補驗。
 - 調校草稿、各步驟及更多捲動位置的完整狀態保留驗收；已選 Session 的跨系統切換已驗證。
 - WebView2 的快速開關、進入中關閉、退出中切主題、背景點擊與自訂 CSS 組合；現有單元測試不能代替這些實測。
 - Windows release EXE、Companion Android 原生、獨立 HUD 及真實遊戲環境。
