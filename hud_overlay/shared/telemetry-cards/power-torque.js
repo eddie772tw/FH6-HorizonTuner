@@ -57,9 +57,18 @@ export function renderPowerTorque(data, powerTorqueHist, now, domCache) {
     // Draw Power Trace (Primary Theme Color)
     var wrapperEl = domCache ? domCache.wrapper : document.getElementById('tcClusterWrapper');
     var primaryColor = 'rgba(255, 0, 136, 0.75)';
-    if (wrapperEl && typeof wrapperEl.style !== 'undefined' && typeof wrapperEl.style.getPropertyValue === 'function') {
-        var cssVal = wrapperEl.style.getPropertyValue('--card-contrast');
-        if (cssVal && cssVal.trim()) primaryColor = cssVal.trim();
+    if (wrapperEl) {
+        if (wrapperEl._cachedContrastColor === undefined) {
+            if (typeof wrapperEl.style !== 'undefined' && typeof wrapperEl.style.getPropertyValue === 'function') {
+                var cssVal = wrapperEl.style.getPropertyValue('--card-contrast');
+                wrapperEl._cachedContrastColor = (cssVal && cssVal.trim()) ? cssVal.trim() : null;
+            } else {
+                wrapperEl._cachedContrastColor = null;
+            }
+        }
+        if (wrapperEl._cachedContrastColor) {
+            primaryColor = wrapperEl._cachedContrastColor;
+        }
     }
     ptCtx.fillStyle = primaryColor;
     for (var k = 0; k < powerTorqueHist.length; k++) {

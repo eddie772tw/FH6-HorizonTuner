@@ -102,12 +102,17 @@ export function renderCompass(canvas, data, config, domCache) {
     if (config && config.customColor && config.useDefaultColors === false) {
         primaryColor = config.customColor;
     } else {
-        if (canvas._cachedPrimaryColor === undefined && canvas.parentElement) {
-            var computedPrimary = getComputedStyle(canvas.parentElement).getPropertyValue('--card-primary');
-            canvas._cachedPrimaryColor = (computedPrimary && computedPrimary.trim()) ? computedPrimary.trim() : null;
-        }
-        if (canvas._cachedPrimaryColor) {
-            primaryColor = canvas._cachedPrimaryColor;
+        if (domCache && domCache.wrapper && domCache.wrapper._cachedPrimaryColor) {
+            primaryColor = domCache.wrapper._cachedPrimaryColor;
+        } else {
+            if (canvas._cachedPrimaryColor === undefined && canvas.parentElement) {
+                var parentComputed = getComputedStyle(canvas.parentElement);
+                var computedPrimary = parentComputed ? parentComputed.getPropertyValue('--card-primary') : null;
+                canvas._cachedPrimaryColor = (computedPrimary && computedPrimary.trim()) ? computedPrimary.trim() : null;
+            }
+            if (canvas._cachedPrimaryColor) {
+                primaryColor = canvas._cachedPrimaryColor;
+            }
         }
     }
 
