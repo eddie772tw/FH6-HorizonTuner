@@ -154,7 +154,7 @@
 .theme-core-preview[data-design-system="rhine"] .theme-core-preview__header { position: relative; padding-left: 8px; }
 .theme-core-preview[data-design-system="rhine"] .theme-core-preview__header::before { content: ''; position: absolute; left: 0; top: 2px; width: 2px; height: 16px; background: var(--text-primary); }
 
-:where([data-design-system="rhine"]) .settings-surface-grid { grid-template-columns: minmax(0, 1fr); gap: 24px !important; }
+:where([data-design-system="rhine"]) .app-dialog--settings .settings-surface-grid { grid-template-columns: minmax(0, 1fr); gap: 24px !important; }
 :where([data-design-system="rhine"]) .settings-section-header { padding-bottom: 12px; }
 :where([data-design-system="rhine"]) .settings-item-description { color: var(--text-secondary); line-height: 1.6; }
 :where([data-design-system="rhine"]) .app-dialog { --surface-enter-duration: 220ms; --surface-exit-duration: 160ms; }
