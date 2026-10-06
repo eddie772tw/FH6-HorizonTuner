@@ -6,7 +6,7 @@
   min-width: min(24rem, 66.6666667vw);
   max-width: min(66.6666667vw, var(--app-drawer-cap));
   z-index: 1050;
-  transition: transform 0.3s ease-in-out, visibility 0.3s ease-in-out;
+  transition: transform var(--surface-exit-duration, 0.3s) ease-in-out, visibility var(--surface-exit-duration, 0.3s) ease-in-out;
 }
 
 .offcanvas.app-menu-drawer.app-dialog--about { --app-drawer-cap: 38rem; }
@@ -17,7 +17,7 @@
 .offcanvas.app-menu-drawer.terminal-sidebar { --app-drawer-cap: 58rem; }
 
 .offcanvas.app-menu-drawer.show {
-  transition: transform 0.3s ease-in-out;
+  transition: transform var(--surface-enter-duration, 0.3s) ease-in-out;
 }
 
 .app-menu-drawer .offcanvas-header {

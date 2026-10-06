@@ -40,6 +40,14 @@
   --instrument-value-color: var(--text-primary);
   --instrument-marker-shadow: none;
   --instrument-glow-strength: 0;
+  --instrument-flat: 0;
+  --instrument-alert-flash: 1;
+  --instrument-regen: #00ff88;
+  --chart-grid: var(--divider);
+  --chart-grid-dash: 3 3;
+  --chart-radius: 8px;
+  --chart-series-saturation: 85%;
+  --chart-series-lightness: 60%;
   --control-font-weight: 600;
   --control-tracking: normal;
   --readout-transform: none;

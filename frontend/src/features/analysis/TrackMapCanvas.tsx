@@ -1,6 +1,7 @@
 import { useSettings } from '../../context/SettingsContext';
 import React, { useRef, useEffect, useState, useMemo } from 'react';
 import { simplifyPathRDP, Point2D } from '../../utils/rdpSimplifier';
+import { useCanvasTheme } from '../../utils/canvasTheme';
 
 export interface TrackPoint extends Point2D {
   val: number;        // Normalized metric value (0.0 to 1.0)
@@ -27,6 +28,7 @@ const TrackMapCanvas: React.FC<TrackMapCanvasProps> = ({
   onPointHover
 }) => {
   const { t } = useSettings();
+  const theme = useCanvasTheme();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [hoveredPoint, setHoveredPoint] = useState<TrackPoint | null>(null);
   const [hoverPos, setHoverPos] = useState<{ x: number; y: number } | null>(null);
@@ -97,12 +99,14 @@ const TrackMapCanvas: React.FC<TrackMapCanvasProps> = ({
   // Render Canvas with Dual-Layer Architecture & Heading Arrow
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas || (simplifiedActiveData.length === 0 && simplifiedBaseData.length === 0)) return;
+    if (!canvas) return;
 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    const draw = () => {
     const rect = canvas.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) return;
     const dpr = window.devicePixelRatio || 1;
     canvas.width = rect.width * dpr;
     canvas.height = rect.height * dpr;
@@ -111,8 +115,9 @@ const TrackMapCanvas: React.FC<TrackMapCanvasProps> = ({
     ctx.clearRect(0, 0, rect.width, rect.height);
 
     // Grid Background
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
+    ctx.strokeStyle = theme.chartGrid;
     ctx.lineWidth = 1;
+    ctx.setLineDash(theme.chartDash);
     const gridSize = 40;
     for (let x = 0; x < rect.width; x += gridSize) {
       ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, rect.height); ctx.stroke();
@@ -121,13 +126,14 @@ const TrackMapCanvas: React.FC<TrackMapCanvasProps> = ({
       ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(rect.width, y); ctx.stroke();
     }
 
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
+    ctx.setLineDash([]);
+    ctx.lineCap = theme.flat ? 'butt' : 'round';
+    ctx.lineJoin = theme.flat ? 'miter' : 'round';
 
     // LAYER 1: Base Full Circuit Track Path
     if (simplifiedBaseData.length > 1) {
       ctx.lineWidth = 6;
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+      ctx.strokeStyle = theme.track;
       ctx.beginPath();
       const firstC = worldToCanvas(simplifiedBaseData[0].x, simplifiedBaseData[0].z, rect.width, rect.height);
       ctx.moveTo(firstC.cx, firstC.cy);
@@ -170,9 +176,12 @@ const TrackMapCanvas: React.FC<TrackMapCanvasProps> = ({
       }
 
       ctx.beginPath();
-      ctx.arc(carC.cx, carC.cy, 9, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(0, 240, 255, 0.3)';
+      if (theme.linear) ctx.rect(carC.cx - 9, carC.cy - 9, 18, 18);
+      else ctx.arc(carC.cx, carC.cy, 9, 0, Math.PI * 2);
+      ctx.fillStyle = theme.primary;
+      ctx.globalAlpha = 0.3;
       ctx.fill();
+      ctx.globalAlpha = 1;
 
       ctx.save();
       ctx.translate(carC.cx, carC.cy);
@@ -185,14 +194,19 @@ const TrackMapCanvas: React.FC<TrackMapCanvasProps> = ({
       ctx.lineTo(-6, 6);
       ctx.closePath();
 
-      ctx.fillStyle = '#00f0ff';
-      ctx.strokeStyle = '#ffffff';
+      ctx.fillStyle = theme.primary;
+      ctx.strokeStyle = theme.pointer;
       ctx.lineWidth = 1.5;
       ctx.fill();
       ctx.stroke();
       ctx.restore();
     }
-  }, [simplifiedActiveData, simplifiedBaseData, bounds, currentPlaybackIndex, filteredData]);
+    };
+    draw();
+    const resize = new ResizeObserver(draw);
+    resize.observe(canvas);
+    return () => resize.disconnect();
+  }, [simplifiedActiveData, simplifiedBaseData, bounds, currentPlaybackIndex, filteredData, theme]);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
@@ -244,7 +258,7 @@ const TrackMapCanvas: React.FC<TrackMapCanvasProps> = ({
           background: 'var(--glass-bg)',
           backdropFilter: 'blur(var(--glass-blur))',
           border: '1px solid var(--primary)',
-          borderRadius: '6px',
+          borderRadius: 'var(--chart-radius)',
           padding: '0.5rem 0.75rem',
           fontSize: '0.8rem',
           color: 'var(--text-primary)',

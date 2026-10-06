@@ -30,7 +30,7 @@ export const SettingsSurface: React.FC<SettingsSurfaceProps> = ({
 
   return (
     <div className="settings-surface settings-surface-grid" data-settings-surface>
-      <p className="settings-grid-wide text-body-secondary mb-0">
+      <p className="settings-grid-wide text-body-secondary mb-0 surface-intro">
         {t('Adjust display language, UDP telemetry options, and unit conversions for the tuning tool. All changes are saved automatically.')}
       </p>
         {has('general', 'language') && <SettingsSection title={t('General')}>

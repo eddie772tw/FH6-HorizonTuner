@@ -1,13 +1,13 @@
 import { useEffect, useRef } from 'react';
 
 /** A portal's keyboard scope follows its visibility, while its UI may stay mounted for animation. */
-export function useModalFocus<T extends HTMLElement>(open: boolean, onClose: () => void) {
+export function useModalFocus<T extends HTMLElement>(open: boolean, onClose: () => void, restoreFocusTo?: HTMLElement | null) {
   const panelRef = useRef<T>(null);
   const closeRef = useRef(onClose);
   closeRef.current = onClose;
   useEffect(() => {
     if (!open) return;
-    const previous = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const previous = restoreFocusTo ?? (document.activeElement instanceof HTMLElement ? document.activeElement : null);
     const panel = panelRef.current;
     const focusable = () => Array.from(panel?.querySelectorAll<HTMLElement>(
       'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex="0"]',
@@ -32,6 +32,6 @@ export function useModalFocus<T extends HTMLElement>(open: boolean, onClose: () 
     };
     document.addEventListener('keydown', onKey);
     return () => { cancelAnimationFrame(frame); document.removeEventListener('keydown', onKey); if (previous?.isConnected) previous.focus(); };
-  }, [open]);
+  }, [open, restoreFocusTo]);
   return panelRef;
 }

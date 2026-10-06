@@ -1,6 +1,6 @@
-# FH6-HorizonTuner 前端設計系統與組件規格書 (Halfmoon / Swiss)
+# FH6-HorizonTuner 前端設計系統與組件規格書 (Halfmoon / Swiss / Rhine)
 
-> **文件版本**：2.5.1
+> **文件版本**：2.6.0
 > **參考標準**：[Halfmoon CSS v2.0.2 官方文件 (gethalfmoon.com/docs)](https://www.gethalfmoon.com/docs/) + Bootstrap 5 相容語意層  
 > ** Agent 遵循與維護宣告**：所有 AI Agent 在開發、重構或維護前端 UI 組件與 Halfmoon CSS 樣式時，**必須嚴格遵循並主動維護本規格書**與 [halfmoon-design-system](SKILL.md) 技能標準。
 > **目標與任務**：定義與規範 FH6-HorizonTuner 專案在實際前端開發時套用 Halfmoon CSS 所有 Components、Layout、Helpers 與 Utilities 的特定規格、參數、語意 Token、視覺行為與使用時機。
@@ -27,13 +27,13 @@ FH6-HorizonTuner 前端採用 **雙層視覺設計架構 (Two-Layer Visual Archi
 
 ### 1.1 主態與主題切換機制 (Theme & Core Attributes)
 
-六個核心沿用 Layer 2，保留既有八組配色並提供 Swiss Signal 與 Bauhaus Mono，共十組 Color Presets。`context/themeSettings.ts` 是載入、匯入、React 更新及首幀設定的共同正規化入口；Bauhaus Mono 以完整三色組識別，日間主色為黑、夜間為淺白，其他自訂配色不改寫。
+七個核心沿用 Layer 2，保留既有八組配色並提供 Swiss Signal、Bauhaus Mono 與 Rhine Lab，共十一組 Color Presets。`context/themeSettings.ts` 是載入、匯入、React 更新及首幀設定的共同正規化入口；Bauhaus Mono 與 Rhine Lab 以完整三色組識別，日間主色為黑、夜間為淺白，其他自訂配色不改寫。
 
-Core Theme 同時決定整體配色風格與元件細節。`context/themeCatalog.ts` 統一登錄核心及設計系統歸屬：Default／Modern／Elegant 屬於 Halfmoon，Swiss Technical／Editorial／Contrast 屬於 Swiss。外觀面板依此 registry 分組，不維護第二份選項表。
+Core Theme 同時決定整體配色風格與元件細節。`context/themeCatalog.ts` 統一登錄核心及設計系統歸屬：Default／Modern／Elegant 屬於 Halfmoon，Swiss Technical／Editorial／Contrast 屬於 Swiss，Rhine Lab 屬於 Rhine。外觀面板依此 registry 分組，不維護第二份選項表。
 
 Swiss Technical 保留 `swiss` ID；新增 `swiss-editorial` 與 `swiss-contrast`，皆沿用 schema 2 的 `halfmoonCore` 欄位。Editorial 使用暖紙白／暖炭黑、2px 面板圓角、較自然字距及 1.05rem 區塊標題；Contrast 使用中性黑白灰、直角控制項、2px 標頭分隔與反差標頭。三核心共用 Swiss 元件規則、無模糊／光暈及既有分頁尺寸；切換核心不重設三色。
 
-`workspace-panel-header` 是即時儀表、調校、賽事摘要及設定的共用結構 hook。`--panel-heading-*` 管理字級、成對底色／文字、內距及分隔線；標頭內按鈕、徽章與提示仍保留自己的表面，不能無差別反轉所有後代色彩。Swiss 選擇卡的預覽以相同 core／mode 屬性及 `themeColorProperties` 顯示實際元件；巢狀預覽必須重新套用三色映射，避免內層 `data-bs-theme` 重設 Halfmoon 原生主色。
+`workspace-panel-header` 是即時儀表、調校、賽事摘要及設定的共用結構 hook。`--panel-heading-*` 管理字級、成對底色／文字、內距及分隔線；標頭內按鈕、徽章與提示仍保留自己的表面，不能無差別反轉所有後代色彩。Swiss／Rhine 選擇卡的預覽（catalog 的 preview 指定元件模式，使用獨立 theme-core-preview__* class）以相同 core／mode 屬性及 `themeColorProperties` 顯示實際元件；巢狀預覽必須重新套用三色映射，避免內層 `data-bs-theme` 重設 Halfmoon 原生主色。
 
 Halfmoon 按鈕與卡片材質以 Swiss 導入前的 `22f9660f` 為參照：`.btn` 沿用 Halfmoon 原生尺寸圓角、outline/hover 狀態及 cyber 按鈕縮放；`.card`／`.glass-panel` 保留原本玻璃 token 與 utility 圓角優先權。一般即時儀表外層只負責排版，不新增整片玻璃底色、邊框或投影；材質由內層儀表容器負責，展開面板保留獨立表面。Swiss 的實色卡片、統一細框與按鈕圓角只存在於 Swiss 模組。現行分頁設計與響應式修正不回退。
 
@@ -43,10 +43,12 @@ Halfmoon 按鈕與卡片材質以 Swiss 導入前的 `22f9660f` 為參照：`.bt
 
 外觀面板將三個色票／HEX 欄位及 Color Presets 收在「系統色彩調配」內。CSS 編輯器、匯入／匯出及 Cheatsheet 放在預設關閉的原生 `details`；折疊不會停用已儲存的自訂 CSS。
 
+Rhine 限定樣式位於 `rhine.css`：頂部刻度導覽、檔案頁標頭、單欄設定分節與平整儀器表面。六個主選單面板在 1024px 以上統一為置中紙頁（設定 65rem、外觀 54rem、診斷 58rem、Companion 60rem、MCP 50rem、關於 38rem，視窗邊距 24px），窄畫面保留抽屜。入場 220ms、退出 160ms、最多位移 8px；刻度 150ms、底線 180ms。只在靜態頁首使用一次性動畫；reduced motion 到終態，高頻圖表及祖先容器不套入場動畫。MiSans 400／600 保留原始分片、授權與回退字體。完整素材與版面約束見 [Rhine 指南](../../../docs/frontend/rhine-lab.md)。
+
 #### 擴充核心與設計系統
 1. 在 `themeCatalog.ts` 登錄新核心；同系統沿用既有 designSystem，新系統先加入 `DESIGN_SYSTEMS`。
 2. 在對應的 `styles/design-systems/<system>.css` 定義模式／核心配色與材質 token。系統特有的分頁、徽章等 selector 必須以 `[data-design-system="<system>"]` 限定範圍；新模組加入 `index.css` 靜態載入，保證首幀可用。
-3. 共用元件透過 token 表達差異；儀表讀取 `--instrument-glow-strength` 等 token 並快取，不在繪圖循環查 DOM，也不加入 `isSwiss` 等核心名稱分支。
+3. 共用元件透過 token 表達差異；儀表讀取 `--instrument-glow-strength` 等 token 並快取，不在繪圖循環查 DOM，也不加入 `isSwiss` 等核心名稱分支。`utils/canvasTheme.ts` 同時供即時、調校及分析 Canvas 使用；SVG 圖表以 `.core-theme-chart` 消費格線、字體與表面 token。`flat`／`alertFlash` 管理平直儀表及警示，`linear` 保留 Rhine 專屬尺規與方形標記。字體載入完成須重畫靜態 Canvas，切換核心不得清空資料。
 4. 補核心歸屬、舊設定載入及首幀／React 一致性驗證；瀏覽器檢查日夜、配色、跨系統往返、鍵盤焦點與窄畫面。新增設計系統不需要複製各個頁面的 CSS。
 
 Swiss 的 `--bg-gradient` 為各核心定義的實色；Technical 夜間為 `#0b0d12`、日間為 `#f8fafc`，Editorial 與 Contrast 各有獨立日夜表面。三核心皆為 `--glass-shadow: none`、`--glass-blur: 0px`，主要面板直接使用 `backdrop-filter: none`。`--on-primary` 依主色相對亮度選取黑或白，供實色按鈕文字使用。焦點使用清楚的 outline。全域數字採 `tabular-nums lining-nums`；Swiss 採 Inter／系統無襯線字型。
@@ -67,7 +69,8 @@ Swiss 的 `--bg-gradient` 為各核心定義的實色；Technical 夜間為 `#0b
   - `swiss`（消光表面、髮絲邊框、工程數字排版）
   - `swiss-editorial`（暖紙色／暖炭色、閱讀層級、細微圓角）
   - `swiss-contrast`（中性黑白、直角、反差標頭）
-* **`data-design-system`** (衍生的元件設計系統)：`halfmoon` 或 `swiss`，由核心 catalog 決定。
+  - `rhine-lab`（MiSans 紙面檔案、刻度導覽、短暫 2D 動效）
+* **`data-design-system`** (衍生的元件設計系統)：`halfmoon`、`swiss` 或 `rhine`，由核心 catalog 決定。
 
 #### 首幀防閃爍 (Anti-FOUC) 腳本
 由 `src/app/applyThemeEarly.ts` 於 React DOM 掛載前同步寫入模式、核心、設計系統及正規化配色，桌面、Lite 與 Web Companion 共用；Android Compose 的整合另由 #485 追蹤：
@@ -143,7 +146,7 @@ applyThemeEarly();
 | :--- | :--- | :--- | :--- |
 | `.form-control` / `.cyber-input` | 使用 `--input-bg`、`--input-text`、`--glass-border` 與原生／系統圓角 | 車輛物理參數輸入框（車重、前後輪胎尺寸、彈簧磅數範圍）。 | 鍵盤 focus 使用 `--focus-color` 與 `--form-focus-shadow` |
 | `.form-select` / `.cyber-select` | 繼承 input 樣式 + 右側原生箭頭向下空間 | 賽事類型選擇 (Road/Drift/Rally/Drag)、季節選擇 (Summer/Winter)。 | **禁止寫死黑底**（`background: black`），統一導轉至 `var(--input-bg)` |
-| `input[type="range"]` / `.form-range` | 軌道高度 `6px` (`var(--surface-2)`)，Thumb 圓點 `16px x 16px` (`var(--primary)`) | 懸吊高度調整、ARB 硬度調整、齒輪比動態拉桿。 | **效能例外**：必須設定 `transition: none !important` 確保 60FPS 拖動 |
+| `input[type="range"]` / `.form-range` | 軌道高度 `6px` (`var(--surface-2)`)，Thumb 圓點 `16px x 16px` (`var(--primary)`) | 懸吊高度調整、ARB 硬度調整、齒輪比動態拉桿。 | **效能例外**：必須設定 `transition: none !important` 與 `animation: none !important` 確保 60FPS 拖動 |
 | `.form-check.form-switch` / `RenderSwitch` | 關閉灰軌，開啟時跟隨主要色；圖示與效果由共用映射及系統 token 決定 | 遙測卡片獨立渲染開關、HUD Overlay 懸浮窗啟用開關。 | 不引起頁面 re-layout；提示使用不透明表面、不疊加模糊 |
 | `.input-group` + `.input-group-text` | 前置/後置單位組合框 | 輸入帶單位的數值（如 `kgf/mm`, `PSI`, `mm`, `kg`）。 | 單位文字以 `var(--surface-2)` 與 `var(--text-secondary)` 呈現 |
 
@@ -365,7 +368,7 @@ Halfmoon 保留原生實色徽章；下表描述 Swiss 的細框／淡色表面�
 ## 5. 視覺行為與設計原則標準 (Design Behavior Standards)
 
 1. **60Hz 高頻渲染元件效能護欄**：
-   - 包含 Canvas、[class*="recharts"] 圖表、`input[type="range"]` 與 `input[type="color"]` 必須在 `styles/base.css` 中明確設定 `transition: none !important`。
+   - 包含 Canvas、[class*="recharts"] 圖表、`input[type="range"]` 與 `input[type="color"]` 必須在 `styles/base.css` 中明確設定 `transition: none !important` 與 `animation: none !important`。
 2. **極簡專業視覺 (Emoji 禁用原則)**：
    - 依據專案 `AGENTS.md` 規範，**嚴禁在 UI 字串或 UI 組件內直接加入 Emoji 圖示**。所有狀態提示與箭頭必須採用純文字（如 `▾`）、 Halfmoon `.badge` 標籤或向量圖示。
 3. **硬編碼色彩禁用**：

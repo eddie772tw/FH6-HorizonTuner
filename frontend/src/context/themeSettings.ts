@@ -19,6 +19,11 @@ export const defaultThemeSettings: ThemeSettings = {
   customCSS: '',
 };
 
+export const rhinePalettes = {
+  light: { primaryColor: '#080a08', secondaryColor: '#9b7247', accentColor: '#66645c' },
+  dark: { primaryColor: '#e0e3dc', secondaryColor: '#c5a16b', accentColor: '#a6b0b1' },
+} as const;
+
 const isHexColor = (value: unknown): value is string => (
   typeof value === 'string' && /^#[\da-f]{6}$/i.test(value)
 );
@@ -40,6 +45,10 @@ export function normalizeThemeSettings(
       && settings.secondaryColor.toLowerCase() === '#ef4444'
       && settings.accentColor.toLowerCase() === '#64748b') {
     settings.primaryColor = settings.mode === 'light' ? '#000000' : '#f1f5f9';
+  }
+  if (Object.values(rhinePalettes).some(palette =>
+    (Object.keys(palette) as Array<keyof typeof palette>).every(key => settings[key].toLowerCase() === palette[key]))) {
+    Object.assign(settings, rhinePalettes[settings.mode]);
   }
   return settings;
 }

@@ -134,6 +134,7 @@ hr {
 }
 canvas, [class*="recharts"], input[type="range"], input[type="color"] {
   transition: none !important;
+  animation: none !important;
 }
 
 /* Navigation Bar Overflow Exception — Dropdown menus must pop out without clipping */

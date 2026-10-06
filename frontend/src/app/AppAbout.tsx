@@ -13,8 +13,13 @@ export function AppAbout({ variant }: { variant: AppVariant }) {
   const { t } = useSettings();
   return <div className="d-flex flex-column gap-4">
     <SettingsSection title={`FH6 HorizonTuner${variant === 'lite' ? ' Lite' : ''}`}>
-      <p className="text-body-secondary m-0">{formatBuildInfoText(getAppBuildInfo())}</p>
+      <p className="text-body-secondary m-0 surface-intro">{formatBuildInfoText(getAppBuildInfo())}</p>
       <div><a href="https://github.com/eddie772tw/FH6-HorizonTuner" target="_blank" rel="noreferrer">{t('Project website')}</a></div>
+    </SettingsSection>
+    <SettingsSection title={t('Theme credits')}>
+      <p className="m-0">{t('Rhine Lab design adapted from')} <a href="https://github.com/LBEILC/RhineLabUI" target="_blank" rel="noreferrer">LBEILC / RhineLabUI</a>.</p>
+      <p className="m-0">{t('Uses MiSans by Xiaomi (400 / 600).')} <a href="/assets/rhine/fonts/MiSans-license.pdf" target="_blank" rel="noreferrer">{t('Font license')}</a></p>
+      <p className="m-0"><a href="/assets/rhine/licenses/RhineLabUI-MIT.txt" target="_blank" rel="noreferrer">RhineLabUI MIT</a></p>
     </SettingsSection>
     <SettingsSection title={t('HUD credits')}>
       <dl className="m-0">

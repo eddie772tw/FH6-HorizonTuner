@@ -1,12 +1,13 @@
+import { useTelemetryCardPaint } from './TelemetryCardVisibility';
 import React, { useEffect, useRef } from 'react';
-import { telemetryEmitter } from '../../../hooks/useTelemetry';
+import { telemetryEmitter, type TelemetryData } from '../../../hooks/useTelemetry';
 import { useSettings } from '../../../context/SettingsContext';
 import {
   emptyQualifiedOutputPeaks,
   updateQualifiedOutputPeaks,
   type QualifiedOutputPeaks,
 } from '../../../utils/qualifiedOutputPeaks';
-import { formatRacePosition } from '../../../utils/telemetryDisplay';
+import { formatRacePosition, setTelemetryText } from '../../../utils/telemetryDisplay';
 
 const formatTime = (seconds: number) => {
   if (seconds <= 0) return "--:--.---";
@@ -17,6 +18,8 @@ const formatTime = (seconds: number) => {
 };
 
 const VehicleDynamicsDisplay: React.FC = React.memo(() => {
+  const paint = useTelemetryCardPaint();
+  const latestData = useRef<TelemetryData | null>(null);
   const powerRef = useRef<HTMLSpanElement>(null);
   const powerContainerRef = useRef<HTMLDivElement>(null);
   const torqueRef = useRef<HTMLSpanElement>(null);
@@ -49,21 +52,74 @@ const VehicleDynamicsDisplay: React.FC = React.memo(() => {
   const boostOrRegenLabelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (powerLabelRef.current) powerLabelRef.current.innerText = convertPower(0).label;
-    if (torqueLabelRef.current) torqueLabelRef.current.innerText = convertTorque(0).label;
-    if (topSpeedLabelRef.current) topSpeedLabelRef.current.innerText = convertSpeed(0).label;
-
-    const handleUpdate = (e: any) => {
-      const data = e.detail;
-      if ((window as any).__IS_HUD_PAUSED__ || !data) return;
+    const powerUnitLabel = convertPower(0).label;
+    const torqueUnitLabel = convertTorque(0).label;
+    const speedUnitLabel = convertSpeed(0).label;
+    const paintCurrent = () => {
+      const data = latestData.current;
+      if (!paint.canPaint()) return;
+      setTelemetryText(powerLabelRef.current, powerUnitLabel);
+      setTelemetryText(torqueLabelRef.current, torqueUnitLabel);
+      setTelemetryText(topSpeedLabelRef.current, speedUnitLabel);
+      if (!data) return;
 
       const isEV = data.EngineIdleRpm === 0;
       const powerData = convertPower(data.PowerWatts || 0);
       const torqueData = convertTorque(data.TorqueNewtons || 0);
       const isRegenActive = isEV && (powerData.value < 0 || torqueData.value < 0);
       const boostData = convertBoost(data.Boost || 0);
-      const curSpeedData = convertSpeed(data.SpeedMetersPerSecond || 0);
 
+      const peakPower = peakOutputRef.current.power;
+      const peakTorque = peakOutputRef.current.torque;
+      setTelemetryText(peakPowerRef.current, peakPower ? Math.round(convertPower(peakPower.value).value).toString() : '--');
+      setTelemetryText(peakTorqueRef.current, peakTorque ? Math.round(convertTorque(peakTorque.value).value).toString() : '--');
+      setTelemetryText(peakPowerRpmRef.current, peakPower ? `${Math.round(peakPower.rpm)} RPM` : '-- RPM');
+      setTelemetryText(peakTorqueRpmRef.current, peakTorque ? `${Math.round(peakTorque.rpm)} RPM` : '-- RPM');
+
+      setTelemetryText(powerRef.current, Math.round(powerData.value).toString());
+      if (powerContainerRef.current) {
+        powerContainerRef.current.style.color = (isEV && powerData.value < 0) ? 'var(--instrument-regen, var(--bs-success))' : 'var(--text-primary)';
+      }
+
+      setTelemetryText(torqueRef.current, Math.round(torqueData.value).toString());
+      if (torqueContainerRef.current) {
+        torqueContainerRef.current.style.color = (isEV && torqueData.value < 0) ? 'var(--instrument-regen, var(--bs-success))' : 'var(--text-primary)';
+      }
+
+      if (isEV) {
+        setTelemetryText(thirdStatValueRef.current, isRegenActive ? t("ON") : t("OFF"));
+        setTelemetryText(thirdStatLabelRef.current, "");
+        if (thirdStatContainerRef.current) thirdStatContainerRef.current.style.color = isRegenActive ? 'var(--instrument-regen, var(--bs-success))' : 'var(--text-primary)';
+      } else {
+        setTelemetryText(thirdStatValueRef.current, boostData.value.toFixed(1));
+        setTelemetryText(thirdStatLabelRef.current, boostData.label);
+        if (thirdStatContainerRef.current) thirdStatContainerRef.current.style.color = boostData.value > 0 ? 'var(--secondary)' : 'var(--text-primary)';
+      }
+
+      setTelemetryText(topSpeedRef.current, Math.round(convertSpeed(maxSpeedRecord.current).value).toString());
+
+      const currentLap = data.CurrentLap || 0;
+      const bestLap = data.BestLap || 0;
+      const lastLap = data.LastLap || 0;
+
+      setTelemetryText(currentLapRef.current, formatTime(currentLap));
+      setTelemetryText(lastLapRef.current, formatTime(lastLap));
+      setTelemetryText(bestLapRef.current, formatTime(bestLap));
+      setTelemetryText(racePositionRef.current, formatRacePosition(data.RacePosition));
+
+      // 策略 C：合併 EV 狀態偵測，只在狀態改變時更新 DOM label
+      if (isEV !== isEvRef.current) {
+        isEvRef.current = isEV;
+        if (boostOrRegenLabelRef.current) {
+          setTelemetryText(boostOrRegenLabelRef.current, isEV ? t("Regen") : t("Boost"));
+        }
+      }
+    };
+
+    const handleUpdate = (e: Event) => {
+      const data = (e as CustomEvent<TelemetryData>).detail;
+      if ((window as any).__IS_HUD_PAUSED__ || !data) return;
+      latestData.current = data;
       if (
         (previousCarRef.current !== undefined && previousCarRef.current !== data.CarOrdinal)
         || (previousRaceRef.current !== undefined && previousRaceRef.current !== data.IsRaceOn)
@@ -75,63 +131,20 @@ const VehicleDynamicsDisplay: React.FC = React.memo(() => {
       previousRaceRef.current = data.IsRaceOn;
       peakOutputRef.current = updateQualifiedOutputPeaks(peakOutputRef.current, data);
 
-      const peakPower = peakOutputRef.current.power;
-      const peakTorque = peakOutputRef.current.torque;
-      if (peakPowerRef.current) peakPowerRef.current.innerText = peakPower ? Math.round(convertPower(peakPower.value).value).toString() : '--';
-      if (peakTorqueRef.current) peakTorqueRef.current.innerText = peakTorque ? Math.round(convertTorque(peakTorque.value).value).toString() : '--';
-      if (peakPowerRpmRef.current) peakPowerRpmRef.current.innerText = peakPower ? `${Math.round(peakPower.rpm)} RPM` : '-- RPM';
-      if (peakTorqueRpmRef.current) peakTorqueRpmRef.current.innerText = peakTorque ? `${Math.round(peakTorque.rpm)} RPM` : '-- RPM';
-
-      if (curSpeedData.value > maxSpeedRecord.current) {
-        maxSpeedRecord.current = curSpeedData.value;
-      }
-
-      if (powerRef.current) powerRef.current.innerText = Math.round(powerData.value).toString();
-      if (powerContainerRef.current) {
-        powerContainerRef.current.style.color = (isEV && powerData.value < 0) ? '#00ff88' : 'var(--text-primary)';
-      }
-
-      if (torqueRef.current) torqueRef.current.innerText = Math.round(torqueData.value).toString();
-      if (torqueContainerRef.current) {
-        torqueContainerRef.current.style.color = (isEV && torqueData.value < 0) ? '#00ff88' : 'var(--text-primary)';
-      }
-
-      if (isEV) {
-        if (thirdStatValueRef.current) thirdStatValueRef.current.innerText = isRegenActive ? t("ON") : t("OFF");
-        if (thirdStatLabelRef.current) thirdStatLabelRef.current.innerText = "";
-        if (thirdStatContainerRef.current) thirdStatContainerRef.current.style.color = isRegenActive ? '#00ff88' : 'var(--text-primary)';
-      } else {
-        if (thirdStatValueRef.current) thirdStatValueRef.current.innerText = boostData.value.toFixed(1);
-        if (thirdStatLabelRef.current) thirdStatLabelRef.current.innerText = boostData.label;
-        if (thirdStatContainerRef.current) thirdStatContainerRef.current.style.color = boostData.value > 0 ? 'var(--secondary)' : 'var(--text-primary)';
-      }
-
-      if (topSpeedRef.current) topSpeedRef.current.innerText = Math.round(maxSpeedRecord.current).toString();
-
-      const currentLap = data.CurrentLap || 0;
-      const bestLap = data.BestLap || 0;
-      const lastLap = data.LastLap || 0;
-
-      if (currentLapRef.current) currentLapRef.current.innerText = formatTime(currentLap);
-      if (lastLapRef.current) lastLapRef.current.innerText = formatTime(lastLap);
-      if (bestLapRef.current) bestLapRef.current.innerText = formatTime(bestLap);
-      if (racePositionRef.current) racePositionRef.current.innerText = formatRacePosition(data.RacePosition);
-
-      // 策略 C：合併 EV 狀態偵測，只在狀態改變時更新 DOM label
-      if (isEV !== isEvRef.current) {
-        isEvRef.current = isEV;
-        if (boostOrRegenLabelRef.current) {
-          boostOrRegenLabelRef.current.innerText = isEV ? t("Regen") : t("Boost");
-        }
-      }
+      maxSpeedRecord.current = Math.max(maxSpeedRecord.current, data.SpeedMetersPerSecond || 0);
+      paintCurrent();
     };
-
+    const stopPaint = paint.subscribe(paintCurrent);
+    paintCurrent();
     telemetryEmitter.addEventListener('update', handleUpdate);
-    return () => telemetryEmitter.removeEventListener('update', handleUpdate);
-  }, [convertPower, convertTorque, convertBoost, convertSpeed, t]);
+    return () => {
+      stopPaint();
+      telemetryEmitter.removeEventListener('update', handleUpdate);
+    };
+  }, [convertPower, convertTorque, convertBoost, convertSpeed, t, paint]);
 
   return (
-    <div className="d-flex flex-column justify-content-center h-100 gap-2 p-1">
+    <div className="telemetry-dynamics-readouts d-flex flex-column justify-content-center h-100 gap-2 p-1">
       {/* Power / Torque / Boost Summary */}
       <div className="d-grid gap-2 border rounded-3 p-2" style={{ gridTemplateColumns: '1fr 1fr 1fr', background: 'var(--surface-1)', borderColor: 'var(--glass-border) !important' }}>
         <div>

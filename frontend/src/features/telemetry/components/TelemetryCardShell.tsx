@@ -1,4 +1,5 @@
-import React, { type ReactNode, useEffect, useRef } from 'react';
+import React, { type ReactNode, useEffect, useRef, useCallback } from 'react';
+import { TelemetryCardPaintContext, useViewportPaintGate } from './TelemetryCardVisibility';
 import { ModalPortal } from '../../../components/common/ModalPortal';
 import { useModalFocus } from '../../../hooks/useModalFocus';
 
@@ -33,9 +34,16 @@ const TelemetryCardShell: React.FC<TelemetryCardShellProps> = ({
   expandLabel,
   closeLabel,
 }) => {
+  const sectionRef = useRef<HTMLElement>(null);
+  const paint = useViewportPaintGate(sectionRef, expanded);
   const expandButtonRef = useRef<HTMLButtonElement>(null);
   const wasExpandedRef = useRef(false);
   const dialogRef = useModalFocus<HTMLElement>(expanded, onClose);
+
+  const setSectionRef = useCallback((element: HTMLElement | null) => {
+    sectionRef.current = element;
+    dialogRef.current = expanded ? element : null;
+  }, [dialogRef, expanded]);
 
   useEffect(() => {
     if (expandable && wasExpandedRef.current && !expanded) expandButtonRef.current?.focus();
@@ -44,7 +52,7 @@ const TelemetryCardShell: React.FC<TelemetryCardShellProps> = ({
 
   const content = (
     <section
-      ref={expanded ? dialogRef : undefined}
+      ref={setSectionRef}
       tabIndex={expanded ? -1 : undefined}
       className={`telemetry-card-shell d-flex flex-column ${expanded ? 'telemetry-card-shell--expanded' : 'h-100 p-2 overflow-hidden'}`}
       style={expanded ? undefined : { gridColumn }}
@@ -78,7 +86,9 @@ const TelemetryCardShell: React.FC<TelemetryCardShellProps> = ({
         </div>
       </div>
       <div id={`${id}-card-detail`} className="telemetry-card-shell__body">
-        {expanded ? detail : children}
+        <TelemetryCardPaintContext.Provider value={paint}>
+          {expanded ? detail : children}
+        </TelemetryCardPaintContext.Provider>
       </div>
     </section>
   );

@@ -1,5 +1,8 @@
+import { useTelemetryCardPaint, createTelemetryCanvasSurface } from './TelemetryCardVisibility';
+import { setTelemetryText } from '../../../utils/telemetryDisplay';
 import React, { useEffect, useRef, useState } from 'react';
 import { telemetryEmitter } from '../../../hooks/useTelemetry';
+import { readCanvasTheme, observeCanvasTheme } from '../../../utils/canvasTheme';
 import { useSettings } from '../../../context/SettingsContext';
 import { getSuspensionDisplayValue, type SuspensionTravelMode } from '../../../utils/suspensionTravel';
 import {
@@ -17,6 +20,8 @@ interface SuspensionBarProps {
 }
 
 const SuspensionBar: React.FC<SuspensionBarProps> = React.memo(({ title, isLeft, tireIdx, renderHistoryTrace = true, displayMode = 'relative' }) => {
+  const paint = useTelemetryCardPaint();
+  const latestSample = useRef({ normalizedTravel: 0, absoluteMeters: 0, received: false });
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasContainerRef = useRef<HTMLDivElement>(null);
   const barRef = useRef<HTMLDivElement>(null);
@@ -40,70 +45,32 @@ const SuspensionBar: React.FC<SuspensionBarProps> = React.memo(({ title, isLeft,
   useEffect(() => {
     if (!renderHistoryTrace) {
       clearSuspensionTraceHistory(history);
-      const canvas = canvasRef.current;
-      if (canvas && canvas.width > 0 && canvas.height > 0) {
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
-          const warningH = canvas.height * 0.08;
-          ctx.fillStyle = 'rgba(255, 0, 60, 0.15)';
-          ctx.fillRect(0, 0, canvas.width, warningH);
-          ctx.fillRect(0, canvas.height - warningH, canvas.width, warningH);
-        }
-      }
     }
   }, [renderHistoryTrace, history]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    const container = canvasContainerRef.current;
-    if (!canvas || !container) return;
-
-    const resizeObserver = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        const { width, height } = entry.contentRect;
-        if (width > 0 && height > 0) {
-          const dpr = window.devicePixelRatio || 1;
-          canvas.width = Math.floor(width * dpr);
-          canvas.height = Math.floor(height * dpr);
-        }
-      }
-    });
-    resizeObserver.observe(container);
-
-    return () => resizeObserver.disconnect();
-  }, []);
-
-  useEffect(() => {
-    let primaryColor = '#00f0ff';
-    const updateTheme = () => {
-      primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#00f0ff';
-    };
-    updateTheme();
-    const themeObserver = new MutationObserver(updateTheme);
-    themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-bs-theme', 'data-bs-core', 'data-design-system', 'style'] });
+    if (!canvas) return;
+    const surface = createTelemetryCanvasSurface(canvas);
+    let theme = readCanvasTheme();
+    const stopThemeObserver = observeCanvasTheme(() => { theme = readCanvasTheme(); draw(); });
 
     const drawBackground = (ctx: CanvasRenderingContext2D, w: number, h: number) => {
       ctx.clearRect(0, 0, w, h);
       const warningH = h * 0.08;
-      ctx.fillStyle = 'rgba(255, 0, 60, 0.15)';
+      ctx.fillStyle = theme.warningFill;
       ctx.fillRect(0, 0, w, warningH);
       ctx.fillRect(0, h - warningH, w, warningH);
       
       ctx.beginPath();
-      ctx.setLineDash([3, 3]);
-      ctx.strokeStyle = 'rgba(255, 0, 60, 0.2)';
+      ctx.setLineDash(theme.linear ? [] : [3, 3]);
+      ctx.strokeStyle = theme.warningLine;
       ctx.lineWidth = 1;
       ctx.moveTo(0, warningH); ctx.lineTo(w, warningH);
       ctx.moveTo(0, h - warningH); ctx.lineTo(w, h - warningH);
       ctx.stroke();
       ctx.setLineDash([]);
     };
-
-    if (canvasRef.current && canvasRef.current.width > 0) {
-      const ctx = canvasRef.current.getContext('2d');
-      if (ctx) drawBackground(ctx, canvasRef.current.width, canvasRef.current.height);
-    }
 
     const handleUpdate = (e: any) => {
       const liveData = e.detail;
@@ -139,15 +106,27 @@ const SuspensionBar: React.FC<SuspensionBarProps> = React.memo(({ title, isLeft,
         clearSuspensionTraceHistory(history);
       }
 
-      const percent = Math.max(0, Math.min(100, normalizedTravel * 100));
-      if (barRef.current) barRef.current.style.height = percent + '%';
-      const precision = displayMode === 'absolute' ? 1 : 2;
-      if (textRef.current) textRef.current.innerText = travel.toFixed(precision);
-      if (unitRef.current) unitRef.current.innerText = displayMode === 'absolute' ? ' mm' : '';
-      if (minRef.current) minRef.current.innerText = minMax.current.min !== null ? minMax.current.min.toFixed(precision) : '-';
-      if (maxRef.current) maxRef.current.innerText = minMax.current.max !== null ? minMax.current.max.toFixed(precision) : '-';
+      latestSample.current.received = true;
+      latestSample.current.normalizedTravel = normalizedTravel;
+      latestSample.current.absoluteMeters = absoluteMeters;
+      draw();
+    };
 
-      const canvas = canvasRef.current;
+    const draw = () => {
+      if (!paint.canPaint()) return;
+      if (latestSample.current.received) {
+        const { normalizedTravel, absoluteMeters } = latestSample.current;
+        const travel = getSuspensionDisplayValue(normalizedTravel, absoluteMeters, displayMode);
+        const percent = Math.max(0, Math.min(100, normalizedTravel * 100));
+        if (barRef.current) barRef.current.style.height = percent + '%';
+        const precision = displayMode === 'absolute' ? 1 : 2;
+        setTelemetryText(textRef.current, travel.toFixed(precision));
+        setTelemetryText(unitRef.current, displayMode === 'absolute' ? ' mm' : '');
+        setTelemetryText(minRef.current, minMax.current.min !== null ? minMax.current.min.toFixed(precision) : '-');
+        setTelemetryText(maxRef.current, minMax.current.max !== null ? minMax.current.max.toFixed(precision) : '-');
+      }
+
+      if (!surface.sync()) return;
       if (canvas && canvas.width > 0 && canvas.height > 0) {
         const ctx = canvas.getContext('2d');
         if (ctx) {
@@ -159,12 +138,15 @@ const SuspensionBar: React.FC<SuspensionBarProps> = React.memo(({ title, isLeft,
 
           if (renderHistoryTrace && history.size > 0) {
             ctx.beginPath();
-            const grad = ctx.createLinearGradient(0, 0, 0, h);
-            grad.addColorStop(0, '#ff003c');
-            grad.addColorStop(0.08, primaryColor);
-            grad.addColorStop(0.92, primaryColor);
-            grad.addColorStop(1, '#ff003c');
-            ctx.strokeStyle = grad;
+            if (theme.flat) ctx.strokeStyle = theme.primary;
+            else {
+              const grad = ctx.createLinearGradient(0, 0, 0, h);
+              grad.addColorStop(0, theme.danger);
+              grad.addColorStop(0.08, theme.primary);
+              grad.addColorStop(0.92, theme.primary);
+              grad.addColorStop(1, theme.danger);
+              ctx.strokeStyle = grad;
+            }
             ctx.lineWidth = 2 * dpr;
             ctx.lineJoin = 'round';
     
@@ -184,24 +166,38 @@ const SuspensionBar: React.FC<SuspensionBarProps> = React.memo(({ title, isLeft,
         }
       }
     };
+    const resizeObserver = new ResizeObserver(entries => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      for (const { contentRect: { width, height } } of entries) {
+        surface.resize(width, height);
+        draw();
+      }
+    });
+    if (canvasContainerRef.current) resizeObserver.observe(canvasContainerRef.current);
+    const stopPaint = paint.subscribe(draw);
+    draw();
+    telemetryEmitter.addEventListener('update', handleUpdate);
     return () => {
-      themeObserver.disconnect();
+      stopPaint();
+      resizeObserver.disconnect();
+      stopThemeObserver();
       telemetryEmitter.removeEventListener('update', handleUpdate);
     };
-  }, [tireIdx, renderHistoryTrace, displayMode, history]);
+  }, [tireIdx, renderHistoryTrace, displayMode, history, paint]);
 
   return (
-    <div ref={containerRef} className="p-2 rounded-3 border d-flex flex-column justify-content-between h-100 overflow-hidden" style={{ background: 'var(--surface-1)', borderColor: 'var(--glass-border) !important' }}>
+    <div ref={containerRef} className="telemetry-instrument-panel p-2 rounded-3 border d-flex flex-column justify-content-between h-100 overflow-hidden" style={{ background: 'var(--surface-1)', borderColor: 'var(--glass-border) !important' }}>
       <div className={`instrument-readout-label fw-bold text-body mb-1 fs-8 ${isLeft ? 'text-start' : 'text-end'}`}>{title}</div>
       <div className={`d-flex gap-2 align-items-center flex-grow-1 ${isLeft ? 'flex-row' : 'flex-row-reverse'}`} style={{ height: '42px', minHeight: '38px' }}>
-        <div className="position-relative h-100 border rounded-pill overflow-hidden flex-shrink-0" style={{ width: '20px', background: 'var(--surface-2)', borderColor: 'var(--glass-border) !important' }}>
+        <div className="telemetry-suspension-track position-relative h-100 border rounded-pill overflow-hidden flex-shrink-0" style={{ width: '20px', background: 'var(--surface-2)', borderColor: 'var(--glass-border) !important' }}>
           <div className="position-absolute" style={{ top: '50%', left: 0, right: 0, height: '1px', background: 'var(--divider)', zIndex: 2 }} />
-          <div ref={barRef} className="position-absolute start-0 end-0 bottom-0 rounded-bottom-pill" style={{
+          <div ref={barRef} className="telemetry-suspension-fill position-absolute start-0 end-0 bottom-0 rounded-bottom-pill" style={{
             height: '50%',
             background: 'var(--primary)'
           }} />
         </div>
-        <div ref={canvasContainerRef} className="flex-grow-1 h-100 position-relative opacity-75 overflow-hidden">
+        <div ref={canvasContainerRef} className="telemetry-suspension-trace flex-grow-1 h-100 position-relative opacity-75 overflow-hidden">
            <canvas ref={canvasRef} className="w-100 h-100 d-block" />
         </div>
       </div>

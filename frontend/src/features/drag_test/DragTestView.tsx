@@ -568,18 +568,18 @@ const DragTestView: React.FC = () => {
                 {t("Loading analysis...")}
               </div>
             ) : (
-              <div style={{ flex: 1, minHeight: '350px', position: 'relative' }}>
+              <div className="core-theme-chart" style={{ flex: 1, minHeight: '350px', position: 'relative' }}>
                 {activeChart === 'speed_rpm' ? (
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={chartData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="var(--divider)" />
+                      <CartesianGrid strokeDasharray="var(--chart-grid-dash)" stroke="var(--chart-grid)" />
                       <XAxis dataKey="time" type="number" name="Time" unit="s" stroke="var(--text-secondary)" tick={{fontSize: 11}} />
                       
                       {/* Left YAxis for Speed */}
-                      <YAxis yAxisId="left" stroke="#00f0ff" tick={{fontSize: 11}} label={{ value: `${t("Speed")} (${speedUnit})`, angle: -90, position: 'insideLeft', style: {textAnchor: 'middle', fill: '#00f0ff', fontSize: 11, fontWeight: 600}, offset: 5 }} />
+                      <YAxis yAxisId="left" stroke="var(--primary)" tick={{fontSize: 11}} label={{ value: `${t("Speed")} (${speedUnit})`, angle: -90, position: 'insideLeft', style: {textAnchor: 'middle', fill: 'var(--primary)', fontSize: 11, fontWeight: 600}, offset: 5 }} />
                       
                       {/* Right YAxis for RPM */}
-                      <YAxis yAxisId="right" orientation="right" stroke="#ff003c" tick={{fontSize: 11}} label={{ value: 'RPM', angle: 90, position: 'insideRight', style: {textAnchor: 'middle', fill: '#ff003c', fontSize: 11, fontWeight: 600}, offset: 5 }} />
+                      <YAxis yAxisId="right" orientation="right" stroke="var(--secondary)" tick={{fontSize: 11}} label={{ value: 'RPM', angle: 90, position: 'insideRight', style: {textAnchor: 'middle', fill: 'var(--secondary)', fontSize: 11, fontWeight: 600}, offset: 5 }} />
                       
                       <Tooltip 
                         contentStyle={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 'var(--panel-radius)' }}
@@ -589,14 +589,14 @@ const DragTestView: React.FC = () => {
                       
 
                       {/* Disabled animation for performance on high-density telemetry data */}
-                      <Line isAnimationActive={false} yAxisId="left" type="monotone" dataKey="speed" name={t("Speed")} stroke="#00f0ff" strokeWidth={2.5} dot={false} activeDot={{ r: 5 }} />
-                      <Line isAnimationActive={false} yAxisId="right" type="monotone" dataKey="rpm" name="RPM" stroke="#ff003c" strokeWidth={2} dot={false} activeDot={{ r: 5 }} />
-                      <Line isAnimationActive={false} yAxisId="left" type="step" dataKey="gear" name={t("Gear")} stroke="#ffaa00" strokeWidth={1.5} dot={false} />
+                      <Line isAnimationActive={false} yAxisId="left" type="monotone" dataKey="speed" name={t("Speed")} stroke="var(--primary)" strokeWidth={2.5} dot={false} activeDot={{ r: 5 }} />
+                      <Line isAnimationActive={false} yAxisId="right" type="monotone" dataKey="rpm" name="RPM" stroke="var(--secondary)" strokeWidth={2} dot={false} activeDot={{ r: 5 }} />
+                      <Line isAnimationActive={false} yAxisId="left" type="step" dataKey="gear" name={t("Gear")} stroke="var(--accent)" strokeWidth={1.5} dot={false} />
                       
                       {compareAnalysis && (
                         <>
-                          <Line isAnimationActive={false} yAxisId="left" type="monotone" dataKey="compare_speed" name={`${t("Compare Speed")} (${compareAnalysis.car_name})`} stroke="#00b0d0" strokeWidth={1.5} strokeDasharray="4 4" connectNulls dot={false} />
-                          <Line isAnimationActive={false} yAxisId="right" type="monotone" dataKey="compare_rpm" name={`Compare RPM (${compareAnalysis.car_name})`} stroke="#d00030" strokeWidth={1.2} strokeDasharray="4 4" connectNulls dot={false} />
+                          <Line isAnimationActive={false} yAxisId="left" type="monotone" dataKey="compare_speed" name={`${t("Compare Speed")} (${compareAnalysis.car_name})`} stroke="var(--primary)" strokeWidth={1.5} strokeDasharray="4 4" connectNulls dot={false} />
+                          <Line isAnimationActive={false} yAxisId="right" type="monotone" dataKey="compare_rpm" name={`Compare RPM (${compareAnalysis.car_name})`} stroke="var(--secondary)" strokeWidth={1.2} strokeDasharray="4 4" connectNulls dot={false} />
                         </>
                       )}
                     </LineChart>
@@ -604,7 +604,7 @@ const DragTestView: React.FC = () => {
                 ) : (
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={chartData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="var(--divider)" />
+                      <CartesianGrid strokeDasharray="var(--chart-grid-dash)" stroke="var(--chart-grid)" />
                       <XAxis dataKey="time" type="number" name="Time" unit="s" stroke="var(--text-secondary)" tick={{fontSize: 11}} />
                       <YAxis stroke="var(--text-secondary)" tick={{fontSize: 11}} label={{ value: `${t("Slip Ratio")} (%)`, angle: -90, position: 'insideLeft', style: {textAnchor: 'middle', fill: 'var(--text-secondary)', fontSize: 11, fontWeight: 600}, offset: 5 }} />
                       <Tooltip 
@@ -615,13 +615,13 @@ const DragTestView: React.FC = () => {
                       
 
                       {/* Disabled animation for performance on high-density telemetry data */}
-                      <Line isAnimationActive={false} type="monotone" dataKey="fl_slip" name={t("FL Slip")} stroke="#387908" strokeWidth={1.5} dot={false} />
-                      <Line isAnimationActive={false} type="monotone" dataKey="fr_slip" name={t("FR Slip")} stroke="#ff7300" strokeWidth={1.5} dot={false} />
-                      <Line isAnimationActive={false} type="monotone" dataKey="rl_slip" name={t("RL Slip")} stroke="#00f0ff" strokeWidth={1.5} dot={false} />
-                      <Line isAnimationActive={false} type="monotone" dataKey="rr_slip" name={t("RR Slip")} stroke="#ff003c" strokeWidth={1.5} dot={false} />
-                      <Line isAnimationActive={false} type="monotone" dataKey="slip_diff" name={t("Slip Difference")} stroke="#ffcc00" strokeWidth={2.5} strokeDasharray="3 3" dot={false} />
+                      <Line isAnimationActive={false} type="monotone" dataKey="fl_slip" name={t("FL Slip")} stroke="var(--instrument-throttle, #387908)" strokeWidth={1.5} dot={false} />
+                      <Line isAnimationActive={false} type="monotone" dataKey="fr_slip" name={t("FR Slip")} stroke="var(--instrument-handbrake, #ff7300)" strokeWidth={1.5} dot={false} />
+                      <Line isAnimationActive={false} type="monotone" dataKey="rl_slip" name={t("RL Slip")} stroke="var(--primary)" strokeWidth={1.5} dot={false} />
+                      <Line isAnimationActive={false} type="monotone" dataKey="rr_slip" name={t("RR Slip")} stroke="var(--secondary)" strokeWidth={1.5} dot={false} />
+                      <Line isAnimationActive={false} type="monotone" dataKey="slip_diff" name={t("Slip Difference")} stroke="var(--bs-warning-text-emphasis)" strokeWidth={2.5} strokeDasharray="3 3" dot={false} />
                       {compareAnalysis && (
-                        <Line isAnimationActive={false} type="monotone" dataKey="compare_slip_diff" name={`${t("Compare Slip Diff")} (${compareAnalysis.car_name})`} stroke="#e6b800" strokeWidth={1.5} strokeDasharray="4 4" connectNulls dot={false} />
+                        <Line isAnimationActive={false} type="monotone" dataKey="compare_slip_diff" name={`${t("Compare Slip Diff")} (${compareAnalysis.car_name})`} stroke="var(--bs-warning-text-emphasis)" strokeWidth={1.5} strokeDasharray="4 4" connectNulls dot={false} />
                       )}
                     </LineChart>
                   </ResponsiveContainer>

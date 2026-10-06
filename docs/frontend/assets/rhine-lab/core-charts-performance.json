@@ -1,0 +1,230 @@
+{
+  "baseline": "35cdb26b5f106f6a4588157cf8105f71146d0484",
+  "product": "6883dfa97759d14643a3007ccc6360600ceb23d9",
+  "conditions": "Same Edge tab, user-confirmed foreground, light, 1422x800, three 10s runs per screen, same 3600 synthetic packet generator after >=10s warmup, same 26 point Session. Native debug host remained open during both sets. Run order baseline then Rhine. Raw runs retained.",
+  "runs": [
+    {
+      "name": "6883-foreground-base-live-1",
+      "agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36 Edg/154.0.0.0",
+      "viewport": [
+        1422,
+        800
+      ],
+      "core": "default",
+      "hidden": false,
+      "frames": 171,
+      "p50": 50.20000000001164,
+      "p95": 83.70000000001164,
+      "max": 166.70000000001164,
+      "before": [],
+      "after": [],
+      "requests": []
+    },
+    {
+      "name": "6883-foreground-base-live-2",
+      "agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36 Edg/154.0.0.0",
+      "viewport": [
+        1422,
+        800
+      ],
+      "core": "default",
+      "hidden": false,
+      "frames": 223,
+      "p50": 49.79999999998836,
+      "p95": 66.70000000001164,
+      "max": 100.60000000003492,
+      "before": [],
+      "after": [],
+      "requests": []
+    },
+    {
+      "name": "6883-foreground-base-live-3",
+      "agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36 Edg/154.0.0.0",
+      "viewport": [
+        1422,
+        800
+      ],
+      "core": "default",
+      "hidden": false,
+      "frames": 204,
+      "p50": 50,
+      "p95": 66.90000000002328,
+      "max": 100,
+      "before": [],
+      "after": [],
+      "requests": []
+    },
+    {
+      "name": "6883-foreground-base-session-1",
+      "agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36 Edg/154.0.0.0",
+      "viewport": [
+        1422,
+        800
+      ],
+      "core": "default",
+      "hidden": false,
+      "frames": 567,
+      "p50": 16.70000000001164,
+      "p95": 17.599999999976717,
+      "max": 82.79999999998836,
+      "before": [],
+      "after": [],
+      "requests": []
+    },
+    {
+      "name": "6883-foreground-base-session-2",
+      "agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36 Edg/154.0.0.0",
+      "viewport": [
+        1422,
+        800
+      ],
+      "core": "default",
+      "hidden": false,
+      "frames": 601,
+      "p50": 16.699999999953434,
+      "p95": 17.20000000001164,
+      "max": 19.5,
+      "before": [],
+      "after": [],
+      "requests": []
+    },
+    {
+      "name": "6883-foreground-base-session-3",
+      "agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36 Edg/154.0.0.0",
+      "viewport": [
+        1422,
+        800
+      ],
+      "core": "default",
+      "hidden": false,
+      "frames": 601,
+      "p50": 16.699999999953434,
+      "p95": 17.300000000046566,
+      "max": 21.199999999953434,
+      "before": [],
+      "after": [],
+      "requests": []
+    },
+    {
+      "name": "6883-foreground-rhine-live-1",
+      "agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36 Edg/154.0.0.0",
+      "viewport": [
+        1422,
+        800
+      ],
+      "core": "rhine-lab",
+      "hidden": false,
+      "frames": 149,
+      "p50": 66.59999999999854,
+      "p95": 100.30000000000291,
+      "max": 133.5,
+      "before": [],
+      "after": [],
+      "requests": []
+    },
+    {
+      "name": "6883-foreground-rhine-live-2",
+      "agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36 Edg/154.0.0.0",
+      "viewport": [
+        1422,
+        800
+      ],
+      "core": "rhine-lab",
+      "hidden": false,
+      "frames": 154,
+      "p50": 66.40000000000873,
+      "p95": 100,
+      "max": 133,
+      "before": [],
+      "after": [],
+      "requests": []
+    },
+    {
+      "name": "6883-foreground-rhine-live-3",
+      "agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36 Edg/154.0.0.0",
+      "viewport": [
+        1422,
+        800
+      ],
+      "core": "rhine-lab",
+      "hidden": false,
+      "frames": 154,
+      "p50": 66.59999999999127,
+      "p95": 99.89999999999418,
+      "max": 117.30000000000291,
+      "before": [],
+      "after": [],
+      "requests": []
+    },
+    {
+      "name": "6883-foreground-rhine-session-1",
+      "agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36 Edg/154.0.0.0",
+      "viewport": [
+        1422,
+        800
+      ],
+      "core": "rhine-lab",
+      "hidden": false,
+      "frames": 578,
+      "p50": 16.60000000000582,
+      "p95": 17.60000000000582,
+      "max": 116.80000000001746,
+      "before": [],
+      "after": [],
+      "requests": []
+    },
+    {
+      "name": "6883-foreground-rhine-session-2",
+      "agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36 Edg/154.0.0.0",
+      "viewport": [
+        1422,
+        800
+      ],
+      "core": "rhine-lab",
+      "hidden": false,
+      "frames": 600,
+      "p50": 16.60000000000582,
+      "p95": 17.300000000017462,
+      "max": 33.20000000001164,
+      "before": [],
+      "after": [],
+      "requests": []
+    },
+    {
+      "name": "6883-foreground-rhine-session-3",
+      "agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36 Edg/154.0.0.0",
+      "viewport": [
+        1422,
+        800
+      ],
+      "core": "rhine-lab",
+      "hidden": false,
+      "frames": 601,
+      "p50": 16.699999999982538,
+      "p95": 17.20000000001164,
+      "max": 19.10000000000582,
+      "before": [],
+      "after": [],
+      "requests": []
+    }
+  ],
+  "diagnosticBeforeForeground": [
+    {
+      "name": "6883-base-live-1",
+      "agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36 Edg/154.0.0.0",
+      "viewport": [
+        1422,
+        800
+      ],
+      "core": "default",
+      "hidden": false,
+      "frames": 27,
+      "p50": 516.5999999999985,
+      "p95": 533.4000000000015,
+      "max": 533.5,
+      "before": [],
+      "after": [],
+      "requests": []
+    }
+  ]
+}

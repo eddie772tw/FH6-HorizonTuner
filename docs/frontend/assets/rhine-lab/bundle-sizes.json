@@ -1,0 +1,60 @@
+{
+  "baseline": "35cdb26b",
+  "current": "codex/rhine-lab-theme (2D only)",
+  "builds": {
+    "baseline": {
+      "all": {
+        "files": 28,
+        "bytes": 1629549,
+        "gzip": 401263
+      },
+      "js": {
+        "files": 17,
+        "bytes": 1188233,
+        "gzip": 339693
+      },
+      "css": {
+        "files": 6,
+        "bytes": 433596,
+        "gzip": 58071
+      },
+      "fonts": {
+        "files": 0,
+        "bytes": 0,
+        "gzip": 0
+      },
+      "models": {
+        "files": 0,
+        "bytes": 0,
+        "gzip": 0
+      }
+    },
+    "rhine": {
+      "all": {
+        "files": 412,
+        "bytes": 14393817,
+        "gzip": 12802324
+      },
+      "js": {
+        "files": 18,
+        "bytes": 1191210,
+        "gzip": 342141
+      },
+      "css": {
+        "files": 6,
+        "bytes": 746925,
+        "gzip": 157536
+      },
+      "fonts": {
+        "files": 376,
+        "bytes": 12197248,
+        "gzip": 12184132
+      },
+      "models": {
+        "files": 0,
+        "bytes": 0,
+        "gzip": 0
+      }
+    }
+  }
+}

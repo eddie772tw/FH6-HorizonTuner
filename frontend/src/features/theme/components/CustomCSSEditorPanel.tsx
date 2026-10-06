@@ -25,6 +25,11 @@ const CUSTOM_VARIABLES = [
   ['--input-radius', 'Input field corner radius'],
   ['--text-primary', 'Maps from --bs-body-color'],
   ['--text-secondary', 'Maps from --bs-secondary-color'],
+  ['--chart-grid', 'Canvas and SVG guide color'],
+  ['--chart-grid-dash', 'Chart guide dash pattern (0 = solid)'],
+  ['--chart-radius', 'Chart surface corner radius'],
+  ['--instrument-flat', 'Flat RPM segments and suspension traces (0/1)'],
+  ['--instrument-alert-flash', 'RPM alert flashing (0/1)'],
 ] as const;
 
 const TARGET_SELECTORS = [
@@ -43,6 +48,8 @@ const TARGET_SELECTORS = [
   ['[data-bs-core="swiss-contrast"]', 'Swiss Contrast'],
   ['[data-design-system="halfmoon"]', 'Halfmoon design system'],
   ['[data-design-system="swiss"]', 'Swiss design system'],
+  ['[data-bs-core="rhine-lab"]', 'Rhine Lab core theme'],
+  ['[data-design-system="rhine"]', 'Rhine Lab design system'],
 ] as const;
 
 const CustomCSSEditorPanel: React.FC = () => {
