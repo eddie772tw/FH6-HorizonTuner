@@ -5,7 +5,7 @@ import AppearanceModePanel from './components/AppearanceModePanel';
 import ColorPickerPanel from './components/ColorPickerPanel';
 import CustomCSSEditorPanel from './components/CustomCSSEditorPanel';
 import { ModalPortal } from '../../components/common/ModalPortal';
-import { useModalFocus } from '../../hooks/useModalFocus';
+import { useDialogTransition } from '../../hooks/useDialogTransition';
 import './theme.css';
 
 interface ThemeViewProps {
@@ -14,7 +14,7 @@ interface ThemeViewProps {
 }
 
 const ThemeView: React.FC<ThemeViewProps> = ({ show, onClose }) => {
-  const panelRef = useModalFocus<HTMLDivElement>(show, onClose);
+  const { shown, close, panelRef, onTransitionEnd } = useDialogTransition(show, onClose);
   const { themeSettings } = useTheme();
   const { t } = useSettings();
 
@@ -22,18 +22,19 @@ const ThemeView: React.FC<ThemeViewProps> = ({ show, onClose }) => {
     <ModalPortal>
       {/* Backdrop */}
       <div
-        className={`offcanvas-backdrop fade${show ? ' show' : ''}`}
+        className={`offcanvas-backdrop fade${shown ? ' show' : ''}`}
         style={{
           display: show ? 'block' : 'none',
           zIndex: 1040,
         }}
-        onClick={onClose}
+        onClick={close}
       />
 
       {/* Offcanvas panel */}
       <div
-        className={`offcanvas offcanvas-end app-menu-drawer settings-drawer theme-sidebar border-start glass-panel shadow-lg${show ? ' show' : ''}`}
+        className={`offcanvas offcanvas-end app-menu-drawer settings-drawer theme-sidebar border-start glass-panel shadow-lg${shown ? ' show' : ''}`}
         ref={panelRef}
+        onTransitionEnd={onTransitionEnd}
         tabIndex={-1}
         aria-modal="true"
         aria-hidden={!show}
@@ -49,7 +50,7 @@ const ThemeView: React.FC<ThemeViewProps> = ({ show, onClose }) => {
             <h5 className="offcanvas-title text-primary fw-bold fs-6 m-0">
               {t("Theme Customization")}
             </h5>
-            <p className="text-body-secondary fs-8 mb-0 mt-1" style={{ lineHeight: '1.3' }}>
+            <p className="surface-intro text-body-secondary fs-8 mb-0 mt-1" style={{ lineHeight: '1.3' }}>
               {t("Personalize skin, colors, and custom CSS")}
             </p>
           </div>
@@ -60,7 +61,7 @@ const ThemeView: React.FC<ThemeViewProps> = ({ show, onClose }) => {
             <button
               type="button"
               className="btn-close"
-              onClick={onClose}
+              onClick={close}
               aria-label={t("Close Theme Panel")}
             />
           </div>

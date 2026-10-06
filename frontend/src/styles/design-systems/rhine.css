@@ -157,10 +157,10 @@
 :where([data-design-system="rhine"]) .app-dialog--settings .settings-surface-grid { grid-template-columns: minmax(0, 1fr); gap: 24px !important; }
 :where([data-design-system="rhine"]) .settings-section-header { padding-bottom: 12px; }
 :where([data-design-system="rhine"]) .settings-item-description { color: var(--text-secondary); line-height: 1.6; }
-:where([data-design-system="rhine"]) .app-dialog { --surface-enter-duration: 220ms; --surface-exit-duration: 160ms; }
+:where([data-design-system="rhine"]) .app-menu-drawer { --surface-enter-duration: 220ms; --surface-exit-duration: 160ms; }
 
 @media (min-width: 1024px) {
-  :where([data-design-system="rhine"]) .offcanvas.app-menu-drawer.app-dialog:is(.app-dialog--settings, .app-dialog--about) {
+  :where([data-design-system="rhine"]) .offcanvas.app-menu-drawer.settings-drawer {
     inset: 50% auto auto 50%;
     width: min(calc(100vw - 48px), var(--app-drawer-cap));
     min-width: 0;
@@ -173,17 +173,17 @@
     border: 1px solid var(--glass-border);
     transition: transform var(--surface-exit-duration) ease-in, opacity var(--surface-exit-duration) ease-in, visibility var(--surface-exit-duration);
   }
-  :where([data-design-system="rhine"]) .offcanvas.app-menu-drawer.app-dialog:is(.app-dialog--settings, .app-dialog--about).show {
+  :where([data-design-system="rhine"]) .offcanvas.app-menu-drawer.settings-drawer.show {
     transform: translate(-50%, -50%);
     opacity: 1;
     transition-duration: var(--surface-enter-duration);
   }
-  :where([data-design-system="rhine"]) .app-dialog:is(.app-dialog--settings, .app-dialog--about) > .offcanvas-header { position: relative; border-bottom: 0 !important; }
-  :where([data-design-system="rhine"]) .app-dialog:is(.app-dialog--settings, .app-dialog--about) > .offcanvas-header::after {
+  :where([data-design-system="rhine"]) .app-menu-drawer > .offcanvas-header { position: relative; border-bottom: 0 !important; }
+  :where([data-design-system="rhine"]) .app-menu-drawer > .offcanvas-header::after {
     content: ''; position: absolute; inset: auto 24px 0; height: 1px; background: var(--glass-border); transform-origin: left; pointer-events: none;
   }
-  :where([data-design-system="rhine"]) .app-dialog:is(.app-dialog--settings, .app-dialog--about).show > .offcanvas-header::after { animation: rhine-rule 220ms ease-out; }
-  :where([data-design-system="rhine"]) .app-dialog:is(.app-dialog--settings, .app-dialog--about).show .surface-intro { animation: rhine-intro 180ms ease-out; }
+  :where([data-design-system="rhine"]) .app-menu-drawer.show > .offcanvas-header::after { animation: rhine-rule 220ms ease-out; }
+  :where([data-design-system="rhine"]) .app-menu-drawer.show .surface-intro { animation: rhine-intro 180ms ease-out; }
 }
 @keyframes rhine-rule { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 @keyframes rhine-intro { from { opacity: 0.7; } to { opacity: 1; } }
