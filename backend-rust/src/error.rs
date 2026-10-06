@@ -50,12 +50,13 @@ impl std::fmt::Display for ApiError {
 impl std::error::Error for ApiError {}
 impl From<std::io::Error> for ApiError {
     fn from(err: std::io::Error) -> Self {
-        let _ = err;
+        eprintln!("storage error: {err}");
         Self::new(500, "Storage operation failed")
     }
 }
 impl From<serde_json::Error> for ApiError {
-    fn from(_: serde_json::Error) -> Self {
+    fn from(err: serde_json::Error) -> Self {
+        eprintln!("json error: {err}");
         Self::new(422, "Invalid JSON document")
     }
 }

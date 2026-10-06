@@ -176,7 +176,7 @@ pub fn export_road_capture(
     let sid = run["sessionId"].as_str().unwrap_or("");
     let points = service
         .get_telemetry_points(sid, None)
-        .map_err(|e| ApiError::new(500, e))?;
+        .map_err(|e| ApiError::internal("Operation failed", e))?;
     let created = run["createdAt"].as_f64().unwrap_or(0.0);
     let captured_at = chrono::DateTime::from_timestamp(
         created.trunc() as i64,
@@ -190,6 +190,6 @@ pub fn export_road_capture(
         .cloned()
         .unwrap_or_else(|| json!({}));
     Ok(
-        json!({"schemaVersion":"tuning-capture/v1","capturedAt":captured_at,"metadata":{"label":run_id,"purpose":"road-setup-verification","carId":identity.get("ordinal").map(Value::to_string).unwrap_or_else(||"null".into()),"gameBuild":workflow.get("gameBuild").cloned().unwrap_or_else(||Value::String("unknown".into())),"installedParts":workflow.get("configuration").cloned().unwrap_or_else(||Value::String("unknown".into())),"tireType":"unknown","surface":"unknown","weather":event.get("conditions").cloned().unwrap_or_else(||Value::String("unknown".into())),"eventType":event.get("format").cloned().unwrap_or(Value::Null),"track":event.get("name").cloned().unwrap_or(Value::Null),"shareCode":"unknown","driverAssists":event.get("driverAssists").cloned().unwrap_or_else(||Value::String("unknown".into())),"notes":"Decoded samples; see recording and parent references."},"samples":points.iter().map(|p|capture_sample(p)).collect::<Vec<_>>(),"recording":service.get_session_metadata(sid).map_err(|e|ApiError::new(500,e))?,"references":{"workflowId":workflow_id,"runId":run_id,"setupId":run["setupId"].clone(),"calibrationSchema":"tuning-calibration/v1"}}),
+        json!({"schemaVersion":"tuning-capture/v1","capturedAt":captured_at,"metadata":{"label":run_id,"purpose":"road-setup-verification","carId":identity.get("ordinal").map(Value::to_string).unwrap_or_else(||"null".into()),"gameBuild":workflow.get("gameBuild").cloned().unwrap_or_else(||Value::String("unknown".into())),"installedParts":workflow.get("configuration").cloned().unwrap_or_else(||Value::String("unknown".into())),"tireType":"unknown","surface":"unknown","weather":event.get("conditions").cloned().unwrap_or_else(||Value::String("unknown".into())),"eventType":event.get("format").cloned().unwrap_or(Value::Null),"track":event.get("name").cloned().unwrap_or(Value::Null),"shareCode":"unknown","driverAssists":event.get("driverAssists").cloned().unwrap_or_else(||Value::String("unknown".into())),"notes":"Decoded samples; see recording and parent references."},"samples":points.iter().map(|p|capture_sample(p)).collect::<Vec<_>>(),"recording":service.get_session_metadata(sid).map_err(|e| ApiError::internal("Operation failed", e))?,"references":{"workflowId":workflow_id,"runId":run_id,"setupId":run["setupId"].clone(),"calibrationSchema":"tuning-calibration/v1"}}),
     )
 }

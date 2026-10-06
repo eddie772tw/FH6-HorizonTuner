@@ -342,12 +342,14 @@ pub fn support_bundle(log_path: &Path, diagnostics: &Value, request: &Value) -> 
                 zip::write::SimpleFileOptions::default()
                     .compression_method(zip::CompressionMethod::Deflated),
             )
-            .map_err(|_| ApiError::new(500, "Unable to create support bundle"))?;
+            .map_err(|_| {
+                ApiError::internal("Operation failed", "Unable to create support bundle")
+            })?;
         archive.write_all(&bytes)?;
     }
     let result = archive
         .finish()
-        .map_err(|_| ApiError::new(500, "Unable to create support bundle"))?
+        .map_err(|_| ApiError::internal("Operation failed", "Unable to create support bundle"))?
         .into_inner();
     if result.len() > 1024 * 1024 {
         return Err(ApiError::new(400, "Invalid support bundle request"));

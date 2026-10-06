@@ -25,8 +25,7 @@ use std::{
 use tokio::sync::{broadcast, watch};
 
 fn database_error(error: String) -> ApiError {
-    eprintln!("database: {error}");
-    ApiError::new(500, "Database operation failed")
+    ApiError::internal("Database operation failed", error)
 }
 struct Engine {
     race: RaceRecorder,

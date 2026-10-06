@@ -198,10 +198,10 @@ pub fn compare_road_runs(
     let first_b = &candidate_runs[0];
     let pa = database
         .get_telemetry_points(first_a["sessionId"].as_str().unwrap_or(""), None)
-        .map_err(|e| ApiError::new(500, e))?;
+        .map_err(|e| ApiError::internal("Operation failed", e))?;
     let pb = database
         .get_telemetry_points(first_b["sessionId"].as_str().unwrap_or(""), None)
-        .map_err(|e| ApiError::new(500, e))?;
+        .map_err(|e| ApiError::internal("Operation failed", e))?;
     let circuit = workflow["event"]["format"] == "circuit";
     let spatial = local_comparison(&pa, &pb, circuit);
     if spatial["routeStatus"] != "compatible" {
@@ -244,7 +244,7 @@ pub fn compare_road_runs(
     {
         let points = database
             .get_telemetry_points(run["sessionId"].as_str().unwrap_or(""), None)
-            .map_err(|e| ApiError::new(500, e))?;
+            .map_err(|e| ApiError::internal("Operation failed", e))?;
         let local = local_comparison(&pa, &points, circuit);
         if local["routeStatus"] != "compatible" {
             reasons.push("repetition-route-incompatible".into())

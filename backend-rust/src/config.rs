@@ -81,8 +81,10 @@ pub fn merge_settings(settings: &Value, patch: &Value) -> ApiResult<Value> {
                 .or_else(|| v.as_str().and_then(|s| s.parse().ok()))
                 .or_else(|| v.as_f64().map(|n| n as i64))
                 .or_else(|| v.as_bool().map(i64::from));
-            next[key] =
-                json!(integer.ok_or_else(|| ApiError::new(500, "Settings could not be saved"))?);
+            next[key] = json!(integer.ok_or_else(|| ApiError::internal(
+                "Operation failed",
+                "Settings could not be saved"
+            ))?);
         }
     }
     if patch["units"].is_object() {

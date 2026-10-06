@@ -49,8 +49,8 @@ impl ConfigService {
         let (overlay, _) = broadcast::channel(32);
         let (settings_changed, _) = watch::channel(settings.clone());
         let profiles = Arc::new(Mutex::new(BTreeMap::new()));
-        let profile_io =
-            ProfileIo::new(root.to_owned(), profiles.clone()).map_err(|e| ApiError::new(500, e))?;
+        let profile_io = ProfileIo::new(root.to_owned(), profiles.clone())
+            .map_err(|e| ApiError::internal("Operation failed", e))?;
         Ok(Self {
             root: root.to_owned(),
             settings: Mutex::new(settings),
@@ -89,11 +89,15 @@ impl ConfigService {
     pub fn save_car_params(&self, id: &str, value: &Value) -> ApiResult<()> {
         storage::safe_path(&self.root.join("car_params"), &format!("{id}.json"))?;
         // Explicit API writes wait for earlier automatic versions before returning.
-        self.profile_io.flush().map_err(|e| ApiError::new(500, e))?;
+        self.profile_io
+            .flush()
+            .map_err(|e| ApiError::internal("Operation failed", e))?;
         self.profile_io
             .save(id, value.clone())
-            .map_err(|e| ApiError::new(500, e))?;
-        self.profile_io.flush().map_err(|e| ApiError::new(500, e))?;
+            .map_err(|e| ApiError::internal("Operation failed", e))?;
+        self.profile_io
+            .flush()
+            .map_err(|e| ApiError::internal("Operation failed", e))?;
         lock(&self.profiles).insert(id.to_owned(), value.clone());
         Ok(())
     }
@@ -132,7 +136,7 @@ impl ConfigService {
             ("GET",["api","settings"]) => Ok(self.settings()),
             ("POST",["api","settings"]) => {
                 let value = { let mut settings=lock(&self.settings); let next=config::merge_settings(&settings,data)?;
-                    storage::save_settings(&self.root,&next).map_err(|_| ApiError::new(500,"Settings could not be saved"))?; *settings=next.clone(); next };
+                    storage::save_settings(&self.root,&next).map_err(|_| ApiError::internal("Operation failed", "Settings could not be saved"))?; *settings=next.clone(); next };
                 self.settings_changed.send_replace(value.clone());
                 if data["theme"].is_object() || data["units"].is_object() { self.publish_hud(); }
                 Ok(value)

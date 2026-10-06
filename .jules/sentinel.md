@@ -1,37 +1,4 @@
-<!-- Raw Jules work log. Promote only after local verification; see .jules/README.md. -->
-
-## 2026-08-03 - Path Traversal in FastAPI Endpoint
-**Vulnerability:** A path traversal vulnerability existed in `/api/languages/{code}` where the path parameter was unsafely joined using `os.path.join`, allowing attackers to read files outside the intended directory on Windows (e.g. via `..\settings`).
-**Learning:** FastAPI's default `{param}` path matching does not sanitize `\` backslashes. It blocks `/`, but URL-encoded backslashes (`%5c`) bypass this and are passed raw to the handler, triggering path traversal when passed to `os.path.join` on Windows OS.
-**Prevention:** Use FastAPI's native `Path(pattern="...")` to enforce strict regex validation on route parameters directly at the framework level, or explicitly validate string patterns before passing user input to file operations.
-## 2024-05-18 - [XSS via innerHTML in ThemeContext]
-**Vulnerability:** XSS vulnerability found in `frontend/src/context/ThemeContext.tsx` where user-controlled theme settings (customCSS) were injected directly into a `<style>` tag using `innerHTML`.
-**Learning:** `innerHTML` is inherently risky when dealing with dynamic text data input, even within elements like `<style>` where scripts generally shouldn't execute, because of parser nuances and escaping edge cases.
-**Prevention:** Use `textContent` instead of `innerHTML` when inserting data that should strictly be treated as text (e.g. CSS text) rather than parsed HTML nodes.
-## 2024-08-07 - Error Message Info Leak\n**Vulnerability:** Raw exception messages were returned in JSON error responses from multiple endpoints.\n**Learning:** Returning `str(e)` in production API endpoints leaks internal state, file paths, or implementation details.\n**Prevention:** Fail securely by logging the full exception string internally and returning a generic, safe error string to the client.
-## 2024-10-27 - SQLite ON DELETE CASCADE Orphaning Data
-**Vulnerability:** Incomplete deletion of telemetry session data resulting in sensitive driving data being orphaned and left in the SQLite database rather than fully erased.
-**Learning:** SQLite does not enforce `ON DELETE CASCADE` foreign key constraints by default unless explicitly enabled via `PRAGMA foreign_keys = ON;` on every single connection. Because the application did not guarantee this PRAGMA was set consistently across all high-frequency connection lifecycles, deleting a session row silently left behind hundreds of thousands of orphaned `telemetry_channels` and `laps` child records.
-**Prevention:** Always use explicit `DELETE FROM child_table` statements before `DELETE FROM parent_table` when removing relational data in SQLite to guarantee complete data eradication and prevent unintentional data leaks, rather than relying on schema-level cascading that may be silently ignored by the engine configuration.
-## 2026-09-01 - Missing CSRF Protection on API Endpoints
-**Vulnerability:** The FastAPI application used `CORSMiddleware` to handle Cross-Origin Resource Sharing (CORS), but this did not protect state-changing API endpoints from Cross-Site Request Forgery (CSRF). A malicious website could send `POST` requests to local API endpoints, and because `CORSMiddleware` only controls browser access to the response (not whether the request executes), the request would still be processed by the backend.
-**Learning:** `CORSMiddleware` does not prevent CSRF for simple requests (like form submissions or text/plain POSTs that don't trigger preflight). A dedicated check is needed for state-changing HTTP requests.
-**Prevention:** Always add a middleware to explicitly validate the `Origin` header for state-changing HTTP methods (POST, PUT, DELETE, PATCH). If an `Origin` is present and doesn't match the allowed origins, reject the request immediately before it reaches the route handler.
-## 2025-01-10 - [SQL Injection via String Concatenation in DDL]
-**Vulnerability:** Found a blocking issue identified by Semgrep where an f-string was used to construct an `ALTER TABLE` DDL query (`f"ALTER TABLE telemetry_channels ADD COLUMN {col_name} {col_def};"`), which presents a potential SQL injection vulnerability if inputs become dynamic.
-**Learning:** Because parameterized queries cannot be used for DDL statements (like ALTER TABLE or CREATE TABLE) in SQLite, string concatenation is often incorrectly used as a fallback, creating risk.
-**Prevention:** Always apply strict allowlist regex validation (e.g., `^[a-zA-Z0-9_]+$`) to column names and definitions before using string concatenation in DDL statements, even if the inputs are currently hardcoded, to implement defense-in-depth and future-proof the codebase.
-
-## 2025-02-27 - Custom Math Formula Remote Code Execution (RCE) via `new Function`
-**Vulnerability:** The math expression engine `evaluateCustomMath` in `frontend/src/utils/customMathEngine.ts` evaluated user-provided formulas using `new Function(...)` without rigorous sanitization, resulting in an arbitrary code execution vulnerability.
-**Learning:** Naive regex-based token substitution combined with string evaluation (`new Function`, `eval`) is fundamentally insecure when parsing untrusted user inputs (like custom telemetry channels).
-**Prevention:** Always implement a proper parser/evaluator algorithm (like the Shunting-Yard algorithm) to interpret mathematical expressions securely, completely avoiding native dynamic execution mechanisms when handling user-provided strings.
-
-## 2025-02-27 - SQL Injection via dynamic values in PRAGMA and ALTER TABLE
-**Vulnerability:** A potential SQL injection vulnerability existed when dynamically building `PRAGMA table_info` and `ALTER TABLE` queries in `backend/telemetry_sqlite.py`. The `table`, `name`, and `definition` variables were concatenated directly into the query strings without validation.
-**Learning:** SQLite cannot parameterize table or column names, nor PRAGMA arguments. If these identifiers become derived from untrusted input, direct interpolation leads to SQL injection.
-**Prevention:** Always strictly validate dynamic table, column names, and schemas against an alphanumeric regex allowlist (e.g., `^[a-zA-Z0-9_]+$`) before executing dynamic DDL or PRAGMA statements.
-## 2024-05-31 - [Prevent Information Leakage in API Errors]
-**Vulnerability:** Raw exception details (`e.to_string()`) were being passed directly to `ApiError::new()` and subsequently leaked to the client in HTTP responses.
-**Learning:** Returning raw exceptions can expose sensitive internal system details, filesystem paths, or architectural context to potential attackers.
-**Prevention:** Always log the detailed exception internally (e.g., using `eprintln!`) and return a sanitized, generic message (e.g., "Internal Server Error" or "Service Unavailable") to the client.
+## 2024-05-24 - Exception Information Disclosure in Rust Backend
+**Vulnerability:** The Rust backend (`backend-rust/src/error.rs`) explicitly logged and returned exact system and application error messages (`e.to_string()`, database error descriptions, etc.) to end users in 500 Server Error HTTP responses via `ApiError::new(500, e)`.
+**Learning:** Returning unredacted internal error details in API responses can leak sensitive system architecture, database schema names, file paths, or third-party service responses to malicious actors, aiding them in reconnaissance.
+**Prevention:** In Axum or generic API handlers, utilize a pattern that internally logs the exact exception (`eprintln!`) but constructs a sanitized, generic error message string for the HTTP client (e.g., `ApiError::internal("Operation", "Internal Server Error")`) to maintain operability while minimizing disclosure.

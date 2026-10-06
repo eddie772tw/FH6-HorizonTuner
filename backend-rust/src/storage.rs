@@ -132,7 +132,10 @@ fn upgrade(mut settings: Value) -> ApiResult<Value> {
             1
         });
     if !(1..=2).contains(&version) {
-        return Err(ApiError::new(500, "Unsupported settings schema version"));
+        return Err(ApiError::internal(
+            "Operation failed",
+            "Unsupported settings schema version",
+        ));
     }
     settings["settings_schema_version"] = json!(2);
     Ok(settings)
