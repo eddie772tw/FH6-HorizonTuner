@@ -1,0 +1,145 @@
+{
+  "sourceCommit": "5f8609ee",
+  "method": "User set Edge browser zoom to 200%; native browser zoom, no CSS zoom or viewport override",
+  "checks": [
+    {
+      "dialog": [
+        {
+          "clientWidth": 635,
+          "rect": {
+            "bottom": 442.5,
+            "height": 442.5,
+            "left": 318.671875,
+            "right": 956,
+            "top": 0,
+            "width": 637.328125,
+            "x": 318.671875,
+            "y": 0
+          },
+          "scrollWidth": 635
+        }
+      ],
+      "dpr": 2,
+      "pageScrollWidth": 956,
+      "pageWidth": 956,
+      "panel": "appearance-top",
+      "rootInert": true,
+      "viewport": [
+        956,
+        442
+      ]
+    },
+    {
+      "dialogScrollWidth": 635,
+      "dialogWidth": 635,
+      "focus": "插入 CSS 起始範例",
+      "panel": "appearance-advanced",
+      "scrollWidth": 956,
+      "width": 956
+    },
+    {
+      "focus": "應用程式選單",
+      "panel": "appearance-closed",
+      "rootInert": false
+    },
+    {
+      "dialog": {
+        "clientWidth": 635,
+        "rect": {
+          "bottom": 442.5,
+          "height": 442.5,
+          "left": 318.671875,
+          "right": 956,
+          "top": 0,
+          "width": 637.328125,
+          "x": 318.671875,
+          "y": 0
+        },
+        "scrollWidth": 635
+      },
+      "dpr": 2,
+      "pageScrollWidth": 956,
+      "pageWidth": 956,
+      "panel": "settings-zh-TW",
+      "viewport": [
+        956,
+        442
+      ]
+    },
+    {
+      "dialogScrollWidth": 635,
+      "dialogWidth": 635,
+      "pageScrollWidth": 956,
+      "pageWidth": 956,
+      "panel": "settings-en-US"
+    },
+    {
+      "dialogScrollWidth": 635,
+      "dialogWidth": 635,
+      "pageScrollWidth": 956,
+      "pageWidth": 956,
+      "panel": "settings-ja-JP"
+    },
+    {
+      "focus": "關閉",
+      "panel": "settings-tab-wrap",
+      "rootInert": true
+    },
+    {
+      "focus": "應用程式選單",
+      "panel": "settings-closed",
+      "rootInert": false
+    },
+    {
+      "dpr": 2,
+      "pageScrollWidth": 956,
+      "pageWidth": 956,
+      "panel": "live",
+      "regions": [
+        {
+          "name": "driver-card-title",
+          "scrollWidth": 452,
+          "width": 452
+        },
+        {
+          "name": "traces-card-title",
+          "scrollWidth": 452,
+          "width": 452
+        },
+        {
+          "name": "dynamics-card-title",
+          "scrollWidth": 914,
+          "width": 914
+        },
+        {
+          "name": "tires-card-title",
+          "scrollWidth": 914,
+          "width": 914
+        },
+        {
+          "name": "suspension-card-title",
+          "scrollWidth": 914,
+          "width": 914
+        }
+      ],
+      "viewport": [
+        956,
+        440
+      ]
+    },
+    {
+      "focus": "絕對值",
+      "pageScrollWidth": 956,
+      "pageWidth": 956,
+      "panel": "live-bottom",
+      "scrollContainers": [
+        {
+          "className": "telemetry-view d-flex flex-column h-100 w-100",
+          "clientHeight": 292,
+          "scrollHeight": 1366,
+          "scrollTop": 1075
+        }
+      ]
+    }
+  ]
+}

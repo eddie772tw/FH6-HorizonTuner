@@ -42,6 +42,10 @@ Sol 已在 `1ead368749cd7ea31086c15af4d59df286e951b9` 重新執行原 P2 情境�
 
 字體載入失敗：隔離靜態伺服器讓全部 WOFF2 請求回傳 HTTP 404，server log 確認 regular／demibold 分片確實請求失敗。Edge 的 Rhine 繁中遙測與設定仍使用系統回退字體可讀；設定可開啟、Escape 關閉，背景 inert 還原，未出現水平溢出。附[字體失敗時的設定畫面](assets/rhine-lab/font-fallback.png)。此項只涵蓋瀏覽器、目前可見文字及字體失敗，不代表離線 API、三語完整字形或 WebView2 已驗收。
 
+200% 縮放：由使用者手動設定 Edge 工具列縮放，量測 `devicePixelRatio = 2`、CSS 內容區約 956×442；沒有以 CSS zoom 或 viewport override 代替。外觀與設定依 1024px 切換點恢復右側抽屜，兩者 clientWidth／scrollWidth 均為 635px，頁面為 956px。外觀可捲至 CSS 編輯器及匯入／匯出控制項；設定的繁中、英文、日文均未新增水平溢出，最末控制項 Tab 回到關閉按鈕，Escape 後解除 inert 並還原選單焦點。五張遙測卡片重新排版，四輪懸吊可捲到底部讀取。見 [量測](assets/rhine-lab/zoom-200.json)、[外觀](assets/rhine-lab/zoom-200-appearance.png)、[繁中設定](assets/rhine-lab/zoom-200-settings.png)、[日文設定](assets/rhine-lab/zoom-200-settings-ja.png)、[遙測](assets/rhine-lab/zoom-200-live.png)及[四輪讀值](assets/rhine-lab/zoom-200-live-bottom.png)。遙測圖使用 fixture 的引擎通道回放，其餘通道為測試值；沒有以這些資料判定物理準確性。此項不代表所有頁面、所有解析度與原生 WebView2 的 200% 驗收。
+
+使用者於同輪明確表示「動畫效果不用測」，因此取消 Windows 系統動畫效果開關的人工驗收；不變更產品對 `prefers-reduced-motion` 的支援與既有契約測試，也不把未執行的 OS 驗收記為通過。
+
 ## 對比與包體
 
 基礎色值的 WCAG 對比計算見 [contrast.json](assets/rhine-lab/contrast.json)：淺色三種表面上的輔助文字最低 **4.63:1**、主要文字最低 **15.50:1**；深色分別最低 **5.60:1**、**9.58:1**。必要控制項邊界在六種表面最低 **3.60:1**。這不代表任意使用者自訂三色都達標，也不取代完整畫面無障礙稽核。
@@ -71,12 +75,14 @@ JavaScript 增加 1,214 bytes；主要增量為計畫保留的 MiSans 原始分�
 
 先前沒有確認前景的配對診斷兩版均出現約 1016ms p95，已排除於正式比較；原先單次 601 幀／16.8ms 結果也不作配對結論。前景恢復後、尚未固定尺寸的三輪診斷另存於 JSON 的 `diagnosticRuns`。
 
-調校狀態補驗：隔離 `default_car` 草稿將車重設為 1475，跨 Halfmoon／Swiss Editorial／Rhine 後保留；步驟 3 套用 Rhine 不跳回第一步，返回步驟 1 仍保留 1475，最後還原原值 1500。未繞過步驟 4 所需的引擎量測資格，見 [tuning-draft-theme-state.json](assets/rhine-lab/tuning-draft-theme-state.json)。完整四步驟及有量測資料的情境仍待驗收。
+調校狀態補驗：隔離 `default_car` 草稿將車重設為 1475，跨 Halfmoon／Swiss Editorial／Rhine 後保留；步驟 3 套用 Rhine 不跳回第一步，返回步驟 1 仍保留 1475，最後還原原值 1500，見 [tuning-draft-theme-state.json](assets/rhine-lab/tuning-draft-theme-state.json)。
+
+四步驟補驗使用既有去識別 Beetle 引擎 fixture 的 2,020 筆資料及測試車輛 profile，經隔離 Rust 後端正常分析／保存／確認沿用流程取得 measured-engine 資格，沒有繞過第四步限制。步驟 1–3 各自跨 Halfmoon／Swiss Editorial／Rhine 保留作用中步驟，第一步未儲存的 785kg 草稿保留；Rhine／Halfmoon 齒比值均為 4.34、2.33、1.70、1.30、1.03、0.85、0.72。第四步的 Road 賽事名稱草稿跨三系統保留，沒有建立基準或開始錄製。見 [完整紀錄](assets/rhine-lab/measured-workflow-theme-state.json)與[第四步畫面](assets/rhine-lab/measured-workflow-step4.png)。第三步後瀏覽器分頁關閉，第四步於新分頁重新通過沿用流程後獨立驗證；不宣稱跨關閉分頁保留未儲存草稿，也不是新的真實遊戲量測。
 
 前一輪互動畫面驗收曾因使用者按 Escape 停止；後續 PR 交付階段已補驗明暗設定與 Session 切換。下列項目仍待實際操作：
 
 - 2D 動畫短錄影；目前留存明暗瀏覽器設定與明暗原生截圖。
-- 200% 縮放、OS reduced motion、離線、三語完整字形及 WebView2 字體失敗；Edge 繁中可見畫面的字體失敗回退已補驗。
-- 調校草稿、各步驟及更多捲動位置的完整狀態保留驗收；已選 Session 的跨系統切換已驗證。
+- 離線、三語完整字形及 WebView2 字體失敗；Edge 200% 的上述畫面及繁中可見畫面的字體失敗回退已補驗。OS reduced motion 人工驗收依使用者要求取消。
+- 更多調校捲動位置與長時間操作；四步驟分段、上述草稿及已選 Session 的跨系統切換已驗證。
 - WebView2 的快速開關、進入中關閉、退出中切主題及自訂 CSS 組合；外觀的 Escape 與設定的背景點擊已補驗，現有單元測試不能代替其餘實測。
 - Windows release EXE、Companion Android 原生、獨立 HUD 及真實遊戲環境。

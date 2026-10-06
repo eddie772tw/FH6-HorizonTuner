@@ -1,0 +1,262 @@
+{
+  "sourceCommit": "5f8609ee29f14a229c76204c0da9b3510b92d78c",
+  "prepared": {
+    "source": "tests/fixtures/aego_beetle_engine_captures.json",
+    "sourceSha256": "33ca6086be04c4b8a08aff9a4c14f2ed3c61c7cf4a549c98db5e8f08eaf2b8a5",
+    "originalObservationId": "b72e930d-cf94-4e83-ad66-a23f08a5530d",
+    "observationId": "rhine-qa-30fc189a-d065-4a58-a6e2-711095506103",
+    "carId": "1435",
+    "sampleCount": 2020,
+    "profile": {
+      "isElectric": false,
+      "weight": 780,
+      "weight_distribution": 54,
+      "drivetrain": "RWD",
+      "induction": "NA",
+      "maxHp": 75,
+      "maxTorque": 1,
+      "maxHpRpm": 0,
+      "maxTorqueRpm": 0,
+      "aeroBalance": 0.5,
+      "aeroEfficiency": 0.5,
+      "mechBalance": 0.5,
+      "aero_downforce_front": 0,
+      "aero_downforce_rear": 0,
+      "frontTireWidth": 245,
+      "frontTireAspect": 40,
+      "frontTireRim": 18,
+      "rearTireWidth": 245,
+      "rearTireAspect": 40,
+      "rearTireRim": 18,
+      "tireType": "Stock",
+      "adjustability": {
+        "gearbox": "Full",
+        "gears": 6,
+        "suspension": "Race",
+        "arb": "Adjustable",
+        "aero": "Adjustable",
+        "brakes": "Adjustable",
+        "diff": "Adjustable"
+      },
+      "dyno_curve": {},
+      "spring_front_min": 10,
+      "spring_front_max": 120,
+      "spring_rear_min": 10,
+      "spring_rear_max": 120,
+      "height_front_min": 10,
+      "height_front_max": 25,
+      "height_rear_min": 10,
+      "height_rear_max": 25,
+      "roll_center_front": 0,
+      "roll_center_rear": 0,
+      "anti_dive": 0,
+      "anti_squat": 0,
+      "target_ride_frequency": 2.4,
+      "target_rebound_ratio": 0.7,
+      "target_bump_ratio": 0.55
+    },
+    "readiness": {
+      "mechanical": true,
+      "engineInputs": true,
+      "measuredEngine": true,
+      "gearingAvailable": true
+    },
+    "formulaVersion": "rust/ice-measured-workflow-v2",
+    "method": "Unmodified fixture samples qualified by running Rust backend; isolated QA profile from workflow contract test"
+  },
+  "steps1To3": [
+    {
+      "activeStep": "1. 目標與參數設定",
+      "core": "rhine-lab",
+      "label": "step1-before",
+      "pageScrollWidth": 956,
+      "pageWidth": 956,
+      "scrollTop": 207,
+      "status": "引擎量測已就緒。錄製驗證賽事前，請確認遊戲設定。",
+      "step4Enabled": true,
+      "weight": "785"
+    },
+    {
+      "activeStep": "1. 目標與參數設定",
+      "core": "default",
+      "label": "step1-halfmoon",
+      "pageScrollWidth": 956,
+      "pageWidth": 956,
+      "scrollTop": 207,
+      "status": "引擎量測已就緒。錄製驗證賽事前，請確認遊戲設定。",
+      "step4Enabled": true,
+      "weight": "785"
+    },
+    {
+      "activeStep": "1. 目標與參數設定",
+      "core": "swiss-editorial",
+      "label": "step1-swiss",
+      "pageScrollWidth": 956,
+      "pageWidth": 956,
+      "scrollTop": 207,
+      "status": "引擎量測已就緒。錄製驗證賽事前，請確認遊戲設定。",
+      "step4Enabled": true,
+      "weight": "785"
+    },
+    {
+      "activeStep": "1. 目標與參數設定",
+      "core": "rhine-lab",
+      "label": "step1-rhine",
+      "pageScrollWidth": 956,
+      "pageWidth": 956,
+      "scrollTop": 204,
+      "status": "引擎量測已就緒。錄製驗證賽事前，請確認遊戲設定。",
+      "step4Enabled": true,
+      "weight": "785"
+    },
+    {
+      "activeStep": "2. Chassis & Tires",
+      "core": "default",
+      "label": "step2-halfmoon",
+      "pageScrollWidth": 956,
+      "pageWidth": 956,
+      "scrollTop": 0,
+      "status": "引擎量測已就緒。錄製驗證賽事前，請確認遊戲設定。",
+      "step4Enabled": true
+    },
+    {
+      "activeStep": "2. Chassis & Tires",
+      "core": "swiss-editorial",
+      "label": "step2-swiss",
+      "pageScrollWidth": 956,
+      "pageWidth": 956,
+      "scrollTop": 0,
+      "status": "引擎量測已就緒。錄製驗證賽事前，請確認遊戲設定。",
+      "step4Enabled": true
+    },
+    {
+      "activeStep": "2. Chassis & Tires",
+      "core": "rhine-lab",
+      "label": "step2-rhine",
+      "pageScrollWidth": 956,
+      "pageWidth": 956,
+      "scrollTop": 0,
+      "status": "引擎量測已就緒。錄製驗證賽事前，請確認遊戲設定。",
+      "step4Enabled": true
+    },
+    {
+      "activeStep": "3. 動力與傳動",
+      "core": "default",
+      "label": "step3-halfmoon",
+      "pageScrollWidth": 956,
+      "pageWidth": 956,
+      "scrollTop": 0,
+      "status": "引擎量測已就緒。錄製驗證賽事前，請確認遊戲設定。",
+      "step4Enabled": true
+    },
+    {
+      "activeStep": "3. 動力與傳動",
+      "core": "swiss-editorial",
+      "label": "step3-swiss",
+      "pageScrollWidth": 956,
+      "pageWidth": 956,
+      "scrollTop": 0,
+      "status": "引擎量測已就緒。錄製驗證賽事前，請確認遊戲設定。",
+      "step4Enabled": true
+    },
+    {
+      "activeStep": "3. 動力與傳動",
+      "core": "rhine-lab",
+      "label": "step3-rhine",
+      "pageScrollWidth": 956,
+      "pageWidth": 956,
+      "scrollTop": 0,
+      "status": "引擎量測已就緒。錄製驗證賽事前，請確認遊戲設定。",
+      "step4Enabled": true
+    },
+    {
+      "activeStep": "3. 動力與傳動",
+      "core": "default",
+      "label": "step3-halfmoon-gearing",
+      "pageScrollWidth": 956,
+      "pageWidth": 956,
+      "scrollTop": 0,
+      "status": "引擎量測已就緒。錄製驗證賽事前，請確認遊戲設定。",
+      "step4Enabled": true
+    }
+  ],
+  "gearingRetention": [
+    {
+      "core": "rhine-lab",
+      "values": [
+        "4.34",
+        "2.33",
+        "1.7",
+        "1.3",
+        "1.03",
+        "0.85",
+        "0.72"
+      ]
+    },
+    {
+      "core": "default",
+      "values": [
+        "4.34",
+        "2.33",
+        "1.7",
+        "1.3",
+        "1.03",
+        "0.85",
+        "0.72"
+      ]
+    }
+  ],
+  "step4": [
+    {
+      "activeStep": "4. 實際設定確認與驗證",
+      "core": "default",
+      "eventName": "Rhine QA draft — keep me",
+      "pageScrollWidth": 956,
+      "pageWidth": 956,
+      "scrollTop": 0,
+      "status": "引擎量測已就緒。錄製驗證賽事前，請確認遊戲設定。"
+    },
+    {
+      "activeStep": "4. 實際設定確認與驗證",
+      "core": "rhine-lab",
+      "eventName": "Rhine QA draft — keep me",
+      "pageScrollWidth": 956,
+      "pageWidth": 956,
+      "scrollTop": 0,
+      "status": "引擎量測已就緒。錄製驗證賽事前，請確認遊戲設定。"
+    },
+    {
+      "activeStep": "4. 實際設定確認與驗證",
+      "core": "swiss-editorial",
+      "eventName": "Rhine QA draft — keep me",
+      "pageScrollWidth": 956,
+      "pageWidth": 956,
+      "scrollTop": 0,
+      "status": "引擎量測已就緒。錄製驗證賽事前，請確認遊戲設定。"
+    },
+    {
+      "activeStep": "4. 實際設定確認與驗證",
+      "core": "default",
+      "eventName": "Rhine QA draft — keep me",
+      "pageScrollWidth": 956,
+      "pageWidth": 956,
+      "scrollTop": 0,
+      "status": "引擎量測已就緒。錄製驗證賽事前，請確認遊戲設定。"
+    },
+    {
+      "label": "resumed-observation-swiss-editorial",
+      "activeStep": "4. 實際設定確認與驗證",
+      "core": "swiss-editorial",
+      "eventName": "Rhine QA draft — keep me",
+      "pageScrollWidth": 1912,
+      "pageWidth": 1912,
+      "scrollTop": 0,
+      "status": "引擎量測已就緒。錄製驗證賽事前，請確認遊戲設定。"
+    }
+  ],
+  "limitations": [
+    "Sanitized existing captured engine fixture and test-only car profile; not a new game capture.",
+    "Steps 1-3 and step 4 ran in separate browser sessions after the first tab closed. No claim of uninterrupted draft continuity across tab closure.",
+    "Only Rhine and Halfmoon gearing values captured explicitly."
+  ]
+}
