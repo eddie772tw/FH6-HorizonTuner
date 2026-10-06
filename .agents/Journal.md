@@ -12,6 +12,7 @@
 
 - **使用者追加要求**：六個主選單 surface 統一桌面紙頁，共用 useDialogTransition 並維持常態掛載。五張遙測卡片的 Canvas 改用快取 CSS token、主題／resize 時重畫現有資料；補回 SuspensionBar 漏失 update 訂閱。新增生命週期、token 與懸吊讀值回歸；最終 188 files／1,697 tests passed、各 1 skipped。使用者指派 Sol 子代理完成五卡唯讀設計研究，本輪實作與下一階段建議分開記錄。
 - **獨立核對修正**：Sol 重現停止封包後輪胎 renderCharts 關閉／開啟，effect local 樣本歸零但 DOM 讀值保留。最新原始樣本與時間須以 ref 保存；同樣修正 RPM／alert 與散點轉速上限，避免 settings converter identity 變更重啟 effect 時丟資料。新增單一資料保留／單位重繪回歸；前端 189 files／1,698 tests passed、各 1 skipped，TypeScript／Vite 通過。
+- **後續驗收**：使用者保持 Edge 前景後完成同資料、同尺寸、每畫面三輪的 p95 比較；Live 三輪 p95 中位數無退化，最差輪約 +0.3%，26 筆 Session 無退化。保留一次 383.3ms 最大間隔，不將短時間合成負載推論為真實遊戲。Windows Computer Use 另補驗 WebView2 暗色 Canvas、外觀 Escape 及設定背景點擊，新增三張原生截圖；200% 縮放、OS reduced motion、錄影及其餘原生組合仍待驗收，以驗收文件為目前狀態。`7af98d56` 的 17 個 CI checks 全部成功，PR 仍維持 Draft。
 
 ## 2026-10-06 / HUD 樣式並行合併後單位型別契約修復（Gemini as Antigravity）
 
