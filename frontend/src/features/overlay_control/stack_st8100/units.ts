@@ -3,7 +3,7 @@ import type { HudDisplayUnits } from '../HudUnitSettingsSidebar';
 import { STACK_ST8100_ALARM_METRICS, normalizeStackSt8100Number, type StackSt8100AlarmMetric, type StackSt8100TemperatureUnit } from './config';
 
 export type StackSt8100ThresholdMetric = StackSt8100AlarmMetric | 'shift_percent';
-export interface StackSt8100DisplayUnits extends HudDisplayUnits {
+export interface StackSt8100DisplayUnits extends Omit<HudDisplayUnits, 'temperature'> {
   temperature: StackSt8100TemperatureUnit;
 }
 export function resolveStackSt8100DisplayUnits(

@@ -1,5 +1,12 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-10-06 / HUD 樣式並行合併後單位型別契約修復（Gemini as Antigravity）
+
+- **Scope**：主分支合併 PR #474、#473、#482、#483 及 #486 後的主線 CI 修復。採用 `modular-refactoring`、`pr-review-evaluation`。
+- **Learning**：PR #483 擴充全域 `HudDisplayUnits` 加入大寫溫度型別 (`'C' | 'F'`)，而並行開發之 PR #482 `StackSt8100DisplayUnits` 則宣告小寫溫度單位 (`'c' | 'f'`) 並 `extends HudDisplayUnits`。單元測試 (`vitest run`) 在未全域執行 `tsc` 型別編譯時通過，但 CI 流程在 `Frontend Build Test & Audit` (`tsc && vite build`) 時遭遇 `TS2430` 型別不相容失敗。
+- **Action**：將 `StackSt8100DisplayUnits` 改為 `extends Omit<HudDisplayUnits, 'temperature'>`，隔離單獨儀表小寫溫度單位與全域 HUD 單位型別，並於本地完整執行 `pnpm --prefix frontend run build` 與 `cargo test`。
+- **Evidence**：`tsc && vite build` 順利產出 bundles（0 錯誤）；前端 185 測試檔案（1,677 測資）全數通過；Rust 契約測試全數通過；`git diff --check` 通過。
+
 ## 2026-10-05 / 懸吊歷史時間窗與靜止遙測一致性（Sol as Codex）
 
 - **Scope**：以 `main`／`v1.7.1` 的 `59e9e83` 為基準；採用 `ponytail`、`halfmoon-design-system`、`huge-component-refactoring`、`pr-author-maintainer`。
