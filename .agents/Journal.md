@@ -1,5 +1,19 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-10-07 / 多 PR 並行合併與 Jules 非同步協作護欄（Gemini as Antigravity）
+
+- **Scope**：依序審核、修復並合入 PR #490、#488、#492 及 #491。採用 `pr-author-maintainer`、`pr-review-evaluation`、`cross-agent-collaboration`。
+- **Learning**：
+  1. **多 PR 文件追蹤衝突 (Journal Footprint Collisions)**：不同任務的 PR（如 PR #488 與 PR #492）若皆在 `.jules/bolt.md` 等歷史日誌檔尾部新增條目，會發生同位衝突。依事件日期排序（如 2026-10-04 先於 2026-10-06）循序合併與 rebase 能完整保留多 Agent 的經驗紀錄。
+  2. **Jules 自動響應與本地 Worktree 漂移**：Jules 處於非 Reactive Mode 時，任何對 PR 的留言均可能觸發 Jules 重新建置並推動 commit。若 Jules 之雲端容器未即時 fetch 主線最新 merge commit，可能在舊 tree 上覆寫已合入之檔案。協作時若需手動介入修復 PR，應建立乾淨分支直接以 `origin/main` 為 base 挑出目標變更，並以 `--force-with-lease` 推送至目標分支，確認 HEAD SHA 與 diff 範圍完全吻合。
+  3. **Rust 格式合約 (rustfmt in CI)**：PR #491 修正例外外洩時因長字串方法鏈超過寬度觸發 CI `cargo fmt --check` 失敗；提交前必須嚴格以 `cargo fmt --manifest-path backend-rust/Cargo.toml -- --check` 驗證。
+- **Action & Result**：
+  - 修復 PR #491 格式，通過全部 Rust 契約與單元測試。
+  - 先後依依賴與無衝突原則依序 squash merge PR #490、PR #488。
+  - 在 PR #492 中解決 `.jules/bolt.md` 衝突並跑通全部前端 Vitest，合入 PR #492。
+  - 待 PR #491 CI 靜態檢查、Rust Backend Contracts、Vitest 通過後，順利合入 PR #491。
+- **Evidence**：前端 195 測試檔／1,717 測資、Rust 後端 11 個契約測試套件全數 passed；`ruff check`、`ruff format --check`、`git diff --check` 通過；所有開源 PR 清空並收攏至 main 分支。
+
 ## 2026-10-06 / Live 增量分箱與保留資料的可見性繪製（Codex as Codex）
 
 - **來源／狀態**：local／verified；使用者要求新 stacked PR 疊於 #489，只處理增量胎溫 histogram 與 off-viewport 卡片繪製。採用 halfmoon-design-system、huge-component-refactoring、modular-refactoring、cross-agent-collaboration、pr-author-maintainer；獨立審查採用 pr-review-evaluation。
