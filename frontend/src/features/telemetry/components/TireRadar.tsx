@@ -2,10 +2,14 @@ import { setTelemetryText } from '../../../utils/telemetryDisplay';
 import React, { useEffect, useRef } from 'react';
 import { telemetryEmitter } from '../../../hooks/useTelemetry';
 import { readCanvasTheme, observeCanvasTheme, type CanvasTheme } from '../../../utils/canvasTheme';
+import { useTelemetryCardPaint } from './TelemetryCardVisibility';
 import { useSettings } from '../../../context/SettingsContext';
-
-// [PERF] Pre-allocate a shared typed array to eliminate per-frame GC allocations for the histogram calculation
-let _sharedBins = new Uint32Array(500);
+import {
+  addTireTemperature, clearTireTemperatureHistogram, createTireTemperatureHistogram,
+  peakTireTemperatureCount, removeTireTemperature, resizeTireTemperatureHistogram,
+  tireTemperatureBinCount, TIRE_TEMPERATURE_MIN, TIRE_TEMPERATURE_MAX,
+  type TireTemperatureHistogram,
+} from '../../../utils/tireTemperatureHistogram';
 
 const getTempColor = (temp: number, theme: CanvasTheme) => {
   if (temp < 167) return theme.cold;
@@ -22,10 +26,18 @@ interface TireRadarProps {
 }
 
 const TireRadar: React.FC<TireRadarProps> = React.memo(({ title, isLeft, tireIdx, renderCharts = true }) => {
+  const paint = useTelemetryCardPaint();
+  const syncBuffersRef = useRef(() => {});
+  const radarSizeRef = useRef(30);
   const containerRef = useRef<HTMLDivElement>(null);
   const radarCanvasRef = useRef<HTMLCanvasElement>(null);
   const tempCanvasRef = useRef<HTMLCanvasElement>(null);
   const hist = useRef<{ temp: number, ratio: number, angle: number, time: number }[]>([]);
+  const histogramRef = useRef<TireTemperatureHistogram | null>(null);
+  if (histogramRef.current === null) {
+    histogramRef.current = createTireTemperatureHistogram(tireTemperatureBinCount(90));
+  }
+  const histogram = histogramRef.current;
   const latestSample = useRef({ temp: 0, ratio: 0, angle: 0, time: 0 });
   const offsetRef = useRef(0);
   const tempLabelRef = useRef<HTMLSpanElement>(null);
@@ -44,66 +56,70 @@ const TireRadar: React.FC<TireRadarProps> = React.memo(({ title, isLeft, tireIdx
   useEffect(() => {
     if (!renderCharts) {
       const rCanvas = radarCanvasRef.current;
-      if (rCanvas) {
+      if (rCanvas && paint.canPaint()) {
         const ctx = rCanvas.getContext('2d');
         if (ctx) ctx.clearRect(0, 0, rCanvas.width, rCanvas.height);
       }
-      hist.current = [];
+      hist.current.length = 0;
       offsetRef.current = 0;
+      clearTireTemperatureHistogram(histogram);
     }
-  }, [renderCharts]);
+  }, [renderCharts, histogram, paint]);
 
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
+    // Resize events measure once, including while hidden. Reentry/DPR changes
+    // update backing buffers from these retained CSS sizes without layout reads.
     const syncCanvasBuffers = () => {
+      if (!paint.canPaint()) return;
       const dpr = window.devicePixelRatio || 1;
-
-      // 1. Radar Canvas Buffer Sync (保持正圓, 最大適應 38% 欄位)
       const rCanvas = radarCanvasRef.current;
-      if (rCanvas && rCanvas.parentElement) {
-        const parent = rCanvas.parentElement;
-        const rw = parent.clientWidth;
-        const rh = parent.clientHeight;
-        const rSize = Math.max(30, Math.min(rw, rh));
-        const pixelR = Math.floor(rSize * dpr);
-        if (rCanvas.width !== pixelR || rCanvas.height !== pixelR) {
-          rCanvas.width = pixelR;
-          rCanvas.height = pixelR;
-          rCanvas.style.width = `${rSize}px`;
-          rCanvas.style.height = `${rSize}px`;
+      if (rCanvas) {
+        const size = radarSizeRef.current;
+        const pixels = Math.floor(size * dpr);
+        if (rCanvas.width !== pixels || rCanvas.height !== pixels) {
+          rCanvas.width = pixels;
+          rCanvas.height = pixels;
+          rCanvas.style.width = `${size}px`;
+          rCanvas.style.height = `${size}px`;
           bgCacheRef.current.canvas = null;
         }
       }
-
-      // 2. Temp Canvas Buffer Sync (完全依據右側欄位 ClientWidth 自適應 100% 寬度)
       const tCanvas = tempCanvasRef.current;
-      if (tCanvas && tCanvas.parentElement) {
-        const parent = tCanvas.parentElement;
-        const tw = Math.max(35, parent.clientWidth);
-        const th = Math.max(16, parent.clientHeight);
-        tempSizeRef.current = { w: tw, h: th };
-        const pixelW = Math.floor(tw * dpr);
-        const pixelH = Math.floor(th * dpr);
+      if (tCanvas) {
+        const { w, h } = tempSizeRef.current;
+        const pixelW = Math.floor(w * dpr), pixelH = Math.floor(h * dpr);
         if (tCanvas.width !== pixelW || tCanvas.height !== pixelH) {
           tCanvas.width = pixelW;
           tCanvas.height = pixelH;
-          tCanvas.style.width = `${tw}px`;
-          tCanvas.style.height = `${th}px`;
+          tCanvas.style.width = `${w}px`;
+          tCanvas.style.height = `${h}px`;
         }
       }
     };
-
-    const resizeObserver = new ResizeObserver(() => {
+    const measure = () => {
+      const radarParent = radarCanvasRef.current?.parentElement;
+      if (radarParent) radarSizeRef.current = Math.max(30, Math.min(radarParent.clientWidth, radarParent.clientHeight));
+      const tempParent = tempCanvasRef.current?.parentElement;
+      if (tempParent) {
+        const w = Math.max(35, tempParent.clientWidth), h = Math.max(16, tempParent.clientHeight);
+        tempSizeRef.current = { w, h };
+        resizeTireTemperatureHistogram(histogram, tireTemperatureBinCount(w), hist.current);
+      }
       syncCanvasBuffers();
       redrawRef.current();
-    });
+    };
+    syncBuffersRef.current = syncCanvasBuffers;
+    const resizeObserver = new ResizeObserver(measure);
     resizeObserver.observe(container);
-    syncCanvasBuffers();
-
-    return () => resizeObserver.disconnect();
-  }, []);
+    measure();
+    return () => {
+      resizeObserver.disconnect();
+      syncBuffersRef.current = () => {};
+    };
+  }, [histogram, paint]);
 
   useEffect(() => {
     const displayLimit = 1.5;
@@ -163,8 +179,9 @@ const TireRadar: React.FC<TireRadarProps> = React.memo(({ title, isLeft, tireIdx
 
       if ((prevCar.current !== null && prevCar.current !== liveData.CarOrdinal) ||
         (prevRace.current !== null && prevRace.current !== liveData.IsRaceOn)) {
-        hist.current = [];
+        hist.current.length = 0;
         offsetRef.current = 0;
+        clearTireTemperatureHistogram(histogram);
       }
       prevCar.current = liveData.CarOrdinal;
       prevRace.current = liveData.IsRaceOn;
@@ -190,15 +207,22 @@ const TireRadar: React.FC<TireRadarProps> = React.memo(({ title, isLeft, tireIdx
           const idx = offsetRef.current;
           const old = hist.current[idx];
           if (old) {
+            removeTireTemperature(histogram, old.temp);
             old.temp = cTemp; old.ratio = cRatio; old.angle = cAngle; old.time = now;
           }
           offsetRef.current = (idx + 1) % 900;
         }
-      } else {
-        hist.current = [];
-        offsetRef.current = 0;
+        addTireTemperature(histogram, cTemp);
       }
 
+
+      draw();
+    };
+
+    const draw = () => {
+      if (!paint.canPaint()) return;
+      syncBuffersRef.current();
+      const { temp: cTemp, ratio: cRatio, angle: cAngle, time: now } = latestSample.current;
       if (angRef.current) {
         setTelemetryText(angRef.current, cAngle.toFixed(2));
         angRef.current.style.color = Math.abs(cAngle) > 1.0 ? 'var(--instrument-danger, var(--bs-danger))' : 'var(--text-secondary)';
@@ -208,11 +232,7 @@ const TireRadar: React.FC<TireRadarProps> = React.memo(({ title, isLeft, tireIdx
         ratioRef.current.style.color = Math.abs(cRatio) > 1.0 ? 'var(--instrument-danger, var(--bs-danger))' : 'var(--text-secondary)';
       }
 
-      draw();
-    };
 
-    const draw = () => {
-      const { temp: cTemp, ratio: cRatio, angle: cAngle, time: now } = latestSample.current;
       // 1. Radar Canvas 繪製 (純動態對齊 Buffer 尺寸)
       const rCanvas = radarCanvasRef.current;
       if (rCanvas && rCanvas.width > 0) {
@@ -304,8 +324,8 @@ const TireRadar: React.FC<TireRadarProps> = React.memo(({ title, isLeft, tireIdx
           ctx.scale(dpr, dpr);
           ctx.clearRect(0, 0, tw, th);
 
-          const tempMinScale = 100;
-          const tempMaxScale = 260;
+          const tempMinScale = TIRE_TEMPERATURE_MIN;
+          const tempMaxScale = TIRE_TEMPERATURE_MAX;
           const tempRange = tempMaxScale - tempMinScale;
 
           // 保留最底部的靜態三色區域基準線
@@ -323,27 +343,10 @@ const TireRadar: React.FC<TireRadarProps> = React.memo(({ title, isLeft, tireIdx
 
           // 僅在 renderCharts === true 時繪製彩色分佈直方圖柱
           if (renderCharts) {
-            const targetBarW = 2.5;
-            const numBins = Math.max(10, Math.floor(tw / targetBarW));
+            const bins = histogram.bins;
+            const numBins = bins.length;
             const tempPerBin = tempRange / numBins;
-
-            // Resize shared buffer if needed for very wide screens to prevent out-of-bounds access
-            if (numBins > _sharedBins.length) {
-              _sharedBins = new Uint32Array(Math.max(_sharedBins.length * 2, numBins));
-            }
-            const bins = _sharedBins;
-            bins.fill(0, 0, numBins);
-            let maxBinCount = 1;
-
-            const hLen = hist.current.length;
-            for (let i = 0; i < hLen; i++) {
-              const idx = hLen < 900 ? i : (offsetRef.current + i) % hLen;
-              const p = hist.current[idx];
-              let normT = Math.max(0, Math.min(1, (p.temp - tempMinScale) / tempRange));
-              let binIdx = Math.min(numBins - 1, Math.floor(normT * numBins));
-              bins[binIdx]++;
-              if (bins[binIdx] > maxBinCount) maxBinCount = bins[binIdx];
-            }
+            const maxBinCount = peakTireTemperatureCount(histogram);
 
             const barW = tw / numBins;
             for (let i = 0; i < numBins; i++) {
@@ -382,15 +385,17 @@ const TireRadar: React.FC<TireRadarProps> = React.memo(({ title, isLeft, tireIdx
       }
     };
 
+    const stopRepaint = paint.subscribe(draw);
     redrawRef.current = draw;
     draw();
     telemetryEmitter.addEventListener('update', handleUpdate);
     return () => {
+      stopRepaint();
       stopThemeObserver();
       redrawRef.current = () => {};
       telemetryEmitter.removeEventListener('update', handleUpdate);
     };
-  }, [tireIdx, convertTemp, renderCharts]);
+  }, [tireIdx, convertTemp, renderCharts, histogram, paint]);
 
   return (
     <div

@@ -1,3 +1,4 @@
+import { useTelemetryCardPaint, createTelemetryCanvasSurface } from './TelemetryCardVisibility';
 import React, { useEffect, useRef } from 'react';
 import { telemetryEmitter } from '../../../hooks/useTelemetry';
 import { readCanvasTheme, observeCanvasTheme, drawTraceGrid, TRACE_PAD_TOP, TRACE_PAD_BOTTOM } from '../../../utils/canvasTheme';
@@ -9,6 +10,7 @@ interface PowerTorqueCanvasProps {
 }
 
 const PowerTorqueCanvas: React.FC<PowerTorqueCanvasProps> = React.memo(({ height = '140px', enabled = true }) => {
+  const paint = useTelemetryCardPaint();
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const hist = useRef<{ rpm: number; power: number; torque: number; time: number }[]>([]);
@@ -25,30 +27,26 @@ const PowerTorqueCanvas: React.FC<PowerTorqueCanvasProps> = React.memo(({ height
   useEffect(() => {
     const canvas = canvasRef.current;
     if (canvas && !enabled) {
-      const ctx = canvas.getContext('2d');
-      if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+      if (paint.canPaint()) canvas.getContext('2d')?.clearRect(0, 0, canvas.width, canvas.height);
       hist.current = [];
       offsetRef.current = 0;
     }
-  }, [enabled]);
+  }, [enabled, paint]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     const container = containerRef.current;
     if (!canvas || !container) return;
 
+    const surface = createTelemetryCanvasSurface(canvas);
     let theme = readCanvasTheme();
     const stopThemeObserver = observeCanvasTheme(() => { theme = readCanvasTheme(); draw(); });
 
     const resizeObserver = new ResizeObserver((entries) => {
       for (const entry of entries) {
         const { width, height } = entry.contentRect;
-        if (width > 0 && height > 0) {
-          const dpr = window.devicePixelRatio || 1;
-          canvas.width = Math.floor(width * dpr);
-          canvas.height = Math.floor(height * dpr);
-          draw();
-        }
+        surface.resize(width, height);
+        draw();
       }
     });
 
@@ -59,10 +57,7 @@ const PowerTorqueCanvas: React.FC<PowerTorqueCanvasProps> = React.memo(({ height
       if ((window as any).__IS_HUD_PAUSED__ || !liveData) return;
 
       if (!enabled) {
-        if (canvas && canvas.width > 0 && canvas.height > 0) {
-          const ctx = canvas.getContext('2d');
-          if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
-        }
+        draw();
         hist.current = [];
         offsetRef.current = 0;
         return;
@@ -112,7 +107,11 @@ const PowerTorqueCanvas: React.FC<PowerTorqueCanvasProps> = React.memo(({ height
     };
 
     const draw = () => {
-      if (!enabled) return;
+      if (!paint.canPaint() || !surface.sync()) return;
+      if (!enabled) {
+        canvas.getContext('2d')?.clearRect(0, 0, canvas.width, canvas.height);
+        return;
+      }
       const maxRpm = lastMaxRpm.current;
       const ctx = canvas.getContext('2d');
       if (!ctx || canvas.width === 0 || canvas.height === 0) return;
@@ -195,14 +194,17 @@ const PowerTorqueCanvas: React.FC<PowerTorqueCanvasProps> = React.memo(({ height
       }
     };
 
+    const stopPaint = paint.subscribe(draw);
+    draw();
     telemetryEmitter.addEventListener('update', handleUpdate);
 
     return () => {
+      stopPaint();
       resizeObserver.disconnect();
       stopThemeObserver();
       telemetryEmitter.removeEventListener('update', handleUpdate);
     };
-  }, [convertPower, convertTorque, enabled]);
+  }, [convertPower, convertTorque, enabled, paint]);
 
   return (
     <div

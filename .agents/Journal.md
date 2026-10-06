@@ -1,5 +1,13 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-10-06 / Live 增量分箱與保留資料的可見性繪製（Codex as Codex）
+
+- **來源／狀態**：local／verified；使用者要求新 stacked PR 疊於 #489，只處理增量胎溫 histogram 與 off-viewport 卡片繪製。採用 halfmoon-design-system、huge-component-refactoring、modular-refactoring、cross-agent-collaboration、pr-author-maintainer；獨立審查採用 pr-review-evaluation。
+- **Learning**：ring 寫入 O(1) 不代表 histogram 已增量化。每輪需獨立計數，扣除舊值後加入新值，bin 數改變才重建；最大分箱會因 eviction 降低，須重新掃描 bins。NaN 在加／減兩側都忽略，Infinity 保留既有端點 clamp。
+- **Lifecycle**：卡片可見性只能 gate painting，不能 gate 取樣、峰值或 history。重入呼叫 retained-state renderer，不能假造新 telemetry event／時間。隱藏 resize 保留 CSS 尺寸，DPR／theme 可在重入重畫；IntersectionObserver 與 resolution callbacks 均須防止清理後的延遲回呼。將初次 DOM 寫入搬進 renderer 時，需保留尚無封包的 N／STEER 等初始讀值。
+- **Evidence**：完整前端 195 files／1,716 tests passed，各 1 skipped；TypeScript／Vite build 與 whitespace 通過。12,000-step 分箱等值、TireRadar 1,000 次隱藏更新的完整 900 筆窗口／時間、suspension history／min-max、dynamics peaks／單位、StrictMode／DPR cleanup 等回歸通過。獨立 reviewer 最終 10 files／28 tests 與 TypeScript 通過，先前初始檔位問題已修復。
+- **Boundary**：五卡 120-frame probe 為 600 ingestions／120 paint commits 的合成 contract；Node 演算法 microbenchmark 不含 Canvas／GPU／原生 host，不宣稱已解決 100ms p95。雲端 localhost browser 已受存取限制阻擋，沒有繞過；原生實測仍未完成。詳見 [Live 效能說明](../docs/frontend/live-performance.md)。
+
 ## 2026-10-06 / Swiss 遙測與跨頁 Core 圖表契約（Codex as Codex）
 
 - **來源／狀態**：`local`／`verified`；使用者要求 Sol 研究並實作 Swiss 五卡差異化，再擴及 AEGO、賽事與其他圖表，併入 PR #489。使用 `ponytail`（full）、`halfmoon-design-system`、`huge-component-refactoring`、`modular-refactoring`、`pr-author-maintainer`、`pr-review-evaluation`；沿用隔離資料驗收與 `computer-use:computer-use`。

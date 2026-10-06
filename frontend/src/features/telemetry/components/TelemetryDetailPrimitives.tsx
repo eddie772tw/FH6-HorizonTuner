@@ -1,3 +1,4 @@
+import { useTelemetryCardPaint, useViewportPaintGate } from './TelemetryCardVisibility';
 import React, { useEffect, useRef, useState } from 'react';
 import { radiansToDegrees } from '../telemetryDetailMath';
 import type { TelemetryChartPoint } from '../telemetryDetailMath';
@@ -225,6 +226,9 @@ export const TrendChart: React.FC<{
   emptyLabel: string;
 }> = React.memo(({ title, data, lines, emptyLabel }) => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const chartRef = useRef<HTMLDivElement>(null);
+  const localPaint = useViewportPaintGate(chartRef);
+  const cardPaint = useTelemetryCardPaint();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const dataRef = useRef<readonly TelemetryChartPoint[]>(data);
   const linesRef = useRef<readonly ChartLine[]>(lines);
@@ -264,6 +268,7 @@ export const TrendChart: React.FC<{
     };
 
     const render = () => {
+      if (!cardPaint.canPaint() || !localPaint.canPaint()) return;
       const width = canvas.clientWidth || container.clientWidth;
       const height = canvas.clientHeight || container.clientHeight;
       if (width <= 0 || height <= 0) return;
@@ -297,12 +302,17 @@ export const TrendChart: React.FC<{
     resizeObserver.observe(container);
 
     const stopThemeObserver = observeCanvasTheme(updateTheme);
+    const stopCardPaint = cardPaint.subscribe(render);
+    const stopLocalPaint = localPaint.subscribe(render);
 
     return () => {
+      stopCardPaint();
+      stopLocalPaint();
+      drawRef.current = () => undefined;
       resizeObserver.disconnect();
       stopThemeObserver();
     };
-  }, [hasData]);
+  }, [hasData, cardPaint, localPaint]);
 
   const handleMouseMove = (event: React.MouseEvent<HTMLCanvasElement>) => {
     const layout = layoutRef.current;
@@ -316,7 +326,7 @@ export const TrendChart: React.FC<{
 
   const hoveredPoint = hover ? data[hover.index] : undefined;
   return (
-    <div className="telemetry-detail-view__chart glass-panel p-2" onMouseLeave={() => setHover(null)}>
+    <div ref={chartRef} className="telemetry-detail-view__chart glass-panel p-2" onMouseLeave={() => setHover(null)}>
       <div className="d-flex justify-content-between align-items-center mb-2 gap-2">
         <h4 className="fs-6 text-primary m-0 text-truncate">{title}</h4>
         <span className="text-body-secondary fs-8 flex-shrink-0">30 s</span>

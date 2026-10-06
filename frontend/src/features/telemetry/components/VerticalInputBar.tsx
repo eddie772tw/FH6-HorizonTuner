@@ -1,3 +1,4 @@
+import { useTelemetryCardPaint } from './TelemetryCardVisibility';
 import { setTelemetryText } from '../../../utils/telemetryDisplay';
 import React, { useEffect, useRef } from 'react';
 import { telemetryEmitter } from '../../../hooks/useTelemetry';
@@ -11,6 +12,8 @@ interface VerticalInputBarProps {
 
 // --- COMPONENT: VerticalInputBar ---
 const VerticalInputBar: React.FC<VerticalInputBarProps> = React.memo(({ label, selector, max = 255, color = 'var(--primary)' }) => {
+  const paint = useTelemetryCardPaint();
+  const percentRef = useRef(0);
   const barRef = useRef<HTMLDivElement>(null);
   const peakRef = useRef<HTMLDivElement>(null);
   const textRef = useRef<HTMLSpanElement>(null);
@@ -21,6 +24,19 @@ const VerticalInputBar: React.FC<VerticalInputBarProps> = React.memo(({ label, s
   useEffect(() => {
     let animId: number;
     let lastDecayTime = 0;
+
+    const paintPeak = () => {
+      if (!paint.canPaint()) return;
+      if (peakRef.current) {
+        peakRef.current.style.bottom = `${currentPeak.current}%`;
+        peakRef.current.style.opacity = currentPeak.current > 1 ? '1' : '0';
+      }
+    };
+    const paintCurrent = () => {
+      if (!paint.canPaint()) return;
+      if (barRef.current) barRef.current.style.height = `${percentRef.current}%`;
+      setTelemetryText(textRef.current, `${Math.round(percentRef.current)}%`);
+    };
 
     const handleUpdate = (e: any) => {
       const liveData = e.detail;
@@ -35,8 +51,8 @@ const VerticalInputBar: React.FC<VerticalInputBarProps> = React.memo(({ label, s
         lastPeakTime.current = now;
       }
 
-      if (barRef.current) barRef.current.style.height = `${percent}%`;
-      setTelemetryText(textRef.current, `${Math.round(percent)}%`);
+      percentRef.current = percent;
+      paintCurrent();
     };
 
     // 策略 D：Peak decay 迴圈降至 ~30Hz（每 33ms 執行一次），減少 4 個實例的 rAF 壓力
@@ -49,20 +65,20 @@ const VerticalInputBar: React.FC<VerticalInputBarProps> = React.memo(({ label, s
       if (now - lastPeakTime.current > 400 && currentPeak.current > 0) {
         currentPeak.current = Math.max(0, currentPeak.current - 1.8);
       }
-      if (peakRef.current) {
-        peakRef.current.style.bottom = `${currentPeak.current}%`;
-        peakRef.current.style.opacity = currentPeak.current > 1 ? '1' : '0';
-      }
+      paintPeak();
     };
 
+    const stopPaint = paint.subscribe(() => { paintCurrent(); paintPeak(); });
+    paintCurrent();
     animId = requestAnimationFrame(updatePeakDecay);
     telemetryEmitter.addEventListener('update', handleUpdate);
 
     return () => {
+      stopPaint();
       cancelAnimationFrame(animId);
       telemetryEmitter.removeEventListener('update', handleUpdate);
     };
-  }, [selector, max]);
+  }, [selector, max, paint]);
 
   return (
     <div className="d-flex flex-column align-items-center gap-1 h-100 flex-grow-1" style={{ maxWidth: '32px', minWidth: '24px' }}>

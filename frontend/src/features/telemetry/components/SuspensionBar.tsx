@@ -1,3 +1,4 @@
+import { useTelemetryCardPaint, createTelemetryCanvasSurface } from './TelemetryCardVisibility';
 import { setTelemetryText } from '../../../utils/telemetryDisplay';
 import React, { useEffect, useRef, useState } from 'react';
 import { telemetryEmitter } from '../../../hooks/useTelemetry';
@@ -19,6 +20,8 @@ interface SuspensionBarProps {
 }
 
 const SuspensionBar: React.FC<SuspensionBarProps> = React.memo(({ title, isLeft, tireIdx, renderHistoryTrace = true, displayMode = 'relative' }) => {
+  const paint = useTelemetryCardPaint();
+  const latestSample = useRef({ normalizedTravel: 0, absoluteMeters: 0, received: false });
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasContainerRef = useRef<HTMLDivElement>(null);
   const barRef = useRef<HTMLDivElement>(null);
@@ -46,6 +49,9 @@ const SuspensionBar: React.FC<SuspensionBarProps> = React.memo(({ title, isLeft,
   }, [renderHistoryTrace, history]);
 
   useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const surface = createTelemetryCanvasSurface(canvas);
     let theme = readCanvasTheme();
     const stopThemeObserver = observeCanvasTheme(() => { theme = readCanvasTheme(); draw(); });
 
@@ -100,19 +106,27 @@ const SuspensionBar: React.FC<SuspensionBarProps> = React.memo(({ title, isLeft,
         clearSuspensionTraceHistory(history);
       }
 
-      const percent = Math.max(0, Math.min(100, normalizedTravel * 100));
-      if (barRef.current) barRef.current.style.height = percent + '%';
-      const precision = displayMode === 'absolute' ? 1 : 2;
-      setTelemetryText(textRef.current, travel.toFixed(precision));
-      setTelemetryText(unitRef.current, displayMode === 'absolute' ? ' mm' : '');
-      setTelemetryText(minRef.current, minMax.current.min !== null ? minMax.current.min.toFixed(precision) : '-');
-      setTelemetryText(maxRef.current, minMax.current.max !== null ? minMax.current.max.toFixed(precision) : '-');
-
+      latestSample.current.received = true;
+      latestSample.current.normalizedTravel = normalizedTravel;
+      latestSample.current.absoluteMeters = absoluteMeters;
       draw();
     };
 
     const draw = () => {
-      const canvas = canvasRef.current;
+      if (!paint.canPaint()) return;
+      if (latestSample.current.received) {
+        const { normalizedTravel, absoluteMeters } = latestSample.current;
+        const travel = getSuspensionDisplayValue(normalizedTravel, absoluteMeters, displayMode);
+        const percent = Math.max(0, Math.min(100, normalizedTravel * 100));
+        if (barRef.current) barRef.current.style.height = percent + '%';
+        const precision = displayMode === 'absolute' ? 1 : 2;
+        setTelemetryText(textRef.current, travel.toFixed(precision));
+        setTelemetryText(unitRef.current, displayMode === 'absolute' ? ' mm' : '');
+        setTelemetryText(minRef.current, minMax.current.min !== null ? minMax.current.min.toFixed(precision) : '-');
+        setTelemetryText(maxRef.current, minMax.current.max !== null ? minMax.current.max.toFixed(precision) : '-');
+      }
+
+      if (!surface.sync()) return;
       if (canvas && canvas.width > 0 && canvas.height > 0) {
         const ctx = canvas.getContext('2d');
         if (ctx) {
@@ -156,23 +170,21 @@ const SuspensionBar: React.FC<SuspensionBarProps> = React.memo(({ title, isLeft,
       const canvas = canvasRef.current;
       if (!canvas) return;
       for (const { contentRect: { width, height } } of entries) {
-        if (width > 0 && height > 0) {
-          const dpr = window.devicePixelRatio || 1;
-          canvas.width = Math.floor(width * dpr);
-          canvas.height = Math.floor(height * dpr);
-          draw();
-        }
+        surface.resize(width, height);
+        draw();
       }
     });
     if (canvasContainerRef.current) resizeObserver.observe(canvasContainerRef.current);
+    const stopPaint = paint.subscribe(draw);
     draw();
     telemetryEmitter.addEventListener('update', handleUpdate);
     return () => {
+      stopPaint();
       resizeObserver.disconnect();
       stopThemeObserver();
       telemetryEmitter.removeEventListener('update', handleUpdate);
     };
-  }, [tireIdx, renderHistoryTrace, displayMode, history]);
+  }, [tireIdx, renderHistoryTrace, displayMode, history, paint]);
 
   return (
     <div ref={containerRef} className="telemetry-instrument-panel p-2 rounded-3 border d-flex flex-column justify-content-between h-100 overflow-hidden" style={{ background: 'var(--surface-1)', borderColor: 'var(--glass-border) !important' }}>

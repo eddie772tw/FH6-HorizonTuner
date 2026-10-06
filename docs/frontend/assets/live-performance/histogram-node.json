@@ -1,0 +1,44 @@
+{
+  "scope": "Binning microbenchmark: existing ring ingestion + full rebin versus existing ring ingestion + incremental bins + paint-time peak scan. No Canvas/React/FPS/native p95 claims.",
+  "environment": {
+    "node": "v24.19.0",
+    "platform": "linux",
+    "architecture": "x64"
+  },
+  "fixture": {
+    "frames": 10000,
+    "tires": 4,
+    "capacity": 900,
+    "bins": 72,
+    "repetitions": 7
+  },
+  "checksum": 8056892,
+  "fullRebin": {
+    "medianMs": 354.527963,
+    "minMs": 342.66919900000005,
+    "maxMs": 356.418142,
+    "roundsMs": [
+      342.66919900000005,
+      354.527963,
+      356.418142,
+      348.3080570000002,
+      355.88834700000007,
+      356.04712500000005,
+      344.3555279999996
+    ]
+  },
+  "incremental": {
+    "medianMs": 6.469506000000138,
+    "minMs": 6.280412999999953,
+    "maxMs": 7.518240999999762,
+    "roundsMs": [
+      6.701432000000068,
+      6.30500700000016,
+      6.469506000000138,
+      6.586966000000075,
+      7.518240999999762,
+      6.333051000000069,
+      6.280412999999953
+    ]
+  }
+}
