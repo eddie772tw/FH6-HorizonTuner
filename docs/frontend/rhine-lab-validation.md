@@ -58,9 +58,18 @@ JavaScript 增加 1,214 bytes；主要增量為計畫保留的 MiSans 原始分�
 
 ## 效能與尚未完成的情境
 
-本機 Edge 154、1422×800、相同合成 UDP 資料（324 bytes、約 60Hz、4500 RPM／120 km/h）的一次 10 秒 Rhine 2D Live 量測取得 601 個 frame interval，p50 16.7ms、p95 16.8ms。量測程式只存在忽略的 `scratch/rhine-evidence/`，不隨產品出貨。尚未完成對原基準版的同機 Live／Sessions 重複比較，因此**未宣告 p95 退化 ≤10% 的完整效能門檻通過**。合成封包不是真實遊戲證據。
+使用者將 Edge 留在前景後，完成 `35cdb26b` 與 `aee773d0` 的同機配對比較。兩版使用同一分頁、淺色模式、1422×800 CSS 內容區，每個畫面各量測三輪、每輪 10 秒。Live 使用相同的 3,600 個合成 UDP 封包產生器（324 bytes、約 60Hz、RPM／踏板／輪胎／懸吊變化、120 km/h），至少預熱 10 秒後採樣；Sessions 載入同一份 26 筆合成資料並量測靜態顯示。完整每輪 frame count／p50／p95／max 見 [foreground-performance.json](assets/rhine-lab/foreground-performance.json)。
 
-後續 2124×978 的配對診斷中，Rhine 與基準版本分別只取得 56／58 幀，兩者 p95 均約 1016ms，雖然頁面的 hidden 標記為 false。這組環境沒有維持正常畫面更新頻率，不能用來判定主題效能差異；需在確實顯示於前景的視窗重做同資料比較。
+| 畫面 | 基準三輪 p95 | Rhine 三輪 p95 | 三輪 p95 中位數差異 | 最差輪 p95 差異 |
+| --- | --- | --- | --- | --- |
+| Live | 33.2／17.1／16.9ms | 16.9／33.3／17.1ms | 約 0% | 約 +0.3% |
+| Sessions（26 筆） | 16.9／16.9／16.9ms | 16.9／16.9／16.9ms | 約 0% | 約 0% |
+
+**這組受控 Edge 測試的中位數與最差輪 p95 比較均未超過 10% 退化門檻**。表中是每輪 p95 的比較，不是將所有幀合併後的 p95。Rhine Live 第二輪保留了一次 383.3ms 的最大間隔，未刪除該輪，也未判定其原因；Sessions 只有 26 筆，不能代表大型賽事負載。這些結果不涵蓋 WebView2 或真實遊戲。量測程式只存在忽略的 `scratch/rhine-evidence/`，不隨產品出貨。
+
+先前沒有確認前景的配對診斷兩版均出現約 1016ms p95，已排除於正式比較；原先單次 601 幀／16.8ms 結果也不作配對結論。前景恢復後、尚未固定尺寸的三輪診斷另存於 JSON 的 `diagnosticRuns`。
+
+調校狀態補驗：隔離 `default_car` 草稿將車重設為 1475，跨 Halfmoon／Swiss Editorial／Rhine 後保留；步驟 3 套用 Rhine 不跳回第一步，返回步驟 1 仍保留 1475，最後還原原值 1500。未繞過步驟 4 所需的引擎量測資格，見 [tuning-draft-theme-state.json](assets/rhine-lab/tuning-draft-theme-state.json)。完整四步驟及有量測資料的情境仍待驗收。
 
 前一輪互動畫面驗收曾因使用者按 Escape 停止；後續 PR 交付階段已補驗明暗設定與 Session 切換。下列項目仍待實際操作：
 

@@ -1,0 +1,295 @@
+{
+  "baseline": "35cdb26b5f106f6a4588157cf8105f71146d0484",
+  "current": "aee773d0ed9c90482757c0253a5387599ab3bdd6",
+  "date": "2026-10-06",
+  "browser": "Edge 154 on Windows",
+  "method": "Same selected foreground tab, light mode, CSS viewport 1422x800, 3 runs of 10s per page/version. Live: identical 3600-frame synthetic UDP generators (~60Hz), first 10s warm-up. Sessions: same saved 26-sample fixture, static rendered page. Summary reports median and worst of run p95, not a pooled frame p95.",
+  "runs": [
+    {
+      "name": "controlled-rhine-live-1",
+      "agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36 Edg/154.0.0.0",
+      "viewport": [
+        1422,
+        800
+      ],
+      "core": "rhine-lab",
+      "hidden": false,
+      "frames": 590,
+      "p50": 16.69999999999709,
+      "p95": 16.89999999999418,
+      "max": 33.40000000000873,
+      "before": [],
+      "after": [],
+      "requests": [],
+      "mode": "light"
+    },
+    {
+      "name": "controlled-rhine-live-2",
+      "agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36 Edg/154.0.0.0",
+      "viewport": [
+        1422,
+        800
+      ],
+      "core": "rhine-lab",
+      "hidden": false,
+      "frames": 526,
+      "p50": 16.699999999982538,
+      "p95": 33.29999999998836,
+      "max": 383.30000000001746,
+      "before": [],
+      "after": [],
+      "requests": [],
+      "mode": "light"
+    },
+    {
+      "name": "controlled-rhine-live-3",
+      "agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36 Edg/154.0.0.0",
+      "viewport": [
+        1422,
+        800
+      ],
+      "core": "rhine-lab",
+      "hidden": false,
+      "frames": 577,
+      "p50": 16.699999999982538,
+      "p95": 17.099999999976717,
+      "max": 33.59999999997672,
+      "before": [],
+      "after": [],
+      "requests": [],
+      "mode": "light"
+    },
+    {
+      "name": "controlled-rhine-sessions-1",
+      "agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36 Edg/154.0.0.0",
+      "viewport": [
+        1422,
+        800
+      ],
+      "core": "rhine-lab",
+      "hidden": false,
+      "frames": 601,
+      "p50": 16.699999999982538,
+      "p95": 16.89999999999418,
+      "max": 17.300000000017462,
+      "before": [],
+      "after": [],
+      "requests": [],
+      "mode": "light",
+      "session": "session_e224e809515a4130bf63d54b6fc9019e",
+      "sampleCount": 26
+    },
+    {
+      "name": "controlled-rhine-sessions-2",
+      "agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36 Edg/154.0.0.0",
+      "viewport": [
+        1422,
+        800
+      ],
+      "core": "rhine-lab",
+      "hidden": false,
+      "frames": 601,
+      "p50": 16.699999999953434,
+      "p95": 16.900000000023283,
+      "max": 17.29999999998836,
+      "before": [],
+      "after": [],
+      "requests": [],
+      "mode": "light",
+      "session": "session_e224e809515a4130bf63d54b6fc9019e",
+      "sampleCount": 26
+    },
+    {
+      "name": "controlled-rhine-sessions-3",
+      "agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36 Edg/154.0.0.0",
+      "viewport": [
+        1422,
+        800
+      ],
+      "core": "rhine-lab",
+      "hidden": false,
+      "frames": 601,
+      "p50": 16.699999999953434,
+      "p95": 16.900000000023283,
+      "max": 17.5,
+      "before": [],
+      "after": [],
+      "requests": [],
+      "mode": "light",
+      "session": "session_e224e809515a4130bf63d54b6fc9019e",
+      "sampleCount": 26
+    },
+    {
+      "name": "controlled-baseline-live-1",
+      "agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36 Edg/154.0.0.0",
+      "viewport": [
+        1422,
+        800
+      ],
+      "core": "default",
+      "hidden": false,
+      "frames": 569,
+      "p50": 16.69999999999709,
+      "p95": 33.19999999999709,
+      "max": 33.80000000000291,
+      "before": [],
+      "after": [],
+      "requests": [],
+      "mode": "light"
+    },
+    {
+      "name": "controlled-baseline-live-2",
+      "agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36 Edg/154.0.0.0",
+      "viewport": [
+        1422,
+        800
+      ],
+      "core": "default",
+      "hidden": false,
+      "frames": 579,
+      "p50": 16.69999999999709,
+      "p95": 17.099999999998545,
+      "max": 34,
+      "before": [],
+      "after": [],
+      "requests": [],
+      "mode": "light"
+    },
+    {
+      "name": "controlled-baseline-live-3",
+      "agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36 Edg/154.0.0.0",
+      "viewport": [
+        1422,
+        800
+      ],
+      "core": "default",
+      "hidden": false,
+      "frames": 581,
+      "p50": 16.69999999999709,
+      "p95": 16.90000000000873,
+      "max": 66.69999999999709,
+      "before": [],
+      "after": [],
+      "requests": [],
+      "mode": "light"
+    },
+    {
+      "name": "controlled-baseline-sessions-1",
+      "agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36 Edg/154.0.0.0",
+      "viewport": [
+        1422,
+        800
+      ],
+      "core": "default",
+      "hidden": false,
+      "frames": 601,
+      "p50": 16.699999999982538,
+      "p95": 16.89999999999418,
+      "max": 17.199999999982538,
+      "before": [],
+      "after": [],
+      "requests": [],
+      "mode": "light",
+      "session": "session_e224e809515a4130bf63d54b6fc9019e",
+      "sampleCount": 26
+    },
+    {
+      "name": "controlled-baseline-sessions-2",
+      "agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36 Edg/154.0.0.0",
+      "viewport": [
+        1422,
+        800
+      ],
+      "core": "default",
+      "hidden": false,
+      "frames": 601,
+      "p50": 16.699999999982538,
+      "p95": 16.89999999999418,
+      "max": 17.39999999999418,
+      "before": [],
+      "after": [],
+      "requests": [],
+      "mode": "light",
+      "session": "session_e224e809515a4130bf63d54b6fc9019e",
+      "sampleCount": 26
+    },
+    {
+      "name": "controlled-baseline-sessions-3",
+      "agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36 Edg/154.0.0.0",
+      "viewport": [
+        1422,
+        800
+      ],
+      "core": "default",
+      "hidden": false,
+      "frames": 601,
+      "p50": 16.699999999982538,
+      "p95": 16.89999999999418,
+      "max": 17.39999999999418,
+      "before": [],
+      "after": [],
+      "requests": [],
+      "mode": "light",
+      "session": "session_e224e809515a4130bf63d54b6fc9019e",
+      "sampleCount": 26
+    }
+  ],
+  "diagnosticRuns": [
+    {
+      "name": "foreground-baseline-live-1",
+      "agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36 Edg/154.0.0.0",
+      "viewport": [
+        2124,
+        983
+      ],
+      "core": "default",
+      "hidden": false,
+      "frames": 570,
+      "p50": 16.699999999953434,
+      "p95": 33.199999999953434,
+      "max": 34.10000000009313,
+      "before": [],
+      "after": [],
+      "requests": []
+    },
+    {
+      "name": "foreground-baseline-live-2",
+      "agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36 Edg/154.0.0.0",
+      "viewport": [
+        2124,
+        983
+      ],
+      "core": "default",
+      "hidden": false,
+      "frames": 594,
+      "p50": 16.699999999953434,
+      "p95": 16.800000000046566,
+      "max": 34.199999999953434,
+      "before": [],
+      "after": [],
+      "requests": []
+    },
+    {
+      "name": "foreground-baseline-live-3",
+      "agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36 Edg/154.0.0.0",
+      "viewport": [
+        2124,
+        983
+      ],
+      "core": "default",
+      "hidden": false,
+      "frames": 572,
+      "p50": 16.699999999953434,
+      "p95": 17.0999999998603,
+      "max": 50.10000000009313,
+      "before": [],
+      "after": [],
+      "requests": []
+    }
+  ],
+  "limitations": [
+    "Synthetic UDP, no real game or WebView2",
+    "Sessions has only 26 samples; no large-session performance claim",
+    "One Rhine Live run had max frame interval 383.3ms; retained, not attributed to a cause"
+  ]
+}
