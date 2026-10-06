@@ -1,0 +1,858 @@
+[
+  {
+    "label": "swiss-technical-light",
+    "canvases": [
+      {
+        "height": 18,
+        "width": 389
+      },
+      {
+        "height": 98,
+        "width": 260
+      },
+      {
+        "height": 112,
+        "width": 598
+      },
+      {
+        "height": 112,
+        "width": 598
+      },
+      {
+        "height": 191,
+        "width": 191
+      },
+      {
+        "height": 132,
+        "width": 132
+      },
+      {
+        "height": 107,
+        "width": 262
+      },
+      {
+        "height": 132,
+        "width": 132
+      },
+      {
+        "height": 107,
+        "width": 262
+      },
+      {
+        "height": 132,
+        "width": 132
+      },
+      {
+        "height": 107,
+        "width": 262
+      },
+      {
+        "height": 132,
+        "width": 132
+      },
+      {
+        "height": 107,
+        "width": 262
+      },
+      {
+        "height": 106,
+        "width": 407
+      },
+      {
+        "height": 106,
+        "width": 407
+      },
+      {
+        "height": 106,
+        "width": 407
+      },
+      {
+        "height": 106,
+        "width": 407
+      }
+    ],
+    "cards": [
+      {
+        "name": null,
+        "scrollWidth": 617,
+        "width": 617
+      },
+      {
+        "name": null,
+        "scrollWidth": 617,
+        "width": 617
+      },
+      {
+        "name": null,
+        "scrollWidth": 617,
+        "width": 617
+      },
+      {
+        "name": null,
+        "scrollWidth": 930,
+        "width": 930
+      },
+      {
+        "name": null,
+        "scrollWidth": 930,
+        "width": 930
+      }
+    ],
+    "core": "swiss",
+    "dpr": 1,
+    "mode": "light",
+    "pageWidth": 1912,
+    "scrollWidth": 1912,
+    "text": "儀表板\n直線加速測試\n後端已連線\n比賽數據即時接收中\n遙測單位\nD\nUnknown Car\n駕駛輸入與引擎\nENGINE & TRANSMISSION\nSHIFT\n檔位\n3\nRPM\n4174\n/ 9000\nSPEED\n120\nkm/h\nLEFT\n2.8°\nCLT\n0%\nTHR\n63%\nBRK\n8%\nHBK\n0%\nLIVE TELEMETRY TRACES\n↗\n展開卡片\n油門\n煞車\nINPUT WAVEFORM\nPOWER\nTORQUE\nRPM SCATTER TRACE\n車輛動力學概覽\n↗\n展開卡片\n馬力\n195hp\n扭力\n316N·m\nBOOST\n0.0bar\nMAX POWER\n-- hp\n-- RPM\n最大扭力\n-- N·m\n-- RPM\nTOP SPEED\n120 km/h\n比賽名次:\n--\n當前單圈:\n--:--.---\n上一圈:\n--:--.---\n最佳單圈:\n--:--.---\n煞車\n油門\n左\n右\n0.11橫向 G 值\n0.71縱向 G 值\n輪胎抓地力與狀態\n↗\n展開卡片\n左前\nANG\n-0.65\nRAT\n0.27\n81\n右前\nANG\n-0.12\nRAT\n0.69\n93\n左後\nANG\n0.52\nRAT\n0.47\n95\n右後\nANG\n0.68\nRAT\n-0.18\n85\n4 輪懸吊行程\n相對值\n絕對值\n↗\n展開卡片\n左前\n最小: 0.20\n0.74\n最大: 0.80\n右前\n最小: 0.20\n0.78\n最大: 0.80\n左後\n最小: 0.20\n0.57\n最大: 0.80\n右後\n最小: 0.20\n0.29\n最大: 0.80",
+    "width": 1912
+  },
+  {
+    "label": "swiss-technical-dark",
+    "canvases": [
+      {
+        "height": 18,
+        "width": 389
+      },
+      {
+        "height": 98,
+        "width": 260
+      },
+      {
+        "height": 112,
+        "width": 598
+      },
+      {
+        "height": 112,
+        "width": 598
+      },
+      {
+        "height": 191,
+        "width": 191
+      },
+      {
+        "height": 132,
+        "width": 132
+      },
+      {
+        "height": 107,
+        "width": 262
+      },
+      {
+        "height": 132,
+        "width": 132
+      },
+      {
+        "height": 107,
+        "width": 262
+      },
+      {
+        "height": 132,
+        "width": 132
+      },
+      {
+        "height": 107,
+        "width": 262
+      },
+      {
+        "height": 132,
+        "width": 132
+      },
+      {
+        "height": 107,
+        "width": 262
+      },
+      {
+        "height": 106,
+        "width": 407
+      },
+      {
+        "height": 106,
+        "width": 407
+      },
+      {
+        "height": 106,
+        "width": 407
+      },
+      {
+        "height": 106,
+        "width": 407
+      }
+    ],
+    "cards": [
+      {
+        "name": null,
+        "scrollWidth": 617,
+        "width": 617
+      },
+      {
+        "name": null,
+        "scrollWidth": 617,
+        "width": 617
+      },
+      {
+        "name": null,
+        "scrollWidth": 617,
+        "width": 617
+      },
+      {
+        "name": null,
+        "scrollWidth": 930,
+        "width": 930
+      },
+      {
+        "name": null,
+        "scrollWidth": 930,
+        "width": 930
+      }
+    ],
+    "core": "swiss",
+    "dpr": 1,
+    "mode": "dark",
+    "pageWidth": 1912,
+    "scrollWidth": 1912,
+    "text": "儀表板\n直線加速測試\n後端已連線\n比賽數據即時接收中\n遙測單位\nD\nUnknown Car\n駕駛輸入與引擎\nENGINE & TRANSMISSION\nSHIFT\n檔位\n3\nRPM\n4174\n/ 9000\nSPEED\n120\nkm/h\nLEFT\n2.8°\nCLT\n0%\nTHR\n63%\nBRK\n8%\nHBK\n0%\nLIVE TELEMETRY TRACES\n↗\n展開卡片\n油門\n煞車\nINPUT WAVEFORM\nPOWER\nTORQUE\nRPM SCATTER TRACE\n車輛動力學概覽\n↗\n展開卡片\n馬力\n195hp\n扭力\n316N·m\nBOOST\n0.0bar\nMAX POWER\n-- hp\n-- RPM\n最大扭力\n-- N·m\n-- RPM\nTOP SPEED\n120 km/h\n比賽名次:\n--\n當前單圈:\n--:--.---\n上一圈:\n--:--.---\n最佳單圈:\n--:--.---\n煞車\n油門\n左\n右\n0.11橫向 G 值\n0.71縱向 G 值\n輪胎抓地力與狀態\n↗\n展開卡片\n左前\nANG\n-0.65\nRAT\n0.27\n81\n右前\nANG\n-0.12\nRAT\n0.69\n93\n左後\nANG\n0.52\nRAT\n0.47\n95\n右後\nANG\n0.68\nRAT\n-0.18\n85\n4 輪懸吊行程\n相對值\n絕對值\n↗\n展開卡片\n左前\n最小: 0.20\n0.74\n最大: 0.80\n右前\n最小: 0.20\n0.78\n最大: 0.80\n左後\n最小: 0.20\n0.57\n最大: 0.80\n右後\n最小: 0.20\n0.29\n最大: 0.80",
+    "width": 1912
+  },
+  {
+    "label": "swiss-editorial-light",
+    "canvases": [
+      {
+        "height": 18,
+        "width": 389
+      },
+      {
+        "height": 98,
+        "width": 260
+      },
+      {
+        "height": 112,
+        "width": 598
+      },
+      {
+        "height": 112,
+        "width": 598
+      },
+      {
+        "height": 191,
+        "width": 191
+      },
+      {
+        "height": 132,
+        "width": 132
+      },
+      {
+        "height": 107,
+        "width": 262
+      },
+      {
+        "height": 132,
+        "width": 132
+      },
+      {
+        "height": 107,
+        "width": 262
+      },
+      {
+        "height": 132,
+        "width": 132
+      },
+      {
+        "height": 107,
+        "width": 262
+      },
+      {
+        "height": 132,
+        "width": 132
+      },
+      {
+        "height": 107,
+        "width": 262
+      },
+      {
+        "height": 106,
+        "width": 407
+      },
+      {
+        "height": 106,
+        "width": 407
+      },
+      {
+        "height": 106,
+        "width": 407
+      },
+      {
+        "height": 106,
+        "width": 407
+      }
+    ],
+    "cards": [
+      {
+        "name": null,
+        "scrollWidth": 617,
+        "width": 617
+      },
+      {
+        "name": null,
+        "scrollWidth": 617,
+        "width": 617
+      },
+      {
+        "name": null,
+        "scrollWidth": 617,
+        "width": 617
+      },
+      {
+        "name": null,
+        "scrollWidth": 930,
+        "width": 930
+      },
+      {
+        "name": null,
+        "scrollWidth": 930,
+        "width": 930
+      }
+    ],
+    "core": "swiss-editorial",
+    "dpr": 1,
+    "mode": "light",
+    "pageWidth": 1912,
+    "scrollWidth": 1912,
+    "text": "儀表板\n直線加速測試\n後端已連線\n比賽數據即時接收中\n遙測單位\nD\nUnknown Car\n駕駛輸入與引擎\nENGINE & TRANSMISSION\nSHIFT\n檔位\n3\nRPM\n4174\n/ 9000\nSPEED\n120\nkm/h\nLEFT\n2.8°\nCLT\n0%\nTHR\n63%\nBRK\n8%\nHBK\n0%\nLIVE TELEMETRY TRACES\n↗\n展開卡片\n油門\n煞車\nINPUT WAVEFORM\nPOWER\nTORQUE\nRPM SCATTER TRACE\n車輛動力學概覽\n↗\n展開卡片\n馬力\n195hp\n扭力\n316N·m\nBOOST\n0.0bar\nMAX POWER\n-- hp\n-- RPM\n最大扭力\n-- N·m\n-- RPM\nTOP SPEED\n120 km/h\n比賽名次:\n--\n當前單圈:\n--:--.---\n上一圈:\n--:--.---\n最佳單圈:\n--:--.---\n煞車\n油門\n左\n右\n0.11橫向 G 值\n0.71縱向 G 值\n輪胎抓地力與狀態\n↗\n展開卡片\n左前\nANG\n-0.65\nRAT\n0.27\n81\n右前\nANG\n-0.12\nRAT\n0.69\n93\n左後\nANG\n0.52\nRAT\n0.47\n95\n右後\nANG\n0.68\nRAT\n-0.18\n85\n4 輪懸吊行程\n相對值\n絕對值\n↗\n展開卡片\n左前\n最小: 0.20\n0.74\n最大: 0.80\n右前\n最小: 0.20\n0.78\n最大: 0.80\n左後\n最小: 0.20\n0.57\n最大: 0.80\n右後\n最小: 0.20\n0.29\n最大: 0.80",
+    "width": 1912
+  },
+  {
+    "label": "swiss-editorial-dark",
+    "canvases": [
+      {
+        "height": 18,
+        "width": 389
+      },
+      {
+        "height": 98,
+        "width": 260
+      },
+      {
+        "height": 112,
+        "width": 598
+      },
+      {
+        "height": 112,
+        "width": 598
+      },
+      {
+        "height": 191,
+        "width": 191
+      },
+      {
+        "height": 132,
+        "width": 132
+      },
+      {
+        "height": 107,
+        "width": 262
+      },
+      {
+        "height": 132,
+        "width": 132
+      },
+      {
+        "height": 107,
+        "width": 262
+      },
+      {
+        "height": 132,
+        "width": 132
+      },
+      {
+        "height": 107,
+        "width": 262
+      },
+      {
+        "height": 132,
+        "width": 132
+      },
+      {
+        "height": 107,
+        "width": 262
+      },
+      {
+        "height": 106,
+        "width": 407
+      },
+      {
+        "height": 106,
+        "width": 407
+      },
+      {
+        "height": 106,
+        "width": 407
+      },
+      {
+        "height": 106,
+        "width": 407
+      }
+    ],
+    "cards": [
+      {
+        "name": null,
+        "scrollWidth": 617,
+        "width": 617
+      },
+      {
+        "name": null,
+        "scrollWidth": 617,
+        "width": 617
+      },
+      {
+        "name": null,
+        "scrollWidth": 617,
+        "width": 617
+      },
+      {
+        "name": null,
+        "scrollWidth": 930,
+        "width": 930
+      },
+      {
+        "name": null,
+        "scrollWidth": 930,
+        "width": 930
+      }
+    ],
+    "core": "swiss-editorial",
+    "dpr": 1,
+    "mode": "dark",
+    "pageWidth": 1912,
+    "scrollWidth": 1912,
+    "text": "儀表板\n直線加速測試\n後端已連線\n比賽數據即時接收中\n遙測單位\nD\nUnknown Car\n駕駛輸入與引擎\nENGINE & TRANSMISSION\nSHIFT\n檔位\n3\nRPM\n4174\n/ 9000\nSPEED\n120\nkm/h\nLEFT\n2.8°\nCLT\n0%\nTHR\n63%\nBRK\n8%\nHBK\n0%\nLIVE TELEMETRY TRACES\n↗\n展開卡片\n油門\n煞車\nINPUT WAVEFORM\nPOWER\nTORQUE\nRPM SCATTER TRACE\n車輛動力學概覽\n↗\n展開卡片\n馬力\n195hp\n扭力\n316N·m\nBOOST\n0.0bar\nMAX POWER\n-- hp\n-- RPM\n最大扭力\n-- N·m\n-- RPM\nTOP SPEED\n120 km/h\n比賽名次:\n--\n當前單圈:\n--:--.---\n上一圈:\n--:--.---\n最佳單圈:\n--:--.---\n煞車\n油門\n左\n右\n0.11橫向 G 值\n0.71縱向 G 值\n輪胎抓地力與狀態\n↗\n展開卡片\n左前\nANG\n-0.65\nRAT\n0.27\n81\n右前\nANG\n-0.12\nRAT\n0.69\n93\n左後\nANG\n0.52\nRAT\n0.47\n95\n右後\nANG\n0.68\nRAT\n-0.18\n85\n4 輪懸吊行程\n相對值\n絕對值\n↗\n展開卡片\n左前\n最小: 0.20\n0.74\n最大: 0.80\n右前\n最小: 0.20\n0.78\n最大: 0.80\n左後\n最小: 0.20\n0.57\n最大: 0.80\n右後\n最小: 0.20\n0.29\n最大: 0.80",
+    "width": 1912
+  },
+  {
+    "label": "diagnostic-click-did-not-select-contrast",
+    "canvases": [
+      {
+        "height": 18,
+        "width": 389
+      },
+      {
+        "height": 98,
+        "width": 260
+      },
+      {
+        "height": 112,
+        "width": 598
+      },
+      {
+        "height": 112,
+        "width": 598
+      },
+      {
+        "height": 191,
+        "width": 191
+      },
+      {
+        "height": 132,
+        "width": 132
+      },
+      {
+        "height": 107,
+        "width": 262
+      },
+      {
+        "height": 132,
+        "width": 132
+      },
+      {
+        "height": 107,
+        "width": 262
+      },
+      {
+        "height": 132,
+        "width": 132
+      },
+      {
+        "height": 107,
+        "width": 262
+      },
+      {
+        "height": 132,
+        "width": 132
+      },
+      {
+        "height": 107,
+        "width": 262
+      },
+      {
+        "height": 106,
+        "width": 407
+      },
+      {
+        "height": 106,
+        "width": 407
+      },
+      {
+        "height": 106,
+        "width": 407
+      },
+      {
+        "height": 106,
+        "width": 407
+      }
+    ],
+    "cards": [
+      {
+        "name": null,
+        "scrollWidth": 617,
+        "width": 617
+      },
+      {
+        "name": null,
+        "scrollWidth": 617,
+        "width": 617
+      },
+      {
+        "name": null,
+        "scrollWidth": 617,
+        "width": 617
+      },
+      {
+        "name": null,
+        "scrollWidth": 930,
+        "width": 930
+      },
+      {
+        "name": null,
+        "scrollWidth": 930,
+        "width": 930
+      }
+    ],
+    "core": "swiss-editorial",
+    "dpr": 1,
+    "mode": "light",
+    "pageWidth": 1912,
+    "scrollWidth": 1912,
+    "text": "儀表板\n直線加速測試\n後端已連線\n比賽數據即時接收中\n遙測單位\nD\nUnknown Car\n駕駛輸入與引擎\nENGINE & TRANSMISSION\nSHIFT\n檔位\n3\nRPM\n4174\n/ 9000\nSPEED\n120\nkm/h\nLEFT\n2.8°\nCLT\n0%\nTHR\n63%\nBRK\n8%\nHBK\n0%\nLIVE TELEMETRY TRACES\n↗\n展開卡片\n油門\n煞車\nINPUT WAVEFORM\nPOWER\nTORQUE\nRPM SCATTER TRACE\n車輛動力學概覽\n↗\n展開卡片\n馬力\n195hp\n扭力\n316N·m\nBOOST\n0.0bar\nMAX POWER\n-- hp\n-- RPM\n最大扭力\n-- N·m\n-- RPM\nTOP SPEED\n120 km/h\n比賽名次:\n--\n當前單圈:\n--:--.---\n上一圈:\n--:--.---\n最佳單圈:\n--:--.---\n煞車\n油門\n左\n右\n0.11橫向 G 值\n0.71縱向 G 值\n輪胎抓地力與狀態\n↗\n展開卡片\n左前\nANG\n-0.65\nRAT\n0.27\n81\n右前\nANG\n-0.12\nRAT\n0.69\n93\n左後\nANG\n0.52\nRAT\n0.47\n95\n右後\nANG\n0.68\nRAT\n-0.18\n85\n4 輪懸吊行程\n相對值\n絕對值\n↗\n展開卡片\n左前\n最小: 0.20\n0.74\n最大: 0.80\n右前\n最小: 0.20\n0.78\n最大: 0.80\n左後\n最小: 0.20\n0.57\n最大: 0.80\n右後\n最小: 0.20\n0.29\n最大: 0.80",
+    "width": 1912
+  },
+  {
+    "label": "swiss-contrast-dark",
+    "canvases": [
+      {
+        "height": 18,
+        "width": 389
+      },
+      {
+        "height": 82,
+        "width": 260
+      },
+      {
+        "height": 104,
+        "width": 598
+      },
+      {
+        "height": 104,
+        "width": 598
+      },
+      {
+        "height": 175,
+        "width": 175
+      },
+      {
+        "height": 124,
+        "width": 124
+      },
+      {
+        "height": 99,
+        "width": 262
+      },
+      {
+        "height": 124,
+        "width": 124
+      },
+      {
+        "height": 99,
+        "width": 262
+      },
+      {
+        "height": 124,
+        "width": 124
+      },
+      {
+        "height": 99,
+        "width": 262
+      },
+      {
+        "height": 124,
+        "width": 124
+      },
+      {
+        "height": 99,
+        "width": 262
+      },
+      {
+        "height": 98,
+        "width": 407
+      },
+      {
+        "height": 98,
+        "width": 407
+      },
+      {
+        "height": 98,
+        "width": 407
+      },
+      {
+        "height": 98,
+        "width": 407
+      }
+    ],
+    "cards": [
+      {
+        "name": null,
+        "scrollWidth": 617,
+        "width": 617
+      },
+      {
+        "name": null,
+        "scrollWidth": 617,
+        "width": 617
+      },
+      {
+        "name": null,
+        "scrollWidth": 617,
+        "width": 617
+      },
+      {
+        "name": null,
+        "scrollWidth": 930,
+        "width": 930
+      },
+      {
+        "name": null,
+        "scrollWidth": 930,
+        "width": 930
+      }
+    ],
+    "core": "swiss-contrast",
+    "dpr": 1,
+    "mode": "dark",
+    "pageWidth": 1912,
+    "scrollWidth": 1912,
+    "text": "儀表板\n直線加速測試\n後端已連線\n比賽數據即時接收中\n遙測單位\nD\nUnknown Car\n駕駛輸入與引擎\nENGINE & TRANSMISSION\nSHIFT\n檔位\n3\nRPM\n4174\n/ 9000\nSPEED\n120\nkm/h\nLEFT\n2.8°\nCLT\n0%\nTHR\n63%\nBRK\n8%\nHBK\n0%\nLIVE TELEMETRY TRACES\n↗\n展開卡片\n油門\n煞車\nINPUT WAVEFORM\nPOWER\nTORQUE\nRPM SCATTER TRACE\n車輛動力學概覽\n↗\n展開卡片\n馬力\n195hp\n扭力\n316N·m\nBOOST\n0.0bar\nMAX POWER\n-- hp\n-- RPM\n最大扭力\n-- N·m\n-- RPM\nTOP SPEED\n120 km/h\n比賽名次:\n--\n當前單圈:\n--:--.---\n上一圈:\n--:--.---\n最佳單圈:\n--:--.---\n煞車\n油門\n左\n右\n0.11橫向 G 值\n0.71縱向 G 值\n輪胎抓地力與狀態\n↗\n展開卡片\n左前\nANG\n-0.65\nRAT\n0.27\n81\n右前\nANG\n-0.12\nRAT\n0.69\n93\n左後\nANG\n0.52\nRAT\n0.47\n95\n右後\nANG\n0.68\nRAT\n-0.18\n85\n4 輪懸吊行程\n相對值\n絕對值\n↗\n展開卡片\n左前\n最小: 0.20\n0.74\n最大: 0.80\n右前\n最小: 0.20\n0.78\n最大: 0.80\n左後\n最小: 0.20\n0.57\n最大: 0.80\n右後\n最小: 0.20\n0.29\n最大: 0.80",
+    "width": 1912
+  },
+  {
+    "label": "core-chart-rhine-dark",
+    "canvases": [
+      {
+        "height": 18,
+        "width": 389
+      },
+      {
+        "height": 98,
+        "width": 260
+      },
+      {
+        "height": 112,
+        "width": 598
+      },
+      {
+        "height": 112,
+        "width": 598
+      },
+      {
+        "height": 191,
+        "width": 191
+      },
+      {
+        "height": 132,
+        "width": 132
+      },
+      {
+        "height": 107,
+        "width": 262
+      },
+      {
+        "height": 132,
+        "width": 132
+      },
+      {
+        "height": 107,
+        "width": 262
+      },
+      {
+        "height": 132,
+        "width": 132
+      },
+      {
+        "height": 107,
+        "width": 262
+      },
+      {
+        "height": 132,
+        "width": 132
+      },
+      {
+        "height": 107,
+        "width": 262
+      },
+      {
+        "height": 106,
+        "width": 407
+      },
+      {
+        "height": 106,
+        "width": 407
+      },
+      {
+        "height": 106,
+        "width": 407
+      },
+      {
+        "height": 106,
+        "width": 407
+      }
+    ],
+    "cards": [
+      {
+        "name": null,
+        "scrollWidth": 617,
+        "width": 617
+      },
+      {
+        "name": null,
+        "scrollWidth": 617,
+        "width": 617
+      },
+      {
+        "name": null,
+        "scrollWidth": 617,
+        "width": 617
+      },
+      {
+        "name": null,
+        "scrollWidth": 930,
+        "width": 930
+      },
+      {
+        "name": null,
+        "scrollWidth": 930,
+        "width": 930
+      }
+    ],
+    "core": "rhine-lab",
+    "dpr": 1,
+    "mode": "dark",
+    "pageWidth": 1912,
+    "scrollWidth": 1912,
+    "text": "儀表板\n直線加速測試\n後端已連線\n比賽數據即時接收中\n遙測單位\nD\nUnknown Car\n駕駛輸入與引擎\nENGINE & TRANSMISSION\nSHIFT\n檔位\n3\nRPM\n4174\n/ 9000\nSPEED\n120\nkm/h\nLEFT\n2.8°\nCLT\n0%\nTHR\n63%\nBRK\n8%\nHBK\n0%\nLive Telemetry Traces\n↗\n展開卡片\n油門\n煞車\nINPUT WAVEFORM\nPOWER\nTORQUE\nRPM SCATTER TRACE\n車輛動力學概覽\n↗\n展開卡片\n馬力\n195hp\n扭力\n316N·m\nBOOST\n0.0bar\nMAX POWER\n-- hp\n-- RPM\n最大扭力\n-- N·m\n-- RPM\nTOP SPEED\n120 km/h\n比賽名次:\n--\n當前單圈:\n--:--.---\n上一圈:\n--:--.---\n最佳單圈:\n--:--.---\n煞車\n油門\n左\n右\n0.11橫向 G 值\n0.71縱向 G 值\n輪胎抓地力與狀態\n↗\n展開卡片\n左前\nANG\n-0.65\nRAT\n0.27\n81\n右前\nANG\n-0.12\nRAT\n0.69\n93\n左後\nANG\n0.52\nRAT\n0.47\n95\n右後\nANG\n0.68\nRAT\n-0.18\n85\n4 輪懸吊行程\n相對值\n絕對值\n↗\n展開卡片\n左前\n最小: 0.20\n0.74\n最大: 0.80\n右前\n最小: 0.20\n0.78\n最大: 0.80\n左後\n最小: 0.20\n0.57\n最大: 0.80\n右後\n最小: 0.20\n0.29\n最大: 0.80",
+    "width": 1912
+  },
+  {
+    "label": "swiss-contrast-light",
+    "canvases": [
+      {
+        "height": 18,
+        "width": 389
+      },
+      {
+        "height": 82,
+        "width": 260
+      },
+      {
+        "height": 104,
+        "width": 598
+      },
+      {
+        "height": 104,
+        "width": 598
+      },
+      {
+        "height": 175,
+        "width": 175
+      },
+      {
+        "height": 124,
+        "width": 124
+      },
+      {
+        "height": 99,
+        "width": 262
+      },
+      {
+        "height": 124,
+        "width": 124
+      },
+      {
+        "height": 99,
+        "width": 262
+      },
+      {
+        "height": 124,
+        "width": 124
+      },
+      {
+        "height": 99,
+        "width": 262
+      },
+      {
+        "height": 124,
+        "width": 124
+      },
+      {
+        "height": 99,
+        "width": 262
+      },
+      {
+        "height": 98,
+        "width": 407
+      },
+      {
+        "height": 98,
+        "width": 407
+      },
+      {
+        "height": 98,
+        "width": 407
+      },
+      {
+        "height": 98,
+        "width": 407
+      }
+    ],
+    "cards": [
+      {
+        "name": null,
+        "scrollWidth": 617,
+        "width": 617
+      },
+      {
+        "name": null,
+        "scrollWidth": 617,
+        "width": 617
+      },
+      {
+        "name": null,
+        "scrollWidth": 617,
+        "width": 617
+      },
+      {
+        "name": null,
+        "scrollWidth": 930,
+        "width": 930
+      },
+      {
+        "name": null,
+        "scrollWidth": 930,
+        "width": 930
+      }
+    ],
+    "core": "swiss-contrast",
+    "dpr": 1,
+    "mode": "light",
+    "pageWidth": 1912,
+    "scrollWidth": 1912,
+    "text": "儀表板\n直線加速測試\n後端已連線\n比賽數據即時接收中\n遙測單位\nD\nUnknown Car\n駕駛輸入與引擎\nENGINE & TRANSMISSION\nSHIFT\n檔位\n3\nRPM\n4174\n/ 9000\nSPEED\n120\nkm/h\nLEFT\n2.8°\nCLT\n0%\nTHR\n63%\nBRK\n8%\nHBK\n0%\nLIVE TELEMETRY TRACES\n↗\n展開卡片\n油門\n煞車\nINPUT WAVEFORM\nPOWER\nTORQUE\nRPM SCATTER TRACE\n車輛動力學概覽\n↗\n展開卡片\n馬力\n195hp\n扭力\n316N·m\nBOOST\n0.0bar\nMAX POWER\n-- hp\n-- RPM\n最大扭力\n-- N·m\n-- RPM\nTOP SPEED\n120 km/h\n比賽名次:\n--\n當前單圈:\n--:--.---\n上一圈:\n--:--.---\n最佳單圈:\n--:--.---\n煞車\n油門\n左\n右\n0.11橫向 G 值\n0.71縱向 G 值\n輪胎抓地力與狀態\n↗\n展開卡片\n左前\nANG\n-0.65\nRAT\n0.27\n81\n右前\nANG\n-0.12\nRAT\n0.69\n93\n左後\nANG\n0.52\nRAT\n0.47\n95\n右後\nANG\n0.68\nRAT\n-0.18\n85\n4 輪懸吊行程\n相對值\n絕對值\n↗\n展開卡片\n左前\n最小: 0.20\n0.74\n最大: 0.80\n右前\n最小: 0.20\n0.78\n最大: 0.80\n左後\n最小: 0.20\n0.57\n最大: 0.80\n右後\n最小: 0.20\n0.29\n最大: 0.80",
+    "width": 1912
+  }
+]

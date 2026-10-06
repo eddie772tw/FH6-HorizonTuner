@@ -1,5 +1,7 @@
+import { setTelemetryText } from '../../../utils/telemetryDisplay';
 import React, { useEffect, useRef } from 'react';
 import { telemetryEmitter } from '../../../hooks/useTelemetry';
+import { readCanvasTheme, observeCanvasTheme } from '../../../utils/canvasTheme';
 import { useSettings } from '../../../context/SettingsContext';
 
 const ArcSteerGauge: React.FC<{ size?: number }> = React.memo(() => {
@@ -7,26 +9,16 @@ const ArcSteerGauge: React.FC<{ size?: number }> = React.memo(() => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const degTextRef = useRef<HTMLSpanElement>(null);
   const dirTextRef = useRef<HTMLSpanElement>(null);
-  const themeVars = useRef({ primary: '#00f0ff', isLight: false, glowStrength: 1 });
   const { t } = useSettings();
 
   useEffect(() => {
     const canvas = canvasRef.current;
     const container = containerRef.current;
     if (!canvas || !container) return;
+    let lastSteer = 0;
 
-    // 策略 A：快取 CSS 主題色值，避免每幀 getComputedStyle
-    const updateThemeVars = () => {
-      const style = getComputedStyle(document.documentElement);
-      themeVars.current = {
-        primary: style.getPropertyValue('--primary').trim() || '#00f0ff',
-        isLight: document.documentElement.getAttribute('data-bs-theme') === 'light',
-        glowStrength: Number(style.getPropertyValue('--instrument-glow-strength').trim() || '1'),
-      };
-    };
-    updateThemeVars();
-    const themeObserver = new MutationObserver(updateThemeVars);
-    themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-bs-theme', 'data-bs-core', 'data-design-system', 'style'] });
+    let theme = readCanvasTheme();
+    const stopThemeObserver = observeCanvasTheme(() => { theme = readCanvasTheme(); drawGauge(lastSteer); });
 
     const resizeObserver = new ResizeObserver((entries) => {
       for (const entry of entries) {
@@ -35,7 +27,7 @@ const ArcSteerGauge: React.FC<{ size?: number }> = React.memo(() => {
           const dpr = window.devicePixelRatio || 1;
           canvas.width = Math.floor(width * dpr);
           canvas.height = Math.floor(height * dpr);
-          drawGauge(0);
+          drawGauge(lastSteer);
         }
       }
     });
@@ -62,25 +54,25 @@ const ArcSteerGauge: React.FC<{ size?: number }> = React.memo(() => {
       const centerAngle = (6 * Math.PI) / 4; // Top center
 
       // 1. Background Arc Track（使用快取的主題色值）
-      const { primary: primaryHex, isLight } = themeVars.current;
+      const { primary: primaryHex } = theme;
       ctx.beginPath();
       ctx.arc(cx, cy, radius, startAngle, endAngle);
-      ctx.lineWidth = 4 * dpr;
-      ctx.strokeStyle = isLight ? 'rgba(15, 23, 42, 0.14)' : 'rgba(255, 255, 255, 0.14)';
+      ctx.lineWidth = (theme.linear ? 1 : 4) * dpr;
+      ctx.strokeStyle = theme.track;
       ctx.stroke();
 
       // Tick marks
-      const tickCount = 9;
+      const tickCount = theme.linear ? 25 : 9;
       ctx.lineWidth = 1.4 * dpr;
       for (let i = 0; i < tickCount; i++) {
         const tickAngle = startAngle + (i / (tickCount - 1)) * (endAngle - startAngle);
-        const isCenter = i === 4;
+        const isCenter = i === (tickCount - 1) / 2;
         const innerR = radius - (isCenter ? 8 * dpr : 4.5 * dpr);
         const outerR = radius + 3 * dpr;
         ctx.beginPath();
         ctx.moveTo(cx + innerR * Math.cos(tickAngle), cy + innerR * Math.sin(tickAngle));
         ctx.lineTo(cx + outerR * Math.cos(tickAngle), cy + outerR * Math.sin(tickAngle));
-        ctx.strokeStyle = isCenter ? primaryHex : isLight ? 'rgba(0,0,0,0.25)' : 'rgba(255,255,255,0.25)';
+        ctx.strokeStyle = isCenter ? primaryHex : theme.tick;
         ctx.stroke();
       }
 
@@ -94,10 +86,10 @@ const ArcSteerGauge: React.FC<{ size?: number }> = React.memo(() => {
         } else {
           ctx.arc(cx, cy, radius, targetAngle, centerAngle, false);
         }
-        ctx.lineWidth = 5 * dpr;
+        ctx.lineWidth = (theme.linear ? 2 : 5) * dpr;
         ctx.strokeStyle = primaryHex;
         ctx.shadowColor = primaryHex;
-        ctx.shadowBlur = themeVars.current.glowStrength * 8 * dpr;
+        ctx.shadowBlur = theme.glowStrength * 8 * dpr;
         ctx.stroke();
         ctx.shadowBlur = 0;
       }
@@ -107,10 +99,11 @@ const ArcSteerGauge: React.FC<{ size?: number }> = React.memo(() => {
       const dotY = cy + radius * Math.sin(targetAngle);
 
       ctx.beginPath();
-      ctx.arc(dotX, dotY, 5.5 * dpr, 0, Math.PI * 2);
+      if (theme.linear) ctx.rect(dotX - 4 * dpr, dotY - 4 * dpr, 8 * dpr, 8 * dpr);
+      else ctx.arc(dotX, dotY, 5.5 * dpr, 0, Math.PI * 2);
       ctx.fillStyle = primaryHex;
       ctx.shadowColor = primaryHex;
-      ctx.shadowBlur = themeVars.current.glowStrength * 10 * dpr;
+      ctx.shadowBlur = theme.glowStrength * 10 * dpr;
       ctx.fill();
       ctx.shadowBlur = 0;
     };
@@ -121,24 +114,24 @@ const ArcSteerGauge: React.FC<{ size?: number }> = React.memo(() => {
 
       const steerRaw = (liveData.SteerInput || 0) / 127;
       const clampedSteer = Math.max(-1, Math.min(1, steerRaw));
-
+      lastSteer = clampedSteer;
       drawGauge(clampedSteer);
 
       if (degTextRef.current) {
         const deg = clampedSteer * 45;
-        degTextRef.current.innerText = `${Math.abs(deg).toFixed(1)}°`;
+        setTelemetryText(degTextRef.current, `${Math.abs(deg).toFixed(1)}°`);
         degTextRef.current.style.color = Math.abs(deg) > 30 ? 'var(--secondary)' : 'var(--text-primary)';
       }
       if (dirTextRef.current) {
-        if (Math.abs(clampedSteer) < 0.02) dirTextRef.current.innerText = 'CENTER';
-        else dirTextRef.current.innerText = clampedSteer < 0 ? 'LEFT' : 'RIGHT';
+        if (Math.abs(clampedSteer) < 0.02) setTelemetryText(dirTextRef.current, 'CENTER');
+        else setTelemetryText(dirTextRef.current, clampedSteer < 0 ? 'LEFT' : 'RIGHT');
       }
     };
 
     telemetryEmitter.addEventListener('update', handleUpdate);
     return () => {
       resizeObserver.disconnect();
-      themeObserver.disconnect();
+      stopThemeObserver();
       telemetryEmitter.removeEventListener('update', handleUpdate);
     };
   }, []);

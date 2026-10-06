@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useMemo, useState } from "react";
 import { AnalysisDataPoint } from "../../context/TelemetryRecorderContext";
 import { useSettings } from "../../context/SettingsContext";
+import { useCanvasTheme } from '../../utils/canvasTheme';
 
 interface LapDeltaCanvasProps {
   primaryLapData: AnalysisDataPoint[];
@@ -16,6 +17,7 @@ const LapDeltaCanvas: React.FC<LapDeltaCanvasProps> = ({
   compareLapNumber = -1,
 }) => {
   const { t } = useSettings();
+  const theme = useCanvasTheme();
   const usablePoint = (point: AnalysisDataPoint): point is AnalysisDataPoint & {
     time: number;
     SpeedMetersPerSecond: number;
@@ -66,8 +68,8 @@ const LapDeltaCanvas: React.FC<LapDeltaCanvasProps> = ({
       ctx.clearRect(0, 0, width, height);
 
     if (primaryPoints.length === 0) {
-      ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
-      ctx.font = "12px sans-serif";
+      ctx.fillStyle = theme.muted;
+      ctx.font = `12px ${theme.font}`;
       ctx.textAlign = "center";
       ctx.fillText(t("No lap data to display."), width / 2, height / 2);
       return;
@@ -75,7 +77,8 @@ const LapDeltaCanvas: React.FC<LapDeltaCanvasProps> = ({
 
     const padding = { top: 25, bottom: 25, left: 45, right: 20 };
     const chartW = width - padding.left - padding.right;
-    const chartH = (height - padding.top - padding.bottom) / 2;
+    // Reserve the gap between plots so the lower zero line does not cover the X labels.
+    const chartH = (height - padding.top - padding.bottom - 25) / 2;
 
     const primaryDenom = Math.max(1, primaryPoints.length - 1);
     const compareDenom = Math.max(1, comparePoints.length - 1);
@@ -98,8 +101,9 @@ const LapDeltaCanvas: React.FC<LapDeltaCanvasProps> = ({
     }
 
     // Grid lines for speed
-    ctx.strokeStyle = "rgba(255, 255, 255, 0.08)";
+    ctx.strokeStyle = theme.chartGrid;
     ctx.lineWidth = 1;
+    ctx.setLineDash(theme.chartDash);
     for (let i = 0; i <= 4; i++) {
       const y = speedTop + (chartH / 4) * i;
       ctx.beginPath();
@@ -108,21 +112,22 @@ const LapDeltaCanvas: React.FC<LapDeltaCanvasProps> = ({
       ctx.stroke();
 
       const speedVal = Math.round(maxSpeed - (maxSpeed / 4) * i);
-      ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
-      ctx.font = "9px monospace";
+      ctx.fillStyle = theme.muted;
+      ctx.font = `9px ${theme.font}`;
       ctx.textAlign = "right";
       ctx.fillText(`${speedVal}`, padding.left - 6, y + 3);
     }
 
     // Label Top Chart
-    ctx.fillStyle = "var(--primary)";
-    ctx.font = "bold 11px sans-serif";
+    ctx.setLineDash([]);
+    ctx.fillStyle = theme.primary;
+    ctx.font = `600 11px ${theme.font}`;
     ctx.textAlign = "left";
     ctx.fillText(`${t("Speed")} (km/h)`, padding.left, speedTop - 8);
 
     // Draw Compare Speed (Dashed Cyan)
     if (comparePoints.length > 0) {
-      ctx.strokeStyle = "#00f0ff";
+      ctx.strokeStyle = theme.secondary;
       ctx.lineWidth = 1.5;
       ctx.setLineDash([4, 4]);
       ctx.beginPath();
@@ -138,15 +143,16 @@ const LapDeltaCanvas: React.FC<LapDeltaCanvasProps> = ({
       if (comparePoints.length === 1) {
         const spd = comparePoints[0].SpeedMetersPerSecond * 3.6;
         const y = speedTop + chartH - (spd / maxSpeed) * chartH;
-        ctx.fillStyle = "#00f0ff";
+        ctx.fillStyle = theme.secondary;
         ctx.beginPath();
-        ctx.arc(padding.left, y, 3, 0, 2 * Math.PI);
+        if (theme.linear) ctx.rect(padding.left - 3, y - 3, 6, 6);
+        else ctx.arc(padding.left, y, 3, 0, 2 * Math.PI);
         ctx.fill();
       }
     }
 
     // Draw Primary Speed (Solid Neon Green)
-    ctx.strokeStyle = "#00ffaa";
+    ctx.strokeStyle = theme.primary;
     ctx.lineWidth = 2;
     ctx.beginPath();
     for (let i = 0; i < primaryPoints.length; i++) {
@@ -160,9 +166,10 @@ const LapDeltaCanvas: React.FC<LapDeltaCanvasProps> = ({
     if (primaryPoints.length === 1) {
       const spd = primaryPoints[0].SpeedMetersPerSecond * 3.6;
       const y = speedTop + chartH - (spd / maxSpeed) * chartH;
-      ctx.fillStyle = "#00ffaa";
+      ctx.fillStyle = theme.primary;
       ctx.beginPath();
-      ctx.arc(padding.left, y, 3, 0, 2 * Math.PI);
+      if (theme.linear) ctx.rect(padding.left - 3, y - 3, 6, 6);
+      else ctx.arc(padding.left, y, 3, 0, 2 * Math.PI);
       ctx.fill();
     }
 
@@ -171,8 +178,9 @@ const LapDeltaCanvas: React.FC<LapDeltaCanvasProps> = ({
     const pedalH = chartH - 10;
 
     // Grid lines for Pedals
-    ctx.strokeStyle = "rgba(255, 255, 255, 0.08)";
+    ctx.strokeStyle = theme.chartGrid;
     ctx.lineWidth = 1;
+    ctx.setLineDash(theme.chartDash);
     for (let i = 0; i <= 2; i++) {
       const y = pedalTop + (pedalH / 2) * i;
       ctx.beginPath();
@@ -181,21 +189,22 @@ const LapDeltaCanvas: React.FC<LapDeltaCanvasProps> = ({
       ctx.stroke();
 
       const pctVal = 100 - i * 50;
-      ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
-      ctx.font = "9px monospace";
+      ctx.fillStyle = theme.muted;
+      ctx.font = `9px ${theme.font}`;
       ctx.textAlign = "right";
       ctx.fillText(`${pctVal}%`, padding.left - 6, y + 3);
     }
 
     // Label Bottom Chart
-    ctx.fillStyle = "var(--text-primary)";
-    ctx.font = "bold 11px sans-serif";
+    ctx.setLineDash([]);
+    ctx.fillStyle = theme.text;
+    ctx.font = `600 11px ${theme.font}`;
     ctx.textAlign = "left";
     ctx.fillText(`${t("Throttle & Brake Inputs")}`, padding.left, pedalTop - 8);
 
     // Draw Throttle (Green Fill + Line)
-    ctx.strokeStyle = "#00ffaa";
-    ctx.fillStyle = "rgba(0, 255, 170, 0.15)";
+    ctx.strokeStyle = theme.throttle;
+    ctx.fillStyle = theme.throttle;
     ctx.lineWidth = 1.5;
     ctx.beginPath();
     ctx.moveTo(padding.left, pedalTop + pedalH);
@@ -207,12 +216,14 @@ const LapDeltaCanvas: React.FC<LapDeltaCanvasProps> = ({
     }
     ctx.lineTo(padding.left + (primaryPoints.length === 1 ? 0 : chartW), pedalTop + pedalH);
     ctx.closePath();
+    ctx.globalAlpha = 0.15;
     ctx.fill();
+    ctx.globalAlpha = 1;
     ctx.stroke();
 
     // Draw Brake (Red Fill + Line)
-    ctx.strokeStyle = "#ff003c";
-    ctx.fillStyle = "rgba(255, 0, 60, 0.25)";
+    ctx.strokeStyle = theme.brake;
+    ctx.fillStyle = theme.brake;
     ctx.lineWidth = 1.5;
     ctx.beginPath();
     ctx.moveTo(padding.left, pedalTop + pedalH);
@@ -224,12 +235,14 @@ const LapDeltaCanvas: React.FC<LapDeltaCanvasProps> = ({
     }
     ctx.lineTo(padding.left + (primaryPoints.length === 1 ? 0 : chartW), pedalTop + pedalH);
     ctx.closePath();
+    ctx.globalAlpha = 0.25;
     ctx.fill();
+    ctx.globalAlpha = 1;
     ctx.stroke();
 
     // X Axis Distance Label
-    ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
-    ctx.font = "9px sans-serif";
+    ctx.fillStyle = theme.muted;
+    ctx.font = `9px ${theme.font}`;
     ctx.textAlign = "center";
     ctx.fillText("0% " + t("Lap Distance"), padding.left + 20, height - 6);
     ctx.fillText("50%", padding.left + chartW / 2, height - 6);
@@ -252,7 +265,7 @@ const LapDeltaCanvas: React.FC<LapDeltaCanvasProps> = ({
         observer.disconnect();
       }
     };
-  }, [primaryPoints, comparePoints, primaryLapNumber, compareLapNumber, t]);
+  }, [primaryPoints, comparePoints, primaryLapNumber, compareLapNumber, t, theme]);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
@@ -290,7 +303,7 @@ const LapDeltaCanvas: React.FC<LapDeltaCanvasProps> = ({
   return (
     <div
       ref={containerRef}
-      className="glass-panel"
+      className="glass-panel core-theme-chart"
       style={{
         padding: "1rem",
         display: "flex",
@@ -305,13 +318,13 @@ const LapDeltaCanvas: React.FC<LapDeltaCanvasProps> = ({
           <span style={{ fontWeight: "bold", color: "var(--text-primary)", fontSize: "0.95rem" }}>
             {t("Speed & Input Delta")}
           </span>
-          <span style={{ fontSize: "0.75rem", color: "#00ffaa", display: "flex", alignItems: "center", gap: "4px" }}>
-            <span style={{ width: "10px", height: "3px", background: "#00ffaa", display: "inline-block" }} />
+          <span style={{ fontSize: "0.75rem", color: "var(--primary)", display: "flex", alignItems: "center", gap: "4px" }}>
+            <span style={{ width: "10px", height: "3px", background: "var(--primary)", display: "inline-block" }} />
             {primaryLapNumber === 0 ? t("Current Session") : `Lap ${primaryLapNumber}`}
           </span>
           {compareLapNumber > 0 && (
-            <span style={{ fontSize: "0.75rem", color: "#00f0ff", display: "flex", alignItems: "center", gap: "4px" }}>
-              <span style={{ width: "10px", height: "3px", background: "#00f0ff", borderTop: "1px dashed #00f0ff", display: "inline-block" }} />
+            <span style={{ fontSize: "0.75rem", color: "var(--secondary)", display: "flex", alignItems: "center", gap: "4px" }}>
+              <span style={{ width: "10px", height: "3px", background: "var(--secondary)", borderTop: "1px dashed var(--secondary)", display: "inline-block" }} />
               vs Lap {compareLapNumber}
             </span>
           )}
@@ -321,9 +334,9 @@ const LapDeltaCanvas: React.FC<LapDeltaCanvasProps> = ({
         {hoverInfo && (
           <div style={{ fontSize: "0.8rem", color: "var(--text-primary)", background: "var(--surface-1)", padding: "0.2rem 0.6rem", borderRadius: "4px", border: "1px solid var(--glass-border)" }}>
             <span style={{ color: "var(--text-secondary)" }}>{hoverInfo.pct}% | </span>
-            <span style={{ color: "#00ffaa" }}>{hoverInfo.primarySpeed} km/h </span>
+            <span style={{ color: "var(--primary)" }}>{hoverInfo.primarySpeed} km/h </span>
             {hoverInfo.compareSpeed !== undefined && (
-              <span style={{ color: "#00f0ff" }}>
+              <span style={{ color: "var(--secondary)" }}>
                 (vs {hoverInfo.compareSpeed} km/h, Δ {(hoverInfo.primarySpeed - hoverInfo.compareSpeed > 0 ? "+" : "") + (hoverInfo.primarySpeed - hoverInfo.compareSpeed)} km/h)
               </span>
             )}
@@ -332,7 +345,7 @@ const LapDeltaCanvas: React.FC<LapDeltaCanvasProps> = ({
       </div>
 
       {/* Canvas */}
-      <div style={{ flex: 1, position: "relative", width: "100%", height: "100%" }}>
+      <div style={{ flex: 1, minHeight: 0, position: "relative", width: "100%", height: "100%" }}>
         <canvas
           ref={canvasRef}
           onMouseMove={handleMouseMove}

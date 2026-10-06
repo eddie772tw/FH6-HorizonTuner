@@ -1,6 +1,7 @@
 import React from 'react';
 import { useTheme, normalizeThemeSettings } from '../../../context/ThemeContext';
 import { useSettings } from '../../../context/SettingsContext';
+import { rhinePalettes } from '../../../context/themeSettings';
 
 interface Preset {
   label: string;
@@ -10,6 +11,7 @@ interface Preset {
 }
 
 const PRESETS: Preset[] = [
+  { label: 'Rhine Lab', ...rhinePalettes.dark },
   {
     label: 'Neon Cyan',
     primaryColor: '#00f0ff',

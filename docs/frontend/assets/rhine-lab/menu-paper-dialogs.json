@@ -1,0 +1,98 @@
+{
+  "sourceCommit": "1ead368749cd7ea31086c15af4d59df286e951b9",
+  "browser": "Edge 154",
+  "settled": true,
+  "dialogs": [
+    {
+      "name": "settings",
+      "inert": true,
+      "overflow": false,
+      "rect": {
+        "height": 751.99658203125,
+        "width": 1040,
+        "x": 191.11111450195312,
+        "y": 24.001737594604492
+      },
+      "transform": "matrix(1, 0, 0, 1, -520, -375.998)",
+      "viewport": [
+        1422,
+        800
+      ]
+    },
+    {
+      "name": "appearance",
+      "inert": true,
+      "overflow": false,
+      "rect": {
+        "height": 751.99658203125,
+        "width": 863.9931030273438,
+        "x": 279.1145935058594,
+        "y": 24.001737594604492
+      },
+      "viewport": [
+        1422,
+        800
+      ]
+    },
+    {
+      "name": "diagnostics",
+      "inert": true,
+      "overflow": false,
+      "rect": {
+        "height": 261.076416015625,
+        "width": 927.9861450195312,
+        "x": 247.1180725097656,
+        "y": 269.4618225097656
+      },
+      "viewport": [
+        1422,
+        800
+      ]
+    },
+    {
+      "name": "companion",
+      "inert": true,
+      "overflow": false,
+      "rect": {
+        "height": 751.99658203125,
+        "width": 960.0000610351562,
+        "x": 231.11111450195312,
+        "y": 24.001737594604492
+      },
+      "viewport": [
+        1422,
+        800
+      ]
+    },
+    {
+      "name": "mcp",
+      "inert": true,
+      "overflow": false,
+      "rect": {
+        "height": 686.3194580078125,
+        "width": 800.0000610351562,
+        "x": 311.1111145019531,
+        "y": 56.84027862548828
+      },
+      "viewport": [
+        1422,
+        800
+      ]
+    },
+    {
+      "name": "about",
+      "inert": true,
+      "overflow": false,
+      "rect": {
+        "height": 607.8472290039062,
+        "width": 607.9861450195312,
+        "x": 407.1180725097656,
+        "y": 96.0763931274414
+      },
+      "viewport": [
+        1422,
+        800
+      ]
+    }
+  ]
+}

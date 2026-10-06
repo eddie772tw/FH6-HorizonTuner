@@ -1,0 +1,54 @@
+{
+  "core": "rhine-lab",
+  "mode": "dark",
+  "readouts": [
+    {
+      "color": "rgb(240, 145, 143)",
+      "text": "1.20"
+    },
+    {
+      "color": "rgb(240, 145, 143)",
+      "text": "1.10"
+    },
+    {
+      "color": "rgb(240, 145, 143)",
+      "text": "1.20"
+    },
+    {
+      "color": "rgb(240, 145, 143)",
+      "text": "1.10"
+    },
+    {
+      "color": "rgb(240, 145, 143)",
+      "text": "1.20"
+    },
+    {
+      "color": "rgb(240, 145, 143)",
+      "text": "1.10"
+    },
+    {
+      "color": "rgb(240, 145, 143)",
+      "text": "1.20"
+    },
+    {
+      "color": "rgb(240, 145, 143)",
+      "text": "1.10"
+    }
+  ],
+  "regenToken": "#8bbd9d",
+  "surface": "rgba(0, 0, 0, 0)",
+  "regenReadouts": [
+    {
+      "color": "rgb(139, 189, 157)",
+      "text": "-27hp"
+    },
+    {
+      "color": "rgb(139, 189, 157)",
+      "text": "-100N·m"
+    },
+    {
+      "color": "rgb(139, 189, 157)",
+      "text": "ON"
+    }
+  ]
+}

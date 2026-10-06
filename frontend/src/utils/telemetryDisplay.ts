@@ -15,3 +15,8 @@ export function formatRacePosition(rawPosition?: number): string {
   if (!Number.isFinite(rawPosition) || (rawPosition ?? 0) <= 0) return '--';
   return `P${Math.trunc(rawPosition ?? 0)}`;
 }
+
+/** Leaf readouts only: skip identical text without a layout-dependent innerText read. */
+export function setTelemetryText(element: HTMLElement | null, text: string): void {
+  if (element && element.textContent !== text) element.textContent = text;
+}

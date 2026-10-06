@@ -408,11 +408,11 @@ export const DynoChart: React.FC<DynoChartProps> = ({
         {t("Drive the car at full throttle in-game to collect horsepower and torque data across RPM ranges. Each RPM point retains up to 50 historical records, filtered using IQR and weighted.")}
       </p>
 
-      <div style={{ flex: 1, minHeight: 0 }}>
+      <div className="core-theme-chart" style={{ flex: 1, minHeight: 0 }}>
         {dynoData.length > 0 ? (
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={dynoData} margin={{ top: 10, right: 30, bottom: 20, left: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+              <CartesianGrid strokeDasharray="var(--chart-grid-dash)" stroke="var(--chart-grid)" />
               <XAxis 
                 dataKey="rpm" 
                 stroke="var(--text-secondary)" 
@@ -420,25 +420,25 @@ export const DynoChart: React.FC<DynoChartProps> = ({
               />
               <YAxis 
                 yAxisId="hp" 
-                stroke="var(--accent)" 
+                stroke="var(--primary)"
                 tick={false}
-                label={{ value: `Power (${getPowerLabel()})`, angle: -90, position: 'insideLeft', fill: 'var(--accent)' }} 
+                label={{ value: `Power (${getPowerLabel()})`, angle: -90, position: 'insideLeft', fill: 'var(--primary)' }}
               />
               <YAxis 
                 yAxisId="torque" 
                 orientation="right" 
-                stroke="hsl(120, 80%, 60%)" 
+                stroke="var(--secondary)"
                 tick={false}
-                label={{ value: `Torque (${getTorqueLabel()})`, angle: -90, position: 'insideRight', fill: 'hsl(120, 80%, 60%)' }} 
+                label={{ value: `Torque (${getTorqueLabel()})`, angle: -90, position: 'insideRight', fill: 'var(--secondary)' }}
               />
               <Tooltip 
-                contentStyle={{ backgroundColor: 'rgba(0,0,0,0.8)', border: '1px solid var(--primary)' }}
+                contentStyle={{ backgroundColor: 'var(--glass-bg)', color: 'var(--text-primary)', border: '1px solid var(--glass-border)', borderRadius: 'var(--chart-radius)' }}
               />
               <Legend verticalAlign="top" height={24}/>
 
               {/* Disabled animation for performance on large dataset */}
-              <Line isAnimationActive={false} yAxisId="hp" type="monotone" dataKey="hp" name={`Power (${getPowerLabel()})`} stroke="var(--accent)" strokeWidth={2} dot={{ r: 1.5 }} activeDot={{ r: 4 }} />
-              <Line isAnimationActive={false} yAxisId="torque" type="monotone" dataKey="torque" name={`Torque (${getTorqueLabel()})`} stroke="hsl(120, 80%, 60%)" strokeWidth={2} dot={{ r: 1.5 }} activeDot={{ r: 4 }} />
+              <Line isAnimationActive={false} yAxisId="hp" type="monotone" dataKey="hp" name={`Power (${getPowerLabel()})`} stroke="var(--primary)" strokeWidth={2} dot={{ r: 1.5 }} activeDot={{ r: 4 }} />
+              <Line isAnimationActive={false} yAxisId="torque" type="monotone" dataKey="torque" name={`Torque (${getTorqueLabel()})`} stroke="var(--secondary)" strokeWidth={2} dot={{ r: 1.5 }} activeDot={{ r: 4 }} />
             </LineChart>
           </ResponsiveContainer>
         ) : (

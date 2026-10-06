@@ -268,10 +268,10 @@ const TelemetryViewContent: React.FC<TelemetryViewContentProps> = ({
                 </div>
                 <div className="vr opacity-25" style={{ height: '80%' }} />
                 <div className="telemetry-pedal-inputs d-flex gap-1 align-items-center h-100 justify-content-around ps-1">
-                  <VerticalInputBar label={t("CLT")} selector={selectClutch} max={255} color="#0088ff" />
-                  <VerticalInputBar label={t("THR")} selector={selectAccel} max={255} color="#00ff66" />
-                  <VerticalInputBar label={t("BRK")} selector={selectBrake} max={255} color="#ff0055" />
-                  <VerticalInputBar label={t("HBK")} selector={selectHandbrake} max={255} color="#ffaa00" />
+                  <VerticalInputBar label={t("CLT")} selector={selectClutch} max={255} color="var(--instrument-cold, #0088ff)" />
+                  <VerticalInputBar label={t("THR")} selector={selectAccel} max={255} color="var(--instrument-throttle, #00ff66)" />
+                  <VerticalInputBar label={t("BRK")} selector={selectBrake} max={255} color="var(--instrument-brake, #ff0055)" />
+                  <VerticalInputBar label={t("HBK")} selector={selectHandbrake} max={255} color="var(--instrument-handbrake, #ffaa00)" />
                 </div>
               </div>
             </TelemetryCardLayout>

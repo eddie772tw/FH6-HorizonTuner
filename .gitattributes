@@ -1,5 +1,9 @@
 # Auto detect text files and perform LF normalization
 * text=auto
 
+# Preserve vendored provenance hashes across Windows and Linux checkouts.
+frontend/public/assets/rhine/** text=auto eol=lf
+frontend/src/styles/fonts/rhine-misans.css text eol=lf
+
 # MoTeC oracle is a byte-level wire fixture, including CSV CRLF terminators.
 backend-rust/tests/fixtures/motec.csv -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol

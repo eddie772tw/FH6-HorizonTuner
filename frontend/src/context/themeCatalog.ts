@@ -1,7 +1,8 @@
 /** A core selects a palette and a component design system; presets only change accents. */
 export const DESIGN_SYSTEMS = {
-  halfmoon: { label: 'Halfmoon' },
-  swiss: { label: 'Swiss' },
+  halfmoon: { label: 'Halfmoon', preview: 'swatches' },
+  swiss: { label: 'Swiss', preview: 'components' },
+  rhine: { label: 'Rhine Lab', preview: 'components' },
 } as const;
 
 export type DesignSystemId = keyof typeof DESIGN_SYSTEMS;
@@ -15,6 +16,11 @@ interface CoreThemeDefinition {
 }
 
 export const CORE_THEMES = {
+  'rhine-lab': {
+    label: 'Rhine Lab', designSystem: 'rhine',
+    description: 'Paper surfaces, archival typography and precise instrument markings',
+    swatchPrimary: '#c5a16b', swatchBg: '#11181b',
+  },
   default: {
     label: 'Default', designSystem: 'halfmoon',
     description: 'Classic neutral tone with clean structure',

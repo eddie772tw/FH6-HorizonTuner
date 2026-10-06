@@ -1,7 +1,22 @@
+// @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { formatRacePosition, formatTelemetryGear } from './telemetryDisplay';
+import { formatRacePosition, formatTelemetryGear, setTelemetryText } from './telemetryDisplay';
 
 describe('telemetry display formatting', () => {
+  it('keeps unchanged readout text nodes and replaces changed values as plain text', () => {
+    const element = document.createElement('span');
+    element.textContent = '9000';
+    const originalText = element.firstChild;
+    setTelemetryText(element, '9000');
+    expect(element.firstChild).toBe(originalText);
+    setTelemetryText(element, '<10 RPM');
+    expect(element.textContent).toBe('<10 RPM');
+    expect(element.children.length).toBe(0);
+    setTelemetryText(element, '');
+    expect(element.textContent).toBe('');
+    expect(() => setTelemetryText(null, '0')).not.toThrow();
+  });
+
   describe('formatTelemetryGear', () => {
     it('formats reverse gear (0)', () => {
       expect(formatTelemetryGear(0)).toBe('R');

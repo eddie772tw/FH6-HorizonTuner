@@ -1,0 +1,21 @@
+{
+  "sourceCommit": "aee773d0ed9c90482757c0253a5387599ab3bdd6",
+  "method": "Edge UI, isolated default_car draft; no workflow calculation",
+  "checks": [
+    {
+      "core": "default",
+      "weight": 1475
+    },
+    {
+      "core": "swiss-editorial",
+      "weight": 1475
+    },
+    {
+      "core": "rhine-lab",
+      "weight": 1475,
+      "step3Retained": true,
+      "returnedStep1": true
+    }
+  ],
+  "limits": "Step 4 remains disabled without engine measurement; no real-game qualification asserted"
+}

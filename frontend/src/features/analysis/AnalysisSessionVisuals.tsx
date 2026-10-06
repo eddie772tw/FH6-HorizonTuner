@@ -71,7 +71,7 @@ const AnalysisSessionVisuals: React.FC<AnalysisSessionVisualsProps> = ({
               </select>
             </label>
           </div>
-          <div style={{ flex: 1, position: "relative", width: "100%", height: "100%" }}>
+          <div style={{ flex: 1, minHeight: 0, position: "relative", width: "100%", height: "100%" }}>
             <TrackMapCanvas
               data={activeCanvasData}
               fullTrackData={baseCanvasData}

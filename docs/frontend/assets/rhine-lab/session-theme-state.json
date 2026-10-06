@@ -1,0 +1,27 @@
+{
+  "before": {
+    "scroll": 348.8888854980469,
+    "selected": "session_e224e809515a4130bf63d54b6fc9019e",
+    "status": "狀態: 閒置 (26 個樣本) | Loaded Session: session_e224e809515a4130bf63d54b6fc9019e"
+  },
+  "checks": [
+    {
+      "core": "default",
+      "scroll": 348.8888854980469,
+      "selected": "session_e224e809515a4130bf63d54b6fc9019e",
+      "status": "狀態: 閒置 (26 個樣本) | Loaded Session: session_e224e809515a4130bf63d54b6fc9019e"
+    },
+    {
+      "core": "swiss-editorial",
+      "scroll": 347.7778015136719,
+      "selected": "session_e224e809515a4130bf63d54b6fc9019e",
+      "status": "狀態: 閒置 (26 個樣本) | Loaded Session: session_e224e809515a4130bf63d54b6fc9019e"
+    },
+    {
+      "core": "rhine-lab",
+      "scroll": 338.8888854980469,
+      "selected": "session_e224e809515a4130bf63d54b6fc9019e",
+      "status": "狀態: 閒置 (26 個樣本) | Loaded Session: session_e224e809515a4130bf63d54b6fc9019e"
+    }
+  ]
+}

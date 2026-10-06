@@ -74,7 +74,7 @@ Road #462 修正採版本化 [launch envelope v3](docs/tuning/aego-road-launch-v
   - **自動化發布架構**：維護者僅需在 GitHub 網頁建立 Release，GitHub Actions 即自動觸發編譯與簽名。`FH6-HorizonTuner-Full-Installer.exe` 與 `FH6-HorizonTuner-Lite-Installer.exe` 是可直接安裝的正式 NSIS installer，也是 OTA updater 重用的同一個經簽署 payload；Full/Lite portable EXE 與 Portable ZIP 則清楚標示為可攜版。兩個 OTA 管道分別使用 `latest.json`（Full）與 `latest-lite.json`（Lite），可獨立下載與安裝，不依賴另一個版本。
 * **診斷主控台與主題 / 多語言系統 (Diagnostics, Theme & i18n)**:
   - **診斷主控台**：內建即時日誌檢視器，支援 DEBUG / INFO / WARNING / ERROR 層級篩選與 Traceback 自動拼接。
-  - **設計系統與主題**：Core Theme 同時決定整體配色、材質與元件設計；Default／Modern／Elegant 屬於 Halfmoon，Swiss Technical／Editorial／Contrast 屬於 Swiss。Halfmoon 保留圓角玻璃風格；Swiss 提供冷色工程、暖紙編排與中性反差三種日夜外觀，共用消光元件與跨頁標頭。一般分頁依內容寬度且設最大值，調校保留編號與等寬滿列。從「應用程式選單 → 外觀」按系統分組選擇核心，Swiss 選擇卡可預覽標頭、按鈕與徽章；系統色彩調配整合三個色票／HEX 欄位及 10 組 Color Presets，同步原生控制項與圖表，切換核心保留三色。CSS 編輯器與速查指南預設折疊供進階使用。`themeCatalog.ts` 管理核心歸屬，`styles/design-systems/` 隔離系統樣式，未來可新增模組而不複製各頁 CSS；舊主題設定及匯入／匯出格式保持相容。
+  - **設計系統與主題**：Core Theme 同時決定整體配色、材質與元件設計；Default／Modern／Elegant 屬於 Halfmoon，Swiss Technical／Editorial／Contrast 屬於 Swiss，Rhine Lab 屬於 Rhine。Halfmoon 保留圓角玻璃風格；Swiss 提供冷色工程、暖紙編排與中性反差三種日夜外觀，共用消光元件與跨頁標頭。一般分頁依內容寬度且設最大值，調校保留編號與等寬滿列。從「應用程式選單 → 外觀」按系統分組選擇核心，Swiss 選擇卡可預覽標頭、按鈕與徽章；系統色彩調配整合三個色票／HEX 欄位及 11 組 Color Presets，同步原生控制項與圖表，切換核心保留三色。CSS 編輯器與速查指南預設折疊供進階使用。Rhine Lab 提供 MiSans 紙面工作台、統一的桌面紙頁設定面板、刻度導覽、同步重繪的平面 Canvas 儀表及 reduced-motion 相容短暫動畫。Swiss 五卡以資料網格、平直 RPM、穩定警示與實色圖例形成差異；AEGO 齒比、引擎曲線、賽事分析及直線加速圖表也共用核心圖表樣式。素材、授權與驗收方式見 [Rhine Lab 指南](docs/frontend/rhine-lab.md)。`themeCatalog.ts` 管理核心歸屬，`styles/design-systems/` 隔離系統樣式，未來可新增模組而不複製各頁 CSS；舊主題設定及匯入／匯出格式保持相容。
   - **動態多語言**：預設支援繁體中文 (zh-tw)、英文 (en-us)、日文 (ja-jp) 等。
 
 ---
@@ -200,7 +200,7 @@ uv run --no-project --python .venv\Scripts\python.exe ruff format --check .
 
 操作指南、HUD 契約、調校開發及校準流程統一由 [文件索引](docs/README.md) 查找；舊計畫與研究已分流至 [歷史索引](docs/archive/README.md)，不代表目前開發進度。
 
-前端工作從[前端開發入口](frontend/README.md)與[主題／設計系統指南](docs/frontend/design-systems.md)開始，包含六個核心、CSS 模組責任、擴充方式及送審驗收矩陣。
+前端工作從[前端開發入口](frontend/README.md)與[主題／設計系統指南](docs/frontend/design-systems.md)開始，包含七個核心、CSS 模組責任、擴充方式及送審驗收矩陣。
 
 協作代理規範位於 [`.agents/AGENTS.md`](.agents/AGENTS.md)，變更前請先閱讀；專案決策與經驗紀錄維護於 [`.agents/Journal.md`](.agents/Journal.md)。
 

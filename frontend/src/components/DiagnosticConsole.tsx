@@ -7,7 +7,7 @@ import {
   supportBundleRequestBody,
 } from './diagnosticSupportBundle';
 import { ModalPortal } from './common/ModalPortal';
-import { useModalFocus } from '../hooks/useModalFocus';
+import { useDialogTransition } from '../hooks/useDialogTransition';
 import { useFileSave } from '../hooks/useFileSave';
 
 interface LogEntry {
@@ -23,7 +23,7 @@ interface DiagnosticConsoleProps {
 }
 
 const DiagnosticConsole: React.FC<DiagnosticConsoleProps> = ({ show, onClose }) => {
-  const panelRef = useModalFocus<HTMLDivElement>(show, onClose);
+  const { shown, close, panelRef, onTransitionEnd } = useDialogTransition(show, onClose);
   const { t } = useSettings();
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [level, setLevel] = useState<string>('ALL');
@@ -120,18 +120,19 @@ const DiagnosticConsole: React.FC<DiagnosticConsoleProps> = ({ show, onClose }) 
     <ModalPortal>
       {/* Backdrop */}
       <div
-        className={`offcanvas-backdrop fade${show ? ' show' : ''}`}
+        className={`offcanvas-backdrop fade${shown ? ' show' : ''}`}
         style={{
           display: show ? 'block' : 'none',
           zIndex: 1040,
         }}
-        onClick={onClose}
+        onClick={close}
       />
 
       {/* Offcanvas panel */}
       <div
-        className={`offcanvas offcanvas-end app-menu-drawer settings-drawer terminal-sidebar border-start glass-panel shadow-lg${show ? ' show' : ''}`}
+        className={`offcanvas offcanvas-end app-menu-drawer settings-drawer terminal-sidebar border-start glass-panel shadow-lg${shown ? ' show' : ''}`}
         ref={panelRef}
+        onTransitionEnd={onTransitionEnd}
         tabIndex={-1}
         aria-modal="true"
         aria-hidden={!show}
@@ -149,7 +150,7 @@ const DiagnosticConsole: React.FC<DiagnosticConsoleProps> = ({ show, onClose }) 
           <button
             type="button"
             className="btn-close"
-            onClick={onClose}
+            onClick={close}
             aria-label={t("Close Console")}
           />
         </div>

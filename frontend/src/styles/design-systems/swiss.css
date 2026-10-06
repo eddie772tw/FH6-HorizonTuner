@@ -240,3 +240,72 @@
   font-weight: 700;
 }
 :where([data-design-system="swiss"]) .telemetry-card-shell :is(.text-secondary, .text-info) { color: var(--text-secondary) !important; }
+
+/* Swiss instruments use a data grid, while Rhine owns ruled guides and square markers. */
+[data-design-system="swiss"] {
+  --instrument-flat: 1;
+  --chart-grid: var(--instrument-grid);
+  --chart-grid-dash: 2 4;
+  --chart-radius: var(--panel-radius);
+  --chart-series-saturation: 55%;
+  --chart-series-lightness: 65%;
+  --instrument-alert-flash: 0;
+  --instrument-grid: var(--divider);
+  --instrument-track: var(--glass-border);
+  --instrument-tick: var(--text-secondary);
+  --instrument-inactive: var(--surface-3);
+  --instrument-history-marker: var(--text-secondary);
+  --instrument-pointer: var(--text-primary);
+}
+[data-design-system="swiss"][data-bs-theme="light"] {
+  --chart-series-lightness: 40%;
+  --instrument-cold: #2368a0;
+  --instrument-normal: #267044;
+  --instrument-throttle: #267044;
+  --instrument-brake: #b92a46;
+  --instrument-danger: #b92a46;
+  --instrument-hot: #b92a46;
+  --instrument-handbrake: #946415;
+  --instrument-regen: #267044;
+  --instrument-warning-fill: #b92a4618;
+  --instrument-warning-line: #b92a4680;
+}
+[data-design-system="swiss"][data-bs-theme="dark"] {
+  --instrument-cold: #7cb9ec;
+  --instrument-normal: #83c99b;
+  --instrument-throttle: #83c99b;
+  --instrument-brake: #f18b9c;
+  --instrument-danger: #f18b9c;
+  --instrument-hot: #f18b9c;
+  --instrument-handbrake: #d6b16a;
+  --instrument-regen: #83c99b;
+  --instrument-warning-fill: #f18b9c18;
+  --instrument-warning-line: #f18b9c80;
+}
+[data-design-system="swiss"][data-bs-core="swiss-contrast"] {
+  --instrument-grid: var(--divider-md);
+  --instrument-track: var(--divider-md);
+}
+:where([data-design-system="swiss"]) :is(.telemetry-instrument-panel, .telemetry-trace-panel, .telemetry-driver-inputs, .telemetry-pedal-inputs .border) {
+  border-radius: var(--panel-radius) !important;
+}
+:where([data-design-system="swiss"]) .telemetry-trace-legend {
+  background: var(--surface-1) !important;
+  border-bottom: 1px solid var(--glass-border);
+  line-height: 1.25;
+}
+:where([data-design-system="swiss"]) .telemetry-trace-legend .telemetry-power-label { color: var(--primary) !important; }
+:where([data-design-system="swiss"]) .telemetry-trace-legend .telemetry-torque-label { color: var(--secondary) !important; }
+:where([data-design-system="swiss"]) .telemetry-trace-legend .text-success { color: var(--instrument-throttle) !important; }
+:where([data-design-system="swiss"]) .telemetry-trace-legend .text-danger { color: var(--instrument-brake) !important; }
+:where([data-design-system="swiss"]) .telemetry-temperature-label {
+  font-family: var(--instrument-font-family) !important;
+  font-weight: 600 !important;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary) !important;
+  background: var(--glass-bg) !important;
+  border: 1px solid var(--glass-border);
+}
+:where([data-design-system="swiss"]) :is(.telemetry-suspension-track, .telemetry-suspension-fill) { border-radius: var(--input-radius) !important; }
+:where([data-design-system="swiss"]) .telemetry-suspension-trace { opacity: 1 !important; }
+:where([data-design-system="swiss"]) .telemetry-dynamics-readouts .text-uppercase { letter-spacing: var(--readout-tracking); }

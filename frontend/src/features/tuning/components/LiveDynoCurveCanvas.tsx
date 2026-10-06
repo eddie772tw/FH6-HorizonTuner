@@ -1,6 +1,7 @@
 import { memo, useEffect, useRef } from 'react';
 import { useSettings } from '../../../context/SettingsContext';
 import type { TuningMeasurementState } from '../../../domain/tuning/types';
+import { useCanvasTheme } from '../../../utils/canvasTheme';
 
 /** Draw the session-owned accepted summary, including after leaving/re-entering Tune. */
 export const LiveDynoCurveCanvas = memo(function LiveDynoCurveCanvas({ state, height = 180 }: {
@@ -9,6 +10,7 @@ export const LiveDynoCurveCanvas = memo(function LiveDynoCurveCanvas({ state, he
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { convertPower, convertTorque, t } = useSettings();
+  const theme = useCanvasTheme();
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -23,11 +25,7 @@ export const LiveDynoCurveCanvas = memo(function LiveDynoCurveCanvas({ state, he
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
       ctx.scale(dpr, dpr);
-      const style = getComputedStyle(document.documentElement);
-      const primary = style.getPropertyValue('--primary').trim();
-      const secondary = style.getPropertyValue('--secondary').trim();
-      const text = style.getPropertyValue('--text-secondary').trim();
-      const divider = style.getPropertyValue('--divider').trim();
+      const { primary, secondary, muted: text, divider } = theme;
       const limit = state.engineMaxRpm;
       if (!limit) return;
       const left = 12, right = width - 12, top = 32, bottom = h - 26;
@@ -38,12 +36,20 @@ export const LiveDynoCurveCanvas = memo(function LiveDynoCurveCanvas({ state, he
       // Independent axes keep curve shape stable when display units change.
       const maxPower = Math.max(1, ...power) * 1.1;
       const maxTorque = Math.max(1, ...torque) * 1.1;
-      ctx.strokeStyle = divider;
+      ctx.strokeStyle = theme.chartGrid;
       ctx.lineWidth = 1;
+      ctx.setLineDash(theme.chartDash);
       for (let i = 0; i <= 4; i++) {
         const y = top + (bottom - top) * i / 4;
         ctx.beginPath(); ctx.moveTo(left, y); ctx.lineTo(right, y); ctx.stroke();
       }
+      if (theme.linear) {
+        for (let i = 1; i < 4; i++) {
+          const gx = left + (right - left) * i / 4;
+          ctx.beginPath(); ctx.moveTo(gx, top); ctx.lineTo(gx, bottom); ctx.stroke();
+        }
+      }
+      ctx.setLineDash([]);
       if (state.powerbandStartRpm && state.powerbandEndRpm && state.powerbandEndRpm > state.powerbandStartRpm) {
         ctx.globalAlpha = 0.12;
         ctx.fillStyle = primary;
@@ -81,13 +87,11 @@ export const LiveDynoCurveCanvas = memo(function LiveDynoCurveCanvas({ state, he
     draw();
     const resize = new ResizeObserver(draw);
     resize.observe(container);
-    const theme = new MutationObserver(draw);
-    theme.observe(document.documentElement, { attributes: true, attributeFilter: ['data-bs-theme', 'data-bs-core', 'style'] });
-    return () => { resize.disconnect(); theme.disconnect(); };
-  }, [state, convertPower, convertTorque]);
+    return () => resize.disconnect();
+  }, [state, convertPower, convertTorque, theme]);
 
-  return <div ref={containerRef} className="position-relative w-100 rounded-3 overflow-hidden"
-    style={{ height, background: 'var(--surface-1)', border: '1px solid var(--glass-border)' }}>
+  return <div ref={containerRef} className="core-theme-chart position-relative w-100 overflow-hidden"
+    style={{ height, background: 'var(--surface-1)', border: '1px solid var(--glass-border)', borderRadius: 'var(--chart-radius)' }}>
     <canvas ref={canvasRef} className="w-100 h-100 d-block" role="img"
       aria-label={t('Observed engine output')} />
     <div className="position-absolute top-0 start-0 end-0 px-2 d-flex justify-content-between small">
