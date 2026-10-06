@@ -15,6 +15,8 @@ const hash = bytes => crypto.createHash('sha256').update(bytes).digest('hex');
 const files = [];
 function write(relative, bytes, original) {
   relative = relative.replace('public/fonts/', 'public/assets/rhine/fonts/').replace('public/licenses/', 'public/assets/rhine/licenses/');
+  // Match Git checkout bytes on Windows and Linux; never alter font/PDF binaries.
+  if (/\.(css|txt|md|json)$/.test(relative)) bytes = Buffer.from(bytes.toString().replaceAll('\r\n', '\n'));
   const destination = path.join(frontend, relative);
   fs.mkdirSync(path.dirname(destination), { recursive: true });
   fs.writeFileSync(destination, bytes);

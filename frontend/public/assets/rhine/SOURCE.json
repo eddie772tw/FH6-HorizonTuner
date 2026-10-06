@@ -1884,7 +1884,7 @@
     },
     {
       "path": "src/styles/fonts/rhine-misans.css",
-      "sha256": "13405091fb9c9e38280e42329be43fe4a5fb0cfe04b26b25e9e2a768e299ddd2"
+      "sha256": "6c70c42e2edd1dbd62d37a48533ad63a382e1d828f9357fef2fd5ba7a4b7c3f3"
     },
     {
       "path": "public/assets/rhine/fonts/MiSans-license.pdf",
@@ -1893,12 +1893,12 @@
     },
     {
       "path": "public/assets/rhine/fonts/NOTICE.txt",
-      "sha256": "b58d6ca5ea8967b460c2ca04d19cab36f180aa60c388dd3487f212618903e38a",
+      "sha256": "c7e6726acd3804831879c01d11df3d769f8d818c645d70297d88b9bc7b500333",
       "source": "public/fonts/NOTICE.txt"
     },
     {
       "path": "public/assets/rhine/fonts/misans-webfont-4.3.1/UPSTREAM-README.md",
-      "sha256": "e583b1778a58e065f0abcad2592a4b6069a4688990bec788ca6387f9c42b45c7"
+      "sha256": "084502087c6b8e0bd028adfe4dbccc83e00c4c203f09abc34593e56e85e367b6"
     },
     {
       "path": "public/assets/rhine/fonts/misans-webfont-4.3.1/source.json",
@@ -1906,7 +1906,7 @@
     },
     {
       "path": "public/assets/rhine/licenses/RhineLabUI-MIT.txt",
-      "sha256": "9129c293e2a6f989d6e648fffc551a3ec914419295e67942b991f7f0f4576163",
+      "sha256": "b42f104f4b3687773c76efbf990c1ab7b306a8c59035958c0b886dfbbcf2cd91",
       "source": "LICENSE"
     }
   ]
