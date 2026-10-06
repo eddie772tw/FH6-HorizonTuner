@@ -1,15 +1,17 @@
-import { isCoreTheme } from './themeCatalog';
+import { isCoreTheme, coreThemeEntries } from './themeCatalog';
 import { describe, expect, it } from 'vitest';
 import {
   defaultThemeSettings,
   normalizeThemeSettings,
   primaryForeground,
   themeColorProperties,
+  rhinePalettes,
   type ThemeSettings,
 } from './themeSettings';
 
 describe('ThemeContext - Swiss Style and Core Theme support', () => {
   it('validates swiss as a recognized core theme value', () => {
+    expect(isCoreTheme('rhine-lab')).toBe(true);
     expect(isCoreTheme('swiss')).toBe(true);
     expect(isCoreTheme('swiss-editorial')).toBe(true);
     expect(isCoreTheme('swiss-contrast')).toBe(true);
@@ -68,7 +70,7 @@ describe('ThemeContext - Swiss Style and Core Theme support', () => {
     expect(primaryForeground(color)).toBe(foreground);
   });
 
-  it.each(['default', 'modern', 'elegant', 'swiss', 'swiss-editorial', 'swiss-contrast'] as const)('shares the preset with Halfmoon controls in %s', halfmoonCore => {
+  it.each(coreThemeEntries.map(([id]) => id))('shares the preset with Halfmoon controls in %s', halfmoonCore => {
     const theme = normalizeThemeSettings({ halfmoonCore, primaryColor: '#ff0000' });
     const properties = themeColorProperties(theme);
     expect(properties['--primary']).toBe('#ff0000');
@@ -79,4 +81,13 @@ describe('ThemeContext - Swiss Style and Core Theme support', () => {
     expect(mono['--bs-primary-foreground-hsl']).toBe('0, 0%, 0%');
     expect(mono['--bs-primary-switch-svg']).toBe('var(--bs-switch-svg-dark)');
   });
+});
+
+it('adapts the complete Rhine palette across modes and leaves edited palettes intact', () => {
+  const saved = normalizeThemeSettings({ halfmoonCore: 'rhine-lab', mode: 'dark', ...rhinePalettes.dark });
+  const light = normalizeThemeSettings({ ...saved, mode: 'light' });
+  expect(light).toMatchObject(rhinePalettes.light);
+  expect(normalizeThemeSettings({ ...JSON.parse(JSON.stringify(light)), mode: 'dark' })).toEqual(saved);
+  const custom = { ...saved, mode: 'light' as const, accentColor: '#123456' };
+  expect(normalizeThemeSettings(custom)).toEqual(custom);
 });

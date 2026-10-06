@@ -4,6 +4,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { ThemeProvider, useTheme } from './ThemeContext';
 import { defaultThemeSettings } from './themeSettings';
+import { coreThemeEntries } from './themeCatalog';
 import { applyThemeEarly } from '../app/applyThemeEarly';
 import ThemeView from '../features/theme/ThemeView';
 
@@ -26,15 +27,15 @@ async function mount(panel = false) {
   await act(async () => root.render(<ThemeProvider><Probe />{panel && <ThemeView show onClose={() => {}} />}</ThemeProvider>));
 }
 
-it.each([
-  ['default', 'halfmoon'], ['modern', 'halfmoon'], ['elegant', 'halfmoon'], ['swiss', 'swiss'],
-  ['swiss-editorial', 'swiss'], ['swiss-contrast', 'swiss'],
-] as const)('resolves saved %s consistently before first paint and after React mounts', async (core, system) => {
-  const saved = { ...defaultThemeSettings, halfmoonCore: core, primaryColor: '#123456' };
+it.each(coreThemeEntries.flatMap(([core, definition]) =>
+  (['light', 'dark'] as const).map(mode => ({ core, system: definition.designSystem, mode })),
+))('resolves saved $core / $mode consistently before first paint and after React mounts', async ({ core, system, mode }) => {
+  const saved = { ...defaultThemeSettings, halfmoonCore: core, mode, primaryColor: '#123456' };
   localStorage.setItem('themeSettings', JSON.stringify(saved));
   applyThemeEarly();
   expect(document.documentElement.dataset.designSystem).toBe(system);
   expect(document.documentElement.getAttribute('data-bs-core')).toBe(core);
+  expect(document.documentElement.getAttribute('data-bs-theme')).toBe(mode);
   await mount();
   expect(document.documentElement.dataset.designSystem).toBe(system);
   expect(document.documentElement.style.getPropertyValue('--primary')).toBe('#123456');
@@ -62,6 +63,7 @@ it('groups cores by system, nests presets under colors and keeps saved CSS activ
   await mount(true);
   expect(document.querySelector('[aria-labelledby="theme-system-halfmoon"]')?.querySelectorAll('button').length).toBe(3);
   expect(document.querySelector('[aria-labelledby="theme-system-swiss"]')?.querySelectorAll('button').length).toBe(3);
+  expect(document.querySelector('[aria-labelledby="theme-system-rhine"]')?.querySelectorAll('button').length).toBe(1);
   expect(document.querySelector('.theme-colors .theme-presets')).not.toBeNull();
   expect(document.querySelector<HTMLDetailsElement>('.theme-advanced')?.open).toBe(false);
   expect(document.getElementById('custom-theme-css')?.textContent).toBe('.card { border-width: 2px; }');
@@ -74,7 +76,7 @@ it('groups cores by system, nests presets under colors and keeps saved CSS activ
   }
 });
 
-it.each(['swiss-editorial', 'swiss-contrast'] as const)('selects %s through the grouped UI and preserves colors on export/import', async core => {
+it.each(['swiss-editorial', 'swiss-contrast', 'rhine-lab'] as const)('selects %s through the grouped UI and preserves colors on export/import', async core => {
   localStorage.setItem('themeSettings', JSON.stringify({ ...defaultThemeSettings, mode: 'light', primaryColor: '#123456' }));
   await mount(true);
   await act(async () => (document.getElementById(`theme-core-${core}`) as HTMLButtonElement).click());
@@ -83,7 +85,7 @@ it.each(['swiss-editorial', 'swiss-contrast'] as const)('selects %s through the 
   const exported = theme.exportThemeJSON();
   await act(async () => theme.updateThemeSettings({ halfmoonCore: 'elegant', mode: 'dark' }));
   await act(async () => { expect(theme.importThemeJSON(exported)).toBe(true); });
-  expect(document.documentElement.dataset.designSystem).toBe('swiss');
+  expect(document.documentElement.dataset.designSystem).toBe(core === 'rhine-lab' ? 'rhine' : 'swiss');
   expect(document.documentElement.getAttribute('data-bs-core')).toBe(core);
   expect(theme.themeSettings).toMatchObject({ halfmoonCore: core, mode: 'light', primaryColor: '#123456' });
   expect(JSON.parse(localStorage.getItem('themeSettings')!)).toEqual(theme.themeSettings);

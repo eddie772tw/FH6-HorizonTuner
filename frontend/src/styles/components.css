@@ -51,7 +51,7 @@
 .telemetry-card-shell__header h3 { font-size: var(--panel-heading-size, 0.875rem) !important; text-transform: var(--readout-transform); }
 .telemetry-card-shell .font-monospace { font-family: var(--instrument-font-family) !important; }
 .telemetry-card-shell .text-primary { color: var(--instrument-value-color) !important; }
-.telemetry-card-shell, .telemetry-card-shell * { transition: none !important; }
+.telemetry-card-shell, .telemetry-card-shell * { transition: none !important; animation: none !important; }
 .telemetry-live-grid, .telemetry-card-layout { gap: 8px !important; }
 .telemetry-live-grid:not(.telemetry-live-grid--focused) { min-height: 44rem; }
 

@@ -29,14 +29,14 @@ const AppearanceModePanel: React.FC = () => {
             {coreThemeEntries.filter(([, core]) => core.designSystem === systemId).map(([id, core]) => <button
               key={id} type="button" id={`theme-core-${id}`} className="theme-choice theme-core-choice"
               aria-pressed={themeSettings.halfmoonCore === id} onClick={() => updateThemeSettings({ halfmoonCore: id })}>
-              {core.designSystem === 'swiss' ? <span className="theme-core-preview" aria-hidden="true"
+              {system.preview === 'components' ? <span className="theme-core-preview" aria-hidden="true"
                 data-design-system={core.designSystem} data-bs-core={id} data-bs-theme={themeSettings.mode}
                 style={themeColorProperties(themeSettings) as React.CSSProperties}>
-                <span className="workspace-panel-header">
-                  <span className="workspace-section-heading">Aa</span><span className="badge text-bg-primary">123</span>
+                <span className="theme-core-preview__header">
+                  <span className="theme-core-preview__title">Aa</span><span className="theme-core-preview__badge">123</span>
                 </span>
                 <span className="theme-core-preview__body">
-                  <span>12.34</span><span className="btn btn-primary btn-sm">Aa</span>
+                  <span>12.34</span><span className="theme-core-preview__button">Aa</span>
                 </span>
               </span> : <span className="theme-core-swatches" aria-hidden="true">
                 <span style={{ background: core.swatchPrimary }} /><span style={{ background: core.swatchBg }} />
