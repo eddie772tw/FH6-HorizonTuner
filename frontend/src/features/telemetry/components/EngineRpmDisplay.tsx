@@ -1,3 +1,4 @@
+import { useTelemetryCardPaint, createTelemetryCanvasSurface } from './TelemetryCardVisibility';
 import React, { useEffect, useRef } from 'react';
 import { telemetryEmitter } from '../../../hooks/useTelemetry';
 import { readCanvasTheme, observeCanvasTheme } from '../../../utils/canvasTheme';
@@ -5,6 +6,7 @@ import { useSettings } from '../../../context/SettingsContext';
 import { formatTelemetryGear, setTelemetryText } from '../../../utils/telemetryDisplay';
 
 const EngineRpmDisplay: React.FC = React.memo(() => {
+  const paint = useTelemetryCardPaint();
   const rpmRef = useRef<HTMLSpanElement>(null);
   const maxRpmRef = useRef<HTMLSpanElement>(null);
   const gearRef = useRef<HTMLSpanElement>(null);
@@ -17,7 +19,7 @@ const EngineRpmDisplay: React.FC = React.memo(() => {
   
   const lastFlashRef = useRef(false);
   const lastFlashTimeRef = useRef(0);
-  const latestSample = useRef({ rpm: 0, maxRpm: 8000, alert: false });
+  const latestSample = useRef({ rpm: 0, maxRpm: 8000, alert: false, gear: 11, speed: 0 });
 
   const { t, convertSpeed } = useSettings();
 
@@ -25,28 +27,31 @@ const EngineRpmDisplay: React.FC = React.memo(() => {
     let theme = readCanvasTheme();
     const stopThemeObserver = observeCanvasTheme(() => { theme = readCanvasTheme(); drawRpmGauge(); });
 
-    setTelemetryText(speedUnitRef.current, convertSpeed(0).label);
-
     const canvas = canvasRef.current;
     const container = containerRef.current;
     if (!canvas || !container) return;
+    const surface = createTelemetryCanvasSurface(canvas);
 
     const resizeObserver = new ResizeObserver((entries) => {
       for (const entry of entries) {
         const { width, height } = entry.contentRect;
-        if (width > 0 && height > 0) {
-          const dpr = window.devicePixelRatio || 1;
-          canvas.width = Math.floor(width * dpr);
-          canvas.height = Math.floor(height * dpr);
-          drawRpmGauge();
-        }
+        surface.resize(width, height);
+        drawRpmGauge();
       }
     });
     resizeObserver.observe(container);
 
     const drawRpmGauge = () => {
-      const { rpm: currentRpm, maxRpm, alert: isShiftAlert } = latestSample.current;
-      if (!canvas || canvas.width === 0 || canvas.height === 0) return;
+      if (!paint.canPaint()) return;
+      const { rpm: currentRpm, maxRpm, alert: isShiftAlert, gear, speed } = latestSample.current;
+      const speedData = convertSpeed(speed);
+      setTelemetryText(speedUnitRef.current, speedData.label);
+      setTelemetryText(rpmRef.current, currentRpm.toString());
+      setTelemetryText(maxRpmRef.current, Math.round(maxRpm).toString());
+      setTelemetryText(speedRef.current, Math.round(speedData.value).toString());
+      setTelemetryText(gearRef.current, formatTelemetryGear(gear));
+      if (shiftBadgeRef.current) shiftBadgeRef.current.style.opacity = isShiftAlert ? '1' : '0';
+      if (!surface.sync()) return;
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
 
@@ -118,37 +123,26 @@ const EngineRpmDisplay: React.FC = React.memo(() => {
 
       const currentRpm = Math.round(data.CurrentEngineRpm || 0);
       const maxRpm = data.EngineMaxRpm || 8000;
-      const gear = data.Gear || 0;
-      const speedData = convertSpeed(data.SpeedMetersPerSecond || 0);
-      const accelInput = data.AccelInput || 0;
-
-      setTelemetryText(rpmRef.current, currentRpm.toString());
-      setTelemetryText(maxRpmRef.current, Math.round(maxRpm).toString());
-      setTelemetryText(speedRef.current, Math.round(speedData.value).toString());
-
-      const gearText = formatTelemetryGear(gear);
-      setTelemetryText(gearRef.current, gearText);
-
       const rpmPercent = currentRpm / Math.max(1000, maxRpm);
-      const isRedlineAlert = rpmPercent >= 0.88 && accelInput > 100;
-
-      if (shiftBadgeRef.current) {
-        shiftBadgeRef.current.style.opacity = isRedlineAlert ? '1' : '0';
-      }
-
+      const isRedlineAlert = rpmPercent >= 0.88 && (data.AccelInput || 0) > 100;
+      latestSample.current.gear = data.Gear || 0;
+      latestSample.current.speed = data.SpeedMetersPerSecond || 0;
       latestSample.current.rpm = currentRpm;
       latestSample.current.maxRpm = maxRpm;
       latestSample.current.alert = isRedlineAlert;
       drawRpmGauge();
     };
 
+    const stopPaint = paint.subscribe(drawRpmGauge);
+    drawRpmGauge();
     telemetryEmitter.addEventListener('update', handleUpdate);
     return () => {
+      stopPaint();
       resizeObserver.disconnect();
       stopThemeObserver();
       telemetryEmitter.removeEventListener('update', handleUpdate);
     };
-  }, [convertSpeed]);
+  }, [convertSpeed, paint]);
 
   return (
     <div className="telemetry-instrument-panel d-flex flex-column gap-1 w-100 p-2 border rounded-3 overflow-hidden shadow-sm" style={{ background: 'var(--surface-1)', borderColor: 'var(--glass-border) !important' }}>

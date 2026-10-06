@@ -1,5 +1,6 @@
+import { useTelemetryCardPaint } from './TelemetryCardVisibility';
 import React, { useEffect, useRef } from 'react';
-import { telemetryEmitter } from '../../../hooks/useTelemetry';
+import { telemetryEmitter, type TelemetryData } from '../../../hooks/useTelemetry';
 import { useSettings } from '../../../context/SettingsContext';
 import {
   emptyQualifiedOutputPeaks,
@@ -17,6 +18,8 @@ const formatTime = (seconds: number) => {
 };
 
 const VehicleDynamicsDisplay: React.FC = React.memo(() => {
+  const paint = useTelemetryCardPaint();
+  const latestData = useRef<TelemetryData | null>(null);
   const powerRef = useRef<HTMLSpanElement>(null);
   const powerContainerRef = useRef<HTMLDivElement>(null);
   const torqueRef = useRef<HTMLSpanElement>(null);
@@ -49,31 +52,22 @@ const VehicleDynamicsDisplay: React.FC = React.memo(() => {
   const boostOrRegenLabelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    setTelemetryText(powerLabelRef.current, convertPower(0).label);
-    setTelemetryText(torqueLabelRef.current, convertTorque(0).label);
-    setTelemetryText(topSpeedLabelRef.current, convertSpeed(0).label);
-
-    const handleUpdate = (e: any) => {
-      const data = e.detail;
-      if ((window as any).__IS_HUD_PAUSED__ || !data) return;
+    const powerUnitLabel = convertPower(0).label;
+    const torqueUnitLabel = convertTorque(0).label;
+    const speedUnitLabel = convertSpeed(0).label;
+    const paintCurrent = () => {
+      const data = latestData.current;
+      if (!paint.canPaint()) return;
+      setTelemetryText(powerLabelRef.current, powerUnitLabel);
+      setTelemetryText(torqueLabelRef.current, torqueUnitLabel);
+      setTelemetryText(topSpeedLabelRef.current, speedUnitLabel);
+      if (!data) return;
 
       const isEV = data.EngineIdleRpm === 0;
       const powerData = convertPower(data.PowerWatts || 0);
       const torqueData = convertTorque(data.TorqueNewtons || 0);
       const isRegenActive = isEV && (powerData.value < 0 || torqueData.value < 0);
       const boostData = convertBoost(data.Boost || 0);
-      const curSpeedData = convertSpeed(data.SpeedMetersPerSecond || 0);
-
-      if (
-        (previousCarRef.current !== undefined && previousCarRef.current !== data.CarOrdinal)
-        || (previousRaceRef.current !== undefined && previousRaceRef.current !== data.IsRaceOn)
-      ) {
-        peakOutputRef.current = emptyQualifiedOutputPeaks();
-        maxSpeedRecord.current = 0;
-      }
-      previousCarRef.current = data.CarOrdinal;
-      previousRaceRef.current = data.IsRaceOn;
-      peakOutputRef.current = updateQualifiedOutputPeaks(peakOutputRef.current, data);
 
       const peakPower = peakOutputRef.current.power;
       const peakTorque = peakOutputRef.current.torque;
@@ -81,10 +75,6 @@ const VehicleDynamicsDisplay: React.FC = React.memo(() => {
       setTelemetryText(peakTorqueRef.current, peakTorque ? Math.round(convertTorque(peakTorque.value).value).toString() : '--');
       setTelemetryText(peakPowerRpmRef.current, peakPower ? `${Math.round(peakPower.rpm)} RPM` : '-- RPM');
       setTelemetryText(peakTorqueRpmRef.current, peakTorque ? `${Math.round(peakTorque.rpm)} RPM` : '-- RPM');
-
-      if (curSpeedData.value > maxSpeedRecord.current) {
-        maxSpeedRecord.current = curSpeedData.value;
-      }
 
       setTelemetryText(powerRef.current, Math.round(powerData.value).toString());
       if (powerContainerRef.current) {
@@ -106,7 +96,7 @@ const VehicleDynamicsDisplay: React.FC = React.memo(() => {
         if (thirdStatContainerRef.current) thirdStatContainerRef.current.style.color = boostData.value > 0 ? 'var(--secondary)' : 'var(--text-primary)';
       }
 
-      setTelemetryText(topSpeedRef.current, Math.round(maxSpeedRecord.current).toString());
+      setTelemetryText(topSpeedRef.current, Math.round(convertSpeed(maxSpeedRecord.current).value).toString());
 
       const currentLap = data.CurrentLap || 0;
       const bestLap = data.BestLap || 0;
@@ -126,9 +116,32 @@ const VehicleDynamicsDisplay: React.FC = React.memo(() => {
       }
     };
 
+    const handleUpdate = (e: Event) => {
+      const data = (e as CustomEvent<TelemetryData>).detail;
+      if ((window as any).__IS_HUD_PAUSED__ || !data) return;
+      latestData.current = data;
+      if (
+        (previousCarRef.current !== undefined && previousCarRef.current !== data.CarOrdinal)
+        || (previousRaceRef.current !== undefined && previousRaceRef.current !== data.IsRaceOn)
+      ) {
+        peakOutputRef.current = emptyQualifiedOutputPeaks();
+        maxSpeedRecord.current = 0;
+      }
+      previousCarRef.current = data.CarOrdinal;
+      previousRaceRef.current = data.IsRaceOn;
+      peakOutputRef.current = updateQualifiedOutputPeaks(peakOutputRef.current, data);
+
+      maxSpeedRecord.current = Math.max(maxSpeedRecord.current, data.SpeedMetersPerSecond || 0);
+      paintCurrent();
+    };
+    const stopPaint = paint.subscribe(paintCurrent);
+    paintCurrent();
     telemetryEmitter.addEventListener('update', handleUpdate);
-    return () => telemetryEmitter.removeEventListener('update', handleUpdate);
-  }, [convertPower, convertTorque, convertBoost, convertSpeed, t]);
+    return () => {
+      stopPaint();
+      telemetryEmitter.removeEventListener('update', handleUpdate);
+    };
+  }, [convertPower, convertTorque, convertBoost, convertSpeed, t, paint]);
 
   return (
     <div className="telemetry-dynamics-readouts d-flex flex-column justify-content-center h-100 gap-2 p-1">

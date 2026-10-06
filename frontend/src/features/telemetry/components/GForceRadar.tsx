@@ -1,3 +1,4 @@
+import { useTelemetryCardPaint, createTelemetryCanvasSurface } from './TelemetryCardVisibility';
 import { setTelemetryText } from '../../../utils/telemetryDisplay';
 import React, { useEffect, useRef } from 'react';
 import { telemetryEmitter } from '../../../hooks/useTelemetry';
@@ -12,6 +13,8 @@ interface GForceRadarProps {
 }
 
 const GForceRadar: React.FC<GForceRadarProps> = React.memo(({ size: propSize, renderRadar = true }) => {
+  const paint = useTelemetryCardPaint();
+  const latestSample = useRef({ lat: 0, lon: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
   const circleContainerRef = useRef<HTMLDivElement>(null);
   const innerCircleRef = useRef<HTMLDivElement>(null);
@@ -27,58 +30,43 @@ const GForceRadar: React.FC<GForceRadarProps> = React.memo(({ size: propSize, re
   const { t } = useSettings();
 
   useEffect(() => {
+    const canvas = markerCanvasRef.current;
+    const container = containerRef.current;
+    if (!canvas || !container) return;
+    const surface = createTelemetryCanvasSurface(canvas);
+    if (propSize) sizeRef.current = propSize;
+    surface.resize(sizeRef.current, sizeRef.current);
+    let paintedSize = 0;
     if (!renderRadar) {
-      const mCanvas = markerCanvasRef.current;
-      if (mCanvas) {
-        const ctx = mCanvas.getContext('2d');
-        if (ctx) ctx.clearRect(0, 0, mCanvas.width, mCanvas.height);
-      }
-      if (dotRef.current) {
-        dotRef.current.style.transform = `translate(-50%, -50%) translate(0px, 0px)`;
-      }
       hist.current = [];
       offsetRef.current = 0;
     }
-  }, [renderRadar]);
 
-  // ResizeObserver：動態計算尺寸並同步 HTML DOM 與 Canvas 尺寸（零 React re-render）
-  useEffect(() => {
-    const container = containerRef.current;
-    if (container && !propSize) {
-      const resizeObserver = new ResizeObserver((entries) => {
-        for (const entry of entries) {
-          const { width, height } = entry.contentRect;
-          if (width > 0 && height > 0) {
-            const clampedSize = calculateRadarDiameter(width, height, 38, 120, 240);
-            sizeRef.current = clampedSize;
-            const dpr = window.devicePixelRatio || 1;
-
-            // 1. 同步外邊框圓 DOM 尺寸
-            if (circleContainerRef.current) {
-              circleContainerRef.current.style.width = `${clampedSize}px`;
-              circleContainerRef.current.style.height = `${clampedSize}px`;
-            }
-            // 2. 同步內邊框 0.5G 虛線圓 DOM 尺寸
-            if (innerCircleRef.current) {
-              innerCircleRef.current.style.width = `${clampedSize / 2}px`;
-              innerCircleRef.current.style.height = `${clampedSize / 2}px`;
-            }
-            // 3. 同步 Marker Canvas CSS 與實際解析度 Buffer
-            if (markerCanvasRef.current) {
-              markerCanvasRef.current.style.width = `${clampedSize}px`;
-              markerCanvasRef.current.style.height = `${clampedSize}px`;
-              markerCanvasRef.current.width = Math.floor(clampedSize * dpr);
-              markerCanvasRef.current.height = Math.floor(clampedSize * dpr);
-            }
-          }
+    const paintCurrent = () => {
+      if (!paint.canPaint()) return;
+      const { lat, lon } = latestSample.current;
+      setTelemetryText(latRef.current, Math.abs(lat).toFixed(2));
+      setTelemetryText(lonRef.current, Math.abs(lon).toFixed(2));
+      const size = sizeRef.current;
+      if (paintedSize !== size) {
+        paintedSize = size;
+        if (circleContainerRef.current) {
+          circleContainerRef.current.style.width = `${size}px`;
+          circleContainerRef.current.style.height = `${size}px`;
         }
-      });
-      resizeObserver.observe(container);
-      return () => resizeObserver.disconnect();
-    }
-  }, [propSize]);
+        if (innerCircleRef.current) {
+          innerCircleRef.current.style.width = `${size / 2}px`;
+          innerCircleRef.current.style.height = `${size / 2}px`;
+        }
+        canvas.style.width = `${size}px`;
+        canvas.style.height = `${size}px`;
+      }
+      const offset = calculateGPointOffset(renderRadar ? lat : 0, renderRadar ? lon : 0, size / 2, 7);
+      if (dotRef.current) {
+        dotRef.current.style.transform = `translate(-50%, -50%) translate(${offset.dx}px, ${offset.dy}px)`;
+      }
+    };
 
-  useEffect(() => {
     let theme = readCanvasTheme();
     const stopThemeObserver = observeCanvasTheme(() => { theme = readCanvasTheme(); drawMarkers(); });
 
@@ -103,15 +91,13 @@ const GForceRadar: React.FC<GForceRadarProps> = React.memo(({ size: propSize, re
       const lat = -(data.AccelerationX || 0) / 9.81;
       const lon = (data.AccelerationZ || 0) / 9.81;
 
-      setTelemetryText(latRef.current, Math.abs(lat).toFixed(2));
-      setTelemetryText(lonRef.current, Math.abs(lon).toFixed(2));
+      latestSample.current.lat = lat;
+      latestSample.current.lon = lon;
 
       if (!renderRadar) {
         hist.current = [];
         offsetRef.current = 0;
-        if (dotRef.current) {
-          dotRef.current.style.transform = `translate(-50%, -50%) translate(0px, 0px)`;
-        }
+        paintCurrent();
         return;
       }
 
@@ -129,16 +115,7 @@ const GForceRadar: React.FC<GForceRadarProps> = React.memo(({ size: propSize, re
         offsetRef.current = (idx + 1) % 900;
       }
 
-      const size = sizeRef.current;
-      const radius = size / 2;
-
-      // 使用純函數計算精確含 Clamp 的 (dx, dy) 偏置量
-      const offset = calculateGPointOffset(lat, lon, radius, 7);
-
-      // 更新即時 G 力指示點（精確從圓心 offset，無 React re-render）
-      if (dotRef.current) {
-        dotRef.current.style.transform = `translate(-50%, -50%) translate(${offset.dx}px, ${offset.dy}px)`;
-      }
+      paintCurrent();
     };
 
     telemetryEmitter.addEventListener('update', handleDraw);
@@ -148,8 +125,8 @@ const GForceRadar: React.FC<GForceRadarProps> = React.memo(({ size: propSize, re
     let rafId: number;
 
     const drawMarkers = () => {
-      const mCanvas = markerCanvasRef.current;
-      if (!mCanvas || mCanvas.width === 0) return;
+      if (!paint.canPaint() || !surface.sync()) return;
+      const mCanvas = canvas;
 
       const ctx = mCanvas.getContext('2d');
       if (!ctx) return;
@@ -209,14 +186,32 @@ const GForceRadar: React.FC<GForceRadarProps> = React.memo(({ size: propSize, re
       lastMarkerTime = now;
       drawMarkers();
     };
+    const repaint = () => { paintCurrent(); drawMarkers(); };
+    const resizeObserver = new ResizeObserver(entries => {
+      if (propSize) return;
+      for (const { contentRect: { width, height } } of entries) {
+        if (width <= 0 || height <= 0) {
+          surface.resize(0, 0);
+          continue;
+        }
+        sizeRef.current = calculateRadarDiameter(width, height, 38, 120, 240);
+        surface.resize(sizeRef.current, sizeRef.current);
+        repaint();
+      }
+    });
+    resizeObserver.observe(container);
+    const stopPaint = paint.subscribe(repaint);
+    repaint();
     rafId = requestAnimationFrame(tickMarkers);
 
     return () => {
+      stopPaint();
+      resizeObserver.disconnect();
       telemetryEmitter.removeEventListener('update', handleDraw);
       stopThemeObserver();
       cancelAnimationFrame(rafId);
     };
-  }, [renderRadar]);
+  }, [renderRadar, propSize, paint]);
 
   const initSize = propSize || 170;
 

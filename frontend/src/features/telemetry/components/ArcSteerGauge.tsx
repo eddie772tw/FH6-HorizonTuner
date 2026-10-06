@@ -1,3 +1,4 @@
+import { useTelemetryCardPaint, createTelemetryCanvasSurface } from './TelemetryCardVisibility';
 import { setTelemetryText } from '../../../utils/telemetryDisplay';
 import React, { useEffect, useRef } from 'react';
 import { telemetryEmitter } from '../../../hooks/useTelemetry';
@@ -5,6 +6,9 @@ import { readCanvasTheme, observeCanvasTheme } from '../../../utils/canvasTheme'
 import { useSettings } from '../../../context/SettingsContext';
 
 const ArcSteerGauge: React.FC<{ size?: number }> = React.memo(() => {
+  const paint = useTelemetryCardPaint();
+  const lastSteer = useRef(0);
+  const hasSample = useRef(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const degTextRef = useRef<HTMLSpanElement>(null);
@@ -15,26 +19,32 @@ const ArcSteerGauge: React.FC<{ size?: number }> = React.memo(() => {
     const canvas = canvasRef.current;
     const container = containerRef.current;
     if (!canvas || !container) return;
-    let lastSteer = 0;
+    const surface = createTelemetryCanvasSurface(canvas);
 
     let theme = readCanvasTheme();
-    const stopThemeObserver = observeCanvasTheme(() => { theme = readCanvasTheme(); drawGauge(lastSteer); });
+    const stopThemeObserver = observeCanvasTheme(() => { theme = readCanvasTheme(); drawGauge(lastSteer.current); });
 
     const resizeObserver = new ResizeObserver((entries) => {
       for (const entry of entries) {
         const { width, height } = entry.contentRect;
-        if (width > 0 && height > 0) {
-          const dpr = window.devicePixelRatio || 1;
-          canvas.width = Math.floor(width * dpr);
-          canvas.height = Math.floor(height * dpr);
-          drawGauge(lastSteer);
-        }
+        surface.resize(width, height);
+        drawGauge(lastSteer.current);
       }
     });
     resizeObserver.observe(container);
 
     const drawGauge = (steerRatio: number) => {
-      if (!canvas || canvas.width === 0 || canvas.height === 0) return;
+      if (!paint.canPaint()) return;
+      if (hasSample.current && degTextRef.current) {
+        const deg = steerRatio * 45;
+        setTelemetryText(degTextRef.current, `${Math.abs(deg).toFixed(1)}°`);
+        degTextRef.current.style.color = Math.abs(deg) > 30 ? 'var(--secondary)' : 'var(--text-primary)';
+      }
+      if (hasSample.current && dirTextRef.current) {
+        if (Math.abs(steerRatio) < 0.02) setTelemetryText(dirTextRef.current, 'CENTER');
+        else setTelemetryText(dirTextRef.current, steerRatio < 0 ? 'LEFT' : 'RIGHT');
+      }
+      if (!surface.sync()) return;
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
 
@@ -114,27 +124,20 @@ const ArcSteerGauge: React.FC<{ size?: number }> = React.memo(() => {
 
       const steerRaw = (liveData.SteerInput || 0) / 127;
       const clampedSteer = Math.max(-1, Math.min(1, steerRaw));
-      lastSteer = clampedSteer;
+      lastSteer.current = clampedSteer;
+      hasSample.current = true;
       drawGauge(clampedSteer);
-
-      if (degTextRef.current) {
-        const deg = clampedSteer * 45;
-        setTelemetryText(degTextRef.current, `${Math.abs(deg).toFixed(1)}°`);
-        degTextRef.current.style.color = Math.abs(deg) > 30 ? 'var(--secondary)' : 'var(--text-primary)';
-      }
-      if (dirTextRef.current) {
-        if (Math.abs(clampedSteer) < 0.02) setTelemetryText(dirTextRef.current, 'CENTER');
-        else setTelemetryText(dirTextRef.current, clampedSteer < 0 ? 'LEFT' : 'RIGHT');
-      }
     };
 
+    const stopPaint = paint.subscribe(() => drawGauge(lastSteer.current));
     telemetryEmitter.addEventListener('update', handleUpdate);
     return () => {
+      stopPaint();
       resizeObserver.disconnect();
       stopThemeObserver();
       telemetryEmitter.removeEventListener('update', handleUpdate);
     };
-  }, []);
+  }, [paint]);
 
   return (
     <div ref={containerRef} className="w-100 h-100 position-relative d-flex align-items-center justify-content-center p-1 overflow-hidden">
