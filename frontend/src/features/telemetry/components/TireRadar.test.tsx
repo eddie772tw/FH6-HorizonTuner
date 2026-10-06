@@ -23,13 +23,13 @@ it('redraws the latest tire sample after chart toggles and unit changes without 
     telemetryEmitter.dispatchEvent(new CustomEvent('update', { detail: {
       IsRaceOn: 1, CarOrdinal: 1, TireTemp: [230], TireSlipRatio: [1.1], TireSlipAngle: [1.2],
     } }));
-    const temperature = () => (host.querySelector('.telemetry-temperature-label') as HTMLElement).innerText;
+    const temperature = () => (host.querySelector('.telemetry-temperature-label') as HTMLElement).textContent;
     expect(temperature()).toBe('230');
     await act(async () => root.render(<TireRadar title="Front Left" isLeft tireIdx={0} renderCharts={false} />));
     settings.celsius = true;
     await act(async () => root.render(<TireRadar title="Front Left" isLeft tireIdx={0} />));
     expect(temperature()).toBe('110');
-    const readouts = Array.from(host.querySelectorAll('span')).map(element => element.innerText);
+    const readouts = Array.from(host.querySelectorAll('span')).map(element => element.textContent);
     expect(readouts).toContain('1.20');
     expect(readouts).toContain('1.10');
   } finally {

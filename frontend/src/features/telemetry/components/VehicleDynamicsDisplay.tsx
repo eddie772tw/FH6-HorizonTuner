@@ -6,7 +6,7 @@ import {
   updateQualifiedOutputPeaks,
   type QualifiedOutputPeaks,
 } from '../../../utils/qualifiedOutputPeaks';
-import { formatRacePosition } from '../../../utils/telemetryDisplay';
+import { formatRacePosition, setTelemetryText } from '../../../utils/telemetryDisplay';
 
 const formatTime = (seconds: number) => {
   if (seconds <= 0) return "--:--.---";
@@ -49,9 +49,9 @@ const VehicleDynamicsDisplay: React.FC = React.memo(() => {
   const boostOrRegenLabelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (powerLabelRef.current) powerLabelRef.current.innerText = convertPower(0).label;
-    if (torqueLabelRef.current) torqueLabelRef.current.innerText = convertTorque(0).label;
-    if (topSpeedLabelRef.current) topSpeedLabelRef.current.innerText = convertSpeed(0).label;
+    setTelemetryText(powerLabelRef.current, convertPower(0).label);
+    setTelemetryText(torqueLabelRef.current, convertTorque(0).label);
+    setTelemetryText(topSpeedLabelRef.current, convertSpeed(0).label);
 
     const handleUpdate = (e: any) => {
       const data = e.detail;
@@ -77,51 +77,51 @@ const VehicleDynamicsDisplay: React.FC = React.memo(() => {
 
       const peakPower = peakOutputRef.current.power;
       const peakTorque = peakOutputRef.current.torque;
-      if (peakPowerRef.current) peakPowerRef.current.innerText = peakPower ? Math.round(convertPower(peakPower.value).value).toString() : '--';
-      if (peakTorqueRef.current) peakTorqueRef.current.innerText = peakTorque ? Math.round(convertTorque(peakTorque.value).value).toString() : '--';
-      if (peakPowerRpmRef.current) peakPowerRpmRef.current.innerText = peakPower ? `${Math.round(peakPower.rpm)} RPM` : '-- RPM';
-      if (peakTorqueRpmRef.current) peakTorqueRpmRef.current.innerText = peakTorque ? `${Math.round(peakTorque.rpm)} RPM` : '-- RPM';
+      setTelemetryText(peakPowerRef.current, peakPower ? Math.round(convertPower(peakPower.value).value).toString() : '--');
+      setTelemetryText(peakTorqueRef.current, peakTorque ? Math.round(convertTorque(peakTorque.value).value).toString() : '--');
+      setTelemetryText(peakPowerRpmRef.current, peakPower ? `${Math.round(peakPower.rpm)} RPM` : '-- RPM');
+      setTelemetryText(peakTorqueRpmRef.current, peakTorque ? `${Math.round(peakTorque.rpm)} RPM` : '-- RPM');
 
       if (curSpeedData.value > maxSpeedRecord.current) {
         maxSpeedRecord.current = curSpeedData.value;
       }
 
-      if (powerRef.current) powerRef.current.innerText = Math.round(powerData.value).toString();
+      setTelemetryText(powerRef.current, Math.round(powerData.value).toString());
       if (powerContainerRef.current) {
         powerContainerRef.current.style.color = (isEV && powerData.value < 0) ? 'var(--instrument-regen, var(--bs-success))' : 'var(--text-primary)';
       }
 
-      if (torqueRef.current) torqueRef.current.innerText = Math.round(torqueData.value).toString();
+      setTelemetryText(torqueRef.current, Math.round(torqueData.value).toString());
       if (torqueContainerRef.current) {
         torqueContainerRef.current.style.color = (isEV && torqueData.value < 0) ? 'var(--instrument-regen, var(--bs-success))' : 'var(--text-primary)';
       }
 
       if (isEV) {
-        if (thirdStatValueRef.current) thirdStatValueRef.current.innerText = isRegenActive ? t("ON") : t("OFF");
-        if (thirdStatLabelRef.current) thirdStatLabelRef.current.innerText = "";
+        setTelemetryText(thirdStatValueRef.current, isRegenActive ? t("ON") : t("OFF"));
+        setTelemetryText(thirdStatLabelRef.current, "");
         if (thirdStatContainerRef.current) thirdStatContainerRef.current.style.color = isRegenActive ? 'var(--instrument-regen, var(--bs-success))' : 'var(--text-primary)';
       } else {
-        if (thirdStatValueRef.current) thirdStatValueRef.current.innerText = boostData.value.toFixed(1);
-        if (thirdStatLabelRef.current) thirdStatLabelRef.current.innerText = boostData.label;
+        setTelemetryText(thirdStatValueRef.current, boostData.value.toFixed(1));
+        setTelemetryText(thirdStatLabelRef.current, boostData.label);
         if (thirdStatContainerRef.current) thirdStatContainerRef.current.style.color = boostData.value > 0 ? 'var(--secondary)' : 'var(--text-primary)';
       }
 
-      if (topSpeedRef.current) topSpeedRef.current.innerText = Math.round(maxSpeedRecord.current).toString();
+      setTelemetryText(topSpeedRef.current, Math.round(maxSpeedRecord.current).toString());
 
       const currentLap = data.CurrentLap || 0;
       const bestLap = data.BestLap || 0;
       const lastLap = data.LastLap || 0;
 
-      if (currentLapRef.current) currentLapRef.current.innerText = formatTime(currentLap);
-      if (lastLapRef.current) lastLapRef.current.innerText = formatTime(lastLap);
-      if (bestLapRef.current) bestLapRef.current.innerText = formatTime(bestLap);
-      if (racePositionRef.current) racePositionRef.current.innerText = formatRacePosition(data.RacePosition);
+      setTelemetryText(currentLapRef.current, formatTime(currentLap));
+      setTelemetryText(lastLapRef.current, formatTime(lastLap));
+      setTelemetryText(bestLapRef.current, formatTime(bestLap));
+      setTelemetryText(racePositionRef.current, formatRacePosition(data.RacePosition));
 
       // 策略 C：合併 EV 狀態偵測，只在狀態改變時更新 DOM label
       if (isEV !== isEvRef.current) {
         isEvRef.current = isEV;
         if (boostOrRegenLabelRef.current) {
-          boostOrRegenLabelRef.current.innerText = isEV ? t("Regen") : t("Boost");
+          setTelemetryText(boostOrRegenLabelRef.current, isEV ? t("Regen") : t("Boost"));
         }
       }
     };

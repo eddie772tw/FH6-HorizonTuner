@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { telemetryEmitter } from '../../../hooks/useTelemetry';
 import { readCanvasTheme, observeCanvasTheme } from '../../../utils/canvasTheme';
 import { useSettings } from '../../../context/SettingsContext';
-import { formatTelemetryGear } from '../../../utils/telemetryDisplay';
+import { formatTelemetryGear, setTelemetryText } from '../../../utils/telemetryDisplay';
 
 const EngineRpmDisplay: React.FC = React.memo(() => {
   const rpmRef = useRef<HTMLSpanElement>(null);
@@ -25,7 +25,7 @@ const EngineRpmDisplay: React.FC = React.memo(() => {
     let theme = readCanvasTheme();
     const stopThemeObserver = observeCanvasTheme(() => { theme = readCanvasTheme(); drawRpmGauge(); });
 
-    if (speedUnitRef.current) speedUnitRef.current.innerText = convertSpeed(0).label;
+    setTelemetryText(speedUnitRef.current, convertSpeed(0).label);
 
     const canvas = canvasRef.current;
     const container = containerRef.current;
@@ -122,12 +122,12 @@ const EngineRpmDisplay: React.FC = React.memo(() => {
       const speedData = convertSpeed(data.SpeedMetersPerSecond || 0);
       const accelInput = data.AccelInput || 0;
 
-      if (rpmRef.current) rpmRef.current.innerText = currentRpm.toString();
-      if (maxRpmRef.current) maxRpmRef.current.innerText = Math.round(maxRpm).toString();
-      if (speedRef.current) speedRef.current.innerText = Math.round(speedData.value).toString();
+      setTelemetryText(rpmRef.current, currentRpm.toString());
+      setTelemetryText(maxRpmRef.current, Math.round(maxRpm).toString());
+      setTelemetryText(speedRef.current, Math.round(speedData.value).toString());
 
       const gearText = formatTelemetryGear(gear);
-      if (gearRef.current) gearRef.current.innerText = gearText;
+      setTelemetryText(gearRef.current, gearText);
 
       const rpmPercent = currentRpm / Math.max(1000, maxRpm);
       const isRedlineAlert = rpmPercent >= 0.88 && accelInput > 100;

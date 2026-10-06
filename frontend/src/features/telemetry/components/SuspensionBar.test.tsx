@@ -17,7 +17,7 @@ it('updates the selected wheel readout and retains its range across a theme chan
   try {
     await act(async () => root.render(<SuspensionBar title="Front Left" isLeft tireIdx={0} />));
     telemetryEmitter.dispatchEvent(new CustomEvent('update', { detail: { IsRaceOn: 1, CarOrdinal: 1, NormalizedSuspensionTravel: [0.42, 0.1, 0.1, 0.1] } }));
-    const readouts = () => Array.from(host.querySelectorAll('span')).map(element => element.innerText).filter(Boolean);
+    const readouts = () => Array.from(host.querySelectorAll('span')).map(element => element.textContent).filter(Boolean);
     expect(readouts()).toContain('0.42');
     document.documentElement.style.setProperty('--instrument-linear', '1');
     await Promise.resolve();

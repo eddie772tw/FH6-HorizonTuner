@@ -7,6 +7,8 @@
 - **Action**：將 `canvasTheme` 移至共用 utils，Swiss 平面材質與穩定警示和 Rhine 線性幾何分開。AEGO、馬力、加速 SVG 與賽事 Canvas 共用字體／格線／曲線 token；只格式化 RPM 軸標籤，不更動齒比公式。圈速圖預留兩子圖間距，內層 flex 可縮小，保留外層 360px 高度。
 - **Evidence**：前端 189 files／1,700 tests passed、各 1 skipped；TypeScript／Vite 通過。Swiss 三 Core 明暗截圖、Rhine／Swiss AEGO 三組相同數值與六条曲線路徑、賽事四組 Session 保留已保存。Sol 原 P2 色彩問題修正後獨立複核；三個 Canvas 掛載／字體更新／卸載的 listener 與 observer 無持續增加。完整數據與限制見 [驗收文件](../docs/frontend/rhine-lab-validation.md)。
 - **Boundary**：合成 UDP／既有去識別引擎 fixture 不代表新真實遊戲量測；舊版 p95 與 WebView2 證據保留其原提交範圍。200% 已由使用者設定並實測，OS 動畫效果人工驗收依使用者要求取消。
+- **追加理論優化**：本機有背景工作，使用者要求停止實際效能量測、留待稍後。保留 `6883dfa9` 的 raw runs（Live 中位 p95 基準66.9ms／Rhine100.0ms，沒有通過門檻）；不把先前約17ms的結果當新版證明。純文字讀值改為 `textContent` 相同時不覆寫，避免重複建立文字節點；不改取樣、插值、歷史、警示或圖表頻率。這是代碼層減少工作量，沒有宣稱實測 FPS 提升。原生新版 Rhine／Swiss 五卡及 Swiss 賽事畫面另外保存。
+- **最終 Gate**：讀值去重後前端 189 files／1,701 tests passed、各 1 skipped；TypeScript／Vite 與 `git diff --check` 通過。Sol 核對所有 helper targets 均為葉節點，新增 DOM case 的 jsdom pragma 修正後 10 個聚焦案例通過，未發現剩餘可重現 P1／P2。
 
 ## 2026-10-06 / Rhine Lab 純 2D 設計系統與對話框生命週期（Codex as Codex）
 

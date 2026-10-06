@@ -1,3 +1,4 @@
+import { setTelemetryText } from '../../../utils/telemetryDisplay';
 import React, { useEffect, useRef, useState } from 'react';
 import { telemetryEmitter } from '../../../hooks/useTelemetry';
 import { readCanvasTheme, observeCanvasTheme } from '../../../utils/canvasTheme';
@@ -102,10 +103,10 @@ const SuspensionBar: React.FC<SuspensionBarProps> = React.memo(({ title, isLeft,
       const percent = Math.max(0, Math.min(100, normalizedTravel * 100));
       if (barRef.current) barRef.current.style.height = percent + '%';
       const precision = displayMode === 'absolute' ? 1 : 2;
-      if (textRef.current) textRef.current.innerText = travel.toFixed(precision);
-      if (unitRef.current) unitRef.current.innerText = displayMode === 'absolute' ? ' mm' : '';
-      if (minRef.current) minRef.current.innerText = minMax.current.min !== null ? minMax.current.min.toFixed(precision) : '-';
-      if (maxRef.current) maxRef.current.innerText = minMax.current.max !== null ? minMax.current.max.toFixed(precision) : '-';
+      setTelemetryText(textRef.current, travel.toFixed(precision));
+      setTelemetryText(unitRef.current, displayMode === 'absolute' ? ' mm' : '');
+      setTelemetryText(minRef.current, minMax.current.min !== null ? minMax.current.min.toFixed(precision) : '-');
+      setTelemetryText(maxRef.current, minMax.current.max !== null ? minMax.current.max.toFixed(precision) : '-');
 
       draw();
     };

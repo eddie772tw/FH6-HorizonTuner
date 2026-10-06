@@ -1,3 +1,4 @@
+import { setTelemetryText } from '../../../utils/telemetryDisplay';
 import React, { useEffect, useRef } from 'react';
 import { telemetryEmitter } from '../../../hooks/useTelemetry';
 import { readCanvasTheme, observeCanvasTheme, type CanvasTheme } from '../../../utils/canvasTheme';
@@ -199,11 +200,11 @@ const TireRadar: React.FC<TireRadarProps> = React.memo(({ title, isLeft, tireIdx
       }
 
       if (angRef.current) {
-        angRef.current.innerText = cAngle.toFixed(2);
+        setTelemetryText(angRef.current, cAngle.toFixed(2));
         angRef.current.style.color = Math.abs(cAngle) > 1.0 ? 'var(--instrument-danger, var(--bs-danger))' : 'var(--text-secondary)';
       }
       if (ratioRef.current) {
-        ratioRef.current.innerText = cRatio.toFixed(2);
+        setTelemetryText(ratioRef.current, cRatio.toFixed(2));
         ratioRef.current.style.color = Math.abs(cRatio) > 1.0 ? 'var(--instrument-danger, var(--bs-danger))' : 'var(--text-secondary)';
       }
 
@@ -368,7 +369,7 @@ const TireRadar: React.FC<TireRadarProps> = React.memo(({ title, isLeft, tireIdx
 
             if (tempLabelRef.current) {
               const pct = (lineX / tw) * 100;
-              tempLabelRef.current.innerText = `${Math.round(convertTemp(cTemp).value)}`;
+              setTelemetryText(tempLabelRef.current, `${Math.round(convertTemp(cTemp).value)}`);
               tempLabelRef.current.style.left = `${pct}%`;
               tempLabelRef.current.style.transform = pct > 50
                 ? 'translateX(calc(-100% - 2px))'

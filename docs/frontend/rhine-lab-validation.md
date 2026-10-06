@@ -6,7 +6,7 @@
 
 | 檢查 | 結果 |
 | --- | --- |
-| `pnpm -C frontend run test` | 189 files passed、1 skipped；1,700 tests passed、1 skipped（含 Swiss 與跨頁圖表追加實作） |
+| `pnpm -C frontend run test` | 189 files passed、1 skipped；1,701 tests passed、1 skipped（含 Swiss／跨頁圖表與讀值去重） |
 | `pnpm -C frontend run build` | TypeScript 與 Vite 通過，含 Full／Lite／Companion 入口 |
 | `pnpm install --frozen-lockfile --ignore-scripts` | 通過；不新增執行期相依 |
 | `git diff --check` | 通過 |
@@ -58,6 +58,10 @@ Sol 已在 `1ead368749cd7ea31086c15af4d59df286e951b9` 重新執行原 P2 情境�
 
 引擎收集 Canvas、車輛馬力／扭力 SVG、直線加速的速度與輪滑 SVG、遙測詳細歷史圖亦已套用共用契約；目前有資料的跨系統互動證據集中在上述五卡、AEGO 與賽事圖表。新增的所有圖表仍需區分瀏覽器實测與原生／真實遊戲驗收。
 
+`6883dfa97759d14643a3007ccc6360600ceb23d9` 已由 Sol 對追加範圍獨立審查，未發現新增且可重現的 P1／P2；聚焦快取／輪胎／懸吊的 3 files、6 tests 通過。這是固定產品提交的審查，不代表未執行的驗收均通過。
+
+同產品提交的原生補驗：既有 WebView2 154.0.4258.53 debug host 載入 Vite 的目前前端，1280×720 內容區中，以已停止的合成資料從 Rhine 淺色切換 Swiss Editorial 淺色。RPM 2659、速度 120、馬力 168、扭力 274 與懸吊 min/max 保留；紙頁外觀面板隨 Swiss 回到側邊，Escape 關閉正常。賽事頁顯示目前 26 筆 Session，捲至底部後可見速度／踏板 Canvas 的 X 軸和完整面板邊界。附 [Rhine 五卡](assets/rhine-lab/webview-core-rhine-light.png)、[Swiss 五卡](assets/rhine-lab/webview-core-swiss-light.png)及[Swiss 賽事](assets/rhine-lab/webview-core-swiss-session.png)。此輪沒有原生 AEGO、雙圈比較或加速測試資料驗收；標頭的 post-35cdb26b 為長駐 Vite 程序啟動時資訊，非此輪產品 SHA。
+
 ## 對比與包體
 
 基礎色值的 WCAG 對比計算見 [contrast.json](assets/rhine-lab/contrast.json)：淺色三種表面上的輔助文字最低 **4.63:1**、主要文字最低 **15.50:1**；深色分別最低 **5.60:1**、**9.58:1**。必要控制項邊界在六種表面最低 **3.60:1**。這不代表任意使用者自訂三色都達標，也不取代完整畫面無障礙稽核。
@@ -66,15 +70,21 @@ Sol 已在 `1ead368749cd7ea31086c15af4d59df286e951b9` 重新執行原 P2 情境�
 
 | 類別 | 基準 | Rhine 2D |
 | --- | ---: | ---: |
-| JavaScript | 1,188,233 bytes | 1,191,806 bytes |
+| JavaScript | 1,188,233 bytes | 1,191,210 bytes |
 | CSS | 433,596 bytes | 746,925 bytes |
 | WOFF2 | 0 bytes | 12,197,248 bytes |
 | GLB | 0 bytes | 0 bytes |
-| 全部前端檔案 | 1,629,549 bytes | 14,394,413 bytes |
+| 全部前端檔案 | 1,629,549 bytes | 14,393,817 bytes |
 
-JavaScript 增加 3,573 bytes；主要增量為計畫保留的 MiSans 原始分片與 unicode-range CSS。字體使用 `font-display: swap` 與系統回退。
+JavaScript 增加 2,977 bytes；主要增量為計畫保留的 MiSans 原始分片與 unicode-range CSS。字體使用 `font-display: swap` 與系統回退。
 
 ## 效能與尚未完成的情境
+
+**目前驗收範圍調整**：使用者確認本機性能較低且有背景工作，要求「只需要完成理論優化即可，剩餘實際測量稍後再說」。因此停止追加前景量測，效能門檻留待穩定環境複測，不以本輪負載數字認證通過或單獨歸因於主題。
+
+`6883dfa9` 的追加配對原始資料保存在 [core-charts-performance.json](assets/rhine-lab/core-charts-performance.json)：同一 Edge 分頁、1422×800、淺色、同一 3,600 封包產生器（約 60Hz）、至少 10 秒預熱；每畫面三輪 10 秒、相同 26 筆 Session。Live 基準 p95 為 83.7／66.7／66.9ms，Rhine 為 100.3／100.0／99.9ms，中位數約 +49.5%；Sessions 基準 17.6／17.2／17.3ms、Rhine 17.6／17.3／17.2ms，中位數相同。本轮 Live 沒有通過 10% 門檻。兩版都慢於先前基準，且使用者確認有背景負載，故保留全部 raw runs 與前景前診斷，不把此資料當作可重現的產品退化結論。
+
+理論優化採最小範圍：即時引擎、方向、踏板、動力、G 值、輪胎與懸吊的純文字讀值，透過 `setTelemetryText` 先比對 `textContent`，字串相同時保留文字節點；變更時立即更新。這減少檔位、轉速上限、單位、峰值、Min／Max、圈速等重複 DOM 寫入，不改資料頻率、插值、警示、歷史或圖表更新。既有 CSS 快取、平面主題不建立懸吊漸層、observer／字體事件清理維持。新增文字節點保留／變更／空字串的回歸，並沿用輪胎單位與懸吊讀值測試。未量測這項優化後的 FPS／p95 改善。
 
 使用者將 Edge 留在前景後，完成 `35cdb26b` 與 `aee773d0` 的同機配對比較。兩版使用同一分頁、淺色模式、1422×800 CSS 內容區，每個畫面各量測三輪、每輪 10 秒。Live 使用相同的 3,600 個合成 UDP 封包產生器（324 bytes、約 60Hz、RPM／踏板／輪胎／懸吊變化、120 km/h），至少預熱 10 秒後採樣；Sessions 載入同一份 26 筆合成資料並量測靜態顯示。完整每輪 frame count／p50／p95／max 見 [foreground-performance.json](assets/rhine-lab/foreground-performance.json)。
 

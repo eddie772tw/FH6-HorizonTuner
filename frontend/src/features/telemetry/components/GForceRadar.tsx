@@ -1,3 +1,4 @@
+import { setTelemetryText } from '../../../utils/telemetryDisplay';
 import React, { useEffect, useRef } from 'react';
 import { telemetryEmitter } from '../../../hooks/useTelemetry';
 import { readCanvasTheme, observeCanvasTheme } from '../../../utils/canvasTheme';
@@ -102,8 +103,8 @@ const GForceRadar: React.FC<GForceRadarProps> = React.memo(({ size: propSize, re
       const lat = -(data.AccelerationX || 0) / 9.81;
       const lon = (data.AccelerationZ || 0) / 9.81;
 
-      if (latRef.current) latRef.current.innerText = Math.abs(lat).toFixed(2);
-      if (lonRef.current) lonRef.current.innerText = Math.abs(lon).toFixed(2);
+      setTelemetryText(latRef.current, Math.abs(lat).toFixed(2));
+      setTelemetryText(lonRef.current, Math.abs(lon).toFixed(2));
 
       if (!renderRadar) {
         hist.current = [];

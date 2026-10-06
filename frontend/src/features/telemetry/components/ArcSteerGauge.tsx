@@ -1,3 +1,4 @@
+import { setTelemetryText } from '../../../utils/telemetryDisplay';
 import React, { useEffect, useRef } from 'react';
 import { telemetryEmitter } from '../../../hooks/useTelemetry';
 import { readCanvasTheme, observeCanvasTheme } from '../../../utils/canvasTheme';
@@ -118,12 +119,12 @@ const ArcSteerGauge: React.FC<{ size?: number }> = React.memo(() => {
 
       if (degTextRef.current) {
         const deg = clampedSteer * 45;
-        degTextRef.current.innerText = `${Math.abs(deg).toFixed(1)}°`;
+        setTelemetryText(degTextRef.current, `${Math.abs(deg).toFixed(1)}°`);
         degTextRef.current.style.color = Math.abs(deg) > 30 ? 'var(--secondary)' : 'var(--text-primary)';
       }
       if (dirTextRef.current) {
-        if (Math.abs(clampedSteer) < 0.02) dirTextRef.current.innerText = 'CENTER';
-        else dirTextRef.current.innerText = clampedSteer < 0 ? 'LEFT' : 'RIGHT';
+        if (Math.abs(clampedSteer) < 0.02) setTelemetryText(dirTextRef.current, 'CENTER');
+        else setTelemetryText(dirTextRef.current, clampedSteer < 0 ? 'LEFT' : 'RIGHT');
       }
     };
 

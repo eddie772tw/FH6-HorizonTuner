@@ -1,3 +1,4 @@
+import { setTelemetryText } from '../../../utils/telemetryDisplay';
 import React, { useEffect, useRef } from 'react';
 import { telemetryEmitter } from '../../../hooks/useTelemetry';
 
@@ -35,7 +36,7 @@ const VerticalInputBar: React.FC<VerticalInputBarProps> = React.memo(({ label, s
       }
 
       if (barRef.current) barRef.current.style.height = `${percent}%`;
-      if (textRef.current) textRef.current.innerText = `${Math.round(percent)}%`;
+      setTelemetryText(textRef.current, `${Math.round(percent)}%`);
     };
 
     // 策略 D：Peak decay 迴圈降至 ~30Hz（每 33ms 執行一次），減少 4 個實例的 rAF 壓力
