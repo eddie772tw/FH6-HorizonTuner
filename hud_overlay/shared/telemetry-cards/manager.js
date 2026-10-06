@@ -148,8 +148,8 @@ init: function (parentEl) {
                     if (_lastStyles['gRadarScale'] !== effectiveGRadarScale) { wrapper.style.setProperty('--tc-gradar-scale', effectiveGRadarScale.toString()); _lastStyles['gRadarScale'] = effectiveGRadarScale; }
                     if (_lastStyles['gRadarOffsetX'] !== gRadarOffsetX) { wrapper.style.setProperty('--tc-gradar-offset-x', gRadarOffsetX + 'px'); _lastStyles['gRadarOffsetX'] = gRadarOffsetX; }
                     if (_lastStyles['gRadarOffsetY'] !== gRadarOffsetY) { wrapper.style.setProperty('--tc-gradar-offset-y', gRadarOffsetY + 'px'); _lastStyles['gRadarOffsetY'] = gRadarOffsetY; }
-                    if (_lastStyles['primaryColor'] !== primaryColor) { wrapper.style.setProperty('--card-primary', primaryColor); _lastStyles['primaryColor'] = primaryColor; }
-                    if (_lastStyles['contrastColor'] !== contrastColor) { wrapper.style.setProperty('--card-contrast', contrastColor); _lastStyles['contrastColor'] = contrastColor; }
+                    if (_lastStyles['primaryColor'] !== primaryColor) { wrapper.style.setProperty('--card-primary', primaryColor); _lastStyles['primaryColor'] = primaryColor; wrapper._cachedPrimaryColor = primaryColor; }
+                    if (_lastStyles['contrastColor'] !== contrastColor) { wrapper.style.setProperty('--card-contrast', contrastColor); _lastStyles['contrastColor'] = contrastColor; wrapper._cachedContrastColor = contrastColor; }
                 }
             }
 

@@ -275,9 +275,18 @@ export function renderCorners(data, showSusp, showSlip, showTemp, tireHist, susp
 
                     var wrapperEl = domCache ? domCache.wrapper : document.getElementById('tcClusterWrapper');
                     var primaryColor = '#00f0ff';
-                    if (wrapperEl && typeof wrapperEl.style !== 'undefined' && typeof wrapperEl.style.getPropertyValue === 'function') {
-                        var cssVal = wrapperEl.style.getPropertyValue('--card-primary');
-                        if (cssVal && cssVal.trim()) primaryColor = cssVal.trim();
+                    if (wrapperEl) {
+                        if (wrapperEl._cachedPrimaryColor === undefined) {
+                            if (typeof wrapperEl.style !== 'undefined' && typeof wrapperEl.style.getPropertyValue === 'function') {
+                                var cssVal = wrapperEl.style.getPropertyValue('--card-primary');
+                                wrapperEl._cachedPrimaryColor = (cssVal && cssVal.trim()) ? cssVal.trim() : null;
+                            } else {
+                                wrapperEl._cachedPrimaryColor = null;
+                            }
+                        }
+                        if (wrapperEl._cachedPrimaryColor) {
+                            primaryColor = wrapperEl._cachedPrimaryColor;
+                        }
                     }
                     wCtx.strokeStyle = primaryColor;
                     wCtx.lineWidth = 1.5 * dpr;
