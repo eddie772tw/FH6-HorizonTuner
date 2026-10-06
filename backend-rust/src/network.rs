@@ -354,7 +354,7 @@ async fn http_request(backend: Arc<dyn Backend>, request: Request<Body>) -> Resp
         Ok(Err(error)) => error.into_response(),
         Err(error) => {
             eprintln!("request worker failed: {error}");
-            ApiError::new(500, "Internal Server Error").into_response()
+            ApiError::internal("Operation failed", "Internal Server Error").into_response()
         }
     }
 }

@@ -47,5 +47,6 @@ pub fn packaged_client(root: &Path) -> ApiResult<AdbClient> {
             fs::write(&path, data)?;
         }
     }
-    AdbClient::new(directory.join("adb.exe")).map_err(|e| ApiError::new(503, &e.to_string()))
+    AdbClient::new(directory.join("adb.exe"))
+        .map_err(|e| ApiError::unavailable("AdbClient initialize", e))
 }

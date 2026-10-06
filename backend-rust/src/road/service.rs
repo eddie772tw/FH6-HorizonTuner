@@ -521,10 +521,10 @@ impl RoadService {
                     .unwrap_or_default()
                     .as_secs_f64(),
             })
-            .map_err(|e| ApiError::new(500, e))?;
+            .map_err(|e| ApiError::internal("Operation failed", e))?;
         if let Err(error) = self.writer.flush() {
             self.cancel_start(&session_id);
-            return Err(ApiError::new(500, error));
+            return Err(ApiError::internal("Operation failed", error));
         }
         self.recorded_count = 0;
         let mut payload = request.as_object().cloned().unwrap_or_default();
@@ -578,7 +578,9 @@ impl RoadService {
         if let Some(active) = self.active.take() {
             self.finish_run(active, "manual-stop")?;
         }
-        self.writer.flush().map_err(|e| ApiError::new(500, e))?;
+        self.writer
+            .flush()
+            .map_err(|e| ApiError::internal("Operation failed", e))?;
         Ok(())
     }
     fn finish_run(&self, run: Value, reason: &str) -> ApiResult<()> {
@@ -595,7 +597,7 @@ impl RoadService {
                         .map_err(|e| e.to_string())
                 },
             )
-            .map_err(|e| ApiError::new(500, e))
+            .map_err(|e| ApiError::internal("Operation failed", e))
     }
     pub fn recover(&mut self) -> ApiResult<()> {
         for d in self.store.list(None, Some("run"), true)? {
@@ -626,15 +628,15 @@ impl RoadService {
         let sid = run["sessionId"].as_str().unwrap_or("");
         let points = database
             .get_telemetry_points(sid, None)
-            .map_err(|e| ApiError::new(500, e))?;
+            .map_err(|e| ApiError::internal("Operation failed", e))?;
         let mut meta = database
             .get_session_metadata(sid)
-            .map_err(|e| ApiError::new(500, e))?;
+            .map_err(|e| ApiError::internal("Operation failed", e))?;
         if meta["state"] != "finalized" {
-            let _self_result=database.finalize_session(sid,json!({"endReason":reason,"incompletePersistence":reason=="application-interrupted"})).map_err(|e|ApiError::new(500,e))?;
+            let _self_result=database.finalize_session(sid,json!({"endReason":reason,"incompletePersistence":reason=="application-interrupted"})).map_err(|e| ApiError::internal("Operation failed", e))?;
             meta = database
                 .get_session_metadata(sid)
-                .map_err(|e| ApiError::new(500, e))?;
+                .map_err(|e| ApiError::internal("Operation failed", e))?;
         }
         let race: Vec<f64> = points
             .iter()
