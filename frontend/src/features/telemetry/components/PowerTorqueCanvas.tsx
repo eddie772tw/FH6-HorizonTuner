@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { telemetryEmitter } from '../../../hooks/useTelemetry';
-import { readCanvasTheme, observeCanvasTheme, drawTraceGrid } from '../canvasTheme';
+import { readCanvasTheme, observeCanvasTheme, drawTraceGrid } from '../../../utils/canvasTheme';
 import { useSettings } from '../../../context/SettingsContext';
 
 interface PowerTorqueCanvasProps {

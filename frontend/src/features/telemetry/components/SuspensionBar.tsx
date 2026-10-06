@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { telemetryEmitter } from '../../../hooks/useTelemetry';
-import { readCanvasTheme, observeCanvasTheme } from '../canvasTheme';
+import { readCanvasTheme, observeCanvasTheme } from '../../../utils/canvasTheme';
 import { useSettings } from '../../../context/SettingsContext';
 import { getSuspensionDisplayValue, type SuspensionTravelMode } from '../../../utils/suspensionTravel';
 import {
@@ -123,7 +123,7 @@ const SuspensionBar: React.FC<SuspensionBarProps> = React.memo(({ title, isLeft,
 
           if (renderHistoryTrace && history.size > 0) {
             ctx.beginPath();
-            if (theme.linear) ctx.strokeStyle = theme.primary;
+            if (theme.flat) ctx.strokeStyle = theme.primary;
             else {
               const grad = ctx.createLinearGradient(0, 0, 0, h);
               grad.addColorStop(0, theme.danger);
@@ -177,14 +177,14 @@ const SuspensionBar: React.FC<SuspensionBarProps> = React.memo(({ title, isLeft,
     <div ref={containerRef} className="telemetry-instrument-panel p-2 rounded-3 border d-flex flex-column justify-content-between h-100 overflow-hidden" style={{ background: 'var(--surface-1)', borderColor: 'var(--glass-border) !important' }}>
       <div className={`instrument-readout-label fw-bold text-body mb-1 fs-8 ${isLeft ? 'text-start' : 'text-end'}`}>{title}</div>
       <div className={`d-flex gap-2 align-items-center flex-grow-1 ${isLeft ? 'flex-row' : 'flex-row-reverse'}`} style={{ height: '42px', minHeight: '38px' }}>
-        <div className="position-relative h-100 border rounded-pill overflow-hidden flex-shrink-0" style={{ width: '20px', background: 'var(--surface-2)', borderColor: 'var(--glass-border) !important' }}>
+        <div className="telemetry-suspension-track position-relative h-100 border rounded-pill overflow-hidden flex-shrink-0" style={{ width: '20px', background: 'var(--surface-2)', borderColor: 'var(--glass-border) !important' }}>
           <div className="position-absolute" style={{ top: '50%', left: 0, right: 0, height: '1px', background: 'var(--divider)', zIndex: 2 }} />
-          <div ref={barRef} className="position-absolute start-0 end-0 bottom-0 rounded-bottom-pill" style={{
+          <div ref={barRef} className="telemetry-suspension-fill position-absolute start-0 end-0 bottom-0 rounded-bottom-pill" style={{
             height: '50%',
             background: 'var(--primary)'
           }} />
         </div>
-        <div ref={canvasContainerRef} className="flex-grow-1 h-100 position-relative opacity-75 overflow-hidden">
+        <div ref={canvasContainerRef} className="telemetry-suspension-trace flex-grow-1 h-100 position-relative opacity-75 overflow-hidden">
            <canvas ref={canvasRef} className="w-100 h-100 d-block" />
         </div>
       </div>

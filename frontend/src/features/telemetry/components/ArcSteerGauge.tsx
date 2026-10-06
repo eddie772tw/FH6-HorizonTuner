@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { telemetryEmitter } from '../../../hooks/useTelemetry';
-import { readCanvasTheme, observeCanvasTheme } from '../canvasTheme';
+import { readCanvasTheme, observeCanvasTheme } from '../../../utils/canvasTheme';
 import { useSettings } from '../../../context/SettingsContext';
 
 const ArcSteerGauge: React.FC<{ size?: number }> = React.memo(() => {

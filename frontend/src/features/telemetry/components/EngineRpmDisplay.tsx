@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { telemetryEmitter } from '../../../hooks/useTelemetry';
-import { readCanvasTheme, observeCanvasTheme } from '../canvasTheme';
+import { readCanvasTheme, observeCanvasTheme } from '../../../utils/canvasTheme';
 import { useSettings } from '../../../context/SettingsContext';
 import { formatTelemetryGear } from '../../../utils/telemetryDisplay';
 
@@ -86,7 +86,7 @@ const EngineRpmDisplay: React.FC = React.memo(() => {
         }
 
         ctx.beginPath();
-        const slant = (theme.linear ? 0 : 3) * dpr;
+        const slant = (theme.flat ? 0 : 3) * dpr;
         ctx.moveTo(x + slant, y);
         ctx.lineTo(x + segWidth + slant, y);
         ctx.lineTo(x + segWidth, y + segHeight);
@@ -95,7 +95,7 @@ const EngineRpmDisplay: React.FC = React.memo(() => {
 
         if (isActive) {
           if (isShiftAlert && segRatio >= 0.85) {
-            ctx.fillStyle = !theme.linear && lastFlashRef.current ? '#ffffff' : theme.danger;
+            ctx.fillStyle = theme.alertFlash && lastFlashRef.current ? theme.pointer : theme.danger;
             ctx.shadowColor = theme.danger;
             ctx.shadowBlur = glowStrength * 10 * dpr;
           } else {

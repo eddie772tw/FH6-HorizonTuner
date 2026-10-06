@@ -88,18 +88,18 @@ const VehicleDynamicsDisplay: React.FC = React.memo(() => {
 
       if (powerRef.current) powerRef.current.innerText = Math.round(powerData.value).toString();
       if (powerContainerRef.current) {
-        powerContainerRef.current.style.color = (isEV && powerData.value < 0) ? '#00ff88' : 'var(--text-primary)';
+        powerContainerRef.current.style.color = (isEV && powerData.value < 0) ? 'var(--instrument-regen, var(--bs-success))' : 'var(--text-primary)';
       }
 
       if (torqueRef.current) torqueRef.current.innerText = Math.round(torqueData.value).toString();
       if (torqueContainerRef.current) {
-        torqueContainerRef.current.style.color = (isEV && torqueData.value < 0) ? '#00ff88' : 'var(--text-primary)';
+        torqueContainerRef.current.style.color = (isEV && torqueData.value < 0) ? 'var(--instrument-regen, var(--bs-success))' : 'var(--text-primary)';
       }
 
       if (isEV) {
         if (thirdStatValueRef.current) thirdStatValueRef.current.innerText = isRegenActive ? t("ON") : t("OFF");
         if (thirdStatLabelRef.current) thirdStatLabelRef.current.innerText = "";
-        if (thirdStatContainerRef.current) thirdStatContainerRef.current.style.color = isRegenActive ? '#00ff88' : 'var(--text-primary)';
+        if (thirdStatContainerRef.current) thirdStatContainerRef.current.style.color = isRegenActive ? 'var(--instrument-regen, var(--bs-success))' : 'var(--text-primary)';
       } else {
         if (thirdStatValueRef.current) thirdStatValueRef.current.innerText = boostData.value.toFixed(1);
         if (thirdStatLabelRef.current) thirdStatLabelRef.current.innerText = boostData.label;
@@ -131,7 +131,7 @@ const VehicleDynamicsDisplay: React.FC = React.memo(() => {
   }, [convertPower, convertTorque, convertBoost, convertSpeed, t]);
 
   return (
-    <div className="d-flex flex-column justify-content-center h-100 gap-2 p-1">
+    <div className="telemetry-dynamics-readouts d-flex flex-column justify-content-center h-100 gap-2 p-1">
       {/* Power / Torque / Boost Summary */}
       <div className="d-grid gap-2 border rounded-3 p-2" style={{ gridTemplateColumns: '1fr 1fr 1fr', background: 'var(--surface-1)', borderColor: 'var(--glass-border) !important' }}>
         <div>

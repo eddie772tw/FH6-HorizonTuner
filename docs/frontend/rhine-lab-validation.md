@@ -6,7 +6,7 @@
 
 | 檢查 | 結果 |
 | --- | --- |
-| `pnpm -C frontend run test` | 189 files passed、1 skipped；1,698 tests passed、1 skipped |
+| `pnpm -C frontend run test` | 189 files passed、1 skipped；1,700 tests passed、1 skipped（含 Swiss 與跨頁圖表追加實作） |
 | `pnpm -C frontend run build` | TypeScript 與 Vite 通過，含 Full／Lite／Companion 入口 |
 | `pnpm install --frozen-lockfile --ignore-scripts` | 通過；不新增執行期相依 |
 | `git diff --check` | 通過 |
@@ -46,6 +46,18 @@ Sol 已在 `1ead368749cd7ea31086c15af4d59df286e951b9` 重新執行原 P2 情境�
 
 使用者於同輪明確表示「動畫效果不用測」，因此取消 Windows 系統動畫效果開關的人工驗收；不變更產品對 `prefers-reduced-motion` 的支援與既有契約測試，也不把未執行的 OS 驗收記為通過。
 
+## Swiss 與跨頁圖表追加驗收
+
+使用者追加 Swiss 五卡差異化與 AEGO／其他頁面的圖表風格後，將原遙測專用 `canvasTheme` 移到共用 utils。高頻圖表保留快取讀取，靜態圖表也會在 Core、明暗、配色及字體載入完成時重畫既有資料。Recharts SVG 沿用相同 CSS token；未修改 Rust 公式、步驟資格、遙測協定與圖表資料。
+
+- Swiss Technical／Editorial／Contrast 各有明暗實際截圖，使用同一批 600 個合成封包後停止傳送，再切換 Core。平面 RPM／懸吊、清楚的功能色、實色圖例與圓形極座標保持 Swiss 的網格儀表語言；Rhine 保留線性方向尺、方形標記與實線刻度。見 [Swiss 研究](swiss-telemetry-design.md)、[矩陣與一次未選成功的操作診斷](assets/rhine-lab/core-chart-live-matrix.json)、[Swiss Editorial 淺色](assets/rhine-lab/swiss-editorial-light.png)、[Swiss Contrast 暗色](assets/rhine-lab/swiss-contrast-dark.png)及[Rhine 暗色](assets/rhine-lab/core-chart-rhine-dark.png)。
+- AEGO 以同一份已保存引擎 fixture、780kg 測試 profile，經正常沿用流程產生齒比。Rhine 暗色／淺色與 Swiss Editorial 淺色間沒有新封包；終傳比與六檔數值均保持 `4.34 / 2.32 / 1.70 / 1.30 / 1.03 / 0.84 / 0.72`，六條 SVG 曲線路徑逐一相等。Rhine 使用實線格線，Swiss 使用 `2 4` 疏虛線；長小數 RPM 軸標籤改為整數顯示。見 [非空三組資料紀錄](assets/rhine-lab/gearing-theme-state.json)、[Rhine 淺色](assets/rhine-lab/gearing-rhine-light.png)及[Swiss 淺色](assets/rhine-lab/gearing-swiss-editorial-light.png)。
+- 賽事頁在 Swiss Editorial 暗色、Rhine 暗色／淺色及 Halfmoon 淺色間切換，Session ID、26 筆樣本及 speed 指標保留；軌跡／圈速 Canvas 即時更新字體、格線與線色。實際畫面修正了圈速圖下方 0% 與 X 軸文字重疊、flex 內層高度超出固定 360px 面板的問題。見 [狀態紀錄](assets/rhine-lab/analysis-theme-state.json)、[Swiss](assets/rhine-lab/analysis-swiss-dark.png)與[Rhine](assets/rhine-lab/analysis-rhine-light.png)。這份合成 Session 的位置為零、速度固定，不代表真實賽道或雙圈比較負載。
+- Sol 獨立檢查找出 `text-body !important` 壓過 ANG／RAT 危險色，以及 Rhine 暗色 Regen 對比不足；已移除衝突 class 並讓 Regen 使用 Rhine 油門功能色。實際 EV 合成封包下，八個 ANG／RAT 讀值皆為 `rgb(240,145,143)`，負功率／扭力與 Regen ON 為 `rgb(139,189,157)`。見 [DOM computed 色彩](assets/rhine-lab/safety-colors.json)與[畫面](assets/rhine-lab/safety-colors.png)。
+- 新增 Core-only 變更時的快取字體／格線回歸。獨立 jsdom 檢查三個靜態 Canvas 的 font loadingdone 與 ResizeObserver，在切換後無持續增加，卸載後歸零。這是程式生命週期證據，不是 GPU 記憶體量測。
+
+引擎收集 Canvas、車輛馬力／扭力 SVG、直線加速的速度與輪滑 SVG、遙測詳細歷史圖亦已套用共用契約；目前有資料的跨系統互動證據集中在上述五卡、AEGO 與賽事圖表。新增的所有圖表仍需區分瀏覽器實测與原生／真實遊戲驗收。
+
 ## 對比與包體
 
 基礎色值的 WCAG 對比計算見 [contrast.json](assets/rhine-lab/contrast.json)：淺色三種表面上的輔助文字最低 **4.63:1**、主要文字最低 **15.50:1**；深色分別最低 **5.60:1**、**9.58:1**。必要控制項邊界在六種表面最低 **3.60:1**。這不代表任意使用者自訂三色都達標，也不取代完整畫面無障礙稽核。
@@ -54,13 +66,13 @@ Sol 已在 `1ead368749cd7ea31086c15af4d59df286e951b9` 重新執行原 P2 情境�
 
 | 類別 | 基準 | Rhine 2D |
 | --- | ---: | ---: |
-| JavaScript | 1,188,233 bytes | 1,189,447 bytes |
-| CSS | 433,596 bytes | 743,420 bytes |
+| JavaScript | 1,188,233 bytes | 1,191,806 bytes |
+| CSS | 433,596 bytes | 746,925 bytes |
 | WOFF2 | 0 bytes | 12,197,248 bytes |
 | GLB | 0 bytes | 0 bytes |
-| 全部前端檔案 | 1,629,549 bytes | 14,388,387 bytes |
+| 全部前端檔案 | 1,629,549 bytes | 14,394,413 bytes |
 
-JavaScript 增加 1,214 bytes；主要增量為計畫保留的 MiSans 原始分片與 unicode-range CSS。字體使用 `font-display: swap` 與系統回退。
+JavaScript 增加 3,573 bytes；主要增量為計畫保留的 MiSans 原始分片與 unicode-range CSS。字體使用 `font-display: swap` 與系統回退。
 
 ## 效能與尚未完成的情境
 

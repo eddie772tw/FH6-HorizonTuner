@@ -96,17 +96,27 @@
   --instrument-marker-shadow: none;
   --instrument-glow-strength: 0;
   --instrument-linear: 1;
+  --chart-grid: var(--instrument-grid);
+  --chart-grid-dash: 0;
+  --chart-radius: var(--panel-radius);
+  --chart-series-saturation: 30%;
+  --chart-series-lightness: 70%;
+  --instrument-flat: 1;
+  --instrument-alert-flash: 0;
   --instrument-grid: var(--glass-border);
   --instrument-track: var(--glass-border);
   --instrument-tick: var(--text-secondary);
   --instrument-inactive: var(--surface-3);
   --instrument-history-marker: var(--text-secondary);
   --instrument-pointer: var(--text-primary);
+  --instrument-regen: var(--instrument-throttle);
   --control-font-weight: 600;
   --control-tracking: 0.015em;
   --readout-transform: none;
   --readout-tracking: 0.025em;
 }
+
+[data-design-system="rhine"][data-bs-theme="light"] { --chart-series-lightness: 35%; }
 
 :where([data-design-system="rhine"]) :is(.navbar, .glass-panel, .card, .halfmoon-card, .popover, .offcanvas, .dropdown-menu, .modal-content, .toast, .telemetry-card-shell) {
   background: var(--glass-bg);

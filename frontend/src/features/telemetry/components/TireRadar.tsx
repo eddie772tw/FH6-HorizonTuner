@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { telemetryEmitter } from '../../../hooks/useTelemetry';
-import { readCanvasTheme, observeCanvasTheme, type CanvasTheme } from '../canvasTheme';
+import { readCanvasTheme, observeCanvasTheme, type CanvasTheme } from '../../../utils/canvasTheme';
 import { useSettings } from '../../../context/SettingsContext';
 
 // [PERF] Pre-allocate a shared typed array to eliminate per-frame GC allocations for the histogram calculation
@@ -144,7 +144,7 @@ const TireRadar: React.FC<TireRadarProps> = React.memo(({ title, isLeft, tireIdx
         ctx.beginPath();
         ctx.setLineDash([3 * dpr, 3 * dpr]);
         ctx.arc(scaledRadius, scaledRadius, scaledRadius / displayLimit, 0, Math.PI * 2);
-        ctx.strokeStyle = theme.linear ? theme.warningLine : 'rgba(255,0,0,0.5)';
+        ctx.strokeStyle = theme.warningLine;
         ctx.stroke();
         ctx.setLineDash([]);
 
@@ -200,11 +200,11 @@ const TireRadar: React.FC<TireRadarProps> = React.memo(({ title, isLeft, tireIdx
 
       if (angRef.current) {
         angRef.current.innerText = cAngle.toFixed(2);
-        angRef.current.style.color = Math.abs(cAngle) > 1.0 ? 'var(--secondary)' : 'var(--text-secondary)';
+        angRef.current.style.color = Math.abs(cAngle) > 1.0 ? 'var(--instrument-danger, var(--bs-danger))' : 'var(--text-secondary)';
       }
       if (ratioRef.current) {
         ratioRef.current.innerText = cRatio.toFixed(2);
-        ratioRef.current.style.color = Math.abs(cRatio) > 1.0 ? 'var(--secondary)' : 'var(--text-secondary)';
+        ratioRef.current.style.color = Math.abs(cRatio) > 1.0 ? 'var(--instrument-danger, var(--bs-danger))' : 'var(--text-secondary)';
       }
 
       draw();
@@ -411,12 +411,12 @@ const TireRadar: React.FC<TireRadarProps> = React.memo(({ title, isLeft, tireIdx
         <div className="d-flex flex-row align-items-center gap-3 flex-shrink-0 pt-1">
           <div className="d-flex flex-column align-items-start">
             <span style={{ fontSize: '0.6rem', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--bs-secondary-color, rgba(108,117,125,0.85))', fontWeight: 600 }}>ANG</span>
-            <span className="fw-bold font-monospace text-body" ref={angRef} style={{ fontSize: '1.45rem', lineHeight: 1.0 }}>0.00</span>
+            <span className="fw-bold font-monospace" ref={angRef} style={{ color: 'var(--text-primary)', fontSize: '1.45rem', lineHeight: 1.0 }}>0.00</span>
           </div>
-          <div style={{ width: '1px', height: '26px', background: 'rgba(128,128,128,0.2)', flexShrink: 0 }} />
+          <div style={{ width: '1px', height: '26px', background: 'var(--divider)', flexShrink: 0 }} />
           <div className="d-flex flex-column align-items-start">
             <span style={{ fontSize: '0.6rem', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--bs-secondary-color, rgba(108,117,125,0.85))', fontWeight: 600 }}>RAT</span>
-            <span className="fw-bold font-monospace text-body" ref={ratioRef} style={{ fontSize: '1.45rem', lineHeight: 1.0 }}>0.00</span>
+            <span className="fw-bold font-monospace" ref={ratioRef} style={{ color: 'var(--text-primary)', fontSize: '1.45rem', lineHeight: 1.0 }}>0.00</span>
           </div>
         </div>
 

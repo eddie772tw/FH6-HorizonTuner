@@ -31,19 +31,19 @@
     },
     "rhine": {
       "all": {
-        "files": 411,
-        "bytes": 14388387,
-        "gzip": 12800550
+        "files": 412,
+        "bytes": 14394413,
+        "gzip": 12802356
       },
       "js": {
-        "files": 17,
-        "bytes": 1189447,
-        "gzip": 341089
+        "files": 18,
+        "bytes": 1191806,
+        "gzip": 342172
       },
       "css": {
         "files": 6,
-        "bytes": 743420,
-        "gzip": 156847
+        "bytes": 746925,
+        "gzip": 157536
       },
       "fonts": {
         "files": 376,

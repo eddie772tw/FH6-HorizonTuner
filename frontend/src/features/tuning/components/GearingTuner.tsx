@@ -1,5 +1,5 @@
 import React, { memo, useMemo } from 'react';
-import { LineChart, Line, XAxis, YAxis, ReferenceLine, ReferenceArea, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, ReferenceLine, ReferenceArea, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { useSettings } from '../../../context/SettingsContext';
 import { computeGearingChartData } from './gearingChartData';
 
@@ -151,11 +151,12 @@ const GearingTunerComponent: React.FC<GearingTunerProps> = ({
 
         {/* Right Column: Speed-RPM LineChart Graph */}
         <div className="col-12 col-md-8" style={{ minWidth: 0 }}>
-          <div style={{ background: 'var(--surface-2)', borderRadius: '8px', padding: '0.8rem', border: '1px solid var(--glass-border)' }}>
+          <div className="core-theme-chart" style={{ background: 'var(--surface-2)', borderRadius: 'var(--chart-radius)', padding: '0.8rem', border: '1px solid var(--glass-border)' }}>
             <ResponsiveContainer width="100%" aspect={16 / 9} minWidth={0}>
               <LineChart data={chartData} margin={{ top: 15, right: 15, bottom: 5, left: -15 }}>
+                <CartesianGrid stroke="var(--chart-grid)" strokeDasharray="var(--chart-grid-dash)" />
                 <XAxis dataKey="speed" type="number" domain={[0, xMax || 400]} stroke="var(--text-secondary)" fontSize={10} unit={` ${speedLabel}`} />
-                <YAxis type="number" domain={[0, yMax || 9000]} stroke="var(--text-secondary)" fontSize={10} unit=" RPM" />
+                <YAxis type="number" domain={[0, yMax || 9000]} stroke="var(--text-secondary)" fontSize={10} tickFormatter={value => Math.round(value).toString()} unit=" RPM" />
                 {/* 3. Effective Powerband Highlight Range (Semi-transparent background area) */}
                 {Boolean(carParams?.maxHpRpm && carParams?.maxTorqueRpm) && (
                   <ReferenceArea
@@ -230,7 +231,7 @@ const GearingTunerComponent: React.FC<GearingTunerProps> = ({
                     key={`gear-graph-${i}`}
                     type="linear"
                     dataKey={`gear${i+1}`}
-                    stroke={`color-mix(in srgb, hsl(${i * 45}, 85%, 60%) 65%, var(--text-primary))`}
+                    stroke={`color-mix(in srgb, hsl(${i * 45} var(--chart-series-saturation) var(--chart-series-lightness)) 65%, var(--text-primary))`}
                     strokeWidth={2}
                     dot={false}
                     isAnimationActive={false}

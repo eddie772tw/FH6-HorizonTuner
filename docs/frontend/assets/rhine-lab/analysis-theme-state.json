@@ -1,0 +1,78 @@
+[
+  {
+    "canvases": [
+      {
+        "height": 294,
+        "width": 894
+      },
+      {
+        "height": 295,
+        "width": 894
+      }
+    ],
+    "core": "swiss-editorial",
+    "metric": "speed",
+    "mode": "dark",
+    "pageWidth": 1912,
+    "sampleCount": "狀態: 閒置 (26 個樣本) | Loaded Session: session_e224e809515a4130bf63d54b6fc9019e",
+    "scrollWidth": 1912,
+    "selection": "session_e224e809515a4130bf63d54b6fc9019e"
+  },
+  {
+    "canvases": [
+      {
+        "height": 294,
+        "width": 894
+      },
+      {
+        "height": 295,
+        "width": 894
+      }
+    ],
+    "core": "rhine-lab",
+    "metric": "speed",
+    "mode": "dark",
+    "pageWidth": 1912,
+    "sampleCount": "狀態: 閒置 (26 個樣本) | Loaded Session: session_e224e809515a4130bf63d54b6fc9019e",
+    "scrollWidth": 1912,
+    "selection": "session_e224e809515a4130bf63d54b6fc9019e"
+  },
+  {
+    "canvases": [
+      {
+        "height": 294,
+        "width": 894
+      },
+      {
+        "height": 295,
+        "width": 894
+      }
+    ],
+    "core": "rhine-lab",
+    "metric": "speed",
+    "mode": "light",
+    "pageWidth": 1912,
+    "sampleCount": "狀態: 閒置 (26 個樣本) | Loaded Session: session_e224e809515a4130bf63d54b6fc9019e",
+    "scrollWidth": 1912,
+    "selection": "session_e224e809515a4130bf63d54b6fc9019e"
+  },
+  {
+    "canvases": [
+      {
+        "height": 294,
+        "width": 894
+      },
+      {
+        "height": 295,
+        "width": 894
+      }
+    ],
+    "core": "default",
+    "metric": "speed",
+    "mode": "light",
+    "pageWidth": 1912,
+    "sampleCount": "狀態: 閒置 (26 個樣本) | Loaded Session: session_e224e809515a4130bf63d54b6fc9019e",
+    "scrollWidth": 1912,
+    "selection": "session_e224e809515a4130bf63d54b6fc9019e"
+  }
+]

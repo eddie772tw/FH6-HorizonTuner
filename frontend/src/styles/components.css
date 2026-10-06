@@ -74,3 +74,12 @@
   .telemetry-card-shell:has(.telemetry-card-layout--grid) { min-height: 38rem; }
   .telemetry-card-layout--grid { grid-template-columns: minmax(0, 1fr); grid-template-rows: repeat(4, minmax(0, 1fr)); }
 }
+.core-theme-chart {
+  font-family: var(--instrument-font-family);
+  font-variant-numeric: tabular-nums;
+}
+.core-theme-chart .recharts-cartesian-grid line {
+  stroke: var(--chart-grid);
+  stroke-dasharray: var(--chart-grid-dash);
+}
+.core-theme-chart .recharts-text { font-family: inherit; }

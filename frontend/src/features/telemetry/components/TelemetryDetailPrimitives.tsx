@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { radiansToDegrees } from '../telemetryDetailMath';
 import type { TelemetryChartPoint } from '../telemetryDetailMath';
+import { readCanvasTheme, observeCanvasTheme } from '../../../utils/canvasTheme';
 
 export interface ChartLine {
   dataKey: string;
@@ -44,6 +45,9 @@ export const Metric: React.FC<{ label: string; value: string; tone?: string }> =
 interface ChartTheme {
   divider: string;
   text: string;
+  font: string;
+  dash: number[];
+  flat: boolean;
 }
 
 interface ChartLayout {
@@ -68,6 +72,9 @@ interface ChartHover {
 const EMPTY_CHART_THEME: ChartTheme = {
   divider: 'rgba(255, 255, 255, 0.08)',
   text: 'rgba(255, 255, 255, 0.65)',
+  font: 'system-ui, sans-serif',
+  dash: [3, 4],
+  flat: false,
 };
 
 const getCssVariable = (style: CSSStyleDeclaration, name: string, fallback: string): string => (
@@ -153,12 +160,13 @@ const drawChart = (
 ): void => {
   const { width, height, left, top, plotWidth, plotHeight, min, max } = layout;
   context.clearRect(0, 0, width, height);
-  context.font = '10px system-ui, sans-serif';
+  context.font = `10px ${theme.font}`;
   context.textBaseline = 'middle';
   context.fillStyle = theme.text;
   context.strokeStyle = theme.divider;
   context.lineWidth = 1;
-  context.setLineDash([3, 4]);
+  context.setLineDash(theme.dash);
+  context.textAlign = 'right';
 
   context.beginPath();
   for (let gridIndex = 0; gridIndex <= 4; gridIndex += 1) {
@@ -185,8 +193,8 @@ const drawChart = (
   }
 
   const range = max - min || 1;
-  context.lineCap = 'round';
-  context.lineJoin = 'round';
+  context.lineCap = theme.flat ? 'butt' : 'round';
+  context.lineJoin = theme.flat ? 'miter' : 'round';
   context.lineWidth = 2;
 
   for (let lineIndex = 0; lineIndex < lines.length; lineIndex += 1) {
@@ -244,9 +252,13 @@ export const TrendChart: React.FC<{
     const updateTheme = () => {
       const style = getComputedStyle(document.documentElement);
       styleRef.current = style;
+      const theme = readCanvasTheme();
       themeRef.current = {
-        divider: getCssVariable(style, '--divider', EMPTY_CHART_THEME.divider),
-        text: getCssVariable(style, '--text-secondary', EMPTY_CHART_THEME.text),
+        divider: theme.chartGrid,
+        text: theme.muted,
+        font: theme.font,
+        dash: theme.chartDash,
+        flat: theme.flat,
       };
       drawRef.current();
     };
@@ -284,12 +296,11 @@ export const TrendChart: React.FC<{
     });
     resizeObserver.observe(container);
 
-    const themeObserver = new MutationObserver(updateTheme);
-    themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-bs-theme', 'style'] });
+    const stopThemeObserver = observeCanvasTheme(updateTheme);
 
     return () => {
       resizeObserver.disconnect();
-      themeObserver.disconnect();
+      stopThemeObserver();
     };
   }, [hasData]);
 

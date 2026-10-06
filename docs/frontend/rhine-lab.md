@@ -15,6 +15,8 @@ Rhine 是第三個設計系統，`rhine-lab` 是第七個 Core。Full／Lite 共
 
 五張遙測卡片中的 RPM、方向盤、踏板曲線、動力／扭力、G 值歷史點、輪胎雷達／胎溫與四輪懸吊共用 canvasTheme 的快取 token。Rhine 使用平直 RPM 刻度、細線方向盤、實線格線、方形扭力／歷史標記與無光暈表面；警示仍使用獨立紅色、胎溫保留冷／正常／熱分類與既有門檻。SHIFT 在 Rhine 保持靜態紅色提示，圖例與點形一致。
 
+共用快取位於 `src/utils/canvasTheme.ts`。適用範圍已延伸至 AEGO 齒比（Recharts SVG）、引擎量測曲線、賽道地圖、圈速比較、遙測詳情、Dyno 與直線加速圖表。Rhine 使用 MiSans、實線尺規與較低飽和的齒輪分類色；Swiss 使用稀疏虛線與資料網格。Canvas 在靜止資料及字體完成載入時也會更新，資料、單位與資格不依主題改寫。完整責任與 token 見[跨頁圖表契約](design-systems.md#跨頁圖表契約)。
+
 主題變更及 resize 只重畫既有樣本，不加入遙測、不重設歷史或最大值。CSS 計算在主題更新時執行，資料接收仍直接繪圖，不引入每幀 React state。停止接收後也能切換風格；切回其他 Core 時回到既有 token fallback。懸吊補回既有漏失的 update 事件訂閱，確保即時讀值與曲線能收到資料。
 
 ## 素材來源與重製

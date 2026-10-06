@@ -1,5 +1,13 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-10-06 / Swiss 遙測與跨頁 Core 圖表契約（Codex as Codex）
+
+- **來源／狀態**：`local`／`verified`；使用者要求 Sol 研究並實作 Swiss 五卡差異化，再擴及 AEGO、賽事與其他圖表，併入 PR #489。使用 `ponytail`（full）、`halfmoon-design-system`、`huge-component-refactoring`、`modular-refactoring`、`pr-author-maintainer`、`pr-review-evaluation`；沿用隔離資料驗收與 `computer-use:computer-use`。
+- **Learning**：只監聽明暗模式會漏掉同模式換 Core；Canvas 也不會因晚到的 webfont 自動刷新。共用快取需監聽 Core／系統／style 與 `document.fonts.loadingdone`，卸載時一起清理。高頻訂閱不應每幀呼叫 computed style。Bootstrap `text-body !important` 會覆蓋 inline 危險色，功能性警示必須避免該 class。
+- **Action**：將 `canvasTheme` 移至共用 utils，Swiss 平面材質與穩定警示和 Rhine 線性幾何分開。AEGO、馬力、加速 SVG 與賽事 Canvas 共用字體／格線／曲線 token；只格式化 RPM 軸標籤，不更動齒比公式。圈速圖預留兩子圖間距，內層 flex 可縮小，保留外層 360px 高度。
+- **Evidence**：前端 189 files／1,700 tests passed、各 1 skipped；TypeScript／Vite 通過。Swiss 三 Core 明暗截圖、Rhine／Swiss AEGO 三組相同數值與六条曲線路徑、賽事四組 Session 保留已保存。Sol 原 P2 色彩問題修正後獨立複核；三個 Canvas 掛載／字體更新／卸載的 listener 與 observer 無持續增加。完整數據與限制見 [驗收文件](../docs/frontend/rhine-lab-validation.md)。
+- **Boundary**：合成 UDP／既有去識別引擎 fixture 不代表新真實遊戲量測；舊版 p95 與 WebView2 證據保留其原提交範圍。200% 已由使用者設定並實測，OS 動畫效果人工驗收依使用者要求取消。
+
 ## 2026-10-06 / Rhine Lab 純 2D 設計系統與對話框生命週期（Codex as Codex）
 
 - **來源／狀態**：`local`／`verified`；使用者核准第三設計系統計畫，實作期間再確認完整移除實驗 3D，保留全部 2D 設計。採用 `ponytail`（full，外部）、`halfmoon-design-system`、`modular-refactoring`、`huge-component-refactoring`、`agent-governance-audit`；Windows 互動驗收另使用 `computer-use:computer-use`。

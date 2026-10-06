@@ -48,7 +48,7 @@ Rhine 限定樣式位於 `rhine.css`：頂部刻度導覽、檔案頁標頭、�
 #### 擴充核心與設計系統
 1. 在 `themeCatalog.ts` 登錄新核心；同系統沿用既有 designSystem，新系統先加入 `DESIGN_SYSTEMS`。
 2. 在對應的 `styles/design-systems/<system>.css` 定義模式／核心配色與材質 token。系統特有的分頁、徽章等 selector 必須以 `[data-design-system="<system>"]` 限定範圍；新模組加入 `index.css` 靜態載入，保證首幀可用。
-3. 共用元件透過 token 表達差異；儀表讀取 `--instrument-glow-strength` 等 token 並快取，不在繪圖循環查 DOM，也不加入 `isSwiss` 等核心名稱分支。
+3. 共用元件透過 token 表達差異；儀表讀取 `--instrument-glow-strength` 等 token 並快取，不在繪圖循環查 DOM，也不加入 `isSwiss` 等核心名稱分支。`utils/canvasTheme.ts` 同時供即時、調校及分析 Canvas 使用；SVG 圖表以 `.core-theme-chart` 消費格線、字體與表面 token。`flat`／`alertFlash` 管理平直儀表及警示，`linear` 保留 Rhine 專屬尺規與方形標記。字體載入完成須重畫靜態 Canvas，切換核心不得清空資料。
 4. 補核心歸屬、舊設定載入及首幀／React 一致性驗證；瀏覽器檢查日夜、配色、跨系統往返、鍵盤焦點與窄畫面。新增設計系統不需要複製各個頁面的 CSS。
 
 Swiss 的 `--bg-gradient` 為各核心定義的實色；Technical 夜間為 `#0b0d12`、日間為 `#f8fafc`，Editorial 與 Contrast 各有獨立日夜表面。三核心皆為 `--glass-shadow: none`、`--glass-blur: 0px`，主要面板直接使用 `backdrop-filter: none`。`--on-primary` 依主色相對亮度選取黑或白，供實色按鈕文字使用。焦點使用清楚的 outline。全域數字採 `tabular-nums lining-nums`；Swiss 採 Inter／系統無襯線字型。

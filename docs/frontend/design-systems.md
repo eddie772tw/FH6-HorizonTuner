@@ -33,6 +33,7 @@ Core Theme 決定表面、字體層級與元件細節；其所屬設計系統由
 | [navigation.css](../../frontend/src/styles/navigation.css) | 分頁結構、寬度、響應式與焦點 |
 | [design-systems/index.css](../../frontend/src/styles/design-systems/index.css) | 靜態載入 Halfmoon／Swiss／Rhine 模組，各自限定 `data-design-system` |
 | [features/theme](../../frontend/src/features/theme/ThemeView.tsx) | 外觀設定、核心預覽、三色色票／HEX、配色預設及進階 CSS |
+| [canvasTheme.ts](../../frontend/src/utils/canvasTheme.ts) | 跨頁 Canvas 的主題快取、屬性／字體完成通知與 React 圖表 hook |
 
 保留 `themeSettings` localStorage key、後端 `theme` 設定、`halfmoonCore` 欄位與 JSON schema 2。設計系統是衍生值，不另存一份可與核心矛盾的狀態。新增核心不需要變更 API 或遷移現有主題。
 
@@ -47,6 +48,20 @@ Core Theme 決定表面、字體層級與元件細節；其所屬設計系統由
 - **覆蓋層與捲動**：抽屜／對話框沿用 `ModalPortal`；頁面容器需保留可達的捲動區，尤其 Sessions 分析與下方 Road 紀錄。反差標頭不能改變按鈕順序、遮住提示或裁切長標籤。
 
 Rhine 的 2D 版面與短暫動畫適用 Full／Lite 共用前端；設定、外觀、診斷、Companion、MCP 與關於在 1024px 以上統一為置中紙頁，窄畫面沿用抽屜。共用 useDialogTransition 以實際 transition 時長提供關閉保護，退出期間持續限制焦點。切換主題不得重新掛載工作區。素材及驗收邊界見 [Rhine Lab 實作與驗收](rhine-lab.md)。
+
+## 跨頁圖表契約
+
+圖表共用 `utils/canvasTheme.ts`，只在主題屬性變更及字體載入完成時更新快取。即時儀表使用 `observeCanvasTheme`，依資料／尺寸重畫的 React Canvas 使用 `useCanvasTheme`；切換主題不清除資料、量測資格、峰值或選取狀態。SVG 的 CSS 變數直接跟隨主題，無須更換 React key 或重建工作流。
+
+| 圖表 | 實作 | 主題範圍 |
+| --- | --- | --- |
+| 五卡即時儀表、詳情趨勢 | Canvas | 導引、字體、表面、功能色與 marker |
+| AEGO 齒比 | Recharts SVG | 格線、字體、核心圓角、分類色飽和度；保留齒比資料、RPM／速度軸與參考線 |
+| 調校引擎量測曲線 | Canvas | 格線、表面；Rhine 加垂直尺規，保留曲線及有效動力帶 |
+| 賽道地圖、圈速／輸入比較 | Canvas | 格線、軌跡底色、車輛 marker、圖例系列色與文字；保留熱度色階及比較虛線 |
+| Dyno、直線加速分析 | Recharts SVG | 格線、字體、圖例／曲線一致的系列色與 tooltip 表面 |
+
+`--instrument-flat` 控制平直 RPM 及懸吊曲線；`--instrument-alert-flash` 控制 RPM 警示閃爍，Swiss／Rhine 使用平直及穩定提示。`--instrument-linear` 專屬 Rhine 密刻度、方形標記與實線尺規，不用來代表所有平面設計。`--chart-grid`、`--chart-grid-dash`、`--chart-radius` 供 Canvas／SVG 共用，分類齒輪色由 `--chart-series-saturation/lightness` 控制；不以品牌色改寫油門、煞車、胎溫與危險閾值。Swiss 五卡規格見 [研究及實作](swiss-telemetry-design.md)。獨立 HUD 不在本次共用前端範圍。
 
 ## 新增核心或設計系統
 

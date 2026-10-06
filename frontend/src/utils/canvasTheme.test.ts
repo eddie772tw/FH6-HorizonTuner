@@ -5,6 +5,7 @@ import { observeCanvasTheme, readCanvasTheme } from './canvasTheme';
 afterEach(() => {
   document.documentElement.removeAttribute('style');
   document.documentElement.removeAttribute('data-bs-theme');
+  document.documentElement.removeAttribute('data-bs-core');
 });
 
 it('refreshes the drawing palette without telemetry and disconnects on disposal', async () => {
@@ -25,4 +26,28 @@ it('refreshes the drawing palette without telemetry and disconnects on disposal'
 it('keeps safety channels independent of a custom brand palette', () => {
   document.documentElement.setAttribute('style', '--primary: #abcdef; --secondary: #654321');
   expect(readCanvasTheme()).toMatchObject({ primary: '#abcdef', secondary: '#654321', brake: '#ff0055', hot: '#ff0000' });
+});
+
+it('refreshes cached chart typography for a core-only change without new telemetry', async () => {
+  let drawingTheme = readCanvasTheme();
+  document.documentElement.style.cssText = '--instrument-font-family: MiSans, sans-serif; --chart-grid-dash: 0';
+  const stop = observeCanvasTheme(() => {
+    drawingTheme = readCanvasTheme();
+  });
+  document.documentElement.setAttribute('data-bs-core', 'rhine-lab');
+  await Promise.resolve();
+  expect(drawingTheme).toMatchObject({ font: 'MiSans, sans-serif', chartDash: [0] });
+  stop();
+});
+
+it('keeps flat instruments and steady alerts independent of ruled geometry', async () => {
+  let drawingTheme = readCanvasTheme();
+  const stop = observeCanvasTheme(() => { drawingTheme = readCanvasTheme(); });
+  document.documentElement.setAttribute('style', '--instrument-flat: 1; --instrument-alert-flash: 0');
+  await Promise.resolve();
+  expect(drawingTheme).toMatchObject({ flat: true, alertFlash: false, linear: false });
+  document.documentElement.removeAttribute('style');
+  await Promise.resolve();
+  expect(drawingTheme).toMatchObject({ flat: false, alertFlash: true, linear: false });
+  stop();
 });
