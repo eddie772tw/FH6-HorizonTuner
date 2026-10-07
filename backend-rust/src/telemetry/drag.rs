@@ -25,6 +25,7 @@ pub struct DragRecorder {
     low_throttle: Option<f64>,
     pub low_throttle_duration_limit: f64,
     pub max_recording_time: f64,
+    started_with_race_on: bool,
     result: Value,
     car_id: i64,
     car_name: String,
@@ -40,6 +41,7 @@ impl Default for DragRecorder {
             low_throttle: None,
             low_throttle_duration_limit: 0.8,
             max_recording_time: 30.0,
+            started_with_race_on: false,
             result: Value::Object(Map::new()),
             car_id: 0,
             car_name: String::new(),
@@ -66,6 +68,7 @@ impl DragRecorder {
         self.session.clear();
         self.first_timestamp = None;
         self.low_throttle = None;
+        self.started_with_race_on = false;
         self.result = Value::Object(Map::new());
         self.car_id = 0;
         self.car_name.clear();
@@ -98,6 +101,7 @@ impl DragRecorder {
         if self.status == DragRecorderStatus::Waiting {
             if speed < 0.5 && gear >= 1 && accel >= 220 {
                 self.status = DragRecorderStatus::Recording;
+                self.started_with_race_on = race == 1;
                 self.first_timestamp = Some(ts);
                 self.car_id = i(d, "CarOrdinal", 0);
                 self.car_name = self
@@ -119,7 +123,7 @@ impl DragRecorder {
         let point = point(d, rel, speed, gear, accel);
         self.session.push(point);
         let mut stop = None;
-        if race != 1 {
+        if self.started_with_race_on && race != 1 {
             stop = Some("Race paused/ended")
         } else if rel > self.max_recording_time {
             stop = Some("Max recording time reached")

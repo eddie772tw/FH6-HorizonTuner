@@ -891,14 +891,18 @@ fn i64v(v: &Value, k: &str, d: i64) -> i64 {
 }
 
 pub fn validate_custom_route(route: &Value) -> Result<(), String> {
-    if let Some(schema) = route.get("schema").and_then(Value::as_str) {
-        if schema != "fh6-custom-route/v1" {
+    if let Some(schema) = route.get("schema") {
+        if schema.as_str() != Some("fh6-custom-route/v1") {
             return Err(format!("Unsupported schema: {schema}"));
         }
     }
-    if let Some(rid) = route.get("route_id").and_then(Value::as_str) {
-        if rid.trim().is_empty() {
-            return Err("route_id cannot be empty".to_string());
+    if let Some(rid_val) = route.get("route_id") {
+        if let Some(rid) = rid_val.as_str() {
+            if rid.trim().is_empty() {
+                return Err("route_id cannot be empty".to_string());
+            }
+        } else if !rid_val.is_null() {
+            return Err("route_id must be a string".to_string());
         }
     }
     let name = route.get("name").and_then(Value::as_str).unwrap_or("");
@@ -921,9 +925,14 @@ pub fn validate_custom_route(route: &Value) -> Result<(), String> {
                 .to_string(),
         );
     }
-    if let Some(sr) = route.get("start_radius").and_then(Value::as_f64) {
-        if !sr.is_finite() || sr < 5.0 || sr > 50.0 {
-            return Err("start_radius must be between 5.0 and 50.0".to_string());
+    if let Some(sr_val) = route.get("start_radius") {
+        if !sr_val.is_null() {
+            let Some(sr) = sr_val.as_f64() else {
+                return Err("start_radius must be a number".to_string());
+            };
+            if !sr.is_finite() || sr < 5.0 || sr > 50.0 {
+                return Err("start_radius must be between 5.0 and 50.0".to_string());
+            }
         }
     }
     if mode == "roaming" {
@@ -938,9 +947,14 @@ pub fn validate_custom_route(route: &Value) -> Result<(), String> {
                 "End coordinates (end_x, end_y, end_z) are required for roaming mode".to_string(),
             );
         }
-        if let Some(er) = route.get("end_radius").and_then(Value::as_f64) {
-            if !er.is_finite() || er < 5.0 || er > 50.0 {
-                return Err("end_radius must be between 5.0 and 50.0".to_string());
+        if let Some(er_val) = route.get("end_radius") {
+            if !er_val.is_null() {
+                let Some(er) = er_val.as_f64() else {
+                    return Err("end_radius must be a number".to_string());
+                };
+                if !er.is_finite() || er < 5.0 || er > 50.0 {
+                    return Err("end_radius must be between 5.0 and 50.0".to_string());
+                }
             }
         }
     }

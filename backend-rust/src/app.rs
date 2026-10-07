@@ -348,8 +348,8 @@ impl App {
                 json!({"success": true, "message": "Disarmed successfully"})
             }
             ("POST", ["api", "analysis", "routes", "import"]) => {
-                if let Some(schema) = data.get("schema").and_then(Value::as_str) {
-                    if schema != "fh6-custom-route/v1" {
+                if let Some(schema) = data.get("schema") {
+                    if schema.as_str() != Some("fh6-custom-route/v1") {
                         return Err(ApiError::invalid(format!("Unsupported schema: {schema}")));
                     }
                 }
@@ -369,9 +369,13 @@ impl App {
                     return Err(ApiError::invalid("No route data found in payload"));
                 }
                 for r in &routes_to_import {
-                    if let Some(rid) = r.get("route_id").and_then(Value::as_str) {
-                        if !rid.is_empty() && uuid::Uuid::parse_str(rid).is_err() {
-                            return Err(ApiError::invalid(format!("Invalid route_id UUID: {rid}")));
+                    if let Some(rid_val) = r.get("route_id") {
+                        if let Some(rid) = rid_val.as_str() {
+                            if !rid.is_empty() && uuid::Uuid::parse_str(rid).is_err() {
+                                return Err(ApiError::invalid(format!("Invalid route_id UUID: {rid}")));
+                            }
+                        } else if !rid_val.is_null() {
+                            return Err(ApiError::invalid("route_id must be a string UUID"));
                         }
                     }
                     crate::telemetry::validate_custom_route(r).map_err(ApiError::invalid)?;

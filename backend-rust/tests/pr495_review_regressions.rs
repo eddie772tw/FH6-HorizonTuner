@@ -293,4 +293,59 @@ mod tests {
             "regressed packet incorrectly finalizes as destination-reached"
         );
     }
+
+    #[test]
+    fn drag_recorder_records_in_free_roam_without_immediate_abort() {
+        let mut r = fh6_backend::telemetry::DragRecorder::default();
+        r.prepare();
+        r.record(&json!({"SpeedMetersPerSecond":0.1,"Gear":1,"AccelInput":255,"TimestampMS":1000,"IsRaceOn":0,"CarOrdinal":42}));
+        assert_eq!(
+            r.status(),
+            "recording",
+            "drag recorder should not abort on frame 1 in free roam"
+        );
+        r.record(&json!({"SpeedMetersPerSecond":15.0,"Gear":2,"AccelInput":255,"TimestampMS":2000,"IsRaceOn":0}));
+        assert_eq!(r.status(), "recording");
+        r.record(&json!({"SpeedMetersPerSecond":25.0,"Gear":3,"AccelInput":0,"TimestampMS":2100,"IsRaceOn":0}));
+        r.record(&json!({"SpeedMetersPerSecond":25.0,"Gear":3,"AccelInput":0,"TimestampMS":3000,"IsRaceOn":0}));
+        assert_eq!(r.status(), "finished");
+        assert!(r.analysis().get("drivetrain").is_some());
+    }
+
+    #[test]
+    fn invalid_schema_and_radius_types_rejected() {
+        let dir = tempfile::tempdir().unwrap();
+        let app = App::new(dir.path()).unwrap();
+        let mut doc = serde_json::to_value(route("roaming")).unwrap();
+        doc["start_radius"] = json!("not-a-number");
+        let res = request(
+            &app,
+            "POST",
+            "/api/analysis/routes/import",
+            json!({"schema":"fh6-custom-route/v1","route":doc}),
+        );
+        assert!(res.is_err(), "non-numeric start_radius must be rejected");
+
+        let doc2 = serde_json::to_value(route("time_trial")).unwrap();
+        let res2 = request(
+            &app,
+            "POST",
+            "/api/analysis/routes/import",
+            json!({"schema":12345,"route":doc2}),
+        );
+        assert!(res2.is_err(), "numeric schema must be rejected");
+    }
+
+    #[test]
+    fn regressed_timestamp_while_armed_is_rejected() {
+        let mut r = RaceRecorder::new(RaceRecorderConfig::default());
+        r.arm_route(route("time_trial"));
+        r.record_at(&frame(-10.0, 2000.0), 1.0);
+        assert!(!r.status().is_recording);
+        r.record_at(&frame(0.0, 1000.0), 1.1);
+        assert!(
+            !r.status().is_recording,
+            "regressed timestamp packet must not trigger gate entry"
+        );
+    }
 }

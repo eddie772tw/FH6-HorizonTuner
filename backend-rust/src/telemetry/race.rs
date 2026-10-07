@@ -306,7 +306,7 @@ impl RaceRecorder {
                 .settings
                 .get("race_recording")
                 .and_then(Value::as_bool)
-                .unwrap_or(true)
+                .unwrap_or(self.config.race_recording)
         {
             if self.status.is_recording {
                 self.save_latest_and_clear("recording-disabled")
@@ -330,6 +330,7 @@ impl RaceRecorder {
         if self.last_timestamp.map(|x| ts <= x).unwrap_or(false) {
             return;
         }
+        self.last_timestamp = Some(ts);
 
         let identity = (
             i(m, "CarOrdinal", 0),
