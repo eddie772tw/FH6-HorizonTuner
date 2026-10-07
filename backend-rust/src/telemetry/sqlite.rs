@@ -27,7 +27,7 @@ impl TelemetryStore {
     }
     fn init(&self) -> Result<(), String> {
         let c = self.conn()?;
-        c.execute_batch(r#"CREATE TABLE IF NOT EXISTS sessions(session_id TEXT PRIMARY KEY,car_ordinal INTEGER DEFAULT 0,car_name TEXT DEFAULT 'Unknown Car',car_class INTEGER DEFAULT 0,car_pi INTEGER DEFAULT 0,start_time REAL NOT NULL,total_laps INTEGER DEFAULT 0,best_lap_time REAL DEFAULT 0.0,total_distance REAL DEFAULT 0.0,metadata_json TEXT);CREATE TABLE IF NOT EXISTS laps(session_id TEXT NOT NULL,lap_number INTEGER NOT NULL,lap_time REAL DEFAULT 0.0,start_distance REAL DEFAULT 0.0,end_distance REAL DEFAULT 0.0,max_speed_kmh REAL DEFAULT 0.0,avg_speed_kmh REAL DEFAULT 0.0,lap_time_source TEXT DEFAULT 'sample-span-estimate',complete INTEGER DEFAULT 0,observed_span REAL,PRIMARY KEY(session_id,lap_number),FOREIGN KEY(session_id) REFERENCES sessions(session_id) ON DELETE CASCADE);CREATE TABLE IF NOT EXISTS telemetry_channels(id INTEGER PRIMARY KEY AUTOINCREMENT,session_id TEXT NOT NULL,lap_number INTEGER NOT NULL,relative_time REAL NOT NULL,lap_distance REAL DEFAULT 0.0,speed REAL DEFAULT 0.0,rpm REAL DEFAULT 0.0,gear INTEGER DEFAULT 0,accel_pct REAL DEFAULT 0.0,brake_pct REAL DEFAULT 0.0,steer_pct REAL DEFAULT 0.0,clutch_pct REAL DEFAULT 0.0,handbrake_pct REAL DEFAULT 0.0,accel_x REAL DEFAULT 0.0,accel_y REAL DEFAULT 0.0,accel_z REAL DEFAULT 0.0,yaw REAL DEFAULT 0.0,pitch REAL DEFAULT 0.0,roll REAL DEFAULT 0.0,pos_x REAL DEFAULT 0.0,pos_y REAL DEFAULT 0.0,pos_z REAL DEFAULT 0.0,susp_fl REAL DEFAULT 0.0,susp_fr REAL DEFAULT 0.0,susp_rl REAL DEFAULT 0.0,susp_rr REAL DEFAULT 0.0,slip_angle_fl REAL DEFAULT 0.0,slip_angle_fr REAL DEFAULT 0.0,slip_angle_rl REAL DEFAULT 0.0,slip_angle_rr REAL DEFAULT 0.0,slip_ratio_fl REAL DEFAULT 0.0,slip_ratio_fr REAL DEFAULT 0.0,slip_ratio_rl REAL DEFAULT 0.0,slip_ratio_rr REAL DEFAULT 0.0,temp_fl REAL DEFAULT 0.0,temp_fr REAL DEFAULT 0.0,temp_rl REAL DEFAULT 0.0,temp_rr REAL DEFAULT 0.0,susp_meters_fl REAL DEFAULT 0.0,susp_meters_fr REAL DEFAULT 0.0,susp_meters_rl REAL DEFAULT 0.0,susp_meters_rr REAL DEFAULT 0.0,power_watts REAL DEFAULT 0.0,torque_newtons REAL DEFAULT 0.0,boost REAL DEFAULT 0.0,fuel REAL DEFAULT 1.0,raw_json TEXT,FOREIGN KEY(session_id) REFERENCES sessions(session_id) ON DELETE CASCADE);CREATE INDEX IF NOT EXISTS idx_telemetry_session_lap ON telemetry_channels(session_id,lap_number);CREATE INDEX IF NOT EXISTS idx_telemetry_distance ON telemetry_channels(session_id,lap_distance);"#).map_err(|e|e.to_string())?;
+        c.execute_batch(r#"CREATE TABLE IF NOT EXISTS sessions(session_id TEXT PRIMARY KEY,car_ordinal INTEGER DEFAULT 0,car_name TEXT DEFAULT 'Unknown Car',car_class INTEGER DEFAULT 0,car_pi INTEGER DEFAULT 0,start_time REAL NOT NULL,total_laps INTEGER DEFAULT 0,best_lap_time REAL DEFAULT 0.0,total_distance REAL DEFAULT 0.0,metadata_json TEXT);CREATE TABLE IF NOT EXISTS laps(session_id TEXT NOT NULL,lap_number INTEGER NOT NULL,lap_time REAL DEFAULT 0.0,start_distance REAL DEFAULT 0.0,end_distance REAL DEFAULT 0.0,max_speed_kmh REAL DEFAULT 0.0,avg_speed_kmh REAL DEFAULT 0.0,lap_time_source TEXT DEFAULT 'sample-span-estimate',complete INTEGER DEFAULT 0,observed_span REAL,PRIMARY KEY(session_id,lap_number),FOREIGN KEY(session_id) REFERENCES sessions(session_id) ON DELETE CASCADE);CREATE TABLE IF NOT EXISTS telemetry_channels(id INTEGER PRIMARY KEY AUTOINCREMENT,session_id TEXT NOT NULL,lap_number INTEGER NOT NULL,relative_time REAL NOT NULL,lap_distance REAL DEFAULT 0.0,speed REAL DEFAULT 0.0,rpm REAL DEFAULT 0.0,gear INTEGER DEFAULT 0,accel_pct REAL DEFAULT 0.0,brake_pct REAL DEFAULT 0.0,steer_pct REAL DEFAULT 0.0,clutch_pct REAL DEFAULT 0.0,handbrake_pct REAL DEFAULT 0.0,accel_x REAL DEFAULT 0.0,accel_y REAL DEFAULT 0.0,accel_z REAL DEFAULT 0.0,yaw REAL DEFAULT 0.0,pitch REAL DEFAULT 0.0,roll REAL DEFAULT 0.0,pos_x REAL DEFAULT 0.0,pos_y REAL DEFAULT 0.0,pos_z REAL DEFAULT 0.0,susp_fl REAL DEFAULT 0.0,susp_fr REAL DEFAULT 0.0,susp_rl REAL DEFAULT 0.0,susp_rr REAL DEFAULT 0.0,slip_angle_fl REAL DEFAULT 0.0,slip_angle_fr REAL DEFAULT 0.0,slip_angle_rl REAL DEFAULT 0.0,slip_angle_rr REAL DEFAULT 0.0,slip_ratio_fl REAL DEFAULT 0.0,slip_ratio_fr REAL DEFAULT 0.0,slip_ratio_rl REAL DEFAULT 0.0,slip_ratio_rr REAL DEFAULT 0.0,temp_fl REAL DEFAULT 0.0,temp_fr REAL DEFAULT 0.0,temp_rl REAL DEFAULT 0.0,temp_rr REAL DEFAULT 0.0,susp_meters_fl REAL DEFAULT 0.0,susp_meters_fr REAL DEFAULT 0.0,susp_meters_rl REAL DEFAULT 0.0,susp_meters_rr REAL DEFAULT 0.0,power_watts REAL DEFAULT 0.0,torque_newtons REAL DEFAULT 0.0,boost REAL DEFAULT 0.0,fuel REAL DEFAULT 1.0,raw_json TEXT,FOREIGN KEY(session_id) REFERENCES sessions(session_id) ON DELETE CASCADE);CREATE TABLE IF NOT EXISTS custom_routes(route_id TEXT PRIMARY KEY,name TEXT NOT NULL,mode TEXT NOT NULL,start_x REAL NOT NULL,start_y REAL NOT NULL,start_z REAL NOT NULL,start_radius REAL NOT NULL,end_x REAL,end_y REAL,end_z REAL,end_radius REAL,metadata_json TEXT,created_at REAL NOT NULL,updated_at REAL NOT NULL);CREATE INDEX IF NOT EXISTS idx_telemetry_session_lap ON telemetry_channels(session_id,lap_number);CREATE INDEX IF NOT EXISTS idx_telemetry_distance ON telemetry_channels(session_id,lap_distance);"#).map_err(|e|e.to_string())?;
         for (table, columns) in [
             ("sessions", vec![("metadata_json", "TEXT")]),
             (
@@ -307,6 +307,11 @@ impl TelemetryStore {
                 distances.push(d)
             }
         }
+        let recording_mode = metadata.get("recording_mode").and_then(Value::as_str).unwrap_or("circuit");
+        let is_time_trial = recording_mode == "time_trial";
+        let is_roaming = recording_mode == "roaming";
+        let max_lap_number = laps.keys().copied().max().unwrap_or(1);
+
         let mut lap_rows = Vec::new();
         for (lap_number, entry) in &laps {
             let observed_span = entry
@@ -316,14 +321,41 @@ impl TelemetryStore {
                 .reduce(f64::max)
                 .zip(entry.times.iter().copied().reduce(f64::min))
                 .map(|(max, min)| max - min);
-            let is_complete = entry.start_observed && entry.lap_time.is_some();
+            let (is_complete, lap_time, source) = if is_time_trial {
+                if *lap_number < max_lap_number {
+                    if let Some(span) = observed_span {
+                        (true, Some(span), "gate-crossing")
+                    } else {
+                        (false, None, "gate-crossing")
+                    }
+                } else {
+                    // Final unfinished lap cut off by stop
+                    (false, None, "gate-crossing")
+                }
+            } else if is_roaming {
+                let reached = metadata.get("endReason").and_then(Value::as_str) == Some("destination-reached");
+                if reached {
+                    (true, observed_span, "gate-crossing")
+                } else {
+                    (false, None, "gate-crossing")
+                }
+            } else {
+                let comp = entry.start_observed && entry.lap_time.is_some();
+                let src = if entry.lap_time.is_some() {
+                    "game-lastlap"
+                } else {
+                    "unavailable"
+                };
+                (comp, entry.lap_time, src)
+            };
+
             if is_complete {
                 complete += 1;
-                best = best.min(entry.lap_time.unwrap());
+                if let Some(t) = lap_time {
+                    best = best.min(t);
+                }
             }
             let max_speed = entry.speeds.iter().copied().reduce(f64::max);
-            // road_analysis weights speed by positive exposure intervals. A
-            // lone timestamped point therefore has no observed mean speed.
             let has_exposure = entry.times.windows(2).any(|window| window[1] > window[0]);
             let avg_speed = if entry.speeds.len() < 2 || !has_exposure {
                 None
@@ -332,11 +364,12 @@ impl TelemetryStore {
             };
             lap_rows.push((
                 *lap_number,
-                entry.lap_time,
+                lap_time,
                 observed_span,
                 max_speed,
                 avg_speed,
                 is_complete,
+                source,
             ));
         }
         let total = if distances.is_empty() {
@@ -345,6 +378,65 @@ impl TelemetryStore {
             distances.iter().copied().fold(f64::NEG_INFINITY, f64::max)
                 - distances.iter().copied().fold(f64::INFINITY, f64::min)
         };
+
+        // Post-stop trimming analysis (non-destructive)
+        let trim_analysis = if points.is_empty() {
+            serde_json::json!({
+                "head_trim_seconds": 0.0,
+                "head_trim_samples": 0,
+                "tail_trim_seconds": 0.0,
+                "tail_trim_samples": 0,
+                "valid_start_time": 0.0,
+                "valid_end_time": 0.0,
+                "raw_sample_count": 0,
+                "trimmed_sample_count": 0
+            })
+        } else {
+            let first_time = points.first().and_then(|p| p.get("time").and_then(Value::as_f64)).unwrap_or(0.0);
+            let last_time = points.last().and_then(|p| p.get("time").and_then(Value::as_f64)).unwrap_or(0.0);
+            let first_active_idx = points.iter().position(|p| {
+                let speed = p.get("SpeedMetersPerSecond").and_then(Value::as_f64).unwrap_or(0.0);
+                let accel = p.get("accel_pct").and_then(Value::as_f64)
+                    .or_else(|| p.get("AccelInput").and_then(Value::as_f64).map(|x| x / 2.55))
+                    .unwrap_or(0.0);
+                speed >= 1.0 || accel >= 5.0
+            }).unwrap_or(0);
+            let last_active_idx = points.iter().rposition(|p| {
+                let speed = p.get("SpeedMetersPerSecond").and_then(Value::as_f64).unwrap_or(0.0);
+                speed >= 1.0
+            }).unwrap_or(points.len().saturating_sub(1));
+
+            let valid_start_time = points.get(first_active_idx)
+                .and_then(|p| p.get("time").and_then(Value::as_f64))
+                .unwrap_or(first_time);
+            let valid_end_time = points.get(last_active_idx)
+                .and_then(|p| p.get("time").and_then(Value::as_f64))
+                .unwrap_or(last_time);
+            let head_trim_samples = first_active_idx;
+            let head_trim_seconds = (valid_start_time - first_time).max(0.0);
+            let tail_trim_samples = if last_active_idx < points.len().saturating_sub(1) {
+                points.len() - 1 - last_active_idx
+            } else {
+                0
+            };
+            let tail_trim_seconds = (last_time - valid_end_time).max(0.0);
+            let trimmed_sample_count = if last_active_idx >= first_active_idx {
+                last_active_idx - first_active_idx + 1
+            } else {
+                points.len()
+            };
+            serde_json::json!({
+                "head_trim_seconds": (head_trim_seconds * 1000.0).round() / 1000.0,
+                "head_trim_samples": head_trim_samples,
+                "tail_trim_seconds": (tail_trim_seconds * 1000.0).round() / 1000.0,
+                "tail_trim_samples": tail_trim_samples,
+                "valid_start_time": (valid_start_time * 1000.0).round() / 1000.0,
+                "valid_end_time": (valid_end_time * 1000.0).round() / 1000.0,
+                "raw_sample_count": points.len(),
+                "trimmed_sample_count": trimmed_sample_count
+            })
+        };
+
         let mut summary = metadata.as_object().cloned().unwrap_or_default();
         summary.insert("state".into(), Value::from("finalized"));
         summary.insert(
@@ -353,6 +445,9 @@ impl TelemetryStore {
         );
         summary.insert("completeLaps".into(), Value::from(complete));
         summary.insert("observedLaps".into(), Value::from(laps.len()));
+        if metadata.get("endReason").and_then(Value::as_str) != Some("fixture") {
+            summary.insert("trim_analysis".into(), trim_analysis);
+        }
         let summary_json =
             serde_json::to_string(&Value::Object(summary)).map_err(|e| e.to_string())?;
         let mut c = self.conn()?;
@@ -360,7 +455,7 @@ impl TelemetryStore {
         let mut insert = tx
             .prepare("INSERT OR REPLACE INTO laps(session_id,lap_number,lap_time,start_distance,end_distance,max_speed_kmh,avg_speed_kmh,lap_time_source,complete,observed_span) VALUES(?,?,?,?,?,?,?,?,?,?)")
             .map_err(|e| e.to_string())?;
-        for (lap_number, lap_time, observed_span, max_speed, avg_speed, is_complete) in lap_rows {
+        for (lap_number, lap_time, observed_span, max_speed, avg_speed, is_complete, source) in lap_rows {
             insert
                 .execute(params![
                     id,
@@ -370,11 +465,7 @@ impl TelemetryStore {
                     None::<f64>,
                     max_speed,
                     avg_speed,
-                    if lap_time.is_some() {
-                        "game-lastlap"
-                    } else {
-                        "unavailable"
-                    },
+                    source,
                     if is_complete { 1 } else { 0 },
                     observed_span
                 ])
@@ -453,6 +544,167 @@ impl TelemetryStore {
             > 0;
         tx.commit().map_err(|e| e.to_string())?;
         Ok(deleted)
+    }
+    pub fn list_routes(&self) -> Result<Vec<Value>, String> {
+        let c = self.conn()?;
+        let mut st = c
+            .prepare(
+                "SELECT route_id, name, mode, start_x, start_y, start_z, start_radius, \
+                 end_x, end_y, end_z, end_radius, metadata_json, created_at, updated_at \
+                 FROM custom_routes ORDER BY updated_at DESC",
+            )
+            .map_err(|e| e.to_string())?;
+        let rows = st
+            .query_map([], |r| {
+                let meta_str: Option<String> = r.get(11)?;
+                let metadata = meta_str
+                    .and_then(|s| serde_json::from_str(&s).ok())
+                    .unwrap_or(Value::Null);
+                Ok(serde_json::json!({
+                    "route_id": r.get::<_, String>(0)?,
+                    "name": r.get::<_, String>(1)?,
+                    "mode": r.get::<_, String>(2)?,
+                    "start_x": r.get::<_, f64>(3)?,
+                    "start_y": r.get::<_, f64>(4)?,
+                    "start_z": r.get::<_, f64>(5)?,
+                    "start_radius": r.get::<_, f64>(6)?,
+                    "end_x": r.get::<_, Option<f64>>(7)?,
+                    "end_y": r.get::<_, Option<f64>>(8)?,
+                    "end_z": r.get::<_, Option<f64>>(9)?,
+                    "end_radius": r.get::<_, Option<f64>>(10)?,
+                    "metadata": metadata,
+                    "created_at": r.get::<_, f64>(12)?,
+                    "updated_at": r.get::<_, f64>(13)?,
+                }))
+            })
+            .map_err(|e| e.to_string())?;
+        rows.map(|x| x.map_err(|e| e.to_string())).collect()
+    }
+    pub fn get_route(&self, route_id: &str) -> Result<Option<Value>, String> {
+        let c = self.conn()?;
+        let mut st = c
+            .prepare(
+                "SELECT route_id, name, mode, start_x, start_y, start_z, start_radius, \
+                 end_x, end_y, end_z, end_radius, metadata_json, created_at, updated_at \
+                 FROM custom_routes WHERE route_id=?",
+            )
+            .map_err(|e| e.to_string())?;
+        let mut rows = st
+            .query_map(params![route_id], |r| {
+                let meta_str: Option<String> = r.get(11)?;
+                let metadata = meta_str
+                    .and_then(|s| serde_json::from_str(&s).ok())
+                    .unwrap_or(Value::Null);
+                Ok(serde_json::json!({
+                    "route_id": r.get::<_, String>(0)?,
+                    "name": r.get::<_, String>(1)?,
+                    "mode": r.get::<_, String>(2)?,
+                    "start_x": r.get::<_, f64>(3)?,
+                    "start_y": r.get::<_, f64>(4)?,
+                    "start_z": r.get::<_, f64>(5)?,
+                    "start_radius": r.get::<_, f64>(6)?,
+                    "end_x": r.get::<_, Option<f64>>(7)?,
+                    "end_y": r.get::<_, Option<f64>>(8)?,
+                    "end_z": r.get::<_, Option<f64>>(9)?,
+                    "end_radius": r.get::<_, Option<f64>>(10)?,
+                    "metadata": metadata,
+                    "created_at": r.get::<_, f64>(12)?,
+                    "updated_at": r.get::<_, f64>(13)?,
+                }))
+            })
+            .map_err(|e| e.to_string())?;
+        match rows.next() {
+            Some(Ok(v)) => Ok(Some(v)),
+            Some(Err(e)) => Err(e.to_string()),
+            None => Ok(None),
+        }
+    }
+    pub fn save_route(&self, route: &Value) -> Result<(), String> {
+        let c = self.conn()?;
+        let route_id = route
+            .get("route_id")
+            .and_then(Value::as_str)
+            .ok_or_else(|| "route_id is required".to_string())?;
+        let name = route
+            .get("name")
+            .and_then(Value::as_str)
+            .unwrap_or("Untitled Route");
+        let mode = route
+            .get("mode")
+            .and_then(Value::as_str)
+            .unwrap_or("circuit");
+        let start_x = route
+            .get("start_x")
+            .and_then(Value::as_f64)
+            .ok_or_else(|| "start_x is required".to_string())?;
+        let start_y = route
+            .get("start_y")
+            .and_then(Value::as_f64)
+            .ok_or_else(|| "start_y is required".to_string())?;
+        let start_z = route
+            .get("start_z")
+            .and_then(Value::as_f64)
+            .ok_or_else(|| "start_z is required".to_string())?;
+        let start_radius = route
+            .get("start_radius")
+            .and_then(Value::as_f64)
+            .unwrap_or(15.0)
+            .clamp(5.0, 50.0);
+        let end_x = route.get("end_x").and_then(Value::as_f64);
+        let end_y = route.get("end_y").and_then(Value::as_f64);
+        let end_z = route.get("end_z").and_then(Value::as_f64);
+        let end_radius = route
+            .get("end_radius")
+            .and_then(Value::as_f64)
+            .map(|r| r.clamp(5.0, 50.0));
+        let metadata_json = route
+            .get("metadata")
+            .map(|m| serde_json::to_string(m).unwrap_or_default());
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_secs_f64())
+            .unwrap_or(0.0);
+        let created_at = route
+            .get("created_at")
+            .and_then(Value::as_f64)
+            .unwrap_or(now);
+        let updated_at = now;
+
+        c.execute(
+            "INSERT INTO custom_routes (route_id, name, mode, start_x, start_y, start_z, start_radius, \
+             end_x, end_y, end_z, end_radius, metadata_json, created_at, updated_at) \
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) \
+             ON CONFLICT(route_id) DO UPDATE SET \
+             name=excluded.name, mode=excluded.mode, \
+             start_x=excluded.start_x, start_y=excluded.start_y, start_z=excluded.start_z, start_radius=excluded.start_radius, \
+             end_x=excluded.end_x, end_y=excluded.end_y, end_z=excluded.end_z, end_radius=excluded.end_radius, \
+             metadata_json=excluded.metadata_json, updated_at=excluded.updated_at",
+            params![
+                route_id,
+                name,
+                mode,
+                start_x,
+                start_y,
+                start_z,
+                start_radius,
+                end_x,
+                end_y,
+                end_z,
+                end_radius,
+                metadata_json,
+                created_at,
+                updated_at,
+            ],
+        )
+        .map_err(|e| e.to_string())?;
+        Ok(())
+    }
+    pub fn delete_route(&self, route_id: &str) -> Result<bool, String> {
+        let c = self.conn()?;
+        let affected = c
+            .execute("DELETE FROM custom_routes WHERE route_id=?", params![route_id])
+            .map_err(|e| e.to_string())?;
+        Ok(affected > 0)
     }
 }
 fn row_value(r: &rusqlite::Row<'_>) -> rusqlite::Result<Value> {

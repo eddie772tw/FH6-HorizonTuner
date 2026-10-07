@@ -59,4 +59,22 @@ describe("sessions I/O adapter", () => {
     await expect(io.readSavedSession("folder/session A")).resolves.toEqual([{ time: 0 }]);
     expect(requests).toEqual(["/api/analysis/sessions/folder%2Fsession%20A?lap=0"]);
   });
+
+  it("imports MoTeC CSV returning both metadata and data points", async () => {
+    const fakeFile = new File(["dummy"], "test.csv", { type: "text/csv" });
+    const io = createSessionsIo(async () => {
+      return {
+        ok: true,
+        json: async () => ({
+          metadata: { car_name: "Ferrari F40", session_id: "f40_session" },
+          data: [{ time: 1.0, SpeedMetersPerSecond: 25.0 }],
+        }),
+      } as Response;
+    });
+
+    const result = await io.importMoTeCCsv(fakeFile);
+    expect(result).not.toBeNull();
+    expect(result?.metadata?.car_name).toBe("Ferrari F40");
+    expect(result?.data).toEqual([{ time: 1.0, SpeedMetersPerSecond: 25.0 }]);
+  });
 });

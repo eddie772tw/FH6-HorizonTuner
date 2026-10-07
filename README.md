@@ -60,9 +60,10 @@ Road #462 修正採版本化 [launch envelope v3](docs/tuning/aego-road-launch-v
 * **彈射起步測試與加速度分析 (Drag Launch Test & Acceleration Analyzer)**:
   - 0-100 km/h, 0-200 km/h, 1/4 英里 (400m) 加速度自動計時測試。
   - 速度/轉速時間軸圖表回放與歷史 Session 紀錄對比。
-* **遙測持久化與 MoTeC i2 數據匯出 (SQLite Storage & MoTeC Exporter)**:
-  - 後端 SQLite 遙測歷程資料庫自動記錄。
-  - 支援一鍵匯出專業賽車數據分析軟體 **MoTeC i2** 標準 `.ld` 格式檔案。
+* **遙測持久化與賽事分析 (SQLite Storage, Race Analysis & MoTeC i2 Exporter)**:
+  - 後端 SQLite 遙測歷程資料庫自動記錄，支援常規賽事、計時賽 (Time Trial) 與點對點漫遊路線 (Free Roam) 錄製。
+  - 具備 3D 球體閘門觸發 (支援 5m–50m 觸發半徑與遲滯保護) 及非破壞性停止後修剪 (Non-Destructive Trimming)。
+  - 支援匯出專業賽車數據分析軟體 **MoTeC i2** 標準 41 頻道 CSV 檔案及預先配置之 i2 XML 工作區範本，並可切換未修剪原始資料匯出。
 * **Localhost 唯讀 MCP Server (Model Context Protocol)**:
   - 由執行中的 Rust backend 提供 Streamable HTTP MCP endpoint（`/mcp`），提供 27 個專屬唯讀工具與 5 類 Resource URI；MCP 與 telemetry 共用同一個 backend process。
   - 支援 AI Agent（Claude Desktop、Cursor、Cline 等）結構化查詢即時遙測（對齊 `TelemetryView`）、歷史單圈、A/B 跑圈差異比對、車輛規格與調校求解器。

@@ -1,7 +1,9 @@
 use axum::http::HeaderMap;
+use fh6_backend::motec;
 use fh6_backend::telemetry::{
-    collect_dyno_sample, decoded_point, pack_binary, parse_packet, DragRecorder, DynoQualityGate,
-    DynoQualityGateRegistry, RaceRecorder, RaceRecorderConfig, RecorderCommand, TelemetryStore,
+    collect_dyno_sample, decoded_point, pack_binary, parse_packet, ActiveRoute, DragRecorder,
+    DynoQualityGate, DynoQualityGateRegistry, RaceRecorder, RaceRecorderConfig, RecorderCommand,
+    TelemetryStore,
 };
 use fh6_backend::{
     app::App,
@@ -571,4 +573,245 @@ fn sqlite_batch_insert_rolls_back_all_points_on_later_row_failure() {
     let result = store.insert_points_batch("s", &[json!({"time":1.0}), json!({"time":2.0})]);
     assert!(result.is_err());
     assert!(store.get_telemetry_points("s", None).unwrap().is_empty());
+}
+
+#[test]
+fn test_custom_routes_lifecycle() {
+    let dir = tempfile::tempdir().unwrap();
+    let store = TelemetryStore::new(&dir.path().join("routes.db")).unwrap();
+
+    let route = json!({
+        "route_id": "test-route-1",
+        "name": "Fujimi Kaido Sprint",
+        "mode": "time_trial",
+        "start_x": 100.0,
+        "start_y": 200.0,
+        "start_z": 300.0,
+        "start_radius": 15.0,
+        "end_x": null,
+        "end_y": null,
+        "end_z": null,
+        "end_radius": null,
+        "metadata": {"creator": "Tester", "elevation_gain": 450}
+    });
+
+    store.save_route(&route).unwrap();
+    let list = store.list_routes().unwrap();
+    assert_eq!(list.len(), 1);
+    assert_eq!(list[0]["route_id"], "test-route-1");
+    assert_eq!(list[0]["name"], "Fujimi Kaido Sprint");
+    assert_eq!(list[0]["mode"], "time_trial");
+    assert_eq!(list[0]["start_radius"], 15.0);
+
+    let retrieved = store.get_route("test-route-1").unwrap();
+    assert!(retrieved.is_some());
+    let r = retrieved.unwrap();
+    assert_eq!(r["name"], "Fujimi Kaido Sprint");
+    assert_eq!(r["metadata"]["creator"], "Tester");
+
+    // Upsert update
+    let mut updated = route.clone();
+    updated["name"] = json!("Fujimi Kaido Rev");
+    store.save_route(&updated).unwrap();
+    let r2 = store.get_route("test-route-1").unwrap().unwrap();
+    assert_eq!(r2["name"], "Fujimi Kaido Rev");
+
+    // Delete
+    assert!(store.delete_route("test-route-1").unwrap());
+    assert!(!store.delete_route("test-route-1").unwrap());
+    assert!(store.list_routes().unwrap().is_empty());
+}
+
+#[test]
+fn test_time_trial_gate_trigger() {
+    let mut recorder = RaceRecorder::new(RaceRecorderConfig::default());
+    let active_route = ActiveRoute {
+        route_id: "tt-route".into(),
+        name: "Time Trial 1".into(),
+        mode: "time_trial".into(),
+        start_x: 0.0,
+        start_y: 0.0,
+        start_z: 0.0,
+        start_radius: 15.0,
+        end_x: None,
+        end_y: None,
+        end_z: None,
+        end_radius: None,
+    };
+
+    recorder.arm_route(active_route);
+    assert!(recorder.status().armed);
+    assert_eq!(recorder.status().armed_route_id.as_deref(), Some("tt-route"));
+
+    // Far away: distance ~ 141m
+    recorder.record_at(&json!({
+        "PositionX": 100.0, "PositionY": 0.0, "PositionZ": 100.0,
+        "TimestampMS": 1000.0, "CarOrdinal": 1
+    }), 1.0);
+    assert!(recorder.status().armed);
+    assert!(!recorder.status().is_recording);
+
+    // Crosses start gate: distance = 10m <= 15m
+    recorder.record_at(&json!({
+        "PositionX": 10.0, "PositionY": 0.0, "PositionZ": 0.0,
+        "TimestampMS": 2000.0, "CarOrdinal": 1
+    }), 2.0);
+    assert!(!recorder.status().armed);
+    assert!(recorder.status().is_recording);
+    assert_eq!(recorder.status().recording_mode, "time_trial");
+
+    // Drives away: distance = 30m > 15m * 1.2 (18m)
+    recorder.record_at(&json!({
+        "PositionX": 30.0, "PositionY": 0.0, "PositionZ": 0.0,
+        "TimestampMS": 3000.0, "CarOrdinal": 1
+    }), 3.0);
+
+    // Re-enters start gate: completes Lap 1, enters Lap 2
+    recorder.record_at(&json!({
+        "PositionX": 5.0, "PositionY": 0.0, "PositionZ": 0.0,
+        "TimestampMS": 4000.0, "CarOrdinal": 1
+    }), 4.0);
+
+    let commands = recorder.drain_commands();
+    assert!(commands.iter().any(|c| matches!(c, RecorderCommand::CreateSession { .. })));
+}
+
+#[test]
+fn test_roaming_start_and_end_gate() {
+    let mut recorder = RaceRecorder::new(RaceRecorderConfig::default());
+    let active_route = ActiveRoute {
+        route_id: "roam-1".into(),
+        name: "Coast to Mountain".into(),
+        mode: "roaming".into(),
+        start_x: 0.0,
+        start_y: 0.0,
+        start_z: 0.0,
+        start_radius: 10.0,
+        end_x: Some(100.0),
+        end_y: Some(0.0),
+        end_z: Some(100.0),
+        end_radius: Some(10.0),
+    };
+
+    recorder.arm_route(active_route);
+    // Enter start
+    recorder.record_at(&json!({
+        "PositionX": 5.0, "PositionY": 0.0, "PositionZ": 0.0,
+        "TimestampMS": 1000.0, "CarOrdinal": 1
+    }), 1.0);
+    assert!(recorder.status().is_recording);
+
+    // Mid point
+    recorder.record_at(&json!({
+        "PositionX": 50.0, "PositionY": 0.0, "PositionZ": 50.0,
+        "TimestampMS": 2000.0, "CarOrdinal": 1
+    }), 2.0);
+    assert!(recorder.status().is_recording);
+
+    // Reach destination: distance to (100, 0, 100) = sqrt(2^2 + 1^2) ~ 2.2m <= 10m
+    recorder.record_at(&json!({
+        "PositionX": 102.0, "PositionY": 0.0, "PositionZ": 101.0,
+        "TimestampMS": 3000.0, "CarOrdinal": 1
+    }), 3.0);
+
+    // Automatically finalized!
+    assert!(!recorder.status().is_recording);
+    let commands = recorder.drain_commands();
+    let finalize = commands.iter().find(|c| matches!(c, RecorderCommand::Finalize { .. })).unwrap();
+    if let RecorderCommand::Finalize { metadata, .. } = finalize {
+        assert_eq!(metadata["endReason"], "destination-reached");
+        assert_eq!(metadata["recording_mode"], "roaming");
+        assert_eq!(metadata["route_id"], "roam-1");
+    } else {
+        panic!("expected Finalize command");
+    }
+}
+
+#[test]
+fn test_post_stop_trimming_and_provenance() {
+    let dir = tempfile::tempdir().unwrap();
+    let store = TelemetryStore::new(&dir.path().join("trim.db")).unwrap();
+    store.create_session("sess_trim", 1, "Car", 700, 800, 0.0).unwrap();
+
+    let points = vec![
+        // Head stationary
+        json!({"time": 0.0, "TimestampMS": 0, "SpeedMetersPerSecond": 0.0, "AccelInput": 0, "LapNumber": 1}),
+        json!({"time": 1.0, "TimestampMS": 1000, "SpeedMetersPerSecond": 0.0, "AccelInput": 0, "LapNumber": 1}),
+        // Active driving
+        json!({"time": 2.0, "TimestampMS": 2000, "SpeedMetersPerSecond": 15.0, "AccelInput": 200, "LapNumber": 1}),
+        json!({"time": 3.0, "TimestampMS": 3000, "SpeedMetersPerSecond": 25.0, "AccelInput": 255, "LapNumber": 1}),
+        json!({"time": 4.0, "TimestampMS": 4000, "SpeedMetersPerSecond": 20.0, "AccelInput": 100, "LapNumber": 1}),
+        // Tail stopped
+        json!({"time": 5.0, "TimestampMS": 5000, "SpeedMetersPerSecond": 0.0, "AccelInput": 0, "LapNumber": 1}),
+        json!({"time": 6.0, "TimestampMS": 6000, "SpeedMetersPerSecond": 0.0, "AccelInput": 0, "LapNumber": 1}),
+    ];
+    store.insert_points_batch("sess_trim", &points).unwrap();
+
+    let res = store.finalize_session("sess_trim", json!({"recording_mode": "circuit"})).unwrap();
+    assert_eq!(res["session_id"], "sess_trim");
+
+    let meta = store.get_session_metadata("sess_trim").unwrap();
+    let trim = &meta["trim_analysis"];
+    assert_eq!(trim["head_trim_samples"], 2);
+    assert_eq!(trim["head_trim_seconds"], 2.0);
+    assert_eq!(trim["tail_trim_samples"], 2);
+    assert_eq!(trim["tail_trim_seconds"], 2.0);
+    assert_eq!(trim["valid_start_time"], 2.0);
+    assert_eq!(trim["valid_end_time"], 4.0);
+    assert_eq!(trim["raw_sample_count"], 7);
+    assert_eq!(trim["trimmed_sample_count"], 3);
+
+    // Raw points in SQLite channels are unchanged
+    let loaded = store.get_telemetry_points("sess_trim", None).unwrap();
+    assert_eq!(loaded.len(), 7);
+}
+
+#[test]
+fn test_motec_csv_roundtrip_and_laps() {
+    let metadata = json!({
+        "session_id": "motec_test_session",
+        "car_name": "Porsche 911 GT3",
+    });
+    let points = vec![
+        json!({
+            "time": 0.0, "lap_distance": 0.0, "LapNumber": 1,
+            "SpeedMetersPerSecond": 20.0, "CurrentEngineRpm": 4000.0, "Gear": 3,
+            "AccelInput": 200, "BrakeInput": 0, "steer_pct": 5.0,
+            "AccelerationX": 0.5, "AccelerationZ": 2.0, "AccelerationY": 9.8,
+            "PositionX": 10.0, "PositionY": 0.0, "PositionZ": 20.0,
+            "SuspTravel": [0.3, 0.3, 0.3, 0.3], "TireSlipAngle": [0.05, 0.05, 0.02, 0.02],
+            "TireSlipRatio": [0.01, 0.01, 0.01, 0.01], "TireTemp": [80.0, 80.0, 82.0, 82.0]
+        }),
+        json!({
+            "time": 30.0, "lap_distance": 500.0, "LapNumber": 1,
+            "SpeedMetersPerSecond": 40.0, "CurrentEngineRpm": 7000.0, "Gear": 4,
+            "AccelInput": 255, "BrakeInput": 0, "steer_pct": 0.0,
+            "AccelerationX": 0.0, "AccelerationZ": 3.0, "AccelerationY": 9.8,
+            "PositionX": 50.0, "PositionY": 0.0, "PositionZ": 100.0,
+            "SuspTravel": [0.4, 0.4, 0.4, 0.4], "TireSlipAngle": [0.02, 0.02, 0.01, 0.01],
+            "TireSlipRatio": [0.02, 0.02, 0.02, 0.02], "TireTemp": [90.0, 90.0, 92.0, 92.0]
+        }),
+        json!({
+            "time": 60.0, "lap_distance": 0.0, "LapNumber": 2,
+            "SpeedMetersPerSecond": 30.0, "CurrentEngineRpm": 5000.0, "Gear": 3,
+            "AccelInput": 220, "BrakeInput": 0, "steer_pct": -2.0,
+            "AccelerationX": -0.8, "AccelerationZ": 1.5, "AccelerationY": 9.8,
+            "PositionX": 10.0, "PositionY": 0.0, "PositionZ": 20.0,
+            "SuspTravel": [0.35, 0.35, 0.35, 0.35], "TireSlipAngle": [0.04, 0.04, 0.03, 0.03],
+            "TireSlipRatio": [0.01, 0.01, 0.01, 0.01], "TireTemp": [95.0, 95.0, 96.0, 96.0]
+        }),
+    ];
+
+    let bytes = motec::export(&metadata, &points).unwrap();
+    assert!(!bytes.is_empty());
+
+    let (imported_meta, imported_points) = motec::import(&bytes).unwrap();
+    assert_eq!(imported_meta["session_id"], "motec_test_session");
+    assert_eq!(imported_meta["car_name"], "Porsche 911 GT3");
+    assert_eq!(imported_points.len(), 3);
+    assert_eq!(imported_points[0]["LapNumber"].as_f64().unwrap() as i64, 1);
+    assert_eq!(imported_points[2]["LapNumber"].as_f64().unwrap() as i64, 2);
+
+    let debrief = motec::debrief(&imported_points);
+    assert_eq!(debrief["total_samples"], 3);
 }

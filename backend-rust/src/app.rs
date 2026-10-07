@@ -275,15 +275,129 @@ impl App {
         let parts: Vec<&str> = request.path.trim_matches('/').split('/').collect();
         let method = request.method.as_str();
         let value=match(method,parts.as_slice()) {
-            ("GET",["api","analysis","status"])=>{let s=lock(&self.engine).race.status();json!({"isRecording":s.is_recording,"recordingCount":s.total_count,"currentSessionId":s.current_session_id})}
+            ("GET",["api","analysis","status"])=>{
+                let s = lock(&self.engine).race.status();
+                json!({
+                    "isRecording": s.is_recording,
+                    "manualMode": s.manual_mode,
+                    "recordingMode": s.recording_mode,
+                    "armed": s.armed,
+                    "armedRouteId": s.armed_route_id,
+                    "recordingCount": s.total_count,
+                    "currentSessionId": s.current_session_id
+                })
+            }
             ("POST",["api","analysis","clear"])=>{let mut engine=lock(&self.engine);engine.race.save_latest_and_clear("manual-clear");self.persist_commands(&mut engine.race)?;drop(engine);self.persistence.flush().map_err(database_error)?;json!({"message":"Current recording session cleared."})}
-            ("POST",["api","analysis","recorder","start"])=>{let mut engine=lock(&self.engine);let id=engine.race.start_manual(0,"Manual Session".into(),0,0,diagnostics::now()).map_err(database_error)?;self.persist_commands(&mut engine.race)?;drop(engine);self.persistence.flush().map_err(database_error)?;json!({"message":"Manual recording started successfully","sessionId":id})}
+            ("POST",["api","analysis","recorder","start"])=>{
+                let mut engine = lock(&self.engine);
+                let ordinal = data.get("car_ordinal").and_then(Value::as_i64).unwrap_or(0);
+                let car_name = data.get("car_name").and_then(Value::as_str).unwrap_or("Manual Session").to_string();
+                let car_class = data.get("car_class").and_then(Value::as_i64).unwrap_or(0);
+                let car_pi = data.get("car_pi").and_then(Value::as_i64).unwrap_or(0);
+                let mode = data.get("mode").and_then(Value::as_str).unwrap_or("circuit");
+                let route_id = data.get("route_id").and_then(Value::as_str);
+                let route = if let Some(rid) = route_id {
+                    self.database.get_route(rid).ok().flatten().and_then(|v| {
+                        serde_json::from_value::<crate::telemetry::ActiveRoute>(v).ok()
+                    })
+                } else {
+                    None
+                };
+                let id = engine.race.start_manual_with_mode(ordinal, car_name, car_class, car_pi, diagnostics::now(), mode, route).map_err(database_error)?;
+                self.persist_commands(&mut engine.race)?;
+                drop(engine);
+                self.persistence.flush().map_err(database_error)?;
+                json!({"message":"Manual recording started successfully","sessionId":id})
+            }
             ("POST",["api","analysis","recorder","stop"])=>{let mut engine=lock(&self.engine);let s=engine.race.status();if !s.is_recording||!s.manual_mode{json!({"error":"Manual recording is not active"})}else{engine.race.save_latest_and_clear("manual-stop");self.persist_commands(&mut engine.race)?;drop(engine);self.persistence.flush().map_err(database_error)?;json!({"message":"Manual recording stopped and saved successfully"})}}
+            ("GET", ["api", "analysis", "routes"]) => {
+                Value::Array(self.database.list_routes().map_err(database_error)?)
+            }
+            ("POST", ["api", "analysis", "routes"]) => {
+                let mut route_doc = data.clone();
+                let route_id = route_doc.get("route_id").and_then(Value::as_str).map(String::from).unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
+                if let Some(obj) = route_doc.as_object_mut() {
+                    obj.insert("route_id".into(), Value::String(route_id.clone()));
+                }
+                self.database.save_route(&route_doc).map_err(database_error)?;
+                let saved = self.database.get_route(&route_id).map_err(database_error)?.unwrap_or(route_doc);
+                json!({"success": true, "message": "Route saved successfully", "route": saved})
+            }
+            ("GET", ["api", "analysis", "routes", id]) => {
+                match self.database.get_route(id).map_err(database_error)? {
+                    Some(r) => r,
+                    None => return Err(ApiError::new(404, "Route not found")),
+                }
+            }
+            ("DELETE", ["api", "analysis", "routes", id]) => {
+                let deleted = self.database.delete_route(id).map_err(database_error)?;
+                if !deleted {
+                    return Err(ApiError::new(404, "Route not found"));
+                }
+                json!({"message": "Route deleted successfully", "success": true})
+            }
+            ("POST", ["api", "analysis", "routes", "arm"]) => {
+                let route_id = data.get("route_id").and_then(Value::as_str).ok_or_else(|| ApiError::invalid("route_id is required"))?;
+                let route_val = self.database.get_route(route_id).map_err(database_error)?.ok_or_else(|| ApiError::new(404, "Route not found"))?;
+                let route = serde_json::from_value::<crate::telemetry::ActiveRoute>(route_val).map_err(|e| ApiError::invalid(e.to_string()))?;
+                lock(&self.engine).race.arm_route(route);
+                json!({"success": true, "message": "Route armed successfully", "route_id": route_id})
+            }
+            ("POST", ["api", "analysis", "routes", "disarm"]) => {
+                lock(&self.engine).race.disarm_route();
+                json!({"success": true, "message": "Disarmed successfully"})
+            }
+            ("POST", ["api", "analysis", "routes", "import"]) => {
+                let overwrite = request.query.get("overwrite").is_some_and(|s| s == "true" || s == "1");
+                let routes_to_import: Vec<Value> = if let Some(arr) = data.as_array() {
+                    arr.clone()
+                } else if let Some(routes_arr) = data.get("routes").and_then(Value::as_array) {
+                    routes_arr.clone()
+                } else if let Some(route_obj) = data.get("route") {
+                    vec![route_obj.clone()]
+                } else if data.is_object() {
+                    vec![data.clone()]
+                } else {
+                    vec![]
+                };
+                if routes_to_import.is_empty() {
+                    return Err(ApiError::invalid("No route data found in payload"));
+                }
+                let mut saved_routes = Vec::new();
+                for mut r in routes_to_import {
+                    let mut rid = r.get("route_id").and_then(Value::as_str).unwrap_or_default().to_string();
+                    let exists = if !rid.is_empty() {
+                        self.database.get_route(&rid).map_err(database_error)?.is_some()
+                    } else {
+                        false
+                    };
+                    if rid.is_empty() || (exists && !overwrite) {
+                        rid = uuid::Uuid::new_v4().to_string();
+                        if let Some(obj) = r.as_object_mut() {
+                            obj.insert("route_id".into(), Value::String(rid.clone()));
+                            if exists && !overwrite {
+                                let orig_name = obj.get("name").and_then(Value::as_str).unwrap_or("Imported Route");
+                                obj.insert("name".into(), Value::String(format!("{orig_name} (Imported)")));
+                            }
+                        }
+                    }
+                    self.database.save_route(&r).map_err(database_error)?;
+                    if let Some(saved) = self.database.get_route(&rid).map_err(database_error)? {
+                        saved_routes.push(saved);
+                    }
+                }
+                json!({"success": true, "imported": saved_routes.len(), "routes": saved_routes})
+            }
+            ("GET", ["api", "analysis", "routes", id, "export"]) => {
+                let r = self.database.get_route(id).map_err(database_error)?.ok_or_else(|| ApiError::new(404, "Route not found"))?;
+                json!({"schema": "fh6-custom-route/v1", "route": r})
+            }
             ("GET",["api","analysis","data"])=>{let lap=query_integer(request,"lap",0)?;Value::Array(match self.session_id("current")?{Some(id)=>self.database.get_telemetry_points(&id,(lap>0).then_some(lap)).map_err(database_error)?,None=>vec![]})}
             ("GET",["api","analysis","sessions"])=>Value::Array(self.database.list_all_sessions().map_err(database_error)?.iter().map(|s|json!({"filename":s["session_id"],"session_id":s["session_id"],"car_name":s["car_name"],"total_laps":s["total_laps"],"best_lap_time":s["best_lap_time"],"total_distance":s["total_distance"],"mtime":s["start_time"],"size":0})).collect()),
             ("GET",["api","analysis","sessions",id])=>{let lap=query_integer(request,"lap",0)?;Value::Array(self.database.get_telemetry_points(id,(lap>0).then_some(lap)).map_err(database_error)?)}
             ("DELETE",["api","analysis","sessions",id])=>{self.database.delete_session(id).map_err(database_error)?;json!({"message":"Session deleted successfully"})},
             ("GET",["api","analysis","sessions",id,"laps"])=>Value::Array(self.database.get_session_laps(id).map_err(database_error)?),
+            ("GET",["api","analysis","sessions",id,"metadata"])=>self.database.get_session_metadata(id).map_err(database_error)?,
             ("GET",["api","analysis","sessions",id,"debrief"])=>{let points=match self.session_id(id)?{Some(id)=>self.database.get_telemetry_points(&id,None).map_err(database_error)?,None=>vec![]};motec::debrief(&points)}
             ("POST",["api","drag","prepare"])=>{lock(&self.engine).drag.prepare();json!({"message":"Drag recorder prepared, waiting for launch."})}
             ("POST",["api","drag","clear"])=>{lock(&self.engine).drag.clear();json!({"message":"Drag recorder cleared."})}
@@ -340,6 +454,7 @@ impl App {
         let Some(metadata) = self.database.get_session(&id).map_err(database_error)? else {
             return Ok(failure("Session not found"));
         };
+        let is_raw = request.query.get("raw").is_some_and(|s| s == "true" || s == "1");
         let points = self
             .database
             .get_telemetry_points(&id, None)
@@ -347,6 +462,29 @@ impl App {
         if points.is_empty() {
             return Ok(failure("No telemetry data points found in session"));
         }
+        let points = if !is_raw {
+            if let Ok(meta) = self.database.get_session_metadata(&id) {
+                if let Some(trim) = meta.get("trim_analysis") {
+                    let start = trim.get("valid_start_time").and_then(Value::as_f64).unwrap_or(0.0);
+                    let end = trim.get("valid_end_time").and_then(Value::as_f64).unwrap_or(f64::INFINITY);
+                    let filtered: Vec<Value> = points.into_iter().filter(|p| {
+                        let t = p.get("time").and_then(Value::as_f64).unwrap_or(0.0);
+                        t >= start && t <= end
+                    }).collect();
+                    if filtered.is_empty() {
+                        self.database.get_telemetry_points(&id, None).map_err(database_error)?
+                    } else {
+                        filtered
+                    }
+                } else {
+                    points
+                }
+            } else {
+                points
+            }
+        } else {
+            points
+        };
         let filename = format!("{id}_motec.csv")
             .rsplit(['/', '\\'])
             .next()

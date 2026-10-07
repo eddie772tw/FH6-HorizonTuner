@@ -24,6 +24,7 @@ export interface AnalysisSessionToolbarProps {
   readonly onImportFile: (event: React.ChangeEvent<HTMLInputElement>) => void;
   readonly onOpenImport: () => void;
   readonly onDownloadTemplate: () => void;
+  readonly onOpenChannelMapping?: () => void;
   readonly onDeleteSession: () => void;
   readonly onCloseMessage: () => void;
   readonly onLatestAnalysis: () => void;
@@ -51,6 +52,7 @@ const AnalysisSessionToolbar: React.FC<AnalysisSessionToolbarProps> = ({
   onImportFile,
   onOpenImport,
   onDownloadTemplate,
+  onOpenChannelMapping,
   onDeleteSession,
   onCloseMessage,
   onLatestAnalysis,
@@ -147,6 +149,11 @@ const AnalysisSessionToolbar: React.FC<AnalysisSessionToolbarProps> = ({
             {t("Workspace Template")}
           </button>
         </span>
+        {onOpenChannelMapping && (
+          <button onClick={onOpenChannelMapping} className="btn btn-outline-secondary" title={t("View 41-channel mapping reference")}>
+            {t("Channel Mapping")}
+          </button>
+        )}
         {isSavedSelection && <button onClick={onDeleteSession} className="btn btn-outline-danger">{t("Delete")}</button>}
       </div>
     </div>
