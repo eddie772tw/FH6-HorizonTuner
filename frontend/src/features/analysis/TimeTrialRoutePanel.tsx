@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import type { CustomRoute } from "./routeTriggerMath";
 import { validateRoute } from "./routeTriggerMath";
 import type { TelemetryData } from "../../hooks/useTelemetry";
+import { useToast } from "../../context/ToastContext";
 
 export interface TimeTrialRoutePanelProps {
   readonly routes: CustomRoute[];
@@ -34,6 +35,7 @@ export const TimeTrialRoutePanel: React.FC<TimeTrialRoutePanelProps> = ({
   onExportRoute,
   t,
 }) => {
+  const { addToast } = useToast();
   const [name, setName] = useState("");
   const [trackName, setTrackName] = useState("");
   const [description, setDescription] = useState("");
@@ -41,7 +43,6 @@ export const TimeTrialRoutePanel: React.FC<TimeTrialRoutePanelProps> = ({
   const [startY, setStartY] = useState<number>(0);
   const [startZ, setStartZ] = useState<number>(0);
   const [radius, setRadius] = useState<number>(15);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const importFileRef = React.useRef<HTMLInputElement>(null);
 
   const activeRoute = routes.find((r) => r.route_id === selectedRouteId) ?? null;
@@ -56,7 +57,6 @@ export const TimeTrialRoutePanel: React.FC<TimeTrialRoutePanelProps> = ({
       setStartY(activeRoute.start_y);
       setStartZ(activeRoute.start_z);
       setRadius(activeRoute.start_radius ?? 15);
-      setErrorMsg(null);
     } else {
       setName("");
       setTrackName("");
@@ -70,13 +70,12 @@ export const TimeTrialRoutePanel: React.FC<TimeTrialRoutePanelProps> = ({
 
   const handleCapturePosition = () => {
     if (!liveTelemetry || liveTelemetry.PositionX === undefined) {
-      setErrorMsg(t("No live telemetry position available"));
+      addToast({ message: t("No live telemetry position available"), type: "warning" });
       return;
     }
     setStartX(Math.round(liveTelemetry.PositionX * 100) / 100);
     setStartY(Math.round((liveTelemetry.PositionY ?? 0) * 100) / 100);
     setStartZ(Math.round((liveTelemetry.PositionZ ?? 0) * 100) / 100);
-    setErrorMsg(null);
   };
 
   const handleSave = async () => {
@@ -92,11 +91,10 @@ export const TimeTrialRoutePanel: React.FC<TimeTrialRoutePanelProps> = ({
     };
     const check = validateRoute(candidate);
     if (!check.valid) {
-      setErrorMsg(check.error || t("Invalid route configuration"));
+      addToast({ message: check.error || t("Invalid route configuration"), type: "danger" });
       return;
     }
-    const success = await onSaveRoute(candidate);
-    if (success) setErrorMsg(null);
+    await onSaveRoute(candidate);
   };
 
   return (
@@ -125,8 +123,6 @@ export const TimeTrialRoutePanel: React.FC<TimeTrialRoutePanelProps> = ({
           )}
         </div>
       </div>
-
-      {errorMsg && <div className="alert alert-danger py-1 px-2 mb-2" style={{ fontSize: "0.8rem" }}>{errorMsg}</div>}
 
       <div className="row g-2 mb-2">
         <div className="col-md-6">

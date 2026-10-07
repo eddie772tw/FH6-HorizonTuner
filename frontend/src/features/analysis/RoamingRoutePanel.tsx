@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import type { CustomRoute } from "./routeTriggerMath";
 import { validateRoute } from "./routeTriggerMath";
 import type { TelemetryData } from "../../hooks/useTelemetry";
+import { useToast } from "../../context/ToastContext";
 
 export interface RoamingRoutePanelProps {
   readonly routes: CustomRoute[];
@@ -34,6 +35,7 @@ export const RoamingRoutePanel: React.FC<RoamingRoutePanelProps> = ({
   onExportRoute,
   t,
 }) => {
+  const { addToast } = useToast();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [startX, setStartX] = useState<number>(0);
@@ -44,7 +46,6 @@ export const RoamingRoutePanel: React.FC<RoamingRoutePanelProps> = ({
   const [endY, setEndY] = useState<number>(0);
   const [endZ, setEndZ] = useState<number>(0);
   const [endRadius, setEndRadius] = useState<number>(15);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const importFileRef = React.useRef<HTMLInputElement>(null);
 
   const activeRoute = routes.find((r) => r.route_id === selectedRouteId) ?? null;
@@ -62,7 +63,6 @@ export const RoamingRoutePanel: React.FC<RoamingRoutePanelProps> = ({
       setEndY(activeRoute.end_y ?? 0);
       setEndZ(activeRoute.end_z ?? 0);
       setEndRadius(activeRoute.end_radius ?? 15);
-      setErrorMsg(null);
     } else {
       setName("");
       setDescription("");
@@ -79,7 +79,7 @@ export const RoamingRoutePanel: React.FC<RoamingRoutePanelProps> = ({
 
   const capturePos = (target: "start" | "end") => {
     if (!liveTelemetry || liveTelemetry.PositionX === undefined) {
-      setErrorMsg(t("No live telemetry position available"));
+      addToast({ message: t("No live telemetry position available"), type: "warning" });
       return;
     }
     const x = Math.round(liveTelemetry.PositionX * 100) / 100;
@@ -94,7 +94,6 @@ export const RoamingRoutePanel: React.FC<RoamingRoutePanelProps> = ({
       setEndY(y);
       setEndZ(z);
     }
-    setErrorMsg(null);
   };
 
   const handleSave = async () => {
@@ -114,11 +113,10 @@ export const RoamingRoutePanel: React.FC<RoamingRoutePanelProps> = ({
     };
     const check = validateRoute(candidate);
     if (!check.valid) {
-      setErrorMsg(check.error || t("Invalid route configuration"));
+      addToast({ message: check.error || t("Invalid route configuration"), type: "danger" });
       return;
     }
-    const success = await onSaveRoute(candidate);
-    if (success) setErrorMsg(null);
+    await onSaveRoute(candidate);
   };
 
   return (
@@ -147,8 +145,6 @@ export const RoamingRoutePanel: React.FC<RoamingRoutePanelProps> = ({
           )}
         </div>
       </div>
-
-      {errorMsg && <div className="alert alert-danger py-1 px-2 mb-2" style={{ fontSize: "0.8rem" }}>{errorMsg}</div>}
 
       <div className="row g-2 mb-2">
         <div className="col-md-6">

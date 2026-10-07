@@ -50,8 +50,25 @@ export const MotecFieldMappingModal: React.FC<MotecFieldMappingModalProps> = ({
 
   return (
     <ModalPortal>
-      <div className="modal d-block" tabIndex={-1} role="dialog" style={{ backgroundColor: "rgba(0,0,0,0.6)" }}>
-        <div className="modal-dialog modal-lg modal-dialog-scrollable" role="document">
+      <div
+        className="modal show d-block"
+        tabIndex={-1}
+        role="dialog"
+        aria-modal="true"
+        aria-label={t("MoTeC i2 CSV Channel Mapping (41 Channels)")}
+        style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          width: "100vw",
+          height: "100vh",
+          backgroundColor: "rgba(0,0,0,0.75)",
+          backdropFilter: "var(--surface-filter)",
+          WebkitBackdropFilter: "var(--surface-filter)",
+          zIndex: 1060,
+        }}
+      >
+        <div className="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" role="document">
           <div className="modal-content">
             <div className="modal-header">
               <h5 className="modal-title">{t("MoTeC i2 CSV Channel Mapping (41 Channels)")}</h5>

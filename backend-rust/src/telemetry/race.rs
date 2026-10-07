@@ -95,6 +95,7 @@ pub struct RaceRecorder {
     was_inside_start: bool,
     recording_mode: String,
     time_trial_lap: i64,
+    last_pos: Option<(f64, f64, f64)>,
 }
 impl RaceRecorder {
     pub fn new(config: RaceRecorderConfig) -> Self {
@@ -132,6 +133,7 @@ impl RaceRecorder {
             was_inside_start: false,
             recording_mode: "circuit".into(),
             time_trial_lap: 1,
+            last_pos: None,
         }
     }
     pub fn update_settings(&mut self, settings: &Value) {
@@ -182,6 +184,7 @@ impl RaceRecorder {
         self.awaiting_since = None;
         self.race_clock_regressions = 0;
         self.lap_start_times.clear();
+        self.last_pos = None;
     }
     pub fn arm_route(&mut self, route: ActiveRoute) {
         self.status.armed = true;
@@ -210,6 +213,30 @@ impl RaceRecorder {
             self.save_latest_and_clear("superseded");
         }
         self.clear();
+        let resolved_name = if car_ordinal > 0
+            && (car_name.is_empty()
+                || car_name == "Unknown Car"
+                || car_name == "Manual Session"
+                || car_name == "Armed Route Session")
+        {
+            self.car_database
+                .get(&car_ordinal.to_string())
+                .and_then(Value::as_object)
+                .map(|x| {
+                    ["year", "make", "model"]
+                        .iter()
+                        .filter_map(|k| {
+                            x.get(*k)
+                                .map(|v| v.to_string().trim_matches('"').to_string())
+                        })
+                        .collect::<Vec<_>>()
+                        .join(" ")
+                })
+                .filter(|x| !x.is_empty())
+                .unwrap_or(car_name)
+        } else {
+            car_name
+        };
         let id = format!("session_{}", Uuid::new_v4().simple());
         self.status.is_recording = true;
         self.status.manual_mode = true;
@@ -222,7 +249,7 @@ impl RaceRecorder {
         self.commands.push_back(RecorderCommand::CreateSession {
             session_id: id.clone(),
             car_ordinal,
-            car_name,
+            car_name: resolved_name,
             car_class,
             car_pi,
             start_time,
@@ -262,16 +289,34 @@ impl RaceRecorder {
         let pos_x = m.get("PositionX").and_then(Value::as_f64);
         let pos_y = m.get("PositionY").and_then(Value::as_f64);
         let pos_z = m.get("PositionZ").and_then(Value::as_f64);
+        let current_pos = match (pos_x, pos_y, pos_z) {
+            (Some(x), Some(y), Some(z)) => Some((x, y, z)),
+            _ => None,
+        };
 
         if self.status.armed {
             if let Some(route) = self.armed_route.clone() {
-                if let (Some(x), Some(y), Some(z)) = (pos_x, pos_y, pos_z) {
-                    let dist_sq = (x - route.start_x).powi(2) + (y - route.start_y).powi(2) + (z - route.start_z).powi(2);
-                    let r = route.start_radius;
-                    if dist_sq <= r * r {
+                if let Some(curr) = current_pos {
+                    let entered = match self.last_pos {
+                        Some(prev) => segment_intersects_sphere(
+                            prev,
+                            curr,
+                            (route.start_x, route.start_y, route.start_z),
+                            route.start_radius,
+                        ),
+                        None => is_inside_sphere(
+                            curr.0,
+                            curr.1,
+                            curr.2,
+                            route.start_x,
+                            route.start_y,
+                            route.start_z,
+                            route.start_radius,
+                        ),
+                    };
+                    if entered {
                         self.status.armed = false;
                         self.status.armed_route_id = None;
-                        self.was_inside_start = true;
                         let ordinal = i(m, "CarOrdinal", 0);
                         let name = self
                             .car_database
@@ -301,10 +346,11 @@ impl RaceRecorder {
                             name,
                             i(m, "CarClass", 0),
                             i(m, "CarPerformanceIndex", 0),
-                            now_seconds(),
+                            now,
                             &mode,
                             Some(route),
                         );
+                        self.was_inside_start = true;
                     }
                 }
             }
@@ -313,25 +359,49 @@ impl RaceRecorder {
         if self.status.is_recording {
             if self.recording_mode == "time_trial" {
                 if let Some(route) = &self.armed_route {
-                    if let (Some(x), Some(y), Some(z)) = (pos_x, pos_y, pos_z) {
-                        let dist_sq = (x - route.start_x).powi(2) + (y - route.start_y).powi(2) + (z - route.start_z).powi(2);
+                    if let Some(curr) = current_pos {
+                        let dist_sq = (curr.0 - route.start_x).powi(2)
+                            + (curr.1 - route.start_y).powi(2)
+                            + (curr.2 - route.start_z).powi(2);
                         let r = route.start_radius;
                         let hyst_r = r * 1.2;
                         if dist_sq > hyst_r * hyst_r {
                             self.was_inside_start = false;
-                        } else if dist_sq <= r * r && !self.was_inside_start {
-                            self.was_inside_start = true;
-                            self.time_trial_lap += 1;
+                        } else if !self.was_inside_start {
+                            let entered = match self.last_pos {
+                                Some(prev) => segment_intersects_sphere(
+                                    prev,
+                                    curr,
+                                    (route.start_x, route.start_y, route.start_z),
+                                    r,
+                                ),
+                                None => dist_sq <= r * r,
+                            };
+                            if entered {
+                                self.was_inside_start = true;
+                                self.time_trial_lap += 1;
+                            }
                         }
                     }
                 }
             } else if self.recording_mode == "roaming" {
                 if let Some(route) = &self.armed_route {
-                    if let (Some(ex), Some(ey), Some(ez), Some(er)) = (route.end_x, route.end_y, route.end_z, route.end_radius) {
-                        if let (Some(x), Some(y), Some(z)) = (pos_x, pos_y, pos_z) {
-                            let dist_sq = (x - ex).powi(2) + (y - ey).powi(2) + (z - ez).powi(2);
-                            if dist_sq <= er * er {
+                    if let (Some(ex), Some(ey), Some(ez), Some(er)) =
+                        (route.end_x, route.end_y, route.end_z, route.end_radius)
+                    {
+                        if let Some(curr) = current_pos {
+                            let reached = match self.last_pos {
+                                Some(prev) => segment_intersects_sphere(
+                                    prev,
+                                    curr,
+                                    (ex, ey, ez),
+                                    er,
+                                ),
+                                None => is_inside_sphere(curr.0, curr.1, curr.2, ex, ey, ez, er),
+                            };
+                            if reached {
                                 self.save_latest_and_clear("destination-reached");
+                                self.last_pos = current_pos;
                                 return;
                             }
                         }
@@ -389,19 +459,26 @@ impl RaceRecorder {
                     }
                 }
             }
+            self.last_pos = current_pos;
             return;
         }
-        let Some(ts) = ts else { return };
+        let Some(ts) = ts else {
+            self.last_pos = current_pos;
+            return;
+        };
         if self.last_timestamp.map(|x| ts <= x).unwrap_or(false) {
+            self.last_pos = current_pos;
             return;
         };
         if !self.status.is_recording {
             if !self.config.automatic {
+                self.last_pos = current_pos;
                 return;
             }
             self.start_auto(m)
         }
         if !self.status.is_recording {
+            self.last_pos = current_pos;
             return;
         };
         self.last_timestamp = Some(ts);
@@ -411,6 +488,7 @@ impl RaceRecorder {
         self.identity = Some(identity);
         if self.status.total_count >= self.config.max_samples {
             self.save_latest_and_clear("sample-limit");
+            self.last_pos = current_pos;
             return;
         }
         let boundary = if self.recording_mode == "time_trial" {
@@ -430,9 +508,11 @@ impl RaceRecorder {
                 .map(|x| ts - x < self.config.downsample_interval_ms)
                 .unwrap_or(false)
         {
+            self.last_pos = current_pos;
             return;
         }
-        self.append(data, ts)
+        self.append(data, ts);
+        self.last_pos = current_pos;
     }
     pub fn tick(&mut self, now: f64) {
         if !now.is_finite() {
@@ -572,4 +652,34 @@ fn now_seconds() -> f64 {
         .duration_since(std::time::UNIX_EPOCH)
         .map(|x| x.as_secs_f64())
         .unwrap_or(0.0)
+}
+
+pub fn is_inside_sphere(x: f64, y: f64, z: f64, cx: f64, cy: f64, cz: f64, r: f64) -> bool {
+    let dist_sq = (x - cx).powi(2) + (y - cy).powi(2) + (z - cz).powi(2);
+    dist_sq <= r * r
+}
+
+pub fn segment_intersects_sphere(
+    p0: (f64, f64, f64),
+    p1: (f64, f64, f64),
+    center: (f64, f64, f64),
+    radius: f64,
+) -> bool {
+    if is_inside_sphere(p0.0, p0.1, p0.2, center.0, center.1, center.2, radius)
+        || is_inside_sphere(p1.0, p1.1, p1.2, center.0, center.1, center.2, radius)
+    {
+        return true;
+    }
+    let (vx, vy, vz) = (p1.0 - p0.0, p1.1 - p0.1, p1.2 - p0.2);
+    let (wx, wy, wz) = (center.0 - p0.0, center.1 - p0.1, center.2 - p0.2);
+    let c1 = wx * vx + wy * vy + wz * vz;
+    let c2 = vx * vx + vy * vy + vz * vz;
+    if c2 <= f64::EPSILON {
+        return false;
+    }
+    let t = (c1 / c2).clamp(0.0, 1.0);
+    let closest_x = p0.0 + t * vx;
+    let closest_y = p0.1 + t * vy;
+    let closest_z = p0.2 + t * vz;
+    is_inside_sphere(closest_x, closest_y, closest_z, center.0, center.1, center.2, radius)
 }

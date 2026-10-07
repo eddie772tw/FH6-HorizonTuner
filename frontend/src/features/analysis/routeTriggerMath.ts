@@ -58,6 +58,35 @@ export function isOutsideHysteresis(
   return calculateDistance3D(x, y, z, cx, cy, cz) > radius * factor;
 }
 
+export function segmentIntersectsSphere(
+  p0: [number, number, number],
+  p1: [number, number, number],
+  center: [number, number, number],
+  radius: number,
+): boolean {
+  if (radius <= 0) return false;
+  if (
+    isInsideSphere(p0[0], p0[1], p0[2], center[0], center[1], center[2], radius) ||
+    isInsideSphere(p1[0], p1[1], p1[2], center[0], center[1], center[2], radius)
+  ) {
+    return true;
+  }
+  const vx = p1[0] - p0[0];
+  const vy = p1[1] - p0[1];
+  const vz = p1[2] - p0[2];
+  const wx = center[0] - p0[0];
+  const wy = center[1] - p0[1];
+  const wz = center[2] - p0[2];
+  const c1 = wx * vx + wy * vy + wz * vz;
+  const c2 = vx * vx + vy * vy + vz * vz;
+  if (c2 <= Number.EPSILON) return false;
+  const t = Math.max(0, Math.min(1, c1 / c2));
+  const closestX = p0[0] + t * vx;
+  const closestY = p0[1] + t * vy;
+  const closestZ = p0[2] + t * vz;
+  return isInsideSphere(closestX, closestY, closestZ, center[0], center[1], center[2], radius);
+}
+
 export function validateRoute(
   route: Partial<CustomRoute>,
 ): { valid: boolean; error?: string } {

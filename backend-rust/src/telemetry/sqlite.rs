@@ -262,6 +262,11 @@ impl TelemetryStore {
         let mut previous_lap: Option<i64> = None;
         let mut pending_lap: Option<i64> = None;
         let mut previous_last: Option<f64> = None;
+        let recording_mode = metadata.get("recording_mode").and_then(Value::as_str).unwrap_or("circuit");
+        let is_time_trial = recording_mode == "time_trial";
+        let is_roaming = recording_mode == "roaming";
+        let is_manual = metadata.get("endReason").and_then(Value::as_str).map(|r| r.starts_with("manual-")).unwrap_or(false);
+
         for p in &points {
             let lap = i64v(p, "LapNumber", 0);
             if let Some(previous) = previous_lap {
@@ -288,7 +293,8 @@ impl TelemetryStore {
             }
             previous_lap = Some(lap);
             let entry = laps.entry(lap).or_default();
-            if p.get("IsRaceOn") != Some(&Value::from(0)) {
+            let is_active_point = is_time_trial || is_roaming || is_manual || p.get("IsRaceOn") != Some(&Value::from(0));
+            if is_active_point {
                 if let Some(current) = p.get("CurrentLap").and_then(Value::as_f64) {
                     if (0.0..=5.0).contains(&current) {
                         entry.start_observed = true;
@@ -307,9 +313,6 @@ impl TelemetryStore {
                 distances.push(d)
             }
         }
-        let recording_mode = metadata.get("recording_mode").and_then(Value::as_str).unwrap_or("circuit");
-        let is_time_trial = recording_mode == "time_trial";
-        let is_roaming = recording_mode == "roaming";
         let max_lap_number = laps.keys().copied().max().unwrap_or(1);
 
         let mut lap_rows = Vec::new();
@@ -447,6 +450,9 @@ impl TelemetryStore {
         summary.insert("observedLaps".into(), Value::from(laps.len()));
         if metadata.get("endReason").and_then(Value::as_str) != Some("fixture") {
             summary.insert("trim_analysis".into(), trim_analysis);
+            if is_time_trial || is_roaming {
+                summary.insert("lap_time_source".into(), Value::from("gate-crossing"));
+            }
         }
         let summary_json =
             serde_json::to_string(&Value::Object(summary)).map_err(|e| e.to_string())?;

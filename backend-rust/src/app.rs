@@ -290,7 +290,7 @@ impl App {
             ("POST",["api","analysis","clear"])=>{let mut engine=lock(&self.engine);engine.race.save_latest_and_clear("manual-clear");self.persist_commands(&mut engine.race)?;drop(engine);self.persistence.flush().map_err(database_error)?;json!({"message":"Current recording session cleared."})}
             ("POST",["api","analysis","recorder","start"])=>{
                 let mut engine = lock(&self.engine);
-                let ordinal = data.get("car_ordinal").and_then(Value::as_i64).unwrap_or(0);
+                let ordinal = data.get("car_ordinal").or_else(|| data.get("ordinal")).and_then(Value::as_i64).unwrap_or(0);
                 let car_name = data.get("car_name").and_then(Value::as_str).unwrap_or("Manual Session").to_string();
                 let car_class = data.get("car_class").and_then(Value::as_i64).unwrap_or(0);
                 let car_pi = data.get("car_pi").and_then(Value::as_i64).unwrap_or(0);
@@ -394,10 +394,10 @@ impl App {
             }
             ("GET",["api","analysis","data"])=>{let lap=query_integer(request,"lap",0)?;Value::Array(match self.session_id("current")?{Some(id)=>self.database.get_telemetry_points(&id,(lap>0).then_some(lap)).map_err(database_error)?,None=>vec![]})}
             ("GET",["api","analysis","sessions"])=>Value::Array(self.database.list_all_sessions().map_err(database_error)?.iter().map(|s|json!({"filename":s["session_id"],"session_id":s["session_id"],"car_name":s["car_name"],"total_laps":s["total_laps"],"best_lap_time":s["best_lap_time"],"total_distance":s["total_distance"],"mtime":s["start_time"],"size":0})).collect()),
-            ("GET",["api","analysis","sessions",id])=>{let lap=query_integer(request,"lap",0)?;Value::Array(self.database.get_telemetry_points(id,(lap>0).then_some(lap)).map_err(database_error)?)}
+            ("GET",["api","analysis","sessions",id])=>{let lap=query_integer(request,"lap",0)?;Value::Array(match self.session_id(id)?{Some(id)=>self.database.get_telemetry_points(&id,(lap>0).then_some(lap)).map_err(database_error)?,None=>vec![]})}
             ("DELETE",["api","analysis","sessions",id])=>{self.database.delete_session(id).map_err(database_error)?;json!({"message":"Session deleted successfully"})},
-            ("GET",["api","analysis","sessions",id,"laps"])=>Value::Array(self.database.get_session_laps(id).map_err(database_error)?),
-            ("GET",["api","analysis","sessions",id,"metadata"])=>self.database.get_session_metadata(id).map_err(database_error)?,
+            ("GET",["api","analysis","sessions",id,"laps"])=>Value::Array(match self.session_id(id)?{Some(id)=>self.database.get_session_laps(&id).map_err(database_error)?,None=>vec![]}),
+            ("GET",["api","analysis","sessions",id,"metadata"])=>match self.session_id(id)?{Some(id)=>self.database.get_session_metadata(&id).map_err(database_error)?,None=>serde_json::Value::Null},
             ("GET",["api","analysis","sessions",id,"debrief"])=>{let points=match self.session_id(id)?{Some(id)=>self.database.get_telemetry_points(&id,None).map_err(database_error)?,None=>vec![]};motec::debrief(&points)}
             ("POST",["api","drag","prepare"])=>{lock(&self.engine).drag.prepare();json!({"message":"Drag recorder prepared, waiting for launch."})}
             ("POST",["api","drag","clear"])=>{lock(&self.engine).drag.clear();json!({"message":"Drag recorder cleared."})}

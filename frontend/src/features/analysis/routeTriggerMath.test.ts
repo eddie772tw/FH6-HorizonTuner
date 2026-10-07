@@ -5,6 +5,7 @@ import {
   filterTrimmedPoints,
   isInsideSphere,
   isOutsideHysteresis,
+  segmentIntersectsSphere,
   validateRoute,
 } from "./routeTriggerMath";
 import type { AnalysisDataPoint } from "../../context/TelemetryRecorderContext";
@@ -35,6 +36,18 @@ describe("routeTriggerMath", () => {
       expect(isOutsideHysteresis(11, 0, 0, 0, 0, 0, radius, 1.2)).toBe(false);
       // Distance is 13m: > 12m
       expect(isOutsideHysteresis(13, 0, 0, 0, 0, 0, radius, 1.2)).toBe(true);
+    });
+  });
+
+  describe("segmentIntersectsSphere", () => {
+    it("detects high-speed swept gate crossings where both endpoints are outside the sphere", () => {
+      // Gate at origin (0, 0, 0) with radius 5.0m
+      // Car jumps from -10m to +10m in one frame (swept directly through sphere)
+      expect(segmentIntersectsSphere([-10, 0, 0], [10, 0, 0], [0, 0, 0], 5)).toBe(true);
+      // Car passes 20m away from sphere
+      expect(segmentIntersectsSphere([-10, 20, 0], [10, 20, 0], [0, 0, 0], 5)).toBe(false);
+      // Car stopped before sphere
+      expect(segmentIntersectsSphere([-20, 0, 0], [-10, 0, 0], [0, 0, 0], 5)).toBe(false);
     });
   });
 

@@ -672,8 +672,107 @@ fn test_time_trial_gate_trigger() {
         "TimestampMS": 4000.0, "CarOrdinal": 1
     }), 4.0);
 
+    recorder.save_latest_and_clear("manual-stop");
+
     let commands = recorder.drain_commands();
     assert!(commands.iter().any(|c| matches!(c, RecorderCommand::CreateSession { .. })));
+    let write_cmd = commands.iter().find(|c| matches!(c, RecorderCommand::WritePoints { .. })).unwrap();
+    if let RecorderCommand::WritePoints { points, .. } = write_cmd {
+        assert_eq!(points.len(), 3);
+        // Start crossing frame must be recorded as Lap 1, NOT Lap 2
+        assert_eq!(points[0]["LapNumber"], 1);
+        assert_eq!(points[1]["LapNumber"], 1);
+        // Second crossing frame triggers Lap 2
+        assert_eq!(points[2]["LapNumber"], 2);
+    } else {
+        panic!("expected WritePoints command");
+    }
+
+    let finalize_cmd = commands.iter().find(|c| matches!(c, RecorderCommand::Finalize { .. })).unwrap();
+    if let RecorderCommand::Finalize { metadata, .. } = finalize_cmd {
+        assert_eq!(metadata["recording_mode"], "time_trial");
+        assert_eq!(metadata["route_id"], "tt-route");
+    } else {
+        panic!("expected Finalize command");
+    }
+}
+
+#[test]
+fn test_high_speed_swept_gate_crossing() {
+    let mut recorder = RaceRecorder::new(RaceRecorderConfig::default());
+    let active_route = ActiveRoute {
+        route_id: "fast-gate".into(),
+        name: "High Speed Gate".into(),
+        mode: "time_trial".into(),
+        start_x: 0.0,
+        start_y: 0.0,
+        start_z: 0.0,
+        start_radius: 5.0, // Small radius
+        end_x: None,
+        end_y: None,
+        end_z: None,
+        end_radius: None,
+    };
+
+    recorder.arm_route(active_route);
+
+    // Frame 1: Before gate at X = -15m (> 5m)
+    recorder.record_at(&json!({
+        "PositionX": -15.0, "PositionY": 0.0, "PositionZ": 0.0,
+        "TimestampMS": 1000.0, "CarOrdinal": 1
+    }), 1.0);
+    assert!(recorder.status().armed);
+    assert!(!recorder.status().is_recording);
+
+    // Frame 2: 100ms later at 360 km/h (100 m/s = 10m/frame), leaped past gate to X = +15m (> 5m)
+    // Neither frame landing inside 5.0m, but segment swept directly through (0, 0, 0)
+    recorder.record_at(&json!({
+        "PositionX": 15.0, "PositionY": 0.0, "PositionZ": 0.0,
+        "TimestampMS": 1100.0, "CarOrdinal": 1
+    }), 1.1);
+
+    // Swept volume must detect and trigger the gate!
+    assert!(!recorder.status().armed);
+    assert!(recorder.status().is_recording);
+}
+
+#[test]
+fn test_free_roam_zero_is_race_on_lap_aggregation() {
+    let dir = tempfile::tempdir().unwrap();
+    let store = TelemetryStore::new(&dir.path().join("freeroam.db")).unwrap();
+    store
+        .create_session("fr-session", 42, "Free Roam Car", 700, 800, 1.0)
+        .unwrap();
+
+    // In Forza Horizon Free Roam, IsRaceOn is ALWAYS 0!
+    let points = vec![
+        json!({"time": 0.0, "TimestampMS": 1000.0, "LapNumber": 1, "IsRaceOn": 0, "SpeedMetersPerSecond": 25.0}),
+        json!({"time": 10.0, "TimestampMS": 11000.0, "LapNumber": 1, "IsRaceOn": 0, "SpeedMetersPerSecond": 35.0}),
+        json!({"time": 20.0, "TimestampMS": 21000.0, "LapNumber": 1, "IsRaceOn": 0, "SpeedMetersPerSecond": 30.0}),
+        json!({"time": 25.0, "TimestampMS": 26000.0, "LapNumber": 2, "IsRaceOn": 0, "SpeedMetersPerSecond": 20.0}),
+    ];
+    store.insert_points_batch("fr-session", &points).unwrap();
+
+    let meta = json!({
+        "recording_mode": "time_trial",
+        "route_id": "test-tt",
+        "endReason": "manual-stop"
+    });
+    let summary = store.finalize_session("fr-session", meta).unwrap();
+    assert_eq!(summary["total_laps"], 1); // Lap 1 complete, Lap 2 incomplete tail
+    assert!(summary["best_lap_time"].as_f64().unwrap() > 0.0);
+
+    let laps = store.get_session_laps("fr-session").unwrap();
+    assert_eq!(laps.len(), 2);
+    assert_eq!(laps[0]["lap_number"], 1);
+    assert_eq!(laps[0]["complete"], 1);
+    assert_eq!(laps[0]["lap_time_source"], "gate-crossing");
+    assert!(laps[0]["max_speed_kmh"].as_f64().unwrap() >= 126.0); // 35 m/s * 3.6
+    assert!(!laps[0]["avg_speed_kmh"].is_null());
+
+    assert_eq!(laps[1]["lap_number"], 2);
+    assert_eq!(laps[1]["complete"], 0); // Tail cut off by manual stop
+    assert!(laps[1]["lap_time"].is_null());
 }
 
 #[test]

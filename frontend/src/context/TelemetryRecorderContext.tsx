@@ -226,6 +226,7 @@ export const TelemetryRecorderProvider: React.FC<{
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          car_ordinal: carInfo?.ordinal ?? 0,
           ordinal: carInfo?.ordinal ?? 0,
           car_name: carInfo?.name ?? "Unknown Car",
           car_class: carInfo?.carClass ?? 0,
