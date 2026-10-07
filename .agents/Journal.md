@@ -183,6 +183,21 @@
 - **Evidence**：歷史 PR（#185 至 #351 等百餘項 PR）與多版本（v1.0 ~ v1.6）發行演進驗收數據；後續所有功能開發與重構均以本摘要及模組化規則為契約基準。
 - **Skills**：`telemetry-udp-protocol`, `physics-tuning-math`, `halfmoon-design-system`, `modular-refactoring`, `testing-strategy`, `agent-governance-audit`。
 
+## 2026-10-07 / 重啟賽事分析：MoTeC、計時賽與漫遊路線錄製落地 (#484)（Gemini as Antigravity）
+
+- **來源／狀態**：`local`／`verified`；完成 Issue #484 賽事分析重啟，建立 PR #495。
+- **Learning**：
+  1. **無鎖 60Hz 接收與 3D 球體檢測門契約**：在 UDP 接收主線路保持零阻塞 I/O，以 $O(1)$ 歐幾里得距離運算搭配 20% 遲滯門檻保護，杜絕邊界抖動造成的重複觸發；在自由漫遊模式下允許 `IsRaceOn == 0` 持續計時與取樣。
+  2. **非破壞性修剪 (Non-Destructive Trimming) 與資料主權**：SQLite 資料庫維持原始所有通道取樣點，僅於 session metadata 紀錄 `trim_analysis`（包含起步前與停車後的修剪秒數及有效邊界）；前端與匯出介面提供即時切換與「匯出時改用未修剪原始資料」選項，兼顧分析乾淨度與原始遙測完整性。
+  3. **MoTeC CSV 純前端記憶體工作流與動態圈速推導**：使用者匯入本機 MoTeC CSV 時嚴格維持記憶體狀態（`selection.kind = 'local'`），不寫入後端 SQLite，透過純前端純函式 `calculateLapsFromPoints` 動態由點位推導圈數清單，無縫支援多圈切換與圈速對比。
+  4. **巨型元件模組化拆分 (< 250 行)**：依據 `huge-component-refactoring` 守則，將擴增後的賽事分析 UI 拆解為 `ManualRecordingToolbar`、`TimeTrialRoutePanel`、`RoamingRoutePanel`、`SessionTrimSummaryCard`、`MotecFieldMappingModal`、`useAnalysisSessionData` 與 `useCustomRoutes`，使核心 `AnalysisView.tsx` 嚴格控制於 213 行。
+- **Action**：
+  1. 擴充 Rust 後端 `custom_routes` 表、CRUD API、計時賽/漫遊路線武裝與二進位回放測試。
+  2. 修正 README.md 與 README.en.md 中關於 MoTeC `.ld` 的陳述為標準 41 頻道 CSV 與 i2 工作區範本。
+  3. 建立 PR #495（`feat/issue-484-race-analysis`）。
+- **Evidence**：後端 `cargo test` 全數通過（含 25 項 `telemetry_contract` 測試）；前端 196 個測試檔、1728 個測試通過；`pnpm build` 與 `git diff --check` 通過。
+- **Skills**：`telemetry-udp-protocol`, `huge-component-refactoring`, `modular-refactoring`, `halfmoon-design-system`, `testing-strategy`, `pr-author-maintainer`。
+
 ## 2026-10-05 / v1.7.1 Release Chore 發行整備與 Rust Tuning SSOT 落地（Gemini as Antigravity）
 
 - **來源／狀態**：`local`／`verified`；完成 v1.7.1 版本發行前置整備（Chore），雙端版本契約統一遞增至 `11.45.21`。
