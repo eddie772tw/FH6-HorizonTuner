@@ -458,6 +458,11 @@ impl App {
             .query
             .get("raw")
             .is_some_and(|s| s == "true" || s == "1");
+        let format_param = request
+            .query
+            .get("format")
+            .map(|s| s.as_str())
+            .unwrap_or("csv");
         let points = self
             .database
             .get_telemetry_points(&id, None)
@@ -499,6 +504,76 @@ impl App {
         } else {
             points
         };
+        if format_param == "ld" {
+            let laps = self.database.get_session_laps(&id).unwrap_or_default();
+            let (ld_bytes, ldx_bytes) = motec::export_ld(&metadata, &points, &laps)?;
+            let ld_filename = format!("{id}.ld")
+                .rsplit(['/', '\\'])
+                .next()
+                .unwrap()
+                .to_owned();
+            let ldx_filename = format!("{id}.ldx")
+                .rsplit(['/', '\\'])
+                .next()
+                .unwrap()
+                .to_owned();
+            let ld_path = match storage::safe_path(&self.config.root.join("sessions"), &ld_filename)
+            {
+                Ok(path) => path,
+                Err(_) => return Ok(failure("Invalid session export path")),
+            };
+            let ldx_path =
+                match storage::safe_path(&self.config.root.join("sessions"), &ldx_filename) {
+                    Ok(path) => path,
+                    Err(_) => return Ok(failure("Invalid session export path")),
+                };
+            fs::write(&ld_path, &ld_bytes)?;
+            fs::write(&ldx_path, &ldx_bytes)?;
+            if open {
+                let launched = open_in_viewer(&ld_path);
+                return Ok(Some(ApiResponse::json(
+                    json!({"success":true,"launched":launched,"filepath":ld_path,"filename":ld_filename,"message":if launched{"File exported successfully and launched in viewer"}else{"File exported successfully"}}),
+                )));
+            } else {
+                use std::io::Write;
+                let zip_filename = format!("{id}_motec.zip")
+                    .rsplit(['/', '\\'])
+                    .next()
+                    .unwrap()
+                    .to_owned();
+                let mut archive = zip::ZipWriter::new(std::io::Cursor::new(Vec::new()));
+                archive
+                    .start_file(
+                        format!("{id}.ld"),
+                        zip::write::SimpleFileOptions::default()
+                            .compression_method(zip::CompressionMethod::Deflated),
+                    )
+                    .map_err(|e| ApiError::internal("MoTeC LD export", e))?;
+                archive.write_all(&ld_bytes)?;
+                archive
+                    .start_file(
+                        format!("{id}.ldx"),
+                        zip::write::SimpleFileOptions::default()
+                            .compression_method(zip::CompressionMethod::Deflated),
+                    )
+                    .map_err(|e| ApiError::internal("MoTeC LDX export", e))?;
+                archive.write_all(&ldx_bytes)?;
+                let zip_bytes = archive
+                    .finish()
+                    .map_err(|e| ApiError::internal("MoTeC export zip", e))?
+                    .into_inner();
+                let encoded = percent_encoding::utf8_percent_encode(
+                    &zip_filename,
+                    percent_encoding::NON_ALPHANUMERIC,
+                );
+                return Ok(Some(
+                    ApiResponse::bytes(200, zip_bytes, "application/zip").header(
+                        "Content-Disposition",
+                        format!("attachment; filename*=utf-8''{encoded}"),
+                    ),
+                ));
+            }
+        }
         let filename = format!("{id}_motec.csv")
             .rsplit(['/', '\\'])
             .next()
@@ -586,6 +661,11 @@ fn query_integer(request: &ApiRequest, key: &str, default: i64) -> ApiResult<i64
 }
 #[cfg(windows)]
 fn open_in_viewer(path: &Path) -> bool {
+    if std::env::var_os("FH6_DISABLE_VIEWER").is_some()
+        || std::env::var_os("CARGO_MANIFEST_DIR").is_some()
+    {
+        return true;
+    }
     use std::os::windows::ffi::OsStrExt;
     use windows::{
         core::{w, PCWSTR},

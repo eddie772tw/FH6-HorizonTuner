@@ -959,3 +959,229 @@ fn test_motec_csv_roundtrip_and_laps() {
     let debrief = motec::debrief(&imported_points);
     assert_eq!(debrief["total_samples"], 3);
 }
+
+#[test]
+fn test_motec_ld_binary_structure_and_ldx_beacons() {
+    let metadata = json!({
+        "session_id": "test_ld_session",
+        "car_name": "Ferrari 488 GT3",
+        "driver": "Horizon Racer",
+        "venue": "Silverstone GP",
+        "date": "07/10/2026",
+        "time": "14:30:00"
+    });
+
+    let points = vec![
+        json!({
+            "time": 0.0, "lap_distance": 0.0, "LapNumber": 1,
+            "SpeedMetersPerSecond": 25.0, "CurrentEngineRpm": 4500.0, "Gear": 3,
+            "AccelInput": 180, "BrakeInput": 0, "steer_pct": 2.0,
+            "AccelerationX": 0.4, "AccelerationZ": 1.8, "AccelerationY": 9.81,
+            "PositionX": 100.0, "PositionY": 15.0, "PositionZ": 200.0,
+            "SuspTravel": [0.25, 0.25, 0.28, 0.28], "SuspensionTravelMeters": [0.05, 0.05, 0.06, 0.06],
+            "TireSlipAngle": [0.03, 0.03, 0.02, 0.02], "TireSlipRatio": [0.01, 0.01, 0.01, 0.01],
+            "TireTemp": [85.0, 85.0, 88.0, 88.0], "Boost": 12.5, "Fuel": 0.85,
+            "PowerWatts": 450000.0, "TorqueNewtons": 650.0
+        }),
+        json!({
+            "time": 0.5, "lap_distance": 20.0, "LapNumber": 1,
+            "SpeedMetersPerSecond": 35.0, "CurrentEngineRpm": 6000.0, "Gear": 4,
+            "AccelInput": 255, "BrakeInput": 0, "steer_pct": 0.0,
+            "AccelerationX": 0.1, "AccelerationZ": 2.5, "AccelerationY": 9.81,
+            "PositionX": 115.0, "PositionY": 15.0, "PositionZ": 210.0,
+            "SuspTravel": [0.30, 0.30, 0.32, 0.32], "SuspensionTravelMeters": [0.06, 0.06, 0.07, 0.07],
+            "TireSlipAngle": [0.02, 0.02, 0.01, 0.01], "TireSlipRatio": [0.02, 0.02, 0.02, 0.02],
+            "TireTemp": [87.0, 87.0, 90.0, 90.0], "Boost": 15.0, "Fuel": 0.84,
+            "PowerWatts": 500000.0, "TorqueNewtons": 700.0
+        }),
+        json!({
+            "time": 1.0, "lap_distance": 45.0, "LapNumber": 2,
+            "SpeedMetersPerSecond": 42.0, "CurrentEngineRpm": 7200.0, "Gear": 5,
+            "AccelInput": 255, "BrakeInput": 0, "steer_pct": -1.0,
+            "AccelerationX": -0.3, "AccelerationZ": 2.0, "AccelerationY": 9.81,
+            "PositionX": 135.0, "PositionY": 15.0, "PositionZ": 225.0,
+            "SuspTravel": [0.28, 0.28, 0.30, 0.30], "SuspensionTravelMeters": [0.055, 0.055, 0.065, 0.065],
+            "TireSlipAngle": [0.02, 0.02, 0.02, 0.02], "TireSlipRatio": [0.015, 0.015, 0.015, 0.015],
+            "TireTemp": [89.0, 89.0, 92.0, 92.0], "Boost": 15.2, "Fuel": 0.83,
+            "PowerWatts": 510000.0, "TorqueNewtons": 680.0
+        }),
+    ];
+
+    let laps = vec![
+        json!({
+            "lap_number": 1,
+            "lap_time": 95.420,
+            "start_distance": 0.0,
+            "end_distance": 4500.0,
+            "max_speed_kmh": 265.0,
+            "complete": 1
+        }),
+        json!({
+            "lap_number": 2,
+            "lap_time": 94.180,
+            "start_distance": 4500.0,
+            "end_distance": 9000.0,
+            "max_speed_kmh": 268.0,
+            "complete": 1
+        }),
+    ];
+
+    // 1. Verify resample_to_grid
+    let resampled = motec::resample_to_grid(&points, 60.0);
+    assert_eq!(resampled.len(), 61); // 0.0 to 1.0s inclusive at 60Hz = 61 samples
+    assert!((resampled[0].time() - 0.0).abs() < 1e-6);
+    assert!((resampled[60].time() - 1.0).abs() < 1e-6);
+    let dt = resampled[1].time() - resampled[0].time();
+    assert!((dt - (1.0 / 60.0)).abs() < 1e-6);
+
+    // 2. Export .ld and .ldx
+    let (ld_bytes, ldx_bytes) = motec::export_ld(&metadata, &points, &laps).unwrap();
+
+    // 3. Verify .ld binary headers and layout
+    assert!(ld_bytes.len() >= 18468);
+    let magic = u32::from_le_bytes(ld_bytes[0..4].try_into().unwrap());
+    assert_eq!(magic, 0x00000040);
+
+    let meta_ptr = u32::from_le_bytes(ld_bytes[8..12].try_into().unwrap());
+    assert_eq!(meta_ptr, 13384);
+
+    let data_ptr = u32::from_le_bytes(ld_bytes[12..16].try_into().unwrap());
+    assert_eq!(data_ptr, 18468);
+
+    let event_ptr = u32::from_le_bytes(ld_bytes[36..40].try_into().unwrap());
+    assert_eq!(event_ptr, 1762);
+
+    assert_eq!(&ld_bytes[74..77], b"ADL");
+    let version = u16::from_le_bytes(ld_bytes[82..84].try_into().unwrap());
+    assert_eq!(version, 420);
+
+    let num_channels = u32::from_le_bytes(ld_bytes[86..90].try_into().unwrap());
+    assert_eq!(num_channels, 41);
+
+    // Verify channel metadata linked list
+    let sample_count = resampled.len() as u32;
+    for i in 0..41 {
+        let offset = 13384 + i * 124;
+        let prev = u32::from_le_bytes(ld_bytes[offset..offset + 4].try_into().unwrap());
+        let next = u32::from_le_bytes(ld_bytes[offset + 4..offset + 8].try_into().unwrap());
+        let d_addr = u32::from_le_bytes(ld_bytes[offset + 8..offset + 12].try_into().unwrap());
+        let count = u32::from_le_bytes(ld_bytes[offset + 12..offset + 16].try_into().unwrap());
+        let datatype = u16::from_le_bytes(ld_bytes[offset + 18..offset + 20].try_into().unwrap());
+        let datasize = u16::from_le_bytes(ld_bytes[offset + 20..offset + 22].try_into().unwrap());
+        let freq = u16::from_le_bytes(ld_bytes[offset + 22..offset + 24].try_into().unwrap());
+        let mul = i16::from_le_bytes(ld_bytes[offset + 26..offset + 28].try_into().unwrap());
+        let scale = i16::from_le_bytes(ld_bytes[offset + 28..offset + 30].try_into().unwrap());
+
+        if i == 0 {
+            assert_eq!(prev, 0);
+            assert_eq!(next, 13384 + 124);
+        } else if i == 40 {
+            assert_eq!(prev, 13384 + 39 * 124);
+            assert_eq!(next, 0);
+        } else {
+            assert_eq!(prev, 13384 + (i as u32 - 1) * 124);
+            assert_eq!(next, 13384 + (i as u32 + 1) * 124);
+        }
+
+        assert_eq!(d_addr, 18468 + (i as u32) * sample_count * 4);
+        assert_eq!(count, sample_count);
+        assert_eq!(datatype, 5);
+        assert_eq!(datasize, 4);
+        assert_eq!(freq, 60);
+        assert_eq!(mul, 1);
+        assert_eq!(scale, 1);
+
+        // Verify channel name
+        let name_bytes = &ld_bytes[offset + 32..offset + 64];
+        let name = std::str::from_utf8(name_bytes).unwrap().trim_matches('\0');
+        assert_eq!(name, motec::MOTEC_CHANNELS[i].name);
+    }
+
+    assert_eq!(ld_bytes.len(), 18468 + 41 * (sample_count as usize) * 4);
+
+    // 4. Verify companion .ldx XML
+    let xml = String::from_utf8(ldx_bytes).unwrap();
+    assert!(xml.contains("<?xml version=\"1.0\"?>"));
+    assert!(xml.contains("<LDXFile"));
+    assert!(xml.contains("<MarkerBlock>"));
+    assert!(xml.contains("<MarkerGroup Name=\"Beacons\""));
+    assert!(xml.contains("ClassName=\"BCN\""));
+    assert!(xml.contains("Flags=\"77\""));
+    assert!(xml.contains("Time=\"0.00000000000000000E+00\""));
+    assert!(xml.contains("Time=\"9.54200000000000000E+07\""));
+    assert!(xml.contains("<String Id=\"Total Laps\" Value=\"2\"/>"));
+    assert!(xml.contains("<String Id=\"Fastest Lap\" Value=\"2\"/>"));
+
+    // 5. Verify API route format=ld export and open
+    let root = tempfile::tempdir().unwrap();
+    let app = App::new(root.path()).unwrap();
+    app.database
+        .create_session("ld_api_test", 100, "Ferrari 488 GT3", 5, 850, 0.0)
+        .unwrap();
+    app.database
+        .insert_points_batch("ld_api_test", &points)
+        .unwrap();
+
+    let mut query = BTreeMap::new();
+    query.insert("format".to_string(), "ld".to_string());
+
+    // GET /api/analysis/export/motec/ld_api_test?format=ld
+    let export_req = ApiRequest {
+        method: "GET".to_string(),
+        path: "/api/analysis/export/motec/ld_api_test".to_string(),
+        query: query.clone(),
+        headers: HeaderMap::new(),
+        body: vec![],
+        upload_filename: None,
+    };
+    let export_res = app.request(export_req).unwrap();
+    assert_eq!(export_res.status, 200);
+    let content_type = export_res
+        .headers
+        .iter()
+        .find(|(k, _)| k.eq_ignore_ascii_case("content-type"))
+        .map(|(_, v)| v.as_str())
+        .unwrap();
+    assert_eq!(content_type, "application/zip");
+    let content_disp = export_res
+        .headers
+        .iter()
+        .find(|(k, _)| k.eq_ignore_ascii_case("content-disposition"))
+        .map(|(_, v)| v.as_str())
+        .unwrap();
+    assert!(
+        content_disp.contains("ld_api_test_motec.zip")
+            || content_disp.contains("ld%5Fapi%5Ftest%5Fmotec%2Ezip")
+    );
+
+    let mut zip_reader = zip::ZipArchive::new(std::io::Cursor::new(export_res.body)).unwrap();
+    assert_eq!(zip_reader.len(), 2);
+    {
+        let ld_file = zip_reader.by_name("ld_api_test.ld").unwrap();
+        assert!(ld_file.size() >= 18468);
+    }
+    {
+        let ldx_file = zip_reader.by_name("ld_api_test.ldx").unwrap();
+        assert!(ldx_file.size() > 0);
+    }
+
+    // POST /api/analysis/motec/open/ld_api_test?format=ld
+    let open_req = ApiRequest {
+        method: "POST".to_string(),
+        path: "/api/analysis/motec/open/ld_api_test".to_string(),
+        query,
+        headers: HeaderMap::new(),
+        body: vec![],
+        upload_filename: None,
+    };
+    let open_res = app.request(open_req).unwrap();
+    assert_eq!(open_res.status, 200);
+    let open_json: Value = serde_json::from_slice(&open_res.body).unwrap();
+    assert_eq!(open_json["success"], true);
+    assert!(root.path().join("sessions").join("ld_api_test.ld").exists());
+    assert!(root
+        .path()
+        .join("sessions")
+        .join("ld_api_test.ldx")
+        .exists());
+}

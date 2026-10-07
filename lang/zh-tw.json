@@ -2012,5 +2012,7 @@
   "HorizonTuner exports 41 standard MoTeC telemetry channels directly compatible with MoTeC i2 Pro. Use the workspace template below to visualize telemetry immediately.": "HorizonTuner 匯出 41 個相容於 MoTeC i2 Pro 的標準遙測頻道。可搭配下方工作區範本立即檢視資料。",
   "MoTeC Channel": "MoTeC 頻道",
   "Horizon UDP Source": "Horizon UDP 來源",
-  "Transformation / Notes": "轉換公式／說明"
+  "Transformation / Notes": "轉換公式／說明",
+  "Export native MoTeC .ld binary with .ldx lap beacons": "匯出 MoTeC 原生二進位 .ld 檔與 .ldx 單圈標記",
+  "Export legacy MoTeC CSV": "匯出相容 MoTeC CSV"
 }

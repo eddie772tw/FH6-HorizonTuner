@@ -19,8 +19,8 @@ export interface AnalysisSessionToolbarProps {
   readonly onSelectSession: (filename: string) => void;
   readonly onSelectPrimaryLap: (lap: number) => void;
   readonly onSelectCompareLap: (lap: number) => void;
-  readonly onOpenInMoTec: () => void;
-  readonly onExportMoTec: () => void;
+  readonly onOpenInMoTec: (format?: "csv" | "ld") => void;
+  readonly onExportMoTec: (format?: "csv" | "ld") => void;
   readonly onImportFile: (event: React.ChangeEvent<HTMLInputElement>) => void;
   readonly onOpenImport: () => void;
   readonly onDownloadTemplate: () => void;
@@ -123,17 +123,26 @@ const AnalysisSessionToolbar: React.FC<AnalysisSessionToolbarProps> = ({
       </div>
       <div className="analysis-toolbar__actions">
         {getRuntimeCapabilities().localMotecLaunch && (
-          <button onClick={onOpenInMoTec} className="btn btn-outline-secondary" title={t("Launch session in local MoTeC i2 viewer")}>
+          <button onClick={() => onOpenInMoTec("ld")} className="btn btn-outline-secondary" title={t("Launch session in local MoTeC i2 viewer")}>
             {t("Open in MoTeC")}
           </button>
         )}
         <span
           className="d-inline-flex"
-          title={isExporting ? t("Export is currently in progress") : undefined}
+          title={isExporting ? t("Export is currently in progress") : t("Export native MoTeC .ld binary with .ldx lap beacons")}
           style={isExporting ? { cursor: 'not-allowed' } : undefined}
         >
-          <button onClick={onExportMoTec} disabled={isExporting} className="btn btn-outline-secondary" style={isExporting ? { pointerEvents: 'none' } : undefined}>
-            MoTeC CSV {t("Export")}
+          <button onClick={() => onExportMoTec("ld")} disabled={isExporting} className="btn btn-outline-secondary" style={isExporting ? { pointerEvents: 'none' } : undefined}>
+            MoTeC .ld {t("Export")}
+          </button>
+        </span>
+        <span
+          className="d-inline-flex"
+          title={isExporting ? t("Export is currently in progress") : t("Export legacy MoTeC CSV")}
+          style={isExporting ? { cursor: 'not-allowed' } : undefined}
+        >
+          <button onClick={() => onExportMoTec("csv")} disabled={isExporting} className="btn btn-outline-secondary" style={isExporting ? { pointerEvents: 'none' } : undefined}>
+            CSV {t("Export")}
           </button>
         </span>
         <input ref={fileInputRef} type="file" accept=".csv" style={{ display: "none" }} onChange={onImportFile} />

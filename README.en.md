@@ -62,7 +62,7 @@ AEGO Road now uses qualified moving-sweep bin averages and jointly allocates fir
 * **Telemetry Persistence, Race Analysis & MoTeC i2 Exporter**:
   - Automated backend SQLite telemetry history logging, supporting Circuit races, Time Trials, and point-to-point Free Roam route recording.
   - Features 3D spherical gate triggers (5m–50m adjustable radius with 20% exit hysteresis) and non-destructive lead-in / post-stop trimming.
-  - Supports one-click export for professional racing analysis software **MoTeC i2** standard 41-channel CSV format, pre-configured i2 XML workspace templates, and optional untrimmed raw export toggle.
+  - Supports one-click export for professional racing analysis software **MoTeC i2**, including native binary `.ld` logging with companion `.ldx` lap beacons (bundled in ZIP) and legacy 41-channel CSV format, pre-configured i2 XML workspace templates, direct local viewer launch, and optional untrimmed raw export toggle.
 * **Localhost Read-Only MCP Server (Model Context Protocol)**:
   - The running Rust backend provides a Streamable HTTP MCP endpoint at `/mcp`, offering 26 dedicated read-only tools and 5 Resource URI templates in the same process as telemetry.
   - Enables AI Agents (Claude Desktop, Cursor, Cline, Antigravity) to query live telemetry (aligned with `TelemetryView`), track sessions, A/B run delta comparisons, car specs, and tuning solvers.

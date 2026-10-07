@@ -80,10 +80,11 @@ interface TelemetryRecorderContextType {
   ) => Promise<AnalysisDataPoint[] | null>;
   loadSessionLaps: (filename: string) => Promise<LapSummary[]>;
   deleteSavedSession: (filename: string) => Promise<boolean>;
-  exportMoTecCsv: (filename: string, raw?: boolean) => void;
+  exportMoTecCsv: (filename: string, raw?: boolean, format?: "csv" | "ld") => void;
+  exportMoTec: (filename: string, raw?: boolean, format?: "csv" | "ld") => void;
   isExporting: boolean;
   uploadMoTecCsv: (file: File) => Promise<AnalysisDataPoint[] | null>;
-  openInMoTec: (sessionId: string) => Promise<{ success: boolean; launched: boolean; message: string }>;
+  openInMoTec: (sessionId: string, format?: "csv" | "ld") => Promise<{ success: boolean; launched: boolean; message: string }>;
   downloadMoTecTemplate: () => void;
   fetchSessionDebrief: (sessionId: string) => Promise<SessionDebriefData | null>;
 }
@@ -356,16 +357,27 @@ export const TelemetryRecorderProvider: React.FC<{
     return false;
   };
 
-  const exportMoTecCsv = (filename: string, raw: boolean = false) => {
-    const query = raw ? "?raw=true" : "";
-    const exportFilename = raw ? `${filename}_motec_raw.csv` : `${filename}_motec.csv`;
+  const exportMoTecCsv = (
+    filename: string,
+    raw: boolean = false,
+    format: "csv" | "ld" = "ld",
+  ) => {
+    const params = new URLSearchParams();
+    if (raw) params.set("raw", "true");
+    if (format === "ld") params.set("format", "ld");
+    const qs = params.toString() ? `?${params.toString()}` : "";
+    const isLd = format === "ld";
+    const exportFilename = isLd
+      ? (raw ? `${filename}_motec_raw.zip` : `${filename}_motec.zip`)
+      : (raw ? `${filename}_motec_raw.csv` : `${filename}_motec.csv`);
+    const mimeType = isLd ? "application/zip" : "text/csv";
     void save({
       filename: exportFilename,
-      mimeType: "text/csv",
+      mimeType,
       load: () =>
         fetchExportBlob(
-          `/api/analysis/export/motec/${encodeURIComponent(filename)}${query}`,
-          "text/csv",
+          `/api/analysis/export/motec/${encodeURIComponent(filename)}${qs}`,
+          mimeType,
         ),
     });
   };
@@ -395,10 +407,12 @@ export const TelemetryRecorderProvider: React.FC<{
 
   const openInMoTec = async (
     sessionId: string,
+    format: "csv" | "ld" = "ld",
   ): Promise<{ success: boolean; launched: boolean; message: string }> => {
     try {
+      const qs = format === "ld" ? "?format=ld" : "";
       const res = await backendFetch(
-        `/api/analysis/motec/open/${encodeURIComponent(sessionId)}`,
+        `/api/analysis/motec/open/${encodeURIComponent(sessionId)}${qs}`,
         { method: "POST" },
       );
       const data = await res.json();
@@ -457,6 +471,7 @@ export const TelemetryRecorderProvider: React.FC<{
         loadSessionLaps,
         deleteSavedSession,
         exportMoTecCsv,
+        exportMoTec: exportMoTecCsv,
         isExporting,
         uploadMoTecCsv,
         openInMoTec,

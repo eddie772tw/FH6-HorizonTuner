@@ -163,13 +163,13 @@ const AnalysisView: React.FC<{ onLatestAnalysis: () => void }> = ({ onLatestAnal
         onSelectSession={handleDropdownChange}
         onSelectPrimaryLap={setPrimaryLap}
         onSelectCompareLap={setCompareLap}
-        onOpenInMoTec={async () => {
+        onOpenInMoTec={async (format = "ld") => {
           const sid = selectedSessionId === "current" ? (currentSessionId || (savedSessions[0]?.session_id ?? "current")) : (selectedSessionId || "current");
-          const res = await openInMoTec(sid);
+          const res = await openInMoTec(sid, format);
           setMotecActionMsg(res.message);
           setTimeout(() => setMotecActionMsg(null), 4000);
         }}
-        onExportMoTec={() => exportMoTecCsv(selectedFilename, exportRawData)}
+        onExportMoTec={(format = "ld") => exportMoTecCsv(selectedFilename, exportRawData, format)}
         onImportFile={handleFileUpload}
         onOpenImport={() => fileInputRef.current?.click()}
         onDownloadTemplate={downloadMoTecTemplate}

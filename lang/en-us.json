@@ -1549,5 +1549,7 @@
   "HorizonTuner exports 41 standard MoTeC telemetry channels directly compatible with MoTeC i2 Pro. Use the workspace template below to visualize telemetry immediately.": "HorizonTuner exports 41 standard MoTeC telemetry channels directly compatible with MoTeC i2 Pro. Use the workspace template below to visualize telemetry immediately.",
   "MoTeC Channel": "MoTeC Channel",
   "Horizon UDP Source": "Horizon UDP Source",
-  "Transformation / Notes": "Transformation / Notes"
+  "Transformation / Notes": "Transformation / Notes",
+  "Export native MoTeC .ld binary with .ldx lap beacons": "Export native MoTeC .ld binary with .ldx lap beacons",
+  "Export legacy MoTeC CSV": "Export legacy MoTeC CSV"
 }

@@ -63,7 +63,7 @@ Road #462 修正採版本化 [launch envelope v3](docs/tuning/aego-road-launch-v
 * **遙測持久化與賽事分析 (SQLite Storage, Race Analysis & MoTeC i2 Exporter)**:
   - 後端 SQLite 遙測歷程資料庫自動記錄，支援常規賽事、計時賽 (Time Trial) 與點對點漫遊路線 (Free Roam) 錄製。
   - 具備 3D 球體閘門觸發 (支援 5m–50m 觸發半徑與遲滯保護) 及非破壞性停止後修剪 (Non-Destructive Trimming)。
-  - 支援匯出專業賽車數據分析軟體 **MoTeC i2** 標準 41 頻道 CSV 檔案及預先配置之 i2 XML 工作區範本，並可切換未修剪原始資料匯出。
+  - 支援匯出專業賽車數據分析軟體 **MoTeC i2** 原生二進位 `.ld` 封裝與 `.ldx` 單圈標記（ZIP 打包）及標準 41 頻道 CSV 檔案，提供預先配置之 i2 XML 工作區範本、本機 MoTeC 快速開啟與未修剪原始資料切換。
 * **Localhost 唯讀 MCP Server (Model Context Protocol)**:
   - 由執行中的 Rust backend 提供 Streamable HTTP MCP endpoint（`/mcp`），提供 27 個專屬唯讀工具與 5 類 Resource URI；MCP 與 telemetry 共用同一個 backend process。
   - 支援 AI Agent（Claude Desktop、Cursor、Cline 等）結構化查詢即時遙測（對齊 `TelemetryView`）、歷史單圈、A/B 跑圈差異比對、車輛規格與調校求解器。
