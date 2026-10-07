@@ -577,3 +577,29 @@
   4. 擴充 `canvasTheme.test.ts` 驗證常數餘量契約與格線無異常繪製。
 - **Evidence**：`git diff --check` 通過；`pnpm -C frontend exec vitest run src/utils/canvasTheme.test.ts` 5 passed；前端全量測試 189 test files / 1702 tests 全數通過。
 - **Skills**：`halfmoon-design-system`。
+
+## 2026-10-07 / MoTeC 原生二進位 .ld 結構、.ldx 單圈標記與 60Hz 網格重取樣整合（Gemini as Antigravity）
+
+- **來源／狀態**：`local`／`verified`；依據 Issue #484 與 PR #495 擴充賽事遙測匯出功能，實現原生 MoTeC .ld 二進位格式、.ldx XML 單圈標記 companion 輸出與前端雙軌匯出。
+- **Learning**：
+  1. **MoTeC .ld 二進位版面與固定偏移指標結構**：
+     - Header magic 固定為 `0x00000040` (u32 LE)，通道元資料指標設於 `13384` (`0x3448`)，通道資料起始位址設於 `18468` (`13384 + 41 * 124`)。
+     - 41 個通道元資料維持雙向 linked list（每個 124 bytes，包含 `data_ptr`, `data_count`, `datatype = 5`, `datasize = 4`, `sample_rate = 60`），通道資料區採小端序 `f32` 平坦連續陣列。
+     - 封裝 sparse runs template（13384 bytes），確保 MoTeC i2 Pro 能正常解析檔案結構與通道元資料。
+  2. **60Hz 等間隔時間網格線性重取樣**：
+     - 遊戲遙測封包時間戳記受網路與影格渲染波動影響，非嚴格等間隔。透過 `resample_to_grid` 將原始點重取樣至 60Hz 均勻時間網格（`dt = 1/60s`）。
+     - 連續物理通道（速度、轉速、G 值、懸吊、胎溫、油門煞車等）採線性插值，離散狀態通道（`Gear`, `LapNumber`）採 nearest step 保留整數跳變，避免非物理中間值。
+  3. **.ldx Companion XML 標記契約**：
+     - 伴隨產出之 `.ldx` XML 內建 `Beacons` 群組（`ClassName="BCN"`, `Flags="77"`），單圈標記時間採科學記號微秒格式（`Time="9.54200000000000000E+07"`），並包含 `Total Laps` 與 `Fastest Lap` 摘要。
+     - API 匯出端點（`GET /api/analysis/export/motec/{id}?format=ld`）打包為 ZIP 格式包含 `{id}.ld` 與 `{id}.ldx`，瀏覽器下載後解壓縮即可在 MoTeC i2 Pro 中直接開啟並識別單圈區間。
+  4. **無頭/測試環境之 ShellExecuteW 彈窗阻塞防護**：
+     - 在 Windows 自動化測試中，調用 `open_in_viewer`（`ShellExecuteW`）可能因系統未關聯 `.ld` 應用程式而彈出「選擇開啟方式」模態對話框，導致 CI/測試工作階段無窮等待。
+     - 透過檢查 `CARGO_MANIFEST_DIR` 或 `FH6_DISABLE_VIEWER` 環境變數，在測試環境中主動短路略過桌面系統調用並回傳成功，杜絕 Heavy E2E 測試阻塞 Unit Gate。
+- **Action**：
+  1. 修改 `backend-rust/src/motec.rs`：新增 `resample_to_grid`、41 通道元資料 linked list 產生、.ld 二進位與 .ldx XML 序列化純函式 `export_ld`。
+  2. 修改 `backend-rust/src/app.rs`：於 `motec_api` 支援 `format=ld` 之 ZIP 封裝匯出與 session 本地檔案寫入啟動，並加固 `open_in_viewer` 之測試環境防護。
+  3. 擴充 `backend-rust/tests/telemetry_contract.rs`：新增 5 階段完整合約測試 `test_motec_ld_binary_structure_and_ldx_beacons`。
+  4. 修改 `frontend/src/context/TelemetryRecorderContext.tsx`、`AnalysisSessionToolbar.tsx`、`AnalysisView.tsx`：支援 `format: "csv" | "ld"`，工具列新增 MoTeC .ld 專用匯出按鈕，行數維持 183 行（嚴格遵守 < 250 行規範）。
+  5. 更新多語系字串 `lang/en-us.json`、`lang/zh-tw.json` 與主文檔 `README.md`、`README.en.md`。
+- **Evidence**：後端全量測試 30 files 通過；前端全量測試 196 files / 1729 tests 通過；Vite build 成功；Ruff check 通過；`git diff --check` 通過。
+- **Skills**：`telemetry-udp-protocol`、`huge-component-refactoring`、`pr-author-maintainer`。
