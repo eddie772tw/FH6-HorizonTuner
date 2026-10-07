@@ -4,13 +4,13 @@
 
 - **Scope**：解決 PR #495 審查（Issue #484）由 Codex as Codex 提出的 13 項回歸問題。採用 `pr-author-maintainer`、`pr-review-evaluation`、`telemetry-udp-protocol`、`modular-refactoring`。
 - **Learning**：
-  1. **IsRaceOn 訊號不可靠性與錄製解耦**：遊戲遙測中的 `IsRaceOn` 旗標在自由漫遊及特殊賽事中經常不穩定。UDP 封包解析器與 `RaceRecorder` 絕不可將其視為封包有效性或起錄之 gate；計時賽與漫遊自訂路線起錄獨立於常規賽事開關。唯 drag 賽事終止契約因既有測試規範保留其依賴。
+  1. **IsRaceOn 訊號不可靠性與錄製解耦**：遊戲遙測中的 `IsRaceOn` 旗標在自由漫遊及特殊賽事中經常不穩定。UDP 封包解析器與 `RaceRecorder` 絕不可將其視為封包有效性或起錄之 gate；計時賽與漫遊自訂路線起錄獨立於常規賽事開關。DragRecorder 透過追蹤起跑時的 `started_with_race_on` 狀態，使漫遊模式（`IsRaceOn == 0`）下的加速測試不再首幀誤判終止，同時完全保留常規賽事結束停止契約。
   2. **計時賽未閉合尾圈與通過時間契約**：計時賽停止時，最後一圈未通過起點閉合之殘留樣本必須自動排除於分析、最快圈速與預設匯出，維持零有效圈時不捏造圈速；圈速計算必須以相鄰起點通過事件之精確時間差為準，而非圈內樣本的 observed_span。
   3. **起點防抖與高速穿球檢測**：起點門檻採用磁滯半徑 (hysteresis) 與進入狀態追蹤，車輛停在門內時武裝起錄需等待離開後再次進入；後續高速閉圈採用線段相交球體演算法，確保兩端點皆在球外的高速幀能正確判定閉圈。
   4. **MoTeC .ld 與 .ldx 標記軸對齊與完整圈過濾**：LD 匯出以首個有效樣本重設為 0 秒起點，當遙測點經過修整時，.ldx 標記必須隨修整視窗之起始時間偏移並排除超出 log 長度之標記；且僅有 `complete == 1` 的有效圈才計入 Total Laps 與最快圈速。
   5. **自訂路線匯入原子性與格式驗證**：批次匯入自訂路線前先執行完整校驗（包含 schema 版本、UUID 格式與 roaming 終點座標），並以單一 SQLite 交易保存，避免部分成功造成資料庫髒讀。
 - **Evidence**：
-  - 新增 `pr495_review_regressions.rs`（13 個專項回歸測試）全部 passed。
+  - 新增 `pr495_review_regressions.rs`（16 個專項回歸測試）全部 passed。
   - 後端 `cargo test --locked --manifest-path backend-rust/Cargo.toml` 全部 passed。
   - 前端 Vitest `pnpm -C frontend run test` 196 檔案／1,730 測資全數 passed。
   - 前端 `pnpm -C frontend run build` 通過。
