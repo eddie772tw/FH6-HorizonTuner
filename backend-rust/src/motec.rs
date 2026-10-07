@@ -820,32 +820,57 @@ pub fn generate_ldx_xml(laps: &[Value], points: &[Value]) -> String {
             .and_then(|p| p.get("time").and_then(Value::as_f64))
             .unwrap_or(t_start);
 
+        let max_span = if !points.is_empty() {
+            Some(t_end - t_start)
+        } else {
+            None
+        };
+
         let mut cum_time = 0.0;
         beacon_times.push(0.0);
         for lap in laps {
+            let is_complete = lap
+                .get("complete")
+                .map(|c| c == 1 || c == true || c.as_i64() == Some(1) || c.as_bool() == Some(true))
+                .unwrap_or(false);
             let dur = lap
                 .get("lap_time")
                 .and_then(Value::as_f64)
-                .filter(|&d| d > 0.0)
-                .or_else(|| {
-                    lap.get("observed_span")
-                        .and_then(Value::as_f64)
-                        .filter(|&d| d > 0.0)
-                });
-            if let Some(dur) = dur {
-                cum_time += dur;
-                let rel_time = if t_start > 0.0 {
-                    cum_time - t_start
-                } else {
-                    cum_time
-                };
-                if rel_time > 0.0 && (t_start == 0.0 || rel_time <= (t_end - t_start + 1e-4)) {
-                    beacon_times.push(rel_time);
+                .filter(|&d| d > 0.0);
+            if is_complete {
+                if let Some(dur) = dur {
+                    cum_time += dur;
+                    let rel_time = if t_start > 0.0 {
+                        cum_time - t_start
+                    } else {
+                        cum_time
+                    };
+                    if rel_time > 0.0 {
+                        if let Some(limit) = max_span {
+                            if rel_time <= limit + 1e-4 {
+                                beacon_times.push(rel_time);
+                            }
+                        } else {
+                            beacon_times.push(rel_time);
+                        }
+                    }
                 }
             }
         }
-        if beacon_times.len() == 1 && !points.is_empty() && t_end > t_start {
-            beacon_times.push(t_end - t_start);
+        if beacon_times.len() == 1 {
+            if let Some(limit) = max_span {
+                if limit > 0.0 {
+                    beacon_times.push(limit);
+                }
+            } else if let Some(first_lap) = laps.first() {
+                let span = first_lap
+                    .get("observed_span")
+                    .and_then(Value::as_f64)
+                    .filter(|&d| d > 0.0);
+                if let Some(span) = span {
+                    beacon_times.push(span);
+                }
+            }
         }
     } else if !points.is_empty() {
         let mut current_lap = -1i64;

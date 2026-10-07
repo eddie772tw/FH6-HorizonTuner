@@ -219,11 +219,17 @@ fn drag_context_survives_clear_and_uses_the_launched_car_name() {
         }));
         app.process(json!({
             "CarOrdinal": id,
-            "SpeedMetersPerSecond": 0.1,
-            "Gear": 1,
-            "AccelInput": 255,
-            "TimestampMS": 1016,
-            "IsRaceOn": 0
+            "SpeedMetersPerSecond": 20.0,
+            "Gear": 2,
+            "AccelInput": 0,
+            "TimestampMS": 2000
+        }));
+        app.process(json!({
+            "CarOrdinal": id,
+            "SpeedMetersPerSecond": 20.0,
+            "Gear": 2,
+            "AccelInput": 0,
+            "TimestampMS": 3000
         }));
         assert_eq!(request(&app, "GET", "/api/drag/analysis")["car_name"], name);
         let data = request(&app, "GET", "/api/drag/data");
@@ -1010,7 +1016,7 @@ fn test_motec_ld_binary_structure_and_ldx_beacons() {
     let laps = vec![
         json!({
             "lap_number": 1,
-            "lap_time": 95.420,
+            "lap_time": 0.542,
             "start_distance": 0.0,
             "end_distance": 4500.0,
             "max_speed_kmh": 265.0,
@@ -1018,7 +1024,7 @@ fn test_motec_ld_binary_structure_and_ldx_beacons() {
         }),
         json!({
             "lap_number": 2,
-            "lap_time": 94.180,
+            "lap_time": 0.418,
             "start_distance": 4500.0,
             "end_distance": 9000.0,
             "max_speed_kmh": 268.0,
@@ -1108,7 +1114,7 @@ fn test_motec_ld_binary_structure_and_ldx_beacons() {
     assert!(xml.contains("ClassName=\"BCN\""));
     assert!(xml.contains("Flags=\"77\""));
     assert!(xml.contains("Time=\"0.00000000000000000E+00\""));
-    assert!(xml.contains("Time=\"9.54200000000000000E+07\""));
+    assert!(xml.contains("Time=\"5.42000000000000000E+05\""));
     assert!(xml.contains("<String Id=\"Total Laps\" Value=\"2\"/>"));
     assert!(xml.contains("<String Id=\"Fastest Lap\" Value=\"2\"/>"));
 

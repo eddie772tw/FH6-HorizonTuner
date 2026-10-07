@@ -167,7 +167,8 @@ export function calculateLapsFromPoints(
   const sortedLaps = Array.from(lapMap.keys()).sort((a, b) => a - b);
   const result: LapSummary[] = [];
 
-  for (const lapNum of sortedLaps) {
+  for (let i = 0; i < sortedLaps.length; i++) {
+    const lapNum = sortedLaps[i];
     const group = lapMap.get(lapNum) ?? [];
     if (group.length === 0) continue;
 
@@ -185,50 +186,61 @@ export function calculateLapsFromPoints(
     const maxTime = validTimes.length > 0 ? Math.max(...validTimes) : 0;
     const observedSpan = maxTime - minTime;
 
-    const maxSpeedKmh = validSpeeds.length > 0
-      ? Math.round(Math.max(...validSpeeds) * 3.6 * 10) / 10
-      : null;
-    const avgSpeedKmh = validSpeeds.length > 0
-      ? Math.round((validSpeeds.reduce((a, b) => a + b, 0) / validSpeeds.length) * 3.6 * 10) / 10
-      : null;
+    const maxSpeedKmh =
+      validSpeeds.length > 0
+        ? Math.round(Math.max(...validSpeeds) * 3.6 * 10) / 10
+        : null;
+    const avgSpeedKmh =
+      validSpeeds.length > 0
+        ? Math.round(
+            (validSpeeds.reduce((a, b) => a + b, 0) / validSpeeds.length) *
+              3.6 *
+              10
+          ) / 10
+        : null;
 
-    const startDistance = validDistances.length > 0 ? Math.min(...validDistances) : null;
-    const endDistance = validDistances.length > 0 ? Math.max(...validDistances) : null;
+    const startDistance =
+      validDistances.length > 0 ? Math.min(...validDistances) : null;
+    const endDistance =
+      validDistances.length > 0 ? Math.max(...validDistances) : null;
 
-    const hasLastLap = group.some(
-      (p) => typeof p.LastLap === "number" && Number.isFinite(p.LastLap) && p.LastLap > 0
-    );
-    const hasNextLap = lapNum < Math.max(...sortedLaps);
-    const hasStartBoundary =
-      (startDistance !== null && startDistance <= 15.0) ||
-      minTime <= 1.0 ||
-      group.some(
-        (p) => typeof p.CurrentLap === "number" && Number.isFinite(p.CurrentLap) && p.CurrentLap <= 5.0
-      );
-    const hasDistanceSpan =
-      startDistance !== null &&
-      endDistance !== null &&
-      endDistance - startDistance >= 100.0;
+    // A lap is complete only if there is genuine evidence of closing:
+    // in telemetry / MoTeC, lap N finishes when the vehicle transitions into lap N+1.
+    const nextLapNum = sortedLaps[i + 1];
+    const nextGroup = nextLapNum !== undefined ? lapMap.get(nextLapNum) : undefined;
+    const hasNextLap = nextGroup !== undefined && nextGroup.length > 0;
 
-    const isComplete =
-      observedSpan > 1.0 &&
-      (hasLastLap || (hasNextLap && hasStartBoundary) || (hasStartBoundary && hasDistanceSpan));
+    // In Forza telemetry, the official finished time of lap N appears in LastLap of lap N+1
+    const nextLapLastLap = hasNextLap
+      ? nextGroup
+          ?.map((p) => p.LastLap)
+          .find((l): l is number => typeof l === "number" && Number.isFinite(l) && l > 0)
+      : undefined;
 
-    const lastLapVal = group
-      .map((p) => p.LastLap)
-      .find((l): l is number => typeof l === "number" && Number.isFinite(l) && l > 0);
+    const isComplete = hasNextLap && observedSpan > 1.0;
+
+    let lapTime: number | null = null;
+    let lapTimeSource = "motec-span";
+
+    if (isComplete) {
+      if (typeof nextLapLastLap === "number" && nextLapLastLap > 0) {
+        lapTime = Math.round(nextLapLastLap * 1000) / 1000;
+        lapTimeSource = "game-lastlap";
+      } else {
+        lapTime = Math.round(observedSpan * 1000) / 1000;
+        lapTimeSource = "motec-span";
+      }
+    }
 
     result.push({
       lap_number: lapNum,
-      lap_time: isComplete
-        ? (lastLapVal ? Math.round(lastLapVal * 1000) / 1000 : Math.round(observedSpan * 1000) / 1000)
-        : null,
+      lap_time: lapTime,
       start_distance: startDistance,
       end_distance: endDistance,
       max_speed_kmh: maxSpeedKmh,
       avg_speed_kmh: avgSpeedKmh,
       complete: isComplete,
-      lap_time_source: hasLastLap ? "game-lastlap" : "motec-span",
+      lap_time_source: lapTimeSource,
       observed_span: Math.round(observedSpan * 1000) / 1000,
     });
   }

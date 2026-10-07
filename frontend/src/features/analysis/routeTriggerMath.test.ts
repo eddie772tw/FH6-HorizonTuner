@@ -122,16 +122,20 @@ describe("routeTriggerMath", () => {
         { time: 25, LapNumber: 2, SpeedMetersPerSecond: 22, lap_distance: 0 },
         { time: 35, LapNumber: 2, SpeedMetersPerSecond: 32, lap_distance: 210 },
         { time: 45, LapNumber: 2, SpeedMetersPerSecond: 28, lap_distance: 420 },
+        { time: 50, LapNumber: 3, SpeedMetersPerSecond: 25, lap_distance: 0 },
       ];
 
       const laps = calculateLapsFromPoints(points as AnalysisDataPoint[]);
-      expect(laps.length).toBe(2);
+      expect(laps.length).toBe(3);
       expect(laps[0].lap_number).toBe(1);
       expect(laps[0].lap_time).toBe(20);
       expect(laps[0].complete).toBe(true);
       expect(laps[1].lap_number).toBe(2);
       expect(laps[1].lap_time).toBe(20);
       expect(laps[1].complete).toBe(true);
+      expect(laps[2].lap_number).toBe(3);
+      expect(laps[2].complete).toBe(false);
+      expect(laps[2].lap_time).toBeNull();
     });
 
     it("handles empty points safely", () => {
@@ -142,6 +146,24 @@ describe("routeTriggerMath", () => {
       const laps = calculateLapsFromPoints([
         { time: 10, LapNumber: 1 },
         { time: 12, LapNumber: 1 },
+      ] as AnalysisDataPoint[]);
+      expect(laps[0].complete).toBe(false);
+      expect(laps[0].lap_time).toBeNull();
+    });
+
+    it("does not complete an unclosed lap after 150 metres", () => {
+      const laps = calculateLapsFromPoints([
+        { time: 0, LapNumber: 1, lap_distance: 0 },
+        { time: 2, LapNumber: 1, lap_distance: 150 },
+      ] as AnalysisDataPoint[]);
+      expect(laps[0].complete).toBe(false);
+      expect(laps[0].lap_time).toBeNull();
+    });
+
+    it("does not use the previous LastLap to complete the current lap", () => {
+      const laps = calculateLapsFromPoints([
+        { time: 60, LapNumber: 2, CurrentLap: 0, LastLap: 60 },
+        { time: 62, LapNumber: 2, CurrentLap: 2, LastLap: 60 },
       ] as AnalysisDataPoint[]);
       expect(laps[0].complete).toBe(false);
       expect(laps[0].lap_time).toBeNull();

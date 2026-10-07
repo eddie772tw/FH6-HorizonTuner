@@ -623,3 +623,20 @@
   5. 更新多語系字串 `lang/en-us.json`、`lang/zh-tw.json` 與主文檔 `README.md`、`README.en.md`。
 - **Evidence**：後端全量測試 30 files 通過（含 29 個 telemetry contract 測試）；前端全量測試 196 files / 1729 tests 通過；Vite build 成功；Ruff check 通過；`git diff --check` 通過。
 - **Skills**：`telemetry-udp-protocol`、`huge-component-refactoring`、`pr-author-maintainer`。
+
+## 2026-10-07 / 賽事分析 PR #495 審查反饋修復：Drag 狀態旗標解耦、起點武裝停等與 LDX 邊界約束（Gemini as Antigravity）
+
+- **來源／狀態**：`local`／`verified`；修復 PR #495 第二輪審查回饋之 5 項阻塞項目，補齊 `pr495_review_regressions.rs` 與現有合約測試。
+- **Learning**：
+  1. **DragRecorder 徹底解耦 `IsRaceOn` 停錄邏輯**：遊戲自由漫遊（Free Roam）直線加速測試中，`IsRaceOn` 常態為 0 或受活動狀態波動影響。移除依賴 `IsRaceOn` 判定之停錄邏輯，改為嚴格由油門釋放（`accel < 150` 超過 0.8 秒）、最大錄製時限逾時或靜止逾時作為唯一終止判定，確保自由漫遊測試不被中斷。
+  2. **停車武裝防護與連續性護欄**：在起點球體範圍內武裝路線（`armed`）時，若車輛已停在半徑內，記錄 `armed_was_inside_start = true` 並透過 $1.2 \times r$ 遲滯半徑等待車輛離開後重新進入才觸發起錄。跨幀軌跡線段檢驗前，嚴格檢驗車輛連續性：在更換車輛（`CarOrdinal` 改變）、時間戳回退、時間戳或 tick 斷層（$\ge 3.0$ 秒）或缺失 `TimestampMS` 時重設連續性，防止跨車或跨時空虛假連線觸發閘門。
+  3. **LDX 單圈標記嚴格邊界約束**：產出 companion `.ldx` XML 時，排除未閉合尾圈之累加時間，且所有單圈 Beacon 時間戳記必須嚴格約束於匯出點時間跨度（`t_end - t_start`）內，即便起點時間為 `0.0s` 亦不得溢出。
+  4. **CSV 匯入單圈完整度契約**：在無閘門穿越事件的 CSV 匯入情境下，移除 150 米距離門檻與本圈 `LastLap` 推定；單圈完整性必須依賴向後轉移至下一圈群組（`hasNextLap`）之事實，且以次圈之 `LastLap`（或本圈觀測區間）作為官方計時依據。
+- **Action**：
+  1. 修改 `backend-rust/src/telemetry/drag.rs`：徹底移除 `started_with_race_on` 與 `IsRaceOn` 停錄邏輯。
+  2. 修改 `backend-rust/src/telemetry/race.rs`：加入空間與時間連續性追蹤（`last_pos_ordinal`, `last_pos_ts`, `last_pos_now`）、重設護欄與停駐起點遲滯檢驗。
+  3. 修改 `backend-rust/src/motec.rs`：於 `generate_ldx_xml` 約束 beacon 不超出匯出時間窗口，排除未閉合單圈。
+  4. 修改 `frontend/src/features/analysis/routeTriggerMath.ts`：以次圈轉移作為完成單圈之必要條件。
+  5. 更新 `backend-rust/tests/pr495_review_regressions.rs` 與 `backend-rust/tests/telemetry_contract.rs` 合約測試。
+- **Evidence**：`cargo test` 全量通過（含 22 個 review regression 測試與 29 個 telemetry contract 測試）；`cargo fmt -- --check` 通過；前端全量測試 196 test files / 1732 tests 通過；前端 build 通過；Ruff check 通過；`git diff --check` 通過。
+- **Skills**：`telemetry-udp-protocol`、`pr-author-maintainer`。

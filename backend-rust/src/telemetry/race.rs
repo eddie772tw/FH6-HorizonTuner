@@ -97,6 +97,9 @@ pub struct RaceRecorder {
     recording_mode: String,
     time_trial_lap: i64,
     last_pos: Option<(f64, f64, f64)>,
+    last_pos_ordinal: Option<i64>,
+    last_pos_ts: Option<f64>,
+    last_pos_now: Option<f64>,
 }
 impl RaceRecorder {
     pub fn new(config: RaceRecorderConfig) -> Self {
@@ -136,6 +139,9 @@ impl RaceRecorder {
             recording_mode: "circuit".into(),
             time_trial_lap: 1,
             last_pos: None,
+            last_pos_ordinal: None,
+            last_pos_ts: None,
+            last_pos_now: None,
         }
     }
     pub fn update_settings(&mut self, settings: &Value) {
@@ -167,6 +173,37 @@ impl RaceRecorder {
     pub fn drain_commands(&mut self) -> Vec<RecorderCommand> {
         self.commands.drain(..).collect()
     }
+    fn invalidate_continuity(&mut self) {
+        self.last_pos = None;
+        self.last_pos_ordinal = None;
+        self.last_pos_ts = None;
+        self.last_pos_now = None;
+    }
+    fn set_last_valid_frame(
+        &mut self,
+        pos: (f64, f64, f64),
+        ordinal: Option<i64>,
+        ts: f64,
+        now: f64,
+    ) {
+        self.last_pos = Some(pos);
+        self.last_pos_ordinal = ordinal;
+        self.last_pos_ts = Some(ts);
+        self.last_pos_now = Some(now);
+    }
+    fn update_last_frame(
+        &mut self,
+        pos: Option<(f64, f64, f64)>,
+        ordinal: Option<i64>,
+        ts: f64,
+        now: f64,
+    ) {
+        if let Some(p) = pos {
+            self.set_last_valid_frame(p, ordinal, ts, now);
+        } else {
+            self.invalidate_continuity();
+        }
+    }
     pub fn clear(&mut self) {
         self.status = RaceRecorderStatus::default();
         self.status.recording_mode = "circuit".into();
@@ -187,7 +224,7 @@ impl RaceRecorder {
         self.awaiting_since = None;
         self.race_clock_regressions = 0;
         self.lap_start_times.clear();
-        self.last_pos = None;
+        self.invalidate_continuity();
     }
     pub fn arm_route(&mut self, route: ActiveRoute) {
         let inside = self
@@ -299,38 +336,74 @@ impl RaceRecorder {
     /// Record with an injected monotonic clock. `tick` must receive values
     /// from the same clock domain.
     pub fn record_at(&mut self, data: &Value, now: f64) {
-        let Some(m) = data.as_object() else { return };
-        if !self.status.manual_mode
-            && !self.status.armed
-            && !self
-                .settings
-                .get("race_recording")
-                .and_then(Value::as_bool)
-                .unwrap_or(self.config.race_recording)
-        {
-            if self.status.is_recording {
-                self.save_latest_and_clear("recording-disabled")
-            }
+        let Some(m) = data.as_object() else {
+            self.invalidate_continuity();
             return;
-        }
+        };
 
         let pos_x = m.get("PositionX").and_then(Value::as_f64);
         let pos_y = m.get("PositionY").and_then(Value::as_f64);
         let pos_z = m.get("PositionZ").and_then(Value::as_f64);
         let current_pos = match (pos_x, pos_y, pos_z) {
-            (Some(x), Some(y), Some(z)) => Some((x, y, z)),
+            (Some(x), Some(y), Some(z)) if x.is_finite() && y.is_finite() && z.is_finite() => {
+                Some((x, y, z))
+            }
             _ => None,
         };
 
         let ts = m.get("TimestampMS").and_then(Value::as_f64);
         let Some(ts) = ts else {
-            self.last_pos = current_pos;
+            self.invalidate_continuity();
             return;
         };
-        if self.last_timestamp.map(|x| ts <= x).unwrap_or(false) {
+        if !ts.is_finite() {
+            self.invalidate_continuity();
             return;
         }
-        self.last_timestamp = Some(ts);
+
+        if self.last_pos_ts.map(|x| ts <= x).unwrap_or(false) {
+            return;
+        }
+
+        let ordinal = m.get("CarOrdinal").and_then(Value::as_i64).or_else(|| {
+            m.get("CarOrdinal")
+                .and_then(Value::as_f64)
+                .map(|v| v as i64)
+        });
+
+        if current_pos.is_none() {
+            self.invalidate_continuity();
+        } else {
+            if let Some(last_ord) = self.last_pos_ordinal {
+                if ordinal.is_some() && ordinal != Some(last_ord) {
+                    self.invalidate_continuity();
+                }
+            }
+            if let Some(last_ts) = self.last_pos_ts {
+                if ts - last_ts > 3000.0 {
+                    self.invalidate_continuity();
+                }
+            }
+            if let Some(last_now) = self.last_pos_now {
+                if now - last_now > 3.0 {
+                    self.invalidate_continuity();
+                }
+            }
+        }
+
+        let auto_rec = self
+            .settings
+            .get("race_recording")
+            .and_then(Value::as_bool)
+            .unwrap_or(self.config.race_recording);
+
+        if !self.status.manual_mode && !self.status.armed && !auto_rec {
+            if self.status.is_recording {
+                self.save_latest_and_clear("recording-disabled");
+            }
+            self.update_last_frame(current_pos, ordinal, ts, now);
+            return;
+        }
 
         let identity = (
             i(m, "CarOrdinal", 0),
@@ -339,72 +412,69 @@ impl RaceRecorder {
         );
         if self.identity.is_some() && self.identity != Some(identity) {
             self.save_latest_and_clear("identity-changed");
-            self.last_pos = current_pos;
+            self.update_last_frame(current_pos, ordinal, ts, now);
             return;
         }
 
         if self.status.armed {
-            if let Some(route) = self.armed_route.clone() {
-                if let Some(curr) = current_pos {
-                    let r = route.start_radius;
-                    let hyst_r = r * 1.2;
-                    let dist_sq = (curr.0 - route.start_x).powi(2)
-                        + (curr.1 - route.start_y).powi(2)
-                        + (curr.2 - route.start_z).powi(2);
+            if let (Some(route), Some(curr)) = (self.armed_route.clone(), current_pos) {
+                let r = route.start_radius;
+                let hyst_r = r * 1.2;
+                let dist_sq = (curr.0 - route.start_x).powi(2)
+                    + (curr.1 - route.start_y).powi(2)
+                    + (curr.2 - route.start_z).powi(2);
 
-                    if self.armed_was_inside_start {
-                        if dist_sq > hyst_r * hyst_r {
-                            self.armed_was_inside_start = false;
-                        }
-                    } else {
-                        let entered = match self.last_pos {
-                            Some(prev) => segment_intersects_sphere(
-                                prev,
-                                curr,
-                                (route.start_x, route.start_y, route.start_z),
-                                r,
-                            ),
-                            None => dist_sq <= r * r,
-                        };
-                        if entered {
-                            self.status.armed = false;
-                            self.status.armed_route_id = None;
-                            let ordinal = i(m, "CarOrdinal", 0);
-                            let name = self
-                                .car_database
-                                .get(&ordinal.to_string())
-                                .and_then(Value::as_object)
-                                .map(|x| {
-                                    ["year", "make", "model"]
-                                        .iter()
-                                        .filter_map(|k| {
-                                            x.get(*k).map(|v| {
-                                                v.to_string().trim_matches('"').to_string()
-                                            })
-                                        })
-                                        .collect::<Vec<_>>()
-                                        .join(" ")
-                                })
-                                .filter(|x| !x.is_empty())
-                                .unwrap_or_else(|| {
-                                    if ordinal > 0 {
-                                        format!("Car #{}", ordinal)
-                                    } else {
-                                        "Armed Route Session".into()
-                                    }
-                                });
-                            let mode = route.mode.clone();
-                            let _ = self.start_manual_with_mode(
-                                ordinal,
-                                name,
-                                i(m, "CarClass", 0),
-                                i(m, "CarPerformanceIndex", 0),
-                                now,
-                                &mode,
-                                Some(route),
-                            );
-                            self.was_inside_start = true;
-                        }
+                if self.armed_was_inside_start {
+                    if dist_sq > hyst_r * hyst_r {
+                        self.armed_was_inside_start = false;
+                    }
+                } else {
+                    let entered = match self.last_pos {
+                        Some(prev) => segment_intersects_sphere(
+                            prev,
+                            curr,
+                            (route.start_x, route.start_y, route.start_z),
+                            r,
+                        ),
+                        None => dist_sq <= r * r,
+                    };
+                    if entered {
+                        self.status.armed = false;
+                        self.status.armed_route_id = None;
+                        let ordinal = i(m, "CarOrdinal", 0);
+                        let name = self
+                            .car_database
+                            .get(&ordinal.to_string())
+                            .and_then(Value::as_object)
+                            .map(|x| {
+                                ["year", "make", "model"]
+                                    .iter()
+                                    .filter_map(|k| {
+                                        x.get(*k)
+                                            .map(|v| v.to_string().trim_matches('"').to_string())
+                                    })
+                                    .collect::<Vec<_>>()
+                                    .join(" ")
+                            })
+                            .filter(|x| !x.is_empty())
+                            .unwrap_or_else(|| {
+                                if ordinal > 0 {
+                                    format!("Car #{}", ordinal)
+                                } else {
+                                    "Armed Route Session".into()
+                                }
+                            });
+                        let mode = route.mode.clone();
+                        let _ = self.start_manual_with_mode(
+                            ordinal,
+                            name,
+                            i(m, "CarClass", 0),
+                            i(m, "CarPerformanceIndex", 0),
+                            now,
+                            &mode,
+                            Some(route),
+                        );
+                        self.was_inside_start = true;
                     }
                 }
             }
@@ -460,7 +530,7 @@ impl RaceRecorder {
                                 self.identity = Some(identity);
                                 self.append(data, ts);
                                 self.save_latest_and_clear("destination-reached");
-                                self.last_pos = current_pos;
+                                self.update_last_frame(current_pos, ordinal, ts, now);
                                 return;
                             }
                         }
@@ -501,18 +571,18 @@ impl RaceRecorder {
                     self.append(data, ts)
                 }
             }
-            self.last_pos = current_pos;
+            self.update_last_frame(current_pos, ordinal, ts, now);
             return;
         }
         if !self.status.is_recording {
             if !self.config.automatic {
-                self.last_pos = current_pos;
+                self.update_last_frame(current_pos, ordinal, ts, now);
                 return;
             }
             self.start_auto(m)
         }
         if !self.status.is_recording {
-            self.last_pos = current_pos;
+            self.update_last_frame(current_pos, ordinal, ts, now);
             return;
         };
         self.last_timestamp = Some(ts);
@@ -522,7 +592,7 @@ impl RaceRecorder {
         self.identity = Some(identity);
         if self.status.total_count >= self.config.max_samples {
             self.save_latest_and_clear("sample-limit");
-            self.last_pos = current_pos;
+            self.update_last_frame(current_pos, ordinal, ts, now);
             return;
         }
         let boundary = if self.recording_mode == "time_trial" {
@@ -542,15 +612,18 @@ impl RaceRecorder {
                 .map(|x| ts - x < self.config.downsample_interval_ms)
                 .unwrap_or(false)
         {
-            self.last_pos = current_pos;
+            self.update_last_frame(current_pos, ordinal, ts, now);
             return;
         }
         self.append(data, ts);
-        self.last_pos = current_pos;
+        self.update_last_frame(current_pos, ordinal, ts, now);
     }
     pub fn tick(&mut self, now: f64) {
         if !now.is_finite() {
             return;
+        }
+        if self.last_pos_now.map(|x| now - x >= 3.0).unwrap_or(false) {
+            self.invalidate_continuity();
         }
         if !self.status.manual_mode && self.awaiting_since.map(|x| now - x >= 3.0).unwrap_or(false)
         {
