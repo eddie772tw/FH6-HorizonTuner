@@ -348,6 +348,11 @@ impl App {
                 json!({"success": true, "message": "Disarmed successfully"})
             }
             ("POST", ["api", "analysis", "routes", "import"]) => {
+                if let Some(schema) = data.get("schema").and_then(Value::as_str) {
+                    if schema != "fh6-custom-route/v1" {
+                        return Err(ApiError::invalid(format!("Unsupported schema: {schema}")));
+                    }
+                }
                 let overwrite = request.query.get("overwrite").is_some_and(|s| s == "true" || s == "1");
                 let routes_to_import: Vec<Value> = if let Some(arr) = data.as_array() {
                     arr.clone()
@@ -363,7 +368,15 @@ impl App {
                 if routes_to_import.is_empty() {
                     return Err(ApiError::invalid("No route data found in payload"));
                 }
-                let mut saved_routes = Vec::new();
+                for r in &routes_to_import {
+                    if let Some(rid) = r.get("route_id").and_then(Value::as_str) {
+                        if !rid.is_empty() && uuid::Uuid::parse_str(rid).is_err() {
+                            return Err(ApiError::invalid(format!("Invalid route_id UUID: {rid}")));
+                        }
+                    }
+                    crate::telemetry::validate_custom_route(r).map_err(ApiError::invalid)?;
+                }
+                let mut prepared_routes = Vec::new();
                 for mut r in routes_to_import {
                     let mut rid = r.get("route_id").and_then(Value::as_str).unwrap_or_default().to_string();
                     let exists = if !rid.is_empty() {
@@ -381,8 +394,13 @@ impl App {
                             }
                         }
                     }
-                    self.database.save_route(&r).map_err(database_error)?;
-                    if let Some(saved) = self.database.get_route(&rid).map_err(database_error)? {
+                    prepared_routes.push(r);
+                }
+                self.database.save_routes_batch(&prepared_routes).map_err(database_error)?;
+                let mut saved_routes = Vec::new();
+                for r in &prepared_routes {
+                    let rid = r.get("route_id").and_then(Value::as_str).unwrap_or_default();
+                    if let Some(saved) = self.database.get_route(rid).map_err(database_error)? {
                         saved_routes.push(saved);
                     }
                 }

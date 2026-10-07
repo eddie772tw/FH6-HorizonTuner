@@ -24,4 +24,4 @@ pub use packet::{
 pub use race::{
     ActiveRoute, RaceRecorder, RaceRecorderConfig, RaceRecorderStatus, RecorderCommand,
 };
-pub use sqlite::TelemetryStore;
+pub use sqlite::{validate_custom_route, TelemetryStore};

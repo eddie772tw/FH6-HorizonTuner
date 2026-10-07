@@ -137,5 +137,14 @@ describe("routeTriggerMath", () => {
     it("handles empty points safely", () => {
       expect(calculateLapsFromPoints([])).toEqual([]);
     });
+
+    it("does not invent a complete lap from an unbounded CSV fragment", () => {
+      const laps = calculateLapsFromPoints([
+        { time: 10, LapNumber: 1 },
+        { time: 12, LapNumber: 1 },
+      ] as AnalysisDataPoint[]);
+      expect(laps[0].complete).toBe(false);
+      expect(laps[0].lap_time).toBeNull();
+    });
   });
 });

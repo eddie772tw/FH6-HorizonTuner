@@ -195,17 +195,40 @@ export function calculateLapsFromPoints(
     const startDistance = validDistances.length > 0 ? Math.min(...validDistances) : null;
     const endDistance = validDistances.length > 0 ? Math.max(...validDistances) : null;
 
-    const isComplete = observedSpan > 1.0;
+    const hasLastLap = group.some(
+      (p) => typeof p.LastLap === "number" && Number.isFinite(p.LastLap) && p.LastLap > 0
+    );
+    const hasNextLap = lapNum < Math.max(...sortedLaps);
+    const hasStartBoundary =
+      (startDistance !== null && startDistance <= 15.0) ||
+      minTime <= 1.0 ||
+      group.some(
+        (p) => typeof p.CurrentLap === "number" && Number.isFinite(p.CurrentLap) && p.CurrentLap <= 5.0
+      );
+    const hasDistanceSpan =
+      startDistance !== null &&
+      endDistance !== null &&
+      endDistance - startDistance >= 100.0;
+
+    const isComplete =
+      observedSpan > 1.0 &&
+      (hasLastLap || (hasNextLap && hasStartBoundary) || (hasStartBoundary && hasDistanceSpan));
+
+    const lastLapVal = group
+      .map((p) => p.LastLap)
+      .find((l): l is number => typeof l === "number" && Number.isFinite(l) && l > 0);
 
     result.push({
       lap_number: lapNum,
-      lap_time: isComplete ? Math.round(observedSpan * 1000) / 1000 : null,
+      lap_time: isComplete
+        ? (lastLapVal ? Math.round(lastLapVal * 1000) / 1000 : Math.round(observedSpan * 1000) / 1000)
+        : null,
       start_distance: startDistance,
       end_distance: endDistance,
       max_speed_kmh: maxSpeedKmh,
       avg_speed_kmh: avgSpeedKmh,
       complete: isComplete,
-      lap_time_source: "motec-span",
+      lap_time_source: hasLastLap ? "game-lastlap" : "motec-span",
       observed_span: Math.round(observedSpan * 1000) / 1000,
     });
   }

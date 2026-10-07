@@ -131,7 +131,7 @@ fn decoded_contract_matches_python_variants() {
 fn parser_has_python_rejection_reasons() {
     assert_eq!(parse_packet(&[0; 3]).unwrap_err(), "too_short");
     let mut b = vec![0u8; 232];
-    assert_eq!(parse_packet(&b).unwrap_err(), "not_racing");
+    assert!(parse_packet(&b).is_ok());
     set_i32(&mut b, 0, 1);
     assert!(parse_packet(&b).is_ok());
     assert_eq!(parse_packet(&vec![0; 233]).unwrap_err(), "partial_schema");
@@ -1247,9 +1247,9 @@ fn test_motec_ld_edge_cases_and_beacon_robustness() {
     // Must use observed_span as beacon duration
     assert!(xml_incomplete.contains("Name=\"1\" Flags=\"77\" Time=\"0.00000000000000000E+00\""));
     assert!(xml_incomplete.contains("Name=\"2\" Flags=\"77\" Time=\"5.23400000000000000E+07\""));
-    assert!(xml_incomplete.contains("<String Id=\"Total Laps\" Value=\"1\"/>"));
-    assert!(xml_incomplete.contains("<String Id=\"Fastest Lap\" Value=\"1\"/>"));
-    assert!(xml_incomplete.contains("<String Id=\"Fastest Time\" Value=\"0:52.340\"/>"));
+    assert!(xml_incomplete.contains("<String Id=\"Total Laps\" Value=\"0\"/>"));
+    assert!(!xml_incomplete.contains("Fastest Lap"));
+    assert!(!xml_incomplete.contains("Fastest Time"));
 
     // 4. Test completely empty session
     let meta = json!({ "session_id": "empty_session", "car_name": "Test" });

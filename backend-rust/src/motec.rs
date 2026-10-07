@@ -811,6 +811,15 @@ pub fn generate_ldx_xml(laps: &[Value], points: &[Value]) -> String {
     let mut beacon_times: Vec<f64> = Vec::new();
 
     if !laps.is_empty() {
+        let t_start = points
+            .first()
+            .and_then(|p| p.get("time").and_then(Value::as_f64))
+            .unwrap_or(0.0);
+        let t_end = points
+            .last()
+            .and_then(|p| p.get("time").and_then(Value::as_f64))
+            .unwrap_or(t_start);
+
         let mut cum_time = 0.0;
         beacon_times.push(0.0);
         for lap in laps {
@@ -825,21 +834,18 @@ pub fn generate_ldx_xml(laps: &[Value], points: &[Value]) -> String {
                 });
             if let Some(dur) = dur {
                 cum_time += dur;
-                beacon_times.push(cum_time);
+                let rel_time = if t_start > 0.0 {
+                    cum_time - t_start
+                } else {
+                    cum_time
+                };
+                if rel_time > 0.0 && (t_start == 0.0 || rel_time <= (t_end - t_start + 1e-4)) {
+                    beacon_times.push(rel_time);
+                }
             }
         }
-        if beacon_times.len() == 1 && !points.is_empty() {
-            let t_start = points
-                .first()
-                .and_then(|p| p.get("time").and_then(Value::as_f64))
-                .unwrap_or(0.0);
-            let t_end = points
-                .last()
-                .and_then(|p| p.get("time").and_then(Value::as_f64))
-                .unwrap_or(t_start);
-            if t_end > t_start {
-                beacon_times.push(t_end - t_start);
-            }
+        if beacon_times.len() == 1 && !points.is_empty() && t_end > t_start {
+            beacon_times.push(t_end - t_start);
         }
     } else if !points.is_empty() {
         let mut current_lap = -1i64;
@@ -873,36 +879,47 @@ pub fn generate_ldx_xml(laps: &[Value], points: &[Value]) -> String {
         }
     }
 
+    let completed_laps: Vec<&Value> = laps
+        .iter()
+        .filter(|lap| {
+            let is_complete = lap
+                .get("complete")
+                .map(|c| c == 1 || c == true || c.as_i64() == Some(1) || c.as_bool() == Some(true))
+                .unwrap_or(false);
+            let has_valid_time = lap
+                .get("lap_time")
+                .and_then(Value::as_f64)
+                .is_some_and(|d| d > 0.0);
+            is_complete && has_valid_time
+        })
+        .collect();
+
     let total_laps = if !laps.is_empty() {
-        laps.len()
+        completed_laps.len()
     } else {
         beacon_times.len().saturating_sub(1)
     };
 
     let mut fastest_time = 0.0;
     let mut fastest_lap = 1usize;
-    for (i, lap) in laps.iter().enumerate() {
-        if let Some(t) = lap
-            .get("lap_time")
-            .and_then(Value::as_f64)
-            .filter(|&d| d > 0.0)
-            .or_else(|| {
-                lap.get("observed_span")
-                    .and_then(Value::as_f64)
-                    .filter(|&d| d > 0.0)
-            })
-        {
-            if fastest_time == 0.0 || t < fastest_time {
-                fastest_time = t;
-                fastest_lap = lap
-                    .get("lap_number")
-                    .and_then(Value::as_u64)
-                    .map(|n| n as usize)
-                    .unwrap_or(i + 1);
+    if !laps.is_empty() {
+        for lap in &completed_laps {
+            if let Some(t) = lap
+                .get("lap_time")
+                .and_then(Value::as_f64)
+                .filter(|&d| d > 0.0)
+            {
+                if fastest_time == 0.0 || t < fastest_time {
+                    fastest_time = t;
+                    fastest_lap = lap
+                        .get("lap_number")
+                        .and_then(Value::as_u64)
+                        .map(|n| n as usize)
+                        .unwrap_or(1);
+                }
             }
         }
-    }
-    if fastest_time == 0.0 && beacon_times.len() >= 2 {
+    } else if beacon_times.len() >= 2 {
         for i in 0..beacon_times.len() - 1 {
             let dur = beacon_times[i + 1] - beacon_times[i];
             if dur > 0.0 && (fastest_time == 0.0 || dur < fastest_time) {

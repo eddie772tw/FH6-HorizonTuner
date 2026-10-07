@@ -268,11 +268,6 @@ impl TelemetryStore {
             .unwrap_or("circuit");
         let is_time_trial = recording_mode == "time_trial";
         let is_roaming = recording_mode == "roaming";
-        let is_manual = metadata
-            .get("endReason")
-            .and_then(Value::as_str)
-            .map(|r| r.starts_with("manual-"))
-            .unwrap_or(false);
 
         for p in &points {
             let lap = i64v(p, "LapNumber", 0);
@@ -300,24 +295,18 @@ impl TelemetryStore {
             }
             previous_lap = Some(lap);
             let entry = laps.entry(lap).or_default();
-            let is_active_point = is_time_trial
-                || is_roaming
-                || is_manual
-                || p.get("IsRaceOn") != Some(&Value::from(0));
-            if is_active_point {
-                if let Some(current) = p.get("CurrentLap").and_then(Value::as_f64) {
-                    if (0.0..=5.0).contains(&current) {
-                        entry.start_observed = true;
-                    }
+            if let Some(current) = p.get("CurrentLap").and_then(Value::as_f64) {
+                if (0.0..=5.0).contains(&current) {
+                    entry.start_observed = true;
                 }
-                if let Some(t) = p.get("TimestampMS").and_then(Value::as_f64) {
-                    entry.times.push(t / 1000.0);
-                } else if let Some(t) = p.get("time").and_then(Value::as_f64) {
-                    entry.times.push(t);
-                }
-                if let Some(speed) = p.get("SpeedMetersPerSecond").and_then(Value::as_f64) {
-                    entry.speeds.push(speed * 3.6);
-                }
+            }
+            if let Some(t) = p.get("TimestampMS").and_then(Value::as_f64) {
+                entry.times.push(t / 1000.0);
+            } else if let Some(t) = p.get("time").and_then(Value::as_f64) {
+                entry.times.push(t);
+            }
+            if let Some(speed) = p.get("SpeedMetersPerSecond").and_then(Value::as_f64) {
+                entry.speeds.push(speed * 3.6);
             }
             if let Some(d) = p.get("lap_distance").and_then(Value::as_f64) {
                 distances.push(d)
@@ -336,11 +325,15 @@ impl TelemetryStore {
                 .map(|(max, min)| max - min);
             let (is_complete, lap_time, source) = if is_time_trial {
                 if *lap_number < max_lap_number {
-                    if let Some(span) = observed_span {
-                        (true, Some(span), "gate-crossing")
-                    } else {
-                        (false, None, "gate-crossing")
-                    }
+                    let lap_start = entry.times.first().copied();
+                    let next_start = laps
+                        .get(&(lap_number + 1))
+                        .and_then(|n| n.times.first().copied());
+                    let duration = match (next_start, lap_start) {
+                        (Some(n), Some(s)) if n > s => Some(((n - s) * 1000.0).round() / 1000.0),
+                        _ => observed_span,
+                    };
+                    (true, duration, "gate-crossing")
                 } else {
                     // Final unfinished lap cut off by stop
                     (false, None, "gate-crossing")
@@ -433,7 +426,7 @@ impl TelemetryStore {
                     speed >= 1.0 || accel >= 5.0
                 })
                 .unwrap_or(0);
-            let last_active_idx = points
+            let mut last_active_idx = points
                 .iter()
                 .rposition(|p| {
                     let speed = p
@@ -443,6 +436,25 @@ impl TelemetryStore {
                     speed >= 1.0
                 })
                 .unwrap_or(points.len().saturating_sub(1));
+
+            if is_time_trial {
+                if complete > 0 {
+                    let last_comp = lap_rows
+                        .iter()
+                        .filter(|(_, _, _, _, _, is_c, _)| *is_c)
+                        .map(|(lap_num, _, _, _, _, _, _)| *lap_num)
+                        .max()
+                        .unwrap_or(0);
+                    if let Some(closing_idx) = points
+                        .iter()
+                        .position(|p| i64v(p, "LapNumber", 0) > last_comp)
+                    {
+                        last_active_idx = closing_idx;
+                    }
+                } else {
+                    last_active_idx = first_active_idx;
+                }
+            }
 
             let valid_start_time = points
                 .get(first_active_idx)
@@ -460,7 +472,9 @@ impl TelemetryStore {
                 0
             };
             let tail_trim_seconds = (last_time - valid_end_time).max(0.0);
-            let trimmed_sample_count = if last_active_idx >= first_active_idx {
+            let trimmed_sample_count = if is_time_trial && complete == 0 {
+                0
+            } else if last_active_idx >= first_active_idx {
                 last_active_idx - first_active_idx + 1
             } else {
                 points.len()
@@ -664,84 +678,99 @@ impl TelemetryStore {
             None => Ok(None),
         }
     }
+    pub fn validate_custom_route(route: &Value) -> Result<(), String> {
+        validate_custom_route(route)
+    }
     pub fn save_route(&self, route: &Value) -> Result<(), String> {
-        let c = self.conn()?;
-        let route_id = route
-            .get("route_id")
-            .and_then(Value::as_str)
-            .ok_or_else(|| "route_id is required".to_string())?;
-        let name = route
-            .get("name")
-            .and_then(Value::as_str)
-            .unwrap_or("Untitled Route");
-        let mode = route
-            .get("mode")
-            .and_then(Value::as_str)
-            .unwrap_or("circuit");
-        let start_x = route
-            .get("start_x")
-            .and_then(Value::as_f64)
-            .ok_or_else(|| "start_x is required".to_string())?;
-        let start_y = route
-            .get("start_y")
-            .and_then(Value::as_f64)
-            .ok_or_else(|| "start_y is required".to_string())?;
-        let start_z = route
-            .get("start_z")
-            .and_then(Value::as_f64)
-            .ok_or_else(|| "start_z is required".to_string())?;
-        let start_radius = route
-            .get("start_radius")
-            .and_then(Value::as_f64)
-            .unwrap_or(15.0)
-            .clamp(5.0, 50.0);
-        let end_x = route.get("end_x").and_then(Value::as_f64);
-        let end_y = route.get("end_y").and_then(Value::as_f64);
-        let end_z = route.get("end_z").and_then(Value::as_f64);
-        let end_radius = route
-            .get("end_radius")
-            .and_then(Value::as_f64)
-            .map(|r| r.clamp(5.0, 50.0));
-        let metadata_json = route
-            .get("metadata")
-            .map(|m| serde_json::to_string(m).unwrap_or_default());
-        let now = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .map(|d| d.as_secs_f64())
-            .unwrap_or(0.0);
-        let created_at = route
-            .get("created_at")
-            .and_then(Value::as_f64)
-            .unwrap_or(now);
-        let updated_at = now;
+        self.save_routes_batch(std::slice::from_ref(route))
+    }
+    pub fn save_routes_batch(&self, routes: &[Value]) -> Result<(), String> {
+        for r in routes {
+            validate_custom_route(r)?;
+        }
+        let mut c = self.conn()?;
+        let tx = c.transaction().map_err(|e| e.to_string())?;
+        for route in routes {
+            let route_id = route
+                .get("route_id")
+                .and_then(Value::as_str)
+                .ok_or_else(|| "route_id is required".to_string())?;
+            let name = route
+                .get("name")
+                .and_then(Value::as_str)
+                .unwrap_or("Untitled Route");
+            let mode = route
+                .get("mode")
+                .and_then(Value::as_str)
+                .unwrap_or("circuit");
+            let start_x = route
+                .get("start_x")
+                .and_then(Value::as_f64)
+                .ok_or_else(|| "start_x is required".to_string())?;
+            let start_y = route
+                .get("start_y")
+                .and_then(Value::as_f64)
+                .ok_or_else(|| "start_y is required".to_string())?;
+            let start_z = route
+                .get("start_z")
+                .and_then(Value::as_f64)
+                .ok_or_else(|| "start_z is required".to_string())?;
+            let start_radius = route
+                .get("start_radius")
+                .and_then(Value::as_f64)
+                .unwrap_or(15.0);
+            let end_x = route.get("end_x").and_then(Value::as_f64);
+            let end_y = route.get("end_y").and_then(Value::as_f64);
+            let end_z = route.get("end_z").and_then(Value::as_f64);
+            let end_radius = route.get("end_radius").and_then(Value::as_f64).or_else(|| {
+                if mode == "roaming" {
+                    Some(15.0)
+                } else {
+                    None
+                }
+            });
+            let metadata_json = route
+                .get("metadata")
+                .map(|m| serde_json::to_string(m).unwrap_or_default());
+            let now = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map(|d| d.as_secs_f64())
+                .unwrap_or(0.0);
+            let created_at = route
+                .get("created_at")
+                .and_then(Value::as_f64)
+                .unwrap_or(now);
+            let updated_at = now;
 
-        c.execute(
-            "INSERT INTO custom_routes (route_id, name, mode, start_x, start_y, start_z, start_radius, \
-             end_x, end_y, end_z, end_radius, metadata_json, created_at, updated_at) \
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) \
-             ON CONFLICT(route_id) DO UPDATE SET \
-             name=excluded.name, mode=excluded.mode, \
-             start_x=excluded.start_x, start_y=excluded.start_y, start_z=excluded.start_z, start_radius=excluded.start_radius, \
-             end_x=excluded.end_x, end_y=excluded.end_y, end_z=excluded.end_z, end_radius=excluded.end_radius, \
-             metadata_json=excluded.metadata_json, updated_at=excluded.updated_at",
-            params![
-                route_id,
-                name,
-                mode,
-                start_x,
-                start_y,
-                start_z,
-                start_radius,
-                end_x,
-                end_y,
-                end_z,
-                end_radius,
-                metadata_json,
-                created_at,
-                updated_at,
-            ],
-        )
-        .map_err(|e| e.to_string())?;
+            tx.execute(
+                "INSERT INTO custom_routes (route_id, name, mode, start_x, start_y, start_z, start_radius, \
+                 end_x, end_y, end_z, end_radius, metadata_json, created_at, updated_at) \
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) \
+                 ON CONFLICT(route_id) DO UPDATE SET \
+                 name=excluded.name, mode=excluded.mode, \
+                 start_x=excluded.start_x, start_y=excluded.start_y, start_z=excluded.start_z, start_radius=excluded.start_radius, \
+                 end_x=excluded.end_x, end_y=excluded.end_y, end_z=excluded.end_z, end_radius=excluded.end_radius, \
+                 metadata_json=excluded.metadata_json, updated_at=excluded.updated_at",
+                params![
+                    route_id,
+                    name,
+                    mode,
+                    start_x,
+                    start_y,
+                    start_z,
+                    start_radius,
+                    end_x,
+                    end_y,
+                    end_z,
+                    end_radius,
+                    metadata_json,
+                    created_at,
+                    updated_at,
+                ],
+            )
+            .map_err(|e| e.to_string())?;
+        }
+        tx.commit().map_err(|e| e.to_string())?;
         Ok(())
     }
     pub fn delete_route(&self, route_id: &str) -> Result<bool, String> {
@@ -859,4 +888,61 @@ fn i64v(v: &Value, k: &str, d: i64) -> i64 {
         .and_then(Value::as_i64)
         .or_else(|| v.get(k).and_then(Value::as_f64).map(|x| x as i64))
         .unwrap_or(d)
+}
+
+pub fn validate_custom_route(route: &Value) -> Result<(), String> {
+    if let Some(schema) = route.get("schema").and_then(Value::as_str) {
+        if schema != "fh6-custom-route/v1" {
+            return Err(format!("Unsupported schema: {schema}"));
+        }
+    }
+    if let Some(rid) = route.get("route_id").and_then(Value::as_str) {
+        if rid.trim().is_empty() {
+            return Err("route_id cannot be empty".to_string());
+        }
+    }
+    let name = route.get("name").and_then(Value::as_str).unwrap_or("");
+    if name.trim().is_empty() {
+        return Err("Route name is required".to_string());
+    }
+    let mode = route.get("mode").and_then(Value::as_str).unwrap_or("");
+    if !["circuit", "time_trial", "roaming"].contains(&mode) {
+        return Err(format!("Invalid route mode: {mode}"));
+    }
+    let sx = route.get("start_x").and_then(Value::as_f64);
+    let sy = route.get("start_y").and_then(Value::as_f64);
+    let sz = route.get("start_z").and_then(Value::as_f64);
+    if sx.is_none_or(|v| !v.is_finite())
+        || sy.is_none_or(|v| !v.is_finite())
+        || sz.is_none_or(|v| !v.is_finite())
+    {
+        return Err(
+            "Start coordinates (start_x, start_y, start_z) are required and must be finite numbers"
+                .to_string(),
+        );
+    }
+    if let Some(sr) = route.get("start_radius").and_then(Value::as_f64) {
+        if !sr.is_finite() || sr < 5.0 || sr > 50.0 {
+            return Err("start_radius must be between 5.0 and 50.0".to_string());
+        }
+    }
+    if mode == "roaming" {
+        let ex = route.get("end_x").and_then(Value::as_f64);
+        let ey = route.get("end_y").and_then(Value::as_f64);
+        let ez = route.get("end_z").and_then(Value::as_f64);
+        if ex.is_none_or(|v| !v.is_finite())
+            || ey.is_none_or(|v| !v.is_finite())
+            || ez.is_none_or(|v| !v.is_finite())
+        {
+            return Err(
+                "End coordinates (end_x, end_y, end_z) are required for roaming mode".to_string(),
+            );
+        }
+        if let Some(er) = route.get("end_radius").and_then(Value::as_f64) {
+            if !er.is_finite() || er < 5.0 || er > 50.0 {
+                return Err("end_radius must be between 5.0 and 50.0".to_string());
+            }
+        }
+    }
+    Ok(())
 }
