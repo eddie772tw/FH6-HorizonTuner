@@ -21,5 +21,7 @@ pub use packet::{
     pack_binary, parse_packet, FULL_TELEMETRY_PACKET_LENGTH, FULL_TELEMETRY_SCHEMA,
     LEGACY_TELEMETRY_PACKET_LENGTH, LEGACY_TELEMETRY_SCHEMA,
 };
-pub use race::{ActiveRoute, RaceRecorder, RaceRecorderConfig, RaceRecorderStatus, RecorderCommand};
+pub use race::{
+    ActiveRoute, RaceRecorder, RaceRecorderConfig, RaceRecorderStatus, RecorderCommand,
+};
 pub use sqlite::TelemetryStore;

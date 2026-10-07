@@ -264,7 +264,15 @@ impl RaceRecorder {
         car_pi: i64,
         start_time: f64,
     ) -> Result<String, String> {
-        self.start_manual_with_mode(car_ordinal, car_name, car_class, car_pi, start_time, "circuit", None)
+        self.start_manual_with_mode(
+            car_ordinal,
+            car_name,
+            car_class,
+            car_pi,
+            start_time,
+            "circuit",
+            None,
+        )
     }
     pub fn record(&mut self, data: &Value) {
         self.record_at(data, now_seconds());
@@ -391,12 +399,9 @@ impl RaceRecorder {
                     {
                         if let Some(curr) = current_pos {
                             let reached = match self.last_pos {
-                                Some(prev) => segment_intersects_sphere(
-                                    prev,
-                                    curr,
-                                    (ex, ey, ez),
-                                    er,
-                                ),
+                                Some(prev) => {
+                                    segment_intersects_sphere(prev, curr, (ex, ey, ez), er)
+                                }
                                 None => is_inside_sphere(curr.0, curr.1, curr.2, ex, ey, ez, er),
                             };
                             if reached {
@@ -518,7 +523,8 @@ impl RaceRecorder {
         if !now.is_finite() {
             return;
         }
-        if !self.status.manual_mode && self.awaiting_since.map(|x| now - x >= 3.0).unwrap_or(false) {
+        if !self.status.manual_mode && self.awaiting_since.map(|x| now - x >= 3.0).unwrap_or(false)
+        {
             self.save_latest_and_clear("race-stopped")
         } else if self
             .last_progress_at
@@ -681,5 +687,7 @@ pub fn segment_intersects_sphere(
     let closest_x = p0.0 + t * vx;
     let closest_y = p0.1 + t * vy;
     let closest_z = p0.2 + t * vz;
-    is_inside_sphere(closest_x, closest_y, closest_z, center.0, center.1, center.2, radius)
+    is_inside_sphere(
+        closest_x, closest_y, closest_z, center.0, center.1, center.2, radius,
+    )
 }

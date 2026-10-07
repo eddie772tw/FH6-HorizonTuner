@@ -454,7 +454,10 @@ impl App {
         let Some(metadata) = self.database.get_session(&id).map_err(database_error)? else {
             return Ok(failure("Session not found"));
         };
-        let is_raw = request.query.get("raw").is_some_and(|s| s == "true" || s == "1");
+        let is_raw = request
+            .query
+            .get("raw")
+            .is_some_and(|s| s == "true" || s == "1");
         let points = self
             .database
             .get_telemetry_points(&id, None)
@@ -465,14 +468,25 @@ impl App {
         let points = if !is_raw {
             if let Ok(meta) = self.database.get_session_metadata(&id) {
                 if let Some(trim) = meta.get("trim_analysis") {
-                    let start = trim.get("valid_start_time").and_then(Value::as_f64).unwrap_or(0.0);
-                    let end = trim.get("valid_end_time").and_then(Value::as_f64).unwrap_or(f64::INFINITY);
-                    let filtered: Vec<Value> = points.into_iter().filter(|p| {
-                        let t = p.get("time").and_then(Value::as_f64).unwrap_or(0.0);
-                        t >= start && t <= end
-                    }).collect();
+                    let start = trim
+                        .get("valid_start_time")
+                        .and_then(Value::as_f64)
+                        .unwrap_or(0.0);
+                    let end = trim
+                        .get("valid_end_time")
+                        .and_then(Value::as_f64)
+                        .unwrap_or(f64::INFINITY);
+                    let filtered: Vec<Value> = points
+                        .into_iter()
+                        .filter(|p| {
+                            let t = p.get("time").and_then(Value::as_f64).unwrap_or(0.0);
+                            t >= start && t <= end
+                        })
+                        .collect();
                     if filtered.is_empty() {
-                        self.database.get_telemetry_points(&id, None).map_err(database_error)?
+                        self.database
+                            .get_telemetry_points(&id, None)
+                            .map_err(database_error)?
                     } else {
                         filtered
                     }

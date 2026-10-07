@@ -262,10 +262,17 @@ impl TelemetryStore {
         let mut previous_lap: Option<i64> = None;
         let mut pending_lap: Option<i64> = None;
         let mut previous_last: Option<f64> = None;
-        let recording_mode = metadata.get("recording_mode").and_then(Value::as_str).unwrap_or("circuit");
+        let recording_mode = metadata
+            .get("recording_mode")
+            .and_then(Value::as_str)
+            .unwrap_or("circuit");
         let is_time_trial = recording_mode == "time_trial";
         let is_roaming = recording_mode == "roaming";
-        let is_manual = metadata.get("endReason").and_then(Value::as_str).map(|r| r.starts_with("manual-")).unwrap_or(false);
+        let is_manual = metadata
+            .get("endReason")
+            .and_then(Value::as_str)
+            .map(|r| r.starts_with("manual-"))
+            .unwrap_or(false);
 
         for p in &points {
             let lap = i64v(p, "LapNumber", 0);
@@ -293,7 +300,10 @@ impl TelemetryStore {
             }
             previous_lap = Some(lap);
             let entry = laps.entry(lap).or_default();
-            let is_active_point = is_time_trial || is_roaming || is_manual || p.get("IsRaceOn") != Some(&Value::from(0));
+            let is_active_point = is_time_trial
+                || is_roaming
+                || is_manual
+                || p.get("IsRaceOn") != Some(&Value::from(0));
             if is_active_point {
                 if let Some(current) = p.get("CurrentLap").and_then(Value::as_f64) {
                     if (0.0..=5.0).contains(&current) {
@@ -336,7 +346,8 @@ impl TelemetryStore {
                     (false, None, "gate-crossing")
                 }
             } else if is_roaming {
-                let reached = metadata.get("endReason").and_then(Value::as_str) == Some("destination-reached");
+                let reached = metadata.get("endReason").and_then(Value::as_str)
+                    == Some("destination-reached");
                 if reached {
                     (true, observed_span, "gate-crossing")
                 } else {
@@ -395,24 +406,50 @@ impl TelemetryStore {
                 "trimmed_sample_count": 0
             })
         } else {
-            let first_time = points.first().and_then(|p| p.get("time").and_then(Value::as_f64)).unwrap_or(0.0);
-            let last_time = points.last().and_then(|p| p.get("time").and_then(Value::as_f64)).unwrap_or(0.0);
-            let first_active_idx = points.iter().position(|p| {
-                let speed = p.get("SpeedMetersPerSecond").and_then(Value::as_f64).unwrap_or(0.0);
-                let accel = p.get("accel_pct").and_then(Value::as_f64)
-                    .or_else(|| p.get("AccelInput").and_then(Value::as_f64).map(|x| x / 2.55))
-                    .unwrap_or(0.0);
-                speed >= 1.0 || accel >= 5.0
-            }).unwrap_or(0);
-            let last_active_idx = points.iter().rposition(|p| {
-                let speed = p.get("SpeedMetersPerSecond").and_then(Value::as_f64).unwrap_or(0.0);
-                speed >= 1.0
-            }).unwrap_or(points.len().saturating_sub(1));
+            let first_time = points
+                .first()
+                .and_then(|p| p.get("time").and_then(Value::as_f64))
+                .unwrap_or(0.0);
+            let last_time = points
+                .last()
+                .and_then(|p| p.get("time").and_then(Value::as_f64))
+                .unwrap_or(0.0);
+            let first_active_idx = points
+                .iter()
+                .position(|p| {
+                    let speed = p
+                        .get("SpeedMetersPerSecond")
+                        .and_then(Value::as_f64)
+                        .unwrap_or(0.0);
+                    let accel = p
+                        .get("accel_pct")
+                        .and_then(Value::as_f64)
+                        .or_else(|| {
+                            p.get("AccelInput")
+                                .and_then(Value::as_f64)
+                                .map(|x| x / 2.55)
+                        })
+                        .unwrap_or(0.0);
+                    speed >= 1.0 || accel >= 5.0
+                })
+                .unwrap_or(0);
+            let last_active_idx = points
+                .iter()
+                .rposition(|p| {
+                    let speed = p
+                        .get("SpeedMetersPerSecond")
+                        .and_then(Value::as_f64)
+                        .unwrap_or(0.0);
+                    speed >= 1.0
+                })
+                .unwrap_or(points.len().saturating_sub(1));
 
-            let valid_start_time = points.get(first_active_idx)
+            let valid_start_time = points
+                .get(first_active_idx)
                 .and_then(|p| p.get("time").and_then(Value::as_f64))
                 .unwrap_or(first_time);
-            let valid_end_time = points.get(last_active_idx)
+            let valid_end_time = points
+                .get(last_active_idx)
                 .and_then(|p| p.get("time").and_then(Value::as_f64))
                 .unwrap_or(last_time);
             let head_trim_samples = first_active_idx;
@@ -461,7 +498,9 @@ impl TelemetryStore {
         let mut insert = tx
             .prepare("INSERT OR REPLACE INTO laps(session_id,lap_number,lap_time,start_distance,end_distance,max_speed_kmh,avg_speed_kmh,lap_time_source,complete,observed_span) VALUES(?,?,?,?,?,?,?,?,?,?)")
             .map_err(|e| e.to_string())?;
-        for (lap_number, lap_time, observed_span, max_speed, avg_speed, is_complete, source) in lap_rows {
+        for (lap_number, lap_time, observed_span, max_speed, avg_speed, is_complete, source) in
+            lap_rows
+        {
             insert
                 .execute(params![
                     id,
@@ -708,7 +747,10 @@ impl TelemetryStore {
     pub fn delete_route(&self, route_id: &str) -> Result<bool, String> {
         let c = self.conn()?;
         let affected = c
-            .execute("DELETE FROM custom_routes WHERE route_id=?", params![route_id])
+            .execute(
+                "DELETE FROM custom_routes WHERE route_id=?",
+                params![route_id],
+            )
             .map_err(|e| e.to_string())?;
         Ok(affected > 0)
     }

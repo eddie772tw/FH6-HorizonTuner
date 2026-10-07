@@ -641,42 +641,62 @@ fn test_time_trial_gate_trigger() {
 
     recorder.arm_route(active_route);
     assert!(recorder.status().armed);
-    assert_eq!(recorder.status().armed_route_id.as_deref(), Some("tt-route"));
+    assert_eq!(
+        recorder.status().armed_route_id.as_deref(),
+        Some("tt-route")
+    );
 
     // Far away: distance ~ 141m
-    recorder.record_at(&json!({
-        "PositionX": 100.0, "PositionY": 0.0, "PositionZ": 100.0,
-        "TimestampMS": 1000.0, "CarOrdinal": 1
-    }), 1.0);
+    recorder.record_at(
+        &json!({
+            "PositionX": 100.0, "PositionY": 0.0, "PositionZ": 100.0,
+            "TimestampMS": 1000.0, "CarOrdinal": 1
+        }),
+        1.0,
+    );
     assert!(recorder.status().armed);
     assert!(!recorder.status().is_recording);
 
     // Crosses start gate: distance = 10m <= 15m
-    recorder.record_at(&json!({
-        "PositionX": 10.0, "PositionY": 0.0, "PositionZ": 0.0,
-        "TimestampMS": 2000.0, "CarOrdinal": 1
-    }), 2.0);
+    recorder.record_at(
+        &json!({
+            "PositionX": 10.0, "PositionY": 0.0, "PositionZ": 0.0,
+            "TimestampMS": 2000.0, "CarOrdinal": 1
+        }),
+        2.0,
+    );
     assert!(!recorder.status().armed);
     assert!(recorder.status().is_recording);
     assert_eq!(recorder.status().recording_mode, "time_trial");
 
     // Drives away: distance = 30m > 15m * 1.2 (18m)
-    recorder.record_at(&json!({
-        "PositionX": 30.0, "PositionY": 0.0, "PositionZ": 0.0,
-        "TimestampMS": 3000.0, "CarOrdinal": 1
-    }), 3.0);
+    recorder.record_at(
+        &json!({
+            "PositionX": 30.0, "PositionY": 0.0, "PositionZ": 0.0,
+            "TimestampMS": 3000.0, "CarOrdinal": 1
+        }),
+        3.0,
+    );
 
     // Re-enters start gate: completes Lap 1, enters Lap 2
-    recorder.record_at(&json!({
-        "PositionX": 5.0, "PositionY": 0.0, "PositionZ": 0.0,
-        "TimestampMS": 4000.0, "CarOrdinal": 1
-    }), 4.0);
+    recorder.record_at(
+        &json!({
+            "PositionX": 5.0, "PositionY": 0.0, "PositionZ": 0.0,
+            "TimestampMS": 4000.0, "CarOrdinal": 1
+        }),
+        4.0,
+    );
 
     recorder.save_latest_and_clear("manual-stop");
 
     let commands = recorder.drain_commands();
-    assert!(commands.iter().any(|c| matches!(c, RecorderCommand::CreateSession { .. })));
-    let write_cmd = commands.iter().find(|c| matches!(c, RecorderCommand::WritePoints { .. })).unwrap();
+    assert!(commands
+        .iter()
+        .any(|c| matches!(c, RecorderCommand::CreateSession { .. })));
+    let write_cmd = commands
+        .iter()
+        .find(|c| matches!(c, RecorderCommand::WritePoints { .. }))
+        .unwrap();
     if let RecorderCommand::WritePoints { points, .. } = write_cmd {
         assert_eq!(points.len(), 3);
         // Start crossing frame must be recorded as Lap 1, NOT Lap 2
@@ -688,7 +708,10 @@ fn test_time_trial_gate_trigger() {
         panic!("expected WritePoints command");
     }
 
-    let finalize_cmd = commands.iter().find(|c| matches!(c, RecorderCommand::Finalize { .. })).unwrap();
+    let finalize_cmd = commands
+        .iter()
+        .find(|c| matches!(c, RecorderCommand::Finalize { .. }))
+        .unwrap();
     if let RecorderCommand::Finalize { metadata, .. } = finalize_cmd {
         assert_eq!(metadata["recording_mode"], "time_trial");
         assert_eq!(metadata["route_id"], "tt-route");
@@ -717,19 +740,25 @@ fn test_high_speed_swept_gate_crossing() {
     recorder.arm_route(active_route);
 
     // Frame 1: Before gate at X = -15m (> 5m)
-    recorder.record_at(&json!({
-        "PositionX": -15.0, "PositionY": 0.0, "PositionZ": 0.0,
-        "TimestampMS": 1000.0, "CarOrdinal": 1
-    }), 1.0);
+    recorder.record_at(
+        &json!({
+            "PositionX": -15.0, "PositionY": 0.0, "PositionZ": 0.0,
+            "TimestampMS": 1000.0, "CarOrdinal": 1
+        }),
+        1.0,
+    );
     assert!(recorder.status().armed);
     assert!(!recorder.status().is_recording);
 
     // Frame 2: 100ms later at 360 km/h (100 m/s = 10m/frame), leaped past gate to X = +15m (> 5m)
     // Neither frame landing inside 5.0m, but segment swept directly through (0, 0, 0)
-    recorder.record_at(&json!({
-        "PositionX": 15.0, "PositionY": 0.0, "PositionZ": 0.0,
-        "TimestampMS": 1100.0, "CarOrdinal": 1
-    }), 1.1);
+    recorder.record_at(
+        &json!({
+            "PositionX": 15.0, "PositionY": 0.0, "PositionZ": 0.0,
+            "TimestampMS": 1100.0, "CarOrdinal": 1
+        }),
+        1.1,
+    );
 
     // Swept volume must detect and trigger the gate!
     assert!(!recorder.status().armed);
@@ -794,29 +823,41 @@ fn test_roaming_start_and_end_gate() {
 
     recorder.arm_route(active_route);
     // Enter start
-    recorder.record_at(&json!({
-        "PositionX": 5.0, "PositionY": 0.0, "PositionZ": 0.0,
-        "TimestampMS": 1000.0, "CarOrdinal": 1
-    }), 1.0);
+    recorder.record_at(
+        &json!({
+            "PositionX": 5.0, "PositionY": 0.0, "PositionZ": 0.0,
+            "TimestampMS": 1000.0, "CarOrdinal": 1
+        }),
+        1.0,
+    );
     assert!(recorder.status().is_recording);
 
     // Mid point
-    recorder.record_at(&json!({
-        "PositionX": 50.0, "PositionY": 0.0, "PositionZ": 50.0,
-        "TimestampMS": 2000.0, "CarOrdinal": 1
-    }), 2.0);
+    recorder.record_at(
+        &json!({
+            "PositionX": 50.0, "PositionY": 0.0, "PositionZ": 50.0,
+            "TimestampMS": 2000.0, "CarOrdinal": 1
+        }),
+        2.0,
+    );
     assert!(recorder.status().is_recording);
 
     // Reach destination: distance to (100, 0, 100) = sqrt(2^2 + 1^2) ~ 2.2m <= 10m
-    recorder.record_at(&json!({
-        "PositionX": 102.0, "PositionY": 0.0, "PositionZ": 101.0,
-        "TimestampMS": 3000.0, "CarOrdinal": 1
-    }), 3.0);
+    recorder.record_at(
+        &json!({
+            "PositionX": 102.0, "PositionY": 0.0, "PositionZ": 101.0,
+            "TimestampMS": 3000.0, "CarOrdinal": 1
+        }),
+        3.0,
+    );
 
     // Automatically finalized!
     assert!(!recorder.status().is_recording);
     let commands = recorder.drain_commands();
-    let finalize = commands.iter().find(|c| matches!(c, RecorderCommand::Finalize { .. })).unwrap();
+    let finalize = commands
+        .iter()
+        .find(|c| matches!(c, RecorderCommand::Finalize { .. }))
+        .unwrap();
     if let RecorderCommand::Finalize { metadata, .. } = finalize {
         assert_eq!(metadata["endReason"], "destination-reached");
         assert_eq!(metadata["recording_mode"], "roaming");
@@ -830,7 +871,9 @@ fn test_roaming_start_and_end_gate() {
 fn test_post_stop_trimming_and_provenance() {
     let dir = tempfile::tempdir().unwrap();
     let store = TelemetryStore::new(&dir.path().join("trim.db")).unwrap();
-    store.create_session("sess_trim", 1, "Car", 700, 800, 0.0).unwrap();
+    store
+        .create_session("sess_trim", 1, "Car", 700, 800, 0.0)
+        .unwrap();
 
     let points = vec![
         // Head stationary
@@ -846,7 +889,9 @@ fn test_post_stop_trimming_and_provenance() {
     ];
     store.insert_points_batch("sess_trim", &points).unwrap();
 
-    let res = store.finalize_session("sess_trim", json!({"recording_mode": "circuit"})).unwrap();
+    let res = store
+        .finalize_session("sess_trim", json!({"recording_mode": "circuit"}))
+        .unwrap();
     assert_eq!(res["session_id"], "sess_trim");
 
     let meta = store.get_session_metadata("sess_trim").unwrap();
