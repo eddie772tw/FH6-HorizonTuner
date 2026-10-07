@@ -517,16 +517,16 @@ impl App {
                 .next()
                 .unwrap()
                 .to_owned();
-            let ld_path = match storage::safe_path(&self.config.root.join("sessions"), &ld_filename)
-            {
+            let sessions_dir = self.config.root.join("sessions");
+            let _ = fs::create_dir_all(&sessions_dir);
+            let ld_path = match storage::safe_path(&sessions_dir, &ld_filename) {
                 Ok(path) => path,
                 Err(_) => return Ok(failure("Invalid session export path")),
             };
-            let ldx_path =
-                match storage::safe_path(&self.config.root.join("sessions"), &ldx_filename) {
-                    Ok(path) => path,
-                    Err(_) => return Ok(failure("Invalid session export path")),
-                };
+            let ldx_path = match storage::safe_path(&sessions_dir, &ldx_filename) {
+                Ok(path) => path,
+                Err(_) => return Ok(failure("Invalid session export path")),
+            };
             fs::write(&ld_path, &ld_bytes)?;
             fs::write(&ldx_path, &ldx_bytes)?;
             if open {

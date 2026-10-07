@@ -594,12 +594,16 @@
      - API 匯出端點（`GET /api/analysis/export/motec/{id}?format=ld`）打包為 ZIP 格式包含 `{id}.ld` 與 `{id}.ldx`，瀏覽器下載後解壓縮即可在 MoTeC i2 Pro 中直接開啟並識別單圈區間。
   4. **無頭/測試環境之 ShellExecuteW 彈窗阻塞防護**：
      - 在 Windows 自動化測試中，調用 `open_in_viewer`（`ShellExecuteW`）可能因系統未關聯 `.ld` 應用程式而彈出「選擇開啟方式」模態對話框，導致 CI/測試工作階段無窮等待。
-     - 透過檢查 `CARGO_MANIFEST_DIR` 或 `FH6_DISABLE_VIEWER` 環境變數，在測試環境中主動短路略過桌面系統調用並回傳成功，杜絕 Heavy E2E 測試阻塞 Unit Gate。
+  5. **時間軸相對化、單圈邊界標記補齊與通道別名容錯**：
+     - 若遙測 session 經歷修剪或非零時間戳起點，`resample_to_grid` 若洩漏絕對時間至通道 `Time`，會造成與自 `0.0s` 起算之 `.ldx` 單圈標記不同步達百秒以上。通道 `Time` 必須標準化為自 `0.0s` 開始的相對記錄時間（`k * dt`），且重取樣前須依時間排序防止封包微抖動。
+     - 當 `laps` 表無資料但有跨圈 points 時，舊實作僅在單圈遞增處產生標記，導致最後一圈缺失終點標記，且單圈 session 僅有 1 個標記而無法在 MoTeC 構成有效單圈。修正於點序列結尾補齊終點標記，並支援以各標記區間長度計算最快單圈。
+     - 若 `laps` 中包含未完賽圈（`lap_time` 為 null），退回採計 `observed_span`，防止單圈被全數略過。
+     - `extract_point_channels` 支援 `accel_pct`, `brake_pct`, `DistanceTraveled`, `speed`, `NormalizedSuspensionTravel` 等欄位別名，確保無論原始 UDP 封包或 SQLite 欄位名稱皆能完整萃取 41 頻道。
 - **Action**：
-  1. 修改 `backend-rust/src/motec.rs`：新增 `resample_to_grid`、41 通道元資料 linked list 產生、.ld 二進位與 .ldx XML 序列化純函式 `export_ld`。
-  2. 修改 `backend-rust/src/app.rs`：於 `motec_api` 支援 `format=ld` 之 ZIP 封裝匯出與 session 本地檔案寫入啟動，並加固 `open_in_viewer` 之測試環境防護。
-  3. 擴充 `backend-rust/tests/telemetry_contract.rs`：新增 5 階段完整合約測試 `test_motec_ld_binary_structure_and_ldx_beacons`。
+  1. 修改 `backend-rust/src/motec.rs`：新增 `resample_to_grid`（含時間軸相對化與點排序）、41 通道元資料 linked list 產生、.ld 二進位與 .ldx XML 序列化純函式 `export_ld`（含終點標記補齊、`observed_span` 回退、時間與賽道動態計算）。
+  2. 修改 `backend-rust/src/app.rs`：於 `motec_api` 支援 `format=ld` 之 ZIP 封裝匯出與 session 本地檔案寫入啟動，加固 `storage::safe_path` 前之 `sessions` 目錄建立，並加固 `open_in_viewer` 之測試環境防護。
+  3. 擴充 `backend-rust/tests/telemetry_contract.rs`：新增完整合約測試 `test_motec_ld_binary_structure_and_ldx_beacons` 與邊界測試 `test_motec_ld_edge_cases_and_beacon_robustness`。
   4. 修改 `frontend/src/context/TelemetryRecorderContext.tsx`、`AnalysisSessionToolbar.tsx`、`AnalysisView.tsx`：支援 `format: "csv" | "ld"`，工具列新增 MoTeC .ld 專用匯出按鈕，行數維持 183 行（嚴格遵守 < 250 行規範）。
   5. 更新多語系字串 `lang/en-us.json`、`lang/zh-tw.json` 與主文檔 `README.md`、`README.en.md`。
-- **Evidence**：後端全量測試 30 files 通過；前端全量測試 196 files / 1729 tests 通過；Vite build 成功；Ruff check 通過；`git diff --check` 通過。
+- **Evidence**：後端全量測試 30 files 通過（含 29 個 telemetry contract 測試）；前端全量測試 196 files / 1729 tests 通過；Vite build 成功；Ruff check 通過；`git diff --check` 通過。
 - **Skills**：`telemetry-udp-protocol`、`huge-component-refactoring`、`pr-author-maintainer`。

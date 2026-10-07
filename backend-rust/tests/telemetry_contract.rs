@@ -1185,3 +1185,76 @@ fn test_motec_ld_binary_structure_and_ldx_beacons() {
         .join("ld_api_test.ldx")
         .exists());
 }
+
+#[test]
+fn test_motec_ld_edge_cases_and_beacon_robustness() {
+    // 1. Test non-zero start time and out-of-order jitter in resample_to_grid
+    let jittered_points = vec![
+        json!({
+            "time": 120.5, "DistanceTraveled": 15.0, "speed": 100.0,
+            "accel_pct": 80.0, "brake_pct": 0.0, "clutch_pct": 0.0, "handbrake_pct": 0.0,
+            "NormalizedSuspensionTravel": [0.2, 0.2, 0.25, 0.25]
+        }),
+        json!({
+            "time": 120.0, "DistanceTraveled": 0.0, "speed": 90.0,
+            "accel_pct": 70.0, "brake_pct": 0.0, "clutch_pct": 0.0, "handbrake_pct": 0.0,
+            "NormalizedSuspensionTravel": [0.2, 0.2, 0.25, 0.25]
+        }),
+        json!({
+            "time": 121.0, "DistanceTraveled": 30.0, "speed": 110.0,
+            "accel_pct": 90.0, "brake_pct": 0.0, "clutch_pct": 0.0, "handbrake_pct": 0.0,
+            "NormalizedSuspensionTravel": [0.2, 0.2, 0.25, 0.25]
+        }),
+    ];
+
+    let resampled = motec::resample_to_grid(&jittered_points, 60.0);
+    assert_eq!(resampled.len(), 61);
+    // Relative time must start at 0.0 and end at 1.0, not 120.0
+    assert!((resampled[0].time() - 0.0).abs() < 1e-6);
+    assert!((resampled[60].time() - 1.0).abs() < 1e-6);
+    // Aliased channels must be correctly extracted
+    assert!((resampled[0].channels[6] - 70.0).abs() < 1e-3); // Accel pct
+    assert!((resampled[0].channels[1] - 0.0).abs() < 1e-3); // DistanceTraveled
+    assert!((resampled[0].channels[3] - 90.0).abs() < 1e-3); // speed km/h
+    assert!((resampled[0].channels[18] - 20.0).abs() < 1e-3); // NormalizedSuspensionTravel FL * 100
+
+    // 2. Test empty laps with multi-lap points: must generate start, transition, AND finish beacons
+    let multi_lap_points = vec![
+        json!({ "time": 0.0, "LapNumber": 1, "SpeedMetersPerSecond": 30.0 }),
+        json!({ "time": 30.0, "LapNumber": 1, "SpeedMetersPerSecond": 40.0 }),
+        json!({ "time": 60.0, "LapNumber": 2, "SpeedMetersPerSecond": 45.0 }),
+        json!({ "time": 90.0, "LapNumber": 2, "SpeedMetersPerSecond": 50.0 }),
+        json!({ "time": 115.0, "LapNumber": 2, "SpeedMetersPerSecond": 55.0 }),
+    ];
+    let xml_multi = motec::generate_ldx_xml(&[], &multi_lap_points);
+    // Must contain 3 markers: 0.0 (lap 1 start), 60.0 (lap 2 start), 115.0 (lap 2 end)
+    assert!(xml_multi.contains("Name=\"1\" Flags=\"77\" Time=\"0.00000000000000000E+00\""));
+    assert!(xml_multi.contains("Name=\"2\" Flags=\"77\" Time=\"6.00000000000000000E+07\""));
+    assert!(xml_multi.contains("Name=\"3\" Flags=\"77\" Time=\"1.15000000000000000E+08\""));
+    assert!(xml_multi.contains("<String Id=\"Total Laps\" Value=\"2\"/>"));
+    // Lap 2 (55s) is faster than Lap 1 (60s)
+    assert!(xml_multi.contains("<String Id=\"Fastest Lap\" Value=\"2\"/>"));
+    assert!(xml_multi.contains("<String Id=\"Fastest Time\" Value=\"0:55.000\"/>"));
+
+    // 3. Test incomplete lap with null lap_time but valid observed_span
+    let incomplete_laps = vec![json!({
+        "lap_number": 1,
+        "lap_time": null,
+        "observed_span": 52.340,
+        "complete": 0
+    })];
+    let xml_incomplete = motec::generate_ldx_xml(&incomplete_laps, &[]);
+    // Must use observed_span as beacon duration
+    assert!(xml_incomplete.contains("Name=\"1\" Flags=\"77\" Time=\"0.00000000000000000E+00\""));
+    assert!(xml_incomplete.contains("Name=\"2\" Flags=\"77\" Time=\"5.23400000000000000E+07\""));
+    assert!(xml_incomplete.contains("<String Id=\"Total Laps\" Value=\"1\"/>"));
+    assert!(xml_incomplete.contains("<String Id=\"Fastest Lap\" Value=\"1\"/>"));
+    assert!(xml_incomplete.contains("<String Id=\"Fastest Time\" Value=\"0:52.340\"/>"));
+
+    // 4. Test completely empty session
+    let meta = json!({ "session_id": "empty_session", "car_name": "Test" });
+    let (ld_empty, ldx_empty) = motec::export_ld(&meta, &[], &[]).unwrap();
+    assert_eq!(ld_empty.len(), 18468);
+    let xml_empty = String::from_utf8(ldx_empty).unwrap();
+    assert!(xml_empty.contains("<String Id=\"Total Laps\" Value=\"0\"/>"));
+}

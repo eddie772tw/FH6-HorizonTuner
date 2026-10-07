@@ -604,15 +604,32 @@ pub const MOTEC_CHANNELS: [ChannelDef; 41] = [
 pub fn extract_point_channels(p: &Value) -> [f64; 41] {
     let mut ch = [0.0; 41];
     ch[0] = number(&p["time"]).unwrap_or(0.0);
-    ch[1] = number(&p["lap_distance"]).unwrap_or(0.0);
+    ch[1] = number(&p["lap_distance"])
+        .or_else(|| number(&p["DistanceTraveled"]))
+        .unwrap_or(0.0);
     ch[2] = number(&p["LapNumber"]).unwrap_or(1.0);
-    ch[3] = number(&p["SpeedMetersPerSecond"]).unwrap_or(0.0) * 3.6;
+    ch[3] = number(&p["SpeedMetersPerSecond"])
+        .map(|s| s * 3.6)
+        .or_else(|| number(&p["speed"]))
+        .unwrap_or(0.0);
     ch[4] = number(&p["CurrentEngineRpm"]).unwrap_or(0.0);
     ch[5] = number(&p["Gear"]).unwrap_or(0.0);
-    ch[6] = number(&p["AccelInput"]).unwrap_or(0.0) * (100.0 / 255.0);
-    ch[7] = number(&p["BrakeInput"]).unwrap_or(0.0) * (100.0 / 255.0);
-    ch[8] = number(&p["ClutchInput"]).unwrap_or(0.0) * (100.0 / 255.0);
-    ch[9] = number(&p["HandBrakeInput"]).unwrap_or(0.0) * (100.0 / 255.0);
+    ch[6] = number(&p["AccelInput"])
+        .map(|a| a * (100.0 / 255.0))
+        .or_else(|| number(&p["accel_pct"]))
+        .unwrap_or(0.0);
+    ch[7] = number(&p["BrakeInput"])
+        .map(|b| b * (100.0 / 255.0))
+        .or_else(|| number(&p["brake_pct"]))
+        .unwrap_or(0.0);
+    ch[8] = number(&p["ClutchInput"])
+        .map(|c| c * (100.0 / 255.0))
+        .or_else(|| number(&p["clutch_pct"]))
+        .unwrap_or(0.0);
+    ch[9] = number(&p["HandBrakeInput"])
+        .map(|h| h * (100.0 / 255.0))
+        .or_else(|| number(&p["handbrake_pct"]))
+        .unwrap_or(0.0);
     ch[10] = if !p["steer_pct"].is_null() {
         number(&p["steer_pct"]).unwrap_or(0.0)
     } else {
@@ -631,7 +648,12 @@ pub fn extract_point_channels(p: &Value) -> [f64; 41] {
         .or_else(|| number(&p["Torque"]))
         .unwrap_or(0.0);
     for i in 0..4 {
-        ch[18 + i] = p["SuspTravel"].get(i).and_then(number).unwrap_or(0.0) * 100.0;
+        ch[18 + i] = p["SuspTravel"]
+            .get(i)
+            .or_else(|| p["NormalizedSuspensionTravel"].get(i))
+            .and_then(number)
+            .unwrap_or(0.0)
+            * 100.0;
         ch[22 + i] = p["SuspensionTravelMeters"]
             .get(i)
             .and_then(number)
@@ -654,15 +676,20 @@ pub fn resample_to_grid(points: &[Value], freq: f64) -> Vec<ResampledPoint> {
     if points.is_empty() {
         return Vec::new();
     }
-    let raw: Vec<[f64; 41]> = points.iter().map(extract_point_channels).collect();
+    let mut raw: Vec<[f64; 41]> = points.iter().map(extract_point_channels).collect();
+    raw.sort_by(|a, b| a[0].total_cmp(&b[0]));
     if raw.len() == 1 {
-        return vec![ResampledPoint { channels: raw[0] }];
+        let mut ch = raw[0];
+        ch[0] = 0.0;
+        return vec![ResampledPoint { channels: ch }];
     }
 
     let t_start = raw[0][0];
     let t_end = raw[raw.len() - 1][0];
     if t_end <= t_start || freq <= 0.0 {
-        return vec![ResampledPoint { channels: raw[0] }];
+        let mut ch = raw[0];
+        ch[0] = 0.0;
+        return vec![ResampledPoint { channels: ch }];
     }
 
     let dt = 1.0 / freq;
@@ -672,13 +699,14 @@ pub fn resample_to_grid(points: &[Value], freq: f64) -> Vec<ResampledPoint> {
     let mut idx = 0;
     for k in 0..=total_steps {
         let t_target = t_start + k as f64 * dt;
+        let t_rel = k as f64 * dt;
         while idx + 1 < raw.len() && raw[idx + 1][0] < t_target {
             idx += 1;
         }
 
         if idx + 1 >= raw.len() {
             let mut ch = raw[raw.len() - 1];
-            ch[0] = t_target;
+            ch[0] = t_rel;
             out.push(ResampledPoint { channels: ch });
             continue;
         }
@@ -686,7 +714,7 @@ pub fn resample_to_grid(points: &[Value], freq: f64) -> Vec<ResampledPoint> {
         let t0 = raw[idx][0];
         let t1 = raw[idx + 1][0];
         let mut ch = [0.0; 41];
-        ch[0] = t_target;
+        ch[0] = t_rel;
 
         if t1 <= t0 {
             for c in 1..41 {
@@ -786,17 +814,38 @@ pub fn generate_ldx_xml(laps: &[Value], points: &[Value]) -> String {
         let mut cum_time = 0.0;
         beacon_times.push(0.0);
         for lap in laps {
-            if let Some(dur) = lap.get("lap_time").and_then(Value::as_f64) {
-                if dur > 0.0 {
-                    cum_time += dur;
-                    beacon_times.push(cum_time);
-                }
+            let dur = lap
+                .get("lap_time")
+                .and_then(Value::as_f64)
+                .filter(|&d| d > 0.0)
+                .or_else(|| {
+                    lap.get("observed_span")
+                        .and_then(Value::as_f64)
+                        .filter(|&d| d > 0.0)
+                });
+            if let Some(dur) = dur {
+                cum_time += dur;
+                beacon_times.push(cum_time);
             }
         }
-    } else {
+        if beacon_times.len() == 1 && !points.is_empty() {
+            let t_start = points
+                .first()
+                .and_then(|p| p.get("time").and_then(Value::as_f64))
+                .unwrap_or(0.0);
+            let t_end = points
+                .last()
+                .and_then(|p| p.get("time").and_then(Value::as_f64))
+                .unwrap_or(t_start);
+            if t_end > t_start {
+                beacon_times.push(t_end - t_start);
+            }
+        }
+    } else if !points.is_empty() {
         let mut current_lap = -1i64;
         let mut start_time = 0.0;
         let mut has_start = false;
+        let mut last_time = 0.0;
         for p in points {
             let lap = p.get("LapNumber").and_then(Value::as_i64).unwrap_or(1);
             let t = p.get("time").and_then(Value::as_f64).unwrap_or(0.0);
@@ -804,9 +853,19 @@ pub fn generate_ldx_xml(laps: &[Value], points: &[Value]) -> String {
                 start_time = t;
                 has_start = true;
             }
+            last_time = t;
             if current_lap == -1 || lap > current_lap {
                 current_lap = lap;
                 beacon_times.push((t - start_time).max(0.0));
+            }
+        }
+        if last_time > start_time {
+            let end_offset = last_time - start_time;
+            if beacon_times
+                .last()
+                .is_none_or(|&last_b| end_offset > last_b)
+            {
+                beacon_times.push(end_offset);
             }
         }
         if beacon_times.is_empty() {
@@ -817,20 +876,38 @@ pub fn generate_ldx_xml(laps: &[Value], points: &[Value]) -> String {
     let total_laps = if !laps.is_empty() {
         laps.len()
     } else {
-        beacon_times.len().saturating_sub(1).max(1)
+        beacon_times.len().saturating_sub(1)
     };
 
     let mut fastest_time = 0.0;
     let mut fastest_lap = 1usize;
     for (i, lap) in laps.iter().enumerate() {
-        if let Some(t) = lap.get("lap_time").and_then(Value::as_f64) {
-            if t > 0.0 && (fastest_time == 0.0 || t < fastest_time) {
+        if let Some(t) = lap
+            .get("lap_time")
+            .and_then(Value::as_f64)
+            .filter(|&d| d > 0.0)
+            .or_else(|| {
+                lap.get("observed_span")
+                    .and_then(Value::as_f64)
+                    .filter(|&d| d > 0.0)
+            })
+        {
+            if fastest_time == 0.0 || t < fastest_time {
                 fastest_time = t;
                 fastest_lap = lap
                     .get("lap_number")
                     .and_then(Value::as_u64)
                     .map(|n| n as usize)
                     .unwrap_or(i + 1);
+            }
+        }
+    }
+    if fastest_time == 0.0 && beacon_times.len() >= 2 {
+        for i in 0..beacon_times.len() - 1 {
+            let dur = beacon_times[i + 1] - beacon_times[i];
+            if dur > 0.0 && (fastest_time == 0.0 || dur < fastest_time) {
+                fastest_time = dur;
+                fastest_lap = i + 1;
             }
         }
     }
@@ -898,9 +975,25 @@ pub fn export_ld(
     let id = metadata["session_id"].as_str().unwrap_or("session");
     let car = metadata["car_name"].as_str().unwrap_or("Unknown Vehicle");
     let driver = metadata["driver"].as_str().unwrap_or("Driver");
-    let venue = metadata["venue"].as_str().unwrap_or("Forza Circuit");
-    let date_str = metadata["date"].as_str().unwrap_or("07/10/2026");
-    let time_str = metadata["time"].as_str().unwrap_or("00:00:00");
+    let venue = metadata["venue"]
+        .as_str()
+        .or_else(|| metadata["track_name"].as_str())
+        .or_else(|| metadata["route_name"].as_str())
+        .unwrap_or("Forza Circuit");
+    let (computed_date, computed_time) = metadata
+        .get("start_time")
+        .or_else(|| metadata.get("timestamp"))
+        .and_then(Value::as_f64)
+        .and_then(|ts| chrono::DateTime::from_timestamp(ts as i64, 0))
+        .map(|dt| {
+            (
+                dt.format("%d/%m/%Y").to_string(),
+                dt.format("%H:%M:%S").to_string(),
+            )
+        })
+        .unwrap_or_else(|| ("07/10/2026".to_string(), "00:00:00".to_string()));
+    let date_str = metadata["date"].as_str().unwrap_or(&computed_date);
+    let time_str = metadata["time"].as_str().unwrap_or(&computed_time);
 
     let channel_data_ptr = DATA_BASE as u32;
 
