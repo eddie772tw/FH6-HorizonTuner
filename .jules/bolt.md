@@ -131,3 +131,7 @@ Additionally, attempting to optimize 60Hz telemetry data copying in `FrameInterp
 **Learning:** `getComputedStyle` and `.style.getPropertyValue()` are very expensive DOM operations that cause massive CPU overhead and layout thrashing when called within a 60Hz canvas render loop (like `renderCorners` and `renderPowerTorque`).
 **Action:** Extract and cache the resolved style result by attaching it directly to a shared DOM object reference like `domCache.wrapper` during configuration updates. Within the render loop, check and initialize the cache fallback if necessary, but prioritize reading the cached value (`wrapperEl._cachedPrimaryColor`) rather than calling DOM API methods every frame.
 
+
+## 2024-11-26 - Caching DOM getComputedStyle in Canvas render loop with logical nullish assignment
+**Learning:** `getComputedStyle` is an extremely expensive DOM operation. When used inside a 60Hz canvas render loop with a nullish coalescing operator (`styleRef.current ?? getComputedStyle(...)`), if the result isn't explicitly assigned back to the ref, it causes massive CPU overhead on every frame.
+**Action:** Use logical nullish assignment (`??=`) when caching expensive operations like `getComputedStyle` to a ref (e.g., `styleRef.current ??= getComputedStyle(...)`) to ensure it's evaluated exactly once and properly cached.

@@ -297,7 +297,13 @@ export const TrendChart: React.FC<{
         context.clearRect(0, 0, width, height);
         return;
       }
-      drawChart(context, dataRef.current, linesRef.current, layout, themeRef.current, styleRef.current ?? getComputedStyle(document.documentElement), colorCacheRef.current);
+
+      // [PERF] getComputedStyle is an expensive DOM operation that causes massive CPU overhead and layout
+      // thrashing when called within a 60Hz canvas render loop. By caching the live CSSStyleDeclaration
+      // object on a ref (using logical nullish assignment), we avoid redundant style evaluations on every frame.
+      styleRef.current ??= getComputedStyle(document.documentElement);
+
+      drawChart(context, dataRef.current, linesRef.current, layout, themeRef.current, styleRef.current, colorCacheRef.current);
     };
 
     drawRef.current = render;
