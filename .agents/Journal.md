@@ -653,3 +653,14 @@
 - **Evidence**：完整 Cargo 契約 183 passed／3 ignored；Vitest 196 passed files、1740 passed／1 skipped；`tsc && vite build` 通過。獨立後端 17 cases、前端 16 個 hook／DOM／provider 補充案例及 180000 筆 CSV 重現通過，scratch 證據不加入產品單元 gate。最終 commit 與遠端 CI 在 PR 留言記錄。
 - **Boundary**：未做真實 FH6 高速穿越、跨車種半徑校準或 MoTeC i2 開檔驗收；README／操作指南／UI 標示 LD／LDX 實驗性。`IsRaceOn` 不參與此錄製及 Road／ICE／EV 收錄資格；來源欄位與 HUD 顯示語意保留。
 - **Skills**：`pr-author-maintainer`、`pr-review-evaluation`、`cross-agent-collaboration`、`telemetry-udp-protocol`、`halfmoon-design-system`、`physics-tuning-math`、`ponytail`。
+
+## 2026-10-09 / Issue #487 P1 中性基準預覽與就地證據（Codex as Codex）
+
+- **來源／狀態**：`local`／`verified`（Rust／DOM 契約）；基於 main `d4e0fe3762c613240f7d6902d07edcb212aa5926`，僅本地差異供獨立審查，未做遠端寫入。
+- **Learning**：
+  1. 引擎相依鍵只涵蓋 powertrain，不能當作完整設定版本。完整 profile／本地基準變更必須讓 archive 保存、hydration、EV 回覆、採集與 workflow 同步失效；A→B→A 也不能讓舊 capture 自動復活。設定版本仍未知，不可由 context 的 UI 防護推論為同設定實車證據。
+  2. ICE observation 的 `capturedAt` 是建立觀察的時刻；EV 沒有對等欄位。最小 provenance envelope 須把 `observationRecordedAt` 和尚未知的採集時間／session／設定版本／圈窗分開，不能用 store 或分析時間補值。
+  3. Rust build script 嵌入 `frontend/dist`，前端 build 的清理／更新與 Rust doctest 不是獨立操作。平行執行可能刪掉已生成 `include_bytes!` 引用的舊資產；先固定前端產物再執行 Cargo 全套，重跑可消除這個已重現的驗證競態。
+- **Evidence**：Cargo 預設 188 passed／2 ignored，無預設功能 180 passed／2 ignored；Vitest 200 passed files、1747 passed／1 skipped；typecheck／Windows frontend build、backend／Tauri fmt、Clippy 與 diff check 通過。raw logs 位於 `/workspace/issue-487-evidence/rawlogs/`，含安裝失敗、資產競態及後續成功紀錄。
+- **Boundary**：沒有非中性偏好校準、WOT 圖或頻率模型；沒有修改正式 Road／frozen legacy 公式、golden fixtures、共享 ThemeContext、全域 CSS 或 Companion theme。雲端 Chromium SUID sandbox 啟動失敗，未關閉 sandbox／更改權限；窄畫面／主題視覺及真實 FH6／Android 驗收未完成。詳細契約見 [P1 文件](../docs/tuning/neutral-baseline-preview-p1.md)。
+- **Skills**：`physics-tuning-math`、`halfmoon-design-system`、`modular-refactoring`、`pr-author-maintainer`。

@@ -52,6 +52,9 @@ pub struct WorkflowResult {
     pub gearing: Option<WorkflowGearing>,
     pub readiness: Readiness,
     pub recommendation: Option<Value>,
+    pub baseline_preview: Value,
+    pub evidence_provenance: Option<Value>,
+    pub tire_evidence: Option<Value>,
 }
 fn positive(v: f64) -> bool {
     v.is_finite() && v > 0.0
@@ -155,6 +158,13 @@ pub(crate) fn calculate_qualified_version(
     let electric = profile.is_electric == Some(true);
     let chassis = calculate_chassis_tuning(input.goal, &profile);
     let alignment = calculate_static_alignment(input.goal, input.season, &profile);
+    let baseline_preview = super::baseline::preview(
+        input.goal,
+        &input.profile,
+        &input.input_snapshot["baselineCurrent"],
+        &chassis,
+        &alignment,
+    );
     let gearing = if electric {
         qualified_ev
             .as_ref()
@@ -249,16 +259,16 @@ pub(crate) fn calculate_qualified_version(
             gearing_available,
         },
         recommendation,
+        baseline_preview,
+        evidence_provenance: proof.map(|p| p.provenance()),
+        tire_evidence: proof.and_then(|p| p.tire_evidence()),
     })
 }
-fn recommendation(
+pub(crate) fn mechanical_fields(
     profile: &Value,
     c: &ChassisTuningResult,
     a: &StaticAlignment,
-    gearing: &WorkflowGearing,
-    mut snapshot: Value,
-    new_road: bool,
-) -> Value {
+) -> Map<String, Value> {
     let mut fields = Map::new();
     let mut add = |key: &str, value: f64, unit: &str| {
         fields.insert(key.into(), json!({"value":value,"unit":unit}));
@@ -315,6 +325,20 @@ fn recommendation(
     if profile["drivetrain"] == "AWD" {
         add("diff.center", c.diff.center_rear, "%");
     }
+    fields
+}
+fn recommendation(
+    profile: &Value,
+    c: &ChassisTuningResult,
+    a: &StaticAlignment,
+    gearing: &WorkflowGearing,
+    mut snapshot: Value,
+    new_road: bool,
+) -> Value {
+    let mut fields = mechanical_fields(profile, c, a);
+    let mut add = |key: &str, value: f64, unit: &str| {
+        fields.insert(key.into(), json!({"value":value,"unit":unit}));
+    };
     let electric = matches!(gearing, WorkflowGearing::Ev(_));
     match gearing {
         WorkflowGearing::Ice(g) => {

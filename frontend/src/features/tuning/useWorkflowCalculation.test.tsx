@@ -10,13 +10,27 @@ const fetchMock = vi.mocked(backendFetch);
 const good = (tag: string) => ({ ok: true, json: async () => ({ schemaVersion: 'tuning-workflow-result/v1', tag }) }) as Response;
 let root: Root; let host: HTMLDivElement;
 const profile = { weight: 1300, weight_distribution: 54 } as CarParams;
-function Probe({ carId, weight = 1300 }: { carId: string; weight?: number }) {
-  const { result, status } = useWorkflowCalculation(carId, 'Road', 'Summer', { ...profile, weight }, null, null, {});
+function Probe({ carId, weight = 1300, goal = 'Road', electric = false, capture = 'capture1' }: { carId: string; weight?: number; goal?: string; electric?: boolean; capture?: string }) {
+  const { result, status } = useWorkflowCalculation(carId, goal, 'Summer', { ...profile, weight, isElectric: electric }, null, null, { carId, evEvidence: electric ? { kind:'saved-ev', evidenceId:capture } : null, engineObservation: electric ? null : {id:capture} });
   return <output>{status}:{JSON.stringify(result)}</output>;
 }
 beforeEach(() => {
   Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
   vi.useFakeTimers(); fetchMock.mockReset(); host = document.createElement('div'); root = createRoot(host);
+});
+
+it('invalidates goal, mode and capture revisions and rejects their late replies', async () => {
+  const pending: ((response:Response)=>void)[]=[];
+  fetchMock.mockImplementation(()=>new Promise(resolve=>pending.push(resolve)));
+  await act(async()=>root.render(<Probe carId="1" />));
+  await act(async()=>root.render(<Probe carId="1" goal="Rally" />));
+  await act(async()=>root.render(<Probe carId="1" goal="Rally" electric />));
+  await act(async()=>root.render(<Probe carId="1" goal="Rally" electric capture="new-capture" />));
+  expect(host.textContent).toBe('pending:null');
+  await act(async()=>pending[3](good('new-EV-capture')));expect(host.textContent).toContain('new-EV-capture');
+  for(const resolve of pending.slice(0,3)) {
+    await act(async()=>resolve(good('stale-evidence')));expect(host.textContent).not.toContain('stale-evidence');
+  }
 });
 afterEach(async () => { await act(async () => root.unmount()); vi.useRealTimers(); });
 it('distinguishes pending and failure, then recovers without displaying missing-input guidance', async () => {

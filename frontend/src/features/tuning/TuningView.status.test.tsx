@@ -16,6 +16,7 @@ vi.mock('./components/SetupVerificationStep', () => ({ SetupVerificationStep: ()
 vi.mock('./components/EngineDataStep', () => ({ EngineDataStep: () => null }));
 vi.mock('./components/EvPowertrainStep', () => ({ EvPowertrainStep: () => null }));
 vi.mock('./components/WorkflowGuide', () => ({ WorkflowGuide: () => null }));
+vi.mock('./components/BaselinePreviewPanel', () => ({ BaselinePreviewPanel: () => null }));
 it('keeps Steps 2 and 4 on request status rather than missing-input panels while pending or failed', async () => {
   Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
   const host = document.createElement('div'); const root = createRoot(host);
