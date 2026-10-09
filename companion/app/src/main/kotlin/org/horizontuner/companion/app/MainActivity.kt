@@ -49,11 +49,15 @@ import kotlinx.coroutines.withContext
 import java.util.concurrent.atomic.AtomicReference
 import org.horizontuner.companion.app.service.TelemetryForegroundService
 import org.horizontuner.companion.theme.HalfmoonTheme
+import org.horizontuner.companion.theme.VisualTheme
+import org.horizontuner.companion.theme.VisualThemeCodec
+import java.security.MessageDigest
 
 private const val COMPANION_PATH = "/companion/index.html"
 private const val PAIRING_PREFS = "companion_lan_session"
 
 class MainActivity : ComponentActivity() {
+    private val visualTheme = mutableStateOf(VisualTheme())
     private val autoConnect = mutableStateOf(false)
     private val notificationPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { /* handled */ }
@@ -61,12 +65,22 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         autoConnect.value = intent.getBooleanExtra("companionAutoConnect", false)
+        val preferences = getSharedPreferences(PAIRING_PREFS, Context.MODE_PRIVATE)
+        val cachePreferences = getSharedPreferences("companion_visual_theme_v1", Context.MODE_PRIVATE)
+        val cache = object : ThemeCache {
+            private fun key(origin: String) = MessageDigest.getInstance("SHA-256").digest(origin.toByteArray()).joinToString("") { "%02x".format(it) }
+            override fun read(origin: String) = cachePreferences.getString(key(origin), null)
+            override fun write(origin: String, raw: String) { cachePreferences.edit().putString(key(origin), raw).apply() }
+        }
+        val initialOrigin = if (autoConnect.value) "http://127.0.0.1:8001" else buildOrigin(preferences.getString("host", "") ?: "", preferences.getString("port", "") ?: "")?.let(::companionThemeOrigin)
+        val themeSession = ThemeSession(cache, initialOrigin)
+        visualTheme.value = themeSession.current
         enableEdgeToEdge()
         window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         setContent {
-            HalfmoonTheme(darkTheme = true) {
+            HalfmoonTheme(theme = visualTheme.value) {
                 Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                    CompanionAppContent(::startTelemetryService, ::stopTelemetryService, autoConnect.value) { autoConnect.value = false }
+                    CompanionAppContent(::startTelemetryService, ::stopTelemetryService, autoConnect.value, { autoConnect.value = false }, themeSession) { visualTheme.value = it }
                 }
             }
         }
@@ -110,6 +124,8 @@ private fun CompanionAppContent(
     onServiceStop: () -> Unit,
     autoConnect: Boolean,
     onAutoConnectHandled: () -> Unit,
+    themeSession: ThemeSession,
+    onThemeChange: (VisualTheme) -> Unit,
 ) {
     val appContext = androidx.compose.ui.platform.LocalContext.current
     val preferences = remember(appContext) { appContext.getSharedPreferences(PAIRING_PREFS, Context.MODE_PRIVATE) }
@@ -132,6 +148,29 @@ private fun CompanionAppContent(
     var backendOnline by remember { mutableStateOf(false) }
     val nativeStatusJson = remember { AtomicReference(connectionStatusJson(state, mode, host, port, errorMessage, sessionToken.isNotBlank())) }
     val scope = rememberCoroutineScope()
+    val connectionAttempt = remember { AtomicReference(UUID.randomUUID().toString()) }
+    val themeBootstrap = remember { AtomicReference("") }
+    fun invalidateThemeCallbacks() {
+        connectionAttempt.set(UUID.randomUUID().toString())
+        themeSession.invalidate()
+        themeBootstrap.set("")
+    }
+    fun bindTheme(view: WebView, endpoint: String) {
+        val origin = companionThemeOrigin(endpoint)
+        val lease = themeSession.attach(origin)
+        onThemeChange(themeSession.current)
+        themeBootstrap.set(themeSession.bootstrap(lease))
+        view.addJavascriptInterface(CompanionThemeJavascriptBridge(themeBootstrap) { raw, generation ->
+            if (sameDocument(Uri.parse(view.url ?: ""), requestedUrl) && themeSession.receive(raw, generation, lease)) {
+                onThemeChange(themeSession.current)
+                themeBootstrap.set(themeSession.bootstrap(lease))
+            }
+        }, "HorizonTunerCompanionTheme")
+    }
+    fun loadEndpoint(endpoint: String) {
+        requestedUrl = endpoint
+        webView?.let { view -> bindTheme(view, endpoint); view.tag = endpoint; view.loadUrl(endpoint) }
+    }
     fun publishStatus(error: String? = errorMessage) {
         nativeStatusJson.set(connectionStatusJson(state, mode, host, port, error, sessionToken.isNotBlank()))
         webView?.let { publishConnectionStatus(it, state, mode, host, port, error, sessionToken.isNotBlank()) }
@@ -151,6 +190,7 @@ private fun CompanionAppContent(
     }
 
     val connect: (String, String) -> Unit = { inputHost, inputPort ->
+        invalidateThemeCallbacks()
         mode = ConnectionMode.USB
         host = inputHost
         port = inputPort
@@ -161,15 +201,14 @@ private fun CompanionAppContent(
             errorMessage = "請輸入有效的 HTTP(S) 主機與 1-65535 連接埠（僅限區域網路或本機位址）"
             publishStatus(errorMessage)
         } else {
-            requestedUrl = endpoint
+            loadEndpoint(endpoint)
             errorMessage = null
             state = WebConnectionState.LOADING
             publishStatus(null)
-            webView?.let { it.tag = endpoint }
-            webView?.loadUrl(endpoint)
         }
     }
     val disconnect: () -> Unit = {
+        invalidateThemeCallbacks()
         webView?.stopLoading()
         webView?.loadUrl("about:blank")
         onServiceStop()
@@ -191,6 +230,8 @@ private fun CompanionAppContent(
             publishStatus(errorMessage)
             return
         }
+        invalidateThemeCallbacks()
+        val attempt = connectionAttempt.get()
         mode = ConnectionMode.LAN
         host = candidates.first().first
         port = targetPort.trim()
@@ -211,6 +252,7 @@ private fun CompanionAppContent(
                 if (result == null) Result.failure(lastFailure ?: IllegalStateException("找不到可連線的桌面端"))
                 else Result.success(successfulHost!! to result)
             }
+            if (connectionAttempt.get() != attempt) return@launch
             result.fold(
                 onSuccess = { (successfulHost, paired) ->
                     val origin = buildOrigin(successfulHost, targetPort) ?: return@fold
@@ -226,14 +268,14 @@ private fun CompanionAppContent(
                         .putString("port", pairedPort)
                         .apply()
                     setSessionCookie(origin, sessionToken) { cookieSet ->
+                        if (connectionAttempt.get() != attempt) return@setSessionCookie
                         if (!cookieSet) {
                             state = WebConnectionState.ERROR
                             errorMessage = "LAN 配對成功，但無法設定 WebView 工作階段"
                             publishStatus(errorMessage)
                         } else {
-                            requestedUrl = "$origin$COMPANION_PATH"
+                            loadEndpoint("$origin$COMPANION_PATH")
                             errorMessage = null
-                            webView?.let { it.tag = requestedUrl; it.loadUrl(requestedUrl!!) }
                             publishStatus(null)
                         }
                     }
@@ -281,17 +323,19 @@ private fun CompanionAppContent(
             return
         }
         state = WebConnectionState.LOADING
+        invalidateThemeCallbacks()
+        val attempt = connectionAttempt.get()
         errorMessage = null
         publishStatus(null)
         setSessionCookie(origin, sessionToken) { cookieSet ->
+            if (connectionAttempt.get() != attempt) return@setSessionCookie
             if (!cookieSet) {
                 state = WebConnectionState.ERROR
                 errorMessage = "無法恢復 LAN 工作階段，請重新配對"
                 publishStatus(errorMessage)
             } else {
                 val endpoint = "$origin$COMPANION_PATH"
-                requestedUrl = endpoint
-                webView?.let { it.tag = endpoint; it.loadUrl(endpoint) }
+                loadEndpoint(endpoint)
             }
         }
     }
@@ -302,6 +346,7 @@ private fun CompanionAppContent(
             disconnect()
             offlinePage = OfflinePage.CONNECTION
         } else if (selectedMode != mode) {
+            invalidateThemeCallbacks()
             state = WebConnectionState.DISCONNECTED
             errorMessage = null
         }
@@ -343,6 +388,7 @@ private fun CompanionAppContent(
         val endpoint = requestedUrl
         val view = webView
         if (endpoint != null && view != null && view.tag != endpoint) {
+            bindTheme(view, endpoint)
             view.tag = endpoint
             view.loadUrl(endpoint)
         }
@@ -391,6 +437,7 @@ private fun CompanionAppContent(
                         publishStatus(null)
                         onServiceStart()
                     }, { message ->
+                        invalidateThemeCallbacks()
                         state = WebConnectionState.ERROR
                         desktopOnline = false
                         backendOnline = false
@@ -420,6 +467,7 @@ private fun CompanionAppContent(
 
     DisposableEffect(Unit) {
         onDispose {
+            invalidateThemeCallbacks()
             webView?.let { view ->
                 onServiceStop()
                 view.stopLoading()
@@ -455,6 +503,26 @@ private class CompanionJavascriptBridge(
     @JavascriptInterface fun scanLanQr() { Handler(Looper.getMainLooper()).post { onScanLanQr() } }
     @JavascriptInterface fun updateDesktopStatus(online: Boolean) { Handler(Looper.getMainLooper()).post { onDesktopStatus(online) } }
     @JavascriptInterface fun updateBackendStatus(online: Boolean) { Handler(Looper.getMainLooper()).post { onBackendStatus(online) } }
+}
+
+/** Receive-only, size-bounded theme bridge; Compose and cache mutation run on the main thread. */
+private class CompanionThemeJavascriptBridge(
+    private val bootstrap: AtomicReference<String>,
+    private val receive: (String, String) -> Unit,
+) {
+    @JavascriptInterface fun themeBootstrap(): String = bootstrap.get()
+    @JavascriptInterface fun updateVisualTheme(raw: String, generation: String) {
+        if (raw.length > VisualThemeCodec.MAX_BYTES || generation.length != 36) return
+        val visual = VisualThemeCodec.decode(raw) ?: return
+        val validated = VisualThemeCodec.encode(visual)
+        Handler(Looper.getMainLooper()).post { receive(validated, generation) }
+    }
+}
+
+private fun companionThemeOrigin(endpoint: String): String {
+    val uri = Uri.parse(endpoint)
+    val port = if ((uri.scheme == "http" && uri.port == 80) || (uri.scheme == "https" && uri.port == 443)) "" else ":${uri.port}"
+    return "${uri.scheme}://${uri.host?.lowercase()}$port"
 }
 
 private fun publishNativeTab(view: WebView, page: OfflinePage) {

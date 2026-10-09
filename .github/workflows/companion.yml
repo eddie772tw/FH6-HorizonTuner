@@ -37,5 +37,5 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
 
-      - name: Run protocol tests, Android lint, and debug assemble
-        run: bash ./gradlew --no-daemon --stacktrace :protocol-core:test :app:lintDebug :app:assembleDebug
+      - name: Run protocol, theme and app tests, Android lint, and debug assemble
+        run: bash ./gradlew --no-daemon --stacktrace :protocol-core:test :theme:testDebugUnitTest :app:testDebugUnitTest :app:lintDebug :app:assembleDebug

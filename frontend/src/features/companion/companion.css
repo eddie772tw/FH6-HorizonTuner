@@ -6,7 +6,8 @@ html, body, #root { height: var(--companion-viewport-height, 100dvh); min-height
 .companion-content { flex: 1; min-height: 0; padding-top: .35rem; overflow: auto; }
 .companion-stack { display: flex; flex-direction: column; gap: .75rem; }
 .companion-section-nav { position: sticky; top: 0; z-index: 9; display: flex; gap: .5rem; overflow-x: auto; padding: .25rem 0 .5rem; background: var(--bs-body-bg); }
-.companion-section-nav .btn { flex: 0 0 auto; min-height: 2.75rem; }
+.companion-section-nav.workspace-tabs { flex-wrap: nowrap; }
+.companion-section-nav .nav-link { flex: 0 0 auto; min-height: 2.75rem; }
 .companion-tuning-setup, .companion-result-card, #companion-engine { scroll-margin-top: 3.75rem; }
 .companion-readiness { margin: .75rem 0 0; font-size: .8rem; }
 .companion-profile-details { margin-top: .75rem; padding-top: .5rem; border-top: 1px solid var(--glass-border); }

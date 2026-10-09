@@ -22,6 +22,8 @@ export interface CompanionState {
   snapshot: CompanionSnapshot | null;
   revision: number;
   commands: CompanionAck[];
+  /** GET projection only; command responses and older backends may omit it. */
+  visualTheme?: unknown;
 }
 export interface CompanionCommand {
   id: string;
