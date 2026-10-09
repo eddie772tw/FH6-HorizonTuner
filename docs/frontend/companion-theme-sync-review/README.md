@@ -1,8 +1,8 @@
 # Issue #485 主題同步切片審查報告
 
-這是供獨立 review 的第一個切片，Related to #485。Android 完整 build、MainActivity、APK、native＋WebView 尚未驗收，Issue 保持 open。
+這是供獨立 review 的第一個切片，Related to #485。Android CI 已完成 MainActivity 編譯、unit tasks、lint 與 debug packaging；native＋WebView 裝置執行尚未驗收，Issue 保持 open。
 
-分支：`feature/issue-485-theme-sync`。基準及提交前核對的遠端 main：`d4e0fe3762c613240f7d6902d07edcb212aa5926`。產品程式碼在測試後沒有修改；最後只加入本報告並更新工作日誌。使用者已授權 commit／push／draft PR，未授權合併或發布，SDK License 接受步驟保持暫停。
+分支：`feature/issue-485-theme-sync`。基準及提交前核對的遠端 main：`d4e0fe3762c613240f7d6902d07edcb212aa5926`。產品程式碼在測試後沒有修改；後續只更新審查文件／日誌並補 CI 證據留存。使用者已授權 commit／push／draft PR，未授權合併或發布，SDK License 接受步驟保持暫停。
 
 ## 實際設計與可交付範圍
 
@@ -20,7 +20,7 @@ Native 色彩、表面、文字、border、shape、字階和 navigation token �
 
 契約與執行命令見 [Companion 主題契約](../../../companion/theme/README.md)、[實作邊界](../../architecture/companion-implementation-boundary.md)。未處理額外 Companion 功能、公式更換或 #487 P2/P3；未修改 PR #497 分支、mind-the-shop、main 或 release。
 
-## 工具與來源
+## 本地工具與來源
 
 新增工具、dependency caches 與原始大型證據均留在 repo 外的 `/workspace/toolchains`、`/workspace/evidence/issue-485`。沒有改系統安全設定或使用未知來源工具。
 
@@ -50,18 +50,23 @@ Native 色彩、表面、文字、border、shape、字階和 navigation token �
 | Gradle `:protocol-core:test` | 5 passed，真正 Gradle task | `android-protocol-test.log`、`protocol-test-results/` |
 | codec／tokens／ThemeSession 同一份 native 測試 | 6 passed；Kotlin 2.2.21＋Compose compiler、實際 libraries 的純 JVM JUnit；不是 Android Gradle gate | `native-contract-test.log`、`run-native-contracts.cjs` |
 | CompanionShell compile-only | 通過；Activity enums／BuildConfig 用 stubs，不包含 MainActivity | `shell-compile.log`、`compile-shell.cjs`、`shell-contract-stubs.kt` |
-| 完整 Android gate | **Blocked**：task dependency 階段因 SDK 授權未接受停止；未執行 theme/app Android unit、lint、assemble | `android-gate.log`、`android-sdk-install.log` |
+| 本地完整 Android gate | **Blocked**：task dependency 階段因 SDK 授權未接受停止；沒有重複安裝 SDK | `android-gate.log`、`android-sdk-install.log` |
+| 遠端 Android 完整 gate | **通過**：MainActivity 所在 app Kotlin compile、protocol/theme/app unit tasks、lint、packageDebug／assembleDebug | `android-ci-original-job.log`；[run 37967243385](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37967243385) |
 | Chromium Web matrix | Chromium 151.0.7922.173，390×844，14 core×mode variants；dirty draft 保留、頁面無水平溢出 | `browser-results.json`、`web-check.cjs` |
 
 前端新增案例涵蓋缺欄位、錯誤／過大／可執行 payload、cache 損壞、bootstrap origin、backend offline／reconnect、desktop lease offline、相同 revision、command busy／缺省 command theme、late callbacks、七 core×日夜、自訂及預設 palette，以及 dirty draft／區段／量測／eligibility 保留。native 純 JVM 案例涵蓋冷啟動、重開、離線、重連、host switch、generation、rapid updates／late callbacks、codec 與 token。Rust LAN tests 確認一般 settings/admin 仍拒絕，session／revocation／origin 保護維持。
 
-[Android CI](../../../.github/workflows/companion.yml) 已實際加入 `:theme:testDebugUnitTest`／`:app:testDebugUnitTest`，與既有 protocol／lint／assemble gate 同跑。這是 CI 設定變更，不能據此宣稱本機或遠端 CI 已通過。
+[Android CI](../../../.github/workflows/companion.yml) 的 [job 113944549082](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37967243385/job/113944549082) log 確認 `:theme:testDebugUnitTest`／`:app:testDebugUnitTest` 實際執行，沒有 NO-SOURCE／UP-TO-DATE 標記；`:app:compileDebugKotlin`、protocol tests、lint、packageDebug／assembleDebug 均完成，`BUILD SUCCESSFUL in 3m 25s`。
+
+此 run 綁定 head `c8ad8e479c087a31327beea7c6a864afba9e7a76`，實際 checkout 為 GitHub PR 合成 merge `f52ef7a6a49571ec75cc6f0f23c74449113f1fda`，將 head 合入既有基準 `d4e0fe3762c613240f7d6902d07edcb212aa5926`；這不是把 PR 合併進 main。初次 run 沒有 artifacts，log 沒有 JUnit 計數，不能憑 source 中的 @Test 數量宣稱實際執行數，也沒有可下載 APK 或 APK hash。
+
+後續 CI 補上三個模組的原始 JUnit XML、lint reports、debug APK、APK SHA-256、head／checkout SHA、Android source hash 與 Java version 留存，並檢查各模組 XML 及 APK 實際存在。artifact 保留 14 天，原始下載證據另留於交付目錄。新增留存步驟的 run 與實際計數需待完成後更新。
 
 ## 截圖、未驗收項目與剩餘界線
 
 `browser-{swiss,rhine-lab}-{light,dark}.png` 是四張 Web 補充截圖。workflow 為合成 fixture，其他 API 模擬 LAN 拒絕，因此部分翻譯退回 key。它們只代表 Chromium Web 層，不是實際 LAN、Android、WebView 或 native＋WebView 同框驗收。
 
-**尚未驗證 MainActivity 完整編譯、`:theme`／`:app` Android Gradle unit tasks、lint、APK、Android／WebView 版本與 native＋WebView 執行。** 沒有 APK，因此 APK SHA-256 為 unavailable。窄螢幕、旋轉、鍵盤、長標籤、頁尾可達、LAN／USB／QR／revocation 的裝置整合及真實遊戲亦未驗證。
+**尚未驗證 Android／WebView 版本與 native＋WebView 裝置執行。** MainActivity 已在上述 CI 真正編譯；unit／lint／debug packaging 已通過，但初次 run 未留存可下載 APK，APK SHA-256 尚待證據留存 run。窄螢幕、旋轉、鍵盤、長標籤、頁尾可達、LAN／USB／QR／revocation 的裝置整合及真實遊戲亦未驗證。
 
 Compose 字體仍為 Android sans-serif fallback，未新增／轉換 MiSans、Inter、Outfit 素材；Halfmoon native 沒有 CSS blur／radial anchor，Rhine native 沒有分頁動畫。這不是 Issue #485 全部視覺與手機驗收。
 
@@ -73,7 +78,7 @@ sdkmanager 的完整授權名稱為 **Android Software Development Kit License A
 
 SDK 條款亦提及開源元件各自授權（3.5）、第三方及 Google Data APIs 額外條款（7.3／8.1.1），以及使用 Android Recognition Service API 時的 [Data Processing Addendum for Products where Google is a Data Processor](https://privacy.google.com/businesses/gdprprocessorterms/)（8.1.2）。這些條件不等於本次有另一個安裝接受提示；使用統計收集亦需另行同意（6.1）。沒有代使用者接受 SDK 或其他條款，亦沒有 automatic approval review rejection。
 
-下一步須先由使用者確認 SDK 授權，再安裝上述三個 package，執行完整 Android gate。裝置驗收須同時看到 native／WebView 並記錄 commit、APK hash、Android／WebView 版本。純 JVM tests、瀏覽器截圖或 APK build 不替代該驗收。
+遠端 runner 已完成 compile／unit／lint／assemble，不為重複編譯要求安裝本地 SDK。本地 SDK 授權保持暫停；若後續確有本地 SDK 需求，才由使用者確認。裝置驗收須同時看到 native／WebView 並記錄 commit、APK hash、Android／WebView 版本。純 JVM tests、瀏覽器截圖或 APK build 不替代該驗收。
 
 ## 完整檔案清單（37 個）
 

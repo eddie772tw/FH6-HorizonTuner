@@ -39,3 +39,35 @@ jobs:
 
       - name: Run protocol, theme and app tests, Android lint, and debug assemble
         run: bash ./gradlew --no-daemon --stacktrace :protocol-core:test :theme:testDebugUnitTest :app:testDebugUnitTest :app:lintDebug :app:assembleDebug
+
+      - name: Record Android verification evidence
+        env:
+          COMPANION_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          mkdir -p build/verification
+          printf '%s\n' "$COMPANION_HEAD_SHA" > build/verification/head-sha.txt
+          git rev-parse HEAD > build/verification/checkout-sha.txt
+          git rev-parse 'HEAD^{tree}' > build/verification/checkout-tree.txt
+          git ls-files '*.kt' '*.kts' 'gradle/wrapper/gradle-wrapper.properties' | xargs sha256sum > build/verification/source-sha256.txt
+          java -version 2> build/verification/java-version.txt
+          for report_dir in protocol-core/build/test-results/test theme/build/test-results/testDebugUnitTest app/build/test-results/testDebugUnitTest; do
+            test -n "$(find "$report_dir" -maxdepth 1 -name 'TEST-*.xml' -print -quit)"
+          done
+          test -s app/build/reports/lint-results-debug.xml
+          test -s app/build/outputs/apk/debug/app-debug.apk
+          (cd app/build/outputs/apk/debug && sha256sum app-debug.apk) | tee build/verification/APK-SHA256.txt
+
+      - name: Upload Android test, lint, and APK evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: companion-verification-${{ github.event.pull_request.head.sha || github.sha }}
+          path: |
+            companion/protocol-core/build/test-results/test/TEST-*.xml
+            companion/theme/build/test-results/testDebugUnitTest/TEST-*.xml
+            companion/app/build/test-results/testDebugUnitTest/TEST-*.xml
+            companion/app/build/reports/lint-results-debug.*
+            companion/app/build/outputs/apk/debug/app-debug.apk
+            companion/build/verification/*.txt
+          if-no-files-found: error
+          retention-days: 14

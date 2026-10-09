@@ -665,3 +665,10 @@
 - **Evidence**：Vitest 198 passed files／1747 passed tests／1 skipped；LAN 與 Windows profile build 通過。含 Companion assets 的 Cargo 184 passed／2 ignored，無預設功能 176 passed／2 ignored；Rust fmt／diff check 通過。Kotlin 2.2.21／Compose compiler＋實際 libraries 的 6 個 native contract／token 案例通過；protocol Gradle 5 tests 通過；Shell compile-only 檢查通過（Activity enums／BuildConfig 用 stubs）。Chromium 151 的 390×844 七核心 × 日夜、dirty draft 與頁面溢出檢查通過，使用合成資料。
 - **Boundary**：Android `:theme:testDebugUnitTest`／`:app:testDebugUnitTest`／lint／assemble 在 task dependency 階段被 SDK 36／Build Tools 35.0.0 的未接受授權阻擋；尚未取得接受 SDK License 的使用者授權。MainActivity 完整編譯、APK、Android／WebView／裝置執行與真實遊戲未驗證。Compose 用 Android sans-serif fallback，CSS blur／radial anchor／Rhine 動效尚未實作。原始 log／完整 diff 另交獨立 review，不將純 JVM 或瀏覽器證據當成 Android 驗收。
 - **Skills**：`halfmoon-design-system`、`modular-refactoring`、`pr-author-maintainer`。
+
+## 2026-10-09 / Issue #485 Android CI 證據留存（Codex as Codex）
+
+- **Learning**：Android Gradle task 成功可證明編譯與 gate 執行，但預設 log 不列 JUnit 計數；未 upload artifact 就無法取得 APK hash 或原始 XML。CI 應留存各模組 XML、lint、APK、head／checkout SHA 與 source hash，而不是用 source 的 @Test 數量當執行結果。
+- **Evidence**：head `c8ad8e479c087a31327beea7c6a864afba9e7a76` 的 run `37967243385`／job `113944549082` 已 success。log 實際包含 app Kotlin compile、protocol/theme/app tests、lint、packageDebug／assembleDebug。checkout 是 PR 合成 merge `f52ef7a6a49571ec75cc6f0f23c74449113f1fda`，未合併 main。此 run artifacts 為空，補留存後重跑取得實際 XML 計數及 APK。
+- **Boundary**：本地 SDK 授權保持暫停，不為重複 compile 安裝 SDK；Android／WebView／native 同框與生命周期仍需裝置驗收。
+- **Skills**：`pr-author-maintainer`。
