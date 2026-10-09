@@ -664,3 +664,13 @@
 - **Evidence**：Cargo 預設 188 passed／2 ignored，無預設功能 180 passed／2 ignored；Vitest 200 passed files、1747 passed／1 skipped；typecheck／Windows frontend build、backend／Tauri fmt、Clippy 與 diff check 通過。raw logs 位於 `/workspace/issue-487-evidence/rawlogs/`，含安裝失敗、資產競態及後續成功紀錄。
 - **Boundary**：沒有非中性偏好校準、WOT 圖或頻率模型；沒有修改正式 Road／frozen legacy 公式、golden fixtures、共享 ThemeContext、全域 CSS 或 Companion theme。雲端 Chromium SUID sandbox 啟動失敗，未關閉 sandbox／更改權限；窄畫面／主題視覺及真實 FH6／Android 驗收未完成。詳細契約見 [P1 文件](../docs/tuning/neutral-baseline-preview-p1.md)。
 - **Skills**：`physics-tuning-math`、`halfmoon-design-system`、`modular-refactoring`、`pr-author-maintainer`。
+
+## 2026-10-09 / Issue #487 P1 獨立審查回歸修正（Codex as Codex）
+
+- **來源／狀態**：`local`／`verified`（Rust／DOM 契約）；在 `eda09b83` 上重現兩項審查發現。本次修正只建立本地 commit，先前已推送分支不包含這些修正。
+- **Learning**：
+  1. 為舊合格 ICE cache 補輪胎摘要時，readonly replay 必須保留已載入的可信 qualified evidence ID，否則 provenance 與 recommendation snapshot 會退回 imported-capture。只從成功載入的 cache 沿用 ID；cold cache 保持 null，readonly 不寫入。
+  2. 完整 profile 是預覽／證據的失效邊界，不應同時用來重設草稿目標。同車 Rally／Drag、重量／範圍或引擎參數編輯需保留草稿與已套用值；換車或實際 live build identity 才重設。初次 idle identity hydration 仍保留草稿，完整 setup／sequence 防護不移除。
+- **Evidence**：修正前 Rust 契約重現 evidenceId 為 null；DOM 整合測試重現 Rally／Drag 編輯後退回 Road。修正後 readonly 資料列及資料庫位元組均未改變；聚焦前端 10 項通過，完整 Vitest 201 passed files、1749 passed／1 skipped，Cargo 預設 189 passed／2 ignored、無預設功能 181 passed／2 ignored；typecheck、Windows frontend build、backend／Tauri fmt、Clippy（含 warnings）通過。原始失敗及最終 raw logs 保留於 `/workspace/issue-487-evidence/rawlogs/`。
+- **Boundary**：本次沒有推送、PR 發布、留言、merge 或 release；不改瀏覽器、窄畫面／主題視覺、FH6／Android 與同設定 A/B 的未驗收標記，不改公式或共享主題檔。
+- **Skills**：`physics-tuning-math`、`halfmoon-design-system`、`pr-author-maintainer`。

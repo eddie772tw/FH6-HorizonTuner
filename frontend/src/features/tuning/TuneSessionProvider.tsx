@@ -165,7 +165,9 @@ export function TuneSessionProvider({ children }: { children: ReactNode }) {
 
   const [reviewHistory, setReviewHistory] = useState(false);
   const [identityGeneration, setIdentityGeneration] = useState(0);
-  const baseline = useBaselineDraft(JSON.stringify([carId, staticProfileJson, identityGeneration]), goal, setGoal);
+  const [baselineGeneration, setBaselineGeneration] = useState(0);
+  // Profile edits invalidate calculations/evidence, while keeping the user's draft target.
+  const baseline = useBaselineDraft(JSON.stringify([carId, baselineGeneration]), goal, setGoal);
   const setupContext = JSON.stringify([staticProfileJson, baseline.fields]);
   const setupContextRef = useRef(setupContext);
   setupContextRef.current = setupContext;
@@ -343,6 +345,7 @@ export function TuneSessionProvider({ children }: { children: ReactNode }) {
   }, [workflowStep]);
 
   useEffect(() => {
+    const previousIdentity = identityTokenRef.current.identity;
     const nextToken = nextTuneAsyncToken(identityTokenRef.current, identity);
     if (nextToken.generation === identityTokenRef.current.generation) return;
     if (shouldPreserveIdleIdentityHydration(identityTokenRef.current.identity, identity, measurementPhaseRef.current)) {
@@ -351,6 +354,11 @@ export function TuneSessionProvider({ children }: { children: ReactNode }) {
     }
     identityTokenRef.current = nextToken;
     setIdentityGeneration(nextToken.generation);
+    if (previousIdentity.carId !== identity.carId
+      || previousIdentity.performanceIndex !== identity.performanceIndex
+      || previousIdentity.carClass !== identity.carClass) {
+      setBaselineGeneration(previous => previous + 1);
+    }
     engineRef.current.invalidate();
     if (shouldInvalidateMeasurementAttempt(measurementPhaseRef.current)) invalidateMeasurement();
     else resetUnstartedMeasurement();

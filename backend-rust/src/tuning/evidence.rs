@@ -343,19 +343,22 @@ impl EvidenceService {
         match raw {
             EvidenceRequest::SavedEngine { observation_id } => {
                 let key = format!("qualified-engine-v4:{observation_id}");
-                if let Ok(proof) = self.load(&key) {
-                    if proof.tire_summary.is_some() {
-                        return Ok(proof);
-                    }
-                }
+                let saved_id = match self.load(&key) {
+                    Ok(proof) if proof.tire_summary.is_some() => return Ok(proof),
+                    Ok(proof) => proof.evidence_id,
+                    Err(_) => None,
+                };
                 let saved = self
                     .store
                     .get(observation_id, Some("engine-observation"), None)?;
-                let proof = qualify(&EvidenceRequest::EngineCapture {
+                let mut proof = qualify(&EvidenceRequest::EngineCapture {
                     observation: saved["observation"].clone(),
                     capture: saved["capture"].clone(),
                 })
                 .map_err(|e| ApiError::invalid(&e))?;
+                // Enrich legacy caches without discarding their saved provenance.
+                // A cold readonly replay still has no qualified saved ID.
+                proof.evidence_id = saved_id;
                 if persist_cache {
                     self.save(proof, Some(&key))
                 } else {
