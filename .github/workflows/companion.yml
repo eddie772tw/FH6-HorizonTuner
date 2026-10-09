@@ -52,10 +52,14 @@ jobs:
           java -version 2> build/verification/java-version.txt
           for report_dir in protocol-core/build/test-results/test theme/build/test-results/testDebugUnitTest app/build/test-results/testDebugUnitTest; do
             test -n "$(find "$report_dir" -maxdepth 1 -name 'TEST-*.xml' -print -quit)"
+            for report in "$report_dir"/TEST-*.xml; do
+              sed -n '1,2p' "$report"
+            done
           done
           test -s app/build/reports/lint-results-debug.xml
           test -s app/build/outputs/apk/debug/app-debug.apk
           (cd app/build/outputs/apk/debug && sha256sum app-debug.apk) | tee build/verification/APK-SHA256.txt
+          cat build/verification/head-sha.txt build/verification/checkout-sha.txt build/verification/source-sha256.txt build/verification/java-version.txt
 
       - name: Upload Android test, lint, and APK evidence
         if: always()
