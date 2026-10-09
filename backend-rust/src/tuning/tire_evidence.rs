@@ -51,8 +51,7 @@ pub fn observe(samples: &[Value], identity: &Value) -> Value {
             discontinuous = true;
         }
         previous = Some(t);
-        if number(s, "isRaceOn") != Some(1.0)
-            || number(s, "speedMps").is_none_or(|v| v <= 1.0)
+        if number(s, "speedMps").is_none_or(|v| v <= 1.0)
             || number(s, "gear").is_none_or(|v| v < 1.0)
         {
             reason("motion-or-gear-invalid");

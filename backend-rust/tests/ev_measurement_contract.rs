@@ -4,6 +4,30 @@ use fh6_backend::tuning::{
 };
 use serde_json::{json, Value};
 #[test]
+fn real_ev_replay_qualification_ignores_unreliable_race_flag() {
+    let replay: Value =
+        serde_json::from_str(include_str!("../../tests/fixtures/ev_taycan_replay.json")).unwrap();
+    let mut enabled = initial("3445");
+    let mut disabled = enabled.clone();
+    for row in replay["runs"][0]["rows"].as_array().unwrap() {
+        let mut frame = Value::Object(
+            replay["columns"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .zip(row.as_array().unwrap())
+                .map(|(k, v)| (k.as_str().unwrap().to_owned(), v.clone()))
+                .collect(),
+        );
+        frame["IsRaceOn"] = json!(1);
+        enabled = advance(&enabled, &frame);
+        frame["IsRaceOn"] = json!(0);
+        disabled = advance(&disabled, &frame);
+    }
+    assert_eq!(enabled["gears"].as_array().unwrap().len(), 2);
+    assert_eq!(disabled, enabled);
+}
+#[test]
 fn taycan_replay_preserves_gear_evidence_and_qualifies_two_gears() {
     let replay: Value =
         serde_json::from_str(include_str!("../../tests/fixtures/ev_taycan_replay.json")).unwrap();

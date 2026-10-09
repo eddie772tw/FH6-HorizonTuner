@@ -7,6 +7,7 @@ import {
   isOutsideHysteresis,
   segmentIntersectsSphere,
   validateRoute,
+  selectedRouteForMode,
 } from "./routeTriggerMath";
 import type { AnalysisDataPoint } from "../../context/TelemetryRecorderContext";
 
@@ -99,6 +100,15 @@ describe("routeTriggerMath", () => {
   });
 
   describe("filterTrimmedPoints", () => {
+    it("excludes a broken middle lap while retaining closed boundaries", () => {
+      const points = [0,1,2,3,4,5,6].map(time => ({ time })) as AnalysisDataPoint[];
+      expect(filterTrimmedPoints(points,0,6,6,[{start_time:0,end_time:2},{start_time:4,end_time:6}]).map(p => p.time)).toEqual([0,1,2,4,5,6]);
+    });
+    it("keeps zero valid samples empty while raw data remains available", () => {
+      const points = [{ time: 0 }, { time: 1 }] as AnalysisDataPoint[];
+      expect(filterTrimmedPoints(points, 0, 0, 0)).toEqual([]);
+      expect(points).toHaveLength(2);
+    });
     it("filters points between valid start and end times", () => {
       const points: Partial<AnalysisDataPoint>[] = [
         { time: 0 },
@@ -114,24 +124,86 @@ describe("routeTriggerMath", () => {
   });
 
   describe("calculateLapsFromPoints", () => {
+    it("keeps zero-based game laps distinct and rejects an unobserved later start", () => {
+      const laps = calculateLapsFromPoints([
+        {time:0,LapNumber:0,lap_distance:0},{time:59,LapNumber:0,lap_distance:5900},
+        {time:60,LapNumber:1,lap_distance:0},{time:119,LapNumber:1,lap_distance:5900},
+        {time:120,LapNumber:2,lap_distance:0},
+      ] as AnalysisDataPoint[]);
+      expect(laps.filter(l => l.complete).map(l => l.lap_time)).toEqual([60,60]);
+      const missing = calculateLapsFromPoints([
+        {time:0,LapNumber:1,CurrentLap:0},{time:10,LapNumber:1,CurrentLap:10},
+        {time:100,LapNumber:2,CurrentLap:40,lap_distance:4000},{time:110,LapNumber:2,CurrentLap:50,lap_distance:5000},
+        {time:120,LapNumber:3,CurrentLap:0,lap_distance:0},
+      ] as AnalysisDataPoint[]);
+      expect(missing[1].complete).toBe(false);
+    });
+    it("handles a long capture without spreading points onto the call stack", () => {
+      const points = Array.from({length:180000},(_,i) => ({time:i/60,LapNumber:1,lap_distance:i})) as AnalysisDataPoint[];
+      expect(calculateLapsFromPoints(points)[0].observed_span).toBeCloseTo(179999/60);
+    });
+    it("requires observed start and consecutive closing boundaries", () => {
+      const partial = calculateLapsFromPoints([
+        { time: 40, LapNumber: 1, CurrentLap: 40, lap_distance: 800 },
+        { time: 50, LapNumber: 1, CurrentLap: 50, lap_distance: 1000 },
+        { time: 60, LapNumber: 2, CurrentLap: 0, lap_distance: 0 },
+      ] as AnalysisDataPoint[]);
+      expect(partial[0].complete).toBe(false);
+      expect(partial[0].lap_time).toBeNull();
+      const skipped = calculateLapsFromPoints([
+        { time: 0, LapNumber: 1, lap_distance: 0 },
+        { time: 10, LapNumber: 1, lap_distance: 100 },
+        { time: 120, LapNumber: 3, lap_distance: 0 },
+      ] as AnalysisDataPoint[]);
+      expect(skipped[0].complete).toBe(false);
+      const gap = calculateLapsFromPoints([
+        {time:0,LapNumber:1,lap_distance:0},{time:59,LapNumber:1,lap_distance:5900},
+        {time:150,LapNumber:2,lap_distance:9000},
+      ] as AnalysisDataPoint[]);
+      expect(gap[0].complete).toBe(false);
+      expect(gap[0].lap_time).toBeNull();
+    });
+
+    it("includes the closing transition and labels estimated timing", () => {
+      const laps = calculateLapsFromPoints([
+        { time: 0, LapNumber: 1, CurrentLap: 0 },
+        { time: 59, LapNumber: 1, CurrentLap: 59 },
+        { time: 60, LapNumber: 2, CurrentLap: 0 },
+      ] as AnalysisDataPoint[]);
+      expect(laps[0].lap_time).toBe(60);
+      expect(laps[0].lap_time_source).toBe("motec-estimate");
+    });
+    it("uses a continuous observed lap transition when CSV distance is cumulative", () => {
+      const laps = calculateLapsFromPoints([
+        {time:0,LapNumber:1,lap_distance:1000},{time:59,LapNumber:1,lap_distance:2000},
+        {time:60,LapNumber:2,lap_distance:2010},{time:119,LapNumber:2,lap_distance:3000},
+        {time:120,LapNumber:3,lap_distance:3010},
+      ] as AnalysisDataPoint[]);
+      expect(laps[0].complete).toBe(false);
+      expect(laps[1].complete).toBe(true);
+      expect(laps[1].lap_time).toBe(60);
+      expect(laps[1].is_estimated).toBe(true);
+    });
     it("extracts laps from multi-lap points array", () => {
       const points: Partial<AnalysisDataPoint>[] = [
         { time: 0, LapNumber: 1, SpeedMetersPerSecond: 20, lap_distance: 0 },
         { time: 10, LapNumber: 1, SpeedMetersPerSecond: 30, lap_distance: 200 },
         { time: 20, LapNumber: 1, SpeedMetersPerSecond: 25, lap_distance: 400 },
+        { time: 24.9, LapNumber: 1, lap_distance: 490 },
         { time: 25, LapNumber: 2, SpeedMetersPerSecond: 22, lap_distance: 0 },
         { time: 35, LapNumber: 2, SpeedMetersPerSecond: 32, lap_distance: 210 },
         { time: 45, LapNumber: 2, SpeedMetersPerSecond: 28, lap_distance: 420 },
+        { time: 49.9, LapNumber: 2, lap_distance: 490 },
         { time: 50, LapNumber: 3, SpeedMetersPerSecond: 25, lap_distance: 0 },
       ];
 
       const laps = calculateLapsFromPoints(points as AnalysisDataPoint[]);
       expect(laps.length).toBe(3);
       expect(laps[0].lap_number).toBe(1);
-      expect(laps[0].lap_time).toBe(20);
+      expect(laps[0].lap_time).toBe(25);
       expect(laps[0].complete).toBe(true);
       expect(laps[1].lap_number).toBe(2);
-      expect(laps[1].lap_time).toBe(20);
+      expect(laps[1].lap_time).toBe(25);
       expect(laps[1].complete).toBe(true);
       expect(laps[2].lap_number).toBe(3);
       expect(laps[2].complete).toBe(false);
@@ -168,5 +240,11 @@ describe("routeTriggerMath", () => {
       expect(laps[0].complete).toBe(false);
       expect(laps[0].lap_time).toBeNull();
     });
+  });
+
+  it("does not submit a route from another recording mode", () => {
+    const routes = [{ route_id: "trial", mode: "time_trial" }] as Parameters<typeof selectedRouteForMode>[0];
+    expect(selectedRouteForMode(routes, "trial", "roaming")).toBeUndefined();
+    expect(selectedRouteForMode(routes, "trial", "time_trial")?.route_id).toBe("trial");
   });
 });

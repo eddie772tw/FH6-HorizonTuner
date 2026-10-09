@@ -207,7 +207,9 @@ export const TelemetryRecorderProvider: React.FC<{
         { method: "POST" },
       );
       const data = await res.json();
-      if (data && data.filename) {
+      if (res.ok && data && data.filename) {
+        setIsRecording(false);
+        setManualMode(false);
         await fetchSavedSessionsList();
         return data.filename;
       }

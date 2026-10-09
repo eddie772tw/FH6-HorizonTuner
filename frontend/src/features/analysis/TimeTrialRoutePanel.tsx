@@ -8,6 +8,7 @@ export interface TimeTrialRoutePanelProps {
   readonly routes: CustomRoute[];
   readonly selectedRouteId: string | null;
   readonly isArmed: boolean;
+  readonly isRecording: boolean;
   readonly armedRouteId: string | null;
   readonly liveTelemetry: TelemetryData | null;
   readonly onSelectRoute: (routeId: string | null) => void;
@@ -24,6 +25,7 @@ export const TimeTrialRoutePanel: React.FC<TimeTrialRoutePanelProps> = ({
   routes,
   selectedRouteId,
   isArmed,
+  isRecording,
   armedRouteId,
   liveTelemetry,
   onSelectRoute,
@@ -203,11 +205,11 @@ export const TimeTrialRoutePanel: React.FC<TimeTrialRoutePanelProps> = ({
         {selectedRouteId && (
           <div>
             {isCurrentArmed ? (
-              <button type="button" className="btn btn-sm btn-warning text-dark" onClick={onDisarmRoute}>
+              <button type="button" className="btn btn-sm btn-warning text-dark" onClick={onDisarmRoute} disabled={isRecording}>
                 {t("Disarm Route")}
               </button>
             ) : (
-              <button type="button" className="btn btn-sm btn-success" onClick={() => onArmRoute(selectedRouteId)}>
+              <button type="button" className="btn btn-sm btn-success" disabled={isRecording} onClick={() => onArmRoute(selectedRouteId)}>
                 {t("Arm Route for Timing")}
               </button>
             )}

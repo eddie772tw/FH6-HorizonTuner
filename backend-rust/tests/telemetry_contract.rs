@@ -645,7 +645,7 @@ fn test_time_trial_gate_trigger() {
         end_radius: None,
     };
 
-    recorder.arm_route(active_route);
+    recorder.arm_route(active_route).unwrap();
     assert!(recorder.status().armed);
     assert_eq!(
         recorder.status().armed_route_id.as_deref(),
@@ -743,7 +743,7 @@ fn test_high_speed_swept_gate_crossing() {
         end_radius: None,
     };
 
-    recorder.arm_route(active_route);
+    recorder.arm_route(active_route).unwrap();
 
     // Frame 1: Before gate at X = -15m (> 5m)
     recorder.record_at(
@@ -827,7 +827,10 @@ fn test_roaming_start_and_end_gate() {
         end_radius: Some(10.0),
     };
 
-    recorder.arm_route(active_route);
+    recorder.arm_route(active_route).unwrap();
+    // A valid point outside is required before an observed start entry.
+    recorder.record_at(&json!({"PositionX":-20.0,"PositionY":0.0,"PositionZ":0.0,"TimestampMS":900.0,"CarOrdinal":1}),0.9);
+    assert!(!recorder.status().is_recording);
     // Enter start
     recorder.record_at(
         &json!({
@@ -1016,7 +1019,7 @@ fn test_motec_ld_binary_structure_and_ldx_beacons() {
     let laps = vec![
         json!({
             "lap_number": 1,
-            "lap_time": 0.542,
+            "lap_time": 1.0,
             "start_distance": 0.0,
             "end_distance": 4500.0,
             "max_speed_kmh": 265.0,
@@ -1024,11 +1027,11 @@ fn test_motec_ld_binary_structure_and_ldx_beacons() {
         }),
         json!({
             "lap_number": 2,
-            "lap_time": 0.418,
+            "lap_time": null,
             "start_distance": 4500.0,
             "end_distance": 9000.0,
             "max_speed_kmh": 268.0,
-            "complete": 1
+            "complete": 0
         }),
     ];
 
@@ -1114,9 +1117,9 @@ fn test_motec_ld_binary_structure_and_ldx_beacons() {
     assert!(xml.contains("ClassName=\"BCN\""));
     assert!(xml.contains("Flags=\"77\""));
     assert!(xml.contains("Time=\"0.00000000000000000E+00\""));
-    assert!(xml.contains("Time=\"5.42000000000000000E+05\""));
-    assert!(xml.contains("<String Id=\"Total Laps\" Value=\"2\"/>"));
-    assert!(xml.contains("<String Id=\"Fastest Lap\" Value=\"2\"/>"));
+    assert!(xml.contains("Time=\"1.00000000000000000E+06\""));
+    assert!(xml.contains("<String Id=\"Total Laps\" Value=\"1\"/>"));
+    assert!(xml.contains("<String Id=\"Fastest Lap\" Value=\"1\"/>"));
 
     // 5. Verify API route format=ld export and open
     let root = tempfile::tempdir().unwrap();
@@ -1224,7 +1227,7 @@ fn test_motec_ld_edge_cases_and_beacon_robustness() {
     assert!((resampled[0].channels[3] - 90.0).abs() < 1e-3); // speed km/h
     assert!((resampled[0].channels[18] - 20.0).abs() < 1e-3); // NormalizedSuspensionTravel FL * 100
 
-    // 2. Test empty laps with multi-lap points: must generate start, transition, AND finish beacons
+    // 2. Unknown lap summaries cannot prove opening/closing boundaries or a fastest lap.
     let multi_lap_points = vec![
         json!({ "time": 0.0, "LapNumber": 1, "SpeedMetersPerSecond": 30.0 }),
         json!({ "time": 30.0, "LapNumber": 1, "SpeedMetersPerSecond": 40.0 }),
@@ -1233,14 +1236,10 @@ fn test_motec_ld_edge_cases_and_beacon_robustness() {
         json!({ "time": 115.0, "LapNumber": 2, "SpeedMetersPerSecond": 55.0 }),
     ];
     let xml_multi = motec::generate_ldx_xml(&[], &multi_lap_points);
-    // Must contain 3 markers: 0.0 (lap 1 start), 60.0 (lap 2 start), 115.0 (lap 2 end)
-    assert!(xml_multi.contains("Name=\"1\" Flags=\"77\" Time=\"0.00000000000000000E+00\""));
-    assert!(xml_multi.contains("Name=\"2\" Flags=\"77\" Time=\"6.00000000000000000E+07\""));
-    assert!(xml_multi.contains("Name=\"3\" Flags=\"77\" Time=\"1.15000000000000000E+08\""));
-    assert!(xml_multi.contains("<String Id=\"Total Laps\" Value=\"2\"/>"));
-    // Lap 2 (55s) is faster than Lap 1 (60s)
-    assert!(xml_multi.contains("<String Id=\"Fastest Lap\" Value=\"2\"/>"));
-    assert!(xml_multi.contains("<String Id=\"Fastest Time\" Value=\"0:55.000\"/>"));
+    assert!(!xml_multi.contains("<Marker Name="));
+    assert!(xml_multi.contains("<String Id=\"Total Laps\" Value=\"0\"/>"));
+    assert!(!xml_multi.contains("<String Id=\"Fastest Lap\""));
+    assert!(!xml_multi.contains("<String Id=\"Fastest Time\""));
 
     // 3. Test incomplete lap with null lap_time but valid observed_span
     let incomplete_laps = vec![json!({
@@ -1250,9 +1249,8 @@ fn test_motec_ld_edge_cases_and_beacon_robustness() {
         "complete": 0
     })];
     let xml_incomplete = motec::generate_ldx_xml(&incomplete_laps, &[]);
-    // Must use observed_span as beacon duration
-    assert!(xml_incomplete.contains("Name=\"1\" Flags=\"77\" Time=\"0.00000000000000000E+00\""));
-    assert!(xml_incomplete.contains("Name=\"2\" Flags=\"77\" Time=\"5.23400000000000000E+07\""));
+    // An observed span is retained for inspection, never promoted to a completed beacon.
+    assert!(!xml_incomplete.contains("<Marker Name="));
     assert!(xml_incomplete.contains("<String Id=\"Total Laps\" Value=\"0\"/>"));
     assert!(!xml_incomplete.contains("Fastest Lap"));
     assert!(!xml_incomplete.contains("Fastest Time"));

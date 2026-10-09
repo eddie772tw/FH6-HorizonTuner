@@ -9,6 +9,7 @@ export interface AnalysisRouteSectionProps {
   readonly routes: CustomRoute[];
   readonly selectedRouteId: string | null;
   readonly isArmed: boolean;
+  readonly isRecording: boolean;
   readonly armedRouteId: string | null;
   readonly liveTelemetry: TelemetryData | null;
   readonly onSelectRoute: (routeId: string | null) => void;
@@ -26,6 +27,7 @@ export const AnalysisRouteSection: React.FC<AnalysisRouteSectionProps> = ({
   routes,
   selectedRouteId,
   isArmed,
+  isRecording,
   armedRouteId,
   liveTelemetry,
   onSelectRoute,
@@ -43,6 +45,7 @@ export const AnalysisRouteSection: React.FC<AnalysisRouteSectionProps> = ({
         routes={routes.filter((r) => r.mode === "time_trial")}
         selectedRouteId={selectedRouteId}
         isArmed={isArmed}
+        isRecording={isRecording}
         armedRouteId={armedRouteId}
         liveTelemetry={liveTelemetry}
         onSelectRoute={onSelectRoute}
@@ -63,6 +66,7 @@ export const AnalysisRouteSection: React.FC<AnalysisRouteSectionProps> = ({
         routes={routes.filter((r) => r.mode === "roaming")}
         selectedRouteId={selectedRouteId}
         isArmed={isArmed}
+        isRecording={isRecording}
         armedRouteId={armedRouteId}
         liveTelemetry={liveTelemetry}
         onSelectRoute={onSelectRoute}

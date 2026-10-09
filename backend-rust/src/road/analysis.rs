@@ -23,8 +23,7 @@ fn wheel_value(values: Option<&[Value]>, i: usize) -> Option<f64> {
     num(values.and_then(|values| values.get(i)))
 }
 fn driving(p: &Value) -> bool {
-    p.get("IsRaceOn").and_then(Value::as_i64) != Some(0)
-        && num(p.get("SpeedMetersPerSecond")).is_some_and(|x| x > 2.0)
+    num(p.get("SpeedMetersPerSecond")).is_some_and(|x| x > 2.0)
 }
 fn weights<'a>(points: impl Iterator<Item = &'a Value>) -> (Vec<f64>, Value) {
     let mut w = Vec::new();
@@ -228,9 +227,6 @@ pub fn summarize_laps(points: &[Value]) -> Vec<Value> {
             previous_last = Some(last);
         }
         previous = Some(index);
-        if p.get("IsRaceOn").and_then(Value::as_i64) == Some(0) {
-            continue;
-        }
         groups.entry(index).or_default().push(p);
         if num(p.get("CurrentLap")).is_some_and(|x| x >= 0.0 && x <= 0.5) {
             starts.insert(index);

@@ -195,7 +195,7 @@ pub fn export(metadata: &Value, points: &[Value]) -> ApiResult<Vec<u8>> {
             ("AccelerationX", 1.0 / 9.81),
             ("AccelerationZ", 1.0 / 9.81),
             ("AccelerationY", 1.0 / 9.81),
-            ("Boost", 1.0),
+            ("Boost", 1.0 / 6894.75729),
             ("Fuel", 100.0),
         ] {
             row.push(fmt(p.get(key), scale, 0.0, 3));
@@ -291,7 +291,7 @@ pub fn import(bytes: &[u8]) -> ApiResult<(Value, Vec<Value>)> {
                 ("AccelerationX", 11, 9.81),
                 ("AccelerationZ", 12, 9.81),
                 ("AccelerationY", 13, 9.81),
-                ("Boost", 14, 1.0),
+                ("Boost", 14, 6894.75729),
                 ("Fuel", 15, 0.01),
                 ("PowerWatts", 16, 745.7),
                 ("TorqueNewtons", 17, 1.0),
@@ -372,6 +372,22 @@ pub fn import(bytes: &[u8]) -> ApiResult<(Value, Vec<Value>)> {
                 .collect::<Vec<_>>());
         }
         points.push(p);
+    }
+    let offset = i64::from(
+        points
+            .iter()
+            .any(|point| point["LapNumber"].as_f64() == Some(0.0)),
+    );
+    for point in &mut points {
+        if let Some(lap) = point["LapNumber"]
+            .as_f64()
+            .filter(|n| n.is_finite() && n.fract() == 0.0)
+        {
+            if offset != 0 {
+                point["gameLapNumber"] = json!(lap);
+            }
+            point["LapNumber"] = json!(lap as i64 + offset);
+        }
     }
     Ok((metadata, points))
 }
@@ -638,7 +654,7 @@ pub fn extract_point_channels(p: &Value) -> [f64; 41] {
     ch[11] = number(&p["AccelerationX"]).unwrap_or(0.0) / 9.81;
     ch[12] = number(&p["AccelerationZ"]).unwrap_or(0.0) / 9.81;
     ch[13] = number(&p["AccelerationY"]).unwrap_or(0.0) / 9.81;
-    ch[14] = number(&p["Boost"]).unwrap_or(0.0);
+    ch[14] = number(&p["Boost"]).unwrap_or(0.0) / 6894.75729;
     ch[15] = number(&p["Fuel"]).unwrap_or(0.0) * 100.0;
     ch[16] = number(&p["PowerWatts"])
         .or_else(|| number(&p["Power"]))
@@ -700,7 +716,7 @@ pub fn resample_to_grid(points: &[Value], freq: f64) -> Vec<ResampledPoint> {
     for k in 0..=total_steps {
         let t_target = t_start + k as f64 * dt;
         let t_rel = k as f64 * dt;
-        while idx + 1 < raw.len() && raw[idx + 1][0] < t_target {
+        while idx + 1 < raw.len() && raw[idx + 1][0] <= t_target {
             idx += 1;
         }
 
@@ -724,11 +740,7 @@ pub fn resample_to_grid(points: &[Value], freq: f64) -> Vec<ResampledPoint> {
             let alpha = ((t_target - t0) / (t1 - t0)).clamp(0.0, 1.0);
             for c in 1..41 {
                 if c == 2 || c == 5 {
-                    ch[c] = if alpha < 0.5 {
-                        raw[idx][c]
-                    } else {
-                        raw[idx + 1][c]
-                    };
+                    ch[c] = raw[idx][c];
                 } else {
                     ch[c] = (1.0 - alpha) * raw[idx][c] + alpha * raw[idx + 1][c];
                 }
@@ -809,150 +821,71 @@ pub fn format_lap_duration(seconds: f64) -> String {
 
 pub fn generate_ldx_xml(laps: &[Value], points: &[Value]) -> String {
     let mut beacon_times: Vec<f64> = Vec::new();
-
-    if !laps.is_empty() {
-        let t_start = points
-            .first()
-            .and_then(|p| p.get("time").and_then(Value::as_f64))
+    let mut completed_laps: Vec<&Value> = Vec::new();
+    let mut starts = std::collections::BTreeMap::new();
+    for point in points {
+        if let (Some(lap), Some(time)) = (
+            point.get("LapNumber").and_then(Value::as_i64),
+            point
+                .get("time")
+                .and_then(Value::as_f64)
+                .filter(|t| t.is_finite()),
+        ) {
+            starts.entry(lap).or_insert(time);
+        }
+    }
+    let first_time = points
+        .first()
+        .and_then(|p| p["time"].as_f64())
+        .unwrap_or(0.0);
+    let last_time = points
+        .last()
+        .and_then(|p| p["time"].as_f64())
+        .unwrap_or(first_time);
+    let mut cursor = 0.0;
+    for lap in laps {
+        let complete = lap["complete"] == 1 || lap["complete"] == true;
+        let duration = lap["lap_time"]
+            .as_f64()
+            .filter(|t| t.is_finite() && *t > 0.0);
+        let number = lap["lap_number"].as_i64().unwrap_or(1);
+        if let (true, Some(duration)) = (complete, duration) {
+            let (start, end) = if points.is_empty() {
+                (cursor, cursor + duration)
+            } else if let Some(observed_start) = starts.get(&number) {
+                let end = starts
+                    .get(&(number + 1))
+                    .copied()
+                    .unwrap_or(observed_start + duration);
+                (end - duration, end)
+            } else {
+                continue;
+            };
+            if points.is_empty() || (start >= first_time - 1e-4 && end <= last_time + 1e-4) {
+                beacon_times.extend([(start - first_time).max(0.0), end - first_time]);
+                completed_laps.push(lap);
+            }
+        }
+        // Partial observations retain their elapsed position; they are never beacons.
+        cursor += duration
+            .or_else(|| lap["observed_span"].as_f64())
             .unwrap_or(0.0);
-        let t_end = points
-            .last()
-            .and_then(|p| p.get("time").and_then(Value::as_f64))
-            .unwrap_or(t_start);
-
-        let max_span = if !points.is_empty() {
-            Some(t_end - t_start)
-        } else {
-            None
-        };
-
-        let mut cum_time = 0.0;
-        beacon_times.push(0.0);
-        for lap in laps {
-            let is_complete = lap
-                .get("complete")
-                .map(|c| c == 1 || c == true || c.as_i64() == Some(1) || c.as_bool() == Some(true))
-                .unwrap_or(false);
-            let dur = lap
-                .get("lap_time")
-                .and_then(Value::as_f64)
-                .filter(|&d| d > 0.0);
-            if is_complete {
-                if let Some(dur) = dur {
-                    cum_time += dur;
-                    let rel_time = if t_start > 0.0 {
-                        cum_time - t_start
-                    } else {
-                        cum_time
-                    };
-                    if rel_time > 0.0 {
-                        if let Some(limit) = max_span {
-                            if rel_time <= limit + 1e-4 {
-                                beacon_times.push(rel_time);
-                            }
-                        } else {
-                            beacon_times.push(rel_time);
-                        }
-                    }
-                }
-            }
-        }
-        if beacon_times.len() == 1 {
-            if let Some(limit) = max_span {
-                if limit > 0.0 {
-                    beacon_times.push(limit);
-                }
-            } else if let Some(first_lap) = laps.first() {
-                let span = first_lap
-                    .get("observed_span")
-                    .and_then(Value::as_f64)
-                    .filter(|&d| d > 0.0);
-                if let Some(span) = span {
-                    beacon_times.push(span);
-                }
-            }
-        }
-    } else if !points.is_empty() {
-        let mut current_lap = -1i64;
-        let mut start_time = 0.0;
-        let mut has_start = false;
-        let mut last_time = 0.0;
-        for p in points {
-            let lap = p.get("LapNumber").and_then(Value::as_i64).unwrap_or(1);
-            let t = p.get("time").and_then(Value::as_f64).unwrap_or(0.0);
-            if !has_start {
-                start_time = t;
-                has_start = true;
-            }
-            last_time = t;
-            if current_lap == -1 || lap > current_lap {
-                current_lap = lap;
-                beacon_times.push((t - start_time).max(0.0));
-            }
-        }
-        if last_time > start_time {
-            let end_offset = last_time - start_time;
-            if beacon_times
-                .last()
-                .is_none_or(|&last_b| end_offset > last_b)
-            {
-                beacon_times.push(end_offset);
-            }
-        }
-        if beacon_times.is_empty() {
-            beacon_times.push(0.0);
-        }
     }
-
-    let completed_laps: Vec<&Value> = laps
-        .iter()
-        .filter(|lap| {
-            let is_complete = lap
-                .get("complete")
-                .map(|c| c == 1 || c == true || c.as_i64() == Some(1) || c.as_bool() == Some(true))
-                .unwrap_or(false);
-            let has_valid_time = lap
-                .get("lap_time")
-                .and_then(Value::as_f64)
-                .is_some_and(|d| d > 0.0);
-            is_complete && has_valid_time
-        })
-        .collect();
-
-    let total_laps = if !laps.is_empty() {
-        completed_laps.len()
-    } else {
-        beacon_times.len().saturating_sub(1)
-    };
-
-    let mut fastest_time = 0.0;
-    let mut fastest_lap = 1usize;
-    if !laps.is_empty() {
-        for lap in &completed_laps {
-            if let Some(t) = lap
-                .get("lap_time")
-                .and_then(Value::as_f64)
-                .filter(|&d| d > 0.0)
-            {
-                if fastest_time == 0.0 || t < fastest_time {
-                    fastest_time = t;
-                    fastest_lap = lap
-                        .get("lap_number")
-                        .and_then(Value::as_u64)
-                        .map(|n| n as usize)
-                        .unwrap_or(1);
-                }
-            }
-        }
-    } else if beacon_times.len() >= 2 {
-        for i in 0..beacon_times.len() - 1 {
-            let dur = beacon_times[i + 1] - beacon_times[i];
-            if dur > 0.0 && (fastest_time == 0.0 || dur < fastest_time) {
-                fastest_time = dur;
-                fastest_lap = i + 1;
-            }
-        }
-    }
+    beacon_times.sort_by(f64::total_cmp);
+    beacon_times.dedup_by(|a, b| (*a - *b).abs() < 1e-4);
+    let total_laps = completed_laps.len();
+    let fastest = completed_laps.iter().min_by(|a, b| {
+        a["lap_time"]
+            .as_f64()
+            .unwrap()
+            .total_cmp(&b["lap_time"].as_f64().unwrap())
+    });
+    let fastest_time = fastest
+        .and_then(|lap| lap["lap_time"].as_f64())
+        .unwrap_or(0.0);
+    let fastest_lap = fastest
+        .and_then(|lap| lap["lap_number"].as_u64())
+        .unwrap_or(1);
 
     let mut xml = String::new();
     xml.push_str("<?xml version=\"1.0\"?>\r\n");

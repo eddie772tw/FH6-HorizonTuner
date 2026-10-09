@@ -8,6 +8,7 @@ export interface RoamingRoutePanelProps {
   readonly routes: CustomRoute[];
   readonly selectedRouteId: string | null;
   readonly isArmed: boolean;
+  readonly isRecording: boolean;
   readonly armedRouteId: string | null;
   readonly liveTelemetry: TelemetryData | null;
   readonly onSelectRoute: (routeId: string | null) => void;
@@ -24,6 +25,7 @@ export const RoamingRoutePanel: React.FC<RoamingRoutePanelProps> = ({
   routes,
   selectedRouteId,
   isArmed,
+  isRecording,
   armedRouteId,
   liveTelemetry,
   onSelectRoute,
@@ -215,9 +217,9 @@ export const RoamingRoutePanel: React.FC<RoamingRoutePanelProps> = ({
         {selectedRouteId && (
           <div>
             {isCurrentArmed ? (
-              <button type="button" className="btn btn-sm btn-warning text-dark" onClick={onDisarmRoute}>{t("Disarm Route")}</button>
+              <button type="button" className="btn btn-sm btn-warning text-dark" disabled={isRecording} onClick={onDisarmRoute}>{t("Disarm Route")}</button>
             ) : (
-              <button type="button" className="btn btn-sm btn-success" onClick={() => onArmRoute(selectedRouteId)}>{t("Arm Route for Timing")}</button>
+              <button type="button" className="btn btn-sm btn-success" disabled={isRecording} onClick={() => onArmRoute(selectedRouteId)}>{t("Arm Route for Timing")}</button>
             )}
           </div>
         )}

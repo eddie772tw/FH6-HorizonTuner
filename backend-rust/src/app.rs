@@ -295,27 +295,46 @@ impl App {
                 let car_class = data.get("car_class").and_then(Value::as_i64).unwrap_or(0);
                 let car_pi = data.get("car_pi").and_then(Value::as_i64).unwrap_or(0);
                 let mode = data.get("mode").and_then(Value::as_str).unwrap_or("circuit");
+                if mode != "circuit" {
+                    return Err(ApiError::invalid("Custom recordings must be armed and started by a subsequent gate crossing"));
+                }
                 let route_id = data.get("route_id").and_then(Value::as_str);
                 let route = if let Some(rid) = route_id {
-                    self.database.get_route(rid).ok().flatten().and_then(|v| {
-                        serde_json::from_value::<crate::telemetry::ActiveRoute>(v).ok()
-                    })
+                    let doc = self.database.get_route(rid).map_err(database_error)?
+                        .ok_or_else(|| ApiError::invalid("Route not found"))?;
+                    Some(serde_json::from_value::<crate::telemetry::ActiveRoute>(doc)
+                        .map_err(|_| ApiError::invalid("Invalid route"))?)
                 } else {
                     None
                 };
-                let id = engine.race.start_manual_with_mode(ordinal, car_name, car_class, car_pi, diagnostics::now(), mode, route).map_err(database_error)?;
+                let id = engine.race.start_manual_with_mode(ordinal, car_name, car_class, car_pi, diagnostics::now(), mode, route).map_err(ApiError::invalid)?;
                 self.persist_commands(&mut engine.race)?;
                 drop(engine);
                 self.persistence.flush().map_err(database_error)?;
                 json!({"message":"Manual recording started successfully","sessionId":id})
             }
             ("POST",["api","analysis","recorder","stop"])=>{let mut engine=lock(&self.engine);let s=engine.race.status();if !s.is_recording||!s.manual_mode{json!({"error":"Manual recording is not active"})}else{engine.race.save_latest_and_clear("manual-stop");self.persist_commands(&mut engine.race)?;drop(engine);self.persistence.flush().map_err(database_error)?;json!({"message":"Manual recording stopped and saved successfully"})}}
+            ("POST",["api","analysis","sessions","save_latest"])=>{
+                let mut engine = lock(&self.engine);
+                let status = engine.race.status();
+                let id = status.current_session_id.filter(|_| status.is_recording)
+                    .ok_or_else(|| ApiError::invalid("No active recording to save"))?;
+                engine.race.save_latest_and_clear("manual-save");
+                self.persist_commands(&mut engine.race)?;
+                drop(engine);
+                self.persistence.flush().map_err(database_error)?;
+                json!({"message":"Recording stopped and saved successfully", "filename":id, "sessionId":id})
+            }
             ("GET", ["api", "analysis", "routes"]) => {
                 Value::Array(self.database.list_routes().map_err(database_error)?)
             }
             ("POST", ["api", "analysis", "routes"]) => {
                 let mut route_doc = data.clone();
-                let route_id = route_doc.get("route_id").and_then(Value::as_str).map(String::from).unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
+                let route_id = match route_doc.get("route_id") {
+                    None | Some(Value::Null) => uuid::Uuid::new_v4().to_string(),
+                    Some(Value::String(id)) if uuid::Uuid::parse_str(id).is_ok() => uuid::Uuid::parse_str(id).unwrap().to_string(),
+                    _ => return Err(ApiError::invalid("route_id must be a valid UUID")),
+                };
                 if let Some(obj) = route_doc.as_object_mut() {
                     obj.insert("route_id".into(), Value::String(route_id.clone()));
                 }
@@ -340,20 +359,24 @@ impl App {
                 let route_id = data.get("route_id").and_then(Value::as_str).ok_or_else(|| ApiError::invalid("route_id is required"))?;
                 let route_val = self.database.get_route(route_id).map_err(database_error)?.ok_or_else(|| ApiError::new(404, "Route not found"))?;
                 let route = serde_json::from_value::<crate::telemetry::ActiveRoute>(route_val).map_err(|e| ApiError::invalid(e.to_string()))?;
-                lock(&self.engine).race.arm_route(route);
+                if data.get("mode").and_then(Value::as_str).is_some_and(|mode| mode != route.mode) {
+                    return Err(ApiError::invalid("Route mode does not match recording mode"));
+                }
+                lock(&self.engine).race.arm_route(route).map_err(ApiError::invalid)?;
                 json!({"success": true, "message": "Route armed successfully", "route_id": route_id})
             }
             ("POST", ["api", "analysis", "routes", "disarm"]) => {
-                lock(&self.engine).race.disarm_route();
+                let mut engine = lock(&self.engine);
+                if engine.race.status().is_recording {
+                    return Err(ApiError::invalid("Stop the current recording before disarming a route"));
+                }
+                engine.race.disarm_route();
                 json!({"success": true, "message": "Disarmed successfully"})
             }
             ("POST", ["api", "analysis", "routes", "import"]) => {
-                if let Some(schema) = data.get("schema") {
-                    if schema.as_str() != Some("fh6-custom-route/v1") {
-                        return Err(ApiError::invalid(format!("Unsupported schema: {schema}")));
-                    }
+                if data.get("schema").and_then(Value::as_str) != Some("fh6-custom-route/v1") {
+                    return Err(ApiError::invalid("Unsupported or missing route schema; expected fh6-custom-route/v1"));
                 }
-                let overwrite = request.query.get("overwrite").is_some_and(|s| s == "true" || s == "1");
                 let routes_to_import: Vec<Value> = if let Some(arr) = data.as_array() {
                     arr.clone()
                 } else if let Some(routes_arr) = data.get("routes").and_then(Value::as_array) {
@@ -369,35 +392,19 @@ impl App {
                     return Err(ApiError::invalid("No route data found in payload"));
                 }
                 for r in &routes_to_import {
-                    if let Some(rid_val) = r.get("route_id") {
-                        if let Some(rid) = rid_val.as_str() {
-                            if !rid.is_empty() && uuid::Uuid::parse_str(rid).is_err() {
-                                return Err(ApiError::invalid(format!("Invalid route_id UUID: {rid}")));
-                            }
-                        } else if !rid_val.is_null() {
-                            return Err(ApiError::invalid("route_id must be a string UUID"));
-                        }
-                    }
+                    r.get("route_id").and_then(Value::as_str).and_then(|id| uuid::Uuid::parse_str(id).ok()).ok_or_else(|| ApiError::invalid("Shared routes must contain a valid route_id UUID"))?;
                     crate::telemetry::validate_custom_route(r).map_err(ApiError::invalid)?;
                 }
                 let mut prepared_routes = Vec::new();
+                let mut batch_ids = std::collections::BTreeSet::new();
                 for mut r in routes_to_import {
-                    let mut rid = r.get("route_id").and_then(Value::as_str).unwrap_or_default().to_string();
-                    let exists = if !rid.is_empty() {
-                        self.database.get_route(&rid).map_err(database_error)?.is_some()
-                    } else {
-                        false
-                    };
-                    if rid.is_empty() || (exists && !overwrite) {
-                        rid = uuid::Uuid::new_v4().to_string();
-                        if let Some(obj) = r.as_object_mut() {
-                            obj.insert("route_id".into(), Value::String(rid.clone()));
-                            if exists && !overwrite {
-                                let orig_name = obj.get("name").and_then(Value::as_str).unwrap_or("Imported Route");
-                                obj.insert("name".into(), Value::String(format!("{orig_name} (Imported)")));
-                            }
-                        }
+                    let rid = uuid::Uuid::parse_str(r["route_id"].as_str().unwrap()).unwrap().to_string();
+                    r["route_id"] = Value::String(rid.clone());
+                    if !batch_ids.insert(rid.clone()) {
+                        return Err(ApiError::invalid("Duplicate route_id in import batch"));
                     }
+                    let exists = self.database.get_route(&rid).map_err(database_error)?.is_some();
+                    if exists { return Err(ApiError::invalid("route_id already exists; importing cannot overwrite or relabel an existing route")); }
                     prepared_routes.push(r);
                 }
                 self.database.save_routes_batch(&prepared_routes).map_err(database_error)?;
@@ -485,6 +492,27 @@ impl App {
             .get("format")
             .map(|s| s.as_str())
             .unwrap_or("csv");
+        if !is_raw && format_param == "ld" {
+            let meta = self
+                .database
+                .get_session_metadata(&id)
+                .map_err(database_error)?;
+            if meta
+                .get("trim_analysis")
+                .and_then(|trim| trim.get("valid_lap_windows"))
+                .and_then(Value::as_array)
+                .is_some_and(|windows| {
+                    windows.windows(2).any(|pair| {
+                        pair[0]["end_time"]
+                            .as_f64()
+                            .zip(pair[1]["start_time"].as_f64())
+                            .is_some_and(|(end, start)| start > end)
+                    })
+                })
+            {
+                return Err(ApiError::invalid("Valid laps contain a telemetry gap; export CSV or select raw data instead of interpolating across the missing interval"));
+            }
+        }
         let points = self
             .database
             .get_telemetry_points(&id, None)
@@ -506,17 +534,25 @@ impl App {
                     let filtered: Vec<Value> = points
                         .into_iter()
                         .filter(|p| {
-                            let t = p.get("time").and_then(Value::as_f64).unwrap_or(0.0);
-                            t >= start && t <= end
+                            trim.get("trimmed_sample_count").and_then(Value::as_u64) != Some(0)
+                                && p.get("time").and_then(Value::as_f64).is_some_and(|t| {
+                                    t >= start
+                                        && t <= end
+                                        && trim
+                                            .get("valid_lap_windows")
+                                            .and_then(Value::as_array)
+                                            .is_none_or(|windows| {
+                                                windows.iter().any(|w| {
+                                                    w["start_time"]
+                                                        .as_f64()
+                                                        .zip(w["end_time"].as_f64())
+                                                        .is_some_and(|(s, e)| t >= s && t <= e)
+                                                })
+                                            })
+                                })
                         })
                         .collect();
-                    if filtered.is_empty() {
-                        self.database
-                            .get_telemetry_points(&id, None)
-                            .map_err(database_error)?
-                    } else {
-                        filtered
-                    }
+                    filtered
                 } else {
                     points
                 }
@@ -526,6 +562,9 @@ impl App {
         } else {
             points
         };
+        if points.is_empty() {
+            return Err(ApiError::invalid("No valid samples in trimmed session; use raw export to inspect the original recording"));
+        }
         if format_param == "ld" {
             let laps = self.database.get_session_laps(&id).unwrap_or_default();
             let (ld_bytes, ldx_bytes) = motec::export_ld(&metadata, &points, &laps)?;

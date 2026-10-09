@@ -1,5 +1,5 @@
 use serde_json::{Map, Value};
-use std::collections::VecDeque;
+use std::collections::{BTreeSet, VecDeque};
 use uuid::Uuid;
 
 #[derive(Clone, Debug)]
@@ -96,6 +96,7 @@ pub struct RaceRecorder {
     was_inside_start: bool,
     recording_mode: String,
     time_trial_lap: i64,
+    invalid_laps: BTreeSet<i64>,
     last_pos: Option<(f64, f64, f64)>,
     last_pos_ordinal: Option<i64>,
     last_pos_ts: Option<f64>,
@@ -138,6 +139,7 @@ impl RaceRecorder {
             was_inside_start: false,
             recording_mode: "circuit".into(),
             time_trial_lap: 1,
+            invalid_laps: BTreeSet::new(),
             last_pos: None,
             last_pos_ordinal: None,
             last_pos_ts: None,
@@ -174,6 +176,9 @@ impl RaceRecorder {
         self.commands.drain(..).collect()
     }
     fn invalidate_continuity(&mut self) {
+        if self.status.is_recording && self.recording_mode != "circuit" {
+            self.invalid_laps.insert(self.time_trial_lap);
+        }
         self.last_pos = None;
         self.last_pos_ordinal = None;
         self.last_pos_ts = None;
@@ -198,7 +203,7 @@ impl RaceRecorder {
         ts: f64,
         now: f64,
     ) {
-        if let Some(p) = pos {
+        if let Some(p) = pos.filter(|_| ordinal.is_some_and(|ordinal| ordinal > 0)) {
             self.set_last_valid_frame(p, ordinal, ts, now);
         } else {
             self.invalidate_continuity();
@@ -212,6 +217,7 @@ impl RaceRecorder {
         self.armed_was_inside_start = false;
         self.was_inside_start = false;
         self.time_trial_lap = 1;
+        self.invalid_laps.clear();
         self.batch.clear();
         self.first_timestamp = None;
         self.sample_timestamp = None;
@@ -226,7 +232,10 @@ impl RaceRecorder {
         self.lap_start_times.clear();
         self.invalidate_continuity();
     }
-    pub fn arm_route(&mut self, route: ActiveRoute) {
+    pub fn arm_route(&mut self, route: ActiveRoute) -> Result<(), String> {
+        if self.status.is_recording {
+            return Err("Stop the current recording before arming a route".into());
+        }
         let inside = self
             .last_pos
             .map(|pos| {
@@ -248,6 +257,7 @@ impl RaceRecorder {
         self.recording_mode = route.mode.clone();
         self.armed_route = Some(route);
         self.was_inside_start = false;
+        Ok(())
     }
     pub fn disarm_route(&mut self) {
         self.status.armed = false;
@@ -265,6 +275,12 @@ impl RaceRecorder {
         mode: &str,
         route: Option<ActiveRoute>,
     ) -> Result<String, String> {
+        if !matches!(mode, "circuit" | "time_trial" | "roaming") {
+            return Err("Unsupported recording mode".into());
+        }
+        if route.as_ref().is_some_and(|route| route.mode != mode) {
+            return Err("Route mode does not match recording mode".into());
+        }
         if self.status.current_session_id.is_some() {
             self.save_latest_and_clear("superseded");
         }
@@ -356,20 +372,30 @@ impl RaceRecorder {
             self.invalidate_continuity();
             return;
         };
-        if !ts.is_finite() {
+        if !ts.is_finite() || ts < 0.0 {
             self.invalidate_continuity();
             return;
         }
 
-        if self.last_pos_ts.map(|x| ts <= x).unwrap_or(false) {
+        if self.last_pos_ts.map(|x| ts <= x).unwrap_or(false)
+            || self.last_timestamp.map(|x| ts <= x).unwrap_or(false)
+        {
+            self.invalidate_continuity();
             return;
         }
 
         let ordinal = m.get("CarOrdinal").and_then(Value::as_i64).or_else(|| {
             m.get("CarOrdinal")
                 .and_then(Value::as_f64)
+                .filter(|v| v.is_finite() && v.fract() == 0.0)
                 .map(|v| v as i64)
         });
+        if ordinal.is_none_or(|ordinal| ordinal <= 0) {
+            self.invalidate_continuity();
+            if self.status.armed || self.recording_mode != "circuit" {
+                return;
+            }
+        }
 
         if current_pos.is_none() {
             self.invalidate_continuity();
@@ -424,7 +450,9 @@ impl RaceRecorder {
                     + (curr.1 - route.start_y).powi(2)
                     + (curr.2 - route.start_z).powi(2);
 
-                if self.armed_was_inside_start {
+                if self.last_pos.is_none() {
+                    self.armed_was_inside_start = dist_sq <= hyst_r * hyst_r;
+                } else if self.armed_was_inside_start {
                     if dist_sq > hyst_r * hyst_r {
                         self.armed_was_inside_start = false;
                     }
@@ -436,7 +464,7 @@ impl RaceRecorder {
                             (route.start_x, route.start_y, route.start_z),
                             r,
                         ),
-                        None => dist_sq <= r * r,
+                        None => false,
                     };
                     if entered {
                         self.status.armed = false;
@@ -474,7 +502,7 @@ impl RaceRecorder {
                             &mode,
                             Some(route),
                         );
-                        self.was_inside_start = true;
+                        self.was_inside_start = dist_sq <= hyst_r * hyst_r;
                     }
                 }
             }
@@ -489,7 +517,9 @@ impl RaceRecorder {
                             + (curr.2 - route.start_z).powi(2);
                         let r = route.start_radius;
                         let hyst_r = r * 1.2;
-                        if !self.was_inside_start {
+                        if self.last_pos.is_none() {
+                            self.was_inside_start = dist_sq <= hyst_r * hyst_r;
+                        } else if !self.was_inside_start {
                             let crossed = match self.last_pos {
                                 Some(prev) => segment_intersects_sphere(
                                     prev,
@@ -497,7 +527,7 @@ impl RaceRecorder {
                                     (route.start_x, route.start_y, route.start_z),
                                     r,
                                 ),
-                                None => dist_sq <= r * r,
+                                None => false,
                             };
                             if crossed {
                                 self.time_trial_lap += 1;
@@ -522,7 +552,7 @@ impl RaceRecorder {
                                 Some(prev) => {
                                     segment_intersects_sphere(prev, curr, (ex, ey, ez), er)
                                 }
-                                None => is_inside_sphere(curr.0, curr.1, curr.2, ex, ey, ez, er),
+                                None => false,
                             };
                             if reached {
                                 self.last_timestamp = Some(ts);
@@ -541,7 +571,7 @@ impl RaceRecorder {
 
         let race_time = f(m, "CurrentRaceTime", 0.0);
         let lap = i(m, "LapNumber", 0);
-        if let Some(previous_race_time) = self.last_race_time {
+        if let Some(previous_race_time) = self.last_race_time.filter(|_| !self.status.manual_mode) {
             if race_time > 0.0 && race_time < previous_race_time {
                 if self
                     .last_lap
@@ -688,7 +718,8 @@ impl RaceRecorder {
         let mut p = data.clone();
         if let Some(m) = p.as_object_mut() {
             m.insert("time".into(), Value::from((rel * 100.0).round() / 100.0));
-            if self.recording_mode == "time_trial" {
+            if self.recording_mode == "time_trial" || self.recording_mode == "roaming" {
+                m.insert("gameLapNumber".into(), Value::from(i(m, "LapNumber", 0)));
                 m.insert("LapNumber".into(), Value::from(self.time_trial_lap));
             }
             let lap = m.get("LapNumber").and_then(Value::as_i64).unwrap_or(0);
@@ -732,12 +763,16 @@ impl RaceRecorder {
         });
         if mode != "circuit" {
             meta["recording_mode"] = Value::String(mode);
+            meta["invalid_laps"] = serde_json::json!(self.invalid_laps);
         }
         if let Some(rid) = route_id {
             meta["route_id"] = Value::String(rid);
         }
         if let Some(rname) = route_name {
             meta["route_name"] = Value::String(rname);
+        }
+        if let Some(route) = &self.armed_route {
+            meta["route_snapshot"] = serde_json::to_value(route).expect("finite route snapshot");
         }
         self.commands.push_back(RecorderCommand::Finalize {
             session_id: id,

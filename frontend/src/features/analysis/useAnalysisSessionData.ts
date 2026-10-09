@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import type { AnalysisDataPoint, LapSummary } from "../../context/TelemetryRecorderContext";
 import { calculateFrontendDebrief, type SessionDebriefData } from "./sessionDebriefMath";
-import { filterTrimmedPoints, calculateLapsFromPoints } from "./routeTriggerMath";
+import { filterTrimmedPoints, calculateLapsFromPoints, type ValidLapWindow } from "./routeTriggerMath";
 import { backendFetch } from "../../services/backend";
 import { analysisDataPath, analysisSelectionKey } from "../sessions/sessionSelection";
 import type { AnalysisSelection } from "../sessions/sessionSelection";
@@ -15,9 +15,10 @@ export interface UseAnalysisSessionDataParams {
   compareLap: number;
   showRawData: boolean;
   isRecording: boolean;
+  currentSessionId: string | null;
   loadSessionLaps: (id: string) => Promise<LapSummary[]>;
   fetchSessionDebrief: (id: string) => Promise<SessionDebriefData | null>;
-  refreshCurrent: () => Promise<AnalysisDataPoint[] | null>;
+  refreshCurrent: (finalized?: boolean) => Promise<AnalysisDataPoint[] | null>;
 }
 
 export function useAnalysisSessionData({
@@ -29,6 +30,7 @@ export function useAnalysisSessionData({
   compareLap,
   showRawData,
   isRecording,
+  currentSessionId,
   loadSessionLaps,
   fetchSessionDebrief,
   refreshCurrent,
@@ -45,12 +47,13 @@ export function useAnalysisSessionData({
       return;
     }
     let active = true;
+    setSessionMetadata(null);
     void backendFetch(`/api/analysis/sessions/${encodeURIComponent(selectedSessionId)}/metadata`)
       .then((r) => r.json())
-      .then((meta) => { if (active && meta) setSessionMetadata(meta); })
+      .then((meta) => { if (active) setSessionMetadata(meta ?? null); })
       .catch(() => { if (active) setSessionMetadata(null); });
     return () => { active = false; };
-  }, [selectedSessionId, selection.kind]);
+  }, [selectedSessionId, selection.kind, isRecording, currentSessionId]);
 
   useEffect(() => {
     let active = true;
@@ -68,7 +71,7 @@ export function useAnalysisSessionData({
       if (!sid || !fullPath) return;
       const [fullTrack, laps, debrief] = await Promise.all([
         backendFetch(fullPath, { signal: controller.signal }).then((r) => r.json()).catch(() => null),
-        selection.kind === "current" ? Promise.resolve([]) : loadSessionLaps(sid),
+        loadSessionLaps(sid),
         fetchSessionDebrief(sid),
       ]);
       if (!active || analysisSelectionKey(selection) !== selectedKey) return;
@@ -78,7 +81,11 @@ export function useAnalysisSessionData({
     };
     void loadSupportingData();
     return () => { active = false; controller.abort(); };
-  }, [fetchSessionDebrief, loadSessionLaps, loadedSession, selectedSessionId, selection]);
+  }, [fetchSessionDebrief, loadSessionLaps, loadedSession, selectedSessionId, selection, isRecording, currentSessionId]);
+
+  useEffect(() => {
+    if (!isRecording && selection.kind === "current") void refreshCurrent(true);
+  }, [isRecording, currentSessionId, refreshCurrent, selection.kind]);
 
   useEffect(() => {
     if (!isRecording || selection.kind !== "current") return;
@@ -95,17 +102,21 @@ export function useAnalysisSessionData({
       pts = pts.filter((p) => (p.LapNumber ?? 1) === primaryLap);
     }
     if (!showRawData && sessionMetadata?.trim_analysis) {
-      const trim = sessionMetadata.trim_analysis as Record<string, number>;
+      const trim = sessionMetadata.trim_analysis as { valid_start_time: number; valid_end_time: number; trimmed_sample_count?: number; valid_lap_windows?: ValidLapWindow[] };
       if (typeof trim.valid_start_time === "number" && typeof trim.valid_end_time === "number") {
-        pts = filterTrimmedPoints(pts, trim.valid_start_time, trim.valid_end_time);
+        pts = filterTrimmedPoints(pts, trim.valid_start_time, trim.valid_end_time, trim.trimmed_sample_count, trim.valid_lap_windows);
       }
     }
     return pts;
   }, [rawActiveSession, selection.kind, primaryLap, showRawData, sessionMetadata]);
 
   useEffect(() => {
-    if (activeSession.length > 0) setDebriefData(calculateFrontendDebrief(activeSession));
-  }, [activeSession]);
+    const summary = calculateFrontendDebrief(activeSession);
+    if (selection.kind === "local" || sessionMetadata?.recording_mode === "time_trial" || sessionMetadata?.recording_mode === "roaming") {
+      summary.valid_laps = lapsList.filter((lap) => lap.complete === true || Number(lap.complete) === 1).length;
+    }
+    setDebriefData(summary);
+  }, [activeSession, lapsList, sessionMetadata, selection.kind]);
 
   useEffect(() => {
     if (selection.kind === "local") {

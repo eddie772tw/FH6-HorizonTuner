@@ -4,6 +4,18 @@ fn sample(t: i64) -> Value {
     json!({"carOrdinal":1,"performanceIndex":700,"carClass":3,"timestampMS":t,"isRaceOn":1,"speedMps":20,"gear":2,"brakeInput":0,"handBrakeInput":0,"clutchInput":0,"accelInput":255,"steerInput":0,"accelerationX":0,"accelerationZ":4,"pitch":0,"roll":0,"tireSlipRatio":[0,0,0,0],"tireTemp":[80,81,82,83],"normalizedSuspensionTravel":[0.5,0.5,0.5,0.5]})
 }
 #[test]
+fn tire_sample_eligibility_ignores_unreliable_race_flag() {
+    let identity = json!({"carOrdinal":1,"performanceIndex":700,"carClass":3});
+    let enabled = vec![sample(0), sample(100)];
+    let mut disabled = enabled.clone();
+    for frame in &mut disabled {
+        frame["isRaceOn"] = json!(0);
+    }
+    let expected = observe(&enabled, &identity);
+    assert_eq!(expected["acceptedSampleCount"], 2);
+    assert_eq!(observe(&disabled, &identity), expected);
+}
+#[test]
 fn missing_channels_zero_and_discontinuity_keep_unavailable_semantics() {
     let id = json!({"carOrdinal":1,"performanceIndex":700,"carClass":3});
     let s = sample(0);

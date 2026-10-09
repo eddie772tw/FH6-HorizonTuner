@@ -28,7 +28,7 @@ const CHANNELS: ChannelMapping[] = [
   { motecChannel: "Handbrake Pos", unit: "%", fhSource: "HandBrakeInput", notes: "0-255 normalized to 0-100%" },
   { motecChannel: "Steered Angle", unit: "%", fhSource: "SteerInput / steer_pct", notes: "-127~127 normalized to %" },
   { motecChannel: "G Force Lat / Long / Vert", unit: "G", fhSource: "AccelerationX / Z / Y", notes: "Value / 9.80665" },
-  { motecChannel: "Boost Pressure", unit: "psi", fhSource: "Boost", notes: "Turbo/Supercharger boost" },
+  { motecChannel: "Boost Pressure", unit: "psi", fhSource: "Boost", notes: "Pa / 6894.75729" },
   { motecChannel: "Fuel Level", unit: "%", fhSource: "Fuel", notes: "Ratio × 100" },
   { motecChannel: "Engine Power", unit: "hp", fhSource: "PowerWatts / Power", notes: "Watts / 745.7" },
   { motecChannel: "Engine Torque", unit: "Nm", fhSource: "TorqueNewtons / Torque", notes: "Engine torque output" },
@@ -76,7 +76,7 @@ export const MotecFieldMappingModal: React.FC<MotecFieldMappingModalProps> = ({
             </div>
             <div className="modal-body">
               <p className="text-secondary" style={{ fontSize: "0.85rem" }}>
-                {t("HorizonTuner exports 41 standard MoTeC telemetry channels directly compatible with MoTeC i2 Pro. Use the workspace template below to visualize telemetry immediately.")}
+          {t("HorizonTuner exports 41 telemetry channels with documented unit mappings. Native .ld export is experimental until verified in MoTeC i2.")}
               </p>
               <div className="table-responsive">
                 <table className="table table-sm table-striped table-hover" style={{ fontSize: "0.8rem" }}>

@@ -640,3 +640,16 @@
   5. 更新 `backend-rust/tests/pr495_review_regressions.rs` 與 `backend-rust/tests/telemetry_contract.rs` 合約測試。
 - **Evidence**：`cargo test` 全量通過（含 22 個 review regression 測試與 29 個 telemetry contract 測試）；`cargo fmt -- --check` 通過；前端全量測試 196 test files / 1732 tests 通過；前端 build 通過；Ruff check 通過；`git diff --check` 通過。
 - **Skills**：`telemetry-udp-protocol`、`pr-author-maintainer`。
+
+## 2026-10-09 / PR #495 錄製連續性、停止刷新與匯出資格修正（Codex as Codex）
+
+- **來源／狀態**：`local`／`verified`；接手 Issue #484 的 PR 維護，所有 tracked 修正由單一 owner 寫入，後端與前端／匯出子代理獨立只讀重現。
+- **Learning**：
+  1. 清除座標線段前點只能阻止虛假穿越，不能證明當圈資料完整。自訂模式的缺座標、識別、時間倒退或長缺口須保存 `invalid_laps`；SQLite 不給該圈有效圈速，並用 `valid_lap_windows` 排除中間壞圈、保留相鄰完整圈閉合點。原始樣本不刪除，後續完整圈可恢復資格。
+  2. 錄製停止時的最後讀取不能沿用定期 poll 的 in-flight 略過策略；須以新 generation 取代舊讀取，並依實際 current session ID／錄製狀態刷新 metadata、laps 與最後樣本。零有效樣本不能回退成 raw 資料或被時間零點漏進。
+  3. CSV 圈次資格需要觀察起點與下一圈閉合，不能用前一 group 存在、片段長度或前圈 LastLap 代替；零起算來源圈號須一次正規化，時間估算須在介面標示。累積距離 CSV 可用三秒內相鄰且沒有相矛盾遊戲圈時計的圈號轉移證明後續起點，長缺口不能冒充。
+  4. 原生 LD 的固定網格重採樣會跨空洞插值，預設多段有效窗口應拒絕 LD 並保留 CSV／明確 raw 選項。Gear／LapNumber 使用前值保持；Boost 的 CSV／LD psi 通道須與領域 Pa 雙向換算。LDX 圈數、最快圈與 Beacon 都要套用同一匯出窗口。
+  5. HTTP 新建與 v1 分享匯入須共用 UUID 語意：建立可生成 UUID，分享不可缺 UUID；大小寫別名統一後再查同批／已存碰撞。未知或缺 schema、錯誤／缺值 UUID 與碰撞整批拒絕，不能默默換 ID／覆寫。
+- **Evidence**：完整 Cargo 契約 183 passed／3 ignored；Vitest 196 passed files、1740 passed／1 skipped；`tsc && vite build` 通過。獨立後端 17 cases、前端 16 個 hook／DOM／provider 補充案例及 180000 筆 CSV 重現通過，scratch 證據不加入產品單元 gate。最終 commit 與遠端 CI 在 PR 留言記錄。
+- **Boundary**：未做真實 FH6 高速穿越、跨車種半徑校準或 MoTeC i2 開檔驗收；README／操作指南／UI 標示 LD／LDX 實驗性。`IsRaceOn` 不參與此錄製及 Road／ICE／EV 收錄資格；來源欄位與 HUD 顯示語意保留。
+- **Skills**：`pr-author-maintainer`、`pr-review-evaluation`、`cross-agent-collaboration`、`telemetry-udp-protocol`、`halfmoon-design-system`、`physics-tuning-math`、`ponytail`。

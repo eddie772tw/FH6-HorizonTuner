@@ -268,6 +268,7 @@ impl TelemetryStore {
             .unwrap_or("circuit");
         let is_time_trial = recording_mode == "time_trial";
         let is_roaming = recording_mode == "roaming";
+        let invalid_laps = metadata.get("invalid_laps").and_then(Value::as_array);
 
         for p in &points {
             let lap = i64v(p, "LapNumber", 0);
@@ -323,17 +324,19 @@ impl TelemetryStore {
                 .reduce(f64::max)
                 .zip(entry.times.iter().copied().reduce(f64::min))
                 .map(|(max, min)| max - min);
+            let continuity_valid = !invalid_laps
+                .is_some_and(|invalid| invalid.iter().any(|v| v.as_i64() == Some(*lap_number)));
             let (is_complete, lap_time, source) = if is_time_trial {
-                if *lap_number < max_lap_number {
+                if continuity_valid && *lap_number < max_lap_number {
                     let lap_start = entry.times.first().copied();
                     let next_start = laps
                         .get(&(lap_number + 1))
                         .and_then(|n| n.times.first().copied());
                     let duration = match (next_start, lap_start) {
                         (Some(n), Some(s)) if n > s => Some(((n - s) * 1000.0).round() / 1000.0),
-                        _ => observed_span,
+                        _ => None,
                     };
-                    (true, duration, "gate-crossing")
+                    (duration.is_some(), duration, "gate-crossing")
                 } else {
                     // Final unfinished lap cut off by stop
                     (false, None, "gate-crossing")
@@ -341,7 +344,7 @@ impl TelemetryStore {
             } else if is_roaming {
                 let reached = metadata.get("endReason").and_then(Value::as_str)
                     == Some("destination-reached");
-                if reached {
+                if reached && continuity_valid {
                     (true, observed_span, "gate-crossing")
                 } else {
                     (false, None, "gate-crossing")
@@ -387,6 +390,31 @@ impl TelemetryStore {
         };
 
         // Post-stop trimming analysis (non-destructive)
+        let valid_lap_windows: Vec<Value> = if is_time_trial || is_roaming {
+            lap_rows
+                .iter()
+                .filter(|(_, _, _, _, _, is_complete, _)| *is_complete)
+                .filter_map(|(lap, _, _, _, _, _, _)| {
+                    let start = points
+                        .iter()
+                        .find(|p| i64v(p, "LapNumber", 0) == *lap)?
+                        .get("time")?
+                        .as_f64()?;
+                    let end = if is_time_trial {
+                        points
+                            .iter()
+                            .find(|p| i64v(p, "LapNumber", 0) == *lap + 1)?
+                            .get("time")?
+                            .as_f64()?
+                    } else {
+                        points.last()?.get("time")?.as_f64()?
+                    };
+                    Some(serde_json::json!({"lap_number":lap,"start_time":start,"end_time":end}))
+                })
+                .collect()
+        } else {
+            Vec::new()
+        };
         let trim_analysis = if points.is_empty() {
             serde_json::json!({
                 "head_trim_seconds": 0.0,
@@ -407,7 +435,7 @@ impl TelemetryStore {
                 .last()
                 .and_then(|p| p.get("time").and_then(Value::as_f64))
                 .unwrap_or(0.0);
-            let first_active_idx = points
+            let mut first_active_idx = points
                 .iter()
                 .position(|p| {
                     let speed = p
@@ -437,20 +465,26 @@ impl TelemetryStore {
                 })
                 .unwrap_or(points.len().saturating_sub(1));
 
-            if is_time_trial {
+            if is_time_trial || is_roaming {
+                // The first sample is the starting gate boundary, even at low speed.
+                first_active_idx = 0;
                 if complete > 0 {
-                    let last_comp = lap_rows
+                    let start = valid_lap_windows
+                        .first()
+                        .and_then(|w| w["start_time"].as_f64())
+                        .unwrap_or(first_time);
+                    let end = valid_lap_windows
+                        .last()
+                        .and_then(|w| w["end_time"].as_f64())
+                        .unwrap_or(last_time);
+                    first_active_idx = points
                         .iter()
-                        .filter(|(_, _, _, _, _, is_c, _)| *is_c)
-                        .map(|(lap_num, _, _, _, _, _, _)| *lap_num)
-                        .max()
+                        .position(|p| p["time"].as_f64().is_some_and(|t| t >= start))
                         .unwrap_or(0);
-                    if let Some(closing_idx) = points
+                    last_active_idx = points
                         .iter()
-                        .position(|p| i64v(p, "LapNumber", 0) > last_comp)
-                    {
-                        last_active_idx = closing_idx;
-                    }
+                        .rposition(|p| p["time"].as_f64().is_some_and(|t| t <= end))
+                        .unwrap_or(first_active_idx);
                 } else {
                     last_active_idx = first_active_idx;
                 }
@@ -472,14 +506,24 @@ impl TelemetryStore {
                 0
             };
             let tail_trim_seconds = (last_time - valid_end_time).max(0.0);
-            let trimmed_sample_count = if is_time_trial && complete == 0 {
-                0
+            let trimmed_sample_count = if is_time_trial || is_roaming {
+                points
+                    .iter()
+                    .filter(|p| {
+                        p["time"].as_f64().is_some_and(|t| {
+                            valid_lap_windows.iter().any(|w| {
+                                t >= w["start_time"].as_f64().unwrap()
+                                    && t <= w["end_time"].as_f64().unwrap()
+                            })
+                        })
+                    })
+                    .count()
             } else if last_active_idx >= first_active_idx {
                 last_active_idx - first_active_idx + 1
             } else {
                 points.len()
             };
-            serde_json::json!({
+            let mut trim = serde_json::json!({
                 "head_trim_seconds": (head_trim_seconds * 1000.0).round() / 1000.0,
                 "head_trim_samples": head_trim_samples,
                 "tail_trim_seconds": (tail_trim_seconds * 1000.0).round() / 1000.0,
@@ -488,7 +532,11 @@ impl TelemetryStore {
                 "valid_end_time": (valid_end_time * 1000.0).round() / 1000.0,
                 "raw_sample_count": points.len(),
                 "trimmed_sample_count": trimmed_sample_count
-            })
+            });
+            if is_time_trial || is_roaming {
+                trim["valid_lap_windows"] = serde_json::json!(valid_lap_windows);
+            }
+            trim
         };
 
         let mut summary = metadata.as_object().cloned().unwrap_or_default();

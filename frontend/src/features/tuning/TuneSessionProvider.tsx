@@ -122,7 +122,7 @@ interface LiveTuneIdentity extends Pick<TuneSessionIdentity, 'performanceIndex' 
 }
 
 const telemetryIdentityFor = (carId: string, data: TelemetryData | null): LiveTuneIdentity | null => {
-  if (!data || data.IsRaceOn !== 1 || String(data.CarOrdinal) !== carId
+  if (!data || String(data.CarOrdinal) !== carId
     || !isInteger(data.CarPerformanceIndex) || !isInteger(data.CarClass)) return null;
   return { carId, performanceIndex: data.CarPerformanceIndex, carClass: data.CarClass };
 };

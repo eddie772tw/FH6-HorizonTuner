@@ -318,9 +318,6 @@ pub fn advance(state: &Value, frame: &Value, connected: bool, now: f64) -> Value
         return with_guidance(s, "identity-changed");
     }
     s["identity"] = identity;
-    if num(f, "IsRaceOn") != 1.0 {
-        return interrupt(s, "not-in-race");
-    }
     let t = num(f, "TimestampMS");
     if !t.is_finite() || t < 0.0 {
         remove(

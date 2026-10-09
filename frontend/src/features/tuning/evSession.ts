@@ -10,7 +10,7 @@ export function evDependencyKey(carId: string, profile: CarParams | null): strin
 
 /** Missing live frames/menu frames retain evidence; a different live build invalidates it. */
 export function evMeasurementMatchesLive(state: EvMeasurement, frame: TelemetryData | null): boolean {
-  if (!state.identity || !frame || frame.IsRaceOn !== 1) return true;
+  if (!state.identity || !frame) return true;
   const identity = evIdentity(frame);
   return identity !== undefined && sameEvIdentity(state.identity, identity);
 }

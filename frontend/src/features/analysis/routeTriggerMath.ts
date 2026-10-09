@@ -17,6 +17,14 @@ export interface CustomRoute {
   updated_at?: number;
 }
 
+export function selectedRouteForMode(
+  routes: readonly CustomRoute[],
+  routeId: string | null,
+  mode: CustomRoute["mode"],
+): CustomRoute | undefined {
+  return routes.find((route) => route.route_id === routeId && route.mode === mode);
+}
+
 export function calculateDistance3D(
   x1: number,
   y1: number,
@@ -132,17 +140,23 @@ export function validateRoute(
   return { valid: true };
 }
 
+export interface ValidLapWindow { start_time: number; end_time: number }
+
 export function filterTrimmedPoints(
   points: AnalysisDataPoint[],
   validStartTime: number,
   validEndTime: number,
+  trimmedSampleCount?: number,
+  validLapWindows?: readonly ValidLapWindow[],
 ): AnalysisDataPoint[] {
+  if (trimmedSampleCount === 0) return [];
   if (points.length === 0) return [];
   if (!Number.isFinite(validStartTime) || !Number.isFinite(validEndTime)) return points;
   return points.filter((p) => {
     const t = p.time;
-    if (t === null || t === undefined || !Number.isFinite(t)) return true;
-    return t >= validStartTime && t <= validEndTime;
+    if (t === null || t === undefined || !Number.isFinite(t)) return false;
+    return t >= validStartTime && t <= validEndTime
+      && (!validLapWindows || validLapWindows.some((w) => t >= w.start_time && t <= w.end_time));
   });
 }
 
@@ -154,7 +168,7 @@ export function calculateLapsFromPoints(
   const lapMap = new Map<number, AnalysisDataPoint[]>();
   for (const p of points) {
     const lapNum = typeof p.LapNumber === "number" && Number.isFinite(p.LapNumber)
-      ? Math.max(1, Math.round(p.LapNumber))
+      ? Math.max(0, Math.round(p.LapNumber))
       : 1;
     let group = lapMap.get(lapNum);
     if (!group) {
@@ -166,6 +180,12 @@ export function calculateLapsFromPoints(
 
   const sortedLaps = Array.from(lapMap.keys()).sort((a, b) => a - b);
   const result: LapSummary[] = [];
+  const ordered = points.every((point, index) => index === 0 || (
+    typeof point.time === "number" && Number.isFinite(point.time)
+    && typeof points[index - 1].time === "number"
+    && point.time > points[index - 1].time!
+    && (point.LapNumber ?? 1) >= (points[index - 1].LapNumber ?? 1)
+  ));
 
   for (let i = 0; i < sortedLaps.length; i++) {
     const lapNum = sortedLaps[i];
@@ -182,13 +202,13 @@ export function calculateLapsFromPoints(
       .map((p) => p.lap_distance)
       .filter((d): d is number => typeof d === "number" && Number.isFinite(d));
 
-    const minTime = validTimes.length > 0 ? Math.min(...validTimes) : 0;
-    const maxTime = validTimes.length > 0 ? Math.max(...validTimes) : 0;
+    const minTime = validTimes.length > 0 ? validTimes.reduce((a, b) => Math.min(a, b)) : 0;
+    const maxTime = validTimes.length > 0 ? validTimes.reduce((a, b) => Math.max(a, b)) : 0;
     const observedSpan = maxTime - minTime;
 
     const maxSpeedKmh =
       validSpeeds.length > 0
-        ? Math.round(Math.max(...validSpeeds) * 3.6 * 10) / 10
+        ? Math.round(validSpeeds.reduce((a, b) => Math.max(a, b)) * 3.6 * 10) / 10
         : null;
     const avgSpeedKmh =
       validSpeeds.length > 0
@@ -200,15 +220,26 @@ export function calculateLapsFromPoints(
         : null;
 
     const startDistance =
-      validDistances.length > 0 ? Math.min(...validDistances) : null;
+      validDistances.length > 0 ? validDistances.reduce((a, b) => Math.min(a, b)) : null;
     const endDistance =
-      validDistances.length > 0 ? Math.max(...validDistances) : null;
+      validDistances.length > 0 ? validDistances.reduce((a, b) => Math.max(a, b)) : null;
 
     // A lap is complete only if there is genuine evidence of closing:
     // in telemetry / MoTeC, lap N finishes when the vehicle transitions into lap N+1.
     const nextLapNum = sortedLaps[i + 1];
     const nextGroup = nextLapNum !== undefined ? lapMap.get(nextLapNum) : undefined;
-    const hasNextLap = nextGroup !== undefined && nextGroup.length > 0;
+    const nextStart = nextGroup?.[0]?.time;
+    const hasNextLap = nextLapNum === lapNum + 1 && typeof nextStart === "number"
+      && Number.isFinite(nextStart) && nextStart > maxTime && nextStart - maxTime <= 3;
+    const first = group[0];
+    const previousGroup = lapMap.get(lapNum - 1);
+    const previousEnd = previousGroup?.[previousGroup.length - 1]?.time;
+    const observedTransition = typeof previousEnd === "number" && typeof first.time === "number"
+      && first.time > previousEnd && first.time - previousEnd <= 3
+      && !(typeof first.CurrentLap === "number" && Number.isFinite(first.CurrentLap));
+    const hasStart = (typeof first.CurrentLap === "number" && first.CurrentLap >= 0 && first.CurrentLap <= 0.5)
+      || (typeof first.lap_distance === "number" && first.lap_distance >= 0 && first.lap_distance <= 15)
+      || observedTransition;
 
     // In Forza telemetry, the official finished time of lap N appears in LastLap of lap N+1
     const nextLapLastLap = hasNextLap
@@ -217,18 +248,18 @@ export function calculateLapsFromPoints(
           .find((l): l is number => typeof l === "number" && Number.isFinite(l) && l > 0)
       : undefined;
 
-    const isComplete = hasNextLap && observedSpan > 1.0;
+    const isComplete = ordered && hasStart && hasNextLap;
 
     let lapTime: number | null = null;
-    let lapTimeSource = "motec-span";
+    let lapTimeSource = "unavailable";
 
     if (isComplete) {
       if (typeof nextLapLastLap === "number" && nextLapLastLap > 0) {
         lapTime = Math.round(nextLapLastLap * 1000) / 1000;
         lapTimeSource = "game-lastlap";
       } else {
-        lapTime = Math.round(observedSpan * 1000) / 1000;
-        lapTimeSource = "motec-span";
+        lapTime = Math.round((nextStart! - minTime) * 1000) / 1000;
+        lapTimeSource = "motec-estimate";
       }
     }
 
@@ -241,6 +272,7 @@ export function calculateLapsFromPoints(
       avg_speed_kmh: avgSpeedKmh,
       complete: isComplete,
       lap_time_source: lapTimeSource,
+      is_estimated: lapTimeSource === "motec-estimate",
       observed_span: Math.round(observedSpan * 1000) / 1000,
     });
   }

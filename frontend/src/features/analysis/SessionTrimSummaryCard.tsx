@@ -38,7 +38,7 @@ export const SessionTrimSummaryCard: React.FC<SessionTrimSummaryCardProps> = ({
   const headTrim = trim?.head_trim_seconds ?? 0;
   const tailTrim = trim?.tail_trim_seconds ?? 0;
   const rawCount = trim?.raw_sample_count ?? 0;
-  const trimmedCount = trim?.trimmed_sample_count ?? 0;
+  const trimmedCount = trim?.trimmed_sample_count ?? rawCount;
 
   return (
     <div className="card mb-3 border">
@@ -99,7 +99,7 @@ export const SessionTrimSummaryCard: React.FC<SessionTrimSummaryCardProps> = ({
           <div className="col-6 col-md-3">
             <div className="text-secondary">{t("Valid Samples")}</div>
             <div className="fw-bold">
-              {trimmedCount > 0 ? `${trimmedCount} / ${rawCount}` : `${rawCount}`}
+              {`${trimmedCount} / ${rawCount}`}
             </div>
           </div>
           <div className="col-6 col-md-3">

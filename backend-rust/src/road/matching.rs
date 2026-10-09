@@ -28,8 +28,7 @@ fn point_time(point: &Value) -> Option<f64> {
         .or_else(|| finite(point.get("time")))
 }
 fn driving(point: &Value) -> bool {
-    point.get("IsRaceOn").and_then(Value::as_i64) != Some(0)
-        && finite(point.get("SpeedMetersPerSecond")).is_some_and(|x| x > 2.0)
+    finite(point.get("SpeedMetersPerSecond")).is_some_and(|x| x > 2.0)
 }
 fn observation_weights(points: &[Value]) -> Vec<f64> {
     let mut weights = vec![0.0; points.len()];

@@ -31,10 +31,9 @@ pub fn advance(state: &Value, f: &Value) -> Value {
     let ordinal = n(f, "CarOrdinal");
     let pi = n(f, "CarPerformanceIndex");
     let class = n(f, "CarClass");
-    if n(f, "IsRaceOn") != 1.0
-        || ![ordinal, pi, class]
-            .iter()
-            .all(|v| v.is_finite() && v.fract() == 0.0)
+    if ![ordinal, pi, class]
+        .iter()
+        .all(|v| v.is_finite() && v.fract() == 0.0)
         || ordinal <= 0.0
         || pi <= 0.0
         || class < 0.0

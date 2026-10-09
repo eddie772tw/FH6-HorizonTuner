@@ -12,6 +12,7 @@ import SessionTrimSummaryCard from "./SessionTrimSummaryCard";
 import MotecFieldMappingModal from "./MotecFieldMappingModal";
 import { useSessionsState } from "../sessions/SessionsStateProvider";
 import { createSessionsIo } from "../sessions/sessionsIo";
+import { selectedRouteForMode } from "./routeTriggerMath";
 
 const AnalysisView: React.FC<{ onLatestAnalysis: () => void }> = ({ onLatestAnalysis }) => {
   const {
@@ -41,6 +42,11 @@ const AnalysisView: React.FC<{ onLatestAnalysis: () => void }> = ({ onLatestAnal
   const [motecActionMsg, setMotecActionMsg] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { selection, primaryLap, compareLap, metric: selectedMetric, isLoading } = sessionsState;
+  const selectedRoute = selectedRouteForMode(routes, selectedRouteId, activeMode);
+
+  useEffect(() => {
+    if (selectedRouteId && !selectedRoute) setSelectedRouteId(null);
+  }, [selectedRouteId, selectedRoute, setSelectedRouteId]);
 
   useEffect(() => {
     if (recordingMode === "circuit" || recordingMode === "time_trial" || recordingMode === "roaming") {
@@ -58,7 +64,7 @@ const AnalysisView: React.FC<{ onLatestAnalysis: () => void }> = ({ onLatestAnal
     sessionMetadata, fallbackDebrief,
   } = useAnalysisSessionData({
     selection, selectedSessionId, loadedSession, currentSession,
-    primaryLap, compareLap, showRawData, isRecording,
+    primaryLap, compareLap, showRawData, isRecording, currentSessionId,
     loadSessionLaps, fetchSessionDebrief, refreshCurrent,
   });
 
@@ -77,12 +83,16 @@ const AnalysisView: React.FC<{ onLatestAnalysis: () => void }> = ({ onLatestAnal
   };
 
   const handleStartManual = async () => {
+    if (activeMode !== "circuit") {
+      if (selectedRoute) await armRoute(selectedRoute.route_id, activeMode);
+      return;
+    }
     const car = liveTelemetry ? {
       ordinal: liveTelemetry.CarOrdinal,
       carClass: liveTelemetry.CarClass,
       pi: liveTelemetry.CarPerformanceIndex,
     } : undefined;
-    await startManualRecording(car, activeMode, selectedRouteId ?? undefined);
+    await startManualRecording(car, activeMode, selectedRoute?.route_id);
   };
 
   const formatTrackCanvasData = useCallback((points: AnalysisDataPoint[]) => {
@@ -99,7 +109,7 @@ const AnalysisView: React.FC<{ onLatestAnalysis: () => void }> = ({ onLatestAnal
       return finite(val) ? [{ point: p, x: p.PositionX, z: p.PositionZ, value: val }] : [];
     });
     if (candidates.length === 0) return [];
-    const metricMax = Math.max(0.1, ...candidates.map((c) => c.value));
+    const metricMax = candidates.reduce((max, candidate) => Math.max(max, candidate.value), 0.1);
     return candidates.map(({ point, x, z, value }) => ({ x, z, val: value / metricMax, raw: point }));
   }, [selectedMetric]);
 
@@ -116,6 +126,7 @@ const AnalysisView: React.FC<{ onLatestAnalysis: () => void }> = ({ onLatestAnal
         manualMode={manualMode}
         armed={armed}
         onStartManual={handleStartManual}
+        canStart={activeMode === "circuit" || Boolean(selectedRoute)}
         onStopManual={() => void stopManualRecording()}
         onClear={() => void clearCurrentSession()}
         onSave={() => void saveCurrentSessionToBackend()}
@@ -126,6 +137,7 @@ const AnalysisView: React.FC<{ onLatestAnalysis: () => void }> = ({ onLatestAnal
         routes={routes}
         selectedRouteId={selectedRouteId}
         isArmed={armed}
+        isRecording={isRecording}
         armedRouteId={armedRouteId}
         liveTelemetry={liveTelemetry ?? null}
         onSelectRoute={setSelectedRouteId}
@@ -164,12 +176,13 @@ const AnalysisView: React.FC<{ onLatestAnalysis: () => void }> = ({ onLatestAnal
         onSelectPrimaryLap={setPrimaryLap}
         onSelectCompareLap={setCompareLap}
         onOpenInMoTec={async (format = "ld") => {
+          if (selection.kind === "local") return;
           const sid = selectedSessionId === "current" ? (currentSessionId || (savedSessions[0]?.session_id ?? "current")) : (selectedSessionId || "current");
           const res = await openInMoTec(sid, format);
           setMotecActionMsg(res.message);
           setTimeout(() => setMotecActionMsg(null), 4000);
         }}
-        onExportMoTec={(format = "ld") => exportMoTecCsv(selectedFilename, exportRawData, format)}
+        onExportMoTec={(format = "ld") => { if (selection.kind !== "local") exportMoTecCsv(selectedFilename, exportRawData, format); }}
         onImportFile={handleFileUpload}
         onOpenImport={() => fileInputRef.current?.click()}
         onDownloadTemplate={downloadMoTecTemplate}

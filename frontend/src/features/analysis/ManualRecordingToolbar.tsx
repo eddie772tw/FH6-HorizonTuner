@@ -7,6 +7,7 @@ export interface ManualRecordingToolbarProps {
   readonly recordingCount: number;
   readonly manualMode: boolean;
   readonly armed: boolean;
+  readonly canStart?: boolean;
   readonly onStartManual: () => void;
   readonly onStopManual: () => void;
   readonly onClear: () => void;
@@ -21,6 +22,7 @@ export const ManualRecordingToolbar: React.FC<ManualRecordingToolbarProps> = ({
   recordingCount,
   manualMode,
   armed,
+  canStart = true,
   onStartManual,
   onStopManual,
   onClear,
@@ -36,6 +38,7 @@ export const ManualRecordingToolbar: React.FC<ManualRecordingToolbarProps> = ({
               type="button"
               className={`btn btn-sm ${mode === "circuit" ? "btn-primary" : "btn-outline-secondary"}`}
               onClick={() => onModeChange("circuit")}
+              disabled={isRecording || armed}
             >
               {t("Circuit Race")}
             </button>
@@ -43,6 +46,7 @@ export const ManualRecordingToolbar: React.FC<ManualRecordingToolbarProps> = ({
               type="button"
               className={`btn btn-sm ${mode === "time_trial" ? "btn-primary" : "btn-outline-secondary"}`}
               onClick={() => onModeChange("time_trial")}
+              disabled={isRecording || armed}
             >
               {t("Time Trial")}
             </button>
@@ -50,6 +54,7 @@ export const ManualRecordingToolbar: React.FC<ManualRecordingToolbarProps> = ({
               type="button"
               className={`btn btn-sm ${mode === "roaming" ? "btn-primary" : "btn-outline-secondary"}`}
               onClick={() => onModeChange("roaming")}
+              disabled={isRecording || armed}
             >
               {t("Free Roam")}
             </button>
@@ -78,8 +83,9 @@ export const ManualRecordingToolbar: React.FC<ManualRecordingToolbarProps> = ({
               type="button"
               className="btn btn-sm btn-success"
               onClick={onStartManual}
+              disabled={armed || !canStart}
             >
-              {t("Start Recording")}
+              {t(mode === "circuit" ? "Start Recording" : "Arm Route")}
             </button>
           ) : manualMode ? (
             <button

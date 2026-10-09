@@ -2014,5 +2014,9 @@
   "Horizon UDP Source": "Horizon UDP 來源",
   "Transformation / Notes": "轉換公式／說明",
   "Export native MoTeC .ld binary with .ldx lap beacons": "匯出 MoTeC 原生二進位 .ld 檔與 .ldx 單圈標記",
-  "Export legacy MoTeC CSV": "匯出相容 MoTeC CSV"
+  "Export legacy MoTeC CSV": "匯出相容 MoTeC CSV",
+  "Imported CSV is previewed locally; use the original file in MoTeC.": "匯入 CSV 僅供本地預覽；請在 MoTeC 使用原始檔案。",
+  "Experimental": "實驗性",
+  "Estimated": "估算",
+  "HorizonTuner exports 41 telemetry channels with documented unit mappings. Native .ld export is experimental until verified in MoTeC i2.": "HorizonTuner 提供 41 個遙測通道與單位映射。原生 .ld 匯出仍屬實驗性，尚待 MoTeC i2 實機驗收。"
 }

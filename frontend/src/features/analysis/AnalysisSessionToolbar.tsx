@@ -79,6 +79,7 @@ const AnalysisSessionToolbar: React.FC<AnalysisSessionToolbarProps> = ({
             {t("Select Session")}:
           </span>
           <select className="form-select" value={selectedFilename} onChange={event => onSelectSession(event.target.value)}>
+            {selectedFilename === "local" && <option value="local">MoTeC CSV {t("Import")}</option>}
             <option value="current">{t("Current / Latest Session")}</option>
             {savedSessions.map(session => (
               <option key={session.filename} value={session.filename}>
@@ -96,7 +97,7 @@ const AnalysisSessionToolbar: React.FC<AnalysisSessionToolbarProps> = ({
               <option value={0}>{t("All Laps")}</option>
               {lapsList.map(lap => (
                 <option key={lap.lap_number} value={lap.lap_number}>
-                  Lap {lap.lap_number} ({lap.lap_time?.toFixed(2) ?? t("Unknown")}s | Max: {lap.max_speed_kmh?.toFixed(0) ?? t("Unknown")}km/h)
+                  Lap {lap.lap_number} ({lap.is_estimated && `${t("Estimated")} `}{lap.lap_time?.toFixed(2) ?? t("Unknown")}s | Max: {lap.max_speed_kmh?.toFixed(0) ?? t("Unknown")}km/h)
                 </option>
               ))}
             </select>
@@ -110,7 +111,7 @@ const AnalysisSessionToolbar: React.FC<AnalysisSessionToolbarProps> = ({
               <option value={-1}>{t("None")}</option>
               {lapsList.map(lap => (
                 <option key={lap.lap_number} value={lap.lap_number}>
-                  vs Lap {lap.lap_number} ({lap.lap_time?.toFixed(2) ?? t("Unknown")}s)
+                  vs Lap {lap.lap_number} ({lap.is_estimated && `${t("Estimated")} `}{lap.lap_time?.toFixed(2) ?? t("Unknown")}s)
                 </option>
               ))}
             </select>
@@ -123,7 +124,7 @@ const AnalysisSessionToolbar: React.FC<AnalysisSessionToolbarProps> = ({
       </div>
       <div className="analysis-toolbar__actions">
         {getRuntimeCapabilities().localMotecLaunch && (
-          <button onClick={() => onOpenInMoTec("ld")} className="btn btn-outline-secondary" title={t("Launch session in local MoTeC i2 viewer")}>
+          <button onClick={() => onOpenInMoTec("ld")} disabled={selectedFilename === "local"} className="btn btn-outline-secondary" title={t("Launch session in local MoTeC i2 viewer")}>
             {t("Open in MoTeC")}
           </button>
         )}
@@ -132,8 +133,8 @@ const AnalysisSessionToolbar: React.FC<AnalysisSessionToolbarProps> = ({
           title={isExporting ? t("Export is currently in progress") : t("Export native MoTeC .ld binary with .ldx lap beacons")}
           style={isExporting ? { cursor: 'not-allowed' } : undefined}
         >
-          <button onClick={() => onExportMoTec("ld")} disabled={isExporting} className="btn btn-outline-secondary" style={isExporting ? { pointerEvents: 'none' } : undefined}>
-            MoTeC .ld {t("Export")}
+          <button onClick={() => onExportMoTec("ld")} disabled={isExporting || selectedFilename === "local"} className="btn btn-outline-secondary" style={isExporting ? { pointerEvents: 'none' } : undefined}>
+            MoTeC .ld {t("Export")} ({t("Experimental")})
           </button>
         </span>
         <span
@@ -141,7 +142,7 @@ const AnalysisSessionToolbar: React.FC<AnalysisSessionToolbarProps> = ({
           title={isExporting ? t("Export is currently in progress") : t("Export legacy MoTeC CSV")}
           style={isExporting ? { cursor: 'not-allowed' } : undefined}
         >
-          <button onClick={() => onExportMoTec("csv")} disabled={isExporting} className="btn btn-outline-secondary" style={isExporting ? { pointerEvents: 'none' } : undefined}>
+          <button onClick={() => onExportMoTec("csv")} disabled={isExporting || selectedFilename === "local"} className="btn btn-outline-secondary" style={isExporting ? { pointerEvents: 'none' } : undefined}>
             CSV {t("Export")}
           </button>
         </span>
@@ -166,6 +167,7 @@ const AnalysisSessionToolbar: React.FC<AnalysisSessionToolbarProps> = ({
         {isSavedSelection && <button onClick={onDeleteSession} className="btn btn-outline-danger">{t("Delete")}</button>}
       </div>
     </div>
+    {selectedFilename === "local" && <p className="text-muted small">{t("Imported CSV is previewed locally; use the original file in MoTeC.")}</p>}
 
     {motecActionMsg && (
       <div

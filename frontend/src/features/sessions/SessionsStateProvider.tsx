@@ -41,7 +41,7 @@ interface SessionsStateContextValue {
   applySessionIntent(intent: SessionIntent, isNavigationCurrent?: () => boolean): Promise<boolean>;
   loadPrimaryLap(): Promise<AnalysisDataPoint[] | null>;
   cancelPrimaryLoad(): void;
-  refreshCurrent(): Promise<AnalysisDataPoint[] | null>;
+  refreshCurrent(finalized?: boolean): Promise<AnalysisDataPoint[] | null>;
 }
 
 const SessionsStateContext = createContext<SessionsStateContextValue | undefined>(undefined);
@@ -179,8 +179,8 @@ export const SessionsStateProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, [setLoadedSession]);
 
-  const refreshCurrent = useCallback(async (): Promise<AnalysisDataPoint[] | null> => {
-    if (stateRef.current.selection.kind !== "current" || refreshInFlightRef.current || primaryInFlightRef.current > 0) {
+  const refreshCurrent = useCallback(async (finalized = false): Promise<AnalysisDataPoint[] | null> => {
+    if (stateRef.current.selection.kind !== "current" || (!finalized && (refreshInFlightRef.current || primaryInFlightRef.current > 0))) {
       return null;
     }
     refreshInFlightRef.current = true;

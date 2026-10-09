@@ -1,6 +1,37 @@
 use fh6_backend::tuning::measurement::{advance, analyze, initial, readiness};
 use serde_json::{json, Value};
 #[test]
+fn real_engine_capture_qualification_ignores_unreliable_race_flag() {
+    let fixture: Value = serde_json::from_str(include_str!(
+        "../../tests/fixtures/aego_beetle_engine_captures.json"
+    ))
+    .unwrap();
+    let capture = &fixture["captures"][0];
+    let mut enabled = initial(capture["carId"].as_str().unwrap());
+    let mut disabled = enabled.clone();
+    for row in capture["samples"].as_array().unwrap() {
+        let mut frame = Value::Object(
+            fixture["fields"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .zip(row.as_array().unwrap())
+                .map(|(k, v)| (k.as_str().unwrap().to_owned(), v.clone()))
+                .collect(),
+        );
+        frame = fh6_backend::tuning::measurement::capture_frame(&frame);
+        let now = frame["TimestampMS"].as_f64().unwrap();
+        frame["IsRaceOn"] = json!(1);
+        enabled = advance(&enabled, &frame, true, now);
+        frame["IsRaceOn"] = json!(0);
+        disabled = advance(&disabled, &frame, true, now);
+    }
+    assert!(enabled["acceptedMs"].as_f64().unwrap() > 0.0);
+    for key in ["acceptedMs", "bins", "status", "guidance", "identity"] {
+        assert_eq!(disabled[key], enabled[key], "{key}");
+    }
+}
+#[test]
 fn frozen_real_captures_match_desktop_v4_analysis() {
     let captures: Value = serde_json::from_str(include_str!(
         "../../tests/fixtures/aego_beetle_engine_captures.json"
