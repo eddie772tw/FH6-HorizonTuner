@@ -104,8 +104,15 @@ export function renderCompass(canvas, data, config, domCache) {
     } else {
         if (domCache && domCache.wrapper && domCache.wrapper._cachedPrimaryColor) {
             primaryColor = domCache.wrapper._cachedPrimaryColor;
-        } else if (canvas._cachedPrimaryColor) {
-            primaryColor = canvas._cachedPrimaryColor;
+        } else {
+            if (canvas._cachedPrimaryColor === undefined && canvas.parentElement) {
+                var parentComputed = getComputedStyle(canvas.parentElement);
+                var computedPrimary = parentComputed ? parentComputed.getPropertyValue('--card-primary') : null;
+                canvas._cachedPrimaryColor = (computedPrimary && computedPrimary.trim()) ? computedPrimary.trim() : null;
+            }
+            if (canvas._cachedPrimaryColor) {
+                primaryColor = canvas._cachedPrimaryColor;
+            }
         }
     }
 

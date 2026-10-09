@@ -297,8 +297,7 @@ export const TrendChart: React.FC<{
         context.clearRect(0, 0, width, height);
         return;
       }
-      styleRef.current ??= getComputedStyle(document.documentElement);
-      drawChart(context, dataRef.current, linesRef.current, layout, themeRef.current, styleRef.current, colorCacheRef.current);
+      drawChart(context, dataRef.current, linesRef.current, layout, themeRef.current, styleRef.current ?? getComputedStyle(document.documentElement), colorCacheRef.current);
     };
 
     drawRef.current = render;
