@@ -59,9 +59,11 @@ AEGO Road now uses qualified moving-sweep bin averages and jointly allocates fir
 * **Drag Launch Test & Acceleration Analyzer**:
   - Automatic timing tests for 0-100 km/h, 0-200 km/h, and 1/4 mile (400m) launch acceleration.
   - Speed/RPM timeline chart playback and historical session comparison.
-* **Telemetry Persistence & MoTeC i2 Exporter**:
-  - Automated backend SQLite historical telemetry logging.
-  - One-click exporter for professional racing analysis software **MoTeC i2** standard `.ld` log format.
+* **Telemetry Persistence, Race Analysis & MoTeC i2 Exporter**:
+  - Automated backend SQLite telemetry history logging, supporting Circuit races, Time Trials, and point-to-point Free Roam route recording.
+  - Features 3D spherical gate triggers (5m–50m adjustable radius with 20% exit hysteresis) and non-destructive lead-in / post-stop trimming.
+  - Time Trial and Free Roam recordings start at the next valid gate crossing after arming. Adjacent valid telemetry segments detect fast passes through a gate; recording eligibility does not depend on `IsRaceOn`. Default analysis excludes unfinished tails and laps with known telemetry gaps while preserving the raw session.
+  - Provides 41-channel CSV, an i2 XML workspace template, and experimental `.ld` / `.ldx` ZIP export. Binary structure is tested; compatibility in a real MoTeC i2 installation remains unverified. See the [race analysis guide](docs/guides/race-analysis.md) for operation and limits.
 * **Localhost Read-Only MCP Server (Model Context Protocol)**:
   - The running Rust backend provides a Streamable HTTP MCP endpoint at `/mcp`, offering 26 dedicated read-only tools and 5 Resource URI templates in the same process as telemetry.
   - Enables AI Agents (Claude Desktop, Cursor, Cline, Antigravity) to query live telemetry (aligned with `TelemetryView`), track sessions, A/B run delta comparisons, car specs, and tuning solvers.

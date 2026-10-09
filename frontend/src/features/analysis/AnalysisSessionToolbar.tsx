@@ -19,11 +19,12 @@ export interface AnalysisSessionToolbarProps {
   readonly onSelectSession: (filename: string) => void;
   readonly onSelectPrimaryLap: (lap: number) => void;
   readonly onSelectCompareLap: (lap: number) => void;
-  readonly onOpenInMoTec: () => void;
-  readonly onExportMoTec: () => void;
+  readonly onOpenInMoTec: (format?: "csv" | "ld") => void;
+  readonly onExportMoTec: (format?: "csv" | "ld") => void;
   readonly onImportFile: (event: React.ChangeEvent<HTMLInputElement>) => void;
   readonly onOpenImport: () => void;
   readonly onDownloadTemplate: () => void;
+  readonly onOpenChannelMapping?: () => void;
   readonly onDeleteSession: () => void;
   readonly onCloseMessage: () => void;
   readonly onLatestAnalysis: () => void;
@@ -51,6 +52,7 @@ const AnalysisSessionToolbar: React.FC<AnalysisSessionToolbarProps> = ({
   onImportFile,
   onOpenImport,
   onDownloadTemplate,
+  onOpenChannelMapping,
   onDeleteSession,
   onCloseMessage,
   onLatestAnalysis,
@@ -77,6 +79,7 @@ const AnalysisSessionToolbar: React.FC<AnalysisSessionToolbarProps> = ({
             {t("Select Session")}:
           </span>
           <select className="form-select" value={selectedFilename} onChange={event => onSelectSession(event.target.value)}>
+            {selectedFilename === "local" && <option value="local">MoTeC CSV {t("Import")}</option>}
             <option value="current">{t("Current / Latest Session")}</option>
             {savedSessions.map(session => (
               <option key={session.filename} value={session.filename}>
@@ -94,7 +97,7 @@ const AnalysisSessionToolbar: React.FC<AnalysisSessionToolbarProps> = ({
               <option value={0}>{t("All Laps")}</option>
               {lapsList.map(lap => (
                 <option key={lap.lap_number} value={lap.lap_number}>
-                  Lap {lap.lap_number} ({lap.lap_time?.toFixed(2) ?? t("Unknown")}s | Max: {lap.max_speed_kmh?.toFixed(0) ?? t("Unknown")}km/h)
+                  Lap {lap.lap_number} ({lap.is_estimated && `${t("Estimated")} `}{lap.lap_time?.toFixed(2) ?? t("Unknown")}s | Max: {lap.max_speed_kmh?.toFixed(0) ?? t("Unknown")}km/h)
                 </option>
               ))}
             </select>
@@ -108,7 +111,7 @@ const AnalysisSessionToolbar: React.FC<AnalysisSessionToolbarProps> = ({
               <option value={-1}>{t("None")}</option>
               {lapsList.map(lap => (
                 <option key={lap.lap_number} value={lap.lap_number}>
-                  vs Lap {lap.lap_number} ({lap.lap_time?.toFixed(2) ?? t("Unknown")}s)
+                  vs Lap {lap.lap_number} ({lap.is_estimated && `${t("Estimated")} `}{lap.lap_time?.toFixed(2) ?? t("Unknown")}s)
                 </option>
               ))}
             </select>
@@ -121,17 +124,26 @@ const AnalysisSessionToolbar: React.FC<AnalysisSessionToolbarProps> = ({
       </div>
       <div className="analysis-toolbar__actions">
         {getRuntimeCapabilities().localMotecLaunch && (
-          <button onClick={onOpenInMoTec} className="btn btn-outline-secondary" title={t("Launch session in local MoTeC i2 viewer")}>
+          <button onClick={() => onOpenInMoTec("ld")} disabled={selectedFilename === "local"} className="btn btn-outline-secondary" title={t("Launch session in local MoTeC i2 viewer")}>
             {t("Open in MoTeC")}
           </button>
         )}
         <span
           className="d-inline-flex"
-          title={isExporting ? t("Export is currently in progress") : undefined}
+          title={isExporting ? t("Export is currently in progress") : t("Export native MoTeC .ld binary with .ldx lap beacons")}
           style={isExporting ? { cursor: 'not-allowed' } : undefined}
         >
-          <button onClick={onExportMoTec} disabled={isExporting} className="btn btn-outline-secondary" style={isExporting ? { pointerEvents: 'none' } : undefined}>
-            MoTeC CSV {t("Export")}
+          <button onClick={() => onExportMoTec("ld")} disabled={isExporting || selectedFilename === "local"} className="btn btn-outline-secondary" style={isExporting ? { pointerEvents: 'none' } : undefined}>
+            MoTeC .ld {t("Export")} ({t("Experimental")})
+          </button>
+        </span>
+        <span
+          className="d-inline-flex"
+          title={isExporting ? t("Export is currently in progress") : t("Export legacy MoTeC CSV")}
+          style={isExporting ? { cursor: 'not-allowed' } : undefined}
+        >
+          <button onClick={() => onExportMoTec("csv")} disabled={isExporting || selectedFilename === "local"} className="btn btn-outline-secondary" style={isExporting ? { pointerEvents: 'none' } : undefined}>
+            CSV {t("Export")}
           </button>
         </span>
         <input ref={fileInputRef} type="file" accept=".csv" style={{ display: "none" }} onChange={onImportFile} />
@@ -147,9 +159,15 @@ const AnalysisSessionToolbar: React.FC<AnalysisSessionToolbarProps> = ({
             {t("Workspace Template")}
           </button>
         </span>
+        {onOpenChannelMapping && (
+          <button onClick={onOpenChannelMapping} className="btn btn-outline-secondary" title={t("View 41-channel mapping reference")}>
+            {t("Channel Mapping")}
+          </button>
+        )}
         {isSavedSelection && <button onClick={onDeleteSession} className="btn btn-outline-danger">{t("Delete")}</button>}
       </div>
     </div>
+    {selectedFilename === "local" && <p className="text-muted small">{t("Imported CSV is previewed locally; use the original file in MoTeC.")}</p>}
 
     {motecActionMsg && (
       <div

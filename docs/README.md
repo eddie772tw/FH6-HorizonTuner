@@ -11,6 +11,7 @@
 | Rust 後端架構、遷移契約與測試分層 | [Rust 後端指南](backend-rust/README.md) |
 | Python 效能工作如何由 Rust 承接、單機量測與資料完整性證據 | [效能承接盤查](backend-rust/performance-inheritance.md) |
 | 匯出檔案、另存新檔與儲存位置 | [檔案匯出指南](guides/file-exports.md) |
+| 計時賽、漫遊路線、修剪與 MoTeC 格式限制 | [賽事分析指南](guides/race-analysis.md) |
 | 使用 Agent CLI | [CLI 操作指南](guides/agent-cli-guide.md) |
 | 連接 MCP | [MCP 設定指南](guides/mcp-setup-guide.md) |
 | 安裝自訂 HUD | [可攜版 HUD 套件](guides/portable-custom-hud.md) |

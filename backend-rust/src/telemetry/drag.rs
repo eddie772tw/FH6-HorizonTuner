@@ -94,7 +94,6 @@ impl DragRecorder {
         let accel = i(d, "AccelInput", 0);
         let gear = i(d, "Gear", 0);
         let ts = f(d, "TimestampMS", 0.0);
-        let race = i(d, "IsRaceOn", 0);
         if self.status == DragRecorderStatus::Waiting {
             if speed < 0.5 && gear >= 1 && accel >= 220 {
                 self.status = DragRecorderStatus::Recording;
@@ -119,9 +118,7 @@ impl DragRecorder {
         let point = point(d, rel, speed, gear, accel);
         self.session.push(point);
         let mut stop = None;
-        if race != 1 {
-            stop = Some("Race paused/ended")
-        } else if rel > self.max_recording_time {
+        if rel > self.max_recording_time {
             stop = Some("Max recording time reached")
         } else if accel < 150 {
             if self.low_throttle.is_none() {

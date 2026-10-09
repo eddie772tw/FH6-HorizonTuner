@@ -113,11 +113,10 @@ impl RoadService {
         if id.is_none() || !progressed {
             return;
         }
-        if frame.get("IsRaceOn").and_then(Value::as_i64) == Some(1)
-            && frame
-                .get("CurrentRaceTime")
-                .and_then(Value::as_f64)
-                .is_some_and(|x| x > 0.0)
+        if frame
+            .get("CurrentRaceTime")
+            .and_then(Value::as_f64)
+            .is_some_and(|x| x > 0.0)
         {
             self.pending.push(frame.clone());
         }
@@ -640,7 +639,6 @@ impl RoadService {
         }
         let race: Vec<f64> = points
             .iter()
-            .filter(|p| p.get("IsRaceOn").and_then(Value::as_i64) == Some(1))
             .filter_map(|p| p.get("CurrentRaceTime").and_then(Value::as_f64))
             .collect();
         let schemas = points

@@ -1,154 +1,162 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { useTelemetryRecorder, AnalysisDataPoint, LapSummary } from "../../context/TelemetryRecorderContext";
+import { useTelemetryRecorder, AnalysisDataPoint } from "../../context/TelemetryRecorderContext";
 import { useSettings } from "../../context/SettingsContext";
-import { calculateFrontendDebrief, type SessionDebriefData } from "./sessionDebriefMath";
+import { useCustomRoutes } from "./useCustomRoutes";
+import { useAnalysisSessionData } from "./useAnalysisSessionData";
+import { useTelemetry } from "../../hooks/useTelemetry";
 import AnalysisSessionToolbar from "./AnalysisSessionToolbar";
 import AnalysisSessionVisuals from "./AnalysisSessionVisuals";
-import { backendFetch } from "../../services/backend";
+import ManualRecordingToolbar from "./ManualRecordingToolbar";
+import AnalysisRouteSection from "./AnalysisRouteSection";
+import SessionTrimSummaryCard from "./SessionTrimSummaryCard";
+import MotecFieldMappingModal from "./MotecFieldMappingModal";
 import { useSessionsState } from "../sessions/SessionsStateProvider";
-import { analysisDataPath, analysisSelectionKey } from "../sessions/sessionSelection";
 import { createSessionsIo } from "../sessions/sessionsIo";
+import { selectedRouteForMode } from "./routeTriggerMath";
 
 const AnalysisView: React.FC<{ onLatestAnalysis: () => void }> = ({ onLatestAnalysis }) => {
-  const { isRecording, recordingCount, currentSessionId, currentSession, loadedSession, savedSessions, fetchSavedSessionsList, loadSessionLaps, exportMoTecCsv, isExporting, openInMoTec, downloadMoTecTemplate, fetchSessionDebrief } = useTelemetryRecorder();
-  const { state: sessionsState, selectedFilename, selectedSessionId, isSavedSelection, selectCurrent, selectSaved, setPrimaryLap, setCompareLap, setMetric, beginSelectionOperation, setImportedSession, loadPrimaryLap, cancelPrimaryLoad, refreshCurrent } = useSessionsState();
+  const {
+    isRecording, recordingCount, manualMode, recordingMode, armed, armedRouteId,
+    currentSessionId, currentSession, loadedSession, savedSessions,
+    fetchSavedSessionsList, loadSessionLaps, exportMoTecCsv, isExporting,
+    openInMoTec, downloadMoTecTemplate, fetchSessionDebrief,
+    startManualRecording, stopManualRecording, armRoute, disarmRoute,
+    clearCurrentSession, saveCurrentSessionToBackend,
+  } = useTelemetryRecorder();
+  const {
+    state: sessionsState, selectedFilename, selectedSessionId, isSavedSelection,
+    selectCurrent, selectSaved, setPrimaryLap, setCompareLap, setMetric,
+    beginSelectionOperation, setImportedSession, loadPrimaryLap, cancelPrimaryLoad, refreshCurrent,
+  } = useSessionsState();
+  const { data: liveTelemetry } = useTelemetry();
   const { t } = useSettings();
+  const {
+    routes, selectedRouteId, setSelectedRouteId,
+    saveRoute, deleteRoute, importRoutes, exportRoute,
+  } = useCustomRoutes();
+
+  const [activeMode, setActiveMode] = useState<"circuit" | "time_trial" | "roaming">("circuit");
+  const [showRawData, setShowRawData] = useState(false);
+  const [exportRawData, setExportRawData] = useState(false);
+  const [isChannelMappingOpen, setIsChannelMappingOpen] = useState(false);
   const [motecActionMsg, setMotecActionMsg] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [lapsList, setLapsList] = useState<LapSummary[]>([]);
-  const [compareSessionData, setCompareSessionData] = useState<AnalysisDataPoint[]>([]);
-  const [fullSessionTrackData, setFullSessionTrackData] = useState<AnalysisDataPoint[]>([]);
-  const [debriefData, setDebriefData] = useState<SessionDebriefData | null>(null);
   const { selection, primaryLap, compareLap, metric: selectedMetric, isLoading } = sessionsState;
+  const selectedRoute = selectedRouteForMode(routes, selectedRouteId, activeMode);
+
+  useEffect(() => {
+    if (selectedRouteId && !selectedRoute) setSelectedRouteId(null);
+  }, [selectedRouteId, selectedRoute, setSelectedRouteId]);
+
+  useEffect(() => {
+    if (recordingMode === "circuit" || recordingMode === "time_trial" || recordingMode === "roaming") {
+      setActiveMode(recordingMode);
+    }
+  }, [recordingMode]);
 
   useEffect(() => {
     if (selection.kind !== "local") void loadPrimaryLap();
     return cancelPrimaryLoad;
   }, [cancelPrimaryLoad, loadPrimaryLap, primaryLap, selection]);
 
-  useEffect(() => {
-    let active = true;
-    const controller = new AbortController();
-    const selectedKey = analysisSelectionKey(selection);
-    const loadSupportingData = async () => {
-      if (selection.kind === "local") {
-        setLapsList([]);
-        setFullSessionTrackData(loadedSession ?? []);
-        setDebriefData(loadedSession && loadedSession.length > 0 ? calculateFrontendDebrief(loadedSession) : null);
-        return;
-      }
-      const sessionId = selectedSessionId;
-      const fullTrackPath = analysisDataPath(selection, 0);
-      if (!sessionId || !fullTrackPath) return;
-      const [fullTrack, laps, debrief] = await Promise.all([
-        backendFetch(fullTrackPath, { signal: controller.signal }).then(response => response.json()).catch(() => null),
-        selection.kind === "current" ? Promise.resolve([]) : loadSessionLaps(sessionId),
-        fetchSessionDebrief(sessionId),
-      ]);
-      if (!active || analysisSelectionKey(selection) !== selectedKey) return;
-      setLapsList(laps);
-      if (Array.isArray(fullTrack)) setFullSessionTrackData(fullTrack);
-      if (debrief) setDebriefData(debrief);
-    };
-    void loadSupportingData();
-    return () => { active = false; controller.abort(); };
-  }, [fetchSessionDebrief, loadSessionLaps, loadedSession, selectedSessionId, selection]);
+  const {
+    activeSession, lapsList, compareSessionData, fullSessionTrackData,
+    sessionMetadata, fallbackDebrief,
+  } = useAnalysisSessionData({
+    selection, selectedSessionId, loadedSession, currentSession,
+    primaryLap, compareLap, showRawData, isRecording, currentSessionId,
+    loadSessionLaps, fetchSessionDebrief, refreshCurrent,
+  });
 
-  useEffect(() => {
-    if (!isRecording || selection.kind !== "current") return;
-    const intervalId = window.setInterval(() => {
-      void refreshCurrent().then(data => { if (data && data.length > 0) setDebriefData(calculateFrontendDebrief(data)); });
-    }, 4000);
-    return () => window.clearInterval(intervalId);
-  }, [isRecording, refreshCurrent, selection.kind]);
+  const handleDropdownChange = (f: string) => { if (f === "current") selectCurrent(); else selectSaved(f); };
 
-  const activeSession = loadedSession || currentSession;
-  useEffect(() => { if (activeSession.length > 0) setDebriefData(calculateFrontendDebrief(activeSession)); }, [activeSession]);
-
-  useEffect(() => {
-    let active = true;
-    const controller = new AbortController();
-    const fetchCompareData = async () => {
-      const path = compareLap > 0 ? analysisDataPath(selection, compareLap) : null;
-      if (path) {
-        try {
-          const data = await backendFetch(path, { signal: controller.signal }).then(response => response.json());
-          if (active && Array.isArray(data)) setCompareSessionData(data);
-        } catch { if (active) setCompareSessionData([]); }
-      } else setCompareSessionData([]);
-    };
-    void fetchCompareData();
-    return () => { active = false; controller.abort(); };
-  }, [compareLap, selection]);
-
-  const handleDropdownChange = (filename: string) => { if (filename === "current") selectCurrent(); else selectSaved(filename); };
-
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
     if (file) {
-      const operation = beginSelectionOperation();
-      const data = await createSessionsIo().importMoTeCCsv(file);
-      if (data && data.length > 0 && setImportedSession(data, operation)) {
-        setFullSessionTrackData(data);
-        setDebriefData(calculateFrontendDebrief(data));
+      const op = beginSelectionOperation();
+      const res = await createSessionsIo().importMoTeCCsv(file);
+      if (res && res.data && res.data.length > 0 && setImportedSession(res.data, op)) {
+        // loadedSession is updated via setImportedSession
       }
     }
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  const handleOpenInMoTec = async () => {
-    const sid = selectedSessionId === "current" ? (currentSessionId || (savedSessions.length > 0 ? savedSessions[0].session_id : "current")) : (selectedSessionId || "current");
-    const result = await openInMoTec(sid);
-    setMotecActionMsg(result.message);
-    setTimeout(() => setMotecActionMsg(null), 4000);
-  };
-
-  const handleDeleteSession = async () => {
-    if (!isSavedSelection || !selectedSessionId) return;
-    if (confirm(`${t("Are you sure you want to delete this session?")} (${selectedSessionId})`)) {
-      const operation = beginSelectionOperation();
-      const success = await createSessionsIo().deleteSavedSession(selectedSessionId);
-      if (success) {
-        await fetchSavedSessionsList();
-        if (operation.isCurrent()) selectCurrent();
-      } else if (operation.isCurrent()) alert(t("Failed to delete session."));
+  const handleStartManual = async () => {
+    if (activeMode !== "circuit") {
+      if (selectedRoute) await armRoute(selectedRoute.route_id, activeMode);
+      return;
     }
+    const car = liveTelemetry ? {
+      ordinal: liveTelemetry.CarOrdinal,
+      carClass: liveTelemetry.CarClass,
+      pi: liveTelemetry.CarPerformanceIndex,
+    } : undefined;
+    await startManualRecording(car, activeMode, selectedRoute?.route_id);
   };
 
   const formatTrackCanvasData = useCallback((points: AnalysisDataPoint[]) => {
-    const finite = (value: number | null | undefined): value is number => typeof value === "number" && Number.isFinite(value);
-    const candidates = points.flatMap(point => {
-      if (!finite(point.time) || !finite(point.PositionX) || !finite(point.PositionZ) || !finite(point.SpeedMetersPerSecond)) return [];
-      const x = point.PositionX;
-      const z = point.PositionZ;
-      let value: number | null = point.SpeedMetersPerSecond;
-      if (selectedMetric === "throttle") value = finite(point.AccelInput) ? point.AccelInput / 255 : null;
-      else if (selectedMetric === "brake") value = finite(point.BrakeInput) ? point.BrakeInput / 255 : null;
+    const finite = (v: number | null | undefined): v is number => typeof v === "number" && Number.isFinite(v);
+    const candidates = points.flatMap((p) => {
+      if (!finite(p.time) || !finite(p.PositionX) || !finite(p.PositionZ) || !finite(p.SpeedMetersPerSecond)) return [];
+      let val: number | null = p.SpeedMetersPerSecond;
+      if (selectedMetric === "throttle") val = finite(p.AccelInput) ? p.AccelInput / 255 : null;
+      else if (selectedMetric === "brake") val = finite(p.BrakeInput) ? p.BrakeInput / 255 : null;
       else if (selectedMetric === "grip") {
-        const slip = (point.TireSlipRatio || []).filter(finite);
-        if (slip.length > 0) { let maxVal = 0; for (let i = 0; i < slip.length; i++) maxVal = Math.max(maxVal, Math.abs(slip[i])); value = maxVal; } else value = null;
-      } else if (selectedMetric === "suspension") value = finite(point.SuspTravel?.[0]) ? point.SuspTravel[0] : null;
-      return finite(value) ? [{ point, x, z, value }] : [];
+        const slip = (p.TireSlipRatio || []).filter(finite);
+        val = slip.length > 0 ? Math.max(...slip.map(Math.abs)) : null;
+      } else if (selectedMetric === "suspension") val = finite(p.SuspTravel?.[0]) ? p.SuspTravel[0] : null;
+      return finite(val) ? [{ point: p, x: p.PositionX, z: p.PositionZ, value: val }] : [];
     });
     if (candidates.length === 0) return [];
-    let metricMax = 0.1;
-    for (const candidate of candidates) if (candidate.value > metricMax) metricMax = candidate.value;
+    const metricMax = candidates.reduce((max, candidate) => Math.max(max, candidate.value), 0.1);
     return candidates.map(({ point, x, z, value }) => ({ x, z, val: value / metricMax, raw: point }));
   }, [selectedMetric]);
 
   const activeCanvasData = useMemo(() => formatTrackCanvasData(activeSession), [activeSession, formatTrackCanvasData]);
   const baseCanvasData = useMemo(() => formatTrackCanvasData(fullSessionTrackData), [fullSessionTrackData, formatTrackCanvasData]);
-  const isSavedSession = selection.kind === "saved" || selection.kind === "latest";
-  const fallbackDebrief: SessionDebriefData = debriefData || {
-    total_samples: activeSession.length,
-    valid_laps: null,
-    tire_thermals: { fl_avg: null, fr_avg: null, rl_avg: null, rr_avg: null, status: "no_data" },
-    suspension: { peak_travel_pct: null, bottom_out_count: null, status: "no_data" },
-    handling_balance: { understeer_pct: null, oversteer_pct: null, tendency: "no_data" },
-  };
 
   return (
     <div className="analysis-view">
+      <ManualRecordingToolbar
+        mode={activeMode}
+        onModeChange={setActiveMode}
+        isRecording={isRecording}
+        recordingCount={recordingCount}
+        manualMode={manualMode}
+        armed={armed}
+        onStartManual={handleStartManual}
+        canStart={activeMode === "circuit" || Boolean(selectedRoute)}
+        onStopManual={() => void stopManualRecording()}
+        onClear={() => void clearCurrentSession()}
+        onSave={() => void saveCurrentSessionToBackend()}
+        t={t}
+      />
+      <AnalysisRouteSection
+        activeMode={activeMode}
+        routes={routes}
+        selectedRouteId={selectedRouteId}
+        isArmed={armed}
+        isRecording={isRecording}
+        armedRouteId={armedRouteId}
+        liveTelemetry={liveTelemetry ?? null}
+        onSelectRoute={setSelectedRouteId}
+        onSaveRoute={saveRoute}
+        onDeleteRoute={deleteRoute}
+        onArmRoute={armRoute}
+        onDisarmRoute={disarmRoute}
+        onImportRoutes={importRoutes}
+        onExportRoute={exportRoute}
+        t={t}
+      />
+      <SessionTrimSummaryCard
+        metadata={sessionMetadata}
+        showRawData={showRawData}
+        onToggleRawData={setShowRawData}
+        exportRawData={exportRawData}
+        onToggleExportRawData={setExportRawData}
+        t={t}
+      />
       <AnalysisSessionToolbar
         onLatestAnalysis={onLatestAnalysis}
         t={t}
@@ -167,12 +175,26 @@ const AnalysisView: React.FC<{ onLatestAnalysis: () => void }> = ({ onLatestAnal
         onSelectSession={handleDropdownChange}
         onSelectPrimaryLap={setPrimaryLap}
         onSelectCompareLap={setCompareLap}
-        onOpenInMoTec={handleOpenInMoTec}
-        onExportMoTec={() => exportMoTecCsv(selectedFilename)}
+        onOpenInMoTec={async (format = "ld") => {
+          if (selection.kind === "local") return;
+          const sid = selectedSessionId === "current" ? (currentSessionId || (savedSessions[0]?.session_id ?? "current")) : (selectedSessionId || "current");
+          const res = await openInMoTec(sid, format);
+          setMotecActionMsg(res.message);
+          setTimeout(() => setMotecActionMsg(null), 4000);
+        }}
+        onExportMoTec={(format = "ld") => { if (selection.kind !== "local") exportMoTecCsv(selectedFilename, exportRawData, format); }}
         onImportFile={handleFileUpload}
         onOpenImport={() => fileInputRef.current?.click()}
         onDownloadTemplate={downloadMoTecTemplate}
-        onDeleteSession={handleDeleteSession}
+        onOpenChannelMapping={() => setIsChannelMappingOpen(true)}
+        onDeleteSession={async () => {
+          if (!isSavedSelection || !selectedSessionId) return;
+          if (confirm(`${t("Are you sure you want to delete this session?")} (${selectedSessionId})`)) {
+            const op = beginSelectionOperation();
+            const ok = await createSessionsIo().deleteSavedSession(selectedSessionId);
+            if (ok) { await fetchSavedSessionsList(); if (op.isCurrent()) selectCurrent(); }
+          }
+        }}
         onCloseMessage={() => setMotecActionMsg(null)}
       />
       <AnalysisSessionVisuals
@@ -187,8 +209,14 @@ const AnalysisView: React.FC<{ onLatestAnalysis: () => void }> = ({ onLatestAnal
         primaryLap={primaryLap}
         compareLap={compareLap}
         isRecording={isRecording}
-        isSavedSession={isSavedSession}
+        isSavedSession={selection.kind === "saved" || selection.kind === "latest"}
         onSelectMetric={setMetric}
+      />
+      <MotecFieldMappingModal
+        isOpen={isChannelMappingOpen}
+        onClose={() => setIsChannelMappingOpen(false)}
+        onDownloadTemplate={downloadMoTecTemplate}
+        t={t}
       />
     </div>
   );

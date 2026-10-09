@@ -1,5 +1,4 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
-import { useSettings } from "./SettingsContext";
 import { backendFetch } from "../services/backend";
 import { fetchExportBlob } from '../services/fileSave';
 import { useFileSave } from '../hooks/useFileSave';
@@ -23,6 +22,7 @@ export interface AnalysisDataPoint {
   TireSlipRatio: (number | null)[]; // [FL, FR, RL, RR]
   TireTemp: (number | null)[]; // [FL, FR, RL, RR] (°F)
   PositionX: number | null;
+  PositionY?: number | null;
   PositionZ: number | null;
 }
 
@@ -46,11 +46,17 @@ export interface LapSummary {
   avg_speed_kmh: number | null;
   complete?: boolean;
   lap_time_source?: string;
+  observed_span?: number | null;
+  is_estimated?: boolean;
 }
 
 interface TelemetryRecorderContextType {
   isRecording: boolean;
   recordingCount: number;
+  manualMode: boolean;
+  recordingMode: string;
+  armed: boolean;
+  armedRouteId: string | null;
   currentSessionId: string | null;
   currentSession: AnalysisDataPoint[];
   loadedSession: AnalysisDataPoint[] | null;
@@ -58,6 +64,14 @@ interface TelemetryRecorderContextType {
   setLoadedSession: (data: AnalysisDataPoint[] | null) => void;
   clearCurrentSession: () => Promise<void>;
   saveCurrentSessionToBackend: () => Promise<string | null>;
+  startManualRecording: (
+    carInfo?: { ordinal?: number; name?: string; carClass?: number; pi?: number },
+    mode?: string,
+    routeId?: string,
+  ) => Promise<string | null>;
+  stopManualRecording: () => Promise<boolean>;
+  armRoute: (routeId: string, mode: string) => Promise<boolean>;
+  disarmRoute: () => Promise<boolean>;
   fetchCurrentSessionData: (lap?: number) => Promise<AnalysisDataPoint[]>;
   fetchSavedSessionsList: () => Promise<void>;
   loadSavedSession: (
@@ -66,10 +80,11 @@ interface TelemetryRecorderContextType {
   ) => Promise<AnalysisDataPoint[] | null>;
   loadSessionLaps: (filename: string) => Promise<LapSummary[]>;
   deleteSavedSession: (filename: string) => Promise<boolean>;
-  exportMoTecCsv: (filename: string) => void;
+  exportMoTecCsv: (filename: string, raw?: boolean, format?: "csv" | "ld") => void;
+  exportMoTec: (filename: string, raw?: boolean, format?: "csv" | "ld") => void;
   isExporting: boolean;
   uploadMoTecCsv: (file: File) => Promise<AnalysisDataPoint[] | null>;
-  openInMoTec: (sessionId: string) => Promise<{ success: boolean; launched: boolean; message: string }>;
+  openInMoTec: (sessionId: string, format?: "csv" | "ld") => Promise<{ success: boolean; launched: boolean; message: string }>;
   downloadMoTecTemplate: () => void;
   fetchSessionDebrief: (sessionId: string) => Promise<SessionDebriefData | null>;
 }
@@ -81,10 +96,13 @@ const TelemetryRecorderContext = createContext<
 export const TelemetryRecorderProvider: React.FC<{
   children: React.ReactNode;
 }> = ({ children }) => {
-  const { settings } = useSettings();
   const { save, isSaving: isExporting } = useFileSave();
   const [isRecording, setIsRecording] = useState(false);
   const [recordingCount, setRecordingCount] = useState(0);
+  const [manualMode, setManualMode] = useState(false);
+  const [recordingMode, setRecordingMode] = useState("circuit");
+  const [armed, setArmed] = useState(false);
+  const [armedRouteId, setArmedRouteId] = useState<string | null>(null);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const [loadedSession, setLoadedSession] = useState<
     AnalysisDataPoint[] | null
@@ -95,11 +113,6 @@ export const TelemetryRecorderProvider: React.FC<{
 
   // Poll recording status from backend every 2 seconds
   useEffect(() => {
-    if (!settings.race_recording) {
-      setIsRecording(false);
-      setRecordingCount(0);
-      return;
-    }
     let active = true;
     let inFlight = false;
     const controller = new AbortController();
@@ -111,9 +124,13 @@ export const TelemetryRecorderProvider: React.FC<{
         if (!res.ok) return;
         const data = await res.json();
         if (active && data) {
-          setIsRecording(data.isRecording);
-          setRecordingCount(data.recordingCount);
+          setIsRecording(Boolean(data.isRecording));
+          setRecordingCount(typeof data.recordingCount === "number" ? data.recordingCount : 0);
           setCurrentSessionId(data.currentSessionId || null);
+          setManualMode(Boolean(data.manualMode));
+          setRecordingMode(data.recordingMode || "circuit");
+          setArmed(Boolean(data.armed));
+          setArmedRouteId(data.armedRouteId || null);
         }
       } catch (e) {
         if (active && !controller.signal.aborted) {
@@ -135,7 +152,7 @@ export const TelemetryRecorderProvider: React.FC<{
       clearInterval(interval);
       controller.abort();
     };
-  }, [settings.race_recording]);
+  }, []);
 
   const fetchSavedSessionsList = useCallback(async () => {
     try {
@@ -190,7 +207,9 @@ export const TelemetryRecorderProvider: React.FC<{
         { method: "POST" },
       );
       const data = await res.json();
-      if (data && data.filename) {
+      if (res.ok && data && data.filename) {
+        setIsRecording(false);
+        setManualMode(false);
         await fetchSavedSessionsList();
         return data.filename;
       }
@@ -198,6 +217,94 @@ export const TelemetryRecorderProvider: React.FC<{
       console.error("Failed to save session to backend:", e);
     }
     return null;
+  };
+
+  const startManualRecording = async (
+    carInfo?: { ordinal?: number; name?: string; carClass?: number; pi?: number },
+    mode: string = "circuit",
+    routeId?: string,
+  ): Promise<string | null> => {
+    try {
+      const res = await backendFetch("/api/analysis/recorder/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          car_ordinal: carInfo?.ordinal ?? 0,
+          ordinal: carInfo?.ordinal ?? 0,
+          car_name: carInfo?.name ?? "Unknown Car",
+          car_class: carInfo?.carClass ?? 0,
+          car_pi: carInfo?.pi ?? 0,
+          mode,
+          route_id: routeId,
+        }),
+      });
+      const data = await res.json();
+      if (data && data.sessionId) {
+        setIsRecording(true);
+        setManualMode(true);
+        setRecordingMode(mode);
+        setCurrentSessionId(data.sessionId);
+        return data.sessionId;
+      }
+    } catch (e) {
+      console.error("Failed to start manual recording:", e);
+    }
+    return null;
+  };
+
+  const stopManualRecording = async (): Promise<boolean> => {
+    try {
+      const res = await backendFetch("/api/analysis/recorder/stop", {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (data && !data.error) {
+        setIsRecording(false);
+        setManualMode(false);
+        await fetchSavedSessionsList();
+        return true;
+      }
+    } catch (e) {
+      console.error("Failed to stop manual recording:", e);
+    }
+    return false;
+  };
+
+  const armRoute = async (routeId: string, mode: string): Promise<boolean> => {
+    try {
+      const res = await backendFetch("/api/analysis/routes/arm", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ route_id: routeId, mode }),
+      });
+      const data = await res.json();
+      if (data && data.success) {
+        setArmed(true);
+        setArmedRouteId(routeId);
+        setRecordingMode(mode);
+        return true;
+      }
+    } catch (e) {
+      console.error("Failed to arm route:", e);
+    }
+    return false;
+  };
+
+  const disarmRoute = async (): Promise<boolean> => {
+    try {
+      const res = await backendFetch("/api/analysis/routes/disarm", {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (data && data.success) {
+        setArmed(false);
+        setArmedRouteId(null);
+        return true;
+      }
+    } catch (e) {
+      console.error("Failed to disarm route:", e);
+    }
+    return false;
   };
 
   const loadSavedSession = async (
@@ -252,9 +359,29 @@ export const TelemetryRecorderProvider: React.FC<{
     return false;
   };
 
-  const exportMoTecCsv = (filename: string) => {
-    void save({ filename: `${filename}_motec.csv`, mimeType: 'text/csv',
-      load: () => fetchExportBlob(`/api/analysis/export/motec/${encodeURIComponent(filename)}`, 'text/csv') });
+  const exportMoTecCsv = (
+    filename: string,
+    raw: boolean = false,
+    format: "csv" | "ld" = "ld",
+  ) => {
+    const params = new URLSearchParams();
+    if (raw) params.set("raw", "true");
+    if (format === "ld") params.set("format", "ld");
+    const qs = params.toString() ? `?${params.toString()}` : "";
+    const isLd = format === "ld";
+    const exportFilename = isLd
+      ? (raw ? `${filename}_motec_raw.zip` : `${filename}_motec.zip`)
+      : (raw ? `${filename}_motec_raw.csv` : `${filename}_motec.csv`);
+    const mimeType = isLd ? "application/zip" : "text/csv";
+    void save({
+      filename: exportFilename,
+      mimeType,
+      load: () =>
+        fetchExportBlob(
+          `/api/analysis/export/motec/${encodeURIComponent(filename)}${qs}`,
+          mimeType,
+        ),
+    });
   };
 
   const uploadMoTecCsv = async (
@@ -282,10 +409,12 @@ export const TelemetryRecorderProvider: React.FC<{
 
   const openInMoTec = async (
     sessionId: string,
+    format: "csv" | "ld" = "ld",
   ): Promise<{ success: boolean; launched: boolean; message: string }> => {
     try {
+      const qs = format === "ld" ? "?format=ld" : "";
       const res = await backendFetch(
-        `/api/analysis/motec/open/${encodeURIComponent(sessionId)}`,
+        `/api/analysis/motec/open/${encodeURIComponent(sessionId)}${qs}`,
         { method: "POST" },
       );
       const data = await res.json();
@@ -323,6 +452,10 @@ export const TelemetryRecorderProvider: React.FC<{
       value={{
         isRecording,
         recordingCount,
+        manualMode,
+        recordingMode,
+        armed,
+        armedRouteId,
         currentSessionId,
         currentSession,
         loadedSession,
@@ -330,12 +463,17 @@ export const TelemetryRecorderProvider: React.FC<{
         setLoadedSession,
         clearCurrentSession,
         saveCurrentSessionToBackend,
+        startManualRecording,
+        stopManualRecording,
+        armRoute,
+        disarmRoute,
         fetchCurrentSessionData,
         fetchSavedSessionsList,
         loadSavedSession,
         loadSessionLaps,
         deleteSavedSession,
         exportMoTecCsv,
+        exportMoTec: exportMoTecCsv,
         isExporting,
         uploadMoTecCsv,
         openInMoTec,

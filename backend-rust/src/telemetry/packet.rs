@@ -41,9 +41,6 @@ pub fn parse_packet(data: &[u8]) -> Result<Value, String> {
     if data.len() > FULL_TELEMETRY_PACKET_LENGTH {
         return Err("unsupported_length".into());
     }
-    if i32_at(data, 0) != 1 {
-        return Err("not_racing".into());
-    }
     if data.len() != LEGACY_TELEMETRY_PACKET_LENGTH && data.len() != FULL_TELEMETRY_PACKET_LENGTH {
         return Err("unsupported_length".into());
     }

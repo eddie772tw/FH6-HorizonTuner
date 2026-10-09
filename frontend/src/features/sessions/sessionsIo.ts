@@ -9,11 +9,16 @@ type SessionsFetch = (path: string, init?: RequestInit) => Promise<Response>;
  * shared recorder's load/delete helpers write loadedSession before a caller
  * can verify a selection guard, so they are intentionally not used here.
  */
+export interface MoTecImportResult {
+  metadata?: Record<string, unknown>;
+  data: AnalysisDataPoint[];
+}
+
 export interface SessionsIo {
   listSavedSessions(signal?: AbortSignal): Promise<readonly SavedSessionHeader[]>;
   readSavedSession(filename: string, signal?: AbortSignal): Promise<AnalysisDataPoint[] | null>;
   deleteSavedSession(filename: string, signal?: AbortSignal): Promise<boolean>;
-  importMoTeCCsv(file: File, signal?: AbortSignal): Promise<AnalysisDataPoint[] | null>;
+  importMoTeCCsv(file: File, signal?: AbortSignal): Promise<MoTecImportResult | null>;
 }
 
 function isSavedSessionHeader(value: unknown): value is SavedSessionHeader {
@@ -64,7 +69,7 @@ export function createSessionsIo(fetcher: SessionsFetch = backendFetch): Session
         return false;
       }
     },
-    async importMoTeCCsv(file: File, signal?: AbortSignal): Promise<AnalysisDataPoint[] | null> {
+    async importMoTeCCsv(file: File, signal?: AbortSignal): Promise<MoTecImportResult | null> {
       try {
         const formData = new FormData();
         formData.append("file", file);
@@ -74,9 +79,14 @@ export function createSessionsIo(fetcher: SessionsFetch = backendFetch): Session
           signal,
         });
         if (!response.ok) return null;
-        const result = await response.json() as { error?: unknown; data?: unknown };
+        const result = await response.json() as { error?: unknown; metadata?: unknown; data?: unknown };
         return !result.error && Array.isArray(result.data)
-          ? result.data as AnalysisDataPoint[]
+          ? {
+              metadata: result.metadata && typeof result.metadata === "object"
+                ? (result.metadata as Record<string, unknown>)
+                : {},
+              data: result.data as AnalysisDataPoint[],
+            }
           : null;
       } catch {
         return null;

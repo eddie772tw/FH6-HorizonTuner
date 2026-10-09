@@ -1,5 +1,21 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-10-07 / 遙測錄製管線解耦、計時賽修整邊界與 MoTeC 標記契約（Gemini as Antigravity）
+
+- **Scope**：解決 PR #495 審查（Issue #484）由 Codex as Codex 提出的 13 項回歸問題。採用 `pr-author-maintainer`、`pr-review-evaluation`、`telemetry-udp-protocol`、`modular-refactoring`。
+- **Learning**：
+  1. **IsRaceOn 訊號不可靠性與錄製解耦**：遊戲遙測中的 `IsRaceOn` 旗標在自由漫遊及特殊賽事中經常不穩定。UDP 封包解析器與 `RaceRecorder` 絕不可將其視為封包有效性或起錄之 gate；計時賽與漫遊自訂路線起錄獨立於常規賽事開關。DragRecorder 透過追蹤起跑時的 `started_with_race_on` 狀態，使漫遊模式（`IsRaceOn == 0`）下的加速測試不再首幀誤判終止，同時完全保留常規賽事結束停止契約。
+  2. **計時賽未閉合尾圈與通過時間契約**：計時賽停止時，最後一圈未通過起點閉合之殘留樣本必須自動排除於分析、最快圈速與預設匯出，維持零有效圈時不捏造圈速；圈速計算必須以相鄰起點通過事件之精確時間差為準，而非圈內樣本的 observed_span。
+  3. **起點防抖與高速穿球檢測**：起點門檻採用磁滯半徑 (hysteresis) 與進入狀態追蹤，車輛停在門內時武裝起錄需等待離開後再次進入；後續高速閉圈採用線段相交球體演算法，確保兩端點皆在球外的高速幀能正確判定閉圈。
+  4. **MoTeC .ld 與 .ldx 標記軸對齊與完整圈過濾**：LD 匯出以首個有效樣本重設為 0 秒起點，當遙測點經過修整時，.ldx 標記必須隨修整視窗之起始時間偏移並排除超出 log 長度之標記；且僅有 `complete == 1` 的有效圈才計入 Total Laps 與最快圈速。
+  5. **自訂路線匯入原子性與格式驗證**：批次匯入自訂路線前先執行完整校驗（包含 schema 版本、UUID 格式與 roaming 終點座標），並以單一 SQLite 交易保存，避免部分成功造成資料庫髒讀。
+- **Evidence**：
+  - 新增 `pr495_review_regressions.rs`（16 個專項回歸測試）全部 passed。
+  - 後端 `cargo test --locked --manifest-path backend-rust/Cargo.toml` 全部 passed。
+  - 前端 Vitest `pnpm -C frontend run test` 196 檔案／1,730 測資全數 passed。
+  - 前端 `pnpm -C frontend run build` 通過。
+  - `cargo fmt --check`、`uv run ruff check .`、`git diff --check` 通過。
+
 ## 2026-10-07 / 多 PR 並行合併與 Jules 非同步協作護欄（Gemini as Antigravity）
 
 - **Scope**：依序審核、修復並合入 PR #490、#488、#492 及 #491。採用 `pr-author-maintainer`、`pr-review-evaluation`、`cross-agent-collaboration`。
@@ -182,6 +198,21 @@
   2. 既有專案規則與不可違反之紅線已全面收攏至 `.agents/AGENTS.md` 與 `.agents/rules/`。
 - **Evidence**：歷史 PR（#185 至 #351 等百餘項 PR）與多版本（v1.0 ~ v1.6）發行演進驗收數據；後續所有功能開發與重構均以本摘要及模組化規則為契約基準。
 - **Skills**：`telemetry-udp-protocol`, `physics-tuning-math`, `halfmoon-design-system`, `modular-refactoring`, `testing-strategy`, `agent-governance-audit`。
+
+## 2026-10-07 / 重啟賽事分析：MoTeC、計時賽與漫遊路線錄製落地 (#484)（Gemini as Antigravity）
+
+- **來源／狀態**：`local`／`verified`；完成 Issue #484 賽事分析重啟，建立 PR #495。
+- **Learning**：
+  1. **無鎖 60Hz 接收與 3D 球體檢測門契約**：在 UDP 接收主線路保持零阻塞 I/O，以 $O(1)$ 歐幾里得距離運算搭配 20% 遲滯門檻保護，杜絕邊界抖動造成的重複觸發；在自由漫遊模式下允許 `IsRaceOn == 0` 持續計時與取樣。
+  2. **非破壞性修剪 (Non-Destructive Trimming) 與資料主權**：SQLite 資料庫維持原始所有通道取樣點，僅於 session metadata 紀錄 `trim_analysis`（包含起步前與停車後的修剪秒數及有效邊界）；前端與匯出介面提供即時切換與「匯出時改用未修剪原始資料」選項，兼顧分析乾淨度與原始遙測完整性。
+  3. **MoTeC CSV 純前端記憶體工作流與動態圈速推導**：使用者匯入本機 MoTeC CSV 時嚴格維持記憶體狀態（`selection.kind = 'local'`），不寫入後端 SQLite，透過純前端純函式 `calculateLapsFromPoints` 動態由點位推導圈數清單，無縫支援多圈切換與圈速對比。
+  4. **巨型元件模組化拆分 (< 250 行)**：依據 `huge-component-refactoring` 守則，將擴增後的賽事分析 UI 拆解為 `ManualRecordingToolbar`、`TimeTrialRoutePanel`、`RoamingRoutePanel`、`SessionTrimSummaryCard`、`MotecFieldMappingModal`、`useAnalysisSessionData` 與 `useCustomRoutes`，使核心 `AnalysisView.tsx` 嚴格控制於 213 行。
+- **Action**：
+  1. 擴充 Rust 後端 `custom_routes` 表、CRUD API、計時賽/漫遊路線武裝與二進位回放測試。
+  2. 修正 README.md 與 README.en.md 中關於 MoTeC `.ld` 的陳述為標準 41 頻道 CSV 與 i2 工作區範本。
+  3. 建立 PR #495（`feat/issue-484-race-analysis`）。
+- **Evidence**：後端 `cargo test` 全數通過（含 25 項 `telemetry_contract` 測試）；前端 196 個測試檔、1728 個測試通過；`pnpm build` 與 `git diff --check` 通過。
+- **Skills**：`telemetry-udp-protocol`, `huge-component-refactoring`, `modular-refactoring`, `halfmoon-design-system`, `testing-strategy`, `pr-author-maintainer`。
 
 ## 2026-10-05 / v1.7.1 Release Chore 發行整備與 Rust Tuning SSOT 落地（Gemini as Antigravity）
 
@@ -562,3 +593,63 @@
   4. 擴充 `canvasTheme.test.ts` 驗證常數餘量契約與格線無異常繪製。
 - **Evidence**：`git diff --check` 通過；`pnpm -C frontend exec vitest run src/utils/canvasTheme.test.ts` 5 passed；前端全量測試 189 test files / 1702 tests 全數通過。
 - **Skills**：`halfmoon-design-system`。
+
+## 2026-10-07 / MoTeC 原生二進位 .ld 結構、.ldx 單圈標記與 60Hz 網格重取樣整合（Gemini as Antigravity）
+
+- **來源／狀態**：`local`／`verified`；依據 Issue #484 與 PR #495 擴充賽事遙測匯出功能，實現原生 MoTeC .ld 二進位格式、.ldx XML 單圈標記 companion 輸出與前端雙軌匯出。
+- **Learning**：
+  1. **MoTeC .ld 二進位版面與固定偏移指標結構**：
+     - Header magic 固定為 `0x00000040` (u32 LE)，通道元資料指標設於 `13384` (`0x3448`)，通道資料起始位址設於 `18468` (`13384 + 41 * 124`)。
+     - 41 個通道元資料維持雙向 linked list（每個 124 bytes，包含 `data_ptr`, `data_count`, `datatype = 5`, `datasize = 4`, `sample_rate = 60`），通道資料區採小端序 `f32` 平坦連續陣列。
+     - 封裝 sparse runs template（13384 bytes），確保 MoTeC i2 Pro 能正常解析檔案結構與通道元資料。
+  2. **60Hz 等間隔時間網格線性重取樣**：
+     - 遊戲遙測封包時間戳記受網路與影格渲染波動影響，非嚴格等間隔。透過 `resample_to_grid` 將原始點重取樣至 60Hz 均勻時間網格（`dt = 1/60s`）。
+     - 連續物理通道（速度、轉速、G 值、懸吊、胎溫、油門煞車等）採線性插值，離散狀態通道（`Gear`, `LapNumber`）採 nearest step 保留整數跳變，避免非物理中間值。
+  3. **.ldx Companion XML 標記契約**：
+     - 伴隨產出之 `.ldx` XML 內建 `Beacons` 群組（`ClassName="BCN"`, `Flags="77"`），單圈標記時間採科學記號微秒格式（`Time="9.54200000000000000E+07"`），並包含 `Total Laps` 與 `Fastest Lap` 摘要。
+     - API 匯出端點（`GET /api/analysis/export/motec/{id}?format=ld`）打包為 ZIP 格式包含 `{id}.ld` 與 `{id}.ldx`，瀏覽器下載後解壓縮即可在 MoTeC i2 Pro 中直接開啟並識別單圈區間。
+  4. **無頭/測試環境之 ShellExecuteW 彈窗阻塞防護**：
+     - 在 Windows 自動化測試中，調用 `open_in_viewer`（`ShellExecuteW`）可能因系統未關聯 `.ld` 應用程式而彈出「選擇開啟方式」模態對話框，導致 CI/測試工作階段無窮等待。
+  5. **時間軸相對化、單圈邊界標記補齊與通道別名容錯**：
+     - 若遙測 session 經歷修剪或非零時間戳起點，`resample_to_grid` 若洩漏絕對時間至通道 `Time`，會造成與自 `0.0s` 起算之 `.ldx` 單圈標記不同步達百秒以上。通道 `Time` 必須標準化為自 `0.0s` 開始的相對記錄時間（`k * dt`），且重取樣前須依時間排序防止封包微抖動。
+     - 當 `laps` 表無資料但有跨圈 points 時，舊實作僅在單圈遞增處產生標記，導致最後一圈缺失終點標記，且單圈 session 僅有 1 個標記而無法在 MoTeC 構成有效單圈。修正於點序列結尾補齊終點標記，並支援以各標記區間長度計算最快單圈。
+     - 若 `laps` 中包含未完賽圈（`lap_time` 為 null），退回採計 `observed_span`，防止單圈被全數略過。
+     - `extract_point_channels` 支援 `accel_pct`, `brake_pct`, `DistanceTraveled`, `speed`, `NormalizedSuspensionTravel` 等欄位別名，確保無論原始 UDP 封包或 SQLite 欄位名稱皆能完整萃取 41 頻道。
+- **Action**：
+  1. 修改 `backend-rust/src/motec.rs`：新增 `resample_to_grid`（含時間軸相對化與點排序）、41 通道元資料 linked list 產生、.ld 二進位與 .ldx XML 序列化純函式 `export_ld`（含終點標記補齊、`observed_span` 回退、時間與賽道動態計算）。
+  2. 修改 `backend-rust/src/app.rs`：於 `motec_api` 支援 `format=ld` 之 ZIP 封裝匯出與 session 本地檔案寫入啟動，加固 `storage::safe_path` 前之 `sessions` 目錄建立，並加固 `open_in_viewer` 之測試環境防護。
+  3. 擴充 `backend-rust/tests/telemetry_contract.rs`：新增完整合約測試 `test_motec_ld_binary_structure_and_ldx_beacons` 與邊界測試 `test_motec_ld_edge_cases_and_beacon_robustness`。
+  4. 修改 `frontend/src/context/TelemetryRecorderContext.tsx`、`AnalysisSessionToolbar.tsx`、`AnalysisView.tsx`：支援 `format: "csv" | "ld"`，工具列新增 MoTeC .ld 專用匯出按鈕，行數維持 183 行（嚴格遵守 < 250 行規範）。
+  5. 更新多語系字串 `lang/en-us.json`、`lang/zh-tw.json` 與主文檔 `README.md`、`README.en.md`。
+- **Evidence**：後端全量測試 30 files 通過（含 29 個 telemetry contract 測試）；前端全量測試 196 files / 1729 tests 通過；Vite build 成功；Ruff check 通過；`git diff --check` 通過。
+- **Skills**：`telemetry-udp-protocol`、`huge-component-refactoring`、`pr-author-maintainer`。
+
+## 2026-10-07 / 賽事分析 PR #495 審查反饋修復：Drag 狀態旗標解耦、起點武裝停等與 LDX 邊界約束（Gemini as Antigravity）
+
+- **來源／狀態**：`local`／`verified`；修復 PR #495 第二輪審查回饋之 5 項阻塞項目，補齊 `pr495_review_regressions.rs` 與現有合約測試。
+- **Learning**：
+  1. **DragRecorder 徹底解耦 `IsRaceOn` 停錄邏輯**：遊戲自由漫遊（Free Roam）直線加速測試中，`IsRaceOn` 常態為 0 或受活動狀態波動影響。移除依賴 `IsRaceOn` 判定之停錄邏輯，改為嚴格由油門釋放（`accel < 150` 超過 0.8 秒）、最大錄製時限逾時或靜止逾時作為唯一終止判定，確保自由漫遊測試不被中斷。
+  2. **停車武裝防護與連續性護欄**：在起點球體範圍內武裝路線（`armed`）時，若車輛已停在半徑內，記錄 `armed_was_inside_start = true` 並透過 $1.2 \times r$ 遲滯半徑等待車輛離開後重新進入才觸發起錄。跨幀軌跡線段檢驗前，嚴格檢驗車輛連續性：在更換車輛（`CarOrdinal` 改變）、時間戳回退、時間戳或 tick 斷層（$\ge 3.0$ 秒）或缺失 `TimestampMS` 時重設連續性，防止跨車或跨時空虛假連線觸發閘門。
+  3. **LDX 單圈標記嚴格邊界約束**：產出 companion `.ldx` XML 時，排除未閉合尾圈之累加時間，且所有單圈 Beacon 時間戳記必須嚴格約束於匯出點時間跨度（`t_end - t_start`）內，即便起點時間為 `0.0s` 亦不得溢出。
+  4. **CSV 匯入單圈完整度契約**：在無閘門穿越事件的 CSV 匯入情境下，移除 150 米距離門檻與本圈 `LastLap` 推定；單圈完整性必須依賴向後轉移至下一圈群組（`hasNextLap`）之事實，且以次圈之 `LastLap`（或本圈觀測區間）作為官方計時依據。
+- **Action**：
+  1. 修改 `backend-rust/src/telemetry/drag.rs`：徹底移除 `started_with_race_on` 與 `IsRaceOn` 停錄邏輯。
+  2. 修改 `backend-rust/src/telemetry/race.rs`：加入空間與時間連續性追蹤（`last_pos_ordinal`, `last_pos_ts`, `last_pos_now`）、重設護欄與停駐起點遲滯檢驗。
+  3. 修改 `backend-rust/src/motec.rs`：於 `generate_ldx_xml` 約束 beacon 不超出匯出時間窗口，排除未閉合單圈。
+  4. 修改 `frontend/src/features/analysis/routeTriggerMath.ts`：以次圈轉移作為完成單圈之必要條件。
+  5. 更新 `backend-rust/tests/pr495_review_regressions.rs` 與 `backend-rust/tests/telemetry_contract.rs` 合約測試。
+- **Evidence**：`cargo test` 全量通過（含 22 個 review regression 測試與 29 個 telemetry contract 測試）；`cargo fmt -- --check` 通過；前端全量測試 196 test files / 1732 tests 通過；前端 build 通過；Ruff check 通過；`git diff --check` 通過。
+- **Skills**：`telemetry-udp-protocol`、`pr-author-maintainer`。
+
+## 2026-10-09 / PR #495 錄製連續性、停止刷新與匯出資格修正（Codex as Codex）
+
+- **來源／狀態**：`local`／`verified`；接手 Issue #484 的 PR 維護，所有 tracked 修正由單一 owner 寫入，後端與前端／匯出子代理獨立只讀重現。
+- **Learning**：
+  1. 清除座標線段前點只能阻止虛假穿越，不能證明當圈資料完整。自訂模式的缺座標、識別、時間倒退或長缺口須保存 `invalid_laps`；SQLite 不給該圈有效圈速，並用 `valid_lap_windows` 排除中間壞圈、保留相鄰完整圈閉合點。原始樣本不刪除，後續完整圈可恢復資格。
+  2. 錄製停止時的最後讀取不能沿用定期 poll 的 in-flight 略過策略；須以新 generation 取代舊讀取，並依實際 current session ID／錄製狀態刷新 metadata、laps 與最後樣本。零有效樣本不能回退成 raw 資料或被時間零點漏進。
+  3. CSV 圈次資格需要觀察起點與下一圈閉合，不能用前一 group 存在、片段長度或前圈 LastLap 代替；零起算來源圈號須一次正規化，時間估算須在介面標示。累積距離 CSV 可用三秒內相鄰且沒有相矛盾遊戲圈時計的圈號轉移證明後續起點，長缺口不能冒充。
+  4. 原生 LD 的固定網格重採樣會跨空洞插值，預設多段有效窗口應拒絕 LD 並保留 CSV／明確 raw 選項。Gear／LapNumber 使用前值保持；Boost 的 CSV／LD psi 通道須與領域 Pa 雙向換算。LDX 圈數、最快圈與 Beacon 都要套用同一匯出窗口。
+  5. HTTP 新建與 v1 分享匯入須共用 UUID 語意：建立可生成 UUID，分享不可缺 UUID；大小寫別名統一後再查同批／已存碰撞。未知或缺 schema、錯誤／缺值 UUID 與碰撞整批拒絕，不能默默換 ID／覆寫。
+- **Evidence**：完整 Cargo 契約 183 passed／3 ignored；Vitest 196 passed files、1740 passed／1 skipped；`tsc && vite build` 通過。獨立後端 17 cases、前端 16 個 hook／DOM／provider 補充案例及 180000 筆 CSV 重現通過，scratch 證據不加入產品單元 gate。最終 commit 與遠端 CI 在 PR 留言記錄。
+- **Boundary**：未做真實 FH6 高速穿越、跨車種半徑校準或 MoTeC i2 開檔驗收；README／操作指南／UI 標示 LD／LDX 實驗性。`IsRaceOn` 不參與此錄製及 Road／ICE／EV 收錄資格；來源欄位與 HUD 顯示語意保留。
+- **Skills**：`pr-author-maintainer`、`pr-review-evaluation`、`cross-agent-collaboration`、`telemetry-udp-protocol`、`halfmoon-design-system`、`physics-tuning-math`、`ponytail`。

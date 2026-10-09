@@ -9,6 +9,23 @@ use std::sync::Arc;
 fn point(ms: i64, lap: i64, current: f64) -> Value {
     json!({"TimestampMS":ms,"IsRaceOn":1,"LapNumber":lap,"CurrentLap":current,"LastLap":0,"SpeedMetersPerSecond":20.0,"PositionX":ms as f64 * 0.02,"PositionY":0.0,"PositionZ":0.0,"TireTemp":[185.0,null,140.0,240.0],"SuspTravel":[0.96,0.3,0.2,0.3],"TireSlipAngle":[0.2,0.2,0.05,0.05],"TireSlipRatio":[0.1,0.1,0.1,0.1],"AccelerationX":4.5})
 }
+#[test]
+fn road_summaries_and_spatial_matching_ignore_unreliable_race_flag() {
+    let enabled: Vec<_> = (0..30).map(|i| point(i * 100, 0, i as f64 * 0.1)).collect();
+    let mut disabled = enabled.clone();
+    for frame in &mut disabled {
+        frame["IsRaceOn"] = json!(0);
+    }
+    assert_eq!(
+        summarize_road_observations(&disabled),
+        summarize_road_observations(&enabled)
+    );
+    assert_eq!(summarize_laps(&disabled), summarize_laps(&enabled));
+    assert_eq!(
+        local_comparison(&enabled, &disabled, true),
+        local_comparison(&enabled, &enabled, true)
+    );
+}
 
 #[test]
 fn analysis_and_lap_summary_keep_python_wire_shape() {
@@ -185,7 +202,7 @@ fn road_service_lifecycle_uses_batched_telemetry_and_persists_summary() {
     }));
     let run = service.start_run(workflow["id"].as_str().unwrap(),&json!({"setupId":setup["id"],"settingsConfirmed":true,"otherSettings":"unchanged","tires":"unchanged","conditions":"unchanged","driverAssists":"unchanged"})).unwrap();
     service.observe(&json!({
-        "TimestampMS": 500, "IsRaceOn": 1, "CurrentRaceTime": 0.5, "CarOrdinal": 42,
+        "TimestampMS": 500, "IsRaceOn": 0, "CurrentRaceTime": 0.5, "CarOrdinal": 42,
         "CarPerformanceIndex": 700, "DrivetrainType": 1, "CarClass": 3,
         "SpeedMetersPerSecond": 20.0, "LapNumber": 0, "CurrentLap": 0.5,
         "TireTemp": [185, 185, 185, 185]
@@ -203,6 +220,7 @@ fn road_service_lifecycle_uses_batched_telemetry_and_persists_summary() {
     assert_eq!(summaries.len(), 1);
     assert_eq!(summaries[0]["runId"], run["id"]);
     assert_eq!(summaries[0]["observations"]["sampleCount"], 1);
+    assert_eq!(summaries[0]["raceTimeCoverage"]["firstSeconds"], 0.5);
 }
 
 #[test]
