@@ -1,6 +1,6 @@
 # Issue #485 主題同步切片審查報告
 
-這是供獨立 review 的第一個切片，Related to #485。Android CI 已完成 MainActivity 編譯、unit tasks、lint 與 debug packaging；native＋WebView 裝置執行尚未驗收，Issue 保持 open。
+這是供獨立 review 的第一個切片，Related to #485。Android CI 已完成 MainActivity 編譯、11 個 unit tests、lint 與 debug assemble，並留存 APK；native＋WebView 裝置執行尚未驗收，Issue 保持 open。
 
 分支：`feature/issue-485-theme-sync`。基準及提交前核對的遠端 main：`d4e0fe3762c613240f7d6902d07edcb212aa5926`。產品程式碼在測試後沒有修改；後續只更新審查文件／日誌並補 CI 證據留存。使用者已授權 commit／push／draft PR，未授權合併或發布，SDK License 接受步驟保持暫停。
 
@@ -52,6 +52,7 @@ Native 色彩、表面、文字、border、shape、字階和 navigation token �
 | CompanionShell compile-only | 通過；Activity enums／BuildConfig 用 stubs，不包含 MainActivity | `shell-compile.log`、`compile-shell.cjs`、`shell-contract-stubs.kt` |
 | 本地完整 Android gate | **Blocked**：task dependency 階段因 SDK 授權未接受停止；沒有重複安裝 SDK | `android-gate.log`、`android-sdk-install.log` |
 | 遠端 Android 完整 gate | **通過**：MainActivity 所在 app Kotlin compile、protocol/theme/app unit tasks、lint、packageDebug／assembleDebug | `android-ci-original-job.log`；[run 37967243385](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37967243385) |
+| 證據留存及實際 XML 計數 run | **通過**：protocol 5／theme 4／app 2，共 11 tests，0 failure／error／skipped；lint／assemble 與 APK 留存成功 | `android-ci-counts-job.log`、`android-ci-summary.json`；[run 37969337059](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37969337059) |
 | Chromium Web matrix | Chromium 151.0.7922.173，390×844，14 core×mode variants；dirty draft 保留、頁面無水平溢出 | `browser-results.json`、`web-check.cjs` |
 
 前端新增案例涵蓋缺欄位、錯誤／過大／可執行 payload、cache 損壞、bootstrap origin、backend offline／reconnect、desktop lease offline、相同 revision、command busy／缺省 command theme、late callbacks、七 core×日夜、自訂及預設 palette，以及 dirty draft／區段／量測／eligibility 保留。native 純 JVM 案例涵蓋冷啟動、重開、離線、重連、host switch、generation、rapid updates／late callbacks、codec 與 token。Rust LAN tests 確認一般 settings/admin 仍拒絕，session／revocation／origin 保護維持。
@@ -60,13 +61,19 @@ Native 色彩、表面、文字、border、shape、字階和 navigation token �
 
 此 run 綁定 head `c8ad8e479c087a31327beea7c6a864afba9e7a76`，實際 checkout 為 GitHub PR 合成 merge `f52ef7a6a49571ec75cc6f0f23c74449113f1fda`，將 head 合入既有基準 `d4e0fe3762c613240f7d6902d07edcb212aa5926`；這不是把 PR 合併進 main。初次 run 沒有 artifacts，log 沒有 JUnit 計數，不能憑 source 中的 @Test 數量宣稱實際執行數，也沒有可下載 APK 或 APK hash。
 
-後續 CI 補上三個模組的原始 JUnit XML、lint reports、debug APK、APK SHA-256、head／checkout SHA、Android source hash 與 Java version 留存，並檢查各模組 XML 及 APK 實際存在。artifact 保留 14 天，原始下載證據另留於交付目錄。新增留存步驟的 run 與實際計數需待完成後更新。
+後續 [run 37969337059／job 113951643171](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37969337059/job/113951643171) 已 success。測試 head 是 `add0c1fde401f99a2789c8f97e5a5d895c632fa9`，checkout 是 PR 合成 merge `31bfe5ab23e635fff4011bed01b7921b23b08a9a`。實際 XML suite header 計數為 protocol 5、theme 4（VisualThemeCodecTest 2／VisualThemeTest 2）、app 2（ThemeSessionTest），合計 11，failure／error／skipped 均為 0；不以 source 中的 @Test 數量推估。
+
+此 run 留存三個模組的原始 JUnit XML、lint XML／HTML、debug APK、APK SHA-256、head／checkout SHA、Android source hash 及 Java version。並實際檢查各模組 XML、lint XML 與 APK 存在。runner 的 30 個 Android source hashes 與本機來源相同，包含 MainActivity SHA-256 `af84cfe9a9a4246fbeb7ae41d40be3b44f4493403a2c35626b3752dfb59c6fc5`。runner JDK 為 Temurin 17.0.20.1；這不是 Android 裝置／WebView 版本。
+
+可下載 [artifact 11635360782](https://github.com/eddie772tw/FH6-HorizonTuner/actions/runs/37969337059/artifacts/11635360782)，保留至 2026-10-23。ZIP size 21,942,905 bytes；artifact digest 是 `8eec20b4f139c640456c3d652d89535a216594685a41eb97cdb57495d61e5cc0`。內含的 `app-debug.apk`，CI 實際計算 SHA-256 為 `75b5d34cfe35365e7d57703d367108516d52a84346f688aee870b6dc34cce12e`。debug APK 是 CI artifact，未發布 release。
+
+工作區的下載路徑及檔案匯入均受環境阻擋，未取得本機 ZIP／APK bytes，沒有宣稱本地重算 hash 或解析完整 XML。實際計數來自 CI 輸出的原始 XML suite headers，完整 XML／APK 留在上述 GitHub artifact；原始 CI logs、API artifact metadata 與可重現的計數／source hash 摘要保存在交付目錄。最後報告更新只改 Markdown，產品來源與此測試 head 相同。
 
 ## 截圖、未驗收項目與剩餘界線
 
 `browser-{swiss,rhine-lab}-{light,dark}.png` 是四張 Web 補充截圖。workflow 為合成 fixture，其他 API 模擬 LAN 拒絕，因此部分翻譯退回 key。它們只代表 Chromium Web 層，不是實際 LAN、Android、WebView 或 native＋WebView 同框驗收。
 
-**尚未驗證 Android／WebView 版本與 native＋WebView 裝置執行。** MainActivity 已在上述 CI 真正編譯；unit／lint／debug packaging 已通過，但初次 run 未留存可下載 APK，APK SHA-256 尚待證據留存 run。窄螢幕、旋轉、鍵盤、長標籤、頁尾可達、LAN／USB／QR／revocation 的裝置整合及真實遊戲亦未驗證。
+**尚未驗證 Android／WebView 版本與 native＋WebView 裝置執行。** MainActivity 已在上述 CI 真正編譯；unit／lint／debug assemble 已通過，APK 及 runner hash 已留存。本機 APK byte verification 未做。窄螢幕、旋轉、鍵盤、長標籤、頁尾可達、LAN／USB／QR／revocation 的裝置整合及真實遊戲亦未驗證。
 
 Compose 字體仍為 Android sans-serif fallback，未新增／轉換 MiSans、Inter、Outfit 素材；Halfmoon native 沒有 CSS blur／radial anchor，Rhine native 沒有分頁動畫。這不是 Issue #485 全部視覺與手機驗收。
 
