@@ -1,6 +1,6 @@
 # FH6-HorizonTuner 🏎️
 
-v1.7.1：桌面與 Companion 共用 Rust 完整調校結果；ICE/EV 量測、齒比、readiness、能力過濾與推薦均由後端計算，CLI/MCP workflow 共用同一 library。PR #460 已合併；#462 仍開放待原始輸入釐清及實車驗收。詳見 [責任契約](docs/contracts/tuning_responsibilities.md)。
+V1.7.2 發行準備（runtime 11.45.22）整合已合併的 HUD、遙測、賽事分析與調校工作流更新；最新已發布版本仍為 v1.7.1。WIP／Known Issues 與產物關卡見[候選發行說明](docs/releases/v1.7.2.md)及[驗收紀錄](docs/releases/v1.7.2-acceptance.md)。Rust 維持[調校 owner](docs/contracts/tuning_responsibilities.md)。
 
 Road #462 修正採版本化 [launch envelope v3](docs/tuning/aego-road-launch-v3.md)，保留低功率與歷史模型；工程先驗不等於實車最佳起步。
 
@@ -445,4 +445,4 @@ To sign off on a new release candidate, you must ensure:
 1. **One successful automated diagnostics run** via GitHub Actions.
 2. **Manual Release Build smoke testing** performed on a clean Windows environment.
 
-v1.7.1 候選版驗收、證據限制與清理清單見[驗收紀錄](docs/releases/v1.7.1-acceptance.md)。本次不發布正式 tag、Release 或 OTA manifest。
+V1.7.2 候選範圍與驗收見[發行說明](docs/releases/v1.7.2.md)、[驗收紀錄](docs/releases/v1.7.2-acceptance.md)；此準備不發布正式 tag、Release 或 OTA manifest。v1.7.1 歷史證據保留於[原驗收紀錄](docs/releases/v1.7.1-acceptance.md)。

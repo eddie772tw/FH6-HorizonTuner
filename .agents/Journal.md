@@ -795,3 +795,12 @@
 - **Evidence**：新增 real SettingsProvider／USB mounted regression，修正前 en-us 1 passed、ja-jp／zh-tw 2 failed，補齊唯一字串後 focused 3 files／31 tests passed；完整 Vitest 206 passed files、1777 passed／1 skipped，TypeScript＋Windows Vite build 與 diff check 通過。full tests／build 使用本地 pnpm 11.20.0；另以 CI 同版 11.27.0 frozen install 證實 graph 前後相同，lock／manifest 未變。三語原有 key/value、主線 baseline／CVT、native fonts／APK gates 與 security lock 保留。
 - **Boundary**：本輪只做本地驗收，未做遊戲、USB 裝置、native hover／視覺或實車測試；新案例驗證實際 translator 與產品 DOM，backend responses 為受控 fixture。僅 stage 指定來源提供 frozen tree；commit、PR、CI 與合併交主線及獨立 reviewer。raw logs 位於本機 `fh6-review-20261010-mihaly` 暫存證據目錄。
 - **Skills**：`pr-author-maintainer`、`pr-review-evaluation`、`halfmoon-design-system`、`ponytail`。
+
+
+## 2026-10-10 / V1.7.2 release preparation（Mihaly as Codex）
+
+- **來源／狀態**：`local`／`partial_verified`；自有 `codex/chore-v1.7.2-release-prep` 由 accepted main6a8c1176建立，root獨占source／GitHub ownership，三位子代理只讀核對行為、測量證據及整合。使用者允許WIP／Known Issues，四個Issue仍開啟。
+- **變更**：五個runtime owner同步11.45.22；新增v1.7.2 notes／acceptance，更新雙語README、docs index與SECURITY支援邊界。Companion以局部English fallback修正raw namespace key，保留ja／zh用語、canonical指令與全域translator契約；實際SettingsProvider三語測試先重現再通過，既有theme測試改驗可讀dirty label。
+- **Evidence**：focused10及fullfrontend1780 passed／1 existing skip；TypeScript／Windows Vite build、version consistency／Rust fmt／diff checks通過。Rust完整locked suite（含doctest）依序重跑204 passed／3ignored／0failed；第一次同時重建dist造成doctest資產引用失敗，保留失敗記錄。
+- **Boundary**：未新增Rust公式／依賴／權限／SDK／game／device操作；FH6保持關閉。原始車輛資料與主工作區保留。完整signedpackage／cleanWindowsGUI／LinuxGUI／publicOTA／Android仍NOT_RUN，版本準備不宣稱已發布。現存ADB payload僅hash核對後複製到ownedignoredstage，沒有下載或接受SDK條款。
+- **Skills**：`portable-release-validation`、`pr-author-maintainer`、`pr-review-evaluation`、`cross-agent-collaboration`、`halfmoon-design-system`、`ponytail`（full）。
