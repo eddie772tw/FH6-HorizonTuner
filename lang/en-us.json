@@ -1555,5 +1555,6 @@
   "Imported CSV is previewed locally; use the original file in MoTeC.": "Imported CSV is previewed locally; use the original file in MoTeC.",
   "Experimental": "Experimental",
   "Estimated": "Estimated",
-  "HorizonTuner exports 41 telemetry channels with documented unit mappings. Native .ld export is experimental until verified in MoTeC i2.": "HorizonTuner exports 41 telemetry channels with documented unit mappings. Native .ld export is experimental until verified in MoTeC i2."
+  "HorizonTuner exports 41 telemetry channels with documented unit mappings. Native .ld export is experimental until verified in MoTeC i2.": "HorizonTuner exports 41 telemetry channels with documented unit mappings. Native .ld export is experimental until verified in MoTeC i2.",
+  "Device not ready": "Device not ready"
 }
