@@ -144,8 +144,9 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
           </div>
 
           <div className="d-flex flex-column gap-2">
-            <label className="text-body-secondary fs-7 fw-semibold">{t('Select Race / Tuning Goal:')}</label>
+            <label htmlFor="tuning-draft-goal" className="text-body-secondary fs-7 fw-semibold">{t('Select Race / Tuning Goal:')}</label>
             <select
+              id="tuning-draft-goal"
               value={selectedRaceGoal}
               onChange={(e) => setSelectedRaceGoal(e.target.value)}
               className="form-select form-select-sm"

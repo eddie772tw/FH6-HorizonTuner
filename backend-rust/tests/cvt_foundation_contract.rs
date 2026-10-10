@@ -509,6 +509,49 @@ fn raw_capture_round_trip_preserves_unknown_metadata_and_replays_at_every_entry(
     ));
 }
 #[test]
+fn cvt_qualification_preserves_the_neutral_chassis_preview_without_engine_provenance() {
+    let mut request = synthetic();
+    request["inputSnapshot"]["baselineCurrent"] =
+        json!({"pressure.front":{"value":30.1,"unit":"psi"}});
+    let cvt = run(request.clone());
+    request["profile"]
+        .as_object_mut()
+        .unwrap()
+        .remove("transmission");
+    request["evidence"] = Value::Null;
+    request["engine"] = Value::Null;
+    let discrete = run(request);
+
+    assert_eq!(cvt["cvt"]["captureStatus"], "qualified");
+    assert_eq!(cvt["chassis"], discrete["chassis"]);
+    assert_eq!(cvt["alignment"], discrete["alignment"]);
+    assert_eq!(cvt["baselinePreview"], discrete["baselinePreview"]);
+    assert_eq!(cvt["baselinePreview"]["canApply"], true);
+    let pressure = cvt["baselinePreview"]["fields"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|field| field["key"] == "pressure.front")
+        .unwrap();
+    assert_eq!(pressure["current"], 30.1);
+    assert_eq!(pressure["unit"], "psi");
+    for field in [
+        "gearing",
+        "recommendation",
+        "evidenceProvenance",
+        "tireEvidence",
+    ] {
+        assert!(
+            cvt[field].is_null(),
+            "{field} must remain unavailable for CVT"
+        );
+    }
+    assert_eq!(cvt["cvt"]["ratioPreview"], Value::Null);
+    assert_eq!(cvt["readiness"]["measuredEngine"], false);
+    assert_eq!(cvt["readiness"]["gearingAvailable"], false);
+}
+
+#[test]
 fn legacy_profiles_are_not_inferred_from_names_or_gear_count() {
     for electric in [false, true] {
         for gears in [1, 2, 6] {

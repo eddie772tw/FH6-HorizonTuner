@@ -698,3 +698,42 @@
 - **Evidence**：head `c8ad8e479c087a31327beea7c6a864afba9e7a76` 的 run `37967243385` 已 success，但 artifacts 為空。補留存與 XML header 輸出後，head `add0c1fde401f99a2789c8f97e5a5d895c632fa9` 的 run `37969337059`／job `113951643171` 已 success，實際 protocol 5／theme 4／app 2 tests，0 failure／error／skipped；MainActivity compile、lint、assemble 均完成。artifact `11635360782` 包含原始 XML、lint、APK 與 provenance，APK runner SHA-256 `75b5d34cfe35365e7d57703d367108516d52a84346f688aee870b6dc34cce12e`。30 個 Android source hashes 與本機相同；產品程式碼未更動，合成 merge 不是合併 main。
 - **Boundary**：本地 SDK 授權保持暫停，不為重複 compile 安裝 SDK；Android／WebView／native 同框與生命週期仍需裝置驗收。工作區下載及檔案匯入受環境阻擋，未取得本機 APK bytes／重算 hash；實際 XML suite 計數來自 CI log，完整 XML／APK 留在 GitHub artifact。原始 job logs／metadata／計數及 hash 摘要保留。
 - **Skills**：`pr-author-maintainer`。
+
+## 2026-10-09 / Issue #487 P1 中性基準預覽與就地證據（Codex as Codex）
+
+- **來源／狀態**：`local`／`verified`（Rust／DOM 契約）；基於 main `d4e0fe3762c613240f7d6902d07edcb212aa5926`，僅本地差異供獨立審查，未做遠端寫入。
+- **Learning**：
+  1. 引擎相依鍵只涵蓋 powertrain，不能當作完整設定版本。完整 profile／本地基準變更必須讓 archive 保存、hydration、EV 回覆、採集與 workflow 同步失效；A→B→A 也不能讓舊 capture 自動復活。設定版本仍未知，不可由 context 的 UI 防護推論為同設定實車證據。
+  2. ICE observation 的 `capturedAt` 是建立觀察的時刻；EV 沒有對等欄位。最小 provenance envelope 須把 `observationRecordedAt` 和尚未知的採集時間／session／設定版本／圈窗分開，不能用 store 或分析時間補值。
+  3. Rust build script 嵌入 `frontend/dist`，前端 build 的清理／更新與 Rust doctest 不是獨立操作。平行執行可能刪掉已生成 `include_bytes!` 引用的舊資產；先固定前端產物再執行 Cargo 全套，重跑可消除這個已重現的驗證競態。
+- **Evidence**：Cargo 預設 188 passed／2 ignored，無預設功能 180 passed／2 ignored；Vitest 200 passed files、1747 passed／1 skipped；typecheck／Windows frontend build、backend／Tauri fmt、Clippy 與 diff check 通過。raw logs 位於 `/workspace/issue-487-evidence/rawlogs/`，含安裝失敗、資產競態及後續成功紀錄。
+- **Boundary**：沒有非中性偏好校準、WOT 圖或頻率模型；沒有修改正式 Road／frozen legacy 公式、golden fixtures、共享 ThemeContext、全域 CSS 或 Companion theme。雲端 Chromium SUID sandbox 啟動失敗，未關閉 sandbox／更改權限；窄畫面／主題視覺及真實 FH6／Android 驗收未完成。詳細契約見 [P1 文件](../docs/tuning/neutral-baseline-preview-p1.md)。
+- **Skills**：`physics-tuning-math`、`halfmoon-design-system`、`modular-refactoring`、`pr-author-maintainer`。
+
+## 2026-10-09 / Issue #487 P1 獨立審查回歸修正（Codex as Codex）
+
+- **來源／狀態**：`local`／`verified`（Rust／DOM 契約）；在 `eda09b83` 上重現兩項審查發現。本次修正只建立本地 commit，先前已推送分支不包含這些修正。
+- **Learning**：
+  1. 為舊合格 ICE cache 補輪胎摘要時，readonly replay 必須保留已載入的可信 qualified evidence ID，否則 provenance 與 recommendation snapshot 會退回 imported-capture。只從成功載入的 cache 沿用 ID；cold cache 保持 null，readonly 不寫入。
+  2. 完整 profile 是預覽／證據的失效邊界，不應同時用來重設草稿目標。同車 Rally／Drag、重量／範圍或引擎參數編輯需保留草稿與已套用值；換車或實際 live build identity 才重設。初次 idle identity hydration 仍保留草稿，完整 setup／sequence 防護不移除。
+- **Evidence**：修正前 Rust 契約重現 evidenceId 為 null；DOM 整合測試重現 Rally／Drag 編輯後退回 Road。修正後 readonly 資料列及資料庫位元組均未改變；聚焦前端 10 項通過，完整 Vitest 201 passed files、1749 passed／1 skipped，Cargo 預設 189 passed／2 ignored、無預設功能 181 passed／2 ignored；typecheck、Windows frontend build、backend／Tauri fmt、Clippy（含 warnings）通過。原始失敗及最終 raw logs 保留於 `/workspace/issue-487-evidence/rawlogs/`。
+- **Boundary**：本次沒有推送、PR 發布、留言、merge 或 release；不改瀏覽器、窄畫面／主題視覺、FH6／Android 與同設定 A/B 的未驗收標記，不改公式或共享主題檔。
+- **Skills**：`physics-tuning-math`、`halfmoon-design-system`、`pr-author-maintainer`。
+
+## 2026-10-10 / PR #499 預覽 context 與 CI lint 修正（Codex as Codex）
+
+- **來源／狀態**：`local`／`verified`（Rust／DOM 契約）；基於審查 head `61f2222b1f5133747efbd7e2d657318da4b41902` 重現 review `5477396731` 與 inline `4236251871`，遠端新 head CI 另行核對。
+- **Learning**：
+  1. 草稿重設 generation 不會自動進入 workflow request：同車 Road→Road、空的已套用欄位與 PI／Class 改變可能產生相同 request key。完整 UI context 必須進入 snapshot，Apply 也須獨立核對捕獲的 context 與目前 phase；identity generation 保留 A→B→A 失效邊界。profile／season 編輯只使預覽失效，仍保留草稿目標。這個 UI token 不是可信設定版本或採集 provenance。
+  2. Ruff 0.17.0 把 `tomllib` 視為標準函式庫；CI 的 I001 可由 `import re`、`import tomllib`、`from pathlib import Path` 同組排列修正，不需要降低工具版本。
+- **Evidence**：修正前 9 個 PI／Class ready／late、A→B→A 與獨立 Apply 案例失敗；修正後聚焦前端 19 項及完整 Vitest 201 passed files、1758 passed／1 skipped 通過。Cargo 預設 189 passed／2 ignored、無預設功能 181 passed／2 ignored；typecheck、Windows-target frontend build、backend／Tauri fmt、Clippy（含 warnings）、Ruff 0.17.0 check／format、版本一致性、路徑大小寫與 diff check 通過。Python 維護測試 49 passed／4 skipped，不替代 Rust 產品 gate。raw logs 保留於 `/workspace/issue-499-review-evidence/rawlogs/`。
+- **Boundary**：保留 Draft，審查 thread 不自行 resolve；不 merge、release 或關閉 #487。沒有擴充 provenance、懸吊證據、P2 WOT 或 P3 模型；瀏覽器／窄畫面／主題視覺、真實 FH6／Android 與同設定 A/B 仍未驗收。
+- **Skills**：`halfmoon-design-system`、`pr-author-maintainer`。
+
+## 2026-10-10 / PR #499 與 #504 中性基準及 CVT foundation 整合（Mihaly as Codex）
+
+- **來源／狀態**：`local`／`verified`（Rust／DOM 契約）；自有 `codex/mihaly-baseline-cvt-integration` 分支保留 #504 `50baa622`、main `0dfddf7f`（含 #498）與 #499 `8b3521ef` 的 ancestry。未修改作者分支或發布遠端變更。
+- **Learning**：CVT early return 仍須提供共用的中性底盤預覽，但引擎／輪胎證據及齒比推薦必須保持 null；Provider 的 EV hook 需同時接受完整 setup context 與 CVT 採集停用條件，不能在手動合併時保留重複 hook 或丟掉任一防護。設定失效 token 仍不是可信的實車設定版本。
+- **Evidence**：保留兩個來源的測試，另補 CVT 與本地底盤基準共存的 Rust／產品 Provider 契約。完整 Vitest 205 passed files、1774 passed／1 skipped；TypeScript／Vite build 通過後固定 dist，再執行 Cargo 預設全套 204 passed／3 ignored，含 CVT 14 項及 workflow 13 項。backend fmt、Ruff 0.17.0 的版本工具 check／format、diff check 通過。raw logs 保留於本機 `fh6-review-20261010-mihaly` 暫存證據目錄。
+- **Boundary**：既有 release performance、Windows audio／media 裝置及 cross-version comparison 測試仍 ignored；沒有真實 CVT、FH6、Android 或同設定 A/B 驗收。窄畫面／主題／鍵盤瀏覽器驗收由獨立 reviewer 執行後另記；未新增公式、求解器、採集器、來源推定或 dependency。Python 僅驗證共通 import 修正。
+- **Skills**：`physics-tuning-math`、`halfmoon-design-system`、`ponytail`。

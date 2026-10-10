@@ -108,6 +108,51 @@ fn ev_capture() -> Value {
         .collect();
     json!({"kind":"ev-capture","carId":"3445","setup":goldens[0]["input"]["setup"],"frames":frames})
 }
+
+#[test]
+fn inline_evidence_uses_the_qualified_capture_and_honest_provenance() {
+    let raw = ice_evidence("AWD");
+    let out = calculate(input("AWD"), "AWD");
+    let id = &raw["observation"]["data"]["identity"];
+    let expected = fh6_backend::tuning::tire_evidence::observe(
+        raw["capture"]["samples"].as_array().unwrap(),
+        &json!({"carOrdinal":id["ordinal"],"performanceIndex":id["performanceIndex"],"carClass":id["carClass"]}),
+    );
+    assert_eq!(out["tireEvidence"], expected);
+    let p = &out["evidenceProvenance"];
+    assert_eq!(p["carId"], "1435");
+    assert_eq!(p["identity"], *id);
+    assert_eq!(p["source"], "imported-capture");
+    assert_eq!(p["analysisVersion"], "engine-loaded-sweep/v4");
+    assert_eq!(p["observationRecordedAt"], 1000.0);
+    for key in [
+        "capturedAt",
+        "sessionId",
+        "setupVersion",
+        "upgradeVersion",
+        "lapWindow",
+        "timeWindow",
+    ] {
+        assert!(p[key].is_null());
+    }
+    for (key, value) in [("carId", json!("wrong")), ("isElectric", json!(true))] {
+        let mut request = input("AWD");
+        if key == "carId" {
+            request["inputSnapshot"][key] = value;
+        } else {
+            request["profile"][key] = value;
+        }
+        assert!(proof("AWD")
+            .calculate(serde_json::from_value(request).unwrap())
+            .is_err());
+    }
+    let ev = qualify(&serde_json::from_value::<EvidenceRequest>(ev_capture()).unwrap()).unwrap();
+    let p = ev.provenance();
+    assert_eq!(p["powertrain"], "ev");
+    assert!(p["observationRecordedAt"].is_null());
+    assert!(p["dependencyKey"].is_null());
+    assert!(ev.tire_evidence().is_none());
+}
 #[test]
 fn bare_peaks_or_forged_ev_moments_are_never_measured_recommendations() {
     let r: Value = serde_json::to_value(
@@ -417,6 +462,49 @@ fn offline_capture_file_needs_no_backend_or_existing_database() {
         "imported-capture"
     );
     assert!(!absent.exists());
+}
+
+#[test]
+fn readonly_legacy_ice_cache_preserves_saved_provenance_without_writes() {
+    let temp = tempfile::tempdir().unwrap();
+    let app = App::new(temp.path()).unwrap();
+    save_engine(&app);
+    let key = "qualified-engine-v4:real-beetle";
+    // Model a pre-P1 cache: qualified engine evidence exists, but no tire summary.
+    let mut legacy = serde_json::to_value(proof("AWD")).unwrap();
+    legacy.as_object_mut().unwrap().remove("tire_summary");
+    legacy["evidence_id"] = json!(key);
+    app.tuning_evidence
+        .store
+        .append("tuning-evidence/v1", "tuning-evidence", &legacy, Some(key))
+        .unwrap();
+    let before = app.tuning_evidence.store.list(None, None, false).unwrap();
+    let database_before = std::fs::read(&app.tuning_evidence.store.db_path).unwrap();
+    let result = serde_json::to_value(
+        app.tuning_evidence
+            .calculate_read_only(serde_json::from_value(saved_request()).unwrap())
+            .unwrap(),
+    )
+    .unwrap();
+    assert_eq!(result["evidenceProvenance"]["evidenceId"], key);
+    assert_eq!(result["evidenceProvenance"]["source"], "saved-capture");
+    assert_eq!(result["recommendation"]["inputSnapshot"]["evidenceId"], key);
+    assert_eq!(
+        result["recommendation"]["inputSnapshot"]["evidenceSource"],
+        "saved-capture"
+    );
+    assert_eq!(
+        result["tireEvidence"],
+        proof("AWD").tire_evidence().unwrap()
+    );
+    assert_eq!(
+        app.tuning_evidence.store.list(None, None, false).unwrap(),
+        before
+    );
+    assert_eq!(
+        std::fs::read(&app.tuning_evidence.store.db_path).unwrap(),
+        database_before
+    );
 }
 
 #[test]

@@ -411,6 +411,23 @@ export interface TireEvidenceResult {
   unavailableReasons: string[];
 }
 
+export interface EvidenceProvenance {
+  schemaVersion: 'tuning-evidence-provenance/v1';
+  evidenceId: string | null; source: string; analysisVersion: string;
+  carId: string; powertrain: string; identity: Record<string, unknown>;
+  observationId: string | null; observationRecordedAt: number | null;
+  dependencyKey: string | null; capturedAt: null; sessionId: null;
+  setupVersion: null; upgradeVersion: null; lapWindow: null; timeWindow: null;
+}
+
+export interface BaselinePreview {
+  schemaVersion: 'tuning-baseline-preview/v1'; modelVersion: string;
+  goal: string; stiffness: 'neutral'; balance: 'neutral'; missingInputs: string[];
+  fields: { key: string; unit: string; current: number | null; recommended: number | null;
+    delta: number | null; status: 'available' | 'locked' | 'unavailable'; reason: string | null }[];
+  affectedFields: string[]; canApply: boolean;
+}
+
 export interface EngineObservation {
   schema: 'engine-observation/v1'; id: string; carId: string; capturedAt: number;
   dependencyKey: string; source: 'measured'; data: TuningMeasurementState;

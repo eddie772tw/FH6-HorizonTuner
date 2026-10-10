@@ -4,6 +4,7 @@ import type { Season, MeasuredEngineInputs, ChassisTuningResult, StaticTireAlign
 import type { EvGearingInput } from '../../domain/tuning/ev/types';
 import type { WorkflowGearingResult } from '../../domain/tuning/types';
 import type { WorkflowRecommendation } from '../../domain/tuning/types';
+import type { BaselinePreview, EvidenceProvenance, TireEvidenceResult } from '../../domain/tuning/types';
 import type { WorkflowReadiness } from './tuningWorkflow';
 import { CalculationSequence } from './mechanicalCalculation';
 import { backendFetch } from '../../services/backend';
@@ -17,6 +18,9 @@ export interface AuthoritativeWorkflow {
   gearing: WorkflowGearingResult | null;
   readiness: WorkflowReadiness;
   recommendation: WorkflowRecommendation | null;
+  baselinePreview: BaselinePreview;
+  evidenceProvenance: EvidenceProvenance | null;
+  tireEvidence: TireEvidenceResult | null;
 }
 export const unavailableReadiness: WorkflowReadiness = { mechanical: false, engineInputs: false, measuredEngine: false, gearingAvailable: false };
 export function useWorkflowCalculation(carId: string, goal: string, season: Season, profile: CarParams | null,
