@@ -1,5 +1,31 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-10-10 / PR #504 CVT 審查契約與 Companion 修補（Codex as Codex）
+
+- **新審查重現**：新增四個 Rust fixtures，於修補前重現 canonical `is_electric` 漏判 EV+CVT、重複／衝突拼字仍可保存、等長窗先 dense 後 sparse 掉成 7 samples、fractional byte controls 被接受；兩個 mounted Companion tests 重現 Engine target 缺失與要求 CVT 執行已停用的 ICE measurement。
+- **Rust owner**：qualification／save 改用既有 `TuningCarParams` serde 語意，兩種合法動力拼字共用結果，重複／衝突欄位明確拒絕。最長窗同時長時選較多 samples，保留排除幀邊界與 strictly-longer sparse policy；byte controls 只接受有限範圍內整數，不改原始單位或四捨五入。
+- **Companion**：共用 `companion-engine` 外層 section，CVT／discrete 導航均實際 scroll 到目前 panel。Gearing 使用既有 CVT unavailable 訊息，即使收到 stale discrete gearing 也不顯示數值／要求 ICE measurement。未改 Step1 或語系檔，未混入其他 PR。
+- **驗收界線**：新增測試全為 synthetic／DOM 契約，沒有新物理公式、真實 CVT capture 或 solver 完成宣稱。保存／workflow 的合法與拒絕結果由產品 HTTP 入口驗證；日期 Journal 條目全部保留。
+- **最終 Gate**：Cargo default 196 passed／2 ignored、no-HUD 188 passed／2 ignored（含 doctest），CVT 專項 13 tests；Vitest 198 files／1,748 tests passed、1 skipped。TypeScript／Vite、Rust binaries build、Clippy all-targets（既存 warnings）、兩個 manifest fmt、Ruff check／format、版本／路徑大小寫與 diff check 通過。
+- **整合紀錄**：重新讀取 Issue comment `6093430484` 與 review `5477593015`；cold-read thread 已由 Reviewer 解除，本輪不 resolve 他人 thread。review `5477570385` 對先前 #499／#504 heads 的 read-only merge-tree 報告六項內容衝突（Rust workflow、tuning README、TuneSessionProvider、TuningView 與兩個 EV／workflow transport tests）。待其中一支另經授權合併後，後者需保留 setup/evidence invalidation 與 CVT 排除兩組保護並跑 fresh CI；本輪僅記錄，未 merge／rebase 其他分支。
+
+## 2026-10-10 / PR #504 saved CVT cold replay 唯讀修補（Codex as Codex）
+
+- **審查與重現**：`SavedCvt` 未沿用 saved ICE／EV 的缺庫檢查，`Connection::open` 在 cold CLI／MCP 失敗查詢前會留下零位元組的 `telemetry_sessions.db`。新增兩個契約測試於修正前均失敗，精確重現資料夾由空變成新 DB。
+- **最小修正**：先確認既有 DB，再以 SQLite read-only flags 查詢 `cvt-evidence/v1`，避免檢查後移除 DB 的情況建立新檔。原本 RoadStore 寫入路徑保留；僅共用既有文件查詢／kind 驗證。
+- **測試邊界**：CLI／MCP 各驗證缺庫、零位元組、損壞內容、有效 SQLite 但沒有 road table 四種錯誤，執行前後完整檔案清單與每檔位元組相同。正常 HTTP／MCP／CLI 保存重播仍一致，且主 DB 位元組不變；SQLite read-only WAL reader 的輔助檔生命週期不等於寫入 evidence，不能對仍可改動的 live DB 使用 `immutable=1`。參考 [SQLite WAL 官方文件](https://www.sqlite.org/wal.html#read_only_databases)。
+- **本地 Gate**：完整 Cargo default 192 passed／2 ignored、no-HUD 184 passed／2 ignored（含 doctest）；CVT 專項 9 tests。Vitest 197 files／1,746 tests passed、1 skipped；Rust binaries build、Clippy all-targets（既存 warnings）、兩個 manifest fmt、Ruff check／format、version consistency、tracked path case 與 diff check 通過。前端 source 無變動，沿用首版通過的 TypeScript／Vite build。
+- **範圍**：同一 foundation 專用分支；未混入 #498／#499／#501，未增加 CVT solver 或變更 ICE／EV 演算法；所有既有 Journal 日期條目保留。
+
+## 2026-10-10 / Issue #434 CVT 能力分流與 Rust evidence foundation（Codex as Codex）
+
+- **來源／範圍**：`local`／`verified`；依審查留言 `6093430484` 從遠端 main `d4e0fe3762c613240f7d6902d07edcb212aa5926` 建立 `feat/issue-434-cvt-foundation`。採用 `physics-tuning-math`、`telemetry-udp-protocol`、`modular-refactoring`、`halfmoon-design-system`、`pr-author-maintainer`。不混入 PR #498／#499；Ruff 0.17 的主線 I001 僅修正 `scripts/validate_version_consistency.py` import 排序。
+- **Learning**：動力類型 `isElectric` 與明確 `transmission`／能力各自保存；缺少新欄位維持 ICE／EV 序列化、依賴 key 與 capture replay。CVT 不從車名或一／兩檔推斷，也不進 ICE／EV collector 或離散齒比 solver。前端 A→B→A／延遲回覆與舊伺服器皆需 fail closed。
+- **Evidence**：`cvt-capture/v1` 保存 raw JSON、來源與未知 null 時間／版本；`cvt-qualification/v1` 只做有界的資料安全檢查。保存 `cvt-evidence/v1` 後各入口重新驗證 raw，不信任舊 summary。新增 variant 後，CLI 的 saved-evidence 路由也必須新增 `SavedCvt`，否則 HTTP／MCP 可讀的 capture 在 CLI 會誤判 wrong mode；HTTP／MCP／離線 CLI 一致性測試已重現並修正。
+- **驗證順序**：Rust `build.rs` 會產生 frontend dist 的 `include_bytes!` 路徑；前端重建與 Cargo doctest 不可並行，否則舊資產消失導致 doctest 編譯失敗。本次依序完成前端 build 後重跑完整 Cargo，包含 default／no-default-features 的 doctest 全數通過。
+- **最終本地 Gate**：Cargo default 190 passed／2 ignored、無 HUD 182 passed／2 ignored；CVT 專項 7 cases（全部 synthetic）。Vitest 197 files／1,746 tests passed，另有 1 skipped；TypeScript／Vite、Rust binaries build、兩個 manifest 的 rustfmt、Ruff check／format、版本一致性、tracked path case、`git diff --check` 通過；維護工具 49 passed／4 skipped。Clippy all-targets 通過但仍有主線既存 warnings，本次 CVT 模組無新增 warning。
+- **界線**：沒有真實 CVT capture、專用 live recorder、已校準 ratio preview 或 solver；所有 CVT gearing／recommendation 為 null，測試只能證明契約安全與舊 ICE／EV 不退化。固定／模擬檔位及 EV+CVT 保持 unsupported。真實 capture、限位來源、不可達目標與可套用 solver 的後續驗收見 [CVT foundation 文件](../docs/tuning/cvt-foundation.md)；Issue #434 保持 open，不 merge／release。
+
 ## 2026-10-07 / 遙測錄製管線解耦、計時賽修整邊界與 MoTeC 標記契約（Gemini as Antigravity）
 
 - **Scope**：解決 PR #495 審查（Issue #484）由 Codex as Codex 提出的 13 項回歸問題。採用 `pr-author-maintainer`、`pr-review-evaluation`、`telemetry-udp-protocol`、`modular-refactoring`。
@@ -653,3 +679,61 @@
 - **Evidence**：完整 Cargo 契約 183 passed／3 ignored；Vitest 196 passed files、1740 passed／1 skipped；`tsc && vite build` 通過。獨立後端 17 cases、前端 16 個 hook／DOM／provider 補充案例及 180000 筆 CSV 重現通過，scratch 證據不加入產品單元 gate。最終 commit 與遠端 CI 在 PR 留言記錄。
 - **Boundary**：未做真實 FH6 高速穿越、跨車種半徑校準或 MoTeC i2 開檔驗收；README／操作指南／UI 標示 LD／LDX 實驗性。`IsRaceOn` 不參與此錄製及 Road／ICE／EV 收錄資格；來源欄位與 HUD 顯示語意保留。
 - **Skills**：`pr-author-maintainer`、`pr-review-evaluation`、`cross-agent-collaboration`、`telemetry-udp-protocol`、`halfmoon-design-system`、`physics-tuning-math`、`ponytail`。
+
+## 2026-10-09 / Issue #485 主題同步第一切片（Codex as Codex）
+
+- **來源／狀態**：`local`／`partial_verified`；基準及遠端 main 皆為 `d4e0fe3762c613240f7d6902d07edcb212aa5926`，獨立分支 `feature/issue-485-theme-sync`。初次交付保留本機 diff；後續使用者授權只提交此切片、push 並建立 draft PR，SDK 授權仍暫停，不合併／發布。完整審查範圍見 `docs/frontend/companion-theme-sync-review/README.md`。
+- **Learning**：
+  1. Companion LAN 不開放完整 settings；主題必須由 ConfigService 投影到 authenticated workflow GET 的 snapshot 外，不能依賴 desktop lease 或 tuning revision，也不能由 desktop host bridge 另存權威。
+  2. React remote receive 要與 settings POST 分離；command busy 的 acknowledgement workflow poll 同樣須接收主題。缺省或失敗只保留最後有效值，不回寫設定或重掛工作區。
+  3. Native bootstrap／cache 要綁 canonical endpoint origin；每次連線 generation 的有效性需在 main-thread 套用時再檢查。舊配對／Cookie 回呼亦須檢查 connection attempt。
+  4. Linux 預設 Vite LAN profile 不輸出 Companion；驗證嵌入 sidecar 前須用 `FH6_PLATFORM=windows pnpm -C frontend run build`，確認 index/assets 存在。
+- **Evidence**：Vitest 198 passed files／1747 passed tests／1 skipped；LAN 與 Windows profile build 通過。含 Companion assets 的 Cargo 184 passed／2 ignored，無預設功能 176 passed／2 ignored；Rust fmt／diff check 通過。Kotlin 2.2.21／Compose compiler＋實際 libraries 的 6 個 native contract／token 案例通過；protocol Gradle 5 tests 通過；Shell compile-only 檢查通過（Activity enums／BuildConfig 用 stubs）。Chromium 151 的 390×844 七核心 × 日夜、dirty draft 與頁面溢出檢查通過，使用合成資料。
+- **Boundary**：初次本機 Android gate 被 SDK 36／Build Tools 35.0.0 未接受授權阻擋；後續遠端 compile／unit／lint／assemble／APK 證據見下節。本地 SDK 授權未接受，Android／WebView／裝置執行與真實遊戲未驗證。Compose 用 Android sans-serif fallback，CSS blur／radial anchor／Rhine 動效尚未實作。原始 log／完整 diff 另交獨立 review，不將純 JVM 或瀏覽器證據當成裝置驗收。
+- **Skills**：`halfmoon-design-system`、`modular-refactoring`、`pr-author-maintainer`。
+
+## 2026-10-09 / Issue #485 Android CI 證據留存（Codex as Codex）
+
+- **Learning**：Android Gradle task 成功可證明編譯與 gate 執行，但預設 log 不列 JUnit 計數；未 upload artifact 就無法取得 APK hash 或原始 XML。CI 應留存各模組 XML、lint、APK、head／checkout SHA 與 source hash，而不是用 source 的 @Test 數量當執行結果。
+- **Evidence**：head `c8ad8e479c087a31327beea7c6a864afba9e7a76` 的 run `37967243385` 已 success，但 artifacts 為空。補留存與 XML header 輸出後，head `add0c1fde401f99a2789c8f97e5a5d895c632fa9` 的 run `37969337059`／job `113951643171` 已 success，實際 protocol 5／theme 4／app 2 tests，0 failure／error／skipped；MainActivity compile、lint、assemble 均完成。artifact `11635360782` 包含原始 XML、lint、APK 與 provenance，APK runner SHA-256 `75b5d34cfe35365e7d57703d367108516d52a84346f688aee870b6dc34cce12e`。30 個 Android source hashes 與本機相同；產品程式碼未更動，合成 merge 不是合併 main。
+- **Boundary**：本地 SDK 授權保持暫停，不為重複 compile 安裝 SDK；Android／WebView／native 同框與生命週期仍需裝置驗收。工作區下載及檔案匯入受環境阻擋，未取得本機 APK bytes／重算 hash；實際 XML suite 計數來自 CI log，完整 XML／APK 留在 GitHub artifact。原始 job logs／metadata／計數及 hash 摘要保留。
+- **Skills**：`pr-author-maintainer`。
+
+## 2026-10-09 / Issue #487 P1 中性基準預覽與就地證據（Codex as Codex）
+
+- **來源／狀態**：`local`／`verified`（Rust／DOM 契約）；基於 main `d4e0fe3762c613240f7d6902d07edcb212aa5926`，僅本地差異供獨立審查，未做遠端寫入。
+- **Learning**：
+  1. 引擎相依鍵只涵蓋 powertrain，不能當作完整設定版本。完整 profile／本地基準變更必須讓 archive 保存、hydration、EV 回覆、採集與 workflow 同步失效；A→B→A 也不能讓舊 capture 自動復活。設定版本仍未知，不可由 context 的 UI 防護推論為同設定實車證據。
+  2. ICE observation 的 `capturedAt` 是建立觀察的時刻；EV 沒有對等欄位。最小 provenance envelope 須把 `observationRecordedAt` 和尚未知的採集時間／session／設定版本／圈窗分開，不能用 store 或分析時間補值。
+  3. Rust build script 嵌入 `frontend/dist`，前端 build 的清理／更新與 Rust doctest 不是獨立操作。平行執行可能刪掉已生成 `include_bytes!` 引用的舊資產；先固定前端產物再執行 Cargo 全套，重跑可消除這個已重現的驗證競態。
+- **Evidence**：Cargo 預設 188 passed／2 ignored，無預設功能 180 passed／2 ignored；Vitest 200 passed files、1747 passed／1 skipped；typecheck／Windows frontend build、backend／Tauri fmt、Clippy 與 diff check 通過。raw logs 位於 `/workspace/issue-487-evidence/rawlogs/`，含安裝失敗、資產競態及後續成功紀錄。
+- **Boundary**：沒有非中性偏好校準、WOT 圖或頻率模型；沒有修改正式 Road／frozen legacy 公式、golden fixtures、共享 ThemeContext、全域 CSS 或 Companion theme。雲端 Chromium SUID sandbox 啟動失敗，未關閉 sandbox／更改權限；窄畫面／主題視覺及真實 FH6／Android 驗收未完成。詳細契約見 [P1 文件](../docs/tuning/neutral-baseline-preview-p1.md)。
+- **Skills**：`physics-tuning-math`、`halfmoon-design-system`、`modular-refactoring`、`pr-author-maintainer`。
+
+## 2026-10-09 / Issue #487 P1 獨立審查回歸修正（Codex as Codex）
+
+- **來源／狀態**：`local`／`verified`（Rust／DOM 契約）；在 `eda09b83` 上重現兩項審查發現。本次修正只建立本地 commit，先前已推送分支不包含這些修正。
+- **Learning**：
+  1. 為舊合格 ICE cache 補輪胎摘要時，readonly replay 必須保留已載入的可信 qualified evidence ID，否則 provenance 與 recommendation snapshot 會退回 imported-capture。只從成功載入的 cache 沿用 ID；cold cache 保持 null，readonly 不寫入。
+  2. 完整 profile 是預覽／證據的失效邊界，不應同時用來重設草稿目標。同車 Rally／Drag、重量／範圍或引擎參數編輯需保留草稿與已套用值；換車或實際 live build identity 才重設。初次 idle identity hydration 仍保留草稿，完整 setup／sequence 防護不移除。
+- **Evidence**：修正前 Rust 契約重現 evidenceId 為 null；DOM 整合測試重現 Rally／Drag 編輯後退回 Road。修正後 readonly 資料列及資料庫位元組均未改變；聚焦前端 10 項通過，完整 Vitest 201 passed files、1749 passed／1 skipped，Cargo 預設 189 passed／2 ignored、無預設功能 181 passed／2 ignored；typecheck、Windows frontend build、backend／Tauri fmt、Clippy（含 warnings）通過。原始失敗及最終 raw logs 保留於 `/workspace/issue-487-evidence/rawlogs/`。
+- **Boundary**：本次沒有推送、PR 發布、留言、merge 或 release；不改瀏覽器、窄畫面／主題視覺、FH6／Android 與同設定 A/B 的未驗收標記，不改公式或共享主題檔。
+- **Skills**：`physics-tuning-math`、`halfmoon-design-system`、`pr-author-maintainer`。
+
+## 2026-10-10 / PR #499 預覽 context 與 CI lint 修正（Codex as Codex）
+
+- **來源／狀態**：`local`／`verified`（Rust／DOM 契約）；基於審查 head `61f2222b1f5133747efbd7e2d657318da4b41902` 重現 review `5477396731` 與 inline `4236251871`，遠端新 head CI 另行核對。
+- **Learning**：
+  1. 草稿重設 generation 不會自動進入 workflow request：同車 Road→Road、空的已套用欄位與 PI／Class 改變可能產生相同 request key。完整 UI context 必須進入 snapshot，Apply 也須獨立核對捕獲的 context 與目前 phase；identity generation 保留 A→B→A 失效邊界。profile／season 編輯只使預覽失效，仍保留草稿目標。這個 UI token 不是可信設定版本或採集 provenance。
+  2. Ruff 0.17.0 把 `tomllib` 視為標準函式庫；CI 的 I001 可由 `import re`、`import tomllib`、`from pathlib import Path` 同組排列修正，不需要降低工具版本。
+- **Evidence**：修正前 9 個 PI／Class ready／late、A→B→A 與獨立 Apply 案例失敗；修正後聚焦前端 19 項及完整 Vitest 201 passed files、1758 passed／1 skipped 通過。Cargo 預設 189 passed／2 ignored、無預設功能 181 passed／2 ignored；typecheck、Windows-target frontend build、backend／Tauri fmt、Clippy（含 warnings）、Ruff 0.17.0 check／format、版本一致性、路徑大小寫與 diff check 通過。Python 維護測試 49 passed／4 skipped，不替代 Rust 產品 gate。raw logs 保留於 `/workspace/issue-499-review-evidence/rawlogs/`。
+- **Boundary**：保留 Draft，審查 thread 不自行 resolve；不 merge、release 或關閉 #487。沒有擴充 provenance、懸吊證據、P2 WOT 或 P3 模型；瀏覽器／窄畫面／主題視覺、真實 FH6／Android 與同設定 A/B 仍未驗收。
+- **Skills**：`halfmoon-design-system`、`pr-author-maintainer`。
+
+## 2026-10-10 / PR #499 與 #504 中性基準及 CVT foundation 整合（Mihaly as Codex）
+
+- **來源／狀態**：`local`／`verified`（Rust／DOM 契約）；自有 `codex/mihaly-baseline-cvt-integration` 分支保留 #504 `50baa622`、main `0dfddf7f`（含 #498）與 #499 `8b3521ef` 的 ancestry。未修改作者分支或發布遠端變更。
+- **Learning**：CVT early return 仍須提供共用的中性底盤預覽，但引擎／輪胎證據及齒比推薦必須保持 null；Provider 的 EV hook 需同時接受完整 setup context 與 CVT 採集停用條件，不能在手動合併時保留重複 hook 或丟掉任一防護。設定失效 token 仍不是可信的實車設定版本。
+- **Evidence**：保留兩個來源的測試，另補 CVT 與本地底盤基準共存的 Rust／產品 Provider 契約。完整 Vitest 205 passed files、1774 passed／1 skipped；TypeScript／Vite build 通過後固定 dist，再執行 Cargo 預設全套 204 passed／3 ignored，含 CVT 14 項及 workflow 13 項。backend fmt、Ruff 0.17.0 的版本工具 check／format、diff check 通過。raw logs 保留於本機 `fh6-review-20261010-mihaly` 暫存證據目錄。
+- **Boundary**：既有 release performance、Windows audio／media 裝置及 cross-version comparison 測試仍 ignored；沒有真實 CVT、FH6、Android 或同設定 A/B 驗收。窄畫面／主題／鍵盤瀏覽器驗收由獨立 reviewer 執行後另記；未新增公式、求解器、採集器、來源推定或 dependency。Python 僅驗證共通 import 修正。
+- **Skills**：`physics-tuning-math`、`halfmoon-design-system`、`ponytail`。

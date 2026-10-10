@@ -1,3 +1,5 @@
+import { TransmissionSetup } from './TransmissionSetup';
+import { usesCvt } from '../../../domain/tuning/transmission';
 import React from 'react';
 import { RoadDrivetrainSetup } from './RoadDrivetrainSetup';
 import { useSettings } from '../../../context/SettingsContext';
@@ -142,8 +144,9 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
           </div>
 
           <div className="d-flex flex-column gap-2">
-            <label className="text-body-secondary fs-7 fw-semibold">{t('Select Race / Tuning Goal:')}</label>
+            <label htmlFor="tuning-draft-goal" className="text-body-secondary fs-7 fw-semibold">{t('Select Race / Tuning Goal:')}</label>
             <select
+              id="tuning-draft-goal"
               value={selectedRaceGoal}
               onChange={(e) => setSelectedRaceGoal(e.target.value)}
               className="form-select form-select-sm"
@@ -268,7 +271,8 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
               onChange={value => updateParam('roadAwdRearPercent', value)} />}
 
             <EvModeSwitch t={t} checked={carParams?.isElectric === true} onChange={value => updateParam('isElectric', value)} />
-            {!carParams?.isElectric && <div className="d-flex justify-content-between align-items-center">
+            <TransmissionSetup t={t} value={carParams?.transmission} onChange={value => updateParam('transmission', value)} />
+            {!carParams?.isElectric && !usesCvt(carParams) && <div className="d-flex justify-content-between align-items-center">
               <label className="text-body-secondary fs-7 mb-0">{t('Gears Count')}</label>
               <div style={{ width: '130px' }}>
                 <DecimalInput

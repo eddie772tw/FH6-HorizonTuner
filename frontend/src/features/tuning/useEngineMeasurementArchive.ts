@@ -1,3 +1,4 @@
+import { usesCvt } from '../../domain/tuning/transmission';
 import { useEffect, useRef, useState } from 'react';
 import type { TuningCarParams } from '../../domain/tuning/types';
 import type { TuningMeasurementState } from '../../domain/tuning/types';
@@ -10,7 +11,7 @@ import { isCurrentEngineObservationSaveToken, type EngineObservationSaveToken } 
 
 const STORAGE_KEY = 'tuning-engine-observations/v1';
 const readArchive = (): unknown => { try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch { return []; } };
-export function useEngineMeasurementArchive(carId: string, profile: TuningCarParams | null, identityGeneration = 0) {
+export function useEngineMeasurementArchive(carId: string, profile: TuningCarParams | null, identityGeneration = 0, setupContext = '') {
   const [archive, setArchive] = useState<EngineObservation[]>([]);
   const [selected, setSelected] = useState<EngineObservation | null>(null);
   const [savedIds, setSavedIds] = useState<string[]>([]);
@@ -29,14 +30,19 @@ export function useEngineMeasurementArchive(carId: string, profile: TuningCarPar
     identityGeneration: identityGenerationRef.current,
     dependencyKey: keyRef.current,
   });
-  useEffect(() => {
+  // Invalidate save/hydration callbacks during render, including setup changes
+  // outside the narrower measured-engine dependency key.
+  const scope = JSON.stringify([key, identityGeneration, setupContext]);
+  const scopeRef = useRef(scope);
+  if (scopeRef.current !== scope) {
+    scopeRef.current = scope;
     keyRef.current = key;
     generation.current += 1;
     pending.current = null;
     saving.current = null;
     setPendingSave(false);
     setSelected(null);
-  }, [key, identityGeneration]);
+  }
   useEffect(() => {
     let active = true;
     void backendFetch('/api/road/engine-observations').then(async response => {
@@ -55,7 +61,7 @@ export function useEngineMeasurementArchive(carId: string, profile: TuningCarPar
     }).catch(() => {});
     return () => { active = false; };
   }, []);
-  const current = !profile?.isElectric && selected?.dependencyKey === key && selected.carId === carId ? selected.data : null;
+  const current = (!profile?.isElectric && !usesCvt(profile)) && selected?.dependencyKey === key && selected.carId === carId ? selected.data : null;
   // Loading/failed capture hydration never exposes the legacy instantaneous peak.
   const [analyzed, setAnalyzed] = useState<{ selection: EngineObservation; value: EngineCalculationSummary } | null>(null);
   useEffect(() => {
@@ -76,9 +82,9 @@ export function useEngineMeasurementArchive(carId: string, profile: TuningCarPar
     return () => { stopped = true; controller.abort(); clearTimeout(retry); };
   }, [current, selected, carId]);
   const calculation = current && analyzed?.selection === selected ? analyzed.value : null;
-  const compatible = archive.filter(item => !profile?.isElectric && item.carId === carId && item.dependencyKey === key && savedIds.includes(item.id));
+  const compatible = archive.filter(item => (!profile?.isElectric && !usesCvt(profile)) && item.carId === carId && item.dependencyKey === key && savedIds.includes(item.id));
   const complete = async (data: TuningMeasurementState, capture: TuningCaptureFile) => {
-    if (profile?.isElectric || saving.current !== null) return false;
+    if (usesCvt(profile) || profile?.isElectric || saving.current !== null) return false;
     const requestId = ++saveSequence.current;
     saving.current = requestId;
     setPendingSave(true);

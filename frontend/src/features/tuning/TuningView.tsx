@@ -14,6 +14,9 @@ import { SetupVerificationStep } from './components/SetupVerificationStep';
 import { canOpenTuningStep, resolveTuningStep, TUNING_WORKFLOW_STEPS, updateWorkflowProfile } from './tuningWorkflow';
 import { useTuneSession } from './TuneSessionProvider';
 import { unavailableReadiness } from './useWorkflowCalculation';
+import { usesCvt } from '../../domain/tuning/transmission';
+import { CvtFoundationPanel } from './components/CvtFoundationPanel';
+import { BaselinePreviewPanel } from './components/BaselinePreviewPanel';
 
 export function TuningViewContent({ unitPreference, onUnitPreferenceChange }: {
     unitPreference: UnitPreferenceOverride; onUnitPreferenceChange: (value: UnitPreferenceOverride) => void;
@@ -58,10 +61,11 @@ export function TuningViewContent({ unitPreference, onUnitPreferenceChange }: {
           title={step.number === 4 && !readiness.gearingAvailable ? t('Engine analysis and a feasible gearing result are required before setup verification.') : undefined}
           onClick={() => { session.workflow.setReviewHistory(false); setCurrentStep(step.number); }}><span className="workspace-tabs__number">{step.number}.</span> {t(step.label)}</button>)}
       </nav>
-      <div className="small text-body-secondary mt-2" role="status">{t(session.calculationStatus === 'pending' ? 'Calculating tuning results…' : session.calculationStatus === 'error' ? 'Tuning calculation is unavailable. Retrying…' : !readiness.mechanical ? 'Complete the vehicle weight and distribution first.' : !readiness.measuredEngine ? 'Mechanical estimates are available. Engine data and gearing still require measurement.' : !readiness.gearingAvailable ? 'Engine analysis is ready, but the gearing model has no feasible result. Review Step 3.' : 'Engine measurement is ready. Confirm game settings before recording a validation run.')}</div>
+      <div className="small text-body-secondary mt-2" role="status">{t(session.calculationStatus === 'pending' ? 'Calculating tuning results…' : session.calculationStatus === 'error' ? 'Tuning calculation is unavailable. Retrying…' : usesCvt(profile) ? 'CVT recommendations are unavailable pending real capture and solver validation.' : !readiness.mechanical ? 'Complete the vehicle weight and distribution first.' : !readiness.measuredEngine ? 'Mechanical estimates are available. Engine data and gearing still require measurement.' : !readiness.gearingAvailable ? 'Engine analysis is ready, but the gearing model has no feasible result. Review Step 3.' : 'Engine measurement is ready. Confirm game settings before recording a validation run.')}</div>
       {!reviewHistory && session.calculationStatus === 'ready' && <WorkflowGuide readiness={readiness} currentStep={currentStep} openStep={step => setCurrentStep(step)} />}
     </header>
-    {!reviewHistory && currentStep === 1 && <Step1GoalSetup measuredEngineInputs selectedRaceGoal={goal} setSelectedRaceGoal={session.workflow.setGoal} season={season} setSeason={session.workflow.setSeason}
+    {!reviewHistory && [1, 2].includes(currentStep) && <BaselinePreviewPanel carId={carId} profile={profile} season={season} draft={session.baseline} showTargetSelector={currentStep !== 1} />}
+    {!reviewHistory && currentStep === 1 && <Step1GoalSetup measuredEngineInputs selectedRaceGoal={session.baseline.goal} setSelectedRaceGoal={session.baseline.setDraftGoal} season={season} setSeason={session.workflow.setSeason}
       carParams={profile} updateParam={(key, value) => {
         const updated = profile && updateWorkflowProfile(liveCarParams, key, value);
         if (updated) setCarParams(updated);
@@ -70,8 +74,8 @@ export function TuningViewContent({ unitPreference, onUnitPreferenceChange }: {
       onProceed={async () => { await saveCarParams(); setCurrentStep(2); }} />}
     {!reviewHistory && [2, 4].includes(currentStep) && session.calculationStatus !== 'ready' && <div className="alert alert-info" role="status">{t(session.calculationStatus === 'error' ? 'Tuning calculation is unavailable. Retrying…' : 'Calculating tuning results…')}</div>}
     {!reviewHistory && currentStep === 2 && session.calculationStatus === 'ready' && <Step2ChassisTuner selectedRaceGoal={goal} season={season} carParams={profile}
-      chassis={chassis} alignment={alignment} saveCarParams={saveCarParams} />}
-    {!reviewHistory && currentStep === 3 && (profile?.isElectric
+      chassis={chassis} alignment={alignment} tireEvidence={session.result?.tireEvidence ?? null} evidenceProvenance={session.result?.evidenceProvenance ?? null} saveCarParams={saveCarParams} />}
+    {!reviewHistory && currentStep === 3 && (usesCvt(profile) ? <CvtFoundationPanel result={session.result?.cvt} t={t} /> : profile?.isElectric
       ? <EvPowertrainStep enabled={readiness.engineInputs} />
       : <EngineDataStep carId={carId} profile={profile} engine={engine} gearing={gearing && !('model' in gearing) ? gearing : null} enabled={readiness.engineInputs} />)}
     {!reviewHistory && currentStep === 4 && session.calculationStatus === 'ready' && <SetupVerificationStep goal={goal} carId={carId} recommendation={session.result?.recommendation ?? null} />}

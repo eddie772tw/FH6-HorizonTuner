@@ -131,8 +131,8 @@ pub fn calculate(input: &Value) -> Result<Value, String> {
         ),
     };
     let differential = json!({"frontAccelPercent":fa,"frontDecelPercent":fd,"rearAccelPercent":ra,"rearDecelPercent":rd,"centerToRearPercent":center});
-    let gearing = if car["isElectric"] == true {
-        json!({"finalDrive":0,"gears":[],"tireCircumferenceM":0,"topSpeedAtPeakHpKmh":0,"unsupported":true,"unsupportedReason":"EV requires the measured EV workflow."})
+    let gearing = if super::cvt::selected(car) || car["isElectric"] == true {
+        json!({"finalDrive":0,"gears":[],"tireCircumferenceM":0,"topSpeedAtPeakHpKmh":0,"unsupported":true,"unsupportedReason":if super::cvt::selected(car) {"CVT solver is unavailable; use the capture foundation."} else {"EV requires the measured EV workflow."}})
     } else {
         let axle = if fwd { "front" } else { "rear" };
         let circumference = ((n(car, &format!("{axle}TireWidth"), 245.0)

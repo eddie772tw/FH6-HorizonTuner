@@ -14,6 +14,13 @@ use serde_json::{json, Value};
 #[derive(Clone, Debug, Deserialize)]
 #[serde(tag = "kind", rename_all = "kebab-case")]
 pub enum EvidenceRequest {
+    CvtCapture {
+        capture: Value,
+    },
+    SavedCvt {
+        #[serde(rename = "evidenceId")]
+        evidence_id: String,
+    },
     SavedEngine {
         #[serde(rename = "observationId")]
         observation_id: String,
@@ -47,6 +54,8 @@ pub struct QualifiedEvidence {
     observation: Value,
     summary: Value,
     evidence_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    tire_summary: Option<Value>,
 }
 pub fn equivalent(a: &Value, b: &Value) -> bool {
     match (a, b) {
@@ -116,6 +125,12 @@ pub fn qualify(raw: &EvidenceRequest) -> Result<QualifiedEvidence, String> {
                 observation: observation.clone(),
                 summary,
                 evidence_id: None,
+                tire_summary: Some(super::tire_evidence::observe(
+                    capture["samples"]
+                        .as_array()
+                        .ok_or("Capture samples required")?,
+                    &json!({"carOrdinal":expected["identity"]["ordinal"],"performanceIndex":expected["identity"]["performanceIndex"],"carClass":expected["identity"]["carClass"]}),
+                )),
             })
         }
         EvidenceRequest::EvCapture {
@@ -155,12 +170,28 @@ pub fn qualify(raw: &EvidenceRequest) -> Result<QualifiedEvidence, String> {
                 observation: Value::Null,
                 summary: state,
                 evidence_id: None,
+                tire_summary: None,
             })
         }
         _ => Err("Saved evidence requires the local evidence store".into()),
     }
 }
 impl QualifiedEvidence {
+    pub fn tire_evidence(&self) -> Option<Value> {
+        self.tire_summary.clone()
+    }
+    pub fn provenance(&self) -> Value {
+        // ICE capturedAt is observation creation time, not a verified capture window.
+        // EV has no equivalent timestamp. Never substitute store/analysis/current time.
+        let recorded = if self.kind == "ice" {
+            self.observation["capturedAt"]
+                .as_f64()
+                .filter(|v| v.is_finite() && *v >= 0.0)
+        } else {
+            None
+        };
+        json!({"schemaVersion":"tuning-evidence-provenance/v1","evidenceId":self.evidence_id,"source":if self.evidence_id.is_some(){"saved-capture"}else{"imported-capture"},"analysisVersion":self.analysis_version,"carId":self.car_id,"powertrain":self.kind,"identity":self.identity,"observationId":self.observation.get("id"),"observationRecordedAt":recorded,"dependencyKey":self.dependency_key,"capturedAt":null,"sessionId":null,"setupVersion":null,"upgradeVersion":null,"lapWindow":null,"timeWindow":null})
+    }
     pub fn calculate(&self, input: WorkflowRequest) -> Result<WorkflowResult, String> {
         calculate_qualified(input, Some(self))
     }
@@ -186,6 +217,9 @@ impl QualifiedEvidence {
         }))
     }
     pub fn validate(&self, input: &WorkflowRequest) -> Result<(), String> {
+        if super::cvt::selected(&input.profile) {
+            return Err("ICE/EV evidence cannot qualify a CVT transmission".into());
+        }
         if input.input_snapshot["carId"].as_str() != Some(&self.car_id)
             || (input.profile["isElectric"] == true) != (self.kind == "ev")
         {
@@ -241,7 +275,15 @@ impl EvidenceService {
             .append("tuning-evidence/v1", "tuning-evidence", &value, Some(&id))
         {
             Ok(_) => Ok(proof),
-            Err(e) => self.load(&id).or(Err(e)),
+            Err(e) => self
+                .load(&id)
+                .map(|mut saved| {
+                    if saved.tire_summary.is_none() {
+                        saved.tire_summary = proof.tire_summary;
+                    }
+                    saved
+                })
+                .or(Err(e)),
         }
     }
     fn load(&self, id: &str) -> ApiResult<QualifiedEvidence> {
@@ -271,6 +313,7 @@ impl EvidenceService {
             observation: v["observation"].clone(),
             summary: v["summary"].clone(),
             evidence_id: Some(id.into()),
+            tire_summary: v.get("tire_summary").filter(|v| !v.is_null()).cloned(),
         })
     }
     pub fn ev_gearing(&self, input: &Value) -> ApiResult<Value> {
@@ -310,17 +353,22 @@ impl EvidenceService {
         match raw {
             EvidenceRequest::SavedEngine { observation_id } => {
                 let key = format!("qualified-engine-v4:{observation_id}");
-                if let Ok(proof) = self.load(&key) {
-                    return Ok(proof);
-                }
+                let saved_id = match self.load(&key) {
+                    Ok(proof) if proof.tire_summary.is_some() => return Ok(proof),
+                    Ok(proof) => proof.evidence_id,
+                    Err(_) => None,
+                };
                 let saved = self
                     .store
                     .get(observation_id, Some("engine-observation"), None)?;
-                let proof = qualify(&EvidenceRequest::EngineCapture {
+                let mut proof = qualify(&EvidenceRequest::EngineCapture {
                     observation: saved["observation"].clone(),
                     capture: saved["capture"].clone(),
                 })
                 .map_err(|e| ApiError::invalid(&e))?;
+                // Enrich legacy caches without discarding their saved provenance.
+                // A cold readonly replay still has no qualified saved ID.
+                proof.evidence_id = saved_id;
                 if persist_cache {
                     self.save(proof, Some(&key))
                 } else {
@@ -346,11 +394,26 @@ impl EvidenceService {
     }
     fn calculate_with_cache(
         &self,
-        input: WorkflowRequest,
+        mut input: WorkflowRequest,
         persist_cache: bool,
     ) -> ApiResult<WorkflowResult> {
         if input.schema_version != "tuning-workflow-result/v1" {
             return Err(ApiError::invalid("Unsupported tuning calculation schema"));
+        }
+        if super::cvt::selected(&input.profile) {
+            if let Some(EvidenceRequest::SavedCvt { evidence_id }) = &input.evidence {
+                if !std::path::Path::new(&self.store.db_path).is_file() {
+                    return Err(ApiError::new(404, "Saved evidence database is unavailable"));
+                }
+                let saved = self
+                    .store
+                    .get_read_only(evidence_id, Some("cvt-evidence/v1"), None)?;
+                // Replay the immutable raw capture; saved qualification is never trusted.
+                input.evidence = Some(EvidenceRequest::CvtCapture {
+                    capture: saved["capture"].clone(),
+                });
+            }
+            return super::workflow::calculate_workflow(input).map_err(|e| ApiError::invalid(&e));
         }
         let proof = input
             .evidence
@@ -375,6 +438,27 @@ impl EvidenceService {
         proof.observation = json!({"id":captured["id"],"carId":proof.car_id,"identity":proof.identity,"schema":"ev-observation/v1","source":"capture-qualified"});
         let proof = self.save(proof, None)?;
         Ok(json!({"evidenceId":proof.evidence_id,"state":proof.summary}))
+    }
+    pub fn save_cvt(&self, input: &Value) -> ApiResult<Value> {
+        let raw: EvidenceRequest = serde_json::from_value(input["evidence"].clone())
+            .map_err(|e| ApiError::invalid(&e.to_string()))?;
+        let EvidenceRequest::CvtCapture { capture } = raw else {
+            return Err(ApiError::invalid("Raw CVT capture required"));
+        };
+        let result =
+            super::cvt::evaluate(&input["profile"], &input["inputSnapshot"], Some(&capture));
+        if result.capture_status != super::cvt::Status::Qualified {
+            return Err(ApiError::invalid(
+                "CVT capture must pass foundation qualification before saving",
+            ));
+        }
+        let saved = self.store.append(
+            "cvt-evidence/v1",
+            "cvt-evidence",
+            &json!({"capture":capture}),
+            None,
+        )?;
+        Ok(json!({"evidenceId":saved["id"],"qualification":result}))
     }
     pub fn verify_recommendation(&self, rec: &Value, identity: Option<&Value>) -> ApiResult<()> {
         let snapshot = &rec["inputSnapshot"];

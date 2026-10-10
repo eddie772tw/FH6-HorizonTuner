@@ -46,12 +46,17 @@ pub struct Readiness {
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct WorkflowResult {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub cvt: Option<super::cvt::FoundationResult>,
     pub schema_version: &'static str,
     pub chassis: ChassisTuningResult,
     pub alignment: StaticAlignment,
     pub gearing: Option<WorkflowGearing>,
     pub readiness: Readiness,
     pub recommendation: Option<Value>,
+    pub baseline_preview: Value,
+    pub evidence_provenance: Option<Value>,
+    pub tire_evidence: Option<Value>,
 }
 fn positive(v: f64) -> bool {
     v.is_finite() && v > 0.0
@@ -72,7 +77,8 @@ fn measured_gearing_version(
     legacy_road: bool,
 ) -> Option<GearingResult> {
     let engine = engine?;
-    if profile.is_electric == Some(true)
+    if super::cvt::is_cvt(profile)
+        || profile.is_electric == Some(true)
         || !(4..=10).contains(&count)
         || !profile.max_hp.is_some_and(positive)
         || ![
@@ -107,6 +113,9 @@ fn measured_gearing_version(
     }
 }
 pub fn calculate_workflow(input: WorkflowRequest) -> Result<WorkflowResult, String> {
+    if super::cvt::selected(&input.profile) {
+        return calculate_qualified(input, None);
+    }
     let proof = input
         .evidence
         .as_ref()
@@ -155,6 +164,49 @@ pub(crate) fn calculate_qualified_version(
     let electric = profile.is_electric == Some(true);
     let chassis = calculate_chassis_tuning(input.goal, &profile);
     let alignment = calculate_static_alignment(input.goal, input.season, &profile);
+    let baseline_preview = super::baseline::preview(
+        input.goal,
+        &input.profile,
+        &input.input_snapshot["baselineCurrent"],
+        &chassis,
+        &alignment,
+    );
+    if super::cvt::selected(&input.profile) {
+        use super::evidence::EvidenceRequest;
+        let raw = match &input.evidence {
+            Some(EvidenceRequest::CvtCapture { capture }) => Some(capture),
+            _ => None,
+        };
+        let mut cvt = super::cvt::evaluate(&input.profile, &input.input_snapshot, raw);
+        if input.evidence.is_some() && raw.is_none() {
+            cvt.diagnostics.push(super::cvt::Diagnostic {
+                status: super::cvt::Status::Unsupported,
+                code: "evidence-mode-mismatch".into(),
+                field: "evidence".into(),
+            });
+            cvt.capture_status = super::cvt::Status::Unsupported;
+        }
+        return Ok(WorkflowResult {
+            cvt: Some(cvt),
+            schema_version: "tuning-workflow-result/v1",
+            chassis,
+            alignment,
+            gearing: None,
+            recommendation: None,
+            baseline_preview,
+            evidence_provenance: None,
+            tire_evidence: None,
+            readiness: Readiness {
+                mechanical: profile.weight.is_some_and(positive)
+                    && profile
+                        .weight_distribution
+                        .is_some_and(|v| positive(v) && v < 100.0),
+                engine_inputs: false,
+                measured_engine: false,
+                gearing_available: false,
+            },
+        });
+    }
     let gearing = if electric {
         qualified_ev
             .as_ref()
@@ -238,6 +290,7 @@ pub(crate) fn calculate_qualified_version(
         None
     };
     Ok(WorkflowResult {
+        cvt: None,
         schema_version: "tuning-workflow-result/v1",
         chassis,
         alignment,
@@ -249,16 +302,16 @@ pub(crate) fn calculate_qualified_version(
             gearing_available,
         },
         recommendation,
+        baseline_preview,
+        evidence_provenance: proof.map(|p| p.provenance()),
+        tire_evidence: proof.and_then(|p| p.tire_evidence()),
     })
 }
-fn recommendation(
+pub(crate) fn mechanical_fields(
     profile: &Value,
     c: &ChassisTuningResult,
     a: &StaticAlignment,
-    gearing: &WorkflowGearing,
-    mut snapshot: Value,
-    new_road: bool,
-) -> Value {
+) -> Map<String, Value> {
     let mut fields = Map::new();
     let mut add = |key: &str, value: f64, unit: &str| {
         fields.insert(key.into(), json!({"value":value,"unit":unit}));
@@ -315,6 +368,20 @@ fn recommendation(
     if profile["drivetrain"] == "AWD" {
         add("diff.center", c.diff.center_rear, "%");
     }
+    fields
+}
+fn recommendation(
+    profile: &Value,
+    c: &ChassisTuningResult,
+    a: &StaticAlignment,
+    gearing: &WorkflowGearing,
+    mut snapshot: Value,
+    new_road: bool,
+) -> Value {
+    let mut fields = mechanical_fields(profile, c, a);
+    let mut add = |key: &str, value: f64, unit: &str| {
+        fields.insert(key.into(), json!({"value":value,"unit":unit}));
+    };
     let electric = matches!(gearing, WorkflowGearing::Ev(_));
     match gearing {
         WorkflowGearing::Ice(g) => {

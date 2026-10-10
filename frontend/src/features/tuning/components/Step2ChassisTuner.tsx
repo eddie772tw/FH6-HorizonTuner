@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useSettings } from '../../../context/SettingsContext';
 import { CarParams } from '../../../context/CarParamsContext';
 import type { ChassisTuningResult, StaticTireAlignResult, Season } from '../../../domain/tuning/types';
+import type { TireEvidenceResult, EvidenceProvenance } from '../../../domain/tuning/types';
+import { TireEvidencePanel } from './TireEvidencePanel';
 
 interface Step2ChassisTunerProps {
   selectedRaceGoal: string;
@@ -10,6 +12,8 @@ interface Step2ChassisTunerProps {
   chassis: ChassisTuningResult | null;
   alignment: StaticTireAlignResult | null;
   saveCarParams: () => Promise<void>;
+  tireEvidence?: TireEvidenceResult | null;
+  evidenceProvenance?: EvidenceProvenance | null;
 }
 
 export const Step2ChassisTuner: React.FC<Step2ChassisTunerProps> = ({
@@ -19,6 +23,8 @@ export const Step2ChassisTuner: React.FC<Step2ChassisTunerProps> = ({
   chassis,
   alignment,
   saveCarParams,
+  tireEvidence = null,
+  evidenceProvenance = null,
 }) => {
   const {
     settings,
@@ -205,6 +211,7 @@ export const Step2ChassisTuner: React.FC<Step2ChassisTunerProps> = ({
           <div className="mt-auto p-2 rounded bg-body-tertiary border fs-8 text-body-secondary" style={{ lineHeight: '1.4' }}>
             {t('Data Out does not report tire pressure. Apply cold pressure in tuning menu and verify temperature build-up during hot laps.')}
           </div>
+          <TireEvidencePanel evidence={tireEvidence} provenance={evidenceProvenance} />
         </div>
 
         {/* Column 2: Suspension Platform */}
@@ -213,6 +220,7 @@ export const Step2ChassisTuner: React.FC<Step2ChassisTunerProps> = ({
             <span className="workspace-section-heading fw-bold fs-6">{t('Suspension Platform')}</span>
             <span className="badge text-bg-secondary">{t('ARB & Springs')}</span>
           </div>
+          <p className="small text-body-secondary">{t('Suspension distributions: unavailable. No qualified setup-specific distribution contract is available.')}</p>
 
           {/* Anti-Roll Bars */}
           <div className="d-flex flex-column gap-2">

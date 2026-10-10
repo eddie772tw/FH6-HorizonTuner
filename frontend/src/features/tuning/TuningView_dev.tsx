@@ -1,3 +1,4 @@
+import { usesCvt } from '../../domain/tuning/transmission';
 import React, { useMemo } from 'react';
 import { useCarParams } from '../../context/CarParamsContext';
 import { useSettings } from '../../context/SettingsContext';
@@ -32,7 +33,7 @@ const TuningViewDevContent: React.FC = () => {
     };
   }, [carParams, developer]);
 
-  const result = useLocalCalculation<{ output: DevTuningOutput; capabilityContract: TuningCapabilityContract }>('/api/tuning/developer', input && !carParams?.isElectric ? input : null);
+  const result = useLocalCalculation<{ output: DevTuningOutput; capabilityContract: TuningCapabilityContract }>('/api/tuning/developer', input && !usesCvt(carParams) && !carParams?.isElectric ? input : null);
   const output = result?.output ?? null;
   const capabilityContract = result?.capabilityContract ?? null;
 
@@ -45,7 +46,7 @@ const TuningViewDevContent: React.FC = () => {
   };
 
   if (developer.showCapture) return <TuningTelemetryCaptureView t={t} onBack={() => developer.setShowCapture(false)} />;
-  if (carParams?.isElectric) return <TuningView />;
+  if (usesCvt(carParams) || carParams?.isElectric) return <TuningView />;
 
   return (
     <div className="container-fluid h-100 w-100 d-flex flex-column gap-3 p-0 overflow-x-hidden overflow-y-auto">

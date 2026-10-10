@@ -98,6 +98,6 @@ git diff --check
 
 ## Companion 與原生驗收邊界
 
-[Issue #485](https://github.com/eddie772tw/FH6-HorizonTuner/issues/485) 追蹤 Companion 功能完善及 Swiss 三核心同步。WebView 已載入共用 CSS，但 Android Compose 原生導覽、連線／離線畫面、跨層主題同步及部分 WebView 區段導覽仍需整合。桌面瀏覽器、窄 viewport、APK 建置或合成資料都不能代替 Android 裝置／模擬器、原生 HUD 或真實遊戲驗收。
+[Issue #485](https://github.com/eddie772tw/FH6-HorizonTuner/issues/485) 追蹤 Companion 功能完善及 Swiss 三核心同步。主題同步第一切片沿用 authenticated workflow GET 傳送 ConfigService 的 version 1 視覺投影；React receive-only 更新及 native endpoint 快取／generation bootstrap 共用同一份已驗證設定，區段導覽沿用 workspace-tabs hooks。Native tokens 已集中於 `:theme`；字體／材質 fidelity 與完整裝置驗收仍待完成，詳見 [Companion 主題契約](../../companion/theme/README.md)。桌面瀏覽器、窄 viewport、APK 建置或合成資料都不能代替 Android 裝置／模擬器、原生 HUD 或真實遊戲驗收。
 
 需求與實作脈絡：[Issue #480](https://github.com/eddie772tw/FH6-HorizonTuner/issues/480)、[PR #481](https://github.com/eddie772tw/FH6-HorizonTuner/pull/481)。具日期的實作證據保存在 [Journal](../../.agents/Journal.md)，PR 保存對應提交的 CI 狀態。
