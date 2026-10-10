@@ -19,11 +19,16 @@ Native `HorizonTunerCompanionTheme` 僅提供 `themeBootstrap()` 與 `updateVisu
 | 七 core／三系統、mode、三色 | `VisualTheme.kt` |
 | Mono／Rhine 完整預設三色隨 mode 轉換；custom 保留 | `VisualThemeCodec`，與 Web normalization 相同 |
 | 背景、glass 表面、surface-1、文字、border、control border／focus | `companionTokens` |
-| panel／control／badge shape、標頭反差、字階／字距 | `CompanionTokens` 與 `HalfmoonTheme` |
+| panel／control／badge shape、標頭反差 | `CompanionTokens` 與 `HalfmoonTheme` |
+| family、heading／control／readout roles、數字特性 | `Typography.kt` 的 `companionTypography` |
 | Halfmoon 實色 tabs、Swiss 底線、Rhine 刻度／底線 | 集中 navigation tokens；shell 只呈現 |
 | 成功／警告／錯誤 | `StatusColors`，不受三色預設改寫 |
 
-Halfmoon 保留透明表面與圓角，Swiss 使用實色、細框與各核心的形狀，Rhine 使用獨立紙面／石板色及控制項 border。Native 背景以 CSS 的 gradient 端點呈現，但沒有實作 CSS backdrop blur、radial anchor 或 Rhine 分頁動畫。Web 字體由現有 CSS 載入；Compose 目前使用 Android sans-serif fallback（未把 WOFF2 轉換或新增字體素材），MiSans／Inter／Outfit 原生字形一致性仍待下一切片與裝置驗收。
+Halfmoon 保留透明表面與圓角，Swiss 使用實色、細框與各核心的形狀，Rhine 使用獨立紙面／石板色及控制項 border。Native 背景以 CSS 的 gradient 端點呈現，但沒有實作 CSS backdrop blur、radial anchor 或 Rhine 分頁動畫。
+
+Typography 的 15 個 Material roles 均設定 family 與 `"tnum" 1, "lnum" 1`，與 `base.css` body 的數字特性繼承相符。heading／control／readout-label 各自保留 CSS 的 em tracking；Swiss Technical heading `.04em` 與 control `.025em` 分離。Shell 的標題、primary／outline buttons、selected tabs、badge、body、supporting、field 與 diagnostics 使用對應 roles。diagnostics 的 dt/dd 是 body，不套用 instrument label 的大寫／字距；目前 shell 沒有原生遙測儀表，readout roles 供儀表用途，不改調校或新增 UI。
+
+Requested family 集中為 Halfmoon Outfit→Inter、Swiss Inter、Rhine MiSans；原生 body **仍使用明示的 Android sans-serif fallback**。Halfmoon instrument 依現有 CSS 使用 platform monospace，Swiss／Rhine instrument 沿用 body family。既有素材／授權盤點、七 core 的 mapping 與可測 fallback 差距見 [typography 切片報告](../../docs/frontend/companion-typography-fidelity/README.md)。沒有新增字體、轉換 MiSans 或接受新條款；這個角色切片不代表原生字形或像素一致性已驗收。
 
 ## 驗證
 

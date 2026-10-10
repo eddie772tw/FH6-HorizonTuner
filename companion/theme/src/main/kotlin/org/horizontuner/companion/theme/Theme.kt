@@ -3,19 +3,15 @@ package org.horizontuner.companion.theme
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
-import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 
 /** Maps existing design-system CSS tokens; pages never select cores or invent colors. */
 data class CompanionTokens(
@@ -23,8 +19,6 @@ data class CompanionTokens(
     val surface: Color, val surface1: Color, val text: Color, val textSecondary: Color, val border: Color,
     val primary: Color, val secondary: Color, val accent: Color,
     val panelRadius: Int, val controlRadius: Int, val system: DesignSystem,
-    val headingWeight: FontWeight, val controlWeight: FontWeight, val tracking: Float,
-    val headingSize: Float,
     val controlBorder: Color, val focusColor: Color,
     val headingBackground: Color, val headingColor: Color, val headingInset: Int,
 ) {
@@ -73,10 +67,6 @@ fun companionTokens(theme: VisualTheme): CompanionTokens {
         palette[5].copy(alpha = if (halfmoon) .10f else if (theme.core == CoreTheme.SWISS) if (dark) .12f else .15f else 1f),
         hexColor(theme.primaryColor), hexColor(theme.secondaryColor), hexColor(theme.accentColor),
         radius, if (halfmoon) 8 else if (theme.core in listOf(CoreTheme.CONTRAST, CoreTheme.RHINE)) 0 else 2, system,
-        if (theme.core in listOf(CoreTheme.SWISS, CoreTheme.CONTRAST)) FontWeight.Bold else FontWeight.SemiBold,
-        if (halfmoon) FontWeight.Normal else FontWeight.SemiBold,
-        when (theme.core) { CoreTheme.EDITORIAL -> 0f; CoreTheme.CONTRAST -> .02f; CoreTheme.RHINE -> .015f; else -> .025f },
-        if (theme.core == CoreTheme.EDITORIAL) 16.8f else 16f,
         if (system == DesignSystem.RHINE) hexColor(if (dark) "#829092" else "#77756d") else palette[5].copy(alpha = if (halfmoon) .10f else if (theme.core == CoreTheme.SWISS) if (dark) .12f else .15f else 1f),
         if (halfmoon) hexColor(theme.primaryColor) else palette[3],
         if (theme.core == CoreTheme.CONTRAST) palette[3] else Color.Transparent,
@@ -98,14 +88,8 @@ fun HalfmoonTheme(theme: VisualTheme = VisualTheme(), content: @Composable () ->
         onBackground = tokens.text, onSurface = tokens.text, onSurfaceVariant = tokens.textSecondary,
         outline = tokens.border, error = StatusColors.danger,
     )
-    // Shared CSS font stacks fall back to Android sans-serif; no unlicensed native font import.
-    val body = TextStyle(fontFamily = FontFamily.SansSerif, fontSize = 14.sp, fontFeatureSettings = "tnum, lnum")
-    val typography = Typography(
-        bodyLarge = body, bodyMedium = body, bodySmall = body.copy(fontSize = 12.sp),
-        titleMedium = body.copy(fontSize = tokens.headingSize.sp, fontWeight = tokens.headingWeight),
-        labelLarge = body.copy(fontWeight = tokens.controlWeight, letterSpacing = (tokens.tracking * 14).sp),
-    )
-    CompositionLocalProvider(LocalCompanionTokens provides tokens) {
-        MaterialTheme(colorScheme = scheme, shapes = Shapes(small = tokens.controlShape, medium = tokens.panelShape, large = tokens.panelShape), typography = typography, content = content)
+    val typography = remember(theme.core) { companionTypography(theme.core) }
+    CompositionLocalProvider(LocalCompanionTokens provides tokens, LocalCompanionTypography provides typography) {
+        MaterialTheme(colorScheme = scheme, shapes = Shapes(small = tokens.controlShape, medium = tokens.panelShape, large = tokens.panelShape), typography = typography.material, content = content)
     }
 }

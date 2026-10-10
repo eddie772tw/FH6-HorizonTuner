@@ -672,3 +672,10 @@
 - **Evidence**：head `c8ad8e479c087a31327beea7c6a864afba9e7a76` 的 run `37967243385` 已 success，但 artifacts 為空。補留存與 XML header 輸出後，head `add0c1fde401f99a2789c8f97e5a5d895c632fa9` 的 run `37969337059`／job `113951643171` 已 success，實際 protocol 5／theme 4／app 2 tests，0 failure／error／skipped；MainActivity compile、lint、assemble 均完成。artifact `11635360782` 包含原始 XML、lint、APK 與 provenance，APK runner SHA-256 `75b5d34cfe35365e7d57703d367108516d52a84346f688aee870b6dc34cce12e`。30 個 Android source hashes 與本機相同；產品程式碼未更動，合成 merge 不是合併 main。
 - **Boundary**：本地 SDK 授權保持暫停，不為重複 compile 安裝 SDK；Android／WebView／native 同框與生命週期仍需裝置驗收。工作區下載及檔案匯入受環境阻擋，未取得本機 APK bytes／重算 hash；實際 XML suite 計數來自 CI log，完整 XML／APK 留在 GitHub artifact。原始 job logs／metadata／計數及 hash 摘要保留。
 - **Skills**：`pr-author-maintainer`。
+
+## 2026-10-10 / Issue #485 typography roles 最小切片（Codex as Codex）
+
+- **Learning**：Swiss Technical heading `.04em` 與 control `.025em` 是不同角色；Contrast 的 readout `.08em` 繼承 Swiss，不能拿 `.02em` control tracking 代用。`Typography` 的未指定 roles 會保留 Material defaults，需集中明示 family／weight／tracking／數字特性。diagnostics dt/dd 是 body，不套用 instrument label uppercase／tracking。
+- **Evidence**：新增七 core mapping tests，純 JVM 的實際 Google Maven Compose AAR／Kotlin 2.2.21 contracts 15 passed、0 failure／error／skipped；前端 1747 passed／1 skipped 與 Companion build 通過。MiSans 376 WOFF2 分片共 12,197,248 bytes 與既有 manifest 逐檔雜湊一致。來源、角色表、驗證命令與 fallback 差距見 `docs/frontend/companion-typography-fidelity/README.md`；精確 head Android CI 於 push 後保留於 stacked PR body。
+- **Boundary**：專用分支基於 #498 的 `901c545d`，沒有修改 #498 分支或標 Ready。無新字體／格式轉換／協議接受；MiSans 分包工具 Apache 不代表字體本身授權，官方格式來源未核實，body 仍為明示 SansSerif fallback。native＋WebView 視覺／裝置矩陣 NOT_RUN，不宣稱像素一致；bridge／安全／主題投影／調校流程與 blur／動畫 scope 均未擴大。
+- **Skills**：`halfmoon-design-system`、`pr-author-maintainer`。

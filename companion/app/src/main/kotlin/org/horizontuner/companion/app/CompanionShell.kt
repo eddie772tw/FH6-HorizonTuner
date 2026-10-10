@@ -28,6 +28,7 @@ import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.MaterialTheme
 import org.horizontuner.companion.theme.LocalCompanionTokens
+import org.horizontuner.companion.theme.LocalCompanionTypography
 import org.horizontuner.companion.theme.StatusColors
 import org.horizontuner.companion.theme.foreground
 import androidx.compose.foundation.verticalScroll
@@ -42,7 +43,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 
 
 internal data class CompanionShellState(
@@ -118,7 +118,7 @@ private fun ShellTabs(state: CompanionShellState, onSelect: (OfflinePage) -> Uni
                     Box(Modifier.padding(start = 12.dp).size(1.dp, 4.dp).background(tokens.border))
                 }
                 Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text(page.label, style = MaterialTheme.typography.labelLarge,
+                    Text(page.label, style = if (selected) LocalCompanionTypography.current.selectedTab else MaterialTheme.typography.labelLarge,
                         color = if (selected && tokens.solidTabs) foreground(tokens.primary) else if (selected) tokens.text else tokens.textSecondary)
                     if (page == OfflinePage.CONNECTION) {
                         Spacer(Modifier.size(5.dp))
@@ -142,7 +142,7 @@ private fun OfflinePageContent(page: OfflinePage, onSelect: (OfflinePage) -> Uni
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             ShellHeading(page.label)
-            Text("PC Companion 尚未連線，${page.label} 暫時無法取得資料。", color = LocalCompanionTokens.current.textSecondary, fontSize = 14.sp)
+            Text("PC Companion 尚未連線，${page.label} 暫時無法取得資料。", color = LocalCompanionTokens.current.textSecondary, style = MaterialTheme.typography.bodyMedium)
             ShellButton("前往 Connection", onClick = { onSelect(OfflinePage.CONNECTION) }, primary = true, modifier = Modifier.fillMaxWidth())
         }
     }
@@ -160,18 +160,18 @@ private fun ConnectionPage(state: CompanionShellState, actions: CompanionShellAc
         ) {
             ShellHeading("Connection")
             if (state.isDevMode) {
-                Text("選擇一般使用的區域網路，或選擇 USB 除錯連線。", color = LocalCompanionTokens.current.textSecondary, fontSize = 14.sp)
+                Text("選擇一般使用的區域網路，或選擇 USB 除錯連線。", color = LocalCompanionTokens.current.textSecondary, style = MaterialTheme.typography.bodyMedium)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     ShellButton("Local network", onClick = { actions.selectMode(ConnectionMode.LAN) }, primary = state.mode == ConnectionMode.LAN)
                     ShellButton("USB debugging", onClick = { actions.selectMode(ConnectionMode.USB) }, primary = state.mode == ConnectionMode.USB)
                 }
             } else {
-                Text("透過區域網路 (Wi-Fi) 連接桌面 HorizonTuner。", color = LocalCompanionTokens.current.textSecondary, fontSize = 14.sp)
+                Text("透過區域網路 (Wi-Fi) 連接桌面 HorizonTuner。", color = LocalCompanionTokens.current.textSecondary, style = MaterialTheme.typography.bodyMedium)
             }
             val (statusColor, statusText) = aggregateStatus(state)
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text(statusText, modifier = Modifier.background(statusColor, LocalCompanionTokens.current.badgeShape).padding(horizontal = 9.dp, vertical = 3.dp), color = foreground(statusColor), fontSize = 12.sp)
-                Text("${state.host.ifBlank { "—" }}:${state.port.ifBlank { "—" }}", color = LocalCompanionTokens.current.textSecondary, fontSize = 13.sp)
+                Text(statusText, modifier = Modifier.background(statusColor, LocalCompanionTokens.current.badgeShape).padding(horizontal = 9.dp, vertical = 3.dp), color = foreground(statusColor), style = LocalCompanionTypography.current.badge)
+                Text("${state.host.ifBlank { "—" }}:${state.port.ifBlank { "—" }}", color = LocalCompanionTokens.current.textSecondary, style = LocalCompanionTypography.current.supporting)
             }
             if (state.mode == ConnectionMode.LAN) {
                 Column(
@@ -180,7 +180,7 @@ private fun ConnectionPage(state: CompanionShellState, actions: CompanionShellAc
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     ShellButton("掃描 QR 並配對", onClick = actions.scanQr, primary = true, enabled = state.connection != WebConnectionState.LOADING, modifier = Modifier.fillMaxWidth(), tall = true)
-                    Text("掃描桌面端產生的 QR 碼，會自動選擇可連線的 LAN 位址。", color = LocalCompanionTokens.current.textSecondary, fontSize = 13.sp)
+                    Text("掃描桌面端產生的 QR 碼，會自動選擇可連線的 LAN 位址。", color = LocalCompanionTokens.current.textSecondary, style = LocalCompanionTypography.current.supporting)
                     if (state.paired) ShellButton("連接已配對的桌面端", onClick = actions.reconnectLan, primary = true, enabled = state.connection != WebConnectionState.LOADING)
                     if (state.webConnected) ShellButton("中斷連線", onClick = actions.disconnect)
                 }
@@ -209,7 +209,7 @@ private fun ConnectionPage(state: CompanionShellState, actions: CompanionShellAc
                     ShellButton("返回區域網路 (LAN) 模式", onClick = { actions.selectMode(ConnectionMode.LAN) }, primary = true)
                 }
             }
-            state.error?.let { Text(it, color = StatusColors.danger, fontSize = 13.sp) }
+            state.error?.let { Text(it, color = StatusColors.danger, style = LocalCompanionTypography.current.supporting) }
             if (!state.webConnected) ShellButton("返回主畫面", onClick = { actions.selectPage(OfflinePage.TELEMETRY) })
             Spacer(Modifier.heightIn(min = 24.dp))
             ConnectionDiagnostics(state)
@@ -239,8 +239,9 @@ private fun ConnectionDiagnostics(state: CompanionShellState) {
 @Composable
 private fun DiagnosticLine(label: String, value: String) {
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(label, modifier = Modifier.weight(1f), color = LocalCompanionTokens.current.textSecondary, fontSize = 12.sp)
-        Text(value, modifier = Modifier.weight(2f), color = LocalCompanionTokens.current.text, fontSize = 12.sp)
+        // companion-diagnostics dt/dd are body text, not instrument-readout-label/value.
+        Text(label, modifier = Modifier.weight(1f), color = LocalCompanionTokens.current.textSecondary, style = MaterialTheme.typography.bodySmall)
+        Text(value, modifier = Modifier.weight(2f), color = LocalCompanionTokens.current.text, style = MaterialTheme.typography.bodySmall)
     }
 }
 
@@ -249,7 +250,8 @@ private fun ShellField(label: String, value: String, onChange: (String) -> Unit)
     OutlinedTextField(
         value = value,
         onValueChange = onChange,
-        label = { Text(label) },
+        label = { Text(label, style = MaterialTheme.typography.bodySmall) },
+        textStyle = MaterialTheme.typography.bodyLarge,
         modifier = Modifier.fillMaxWidth(),
         singleLine = true,
         shape = LocalCompanionTokens.current.controlShape,
@@ -292,7 +294,7 @@ private fun ShellButton(
             shape = LocalCompanionTokens.current.controlShape,
             border = BorderStroke(1.dp, LocalCompanionTokens.current.controlBorder),
             colors = ButtonDefaults.outlinedButtonColors(contentColor = LocalCompanionTokens.current.textSecondary),
-        ) { Text(label, fontSize = 14.sp) }
+        ) { Text(label, style = MaterialTheme.typography.labelLarge) }
     }
 }
 
