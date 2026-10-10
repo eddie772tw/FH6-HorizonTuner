@@ -1,5 +1,14 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-10-10 / PR #504 CVT 審查契約與 Companion 修補（Codex as Codex）
+
+- **新審查重現**：新增四個 Rust fixtures，於修補前重現 canonical `is_electric` 漏判 EV+CVT、重複／衝突拼字仍可保存、等長窗先 dense 後 sparse 掉成 7 samples、fractional byte controls 被接受；兩個 mounted Companion tests 重現 Engine target 缺失與要求 CVT 執行已停用的 ICE measurement。
+- **Rust owner**：qualification／save 改用既有 `TuningCarParams` serde 語意，兩種合法動力拼字共用結果，重複／衝突欄位明確拒絕。最長窗同時長時選較多 samples，保留排除幀邊界與 strictly-longer sparse policy；byte controls 只接受有限範圍內整數，不改原始單位或四捨五入。
+- **Companion**：共用 `companion-engine` 外層 section，CVT／discrete 導航均實際 scroll 到目前 panel。Gearing 使用既有 CVT unavailable 訊息，即使收到 stale discrete gearing 也不顯示數值／要求 ICE measurement。未改 Step1 或語系檔，未混入其他 PR。
+- **驗收界線**：新增測試全為 synthetic／DOM 契約，沒有新物理公式、真實 CVT capture 或 solver 完成宣稱。保存／workflow 的合法與拒絕結果由產品 HTTP 入口驗證；日期 Journal 條目全部保留。
+- **最終 Gate**：Cargo default 196 passed／2 ignored、no-HUD 188 passed／2 ignored（含 doctest），CVT 專項 13 tests；Vitest 198 files／1,748 tests passed、1 skipped。TypeScript／Vite、Rust binaries build、Clippy all-targets（既存 warnings）、兩個 manifest fmt、Ruff check／format、版本／路徑大小寫與 diff check 通過。
+- **整合紀錄**：重新讀取 Issue comment `6093430484` 與 review `5477593015`；cold-read thread 已由 Reviewer 解除，本輪不 resolve 他人 thread。review `5477570385` 對先前 #499／#504 heads 的 read-only merge-tree 報告六項內容衝突（Rust workflow、tuning README、TuneSessionProvider、TuningView 與兩個 EV／workflow transport tests）。待其中一支另經授權合併後，後者需保留 setup/evidence invalidation 與 CVT 排除兩組保護並跑 fresh CI；本輪僅記錄，未 merge／rebase 其他分支。
+
 ## 2026-10-10 / PR #504 saved CVT cold replay 唯讀修補（Codex as Codex）
 
 - **審查與重現**：`SavedCvt` 未沿用 saved ICE／EV 的缺庫檢查，`Connection::open` 在 cold CLI／MCP 失敗查詢前會留下零位元組的 `telemetry_sessions.db`。新增兩個契約測試於修正前均失敗，精確重現資料夾由空變成新 DB。

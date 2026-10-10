@@ -8,6 +8,8 @@
 
 `isElectric` 維持原動力類型語意。新增可選的 `transmission: { type, capability }`；未提供時完整沿用既有 ICE／EV 設定、capture、儲存與 replay。明確 `type: discrete` 使用原路徑。`type: cvt` 由使用者選擇，不從車名、gear 1／2 或輪速推斷。
 
+CVT qualification／save 直接使用 Rust `TuningCarParams` 的 serde 動力語意；`is_electric` 與 `isElectric` 皆可單獨表示 EV。兩個拼字同時提供則依 typed contract 拒絕，避免衝突／重複欄位得到歧義資格。
+
 | CVT capability | Rust foundation 結果 |
 | --- | --- |
 | `unknown` 或未提供 | missing：需要確認遊戲可見能力 |
@@ -38,11 +40,13 @@
 | `units` | 固定 `{ timestamp: "ms", speed: "m/s", rpm: "rpm", controls: "byte", slip: "normalized-ratio" }`；不猜測／自動換算 |
 | `frames` | 1–30000 筆，包含 timestampMs、identity、configurationId、speedMps、engineRpm、throttle、brake、clutch、handbrake、四輪 normalizedSlip、gear、isRaceOn |
 
-控制輸入為原生 0–255 byte；滑移為 Forza normalized ratio，不能當物理滑移百分比。原始 UDP offset／layout 沒有變更。正規化以 Rust 解析契約為準；capture producer 必須保留原始檔與轉換來源。
+控制輸入為原生 0–255 byte，必須有限且為整數；JSON `255.0` 有效，`254.5` 無效，不四捨五入或重新解讀單位。滑移為 Forza normalized ratio，不能當物理滑移百分比。原始 UDP offset／layout 沒有變更。正規化以 Rust 解析契約為準；capture producer 必須保留原始檔與轉換來源。
 
 資格結果包含 `captureStatus`（qualified／missing／invalid／stale／unsupported）、具 `status/code/field` 的 diagnostics、最長連續時間與該窗樣本數。它不讀 wall clock，不推測資料年齡；stale 指當前車輛、PI/Class、設定或能力與來源不一致。時間／version 未知本身保持未知，不捏造 age。
 
 `cvt-qualification/v1` 的保守資料安全政策：時間必須嚴格增加、相鄰間隔不超過 250ms；所有身份與設定一致。只計入至少 5m/s、有效 RPM、throttle ≥250、煞車／離合／手煞車為零、race on、前進檔、四輪 normalized slip 絕對值 ≤0.1 的區段。gear 改變、RPM 相鄰變化超過 10%、速度下降或任何排除幀都切斷區段。最長區段至少 1000ms／30 筆。這些是待實車校準的安全門檻，不是已驗證 CVT 物理常數；資料斷流或倒退會 invalid，不能拼接短窗。
+
+若最長區段的時間長度相同，保留 sample count 較大的區段；前後順序不能改變資格。排除幀仍切斷區段，嚴格較長的 sparse window 政策不變。
 
 ## 保存與重播
 
@@ -62,5 +66,9 @@
 2. 以實車來源取得可信 CVT ratio 限位，驗證安全政策是否保留有效 WOT RPM-speed 區段、排除起步／打滑／離合／煞車／不穩定區段；明列單位與紀錄連續性。
 3. 在獨立 solver 切片驗證終傳 ratio preview、可信限位、不可達目標與不足資料的診斷，才可開啟 applicable recommendation。固定／模擬兩段及 EV+CVT 各需明確產品契約與來源驗收。
 4. 桌面／Companion／CLI／MCP 的同資料 replay 結果一致，再執行遊戲內套用與重測。沒有以上證據，Issue #434 保持 open。
+
+## 並行 PR 整合紀錄
+
+[Review 5477570385](https://github.com/eddie772tw/FH6-HorizonTuner/pull/504#pullrequestreview-5477570385) 對先前 #499／#504 heads 的 read-only merge-tree 預覽發現六項內容衝突，涉及 Rust workflow、tuning README、TuneSessionProvider、TuningView 與兩個 EV／workflow transport tests。這份 foundation 不合併其他 PR。待其中一支另經授權合併後，後者需同步主線，逐處保留 setup/evidence invalidation 與 CVT 排除兩組保護，重跑雙方契約與新 head CI；不能整段選 ours／theirs。這是後續整合要求，不代表本分支接受合併或 Issue 已完成。
 
 本 foundation 不新增最佳終傳公式、預測極速、預設 Rmin/Rmax、μ／效率、賽事偏置或未校準係數；舊理論留言只作研究背景。

@@ -120,7 +120,7 @@ export default function CompanionTuning({ state, disabled, onCommand }: Props) {
       </details>
     </section>
     <div className="companion-tuning-results"><ChassisResults result={snapshot.results.chassis} /><AlignmentResults result={snapshot.results.alignment} /></div>
-    {usesCvt(profile) ? <CvtFoundationPanel result={snapshot.results.cvt} t={t} /> : <section id="companion-engine"><CompanionMeasurement measurement={measurement} disabled={disabled} onCommand={onCommand} /></section>}
-    <GearingResults result={snapshot.results.gearing} measurementPhase={measurement.phase} />
+    <section id="companion-engine">{usesCvt(profile) ? <CvtFoundationPanel result={snapshot.results.cvt} t={t} /> : <CompanionMeasurement measurement={measurement} disabled={disabled} onCommand={onCommand} />}</section>
+    <GearingResults result={snapshot.results.gearing} measurementPhase={measurement.phase} unavailableMessage={usesCvt(profile) ? t('CVT recommendations are unavailable pending real capture and solver validation.') : undefined} />
   </div>;
 }

@@ -218,7 +218,14 @@ pub fn evaluate(profile: &Value, snapshot: &Value, raw: Option<&Value>) -> Found
             return r.finish();
         }
     };
-    if selection.kind != TransmissionType::Cvt || profile["isElectric"] == true {
+    let powertrain: super::TuningCarParams = match serde_json::from_value(profile.clone()) {
+        Ok(profile) => profile,
+        Err(_) => {
+            r.issue(Status::Invalid, "profile-invalid", "profile");
+            return r.finish();
+        }
+    };
+    if selection.kind != TransmissionType::Cvt || powertrain.is_electric == Some(true) {
         r.issue(
             Status::Unsupported,
             "powertrain-transmission-combination",
@@ -421,7 +428,7 @@ pub fn evaluate(profile: &Value, snapshot: &Value, raw: Option<&Value>) -> Found
             || rpm < 0.0
             || [throttle, brake, clutch, handbrake]
                 .iter()
-                .any(|v| !(0.0..=255.0).contains(v))
+                .any(|v| !(0.0..=255.0).contains(v) || v.fract() != 0.0)
         {
             r.issue(Status::Invalid, "channel-invalid", "frames");
             since = None;
@@ -474,8 +481,11 @@ pub fn evaluate(profile: &Value, snapshot: &Value, raw: Option<&Value>) -> Found
         previous_loaded = Some((rpm, speed, f.gear.unwrap()));
         let start = *since.get_or_insert(t);
         segment_count += 1;
-        if t - start >= r.longest_continuous_ms {
-            r.longest_continuous_ms = t - start;
+        let duration = t - start;
+        if duration > r.longest_continuous_ms
+            || (duration == r.longest_continuous_ms && segment_count > longest_count)
+        {
+            r.longest_continuous_ms = duration;
             longest_count = segment_count;
         }
     }

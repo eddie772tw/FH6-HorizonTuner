@@ -174,6 +174,144 @@ fn qualified_hygiene_never_claims_a_solver_or_applicable_result() {
     }
 }
 #[test]
+fn electric_profile_spellings_share_workflow_and_save_qualification() {
+    let temp = tempfile::tempdir().unwrap();
+    let app = App::new(temp.path()).unwrap();
+    for field in ["isElectric", "is_electric"] {
+        for electric in [false, true] {
+            let mut request = synthetic();
+            request["profile"]
+                .as_object_mut()
+                .unwrap()
+                .remove("isElectric");
+            request["profile"][field] = json!(electric);
+            let output = run(request.clone());
+            assert_eq!(
+                call(&app, "/api/tuning/workflow", request.clone()).unwrap(),
+                output
+            );
+            assert_eq!(
+                output["cvt"]["captureStatus"],
+                if electric { "unsupported" } else { "qualified" },
+                "{field}={electric}"
+            );
+            assert_eq!(
+                has(&output, "powertrain-transmission-combination"),
+                electric
+            );
+            let saved = call(&app, "/api/tuning/cvt-evidence", request);
+            if electric {
+                assert!(saved.is_err(), "EV+CVT must not be saved: {field}");
+            } else {
+                assert_eq!(
+                    saved.unwrap()["qualification"]["captureStatus"],
+                    "qualified"
+                );
+            }
+        }
+    }
+}
+#[test]
+fn duplicate_powertrain_spellings_cannot_qualify_or_save_ambiguous_evidence() {
+    let temp = tempfile::tempdir().unwrap();
+    let app = App::new(temp.path()).unwrap();
+    for (camel, canonical) in [(false, true), (true, false), (false, false), (true, true)] {
+        let mut request = synthetic();
+        request["profile"]["isElectric"] = json!(camel);
+        request["profile"]["is_electric"] = json!(canonical);
+        let workflow: WorkflowRequest = serde_json::from_value(request.clone()).unwrap();
+        assert!(calculate_workflow(workflow).is_err());
+        assert!(call(&app, "/api/tuning/workflow", request.clone()).is_err());
+        let qualification = cvt::evaluate(
+            &request["profile"],
+            &request["inputSnapshot"],
+            Some(&request["evidence"]["capture"]),
+        );
+        assert_eq!(qualification.capture_status, cvt::Status::Invalid);
+        assert!(call(&app, "/api/tuning/cvt-evidence", request).is_err());
+    }
+}
+#[test]
+fn equal_duration_windows_keep_the_larger_sample_count_in_either_order() {
+    let temp = tempfile::tempdir().unwrap();
+    let app = App::new(temp.path()).unwrap();
+    for reverse in [false, true] {
+        let mut request = synthetic();
+        let dense = request["evidence"]["capture"]["frames"]
+            .as_array()
+            .unwrap()
+            .clone();
+        let sparse: Vec<_> = (0..=6)
+            .map(|i| {
+                let mut frame = dense[0].clone();
+                frame["timestampMs"] = json!(i * 200);
+                frame
+            })
+            .collect();
+        let (first, mut second) = if reverse {
+            (sparse, dense)
+        } else {
+            (dense, sparse)
+        };
+        let mut excluded = first.last().unwrap().clone();
+        excluded["timestampMs"] = json!(1220);
+        excluded["throttle"] = json!(0);
+        let mut frames = first;
+        frames.push(excluded);
+        for frame in &mut second {
+            frame["timestampMs"] = json!(frame["timestampMs"].as_f64().unwrap() + 1240.0);
+        }
+        frames.extend(second);
+        request["evidence"]["capture"]["frames"] = json!(frames);
+        let out = run(request.clone());
+        assert_eq!(
+            out["cvt"]["captureStatus"], "qualified",
+            "reverse={reverse}"
+        );
+        assert_eq!(out["cvt"]["longestContinuousMs"], 1200.0);
+        assert_eq!(out["cvt"]["acceptedSampleCount"], 61);
+        assert_eq!(
+            call(&app, "/api/tuning/cvt-evidence", request.clone()).unwrap()["qualification"],
+            out["cvt"]
+        );
+        if !reverse {
+            // The strictly longer sparse-window policy is unchanged by the tie fix.
+            let frames = request["evidence"]["capture"]["frames"]
+                .as_array_mut()
+                .unwrap();
+            let mut extra = frames.last().unwrap().clone();
+            extra["timestampMs"] = json!(2640);
+            frames.push(extra);
+            let sparse = run(request.clone());
+            assert_eq!(sparse["cvt"]["longestContinuousMs"], 1400.0);
+            assert_eq!(sparse["cvt"]["acceptedSampleCount"], 8);
+            assert!(has(&sparse, "continuous-loaded-window-required"));
+            assert!(call(&app, "/api/tuning/cvt-evidence", request).is_err());
+        }
+    }
+}
+#[test]
+fn byte_controls_reject_fractional_values_without_rounding() {
+    for (field, value) in [
+        ("throttle", 254.5),
+        ("brake", 0.5),
+        ("clutch", 0.5),
+        ("handbrake", 0.5),
+    ] {
+        let mut request = synthetic();
+        for frame in request["evidence"]["capture"]["frames"]
+            .as_array_mut()
+            .unwrap()
+        {
+            frame[field] = json!(value);
+        }
+        let out = run(request);
+        assert_eq!(out["cvt"]["captureStatus"], "invalid", "{field}");
+        assert!(has(&out, "channel-invalid"));
+    }
+    assert_eq!(run(synthetic())["cvt"]["captureStatus"], "qualified");
+}
+#[test]
 fn explicit_mode_and_capabilities_cannot_enter_ice_or_ev_models() {
     for (cap, code) in [
         ("unknown", "capability-unknown"),
