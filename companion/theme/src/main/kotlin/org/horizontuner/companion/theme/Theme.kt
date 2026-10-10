@@ -12,6 +12,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalDensity
 
 /** Maps existing design-system CSS tokens; pages never select cores or invent colors. */
 data class CompanionTokens(
@@ -88,7 +90,12 @@ fun HalfmoonTheme(theme: VisualTheme = VisualTheme(), content: @Composable () ->
         onBackground = tokens.text, onSurface = tokens.text, onSurfaceVariant = tokens.textSecondary,
         outline = tokens.border, error = StatusColors.danger,
     )
-    val typography = remember(theme.core) { companionTypography(theme.core) }
+    val density = LocalDensity.current
+    val typography = remember(theme.core, density) {
+        companionTypography(theme.core, CompanionFontResolver { stack, sizeSp ->
+            nativeFontFamily(stack, with(density) { sizeSp.sp.toDp().value })
+        })
+    }
     CompositionLocalProvider(LocalCompanionTokens provides tokens, LocalCompanionTypography provides typography) {
         MaterialTheme(colorScheme = scheme, shapes = Shapes(small = tokens.controlShape, medium = tokens.panelShape, large = tokens.panelShape), typography = typography.material, content = content)
     }

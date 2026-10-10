@@ -18,6 +18,7 @@ android {
     buildFeatures {
         compose = true
     }
+    sourceSets.getByName("test").resources.srcDirs("src/main/res", "src/main/assets")
 }
 
 kotlin {

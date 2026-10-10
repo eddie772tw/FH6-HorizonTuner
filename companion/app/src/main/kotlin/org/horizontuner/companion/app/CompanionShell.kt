@@ -213,6 +213,7 @@ private fun ConnectionPage(state: CompanionShellState, actions: CompanionShellAc
             if (!state.webConnected) ShellButton("返回主畫面", onClick = { actions.selectPage(OfflinePage.TELEMETRY) })
             Spacer(Modifier.heightIn(min = 24.dp))
             ConnectionDiagnostics(state)
+            FontNoticesButton()
         }
     }
 }

@@ -44,7 +44,7 @@ class CompanionTypographyTest {
         }
     }
 
-    @Test fun requestedFamiliesAndAuditedFallbackRemainExplicitAcrossSystemSwitches() {
+    @Test fun pureRoleDefaultsRemainExplicitOutsideAndroidThemeProvider() {
         for (core in CoreTheme.entries) {
             val roles = companionTypography(core)
             assertEquals(when (core.system) {

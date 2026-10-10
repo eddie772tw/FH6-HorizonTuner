@@ -28,7 +28,11 @@ Halfmoon 保留透明表面與圓角，Swiss 使用實色、細框與各核心�
 
 Typography 的 15 個 Material roles 均設定 family 與 `"tnum" 1, "lnum" 1`，與 `base.css` body 的數字特性繼承相符。heading／control／readout-label 各自保留 CSS 的 em tracking；Swiss Technical heading `.04em` 與 control `.025em` 分離。Shell 的標題、primary／outline buttons、selected tabs、badge、body、supporting、field 與 diagnostics 使用對應 roles。diagnostics 的 dt/dd 是 body，不套用 instrument label 的大寫／字距；目前 shell 沒有原生遙測儀表，readout roles 供儀表用途，不改調校或新增 UI。
 
-Requested family 集中為 Halfmoon Outfit→Inter、Swiss Inter、Rhine MiSans；原生 body **仍使用明示的 Android sans-serif fallback**。Halfmoon instrument 依現有 CSS 使用 platform monospace，Swiss／Rhine instrument 沿用 body family。既有素材／授權盤點、七 core 的 mapping 與可測 fallback 差距見 [typography 切片報告](../../docs/frontend/companion-typography-fidelity/README.md)。沒有新增字體、轉換 MiSans 或接受新條款；這個角色切片不代表原生字形或像素一致性已驗收。
+Requested family 集中為 Halfmoon Outfit→Inter、Swiss Inter、Rhine MiSans。`HalfmoonTheme` 的原生 resolver 實際載入原始 Outfit／Inter variable TTF：每個 Compose weight descriptor 透過 Android `CustomFallbackBuilder` 建立完整 glyph fallback（Halfmoon Outfit→Inter→system sans-serif；Swiss Inter→system sans-serif）。中文仍由 Android system fallback 提供；Halfmoon instrument 保持 platform monospace。角色最終字級經 `LocalDensity` 的 sp→dp 轉換後設定 Inter `opsz`（14–32），`wght`／native style 同步為 100–900 的對應權重。重新提供 typography 不重建 session 或 WebView；沒有修改 bridge、調校或 Web CSS。
+
+完整原始 OFL／copyright／Inter metadata 隨 APK assets 保留，可從 Connection 頁「字型授權」離線捲動閱讀。來源、版本、binary SHA-256 與 APK verification 見[字體資源／resolver 切片報告](../../docs/frontend/companion-native-fonts/README.md)。`companionTypography` 的可注入 resolver 預設為 pure role tests／provider 外的明示 SansSerif；production provider 會傳入原生實作。七 core 與 badge mapping 沿用 [#503 typography 切片](../../docs/frontend/companion-typography-fidelity/README.md)。
+
+Rhine **仍是待核實的 system SansSerif fallback**，不代表永久接受該字形／metrics；沒有下载、轉檔或拼接 MiSans。`tnum` 實際 GSUB substitution／hmtx 等寬與字型 axes 可在 JVM 核對；兩字型沒有獨立 `lnum` feature，使用其預設 lining digits，保留 `"lnum" 1` 設定。未有裝置證據前不宣稱 rendered glyph、CJK baseline、truncation 或 native／WebView 視覺一致。
 
 ## 驗證
 

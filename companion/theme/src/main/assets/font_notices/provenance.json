@@ -1,0 +1,44 @@
+{
+  "format": 1,
+  "fonts": [
+    {
+      "family": "Outfit",
+      "resource": "res/font/outfit_variable.ttf",
+      "source": "https://github.com/Outfitio/Outfit-Fonts/blob/902773808eb372f70fb34e8946dd1ffe604efc79/fonts/variable/Outfit%5Bwght%5D.ttf",
+      "commit": "902773808eb372f70fb34e8946dd1ffe604efc79",
+      "bytes": 110884,
+      "gitBlobSha1": "466d6245f9582df39bf73da91a8b3c938fd061cd",
+      "binarySha256": "fc7287273e66929776e2ba54f144fe699080bec29f61bf649d70d871468aeade",
+      "internalVersion": "Version 1.100;gftools[0.9.27]",
+      "copyright": "Copyright 2021 The Outfit Project Authors (https://github.com/Outfitio/Outfit-Fonts)",
+      "license": "SIL Open Font License 1.1",
+      "licenseSource": "https://github.com/Outfitio/Outfit-Fonts/blob/902773808eb372f70fb34e8946dd1ffe604efc79/OFL.txt",
+      "licenseAsset": "assets/font_notices/Outfit-OFL.txt",
+      "licenseSha256": "c676351bf8576b9aba743cd5eaa8c0e7ee0d51f805d720447b4df4ddb6a2e416"
+    },
+    {
+      "family": "Inter",
+      "resource": "res/font/inter_variable.ttf",
+      "source": "https://github.com/google/fonts/blob/e1d6480102fed30739fead0faee463101f892c8f/ofl/inter/Inter%5Bopsz,wght%5D.ttf",
+      "commit": "e1d6480102fed30739fead0faee463101f892c8f",
+      "upstreamCommit": "66647c0bbbe41a850d79d9c76fb13add3378940f",
+      "bytes": 876576,
+      "gitBlobSha1": "047c92f6e2212473dc436020afed689527076d44",
+      "binarySha256": "29160a80ff49ddcab2c97711247e08b1fab27a484a329ce8b813d820dc559031",
+      "internalVersion": "Version 4.001;git-66647c0bb",
+      "copyright": "Copyright 2016 The Inter Project Authors (https://github.com/rsms/inter)",
+      "license": "SIL Open Font License 1.1",
+      "licenseSource": "https://github.com/google/fonts/blob/e1d6480102fed30739fead0faee463101f892c8f/ofl/inter/OFL.txt",
+      "licenseAsset": "assets/font_notices/Inter-OFL.txt",
+      "licenseSha256": "5b9321a4298cfeb6b34354164a1c3afc3db114569984c502b9b35d988fd58c57",
+      "metadataSource": "https://github.com/google/fonts/blob/e1d6480102fed30739fead0faee463101f892c8f/ofl/inter/METADATA.pb",
+      "metadataAsset": "assets/font_notices/Inter-METADATA.pb",
+      "metadataSha256": "79e4721ef4f72251c6080a40dfd9efb6728b4df1fc690f0c70eb4b1b5303a5b0",
+      "archiveLabelIsNotInternalVersion": "Inter-4.1-GoogleFonts.zip"
+    }
+  ],
+  "unmodified": true,
+  "fontBytesTotal": 987460,
+  "noticeUi": "Connection > 字型授權 (offline, full Outfit OFL / Inter OFL / Inter metadata)",
+  "rhineMiSans": "NOT_BUNDLED; source/version/license still pending independent verification"
+}

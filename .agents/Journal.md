@@ -693,3 +693,10 @@
 - **Evidence**：完整 Companion stylesheet／status markup 的 CSSOM 字重與來源字距核對，七 core×日夜×三種狀態共 42 cases 通過。七 core mapping test 先重現 expected 400／actual 600，修正後純 JVM 15 passed／0 failures、errors、skipped；前端 198 passed files／1747 passed tests／1 skipped；diff check 通過。
 - **Boundary**：只修 Halfmoon badge weight，control／selected-tab／heading／readout 原值不變。CSSOM custom-property chain 明確解析，並非字形或像素驗收；Chromium sandbox helper 配置阻止啟動，未改系統安全設定。實際字型素材／CJK／裝置 QA 缺口仍保留，新 head Android CI 證據記錄於 #503 PR body。
 - **Skills**：`halfmoon-design-system`、`pr-author-maintainer`。
+
+## 2026-10-10 / Issue #485 原始 Outfit／Inter resources 與原生 resolver（Codex as Codex）
+
+- **Learning**：Compose font list 的 weight/style matching 不是 CSS 缺 glyph fallback；Compose 1.9.4 的 loaded Android Typeface wrapper 也不依 style request 重選 weight。每個 weight descriptor 要提供 Android `CustomFallbackBuilder` 完整 ordered chain，並讓 `wght`、native Font／Typeface style 一致。Inter `opsz` 要在角色最後字級確定後設定；其 Google Fonts archive 4.1 不等於 SFNT 內部 4.001。
+- **Evidence**：固定官方 commits 的原始 Outfit 110884／Inter 876576 bytes，Git blob SHA-1 與使用者提供值一致，另計 binary SHA-256；完整原始 OFL／copyright／Inter metadata 隨 APK assets 保留。實際 SFNT name／fvar／GSUB tnum→hmtx 等寬與 resolver／七 core mapping 的純 JVM 10 tests pass；frontend 1747 passed／1 skipped。精確 head Android unit／lint／assemble、APK entries 與同 runner base APK 增量於 stacked Draft PR 保留，詳見 `docs/frontend/companion-native-fonts/README.md`。
+- **Boundary**：基於 #503 `b294d634`，Depends on #503／#498，Related to #485。Rhine MiSans 來源／font 協議／4.003 仍待核實，未下載／轉換 shards，不接受永久 SansSerif；兩字型預設 lining、沒有獨立 lnum tag。無 device，mixed CJK／Latin／baseline／truncation／native＋WebView 視覺 NOT_RUN；未改 session、bridge、安全、調校、Web 設計或安裝 SDK。
+- **Skills**：`halfmoon-design-system`、`pr-author-maintainer`。
