@@ -46,3 +46,6 @@
 ## 2024-05-24 - [Internationalize ARIA Labels]
 **Learning:** Hardcoding English strings in ARIA labels (e.g., `aria-label="Close"`) breaks accessibility for non-English screen reader users.
 **Action:** Always wrap ARIA label strings in translation functions (e.g., `aria-label={t("Close")}`) when working within i18n-supported components to ensure universal accessibility.
+## 2024-03-24 - Tooltips on Disabled Buttons
+**Learning:** In React, disabled HTML buttons completely swallow pointer events (like hover), preventing standard browser tooltips (the `title` attribute) from appearing. This hides critical context about *why* an action is unavailable from users.
+**Action:** When a button is conditionally disabled for reasons that might not be obvious, wrap it in a `<span>` (e.g., `<span className="d-inline-flex" title={...} style={{ cursor: 'not-allowed' }}>`) and apply `pointerEvents: 'none'` to the disabled `<button>` itself. This allows the wrapper to catch hover events and display the tooltip effectively.
