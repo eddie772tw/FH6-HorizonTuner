@@ -10,15 +10,15 @@ import org.junit.Test
 class CompanionTypographyTest {
     // CSS design-systems/{halfmoon,swiss,rhine}.css: heading/control/badge/readout are separate roles.
     @Test fun allSevenCoresMatchCssRoleWeightsTrackingAndSectionSizes() {
-        data class Expected(val core: CoreTheme, val headingWeight: Int, val heading: Float, val control: Float, val badge: Float, val readout: Float)
+        data class Expected(val core: CoreTheme, val headingWeight: Int, val heading: Float, val controlWeight: Int, val control: Float, val badgeWeight: Int, val badge: Float, val readout: Float)
         val cases = listOf(
-            Expected(CoreTheme.DEFAULT, 600, .025f, 0f, 0f, .025f),
-            Expected(CoreTheme.MODERN, 600, .025f, 0f, 0f, .025f),
-            Expected(CoreTheme.ELEGANT, 600, .025f, 0f, 0f, .025f),
-            Expected(CoreTheme.SWISS, 700, .04f, .025f, .025f, .08f),
-            Expected(CoreTheme.EDITORIAL, 600, 0f, 0f, 0f, .025f),
-            Expected(CoreTheme.CONTRAST, 700, .02f, .02f, .02f, .08f),
-            Expected(CoreTheme.RHINE, 600, .015f, .015f, .025f, .025f),
+            Expected(CoreTheme.DEFAULT, 600, .025f, 400, 0f, 400, 0f, .025f),
+            Expected(CoreTheme.MODERN, 600, .025f, 400, 0f, 400, 0f, .025f),
+            Expected(CoreTheme.ELEGANT, 600, .025f, 400, 0f, 400, 0f, .025f),
+            Expected(CoreTheme.SWISS, 700, .04f, 600, .025f, 600, .025f, .08f),
+            Expected(CoreTheme.EDITORIAL, 600, 0f, 600, 0f, 600, 0f, .025f),
+            Expected(CoreTheme.CONTRAST, 700, .02f, 600, .02f, 600, .02f, .08f),
+            Expected(CoreTheme.RHINE, 600, .015f, 600, .015f, 600, .025f, .025f),
         )
         assertEquals(CoreTheme.entries.toSet(), cases.map { it.core }.toSet())
         for (case in cases) {
@@ -27,12 +27,15 @@ class CompanionTypographyTest {
                 assertEquals(case.headingWeight, titleMedium.fontWeight!!.weight)
                 assertEquals(case.heading.em, titleMedium.letterSpacing)
                 assertEquals(if (case.core == CoreTheme.EDITORIAL) 16.8.sp else 16.sp, titleMedium.fontSize)
-                assertEquals(if (case.core.system == DesignSystem.HALFMOON) FontWeight.Normal else FontWeight.SemiBold, labelLarge.fontWeight)
-                for (control in listOf(labelLarge, labelMedium, labelSmall)) assertEquals(case.control.em, control.letterSpacing)
+                for (control in listOf(labelLarge, labelMedium, labelSmall)) {
+                    assertEquals(case.controlWeight, control.fontWeight!!.weight)
+                    assertEquals(case.control.em, control.letterSpacing)
+                }
                 assertEquals(case.heading.em, headlineLarge.letterSpacing)
                 assertEquals(case.heading.em, titleSmall.letterSpacing)
             }
             assertEquals(case.readout.em, roles.readoutLabel.letterSpacing)
+            assertEquals(case.badgeWeight, roles.badge.fontWeight!!.weight) // Halfmoon normal=400; Swiss/Rhine=600.
             assertEquals(case.badge.em, roles.badge.letterSpacing) // Rhine .badge is .025em, not control .015em.
             assertEquals(11.sp, roles.readoutLabel.fontSize) // base.css: .6875rem
             assertEquals(FontWeight.SemiBold, roles.readoutLabel.fontWeight)
@@ -72,7 +75,6 @@ class CompanionTypographyTest {
             assertEquals(0.em, roles.readoutValue.letterSpacing) // label tracking must not spread the digits
             assertEquals(13.sp, roles.supporting.fontSize)
             assertEquals(12.sp, roles.badge.fontSize)
-            assertEquals(FontWeight.SemiBold, roles.badge.fontWeight)
         }
     }
 

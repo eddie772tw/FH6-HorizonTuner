@@ -35,7 +35,7 @@ data class CompanionTypography(
     fun readoutLabelText(text: String): String = if (uppercaseReadoutLabel) text.uppercase(Locale.ROOT) else text
 }
 
-/** CSS heading, control and readout tracking are independent, expressed in em at every size. */
+/** CSS heading, control, badge and readout roles are independent; tracking uses em at every size. */
 fun companionTypography(core: CoreTheme): CompanionTypography {
     val stack = when (core.system) {
         DesignSystem.HALFMOON -> CompanionFontStack.HALFMOON
@@ -57,6 +57,8 @@ fun companionTypography(core: CoreTheme): CompanionTypography {
     }
     // Swiss badges use control-tracking; Rhine .badge independently specifies .025em.
     val badgeTracking = if (core == CoreTheme.RHINE) .025f else controlTracking
+    // Halfmoon .badge uses --bs-font-weight-normal=400; Swiss/Rhine explicitly override to 600.
+    val badgeWeight = if (core.system == DesignSystem.HALFMOON) FontWeight.Normal else FontWeight.SemiBold
     val headingWeight = if (core == CoreTheme.SWISS || core == CoreTheme.CONTRAST) FontWeight.Bold else FontWeight.SemiBold
     val controlWeight = if (core.system == DesignSystem.HALFMOON) FontWeight.Normal else FontWeight.SemiBold
     val body = TextStyle(
@@ -82,7 +84,7 @@ fun companionTypography(core: CoreTheme): CompanionTypography {
         fontStack = stack,
         material = material,
         supporting = body.copy(fontSize = 13.sp),
-        badge = body.copy(fontSize = 12.sp, fontWeight = FontWeight.SemiBold, letterSpacing = badgeTracking.em),
+        badge = body.copy(fontSize = 12.sp, fontWeight = badgeWeight, letterSpacing = badgeTracking.em),
         selectedTab = control(14).copy(fontWeight = if (core.system == DesignSystem.SWISS) FontWeight.Bold else FontWeight.SemiBold),
         readoutLabel = body.copy(fontSize = 11.sp, fontWeight = FontWeight.SemiBold,
             letterSpacing = (if (core == CoreTheme.SWISS || core == CoreTheme.CONTRAST) .08f else .025f).em),

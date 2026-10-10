@@ -686,3 +686,10 @@
 - **Evidence**：七 core mapping test 加入 badge 字距欄位，先重現 Rhine expected `.025em`／actual `.015em`，分離 badge tracking 後純 JVM 15 passed、0 failures／errors／skipped；前端 198 passed files／1747 passed tests／1 skipped，diff check 通過。新 head 的 Android unit／lint／assemble 與 artifact 證據更新於 #503 PR body。
 - **Boundary**：只改 Rhine badge 字距；heading／control／readout 未改。Halfmoon 基底 badge 字重 400 與目前 native 600 的差距另外記錄；字體 fallback、裝置／native＋WebView 視覺 QA NOT_RUN 與 #498 stacked Draft 依賴維持。
 - **Skills**：`halfmoon-design-system`、`pr-author-maintainer`。
+
+## 2026-10-10 / PR #503 Halfmoon badge 字重審查修正（Codex as Codex）
+
+- **Learning**：Halfmoon 2.0.2 `.badge` 消費 normal=400，不能將 Swiss／Rhine 的 600 無條件套用。cores／shared／Companion CSS 與連線 status markup 沒有字重覆寫，badge weight 應獨立於 control role 管理。
+- **Evidence**：完整 Companion stylesheet／status markup 的 CSSOM 字重與來源字距核對，七 core×日夜×三種狀態共 42 cases 通過。七 core mapping test 先重現 expected 400／actual 600，修正後純 JVM 15 passed／0 failures、errors、skipped；前端 198 passed files／1747 passed tests／1 skipped；diff check 通過。
+- **Boundary**：只修 Halfmoon badge weight，control／selected-tab／heading／readout 原值不變。CSSOM custom-property chain 明確解析，並非字形或像素驗收；Chromium sandbox helper 配置阻止啟動，未改系統安全設定。實際字型素材／CJK／裝置 QA 缺口仍保留，新 head Android CI 證據記錄於 #503 PR body。
+- **Skills**：`halfmoon-design-system`、`pr-author-maintainer`。

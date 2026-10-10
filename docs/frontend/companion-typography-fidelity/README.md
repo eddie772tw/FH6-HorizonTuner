@@ -11,23 +11,25 @@
 
 Typography 從色彩／shape tokens 分離至 [`Typography.kt`](../../../companion/theme/src/main/kotlin/org/horizontuner/companion/theme/Typography.kt)。`HalfmoonTheme` 依 core 集中提供 Material 15 roles 與 supporting、badge、selected-tab、instrument readout roles；mode／配色不改字體契約。沒有改 receive-only bridge、cache、generation、配對、安全投影、status colors、48dp targets 或調校工作流。
 
-| Core | Requested body family | Heading weight／tracking | Control weight／tracking | Badge tracking | Readout-label tracking |
+| Core | Requested body family | Heading weight／tracking | Control weight／tracking | Badge weight／tracking | Readout-label tracking |
 | --- | --- | --- | --- | --- | --- |
-| Default／Modern／Elegant | Outfit→Inter | 600／.025em | 400／normal | normal | .025em |
-| Swiss Technical | Inter | 700／.04em | 600／.025em | .025em | .08em |
-| Swiss Editorial | Inter | 600／normal | 600／normal | normal | .025em |
-| Swiss Contrast | Inter | 700／.02em | 600／.02em | .02em | .08em |
-| Rhine Lab | Rhine MiSans | 600／.015em | 600／.015em | .025em | .025em |
+| Default／Modern／Elegant | Outfit→Inter | 600／.025em | 400／normal | 400／normal | .025em |
+| Swiss Technical | Inter | 700／.04em | 600／.025em | 600／.025em | .08em |
+| Swiss Editorial | Inter | 600／normal | 600／normal | 600／normal | .025em |
+| Swiss Contrast | Inter | 700／.02em | 600／.02em | 600／.02em | .08em |
+| Rhine Lab | Rhine MiSans | 600／.015em | 600／.015em | 600／.025em | .025em |
 
 來源：[`halfmoon.css`](../../../frontend/src/styles/design-systems/halfmoon.css)、[`swiss.css`](../../../frontend/src/styles/design-systems/swiss.css)、[`rhine.css`](../../../frontend/src/styles/design-systems/rhine.css)。Contrast 沒有覆寫 readout tracking，仍繼承 Swiss `.08em`，不能把 control 的 `.02em` 當作 readout tracking。
 
-2026-10-10 badge review 修正：原先 badge 由 control role 派生，誤使 Rhine badge tracking 為 `.015em`；`rhine.css` 的 `.badge` 明定 `.025em`，現在獨立映射。Swiss `.badge` 仍消費各 core 的 control tracking，Halfmoon 原生基底在此連線狀態上下文繼承 body 的 normal spacing。既有七 core mapping test 加入 badge 欄位與 Rhine `.025em` regression assertion；heading／control／readout 原值未改。此輪只處理字距；另核實 Halfmoon CSS 基底 badge 字重為 400、目前 native badge 為 600，這項字重差距另待切片範圍處置，沒有宣稱完整 badge 字重一致。
+2026-10-10 badge review 修正：原先 badge 由 control role 派生，誤使 Rhine badge tracking 為 `.015em`；`rhine.css` 的 `.badge` 明定 `.025em`，現在獨立映射。Swiss `.badge` 仍消費各 core 的 control tracking，Halfmoon 基底在此連線狀態上下文繼承 body 的 normal spacing。字重亦獨立映射：lockfile 的 Halfmoon 2.0.2 `css/halfmoon.css:1595,7546–7556` 使用 `--bs-badge-font-weight`→`--bs-font-weight-normal`→400，cores／shared／Companion CSS 沒有覆寫，連線 status badge 也沒有字重 utility；Swiss／Rhine `.badge` 明定 600。native 的 Halfmoon badge 因此從 600 修正為 400，其他系統維持 600。七 core mapping test 同時驗證 badge 字重／字距與各 control 字重／字距；control／selected-tab／heading／readout 原值未改。
+
+CSSOM 核對使用既有 Companion build 的完整 stylesheet 順序與連線 status markup，七 core×日夜×success／warning／danger 共 42 cases 通過；jsdom `getComputedStyle` 的字重 custom-property chain 另行明確解析，字距按 matching CSSOM declarations 核對。這是 cascade／角色契約證據，不是瀏覽器像素或字形驗收。本機 Chromium 因 sandbox helper 配置無法啟動；未修改系統安全設定，browser／裝置視覺 QA 仍 NOT_RUN。
 
 Section heading 沿用 native 的 16sp，Editorial 以既有 CSS 1.05rem 對應 16.8sp。readout label 依 [`base.css`](../../../frontend/src/styles/base.css) `.6875rem` 對應 11sp／600；Swiss 三 core 使用 uppercase，其餘保留文字。數值 tracking 為 normal；Halfmoon instrument family 依 CSS 為 platform monospace，Swiss／Rhine 為 body。值的預設大小為 native body 14sp，實際儀表可按用途指定大小；此 shell 尚無原生儀表，沒有新增測試畫面或遙測流程。
 
 Native body 14sp、small 12sp、supporting 13sp 沿用本來的 shell 階層。所有 roles 明示 `"tnum" 1, "lnum" 1`，對應 Web body 的全域 numeric inheritance，不把 readout-label 的字距施加於數字。unused Material display/headline/title-large/small 沿用 Material 預設大小與行高，明示本系統 family／weight／tracking，避免以後落回未映射的 Material 預設 family。
 
-[`CompanionShell.kt`](../../../companion/app/src/main/kotlin/org/horizontuner/companion/app/CompanionShell.kt) 的 primary 與 outline button 均用 control role；selected-tab 依 CSS 為 Halfmoon／Rhine 600、Swiss 700。status badge 為 12sp／600，與功能色分離；輸入值與 label 使用 body roles，diagnostics 依 [`companion.css`](../../../frontend/src/features/companion/companion.css) dt/dd 保持 body 字重／normal tracking，不誤套 instrument label 的 uppercase／600／字距。
+[`CompanionShell.kt`](../../../companion/app/src/main/kotlin/org/horizontuner/companion/app/CompanionShell.kt) 的 primary 與 outline button 均用 control role；selected-tab 依 CSS 為 Halfmoon／Rhine 600、Swiss 700。status badge 沿用 12sp，字重依上表獨立映射，與功能色分離；輸入值與 label 使用 body roles，diagnostics 依 [`companion.css`](../../../frontend/src/features/companion/companion.css) dt/dd 保持 body 字重／normal tracking，不誤套 instrument label 的 uppercase／600／字距。
 
 ## 字體素材與授權盤點（2026-10-10）
 
