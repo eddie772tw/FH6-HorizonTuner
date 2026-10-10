@@ -1,5 +1,13 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-10-10 / PR #504 saved CVT cold replay 唯讀修補（Codex as Codex）
+
+- **審查與重現**：`SavedCvt` 未沿用 saved ICE／EV 的缺庫檢查，`Connection::open` 在 cold CLI／MCP 失敗查詢前會留下零位元組的 `telemetry_sessions.db`。新增兩個契約測試於修正前均失敗，精確重現資料夾由空變成新 DB。
+- **最小修正**：先確認既有 DB，再以 SQLite read-only flags 查詢 `cvt-evidence/v1`，避免檢查後移除 DB 的情況建立新檔。原本 RoadStore 寫入路徑保留；僅共用既有文件查詢／kind 驗證。
+- **測試邊界**：CLI／MCP 各驗證缺庫、零位元組、損壞內容、有效 SQLite 但沒有 road table 四種錯誤，執行前後完整檔案清單與每檔位元組相同。正常 HTTP／MCP／CLI 保存重播仍一致，且主 DB 位元組不變；SQLite read-only WAL reader 的輔助檔生命週期不等於寫入 evidence，不能對仍可改動的 live DB 使用 `immutable=1`。參考 [SQLite WAL 官方文件](https://www.sqlite.org/wal.html#read_only_databases)。
+- **本地 Gate**：完整 Cargo default 192 passed／2 ignored、no-HUD 184 passed／2 ignored（含 doctest）；CVT 專項 9 tests。Vitest 197 files／1,746 tests passed、1 skipped；Rust binaries build、Clippy all-targets（既存 warnings）、兩個 manifest fmt、Ruff check／format、version consistency、tracked path case 與 diff check 通過。前端 source 無變動，沿用首版通過的 TypeScript／Vite build。
+- **範圍**：同一 foundation 專用分支；未混入 #498／#499／#501，未增加 CVT solver 或變更 ICE／EV 演算法；所有既有 Journal 日期條目保留。
+
 ## 2026-10-10 / Issue #434 CVT 能力分流與 Rust evidence foundation（Codex as Codex）
 
 - **來源／範圍**：`local`／`verified`；依審查留言 `6093430484` 從遠端 main `d4e0fe3762c613240f7d6902d07edcb212aa5926` 建立 `feat/issue-434-cvt-foundation`。採用 `physics-tuning-math`、`telemetry-udp-protocol`、`modular-refactoring`、`halfmoon-design-system`、`pr-author-maintainer`。不混入 PR #498／#499；Ruff 0.17 的主線 I001 僅修正 `scripts/validate_version_consistency.py` import 排序。

@@ -364,7 +364,12 @@ impl EvidenceService {
         }
         if super::cvt::selected(&input.profile) {
             if let Some(EvidenceRequest::SavedCvt { evidence_id }) = &input.evidence {
-                let saved = self.store.get(evidence_id, Some("cvt-evidence/v1"), None)?;
+                if !std::path::Path::new(&self.store.db_path).is_file() {
+                    return Err(ApiError::new(404, "Saved evidence database is unavailable"));
+                }
+                let saved = self
+                    .store
+                    .get_read_only(evidence_id, Some("cvt-evidence/v1"), None)?;
                 // Replay the immutable raw capture; saved qualification is never trusted.
                 input.evidence = Some(EvidenceRequest::CvtCapture {
                     capture: saved["capture"].clone(),

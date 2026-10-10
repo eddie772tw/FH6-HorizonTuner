@@ -48,7 +48,7 @@
 
 - `/api/tuning/workflow` 與 MCP `calculate_tuning_workflow` 共用 Rust owner；離線 `fh6-agent solve workflow --args-file request.json --data-dir <dir> --json` 使用相同判定。
 - 桌面本機 `/api/tuning/cvt-evidence` POST 接受包含 `profile`、`inputSnapshot` 與 raw `evidence` 的 request，只有 foundation qualification 通過才保存。保存 `cvt-evidence/v1` 的 immutable raw JSON，原始 null 時間／版本不變；資料庫 envelope 的建立時間不當 capture 時間。
-- 讀回使用 `evidence: { kind: "saved-cvt", evidenceId }`。每次從 raw 重新驗證，不信任保存的 qualification summary。CLI／MCP 的讀回維持唯讀。
+- 讀回使用 `evidence: { kind: "saved-cvt", evidenceId }`。每次從 raw 重新驗證，不信任保存的 qualification summary。缺庫先回報 unavailable，再以 SQLite read-only flags 開啟，避免 cold CLI／MCP lookup 建立空資料庫。缺庫、空庫、損壞庫或無 `road_documents` 的冷庫錯誤均不得新增檔案或修改原始位元組；正常 WAL replay 可有 SQLite 輔助檔生命週期，主資料庫與結果保持不變。
 - 本切片尚無 CVT 專用 live recorder／匯入嚮導；可追溯外部 raw 檔透過正式 workflow API／離線 CLI 驗證。現有 `tuning-capture/v1` 錄製檔仍原樣可讀，不能直接冒充新的 CVT 證據。
 - 舊 CLI／MCP quick solvers 仍是通用、未驗證的歷史數值契約，缺乏 CVT 選擇／證據欄位，不能作為 CVT 入口或證明。正式 CVT 結果只能經由 workflow。
 

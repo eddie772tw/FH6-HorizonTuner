@@ -51,6 +51,111 @@ fn call(app: &App, path: &str, body: Value) -> fh6_backend::error::ApiResult<Val
     })?;
     Ok(serde_json::from_slice(&response.body).unwrap())
 }
+fn filesystem_snapshot(
+    root: &std::path::Path,
+) -> std::collections::BTreeMap<std::path::PathBuf, Option<Vec<u8>>> {
+    fn visit(
+        root: &std::path::Path,
+        directory: &std::path::Path,
+        snapshot: &mut std::collections::BTreeMap<std::path::PathBuf, Option<Vec<u8>>>,
+    ) {
+        for entry in std::fs::read_dir(directory).unwrap() {
+            let path = entry.unwrap().path();
+            let directory = path.is_dir();
+            snapshot.insert(
+                path.strip_prefix(root).unwrap().to_owned(),
+                if directory {
+                    None
+                } else {
+                    Some(std::fs::read(&path).unwrap())
+                },
+            );
+            if directory {
+                visit(root, &path, snapshot);
+            }
+        }
+    }
+    let mut snapshot = std::collections::BTreeMap::new();
+    visit(root, root, &mut snapshot);
+    snapshot
+}
+fn saved_cvt_request() -> Value {
+    let mut request = synthetic();
+    request["evidence"] = json!({"kind":"saved-cvt","evidenceId":"missing"});
+    request
+}
+fn seed_cold_database(data: &std::path::Path, state: &str) {
+    let database = data.join("telemetry_sessions.db");
+    match state {
+        "missing" => (),
+        "empty" => std::fs::write(database, []).unwrap(),
+        "invalid" => std::fs::write(database, b"invalid database").unwrap(),
+        "no-road-table" => rusqlite::Connection::open(database)
+            .unwrap()
+            .execute_batch(
+                "CREATE TABLE sentinel (value TEXT); INSERT INTO sentinel VALUES ('preserve');",
+            )
+            .unwrap(),
+        _ => unreachable!(),
+    }
+}
+#[test]
+fn saved_cvt_cli_errors_do_not_create_or_modify_a_cold_database() {
+    for state in ["missing", "empty", "invalid", "no-road-table"] {
+        let temp = tempfile::tempdir().unwrap();
+        let data = temp.path().join("existing-empty-data-dir");
+        std::fs::create_dir(&data).unwrap();
+        seed_cold_database(&data, state);
+        let before = filesystem_snapshot(&data);
+        let output = std::process::Command::new(env!("CARGO_BIN_EXE_fh6-agent"))
+            .args([
+                "solve",
+                "workflow",
+                "--args",
+                &saved_cvt_request().to_string(),
+                "--data-dir",
+                data.to_str().unwrap(),
+                "--backend-url",
+                "http://127.0.0.1:1",
+                "--json",
+            ])
+            .output()
+            .unwrap();
+        assert!(!output.status.success());
+        assert_eq!(
+            filesystem_snapshot(&data),
+            before,
+            "Saved CVT CLI must be read-only even when lookup fails"
+        );
+    }
+}
+#[test]
+fn saved_cvt_mcp_errors_do_not_create_or_modify_a_cold_database() {
+    for state in ["missing", "empty", "invalid", "no-road-table"] {
+        let host = tempfile::tempdir().unwrap();
+        let mut app = App::new(host.path()).unwrap();
+        let data = tempfile::tempdir().unwrap();
+        let db_path = data.path().join("telemetry_sessions.db");
+        seed_cold_database(data.path(), state);
+        // A host can remain alive while its configured evidence store is absent.
+        std::sync::Arc::get_mut(&mut app)
+            .unwrap()
+            .tuning_evidence
+            .store
+            .db_path = db_path.to_string_lossy().into_owned();
+        let before = filesystem_snapshot(data.path());
+        let response = fh6_backend::mcp::McpServer::default().handle(&app, &json!({"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"calculate_tuning_workflow","arguments":saved_cvt_request()}})).unwrap().unwrap();
+        assert!(
+            response["result"]["isError"] == true || response["error"].is_object(),
+            "{response}"
+        );
+        assert_eq!(
+            filesystem_snapshot(data.path()),
+            before,
+            "Saved CVT MCP must be read-only even when lookup fails"
+        );
+    }
+}
 #[test]
 fn qualified_hygiene_never_claims_a_solver_or_applicable_result() {
     for goal in ["Road", "Drag", "Drift", "Rally", "DangerSign"] {
@@ -224,6 +329,10 @@ fn raw_capture_round_trip_preserves_unknown_metadata_and_replays_at_every_entry(
     }
     let mut request = request;
     request["evidence"] = json!({"kind":"saved-cvt","evidenceId":saved["evidenceId"]});
+    let file = temp.path().join("request.json");
+    std::fs::write(&file, request.to_string()).unwrap();
+    let database = temp.path().join("telemetry_sessions.db");
+    let before_replay = std::fs::read(&database).unwrap();
     assert_eq!(
         call(&app, "/api/tuning/workflow", request.clone()).unwrap(),
         expected
@@ -232,8 +341,6 @@ fn raw_capture_round_trip_preserves_unknown_metadata_and_replays_at_every_entry(
     let out: Value =
         serde_json::from_str(mcp["result"]["content"][0]["text"].as_str().unwrap()).unwrap();
     assert_eq!(out, expected);
-    let file = temp.path().join("request.json");
-    std::fs::write(&file, request.to_string()).unwrap();
     let output = std::process::Command::new(env!("CARGO_BIN_EXE_fh6-agent"))
         .args([
             "solve",
@@ -255,6 +362,8 @@ fn raw_capture_round_trip_preserves_unknown_metadata_and_replays_at_every_entry(
     );
     let out: Value = serde_json::from_slice(&output.stdout).unwrap();
     assert_eq!(out, expected);
+    // WAL readers may create auxiliary WAL/SHM files; the main DB remains unchanged.
+    assert_eq!(std::fs::read(database).unwrap(), before_replay);
     request["inputSnapshot"]["identity"]["performanceIndex"] = json!(501);
     assert!(has(
         &call(&app, "/api/tuning/workflow", request).unwrap(),
