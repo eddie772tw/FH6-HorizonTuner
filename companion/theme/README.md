@@ -19,11 +19,20 @@ Native `HorizonTunerCompanionTheme` 僅提供 `themeBootstrap()` 與 `updateVisu
 | 七 core／三系統、mode、三色 | `VisualTheme.kt` |
 | Mono／Rhine 完整預設三色隨 mode 轉換；custom 保留 | `VisualThemeCodec`，與 Web normalization 相同 |
 | 背景、glass 表面、surface-1、文字、border、control border／focus | `companionTokens` |
-| panel／control／badge shape、標頭反差、字階／字距 | `CompanionTokens` 與 `HalfmoonTheme` |
+| panel／control／badge shape、標頭反差 | `CompanionTokens` 與 `HalfmoonTheme` |
+| family、heading／control／readout roles、數字特性 | `Typography.kt` 的 `companionTypography` |
 | Halfmoon 實色 tabs、Swiss 底線、Rhine 刻度／底線 | 集中 navigation tokens；shell 只呈現 |
 | 成功／警告／錯誤 | `StatusColors`，不受三色預設改寫 |
 
-Halfmoon 保留透明表面與圓角，Swiss 使用實色、細框與各核心的形狀，Rhine 使用獨立紙面／石板色及控制項 border。Native 背景以 CSS 的 gradient 端點呈現，但沒有實作 CSS backdrop blur、radial anchor 或 Rhine 分頁動畫。Web 字體由現有 CSS 載入；Compose 目前使用 Android sans-serif fallback（未把 WOFF2 轉換或新增字體素材），MiSans／Inter／Outfit 原生字形一致性仍待下一切片與裝置驗收。
+Halfmoon 保留透明表面與圓角，Swiss 使用實色、細框與各核心的形狀，Rhine 使用獨立紙面／石板色及控制項 border。Native 背景以 CSS 的 gradient 端點呈現，但沒有實作 CSS backdrop blur、radial anchor 或 Rhine 分頁動畫。
+
+Typography 的 15 個 Material roles 均設定 family 與 `"tnum" 1, "lnum" 1`，與 `base.css` body 的數字特性繼承相符。heading／control／readout-label 各自保留 CSS 的 em tracking；Swiss Technical heading `.04em` 與 control `.025em` 分離。Shell 的標題、primary／outline buttons、selected tabs、badge、body、supporting、field 與 diagnostics 使用對應 roles。diagnostics 的 dt/dd 是 body，不套用 instrument label 的大寫／字距；目前 shell 沒有原生遙測儀表，readout roles 供儀表用途，不改調校或新增 UI。
+
+Requested family 集中為 Halfmoon Outfit→Inter、Swiss Inter、Rhine MiSans。`HalfmoonTheme` 的原生 resolver 實際載入原始 Outfit／Inter variable TTF：每個 Compose weight descriptor 透過 Android `CustomFallbackBuilder` 建立完整 glyph fallback（Halfmoon Outfit→Inter→system sans-serif；Swiss Inter→system sans-serif）。中文仍由 Android system fallback 提供；Halfmoon instrument 保持 platform monospace。角色最終字級經 `LocalDensity` 的 sp→dp 轉換後設定 Inter `opsz`（14–32），`wght`／native style 同步為 100–900 的對應權重。重新提供 typography 不重建 session 或 WebView；沒有修改 bridge、調校或 Web CSS。
+
+完整原始 OFL／copyright／Inter metadata 隨 APK assets 保留，可從 Connection 頁「字型授權」離線捲動閱讀。來源、版本、binary SHA-256 與 APK verification 見[字體資源／resolver 切片報告](../../docs/frontend/companion-native-fonts/README.md)。`companionTypography` 的可注入 resolver 預設為 pure role tests／provider 外的明示 SansSerif；production provider 會傳入原生實作。七 core 與 badge mapping 沿用 [#503 typography 切片](../../docs/frontend/companion-typography-fidelity/README.md)。
+
+Rhine **仍是待核實的 system SansSerif fallback**，不代表永久接受該字形／metrics；沒有下载、轉檔或拼接 MiSans。`tnum` 實際 GSUB substitution／hmtx 等寬與字型 axes 可在 JVM 核對；兩字型沒有獨立 `lnum` feature，使用其預設 lining digits，保留 `"lnum" 1` 設定。未有裝置證據前不宣稱 rendered glyph、CJK baseline、truncation 或 native／WebView 視覺一致。
 
 ## 驗證
 
