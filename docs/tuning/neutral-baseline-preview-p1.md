@@ -10,6 +10,7 @@
 - `inputSnapshot.baselineCurrent` 僅是本地已套用基準的 canonical 值與單位。沒有確認的遊戲讀值時保持 null；不能把建議當成實際遊戲設定。
 - 切目標只更新草稿；取消保留目前基準。明確套用會保留可用欄位並更新現行目標；重複套用不可覆寫。此操作不寫入遊戲，也不宣稱完成實車設定確認。
 - 同車編輯 Rally／Drag、重量、範圍或引擎參數會讓原預覽失效，但保留草稿目標與本地已套用值；新回覆通過 context 防護前不能套用。換車或實際 live build／session identity 變更才重設草稿；初次 idle identity hydration 不重設，取消則回到已套用目標。
+- 預覽 request 的 `inputSnapshot.baselineContext` 包含 UI session／identity generation、車輛與 live PI／Class、完整靜態 profile、季節、草稿目標及已套用值。Apply 另核對回覆所屬 context 與目前 phase；同車 Road→Road、ready／late 回覆及 A→B→A 不能套用舊結果。此 context 僅是 UI 失效 token，不是可信設定版本或採集 provenance。
 - 缺重量／配重禁止套用；固定零件顯示 locked。未知、非法或無法涵蓋現行數值的單車彈簧／車高／ARB 範圍顯示 unavailable，不套用該欄位。其他可用欄位可以部分套用。
 - 前端的單位偏好只改展示；保存及差異分析沿用 spring kgf/mm、height cm、pressure psi、angle deg、diff %。齒比仍由既有量測 workflow 使用 ratio。
 

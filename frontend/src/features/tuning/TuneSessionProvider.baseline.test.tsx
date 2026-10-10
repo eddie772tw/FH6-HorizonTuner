@@ -58,7 +58,11 @@ const latestPreview = (goal: string) => {
   const matches = pending.filter(item => item.input.goal === goal && item.input.inputSnapshot.baselineCurrent != null);
   return matches[matches.length - 1];
 };
-const settle = async (item: Pending, version?: string) => act(async () => item.resolve({ ok: true, json: async () => ({ schemaVersion: 'tuning-workflow-result/v1', baselinePreview: preview(item.input.goal, version) }) } as Response));
+const settle = async (item: Pending, version?: string) => {
+  const baselinePreview = preview(item.input.goal, version);
+  await act(async () => item.resolve({ ok: true, json: async () => ({ schemaVersion: 'tuning-workflow-result/v1', baselinePreview }) } as Response));
+  return baselinePreview;
+};
 const select = async (selector: string, value: string) => act(async () => {
   const element = host.querySelector<HTMLSelectElement>(selector)!;
   element.value = value; element.dispatchEvent(new Event('change', { bubbles: true }));
@@ -75,6 +79,69 @@ beforeEach(() => {
   vi.mocked(backendFetch).mockImplementation((_path, options) => new Promise(resolve => pending.push({ input: JSON.parse(options!.body as string), resolve })));
 });
 afterEach(async () => { await act(async () => root.unmount()); vi.mocked(backendFetch).mockReset(); });
+
+const buildChanges = [
+  { name: 'PI', next: { CarOrdinal: 42, CarPerformanceIndex: 750, CarClass: 3 } as TelemetryData },
+  { name: 'Class', next: { CarOrdinal: 42, CarPerformanceIndex: 700, CarClass: 4 } as TelemetryData },
+];
+it.each(buildChanges)('rejects a retained Road preview after live $name changes', async ({ next }) => {
+  model.data = { CarOrdinal: 42, CarPerformanceIndex: 700, CarClass: 3 } as TelemetryData;
+  await act(async () => root.render(<Harness />));
+  await settle(latestPreview('Road'));
+  expect(button('Apply local baseline').disabled).toBe(false);
+  model.data = next;
+  await act(async () => root.render(<Harness />));
+  expect(session.baseline.goal).toBe('Road');
+  expect(button('Apply local baseline').disabled).toBe(true);
+  await act(async () => button('Apply local baseline').click());
+  expect(session.baseline.fields).toEqual({});
+  await settle(latestPreview('Road'));
+  expect(button('Apply local baseline').disabled).toBe(false);
+});
+it.each(buildChanges)('rejects a late Road preview after live $name changes', async ({ next }) => {
+  model.data = { CarOrdinal: 42, CarPerformanceIndex: 700, CarClass: 3 } as TelemetryData;
+  await act(async () => root.render(<Harness />));
+  const stale = latestPreview('Road');
+  model.data = next;
+  await act(async () => root.render(<Harness />));
+  await settle(stale, 'stale-build-preview');
+  expect(button('Apply local baseline').disabled).toBe(true);
+  expect(host.textContent).not.toContain('stale-build-preview');
+  await act(async () => button('Apply local baseline').click());
+  expect(session.baseline.fields).toEqual({});
+});
+it.each(['ready', 'pending'])('rejects the old %s Road preview after build A to B to A', async state => {
+  const original = { CarOrdinal: 42, CarPerformanceIndex: 700, CarClass: 3 } as TelemetryData;
+  model.data = original;
+  await act(async () => root.render(<Harness />));
+  const stale = latestPreview('Road');
+  if (state === 'ready') await settle(stale, 'old-A-preview');
+  model.data = { ...original, CarPerformanceIndex: 750, CarClass: 4 };
+  await act(async () => root.render(<Harness />));
+  model.data = original;
+  await act(async () => root.render(<Harness />));
+  if (state === 'pending') await settle(stale, 'old-A-preview');
+  expect(button('Apply local baseline').disabled).toBe(true);
+  expect(host.textContent).not.toContain('old-A-preview');
+  expect(session.baseline.fields).toEqual({});
+});
+it.each(['build', 'profile', 'season'])('guards Apply independently against a captured preview after %s changes', async scope => {
+  model.data = { CarOrdinal: 42, CarPerformanceIndex: 700, CarClass: 3 } as TelemetryData;
+  await act(async () => root.render(<Harness />));
+  const capturedPreview = await settle(latestPreview('Road'));
+  const capturedContext = session.baseline.context;
+  if (scope === 'build') {
+    model.data = { ...model.data, CarPerformanceIndex: 750 };
+    await act(async () => root.render(<Harness />));
+  } else if (scope === 'profile') {
+    await act(async () => model.setCarParams({ ...model.carParams!, weight: 1500 }));
+  } else {
+    await act(async () => session.workflow.setSeason('Winter'));
+  }
+  await act(async () => session.baseline.apply(capturedPreview, capturedContext));
+  expect(session.baseline.fields).toEqual({});
+  expect(session.workflow.goal).toBe('Road');
+});
 
 it('keeps the Rally draft and settings panel after an edit, invalidates the preview and rejects late responses', async () => {
   // Synthetic transport responses test UI state, not Rust values or game evidence.

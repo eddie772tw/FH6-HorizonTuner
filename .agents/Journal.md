@@ -674,3 +674,13 @@
 - **Evidence**：修正前 Rust 契約重現 evidenceId 為 null；DOM 整合測試重現 Rally／Drag 編輯後退回 Road。修正後 readonly 資料列及資料庫位元組均未改變；聚焦前端 10 項通過，完整 Vitest 201 passed files、1749 passed／1 skipped，Cargo 預設 189 passed／2 ignored、無預設功能 181 passed／2 ignored；typecheck、Windows frontend build、backend／Tauri fmt、Clippy（含 warnings）通過。原始失敗及最終 raw logs 保留於 `/workspace/issue-487-evidence/rawlogs/`。
 - **Boundary**：本次沒有推送、PR 發布、留言、merge 或 release；不改瀏覽器、窄畫面／主題視覺、FH6／Android 與同設定 A/B 的未驗收標記，不改公式或共享主題檔。
 - **Skills**：`physics-tuning-math`、`halfmoon-design-system`、`pr-author-maintainer`。
+
+## 2026-10-10 / PR #499 預覽 context 與 CI lint 修正（Codex as Codex）
+
+- **來源／狀態**：`local`／`verified`（Rust／DOM 契約）；基於審查 head `61f2222b1f5133747efbd7e2d657318da4b41902` 重現 review `5477396731` 與 inline `4236251871`，遠端新 head CI 另行核對。
+- **Learning**：
+  1. 草稿重設 generation 不會自動進入 workflow request：同車 Road→Road、空的已套用欄位與 PI／Class 改變可能產生相同 request key。完整 UI context 必須進入 snapshot，Apply 也須獨立核對捕獲的 context 與目前 phase；identity generation 保留 A→B→A 失效邊界。profile／season 編輯只使預覽失效，仍保留草稿目標。這個 UI token 不是可信設定版本或採集 provenance。
+  2. Ruff 0.17.0 把 `tomllib` 視為標準函式庫；CI 的 I001 可由 `import re`、`import tomllib`、`from pathlib import Path` 同組排列修正，不需要降低工具版本。
+- **Evidence**：修正前 9 個 PI／Class ready／late、A→B→A 與獨立 Apply 案例失敗；修正後聚焦前端 19 項及完整 Vitest 201 passed files、1758 passed／1 skipped 通過。Cargo 預設 189 passed／2 ignored、無預設功能 181 passed／2 ignored；typecheck、Windows-target frontend build、backend／Tauri fmt、Clippy（含 warnings）、Ruff 0.17.0 check／format、版本一致性、路徑大小寫與 diff check 通過。Python 維護測試 49 passed／4 skipped，不替代 Rust 產品 gate。raw logs 保留於 `/workspace/issue-499-review-evidence/rawlogs/`。
+- **Boundary**：保留 Draft，審查 thread 不自行 resolve；不 merge、release 或關閉 #487。沒有擴充 provenance、懸吊證據、P2 WOT 或 P3 模型；瀏覽器／窄畫面／主題視覺、真實 FH6／Android 與同設定 A/B 仍未驗收。
+- **Skills**：`halfmoon-design-system`、`pr-author-maintainer`。

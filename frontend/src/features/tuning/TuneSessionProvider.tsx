@@ -167,7 +167,8 @@ export function TuneSessionProvider({ children }: { children: ReactNode }) {
   const [identityGeneration, setIdentityGeneration] = useState(0);
   const [baselineGeneration, setBaselineGeneration] = useState(0);
   // Profile edits invalidate calculations/evidence, while keeping the user's draft target.
-  const baseline = useBaselineDraft(JSON.stringify([carId, baselineGeneration]), goal, setGoal);
+  const baseline = useBaselineDraft(JSON.stringify([carId, baselineGeneration]), goal, setGoal,
+    JSON.stringify([staticProfileJson, season, identity, identityGeneration]));
   const setupContext = JSON.stringify([staticProfileJson, baseline.fields]);
   const setupContextRef = useRef(setupContext);
   setupContextRef.current = setupContext;

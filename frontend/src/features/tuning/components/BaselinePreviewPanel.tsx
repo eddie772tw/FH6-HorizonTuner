@@ -9,7 +9,7 @@ export function BaselinePreviewPanel({ carId, profile, season, draft, showTarget
   carId: string; profile: CarParams | null; season: Season; draft: ReturnType<typeof useBaselineDraft>; showTargetSelector?: boolean;
 }) {
   const { t, convertSpringRate, convertHeight, convertTirePressureFromPsi } = useSettings();
-  const snapshot = useMemo(() => ({ carId, baselineCurrent: draft.fields }), [carId, draft.fields]);
+  const snapshot = useMemo(() => ({ carId, baselineCurrent: draft.fields, baselineContext: draft.context }), [carId, draft.fields, draft.context]);
   // The same Rust workflow owns this mechanical preview, without inventing engine evidence.
   const request = useWorkflowCalculation(carId, draft.goal, season, profile, null, null, snapshot);
   const preview = request.result?.baselinePreview;
@@ -51,7 +51,7 @@ export function BaselinePreviewPanel({ carId, profile, season, draft, showTarget
       <button type="button" className="btn btn-outline-secondary" onClick={draft.begin}>{t('Preview baseline')}</button>
       <button type="button" className="btn btn-outline-secondary" onClick={draft.cancel} disabled={draft.phase !== 'draft'}>{t('Cancel draft')}</button>
       <button type="button" className="btn btn-primary" disabled={draft.phase !== 'draft' || request.status !== 'ready' || !preview?.canApply}
-        onClick={() => preview && draft.apply(preview)}>{t('Apply local baseline')}</button>
+        onClick={() => preview && draft.apply(preview, snapshot.baselineContext)}>{t('Apply local baseline')}</button>
     </div>
   </section>;
 }
