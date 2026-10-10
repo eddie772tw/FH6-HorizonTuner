@@ -137,13 +137,15 @@ function SystemSettings({ config, onConfigPatch, audioDevices, loadingAudioDevic
       <div className="border-bottom pb-3">
         <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-1">
           <label htmlFor={`${id}-source`} className="form-label fs-7 text-body-secondary mb-0">{t('Audio Capture Source')}:</label>
-          <button type="button" className="btn btn-outline-secondary btn-sm py-0 px-2 fs-8" disabled={loadingAudioDevices}
-            aria-busy={loadingAudioDevices} onClick={onRefreshAudioDevices}>
-            <span className="hud-status-labels">
-              <span className={loadingAudioDevices ? 'hud-status-reserved' : ''} aria-hidden={loadingAudioDevices}>{t('Refresh Audio Devices')}</span>
-              <span className={loadingAudioDevices ? '' : 'hud-status-reserved'} aria-hidden={!loadingAudioDevices}>{t('Refreshing...')}</span>
-            </span>
-          </button>
+          <span className="d-inline-flex" title={loadingAudioDevices ? t('Refreshing...') : undefined} style={loadingAudioDevices ? { cursor: 'not-allowed' } : undefined}>
+            <button type="button" className="btn btn-outline-secondary btn-sm py-0 px-2 fs-8" disabled={loadingAudioDevices} style={loadingAudioDevices ? { pointerEvents: 'none' } : undefined}
+              aria-busy={loadingAudioDevices} onClick={onRefreshAudioDevices}>
+              <span className="hud-status-labels">
+                <span className={loadingAudioDevices ? 'hud-status-reserved' : ''} aria-hidden={loadingAudioDevices}>{t('Refresh Audio Devices')}</span>
+                <span className={loadingAudioDevices ? '' : 'hud-status-reserved'} aria-hidden={!loadingAudioDevices}>{t('Refreshing...')}</span>
+              </span>
+            </button>
+          </span>
         </div>
         <select id={`${id}-source`} className="form-select form-select-sm" value={config.audioDeviceId || 'default'}
           onChange={event => onAudioDeviceChange(event.target.value)}>

@@ -787,3 +787,11 @@
 - **Evidence**：完整 Vitest 205 passed files、1774 passed／1 skipped；Cargo locked 預設 204 passed／3 ignored、無預設功能 196 passed／2 ignored，backend fmt／diff check 通過。Companion、Android workflow、字型 notices 與兩份 TTF 均與 `28da9c9c` 相同；frontend／backend／Tauri／HUD／golden fixtures 與 `60f4e4e4` 相同。現有 frontend dist 的編譯來源未變，未重建前端；Cargo gate 完成後恢復預設功能 executable，避免 reviewer 誤用無 HUD 產物。
 - **Boundary**：沒有本地 JDK／SDK／Gradle／APK verifier Java 執行或裝置驗收，未安裝工具或接受協議。新整合 CI、APK provenance、native／WebView／CJK／MiSans 與實車 gate 由主線及獨立 reviewer 收斂；沒有 push、PR／GitHub 操作或 release。raw logs 於本機 `fh6-review-20261010-mihaly` 暫存證據目錄。
 - **Skills**：`pr-author-maintainer`、`halfmoon-design-system`、`ponytail`。
+
+## 2026-10-10 / PR #500／#501／#502 限定功能接手與本地驗收（Mihaly as Codex）
+
+- **來源／狀態**：`local`／`verified`（Git source、實際 translator／DOM 與 loaded-session 契約）；自有 `codex/mihaly-pr-queue-takeover` 從 main `15f91fd3` 提取 #500 `6ea5a45c` 的三組 disabled-button 提示、#501 `1fab407b` 的兩處 Hz 翻譯及 #502 `43024f3a` 的單圈彙整功能。未匯入 flattened heads 的舊 main snapshot，原作者分支未改寫。
+- **Learning**：原生 disabled button 的 wrapper title 只補充滑鼠提示；native disabled、busy、USB 未選裝置／serial request 與 HUD aria／fieldset 契約仍由原元件保留。建立／掃描／連線／選擇 USB／装置未就緒字串需三語實際字典；Hz 不能套用於輪胎 R 或方向 R。loaded-session 單 loop 避免中間陣列，不代表 live 60Hz 性能已測得提升。
+- **Evidence**：新增 real SettingsProvider／USB mounted regression，修正前 en-us 1 passed、ja-jp／zh-tw 2 failed，補齊唯一字串後 focused 3 files／31 tests passed；完整 Vitest 206 passed files、1777 passed／1 skipped，TypeScript＋Windows Vite build 與 diff check 通過。full tests／build 使用本地 pnpm 11.20.0；另以 CI 同版 11.27.0 frozen install 證實 graph 前後相同，lock／manifest 未變。三語原有 key/value、主線 baseline／CVT、native fonts／APK gates 與 security lock 保留。
+- **Boundary**：本輪只做本地驗收，未做遊戲、USB 裝置、native hover／視覺或實車測試；新案例驗證實際 translator 與產品 DOM，backend responses 為受控 fixture。僅 stage 指定來源提供 frozen tree；commit、PR、CI 與合併交主線及獨立 reviewer。raw logs 位於本機 `fh6-review-20261010-mihaly` 暫存證據目錄。
+- **Skills**：`pr-author-maintainer`、`pr-review-evaluation`、`halfmoon-design-system`、`ponytail`。

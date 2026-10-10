@@ -72,12 +72,12 @@ const DevInputPanel: React.FC<DevInputPanelProps> = (props) => {
           <div className="col-6">
             <label className="form-label fs-7" htmlFor="dev-front-frequency">{t('Front Ride Frequency')}</label>
             {numberInput('dev-front-frequency', targetRideFrequencyFrontHz, props.onFrontFrequencyChange, 1, 4.5, 0.05)}
-            <div className="form-text fs-7">Hz</div>
+            <div className="form-text fs-7">{t("Hz")}</div>
           </div>
           <div className="col-6">
             <label className="form-label fs-7" htmlFor="dev-rear-frequency">{t('Rear Ride Frequency')}</label>
             {numberInput('dev-rear-frequency', targetRideFrequencyRearHz, props.onRearFrequencyChange, 1, 4.5, 0.05)}
-            <div className="form-text fs-7">Hz</div>
+            <div className="form-text fs-7">{t("Hz")}</div>
           </div>
           <div className="col-6">
             <label className="form-label fs-7" htmlFor="dev-front-damping">{t('Front Damping Ratio')}</label>

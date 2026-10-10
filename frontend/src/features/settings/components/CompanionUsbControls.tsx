@@ -44,7 +44,7 @@ export default function CompanionUsbControls() {
   };
 
   return <div className="glass-panel p-3 d-flex flex-column gap-2">
-    <div className="d-flex justify-content-between align-items-center gap-2"><h4 className="h6 text-primary mb-0">{t('USB device connection')}</h4><button type="button" className="btn btn-sm btn-outline-secondary" disabled={scanning || busy} onClick={() => void scan()}>{scanning ? t('Scanning…') : t('Refresh devices')}</button></div>
+    <div className="d-flex justify-content-between align-items-center gap-2"><h4 className="h6 text-primary mb-0">{t('USB device connection')}</h4><span className="d-inline-flex" title={scanning ? t('Scanning…') : busy ? t('Connecting…') : undefined} style={scanning || busy ? { cursor: 'not-allowed' } : undefined}><button type="button" className="btn btn-sm btn-outline-secondary" disabled={scanning || busy} style={scanning || busy ? { pointerEvents: 'none' } : undefined} onClick={() => void scan()}>{scanning ? t('Scanning…') : t('Refresh devices')}</button></span></div>
     <p className="small text-body-secondary mb-1">{t('Install the Companion APK, enable USB debugging and accept the Android authorization dialog before connecting.')}</p>
     {!devices.length && !scanning && <p className="small text-body-secondary mb-1">{t('No USB devices found. Connect the cable and try Refresh devices.')}</p>}
     {devices.length > 0 && <select className="form-select" value={selected} disabled={busy || scanning} onChange={(event) => { setSelected(event.target.value); setForwarded(null); }} aria-label={t('USB device')}>
@@ -53,7 +53,7 @@ export default function CompanionUsbControls() {
     </select>}
     {selectedDevice?.state === 'unauthorized' && <p className="small text-warning mb-0">{t('Unlock the Android device and allow USB debugging for this PC, then refresh devices.')}</p>}
     {selectedDevice?.state === 'offline' && <p className="small text-warning mb-0">{t('Reconnect the USB cable or wake the Android device, then refresh devices.')}</p>}
-    <button type="button" className="btn btn-primary w-100" disabled={busy || scanning || selectedDevice?.state !== 'device'} onClick={() => void connect()}>{busy ? t('Connecting…') : t('Connect USB device')}</button>
+    <span className="d-flex w-100" title={busy ? t('Connecting…') : scanning ? t('Scanning…') : !selectedDevice ? t('Choose a USB device') : selectedDevice.state !== 'device' ? t('Device not ready') : undefined} style={busy || scanning || selectedDevice?.state !== 'device' ? { cursor: 'not-allowed' } : undefined}><button type="button" className="btn btn-primary w-100" disabled={busy || scanning || selectedDevice?.state !== 'device'} style={busy || scanning || selectedDevice?.state !== 'device' ? { pointerEvents: 'none' } : undefined} onClick={() => void connect()}>{busy ? t('Connecting…') : t('Connect USB device')}</button></span>
     {error && <div className="companion-message is-error mb-0" role="alert">{error}</div>}
     {forwarded && <div className="companion-message is-success mb-0" role="status">{t('USB forwarding is active and the Companion app was launched.')} <span className="d-block small">{t('Waiting for active connection…')} ({forwarded.reverse_local} → {forwarded.reverse_remote})</span></div>}
   </div>;

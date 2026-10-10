@@ -1630,5 +1630,11 @@
   "qualified-capture-unavailable": "No qualified capture for this context; collect again in Step 3",
   "ev-tire-channels-unavailable": "The existing EV capture does not retain the channels required for tire evidence",
   "saved-capture": "Saved capture",
-  "imported-capture": "Imported capture"
+  "imported-capture": "Imported capture",
+  "Hz": "Hz",
+  "Creating…": "Creating…",
+  "Scanning…": "Scanning…",
+  "Connecting…": "Connecting…",
+  "Choose a USB device": "Choose a USB device",
+  "Device not ready": "Device not ready"
 }

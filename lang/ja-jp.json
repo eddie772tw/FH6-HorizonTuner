@@ -1471,5 +1471,11 @@
   "Imported CSV is previewed locally; use the original file in MoTeC.": "インポートした CSV はローカルでプレビューされます。MoTeC では元のファイルを使用してください。",
   "Experimental": "試験的",
   "Estimated": "推定",
-  "HorizonTuner exports 41 telemetry channels with documented unit mappings. Native .ld export is experimental until verified in MoTeC i2.": "HorizonTuner は単位の対応を明示した 41 のテレメトリチャンネルを提供します。ネイティブ .ld の出力は MoTeC i2 での検証が完了するまで試験的機能です。"
+  "HorizonTuner exports 41 telemetry channels with documented unit mappings. Native .ld export is experimental until verified in MoTeC i2.": "HorizonTuner は単位の対応を明示した 41 のテレメトリチャンネルを提供します。ネイティブ .ld の出力は MoTeC i2 での検証が完了するまで試験的機能です。",
+  "Hz": "Hz",
+  "Creating…": "作成中…",
+  "Scanning…": "スキャン中…",
+  "Connecting…": "接続中…",
+  "Choose a USB device": "USB デバイスを選択",
+  "Device not ready": "端末の準備ができていません"
 }

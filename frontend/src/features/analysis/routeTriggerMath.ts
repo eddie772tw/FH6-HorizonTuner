@@ -192,37 +192,58 @@ export function calculateLapsFromPoints(
     const group = lapMap.get(lapNum) ?? [];
     if (group.length === 0) continue;
 
-    const validTimes = group
-      .map((p) => p.time)
-      .filter((t): t is number => typeof t === "number" && Number.isFinite(t));
-    const validSpeeds = group
-      .map((p) => p.SpeedMetersPerSecond)
-      .filter((s): s is number => typeof s === "number" && Number.isFinite(s));
-    const validDistances = group
-      .map((p) => p.lap_distance)
-      .filter((d): d is number => typeof d === "number" && Number.isFinite(d));
+    // Aggregate a loaded session in one pass per lap, avoiding intermediate arrays.
+    let minTime = Infinity;
+    let maxTime = -Infinity;
+    let maxSpeedRaw = -Infinity;
+    let sumSpeedRaw = 0;
+    let validSpeedsCount = 0;
+    let startDistance: number | null = Infinity;
+    let endDistance: number | null = -Infinity;
+    let hasValidTime = false;
+    let hasValidDistance = false;
 
-    const minTime = validTimes.length > 0 ? validTimes.reduce((a, b) => Math.min(a, b)) : 0;
-    const maxTime = validTimes.length > 0 ? validTimes.reduce((a, b) => Math.max(a, b)) : 0;
+    for (let j = 0; j < group.length; j++) {
+      const p = group[j];
+      const t = p.time;
+      if (typeof t === "number" && Number.isFinite(t)) {
+        if (t < minTime) minTime = t;
+        if (t > maxTime) maxTime = t;
+        hasValidTime = true;
+      }
+
+      const s = p.SpeedMetersPerSecond;
+      if (typeof s === "number" && Number.isFinite(s)) {
+        if (s > maxSpeedRaw) maxSpeedRaw = s;
+        sumSpeedRaw += s;
+        validSpeedsCount++;
+      }
+
+      const d = p.lap_distance;
+      if (typeof d === "number" && Number.isFinite(d)) {
+        if (d < startDistance) startDistance = d;
+        if (d > endDistance) endDistance = d;
+        hasValidDistance = true;
+      }
+    }
+
+    if (!hasValidTime) {
+      minTime = 0;
+      maxTime = 0;
+    }
+    if (!hasValidDistance) {
+      startDistance = null;
+      endDistance = null;
+    }
+
     const observedSpan = maxTime - minTime;
 
-    const maxSpeedKmh =
-      validSpeeds.length > 0
-        ? Math.round(validSpeeds.reduce((a, b) => Math.max(a, b)) * 3.6 * 10) / 10
-        : null;
-    const avgSpeedKmh =
-      validSpeeds.length > 0
-        ? Math.round(
-            (validSpeeds.reduce((a, b) => a + b, 0) / validSpeeds.length) *
-              3.6 *
-              10
-          ) / 10
-        : null;
-
-    const startDistance =
-      validDistances.length > 0 ? validDistances.reduce((a, b) => Math.min(a, b)) : null;
-    const endDistance =
-      validDistances.length > 0 ? validDistances.reduce((a, b) => Math.max(a, b)) : null;
+    const maxSpeedKmh = validSpeedsCount > 0
+      ? Math.round(maxSpeedRaw * 3.6 * 10) / 10
+      : null;
+    const avgSpeedKmh = validSpeedsCount > 0
+      ? Math.round((sumSpeedRaw / validSpeedsCount) * 3.6 * 10) / 10
+      : null;
 
     // A lap is complete only if there is genuine evidence of closing:
     // in telemetry / MoTeC, lap N finishes when the vehicle transitions into lap N+1.
@@ -242,11 +263,16 @@ export function calculateLapsFromPoints(
       || observedTransition;
 
     // In Forza telemetry, the official finished time of lap N appears in LastLap of lap N+1
-    const nextLapLastLap = hasNextLap
-      ? nextGroup
-          ?.map((p) => p.LastLap)
-          .find((l): l is number => typeof l === "number" && Number.isFinite(l) && l > 0)
-      : undefined;
+    let nextLapLastLap: number | undefined;
+    if (hasNextLap && nextGroup) {
+      for (let j = 0; j < nextGroup.length; j++) {
+        const l = nextGroup[j].LastLap;
+        if (typeof l === "number" && Number.isFinite(l) && l > 0) {
+          nextLapLastLap = l;
+          break;
+        }
+      }
+    }
 
     const isComplete = ordered && hasStart && hasNextLap;
 
