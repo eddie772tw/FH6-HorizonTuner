@@ -1,6 +1,6 @@
 # FH6-HorizonTuner 🏎️
 
-v1.7.1: desktop and Companion share Rust workflow results. ICE/EV evidence, gearing, readiness, capabilities and recommendations have backend owners; CLI/MCP workflow calls reuse the same library. PR #460 has been merged; #462 remains open pending raw input clarification and in-game validation. See the [ownership contract](docs/contracts/tuning_responsibilities.md).
+V1.7.2 release preparation (runtime 11.45.22) integrates the merged HUD, telemetry, race-analysis and tuning workflow changes. The latest published release remains v1.7.1. See the [candidate notes](docs/releases/v1.7.2.md) and [acceptance ledger](docs/releases/v1.7.2-acceptance.md) for WIP / Known Issues and remaining artifact gates. Rust remains the [tuning owner](docs/contracts/tuning_responsibilities.md).
 
 The versioned [Road launch-envelope correction for #462](docs/tuning/aego-road-launch-v3.md) preserves low-power and historical models; its engineering priors do not establish optimal in-game launches.
 
@@ -364,4 +364,4 @@ In the game, set **Data Out IP Address** to `127.0.0.1` and **Data Out Port** to
 In a Release Build, the Rust HTTP service first attempts to bind `8001`. If another process owns that port, it falls back to an available dynamic TCP port. The actual bound port is written to `logs/web_port.txt` under the data directory after binding succeeds, and the frontend uses that value directly. Forza UDP telemetry still listens on `8000` by default. When fallback occurs, the application displays a Settings/MCP popover so the current endpoint can be confirmed before a client's one-time endpoint bootstrap. After the first connection, a compatible Agent receives configuration guidance through the standard MCP `initialize` response; MCP does not define a cross-client API for injecting the initial URL.
 After the Tauri sidecar reports ready, the frontend configures that actual port through a centralized transport contract. REST and WebSocket calls do not rely on global `fetch` or `WebSocket` interception, so HUD assets and other non-backend connections are never rewritten.
 
-v1.7.1 candidate acceptance, evidence limits and cleanup inventory: [acceptance ledger](docs/releases/v1.7.1-acceptance.md). This work does not publish a tag, Release or OTA manifest.
+V1.7.2 candidate scope and acceptance: [release notes](docs/releases/v1.7.2.md), [acceptance ledger](docs/releases/v1.7.2-acceptance.md). This preparation does not publish a tag, Release or OTA manifest. Historical v1.7.1 evidence remains in its [original ledger](docs/releases/v1.7.1-acceptance.md).

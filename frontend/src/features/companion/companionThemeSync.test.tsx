@@ -80,7 +80,7 @@ it('receives rapid changes without settings POST or remounting a dirty draft, na
     await act(async () => { receiveCompanionTheme({ ...visual, halfmoonCore, mode }, theme.receiveThemeSettings); });
     expect(host.querySelector('input')).toBe(weight);
     expect(weight.value).toBe('1555');
-    expect(host.textContent).toContain('companion.unsaved_draft');
+    expect(host.textContent).toContain('Unsaved draft');
     expect(nav.getAttribute('aria-current')).toBe('location');
     expect(host.querySelector('#companion-engine')).toBe(measurement);
     expect(measurement?.textContent).toContain('collecting');
