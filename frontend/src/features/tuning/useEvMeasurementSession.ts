@@ -11,8 +11,10 @@ type Phase = 'idle' | 'collecting' | 'paused' | 'complete' | 'invalidated';
 interface Runtime { calculationError?: string; evidenceId?: string; readyGears?: number[]; key: string; phase: Phase; state: EvMeasurement; result: EvGearingResult | null }
 
 /** Mounted at TuneSession scope: navigating between steps never unmounts a recording. */
-export function useEvMeasurementSession(carId: string, profile: CarParams | null, live: TelemetryData | null) {
-  const key = evDependencyKey(carId, profile);
+export function useEvMeasurementSession(carId: string, profile: CarParams | null, live: TelemetryData | null, setupContext = '') {
+  // Setup changes invalidate async display state even when the measured powertrain
+  // dependency key is unchanged. EV qualification/projection remains Rust-owned.
+  const key = JSON.stringify([evDependencyKey(carId, profile), setupContext]);
   const initial = (): Runtime => ({ key, phase: 'idle', state: createEvMeasurement(carId), result: null });
   const ref = useRef<Runtime>(initial());
   const [runtime, setRuntime] = useState(ref.current);

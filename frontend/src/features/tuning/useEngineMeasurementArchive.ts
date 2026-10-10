@@ -11,7 +11,7 @@ import { isCurrentEngineObservationSaveToken, type EngineObservationSaveToken } 
 
 const STORAGE_KEY = 'tuning-engine-observations/v1';
 const readArchive = (): unknown => { try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch { return []; } };
-export function useEngineMeasurementArchive(carId: string, profile: TuningCarParams | null, identityGeneration = 0) {
+export function useEngineMeasurementArchive(carId: string, profile: TuningCarParams | null, identityGeneration = 0, setupContext = '') {
   const [archive, setArchive] = useState<EngineObservation[]>([]);
   const [selected, setSelected] = useState<EngineObservation | null>(null);
   const [savedIds, setSavedIds] = useState<string[]>([]);
@@ -30,14 +30,19 @@ export function useEngineMeasurementArchive(carId: string, profile: TuningCarPar
     identityGeneration: identityGenerationRef.current,
     dependencyKey: keyRef.current,
   });
-  useEffect(() => {
+  // Invalidate save/hydration callbacks during render, including setup changes
+  // outside the narrower measured-engine dependency key.
+  const scope = JSON.stringify([key, identityGeneration, setupContext]);
+  const scopeRef = useRef(scope);
+  if (scopeRef.current !== scope) {
+    scopeRef.current = scope;
     keyRef.current = key;
     generation.current += 1;
     pending.current = null;
     saving.current = null;
     setPendingSave(false);
     setSelected(null);
-  }, [key, identityGeneration]);
+  }
   useEffect(() => {
     let active = true;
     void backendFetch('/api/road/engine-observations').then(async response => {
