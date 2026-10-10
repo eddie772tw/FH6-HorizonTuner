@@ -91,7 +91,7 @@ export const BasicCarInfo: React.FC<BasicCarInfoProps> = ({
           <input id="front_tire_width" aria-label={t("Front Tire Width")} type="number" value={carParams.frontTireWidth || 245} onChange={e => updateParam('frontTireWidth', parseInt(e.target.value) || 0)} className="form-control text-center px-1" placeholder="245" />
           <span className="input-group-text px-1">/</span>
           <input aria-label={t("Front Tire Aspect Ratio")} type="number" value={carParams.frontTireAspect || 40} onChange={e => updateParam('frontTireAspect', parseInt(e.target.value) || 0)} className="form-control text-center px-1" placeholder="40" />
-          <span className="input-group-text px-1">{t("Radial tire marker")}</span>
+          <span className="input-group-text px-1">R</span>
           <input aria-label={t("Front Tire Rim Size")} type="number" value={carParams.frontTireRim || 18} onChange={e => updateParam('frontTireRim', parseInt(e.target.value) || 0)} className="form-control text-center px-1" placeholder="18" />
         </div>
       </div>
@@ -102,7 +102,7 @@ export const BasicCarInfo: React.FC<BasicCarInfoProps> = ({
           <input id="rear_tire_width" aria-label={t("Rear Tire Width")} type="number" value={carParams.rearTireWidth || 245} onChange={e => updateParam('rearTireWidth', parseInt(e.target.value) || 0)} className="form-control text-center px-1" placeholder="245" />
           <span className="input-group-text px-1">/</span>
           <input aria-label={t("Rear Tire Aspect Ratio")} type="number" value={carParams.rearTireAspect || 40} onChange={e => updateParam('rearTireAspect', parseInt(e.target.value) || 0)} className="form-control text-center px-1" placeholder="40" />
-          <span className="input-group-text px-1">{t("Radial tire marker")}</span>
+          <span className="input-group-text px-1">R</span>
           <input aria-label={t("Rear Tire Rim Size")} type="number" value={carParams.rearTireRim || 18} onChange={e => updateParam('rearTireRim', parseInt(e.target.value) || 0)} className="form-control text-center px-1" placeholder="18" />
         </div>
       </div>
