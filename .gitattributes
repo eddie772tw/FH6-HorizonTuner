@@ -5,5 +5,11 @@
 frontend/public/assets/rhine/** text=auto eol=lf
 frontend/src/styles/fonts/rhine-misans.css text eol=lf
 
+# Audited original font/notices bytes must survive Windows checkout unchanged.
+companion/theme/src/main/res/font/*.ttf binary
+companion/theme/src/main/assets/font_notices/* -text
+# Original OFL files contain upstream trailing spaces; preserve their hashes.
+companion/theme/src/main/assets/font_notices/*-OFL.txt -whitespace
+
 # MoTeC oracle is a byte-level wire fixture, including CSV CRLF terminators.
 backend-rust/tests/fixtures/motec.csv -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol

@@ -744,3 +744,46 @@
 - **Evidence**：保留兩個來源的測試，另補 CVT 與本地底盤基準共存的 Rust／產品 Provider 契約。完整 Vitest 205 passed files、1774 passed／1 skipped；TypeScript／Vite build 通過後固定 dist，再執行 Cargo 預設全套 204 passed／3 ignored，含 CVT 14 項及 workflow 13 項。backend fmt、Ruff 0.17.0 的版本工具 check／format、diff check 通過。raw logs 保留於本機 `fh6-review-20261010-mihaly` 暫存證據目錄。
 - **Boundary**：既有 release performance、Windows audio／media 裝置及 cross-version comparison 測試仍 ignored；沒有真實 CVT、FH6、Android 或同設定 A/B 驗收。窄畫面／主題／鍵盤瀏覽器驗收由獨立 reviewer 執行後另記；未新增公式、求解器、採集器、來源推定或 dependency。Python 僅驗證共通 import 修正。
 - **Skills**：`physics-tuning-math`、`halfmoon-design-system`、`ponytail`。
+
+## 2026-10-10 / Issue #485 typography roles 最小切片（Codex as Codex）
+
+- **Learning**：Swiss Technical heading `.04em` 與 control `.025em` 是不同角色；Contrast 的 readout `.08em` 繼承 Swiss，不能拿 `.02em` control tracking 代用。`Typography` 的未指定 roles 會保留 Material defaults，需集中明示 family／weight／tracking／數字特性。diagnostics dt/dd 是 body，不套用 instrument label uppercase／tracking。
+- **Evidence**：新增七 core mapping tests，純 JVM 的實際 Google Maven Compose AAR／Kotlin 2.2.21 contracts 15 passed、0 failure／error／skipped；前端 1747 passed／1 skipped 與 Companion build 通過。MiSans 376 WOFF2 分片共 12,197,248 bytes 與既有 manifest 逐檔雜湊一致。來源、角色表、驗證命令與 fallback 差距見 `docs/frontend/companion-typography-fidelity/README.md`；精確 head Android CI 於 push 後保留於 stacked PR body。
+- **Boundary**：專用分支基於 #498 的 `901c545d`，沒有修改 #498 分支或標 Ready。無新字體／格式轉換／協議接受；MiSans 分包工具 Apache 不代表字體本身授權，官方格式來源未核實，body 仍為明示 SansSerif fallback。native＋WebView 視覺／裝置矩陣 NOT_RUN，不宣稱像素一致；bridge／安全／主題投影／調校流程與 blur／動畫 scope 均未擴大。
+- **Skills**：`halfmoon-design-system`、`pr-author-maintainer`。
+
+## 2026-10-10 / PR #503 Rhine badge 字距審查修正（Codex as Codex）
+
+- **Learning**：badge 不一定繼承 control 字距。`rhine.css` 的 `.badge` 明定 `.025em`，control 為 `.015em`；Swiss badge 才消費 `--control-tracking`，Halfmoon 連線狀態 badge 繼承 normal spacing。集中 role 時仍須逐用途核對 CSS。
+- **Evidence**：七 core mapping test 加入 badge 字距欄位，先重現 Rhine expected `.025em`／actual `.015em`，分離 badge tracking 後純 JVM 15 passed、0 failures／errors／skipped；前端 198 passed files／1747 passed tests／1 skipped，diff check 通過。新 head 的 Android unit／lint／assemble 與 artifact 證據更新於 #503 PR body。
+- **Boundary**：只改 Rhine badge 字距；heading／control／readout 未改。Halfmoon 基底 badge 字重 400 與目前 native 600 的差距另外記錄；字體 fallback、裝置／native＋WebView 視覺 QA NOT_RUN 與 #498 stacked Draft 依賴維持。
+- **Skills**：`halfmoon-design-system`、`pr-author-maintainer`。
+
+## 2026-10-10 / PR #503 Halfmoon badge 字重審查修正（Codex as Codex）
+
+- **Learning**：Halfmoon 2.0.2 `.badge` 消費 normal=400，不能將 Swiss／Rhine 的 600 無條件套用。cores／shared／Companion CSS 與連線 status markup 沒有字重覆寫，badge weight 應獨立於 control role 管理。
+- **Evidence**：完整 Companion stylesheet／status markup 的 CSSOM 字重與來源字距核對，七 core×日夜×三種狀態共 42 cases 通過。七 core mapping test 先重現 expected 400／actual 600，修正後純 JVM 15 passed／0 failures、errors、skipped；前端 198 passed files／1747 passed tests／1 skipped；diff check 通過。
+- **Boundary**：只修 Halfmoon badge weight，control／selected-tab／heading／readout 原值不變。CSSOM custom-property chain 明確解析，並非字形或像素驗收；Chromium sandbox helper 配置阻止啟動，未改系統安全設定。實際字型素材／CJK／裝置 QA 缺口仍保留，新 head Android CI 證據記錄於 #503 PR body。
+- **Skills**：`halfmoon-design-system`、`pr-author-maintainer`。
+
+## 2026-10-10 / Issue #485 原始 Outfit／Inter resources 與原生 resolver（Codex as Codex）
+
+- **Learning**：Compose font list 的 weight/style matching 不是 CSS 缺 glyph fallback；Compose 1.9.4 的 loaded Android Typeface wrapper 也不依 style request 重選 weight。每個 weight descriptor 要提供 Android `CustomFallbackBuilder` 完整 ordered chain，並讓 `wght`、native Font／Typeface style 一致。Inter `opsz` 要在角色最後字級確定後設定；其 Google Fonts archive 4.1 不等於 SFNT 內部 4.001。
+- **Evidence**：固定官方 commits 的原始 Outfit 110884／Inter 876576 bytes，Git blob SHA-1 與使用者提供值一致，另計 binary SHA-256；完整原始 OFL／copyright／Inter metadata 隨 APK assets 保留。實際 SFNT name／fvar／GSUB tnum→hmtx 等寬與 resolver／七 core mapping 的純 JVM 10 tests pass；frontend 1747 passed／1 skipped。精確 head Android unit／lint／assemble、APK entries 與同 runner base APK 增量於 stacked Draft PR 保留，詳見 `docs/frontend/companion-native-fonts/README.md`。
+- **Boundary**：基於 #503 `b294d634`，Depends on #503／#498，Related to #485。Rhine MiSans 來源／font 協議／4.003 仍待核實，未下載／轉換 shards，不接受永久 SansSerif；兩字型預設 lining、沒有獨立 lnum tag。無 device，mixed CJK／Latin／baseline／truncation／native＋WebView 視覺 NOT_RUN；未改 session、bridge、安全、調校、Web 設計或安裝 SDK。
+- **Skills**：`halfmoon-design-system`、`pr-author-maintainer`。
+
+## 2026-10-10 / PR #505 APK verifier pipeline 失敗傳遞（Codex as Codex）
+
+- **Learning**：GitHub Linux 未指定 shell 的 run 使用 `bash -e`，不是明示 `shell: bash` 的 `bash --noprofile --norc -e -o pipefail`。verifier→tee 需要明示 pipefail，不能只看 step 結果；pipeline 最後一段成功可能吞掉字體驗證錯誤。
+- **Evidence**：缺少 Outfit entry 的獨立 ZIP fixture 重現舊 invocation exit 0／修正 invocation exit 1；正向 fixture 與正常來源 SHA-256 前後一致。job 明示 shell，加 CI negative control，確認 missing-entry pipeline 必須拒絕；修正後 exact-head CI 留於 #505。
+- **Boundary**：僅 CI／verifier 負向證據；不改正常 APK、font bytes、resolver 或 parent PR，不 resolve 外部審查。不新增安裝或協議。
+- **Skills**：`pr-author-maintainer`。
+
+## 2026-10-10 / Ready #503／#505 原生字型與 typography 整合（Mihaly as Codex）
+
+- **來源／狀態**：`local`／`verified`（Git source／Rust／DOM 契約）；自有 `codex/mihaly-companion-integration` 正常合併 Ready #505 `28da9c9c`（含 #503 `b294d634`）至 main `60f4e4e4`，只解 Journal 衝突並完整保留兩側原始紀錄。作者分支未改寫。
+- **Learning**：stacked head 的 native tree、font／notice bytes 與 workflow 可以原樣保留，同時讓主線 baseline／CVT 與前端 bridge 維持既有 tree；不能把前一 base 的 APK／synthetic checkout 證據沿用為新整合 head CI。兩側 Journal 各完整段落與目錄／blob IDs 比對可直接證明此邊界，不需為合併新增功能或改動既有 tests。
+- **Evidence**：完整 Vitest 205 passed files、1774 passed／1 skipped；Cargo locked 預設 204 passed／3 ignored、無預設功能 196 passed／2 ignored，backend fmt／diff check 通過。Companion、Android workflow、字型 notices 與兩份 TTF 均與 `28da9c9c` 相同；frontend／backend／Tauri／HUD／golden fixtures 與 `60f4e4e4` 相同。現有 frontend dist 的編譯來源未變，未重建前端；Cargo gate 完成後恢復預設功能 executable，避免 reviewer 誤用無 HUD 產物。
+- **Boundary**：沒有本地 JDK／SDK／Gradle／APK verifier Java 執行或裝置驗收，未安裝工具或接受協議。新整合 CI、APK provenance、native／WebView／CJK／MiSans 與實車 gate 由主線及獨立 reviewer 收斂；沒有 push、PR／GitHub 操作或 release。raw logs 於本機 `fh6-review-20261010-mihaly` 暫存證據目錄。
+- **Skills**：`pr-author-maintainer`、`halfmoon-design-system`、`ponytail`。
