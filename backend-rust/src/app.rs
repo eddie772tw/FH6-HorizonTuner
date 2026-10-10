@@ -832,7 +832,12 @@ impl Backend for App {
             ("GET", "/api/companion/workflow") => {
                 let mut workflow = lock(&self.companion_workflow);
                 workflow.touch_client(request.query.get("clientId").map(String::as_str));
-                return Ok(ApiResponse::json(workflow.state()));
+                let mut state = workflow.state();
+                // Independent of the desktop lease, snapshot and tuning revision.
+                if let Some(theme) = self.config.companion_visual_theme() {
+                    state["visualTheme"] = serde_json::to_value(theme)?;
+                }
+                return Ok(ApiResponse::json(state));
             }
             ("POST", "/api/companion/commands") => {
                 return Ok(ApiResponse::json(

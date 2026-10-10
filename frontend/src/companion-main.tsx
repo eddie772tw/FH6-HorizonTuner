@@ -6,9 +6,11 @@ import './App.css';
 import { AppProviders } from './AppProviders';
 import CompanionApp from './features/companion/CompanionApp';
 import { configureCompanionTransport } from './services/backend';
-import { applyThemeEarly } from './app/applyThemeEarly';
+import { applyThemeToDocument } from './context/themeDocument';
+import { readCompanionThemeBootstrap } from './features/companion/companionTheme';
 
-applyThemeEarly();
+const bootstrap = readCompanionThemeBootstrap();
+applyThemeToDocument(bootstrap.theme);
 configureCompanionTransport();
 
-ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(<React.StrictMode><AppProviders><CompanionApp /></AppProviders></React.StrictMode>);
+ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(<React.StrictMode><AppProviders companionTheme={bootstrap.theme}><CompanionApp themeGeneration={bootstrap.generation} /></AppProviders></React.StrictMode>);

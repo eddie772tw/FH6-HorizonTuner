@@ -1,3 +1,4 @@
+import { usesCvt } from '../../domain/tuning/transmission';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { CarParams } from '../../context/CarParamsContext';
 import { subscribeToDecodedTelemetry, type TelemetryData } from '../../hooks/useTelemetry';
@@ -19,7 +20,7 @@ export function useEvMeasurementSession(carId: string, profile: CarParams | null
   const cursor = useRef(0);
   const calculationSequence = useRef(0);
   const keyRef = useRef(key); keyRef.current = key;
-  const enabled = useRef(false); enabled.current = profile?.isElectric === true;
+  const enabled = useRef(false); enabled.current = profile?.isElectric === true && !usesCvt(profile);
   const lastPublish = useRef(0);
   const publish = useCallback((force = false) => {
     const now = performance.now();
@@ -78,7 +79,7 @@ export function useEvMeasurementSession(carId: string, profile: CarParams | null
   }, [publish]);
 
   const restart = () => {
-    if (key !== keyRef.current || !profile?.isElectric || !profile.evGearbox?.allForwardGearsConfirmed) return;
+    if (key !== keyRef.current || (usesCvt(profile) || !profile?.isElectric) || !profile.evGearbox?.allForwardGearsConfirmed) return;
     calculationSequence.current++;
     ref.current = { key, phase: 'collecting', state: createEvMeasurement(carId), result: null };
     frames.current = [];
@@ -87,7 +88,7 @@ export function useEvMeasurementSession(carId: string, profile: CarParams | null
   };
   const calculate = async (candidateFinalDrive: number | null = profile?.evGearbox?.finalDrive ?? null) => {
     const r = ref.current;
-    if (!profile?.isElectric || !profile.evGearbox || r.key !== key || r.phase === 'collecting' ||
+    if ((usesCvt(profile) || !profile?.isElectric) || !profile.evGearbox || r.key !== key || r.phase === 'collecting' ||
       r.phase === 'invalidated' || cursor.current !== frames.current.length || r.state.status === 'blocked' || !evMeasurementMatchesLive(r.state, live)) return;
     const token = ++calculationSequence.current;
     try {
@@ -114,7 +115,7 @@ export function useEvMeasurementSession(carId: string, profile: CarParams | null
     }
   };
   // Synchronous gate prevents a stale result rendering before reset effects run.
-  const current = runtime.key === key && profile?.isElectric && evMeasurementMatchesLive(runtime.state, live)
+  const current = runtime.key === key && !usesCvt(profile) && profile?.isElectric && evMeasurementMatchesLive(runtime.state, live)
     ? runtime : initial();
   return {
     ...current,

@@ -25,6 +25,8 @@ kotlin {
 }
 
 dependencies {
+    implementation("com.google.code.gson:gson:2.11.0")
+    testImplementation("junit:junit:4.13.2")
     implementation("androidx.compose.ui:ui:1.9.4")
     implementation("androidx.compose.material3:material3:1.3.2")
     implementation("androidx.compose.foundation:foundation:1.9.4")

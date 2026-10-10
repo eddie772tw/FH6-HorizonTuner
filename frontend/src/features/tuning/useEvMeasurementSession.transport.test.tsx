@@ -32,3 +32,19 @@ it('preserves the frozen EV capture projection consumed by Rust qualification, i
     expect(JSON.parse(JSON.stringify(session.snapshot().frames)).at(-1)).not.toHaveProperty('SteerInput');
   } finally { await act(async () => root.unmount()); }
 });
+it('never collects CVT through the EV reducer, including an unsupported EV plus CVT selection', async () => {
+  Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
+  const root = createRoot(document.createElement('div'));
+  let session!: ReturnType<typeof useEvMeasurementSession>;
+  const profile = { isElectric: true, transmission: { type: 'cvt', capability: 'final-drive-only' }, evGearbox: { allForwardGearsConfirmed: true } } as CarParams;
+  function Probe() { session = useEvMeasurementSession('3445', profile, null); return null; }
+  try {
+    await act(async () => root.render(<Probe />));
+    await act(async () => session.restart());
+    const frame = Object.fromEntries(replay.columns.map((key, i) => [key, replay.runs[0].rows[0][i]]));
+    await act(async () => telemetry.listener!(frame as unknown as TelemetryData));
+    expect(session.phase).toBe('idle');
+    expect(session.snapshot().frames).toEqual([]);
+    expect(session.result).toBeNull();
+  } finally { await act(async () => root.unmount()); }
+});

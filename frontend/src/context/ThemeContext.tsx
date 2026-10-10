@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { backendFetch } from '../services/backend';
 import { validateCSS } from '../utils/cssValidator';
 
@@ -12,14 +12,16 @@ export type { CoreThemeId, DesignSystemId } from './themeCatalog';
 interface ThemeContextType {
   themeSettings: ThemeSettings;
   updateThemeSettings: (updates: Partial<ThemeSettings>) => void;
+  receiveThemeSettings: (settings: ThemeSettings) => void;
   exportThemeJSON: () => string;
   importThemeJSON: (jsonString: string) => boolean;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const ThemeProvider: React.FC<{ children: React.ReactNode; receiveOnly?: boolean; initialTheme?: ThemeSettings }> = ({ children, receiveOnly = false, initialTheme }) => {
   const [themeSettings, setThemeSettings] = useState<ThemeSettings>(() => {
+    if (receiveOnly) return initialTheme ?? defaultThemeSettings;
     const saved = localStorage.getItem('themeSettings');
     if (saved) {
       try {
@@ -33,6 +35,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   // Fetch backend settings on startup
   useEffect(() => {
+    if (receiveOnly) return;
     const fetchBackendTheme = async () => {
       try {
         const res = await backendFetch('/api/settings');
@@ -45,7 +48,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       }
     };
     fetchBackendTheme();
-  }, []);
+  }, [receiveOnly]);
 
   useEffect(() => {
     applyThemeToDocument(themeSettings);
@@ -60,8 +63,15 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     styleTag.textContent = themeSettings.customCSS;
 
     // Save to LocalStorage
-    localStorage.setItem('themeSettings', JSON.stringify(themeSettings));
-  }, [themeSettings]);
+    if (!receiveOnly) localStorage.setItem('themeSettings', JSON.stringify(themeSettings));
+  }, [themeSettings, receiveOnly]);
+
+  const receiveThemeSettings = useCallback((settings: ThemeSettings) => {
+    setThemeSettings(previous => {
+      const next = normalizeThemeSettings(settings, previous);
+      return (Object.keys(next) as Array<keyof ThemeSettings>).every(key => next[key] === previous[key]) ? previous : next;
+    });
+  }, []);
 
   const syncToBackend = async (newSettings: ThemeSettings) => {
     try {
@@ -76,6 +86,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const updateThemeSettings = (updates: Partial<ThemeSettings>) => {
+    if (receiveOnly) return;
     setThemeSettings(prev => {
       const updated = normalizeThemeSettings({ ...prev, ...updates }, prev);
       syncToBackend(updated);
@@ -121,6 +132,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     <ThemeContext.Provider value={{
       themeSettings,
       updateThemeSettings,
+      receiveThemeSettings,
       exportThemeJSON,
       importThemeJSON
     }}>

@@ -1,4 +1,13 @@
 {
+  "Transmission type": "變速箱類型",
+  "Discrete gears": "離散檔位",
+  "Game-visible CVT adjustability": "遊戲中可見的 CVT 可調能力",
+  "Fixed / locked": "固定／鎖定",
+  "Final drive only": "僅終傳比",
+  "Simulated gears": "模擬檔位",
+  "Foundation": "基礎契約",
+  "CVT recommendations are unavailable pending real capture and solver validation.": "CVT 建議尚不可用，仍需真實採樣與求解器驗收。",
+  "Record the vehicle, PI/Class, installed parts and visible final drive settings with a continuous raw telemetry session. Keep unknown values unknown; ratio limits require traceable measurement.": "請在連續原始遙測中記錄車輛、PI／Class、改裝及可見終傳設定。未知值保留未知；變速比限位須有可追溯量測來源。",
   "Rhine Lab": "Rhine Lab",
   "Paper surfaces, archival typography and precise instrument markings": "紙面材質、檔案字階與精準儀器刻度",
   "Theme credits": "主題署名",

@@ -60,6 +60,7 @@ fn execute(args: &Options, ctx: &Context) -> Result<Value, String> {
                 Some(
                     crate::tuning::evidence::EvidenceRequest::SavedEngine { .. }
                         | crate::tuning::evidence::EvidenceRequest::SavedEv { .. }
+                        | crate::tuning::evidence::EvidenceRequest::SavedCvt { .. }
                 )
             );
             let result = if saved {

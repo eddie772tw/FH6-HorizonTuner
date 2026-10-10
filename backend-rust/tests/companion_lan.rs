@@ -92,6 +92,70 @@ async fn lan_pairing_limits_routes_and_revokes_session() {
         .await
         .unwrap();
     assert_eq!(workflow.status(), StatusCode::OK);
+    let initial: Value =
+        serde_json::from_slice(&to_bytes(workflow.into_body(), 8192).await.unwrap()).unwrap();
+    assert_eq!(initial["visualTheme"]["schemaVersion"], 1);
+    assert_eq!(initial["visualTheme"].as_object().unwrap().len(), 6);
+    assert_eq!(initial["hostOnline"], false);
+    for core in [
+        "default",
+        "modern",
+        "elegant",
+        "swiss",
+        "swiss-editorial",
+        "swiss-contrast",
+        "rhine-lab",
+    ] {
+        for mode in ["light", "dark"] {
+            app.config.handle("POST", "/api/settings", &json!({"theme":{"mode":mode,"halfmoonCore":core,"primaryColor":"#123456","secondaryColor":"#abcdef","accentColor":"#987654","customCSS":"body{background:url(secret)}"}})).unwrap().unwrap();
+            let response = router
+                .clone()
+                .oneshot(request(
+                    Method::GET,
+                    "/api/companion/workflow",
+                    Some(session),
+                    None,
+                    Body::empty(),
+                ))
+                .await
+                .unwrap();
+            let next: Value =
+                serde_json::from_slice(&to_bytes(response.into_body(), 8192).await.unwrap())
+                    .unwrap();
+            assert_eq!(next["revision"], initial["revision"]);
+            assert_eq!(next["snapshot"], initial["snapshot"]);
+            assert_eq!(next["hostOnline"], false);
+            assert_eq!(next["visualTheme"]["mode"], mode);
+            assert_eq!(next["visualTheme"]["halfmoonCore"], core);
+            assert_eq!(next["visualTheme"].as_object().unwrap().len(), 6);
+            assert!(!next.to_string().contains("secret"));
+        }
+    }
+    for (method, path) in [
+        (Method::GET, "/api/settings"),
+        (Method::POST, "/api/settings"),
+        (Method::POST, "/api/companion/lan/pairing"),
+        (Method::DELETE, "/api/companion/devices/tablet-1"),
+    ] {
+        let response = router
+            .clone()
+            .oneshot(request(method, path, Some(session), None, Body::empty()))
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::NOT_FOUND);
+    }
+    let wrong_origin = router
+        .clone()
+        .oneshot(request(
+            Method::GET,
+            "/api/companion/workflow",
+            Some(session),
+            Some("http://attacker.example"),
+            Body::empty(),
+        ))
+        .await
+        .unwrap();
+    assert_eq!(wrong_origin.status(), StatusCode::FORBIDDEN);
 
     let host_control = router
         .clone()

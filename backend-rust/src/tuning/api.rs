@@ -8,6 +8,11 @@ pub fn request(
     request: &ApiRequest,
     evidence: &super::evidence::EvidenceService,
 ) -> ApiResult<Option<ApiResponse>> {
+    if request.method == "POST" && request.path == "/api/tuning/cvt-evidence" {
+        return Ok(Some(ApiResponse::json(
+            evidence.save_cvt(&request.json()?)?,
+        )));
+    }
     if request.method == "POST" && request.path == "/api/tuning/engine-archive" {
         return Ok(Some(ApiResponse::json(
             crate::tuning::measurement::parse_archive(&request.json()?),

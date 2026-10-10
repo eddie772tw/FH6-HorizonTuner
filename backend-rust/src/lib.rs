@@ -3,6 +3,7 @@ pub mod agent_cli;
 pub mod app;
 pub mod assets;
 pub mod companion;
+pub mod companion_theme;
 pub mod companion_usb;
 mod companion_usb_runtime;
 pub mod companion_workflow;

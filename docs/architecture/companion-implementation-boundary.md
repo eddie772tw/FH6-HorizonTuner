@@ -11,7 +11,8 @@ The Rust sidecar embeds `frontend/dist/companion` and shared `frontend/dist/asse
 - profile, workflow, and measurement commands;
 - queued command acknowledgements and current workflow state;
 - `profileKey` checks that reject stale profile results;
-- a host lease and client heartbeat for ownership and liveness.
+- a host lease and client heartbeat for ownership and liveness;
+- a versioned visual projection from ConfigService outside the tuning snapshot, received by Web/native without settings POST. See [the theme contract](../../companion/theme/README.md) for cache, generation and validation boundaries.
 
 The user-facing workflow has four steps:
 
@@ -37,12 +38,12 @@ mDNS discovery, Bluetooth Classic RFCOMM, and a native offline HUD cache are pla
 The Android validation command is:
 
 ```text
-./gradlew :protocol-core:test :app:lintDebug :app:assembleDebug
+./gradlew :protocol-core:test :theme:testDebugUnitTest :app:testDebugUnitTest :app:lintDebug :app:assembleDebug
 ```
 
 Use generic `JAVA_HOME` and `ANDROID_HOME` environment variables; product documentation does not prescribe a machine-specific SDK path. The desktop frontend build emits the Companion page and shared assets before Rust sidecar compilation. A CI sidecar build may consume a verified frontend artifact, but must fail clearly when `frontend/dist/companion/index.html` or its shared assets are absent.
 
-These checks cover Kotlin/JVM protocol tests, Android lint, and debug packaging. They do not prove USB permissions, ADB setup, physical-device rendering, LAN reachability, QR scanning, mDNS, RFCOMM, or gameplay telemetry acceptance. Those require a separately recorded device test with the PC Full app, actual HTTP port, connection path, and observed logs.
+These checks cover protocol, visual contract/cache unit tests, Android lint, and debug packaging. They do not prove USB permissions, ADB setup, physical-device rendering, LAN reachability, QR scanning, mDNS, RFCOMM, or gameplay telemetry acceptance. Those require a separately recorded device test with the PC Full app, actual HTTP port, connection path, and observed logs.
 
 ## Acceptance checklist
 

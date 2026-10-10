@@ -1,16 +1,18 @@
 package org.horizontuner.companion.theme
 
 import androidx.compose.ui.graphics.Color
+import kotlin.math.pow
 
-// Halfmoon CSS v2 Design Tokens
-val HalfmoonDarkBg = Color(0xFF0D0D0D)            // Companion WebView outer surface
-val HalfmoonDarkSurface = Color(0xFF10141E)       // Companion panel
-val HalfmoonDarkSurfaceVariant = Color(0xFF0C0F16)// Companion inner surface
-val HalfmoonBorder = Color(0xFF343941)            // Companion panel outline
-val HalfmoonPrimary = Color(0xFF0066FF)           // Companion action blue
-val HalfmoonSuccess = Color(0xFF198754)           // --bs-success (Grip / Active)
-val HalfmoonWarning = Color(0xFFFFC107)           // --bs-warning (Tire slip alert)
-val HalfmoonDanger = Color(0xFFDC3545)            // --bs-danger (Redline / Overheat)
-val HalfmoonInfo = Color(0xFF0DCAF0)              // --bs-info (Telemetry neutral)
-val HalfmoonTextPrimary = Color(0xFFF1F5F9)       // Companion foreground
-val HalfmoonTextSecondary = Color(0xFF94989E)     // Companion secondary text
+/** Functional status colors are independent of the user palette (Halfmoon semantic colors). */
+object StatusColors {
+    val success = Color(0xFF198754)
+    val warning = Color(0xFFFFC107)
+    val danger = Color(0xFFDC3545)
+}
+
+fun hexColor(hex: String): Color = Color(0xFF000000L or hex.drop(1).toLong(16))
+fun foreground(fill: Color): Color {
+    fun linear(channel: Float): Double = if (channel <= 0.04045f) channel / 12.92 else ((channel + 0.055) / 1.055).pow(2.4)
+    val luminance = linear(fill.red) * 0.2126 + linear(fill.green) * 0.7152 + linear(fill.blue) * 0.0722
+    return if (luminance > 0.179) Color.Black else Color.White
+}
