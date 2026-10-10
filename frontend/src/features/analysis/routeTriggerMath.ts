@@ -192,7 +192,7 @@ export function calculateLapsFromPoints(
     const group = lapMap.get(lapNum) ?? [];
     if (group.length === 0) continue;
 
-    // [PERF] Manual unrolling to avoid .map() intermediate objects and closure overhead in high-frequency path
+    // Aggregate a loaded session in one pass per lap, avoiding intermediate arrays.
     let minTime = Infinity;
     let maxTime = -Infinity;
     let maxSpeedRaw = -Infinity;
