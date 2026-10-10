@@ -679,3 +679,10 @@
 - **Evidence**：新增七 core mapping tests，純 JVM 的實際 Google Maven Compose AAR／Kotlin 2.2.21 contracts 15 passed、0 failure／error／skipped；前端 1747 passed／1 skipped 與 Companion build 通過。MiSans 376 WOFF2 分片共 12,197,248 bytes 與既有 manifest 逐檔雜湊一致。來源、角色表、驗證命令與 fallback 差距見 `docs/frontend/companion-typography-fidelity/README.md`；精確 head Android CI 於 push 後保留於 stacked PR body。
 - **Boundary**：專用分支基於 #498 的 `901c545d`，沒有修改 #498 分支或標 Ready。無新字體／格式轉換／協議接受；MiSans 分包工具 Apache 不代表字體本身授權，官方格式來源未核實，body 仍為明示 SansSerif fallback。native＋WebView 視覺／裝置矩陣 NOT_RUN，不宣稱像素一致；bridge／安全／主題投影／調校流程與 blur／動畫 scope 均未擴大。
 - **Skills**：`halfmoon-design-system`、`pr-author-maintainer`。
+
+## 2026-10-10 / PR #503 Rhine badge 字距審查修正（Codex as Codex）
+
+- **Learning**：badge 不一定繼承 control 字距。`rhine.css` 的 `.badge` 明定 `.025em`，control 為 `.015em`；Swiss badge 才消費 `--control-tracking`，Halfmoon 連線狀態 badge 繼承 normal spacing。集中 role 時仍須逐用途核對 CSS。
+- **Evidence**：七 core mapping test 加入 badge 字距欄位，先重現 Rhine expected `.025em`／actual `.015em`，分離 badge tracking 後純 JVM 15 passed、0 failures／errors／skipped；前端 198 passed files／1747 passed tests／1 skipped，diff check 通過。新 head 的 Android unit／lint／assemble 與 artifact 證據更新於 #503 PR body。
+- **Boundary**：只改 Rhine badge 字距；heading／control／readout 未改。Halfmoon 基底 badge 字重 400 與目前 native 600 的差距另外記錄；字體 fallback、裝置／native＋WebView 視覺 QA NOT_RUN 與 #498 stacked Draft 依賴維持。
+- **Skills**：`halfmoon-design-system`、`pr-author-maintainer`。

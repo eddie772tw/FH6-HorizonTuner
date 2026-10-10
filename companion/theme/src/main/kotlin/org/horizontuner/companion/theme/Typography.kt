@@ -55,6 +55,8 @@ fun companionTypography(core: CoreTheme): CompanionTypography {
         CoreTheme.RHINE -> .015f
         else -> 0f
     }
+    // Swiss badges use control-tracking; Rhine .badge independently specifies .025em.
+    val badgeTracking = if (core == CoreTheme.RHINE) .025f else controlTracking
     val headingWeight = if (core == CoreTheme.SWISS || core == CoreTheme.CONTRAST) FontWeight.Bold else FontWeight.SemiBold
     val controlWeight = if (core.system == DesignSystem.HALFMOON) FontWeight.Normal else FontWeight.SemiBold
     val body = TextStyle(
@@ -80,7 +82,7 @@ fun companionTypography(core: CoreTheme): CompanionTypography {
         fontStack = stack,
         material = material,
         supporting = body.copy(fontSize = 13.sp),
-        badge = control(12).copy(fontWeight = FontWeight.SemiBold),
+        badge = body.copy(fontSize = 12.sp, fontWeight = FontWeight.SemiBold, letterSpacing = badgeTracking.em),
         selectedTab = control(14).copy(fontWeight = if (core.system == DesignSystem.SWISS) FontWeight.Bold else FontWeight.SemiBold),
         readoutLabel = body.copy(fontSize = 11.sp, fontWeight = FontWeight.SemiBold,
             letterSpacing = (if (core == CoreTheme.SWISS || core == CoreTheme.CONTRAST) .08f else .025f).em),

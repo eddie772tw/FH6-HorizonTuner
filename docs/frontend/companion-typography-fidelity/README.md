@@ -11,15 +11,17 @@
 
 Typography 從色彩／shape tokens 分離至 [`Typography.kt`](../../../companion/theme/src/main/kotlin/org/horizontuner/companion/theme/Typography.kt)。`HalfmoonTheme` 依 core 集中提供 Material 15 roles 與 supporting、badge、selected-tab、instrument readout roles；mode／配色不改字體契約。沒有改 receive-only bridge、cache、generation、配對、安全投影、status colors、48dp targets 或調校工作流。
 
-| Core | Requested body family | Heading weight／tracking | Control weight／tracking | Readout-label tracking |
-| --- | --- | --- | --- | --- |
-| Default／Modern／Elegant | Outfit→Inter | 600／.025em | 400／normal | .025em |
-| Swiss Technical | Inter | 700／.04em | 600／.025em | .08em |
-| Swiss Editorial | Inter | 600／normal | 600／normal | .025em |
-| Swiss Contrast | Inter | 700／.02em | 600／.02em | .08em |
-| Rhine Lab | Rhine MiSans | 600／.015em | 600／.015em | .025em |
+| Core | Requested body family | Heading weight／tracking | Control weight／tracking | Badge tracking | Readout-label tracking |
+| --- | --- | --- | --- | --- | --- |
+| Default／Modern／Elegant | Outfit→Inter | 600／.025em | 400／normal | normal | .025em |
+| Swiss Technical | Inter | 700／.04em | 600／.025em | .025em | .08em |
+| Swiss Editorial | Inter | 600／normal | 600／normal | normal | .025em |
+| Swiss Contrast | Inter | 700／.02em | 600／.02em | .02em | .08em |
+| Rhine Lab | Rhine MiSans | 600／.015em | 600／.015em | .025em | .025em |
 
 來源：[`halfmoon.css`](../../../frontend/src/styles/design-systems/halfmoon.css)、[`swiss.css`](../../../frontend/src/styles/design-systems/swiss.css)、[`rhine.css`](../../../frontend/src/styles/design-systems/rhine.css)。Contrast 沒有覆寫 readout tracking，仍繼承 Swiss `.08em`，不能把 control 的 `.02em` 當作 readout tracking。
+
+2026-10-10 badge review 修正：原先 badge 由 control role 派生，誤使 Rhine badge tracking 為 `.015em`；`rhine.css` 的 `.badge` 明定 `.025em`，現在獨立映射。Swiss `.badge` 仍消費各 core 的 control tracking，Halfmoon 原生基底在此連線狀態上下文繼承 body 的 normal spacing。既有七 core mapping test 加入 badge 欄位與 Rhine `.025em` regression assertion；heading／control／readout 原值未改。此輪只處理字距；另核實 Halfmoon CSS 基底 badge 字重為 400、目前 native badge 為 600，這項字重差距另待切片範圍處置，沒有宣稱完整 badge 字重一致。
 
 Section heading 沿用 native 的 16sp，Editorial 以既有 CSS 1.05rem 對應 16.8sp。readout label 依 [`base.css`](../../../frontend/src/styles/base.css) `.6875rem` 對應 11sp／600；Swiss 三 core 使用 uppercase，其餘保留文字。數值 tracking 為 normal；Halfmoon instrument family 依 CSS 為 platform monospace，Swiss／Rhine 為 body。值的預設大小為 native body 14sp，實際儀表可按用途指定大小；此 shell 尚無原生儀表，沒有新增測試畫面或遙測流程。
 
