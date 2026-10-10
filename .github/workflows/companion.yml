@@ -22,6 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
+        shell: bash
         working-directory: companion
     steps:
       - name: Check out repository
@@ -40,6 +41,32 @@ jobs:
       - name: Run protocol, theme and app tests, Android lint, and debug assemble
         run: bash ./gradlew --no-daemon --stacktrace :protocol-core:test :theme:testDebugUnitTest :app:testDebugUnitTest :app:lintDebug :app:assembleDebug
 
+      - name: Measure stacked native-font APK increment against actual parent
+        if: github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'feature/issue-485-typography-fidelity'
+        env:
+          FONT_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          git fetch --no-tags --depth=1 origin "$FONT_BASE_SHA"
+          git worktree add --detach "$RUNNER_TEMP/companion-font-baseline" "$FONT_BASE_SHA"
+          (cd "$RUNNER_TEMP/companion-font-baseline/companion" && bash ./gradlew --no-daemon :app:assembleDebug)
+          mkdir -p build/verification
+          cp "$RUNNER_TEMP/companion-font-baseline/companion/app/build/outputs/apk/debug/app-debug.apk" build/verification/baseline-debug.apk
+          printf '%s\n' "$FONT_BASE_SHA" > build/verification/font-baseline-sha.txt
+
+      - name: Verify APK gate rejects a missing-font fixture
+        run: |
+          mkdir -p build/verification
+          bash scripts/TestFontApkGate.sh app/build/outputs/apk/debug/app-debug.apk | tee build/verification/font-negative-control.txt
+
+      - name: Verify unmodified fonts and accessible notice assets in APK
+        run: |
+          mkdir -p build/verification
+          if test -f build/verification/baseline-debug.apk; then
+            java scripts/VerifyFontApk.java app/build/outputs/apk/debug/app-debug.apk build/verification/baseline-debug.apk | tee build/verification/font-apk.txt
+          else
+            java scripts/VerifyFontApk.java app/build/outputs/apk/debug/app-debug.apk | tee build/verification/font-apk.txt
+          fi
+
       - name: Record Android verification evidence
         env:
           COMPANION_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
@@ -48,7 +75,7 @@ jobs:
           printf '%s\n' "$COMPANION_HEAD_SHA" > build/verification/head-sha.txt
           git rev-parse HEAD > build/verification/checkout-sha.txt
           git rev-parse 'HEAD^{tree}' > build/verification/checkout-tree.txt
-          git ls-files '*.kt' '*.kts' 'gradle/wrapper/gradle-wrapper.properties' | xargs sha256sum > build/verification/source-sha256.txt
+          git ls-files -z '*.kt' '*.kts' 'gradle/wrapper/gradle-wrapper.properties' 'scripts/*.java' 'scripts/*.sh' 'theme/src/main/res/font/*' 'theme/src/main/assets/font_notices/*' '../.github/workflows/companion.yml' | xargs -0 sha256sum > build/verification/source-sha256.txt
           java -version 2> build/verification/java-version.txt
           for report_dir in protocol-core/build/test-results/test theme/build/test-results/testDebugUnitTest app/build/test-results/testDebugUnitTest; do
             test -n "$(find "$report_dir" -maxdepth 1 -name 'TEST-*.xml' -print -quit)"
@@ -73,5 +100,6 @@ jobs:
             companion/app/build/reports/lint-results-debug.*
             companion/app/build/outputs/apk/debug/app-debug.apk
             companion/build/verification/*.txt
+            companion/build/verification/baseline-debug.apk
           if-no-files-found: error
           retention-days: 14
