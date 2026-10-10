@@ -135,3 +135,6 @@ Additionally, attempting to optimize 60Hz telemetry data copying in `FrameInterp
 ## 2024-11-26 - Caching DOM getComputedStyle in Canvas render loop with logical nullish assignment
 **Learning:** `getComputedStyle` is an extremely expensive DOM operation. When used inside a 60Hz canvas render loop with a nullish coalescing operator (`styleRef.current ?? getComputedStyle(...)`), if the result isn't explicitly assigned back to the ref, it causes massive CPU overhead on every frame.
 **Action:** Use logical nullish assignment (`??=`) when caching expensive operations like `getComputedStyle` to a ref (e.g., `styleRef.current ??= getComputedStyle(...)`) to ensure it's evaluated exactly once and properly cached.
+## 2024-05-18 - Avoid chained map/filter/reduce in high-frequency loops
+**Learning:** Chaining \`Array.prototype.map\`, \`.filter\`, and \`.reduce\` operations in high-frequency data processing functions (like telemetry point analysis in \`calculateLapsFromPoints\`) creates excessive intermediate array allocations and closure overhead, leading to significant garbage collection (GC) pressure and slower execution.
+**Action:** When aggregating or filtering data in high-frequency or large-array paths, replace chained array methods with a single manual O(N) \`for\` loop to compute aggregates (like min/max/sum) inline.
