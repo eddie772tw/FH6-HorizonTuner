@@ -81,7 +81,8 @@ it('receives rapid changes without settings POST or remounting a dirty draft, na
     expect(host.querySelector('input')).toBe(weight);
     expect(weight.value).toBe('1555');
     expect(host.textContent).toContain('companion.unsaved_draft');
-    expect(nav.getAttribute('aria-current')).toBe('location');
+    expect(nav.getAttribute('aria-selected')).toBe('true');
+    expect(nav.getAttribute('role')).toBe('tab');
     expect(host.querySelector('#companion-engine')).toBe(measurement);
     expect(measurement?.textContent).toContain('collecting');
     expect(measurement?.textContent).toContain('41');

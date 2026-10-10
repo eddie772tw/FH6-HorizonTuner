@@ -39,7 +39,8 @@ it('keeps Engine navigation attached to its mounted section for discrete and CVT
       const button = Array.from(host.querySelectorAll('nav button')).find(node => node.textContent === 'Engine')!;
       await act(async () => button.dispatchEvent(new MouseEvent('click', { bubbles: true })));
       expect(scroll).toHaveBeenCalledExactlyOnceWith({ behavior: 'smooth', block: 'start' });
-      expect(button.getAttribute('aria-current')).toBe('location');
+      expect(button.getAttribute('aria-selected')).toBe('true');
+      expect(button.getAttribute('role')).toBe('tab');
       expect(target!.textContent).toContain(cvt ? unavailable : 'Engine measurement');
     }
     expect(onCommand).not.toHaveBeenCalled();
