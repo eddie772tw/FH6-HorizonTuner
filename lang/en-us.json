@@ -1,4 +1,13 @@
 {
+  "Transmission type": "Transmission type",
+  "Discrete gears": "Discrete gears",
+  "Game-visible CVT adjustability": "Game-visible CVT adjustability",
+  "Fixed / locked": "Fixed / locked",
+  "Final drive only": "Final drive only",
+  "Simulated gears": "Simulated gears",
+  "Foundation": "Foundation",
+  "CVT recommendations are unavailable pending real capture and solver validation.": "CVT recommendations are unavailable pending real capture and solver validation.",
+  "Record the vehicle, PI/Class, installed parts and visible final drive settings with a continuous raw telemetry session. Keep unknown values unknown; ratio limits require traceable measurement.": "Record the vehicle, PI/Class, installed parts and visible final drive settings with a continuous raw telemetry session. Keep unknown values unknown; ratio limits require traceable measurement.",
   "Rhine Lab": "Rhine Lab",
   "Paper surfaces, archival typography and precise instrument markings": "Paper surfaces, archival typography and precise instrument markings",
   "Theme credits": "Theme credits",

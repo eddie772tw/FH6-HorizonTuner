@@ -6,6 +6,8 @@ v1.7.1：正式調校公式、資格審查與數值診斷之唯一 owner 已全�
 
 ## 現行模型與調校參考
 
+- **CVT 安全 foundation（solver 尚未完成）**：[CVT 契約與驗收界線](cvt-foundation.md)，記錄明確能力選擇、Rust raw evidence qualification／保存重播與真實資料缺口。
+
 - **AEGO Road v3 起步與運動學診斷**：[AEGO Road Launch v3 報告與邊界分析](aego-road-launch-v3.md)，說明有效紅線修正、Rspeed 先驗與多檔扭力分配。
 - **AEGO 低功率與斷油特徵閉環**：[AEGO 低功率修正紀錄](aego-low-power-20260927.md)，記錄低打滑起步瞬態過濾、斷油自動辨識與 2026-09-28 六項實車驗收基準。
 - **EV 獨立模型基礎**：[EV 獨立量測與齒比基礎模型](../calibration/ev-foundation.md)，記錄 `ev-measurement/v1` 專屬流程與單速/多速齒比契約。

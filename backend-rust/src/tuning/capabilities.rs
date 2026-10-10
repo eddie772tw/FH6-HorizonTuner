@@ -11,8 +11,9 @@ pub fn contract(car: &Value) -> Value {
     let diff = part("diff");
     let su = suspension != "Fixed" && suspension != "unknown";
     let au = arb == "Adjustable";
-    let gu = gearbox == "Full" || gearbox == "FinalDrive";
-    let fu = gearbox == "Full";
+    let cvt = super::cvt::selected(car);
+    let gu = !cvt && (gearbox == "Full" || gearbox == "FinalDrive");
+    let fu = !cvt && gearbox == "Full";
     let aero_u = ["Adjustable", "Front Only", "Rear Only"].contains(&aero);
     let bu = brakes == "Adjustable";
     let du = diff == "Adjustable";

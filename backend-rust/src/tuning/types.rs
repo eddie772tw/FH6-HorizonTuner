@@ -75,6 +75,13 @@ pub struct GearingSecondaryCorrection {
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct TuningCarParams {
+    /// Explicit user selection. Absence preserves historical ICE/EV documents.
+    #[serde(
+        default,
+        alias = "transmission",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub transmission: Option<super::cvt::Transmission>,
     #[serde(alias = "isElectric")]
     pub is_electric: Option<bool>,
     pub weight: Option<f64>,

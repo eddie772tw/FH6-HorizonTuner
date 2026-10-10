@@ -136,3 +136,5 @@ id_rsa*
 /.agents/PROJECT.md
 /.agents/TEST_INFRA.md
 /backend/car_params
+# Task-local official Rust toolchain (never distributed).
+.toolchains/

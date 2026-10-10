@@ -10,8 +10,8 @@ const fetchMock = vi.mocked(backendFetch);
 const good = (tag: string) => ({ ok: true, json: async () => ({ schemaVersion: 'tuning-workflow-result/v1', tag }) }) as Response;
 let root: Root; let host: HTMLDivElement;
 const profile = { weight: 1300, weight_distribution: 54 } as CarParams;
-function Probe({ carId, weight = 1300 }: { carId: string; weight?: number }) {
-  const { result, status } = useWorkflowCalculation(carId, 'Road', 'Summer', { ...profile, weight }, null, null, {});
+function Probe({ carId, weight = 1300, cvt = false }: { carId: string; weight?: number; cvt?: boolean }) {
+  const { result, status } = useWorkflowCalculation(carId, 'Road', 'Summer', { ...profile, weight, ...(cvt ? { transmission: { type: 'cvt' as const, capability: 'unknown' as const } } : {}) }, null, null, {});
   return <output>{status}:{JSON.stringify(result)}</output>;
 }
 beforeEach(() => {
@@ -49,4 +49,22 @@ it('does not redisplay an old A result after A to B to A', async () => {
   await act(async () => root.render(<Probe carId="2" />));
   await act(async () => root.render(<Probe carId="1" />));
   expect(host.textContent).toBe('pending:null');
+});
+it('rejects late ICE results and old servers after an explicit CVT selection', async () => {
+  const pending: ((response: Response) => void)[] = [];
+  fetchMock.mockImplementation(() => new Promise(r => pending.push(r)));
+  await act(async () => root.render(<Probe carId="1" />));
+  await act(async () => root.render(<Probe carId="1" cvt />));
+  expect(host.textContent).toBe('pending:null');
+  expect(JSON.parse(fetchMock.mock.calls[1][1]!.body as string).evidence).toBeNull();
+  await act(async () => pending[0](good('late-ice')));
+  expect(host.textContent).not.toContain('late-ice');
+  await act(async () => pending[1](good('old-server')));
+  expect(host.textContent).toBe('error:null');
+});
+it('consumes the Rust CVT diagnostics while keeping application unavailable', async () => {
+  fetchMock.mockResolvedValue({ ok: true, json: async () => ({ schemaVersion: 'tuning-workflow-result/v1', cvt: { schemaVersion: 'cvt-qualification/v1', status: 'unsupported', captureStatus: 'missing', diagnostics: [{ code: 'raw-capture-required' }] }, gearing: null, recommendation: null, readiness: { measuredEngine: false, gearingAvailable: false } }) } as Response);
+  await act(async () => root.render(<Probe carId="1" cvt />));
+  expect(host.textContent).toContain('ready:');
+  expect(host.textContent).toContain('raw-capture-required');
 });

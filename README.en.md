@@ -29,6 +29,8 @@ The current release provides **real-time telemetry dashboards**, a **customizabl
 
 ## Core Features
 
+CVT foundation adds explicit transmission and adjustability selection with Rust-owned raw capture provenance, qualification and replay. Desktop, Companion and workflow CLI share the restrictions. Real CVT captures and the solver remain unvalidated; applicable recommendations and ratio previews are unavailable. See the [contract and acceptance boundaries](docs/tuning/cvt-foundation.md).
+
 AEGO Road now uses qualified moving-sweep bin averages and jointly allocates first gear, final drive and top gear. Historical observations remain readable; insufficient captures or infeasible model targets block recommendations. On 2026-09-28, the user confirmed completion of all six in-game acceptance items. Engineering priors, evidence attribution and scope limitations are documented in the [low-power Road fix record](docs/tuning/aego-low-power-20260927.md).
 
 * **Real-time Telemetry & Dynamics (60Hz Live Data)**:
