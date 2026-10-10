@@ -17,7 +17,7 @@ mDNS discovery, Bluetooth Classic RFCOMM, and a native offline HUD cache are pla
 ## Modules
 
 - `:protocol-core` is a pure Kotlin/JVM module for transport abstractions, framing, telemetry decoding, connection liveness, and protocol tests. It maintains bi-directional synchronization with the upstream PadLink protocol (`ITransport`, 5-state `ConnectionStateMachine`, `HeartbeatWatchdog`, and pairing manager). It does not own tuning formulas.
-- `:theme` currently provides Compose theme tokens; synchronization with desktop Core Theme, mode and Color Presets remains pending.
+- `:theme` provides validated visual settings and centralized Compose tokens for all seven cores; the backend workflow GET supplies receive-only synchronization. See [the theme contract](theme/README.md).
 - `:app` provides the Android 13+ Compose shell, WebView, connection validation, and the `connectedDevice` foreground service.
 - `frontend/companion` and `frontend/src/features/companion` provide the shared Companion page, five telemetry cards, and four-step remote workflow.
 
@@ -25,7 +25,7 @@ The current workflow is four steps: **Goal & Setup**, **Chassis & Tires**, **Eng
 
 ## Theme integration follow-up
 
-The WebView loads the desktop's shared CSS and theme bootstrap. Native Compose navigation, connection/offline screens, live theme synchronization and some WebView section tabs still require integration. [Issue #485](https://github.com/eddie772tw/FH6-HorizonTuner/issues/485) tracks this work alongside Companion feature completion, including Swiss Technical, Editorial and Contrast. Follow the [shared design-system guide](../docs/frontend/design-systems.md); desktop browser checks do not establish Android acceptance.
+The WebView and native shell receive the same bounded backend visual projection through the existing workflow poll. The first theme slice adds endpoint-scoped native cache/bootstrap, generation checks, centralized native tokens and shared section navigation. Native typography/material fidelity and device acceptance still require verification. See [the theme contract](theme/README.md). [Issue #485](https://github.com/eddie772tw/FH6-HorizonTuner/issues/485) tracks this work alongside Companion feature completion, including Swiss Technical, Editorial and Contrast. Follow the [shared design-system guide](../docs/frontend/design-systems.md); desktop browser checks do not establish Android acceptance.
 
 ## Toolchain and validation
 
@@ -34,7 +34,7 @@ Use `JAVA_HOME` and `ANDROID_HOME` (or the Android Studio equivalents) rather th
 From this directory, the Android gate is:
 
 ```text
-./gradlew :protocol-core:test :app:lintDebug :app:assembleDebug
+./gradlew :protocol-core:test :theme:testDebugUnitTest :app:testDebugUnitTest :app:lintDebug :app:assembleDebug
 ```
 
 Desktop development builds the frontend distribution before compiling the Rust sidecar so the current Companion page and assets are embedded. CI may pass a previously verified frontend distribution to the sidecar build; the sidecar must reject a missing `frontend/dist/companion/index.html` instead of embedding stale or incomplete assets.

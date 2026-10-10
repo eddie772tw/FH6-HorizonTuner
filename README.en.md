@@ -55,6 +55,7 @@ AEGO Road now uses qualified moving-sweep bin averages and jointly allocates fir
 * **Android Companion (Beta)**:
   - A native Jetpack Compose connection shell hosts an Android WebView that loads the shared `frontend/dist/companion/index.html`, reusing the desktop five telemetry cards and four-step workflow.
   - Supports local network QR code pairing (LAN Pairing) and low-latency USB/ADB connection modes with automated reverse port forwarding and host lease protection.
+  - The first theme slice receives a bounded visual projection through authenticated workflow GET, with endpoint cache/bootstrap and generation checks shared by Web/native. Seven-core native tokens live in `:theme`; native font/material fidelity and device acceptance remain pending. See [the Companion theme contract](companion/theme/README.md).
   - Note: Pre-compiled APK binaries are not included in GitHub Release assets during the Beta phase; users can build from source in `companion/` via `./gradlew :app:assembleRelease` or `:app:assembleDebug`. See [Companion architecture and acceptance boundary](docs/architecture/companion-app-evaluation.md) and [Companion README](companion/README.md).
 * **Drag Launch Test & Acceleration Analyzer**:
   - Automatic timing tests for 0-100 km/h, 0-200 km/h, and 1/4 mile (400m) launch acceleration.

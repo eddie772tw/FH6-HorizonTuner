@@ -56,6 +56,7 @@ Road #462 修正採版本化 [launch envelope v3](docs/tuning/aego-road-launch-v
 * **Android Companion App（Beta）**:
   - 原生 Jetpack Compose 連線外殼搭配 Android WebView，載入共用 `frontend/dist/companion/index.html`，重用桌面端五大遙測卡片與四步工作流。
   - 支援區網 QR Code 一鍵掃碼配對 (LAN Pairing) 與低延遲 USB/ADB 連線模式，具備自動反向轉發與主機租約保護。
+  - 主題同步第一切片使用 authenticated workflow GET 的受限視覺投影；Web/native 共用 endpoint 快取與 generation 防護，七核心 tokens 集中於 `:theme`。原生字體／材質及裝置驗收仍待完成，見 [Companion 主題契約](companion/theme/README.md)。
   - 注意：Beta 階段 GitHub Release 產物未包含預編譯 APK，若欲體驗請於 `companion/` 目錄由原始碼手動編譯（`./gradlew :app:assembleRelease` 或 `:app:assembleDebug`）。詳見 [Companion 架構與驗收界線](docs/architecture/companion-app-evaluation.md) 與 [Companion README](companion/README.md)。
 * **彈射起步測試與加速度分析 (Drag Launch Test & Acceleration Analyzer)**:
   - 0-100 km/h, 0-200 km/h, 1/4 英里 (400m) 加速度自動計時測試。

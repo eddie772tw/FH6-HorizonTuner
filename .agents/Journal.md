@@ -653,3 +653,22 @@
 - **Evidence**：完整 Cargo 契約 183 passed／3 ignored；Vitest 196 passed files、1740 passed／1 skipped；`tsc && vite build` 通過。獨立後端 17 cases、前端 16 個 hook／DOM／provider 補充案例及 180000 筆 CSV 重現通過，scratch 證據不加入產品單元 gate。最終 commit 與遠端 CI 在 PR 留言記錄。
 - **Boundary**：未做真實 FH6 高速穿越、跨車種半徑校準或 MoTeC i2 開檔驗收；README／操作指南／UI 標示 LD／LDX 實驗性。`IsRaceOn` 不參與此錄製及 Road／ICE／EV 收錄資格；來源欄位與 HUD 顯示語意保留。
 - **Skills**：`pr-author-maintainer`、`pr-review-evaluation`、`cross-agent-collaboration`、`telemetry-udp-protocol`、`halfmoon-design-system`、`physics-tuning-math`、`ponytail`。
+
+## 2026-10-09 / Issue #485 主題同步第一切片（Codex as Codex）
+
+- **來源／狀態**：`local`／`partial_verified`；基準及遠端 main 皆為 `d4e0fe3762c613240f7d6902d07edcb212aa5926`，獨立分支 `feature/issue-485-theme-sync`。初次交付保留本機 diff；後續使用者授權只提交此切片、push 並建立 draft PR，SDK 授權仍暫停，不合併／發布。完整審查範圍見 `docs/frontend/companion-theme-sync-review/README.md`。
+- **Learning**：
+  1. Companion LAN 不開放完整 settings；主題必須由 ConfigService 投影到 authenticated workflow GET 的 snapshot 外，不能依賴 desktop lease 或 tuning revision，也不能由 desktop host bridge 另存權威。
+  2. React remote receive 要與 settings POST 分離；command busy 的 acknowledgement workflow poll 同樣須接收主題。缺省或失敗只保留最後有效值，不回寫設定或重掛工作區。
+  3. Native bootstrap／cache 要綁 canonical endpoint origin；每次連線 generation 的有效性需在 main-thread 套用時再檢查。舊配對／Cookie 回呼亦須檢查 connection attempt。
+  4. Linux 預設 Vite LAN profile 不輸出 Companion；驗證嵌入 sidecar 前須用 `FH6_PLATFORM=windows pnpm -C frontend run build`，確認 index/assets 存在。
+- **Evidence**：Vitest 198 passed files／1747 passed tests／1 skipped；LAN 與 Windows profile build 通過。含 Companion assets 的 Cargo 184 passed／2 ignored，無預設功能 176 passed／2 ignored；Rust fmt／diff check 通過。Kotlin 2.2.21／Compose compiler＋實際 libraries 的 6 個 native contract／token 案例通過；protocol Gradle 5 tests 通過；Shell compile-only 檢查通過（Activity enums／BuildConfig 用 stubs）。Chromium 151 的 390×844 七核心 × 日夜、dirty draft 與頁面溢出檢查通過，使用合成資料。
+- **Boundary**：初次本機 Android gate 被 SDK 36／Build Tools 35.0.0 未接受授權阻擋；後續遠端 compile／unit／lint／assemble／APK 證據見下節。本地 SDK 授權未接受，Android／WebView／裝置執行與真實遊戲未驗證。Compose 用 Android sans-serif fallback，CSS blur／radial anchor／Rhine 動效尚未實作。原始 log／完整 diff 另交獨立 review，不將純 JVM 或瀏覽器證據當成裝置驗收。
+- **Skills**：`halfmoon-design-system`、`modular-refactoring`、`pr-author-maintainer`。
+
+## 2026-10-09 / Issue #485 Android CI 證據留存（Codex as Codex）
+
+- **Learning**：Android Gradle task 成功可證明編譯與 gate 執行，但預設 log 不列 JUnit 計數；未 upload artifact 就無法取得 APK hash 或原始 XML。CI 應留存各模組 XML、lint、APK、head／checkout SHA 與 source hash，而不是用 source 的 @Test 數量當執行結果。
+- **Evidence**：head `c8ad8e479c087a31327beea7c6a864afba9e7a76` 的 run `37967243385` 已 success，但 artifacts 為空。補留存與 XML header 輸出後，head `add0c1fde401f99a2789c8f97e5a5d895c632fa9` 的 run `37969337059`／job `113951643171` 已 success，實際 protocol 5／theme 4／app 2 tests，0 failure／error／skipped；MainActivity compile、lint、assemble 均完成。artifact `11635360782` 包含原始 XML、lint、APK 與 provenance，APK runner SHA-256 `75b5d34cfe35365e7d57703d367108516d52a84346f688aee870b6dc34cce12e`。30 個 Android source hashes 與本機相同；產品程式碼未更動，合成 merge 不是合併 main。
+- **Boundary**：本地 SDK 授權保持暫停，不為重複 compile 安裝 SDK；Android／WebView／native 同框與生命週期仍需裝置驗收。工作區下載及檔案匯入受環境阻擋，未取得本機 APK bytes／重算 hash；實際 XML suite 計數來自 CI log，完整 XML／APK 留在 GitHub artifact。原始 job logs／metadata／計數及 hash 摘要保留。
+- **Skills**：`pr-author-maintainer`。
