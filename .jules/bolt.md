@@ -135,3 +135,7 @@ Additionally, attempting to optimize 60Hz telemetry data copying in `FrameInterp
 ## 2024-11-26 - Caching DOM getComputedStyle in Canvas render loop with logical nullish assignment
 **Learning:** `getComputedStyle` is an extremely expensive DOM operation. When used inside a 60Hz canvas render loop with a nullish coalescing operator (`styleRef.current ?? getComputedStyle(...)`), if the result isn't explicitly assigned back to the ref, it causes massive CPU overhead on every frame.
 **Action:** Use logical nullish assignment (`??=`) when caching expensive operations like `getComputedStyle` to a ref (e.g., `styleRef.current ??= getComputedStyle(...)`) to ensure it's evaluated exactly once and properly cached.
+
+## 2026-10-10 - Loaded-session aggregation (PR #502 feature)
+**Learning:** The reviewed calculateLapsFromPoints change aggregates loaded telemetry sessions once per lap, avoiding temporary arrays used only for min/max/sum. This is not a measured live 60Hz receiver performance result.
+**Action:** Preserve finite-sample filtering, observed start/closing boundaries, and the first positive finite LastLap in the next lap; use product lap-contract tests and recorded-session comparison before claiming a broader performance improvement.

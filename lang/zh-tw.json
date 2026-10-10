@@ -2093,5 +2093,11 @@
   "qualified-capture-unavailable": "目前 context 沒有合格 capture，請在第 3 步重新採集",
   "ev-tire-channels-unavailable": "現有 EV capture 未保存輪胎證據所需通道，此證據不可用",
   "saved-capture": "已保存的採集",
-  "imported-capture": "匯入的採集"
+  "imported-capture": "匯入的採集",
+  "Hz": "Hz",
+  "Creating…": "建立中…",
+  "Scanning…": "掃描中…",
+  "Connecting…": "連線中…",
+  "Choose a USB device": "選擇 USB 裝置",
+  "Device not ready": "裝置尚未就緒"
 }
