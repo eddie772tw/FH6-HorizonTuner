@@ -22,6 +22,10 @@ pub fn ev_profile(raw: &Value) -> Value {
 }
 pub fn normalize(raw: &Value) -> Value {
     let mut result: Value = serde_json::from_str(include_str!("profile_defaults.json")).unwrap();
+    if let Some(selection) = raw.get("transmission") {
+        // Preserve explicit/unknown choices; never guess or normalize them into ICE.
+        result["transmission"] = selection.clone();
+    }
     for (key, value) in result.as_object_mut().unwrap() {
         if key == "adjustability" {
             for (field, default) in value.as_object_mut().unwrap() {

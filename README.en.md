@@ -29,6 +29,8 @@ The current release provides **real-time telemetry dashboards**, a **customizabl
 
 ## Core Features
 
+CVT foundation adds explicit transmission and adjustability selection with Rust-owned raw capture provenance, qualification and replay. Desktop, Companion and workflow CLI share the restrictions. Real CVT captures and the solver remain unvalidated; applicable recommendations and ratio previews are unavailable. See the [contract and acceptance boundaries](docs/tuning/cvt-foundation.md).
+
 AEGO Road now uses qualified moving-sweep bin averages and jointly allocates first gear, final drive and top gear. Historical observations remain readable; insufficient captures or infeasible model targets block recommendations. On 2026-09-28, the user confirmed completion of all six in-game acceptance items. Engineering priors, evidence attribution and scope limitations are documented in the [low-power Road fix record](docs/tuning/aego-low-power-20260927.md).
 
 * **Real-time Telemetry & Dynamics (60Hz Live Data)**:
@@ -55,6 +57,7 @@ AEGO Road now uses qualified moving-sweep bin averages and jointly allocates fir
 * **Android Companion (Beta)**:
   - A native Jetpack Compose connection shell hosts an Android WebView that loads the shared `frontend/dist/companion/index.html`, reusing the desktop five telemetry cards and four-step workflow.
   - Supports local network QR code pairing (LAN Pairing) and low-latency USB/ADB connection modes with automated reverse port forwarding and host lease protection.
+  - The first theme slice receives a bounded visual projection through authenticated workflow GET, with endpoint cache/bootstrap and generation checks shared by Web/native. Seven-core native tokens live in `:theme`; native font/material fidelity and device acceptance remain pending. See [the Companion theme contract](companion/theme/README.md).
   - Note: Pre-compiled APK binaries are not included in GitHub Release assets during the Beta phase; users can build from source in `companion/` via `./gradlew :app:assembleRelease` or `:app:assembleDebug`. See [Companion architecture and acceptance boundary](docs/architecture/companion-app-evaluation.md) and [Companion README](companion/README.md).
 * **Drag Launch Test & Acceleration Analyzer**:
   - Automatic timing tests for 0-100 km/h, 0-200 km/h, and 1/4 mile (400m) launch acceleration.

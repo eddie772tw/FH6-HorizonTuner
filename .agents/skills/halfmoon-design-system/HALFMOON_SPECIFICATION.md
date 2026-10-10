@@ -73,7 +73,7 @@ Swiss 的 `--bg-gradient` 為各核心定義的實色；Technical 夜間為 `#0b
 * **`data-design-system`** (衍生的元件設計系統)：`halfmoon`、`swiss` 或 `rhine`，由核心 catalog 決定。
 
 #### 首幀防閃爍 (Anti-FOUC) 腳本
-由 `src/app/applyThemeEarly.ts` 於 React DOM 掛載前同步寫入模式、核心、設計系統及正規化配色，桌面、Lite 與 Web Companion 共用；Android Compose 的整合另由 #485 追蹤：
+由 `src/app/applyThemeEarly.ts` 於 React DOM 掛載前同步寫入模式、核心、設計系統及正規化配色，桌面、Lite 與 Web Companion 共用；Android Compose 的 receive-only 投影、endpoint cache／generation 與 token 映射見 [Companion 主題契約](../../../companion/theme/README.md)；#485 仍追蹤原生視覺與裝置驗收：
 ```typescript
 import { applyThemeEarly } from './app/applyThemeEarly';
 applyThemeEarly();

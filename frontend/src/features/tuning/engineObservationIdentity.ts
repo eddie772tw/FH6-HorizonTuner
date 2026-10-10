@@ -1,3 +1,4 @@
+import { usesCvt } from '../../domain/tuning/transmission';
 import type { TuningCarParams } from '../../domain/tuning/types';
 import type { TuningMeasurementState } from '../../domain/tuning/types';
 import type { TuningCaptureFile } from '../../domain/tuning/telemetryCapture';
@@ -11,5 +12,5 @@ export interface EngineObservation {
 export function engineDependencyKey(carId: string, profile: TuningCarParams | null): string {
   const key = [carId, profile?.drivetrain, profile?.induction, profile?.maxHp, profile?.maxTorque];
   // Keep historical ICE archives compatible; EV can never share their dependency key.
-  return JSON.stringify(profile?.isElectric ? [...key, 'ev/v1'] : key);
+  return JSON.stringify(usesCvt(profile) ? [...key, profile?.isElectric === true, profile?.transmission] : profile?.isElectric ? [...key, 'ev/v1'] : key);
 }

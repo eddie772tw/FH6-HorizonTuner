@@ -3,10 +3,17 @@ import { backendFetch } from '../../services/backend';
 import { readCompanionResponse, sendCompanionCommand } from './companionClient';
 import type { CompanionIntent, CompanionState } from './companionProtocol';
 import { companionUuid } from './companionUuid';
+import { useTheme } from '../../context/ThemeContext';
+import { receiveCompanionTheme } from './companionTheme';
 
-export function useCompanionSession() {
+export function useCompanionSession(themeGeneration?: string) {
+  const { receiveThemeSettings } = useTheme();
   const [clientId] = useState(companionUuid);
   const [state, setState] = useState<CompanionState | null>(null);
+  const receiveState = useCallback((next: CompanionState) => {
+    receiveCompanionTheme(next.visualTheme, receiveThemeSettings, themeGeneration);
+    setState(next);
+  }, [receiveThemeSettings, themeGeneration]);
   const [backendOnline, setBackendOnline] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -28,7 +35,7 @@ export function useCompanionSession() {
           const next = await readCompanionResponse(await backendFetch(`/api/companion/workflow?clientId=${encodeURIComponent(clientId)}`, { signal: controller.signal }));
           if (active && !controller.signal.aborted) {
             setBackendOnline(true);
-            setState(next);
+            receiveState(next);
           }
         } catch {
           if (active && !controller.signal.aborted) {
@@ -41,7 +48,7 @@ export function useCompanionSession() {
     };
     void poll();
     return () => { active = false; clearTimeout(timer); pollAbort.current?.abort(); commandAbort.current?.abort(); };
-  }, [clientId]);
+  }, [clientId, receiveState]);
 
   const send = useCallback(async (intent: CompanionIntent): Promise<boolean> => {
     const current = latest.current;
@@ -52,7 +59,7 @@ export function useCompanionSession() {
     const controller = new AbortController();
     commandAbort.current = controller;
     try {
-      await sendCompanionCommand({ ...intent, id: companionUuid(), carId: current.snapshot.carId, profileKey: current.snapshot.profileKey }, clientId, controller.signal, setState);
+      await sendCompanionCommand({ ...intent, id: companionUuid(), carId: current.snapshot.carId, profileKey: current.snapshot.profileKey }, clientId, controller.signal, receiveState);
       setNotice('Applied on PC');
       return true;
     } catch (reason) {
@@ -62,6 +69,6 @@ export function useCompanionSession() {
       busy.current = false;
       if (!controller.signal.aborted) setCommandBusy(false);
     }
-  }, [clientId]);
+  }, [clientId, receiveState]);
   return { state, backendOnline, error, notice, commandBusy, send };
 }

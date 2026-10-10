@@ -298,12 +298,19 @@ fn calculate_gearing(
     secondary_correction: Option<&GearingSecondaryCorrection>,
     launch_envelope: bool,
 ) -> GearingResult {
-    if car_params.is_electric == Some(true) {
+    if super::cvt::is_cvt(car_params) || car_params.is_electric == Some(true) {
         return GearingResult {
             final_drive: 0.0,
             gears: vec![],
             unsupported: Some(true),
-            unsupported_reason: Some("EV requires the independent measured EV model.".into()),
+            unsupported_reason: Some(
+                if super::cvt::is_cvt(car_params) {
+                    "CVT requires the independent capture foundation; solver unavailable."
+                } else {
+                    "EV requires the independent measured EV model."
+                }
+                .into(),
+            ),
         };
     }
     let normalized;

@@ -1,3 +1,4 @@
+import { usesCvt } from '../../domain/tuning/transmission';
 import type { CarParams } from '../../context/CarParamsContext';
 import type { TelemetryData } from '../../hooks/useTelemetry';
 import { evIdentity, sameEvIdentity } from '../../domain/tuning/ev/sessionIdentity';
@@ -5,7 +6,7 @@ import type { EvMeasurement } from '../../domain/tuning/ev/types';
 
 export function evDependencyKey(carId: string, profile: CarParams | null): string {
   return JSON.stringify([carId, profile?.isElectric === true, profile?.drivetrain,
-    profile?.maxHp, profile?.maxTorque, profile?.evGearbox]);
+    profile?.maxHp, profile?.maxTorque, profile?.evGearbox, ...(usesCvt(profile) ? [profile?.transmission] : [])]);
 }
 
 /** Missing live frames/menu frames retain evidence; a different live build invalidates it. */

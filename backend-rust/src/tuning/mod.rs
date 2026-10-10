@@ -3,6 +3,7 @@ pub mod api;
 pub mod calculation;
 pub mod capabilities;
 pub mod chassis;
+pub mod cvt;
 pub mod developer;
 pub mod dyno_guidance;
 pub mod ev;
