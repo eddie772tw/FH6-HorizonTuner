@@ -31,6 +31,7 @@ Road #462 修正採版本化 [launch envelope v3](docs/tuning/aego-road-launch-v
 
 * **AEGO Road 聯合齒比與量測保護**：AEGO Road 已加入行進加速分箱分析與一檔／終傳／最高檔共同求解；舊觀測保留、資料不足或模型無解時阻止推薦。使用者已於 2026-09-28 確認六項遊戲內驗收完成；工程先驗、驗收來源與適用範圍見 [低功率 Road 修正紀錄](docs/tuning/aego-low-power-20260927.md)。
 * **EV 獨立量測模型**：車輛參數的 EV 開關與傳統檔位數互斥，沿用四步調校流程，支援單速及多速 EV 的逐檔量測與終傳比預覽。這是實測基礎模型，尚不提供最佳換檔點或實際極速預測。[使用方式、模型邊界與驗證](docs/calibration/ev-foundation.md)。
+* **CVT 安全 foundation**：使用者可明確選擇 CVT 及遊戲可調能力；Rust 定義 raw capture 的來源、資格與保存重播契約，桌面／Companion／CLI 共用限制。尚無真實 CVT capture 與 solver 驗收，故不產生可套用建議或 ratio preview。[契約與後續驗收界線](docs/tuning/cvt-foundation.md)。
 
 * **即時遙測與物理動態分析 (60Hz Live Telemetry & Dynamics)**:
   - 60Hz 高頻 UDP 遙測封包接收與極致效能視效渲染。

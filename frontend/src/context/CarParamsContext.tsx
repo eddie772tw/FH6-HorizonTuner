@@ -6,6 +6,7 @@ import type { DynoQuality } from '../features/car_params/dynoQuality';
 import type { EvGearboxSetup } from '../domain/tuning/ev/types';
 
 export interface CarParams {
+  transmission?: import('../domain/tuning/transmission').TransmissionSelection;
   isElectric?: boolean;
   evGearbox?: EvGearboxSetup;
   weight: number;

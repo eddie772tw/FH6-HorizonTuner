@@ -1,4 +1,13 @@
 {
+  "Transmission type": "トランスミッションの種類",
+  "Discrete gears": "段付き変速機",
+  "Game-visible CVT adjustability": "ゲーム内で確認できる CVT 調整機能",
+  "Fixed / locked": "固定／調整不可",
+  "Final drive only": "ファイナルドライブのみ",
+  "Simulated gears": "仮想ギア",
+  "Foundation": "基礎契約",
+  "CVT recommendations are unavailable pending real capture and solver validation.": "CVT の推奨値は、実車データとソルバーの検証まで利用できません。",
+  "Record the vehicle, PI/Class, installed parts and visible final drive settings with a continuous raw telemetry session. Keep unknown values unknown; ratio limits require traceable measurement.": "連続した生テレメトリーとともに車両、PI／クラス、装着パーツ、画面で確認したファイナルドライブを記録してください。不明な値は不明のままとし、変速比の限界には追跡可能な測定が必要です。",
   "Rhine Lab": "Rhine Lab",
   "Paper surfaces, archival typography and precise instrument markings": "紙の質感、アーカイブ風の文字組みと精密な計器目盛り",
   "Theme credits": "テーマのクレジット",

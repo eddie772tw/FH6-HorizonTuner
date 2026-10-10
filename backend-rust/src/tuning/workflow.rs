@@ -46,6 +46,8 @@ pub struct Readiness {
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct WorkflowResult {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub cvt: Option<super::cvt::FoundationResult>,
     pub schema_version: &'static str,
     pub chassis: ChassisTuningResult,
     pub alignment: StaticAlignment,
@@ -72,7 +74,8 @@ fn measured_gearing_version(
     legacy_road: bool,
 ) -> Option<GearingResult> {
     let engine = engine?;
-    if profile.is_electric == Some(true)
+    if super::cvt::is_cvt(profile)
+        || profile.is_electric == Some(true)
         || !(4..=10).contains(&count)
         || !profile.max_hp.is_some_and(positive)
         || ![
@@ -107,6 +110,9 @@ fn measured_gearing_version(
     }
 }
 pub fn calculate_workflow(input: WorkflowRequest) -> Result<WorkflowResult, String> {
+    if super::cvt::selected(&input.profile) {
+        return calculate_qualified(input, None);
+    }
     let proof = input
         .evidence
         .as_ref()
@@ -155,6 +161,39 @@ pub(crate) fn calculate_qualified_version(
     let electric = profile.is_electric == Some(true);
     let chassis = calculate_chassis_tuning(input.goal, &profile);
     let alignment = calculate_static_alignment(input.goal, input.season, &profile);
+    if super::cvt::selected(&input.profile) {
+        use super::evidence::EvidenceRequest;
+        let raw = match &input.evidence {
+            Some(EvidenceRequest::CvtCapture { capture }) => Some(capture),
+            _ => None,
+        };
+        let mut cvt = super::cvt::evaluate(&input.profile, &input.input_snapshot, raw);
+        if input.evidence.is_some() && raw.is_none() {
+            cvt.diagnostics.push(super::cvt::Diagnostic {
+                status: super::cvt::Status::Unsupported,
+                code: "evidence-mode-mismatch".into(),
+                field: "evidence".into(),
+            });
+            cvt.capture_status = super::cvt::Status::Unsupported;
+        }
+        return Ok(WorkflowResult {
+            cvt: Some(cvt),
+            schema_version: "tuning-workflow-result/v1",
+            chassis,
+            alignment,
+            gearing: None,
+            recommendation: None,
+            readiness: Readiness {
+                mechanical: profile.weight.is_some_and(positive)
+                    && profile
+                        .weight_distribution
+                        .is_some_and(|v| positive(v) && v < 100.0),
+                engine_inputs: false,
+                measured_engine: false,
+                gearing_available: false,
+            },
+        });
+    }
     let gearing = if electric {
         qualified_ev
             .as_ref()
@@ -238,6 +277,7 @@ pub(crate) fn calculate_qualified_version(
         None
     };
     Ok(WorkflowResult {
+        cvt: None,
         schema_version: "tuning-workflow-result/v1",
         chassis,
         alignment,

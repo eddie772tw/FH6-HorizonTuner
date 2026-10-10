@@ -1,5 +1,31 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-10-10 / PR #504 CVT 審查契約與 Companion 修補（Codex as Codex）
+
+- **新審查重現**：新增四個 Rust fixtures，於修補前重現 canonical `is_electric` 漏判 EV+CVT、重複／衝突拼字仍可保存、等長窗先 dense 後 sparse 掉成 7 samples、fractional byte controls 被接受；兩個 mounted Companion tests 重現 Engine target 缺失與要求 CVT 執行已停用的 ICE measurement。
+- **Rust owner**：qualification／save 改用既有 `TuningCarParams` serde 語意，兩種合法動力拼字共用結果，重複／衝突欄位明確拒絕。最長窗同時長時選較多 samples，保留排除幀邊界與 strictly-longer sparse policy；byte controls 只接受有限範圍內整數，不改原始單位或四捨五入。
+- **Companion**：共用 `companion-engine` 外層 section，CVT／discrete 導航均實際 scroll 到目前 panel。Gearing 使用既有 CVT unavailable 訊息，即使收到 stale discrete gearing 也不顯示數值／要求 ICE measurement。未改 Step1 或語系檔，未混入其他 PR。
+- **驗收界線**：新增測試全為 synthetic／DOM 契約，沒有新物理公式、真實 CVT capture 或 solver 完成宣稱。保存／workflow 的合法與拒絕結果由產品 HTTP 入口驗證；日期 Journal 條目全部保留。
+- **最終 Gate**：Cargo default 196 passed／2 ignored、no-HUD 188 passed／2 ignored（含 doctest），CVT 專項 13 tests；Vitest 198 files／1,748 tests passed、1 skipped。TypeScript／Vite、Rust binaries build、Clippy all-targets（既存 warnings）、兩個 manifest fmt、Ruff check／format、版本／路徑大小寫與 diff check 通過。
+- **整合紀錄**：重新讀取 Issue comment `6093430484` 與 review `5477593015`；cold-read thread 已由 Reviewer 解除，本輪不 resolve 他人 thread。review `5477570385` 對先前 #499／#504 heads 的 read-only merge-tree 報告六項內容衝突（Rust workflow、tuning README、TuneSessionProvider、TuningView 與兩個 EV／workflow transport tests）。待其中一支另經授權合併後，後者需保留 setup/evidence invalidation 與 CVT 排除兩組保護並跑 fresh CI；本輪僅記錄，未 merge／rebase 其他分支。
+
+## 2026-10-10 / PR #504 saved CVT cold replay 唯讀修補（Codex as Codex）
+
+- **審查與重現**：`SavedCvt` 未沿用 saved ICE／EV 的缺庫檢查，`Connection::open` 在 cold CLI／MCP 失敗查詢前會留下零位元組的 `telemetry_sessions.db`。新增兩個契約測試於修正前均失敗，精確重現資料夾由空變成新 DB。
+- **最小修正**：先確認既有 DB，再以 SQLite read-only flags 查詢 `cvt-evidence/v1`，避免檢查後移除 DB 的情況建立新檔。原本 RoadStore 寫入路徑保留；僅共用既有文件查詢／kind 驗證。
+- **測試邊界**：CLI／MCP 各驗證缺庫、零位元組、損壞內容、有效 SQLite 但沒有 road table 四種錯誤，執行前後完整檔案清單與每檔位元組相同。正常 HTTP／MCP／CLI 保存重播仍一致，且主 DB 位元組不變；SQLite read-only WAL reader 的輔助檔生命週期不等於寫入 evidence，不能對仍可改動的 live DB 使用 `immutable=1`。參考 [SQLite WAL 官方文件](https://www.sqlite.org/wal.html#read_only_databases)。
+- **本地 Gate**：完整 Cargo default 192 passed／2 ignored、no-HUD 184 passed／2 ignored（含 doctest）；CVT 專項 9 tests。Vitest 197 files／1,746 tests passed、1 skipped；Rust binaries build、Clippy all-targets（既存 warnings）、兩個 manifest fmt、Ruff check／format、version consistency、tracked path case 與 diff check 通過。前端 source 無變動，沿用首版通過的 TypeScript／Vite build。
+- **範圍**：同一 foundation 專用分支；未混入 #498／#499／#501，未增加 CVT solver 或變更 ICE／EV 演算法；所有既有 Journal 日期條目保留。
+
+## 2026-10-10 / Issue #434 CVT 能力分流與 Rust evidence foundation（Codex as Codex）
+
+- **來源／範圍**：`local`／`verified`；依審查留言 `6093430484` 從遠端 main `d4e0fe3762c613240f7d6902d07edcb212aa5926` 建立 `feat/issue-434-cvt-foundation`。採用 `physics-tuning-math`、`telemetry-udp-protocol`、`modular-refactoring`、`halfmoon-design-system`、`pr-author-maintainer`。不混入 PR #498／#499；Ruff 0.17 的主線 I001 僅修正 `scripts/validate_version_consistency.py` import 排序。
+- **Learning**：動力類型 `isElectric` 與明確 `transmission`／能力各自保存；缺少新欄位維持 ICE／EV 序列化、依賴 key 與 capture replay。CVT 不從車名或一／兩檔推斷，也不進 ICE／EV collector 或離散齒比 solver。前端 A→B→A／延遲回覆與舊伺服器皆需 fail closed。
+- **Evidence**：`cvt-capture/v1` 保存 raw JSON、來源與未知 null 時間／版本；`cvt-qualification/v1` 只做有界的資料安全檢查。保存 `cvt-evidence/v1` 後各入口重新驗證 raw，不信任舊 summary。新增 variant 後，CLI 的 saved-evidence 路由也必須新增 `SavedCvt`，否則 HTTP／MCP 可讀的 capture 在 CLI 會誤判 wrong mode；HTTP／MCP／離線 CLI 一致性測試已重現並修正。
+- **驗證順序**：Rust `build.rs` 會產生 frontend dist 的 `include_bytes!` 路徑；前端重建與 Cargo doctest 不可並行，否則舊資產消失導致 doctest 編譯失敗。本次依序完成前端 build 後重跑完整 Cargo，包含 default／no-default-features 的 doctest 全數通過。
+- **最終本地 Gate**：Cargo default 190 passed／2 ignored、無 HUD 182 passed／2 ignored；CVT 專項 7 cases（全部 synthetic）。Vitest 197 files／1,746 tests passed，另有 1 skipped；TypeScript／Vite、Rust binaries build、兩個 manifest 的 rustfmt、Ruff check／format、版本一致性、tracked path case、`git diff --check` 通過；維護工具 49 passed／4 skipped。Clippy all-targets 通過但仍有主線既存 warnings，本次 CVT 模組無新增 warning。
+- **界線**：沒有真實 CVT capture、專用 live recorder、已校準 ratio preview 或 solver；所有 CVT gearing／recommendation 為 null，測試只能證明契約安全與舊 ICE／EV 不退化。固定／模擬檔位及 EV+CVT 保持 unsupported。真實 capture、限位來源、不可達目標與可套用 solver 的後續驗收見 [CVT foundation 文件](../docs/tuning/cvt-foundation.md)；Issue #434 保持 open，不 merge／release。
+
 ## 2026-10-07 / 遙測錄製管線解耦、計時賽修整邊界與 MoTeC 標記契約（Gemini as Antigravity）
 
 - **Scope**：解決 PR #495 審查（Issue #484）由 Codex as Codex 提出的 13 項回歸問題。採用 `pr-author-maintainer`、`pr-review-evaluation`、`telemetry-udp-protocol`、`modular-refactoring`。

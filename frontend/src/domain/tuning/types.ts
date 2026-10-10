@@ -435,6 +435,7 @@ export interface TuningMeasurementReadiness {
 }
 
 export interface TuningCarParams {
+  transmission?: import('./transmission').TransmissionSelection;
   isElectric?: boolean;
   weight: number; // in kg
   weight_distribution: number; // front weight percentage (0-100)

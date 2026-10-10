@@ -28,6 +28,7 @@ export function CompanionHostBridge() {
         profileKey: companionProfileKey(current.carId, current.carParams, tune.identityGeneration),
         workflow: { goal, season, step },
         results: {
+          cvt: tune.result?.cvt,
           chassis: tune.result?.chassis ?? null,
           alignment: tune.result?.alignment ?? null,
           gearing: tune.result?.gearing ?? null,

@@ -1,5 +1,5 @@
 use crate::error::{ApiError, ApiResult};
-use rusqlite::{params, Connection, OptionalExtension};
+use rusqlite::{params, Connection, OpenFlags, OptionalExtension};
 use serde_json::{json, Value};
 use std::time::{SystemTime, UNIX_EPOCH};
 use uuid::Uuid;
@@ -121,6 +121,24 @@ impl RoadStore {
     }
     pub fn get(&self, id: &str, kind: Option<&str>, wf: Option<&str>) -> ApiResult<Value> {
         let c = self.connect()?;
+        Self::get_from_connection(&c, id, kind, wf)
+    }
+    /// Evidence replay must not create a database, including after a missing-store check.
+    pub fn get_read_only(
+        &self,
+        id: &str,
+        kind: Option<&str>,
+        wf: Option<&str>,
+    ) -> ApiResult<Value> {
+        let c = Connection::open_with_flags(&self.db_path, OpenFlags::SQLITE_OPEN_READ_ONLY)?;
+        Self::get_from_connection(&c, id, kind, wf)
+    }
+    fn get_from_connection(
+        c: &Connection,
+        id: &str,
+        kind: Option<&str>,
+        wf: Option<&str>,
+    ) -> ApiResult<Value> {
         let s: String = c
             .query_row(
                 "SELECT document FROM road_documents WHERE id=?1",

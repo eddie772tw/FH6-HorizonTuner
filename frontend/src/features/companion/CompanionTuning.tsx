@@ -5,6 +5,8 @@ import { canOpenTuningStep } from '../tuning/tuningWorkflow';
 import { useSettings } from '../../context/SettingsContext';
 import { AlignmentResults, ChassisResults, GearingResults } from './CompanionResults';
 import CompanionMeasurement from './CompanionMeasurement';
+import { usesCvt } from '../../domain/tuning/transmission';
+import { CvtFoundationPanel } from '../tuning/components/CvtFoundationPanel';
 
 type Props = { state: CompanionState | null; disabled: boolean; onCommand: (command: Omit<CompanionCommand, 'id' | 'carId' | 'profileKey'>) => Promise<boolean> };
 type Draft = Record<string, string>;
@@ -98,7 +100,7 @@ export default function CompanionTuning({ state, disabled, onCommand }: Props) {
   const identityChanged = Boolean(editing && draftIdentity && draftIdentity !== `${snapshot.carId}:${snapshot.profileKey}`);
   const readinessMessage = snapshot.calculationStatus === 'pending' ? t('companion.readiness_pending')
     : snapshot.calculationStatus === 'error' ? t('companion.readiness_error')
-    : !snapshot.readiness.mechanical ? t('companion.weight_missing')
+    : usesCvt(profile) ? t('CVT recommendations are unavailable pending real capture and solver validation.') : !snapshot.readiness.mechanical ? t('companion.weight_missing')
     : !snapshot.readiness.engineInputs ? t('companion.engine_inputs_missing')
       : !snapshot.readiness.measuredEngine ? t('companion.measurement_missing')
         : t('companion.ready_message');
@@ -118,7 +120,7 @@ export default function CompanionTuning({ state, disabled, onCommand }: Props) {
       </details>
     </section>
     <div className="companion-tuning-results"><ChassisResults result={snapshot.results.chassis} /><AlignmentResults result={snapshot.results.alignment} /></div>
-    <section id="companion-engine"><CompanionMeasurement measurement={measurement} disabled={disabled} onCommand={onCommand} /></section>
-    <GearingResults result={snapshot.results.gearing} measurementPhase={measurement.phase} />
+    <section id="companion-engine">{usesCvt(profile) ? <CvtFoundationPanel result={snapshot.results.cvt} t={t} /> : <CompanionMeasurement measurement={measurement} disabled={disabled} onCommand={onCommand} />}</section>
+    <GearingResults result={snapshot.results.gearing} measurementPhase={measurement.phase} unavailableMessage={usesCvt(profile) ? t('CVT recommendations are unavailable pending real capture and solver validation.') : undefined} />
   </div>;
 }

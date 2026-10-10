@@ -14,6 +14,13 @@ use serde_json::{json, Value};
 #[derive(Clone, Debug, Deserialize)]
 #[serde(tag = "kind", rename_all = "kebab-case")]
 pub enum EvidenceRequest {
+    CvtCapture {
+        capture: Value,
+    },
+    SavedCvt {
+        #[serde(rename = "evidenceId")]
+        evidence_id: String,
+    },
     SavedEngine {
         #[serde(rename = "observationId")]
         observation_id: String,
@@ -186,6 +193,9 @@ impl QualifiedEvidence {
         }))
     }
     pub fn validate(&self, input: &WorkflowRequest) -> Result<(), String> {
+        if super::cvt::selected(&input.profile) {
+            return Err("ICE/EV evidence cannot qualify a CVT transmission".into());
+        }
         if input.input_snapshot["carId"].as_str() != Some(&self.car_id)
             || (input.profile["isElectric"] == true) != (self.kind == "ev")
         {
@@ -346,11 +356,26 @@ impl EvidenceService {
     }
     fn calculate_with_cache(
         &self,
-        input: WorkflowRequest,
+        mut input: WorkflowRequest,
         persist_cache: bool,
     ) -> ApiResult<WorkflowResult> {
         if input.schema_version != "tuning-workflow-result/v1" {
             return Err(ApiError::invalid("Unsupported tuning calculation schema"));
+        }
+        if super::cvt::selected(&input.profile) {
+            if let Some(EvidenceRequest::SavedCvt { evidence_id }) = &input.evidence {
+                if !std::path::Path::new(&self.store.db_path).is_file() {
+                    return Err(ApiError::new(404, "Saved evidence database is unavailable"));
+                }
+                let saved = self
+                    .store
+                    .get_read_only(evidence_id, Some("cvt-evidence/v1"), None)?;
+                // Replay the immutable raw capture; saved qualification is never trusted.
+                input.evidence = Some(EvidenceRequest::CvtCapture {
+                    capture: saved["capture"].clone(),
+                });
+            }
+            return super::workflow::calculate_workflow(input).map_err(|e| ApiError::invalid(&e));
         }
         let proof = input
             .evidence
@@ -375,6 +400,27 @@ impl EvidenceService {
         proof.observation = json!({"id":captured["id"],"carId":proof.car_id,"identity":proof.identity,"schema":"ev-observation/v1","source":"capture-qualified"});
         let proof = self.save(proof, None)?;
         Ok(json!({"evidenceId":proof.evidence_id,"state":proof.summary}))
+    }
+    pub fn save_cvt(&self, input: &Value) -> ApiResult<Value> {
+        let raw: EvidenceRequest = serde_json::from_value(input["evidence"].clone())
+            .map_err(|e| ApiError::invalid(&e.to_string()))?;
+        let EvidenceRequest::CvtCapture { capture } = raw else {
+            return Err(ApiError::invalid("Raw CVT capture required"));
+        };
+        let result =
+            super::cvt::evaluate(&input["profile"], &input["inputSnapshot"], Some(&capture));
+        if result.capture_status != super::cvt::Status::Qualified {
+            return Err(ApiError::invalid(
+                "CVT capture must pass foundation qualification before saving",
+            ));
+        }
+        let saved = self.store.append(
+            "cvt-evidence/v1",
+            "cvt-evidence",
+            &json!({"capture":capture}),
+            None,
+        )?;
+        Ok(json!({"evidenceId":saved["id"],"qualification":result}))
     }
     pub fn verify_recommendation(&self, rec: &Value, identity: Option<&Value>) -> ApiResult<()> {
         let snapshot = &rec["inputSnapshot"];

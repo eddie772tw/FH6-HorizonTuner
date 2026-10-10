@@ -1,4 +1,5 @@
 import type { CarParams } from '../../context/CarParamsContext';
+import { usesCvt, type CvtFoundationResult } from '../../domain/tuning/transmission';
 import type { Season, ChassisTuningResult, StaticTireAlignResult } from '../../domain/tuning/types';
 import type { TuningMeasurementState } from '../../domain/tuning/types';
 import type { WorkflowReadiness } from '../tuning/tuningWorkflow';
@@ -11,7 +12,7 @@ export interface CompanionSnapshot {
   profile: CarParams | null;
   profileKey: string;
   workflow: { step: number; goal: string; season: string };
-  results: { chassis: ChassisTuningResult | null; alignment: StaticTireAlignResult | null; gearing: WorkflowGearingResult | null };
+  results: { chassis: ChassisTuningResult | null; alignment: StaticTireAlignResult | null; gearing: WorkflowGearingResult | null; cvt?: CvtFoundationResult };
   engine: { phase: string; sampleCount: number; state: TuningMeasurementState | null };
   readiness: WorkflowReadiness;
   calculationStatus?: 'pending' | 'error' | 'ready';
@@ -69,6 +70,7 @@ export function validateCompanionCommand(command: CompanionCommand, snapshot: Co
     if (command.step !== undefined && !canOpenTuningStep(command.step, snapshot.readiness)) throw new Error('Complete the required workflow inputs before opening this step.');
     if (command.goal === undefined && command.season === undefined && command.step === undefined) throw new Error('Empty workflow command.');
   } else if (command.kind === 'measurement') {
+    if (usesCvt(snapshot.profile)) throw new Error('CVT requires its independent capture contract.');
     if (snapshot.profile.isElectric) throw new Error('Use the desktop EV measurement controls for this powertrain.');
     if (!snapshot.readiness.engineInputs) throw new Error('Complete vehicle weight and engine power first.');
     const phase = snapshot.engine.phase;
