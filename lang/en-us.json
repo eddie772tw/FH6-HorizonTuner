@@ -674,7 +674,6 @@
   "Primary Lap": "Primary Lap",
   "Profile Configuration": "Profile Configuration",
   "pts collected": "pts collected",
-  "R": "R",
   "Race (Full Adjustable)": "Race (Full Adjustable)",
   "Race Recording": "Race Recording",
   "Race Type:": "Race Type:",
@@ -1557,5 +1556,5 @@
   "Estimated": "Estimated",
   "HorizonTuner exports 41 telemetry channels with documented unit mappings. Native .ld export is experimental until verified in MoTeC i2.": "HorizonTuner exports 41 telemetry channels with documented unit mappings. Native .ld export is experimental until verified in MoTeC i2.",
   "Hz": "Hz",
-  "R": "R"
+  "Radial tire marker": "R"
 }

@@ -1464,5 +1464,5 @@
   "Estimated": "推定",
   "HorizonTuner exports 41 telemetry channels with documented unit mappings. Native .ld export is experimental until verified in MoTeC i2.": "HorizonTuner は単位の対応を明示した 41 のテレメトリチャンネルを提供します。ネイティブ .ld の出力は MoTeC i2 での検証が完了するまで試験的機能です。",
   "Hz": "Hz",
-  "R": "R"
+  "Radial tire marker": "R"
 }

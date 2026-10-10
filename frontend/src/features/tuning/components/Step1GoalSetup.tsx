@@ -556,7 +556,7 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
                     placeholder="40"
                   />
                 </div>
-                <span className="text-body-secondary fs-7">{t("R")}</span>
+                <span className="text-body-secondary fs-7">{t("Radial tire marker")}</span>
                 <div style={{ width: '60px' }}>
                   <DecimalInput
                     value={carParams?.frontTireRim || 18}
@@ -589,7 +589,7 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
                     placeholder="40"
                   />
                 </div>
-                <span className="text-body-secondary fs-7">{t("R")}</span>
+                <span className="text-body-secondary fs-7">{t("Radial tire marker")}</span>
                 <div style={{ width: '60px' }}>
                   <DecimalInput
                     value={carParams?.rearTireRim || 18}
