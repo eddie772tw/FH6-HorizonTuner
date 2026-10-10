@@ -1,5 +1,12 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-10-10 / source-map-js 間接依賴安全修補（Mihaly as Codex）
+
+- **Scope**：採用 `github-security-audit`、`pr-author-maintainer`；針對 [GHSA-68fv-2mgg-jv7q](https://github.com/advisories/GHSA-68fv-2mgg-jv7q)，只將 css-tree 3.2.1 與 PostCSS 8.5.23 的 source-map-js edge 移至鎖檔既有 1.2.2，移除無引用的 1.2.1 區塊。父套件官方範圍皆為 `^1.2.1`，未改 importer、父版本、override、產品 API 或 audit policy。
+- **Learning**：鎖檔同時存在修補版本仍可能經其他父節點到達舊版本；需以完整依賴圖與原始 audit 驗證。現行 CI 將 audit 非零結果轉成 warning，因此 job success 本身不代表 audit 無警告。
+- **Evidence**：Node 24.13.0／pnpm 11.27.0 的 frozen install 與 `why` 通過，依賴圖只剩 source-map-js 1.2.2；直接 `audit --json` exit 0，advisories 為空、各嚴重度皆為 0。Vitest 1,774 passed／1 skipped、TypeScript／Vite Windows build、Cargo locked 204 passed／3 ignored、Rust fmt 與 diff check 通過；前端 build 先於 Cargo。
+- **界線**：audit 僅為本次鎖定依賴圖的即時結果，沒有極大 offset DoS、完整安全稽核或實機驗收宣稱；未手動解除 alert。後續同步主線仍須 fresh exact-head CI 與合併後 dependency graph 確認。
+
 ## 2026-10-10 / PR #504 CVT 審查契約與 Companion 修補（Codex as Codex）
 
 - **新審查重現**：新增四個 Rust fixtures，於修補前重現 canonical `is_electric` 漏判 EV+CVT、重複／衝突拼字仍可保存、等長窗先 dense 後 sparse 掉成 7 samples、fractional byte controls 被接受；兩個 mounted Companion tests 重現 Engine target 缺失與要求 CVT 執行已停用的 ICE measurement。
