@@ -22,6 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
+        shell: bash
         working-directory: companion
     steps:
       - name: Check out repository
@@ -52,6 +53,11 @@ jobs:
           cp "$RUNNER_TEMP/companion-font-baseline/companion/app/build/outputs/apk/debug/app-debug.apk" build/verification/baseline-debug.apk
           printf '%s\n' "$FONT_BASE_SHA" > build/verification/font-baseline-sha.txt
 
+      - name: Verify APK gate rejects a missing-font fixture
+        run: |
+          mkdir -p build/verification
+          bash scripts/TestFontApkGate.sh app/build/outputs/apk/debug/app-debug.apk | tee build/verification/font-negative-control.txt
+
       - name: Verify unmodified fonts and accessible notice assets in APK
         run: |
           mkdir -p build/verification
@@ -69,7 +75,7 @@ jobs:
           printf '%s\n' "$COMPANION_HEAD_SHA" > build/verification/head-sha.txt
           git rev-parse HEAD > build/verification/checkout-sha.txt
           git rev-parse 'HEAD^{tree}' > build/verification/checkout-tree.txt
-          git ls-files -z '*.kt' '*.kts' 'gradle/wrapper/gradle-wrapper.properties' 'scripts/VerifyFontApk.java' 'theme/src/main/res/font/*' 'theme/src/main/assets/font_notices/*' | xargs -0 sha256sum > build/verification/source-sha256.txt
+          git ls-files -z '*.kt' '*.kts' 'gradle/wrapper/gradle-wrapper.properties' 'scripts/*.java' 'scripts/*.sh' 'theme/src/main/res/font/*' 'theme/src/main/assets/font_notices/*' '../.github/workflows/companion.yml' | xargs -0 sha256sum > build/verification/source-sha256.txt
           java -version 2> build/verification/java-version.txt
           for report_dir in protocol-core/build/test-results/test theme/build/test-results/testDebugUnitTest app/build/test-results/testDebugUnitTest; do
             test -n "$(find "$report_dir" -maxdepth 1 -name 'TEST-*.xml' -print -quit)"

@@ -49,3 +49,11 @@ java scripts/VerifyFontApk.java app/build/outputs/apk/debug/app-debug.apk [BASEL
 **裝置／native＋WebView 視覺：NOT_RUN。** 無 device；mixed CJK／Latin glyph fallback、baseline、實際字寬、truncation、長標籤、窄屏／旋轉／200%字級、七 core×日夜／配色，以及 inherited 連線／冷啟動／重連／host switch／LAN／USB／QR／revocation／late callback／reload／back-forward／鍵盤／頁尾矩陣仍待 exact APK + Android／WebView 版本實測。notices dialog 的 TalkBack／font scale 實機驗收也未執行。
 
 工具限制：GitHub CLI 的 PR read 回傳 Forbidden；connector 已成功核對 #503 metadata／review threads。歷史 #503 artifact 由 connector 提供的下載 URL 在本機 GET 為 HTTP 403，未換另一條路下載它；APK delta 改由上述已授權的 CI 實際建置 base 比較。沒有將此限制作為成功下載或本機 APK 驗證。
+
+## APK verifier pipeline 審查修正
+
+獨立審查指出 `java VerifyFontApk | tee` 在未明示 shell 的 GitHub Linux `bash -e` 中，verifier 非零可能被成功的 `tee` 掩蓋。實際缺少 `res/font/outfit_variable.ttf` 的獨立 fixture 已重現：舊 invocation 回傳 0；明示 `bash --noprofile --norc -e -o pipefail` 回傳 1。這項發現是失敗傳遞缺口，不代表先前正常 APK 的字體 bytes 不匹配。
+
+workflow 的 job `defaults.run.shell: bash` 明示採用 GitHub `-e -o pipefail`；另在同一 CI 對正常 APK 的**獨立副本**移除 Outfit ZIP entry，確認 verifier→tee pipeline 必須回傳 1，且錯誤確實為該 missing entry。fixture 只在臨時目錄產生／移除，不改原字體 bytes 或正常 APK；正向驗證／正常 artifact 繼續保留。helper、shell script 與 workflow 也加入 CI source hashes。
+
+本地負向控制、正向 fixture、原檔 SHA-256 前後一致與 `bash -n`／diff check 通過；不重跑未變更的 frontend／字體 mapping，也不重新安裝工具或 SDK。修正後精確 head 的 Android unit／lint／assemble、CI negative control／APK delta 與 artifacts 更新於 #505 活內文。外部 review thread 的 resolution 留給 reviewer。

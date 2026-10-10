@@ -700,3 +700,10 @@
 - **Evidence**：固定官方 commits 的原始 Outfit 110884／Inter 876576 bytes，Git blob SHA-1 與使用者提供值一致，另計 binary SHA-256；完整原始 OFL／copyright／Inter metadata 隨 APK assets 保留。實際 SFNT name／fvar／GSUB tnum→hmtx 等寬與 resolver／七 core mapping 的純 JVM 10 tests pass；frontend 1747 passed／1 skipped。精確 head Android unit／lint／assemble、APK entries 與同 runner base APK 增量於 stacked Draft PR 保留，詳見 `docs/frontend/companion-native-fonts/README.md`。
 - **Boundary**：基於 #503 `b294d634`，Depends on #503／#498，Related to #485。Rhine MiSans 來源／font 協議／4.003 仍待核實，未下載／轉換 shards，不接受永久 SansSerif；兩字型預設 lining、沒有獨立 lnum tag。無 device，mixed CJK／Latin／baseline／truncation／native＋WebView 視覺 NOT_RUN；未改 session、bridge、安全、調校、Web 設計或安裝 SDK。
 - **Skills**：`halfmoon-design-system`、`pr-author-maintainer`。
+
+## 2026-10-10 / PR #505 APK verifier pipeline 失敗傳遞（Codex as Codex）
+
+- **Learning**：GitHub Linux 未指定 shell 的 run 使用 `bash -e`，不是明示 `shell: bash` 的 `bash --noprofile --norc -e -o pipefail`。verifier→tee 需要明示 pipefail，不能只看 step 結果；pipeline 最後一段成功可能吞掉字體驗證錯誤。
+- **Evidence**：缺少 Outfit entry 的獨立 ZIP fixture 重現舊 invocation exit 0／修正 invocation exit 1；正向 fixture 與正常來源 SHA-256 前後一致。job 明示 shell，加 CI negative control，確認 missing-entry pipeline 必須拒絕；修正後 exact-head CI 留於 #505。
+- **Boundary**：僅 CI／verifier 負向證據；不改正常 APK、font bytes、resolver 或 parent PR，不 resolve 外部審查。不新增安裝或協議。
+- **Skills**：`pr-author-maintainer`。
