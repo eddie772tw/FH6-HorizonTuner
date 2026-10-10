@@ -23,6 +23,10 @@ declare global {
       updateDesktopStatus?: (online: boolean) => void;
       updateBackendStatus?: (online: boolean) => void;
     };
+    HorizonTunerCompanionTheme?: {
+      themeBootstrap: () => string;
+      updateVisualTheme: (json: string, generation: string) => void;
+    };
   }
 }
 
@@ -34,14 +38,14 @@ function readNativeStatus(): NativeConnectionState {
   return { state: 'DISCONNECTED', host: '127.0.0.1', port: '8001', error: null };
 }
 
-export default function CompanionApp() {
+export default function CompanionApp({ themeGeneration }: { themeGeneration?: string }) {
   const { t } = useSettings();
   const [tab, setTab] = useState<CompanionTab>('telemetry');
   const [nativeStatus, setNativeStatus] = useState<NativeConnectionState>(readNativeStatus);
   const [host, setHost] = useState(nativeStatus.host);
   const [port, setPort] = useState(nativeStatus.port);
   const [token, setToken] = useState('');
-  const { state, backendOnline, error, notice, commandBusy, send } = useCompanionSession();
+  const { state, backendOnline, error, notice, commandBusy, send } = useCompanionSession(themeGeneration);
   const [noticeVisible, setNoticeVisible] = useState(false);
   const nativeAvailable = Boolean(window.HorizonTunerCompanion);
 

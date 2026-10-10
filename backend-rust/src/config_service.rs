@@ -65,6 +65,9 @@ impl ConfigService {
     pub fn settings(&self) -> Value {
         lock(&self.settings).clone()
     }
+    pub fn companion_visual_theme(&self) -> Option<crate::companion_theme::CompanionVisualTheme> {
+        crate::companion_theme::CompanionVisualTheme::project(&lock(&self.settings)["theme"])
+    }
     pub fn hud(&self) -> Value {
         let data = storage::read_json(&self.root.join("hud_config.json"))
             .ok()
