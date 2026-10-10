@@ -2018,5 +2018,7 @@
   "Imported CSV is previewed locally; use the original file in MoTeC.": "匯入 CSV 僅供本地預覽；請在 MoTeC 使用原始檔案。",
   "Experimental": "實驗性",
   "Estimated": "估算",
-  "HorizonTuner exports 41 telemetry channels with documented unit mappings. Native .ld export is experimental until verified in MoTeC i2.": "HorizonTuner 提供 41 個遙測通道與單位映射。原生 .ld 匯出仍屬實驗性，尚待 MoTeC i2 實機驗收。"
+  "HorizonTuner exports 41 telemetry channels with documented unit mappings. Native .ld export is experimental until verified in MoTeC i2.": "HorizonTuner 提供 41 個遙測通道與單位映射。原生 .ld 匯出仍屬實驗性，尚待 MoTeC i2 實機驗收。",
+  "Hz": "Hz",
+  "R": "R"
 }
