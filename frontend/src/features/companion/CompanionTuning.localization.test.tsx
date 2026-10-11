@@ -58,7 +58,10 @@ it.each(languages)('renders readable Companion labels with the actual SettingsPr
   expect(host.textContent).toContain(label('companion.waiting_desc'));
 
   const state = snapshot();
+  state.snapshot!.results.chassisDiagnostics = { modelVersion: 'rust/chassis-load-baseline/v1', available: false,
+    reasons: ['aero-balance-required'], aero: { source: 'unavailable', front: null, rear: null, reason: 'aero-balance-required' }, axles: [] };
   await render(state);
+  expect(host.textContent).toContain(label('aero-balance-required'));
   expect(host.textContent).not.toContain('companion.');
   expect([...host.querySelectorAll('nav button')].map(button => button.textContent)).toEqual(
     ['Setup', 'Chassis', 'Alignment', 'Engine', 'Gearing'].map(section => label('companion.sections.' + section)),

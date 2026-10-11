@@ -4,6 +4,7 @@ import { useSettings } from '../../../context/SettingsContext';
 import type { Season } from '../../../domain/tuning/types';
 import type { useBaselineDraft } from '../useBaselineDraft';
 import { useWorkflowCalculation } from '../useWorkflowCalculation';
+import { ChassisCalculationStatus, chassisReasonText } from './ChassisCalculationStatus';
 
 export function BaselinePreviewPanel({ carId, profile, season, draft, showTargetSelector = true }: {
   carId: string; profile: CarParams | null; season: Season; draft: ReturnType<typeof useBaselineDraft>; showTargetSelector?: boolean;
@@ -32,6 +33,7 @@ export function BaselinePreviewPanel({ carId, profile, season, draft, showTarget
     <p role="status">{t(draft.phase === 'cancelled' ? 'Draft cancelled. Current baseline retained.' : draft.phase === 'applied' ? 'Local baseline applied.' : 'Draft — current baseline retained.')}</p>
     {request.status !== 'ready' && <p role="status">{t(request.status === 'error' ? 'Tuning calculation is unavailable. Retrying…' : 'Calculating tuning results…')}</p>}
     {preview && <>
+      <ChassisCalculationStatus diagnostics={request.result?.chassisDiagnostics} />
       <p className="small" style={{ overflowWrap: 'anywhere' }}>{t('Model version')}: {preview.modelVersion} · {t('Draft target')}: {t(preview.goal)}</p>
       {preview.missingInputs.length > 0 && <p>{t('Missing inputs')}: {preview.missingInputs.map(reason => t(reason)).join(' · ')}</p>}
       <p className="small">{t('Affected fields')}: {preview.affectedFields.length ? preview.affectedFields.map(key => t(key)).join(' · ') : t('None')}</p>
@@ -42,7 +44,7 @@ export function BaselinePreviewPanel({ carId, profile, season, draft, showTarget
             <div>{t('Current')}: {display(field.current, field.unit)}</div>
             <div>{t('Suggested')}: {field.recommended == null ? t('Unavailable') : display(field.recommended, field.unit)}</div>
             <div>{t('Difference')}: {display(field.delta, field.unit)}</div>
-            {field.reason && <div className="text-body-secondary">{t(field.reason)}</div>}
+            {field.reason && <div className="text-body-secondary">{chassisReasonText(field.reason, t)}</div>}
           </div>)}
         </div>
       </details>

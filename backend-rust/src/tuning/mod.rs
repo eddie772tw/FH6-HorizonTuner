@@ -4,6 +4,7 @@ pub mod baseline;
 pub mod calculation;
 pub mod capabilities;
 pub mod chassis;
+pub mod chassis_load;
 pub mod cvt;
 pub mod developer;
 pub mod dyno_guidance;

@@ -41,7 +41,7 @@ pub fn preview(
                 (Some(min), Some(max)) if min.is_finite() && max.is_finite() && min <= max
                     && (if family == "arb" { min >= 0.0 } else { min > 0.0 }) => {
                     let value = field["value"].as_f64().unwrap();
-                    if value < min || value > max { Some("value-outside-range") } else { None }
+                    if value < min - 1e-4 || value > max + 1e-4 { Some("value-outside-range") } else { None }
                 }
                 (Some(_), Some(_)) => Some("invalid-range"),
                 _ => Some("unknown-range"),

@@ -283,3 +283,56 @@ fn frozen_v2_tuning_core_matches_immutable_golden_fixtures() {
         }
     }
 }
+
+#[test]
+fn fractional_spring_bounds_never_overflow_max() {
+    // 2008 Subaru Impreza WRX STi (car 1060 parameters from game conversion)
+    // 871.1 lbs/in = 15.556079389400223 kgf/mm
+    let car_params = TuningCarParams {
+        weight: Some(1525.43),
+        weight_distribution: Some(56.0),
+        drivetrain: Some("AWD".into()),
+        spring_front_min: Some(3.1108587),
+        spring_front_max: Some(15.556079),
+        spring_rear_min: Some(5.1341669),
+        spring_rear_max: Some(15.556079),
+        height_front_min: Some(16.51),
+        height_front_max: Some(20.32),
+        height_rear_min: Some(17.526),
+        height_rear_max: Some(20.828),
+        ..Default::default()
+    };
+
+    for goal in [
+        RaceGoal::Road,
+        RaceGoal::Rally,
+        RaceGoal::Drift,
+        RaceGoal::Drag,
+    ] {
+        let res = calculate_chassis_tuning(goal, &car_params);
+        assert!(
+            res.springs.front <= 15.556079,
+            "[{:?}] Front spring {:.1} must not exceed max 15.556079",
+            goal,
+            res.springs.front
+        );
+        assert!(
+            res.springs.front >= 3.1108587,
+            "[{:?}] Front spring {:.1} must not be below min 3.1108587",
+            goal,
+            res.springs.front
+        );
+        assert!(
+            res.springs.rear <= 15.556079,
+            "[{:?}] Rear spring {:.1} must not exceed max 15.556079",
+            goal,
+            res.springs.rear
+        );
+        assert!(
+            res.springs.rear >= 5.1341669,
+            "[{:?}] Rear spring {:.1} must not be below min 5.1341669",
+            goal,
+            res.springs.rear
+        );
+    }
+}

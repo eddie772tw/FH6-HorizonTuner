@@ -8,7 +8,7 @@ export function RoadDrivetrainSetup({ profile, onChange }: {
 }) {
   const { t } = useSettings();
   const { result } = useTuneSession();
-  const rearPercent = result?.chassis.diff.centerRear;
+  const rearPercent = result?.chassis?.diff.centerRear;
   if (profile.drivetrain === 'FWD') return <p className="small text-body-secondary mb-0">
     {t('FWD baseline keeps the front compliant and lengthens launch gearing as front axle load falls. Validate corner exit and wheelspin in game.')}
   </p>;

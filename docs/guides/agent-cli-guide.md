@@ -119,7 +119,7 @@ cargo run --locked --manifest-path backend-rust/Cargo.toml --bin fh6-agent -- <s
 .\fh6-agent.bat solve workflow --args-file workflow-request.json --data-dir <資料目錄> --json
 ```
 
-JSON request 使用 `schemaVersion: "tuning-workflow-result/v1"`，包含 `goal`、`season`、完整 `profile`、`inputSnapshot.carId` 與 `evidence`。本地已存 ICE 證據使用 `{"kind":"saved-engine","observationId":"..."}`；EV 使用 `{"kind":"saved-ev","evidenceId":"..."}`。亦可傳完整 `engine-capture`／`ev-capture` 原始資料，由相同 Rust library 重播資格；不能只填 RPM／功率峰值宣稱 measured。
+新 JSON request 使用 `schemaVersion: "tuning-workflow-result/v2"`（v1 保留歷史 chassis 語意），包含 `goal`、`season`、完整 `profile`、`inputSnapshot.carId` 與 `evidence`。本地已存 ICE 證據使用 `{"kind":"saved-engine","observationId":"..."}`；EV 使用 `{"kind":"saved-ev","evidenceId":"..."}`。亦可傳完整 `engine-capture`／`ev-capture` 原始資料，由相同 Rust library 重播資格；不能只填 RPM／功率峰值宣稱 measured。
 
 CLI 與 MCP 是唯讀分析入口；正式保存由桌面／後端 API 確認 backend-issued evidenceId。下面三個子命令保留 `legacy-cli/v1` 數值與舊匯出 schema；不等同正式 workflow，也不與 legacy MCP quick solver 混用。
 

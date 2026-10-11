@@ -17,16 +17,30 @@ pub struct MechanicalRequest {
 #[serde(rename_all = "camelCase")]
 pub struct MechanicalResult {
     pub schema_version: &'static str,
-    pub chassis: ChassisTuningResult,
+    pub chassis: Option<ChassisTuningResult>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub chassis_diagnostics: Option<serde_json::Value>,
     pub alignment: StaticAlignment,
 }
 pub fn calculate_mechanical(request: &MechanicalRequest) -> Result<MechanicalResult, &'static str> {
-    if request.schema_version != "tuning-mechanical/v1" {
+    if !["tuning-mechanical/v1", "tuning-mechanical/v2"].contains(&request.schema_version.as_str())
+    {
         return Err("Unsupported tuning calculation schema");
     }
+    let current = request.schema_version == "tuning-mechanical/v2";
+    let calculation =
+        current.then(|| super::chassis_load::calculate(request.goal, &request.profile));
     Ok(MechanicalResult {
-        schema_version: "tuning-mechanical/v1",
-        chassis: calculate_chassis_tuning(request.goal, &request.profile),
+        schema_version: if current {
+            "tuning-mechanical/v2"
+        } else {
+            "tuning-mechanical/v1"
+        },
+        chassis: match &calculation {
+            Some(c) => c.public_chassis(),
+            None => Some(calculate_chassis_tuning(request.goal, &request.profile)),
+        },
+        chassis_diagnostics: calculation.map(|c| c.diagnostics),
         alignment: calculate_static_alignment(request.goal, request.season, &request.profile),
     })
 }
