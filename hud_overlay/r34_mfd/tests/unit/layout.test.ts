@@ -16,9 +16,9 @@ describe('independent lower-center instruments and corner MFD', () => {
     for (const scale of [.7, 1, 1.5, 2, 3]) {
       const g = L.layout(width, height, scale);
       for (const key of ['tach', 'speed', 'boost', 'temperature', 'screen']) inside(g[key], width, height);
-      expect(g.temperature.x).toBeLessThan(g.tach.x);
+      expect(g.temperature.x + g.temperature.width).toBeLessThan(g.tach.x);
       expect(g.tach.x + g.tach.width).toBeLessThan(g.speed.x);
-      expect(g.speed.x).toBeLessThan(g.boost.x);
+      expect(g.speed.x + g.speed.width).toBeLessThan(g.boost.x);
       expect(g.boost.x + g.boost.width).toBeLessThan(g.screen.x);
       expect(g.status.y + 12).toBeLessThanOrEqual(height);
       expect(g.screen.width / g.screen.height).toBeCloseTo(270 / 152);
@@ -28,7 +28,10 @@ describe('independent lower-center instruments and corner MFD', () => {
   });
   it.each(profiles)('keeps an independent meaningful MFD when the cluster is hidden at %i×%i', (width, height) => {
     const normal = L.layout(width, height, 1), hidden = L.layout(width, height, 1, false);
-    expect(hidden.screen).toEqual(normal.screen);
+    // Hiding the cluster releases its width reservation; the corner MFD must not shrink.
+    expect(hidden.screen.width).toBeGreaterThanOrEqual(normal.screen.width);
+    expect(hidden.screen.x + hidden.screen.width).toBeCloseTo(normal.screen.x + normal.screen.width);
+    expect(hidden.screen.y + hidden.screen.height).toBeCloseTo(normal.screen.y + normal.screen.height);
     const enlarged = L.layout(width, height, 3, false); inside(enlarged.screen, width, height);
     expect(enlarged.screen.width).toBeGreaterThan(hidden.screen.width);
   });

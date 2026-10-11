@@ -2,6 +2,8 @@
 
 V1.7.2 release preparation (runtime 11.45.22) integrates the merged HUD, telemetry, race-analysis and tuning workflow changes. The latest published release remains v1.7.1. See the [candidate notes](docs/releases/v1.7.2.md) and [acceptance ledger](docs/releases/v1.7.2-acceptance.md) for WIP / Known Issues and remaining artifact gates. Rust remains the [tuning owner](docs/contracts/tuning_responsibilities.md).
 
+The [Road/Rally chassis engineering baseline](docs/tuning/chassis-engineering-baseline-v1.md) makes downforce optional, resolves a missing axle from explicit aero balance, and adjusts springs and damping by relative load. Workflow v2 reports missing inputs and limits while preserving historical replay. Existing complete configurations are checked for a reasonable Road or Rally baseline; this is not in-game performance validation of the new settings.
+
 The versioned [Road launch-envelope correction for #462](docs/tuning/aego-road-launch-v3.md) preserves low-power and historical models; its engineering priors do not establish optimal in-game launches.
 
 EV tuning now has an independent measured powertrain model, selected with a persisted EV switch instead of the conventional gear-count input. The same four-step workflow supports single-speed and multi-speed EV scans and final-drive previews. Launch/shift optimization and attainable top-speed prediction remain uncalibrated. See the [model contract and validation notes](docs/calibration/ev-foundation.md).

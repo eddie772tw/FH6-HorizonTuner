@@ -75,6 +75,86 @@ fn saved_request() -> Value {
     r["evidence"] = json!({"kind":"saved-engine","observationId":"real-beetle"});
     r
 }
+
+#[test]
+fn current_chassis_recommendations_replay_and_reject_version_or_diagnostic_forgery() {
+    let temp = tempfile::tempdir().unwrap();
+    let app = App::new(temp.path()).unwrap();
+    save_engine(&app);
+    let mut request = saved_request();
+    request["schemaVersion"] = json!("tuning-workflow-result/v2");
+    for (key, value) in [
+        ("spring_front_min", 3.0),
+        ("spring_rear_min", 3.0),
+        ("spring_front_max", 16.0),
+        ("spring_rear_max", 16.0),
+    ] {
+        request["profile"][key] = json!(value);
+    }
+    request["profile"]["aeroInputVersion"] = json!("optional/v1");
+    request["profile"]["aero_downforce_front"] = json!(100);
+    // Missing balance masks the incomplete correction, but does not remove gearing.
+    let partial = call(&app, "/api/tuning/workflow", request.clone()).unwrap();
+    assert!(partial["chassis"].is_null());
+    let fields = partial["recommendation"]["fields"].as_object().unwrap();
+    assert!(fields.contains_key("gearing.finalDrive"));
+    assert!(!fields.keys().any(|key| key.starts_with("spring.")
+        || key.starts_with("rebound.")
+        || key.starts_with("bump.")));
+    request["profile"]["aeroBalance"] = json!(0.4);
+    let out = call(&app, "/api/tuning/workflow", request.clone()).unwrap();
+    let rec = &out["recommendation"];
+    assert_eq!(rec["formulaVersion"], "rust/ice-measured-workflow-v3");
+    assert_eq!(
+        rec["inputSnapshot"]["chassisModelVersion"],
+        "rust/chassis-load-baseline/v1"
+    );
+    assert!(
+        (rec["inputSnapshot"]["chassisCalculation"]["aero"]["rear"]
+            .as_f64()
+            .unwrap()
+            - 150.0)
+            .abs()
+            < 1e-9
+    );
+    assert!(rec["inputSnapshot"]["profile"]["aero_downforce_rear"].is_null());
+    assert!(rec["fields"].get("spring.front").is_some());
+    for valid in [&partial["recommendation"], rec] {
+        call(
+            &app,
+            "/api/road/compatibility",
+            json!({"discipline":"Drag","recommendation":valid}),
+        )
+        .unwrap();
+    }
+    for key in ["chassisModelVersion", "chassisCalculation"] {
+        let mut forged = rec.clone();
+        forged["inputSnapshot"][key] = json!("forged");
+        assert!(call(
+            &app,
+            "/api/road/compatibility",
+            json!({"discipline":"Drag","recommendation":forged})
+        )
+        .is_err());
+    }
+    let mut old_label = rec.clone();
+    old_label["formulaVersion"] = json!("rust/ice-measured-workflow-v2");
+    assert!(call(
+        &app,
+        "/api/road/compatibility",
+        json!({"discipline":"Drag","recommendation":old_label})
+    )
+    .is_err());
+    let recovered = App::new(temp.path()).unwrap();
+    assert_eq!(
+        call(&recovered, "/api/tuning/workflow", request.clone()).unwrap(),
+        out
+    );
+    request["profile"]["aero_downforce_front"] = Value::Null;
+    let cleared = call(&app, "/api/tuning/workflow", request).unwrap();
+    assert_eq!(cleared["chassisDiagnostics"]["aero"]["source"], "omitted");
+    assert_ne!(cleared["chassis"]["springs"], out["chassis"]["springs"]);
+}
 fn ev_capture() -> Value {
     // Frozen actual desktop projection: the React hook test verifies every replay frame.
     let channels: Vec<String> = serde_json::from_str(include_str!(
@@ -349,82 +429,88 @@ fn persisted_ice_requires_qualified_capture_and_exact_authoritative_result() {
 }
 #[test]
 fn ev_persistence_replays_frames_and_locked_ratios_remain_unapplied() {
-    let temp = tempfile::tempdir().unwrap();
-    let app = App::new(temp.path()).unwrap();
-    let mut raw = ev_capture();
-    raw["setup"]["finalDriveAdjustable"] = json!(false);
-    raw["setup"]["gearAdjustable"] = json!([false, false]);
-    let proof = call(&app, "/api/tuning/ev-evidence", raw.clone()).unwrap();
-    let mut r = input("AWD");
-    r["profile"]["isElectric"] = json!(true);
-    r["profile"]["evGearbox"] = raw["setup"].clone();
-    r["inputSnapshot"]["carId"] = json!("3445");
-    r["evidence"] = json!({"kind":"saved-ev","evidenceId":proof["evidenceId"]});
-    let result = call(&app, "/api/tuning/workflow", r.clone()).unwrap();
-    let road = call(
-        &app,
-        "/api/road/workflows",
-        json!({"identity":{"ordinal":3445,"performanceIndex":795,"drivetrain":2},"carName":"Taycan","event":{"name":"Test","format":"circuit"},"recommendation":result["recommendation"]}),
-    );
-    let saved = road.unwrap();
-    drop(app);
-    let app = App::new(temp.path()).unwrap();
-    assert_eq!(call(&app, "/api/tuning/workflow", r).unwrap(), result);
-    assert_eq!(saved["identity"]["ordinal"], 3445);
+    for schema in ["tuning-workflow-result/v1", "tuning-workflow-result/v2"] {
+        let temp = tempfile::tempdir().unwrap();
+        let app = App::new(temp.path()).unwrap();
+        let mut raw = ev_capture();
+        raw["setup"]["finalDriveAdjustable"] = json!(false);
+        raw["setup"]["gearAdjustable"] = json!([false, false]);
+        let proof = call(&app, "/api/tuning/ev-evidence", raw.clone()).unwrap();
+        let mut r = input("AWD");
+        r["schemaVersion"] = json!(schema);
+        r["profile"]["isElectric"] = json!(true);
+        r["profile"]["evGearbox"] = raw["setup"].clone();
+        r["inputSnapshot"]["carId"] = json!("3445");
+        r["evidence"] = json!({"kind":"saved-ev","evidenceId":proof["evidenceId"]});
+        let result = call(&app, "/api/tuning/workflow", r.clone()).unwrap();
+        let road = call(
+            &app,
+            "/api/road/workflows",
+            json!({"identity":{"ordinal":3445,"performanceIndex":795,"drivetrain":2},"carName":"Taycan","event":{"name":"Test","format":"circuit"},"recommendation":result["recommendation"]}),
+        );
+        let saved = road.unwrap();
+        drop(app);
+        let app = App::new(temp.path()).unwrap();
+        assert_eq!(call(&app, "/api/tuning/workflow", r).unwrap(), result);
+        assert_eq!(saved["identity"]["ordinal"], 3445);
 
-    let fields = result["recommendation"]["fields"].as_object().unwrap();
-    assert!(!fields.keys().any(|k| k.starts_with("gearing.")));
-    assert!(call(
-        &app,
-        "/api/road/compatibility",
-        json!({"discipline":"Drag","recommendation":result["recommendation"]})
-    )
-    .is_ok());
-    raw["frames"] = json!([raw["frames"][0]]);
-    assert!(call(&app, "/api/tuning/ev-evidence", raw).is_err());
-    assert!(call(
-        &app,
-        "/api/tuning/ev-gearing",
-        json!({"measurements":[],"setup":{}})
-    )
-    .is_err());
+        let fields = result["recommendation"]["fields"].as_object().unwrap();
+        assert!(!fields.keys().any(|k| k.starts_with("gearing.")));
+        assert!(call(
+            &app,
+            "/api/road/compatibility",
+            json!({"discipline":"Drag","recommendation":result["recommendation"]})
+        )
+        .is_ok());
+        raw["frames"] = json!([raw["frames"][0]]);
+        assert!(call(&app, "/api/tuning/ev-evidence", raw).is_err());
+        assert!(call(
+            &app,
+            "/api/tuning/ev-gearing",
+            json!({"measurements":[],"setup":{}})
+        )
+        .is_err());
+    }
 }
 #[test]
 fn mcp_and_offline_cli_use_same_qualified_owner() {
-    use fh6_backend::mcp::McpServer;
-    use std::process::Command;
-    let temp = tempfile::tempdir().unwrap();
-    let app = App::new(temp.path()).unwrap();
-    save_engine(&app);
-    let request = saved_request();
-    let expected = call(&app, "/api/tuning/workflow", request.clone()).unwrap();
-    let mcp=McpServer::default().handle(&app,&json!({"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"calculate_tuning_workflow","arguments":request}})).unwrap().unwrap();
-    let out: Value =
-        serde_json::from_str(mcp["result"]["content"][0]["text"].as_str().unwrap()).unwrap();
-    assert_eq!(out, expected);
-    let output = Command::new(env!("CARGO_BIN_EXE_fh6-agent"))
-        .args([
-            "solve",
-            "workflow",
-            "--args",
-            &request.to_string(),
-            "--data-dir",
-            temp.path().to_str().unwrap(),
-            "--backend-url",
-            "http://127.0.0.1:1",
-            "--json",
-        ])
-        .output()
-        .unwrap();
-    assert!(
-        output.status.success(),
-        "{}",
-        String::from_utf8_lossy(&output.stdout)
-    );
-    assert_eq!(
-        serde_json::from_slice::<Value>(&output.stdout).unwrap(),
-        expected
-    );
+    for schema in ["tuning-workflow-result/v1", "tuning-workflow-result/v2"] {
+        use fh6_backend::mcp::McpServer;
+        use std::process::Command;
+        let temp = tempfile::tempdir().unwrap();
+        let app = App::new(temp.path()).unwrap();
+        save_engine(&app);
+        let mut request = saved_request();
+        request["schemaVersion"] = json!(schema);
+        let expected = call(&app, "/api/tuning/workflow", request.clone()).unwrap();
+        let mcp=McpServer::default().handle(&app,&json!({"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"calculate_tuning_workflow","arguments":request}})).unwrap().unwrap();
+        let out: Value =
+            serde_json::from_str(mcp["result"]["content"][0]["text"].as_str().unwrap()).unwrap();
+        assert_eq!(out, expected);
+        let output = Command::new(env!("CARGO_BIN_EXE_fh6-agent"))
+            .args([
+                "solve",
+                "workflow",
+                "--args",
+                &request.to_string(),
+                "--data-dir",
+                temp.path().to_str().unwrap(),
+                "--backend-url",
+                "http://127.0.0.1:1",
+                "--json",
+            ])
+            .output()
+            .unwrap();
+        assert!(
+            output.status.success(),
+            "{}",
+            String::from_utf8_lossy(&output.stdout)
+        );
+        assert_eq!(
+            serde_json::from_slice::<Value>(&output.stdout).unwrap(),
+            expected
+        );
+    }
 }
 
 #[test]

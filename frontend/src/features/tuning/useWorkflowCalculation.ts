@@ -12,8 +12,9 @@ import { usesCvt, type CvtFoundationResult } from '../../domain/tuning/transmiss
 
 export interface AuthoritativeWorkflow {
   cvt?: CvtFoundationResult;
-  schemaVersion: 'tuning-workflow-result/v1';
-  chassis: ChassisTuningResult;
+  schemaVersion: 'tuning-workflow-result/v2';
+  chassis: ChassisTuningResult | null;
+  chassisDiagnostics?: import('../../domain/tuning/types').ChassisDiagnostics;
   alignment: StaticTireAlignResult;
   gearing: WorkflowGearingResult | null;
   readiness: WorkflowReadiness;
@@ -26,7 +27,7 @@ export const unavailableReadiness: WorkflowReadiness = { mechanical: false, engi
 export function useWorkflowCalculation(carId: string, goal: string, season: Season, profile: CarParams | null,
   engine: MeasuredEngineInputs | null, ev: EvGearingInput | null, inputSnapshot: Record<string, unknown>) {
   const evidence = usesCvt(profile) ? inputSnapshot.cvtEvidence ?? null : profile?.isElectric ? inputSnapshot.evEvidence ?? null : engine && inputSnapshot.engineObservation ? { kind: 'saved-engine', observationId: (inputSnapshot.engineObservation as { id: string }).id } : null;
-  const key = JSON.stringify({ carId, evidence, schemaVersion: 'tuning-workflow-result/v1', goal, season, profile, engine, ev, inputSnapshot });
+  const key = JSON.stringify({ carId, evidence, schemaVersion: 'tuning-workflow-result/v2', goal, season, profile, engine, ev, inputSnapshot });
   const sequence = useRef(new CalculationSequence());
   const [state, setState] = useState<{ key: string; result: AuthoritativeWorkflow } | null>(null);
   const [status, setStatus] = useState<'pending' | 'ready' | 'error'>('pending');
@@ -45,7 +46,7 @@ export function useWorkflowCalculation(carId: string, goal: string, season: Seas
         const response = await backendFetch('/api/tuning/workflow', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(input), signal: controller.signal });
         if (!response.ok) throw new Error(`Calculation failed (${response.status})`);
         const result = await response.json() as AuthoritativeWorkflow;
-        if (result.schemaVersion !== 'tuning-workflow-result/v1') throw new Error('Unsupported calculation result');
+        if (result.schemaVersion !== 'tuning-workflow-result/v2') throw new Error('Unsupported calculation result');
         if (usesCvt(input.profile) && (result.cvt?.schemaVersion !== 'cvt-qualification/v1'
           || result.cvt.status !== 'unsupported' || result.gearing !== null || result.recommendation !== null
           || result.readiness?.measuredEngine !== false || result.readiness?.gearingAvailable !== false)) {

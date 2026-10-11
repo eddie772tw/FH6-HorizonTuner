@@ -4,6 +4,8 @@
 
 ## 預覽與套用
 
+後續底盤工程基準使用 `tuning-workflow-result/v2`／`rust/chassis-alignment-neutral/v2`，詳見[現行公式](chassis-engineering-baseline-v1.md)。以下記錄原始 P1 契約。
+
 `tuning-workflow-result/v1` 新增 `baselinePreview`（`tuning-baseline-preview/v1`）。`rust/chassis-alignment-neutral/v1` 標識現行底盤／定位 owner 的中性預覽契約，並非新物理公式。
 
 - Rust 由同一組底盤／定位結果產生 canonical 欄位、目前／建議／差異、受影響欄位及缺項；前端不重算差異或資格。

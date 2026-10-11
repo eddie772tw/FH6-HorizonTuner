@@ -30,6 +30,7 @@ export function CompanionHostBridge() {
         results: {
           cvt: tune.result?.cvt,
           chassis: tune.result?.chassis ?? null,
+          chassisDiagnostics: tune.result?.chassisDiagnostics,
           alignment: tune.result?.alignment ?? null,
           gearing: tune.result?.gearing ?? null,
         },

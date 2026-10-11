@@ -21,11 +21,12 @@ export interface CarParams {
   /** Optional Drag finish speed; used only with explicit provenance. */
   dragFinishSpeedKmh?: number;
   dragFinishSpeedProvenance?: 'telemetry' | 'manual';
-  aeroBalance?: number;
+  aeroInputVersion?: 'optional/v1';
+  aeroBalance?: number | null;
   aeroEfficiency: number;
   mechBalance?: number;
-  aero_downforce_front?: number;
-  aero_downforce_rear?: number;
+  aero_downforce_front?: number | null;
+  aero_downforce_rear?: number | null;
   frontTireWidth?: number;
   frontTireAspect?: number;
   frontTireRim?: number;
@@ -47,10 +48,10 @@ export interface CarParams {
   dyno_quality?: DynoQuality;
   
   // Suspension & Ride Height limits for tuning wizard
-  spring_front_min?: number;
-  spring_front_max?: number;
-  spring_rear_min?: number;
-  spring_rear_max?: number;
+  spring_front_min?: number | null;
+  spring_front_max?: number | null;
+  spring_rear_min?: number | null;
+  spring_rear_max?: number | null;
   height_front_min?: number;
   height_front_max?: number;
   height_rear_min?: number;

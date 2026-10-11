@@ -1,5 +1,4 @@
-//! Draft defaults preserve the pre-migration desktop loader. Persisted documents
-//! are never rewritten by normalization.
+//! Current drafts use explicit optional aero. Persisted documents are never rewritten.
 use serde_json::{json, Value};
 pub fn ev_profile(raw: &Value) -> Value {
     let setup = &raw["evGearbox"];
@@ -42,6 +41,33 @@ pub fn normalize(raw: &Value) -> Value {
     }
     for (key, value) in ev_profile(raw).as_object().unwrap() {
         result[key] = value.clone();
+    }
+    for key in [
+        "rallyProfile",
+        "roadAwdRearPercent",
+        "dragFinishSpeedKmh",
+        "dragFinishSpeedProvenance",
+        "arb_front_min",
+        "arb_front_max",
+        "arb_rear_min",
+        "arb_rear_max",
+    ] {
+        if let Some(value) = raw.get(key) {
+            result[key] = value.clone();
+        }
+    }
+    if raw["aeroInputVersion"] != super::chassis_load::AERO_INPUT {
+        // Old 0 meant Auto; even a stored balance could have been a loader default.
+        for key in ["aero_downforce_front", "aero_downforce_rear"] {
+            if raw[key].as_f64() == Some(0.0) {
+                result[key] = Value::Null;
+            }
+        }
+        result["aeroBalance"] = Value::Null;
+        // Do not silently repair an unknown future input contract.
+        if raw.get("aeroInputVersion").is_none_or(Value::is_null) {
+            result["aeroInputVersion"] = json!(super::chassis_load::AERO_INPUT);
+        }
     }
     result
 }

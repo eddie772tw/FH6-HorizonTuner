@@ -7,6 +7,7 @@ import { AlignmentResults, ChassisResults, GearingResults } from './CompanionRes
 import CompanionMeasurement from './CompanionMeasurement';
 import { usesCvt } from '../../domain/tuning/transmission';
 import { CvtFoundationPanel } from '../tuning/components/CvtFoundationPanel';
+import { ChassisCalculationStatus } from '../tuning/components/ChassisCalculationStatus';
 
 type Props = { state: CompanionState | null; disabled: boolean; onCommand: (command: Omit<CompanionCommand, 'id' | 'carId' | 'profileKey'>) => Promise<boolean> };
 type Draft = Record<string, string>;
@@ -124,6 +125,7 @@ export default function CompanionTuning({ state, disabled, onCommand }: Props) {
         </div>
       </details>
     </section>
+    <ChassisCalculationStatus diagnostics={snapshot.results.chassisDiagnostics} />
     <div className="companion-tuning-results"><ChassisResults result={snapshot.results.chassis} /><AlignmentResults result={snapshot.results.alignment} /></div>
     <section id="companion-engine">{usesCvt(profile) ? <CvtFoundationPanel result={snapshot.results.cvt} t={t} /> : <CompanionMeasurement measurement={measurement} disabled={disabled} onCommand={onCommand} />}</section>
     <GearingResults result={snapshot.results.gearing} measurementPhase={measurement.phase} unavailableMessage={usesCvt(profile) ? t('CVT recommendations are unavailable pending real capture and solver validation.') : undefined} />

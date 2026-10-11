@@ -1,5 +1,12 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-10-12 / 底盤 PR 的既有 CI 阻擋修復（Mihaly as Codex）
+
+- **Scope**：沿用 `pr-author-maintainer`、`ponytail`、`halfmoon-design-system`；修復 PR #515 從 main 繼承的 Ruff 排序及 R34 間距失敗，不調整底盤定案。
+- **Learning**：本地 Ruff 0.16.8 通過不代表 CI 0.17.0 通過；`tomllib` 應與其他標準庫 import 同組，使用 CI 相同版本確認。R34 輔助表中心距 160 小於兩個模組半徑之和 114 + 54，僅檢查中心左右順序會漏掉交疊；間距由半徑加少量留白推得，並同步保留完整外緣給 MFD。
+- **Evidence**：CI `38153407046` 的 I001 與 `38153406990` 的 outside-left/right 斷言重現。原有瀏覽器防重疊斷言保留，單元測試補回同一外緣關係；本機 1280×720 實際 HUD 的兩側間隙均約 1.61 px、右輔助表至 MFD 約 16.02 px。Ruff 0.17.0 check／format 與維護工具 53 項測試通過。
+- **Boundary**：R34 為瀏覽器幾何與 fixture 驗證，不是遊戲或 Windows 原生 HUD 驗收；中央安全區與 MFD 右側錨點沿用既有設計。
+
 ## 2026-10-11 / 底盤彈簧防溢出截斷與小數邊界保護（Gemini as Antigravity）
 
 - **Scope**：採用 `physics-tuning-math`、`modular-refactoring`；修復 2008 Subaru Impreza WRX STi（Car ID: 1060）等帶有小數上限之車型在底盤調校中因四捨五入進位溢出滑桿上限之問題。
@@ -839,3 +846,39 @@
   - R34 MFD 與環表排擠修正：小環表中心距由 `190*scale` 貼近至 `160*scale`（外緣縮至 `214*scale`），MFD 右側邊距自 `margin` 放寬至 `screenMarginX`（右移約 16~22px），並設 `minOffset = 260*scale` 護欄，徹底根絕中央環表內縮擠壓安全區現象。
 - **Boundary**：遵循 Rust 物理計算唯一 SSOT 與 `AGENTS.md` 規範，無 UI 硬編碼物理公式。
 - **Skills**：`physics-tuning-math`、`telemetry-udp-protocol`、`halfmoon-design-system`、`modular-refactoring`、`pr-author-maintainer`。
+
+## 2026-10-11 / 底盤彈簧重構與 Road 路徑評估（Codex）
+
+- **來源／狀態**：`local`／`research`；由乾淨 main `9bfd6c90` 在原目錄建立 `codex/chassis-spring-refactor`，依使用者要求不新增 worktree。詳細數據與規劃見 [評估文件](../docs/tuning/chassis-spring-refactor-evaluation-20261011.md)。
+- **Learning**：未提供下壓力與 Fixed／單軸空力能力仍可能經 resolver 改變 Road 彈簧；正式 `TuningCarParams` 沒有讀入 adjustability。`clamp_round` 在 `[3.11,3.11]` 或 `[3.11,3.14]` 仍輸出 3.1，預覽回報 `value-outside-range`；一位小數與合法邊界在此不可同時滿足。歷史 recommendation 會經共同 chassis owner 重算，新公式須連同版本路由規劃。
+- **Evidence**：三組 Rust 契約 18 passed；正式 workflow CLI 重播六個案例。精確 Impreza 範例的 Rally A Mixed 候選為 9.1／7.1，而非原計畫 9.1／7.2。
+- **Boundary**：僅研究與文件，未實作候選公式、改寫歷史 fixture、commit／push 或驗證 FH6 實機；R3 為建議，Road 模型尚未由使用者選定。
+- **Skills**：`physics-tuning-math`、`ponytail`。
+
+### 使用者追加：可選下壓力與空力平衡反推
+
+- **決策**：兩軸皆未填不做下壓力補正；單軸已填時必須明確填入前軸空力占比，以此反推另一軸；雙軸已填直接採用，既有平衡不能覆蓋輸入值。此需求取代初版評估中「另一軸一律不推導」的建議，詳見評估文件 2.5。
+- **程式核對**：`aeroBalance` 存在於前端型別與 profile defaults（0.5），正式 Rust `TuningCarParams`／chassis 尚未消費。開發時不可把 loader 預設值當成玩家明確輸入；推導值也不可回寫為已填值。可調能力與實際負載須分開。
+- **狀態／驗證**：本次同步計畫、索引與驗收矩陣，僅文件變更；反推例以前 100／後 150 kgf、前占比 40% 算術核對。產品實作與新契約測試尚未執行，未改變 Road 模型待選定的狀態。
+
+### 工程合理基準收斂（Codex）
+
+- **需求與定案**：依使用者要求停止追求最優解，採 Road R3 保留 FWD 偏置、Rally A 的 0.35／0.48 基線；空力改為 `K0 × (1+F/W)`，依每軸已解析下壓力與靜態軸重作相對支撐修正；阻尼用實際限界後彈簧與既有參考剛性之比的平方根修正。完整實作準據見 [底盤工程基準 v1](../docs/tuning/chassis-engineering-baseline-v1.md)。
+- **Learning**：相對負載模型可避免新增未知運動比／簧載質量輸入，但使用總軸重代理不能宣稱真實下沉量或頻率不變；空力是外力，不增加慣性質量。阻尼必須消費實際可達彈簧值，避免彈簧觸頂後仍依 raw 目標提高阻尼。Forza 滑桿縮放只是工程近似。
+- **Evidence**：本機研究腳本 `scratch/chassis-engineering-baseline-20261011.mjs` 重播 7,875 組有效輸入，上下限、零空力恆等、空力單調性與 Cross／Mixed 關係通過；另核對反推與窄／鎖定區間。此為算術檢查，不是 Rust／遊戲證據。
+- **Boundary**：計畫已可進入開發；R1／R2 不納入本次，不再等待最佳模型。產品公式尚未修改，未 commit／push；實機只規劃基本可用性驗收，不以圈速最優為交付條件。技能：`physics-tuning-math`、`ponytail`。
+
+### 既有完整量測配置驗證（Codex）
+
+- **Scope**：依使用者補充，只採完整量測配置，以 Road 或 Rally 至少一個合理基準判定，不要求各改裝組合適用所有模式。使用 `physics-tuning-math`、`ponytail`；沿用本機分支，未新增 worktree。
+- **Evidence**：7 台、8 份合格原始量測（40,324 幀）；正式 Rust workflow 的 Road／Rally 共 16 次合格重播。新公式研究算式 21 組模式、171 項檢查通過；無彈簧基線 clamp、無阻尼飽和。詳見 [逐車驗證](../docs/tuning/chassis-existing-vehicles-validation-20261011.md)。
+- **Learning**：舊 observation 標記 ready 不代表現行 owner 仍可重播；Beetle 一份 874 幀紀錄被拒絕但另兩份可用。Furai 雖可重播，量測約 627 hp／517 Nm 與車檔 458 hp／377 Nm 不一致，dependency key 合格也不能取代數值一致性核對，故暫不列完整配置驗收。
+- **Boundary**：維持 Road R3／Rally A 及現有定案常數。原資料庫與驗證車檔雜湊未變；沒有改寫使用者資料或生產公式。這批只有 AWD／RWD、未提供空力，不宣稱完成 FWD／有空力或新底盤實機驗證；不因覆蓋缺口追加量測。
+
+### 工程基準 v1 導入正式 Rust workflow（Codex）
+
+- **Implementation**：`chassis_load.rs` 擁有 Road／Rally 工程基準、可選空力、合法刻度與阻尼相對修正。v2 mechanical／workflow 回傳可為 null 的 chassis 及逐軸診斷；保留 v1 形狀與數值。ICE v3／EV v2 recommendation 由新 owner 重播，歷史 ICE v1/v2／EV v1 使用舊 owner，凍結 fixtures 未改。
+- **Learning**：下壓力的缺值／0 必須連同 profile 語意版本一起保存；舊 Auto 0 與預設 balance 不能當明確輸入。清空欄位需送 null，避免 JSON 略去 undefined 後保留舊值。推導載荷只進入診斷與計算，不回填車檔；僅有部分合格底盤欄位時，不將完整補正標為可用。
+- **Evidence**：完整 Cargo 214 passed／3 ignored；新底盤契約 8 項與推薦重播、防偽、CLI／MCP／API 一致性契約通過。正式 CLI 重播完整 7 台／8 份／40,324 幀，24 次數值與定案表一致；原檔雜湊未變。前端可選欄位、三語 Companion 診斷與過期回覆保護已測試；本機元件預覽確認七核心日夜模式、三語、空白／0／單雙軸欄位切換。
+- **Boundary**：量測重播、UI fixture 與數值契約不是新底盤設定的實機操控證據。沒有新增量測、修改原始車檔或另建 worktree。Windows 全套編譯曾因多個 linker 記憶體競爭拖慢並造成 Vitest worker 啟動失敗，降低 Cargo `-j 2`、Vitest `--maxWorkers=2` 後重新驗證；失敗程序不算通過。
+- **Skills**：`physics-tuning-math`、`ponytail`、`halfmoon-design-system`、`huge-component-refactoring`、`modular-refactoring`、`pr-author-maintainer`、`agent-governance-audit`。
