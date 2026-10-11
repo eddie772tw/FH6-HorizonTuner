@@ -49,7 +49,9 @@ pub struct WorkflowResult {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub cvt: Option<super::cvt::FoundationResult>,
     pub schema_version: &'static str,
-    pub chassis: ChassisTuningResult,
+    pub chassis: Option<ChassisTuningResult>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub chassis_diagnostics: Option<Value>,
     pub alignment: StaticAlignment,
     pub gearing: Option<WorkflowGearing>,
     pub readiness: Readiness,
@@ -139,9 +141,17 @@ pub(crate) fn calculate_qualified_version(
     }
     let qualified_ev = proof.map(|p| p.ev_input(&input)).transpose()?.flatten();
     let qualified_engine = proof.and_then(|p| p.engine());
-    if input.schema_version != "tuning-workflow-result/v1" {
+    if !["tuning-workflow-result/v1", "tuning-workflow-result/v2"]
+        .contains(&input.schema_version.as_str())
+    {
         return Err("Unsupported tuning calculation schema".into());
     }
+    let current_chassis = input.schema_version == "tuning-workflow-result/v2";
+    let schema_version = if current_chassis {
+        "tuning-workflow-result/v2"
+    } else {
+        "tuning-workflow-result/v1"
+    };
     let profile: TuningCarParams =
         serde_json::from_value(input.profile.clone()).map_err(|e| e.to_string())?;
     if !input.profile.is_object() || !input.input_snapshot.is_object() {
@@ -162,15 +172,27 @@ pub(crate) fn calculate_qualified_version(
         0
     };
     let electric = profile.is_electric == Some(true);
-    let chassis = calculate_chassis_tuning(input.goal, &profile);
+    let calculation = current_chassis.then(|| super::chassis_load::calculate(input.goal, &profile));
+    let chassis = match &calculation {
+        Some(c) => c.values.clone(),
+        None => calculate_chassis_tuning(input.goal, &profile),
+    };
+    let public_chassis = match &calculation {
+        Some(c) => c.public_chassis(),
+        None => Some(chassis.clone()),
+    };
+    let chassis_diagnostics = calculation.as_ref().map(|c| c.diagnostics.clone());
     let alignment = calculate_static_alignment(input.goal, input.season, &profile);
-    let baseline_preview = super::baseline::preview(
+    let mut baseline_preview = super::baseline::preview(
         input.goal,
         &input.profile,
         &input.input_snapshot["baselineCurrent"],
         &chassis,
         &alignment,
     );
+    if let Some(calculation) = &calculation {
+        super::chassis_load::qualify_preview(&mut baseline_preview, calculation);
+    }
     if super::cvt::selected(&input.profile) {
         use super::evidence::EvidenceRequest;
         let raw = match &input.evidence {
@@ -188,8 +210,9 @@ pub(crate) fn calculate_qualified_version(
         }
         return Ok(WorkflowResult {
             cvt: Some(cvt),
-            schema_version: "tuning-workflow-result/v1",
-            chassis,
+            schema_version,
+            chassis: public_chassis,
+            chassis_diagnostics,
             alignment,
             gearing: None,
             recommendation: None,
@@ -235,6 +258,14 @@ pub(crate) fn calculate_qualified_version(
     snapshot["profile"] = input.profile.clone();
     snapshot["goal"] = serde_json::to_value(input.goal).map_err(|e| e.to_string())?;
     snapshot["season"] = serde_json::to_value(input.season).map_err(|e| e.to_string())?;
+    if let Some(calculation) = &calculation {
+        snapshot["chassisModelVersion"] = calculation.diagnostics["modelVersion"].clone();
+        snapshot["chassisCalculation"] = calculation.diagnostics.clone();
+    } else if snapshot.get("chassisModelVersion").is_some()
+        || snapshot.get("chassisCalculation").is_some()
+    {
+        return Err("Historical workflow cannot claim current chassis metadata".into());
+    }
     if electric {
         snapshot["evResult"] = serde_json::to_value(&gearing).map_err(|e| e.to_string())?;
     }
@@ -278,21 +309,40 @@ pub(crate) fn calculate_qualified_version(
         }
     }
     let recommendation = if gearing_available {
-        Some(recommendation(
+        let mut rec = recommendation(
             &input.profile,
             &chassis,
             &alignment,
             gearing.as_ref().unwrap(),
             snapshot,
             new_road,
-        ))
+        );
+        if current_chassis {
+            rec["formulaVersion"] = json!(if electric {
+                "rust/ev-measured-workflow-v2"
+            } else {
+                "rust/ice-measured-workflow-v3"
+            });
+            // Only independently qualified mechanical fields can be offered for application.
+            let fields = rec["fields"].as_object_mut().unwrap();
+            fields.retain(|key, _| {
+                key.starts_with("gearing.")
+                    || baseline_preview["fields"]
+                        .as_array()
+                        .unwrap()
+                        .iter()
+                        .any(|f| f["key"] == *key && f["status"] == "available")
+            });
+        }
+        Some(rec)
     } else {
         None
     };
     Ok(WorkflowResult {
         cvt: None,
-        schema_version: "tuning-workflow-result/v1",
-        chassis,
+        schema_version,
+        chassis: public_chassis,
+        chassis_diagnostics,
         alignment,
         gearing,
         readiness: Readiness {

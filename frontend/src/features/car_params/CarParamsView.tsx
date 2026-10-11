@@ -211,40 +211,40 @@ const CarParamsView: React.FC<CarParamsViewProps> = ({ subTab: propSubTab, setSu
 
   const updateParam = (field: keyof CarParams, value: any) => {
     if (!carParams) return;
-    const next = { ...carParams, [field]: value };
+    const next = { ...carParams, ...(['aero_downforce_front', 'aero_downforce_rear', 'aeroBalance'].includes(field) ? { aeroInputVersion: 'optional/v1' as const } : {}), [field]: value };
     setCarParams(next);
     triggerAutoSave(next);
   };
 
   // Conversions for Spring limits inputs
-  const displaySpringFrontMin = carParams.spring_front_min !== undefined
+  const displaySpringFrontMin = carParams.spring_front_min != null
     ? Math.round(convertSpringRate(carParams.spring_front_min).value * 10) / 10
     : '';
-  const displaySpringFrontMax = carParams.spring_front_max !== undefined
+  const displaySpringFrontMax = carParams.spring_front_max != null
     ? Math.round(convertSpringRate(carParams.spring_front_max).value * 10) / 10
     : '';
-  const displaySpringRearMin = carParams.spring_rear_min !== undefined
+  const displaySpringRearMin = carParams.spring_rear_min != null
     ? Math.round(convertSpringRate(carParams.spring_rear_min).value * 10) / 10
     : '';
-  const displaySpringRearMax = carParams.spring_rear_max !== undefined
+  const displaySpringRearMax = carParams.spring_rear_max != null
     ? Math.round(convertSpringRate(carParams.spring_rear_max).value * 10) / 10
     : '';
 
   const handleSpringFrontMinChange = (valStr: string) => {
     const val = parseFloat(valStr);
-    updateParam('spring_front_min', isNaN(val) ? undefined : convertSpringRateToKgfmm(val));
+    updateParam('spring_front_min', isNaN(val) ? null : convertSpringRateToKgfmm(val));
   };
   const handleSpringFrontMaxChange = (valStr: string) => {
     const val = parseFloat(valStr);
-    updateParam('spring_front_max', isNaN(val) ? undefined : convertSpringRateToKgfmm(val));
+    updateParam('spring_front_max', isNaN(val) ? null : convertSpringRateToKgfmm(val));
   };
   const handleSpringRearMinChange = (valStr: string) => {
     const val = parseFloat(valStr);
-    updateParam('spring_rear_min', isNaN(val) ? undefined : convertSpringRateToKgfmm(val));
+    updateParam('spring_rear_min', isNaN(val) ? null : convertSpringRateToKgfmm(val));
   };
   const handleSpringRearMaxChange = (valStr: string) => {
     const val = parseFloat(valStr);
-    updateParam('spring_rear_max', isNaN(val) ? undefined : convertSpringRateToKgfmm(val));
+    updateParam('spring_rear_max', isNaN(val) ? null : convertSpringRateToKgfmm(val));
   };
 
   const updateAdjust = (field: keyof CarParams['adjustability'], value: any) => {

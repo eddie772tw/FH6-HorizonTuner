@@ -22,7 +22,7 @@ CVT qualification／save 直接使用 Rust `TuningCarParams` 的 serde 動力語
 
 ## Rust wire 契約
 
-正式入口保持 `tuning-workflow-result/v1`，CVT 額外回傳 `cvt-qualification/v1` 的 `cvt` 結果。Rust 型別及純資格函數位於 [cvt.rs](../../backend-rust/src/tuning/cvt.rs)，前端只做型別、選擇、傳輸與呈現。
+正式入口使用 `tuning-workflow-result/v2`（仍支援歷史 v1），CVT 額外回傳 `cvt-qualification/v1` 的 `cvt` 結果。Rust 型別及純資格函數位於 [cvt.rs](../../backend-rust/src/tuning/cvt.rs)，前端只做型別、選擇、傳輸與呈現。
 
 `evidence: { kind: "cvt-capture", capture }` 的 capture 使用 `cvt-capture/v1`：
 

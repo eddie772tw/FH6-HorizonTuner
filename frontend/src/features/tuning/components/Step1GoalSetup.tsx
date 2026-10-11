@@ -9,6 +9,7 @@ import { DragGearingSetup } from './DragGearingSetup';
 import type { Season } from '../../../domain/tuning/types';
 import { DecimalInput } from '../../../components/common/DecimalInput';
 import { DriftModeGuidance } from './DriftModeGuidance';
+import { OptionalAeroInputs } from './OptionalAeroInputs';
 import { EvModeSwitch } from '../../car_params/components/EvModeSwitch';
 
 interface Step1GoalSetupProps {
@@ -60,18 +61,6 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
   const torqueToNm = (value: number) =>
     settings.units.torque === 'lbft' ? value / 0.73756 : value;
   const seasonalPressure = convertTirePressureFromPsi(0.5);
-
-  const applyDefaultLimits = () => {
-    if (!carParams) return;
-    updateParam('spring_front_min', 10.0);
-    updateParam('spring_front_max', 120.0);
-    updateParam('spring_rear_min', 10.0);
-    updateParam('spring_rear_max', 120.0);
-    updateParam('height_front_min', 10.0);
-    updateParam('height_front_max', 25.0);
-    updateParam('height_rear_min', 10.0);
-    updateParam('height_rear_max', 25.0);
-  };
 
   const isFrontAutoAero = (carParams?.aero_downforce_front ?? 0) <= 0;
   const isRearAutoAero = (carParams?.aero_downforce_rear ?? 0) <= 0;
@@ -242,7 +231,7 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
               <div style={{ width: '130px' }}>
                 <DecimalInput
                   value={carParams?.weight_distribution}
-                  onChange={(val) => updateParam('weight_distribution', val ?? 50)}
+                  onChange={(val) => updateParam('weight_distribution', val ?? 0)}
                   precision={1}
                   min={1}
                   max={99}
@@ -370,13 +359,7 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
         <div className="glass-panel p-3 d-flex flex-column gap-3">
           <div className="workspace-panel-header border-bottom pb-2 d-flex justify-content-between align-items-center gap-2 flex-wrap">
             <span className="workspace-section-heading fw-bold fs-6">{t('Suspension & Tires')}</span>
-            <button
-              type="button"
-              onClick={applyDefaultLimits}
-              className="btn btn-outline-primary btn-sm py-0 px-2 fw-semibold fs-8"
-            >
-              {t('Apply Race Defaults')}
-            </button>
+
           </div>
 
           <div className="d-flex flex-column gap-2">
@@ -388,8 +371,8 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
               <div className="d-flex align-items-center gap-2">
                 <div className="flex-grow-1">
                   <DecimalInput
-                    value={carParams?.spring_front_min !== undefined ? convertSpringRate(carParams.spring_front_min).value : undefined}
-                    onChange={(val) => updateParam('spring_front_min', val !== undefined ? convertSpringRateToKgfmm(val) : undefined)}
+                    value={carParams?.spring_front_min != null ? convertSpringRate(carParams.spring_front_min).value : undefined}
+                    onChange={(val) => updateParam('spring_front_min', val !== undefined ? convertSpringRateToKgfmm(val) : null)}
                     precision={1}
                     min={0.1}
                     placeholder={t('Min')}
@@ -398,8 +381,8 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
                 <span className="text-body-secondary fs-7">-</span>
                 <div className="flex-grow-1">
                   <DecimalInput
-                    value={carParams?.spring_front_max !== undefined ? convertSpringRate(carParams.spring_front_max).value : undefined}
-                    onChange={(val) => updateParam('spring_front_max', val !== undefined ? convertSpringRateToKgfmm(val) : undefined)}
+                    value={carParams?.spring_front_max != null ? convertSpringRate(carParams.spring_front_max).value : undefined}
+                    onChange={(val) => updateParam('spring_front_max', val !== undefined ? convertSpringRateToKgfmm(val) : null)}
                     precision={1}
                     min={0.1}
                     placeholder={t('Max')}
@@ -416,8 +399,8 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
               <div className="d-flex align-items-center gap-2">
                 <div className="flex-grow-1">
                   <DecimalInput
-                    value={carParams?.spring_rear_min !== undefined ? convertSpringRate(carParams.spring_rear_min).value : undefined}
-                    onChange={(val) => updateParam('spring_rear_min', val !== undefined ? convertSpringRateToKgfmm(val) : undefined)}
+                    value={carParams?.spring_rear_min != null ? convertSpringRate(carParams.spring_rear_min).value : undefined}
+                    onChange={(val) => updateParam('spring_rear_min', val !== undefined ? convertSpringRateToKgfmm(val) : null)}
                     precision={1}
                     min={0.1}
                     placeholder={t('Min')}
@@ -426,8 +409,8 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
                 <span className="text-body-secondary fs-7">-</span>
                 <div className="flex-grow-1">
                   <DecimalInput
-                    value={carParams?.spring_rear_max !== undefined ? convertSpringRate(carParams.spring_rear_max).value : undefined}
-                    onChange={(val) => updateParam('spring_rear_max', val !== undefined ? convertSpringRateToKgfmm(val) : undefined)}
+                    value={carParams?.spring_rear_max != null ? convertSpringRate(carParams.spring_rear_max).value : undefined}
+                    onChange={(val) => updateParam('spring_rear_max', val !== undefined ? convertSpringRateToKgfmm(val) : null)}
                     precision={1}
                     min={0.1}
                     placeholder={t('Max')}
@@ -492,6 +475,7 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
               </div>
             </div>
 
+            {['Road', 'Rally'].includes(selectedRaceGoal) ? <OptionalAeroInputs value={carParams} onChange={updateParam} /> : <>
             {/* Downforce */}
             <div className="d-flex justify-content-between align-items-center">
               <label className="text-body-secondary fs-8 mb-0">{t('Front Downforce')} ({convertForce(0).label})</label>
@@ -509,7 +493,7 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
                     type="checkbox"
                     className="form-check-input mt-0"
                     checked={isFrontAutoAero}
-                    onChange={(e) => updateParam('aero_downforce_front', e.target.checked ? 0 : 50)}
+                    onChange={(e) => updateParam('aero_downforce_front', e.target.checked ? null : 50)}
                   />
                   {t('Auto')}
                 </label>
@@ -532,12 +516,14 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
                     type="checkbox"
                     className="form-check-input mt-0"
                     checked={isRearAutoAero}
-                    onChange={(e) => updateParam('aero_downforce_rear', e.target.checked ? 0 : 50)}
+                    onChange={(e) => updateParam('aero_downforce_rear', e.target.checked ? null : 50)}
                   />
                   {t('Auto')}
                 </label>
               </div>
             </div>
+
+            </>}
 
             {/* Front Tire Specs */}
             <div>

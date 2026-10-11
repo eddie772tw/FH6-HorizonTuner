@@ -2,6 +2,8 @@
 
 V1.7.2 發行準備（runtime 11.45.22）整合已合併的 HUD、遙測、賽事分析與調校工作流更新；最新已發布版本仍為 v1.7.1。WIP／Known Issues 與產物關卡見[候選發行說明](docs/releases/v1.7.2.md)及[驗收紀錄](docs/releases/v1.7.2-acceptance.md)。Rust 維持[調校 owner](docs/contracts/tuning_responsibilities.md)。
 
+Road／Rally [底盤工程基準 v1](docs/tuning/chassis-engineering-baseline-v1.md) 提供可選下壓力、單軸＋空力平衡反推、彈簧載荷比例與阻尼連動補正；v2 workflow 回報缺值／限界診斷，保留歷史版本重播。既有完整量測配置採 Road 或 Rally 合理基準驗收，尚非新設定的實機性能證明。
+
 Road #462 修正採版本化 [launch envelope v3](docs/tuning/aego-road-launch-v3.md)，保留低功率與歷史模型；工程先驗不等於實車最佳起步。
 
 > **Forza Horizon 6 Real-Time Telemetry Analyzer, Vehicle Tuning Workbench & Custom Racing Dashboard Overlay**

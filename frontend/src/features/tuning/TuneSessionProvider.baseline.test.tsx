@@ -60,7 +60,7 @@ const latestPreview = (goal: string) => {
 };
 const settle = async (item: Pending, version?: string) => {
   const baselinePreview = preview(item.input.goal, version);
-  await act(async () => item.resolve({ ok: true, json: async () => ({ schemaVersion: 'tuning-workflow-result/v1', baselinePreview }) } as Response));
+  await act(async () => item.resolve({ ok: true, json: async () => ({ schemaVersion: 'tuning-workflow-result/v2', baselinePreview }) } as Response));
   return baselinePreview;
 };
 const select = async (selector: string, value: string) => act(async () => {
@@ -155,7 +155,7 @@ it('applies a fresh CVT chassis baseline while rejecting the old ICE preview and
   expect(button('Apply local baseline').disabled).toBe(true);
   expect(host.textContent).not.toContain('old-ice-preview');
   await act(async () => current.resolve({ ok: true, json: async () => ({
-    schemaVersion: 'tuning-workflow-result/v1',
+    schemaVersion: 'tuning-workflow-result/v2',
     baselinePreview: preview('Road', 'synthetic-cvt-neutral'),
     cvt: {
       schemaVersion: 'cvt-qualification/v1', status: 'unsupported', captureStatus: 'missing',

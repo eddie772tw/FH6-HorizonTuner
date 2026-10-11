@@ -23,7 +23,7 @@ describe('authoritative mechanical boundary', () => {
   });
   it('forwards the draft and abort signal; failure never falls back to a local solver', async () => {
     const controller = new AbortController();
-    const input = { schemaVersion: 'tuning-mechanical/v1' as const, goal: 'Road', season: 'Summer' as const, profile };
+    const input = { schemaVersion: 'tuning-mechanical/v2' as const, goal: 'Road', season: 'Summer' as const, profile };
     vi.mocked(backendFetch).mockResolvedValueOnce(new Response('{}', { status: 503 }));
     await expect(requestMechanical(input, controller.signal)).rejects.toThrow('503');
     expect(backendFetch).toHaveBeenLastCalledWith('/api/tuning/mechanical', expect.objectContaining({ body: JSON.stringify(input), signal: controller.signal }));

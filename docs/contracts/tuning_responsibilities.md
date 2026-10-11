@@ -15,18 +15,19 @@
 - `tuning::workflow` 是一般模式的推薦、能力過濾與 readiness owner；本機 `POST /api/tuning/workflow`、離線 `fh6-agent solve workflow --args JSON` 與 MCP `calculate_tuning_workflow` 呼叫相同 Rust library。
 - TuneSessionProvider 只送完整草稿／goal／season／量測證據；桌面與 Companion 消費同一結果。完整輸入 key、abort、sequence、render-time invalidation 防止切車／改稿／A→B→A 舊回覆；pending、error 與 ready 分開，失敗每兩秒重試，不使用 TS fallback。
 - `measurement` 擁有 loaded-sweep/v4、archive 資格與 capture replay；`ev_measurement`／`ev` 擁有 EV 觀測與求解；250ms 有界增量批次處理，非每一 telemetry frame 或 Companion 400ms exchange 重算。capture replay 在 receiver mutex 外執行。
-- `alignment`／`chassis`／`gearing` 擁有機械模型；`tire_evidence` 擁有輪胎證據診斷；`profile` 擁有既有桌面預設與 EV profile 資格；`capabilities` 擁有實驗模式能力契約。Road 量化診斷維持 `backend-rust/src/road/` owner。
+- `alignment`／`chassis_load`（Road／Rally 新基準）／`chassis`（歷史與其他模式）／`gearing` 擁有機械模型；`tire_evidence` 擁有輪胎證據診斷；`profile` 擁有既有桌面預設與 EV profile 資格；`capabilities` 擁有實驗模式能力契約。Road 量化診斷維持 `backend-rust/src/road/` owner。
 - `dyno_guidance` 擁有舊 dyno wizard 的數值門檻、建議測試檔位與峰值匯入；guidance 隨既有 telemetry 推送，實際 dyno 採樣仍由 Rust `telemetry/dyno.rs` 的獨立品質契約控制。
 - 量測來源不接受客戶端峰值／聚合 moments 自行宣稱 measured。`evidence` 使用 `saved-engine` observationId 或 `saved-ev` evidenceId；Rust 從不可變原始 capture 重播、檢查車輛／PI／class／profile dependency，再產生有版本的 backend-only qualification cache。離線 CLI 可讀本機保存證據，或用 `--args-file PATH` 提供完整 capture 由同一 library 重播；裸峰值不會產生 measured readiness／推薦。外部 capture 明確標記 `imported-capture`，不等同硬體來源認證；正式保存仍必須有 backend-issued evidenceId。MCP 與 CLI 為唯讀：可重用現有資格 cache，cold-cache 則純重播並標記 imported-capture，不會新增資格紀錄；數值 owner 不因此分叉。
 - EV 原始 frames 與 backend-qualified evidence 都不可變保存；`ev-preview` 回傳明確 `unverified-preview`，正式 `ev-gearing` 必須提供 evidenceId。保存推薦時從 backend-owned qualification metadata 重新組合並比對欄位與來源；不相信 snapshot 的峰值／moments，也不在 receiver mutex 內 replay capture。
-- Road 新推薦使用 `rust/ice-measured-workflow-v2`／`aego-road-launch-envelope/v3`；非 Road ICE 仍為 `rust/ice-measured-workflow-v1`，EV 為 `rust/ev-measured-workflow-v1`。Road v1 歷史依凍結 v2 owner 驗證，詳見 [#462 修正](../tuning/aego-road-launch-v3.md)；EV 保存驗證後端資格來源與推薦一致性，未知／鎖定齒比不套用。歷史版本唯讀，不重寫。
+- v2 API 新推薦使用 `rust/ice-measured-workflow-v3`／`rust/ev-measured-workflow-v2`；Road 齒比維持 `aego-road-launch-envelope/v3`。v1 API 保持 Road ICE v2、其他 ICE v1、EV v1；新舊 chassis 依 recommendation 版本重播。Road v1 歷史依凍結 v2 owner 驗證，詳見 [#462 修正](../tuning/aego-road-launch-v3.md)；EV 保存驗證後端資格來源與推薦一致性，未知／鎖定齒比不套用。歷史版本唯讀，不重寫。
 - 計算 API 不擴大 LAN allowlist；純函式共享 library 保留離線 CLI。Vite build 拒絕將凍結 TS tuning solver／readiness／diagnosis 參考模組帶入產品 bundle。
-- Road/Rally 正值 spring/height minima 保留小於 1 的數值；零值使用既有桌面預設，反向範圍把 max 提升到 min。靜態定位保留 JS 原運算順序與 toFixed 精確 binary rounding，不能以縮放 round 取代。
+- v2 Road／Rally 必須提供有限正值車重、0–100% 之間配重與合法正值 spring 範圍；缺值／反向範圍回報 unavailable，不補預設。合法窄／鎖定區間無一位小數刻度時保留界內精度；height 與其他模式保持原策略。v1 原 spring fallback 保留。靜態定位保留 JS 原運算順序與 toFixed 精確 binary rounding，不能以縮放 round 取代。
 
 模型版本與相容入口：
 | 模型 | 入口／用途 |
 | --- | --- |
-| `rust/ice-measured-workflow-v2`（Road）、`rust/ice-measured-workflow-v1`（其他 ICE／歷史）、`rust/ev-measured-workflow-v1` | 桌面、Companion、workflow API、CLI、MCP 共用 |
+| `rust/ice-measured-workflow-v3`、`rust/ev-measured-workflow-v2` | v2 workflow；桌面、Companion、API、CLI、MCP 共用新 chassis 版本 |
+| ICE v1/v2、EV v1 | v1 workflow／歷史推薦；原 chassis 數值不改 |
 | `legacy-cli/v1` | 舊 `solve chassis/gearing/full`；保留歷史數值與 wire schema `tuning-dev/v1` |
 | `legacy-mcp/v1` | 舊 MCP quick chassis；Drift 公式不同於 CLI，獨立凍結 |
 | `legacy-desktop-experimental/v1` | 實驗 UI 呼叫 Rust developer model；保留既有 48 組 fixture 與 `tuning-dev/v1` output schema |
@@ -46,19 +47,21 @@ CLI 與 MCP 雖曾同標 `tuning-dev/v1`，其 drift 數值不同，必須保留
 
 ### 2.1 車輛輸入參數 (`TuningCarParams`)
 
+下表原引擎／車高相容預設維持；Road／Rally v2 的車重、配重、彈簧及空力資格以[底盤工程基準](../tuning/chassis-engineering-baseline-v1.md)為準。
+
 | 欄位名稱 | 型別 | 單位 | 限制與預設值 | 說明 |
 | :--- | :--- | :--- | :--- | :--- |
-| `weight` | `float` | kg | $> 0$, 預設 `1400.0` | 車輛總重量 |
-| `weight_distribution` | `float` | % | `[1.0, 99.0]`, 預設 `50.0` | 前軸車重分佈百分比 |
+| `weight` | `float` | kg | $> 0$，缺值不可計算新 chassis | 車輛總重量 |
+| `weight_distribution` | `float` | % | `0 < w < 100`，缺值不可計算新 chassis | 前軸車重分佈百分比 |
 | `drivetrain` | `enum` | - | `"AWD"`, `"RWD"`, `"FWD"` | 驅動方式（預設 `"RWD"`） |
 | `maxHp` | `float` | HP | $> 0$, 預設 `300.0` | 最大馬力 |
 | `maxTorque` | `float` | N·m | $\ge 0$, 若為 0 由馬力與扭力轉速推估 | 最大扭矩 |
 | `maxHpRpm` | `float` | RPM | $> 0$, 預設 `maxRpm * 0.85` | 最大馬力輸出轉速 |
 | `maxTorqueRpm` | `float` | RPM | $> 0$, 預設 `maxRpm * 0.60` | 最大扭力輸出轉速 |
-| `aero_downforce_front` | `float` | kgf | $\ge 0$, $\le 0$ 時自動解析 | 前軸空氣下壓力 |
-| `aero_downforce_rear` | `float` | kgf | $\ge 0$, $\le 0$ 時自動解析 | 後軸空氣下壓力 |
-| `spring_front_min` / `max` | `float` | kgf/mm | `[10.0, 120.0]` | 前彈簧滑桿上下限 |
-| `spring_rear_min` / `max` | `float` | kgf/mm | `[10.0, 120.0]` | 後彈簧滑桿上下限 |
+| `aero_downforce_front` | `float` | kgf | $\ge 0$ 或 null；未提供時不生成下壓力 | 前軸空氣下壓力 |
+| `aero_downforce_rear` | `float` | kgf | $\ge 0$ 或 null；未提供時不生成下壓力 | 後軸空氣下壓力 |
+| `spring_front_min` / `max` | `float` | kgf/mm | 必填正值 `min <= max` | 前彈簧滑桿上下限 |
+| `spring_rear_min` / `max` | `float` | kgf/mm | 必填正值 `min <= max` | 後彈簧滑桿上下限 |
 | `height_front_min` / `max` | `float` | cm | `[10.0, 25.0]` | 前車高滑桿上下限 |
 | `height_rear_min` / `max` | `float` | cm | `[10.0, 25.0]` | 後車高滑桿上下限 |
 | `roadAwdRearPercent` | `float` | % | `[0.0, 100.0]`, 預設後偏置 | Road AWD 中央差速後軸分配比 |
@@ -68,7 +71,7 @@ CLI 與 MCP 雖曾同標 `tuning-dev/v1`，其 drift 數值不同，必須保留
 
 ### 2.2 底盤輸出規格 (`ChassisTuningResult`)
 
-所有數值需經由安全範圍 Clamping 與保留 1 位小數（Diff 為整數或 1 位小數）：
+v2 API 的 `chassis` 型別為 `ChassisTuningResult | null`；無法完成彈簧／阻尼補正時回傳 null 與 `chassisDiagnostics`，不使用看似完整的 fallback。一般數值限制於合法範圍後保留 1 位小數；彈簧窄／鎖定區間不包含一位小數格點時保留合法精度。
 
 ```typescript
 interface ChassisTuningResult {
