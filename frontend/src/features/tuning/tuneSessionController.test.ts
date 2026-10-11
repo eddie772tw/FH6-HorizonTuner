@@ -112,7 +112,9 @@ describe('Tune session controller', () => {
     expect(selectedEngineObservationMatchesLiveTelemetry('42', measurement, matching)).toBe(true);
     expect(selectedEngineObservationMatchesLiveTelemetry('42', measurement, changedRedline)).toBe(false);
     expect(selectedEngineObservationMatchesLiveTelemetry('42', measurement, { ...matching, IsRaceOn: 0 })).toBe(true);
-    expect(selectedEngineObservationMatchesLiveTelemetry('42', measurement, { ...changedRedline, IsRaceOn: 0 })).toBe(false);
+    expect(selectedEngineObservationMatchesLiveTelemetry('42', measurement, { ...changedRedline, IsRaceOn: 0 })).toBe(true);
+    expect(selectedEngineObservationMatchesLiveTelemetry('42', measurement, { ...matching, CarOrdinal: 0 })).toBe(true);
+    expect(selectedEngineObservationMatchesLiveTelemetry('42', measurement, { ...changedRedline, IsRaceOn: 1 })).toBe(false);
   });
 
   it('does not let a save started before a retry select the old observation', () => {

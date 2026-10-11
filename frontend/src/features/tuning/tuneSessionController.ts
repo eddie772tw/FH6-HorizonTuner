@@ -107,7 +107,7 @@ export const selectedEngineObservationMatchesLiveTelemetry = (
   carId: string,
   measurement: TuningMeasurementState | null | undefined,
   data: TelemetryData | null,
-): boolean => !data || !measurement || (
+): boolean => !data || !measurement || data.IsRaceOn === 0 || !data.CarOrdinal || data.CarOrdinal <= 0 || (
   String(data.CarOrdinal) === carId
   && data.CarPerformanceIndex === measurement.identity?.performanceIndex
   && data.CarClass === measurement.identity?.carClass

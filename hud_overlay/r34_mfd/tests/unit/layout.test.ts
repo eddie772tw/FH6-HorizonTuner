@@ -22,13 +22,16 @@ describe('independent lower-center instruments and corner MFD', () => {
       expect(g.boost.x + g.boost.width).toBeLessThan(g.screen.x);
       expect(g.status.y + 12).toBeLessThanOrEqual(height);
       expect(g.screen.width / g.screen.height).toBeCloseTo(270 / 152);
-      expect(g.screen.x + g.screen.width).toBeCloseTo(width - g.margin);
+      expect(g.screen.x + g.screen.width).toBeCloseTo(width - g.screenMarginX);
       expect(g.screen.y + g.screen.height).toBeCloseTo(height - g.margin);
     }
   });
   it.each(profiles)('keeps an independent meaningful MFD when the cluster is hidden at %i×%i', (width, height) => {
     const normal = L.layout(width, height, 1), hidden = L.layout(width, height, 1, false);
-    expect(hidden.screen).toEqual(normal.screen);
+    // Hiding the cluster releases its width reservation; the corner MFD must not shrink.
+    expect(hidden.screen.width).toBeGreaterThanOrEqual(normal.screen.width);
+    expect(hidden.screen.x + hidden.screen.width).toBeCloseTo(normal.screen.x + normal.screen.width);
+    expect(hidden.screen.y + hidden.screen.height).toBeCloseTo(normal.screen.y + normal.screen.height);
     const enlarged = L.layout(width, height, 3, false); inside(enlarged.screen, width, height);
     expect(enlarged.screen.width).toBeGreaterThan(hidden.screen.width);
   });

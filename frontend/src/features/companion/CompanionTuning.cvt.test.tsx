@@ -24,24 +24,52 @@ function state(cvt: boolean): CompanionState {
     },
   };
 }
-it('keeps Engine navigation attached to its mounted section for discrete and CVT profiles', async () => {
+it.each([false, true])('navigates mounted sections without discarding draft or measurement state (CVT: %s)', async cvt => {
   Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
   const host = document.createElement('div');
   host.className = 'companion-content'; document.body.append(host);
   const root = createRoot(host);
   const onCommand = vi.fn(async () => true);
   try {
-    for (const cvt of [false, true]) {
-      await act(async () => root.render(<CompanionTuning state={state(cvt)} disabled={false} onCommand={onCommand} />));
-      const target = host.querySelector<HTMLElement>('#companion-engine');
-      expect(target).not.toBeNull();
-      const scroll = vi.fn(); target!.scrollIntoView = scroll;
-      const button = Array.from(host.querySelectorAll('nav button')).find(node => node.textContent === 'Engine')!;
-      await act(async () => button.dispatchEvent(new MouseEvent('click', { bubbles: true })));
+    const snapshot = state(cvt);
+    snapshot.snapshot!.engine = { phase: 'collecting', sampleCount: 41, state: null };
+    await act(async () => root.render(<CompanionTuning state={snapshot} disabled={false} onCommand={onCommand} />));
+    const nav = host.querySelector('nav')!;
+    expect(nav.getAttribute('role')).toBeNull();
+    const buttons = Array.from(nav.querySelectorAll('button'));
+    const sections = ['setup', 'chassis', 'alignment', 'engine', 'gearing'].map(id => host.querySelector<HTMLElement>(`#companion-${id}`)!);
+    const measurement = sections[3].textContent;
+    expect(measurement).toContain(cvt ? unavailable : 'Engine measurement');
+    if (!cvt) {
+      expect(measurement).toContain('collecting');
+      expect(measurement).toContain('41');
+    }
+    const weight = host.querySelector<HTMLInputElement>('input')!;
+    await act(async () => {
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(weight, '1555');
+      weight.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    const disabledSteps = Array.from(host.querySelectorAll('select option:disabled')).map(option => option.textContent);
+    for (const [index, button] of buttons.entries()) {
+      expect(button.getAttribute('role')).toBeNull();
+      expect(button.tabIndex).toBe(0);
+      const scroll = vi.fn(); sections[index].scrollIntoView = scroll;
+      button.focus();
+      await act(async () => button.click());
       expect(scroll).toHaveBeenCalledExactlyOnceWith({ behavior: 'smooth', block: 'start' });
-      expect(button.getAttribute('aria-selected')).toBe('true');
-      expect(button.getAttribute('role')).toBe('tab');
-      expect(target!.textContent).toContain(cvt ? unavailable : 'Engine measurement');
+      expect(document.activeElement).toBe(button);
+      expect(button.getAttribute('aria-current')).toBe('location');
+      expect(buttons.filter(node => node.getAttribute('aria-current') === 'location')).toEqual([button]);
+      expect(nav.querySelector('[aria-selected]')).toBeNull();
+      for (const section of sections) {
+        expect(host.querySelector(`#${section.id}`)).toBe(section);
+        expect(section.hidden).toBe(false);
+      }
+      expect(host.querySelector('input')).toBe(weight);
+      expect(weight.value).toBe('1555');
+      expect(host.textContent).toContain('Unsaved draft');
+      expect(sections[3].textContent).toBe(measurement);
+      expect(Array.from(host.querySelectorAll('select option:disabled')).map(option => option.textContent)).toEqual(disabledSteps);
     }
     expect(onCommand).not.toHaveBeenCalled();
   } finally { await act(async () => root.unmount()); host.remove(); }

@@ -127,6 +127,15 @@ export interface ChassisTuningResult {
   };
 }
 
+/** Rust-owned qualification and bounded targets; UI never recomputes these. */
+export interface ChassisDiagnostics {
+  modelVersion: string;
+  available: boolean;
+  reasons: string[];
+  aero: null | { source: 'omitted' | 'provided' | 'derived-front' | 'derived-rear' | 'unavailable'; front: number | null; rear: number | null; reason: string | null };
+  axles: Array<{ axle: 'front' | 'rear'; baseTarget: number; baseline: number; reference: number; target: number | null; baseLimited: boolean; aeroLimited: boolean; reboundTarget: number; reboundLimited: boolean; bumpLimited: boolean }>;
+}
+
 export interface StaticTireAlignResult {
   pcF: number; // PSI
   pcR: number; // PSI
@@ -234,10 +243,10 @@ export interface DevCarInput {
     gearbox?: string;
     diff?: string;
   };
-  spring_front_min?: number;
-  spring_front_max?: number;
-  spring_rear_min?: number;
-  spring_rear_max?: number;
+  spring_front_min?: number | null;
+  spring_front_max?: number | null;
+  spring_rear_min?: number | null;
+  spring_rear_max?: number | null;
   height_front_min?: number;
   height_front_max?: number;
   height_rear_min?: number;
@@ -467,11 +476,12 @@ export interface TuningCarParams {
   /** Optional measured Drag finish speed, never inferred from softMaxSpeed. */
   dragFinishSpeedKmh?: number;
   dragFinishSpeedProvenance?: 'telemetry' | 'manual';
-  aeroBalance?: number;
+  aeroInputVersion?: 'optional/v1';
+  aeroBalance?: number | null;
   aeroEfficiency?: number;
   mechBalance?: number;
-  aero_downforce_front?: number;
-  aero_downforce_rear?: number;
+  aero_downforce_front?: number | null;
+  aero_downforce_rear?: number | null;
   frontTireWidth?: number;
   frontTireAspect?: number;
   frontTireRim?: number;
@@ -491,10 +501,10 @@ export interface TuningCarParams {
     diff?: string;
   };
   // Suspension & Ride Height Limits for Safety Clamping
-  spring_front_min?: number; // kgf/mm
-  spring_front_max?: number;
-  spring_rear_min?: number;
-  spring_rear_max?: number;
+  spring_front_min?: number | null; // kgf/mm
+  spring_front_max?: number | null;
+  spring_rear_min?: number | null;
+  spring_rear_max?: number | null;
   height_front_min?: number; // cm
   height_front_max?: number;
   height_rear_min?: number;

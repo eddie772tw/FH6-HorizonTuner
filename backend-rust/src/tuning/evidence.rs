@@ -397,7 +397,9 @@ impl EvidenceService {
         mut input: WorkflowRequest,
         persist_cache: bool,
     ) -> ApiResult<WorkflowResult> {
-        if input.schema_version != "tuning-workflow-result/v1" {
+        if !["tuning-workflow-result/v1", "tuning-workflow-result/v2"]
+            .contains(&input.schema_version.as_str())
+        {
             return Err(ApiError::invalid("Unsupported tuning calculation schema"));
         }
         if super::cvt::selected(&input.profile) {
@@ -461,6 +463,19 @@ impl EvidenceService {
         Ok(json!({"evidenceId":saved["id"],"qualification":result}))
     }
     pub fn verify_recommendation(&self, rec: &Value, identity: Option<&Value>) -> ApiResult<()> {
+        let current = match rec["formulaVersion"].as_str() {
+            Some("rust/ice-measured-workflow-v3" | "rust/ev-measured-workflow-v2") => true,
+            Some(
+                "rust/ice-measured-workflow-v1"
+                | "rust/ice-measured-workflow-v2"
+                | "rust/ev-measured-workflow-v1",
+            ) => false,
+            _ => {
+                return Err(ApiError::invalid(
+                    "Unsupported recommendation formula version",
+                ))
+            }
+        };
         let snapshot = &rec["inputSnapshot"];
         let id = snapshot["evidenceId"].as_str().ok_or_else(|| {
             ApiError::invalid("Recommendation requires backend-qualified saved evidence")
@@ -478,7 +493,7 @@ impl EvidenceService {
                 }
             }
         }
-        let request:WorkflowRequest=serde_json::from_value(json!({"schemaVersion":"tuning-workflow-result/v1","goal":snapshot["goal"],"season":snapshot["season"],"profile":snapshot["profile"],"engine":null,"ev":if proof.kind=="ev"{json!({"setup":proof.setup,"measurements":[],"candidateFinalDrive":snapshot["evResult"]["finalDrive"]})}else{Value::Null},"inputSnapshot":snapshot})).map_err(|e|ApiError::invalid(&e.to_string()))?;
+        let request:WorkflowRequest=serde_json::from_value(json!({"schemaVersion":if current{"tuning-workflow-result/v2"}else{"tuning-workflow-result/v1"},"goal":snapshot["goal"],"season":snapshot["season"],"profile":snapshot["profile"],"engine":null,"ev":if proof.kind=="ev"{json!({"setup":proof.setup,"measurements":[],"candidateFinalDrive":snapshot["evResult"]["finalDrive"]})}else{Value::Null},"inputSnapshot":snapshot})).map_err(|e|ApiError::invalid(&e.to_string()))?;
         let expected = super::workflow::calculate_qualified_version(
             request,
             Some(&proof),

@@ -22,7 +22,7 @@
 | 查閱 2026-09-24 版型一致化背景 | [版型研究與階段紀錄](frontend/ui-layout-refinement-20260924.md) |
 | 收集實機資料、規劃人工驗收 | [校準資料與流程](calibration/README.md) |
 | 查找外部 HUD 研究 | [外部專案參考索引](reference-projects/README.md) |
-| 查找版本發行紀錄 | [v1.7.1](releases/v1.7.1.md)、[v1.6.2](releases/v1.6.2.md)、[v1.6.1](releases/v1.6.1.md)、[v1.6.0](releases/v1.6.0.md)、[v1.5.2](releases/v1.5.2.md)、[v1.4.4](releases/v1.4.4.md) |
+| 查找版本發行紀錄 | [v1.7.2 候選](releases/v1.7.2.md)、[v1.7.2 驗收](releases/v1.7.2-acceptance.md)、[v1.7.1](releases/v1.7.1.md)、[v1.6.2](releases/v1.6.2.md)、[v1.6.1](releases/v1.6.1.md)、[v1.6.0](releases/v1.6.0.md)、[v1.5.2](releases/v1.5.2.md)、[v1.4.4](releases/v1.4.4.md) |
 | 查找舊計畫、研究與搬移位置 | [歷史文件與路徑對照](archive/README.md) |
 
 ## 維護原則

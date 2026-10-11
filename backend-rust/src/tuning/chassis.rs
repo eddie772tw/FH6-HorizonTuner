@@ -10,6 +10,31 @@ fn r1(n: f64) -> f64 {
     (n * 10.0).round() / 10.0
 }
 
+/// Clamps a value and rounds to 1 decimal place, strictly guaranteeing that the rounded
+/// result never exceeds `max` or falls below `min`.
+#[inline]
+fn clamp_round(val: f64, min: f64, max: f64) -> f64 {
+    let clamped = clamp(val, min, max);
+    let rounded = r1(clamped);
+    if rounded > max {
+        let floored = (max * 10.0).floor() / 10.0;
+        if floored >= min {
+            floored
+        } else {
+            r1(max)
+        }
+    } else if rounded < min {
+        let ceiled = (min * 10.0).ceil() / 10.0;
+        if ceiled <= max {
+            ceiled
+        } else {
+            r1(min)
+        }
+    } else {
+        rounded
+    }
+}
+
 /// Resolves aerodynamic downforce for front and rear axles (in kgf).
 pub fn resolve_aero_downforce(params: &TuningCarParams) -> AeroDownforceResult {
     let weight_kg = params.weight.unwrap_or(1400.0).max(0.1);
@@ -269,11 +294,9 @@ pub fn calculate_chassis_tuning(
                     0.35
                 };
 
-            let base_spring_f = (k_max_f - k_min_f) * (wf / 100.0) + k_min_f;
-            let base_spring_r = (k_max_r - k_min_r) * (wr / 100.0) + k_min_r;
             let spring_scale = if is_cross_country { 0.85 } else { 0.65 };
-            spring_f = base_spring_f * spring_scale;
-            spring_r = base_spring_r * spring_scale;
+            spring_f = k_min_f + (k_max_f - k_min_f) * (wf / 100.0) * spring_scale;
+            spring_r = k_min_r + (k_max_r - k_min_r) * (wr / 100.0) * spring_scale;
 
             let h_fraction = if is_cross_country || race_goal == RaceGoal::DangerSign {
                 1.0
@@ -425,27 +448,27 @@ pub fn calculate_chassis_tuning(
 
     ChassisTuningResult {
         arb: ArbResult {
-            front: r1(clamp(arb_f, 1.0, 65.0)),
-            rear: r1(clamp(arb_r, 1.0, 65.0)),
+            front: clamp_round(arb_f, 1.0, 65.0),
+            rear: clamp_round(arb_r, 1.0, 65.0),
         },
         springs: SpringsResult {
-            front: r1(clamp(spring_f, k_min_f, k_max_f)),
-            rear: r1(clamp(spring_r, k_min_r, k_max_r)),
-            height_f: r1(clamp(height_f, h_min_f, h_max_f)),
-            height_r: r1(clamp(height_r, h_min_r, h_max_r)),
+            front: clamp_round(spring_f, k_min_f, k_max_f),
+            rear: clamp_round(spring_r, k_min_r, k_max_r),
+            height_f: clamp_round(height_f, h_min_f, h_max_f),
+            height_r: clamp_round(height_r, h_min_r, h_max_r),
         },
         damping: DampingResult {
-            rebound_f: r1(clamp(reb_f, 1.0, 20.0)),
-            rebound_r: r1(clamp(reb_r, 1.0, 20.0)),
-            bump_f: r1(clamp(bump_f, 1.0, 20.0)),
-            bump_r: r1(clamp(bump_r, 1.0, 20.0)),
+            rebound_f: clamp_round(reb_f, 1.0, 20.0),
+            rebound_r: clamp_round(reb_r, 1.0, 20.0),
+            bump_f: clamp_round(bump_f, 1.0, 20.0),
+            bump_r: clamp_round(bump_r, 1.0, 20.0),
         },
         diff: DiffResult {
-            accel_f: r1(clamp(accel_f, 0.0, 100.0)),
-            decel_f: r1(clamp(decel_f, 0.0, 100.0)),
-            accel_r: r1(clamp(accel_r, 0.0, 100.0)),
-            decel_r: r1(clamp(decel_r, 0.0, 100.0)),
-            center_rear: r1(clamp(
+            accel_f: clamp_round(accel_f, 0.0, 100.0),
+            decel_f: clamp_round(decel_f, 0.0, 100.0),
+            accel_r: clamp_round(accel_r, 0.0, 100.0),
+            decel_r: clamp_round(decel_r, 0.0, 100.0),
+            center_rear: clamp_round(
                 center_rear,
                 if race_goal == RaceGoal::Road && dt == Drivetrain::AWD {
                     0.0
@@ -457,7 +480,7 @@ pub fn calculate_chassis_tuning(
                 } else {
                     90.0
                 },
-            )),
+            ),
         },
     }
 }

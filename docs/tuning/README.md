@@ -6,6 +6,8 @@ v1.7.1：正式調校公式、資格審查與數值診斷之唯一 owner 已全�
 
 ## 現行模型與調校參考
 
+- **底盤彈簧重構定案（待實作）**：[底盤工程基準 v1](chassis-engineering-baseline-v1.md)：Road R3／Rally A、可選下壓力與平衡反推、軸載荷比例彈簧補正、相對阻尼及歷史版本契約。[初輪評估](chassis-spring-refactor-evaluation-20261011.md) 保留路徑比較與現況重播。
+- **既有完整量測車輛驗證**：[逐車結果與資料資格](chassis-existing-vehicles-validation-20261011.md)：7 台、8 份合格量測；以 Road 或 Rally 至少一個合理基準驗收，含 Furai 配置衝突與 Beetle 不合格紀錄的排除依據。
 - **CVT 安全 foundation（solver 尚未完成）**：[CVT 契約與驗收界線](cvt-foundation.md)，記錄明確能力選擇、Rust raw evidence qualification／保存重播與真實資料缺口。
 - **中性基準預覽與就地證據**：[Issue #487 P1 契約](neutral-baseline-preview-p1.md)，記錄草稿／明確套用、未知來源與單位界線。
 - **AEGO Road v3 起步與運動學診斷**：[AEGO Road Launch v3 報告與邊界分析](aego-road-launch-v3.md)，說明有效紅線修正、Rspeed 先驗與多檔扭力分配。

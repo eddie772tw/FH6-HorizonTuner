@@ -10,7 +10,7 @@
     --lfa-track: #30383d;
     --lfa-accent: var(--hud-custom-color, var(--lfa-primary));
 }
-.lfa-cluster { width: 560px; height: 370px; pointer-events: none; font-family: Arial, sans-serif; font-variant-numeric: tabular-nums; color: var(--lfa-primary); zoom: .75; transition: none; }
+.lfa-cluster { width: 560px; height: 370px; pointer-events: none; font-family: Arial, sans-serif; font-variant-numeric: tabular-nums; color: var(--lfa-primary); transition: none; }
 .lfa-housing, .lfa-cluster canvas { position: absolute; inset: 0; width: 560px; height: 370px; pointer-events: none; transition: none !important; }
 .lfa-readouts { position: absolute; inset: 0; text-align: center; }
 .lfa-speed { position: absolute; top: 101px; left: 205px; width: 150px; font-size: 62px; line-height: 65px; letter-spacing: -3px; font-weight: 500; }

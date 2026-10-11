@@ -181,7 +181,9 @@ impl RoadService {
             Some(
                 "rust/ice-measured-workflow-v1"
                     | "rust/ice-measured-workflow-v2"
+                    | "rust/ice-measured-workflow-v3"
                     | "rust/ev-measured-workflow-v1"
+                    | "rust/ev-measured-workflow-v2"
             )
         ) {
             // Only already-qualified immutable metadata is loaded here. No capture replay.

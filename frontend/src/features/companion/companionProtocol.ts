@@ -1,6 +1,6 @@
 import type { CarParams } from '../../context/CarParamsContext';
 import { usesCvt, type CvtFoundationResult } from '../../domain/tuning/transmission';
-import type { Season, ChassisTuningResult, StaticTireAlignResult } from '../../domain/tuning/types';
+import type { Season, ChassisTuningResult, ChassisDiagnostics, StaticTireAlignResult } from '../../domain/tuning/types';
 import type { TuningMeasurementState } from '../../domain/tuning/types';
 import type { WorkflowReadiness } from '../tuning/tuningWorkflow';
 import type { WorkflowGearingResult } from '../../domain/tuning/types';
@@ -12,7 +12,7 @@ export interface CompanionSnapshot {
   profile: CarParams | null;
   profileKey: string;
   workflow: { step: number; goal: string; season: string };
-  results: { chassis: ChassisTuningResult | null; alignment: StaticTireAlignResult | null; gearing: WorkflowGearingResult | null; cvt?: CvtFoundationResult };
+  results: { chassis: ChassisTuningResult | null; chassisDiagnostics?: ChassisDiagnostics; alignment: StaticTireAlignResult | null; gearing: WorkflowGearingResult | null; cvt?: CvtFoundationResult };
   engine: { phase: string; sampleCount: number; state: TuningMeasurementState | null };
   readiness: WorkflowReadiness;
   calculationStatus?: 'pending' | 'error' | 'ready';

@@ -7,11 +7,11 @@ import { useWorkflowCalculation } from './useWorkflowCalculation';
 import { backendFetch } from '../../services/backend';
 vi.mock('../../services/backend', () => ({ backendFetch: vi.fn() }));
 const fetchMock = vi.mocked(backendFetch);
-const good = (tag: string) => ({ ok: true, json: async () => ({ schemaVersion: 'tuning-workflow-result/v1', tag }) }) as Response;
+const good = (tag: string) => ({ ok: true, json: async () => ({ schemaVersion: 'tuning-workflow-result/v2', tag }) }) as Response;
 let root: Root; let host: HTMLDivElement;
 const profile = { weight: 1300, weight_distribution: 54 } as CarParams;
-function Probe({ carId, weight = 1300, goal = 'Road', electric = false, capture = 'capture1', cvt = false }: { carId: string; weight?: number; goal?: string; electric?: boolean; capture?: string; cvt?: boolean }) {
-  const { result, status } = useWorkflowCalculation(carId, goal, 'Summer', { ...profile, weight, isElectric: electric, ...(cvt ? { transmission: { type: 'cvt' as const, capability: 'unknown' as const } } : {}) }, null, null, { carId, evEvidence: electric ? { kind:'saved-ev', evidenceId:capture } : null, engineObservation: electric ? null : {id:capture} });
+function Probe({ carId, weight = 1300, goal = 'Road', electric = false, capture = 'capture1', cvt = false, aero = {} }: { carId: string; weight?: number; goal?: string; electric?: boolean; capture?: string; cvt?: boolean; aero?: Partial<CarParams> }) {
+  const { result, status } = useWorkflowCalculation(carId, goal, 'Summer', { ...profile, weight, isElectric: electric, ...aero, ...(cvt ? { transmission: { type: 'cvt' as const, capability: 'unknown' as const } } : {}) }, null, null, { carId, evEvidence: electric ? { kind:'saved-ev', evidenceId:capture } : null, engineObservation: electric ? null : {id:capture} });
   return <output>{status}:{JSON.stringify(result)}</output>;
 }
 beforeEach(() => {
@@ -33,6 +33,23 @@ it('invalidates goal, mode and capture revisions and rejects their late replies'
   }
 });
 afterEach(async () => { await act(async () => root.unmount()); vi.useRealTimers(); });
+it('invalidates changes and clears of loads and balance, rejecting late corrected results', async () => {
+  const pending: ((response: Response) => void)[] = [];
+  fetchMock.mockImplementation(() => new Promise(resolve => pending.push(resolve)));
+  for (const aero of [
+    { aero_downforce_front: 100, aero_downforce_rear: 150, aeroBalance: .4 },
+    { aero_downforce_front: 100, aero_downforce_rear: null, aeroBalance: .4 },
+    { aero_downforce_front: 100, aero_downforce_rear: null, aeroBalance: null },
+    { aero_downforce_front: null, aero_downforce_rear: null, aeroBalance: null },
+  ]) {
+    await act(async () => root.render(<Probe carId="1" aero={aero} />));
+    expect(host.textContent).toBe('pending:null');
+    expect(JSON.parse(fetchMock.mock.calls[fetchMock.mock.calls.length - 1][1]!.body as string).profile).toMatchObject(aero);
+  }
+  await act(async () => pending[3](good('no-correction')));
+  for (const resolve of pending.slice(0,3)) await act(async () => resolve(good('stale-correction')));
+  expect(host.textContent).toContain('no-correction'); expect(host.textContent).not.toContain('stale-correction');
+});
 it('distinguishes pending and failure, then recovers without displaying missing-input guidance', async () => {
   let resolve!: (value: Response) => void;
   fetchMock.mockImplementationOnce(() => new Promise(r => { resolve = r; })).mockResolvedValueOnce(good('recovered'));
@@ -77,7 +94,7 @@ it('rejects late ICE results and old servers after an explicit CVT selection', a
   expect(host.textContent).toBe('error:null');
 });
 it('consumes the Rust CVT diagnostics while keeping application unavailable', async () => {
-  fetchMock.mockResolvedValue({ ok: true, json: async () => ({ schemaVersion: 'tuning-workflow-result/v1', cvt: { schemaVersion: 'cvt-qualification/v1', status: 'unsupported', captureStatus: 'missing', diagnostics: [{ code: 'raw-capture-required' }] }, gearing: null, recommendation: null, readiness: { measuredEngine: false, gearingAvailable: false } }) } as Response);
+  fetchMock.mockResolvedValue({ ok: true, json: async () => ({ schemaVersion: 'tuning-workflow-result/v2', cvt: { schemaVersion: 'cvt-qualification/v1', status: 'unsupported', captureStatus: 'missing', diagnostics: [{ code: 'raw-capture-required' }] }, gearing: null, recommendation: null, readiness: { measuredEngine: false, gearingAvailable: false } }) } as Response);
   await act(async () => root.render(<Probe carId="1" cvt />));
   expect(host.textContent).toContain('ready:');
   expect(host.textContent).toContain('raw-capture-required');

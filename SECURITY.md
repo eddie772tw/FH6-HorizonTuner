@@ -19,6 +19,8 @@ We actively provide security patches and updates for the following versions of *
 
 If you are using an older build or development branch, please upgrade to the latest stable release (`1.7.x` or later) before reporting a vulnerability.
 
+The `1.7.x` policy also covers the prepared v1.7.2 candidate; it does not mark that candidate as published or promote an unreleased v1.8. Current public release mapping: v1.7.1 → runtime11.45.21; prepared v1.7.2 → runtime11.45.22. See the [candidate acceptance ledger](docs/releases/v1.7.2-acceptance.md) for platform/artifact gates and the [notes](docs/releases/v1.7.2.md) for incomplete capabilities. Android debug-build success and CodeQL none-mode success do not establish production APK signing, full Kotlin coverage or device acceptance.
+
 Platform scope for the expanded release pipeline:
 
 | Platform | Distribution / support boundary |
@@ -96,6 +98,8 @@ FH6-HorizonTuner is designed as a local desktop companion app and overlay tool f
 | `< 1.6`         | :x:                | 早期版本，已停止安全性支援 |
 
 若您目前使用的是舊版本或未標籤的開發分支，請在回報前先升級至最新的正式釋出版本（`1.7.x` 或以上）。
+
+`1.7.x` 支援政策涵蓋準備中的 v1.7.2 候選，但不表示該候選已發布，也不將未發布的 v1.8 升為穩定版。版本對應：已發布 v1.7.1 → runtime11.45.21；準備中 v1.7.2 → runtime11.45.22。平台／產物關卡見[候選驗收紀錄](docs/releases/v1.7.2-acceptance.md)，未完成能力見[發行說明](docs/releases/v1.7.2.md)。Android debug build 與 CodeQL none-mode 成功不代表正式 APK 簽章、完整 Kotlin 覆蓋或裝置驗收。
 
 新增發行流程的平台支援邊界如下：
 

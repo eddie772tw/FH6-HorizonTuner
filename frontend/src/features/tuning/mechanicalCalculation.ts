@@ -2,12 +2,13 @@ import { backendFetch } from '../../services/backend';
 import type { ChassisTuningResult, StaticTireAlignResult, Season, TuningCarParams } from '../../domain/tuning/types';
 
 export interface MechanicalResult {
-  schemaVersion: 'tuning-mechanical/v1';
-  chassis: ChassisTuningResult;
+  schemaVersion: 'tuning-mechanical/v2';
+  chassis: ChassisTuningResult | null;
+  chassisDiagnostics?: import('../../domain/tuning/types').ChassisDiagnostics;
   alignment: StaticTireAlignResult;
 }
 export interface MechanicalInput {
-  schemaVersion: 'tuning-mechanical/v1';
+  schemaVersion: 'tuning-mechanical/v2';
   goal: string;
   season: Season;
   profile: TuningCarParams;
@@ -15,7 +16,7 @@ export interface MechanicalInput {
 
 /** Full draft inputs, not the narrower engine measurement dependency identity. */
 export function mechanicalRequestKey(carId: string, goal: string, season: Season, profile: TuningCarParams | null): string {
-  return JSON.stringify({ carId, schemaVersion: 'tuning-mechanical/v1', goal, season, profile });
+  return JSON.stringify({ carId, schemaVersion: 'tuning-mechanical/v2', goal, season, profile });
 }
 
 export async function requestMechanical(input: MechanicalInput, signal: AbortSignal): Promise<MechanicalResult> {
@@ -24,7 +25,7 @@ export async function requestMechanical(input: MechanicalInput, signal: AbortSig
   });
   if (!response.ok) throw new Error(`Tuning calculation failed (${response.status})`);
   const result = await response.json() as MechanicalResult;
-  if (result.schemaVersion !== 'tuning-mechanical/v1' || !result.chassis || !result.alignment) {
+  if (result.schemaVersion !== 'tuning-mechanical/v2' || (!result.chassis && result.chassisDiagnostics?.available !== false) || !result.alignment) {
     throw new Error('Unsupported tuning calculation response');
   }
   return result;

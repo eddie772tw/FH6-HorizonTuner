@@ -50,7 +50,9 @@ export function serializeWorkflowProfile(profile: (TuningCarParams & { dyno_curv
 
 /** Apply an interactive workflow edit to the full persisted profile. */
 export function updateWorkflowProfile<T extends object, K extends keyof T>(profile: T | null, field: K, value: T[K]): T | null {
-  return profile ? { ...profile, [field]: value } : null;
+  if (!profile) return null;
+  const optionalAero = ['aero_downforce_front', 'aero_downforce_rear', 'aeroBalance'].includes(String(field));
+  return { ...profile, ...(optionalAero ? { aeroInputVersion: 'optional/v1' } : {}), [field]: value };
 }
 
 export function canOpenTuningStep(step: number, readiness: WorkflowReadiness): boolean {

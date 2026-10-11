@@ -377,12 +377,15 @@ export function TuneSessionProvider({ children }: { children: ReactNode }) {
     invalidateRawCapture();
   }, [setupContext, invalidateMeasurement, invalidateRawCapture, resetUnstartedMeasurement]);
 
+  const hasProducedGearing = Boolean(workflowStep === 3 && engine.observation && engine.calculation?.status === 'ready');
+
   useEffect(() => {
+    if (hasProducedGearing) return;
     if (selectedEngineObservationMatchesLiveTelemetry(carId, engine.observation?.data, data)) return;
     engineRef.current.invalidate();
     invalidateMeasurement();
     invalidateRawCapture();
-  }, [carId, data, engine.observation?.id, engine.observation?.data, invalidateMeasurement, invalidateRawCapture]);
+  }, [carId, data, engine.observation?.id, engine.observation?.data, invalidateMeasurement, invalidateRawCapture, hasProducedGearing]);
 
   useEffect(() => subscribeToDecodedTelemetry(frame => {
     if (captureStatusRef.current === 'capturing') {
@@ -553,7 +556,7 @@ export function TuneSessionProvider({ children }: { children: ReactNode }) {
       : null
   );
 
-  const prepared = selectedEngineObservationMatchesLiveTelemetry(carId, engine.current, data) ? engine.current : null;
+  const prepared = (hasProducedGearing || selectedEngineObservationMatchesLiveTelemetry(carId, engine.current, data)) ? engine.current : null;
   const calculation = prepared && engine.calculation?.status === 'ready' ? engine.calculation : null;
   const evidenceContext = JSON.stringify([carId, staticProfileJson, identityGeneration, baseline.fields]);
   const evidenceCurrent = useEvidenceContext(evidenceContext, profile?.isElectric ? evMeasurement.evidenceId ?? null : engine.observation?.id ?? null);

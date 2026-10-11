@@ -108,6 +108,12 @@ pub struct TuningCarParams {
     pub drag_finish_speed_provenance: Option<String>,
     #[serde(alias = "aero_efficiency", alias = "aeroEfficiency")]
     pub aero_efficiency: Option<f64>,
+    /// Explicit optional-input semantics; absent on historical Auto=0 profiles.
+    #[serde(alias = "aeroInputVersion")]
+    pub aero_input_version: Option<String>,
+    /// Front share of total nominal downforce, not static weight distribution.
+    #[serde(alias = "aeroBalance")]
+    pub aero_balance: Option<f64>,
     #[serde(alias = "aeroDownforceFront")]
     pub aero_downforce_front: Option<f64>,
     #[serde(alias = "aeroDownforceRear")]

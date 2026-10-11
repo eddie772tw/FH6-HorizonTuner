@@ -17,18 +17,17 @@ description: 當新增、修改車輛物理計算（懸吊、彈簧、防傾桿 
 
 3. **邊界防護與校準常數**：
    - 逆向工程常數（如 `CALIBRATION_CONST`）需加上詳細註解說明物理依據。
-   - 極端輸入（如車重 0、車重分佈 0% 或 100%）必須有防呆 clamp / fallback 機制。
+   - 新模型對非法輸入（如車重 0、配重 0% 或 100%）回報 unavailable；合法目標超出配件範圍才限界並附診斷。歷史 owner 的 fallback 保持版本相容，不得擴張為新模型的猜值來源。
 
 ---
 
 ## 現行演算法架構速查
 
-詳細物理模型與符號推導請參閱：
-- [公式化底盤調校.md](../../docs/公式化底盤調校.md)
-- [公式化齒比調校.md](../../docs/公式化齒比調校.md)
-- [底盤調校研究原檔.md](../../docs/底盤調校研究原檔.md)
+現行 Road／Rally 公式與輸入資格：[底盤工程基準 v1](../../../docs/tuning/chassis-engineering-baseline-v1.md)。責任、API 與歷史重播：[調校責任契約](../../../docs/contracts/tuning_responsibilities.md)。
 
-### 1. 四大賽事取向 (Race Goals) 底盤算牌速查
+### 1. 歷史底盤模型速查（v1 API／凍結 owner）
+
+以下 Road／Rally 舊彈簧與阻尼僅適用歷史 owner，不得當作現行 v2 公式。新模型由 `chassis_load.rs` 擁有，其他模式沿用舊路徑。
 
 | 調校項目 | 公路/環道 (Road / Circuit) | 甩尾 (Drift) | 拉力/越野 (Rally / Off-Road) | 直線加速 (Drag) |
 | :--- | :--- | :--- | :--- | :--- |
@@ -46,8 +45,9 @@ description: 當新增、修改車輛物理計算（懸吊、彈簧、防傾桿 
 - **Drag 4-Speed Meta**：極速採 $vDragTop = 410.0 \times (hp/kg)^{0.30} \times (1 + 0.12 \times aeroEfficiency)$。
 - **Secondary Correction**：支援 `simulatedTopSpeed` 與 `softMaxSpeed` 時速上限鎖定，動態計算頂檔與閉環重分佈中間檔位。
 
-### 3. 下壓力自動解算 (`resolveAeroDownforce`)
-- 當 UI 下壓力數值未指定 ($\le 0$) 時，以車重 20% (lbs) 結合驅動偏置 (RWD 0.82, FWD/AWD 1.05) 自動導出前後軸下壓力。
+### 3. Road／Rally 可選下壓力
+- v2：兩軸未填不補正；單軸需明確前空力占比反推；雙軸直接採用。明確 0 與未填分開，禁止猜測負載、沿用無來源預設 balance 或回填推導值。`optional/v1` 記錄輸入語意；舊 Auto 0 正規化為未提供。
+- `chassis_load.rs` 以 `K0 × (1+F/W)` 修正彈簧，阻尼依實際限界後剛性比例平方根縮放；缺值、不可解端點與限界由 Rust 回報。車重 20%／驅動偏置 Auto 僅保留於歷史／其他模式 owner。
 
 ### 4. Agent CLI 調校算牌工具 (`fh6-agent`)
 

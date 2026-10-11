@@ -703,12 +703,10 @@ export function calculateChassisTuning(
     arbF = baseArbF * (isCrossCountry ? 0.38 : raceGoal === 'Rally' ? 0.32 : 0.35);
     arbR = baseArbR * (isCrossCountry ? 0.46 : raceGoal === 'Rally' ? 0.32 : 0.35);
 
-    // 2. Springs (Softened 65% of base)
-    const baseSpringF = (kMaxF - kMinF) * (wf / 100) + kMinF;
-    const baseSpringR = (kMaxR - kMinR) * (wr / 100) + kMinR;
+    // 2. Springs (Softened 65% of base range)
     const springScale = isCrossCountry ? 0.85 : 0.65;
-    springF = baseSpringF * springScale;
-    springR = baseSpringR * springScale;
+    springF = kMinF + (kMaxF - kMinF) * (wf / 100) * springScale;
+    springR = kMinR + (kMaxR - kMinR) * (wr / 100) * springScale;
 
     // Dirt benefits from travel; Cross Country trades a little CG for landing support.
     heightF = hMinF + (isCrossCountry || raceGoal === 'DangerSign' ? 1.0 : 0.85) * (hMaxF - hMinF);
