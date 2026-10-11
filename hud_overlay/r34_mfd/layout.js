@@ -11,9 +11,10 @@
         var clusterGap = Math.min(16, Math.max(8, w / 40));
         var heightFactor = clamp(h / 1080, .8, 1.5);
         var screenPerFactor = clamp(320 * h / 1080, 230, 380) / heightFactor;
-        // Reserve the corner LCD, hug auxiliary dials closer to the main dials (160*scale, reach 214*scale)
-        // and preserve a generous center safe gap (minOffsetBase 260*scale).
-        var auxReach = 214;
+        // Keep auxiliaries close, with a scaled gap beyond both module radii.
+        // Reserve that full reach before fitting the corner LCD and center safe gap.
+        var auxOffset = 114 + 54 + 2;
+        var auxReach = auxOffset + 54;
         var minOffsetBase = 260;
         var maximum = Math.max(.001, Math.min((w / 2 - screenMarginX - clusterGap) / (screenPerFactor + auxReach + minOffsetBase), (h - 2 * margin) / 228));
         if (showCluster === false) maximum = Math.min((w - 2 * screenMarginX) / screenPerFactor, (h - 2 * margin) / (screenPerFactor * 152 / 270));
@@ -28,8 +29,8 @@
         return {
             width: w, height: h, scale: scale, margin: margin, screenMarginX: screenMarginX,
             tach: box(cx - offset, cy, radius), speed: box(cx + offset, cy, radius),
-            temperature: box(cx - offset - 160 * scale, cy - 36 * scale, smallRadius),
-            boost: box(cx + offset + 160 * scale, cy - 36 * scale, smallRadius),
+            temperature: box(cx - offset - auxOffset * scale, cy - 36 * scale, smallRadius),
+            boost: box(cx + offset + auxOffset * scale, cy - 36 * scale, smallRadius),
             screen: { x: w - screenMarginX - screenWidth, y: h - margin - screenHeight, width: screenWidth, height: screenHeight },
             note: { x: cx, y: cy, scale: scale },
             status: { x: cx, y: Math.min(h - 14, h - margin + 13 * scale) }

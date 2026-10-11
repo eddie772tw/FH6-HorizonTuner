@@ -1,5 +1,12 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-10-12 / 底盤 PR 的既有 CI 阻擋修復（Mihaly as Codex）
+
+- **Scope**：沿用 `pr-author-maintainer`、`ponytail`、`halfmoon-design-system`；修復 PR #515 從 main 繼承的 Ruff 排序及 R34 間距失敗，不調整底盤定案。
+- **Learning**：本地 Ruff 0.16.8 通過不代表 CI 0.17.0 通過；`tomllib` 應與其他標準庫 import 同組，使用 CI 相同版本確認。R34 輔助表中心距 160 小於兩個模組半徑之和 114 + 54，僅檢查中心左右順序會漏掉交疊；間距由半徑加少量留白推得，並同步保留完整外緣給 MFD。
+- **Evidence**：CI `38153407046` 的 I001 與 `38153406990` 的 outside-left/right 斷言重現。原有瀏覽器防重疊斷言保留，單元測試補回同一外緣關係；本機 1280×720 實際 HUD 的兩側間隙均約 1.61 px、右輔助表至 MFD 約 16.02 px。Ruff 0.17.0 check／format 與維護工具 53 項測試通過。
+- **Boundary**：R34 為瀏覽器幾何與 fixture 驗證，不是遊戲或 Windows 原生 HUD 驗收；中央安全區與 MFD 右側錨點沿用既有設計。
+
 ## 2026-10-11 / 底盤彈簧防溢出截斷與小數邊界保護（Gemini as Antigravity）
 
 - **Scope**：採用 `physics-tuning-math`、`modular-refactoring`；修復 2008 Subaru Impreza WRX STi（Car ID: 1060）等帶有小數上限之車型在底盤調校中因四捨五入進位溢出滑桿上限之問題。
