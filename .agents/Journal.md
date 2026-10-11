@@ -1,5 +1,18 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-10-11 / 底盤彈簧防溢出截斷與小數邊界保護（Gemini as Antigravity）
+
+- **Scope**：採用 `physics-tuning-math`、`modular-refactoring`；修復 2008 Subaru Impreza WRX STi（Car ID: 1060）等帶有小數上限之車型在底盤調校中因四捨五入進位溢出滑桿上限之問題。
+- **Root Cause & Learning**：
+  1. **截斷與進位順序錯置**：`r1(clamp(val, min, max))` 在數值達到或觸頂邊界時，四捨五入至小數點一位的運算可能向上進位（例如 `15.556` 進位為 `15.6`）。當上限由英制轉換而來（如 871.1 lbs/in = 15.556 kgf/mm），推薦值 `15.6` (873.6 lbs/in) 將突破使用者與遊戲實機的滑桿上限（871.1 lbs/in），並在 `baseline.rs` 中被判定為 `value-outside-range`。
+  2. **防溢出截斷機制（Anti-Overflow Clamping）**：實作 `clamp_round` 純函數，當進位結果 `rounded > max` 時向下安全取整至 `(max * 10.0).floor() / 10.0`，反之下探時向上取整至 `ceil()`，嚴格保證輸出值收斂於 `[min, max]` 區間內。
+  3. **基準容差保護**：在 `baseline.rs` 引入 `1e-4` 浮點比對容差，避免浮點精度微小誤差造成誤判出界。
+- **Evidence**：
+  - 新增 `tuning_contract.rs::fractional_spring_bounds_never_overflow_max` 測試通過。
+  - 後端 `mechanical_contract`、`baseline_preview_contract`、`workflow_calculation_contract` 測試全數通過。
+  - 前端 Vitest 207 個測試檔、1,780 項單元測試全數通過。
+  - `git diff --check`、`cargo fmt --check`、`uv run ruff check .` 全部通過。
+
 ## 2026-10-10 / source-map-js 間接依賴安全修補（Mihaly as Codex）
 
 - **Scope**：採用 `github-security-audit`、`pr-author-maintainer`；針對 [GHSA-68fv-2mgg-jv7q](https://github.com/advisories/GHSA-68fv-2mgg-jv7q)，只將 css-tree 3.2.1 與 PostCSS 8.5.23 的 source-map-js edge 移至鎖檔既有 1.2.2，移除無引用的 1.2.1 區塊。父套件官方範圍皆為 `^1.2.1`，未改 importer、父版本、override、產品 API 或 audit policy。
