@@ -821,5 +821,8 @@
   - 後端測試：`cargo test --locked --manifest-path backend-rust/Cargo.toml` 全量通過（含 `tuning_contract`、`mechanical_contract` 66 組 cases）。
   - 前端測試：`cmd /c "pnpm -C frontend run test"` 208 test files、1780 passed、1 skipped 全數通過；HUD 測試 57 files／658 tests 全通；R34 單元測試 170 tests 全通。
   - 程式碼品質：`uv run ruff check .`、`uv run ruff format --check .`、`git diff --check` 全部通過無警告。
-- **Boundary**：遵循 Rust 物理計算唯一 SSOT 與 `AGENTS.md` 規範，無 UI 硬編碼物理公式。衍生之 R34 MFD 與中央右側環表擠壓問題依使用者要求留待後續專屬任務處理。
+- **追加調整**：
+  - 調校 Step 3 介面上移：將齒比折線圖與設定值面板（`EngineCalculationStatus` 與 `GearingTuner`）上移至引擎觀測歷史與即時測量區塊上方，產出後第一時間可見無需滾動。
+  - R34 MFD 與環表排擠修正：小環表中心距由 `190*scale` 貼近至 `160*scale`（外緣縮至 `214*scale`），MFD 右側邊距自 `margin` 放寬至 `screenMarginX`（右移約 16~22px），並設 `minOffset = 260*scale` 護欄，徹底根絕中央環表內縮擠壓安全區現象。
+- **Boundary**：遵循 Rust 物理計算唯一 SSOT 與 `AGENTS.md` 規範，無 UI 硬編碼物理公式。
 - **Skills**：`physics-tuning-math`、`telemetry-udp-protocol`、`halfmoon-design-system`、`modular-refactoring`、`pr-author-maintainer`。
