@@ -8,7 +8,7 @@
         var w = positive(width, 1920), h = positive(height, 1080);
         var margin = Math.min(w / 10, h / 10, Math.max(24, h / 36));
         var gap = Math.min(24, w / 20);
-        var heightFactor = clamp(h / 1080, .8, 1.2);
+        var heightFactor = clamp(h / 1080, .8, 1.5);
         var screenPerFactor = clamp(320 * h / 1080, 230, 380) / heightFactor;
         // Reserve the corner LCD, outside auxiliary and a readable center gap
         // before fitting enlarged user scales. This prevents negative offsets.

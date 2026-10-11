@@ -63,7 +63,7 @@
         if (event.data?.type === 'hud:destroy') destroy();
     }
     window.HUDCore.registerStyle('lfa_center_ring', {
-        containerId: 'lfaContainer', scaleMultiplier: 1, globalScaleFactor: .75,
+        containerId: 'lfaContainer', scaleBaseline: 1.45, scaleMultiplier: 1, globalScaleFactor: .75,
         onInit: configure,
         onElementsChange: (elements) => configure({ elements }),
         onFrame: (data, payload) => {

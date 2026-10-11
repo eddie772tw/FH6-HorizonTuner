@@ -45,7 +45,7 @@
         dprQuery?.removeEventListener('change', onDprChange);
     }
     root.HUDCore.registerStyle('r34_mfd', {
-        containerId: 'r34Container', scaleMultiplier: 0.88,
+        containerId: 'r34Container', scaleBaseline: 1.35, scaleMultiplier: 0.88,
         onInit: configure, onFrame: frame,
         onScale: function (scale) { currentScale = scale; resize(); },
         onElementsChange: function (elements) { configure(Object.assign({}, config, { elements: elements })); },

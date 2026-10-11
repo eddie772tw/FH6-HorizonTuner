@@ -35,7 +35,7 @@
     }
     function message(event) { if (event.data?.type === 'hud:destroy') stop(); }
     root.HUDCore.registerStyle('stack_st8100', {
-        containerId: 'stackContainer', scaleBaseline: 1, scaleMultiplier: .95, globalScaleFactor: .75,
+        containerId: 'stackContainer', scaleBaseline: 1.45, scaleMultiplier: .95, globalScaleFactor: .75,
         onInit: configure,
         onElementsChange: function (elements) { configure({ elements }); },
         onFrame: function (data, payload) { root.StackMonitor.ingest(state, data, payload, performance.now()); render(performance.now()); },

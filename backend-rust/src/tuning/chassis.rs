@@ -269,11 +269,9 @@ pub fn calculate_chassis_tuning(
                     0.35
                 };
 
-            let base_spring_f = (k_max_f - k_min_f) * (wf / 100.0) + k_min_f;
-            let base_spring_r = (k_max_r - k_min_r) * (wr / 100.0) + k_min_r;
             let spring_scale = if is_cross_country { 0.85 } else { 0.65 };
-            spring_f = base_spring_f * spring_scale;
-            spring_r = base_spring_r * spring_scale;
+            spring_f = k_min_f + (k_max_f - k_min_f) * (wf / 100.0) * spring_scale;
+            spring_r = k_min_r + (k_max_r - k_min_r) * (wr / 100.0) * spring_scale;
 
             let h_fraction = if is_cross_country || race_goal == RaceGoal::DangerSign {
                 1.0

@@ -61,7 +61,9 @@
         for (var i = 0; i < pairs.length; i++) {
             var context = this[pairs[i][0]]; if (!context) continue;
             var canvas = context.canvas;
-            var geometry = root.R34CanvasGeometry.geometry(canvas.clientWidth, canvas.clientHeight, scale, dpr);
+            var cw = canvas.clientWidth || (canvas.getAttribute('width') ? parseFloat(canvas.getAttribute('width')) : 0);
+            var ch = canvas.clientHeight || (canvas.getAttribute('height') ? parseFloat(canvas.getAttribute('height')) : 0);
+            var geometry = root.R34CanvasGeometry.geometry(cw, ch, scale, dpr);
             this[pairs[i][1]] = geometry;
             if (!geometry.drawable) continue; // Hidden / zero-size surfaces allocate nothing.
             if (canvas.width !== geometry.pixelWidth || canvas.height !== geometry.pixelHeight) {
@@ -146,12 +148,20 @@
         this.text('r34TempUnit', view.tireTemperatureUnit);
         if (this.mode === 'single') {
             this.dial('r34Single', boost, boostRatio, e.showBoost === false ? null : view.peakBoost, view.boostSpec.decimals);
+            if (!this.historyGeometry.drawable && this.history?.canvas?.clientWidth) {
+                this.resizeCanvases(this.layoutGeometry?.screen?.width / 270 || 1, root.devicePixelRatio || 1);
+            }
             if (this.historySequence !== state.sequence || this.historyLive !== view.live) { this.drawHistory(view, state, e.showBoost !== false); this.historySequence = state.sequence; this.historyLive = view.live; }
         } else if (this.mode === 'twin') {
             this.dial('r34TwinB', boost, boostRatio, e.showBoost === false ? null : view.peakBoost, view.boostSpec.decimals);
             this.dial('r34TwinR', e.showRPM === false || view.rpm === null ? null : view.rpm / 1000, e.showRPM === false ? null : M.ratio(view.rpm, 0, 10000), e.showRPM === false || view.peakRpm === null ? null : view.peakRpm / 1000, 1);
         } else if (this.mode === 'multi') this.drawMulti(view, e);
-        else if (this.mode === 'g') this.drawG(view);
+        else if (this.mode === 'g') {
+            if (!this.gGeometry.drawable && this.g?.canvas?.clientWidth) {
+                this.resizeCanvases(this.layoutGeometry?.screen?.width / 270 || 1, root.devicePixelRatio || 1);
+            }
+            this.drawG(view);
+        }
         else this.drawLap(view);
     };
     Renderer.prototype.drawLcd = function (view, elements) {

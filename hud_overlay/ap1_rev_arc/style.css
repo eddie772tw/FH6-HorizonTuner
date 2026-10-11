@@ -9,7 +9,7 @@
   --ap1-glow: 0.65;
   --ap1-caption-inactive-opacity: .25;
 }
-.ap1-cluster { width: 720px; height: 300px; pointer-events: none; zoom: .75; transition: none; }
+.ap1-cluster { width: 720px; height: 300px; pointer-events: none; transition: none; }
 .ap1-fascia, #ap1Display { position: absolute; inset: 0; width: 100%; height: 100%; }
 .ap1-cluster.asset-missing { background: var(--ap1-fallback-face); border: 2px solid var(--ap1-fallback-rim); border-radius: 48% 48% 7% 7%; }
 #ap1Display { overflow: visible; font-family: 'Arial Narrow', 'Liberation Sans Narrow', Arial, sans-serif; color: var(--ap1-primary); fill: currentColor; }

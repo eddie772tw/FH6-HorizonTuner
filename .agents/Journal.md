@@ -804,3 +804,22 @@
 - **Evidence**：focused10及fullfrontend1780 passed／1 existing skip；TypeScript／Windows Vite build、version consistency／Rust fmt／diff checks通過。Rust完整locked suite（含doctest）依序重跑204 passed／3ignored／0failed；第一次同時重建dist造成doctest資產引用失敗，保留失敗記錄。
 - **Boundary**：未新增Rust公式／依賴／權限／SDK／game／device操作；FH6保持關閉。原始車輛資料與主工作區保留。完整signedpackage／cleanWindowsGUI／LinuxGUI／publicOTA／Android仍NOT_RUN，版本準備不宣稱已發布。現存ADB payload僅hash核對後複製到ownedignoredstage，沒有下載或接受SDK條款。
 - **Skills**：`portable-release-validation`、`pr-author-maintainer`、`pr-review-evaluation`、`cross-agent-collaboration`、`halfmoon-design-system`、`ponytail`（full）。
+
+## 2026-10-11 / main 建置缺陷修正與 Rally 歷史根因追溯（Gemini as Antigravity）
+
+- **來源／狀態**：`local`／`verified`；使用者回報 main 版本測試四項缺陷，依指示完成追溯、修復、分流驗證並直接更新 main。
+- **問題 1 歷史根因與追溯**：
+  - 缺陷起源於 **PR #134 (`feat(tuning): Full Rework Tuning Workflow`)**，由 commit `16632bc63e1ffe7cda984133717cd242af6ca93f` (`feat: chassis tuner`，2026-08-05) 於 `frontend/src/features/tuning/utils/tuningMath.ts` 引入：原設計意圖為軟化可調行程權重 65%，但代碼誤寫為 `springF = baseSpringF * 0.65;`，導致彈簧下限截距 $K_{min}$ 一同被打折；後續於 **PR #423 (`38d1c945`)** 實作純 Rust `tuning_core` 時逐字移植至 `backend-rust/src/tuning/chassis.rs`。
+  - 修復方案：將 Rally 與 DangerSign 彈簧公式修正為區間插值 `k_min + (k_max - k_min) * (w / 100.0) * spring_scale`；同步更新 `tests/fixtures/tuning_golden_fixtures.json`、`tests/fixtures/mechanical_desktop_v162.json` 與前端測試參考。Focus RS WRC Rally 彈簧輸出自前 6.8 / 後 6.7 修正為前 10.5 / 後 10.3 kgf/mm。
+- **問題 2 調校 Step 3 暫停回退修復**：
+  - 根因：遊戲暫停或進入選單時 Forza UDP 送出 `IsRaceOn = 0` 且 `CarOrdinal <= 0`，`tuneSessionController.ts` 的 `selectedEngineObservationMatchesLiveTelemetry` 判定失配而呼叫 `invalidate()` 清空觀測。
+  - 修復方案：在失配比對中加入暫停與選單封包放行保護；在 `TuneSessionProvider.tsx` 增加 `hasProducedGearing` 守衛，Step 3 齒比產出後鎖定狀態與觀測資料，不再受即時遙測波動影響。
+- **問題 3 & 4 HUD 儀表 1440P 縮放與 R34 MFD 渲染修復**：
+  - 根因：AP1 與 LFA 樣式在 CSS (`zoom: .75`) 與 HUDCore 發生雙重打折；V1.7 新樣式預設 `scaleBaseline` 為 1.0（遠低於 S650 的 2.1 基準），導致 1440P 與各解析度下偏小；R34 MFD 在初始化階段 `clientWidth === 0` 時被標記為 `drawable: false` 且未動態恢復。
+  - 修復方案：移除 AP1 與 LFA 的 CSS 硬編碼 zoom，統一新樣式 `scaleBaseline` 至 1.35~1.45；放寬 R34 `heightFactor` clamp 上限至 1.5；`renderer.js` 增加 intrinsic fallback 與渲染時動態 geometry 恢復邏輯。
+- **Evidence**：
+  - 後端測試：`cargo test --locked --manifest-path backend-rust/Cargo.toml` 全量通過（含 `tuning_contract`、`mechanical_contract` 66 組 cases）。
+  - 前端測試：`cmd /c "pnpm -C frontend run test"` 208 test files、1780 passed、1 skipped 全數通過；HUD 測試 57 files／658 tests 全通；R34 單元測試 170 tests 全通。
+  - 程式碼品質：`uv run ruff check .`、`uv run ruff format --check .`、`git diff --check` 全部通過無警告。
+- **Boundary**：遵循 Rust 物理計算唯一 SSOT 與 `AGENTS.md` 規範，無 UI 硬編碼物理公式。衍生之 R34 MFD 與中央右側環表擠壓問題依使用者要求留待後續專屬任務處理。
+- **Skills**：`physics-tuning-math`、`telemetry-udp-protocol`、`halfmoon-design-system`、`modular-refactoring`、`pr-author-maintainer`。

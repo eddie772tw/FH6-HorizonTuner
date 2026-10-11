@@ -63,6 +63,7 @@ if (fascia.complete && fascia.naturalWidth === 0) container.classList.add('asset
 
 window.HUDCore.registerStyle('ap1_rev_arc', {
   containerId: 'ap1Cluster',
+  scaleBaseline: 1.4,
   scaleMultiplier: 1,
   onInit: configure,
   onElementsChange(elements) {

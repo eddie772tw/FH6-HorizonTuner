@@ -25,7 +25,7 @@
           "rear": "-0.1°"
         },
         "caster": 6.1,
-        "hwF": 98,
+        "hwF": 98.0,
         "hwR": 96.3
       },
       "chassis": {
@@ -35,7 +35,7 @@
         },
         "springs": {
           "front": 65.9,
-          "rear": 74,
+          "rear": 74.0,
           "heightF": 11.5,
           "heightR": 11.5
         },
@@ -46,11 +46,11 @@
           "bumpR": 6.3
         },
         "diff": {
-          "accelF": 25,
-          "decelF": 5,
-          "accelR": 0,
-          "decelR": 0,
-          "centerRear": 50
+          "accelF": 25.0,
+          "decelF": 5.0,
+          "accelR": 0.0,
+          "decelR": 0.0,
+          "centerRear": 50.0
         }
       }
     },
@@ -78,7 +78,7 @@
           "rear": "-0.1°"
         },
         "caster": 6.1,
-        "hwF": 98,
+        "hwF": 98.0,
         "hwR": 96.3
       },
       "chassis": {
@@ -87,7 +87,7 @@
           "rear": 30.4
         },
         "springs": {
-          "front": 76,
+          "front": 76.0,
           "rear": 63.4,
           "heightF": 11.5,
           "heightR": 11.5
@@ -99,11 +99,11 @@
           "bumpR": 5.8
         },
         "diff": {
-          "accelF": 0,
-          "decelF": 0,
-          "accelR": 40,
-          "decelR": 20,
-          "centerRear": 50
+          "accelF": 0.0,
+          "decelF": 0.0,
+          "accelR": 40.0,
+          "decelR": 20.0,
+          "centerRear": 50.0
         }
       }
     },
@@ -131,17 +131,17 @@
           "rear": "-0.1°"
         },
         "caster": 6.1,
-        "hwF": 98,
+        "hwF": 98.0,
         "hwR": 96.3
       },
       "chassis": {
         "arb": {
           "front": 3.2,
-          "rear": 50
+          "rear": 50.0
         },
         "springs": {
           "front": 76.9,
-          "rear": 63,
+          "rear": 63.0,
           "heightF": 11.5,
           "heightR": 11.5
         },
@@ -152,11 +152,11 @@
           "bumpR": 5.8
         },
         "diff": {
-          "accelF": 15,
-          "decelF": 0,
-          "accelR": 75,
-          "decelR": 15,
-          "centerRear": 66
+          "accelF": 15.0,
+          "decelF": 0.0,
+          "accelR": 75.0,
+          "decelR": 15.0,
+          "centerRear": 66.0
         }
       }
     },
@@ -184,7 +184,7 @@
           "rear": "-0.1°"
         },
         "caster": 6.1,
-        "hwF": 98,
+        "hwF": 98.0,
         "hwR": 96.3
       },
       "chassis": {
@@ -194,7 +194,7 @@
         },
         "springs": {
           "front": 65.9,
-          "rear": 74,
+          "rear": 74.0,
           "heightF": 11.5,
           "heightR": 11.5
         },
@@ -205,11 +205,11 @@
           "bumpR": 6.3
         },
         "diff": {
-          "accelF": 25,
-          "decelF": 5,
-          "accelR": 0,
-          "decelR": 0,
-          "centerRear": 50
+          "accelF": 25.0,
+          "decelF": 5.0,
+          "accelR": 0.0,
+          "decelR": 0.0,
+          "centerRear": 50.0
         }
       }
     },
@@ -237,7 +237,7 @@
           "rear": "-0.1°"
         },
         "caster": 6.1,
-        "hwF": 98,
+        "hwF": 98.0,
         "hwR": 96.3
       },
       "chassis": {
@@ -246,7 +246,7 @@
           "rear": 30.4
         },
         "springs": {
-          "front": 76,
+          "front": 76.0,
           "rear": 63.4,
           "heightF": 11.5,
           "heightR": 11.5
@@ -258,11 +258,11 @@
           "bumpR": 5.8
         },
         "diff": {
-          "accelF": 0,
-          "decelF": 0,
-          "accelR": 40,
-          "decelR": 20,
-          "centerRear": 50
+          "accelF": 0.0,
+          "decelF": 0.0,
+          "accelR": 40.0,
+          "decelR": 20.0,
+          "centerRear": 50.0
         }
       }
     },
@@ -290,17 +290,17 @@
           "rear": "-0.1°"
         },
         "caster": 6.1,
-        "hwF": 98,
+        "hwF": 98.0,
         "hwR": 96.3
       },
       "chassis": {
         "arb": {
           "front": 3.2,
-          "rear": 50
+          "rear": 50.0
         },
         "springs": {
           "front": 76.9,
-          "rear": 63,
+          "rear": 63.0,
           "heightF": 11.5,
           "heightR": 11.5
         },
@@ -311,11 +311,11 @@
           "bumpR": 5.8
         },
         "diff": {
-          "accelF": 15,
-          "decelF": 0,
-          "accelR": 75,
-          "decelR": 15,
-          "centerRear": 66
+          "accelF": 15.0,
+          "decelF": 0.0,
+          "accelR": 75.0,
+          "decelR": 15.0,
+          "centerRear": 66.0
         }
       }
     },
@@ -343,7 +343,7 @@
           "rear": "-0.1°"
         },
         "caster": 6.1,
-        "hwF": 98,
+        "hwF": 98.0,
         "hwR": 96.3
       },
       "chassis": {
@@ -353,7 +353,7 @@
         },
         "springs": {
           "front": 65.9,
-          "rear": 74,
+          "rear": 74.0,
           "heightF": 11.5,
           "heightR": 11.5
         },
@@ -364,11 +364,11 @@
           "bumpR": 6.3
         },
         "diff": {
-          "accelF": 25,
-          "decelF": 5,
-          "accelR": 0,
-          "decelR": 0,
-          "centerRear": 50
+          "accelF": 25.0,
+          "decelF": 5.0,
+          "accelR": 0.0,
+          "decelR": 0.0,
+          "centerRear": 50.0
         }
       }
     },
@@ -396,7 +396,7 @@
           "rear": "-0.1°"
         },
         "caster": 6.1,
-        "hwF": 98,
+        "hwF": 98.0,
         "hwR": 96.3
       },
       "chassis": {
@@ -405,7 +405,7 @@
           "rear": 30.4
         },
         "springs": {
-          "front": 76,
+          "front": 76.0,
           "rear": 63.4,
           "heightF": 11.5,
           "heightR": 11.5
@@ -417,11 +417,11 @@
           "bumpR": 5.8
         },
         "diff": {
-          "accelF": 0,
-          "decelF": 0,
-          "accelR": 40,
-          "decelR": 20,
-          "centerRear": 50
+          "accelF": 0.0,
+          "decelF": 0.0,
+          "accelR": 40.0,
+          "decelR": 20.0,
+          "centerRear": 50.0
         }
       }
     },
@@ -449,17 +449,17 @@
           "rear": "-0.1°"
         },
         "caster": 6.1,
-        "hwF": 98,
+        "hwF": 98.0,
         "hwR": 96.3
       },
       "chassis": {
         "arb": {
           "front": 3.2,
-          "rear": 50
+          "rear": 50.0
         },
         "springs": {
           "front": 76.9,
-          "rear": 63,
+          "rear": 63.0,
           "heightF": 11.5,
           "heightR": 11.5
         },
@@ -470,11 +470,11 @@
           "bumpR": 5.8
         },
         "diff": {
-          "accelF": 15,
-          "decelF": 0,
-          "accelR": 75,
-          "decelR": 15,
-          "centerRear": 66
+          "accelF": 15.0,
+          "decelF": 0.0,
+          "accelR": 75.0,
+          "decelR": 15.0,
+          "centerRear": 66.0
         }
       }
     },
@@ -502,7 +502,7 @@
           "rear": "-0.1°"
         },
         "caster": 6.1,
-        "hwF": 98,
+        "hwF": 98.0,
         "hwR": 96.3
       },
       "chassis": {
@@ -512,7 +512,7 @@
         },
         "springs": {
           "front": 65.9,
-          "rear": 74,
+          "rear": 74.0,
           "heightF": 11.5,
           "heightR": 11.5
         },
@@ -523,11 +523,11 @@
           "bumpR": 6.3
         },
         "diff": {
-          "accelF": 25,
-          "decelF": 5,
-          "accelR": 0,
-          "decelR": 0,
-          "centerRear": 50
+          "accelF": 25.0,
+          "decelF": 5.0,
+          "accelR": 0.0,
+          "decelR": 0.0,
+          "centerRear": 50.0
         }
       }
     },
@@ -555,7 +555,7 @@
           "rear": "-0.1°"
         },
         "caster": 6.1,
-        "hwF": 98,
+        "hwF": 98.0,
         "hwR": 96.3
       },
       "chassis": {
@@ -564,7 +564,7 @@
           "rear": 30.4
         },
         "springs": {
-          "front": 76,
+          "front": 76.0,
           "rear": 63.4,
           "heightF": 11.5,
           "heightR": 11.5
@@ -576,11 +576,11 @@
           "bumpR": 5.8
         },
         "diff": {
-          "accelF": 0,
-          "decelF": 0,
-          "accelR": 40,
-          "decelR": 20,
-          "centerRear": 50
+          "accelF": 0.0,
+          "decelF": 0.0,
+          "accelR": 40.0,
+          "decelR": 20.0,
+          "centerRear": 50.0
         }
       }
     },
@@ -608,17 +608,17 @@
           "rear": "-0.1°"
         },
         "caster": 6.1,
-        "hwF": 98,
+        "hwF": 98.0,
         "hwR": 96.3
       },
       "chassis": {
         "arb": {
           "front": 3.2,
-          "rear": 50
+          "rear": 50.0
         },
         "springs": {
           "front": 76.9,
-          "rear": 63,
+          "rear": 63.0,
           "heightF": 11.5,
           "heightR": 11.5
         },
@@ -629,11 +629,11 @@
           "bumpR": 5.8
         },
         "diff": {
-          "accelF": 15,
-          "decelF": 0,
-          "accelR": 75,
-          "decelR": 15,
-          "centerRear": 66
+          "accelF": 15.0,
+          "decelF": 0.0,
+          "accelR": 75.0,
+          "decelR": 15.0,
+          "centerRear": 66.0
         }
       }
     },
@@ -648,9 +648,9 @@
         "rallyProfile": "cross-country"
       },
       "alignment": {
-        "pcF": 33,
+        "pcF": 33.0,
         "pcR": 19.6,
-        "targetPhot": 21,
+        "targetPhot": 21.0,
         "seasonBias": -0.5,
         "camber": {
           "front": -4.8,
@@ -660,8 +660,8 @@
           "front": "+1.2°",
           "rear": "-0.3°"
         },
-        "caster": 7,
-        "hwF": 98,
+        "caster": 7.0,
+        "hwF": 98.0,
         "hwR": 96.3
       },
       "chassis": {
@@ -673,20 +673,20 @@
           "front": 25.5,
           "rear": 21.7,
           "heightF": 10.5,
-          "heightR": 11
+          "heightR": 11.0
         },
         "damping": {
           "reboundF": 3.7,
-          "reboundR": 3,
+          "reboundR": 3.0,
           "bumpF": 2.2,
           "bumpR": 1.8
         },
         "diff": {
-          "accelF": 85,
-          "decelF": 5,
-          "accelR": 0,
-          "decelR": 0,
-          "centerRear": 50
+          "accelF": 85.0,
+          "decelF": 5.0,
+          "accelR": 0.0,
+          "decelR": 0.0,
+          "centerRear": 50.0
         }
       }
     },
@@ -701,9 +701,9 @@
         "rallyProfile": "cross-country"
       },
       "alignment": {
-        "pcF": 33,
+        "pcF": 33.0,
         "pcR": 19.6,
-        "targetPhot": 21,
+        "targetPhot": 21.0,
         "seasonBias": -0.5,
         "camber": {
           "front": -4.8,
@@ -713,8 +713,8 @@
           "front": "+1.2°",
           "rear": "-0.3°"
         },
-        "caster": 7,
-        "hwF": 98,
+        "caster": 7.0,
+        "hwF": 98.0,
         "hwR": 96.3
       },
       "chassis": {
@@ -726,20 +726,20 @@
           "front": 25.5,
           "rear": 21.7,
           "heightF": 10.5,
-          "heightR": 11
+          "heightR": 11.0
         },
         "damping": {
           "reboundF": 3.7,
-          "reboundR": 3,
+          "reboundR": 3.0,
           "bumpF": 2.2,
           "bumpR": 1.8
         },
         "diff": {
-          "accelF": 0,
-          "decelF": 0,
-          "accelR": 90,
-          "decelR": 15,
-          "centerRear": 50
+          "accelF": 0.0,
+          "decelF": 0.0,
+          "accelR": 90.0,
+          "decelR": 15.0,
+          "centerRear": 50.0
         }
       }
     },
@@ -754,9 +754,9 @@
         "rallyProfile": "cross-country"
       },
       "alignment": {
-        "pcF": 33,
+        "pcF": 33.0,
         "pcR": 19.6,
-        "targetPhot": 21,
+        "targetPhot": 21.0,
         "seasonBias": -0.5,
         "camber": {
           "front": -4.8,
@@ -766,8 +766,8 @@
           "front": "+1.2°",
           "rear": "-0.3°"
         },
-        "caster": 7,
-        "hwF": 98,
+        "caster": 7.0,
+        "hwF": 98.0,
         "hwR": 96.3
       },
       "chassis": {
@@ -779,20 +779,20 @@
           "front": 25.5,
           "rear": 21.7,
           "heightF": 10.5,
-          "heightR": 11
+          "heightR": 11.0
         },
         "damping": {
           "reboundF": 3.7,
-          "reboundR": 3,
+          "reboundR": 3.0,
           "bumpF": 2.2,
           "bumpR": 1.8
         },
         "diff": {
-          "accelF": 85,
-          "decelF": 5,
-          "accelR": 60,
-          "decelR": 15,
-          "centerRear": 75
+          "accelF": 85.0,
+          "decelF": 5.0,
+          "accelR": 60.0,
+          "decelR": 15.0,
+          "centerRear": 75.0
         }
       }
     },
@@ -807,9 +807,9 @@
         "rallyProfile": "cross-country"
       },
       "alignment": {
-        "pcF": 33,
+        "pcF": 33.0,
         "pcR": 19.6,
-        "targetPhot": 21,
+        "targetPhot": 21.0,
         "seasonBias": -0.5,
         "camber": {
           "front": -4.8,
@@ -819,8 +819,8 @@
           "front": "+1.2°",
           "rear": "-0.3°"
         },
-        "caster": 7,
-        "hwF": 98,
+        "caster": 7.0,
+        "hwF": 98.0,
         "hwR": 96.3
       },
       "chassis": {
@@ -832,20 +832,20 @@
           "front": 25.5,
           "rear": 21.7,
           "heightF": 10.5,
-          "heightR": 11
+          "heightR": 11.0
         },
         "damping": {
           "reboundF": 3.7,
-          "reboundR": 3,
+          "reboundR": 3.0,
           "bumpF": 2.2,
           "bumpR": 1.8
         },
         "diff": {
-          "accelF": 85,
-          "decelF": 5,
-          "accelR": 0,
-          "decelR": 0,
-          "centerRear": 50
+          "accelF": 85.0,
+          "decelF": 5.0,
+          "accelR": 0.0,
+          "decelR": 0.0,
+          "centerRear": 50.0
         }
       }
     },
@@ -860,9 +860,9 @@
         "rallyProfile": "cross-country"
       },
       "alignment": {
-        "pcF": 33,
+        "pcF": 33.0,
         "pcR": 19.6,
-        "targetPhot": 21,
+        "targetPhot": 21.0,
         "seasonBias": -0.5,
         "camber": {
           "front": -4.8,
@@ -872,8 +872,8 @@
           "front": "+1.2°",
           "rear": "-0.3°"
         },
-        "caster": 7,
-        "hwF": 98,
+        "caster": 7.0,
+        "hwF": 98.0,
         "hwR": 96.3
       },
       "chassis": {
@@ -885,20 +885,20 @@
           "front": 25.5,
           "rear": 21.7,
           "heightF": 10.5,
-          "heightR": 11
+          "heightR": 11.0
         },
         "damping": {
           "reboundF": 3.7,
-          "reboundR": 3,
+          "reboundR": 3.0,
           "bumpF": 2.2,
           "bumpR": 1.8
         },
         "diff": {
-          "accelF": 0,
-          "decelF": 0,
-          "accelR": 90,
-          "decelR": 15,
-          "centerRear": 50
+          "accelF": 0.0,
+          "decelF": 0.0,
+          "accelR": 90.0,
+          "decelR": 15.0,
+          "centerRear": 50.0
         }
       }
     },
@@ -913,9 +913,9 @@
         "rallyProfile": "cross-country"
       },
       "alignment": {
-        "pcF": 33,
+        "pcF": 33.0,
         "pcR": 19.6,
-        "targetPhot": 21,
+        "targetPhot": 21.0,
         "seasonBias": -0.5,
         "camber": {
           "front": -4.8,
@@ -925,8 +925,8 @@
           "front": "+1.2°",
           "rear": "-0.3°"
         },
-        "caster": 7,
-        "hwF": 98,
+        "caster": 7.0,
+        "hwF": 98.0,
         "hwR": 96.3
       },
       "chassis": {
@@ -938,20 +938,20 @@
           "front": 25.5,
           "rear": 21.7,
           "heightF": 10.5,
-          "heightR": 11
+          "heightR": 11.0
         },
         "damping": {
           "reboundF": 3.7,
-          "reboundR": 3,
+          "reboundR": 3.0,
           "bumpF": 2.2,
           "bumpR": 1.8
         },
         "diff": {
-          "accelF": 85,
-          "decelF": 5,
-          "accelR": 60,
-          "decelR": 15,
-          "centerRear": 75
+          "accelF": 85.0,
+          "decelF": 5.0,
+          "accelR": 60.0,
+          "decelR": 15.0,
+          "centerRear": 75.0
         }
       }
     },
@@ -966,9 +966,9 @@
         "rallyProfile": "cross-country"
       },
       "alignment": {
-        "pcF": 34,
+        "pcF": 34.0,
         "pcR": 20.6,
-        "targetPhot": 21,
+        "targetPhot": 21.0,
         "seasonBias": 0.5,
         "camber": {
           "front": -4.8,
@@ -978,8 +978,8 @@
           "front": "+1.2°",
           "rear": "-0.3°"
         },
-        "caster": 7,
-        "hwF": 98,
+        "caster": 7.0,
+        "hwF": 98.0,
         "hwR": 96.3
       },
       "chassis": {
@@ -991,20 +991,20 @@
           "front": 25.5,
           "rear": 21.7,
           "heightF": 10.5,
-          "heightR": 11
+          "heightR": 11.0
         },
         "damping": {
           "reboundF": 3.7,
-          "reboundR": 3,
+          "reboundR": 3.0,
           "bumpF": 2.2,
           "bumpR": 1.8
         },
         "diff": {
-          "accelF": 85,
-          "decelF": 5,
-          "accelR": 0,
-          "decelR": 0,
-          "centerRear": 50
+          "accelF": 85.0,
+          "decelF": 5.0,
+          "accelR": 0.0,
+          "decelR": 0.0,
+          "centerRear": 50.0
         }
       }
     },
@@ -1019,9 +1019,9 @@
         "rallyProfile": "cross-country"
       },
       "alignment": {
-        "pcF": 34,
+        "pcF": 34.0,
         "pcR": 20.6,
-        "targetPhot": 21,
+        "targetPhot": 21.0,
         "seasonBias": 0.5,
         "camber": {
           "front": -4.8,
@@ -1031,8 +1031,8 @@
           "front": "+1.2°",
           "rear": "-0.3°"
         },
-        "caster": 7,
-        "hwF": 98,
+        "caster": 7.0,
+        "hwF": 98.0,
         "hwR": 96.3
       },
       "chassis": {
@@ -1044,20 +1044,20 @@
           "front": 25.5,
           "rear": 21.7,
           "heightF": 10.5,
-          "heightR": 11
+          "heightR": 11.0
         },
         "damping": {
           "reboundF": 3.7,
-          "reboundR": 3,
+          "reboundR": 3.0,
           "bumpF": 2.2,
           "bumpR": 1.8
         },
         "diff": {
-          "accelF": 0,
-          "decelF": 0,
-          "accelR": 90,
-          "decelR": 15,
-          "centerRear": 50
+          "accelF": 0.0,
+          "decelF": 0.0,
+          "accelR": 90.0,
+          "decelR": 15.0,
+          "centerRear": 50.0
         }
       }
     },
@@ -1072,9 +1072,9 @@
         "rallyProfile": "cross-country"
       },
       "alignment": {
-        "pcF": 34,
+        "pcF": 34.0,
         "pcR": 20.6,
-        "targetPhot": 21,
+        "targetPhot": 21.0,
         "seasonBias": 0.5,
         "camber": {
           "front": -4.8,
@@ -1084,8 +1084,8 @@
           "front": "+1.2°",
           "rear": "-0.3°"
         },
-        "caster": 7,
-        "hwF": 98,
+        "caster": 7.0,
+        "hwF": 98.0,
         "hwR": 96.3
       },
       "chassis": {
@@ -1097,20 +1097,20 @@
           "front": 25.5,
           "rear": 21.7,
           "heightF": 10.5,
-          "heightR": 11
+          "heightR": 11.0
         },
         "damping": {
           "reboundF": 3.7,
-          "reboundR": 3,
+          "reboundR": 3.0,
           "bumpF": 2.2,
           "bumpR": 1.8
         },
         "diff": {
-          "accelF": 85,
-          "decelF": 5,
-          "accelR": 60,
-          "decelR": 15,
-          "centerRear": 75
+          "accelF": 85.0,
+          "decelF": 5.0,
+          "accelR": 60.0,
+          "decelR": 15.0,
+          "centerRear": 75.0
         }
       }
     },
@@ -1125,9 +1125,9 @@
         "rallyProfile": "cross-country"
       },
       "alignment": {
-        "pcF": 34,
+        "pcF": 34.0,
         "pcR": 20.6,
-        "targetPhot": 21,
+        "targetPhot": 21.0,
         "seasonBias": 0.5,
         "camber": {
           "front": -4.8,
@@ -1137,8 +1137,8 @@
           "front": "+1.2°",
           "rear": "-0.3°"
         },
-        "caster": 7,
-        "hwF": 98,
+        "caster": 7.0,
+        "hwF": 98.0,
         "hwR": 96.3
       },
       "chassis": {
@@ -1150,20 +1150,20 @@
           "front": 25.5,
           "rear": 21.7,
           "heightF": 10.5,
-          "heightR": 11
+          "heightR": 11.0
         },
         "damping": {
           "reboundF": 3.7,
-          "reboundR": 3,
+          "reboundR": 3.0,
           "bumpF": 2.2,
           "bumpR": 1.8
         },
         "diff": {
-          "accelF": 85,
-          "decelF": 5,
-          "accelR": 0,
-          "decelR": 0,
-          "centerRear": 50
+          "accelF": 85.0,
+          "decelF": 5.0,
+          "accelR": 0.0,
+          "decelR": 0.0,
+          "centerRear": 50.0
         }
       }
     },
@@ -1178,9 +1178,9 @@
         "rallyProfile": "cross-country"
       },
       "alignment": {
-        "pcF": 34,
+        "pcF": 34.0,
         "pcR": 20.6,
-        "targetPhot": 21,
+        "targetPhot": 21.0,
         "seasonBias": 0.5,
         "camber": {
           "front": -4.8,
@@ -1190,8 +1190,8 @@
           "front": "+1.2°",
           "rear": "-0.3°"
         },
-        "caster": 7,
-        "hwF": 98,
+        "caster": 7.0,
+        "hwF": 98.0,
         "hwR": 96.3
       },
       "chassis": {
@@ -1203,20 +1203,20 @@
           "front": 25.5,
           "rear": 21.7,
           "heightF": 10.5,
-          "heightR": 11
+          "heightR": 11.0
         },
         "damping": {
           "reboundF": 3.7,
-          "reboundR": 3,
+          "reboundR": 3.0,
           "bumpF": 2.2,
           "bumpR": 1.8
         },
         "diff": {
-          "accelF": 0,
-          "decelF": 0,
-          "accelR": 90,
-          "decelR": 15,
-          "centerRear": 50
+          "accelF": 0.0,
+          "decelF": 0.0,
+          "accelR": 90.0,
+          "decelR": 15.0,
+          "centerRear": 50.0
         }
       }
     },
@@ -1231,9 +1231,9 @@
         "rallyProfile": "cross-country"
       },
       "alignment": {
-        "pcF": 34,
+        "pcF": 34.0,
         "pcR": 20.6,
-        "targetPhot": 21,
+        "targetPhot": 21.0,
         "seasonBias": 0.5,
         "camber": {
           "front": -4.8,
@@ -1243,8 +1243,8 @@
           "front": "+1.2°",
           "rear": "-0.3°"
         },
-        "caster": 7,
-        "hwF": 98,
+        "caster": 7.0,
+        "hwF": 98.0,
         "hwR": 96.3
       },
       "chassis": {
@@ -1256,20 +1256,20 @@
           "front": 25.5,
           "rear": 21.7,
           "heightF": 10.5,
-          "heightR": 11
+          "heightR": 11.0
         },
         "damping": {
           "reboundF": 3.7,
-          "reboundR": 3,
+          "reboundR": 3.0,
           "bumpF": 2.2,
           "bumpR": 1.8
         },
         "diff": {
-          "accelF": 85,
-          "decelF": 5,
-          "accelR": 60,
-          "decelR": 15,
-          "centerRear": 75
+          "accelF": 85.0,
+          "decelF": 5.0,
+          "accelR": 60.0,
+          "decelR": 15.0,
+          "centerRear": 75.0
         }
       }
     },
@@ -1296,20 +1296,20 @@
           "front": "0.0°",
           "rear": "0.0°"
         },
-        "caster": 6,
-        "hwF": 98,
+        "caster": 6.0,
+        "hwF": 98.0,
         "hwR": 96.3
       },
       "chassis": {
         "arb": {
           "front": 13.5,
-          "rear": 14
+          "rear": 14.0
         },
         "springs": {
-          "front": 59,
-          "rear": 51.5,
-          "heightF": 25,
-          "heightR": 25
+          "front": 60.5,
+          "rear": 53.0,
+          "heightF": 25.0,
+          "heightR": 25.0
         },
         "damping": {
           "reboundF": 9.4,
@@ -1318,11 +1318,11 @@
           "bumpR": 4.1
         },
         "diff": {
-          "accelF": 70,
-          "decelF": 20,
-          "accelR": 0,
-          "decelR": 0,
-          "centerRear": 50
+          "accelF": 70.0,
+          "decelF": 20.0,
+          "accelR": 0.0,
+          "decelR": 0.0,
+          "centerRear": 50.0
         }
       }
     },
@@ -1349,20 +1349,20 @@
           "front": "0.0°",
           "rear": "0.0°"
         },
-        "caster": 6,
-        "hwF": 98,
+        "caster": 6.0,
+        "hwF": 98.0,
         "hwR": 96.3
       },
       "chassis": {
         "arb": {
           "front": 13.5,
-          "rear": 14
+          "rear": 14.0
         },
         "springs": {
-          "front": 59,
-          "rear": 51.5,
-          "heightF": 25,
-          "heightR": 25
+          "front": 60.5,
+          "rear": 53.0,
+          "heightF": 25.0,
+          "heightR": 25.0
         },
         "damping": {
           "reboundF": 9.4,
@@ -1371,11 +1371,11 @@
           "bumpR": 4.1
         },
         "diff": {
-          "accelF": 0,
-          "decelF": 0,
-          "accelR": 85,
-          "decelR": 30,
-          "centerRear": 50
+          "accelF": 0.0,
+          "decelF": 0.0,
+          "accelR": 85.0,
+          "decelR": 30.0,
+          "centerRear": 50.0
         }
       }
     },
@@ -1402,20 +1402,20 @@
           "front": "0.0°",
           "rear": "0.0°"
         },
-        "caster": 6,
-        "hwF": 98,
+        "caster": 6.0,
+        "hwF": 98.0,
         "hwR": 96.3
       },
       "chassis": {
         "arb": {
           "front": 13.5,
-          "rear": 14
+          "rear": 14.0
         },
         "springs": {
-          "front": 59,
-          "rear": 51.5,
-          "heightF": 25,
-          "heightR": 25
+          "front": 60.5,
+          "rear": 53.0,
+          "heightF": 25.0,
+          "heightR": 25.0
         },
         "damping": {
           "reboundF": 9.4,
@@ -1424,11 +1424,11 @@
           "bumpR": 4.1
         },
         "diff": {
-          "accelF": 50,
-          "decelF": 20,
-          "accelR": 90,
-          "decelR": 35,
-          "centerRear": 55
+          "accelF": 50.0,
+          "decelF": 20.0,
+          "accelR": 90.0,
+          "decelR": 35.0,
+          "centerRear": 55.0
         }
       }
     },
@@ -1455,20 +1455,20 @@
           "front": "0.0°",
           "rear": "0.0°"
         },
-        "caster": 6,
-        "hwF": 98,
+        "caster": 6.0,
+        "hwF": 98.0,
         "hwR": 96.3
       },
       "chassis": {
         "arb": {
           "front": 13.5,
-          "rear": 14
+          "rear": 14.0
         },
         "springs": {
-          "front": 59,
-          "rear": 51.5,
-          "heightF": 25,
-          "heightR": 25
+          "front": 60.5,
+          "rear": 53.0,
+          "heightF": 25.0,
+          "heightR": 25.0
         },
         "damping": {
           "reboundF": 9.4,
@@ -1477,11 +1477,11 @@
           "bumpR": 4.1
         },
         "diff": {
-          "accelF": 70,
-          "decelF": 20,
-          "accelR": 0,
-          "decelR": 0,
-          "centerRear": 50
+          "accelF": 70.0,
+          "decelF": 20.0,
+          "accelR": 0.0,
+          "decelR": 0.0,
+          "centerRear": 50.0
         }
       }
     },
@@ -1508,20 +1508,20 @@
           "front": "0.0°",
           "rear": "0.0°"
         },
-        "caster": 6,
-        "hwF": 98,
+        "caster": 6.0,
+        "hwF": 98.0,
         "hwR": 96.3
       },
       "chassis": {
         "arb": {
           "front": 13.5,
-          "rear": 14
+          "rear": 14.0
         },
         "springs": {
-          "front": 59,
-          "rear": 51.5,
-          "heightF": 25,
-          "heightR": 25
+          "front": 60.5,
+          "rear": 53.0,
+          "heightF": 25.0,
+          "heightR": 25.0
         },
         "damping": {
           "reboundF": 9.4,
@@ -1530,11 +1530,11 @@
           "bumpR": 4.1
         },
         "diff": {
-          "accelF": 0,
-          "decelF": 0,
-          "accelR": 85,
-          "decelR": 30,
-          "centerRear": 50
+          "accelF": 0.0,
+          "decelF": 0.0,
+          "accelR": 85.0,
+          "decelR": 30.0,
+          "centerRear": 50.0
         }
       }
     },
@@ -1561,20 +1561,20 @@
           "front": "0.0°",
           "rear": "0.0°"
         },
-        "caster": 6,
-        "hwF": 98,
+        "caster": 6.0,
+        "hwF": 98.0,
         "hwR": 96.3
       },
       "chassis": {
         "arb": {
           "front": 13.5,
-          "rear": 14
+          "rear": 14.0
         },
         "springs": {
-          "front": 59,
-          "rear": 51.5,
-          "heightF": 25,
-          "heightR": 25
+          "front": 60.5,
+          "rear": 53.0,
+          "heightF": 25.0,
+          "heightR": 25.0
         },
         "damping": {
           "reboundF": 9.4,
@@ -1583,11 +1583,11 @@
           "bumpR": 4.1
         },
         "diff": {
-          "accelF": 50,
-          "decelF": 20,
-          "accelR": 90,
-          "decelR": 35,
-          "centerRear": 55
+          "accelF": 50.0,
+          "decelF": 20.0,
+          "accelR": 90.0,
+          "decelR": 35.0,
+          "centerRear": 55.0
         }
       }
     },
@@ -1614,20 +1614,20 @@
           "front": "0.0°",
           "rear": "0.0°"
         },
-        "caster": 6,
-        "hwF": 98,
+        "caster": 6.0,
+        "hwF": 98.0,
         "hwR": 96.3
       },
       "chassis": {
         "arb": {
           "front": 13.5,
-          "rear": 14
+          "rear": 14.0
         },
         "springs": {
-          "front": 59,
-          "rear": 51.5,
-          "heightF": 25,
-          "heightR": 25
+          "front": 60.5,
+          "rear": 53.0,
+          "heightF": 25.0,
+          "heightR": 25.0
         },
         "damping": {
           "reboundF": 9.4,
@@ -1636,11 +1636,11 @@
           "bumpR": 4.1
         },
         "diff": {
-          "accelF": 70,
-          "decelF": 20,
-          "accelR": 0,
-          "decelR": 0,
-          "centerRear": 50
+          "accelF": 70.0,
+          "decelF": 20.0,
+          "accelR": 0.0,
+          "decelR": 0.0,
+          "centerRear": 50.0
         }
       }
     },
@@ -1667,20 +1667,20 @@
           "front": "0.0°",
           "rear": "0.0°"
         },
-        "caster": 6,
-        "hwF": 98,
+        "caster": 6.0,
+        "hwF": 98.0,
         "hwR": 96.3
       },
       "chassis": {
         "arb": {
           "front": 13.5,
-          "rear": 14
+          "rear": 14.0
         },
         "springs": {
-          "front": 59,
-          "rear": 51.5,
-          "heightF": 25,
-          "heightR": 25
+          "front": 60.5,
+          "rear": 53.0,
+          "heightF": 25.0,
+          "heightR": 25.0
         },
         "damping": {
           "reboundF": 9.4,
@@ -1689,11 +1689,11 @@
           "bumpR": 4.1
         },
         "diff": {
-          "accelF": 0,
-          "decelF": 0,
-          "accelR": 85,
-          "decelR": 30,
-          "centerRear": 50
+          "accelF": 0.0,
+          "decelF": 0.0,
+          "accelR": 85.0,
+          "decelR": 30.0,
+          "centerRear": 50.0
         }
       }
     },
@@ -1720,20 +1720,20 @@
           "front": "0.0°",
           "rear": "0.0°"
         },
-        "caster": 6,
-        "hwF": 98,
+        "caster": 6.0,
+        "hwF": 98.0,
         "hwR": 96.3
       },
       "chassis": {
         "arb": {
           "front": 13.5,
-          "rear": 14
+          "rear": 14.0
         },
         "springs": {
-          "front": 59,
-          "rear": 51.5,
-          "heightF": 25,
-          "heightR": 25
+          "front": 60.5,
+          "rear": 53.0,
+          "heightF": 25.0,
+          "heightR": 25.0
         },
         "damping": {
           "reboundF": 9.4,
@@ -1742,11 +1742,11 @@
           "bumpR": 4.1
         },
         "diff": {
-          "accelF": 50,
-          "decelF": 20,
-          "accelR": 90,
-          "decelR": 35,
-          "centerRear": 55
+          "accelF": 50.0,
+          "decelF": 20.0,
+          "accelR": 90.0,
+          "decelR": 35.0,
+          "centerRear": 55.0
         }
       }
     },
@@ -1773,20 +1773,20 @@
           "front": "0.0°",
           "rear": "0.0°"
         },
-        "caster": 6,
-        "hwF": 98,
+        "caster": 6.0,
+        "hwF": 98.0,
         "hwR": 96.3
       },
       "chassis": {
         "arb": {
           "front": 13.5,
-          "rear": 14
+          "rear": 14.0
         },
         "springs": {
-          "front": 59,
-          "rear": 51.5,
-          "heightF": 25,
-          "heightR": 25
+          "front": 60.5,
+          "rear": 53.0,
+          "heightF": 25.0,
+          "heightR": 25.0
         },
         "damping": {
           "reboundF": 9.4,
@@ -1795,11 +1795,11 @@
           "bumpR": 4.1
         },
         "diff": {
-          "accelF": 70,
-          "decelF": 20,
-          "accelR": 0,
-          "decelR": 0,
-          "centerRear": 50
+          "accelF": 70.0,
+          "decelF": 20.0,
+          "accelR": 0.0,
+          "decelR": 0.0,
+          "centerRear": 50.0
         }
       }
     },
@@ -1826,20 +1826,20 @@
           "front": "0.0°",
           "rear": "0.0°"
         },
-        "caster": 6,
-        "hwF": 98,
+        "caster": 6.0,
+        "hwF": 98.0,
         "hwR": 96.3
       },
       "chassis": {
         "arb": {
           "front": 13.5,
-          "rear": 14
+          "rear": 14.0
         },
         "springs": {
-          "front": 59,
-          "rear": 51.5,
-          "heightF": 25,
-          "heightR": 25
+          "front": 60.5,
+          "rear": 53.0,
+          "heightF": 25.0,
+          "heightR": 25.0
         },
         "damping": {
           "reboundF": 9.4,
@@ -1848,11 +1848,11 @@
           "bumpR": 4.1
         },
         "diff": {
-          "accelF": 0,
-          "decelF": 0,
-          "accelR": 85,
-          "decelR": 30,
-          "centerRear": 50
+          "accelF": 0.0,
+          "decelF": 0.0,
+          "accelR": 85.0,
+          "decelR": 30.0,
+          "centerRear": 50.0
         }
       }
     },
@@ -1879,20 +1879,20 @@
           "front": "0.0°",
           "rear": "0.0°"
         },
-        "caster": 6,
-        "hwF": 98,
+        "caster": 6.0,
+        "hwF": 98.0,
         "hwR": 96.3
       },
       "chassis": {
         "arb": {
           "front": 13.5,
-          "rear": 14
+          "rear": 14.0
         },
         "springs": {
-          "front": 59,
-          "rear": 51.5,
-          "heightF": 25,
-          "heightR": 25
+          "front": 60.5,
+          "rear": 53.0,
+          "heightF": 25.0,
+          "heightR": 25.0
         },
         "damping": {
           "reboundF": 9.4,
@@ -1901,11 +1901,11 @@
           "bumpR": 4.1
         },
         "diff": {
-          "accelF": 50,
-          "decelF": 20,
-          "accelR": 90,
-          "decelR": 35,
-          "centerRear": 55
+          "accelF": 50.0,
+          "decelF": 20.0,
+          "accelR": 90.0,
+          "decelR": 35.0,
+          "centerRear": 55.0
         }
       }
     },
@@ -1925,40 +1925,40 @@
         "targetPhot": 23.5,
         "seasonBias": -0.5,
         "camber": {
-          "front": 0,
+          "front": 0.0,
           "rear": -0.1
         },
         "toe": {
           "front": "0.0°",
           "rear": "0.0°"
         },
-        "caster": 7,
-        "hwF": 98,
+        "caster": 7.0,
+        "hwF": 98.0,
         "hwR": 96.3
       },
       "chassis": {
         "arb": {
-          "front": 55,
-          "rear": 65
+          "front": 55.0,
+          "rear": 65.0
         },
         "springs": {
           "front": 26.5,
           "rear": 37.5,
-          "heightF": 10,
-          "heightR": 25
+          "heightF": 10.0,
+          "heightR": 25.0
         },
         "damping": {
-          "reboundF": 8,
-          "reboundR": 8,
-          "bumpF": 12,
-          "bumpR": 10
+          "reboundF": 8.0,
+          "reboundR": 8.0,
+          "bumpF": 12.0,
+          "bumpR": 10.0
         },
         "diff": {
-          "accelF": 85,
-          "decelF": 0,
-          "accelR": 0,
-          "decelR": 0,
-          "centerRear": 50
+          "accelF": 85.0,
+          "decelF": 0.0,
+          "accelR": 0.0,
+          "decelR": 0.0,
+          "centerRear": 50.0
         }
       }
     },
@@ -1978,40 +1978,40 @@
         "targetPhot": 23.5,
         "seasonBias": -0.5,
         "camber": {
-          "front": 0,
+          "front": 0.0,
           "rear": -0.1
         },
         "toe": {
           "front": "0.0°",
           "rear": "0.0°"
         },
-        "caster": 7,
-        "hwF": 98,
+        "caster": 7.0,
+        "hwF": 98.0,
         "hwR": 96.3
       },
       "chassis": {
         "arb": {
-          "front": 65,
-          "rear": 65
+          "front": 65.0,
+          "rear": 65.0
         },
         "springs": {
-          "front": 32,
-          "rear": 32,
-          "heightF": 25,
-          "heightR": 25
+          "front": 32.0,
+          "rear": 32.0,
+          "heightF": 25.0,
+          "heightR": 25.0
         },
         "damping": {
-          "reboundF": 3,
-          "reboundR": 12,
-          "bumpF": 12,
-          "bumpR": 4
+          "reboundF": 3.0,
+          "reboundR": 12.0,
+          "bumpF": 12.0,
+          "bumpR": 4.0
         },
         "diff": {
-          "accelF": 0,
-          "decelF": 0,
-          "accelR": 85,
-          "decelR": 0,
-          "centerRear": 50
+          "accelF": 0.0,
+          "decelF": 0.0,
+          "accelR": 85.0,
+          "decelR": 0.0,
+          "centerRear": 50.0
         }
       }
     },
@@ -2031,40 +2031,40 @@
         "targetPhot": 23.5,
         "seasonBias": -0.5,
         "camber": {
-          "front": 0,
+          "front": 0.0,
           "rear": -0.1
         },
         "toe": {
           "front": "0.0°",
           "rear": "0.0°"
         },
-        "caster": 7,
-        "hwF": 98,
+        "caster": 7.0,
+        "hwF": 98.0,
         "hwR": 96.3
       },
       "chassis": {
         "arb": {
-          "front": 65,
-          "rear": 65
+          "front": 65.0,
+          "rear": 65.0
         },
         "springs": {
-          "front": 32,
-          "rear": 32,
-          "heightF": 25,
-          "heightR": 25
+          "front": 32.0,
+          "rear": 32.0,
+          "heightF": 25.0,
+          "heightR": 25.0
         },
         "damping": {
-          "reboundF": 3,
-          "reboundR": 12,
-          "bumpF": 12,
-          "bumpR": 4
+          "reboundF": 3.0,
+          "reboundR": 12.0,
+          "bumpF": 12.0,
+          "bumpR": 4.0
         },
         "diff": {
-          "accelF": 85,
-          "decelF": 0,
-          "accelR": 65,
-          "decelR": 10,
-          "centerRear": 75
+          "accelF": 85.0,
+          "decelF": 0.0,
+          "accelR": 65.0,
+          "decelR": 10.0,
+          "centerRear": 75.0
         }
       }
     },
@@ -2084,40 +2084,40 @@
         "targetPhot": 23.5,
         "seasonBias": -0.5,
         "camber": {
-          "front": 0,
+          "front": 0.0,
           "rear": -0.1
         },
         "toe": {
           "front": "0.0°",
           "rear": "0.0°"
         },
-        "caster": 7,
-        "hwF": 98,
+        "caster": 7.0,
+        "hwF": 98.0,
         "hwR": 96.3
       },
       "chassis": {
         "arb": {
-          "front": 55,
-          "rear": 65
+          "front": 55.0,
+          "rear": 65.0
         },
         "springs": {
           "front": 26.5,
           "rear": 37.5,
-          "heightF": 10,
-          "heightR": 25
+          "heightF": 10.0,
+          "heightR": 25.0
         },
         "damping": {
-          "reboundF": 8,
-          "reboundR": 8,
-          "bumpF": 12,
-          "bumpR": 10
+          "reboundF": 8.0,
+          "reboundR": 8.0,
+          "bumpF": 12.0,
+          "bumpR": 10.0
         },
         "diff": {
-          "accelF": 85,
-          "decelF": 0,
-          "accelR": 0,
-          "decelR": 0,
-          "centerRear": 50
+          "accelF": 85.0,
+          "decelF": 0.0,
+          "accelR": 0.0,
+          "decelR": 0.0,
+          "centerRear": 50.0
         }
       }
     },
@@ -2137,40 +2137,40 @@
         "targetPhot": 23.5,
         "seasonBias": -0.5,
         "camber": {
-          "front": 0,
+          "front": 0.0,
           "rear": -0.1
         },
         "toe": {
           "front": "0.0°",
           "rear": "0.0°"
         },
-        "caster": 7,
-        "hwF": 98,
+        "caster": 7.0,
+        "hwF": 98.0,
         "hwR": 96.3
       },
       "chassis": {
         "arb": {
-          "front": 65,
-          "rear": 65
+          "front": 65.0,
+          "rear": 65.0
         },
         "springs": {
-          "front": 32,
-          "rear": 32,
-          "heightF": 25,
-          "heightR": 25
+          "front": 32.0,
+          "rear": 32.0,
+          "heightF": 25.0,
+          "heightR": 25.0
         },
         "damping": {
-          "reboundF": 3,
-          "reboundR": 12,
-          "bumpF": 12,
-          "bumpR": 4
+          "reboundF": 3.0,
+          "reboundR": 12.0,
+          "bumpF": 12.0,
+          "bumpR": 4.0
         },
         "diff": {
-          "accelF": 0,
-          "decelF": 0,
-          "accelR": 85,
-          "decelR": 0,
-          "centerRear": 50
+          "accelF": 0.0,
+          "decelF": 0.0,
+          "accelR": 85.0,
+          "decelR": 0.0,
+          "centerRear": 50.0
         }
       }
     },
@@ -2190,40 +2190,40 @@
         "targetPhot": 23.5,
         "seasonBias": -0.5,
         "camber": {
-          "front": 0,
+          "front": 0.0,
           "rear": -0.1
         },
         "toe": {
           "front": "0.0°",
           "rear": "0.0°"
         },
-        "caster": 7,
-        "hwF": 98,
+        "caster": 7.0,
+        "hwF": 98.0,
         "hwR": 96.3
       },
       "chassis": {
         "arb": {
-          "front": 65,
-          "rear": 65
+          "front": 65.0,
+          "rear": 65.0
         },
         "springs": {
-          "front": 32,
-          "rear": 32,
-          "heightF": 25,
-          "heightR": 25
+          "front": 32.0,
+          "rear": 32.0,
+          "heightF": 25.0,
+          "heightR": 25.0
         },
         "damping": {
-          "reboundF": 3,
-          "reboundR": 12,
-          "bumpF": 12,
-          "bumpR": 4
+          "reboundF": 3.0,
+          "reboundR": 12.0,
+          "bumpF": 12.0,
+          "bumpR": 4.0
         },
         "diff": {
-          "accelF": 85,
-          "decelF": 0,
-          "accelR": 65,
-          "decelR": 10,
-          "centerRear": 75
+          "accelF": 85.0,
+          "decelF": 0.0,
+          "accelR": 65.0,
+          "decelR": 10.0,
+          "centerRear": 75.0
         }
       }
     },
@@ -2243,40 +2243,40 @@
         "targetPhot": 23.5,
         "seasonBias": 0.5,
         "camber": {
-          "front": 0,
+          "front": 0.0,
           "rear": -0.1
         },
         "toe": {
           "front": "0.0°",
           "rear": "0.0°"
         },
-        "caster": 7,
-        "hwF": 98,
+        "caster": 7.0,
+        "hwF": 98.0,
         "hwR": 96.3
       },
       "chassis": {
         "arb": {
-          "front": 55,
-          "rear": 65
+          "front": 55.0,
+          "rear": 65.0
         },
         "springs": {
           "front": 26.5,
           "rear": 37.5,
-          "heightF": 10,
-          "heightR": 25
+          "heightF": 10.0,
+          "heightR": 25.0
         },
         "damping": {
-          "reboundF": 8,
-          "reboundR": 8,
-          "bumpF": 12,
-          "bumpR": 10
+          "reboundF": 8.0,
+          "reboundR": 8.0,
+          "bumpF": 12.0,
+          "bumpR": 10.0
         },
         "diff": {
-          "accelF": 85,
-          "decelF": 0,
-          "accelR": 0,
-          "decelR": 0,
-          "centerRear": 50
+          "accelF": 85.0,
+          "decelF": 0.0,
+          "accelR": 0.0,
+          "decelR": 0.0,
+          "centerRear": 50.0
         }
       }
     },
@@ -2296,40 +2296,40 @@
         "targetPhot": 23.5,
         "seasonBias": 0.5,
         "camber": {
-          "front": 0,
+          "front": 0.0,
           "rear": -0.1
         },
         "toe": {
           "front": "0.0°",
           "rear": "0.0°"
         },
-        "caster": 7,
-        "hwF": 98,
+        "caster": 7.0,
+        "hwF": 98.0,
         "hwR": 96.3
       },
       "chassis": {
         "arb": {
-          "front": 65,
-          "rear": 65
+          "front": 65.0,
+          "rear": 65.0
         },
         "springs": {
-          "front": 32,
-          "rear": 32,
-          "heightF": 25,
-          "heightR": 25
+          "front": 32.0,
+          "rear": 32.0,
+          "heightF": 25.0,
+          "heightR": 25.0
         },
         "damping": {
-          "reboundF": 3,
-          "reboundR": 12,
-          "bumpF": 12,
-          "bumpR": 4
+          "reboundF": 3.0,
+          "reboundR": 12.0,
+          "bumpF": 12.0,
+          "bumpR": 4.0
         },
         "diff": {
-          "accelF": 0,
-          "decelF": 0,
-          "accelR": 85,
-          "decelR": 0,
-          "centerRear": 50
+          "accelF": 0.0,
+          "decelF": 0.0,
+          "accelR": 85.0,
+          "decelR": 0.0,
+          "centerRear": 50.0
         }
       }
     },
@@ -2349,40 +2349,40 @@
         "targetPhot": 23.5,
         "seasonBias": 0.5,
         "camber": {
-          "front": 0,
+          "front": 0.0,
           "rear": -0.1
         },
         "toe": {
           "front": "0.0°",
           "rear": "0.0°"
         },
-        "caster": 7,
-        "hwF": 98,
+        "caster": 7.0,
+        "hwF": 98.0,
         "hwR": 96.3
       },
       "chassis": {
         "arb": {
-          "front": 65,
-          "rear": 65
+          "front": 65.0,
+          "rear": 65.0
         },
         "springs": {
-          "front": 32,
-          "rear": 32,
-          "heightF": 25,
-          "heightR": 25
+          "front": 32.0,
+          "rear": 32.0,
+          "heightF": 25.0,
+          "heightR": 25.0
         },
         "damping": {
-          "reboundF": 3,
-          "reboundR": 12,
-          "bumpF": 12,
-          "bumpR": 4
+          "reboundF": 3.0,
+          "reboundR": 12.0,
+          "bumpF": 12.0,
+          "bumpR": 4.0
         },
         "diff": {
-          "accelF": 85,
-          "decelF": 0,
-          "accelR": 65,
-          "decelR": 10,
-          "centerRear": 75
+          "accelF": 85.0,
+          "decelF": 0.0,
+          "accelR": 65.0,
+          "decelR": 10.0,
+          "centerRear": 75.0
         }
       }
     },
@@ -2402,40 +2402,40 @@
         "targetPhot": 23.5,
         "seasonBias": 0.5,
         "camber": {
-          "front": 0,
+          "front": 0.0,
           "rear": -0.1
         },
         "toe": {
           "front": "0.0°",
           "rear": "0.0°"
         },
-        "caster": 7,
-        "hwF": 98,
+        "caster": 7.0,
+        "hwF": 98.0,
         "hwR": 96.3
       },
       "chassis": {
         "arb": {
-          "front": 55,
-          "rear": 65
+          "front": 55.0,
+          "rear": 65.0
         },
         "springs": {
           "front": 26.5,
           "rear": 37.5,
-          "heightF": 10,
-          "heightR": 25
+          "heightF": 10.0,
+          "heightR": 25.0
         },
         "damping": {
-          "reboundF": 8,
-          "reboundR": 8,
-          "bumpF": 12,
-          "bumpR": 10
+          "reboundF": 8.0,
+          "reboundR": 8.0,
+          "bumpF": 12.0,
+          "bumpR": 10.0
         },
         "diff": {
-          "accelF": 85,
-          "decelF": 0,
-          "accelR": 0,
-          "decelR": 0,
-          "centerRear": 50
+          "accelF": 85.0,
+          "decelF": 0.0,
+          "accelR": 0.0,
+          "decelR": 0.0,
+          "centerRear": 50.0
         }
       }
     },
@@ -2455,40 +2455,40 @@
         "targetPhot": 23.5,
         "seasonBias": 0.5,
         "camber": {
-          "front": 0,
+          "front": 0.0,
           "rear": -0.1
         },
         "toe": {
           "front": "0.0°",
           "rear": "0.0°"
         },
-        "caster": 7,
-        "hwF": 98,
+        "caster": 7.0,
+        "hwF": 98.0,
         "hwR": 96.3
       },
       "chassis": {
         "arb": {
-          "front": 65,
-          "rear": 65
+          "front": 65.0,
+          "rear": 65.0
         },
         "springs": {
-          "front": 32,
-          "rear": 32,
-          "heightF": 25,
-          "heightR": 25
+          "front": 32.0,
+          "rear": 32.0,
+          "heightF": 25.0,
+          "heightR": 25.0
         },
         "damping": {
-          "reboundF": 3,
-          "reboundR": 12,
-          "bumpF": 12,
-          "bumpR": 4
+          "reboundF": 3.0,
+          "reboundR": 12.0,
+          "bumpF": 12.0,
+          "bumpR": 4.0
         },
         "diff": {
-          "accelF": 0,
-          "decelF": 0,
-          "accelR": 85,
-          "decelR": 0,
-          "centerRear": 50
+          "accelF": 0.0,
+          "decelF": 0.0,
+          "accelR": 85.0,
+          "decelR": 0.0,
+          "centerRear": 50.0
         }
       }
     },
@@ -2508,40 +2508,40 @@
         "targetPhot": 23.5,
         "seasonBias": 0.5,
         "camber": {
-          "front": 0,
+          "front": 0.0,
           "rear": -0.1
         },
         "toe": {
           "front": "0.0°",
           "rear": "0.0°"
         },
-        "caster": 7,
-        "hwF": 98,
+        "caster": 7.0,
+        "hwF": 98.0,
         "hwR": 96.3
       },
       "chassis": {
         "arb": {
-          "front": 65,
-          "rear": 65
+          "front": 65.0,
+          "rear": 65.0
         },
         "springs": {
-          "front": 32,
-          "rear": 32,
-          "heightF": 25,
-          "heightR": 25
+          "front": 32.0,
+          "rear": 32.0,
+          "heightF": 25.0,
+          "heightR": 25.0
         },
         "damping": {
-          "reboundF": 3,
-          "reboundR": 12,
-          "bumpF": 12,
-          "bumpR": 4
+          "reboundF": 3.0,
+          "reboundR": 12.0,
+          "bumpF": 12.0,
+          "bumpR": 4.0
         },
         "diff": {
-          "accelF": 85,
-          "decelF": 0,
-          "accelR": 65,
-          "decelR": 10,
-          "centerRear": 75
+          "accelF": 85.0,
+          "decelF": 0.0,
+          "accelR": 65.0,
+          "decelR": 10.0,
+          "centerRear": 75.0
         }
       }
     },
@@ -2568,8 +2568,8 @@
           "front": "+0.2°",
           "rear": "0.0°"
         },
-        "caster": 6,
-        "hwF": 98,
+        "caster": 6.0,
+        "hwF": 98.0,
         "hwR": 96.3
       },
       "chassis": {
@@ -2578,23 +2578,23 @@
           "rear": 10.7
         },
         "springs": {
-          "front": 45.1,
-          "rear": 39.4,
-          "heightF": 25,
-          "heightR": 25
+          "front": 48.6,
+          "rear": 42.9,
+          "heightF": 25.0,
+          "heightR": 25.0
         },
         "damping": {
           "reboundF": 8.6,
           "reboundR": 7.4,
           "bumpF": 3.4,
-          "bumpR": 3
+          "bumpR": 3.0
         },
         "diff": {
-          "accelF": 60,
-          "decelF": 15,
-          "accelR": 0,
-          "decelR": 0,
-          "centerRear": 50
+          "accelF": 60.0,
+          "decelF": 15.0,
+          "accelR": 0.0,
+          "decelR": 0.0,
+          "centerRear": 50.0
         }
       }
     },
@@ -2621,8 +2621,8 @@
           "front": "+0.2°",
           "rear": "0.0°"
         },
-        "caster": 6,
-        "hwF": 98,
+        "caster": 6.0,
+        "hwF": 98.0,
         "hwR": 96.3
       },
       "chassis": {
@@ -2631,23 +2631,23 @@
           "rear": 10.7
         },
         "springs": {
-          "front": 45.1,
-          "rear": 39.4,
-          "heightF": 25,
-          "heightR": 25
+          "front": 48.6,
+          "rear": 42.9,
+          "heightF": 25.0,
+          "heightR": 25.0
         },
         "damping": {
           "reboundF": 8.6,
           "reboundR": 7.4,
           "bumpF": 3.4,
-          "bumpR": 3
+          "bumpR": 3.0
         },
         "diff": {
-          "accelF": 0,
-          "decelF": 0,
-          "accelR": 75,
-          "decelR": 25,
-          "centerRear": 50
+          "accelF": 0.0,
+          "decelF": 0.0,
+          "accelR": 75.0,
+          "decelR": 25.0,
+          "centerRear": 50.0
         }
       }
     },
@@ -2674,8 +2674,8 @@
           "front": "+0.2°",
           "rear": "0.0°"
         },
-        "caster": 6,
-        "hwF": 98,
+        "caster": 6.0,
+        "hwF": 98.0,
         "hwR": 96.3
       },
       "chassis": {
@@ -2684,23 +2684,23 @@
           "rear": 10.7
         },
         "springs": {
-          "front": 45.1,
-          "rear": 39.4,
-          "heightF": 25,
-          "heightR": 25
+          "front": 48.6,
+          "rear": 42.9,
+          "heightF": 25.0,
+          "heightR": 25.0
         },
         "damping": {
           "reboundF": 8.6,
           "reboundR": 7.4,
           "bumpF": 3.4,
-          "bumpR": 3
+          "bumpR": 3.0
         },
         "diff": {
-          "accelF": 40,
-          "decelF": 10,
-          "accelR": 80,
-          "decelR": 25,
-          "centerRear": 65
+          "accelF": 40.0,
+          "decelF": 10.0,
+          "accelR": 80.0,
+          "decelR": 25.0,
+          "centerRear": 65.0
         }
       }
     },
@@ -2727,8 +2727,8 @@
           "front": "+0.2°",
           "rear": "0.0°"
         },
-        "caster": 6,
-        "hwF": 98,
+        "caster": 6.0,
+        "hwF": 98.0,
         "hwR": 96.3
       },
       "chassis": {
@@ -2737,23 +2737,23 @@
           "rear": 10.7
         },
         "springs": {
-          "front": 45.1,
-          "rear": 39.4,
-          "heightF": 25,
-          "heightR": 25
+          "front": 48.6,
+          "rear": 42.9,
+          "heightF": 25.0,
+          "heightR": 25.0
         },
         "damping": {
           "reboundF": 8.6,
           "reboundR": 7.4,
           "bumpF": 3.4,
-          "bumpR": 3
+          "bumpR": 3.0
         },
         "diff": {
-          "accelF": 60,
-          "decelF": 15,
-          "accelR": 0,
-          "decelR": 0,
-          "centerRear": 50
+          "accelF": 60.0,
+          "decelF": 15.0,
+          "accelR": 0.0,
+          "decelR": 0.0,
+          "centerRear": 50.0
         }
       }
     },
@@ -2780,8 +2780,8 @@
           "front": "+0.2°",
           "rear": "0.0°"
         },
-        "caster": 6,
-        "hwF": 98,
+        "caster": 6.0,
+        "hwF": 98.0,
         "hwR": 96.3
       },
       "chassis": {
@@ -2790,23 +2790,23 @@
           "rear": 10.7
         },
         "springs": {
-          "front": 45.1,
-          "rear": 39.4,
-          "heightF": 25,
-          "heightR": 25
+          "front": 48.6,
+          "rear": 42.9,
+          "heightF": 25.0,
+          "heightR": 25.0
         },
         "damping": {
           "reboundF": 8.6,
           "reboundR": 7.4,
           "bumpF": 3.4,
-          "bumpR": 3
+          "bumpR": 3.0
         },
         "diff": {
-          "accelF": 0,
-          "decelF": 0,
-          "accelR": 75,
-          "decelR": 25,
-          "centerRear": 50
+          "accelF": 0.0,
+          "decelF": 0.0,
+          "accelR": 75.0,
+          "decelR": 25.0,
+          "centerRear": 50.0
         }
       }
     },
@@ -2833,8 +2833,8 @@
           "front": "+0.2°",
           "rear": "0.0°"
         },
-        "caster": 6,
-        "hwF": 98,
+        "caster": 6.0,
+        "hwF": 98.0,
         "hwR": 96.3
       },
       "chassis": {
@@ -2843,23 +2843,23 @@
           "rear": 10.7
         },
         "springs": {
-          "front": 45.1,
-          "rear": 39.4,
-          "heightF": 25,
-          "heightR": 25
+          "front": 48.6,
+          "rear": 42.9,
+          "heightF": 25.0,
+          "heightR": 25.0
         },
         "damping": {
           "reboundF": 8.6,
           "reboundR": 7.4,
           "bumpF": 3.4,
-          "bumpR": 3
+          "bumpR": 3.0
         },
         "diff": {
-          "accelF": 40,
-          "decelF": 10,
-          "accelR": 80,
-          "decelR": 25,
-          "centerRear": 65
+          "accelF": 40.0,
+          "decelF": 10.0,
+          "accelR": 80.0,
+          "decelR": 25.0,
+          "centerRear": 65.0
         }
       }
     },
@@ -2886,8 +2886,8 @@
           "front": "+0.2°",
           "rear": "0.0°"
         },
-        "caster": 6,
-        "hwF": 98,
+        "caster": 6.0,
+        "hwF": 98.0,
         "hwR": 96.3
       },
       "chassis": {
@@ -2896,23 +2896,23 @@
           "rear": 10.7
         },
         "springs": {
-          "front": 45.1,
-          "rear": 39.4,
-          "heightF": 25,
-          "heightR": 25
+          "front": 48.6,
+          "rear": 42.9,
+          "heightF": 25.0,
+          "heightR": 25.0
         },
         "damping": {
           "reboundF": 8.6,
           "reboundR": 7.4,
           "bumpF": 3.4,
-          "bumpR": 3
+          "bumpR": 3.0
         },
         "diff": {
-          "accelF": 60,
-          "decelF": 15,
-          "accelR": 0,
-          "decelR": 0,
-          "centerRear": 50
+          "accelF": 60.0,
+          "decelF": 15.0,
+          "accelR": 0.0,
+          "decelR": 0.0,
+          "centerRear": 50.0
         }
       }
     },
@@ -2939,8 +2939,8 @@
           "front": "+0.2°",
           "rear": "0.0°"
         },
-        "caster": 6,
-        "hwF": 98,
+        "caster": 6.0,
+        "hwF": 98.0,
         "hwR": 96.3
       },
       "chassis": {
@@ -2949,23 +2949,23 @@
           "rear": 10.7
         },
         "springs": {
-          "front": 45.1,
-          "rear": 39.4,
-          "heightF": 25,
-          "heightR": 25
+          "front": 48.6,
+          "rear": 42.9,
+          "heightF": 25.0,
+          "heightR": 25.0
         },
         "damping": {
           "reboundF": 8.6,
           "reboundR": 7.4,
           "bumpF": 3.4,
-          "bumpR": 3
+          "bumpR": 3.0
         },
         "diff": {
-          "accelF": 0,
-          "decelF": 0,
-          "accelR": 75,
-          "decelR": 25,
-          "centerRear": 50
+          "accelF": 0.0,
+          "decelF": 0.0,
+          "accelR": 75.0,
+          "decelR": 25.0,
+          "centerRear": 50.0
         }
       }
     },
@@ -2992,8 +2992,8 @@
           "front": "+0.2°",
           "rear": "0.0°"
         },
-        "caster": 6,
-        "hwF": 98,
+        "caster": 6.0,
+        "hwF": 98.0,
         "hwR": 96.3
       },
       "chassis": {
@@ -3002,23 +3002,23 @@
           "rear": 10.7
         },
         "springs": {
-          "front": 45.1,
-          "rear": 39.4,
-          "heightF": 25,
-          "heightR": 25
+          "front": 48.6,
+          "rear": 42.9,
+          "heightF": 25.0,
+          "heightR": 25.0
         },
         "damping": {
           "reboundF": 8.6,
           "reboundR": 7.4,
           "bumpF": 3.4,
-          "bumpR": 3
+          "bumpR": 3.0
         },
         "diff": {
-          "accelF": 40,
-          "decelF": 10,
-          "accelR": 80,
-          "decelR": 25,
-          "centerRear": 65
+          "accelF": 40.0,
+          "decelF": 10.0,
+          "accelR": 80.0,
+          "decelR": 25.0,
+          "centerRear": 65.0
         }
       }
     },
@@ -3045,8 +3045,8 @@
           "front": "+0.2°",
           "rear": "0.0°"
         },
-        "caster": 6,
-        "hwF": 98,
+        "caster": 6.0,
+        "hwF": 98.0,
         "hwR": 96.3
       },
       "chassis": {
@@ -3055,23 +3055,23 @@
           "rear": 10.7
         },
         "springs": {
-          "front": 45.1,
-          "rear": 39.4,
-          "heightF": 25,
-          "heightR": 25
+          "front": 48.6,
+          "rear": 42.9,
+          "heightF": 25.0,
+          "heightR": 25.0
         },
         "damping": {
           "reboundF": 8.6,
           "reboundR": 7.4,
           "bumpF": 3.4,
-          "bumpR": 3
+          "bumpR": 3.0
         },
         "diff": {
-          "accelF": 60,
-          "decelF": 15,
-          "accelR": 0,
-          "decelR": 0,
-          "centerRear": 50
+          "accelF": 60.0,
+          "decelF": 15.0,
+          "accelR": 0.0,
+          "decelR": 0.0,
+          "centerRear": 50.0
         }
       }
     },
@@ -3098,8 +3098,8 @@
           "front": "+0.2°",
           "rear": "0.0°"
         },
-        "caster": 6,
-        "hwF": 98,
+        "caster": 6.0,
+        "hwF": 98.0,
         "hwR": 96.3
       },
       "chassis": {
@@ -3108,23 +3108,23 @@
           "rear": 10.7
         },
         "springs": {
-          "front": 45.1,
-          "rear": 39.4,
-          "heightF": 25,
-          "heightR": 25
+          "front": 48.6,
+          "rear": 42.9,
+          "heightF": 25.0,
+          "heightR": 25.0
         },
         "damping": {
           "reboundF": 8.6,
           "reboundR": 7.4,
           "bumpF": 3.4,
-          "bumpR": 3
+          "bumpR": 3.0
         },
         "diff": {
-          "accelF": 0,
-          "decelF": 0,
-          "accelR": 75,
-          "decelR": 25,
-          "centerRear": 50
+          "accelF": 0.0,
+          "decelF": 0.0,
+          "accelR": 75.0,
+          "decelR": 25.0,
+          "centerRear": 50.0
         }
       }
     },
@@ -3151,8 +3151,8 @@
           "front": "+0.2°",
           "rear": "0.0°"
         },
-        "caster": 6,
-        "hwF": 98,
+        "caster": 6.0,
+        "hwF": 98.0,
         "hwR": 96.3
       },
       "chassis": {
@@ -3161,23 +3161,23 @@
           "rear": 10.7
         },
         "springs": {
-          "front": 45.1,
-          "rear": 39.4,
-          "heightF": 25,
-          "heightR": 25
+          "front": 48.6,
+          "rear": 42.9,
+          "heightF": 25.0,
+          "heightR": 25.0
         },
         "damping": {
           "reboundF": 8.6,
           "reboundR": 7.4,
           "bumpF": 3.4,
-          "bumpR": 3
+          "bumpR": 3.0
         },
         "diff": {
-          "accelF": 40,
-          "decelF": 10,
-          "accelR": 80,
-          "decelR": 25,
-          "centerRear": 65
+          "accelF": 40.0,
+          "decelF": 10.0,
+          "accelR": 80.0,
+          "decelR": 25.0,
+          "centerRear": 65.0
         }
       }
     },
@@ -3208,17 +3208,17 @@
           "rear": "-0.1°"
         },
         "caster": 6.1,
-        "hwF": 98,
+        "hwF": 98.0,
         "hwR": 96.3
       },
       "chassis": {
         "arb": {
           "front": 3.2,
-          "rear": 50
+          "rear": 50.0
         },
         "springs": {
           "front": 0.8,
-          "rear": 63,
+          "rear": 63.0,
           "heightF": 0.9,
           "heightR": 11.5
         },
@@ -3229,11 +3229,11 @@
           "bumpR": 5.8
         },
         "diff": {
-          "accelF": 15,
-          "decelF": 0,
-          "accelR": 75,
-          "decelR": 15,
-          "centerRear": 66
+          "accelF": 15.0,
+          "decelF": 0.0,
+          "accelR": 75.0,
+          "decelR": 15.0,
+          "centerRear": 66.0
         }
       }
     },
@@ -3264,17 +3264,17 @@
           "rear": "-0.1°"
         },
         "caster": 6.1,
-        "hwF": 98,
+        "hwF": 98.0,
         "hwR": 96.3
       },
       "chassis": {
         "arb": {
           "front": 3.2,
-          "rear": 50
+          "rear": 50.0
         },
         "springs": {
           "front": 76.9,
-          "rear": 63,
+          "rear": 63.0,
           "heightF": 11.5,
           "heightR": 11.5
         },
@@ -3285,11 +3285,11 @@
           "bumpR": 5.8
         },
         "diff": {
-          "accelF": 15,
-          "decelF": 0,
-          "accelR": 75,
-          "decelR": 15,
-          "centerRear": 66
+          "accelF": 15.0,
+          "decelF": 0.0,
+          "accelR": 75.0,
+          "decelR": 15.0,
+          "centerRear": 66.0
         }
       }
     },
@@ -3320,18 +3320,18 @@
           "rear": "-0.1°"
         },
         "caster": 6.1,
-        "hwF": 98,
+        "hwF": 98.0,
         "hwR": 96.3
       },
       "chassis": {
         "arb": {
           "front": 3.2,
-          "rear": 50
+          "rear": 50.0
         },
         "springs": {
-          "front": 25,
-          "rear": 63,
-          "heightF": 20,
+          "front": 25.0,
+          "rear": 63.0,
+          "heightF": 20.0,
           "heightR": 11.5
         },
         "damping": {
@@ -3341,11 +3341,11 @@
           "bumpR": 5.8
         },
         "diff": {
-          "accelF": 15,
-          "decelF": 0,
-          "accelR": 75,
-          "decelR": 15,
-          "centerRear": 66
+          "accelF": 15.0,
+          "decelF": 0.0,
+          "accelR": 75.0,
+          "decelR": 15.0,
+          "centerRear": 66.0
         }
       }
     },
@@ -3375,8 +3375,8 @@
           "front": "+0.2°",
           "rear": "0.0°"
         },
-        "caster": 6,
-        "hwF": 98,
+        "caster": 6.0,
+        "hwF": 98.0,
         "hwR": 96.3
       },
       "chassis": {
@@ -3385,8 +3385,8 @@
           "rear": 9.7
         },
         "springs": {
-          "front": 0.3,
-          "rear": 39.4,
+          "front": 0.4,
+          "rear": 42.9,
           "heightF": 0.8,
           "heightR": 22.8
         },
@@ -3394,14 +3394,14 @@
           "reboundF": 8.6,
           "reboundR": 7.4,
           "bumpF": 3.4,
-          "bumpR": 3
+          "bumpR": 3.0
         },
         "diff": {
-          "accelF": 40,
-          "decelF": 10,
-          "accelR": 80,
-          "decelR": 25,
-          "centerRear": 65
+          "accelF": 40.0,
+          "decelF": 10.0,
+          "accelR": 80.0,
+          "decelR": 25.0,
+          "centerRear": 65.0
         }
       }
     },
@@ -3431,8 +3431,8 @@
           "front": "+0.2°",
           "rear": "0.0°"
         },
-        "caster": 6,
-        "hwF": 98,
+        "caster": 6.0,
+        "hwF": 98.0,
         "hwR": 96.3
       },
       "chassis": {
@@ -3441,8 +3441,8 @@
           "rear": 9.7
         },
         "springs": {
-          "front": 45.1,
-          "rear": 39.4,
+          "front": 48.6,
+          "rear": 42.9,
           "heightF": 22.8,
           "heightR": 22.8
         },
@@ -3450,14 +3450,14 @@
           "reboundF": 8.6,
           "reboundR": 7.4,
           "bumpF": 3.4,
-          "bumpR": 3
+          "bumpR": 3.0
         },
         "diff": {
-          "accelF": 40,
-          "decelF": 10,
-          "accelR": 80,
-          "decelR": 25,
-          "centerRear": 65
+          "accelF": 40.0,
+          "decelF": 10.0,
+          "accelR": 80.0,
+          "decelR": 25.0,
+          "centerRear": 65.0
         }
       }
     },
@@ -3487,8 +3487,8 @@
           "front": "+0.2°",
           "rear": "0.0°"
         },
-        "caster": 6,
-        "hwF": 98,
+        "caster": 6.0,
+        "hwF": 98.0,
         "hwR": 96.3
       },
       "chassis": {
@@ -3497,23 +3497,23 @@
           "rear": 9.7
         },
         "springs": {
-          "front": 25,
-          "rear": 39.4,
-          "heightF": 20,
+          "front": 25.0,
+          "rear": 42.9,
+          "heightF": 20.0,
           "heightR": 22.8
         },
         "damping": {
           "reboundF": 8.6,
           "reboundR": 7.4,
           "bumpF": 3.4,
-          "bumpR": 3
+          "bumpR": 3.0
         },
         "diff": {
-          "accelF": 40,
-          "decelF": 10,
-          "accelR": 80,
-          "decelR": 25,
-          "centerRear": 65
+          "accelF": 40.0,
+          "decelF": 10.0,
+          "accelR": 80.0,
+          "decelR": 25.0,
+          "centerRear": 65.0
         }
       }
     }

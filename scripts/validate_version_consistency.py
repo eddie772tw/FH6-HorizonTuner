@@ -4,8 +4,9 @@ from __future__ import annotations
 
 import json
 import re
-import tomllib
 from pathlib import Path
+
+import tomllib
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 VERSION_PATTERN = re.compile(r"^\d+\.\d+\.\d+$")
