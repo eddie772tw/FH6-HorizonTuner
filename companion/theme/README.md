@@ -24,7 +24,7 @@ Native `HorizonTunerCompanionTheme` 僅提供 `themeBootstrap()` 與 `updateVisu
 | Halfmoon 實色 tabs、Swiss 底線、Rhine 刻度／底線 | 集中 navigation tokens；shell 只呈現 |
 | 成功／警告／錯誤 | `StatusColors`，不受三色預設改寫 |
 
-Halfmoon 保留透明表面與圓角，Swiss 使用實色、細框與各核心的形狀，Rhine 使用獨立紙面／石板色及控制項 border。Native 背景以 CSS 的 gradient 端點呈現，但沒有實作 CSS backdrop blur、radial anchor 或 Rhine 分頁動畫。
+Halfmoon 保留透明表面與圓角，Swiss 使用實色、細框與各核心的形狀，Rhine 使用獨立紙面／石板色及控制項 border。`Background.kt` 將 Halfmoon 夜間三核心映射為 size-aware farthest-corner 橢圓與各自角落 anchor，日間保持 135deg linear；shell 共用一次背景繪製。`Navigation.kt` 集中 Rhine 左侧 marker、底線 geometry／target／motion，shell 以 selection、hover、keyboard focus 驅動 draw，沿用 Compose 的系統 duration scale。CSS backdrop blur 與 MiSans 原始資源驗證仍是殘留；完整前後差異、可行性、測試及 NOT_RUN 裝置矩陣見[背景／Rhine 導覽切片](../../docs/frontend/companion-native-theme-parity/README.md)，不宣稱 native／WebView 像素等價或永久接受 fallback。
 
 Typography 的 15 個 Material roles 均設定 family 與 `"tnum" 1, "lnum" 1`，與 `base.css` body 的數字特性繼承相符。heading／control／readout-label 各自保留 CSS 的 em tracking；Swiss Technical heading `.04em` 與 control `.025em` 分離。Shell 的標題、primary／outline buttons、selected tabs、badge、body、supporting、field 與 diagnostics 使用對應 roles。diagnostics 的 dt/dd 是 body，不套用 instrument label 的大寫／字距；目前 shell 沒有原生遙測儀表，readout roles 供儀表用途，不改調校或新增 UI。
 

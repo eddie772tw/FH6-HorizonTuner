@@ -1,5 +1,13 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-10-12 / Companion 橢圓背景與 Rhine 導覽（Codex as Codex）
+
+- **Scope**：由 main `c1e86317` 建立 `codex/issue-485-native-theme-parity`；採用 `halfmoon-design-system`、`pr-author-maintainer`、`cross-agent-collaboration`。限原生 Halfmoon background、Rhine marker／underline 與相應測試／[差異矩陣](../docs/frontend/companion-native-theme-parity/README.md)，不改 Gradle、release、CI、字型或 bridge。
+- **Learning**：CSS corner ellipse 的 farthest-corner 半徑為 `width×√2`／`height×√2`，需要兩軸獨立縮放；日間 135deg 也不能用矩形端點對角線冒充固定角度。原生頁各自繪製背景會重新定位 anchor；只在 shell 繪製並隱藏已掛載的 WebView pixels，可避免 alpha 面板露出舊 document，無需重建 WebView。alpha 並非輸入／焦點／accessibility 隔離，相關裝置驗收仍需實測。
+- **Motion**：已核對 Compose 1.9.4 的 WindowRecomposer sources，其 coroutine context 會動態接收 `ANIMATOR_DURATION_SCALE`。Rhine tween 沿用此倍率，不另讀 Settings、不重複乘 duration；animation State 只在 draw 讀取，marker／underline 不改文字或量測。
+- **Evidence**：本地完整 Vitest 1,785 passed／1 skipped、TypeScript／Windows profile production build 通過；Gradle protocol 5 tests 通過。Kotlin 2.2.21／Compose compiler、實際 Android AAR 與 android-all 的 JVM 編譯及 theme／ThemeSession 22 tests 通過（shell compile-only 使用 Activity enums／BuildConfig／R 的最小 stubs；不是 MainActivity／Android Gradle build）。獨立 reviewer 核對 CSS、實際 1.9.4 sources、分層與文件，無阻塞 findings；最終 published head／CI actual checkout／tree 結果保存於 Draft PR，不引用舊 main CI。
+- **Boundary**：本地 Android unit／lint／assemble 因 SDK location not found 未執行，未下載 SDK 或接受新條款。MiSans 原始資產／授權與 Halfmoon backdrop blur 均明列殘留，不作永久降級決定。Android／WebView／TalkBack／native＋Web 同框／GPU／實機矩陣全部 NOT_RUN；純 JVM、前端或 APK 建置均不代替裝置驗收。
+
 ## 2026-10-12 / 底盤 PR 的既有 CI 阻擋修復（Mihaly as Codex）
 
 - **Scope**：沿用 `pr-author-maintainer`、`ponytail`、`halfmoon-design-system`；修復 PR #515 從 main 繼承的 Ruff 排序及 R34 間距失敗，不調整底盤定案。
