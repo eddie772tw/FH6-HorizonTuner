@@ -920,3 +920,15 @@
 - **Evidence**：Rust 新增 cold discovery／raw read／restart、未知與損壞 schema／envelope、非法 ID 和 stale 身分／設定契約；mounted provider 測試驗證空白獨立確認、保存傳輸、live identity、A→B→A 與過期回覆。完整命令與結果見 Draft PR 及 `docs/tuning/cvt-evidence-selection.md`。
 - **Boundary**：沿用現有保存／資格與 Rust owner，不變更 #515 公式或全局選車入口，不新增 live recorder／solver。WAL 輔助檔生命週期不等於主庫改寫；缺庫／壞庫仍核對完整檔案 snapshot。真實 CVT、設備與瀏覽器視覺 gate 為 NOT_RUN；既有 Chromium sandbox 配置未變。
 - **Skills**：`cross-agent-collaboration`、`physics-tuning-math`、`halfmoon-design-system`、`pr-author-maintainer`。
+
+## 2026-10-12 / Ruff target-version 鎖定與 tomllib 標準庫排序一致性修復（Gemini as Antigravity）
+
+- **來源／狀態**：`local`／`verified`；修復 main 分支 CI `Backend Lint & Static Check` 因 `I001` (isort) 導入區塊排序錯誤而失敗之問題。
+- **Learning**：
+  1. **Ruff 預設 target-version 與 Python 3.11+ 標準庫識別**：若 `pyproject.toml` 中未明訂 `[tool.ruff]` 的 `target-version`，Ruff 在無專案環境下預設推斷版本低於 Python 3.11，會誤將 Python 3.11 起納入標準庫之 `tomllib` 識別為第三方套件（Third-party package），致使排序分離；而在 CI 之 managed Python 3.13 環境下，Ruff 依據 3.13 將 `tomllib` 視為標準庫模組，要求其與 `sys`, `zipfile`, `from pathlib import Path` 緊鄰排列並依字母順序排序。
+  2. **pyproject.toml 明確鎖定契約**：在 `[tool.ruff]` 中明確指定 `target-version = "py313"`，徹底消除跨環境（本地 vs CI）對 Python 標準庫模組判定之歧義，使全域 `ruff check` 與 isort 一致化。
+- **Action**：
+  1. 修改 `pyproject.toml`：於 `[tool.ruff]` 追加 `target-version = "py313"`。
+  2. 修改 `scripts/build_companion_apk.py` 與 `scripts/validate_version_consistency.py`：將 `import tomllib` 依字母順序收整至標準庫 import 區塊。
+- **Evidence**：本地 `uv run --no-project ruff check .` 與 `uv run --no-project ruff format --check .` 通過；`uv run --no-project pytest scripts/tests/` 97 passed；GitHub Actions CI Pipeline run `38257562846` 之 `Backend Lint & Static Check` (11s) 與 `Frontend Build Test & Audit` (19s) 均通過轉綠。
+- **Skills**：`agent-governance-audit`、`modular-refactoring`。
