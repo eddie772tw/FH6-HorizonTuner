@@ -8,6 +8,7 @@ import type { EvGearingResult } from '../../../domain/tuning/ev/types';
 import { useTuneSession } from '../TuneSessionProvider';
 import { captureSaveRequest } from '../captureDownload';
 import { EvGearboxSetup } from './EvGearboxSetup';
+import { EvEvidencePanel } from './EvEvidencePanel';
 
 export function EvPowertrainStep({ enabled }: { enabled: boolean }) {
   const { t } = useSettings();
@@ -45,15 +46,17 @@ export function EvPowertrainStep({ enabled }: { enabled: boolean }) {
       <EvGearboxSetup key={carId} value={setup} disabled={recording || saving} t={t}
         onChange={evGearbox => carParams && setCarParams({ ...carParams, evGearbox })} />
     </div>
+    <EvEvidencePanel t={t} />
     <div className="glass-panel p-3">
       <div role="status" aria-live="polite" style={{ minHeight: '3rem' }}>
-        {offline ? t('Offline selection does not supply live telemetry. Follow Data Out to collect new data.') : error || m.calculationError ? t(error || m.calculationError!) : m.phase === 'invalidated' ? t('The vehicle, build or driving session changed. Restart EV collection.') :
+        {offline ? t('Offline selection does not supply live telemetry. Follow Data Out to collect new data.') : error || m.calculationError ? t(error || m.calculationError!) : m.transportError ? t('EV measurement transport is unavailable. Pending frames are retained; retrying.') : m.phase === 'invalidated' ? t('The vehicle, build or driving session changed. Restart EV collection.') :
           !isConnected ? t('Connect the game and enable Data Out to start receiving driving data.') :
           setupValidation.status === 'error' ? t('Tuning calculation is unavailable. Retrying…') :
           setupValidation.status === 'pending' ? t('Calculating tuning results…') :
           !setupValid ? t('Confirm the current EV gearbox before recording.') :
           t(recording ? 'EV collection is active. You can switch to the game now.' : result ? 'EV calculation is ready.' : 'Pause collection after all gear runs, then calculate the EV baseline.')}
         <div className="small text-body-secondary">{t('Collected frames')}: {m.sampleCount} / 30000 · {t(m.phase)}</div>
+        {m.warnings?.map(reason => <div className="small text-body-secondary" key={reason}>{t(reason)}</div>)}
       </div>
       <div className="table-responsive">
         <table className="table table-sm">
@@ -62,7 +65,8 @@ export function EvPowertrainStep({ enabled }: { enabled: boolean }) {
             const g = m.state.gears.find(v => v.gear === i + 1);
             return <tr key={i}><th>{i + 1}</th><td>{((g?.acceptedMs ?? 0) / 1000).toFixed(1)} s</td>
               <td>{g ? Math.round(g.lowestRpm) + '–' + Math.round(g.highestRpm) : '—'}</td>
-              <td>{g?.zeroOutputSamples ?? 0}</td><td>{t(g && m.readyGears?.includes(g.gear) ? 'Collected' : 'Still needed')}</td></tr>;
+              <td>{g?.zeroOutputSamples ?? 0}</td><td>{t(g && m.readyGears?.includes(g.gear) ? 'Collected' : 'Still needed')}
+                {m.diagnostics?.find(d => d.gear === i + 1)?.reasons.map(reason => <div className="small" key={reason}>{t(reason)}</div>)}</td></tr>;
           })}</tbody>
         </table>
       </div>
@@ -70,7 +74,7 @@ export function EvPowertrainStep({ enabled }: { enabled: boolean }) {
       <div className="d-flex flex-wrap gap-2">
         <button className="btn btn-primary" disabled={offline || !enabled || !setupValid || recording || saving}
           onClick={() => void start()}>{t(m.sampleCount ? 'Restart EV collection' : 'Start EV collection')}</button>
-        <button className="btn btn-outline-secondary" disabled={!['collecting', 'paused'].includes(m.phase)}
+        <button className="btn btn-outline-secondary" disabled={m.source === 'saved' || !['collecting', 'paused'].includes(m.phase)}
           onClick={m.pauseOrResume}>{t(recording ? 'Pause collection' : 'Resume collection')}</button>
         <button className="btn btn-outline-secondary" disabled={!m.sampleCount || isSaving}
           onClick={() => void save(captureSaveRequest(m.snapshot(), 'ev-measurement.json'))}>{t('Export EV data')}</button>

@@ -14,6 +14,7 @@ vi.mock('../../../hooks/useTelemetry', () => ({ useTelemetry: () => ({ isConnect
 vi.mock('../../../hooks/useFileSave', () => ({ useFileSave: () => ({ save: vi.fn(), isSaving: false }) }));
 vi.mock('../TuneSessionProvider', () => ({ useTuneSession: () => ({ profile: { evGearbox: fixture.setup }, evMeasurement: { key: 'paused-scan', phase: 'paused', state: fixture.state, pendingSamples: 0, readyGears: [1], result: null, sampleCount: 1000, calculate: fixture.calculate, restart: vi.fn(), pauseOrResume: vi.fn() } }) }));
 vi.mock('../../../services/backend', () => ({ backendFetch: vi.fn() }));
+vi.mock('./EvEvidencePanel', () => ({ EvEvidencePanel: () => null }));
 const host = document.createElement('div');
 let root: ReturnType<typeof createRoot>;
 afterEach(async () => { if (root) await act(async () => root.unmount()); vi.useRealTimers(); });

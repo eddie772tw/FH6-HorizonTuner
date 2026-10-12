@@ -7,7 +7,7 @@ import { useWorkflowCalculation } from './useWorkflowCalculation';
 import { backendFetch } from '../../services/backend';
 vi.mock('../../services/backend', () => ({ backendFetch: vi.fn() }));
 const fetchMock = vi.mocked(backendFetch);
-const good = (tag: string) => ({ ok: true, json: async () => ({ schemaVersion: 'tuning-workflow-result/v2', tag }) }) as Response;
+const good = (tag: string, schemaVersion = 'tuning-workflow-result/v2') => ({ ok: true, json: async () => ({ schemaVersion, tag }) }) as Response;
 let root: Root; let host: HTMLDivElement;
 const profile = { weight: 1300, weight_distribution: 54 } as CarParams;
 function Probe({ carId, weight = 1300, goal = 'Road', electric = false, capture = 'capture1', cvt = false, aero = {} }: { carId: string; weight?: number; goal?: string; electric?: boolean; capture?: string; cvt?: boolean; aero?: Partial<CarParams> }) {
@@ -27,7 +27,8 @@ it('invalidates goal, mode and capture revisions and rejects their late replies'
   await act(async()=>root.render(<Probe carId="1" goal="Rally" electric />));
   await act(async()=>root.render(<Probe carId="1" goal="Rally" electric capture="new-capture" />));
   expect(host.textContent).toBe('pending:null');
-  await act(async()=>pending[3](good('new-EV-capture')));expect(host.textContent).toContain('new-EV-capture');
+  expect(JSON.parse(fetchMock.mock.calls[3][1]!.body as string).schemaVersion).toBe('tuning-workflow-result/v3');
+  await act(async()=>pending[3](good('new-EV-capture','tuning-workflow-result/v3')));expect(host.textContent).toContain('new-EV-capture');
   for(const resolve of pending.slice(0,3)) {
     await act(async()=>resolve(good('stale-evidence')));expect(host.textContent).not.toContain('stale-evidence');
   }

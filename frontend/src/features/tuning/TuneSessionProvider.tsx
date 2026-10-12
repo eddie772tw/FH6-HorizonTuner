@@ -177,7 +177,7 @@ export function TuneSessionProvider({ children }: { children: ReactNode }) {
   const setupContext = JSON.stringify([staticProfileJson, baseline.fields, selectionGeneration]);
   const setupContextRef = useRef(setupContext);
   setupContextRef.current = setupContext;
-  const evMeasurement = useEvMeasurementSession(carId, profile, data, setupContext, !offlineSelectionRef.current);
+  const evMeasurement = useEvMeasurementSession(carId, profile, data, setupContext, isConnected, !offlineSelectionRef.current);
   const identityTokenRef = useRef<TuneAsyncToken>({ generation: 0, identity });
 
   const [developerStep, setDeveloperStep] = useState(1);
@@ -564,12 +564,16 @@ export function TuneSessionProvider({ children }: { children: ReactNode }) {
   const prepared = (hasProducedGearing || selectedEngineObservationMatchesLiveTelemetry(carId, engine.current, data)) ? engine.current : null;
   const calculation = prepared && engine.calculation?.status === 'ready' ? engine.calculation : null;
   const evidenceContext = JSON.stringify([carId, staticProfileJson, identityGeneration, baseline.fields, selectionGeneration]);
-  const evidenceCurrent = useEvidenceContext(evidenceContext, profile?.isElectric ? evMeasurement.evidenceId ?? null : engine.observation?.id ?? null);
+  // Only an explicit EV confirmation/reselection creates a new lifetime for the same immutable raw ID.
+  const evidenceCurrent = useEvidenceContext(evidenceContext, profile?.isElectric
+    ? evMeasurement.evidenceId ? JSON.stringify([evMeasurement.evidenceId, evMeasurement.evidenceLifetime]) : null
+    : engine.observation?.id ?? null);
   const inputSnapshot = useMemo(() => ({ carId, goal, season, profile,
     ...(usesCvt(profile) ? { transmissionModel: 'cvt-foundation/v1' } : profile?.isElectric
-      ? { powertrainModel: 'ev/v1', evMeasurement: evMeasurement.state, evResult: evMeasurement.result, evEvidence: evidenceCurrent && evMeasurement.evidenceId ? { kind: 'saved-ev', evidenceId: evMeasurement.evidenceId } : null }
+      ? { powertrainModel: 'ev/v1', evMeasurement: evMeasurement.state, evResult: evMeasurement.result, evEvidence: evidenceCurrent && evMeasurement.evidenceId ? { kind: 'saved-ev', evidenceId: evMeasurement.evidenceId } : null,
+        ...(evMeasurement.confirmation ? { evEvidenceConfirmation: evMeasurement.confirmation } : {}) }
       : { powertrainModel: 'ice', engineObservation: evidenceCurrent && engine.observation ? { ...engine.observation, capture: undefined } : null, engineCalculation: calculation }),
-  }), [carId, goal, season, profile, engine.observation, calculation, evMeasurement.result, evMeasurement.evidenceId, evidenceCurrent]);
+  }), [carId, goal, season, profile, engine.observation, calculation, evMeasurement.result, evMeasurement.evidenceId, evMeasurement.confirmation, evidenceCurrent]);
   const { result, status: calculationStatus } = useWorkflowCalculation(carId, goal, season, profile, calculation ? {
     engineMaxRpm: calculation.engineMaxRpm!, peakPowerRpm: calculation.peakPower!.rpm,
     peakTorqueRpm: calculation.peakTorque!.rpm, peakTorqueNm: calculation.peakTorque!.value,

@@ -1,0 +1,245 @@
+{
+  "schema_version": 1,
+  "status": "NOT_RUN",
+  "evidence_kind": "tracked_source_inventory",
+  "revision": "c1e86317b43aa328a075760e3f6d683dc179583b",
+  "tree": "5ff98b547e0d49b9e4a1a7d33018f96375e908ff",
+  "counts": {
+    "java": 2,
+    "kotlin_build_script": 5,
+    "kotlin_production_app": 6,
+    "kotlin_production_protocol-core": 10,
+    "kotlin_production_theme": 6,
+    "kotlin_test": 9
+  },
+  "sources": [
+    {
+      "path": "companion/app/build.gradle.kts",
+      "category": "kotlin_build_script",
+      "git_blob": "b6f6928cf362bc7675b39ae99b67ae736747abd3",
+      "sha256": "a437a41e08c9c5eca4327895b8a2d1257edb2ce6fb5d3beb6ffb2067fd26ed24"
+    },
+    {
+      "path": "companion/app/src/main/kotlin/org/horizontuner/companion/app/CompanionShell.kt",
+      "category": "kotlin_production_app",
+      "git_blob": "1ad56da06bab9f65564197009403f0cdd6c50c9a",
+      "sha256": "c31dabc7a28f76e5c1d067108cb1bafb997f730d2217f87a6cbbf0347191d175"
+    },
+    {
+      "path": "companion/app/src/main/kotlin/org/horizontuner/companion/app/FontNotices.kt",
+      "category": "kotlin_production_app",
+      "git_blob": "778f31e8e5477e441409406c2eee6bb5e7843336",
+      "sha256": "5ce53b4dfd9467195079566503eeb9a722e31f0845afbe379916eebfb1924f01"
+    },
+    {
+      "path": "companion/app/src/main/kotlin/org/horizontuner/companion/app/LanQrScanner.kt",
+      "category": "kotlin_production_app",
+      "git_blob": "297a906a16448c62e4b76e202f3ecc6ce3ad3f28",
+      "sha256": "5e7a5429799f43613c318b928875c52307da33ef30c6905d4ce2e28a48903f47"
+    },
+    {
+      "path": "companion/app/src/main/kotlin/org/horizontuner/companion/app/MainActivity.kt",
+      "category": "kotlin_production_app",
+      "git_blob": "9584489134b7cd3135d883207e18130af6c37f8c",
+      "sha256": "af84cfe9a9a4246fbeb7ae41d40be3b44f4493403a2c35626b3752dfb59c6fc5"
+    },
+    {
+      "path": "companion/app/src/main/kotlin/org/horizontuner/companion/app/ThemeSession.kt",
+      "category": "kotlin_production_app",
+      "git_blob": "fe575c6b9cda8b12e4119db2a4d481a5b0889f00",
+      "sha256": "f84e1fb8df811e3b07a516fb19b5a7d847133c86939efe0ce157d3eef9bd3b7a"
+    },
+    {
+      "path": "companion/app/src/main/kotlin/org/horizontuner/companion/app/service/TelemetryForegroundService.kt",
+      "category": "kotlin_production_app",
+      "git_blob": "3d92e9f873ca328b9c2adeaa14cc5830b48d6c0d",
+      "sha256": "ed2e402f878f9a491800217938179500f366ad5f4962f0b41f8847ba3a1fbe4d"
+    },
+    {
+      "path": "companion/app/src/test/kotlin/org/horizontuner/companion/app/ThemeSessionTest.kt",
+      "category": "kotlin_test",
+      "git_blob": "c561faba71bd1b878d9c3b830ca89262f8774599",
+      "sha256": "efa3248231c28979ca4d8232909b4c356bcabd262be7752073ec6c1b6bfcbcfd"
+    },
+    {
+      "path": "companion/build.gradle.kts",
+      "category": "kotlin_build_script",
+      "git_blob": "40a67d73423028acae81120d02f460d83fa7bc2e",
+      "sha256": "fc9728ced64c48e22bee41068b2534b965df52cbc890e09a6f17c0117e0dfe0c"
+    },
+    {
+      "path": "companion/protocol-core/build.gradle.kts",
+      "category": "kotlin_build_script",
+      "git_blob": "af23390904e29e01b468daf74260440eeacce2d4",
+      "sha256": "87a1d16d02448fd561eb83208f7a1a2f1988af390a236db08550829d66aa65ac"
+    },
+    {
+      "path": "companion/protocol-core/src/main/kotlin/org/horizontuner/companion/core/connection/ConnectionStateMachine.kt",
+      "category": "kotlin_production_protocol-core",
+      "git_blob": "fe846bbed11888d2b95c009f0d8c9db05995bc10",
+      "sha256": "5f186567a236638800c33bb78e6e35fbb6f6dc3c15f088fd85bc43c8b9f7f448"
+    },
+    {
+      "path": "companion/protocol-core/src/main/kotlin/org/horizontuner/companion/core/connection/HeartbeatWatchdog.kt",
+      "category": "kotlin_production_protocol-core",
+      "git_blob": "f8aafa217db31afef1e6b38f860c55c812c931ec",
+      "sha256": "33893ba3fd726986a2b7f9b1e44bab5f1844727c15336c4cc08d9fe0c12b16dd"
+    },
+    {
+      "path": "companion/protocol-core/src/main/kotlin/org/horizontuner/companion/core/decoder/ForzaPacketDecoder.kt",
+      "category": "kotlin_production_protocol-core",
+      "git_blob": "ceb53d897513ca86d2db0f8a8720ea3d19f1cc88",
+      "sha256": "bb3a93efa8a9ef1476daac46829b5c5842d53fd41e525572fa9c47a6c8a388f9"
+    },
+    {
+      "path": "companion/protocol-core/src/main/kotlin/org/horizontuner/companion/core/hud/HudCacheContract.kt",
+      "category": "kotlin_production_protocol-core",
+      "git_blob": "872c03ed9807b7ffef65635d5009cfc5ef2da357",
+      "sha256": "252aef1f665a8d0e3e0ddc4d6c5963658aa8fa15ee5d6d1d71a22dc47e2d95b3"
+    },
+    {
+      "path": "companion/protocol-core/src/main/kotlin/org/horizontuner/companion/core/model/ForzaTelemetryPacket.kt",
+      "category": "kotlin_production_protocol-core",
+      "git_blob": "324e99ee1d46f5cd03da2fbc718d43667f734d0e",
+      "sha256": "823c6c8dc57d363c2996e18befafee7caeb4a2a6419a08ff0a742c42fc874ed1"
+    },
+    {
+      "path": "companion/protocol-core/src/main/kotlin/org/horizontuner/companion/core/transport/ITransport.kt",
+      "category": "kotlin_production_protocol-core",
+      "git_blob": "57f9084fe4b024f5e6f738a6d27f182d7efff90d",
+      "sha256": "42e3e6028a702cc8b352561b5131624ea5c03c9350df27053e3a25d6b601d2f3"
+    },
+    {
+      "path": "companion/protocol-core/src/main/kotlin/org/horizontuner/companion/core/transport/RfcommTransport.kt",
+      "category": "kotlin_production_protocol-core",
+      "git_blob": "328a09b20c53891859be584b31b57d5bbeb395e9",
+      "sha256": "0b2c33f5b535825a1a67b8acd020dab127edef3a01fc552a7c8ad05b6cef2342"
+    },
+    {
+      "path": "companion/protocol-core/src/main/kotlin/org/horizontuner/companion/core/transport/TransportState.kt",
+      "category": "kotlin_production_protocol-core",
+      "git_blob": "1d86e31b3037ad319472939a85be040e79599141",
+      "sha256": "2f4305cf61d7f14e0481049d5d347896a0a5b4df74caa1e4e2462ed47634a472"
+    },
+    {
+      "path": "companion/protocol-core/src/main/kotlin/org/horizontuner/companion/core/transport/UsbAdbTransport.kt",
+      "category": "kotlin_production_protocol-core",
+      "git_blob": "3a14964e767a2e9e7d4154d9707ad4c0c5198f67",
+      "sha256": "79b5f4e57e08feb4fbff23e24e0f0008f7cacb60560a4bf0e4b11f4098555b7f"
+    },
+    {
+      "path": "companion/protocol-core/src/main/kotlin/org/horizontuner/companion/core/transport/WebSocketTransport.kt",
+      "category": "kotlin_production_protocol-core",
+      "git_blob": "664d4bf027687eedeab331fd4cd6bff37a6af4d7",
+      "sha256": "1b9446ecf0803480f9f76d2c9281c75541e9bab4f5345e0a0a6facf79976e793"
+    },
+    {
+      "path": "companion/protocol-core/src/test/kotlin/org/horizontuner/companion/core/ConnectionLifecycleTest.kt",
+      "category": "kotlin_test",
+      "git_blob": "e621eb389eeba17fea04426cf731e43a2df6fe63",
+      "sha256": "a6341dd42bcb9b94c7f1eb6a3f5cb144987e32c5ea005d07eb2f04cb542d785c"
+    },
+    {
+      "path": "companion/protocol-core/src/test/kotlin/org/horizontuner/companion/core/ForzaPacketDecoderTest.kt",
+      "category": "kotlin_test",
+      "git_blob": "eea9a9e6ece1c0d2073f1a7803c2c26c24687706",
+      "sha256": "0f28488ddda13e3776e18eb038fadcfd2e1247cb41048237c000a0c5236961f6"
+    },
+    {
+      "path": "companion/protocol-core/src/test/kotlin/org/horizontuner/companion/core/TransportPrototypeTest.kt",
+      "category": "kotlin_test",
+      "git_blob": "9152511174ed6dd1e2f372a00a80676386160cc7",
+      "sha256": "301356b8b8fa5a14b91e2263aa3cab5a9f636ab7b958f9ca2c2830845f4519d5"
+    },
+    {
+      "path": "companion/scripts/MakeMissingFontFixture.java",
+      "category": "java",
+      "git_blob": "a6ef54d90218f7f44bc8c7b7326190d2ba75ee58",
+      "sha256": "136676d5c54244d8a0728f31bbec388b15aecd4e32888f5f28b627ab1690cd25"
+    },
+    {
+      "path": "companion/scripts/VerifyFontApk.java",
+      "category": "java",
+      "git_blob": "58410ff77fac4cde2d9887e2cfe5573ef673a506",
+      "sha256": "192a1c89e97d7768b2fa87bb6862c4b3e85eaf2c9124600c706d5bbc77569479"
+    },
+    {
+      "path": "companion/settings.gradle.kts",
+      "category": "kotlin_build_script",
+      "git_blob": "4c32d14b1d174ae29cf42a4fdd328f9e570e85b6",
+      "sha256": "f4589bb62a8fce9c8495e9e9dad9ee686b523ba34bcb07bc58b6188cffd6328e"
+    },
+    {
+      "path": "companion/theme/build.gradle.kts",
+      "category": "kotlin_build_script",
+      "git_blob": "980cb44a21740fbdef90e297953c626b9f8b3f22",
+      "sha256": "7a4eb70fdcf4a516e6800210567c5e4b09c34397db1ee5df9a06ca3581727fe6"
+    },
+    {
+      "path": "companion/theme/src/main/kotlin/org/horizontuner/companion/theme/Color.kt",
+      "category": "kotlin_production_theme",
+      "git_blob": "faa0e86c4d1e619ee286483876ee528357213e0c",
+      "sha256": "8a4996d2197b10ca195ffa2dea772f64c6476597815cacd47a732f48632924b3"
+    },
+    {
+      "path": "companion/theme/src/main/kotlin/org/horizontuner/companion/theme/NativeFontPlan.kt",
+      "category": "kotlin_production_theme",
+      "git_blob": "7a97ad6e645408990d338c810d24f404b381c250",
+      "sha256": "3de3e5c089fea0892a79326227de2d79a9fee2c7308960133edaa0391c0226cc"
+    },
+    {
+      "path": "companion/theme/src/main/kotlin/org/horizontuner/companion/theme/NativeFontResolver.kt",
+      "category": "kotlin_production_theme",
+      "git_blob": "3683dec775ea3e41653132314af6b6383555f984",
+      "sha256": "aff9c777c52f109b2026cfdf29e49e6b128a4c63589256e3c840e9f5f05670c5"
+    },
+    {
+      "path": "companion/theme/src/main/kotlin/org/horizontuner/companion/theme/Theme.kt",
+      "category": "kotlin_production_theme",
+      "git_blob": "66e427d20be6a11de6569b337d82acfeb538edd0",
+      "sha256": "ab05476a808a1d0eb5e82f5afcbd6b1ae3667327e05bb24130c7d3540b96e1c9"
+    },
+    {
+      "path": "companion/theme/src/main/kotlin/org/horizontuner/companion/theme/Typography.kt",
+      "category": "kotlin_production_theme",
+      "git_blob": "81f0a852c7e1003d7e57066ab7a3c01c514f5e40",
+      "sha256": "b9cdaeb064f51f7317e2dd935a42bc03f5d4b4e2ca6060dfc000f90b4cd0cbbb"
+    },
+    {
+      "path": "companion/theme/src/main/kotlin/org/horizontuner/companion/theme/VisualTheme.kt",
+      "category": "kotlin_production_theme",
+      "git_blob": "43d55f6f563c0f36cf941c695723dff6e78d5ac3",
+      "sha256": "1c10f133bf93f764118ec28458e000c336863a889d348c3cd1a25208f885598f"
+    },
+    {
+      "path": "companion/theme/src/test/kotlin/org/horizontuner/companion/theme/BundledFontResourcesTest.kt",
+      "category": "kotlin_test",
+      "git_blob": "a32f66d142bfc71c462ea0291d955f5dd0b10576",
+      "sha256": "e0a24143d53d7c7ec901c31bf2209882e8428e3f15e62f6868b7b396422d4e1b"
+    },
+    {
+      "path": "companion/theme/src/test/kotlin/org/horizontuner/companion/theme/CompanionTypographyTest.kt",
+      "category": "kotlin_test",
+      "git_blob": "c2bda70856546ad0761f68aba28b8a71bb884649",
+      "sha256": "f8195e1099e2e6d209564758e679d6fb19aae101096e4a4ed2d97e7e0d570f22"
+    },
+    {
+      "path": "companion/theme/src/test/kotlin/org/horizontuner/companion/theme/NativeFontPlanTest.kt",
+      "category": "kotlin_test",
+      "git_blob": "6ac0bd00eb6f8984843c782c268393164aaa1930",
+      "sha256": "b0d16eaff6683a42526a42bf8a2d2354b6ec6a407267329178f957cdec03585c"
+    },
+    {
+      "path": "companion/theme/src/test/kotlin/org/horizontuner/companion/theme/VisualThemeCodecTest.kt",
+      "category": "kotlin_test",
+      "git_blob": "2d86d550823d22448bf8022404e76504440d618a",
+      "sha256": "4b1ee014913065f45ba3fcfd8fcf451270798d1c27dded8373f12045e3b3c5e2"
+    },
+    {
+      "path": "companion/theme/src/test/kotlin/org/horizontuner/companion/theme/VisualThemeTest.kt",
+      "category": "kotlin_test",
+      "git_blob": "2edadc0680f3cb1e16281a725de6aa1c338760af",
+      "sha256": "785002ac6a9f5293493f11594c89445c0087390879cb59e26f683971161d2c72"
+    }
+  ]
+}

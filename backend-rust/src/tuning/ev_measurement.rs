@@ -219,5 +219,42 @@ pub fn batch(input: &Value) -> Result<Value, String> {
         .filter(|g| super::ev::ready(g))
         .map(|g| g.gear)
         .collect();
-    Ok(json!({"state":state,"readyGears":ready}))
+    let diagnostics: Vec<Value> = gears
+        .iter()
+        .map(|g| json!({"gear":g.gear,"reasons":super::ev::qualification_reasons(g)}))
+        .collect();
+    let mut warnings = vec![];
+    if frames.iter().any(|f| {
+        [
+            "TimestampMS",
+            "CarOrdinal",
+            "CarPerformanceIndex",
+            "CarClass",
+            "CurrentEngineRpm",
+            "EngineMaxRpm",
+            "Gear",
+            "AccelInput",
+            "BrakeInput",
+            "ClutchInput",
+            "HandBrakeInput",
+            "PowerWatts",
+            "TorqueNewtons",
+            "SteerInput",
+            "SpeedMetersPerSecond",
+        ]
+        .iter()
+        .any(|key| !n(f, key).is_finite())
+            || f["WheelRotationSpeed"]
+                .as_array()
+                .is_none_or(|v| v.len() != 4)
+            || f["TireSlipRatio"].as_array().is_none_or(|v| v.len() != 4)
+    }) {
+        warnings.push("EV raw frames are missing required channels");
+    }
+    if !frames.is_empty() && gears.is_empty() {
+        warnings.push(
+            "EV needs forward full-throttle positive output without brake, clutch or regeneration",
+        );
+    }
+    Ok(json!({"state":state,"readyGears":ready,"diagnostics":diagnostics,"warnings":warnings}))
 }

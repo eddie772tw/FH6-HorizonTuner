@@ -2,6 +2,8 @@
 
 狀態：v1.7.1 基礎模型與正式 Rust owner 已落地。2026-10-05 以既有 Taycan 實機資料完成 Rust HTTP／瀏覽器回放與後端重啟持久化驗收；真實單速車款與新的遊戲內 UI 操作仍未追加驗收。Issue #435；CVT / #434 與新的 EV 最佳化暫不納入。
 
+2026-10-12：[EV 證據生命週期補齊](../tuning/issue-435-ev-completeness.md) 新增本機歷史證據選取／有界 raw 匯入與重新資格審核。新 current EV 使用 workflow／recommendation v3，仍共用 #515 底盤與 `ev/v1`；v1/v2 保留歷史合約。以下 v1.7.1 描述屬該次交付，不能視為廣泛 EV 最佳化已完成。
+
 ## 使用方式與範圍
 
 車輛參數及 Tune 步驟 1 提供可儲存的 `isElectric` 開關。啟用後隱藏傳統 4–10 檔數量欄位；關閉時恢復原值。舊車輛設定缺此欄位等同 false。沒有自動把怠速 RPM = 0 的瞬間判斷寫成車輛類型：本次 Taycan 預檢曾出現非零 idle metadata，單一訊號不足以可靠覆寫使用者設定。

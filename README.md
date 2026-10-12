@@ -1,11 +1,4 @@
 # FH6-HorizonTuner 🏎️
-
-V1.7.2 發行準備（runtime 11.45.22）整合已合併的 HUD、遙測、賽事分析與調校工作流更新；最新已發布版本仍為 v1.7.1。WIP／Known Issues 與產物關卡見[候選發行說明](docs/releases/v1.7.2.md)及[驗收紀錄](docs/releases/v1.7.2-acceptance.md)。Rust 維持[調校 owner](docs/contracts/tuning_responsibilities.md)。
-
-Road／Rally [底盤工程基準 v1](docs/tuning/chassis-engineering-baseline-v1.md) 提供可選下壓力、單軸＋空力平衡反推、彈簧載荷比例與阻尼連動補正；v2 workflow 回報缺值／限界診斷，保留歷史版本重播。既有完整量測配置採 Road 或 Rally 合理基準驗收，尚非新設定的實機性能證明。
-
-Road #462 修正採版本化 [launch envelope v3](docs/tuning/aego-road-launch-v3.md)，保留低功率與歷史模型；工程先驗不等於實車最佳起步。
-
 > **Forza Horizon 6 Real-Time Telemetry Analyzer, Vehicle Tuning Workbench & Custom Racing Dashboard Overlay**
 > **《極限競速：地平線 6》即時遙測分析、車輛調校工作台與賽車客製化儀表覆蓋層**
 
@@ -33,6 +26,7 @@ Road #462 修正採版本化 [launch envelope v3](docs/tuning/aego-road-launch-v
 
 * **AEGO Road 聯合齒比與量測保護**：AEGO Road 已加入行進加速分箱分析與一檔／終傳／最高檔共同求解；舊觀測保留、資料不足或模型無解時阻止推薦。使用者已於 2026-09-28 確認六項遊戲內驗收完成；工程先驗、驗收來源與適用範圍見 [低功率 Road 修正紀錄](docs/tuning/aego-low-power-20260927.md)。
 * **EV 獨立量測模型**：車輛參數的 EV 開關與傳統檔位數互斥，沿用四步調校流程，支援單速及多速 EV 的逐檔量測與終傳比預覽。這是實測基礎模型，尚不提供最佳換檔點或實際極速預測。[使用方式、模型邊界與驗證](docs/calibration/ev-foundation.md)。
+  保存證據可在電腦端選取或匯入原始 JSON，經 Rust 重播與獨立目前配置確認後使用；缺少的歷史來源保持未知。[EV 證據生命週期](docs/tuning/issue-435-ev-completeness.md)。
 * **CVT 安全 foundation**：使用者可明確選擇 CVT 及遊戲可調能力；Rust 定義 raw capture 的來源、資格與保存重播契約，桌面／Companion／CLI 共用限制。尚無真實 CVT capture 與 solver 驗收，故不產生可套用建議或 ratio preview。[契約與後續驗收界線](docs/tuning/cvt-foundation.md)。
 
 * **即時遙測與物理動態分析 (60Hz Live Telemetry & Dynamics)**:

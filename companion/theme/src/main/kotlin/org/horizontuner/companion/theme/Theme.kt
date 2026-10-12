@@ -23,10 +23,11 @@ data class CompanionTokens(
     val panelRadius: Int, val controlRadius: Int, val system: DesignSystem,
     val controlBorder: Color, val focusColor: Color,
     val headingBackground: Color, val headingColor: Color, val headingInset: Int,
+    val backgroundStyle: BackgroundStyle,
 ) {
     val panelShape get() = RoundedCornerShape(panelRadius.dp)
     val controlShape get() = RoundedCornerShape(controlRadius.dp)
-    val backgroundBrush get() = Brush.linearGradient(listOf(background, backgroundEnd))
+    val backgroundBrush: Brush by lazy { backgroundBrush(backgroundStyle, background, backgroundEnd) }
     val solidTabs get() = system == DesignSystem.HALFMOON
     val tabMaxWidth = 224.dp // workspace-tabs max-width: 14rem
     val touchTarget = 48.dp
@@ -74,6 +75,7 @@ fun companionTokens(theme: VisualTheme): CompanionTokens {
         if (theme.core == CoreTheme.CONTRAST) palette[3] else Color.Transparent,
         if (theme.core == CoreTheme.CONTRAST) palette[1] else if (halfmoon) hexColor(theme.primaryColor) else palette[3],
         if (theme.core == CoreTheme.CONTRAST) 8 else 0,
+        backgroundStyle(theme),
     )
 }
 
@@ -81,7 +83,7 @@ val LocalCompanionTokens = staticCompositionLocalOf { companionTokens(VisualThem
 
 @Composable
 fun HalfmoonTheme(theme: VisualTheme = VisualTheme(), content: @Composable () -> Unit) {
-    val tokens = companionTokens(theme)
+    val tokens = remember(theme) { companionTokens(theme) }
     val base = if (theme.mode == ThemeMode.DARK) darkColorScheme() else lightColorScheme()
     val scheme = base.copy(
         primary = tokens.primary, onPrimary = foreground(tokens.primary), secondary = tokens.secondary,

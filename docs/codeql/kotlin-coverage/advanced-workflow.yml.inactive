@@ -1,0 +1,174 @@
+# INACTIVE: outside .github/workflows. No automatic trigger or SARIF upload.
+# Copying/enabling this proposal requires separate maintainer authorization.
+# Keep Default setup enabled until a maintainer explicitly reviews any switch.
+name: CodeQL advanced extraction rehearsal
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - language: actions
+            build-mode: none
+          - language: java-kotlin
+            build-mode: manual
+          - language: javascript-typescript
+            build-mode: none
+          - language: python
+            build-mode: none
+          - language: rust
+            build-mode: none
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Check out exact requested revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1, companion.yml
+
+      - name: Record actual checkout
+        run: |
+          mkdir -p evidence
+          git rev-parse HEAD | tee evidence/checkout-sha.txt
+          git rev-parse 'HEAD^{tree}' | tee evidence/checkout-tree.txt
+          test "$(git rev-parse HEAD)" = "$REQUESTED_SHA"
+        env:
+          REQUESTED_SHA: ${{ github.sha }}
+
+      - name: Set up Java
+        if: matrix.language == 'java-kotlin'
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1, companion.yml
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+
+      - name: Set up Gradle
+        if: matrix.language == 'java-kotlin'
+        uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0, companion.yml
+        with:
+          cache-read-only: true
+
+      - name: Verify preinstalled Android SDK; never accept new terms
+        if: matrix.language == 'java-kotlin'
+        run: |
+          test -d "$ANDROID_HOME/platforms/android-36"
+          test -d "$ANDROID_HOME/build-tools/35.0.0"
+          test -d "$ANDROID_HOME/build-tools/36.0.0"
+          test -s "$ANDROID_HOME/licenses/android-sdk-license"
+          # Missing packages/licenses stop this rehearsal for maintainer review.
+          # No sdkmanager --licenses, yes pipe, or new license bootstrap.
+
+      - name: Set up uv and Python 3.13
+        if: matrix.language == 'java-kotlin'
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0, ci.yml
+        with:
+          python-version: "3.13"
+          activate-environment: true
+          no-project: true
+
+      - name: Initialize CodeQL with unchanged query/threat/model policy
+        id: init
+        uses: github/codeql-action/init@v4
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
+          db-location: ${{ runner.temp }}/horizon-codeql-databases
+          config: |
+            default-setup:
+              org:
+                model-packs: []
+            threat-models: []
+          # Omit queries/packs/disable-default-queries: retain default queries.
+          # The evidence QL query below is independent of the security suite.
+
+      - name: Trace clean Gradle compilation and both existing Java tools
+        if: matrix.language == 'java-kotlin'
+        working-directory: companion
+        run: |
+          bash ./gradlew --no-daemon --no-build-cache --rerun-tasks --stacktrace \
+            -Pkotlin.compiler.execution.strategy=in-process \
+            clean :protocol-core:test :theme:testDebugUnitTest :app:testDebugUnitTest \
+            :app:lintDebug :app:assembleDebug
+          mkdir -p "$RUNNER_TEMP/horizon-font-tools"
+          javac -d "$RUNNER_TEMP/horizon-font-tools" \
+            scripts/VerifyFontApk.java scripts/MakeMissingFontFixture.java
+
+      - name: Verify APK gate rejects a missing-font fixture
+        if: matrix.language == 'java-kotlin'
+        working-directory: companion
+        run: |
+          mkdir -p build/verification
+          bash scripts/TestFontApkGate.sh app/build/outputs/apk/debug/app-debug.apk | tee build/verification/font-negative-control.txt
+
+      - name: Verify unmodified fonts and accessible notice assets in APK
+        if: matrix.language == 'java-kotlin'
+        working-directory: companion
+        run: |
+          java scripts/VerifyFontApk.java app/build/outputs/apk/debug/app-debug.apk | tee build/verification/font-apk.txt
+
+      - name: Record Android test, lint, source and APK evidence
+        if: matrix.language == 'java-kotlin'
+        working-directory: companion
+        run: |
+          git rev-parse HEAD > build/verification/checkout-sha.txt
+          git rev-parse 'HEAD^{tree}' > build/verification/checkout-tree.txt
+          git ls-files -z '*.kt' '*.kts' 'gradle/wrapper/gradle-wrapper.properties' 'scripts/*.java' 'scripts/*.sh' 'theme/src/main/res/font/*' 'theme/src/main/assets/font_notices/*' '../.github/workflows/companion.yml' | xargs -0 sha256sum > build/verification/source-sha256.txt
+          java -version 2> build/verification/java-version.txt
+          for report_dir in protocol-core/build/test-results/test theme/build/test-results/testDebugUnitTest app/build/test-results/testDebugUnitTest; do
+            test -n "$(find "$report_dir" -maxdepth 1 -name 'TEST-*.xml' -print -quit)"
+            for report in "$report_dir"/TEST-*.xml; do
+              sed -n '1,2p' "$report"
+            done
+          done
+          test -s app/build/reports/lint-results-debug.xml
+          test -s app/build/outputs/apk/debug/app-debug.apk
+          sha256sum app/build/outputs/apk/debug/app-debug.apk | tee build/verification/APK-SHA256.txt
+
+      - name: Finalize and run default security queries without upload
+        uses: github/codeql-action/analyze@v4
+        with:
+          category: /language:${{ matrix.language }}
+          upload: never
+          upload-database: false
+          output: evidence/sarif
+
+      - name: Query actual extracted sources and verify database source bytes
+        if: matrix.language == 'java-kotlin'
+        run: |
+          "$CODEQL_BINARY" pack install docs/codeql/kotlin-coverage/queries
+          cp docs/codeql/kotlin-coverage/queries/codeql-pack.lock.yml evidence/query-pack.lock.yml
+          "$CODEQL_BINARY" resolve packs --format=json > evidence/resolved-packs.json
+          uv run --no-project --active python scripts/codeql_source_coverage.py verify \
+            --ref "$REQUESTED_SHA" --database "$JAVA_DATABASE" \
+            --codeql "$CODEQL_BINARY" --output evidence/source-coverage
+          "$CODEQL_BINARY" database bundle "$JAVA_DATABASE" --output=evidence/java-database.zip
+        env:
+          CODEQL_BINARY: ${{ steps.init.outputs.codeql-path }}
+          JAVA_DATABASE: ${{ runner.temp }}/horizon-codeql-databases/java
+          REQUESTED_SHA: ${{ github.sha }}
+
+      - name: Retain analysis and Android evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7, companion.yml
+        with:
+          name: codeql-rehearsal-${{ matrix.language }}-${{ github.sha }}
+          path: |
+            evidence/
+            companion/protocol-core/build/test-results/test/TEST-*.xml
+            companion/theme/build/test-results/testDebugUnitTest/TEST-*.xml
+            companion/app/build/test-results/testDebugUnitTest/TEST-*.xml
+            companion/app/build/reports/lint-results-debug.*
+            companion/app/build/outputs/apk/debug/app-debug.apk
+            companion/build/verification/*.txt
+          if-no-files-found: error
+          retention-days: 14

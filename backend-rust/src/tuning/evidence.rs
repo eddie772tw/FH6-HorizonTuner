@@ -38,6 +38,8 @@ pub enum EvidenceRequest {
         car_id: String,
         setup: Value,
         frames: Vec<Value>,
+        #[serde(default)]
+        powertrain: Option<Value>,
     },
 }
 #[derive(Clone, Debug, Serialize)]
@@ -56,6 +58,8 @@ pub struct QualifiedEvidence {
     evidence_id: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     tire_summary: Option<Value>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    ev_powertrain: Option<Value>,
 }
 pub fn equivalent(a: &Value, b: &Value) -> bool {
     match (a, b) {
@@ -131,12 +135,14 @@ pub fn qualify(raw: &EvidenceRequest) -> Result<QualifiedEvidence, String> {
                         .ok_or("Capture samples required")?,
                     &json!({"carOrdinal":expected["identity"]["ordinal"],"performanceIndex":expected["identity"]["performanceIndex"],"carClass":expected["identity"]["carClass"]}),
                 )),
+                ev_powertrain: None,
             })
         }
         EvidenceRequest::EvCapture {
             car_id,
             setup,
             frames,
+            powertrain,
         } => {
             if frames.is_empty() || frames.len() > 30000 {
                 return Err("EV capture requires 1–30000 frames".into());
@@ -158,6 +164,12 @@ pub fn qualify(raw: &EvidenceRequest) -> Result<QualifiedEvidence, String> {
             if super::ev::calculate_ev_gearing(&input).is_none() {
                 return Err("EV capture is not qualified".into());
             }
+            if powertrain
+                .as_ref()
+                .is_some_and(|p| !super::ev_archive::valid_powertrain(p))
+            {
+                return Err("Invalid EV powertrain context".into());
+            }
             Ok(QualifiedEvidence {
                 kind: "ev".into(),
                 analysis_version: "ev-measurement/v1".into(),
@@ -171,12 +183,34 @@ pub fn qualify(raw: &EvidenceRequest) -> Result<QualifiedEvidence, String> {
                 summary: state,
                 evidence_id: None,
                 tire_summary: None,
+                ev_powertrain: powertrain.clone(),
             })
         }
         _ => Err("Saved evidence requires the local evidence store".into()),
     }
 }
 impl QualifiedEvidence {
+    pub(crate) fn ev_metadata(&self) -> Value {
+        json!({"evidenceId":self.evidence_id,"carId":self.car_id,"identity":self.identity,"setup":self.setup,"powertrain":self.ev_powertrain,"analysisVersion":self.analysis_version,"provenance":self.provenance()})
+    }
+    pub(crate) fn confirm_ev(&self, context: &Value) -> Result<(), String> {
+        if self.kind != "ev"
+            || context["schemaVersion"] != "ev-context/v1"
+            || context["carId"].as_str() != Some(&self.car_id)
+            || !equivalent(&context["identity"], &self.identity)
+            || !equivalent(&context["setup"], &self.setup)
+            || !super::ev_archive::valid_powertrain(&context["powertrain"])
+            || self
+                .ev_powertrain
+                .as_ref()
+                .is_some_and(|p| !equivalent(p, &context["powertrain"]))
+        {
+            return Err(
+                "EV evidence differs from the independently confirmed current configuration".into(),
+            );
+        }
+        Ok(())
+    }
     pub fn tire_evidence(&self) -> Option<Value> {
         self.tire_summary.clone()
     }
@@ -225,6 +259,22 @@ impl QualifiedEvidence {
         {
             return Err("Evidence belongs to another car or powertrain".into());
         }
+        if self.kind == "ev" {
+            let current = super::ev_archive::powertrain(&input.profile);
+            if self
+                .ev_powertrain
+                .as_ref()
+                .is_some_and(|p| !equivalent(p, &current))
+            {
+                return Err("EV evidence belongs to another powertrain profile".into());
+            }
+            if let Some(context) = input.input_snapshot.get("evEvidenceConfirmation") {
+                self.confirm_ev(context)?;
+                if !equivalent(&context["powertrain"], &current) {
+                    return Err("EV confirmation belongs to another current profile".into());
+                }
+            }
+        }
         if let Some(key) = &self.dependency_key {
             let expected = json!([
                 self.car_id,
@@ -263,7 +313,33 @@ impl QualifiedEvidence {
 pub struct EvidenceService {
     pub store: RoadStore,
 }
+/// Backend-only proof of the exact request verified before acquiring receiver locks.
+pub(crate) struct VerifiedRecommendation {
+    recommendation: Value,
+    identity: Option<Value>,
+}
+impl VerifiedRecommendation {
+    pub(crate) fn matches(&self, rec: &Value, identity: Option<&Value>) -> bool {
+        equivalent(&self.recommendation, rec)
+            && match (&self.identity, identity) {
+                (Some(a), Some(b)) => equivalent(a, b),
+                (None, None) => true,
+                _ => false,
+            }
+    }
+}
 impl EvidenceService {
+    pub(crate) fn verify_for_road(
+        &self,
+        rec: &Value,
+        identity: Option<&Value>,
+    ) -> ApiResult<VerifiedRecommendation> {
+        self.verify_recommendation(rec, identity)?;
+        Ok(VerifiedRecommendation {
+            recommendation: rec.clone(),
+            identity: identity.cloned(),
+        })
+    }
     fn save(&self, mut proof: QualifiedEvidence, id: Option<&str>) -> ApiResult<QualifiedEvidence> {
         let id = id
             .map(str::to_owned)
@@ -287,7 +363,9 @@ impl EvidenceService {
         }
     }
     fn load(&self, id: &str) -> ApiResult<QualifiedEvidence> {
-        let v = self.store.get(id, Some("tuning-evidence/v1"), None)?;
+        let v = self
+            .store
+            .get_read_only(id, Some("tuning-evidence/v1"), None)?;
         let text = |key: &str| {
             v[key]
                 .as_str()
@@ -300,6 +378,47 @@ impl EvidenceService {
             (Some("ice"), "engine-loaded-sweep/v4") | (Some("ev"), "ev-measurement/v1")
         ) {
             return Err(ApiError::invalid("Unsupported qualified evidence version"));
+        }
+        if v["powertrain"] == "ev" {
+            let observation_id = v["observation"]["id"]
+                .as_str()
+                .ok_or_else(|| ApiError::invalid("Saved EV raw observation is unavailable"))?;
+            let raw = self.store.get_read_only(
+                observation_id,
+                Some("ev-observation/v1"),
+                Some("ev-observations"),
+            )?;
+            if raw["capture"].get("schema").is_some()
+                || raw["capture"].get("schemaVersion").is_some()
+            {
+                return Err(ApiError::invalid("Unsupported saved EV raw capture schema"));
+            }
+            let capture: EvidenceRequest = serde_json::from_value(raw["capture"].clone())?;
+            if !matches!(capture, EvidenceRequest::EvCapture { .. }) {
+                return Err(ApiError::invalid(
+                    "Saved EV raw capture has an unsupported type",
+                ));
+            }
+            let mut proof = qualify(&capture).map_err(|e| ApiError::invalid(&e))?;
+            if v["schema"] != crate::road::ROAD_SCHEMA
+                || raw["schema"] != crate::road::ROAD_SCHEMA
+                || v["id"].as_str() != Some(id)
+                || raw["id"].as_str() != Some(observation_id)
+                || !equivalent(&v["identity"], &proof.identity)
+                || !equivalent(&v["setup"], &proof.setup)
+                || !equivalent(
+                    &v["ev_powertrain"],
+                    &serde_json::to_value(&proof.ev_powertrain)?,
+                )
+                || v["car_id"].as_str() != Some(&proof.car_id)
+            {
+                return Err(ApiError::conflict(
+                    "Saved EV metadata differs from its raw capture",
+                ));
+            }
+            proof.observation = v["observation"].clone();
+            proof.evidence_id = Some(id.into());
+            return Ok(proof);
         }
         Ok(QualifiedEvidence {
             analysis_version: version,
@@ -314,6 +433,7 @@ impl EvidenceService {
             summary: v["summary"].clone(),
             evidence_id: Some(id.into()),
             tire_summary: v.get("tire_summary").filter(|v| !v.is_null()).cloned(),
+            ev_powertrain: None,
         })
     }
     pub fn ev_gearing(&self, input: &Value) -> ApiResult<Value> {
@@ -325,6 +445,11 @@ impl EvidenceService {
         })?;
         if !equivalent(&proof.setup, &input["setup"]) {
             return Err(ApiError::conflict("EV evidence setup mismatch"));
+        }
+        if let Some(context) = input.get("confirmation") {
+            proof
+                .confirm_ev(context)
+                .map_err(|e| ApiError::conflict(&e))?;
         }
         let input = EvGearingInput {
             setup: serde_json::from_value(proof.setup)?,
@@ -397,8 +522,12 @@ impl EvidenceService {
         mut input: WorkflowRequest,
         persist_cache: bool,
     ) -> ApiResult<WorkflowResult> {
-        if !["tuning-workflow-result/v1", "tuning-workflow-result/v2"]
-            .contains(&input.schema_version.as_str())
+        if ![
+            "tuning-workflow-result/v1",
+            "tuning-workflow-result/v2",
+            "tuning-workflow-result/v3",
+        ]
+        .contains(&input.schema_version.as_str())
         {
             return Err(ApiError::invalid("Unsupported tuning calculation schema"));
         }
@@ -425,6 +554,11 @@ impl EvidenceService {
         calculate_qualified(input, proof.as_ref()).map_err(|e| ApiError::invalid(&e))
     }
     pub fn save_ev(&self, input: &Value) -> ApiResult<Value> {
+        if input.get("schema").is_some() || input.get("schemaVersion").is_some() {
+            return Err(ApiError::invalid(
+                "Use the EV import endpoint for versioned raw exports",
+            ));
+        }
         let raw: EvidenceRequest =
             serde_json::from_value(input.clone()).map_err(|e| ApiError::invalid(&e.to_string()))?;
         if !matches!(raw, EvidenceRequest::EvCapture { .. }) {
@@ -439,7 +573,9 @@ impl EvidenceService {
         )?;
         proof.observation = json!({"id":captured["id"],"carId":proof.car_id,"identity":proof.identity,"schema":"ev-observation/v1","source":"capture-qualified"});
         let proof = self.save(proof, None)?;
-        Ok(json!({"evidenceId":proof.evidence_id,"state":proof.summary}))
+        Ok(
+            json!({"evidenceId":proof.evidence_id,"state":proof.summary,"metadata":proof.ev_metadata()}),
+        )
     }
     pub fn save_cvt(&self, input: &Value) -> ApiResult<Value> {
         let raw: EvidenceRequest = serde_json::from_value(input["evidence"].clone())
@@ -464,7 +600,11 @@ impl EvidenceService {
     }
     pub fn verify_recommendation(&self, rec: &Value, identity: Option<&Value>) -> ApiResult<()> {
         let current = match rec["formulaVersion"].as_str() {
-            Some("rust/ice-measured-workflow-v3" | "rust/ev-measured-workflow-v2") => true,
+            Some(
+                "rust/ice-measured-workflow-v3"
+                | "rust/ev-measured-workflow-v2"
+                | "rust/ev-measured-workflow-v3",
+            ) => true,
             Some(
                 "rust/ice-measured-workflow-v1"
                 | "rust/ice-measured-workflow-v2"
@@ -477,6 +617,12 @@ impl EvidenceService {
             }
         };
         let snapshot = &rec["inputSnapshot"];
+        let confirmed_ev = rec["formulaVersion"] == "rust/ev-measured-workflow-v3";
+        if confirmed_ev && !snapshot["evEvidenceConfirmation"].is_object() {
+            return Err(ApiError::invalid(
+                "EV v3 recommendation requires independently confirmed current configuration",
+            ));
+        }
         let id = snapshot["evidenceId"].as_str().ok_or_else(|| {
             ApiError::invalid("Recommendation requires backend-qualified saved evidence")
         })?;
@@ -493,10 +639,10 @@ impl EvidenceService {
                 }
             }
         }
-        let request:WorkflowRequest=serde_json::from_value(json!({"schemaVersion":if current{"tuning-workflow-result/v2"}else{"tuning-workflow-result/v1"},"goal":snapshot["goal"],"season":snapshot["season"],"profile":snapshot["profile"],"engine":null,"ev":if proof.kind=="ev"{json!({"setup":proof.setup,"measurements":[],"candidateFinalDrive":snapshot["evResult"]["finalDrive"]})}else{Value::Null},"inputSnapshot":snapshot})).map_err(|e|ApiError::invalid(&e.to_string()))?;
-        let expected = super::workflow::calculate_qualified_version(
+        let request:WorkflowRequest=serde_json::from_value(json!({"schemaVersion":if confirmed_ev{"tuning-workflow-result/v3"}else if current{"tuning-workflow-result/v2"}else{"tuning-workflow-result/v1"},"goal":snapshot["goal"],"season":snapshot["season"],"profile":snapshot["profile"],"engine":null,"ev":if proof.kind=="ev"{json!({"setup":proof.setup,"measurements":[],"candidateFinalDrive":snapshot["evResult"]["finalDrive"]})}else{Value::Null},"inputSnapshot":snapshot})).map_err(|e|ApiError::invalid(&e.to_string()))?;
+        let expected = super::workflow::calculate_historical(
             request,
-            Some(&proof),
+            &proof,
             rec["formulaVersion"] == "rust/ice-measured-workflow-v1",
         )
         .map_err(|e| ApiError::invalid(&e))?;
