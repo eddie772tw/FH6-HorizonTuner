@@ -12,7 +12,7 @@ export function EngineObservationHistory({ entries, compatibleIds, reuse, storag
   const [confirmed, setConfirmed] = useState(false);
   const [selectedId, setSelectedId] = useState('');
   const selected = entries.find(e => e.id === selectedId) || entries[entries.length - 1];
-  if (!entries.length) return null;
+  if (!entries.length) return <p className="small text-body-secondary" role="status">{t('No saved engine observations are available for this vehicle. Follow Data Out to collect new data.')}</p>;
   return <details className="glass-panel p-3 mb-3"><summary>{t('Saved engine observations')} · {entries.length}</summary>
     <p className="small mt-2">{t('Suspension and tire edits preserve engine observations. Reuse requires confirmation that the powertrain configuration is unchanged.')}</p>
     {storageError && <p role="status">{t('The engine observation is available in this page but could not be saved to device storage.')}</p>}
