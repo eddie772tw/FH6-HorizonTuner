@@ -64,7 +64,7 @@ Source mapping 是可核對的 build evidence，**不是** GitHub/OIDC 簽署 at
 3. `--mode test-only` 正向建置：package 固定為 `org.horizontuner.companion.contracttest`，versionName 加 `-test-only`，receipt／artifact 標示 TEST-ONLY。使用實際 APK 檢查 certificate、package、version、hash、non-debuggable、alignment、embedded source，並再次驗證 release APK font/notice entries。
 4. 對同一實際 APK 使用錯誤 signer pin，要求 exit 1 且舊 receipt 消失；重新正向驗證恢復 final receipt。
 
-CI 留存 14 天的 `companion-release-contract-TEST-ONLY-<head>` artifact，包含 test-only APK／receipt／positive-negative logs。臨時 key 在 exit trap 移除，不上傳。既有 debug evidence artifact 獨立保留。**TEST-ONLY 產物只驗證工具契約，不能代表維護者正式簽章、正式升級或可供一般使用者安裝的發行版。**
+CI 留存 14 天的 `companion-release-contract-TEST-ONLY-<head>` artifact，包含 test-only APK／receipt／positive-negative logs。臨時 key 在 exit trap 移除，不上傳。既有 debug evidence artifact 獨立保留。AGP 8.13 的 non-debug resource path shortening 關閉，使 release 保留與原始字型 gate 相同的 exact entries；仍驗證原始 bytes，不放寬 gate。此選項在 AGP 9.0 將改為 enforced；本切片固定 AGP 8.13.2，未來升級須重新設計 exact-entry 契約。**TEST-ONLY 產物只驗證工具契約，不能代表維護者正式簽章、正式升級或可供一般使用者安裝的發行版。**
 
 本切片不新增 production secret 消費、發布 workflow 或發布權限。最小後續 proposal：維護者在已授權的正式建置環境提供既有 signing 設定，對 final source 執行相同入口，核對 receipt/hash/public certificate，先作最終 Android 驗收；正式 artifact 上傳與 Release 操作須依其後另行授權的發行範圍執行。
 
