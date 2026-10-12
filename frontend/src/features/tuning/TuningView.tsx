@@ -79,7 +79,7 @@ export function TuningViewContent({ unitPreference, onUnitPreferenceChange }: {
     {!reviewHistory && [2, 4].includes(currentStep) && session.calculationStatus !== 'ready' && <div className="alert alert-info" role="status">{t(session.calculationStatus === 'error' ? 'Tuning calculation is unavailable. Retrying…' : 'Calculating tuning results…')}</div>}
     {!reviewHistory && currentStep === 2 && session.calculationStatus === 'ready' && <Step2ChassisTuner selectedRaceGoal={goal} season={season} carParams={profile}
       chassis={chassis} alignment={alignment} tireEvidence={session.result?.tireEvidence ?? null} evidenceProvenance={session.result?.evidenceProvenance ?? null} saveCarParams={saveCarParams} />}
-    {!reviewHistory && currentStep === 3 && (usesCvt(profile) ? <CvtFoundationPanel result={session.result?.cvt} t={t} /> : profile?.isElectric
+    {!reviewHistory && currentStep === 3 && (usesCvt(profile) ? <CvtFoundationPanel result={session.result?.cvt} t={t} evidenceSession={session.cvtEvidence} /> : profile?.isElectric
       ? <EvPowertrainStep enabled={readiness.engineInputs} />
       : <EngineDataStep key={JSON.stringify([carId, selectionGeneration, session.identityGeneration, profile])} carId={carId} profile={profile} engine={engine} gearing={gearing && !('model' in gearing) ? gearing : null} enabled={readiness.engineInputs} />)}
     {!reviewHistory && currentStep === 4 && session.calculationStatus === 'ready' && <SetupVerificationStep goal={goal} carId={carId} recommendation={session.result?.recommendation ?? null} />}

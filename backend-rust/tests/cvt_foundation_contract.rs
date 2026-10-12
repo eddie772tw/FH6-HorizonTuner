@@ -51,6 +51,184 @@ fn call(app: &App, path: &str, body: Value) -> fh6_backend::error::ApiResult<Val
     })?;
     Ok(serde_json::from_slice(&response.body).unwrap())
 }
+fn discover(
+    service: &tuning::evidence::EvidenceService,
+    path: &str,
+) -> fh6_backend::error::ApiResult<Value> {
+    let response = tuning::api::request(
+        &ApiRequest {
+            method: "GET".into(),
+            path: path.into(),
+            query: Default::default(),
+            headers: Default::default(),
+            body: vec![],
+            upload_filename: None,
+        },
+        service,
+    )?
+    .unwrap();
+    Ok(serde_json::from_slice(&response.body).unwrap())
+}
+
+#[test]
+fn cvt_discovery_and_read_survive_restart_without_rewriting_raw_or_database() {
+    let temp = tempfile::tempdir().unwrap();
+    let request = synthetic();
+    let saved = {
+        let app = App::new(temp.path()).unwrap();
+        assert!(
+            discover(&app.tuning_evidence, "/api/tuning/cvt-evidence").unwrap()["items"]
+                .as_array()
+                .unwrap()
+                .is_empty()
+        );
+        call(&app, "/api/tuning/cvt-evidence", request.clone()).unwrap()
+    }; // Drop every host/database owner before opening a cold reader.
+    let reader = tuning::evidence::EvidenceService {
+        store: fh6_backend::road::RoadStore {
+            db_path: temp
+                .path()
+                .join("telemetry_sessions.db")
+                .to_string_lossy()
+                .into(),
+        },
+    };
+    let before = stable_filesystem_snapshot(temp.path());
+    let list = discover(&reader, "/api/tuning/cvt-evidence").unwrap();
+    assert_eq!(list["schemaVersion"], "cvt-evidence-list/v1");
+    assert_eq!(list["items"][0]["evidenceId"], saved["evidenceId"]);
+    let mut metadata = request["evidence"]["capture"].clone();
+    metadata.as_object_mut().unwrap().remove("frames");
+    assert_eq!(list["items"][0]["capture"], metadata);
+    let id = saved["evidenceId"].as_str().unwrap();
+    let raw = discover(&reader, &format!("/api/tuning/cvt-evidence/{id}")).unwrap();
+    assert_eq!(raw["schemaVersion"], "cvt-evidence-read/v1");
+    assert_eq!(raw["capture"], request["evidence"]["capture"]);
+    for hostile_id in ["../sentinel", "' OR 1=1 --", "missing"] {
+        assert!(reader.read_cvt(hostile_id).is_err());
+    }
+    let mut replay = request.clone();
+    replay["evidence"] = json!({"kind":"saved-cvt","evidenceId":id});
+    assert_eq!(
+        serde_json::to_value(
+            reader
+                .calculate_read_only(serde_json::from_value(replay.clone()).unwrap())
+                .unwrap()
+        )
+        .unwrap(),
+        run(request)
+    );
+    for (field, value, code) in [
+        (
+            "identity",
+            json!({"ordinal":42,"performanceIndex":501,"carClass":2}),
+            "identity-changed",
+        ),
+        ("cvtConfiguration", Value::Null, "configuration-changed"),
+    ] {
+        let mut changed = replay.clone();
+        changed["inputSnapshot"][field] = value;
+        let out = serde_json::to_value(
+            reader
+                .calculate_read_only(serde_json::from_value(changed).unwrap())
+                .unwrap(),
+        )
+        .unwrap();
+        assert_eq!(out["cvt"]["captureStatus"], "stale");
+        assert!(has(&out, code));
+        assert!(out["gearing"].is_null() && out["recommendation"].is_null());
+    }
+    // WAL readers may create auxiliary files; all durable bytes remain unchanged.
+    assert!(stable_filesystem_snapshot(temp.path()) == before);
+}
+
+#[test]
+fn cold_cvt_discovery_failures_never_create_or_modify_storage() {
+    for state in ["missing", "empty", "invalid", "no-road-table"] {
+        let temp = tempfile::tempdir().unwrap();
+        seed_cold_database(temp.path(), state);
+        let service = tuning::evidence::EvidenceService {
+            store: fh6_backend::road::RoadStore {
+                db_path: temp
+                    .path()
+                    .join("telemetry_sessions.db")
+                    .to_string_lossy()
+                    .into(),
+            },
+        };
+        let before = filesystem_snapshot(temp.path());
+        assert!(discover(&service, "/api/tuning/cvt-evidence").is_err());
+        assert!(discover(&service, "/api/tuning/cvt-evidence/missing").is_err());
+        assert_eq!(filesystem_snapshot(temp.path()), before, "{state}");
+    }
+}
+
+#[test]
+fn selected_saved_cvt_never_trusts_unknown_or_damaged_schema() {
+    for damage in [
+        "capture-version",
+        "channel-schema",
+        "envelope-version",
+        "invalid-json",
+    ] {
+        let temp = tempfile::tempdir().unwrap();
+        let app = App::new(temp.path()).unwrap();
+        let mut request = synthetic();
+        let saved = call(&app, "/api/tuning/cvt-evidence", request.clone()).unwrap();
+        let id = saved["evidenceId"].as_str().unwrap();
+        let connection = rusqlite::Connection::open(&app.tuning_evidence.store.db_path).unwrap();
+        let mut document = app
+            .tuning_evidence
+            .store
+            .get_read_only(id, None, None)
+            .unwrap();
+        match damage {
+            "capture-version" => document["capture"]["schemaVersion"] = json!("cvt-capture/v99"),
+            "channel-schema" => document["capture"]["frames"][0]["speedMps"] = json!("corrupt"),
+            "envelope-version" => document["schema"] = json!("road-workflow/v99"),
+            _ => (),
+        }
+        connection
+            .execute(
+                "UPDATE road_documents SET document=?1 WHERE id=?2",
+                rusqlite::params![
+                    if damage == "invalid-json" {
+                        "invalid JSON".into()
+                    } else {
+                        document.to_string()
+                    },
+                    id
+                ],
+            )
+            .unwrap();
+        drop(connection);
+        let before = stable_filesystem_snapshot(temp.path());
+        request["evidence"] = json!({"kind":"saved-cvt","evidenceId":id});
+        let read = app.tuning_evidence.read_cvt(id);
+        let replay = call(&app, "/api/tuning/workflow", request);
+        if damage == "capture-version" || damage == "channel-schema" {
+            assert_eq!(read.unwrap()["capture"], document["capture"]);
+            let out = replay.unwrap();
+            assert!(has(
+                &out,
+                if damage == "capture-version" {
+                    "capture-version-unsupported"
+                } else {
+                    "capture-schema-invalid"
+                }
+            ));
+            assert!(out["gearing"].is_null() && out["recommendation"].is_null());
+        } else {
+            assert!(read.is_err());
+            assert!(replay.is_err());
+            assert!(app.tuning_evidence.list_cvt().is_err());
+        }
+        assert!(
+            stable_filesystem_snapshot(temp.path()) == before,
+            "{damage}"
+        );
+    }
+}
 fn filesystem_snapshot(
     root: &std::path::Path,
 ) -> std::collections::BTreeMap<std::path::PathBuf, Option<Vec<u8>>> {
@@ -78,6 +256,19 @@ fn filesystem_snapshot(
     let mut snapshot = std::collections::BTreeMap::new();
     visit(root, root, &mut snapshot);
     snapshot
+}
+fn stable_filesystem_snapshot(
+    root: &std::path::Path,
+) -> std::collections::BTreeMap<std::path::PathBuf, Option<Vec<u8>>> {
+    filesystem_snapshot(root)
+        .into_iter()
+        .filter(|(path, _)| {
+            !matches!(
+                path.file_name().and_then(|name| name.to_str()),
+                Some("telemetry_sessions.db-wal" | "telemetry_sessions.db-shm")
+            )
+        })
+        .collect()
 }
 fn saved_cvt_request() -> Value {
     let mut request = synthetic();

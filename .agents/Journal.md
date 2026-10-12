@@ -913,3 +913,10 @@
 - **Evidence**：獨立只讀審查已重現並複測上述lifecycle問題；Rust產品負向矩陣、三版本HTTP／CLI／MCP／restart契約與 mounted React測試見[詳細範圍](../docs/tuning/issue-435-ev-completeness.md)。精確gate及CI數據附PR body。凍結fixtures未更動。
 - **Boundary**：真正單速FD A→B→A、fresh game與廣泛optimizer仍NOT_RUN；Chromium既有sandbox helper使完整browser驗收受阻，未停用sandbox或改安全權限。未修改#518/#519分支、遊戲設備、release或Issue狀態。
 - **Skills**：physics-tuning-math、modular-refactoring、halfmoon-design-system、cross-agent-collaboration、pr-author-maintainer。
+
+## 2026-10-12 / #434 既有 CVT evidence 選取（Mihaly as Codex）
+
+- **Learning**：初次 live identity hydration 會使正在讀取的 discovery 回覆過期；需重讀清單，不能把過期讀取綁回新身分。共享 foundation 面板也用於 Companion；桌面才注入 evidence session，避免遠端面板依賴 desktop context 或擴大 LAN 白名單。
+- **Evidence**：Rust 新增 cold discovery／raw read／restart、未知與損壞 schema／envelope、非法 ID 和 stale 身分／設定契約；mounted provider 測試驗證空白獨立確認、保存傳輸、live identity、A→B→A 與過期回覆。完整命令與結果見 Draft PR 及 `docs/tuning/cvt-evidence-selection.md`。
+- **Boundary**：沿用現有保存／資格與 Rust owner，不變更 #515 公式或全局選車入口，不新增 live recorder／solver。WAL 輔助檔生命週期不等於主庫改寫；缺庫／壞庫仍核對完整檔案 snapshot。真實 CVT、設備與瀏覽器視覺 gate 為 NOT_RUN；既有 Chromium sandbox 配置未變。
+- **Skills**：`cross-agent-collaboration`、`physics-tuning-math`、`halfmoon-design-system`、`pr-author-maintainer`。

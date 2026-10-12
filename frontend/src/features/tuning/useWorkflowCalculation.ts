@@ -49,7 +49,7 @@ export function useWorkflowCalculation(carId: string, goal: string, season: Seas
         const result = await response.json() as AuthoritativeWorkflow;
         if (result.schemaVersion !== input.schemaVersion) throw new Error('Unsupported calculation result');
         if (usesCvt(input.profile) && (result.cvt?.schemaVersion !== 'cvt-qualification/v1'
-          || result.cvt.status !== 'unsupported' || result.gearing !== null || result.recommendation !== null
+          || result.cvt.status !== 'unsupported' || result.cvt.ratioPreview !== null || result.gearing !== null || result.recommendation !== null
           || result.readiness?.measuredEngine !== false || result.readiness?.gearingAvailable !== false)) {
           throw new Error('Unsupported CVT foundation result');
         }

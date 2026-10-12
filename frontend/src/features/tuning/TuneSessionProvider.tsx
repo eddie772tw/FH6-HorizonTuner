@@ -3,6 +3,7 @@ import { requestEngineBatch, type EngineBatchResult } from './engineBatch';
 import { useWorkflowCalculation } from './useWorkflowCalculation';
 import { useBaselineDraft } from './useBaselineDraft';
 import { useEvidenceContext } from './evidenceContext';
+import { useCvtEvidenceSession } from './useCvtEvidenceSession';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { CarParams } from '../../context/CarParamsContext';
 import { useCarParams } from '../../context/CarParamsContext';
@@ -91,6 +92,7 @@ export interface TuneSessionValue {
   };
   engine: ReturnType<typeof useEngineMeasurementArchive>;
   evMeasurement: ReturnType<typeof useEvMeasurementSession>;
+  cvtEvidence: ReturnType<typeof useCvtEvidenceSession>;
   engineMeasurement: EngineMeasurementRuntime & {
     ensureStarted: (enabled: boolean) => void;
     pauseOrResume: () => void;
@@ -564,16 +566,21 @@ export function TuneSessionProvider({ children }: { children: ReactNode }) {
   const prepared = (hasProducedGearing || selectedEngineObservationMatchesLiveTelemetry(carId, engine.current, data)) ? engine.current : null;
   const calculation = prepared && engine.calculation?.status === 'ready' ? engine.calculation : null;
   const evidenceContext = JSON.stringify([carId, staticProfileJson, identityGeneration, baseline.fields, selectionGeneration]);
+  const cvtLiveIdentity = isConnected ? telemetryIdentityFor(carId, data) : null;
+  // Read fresh telemetry directly: the shared identity state updates in an effect.
+  const cvtIdentity = cvtLiveIdentity ? { ...identity, ...cvtLiveIdentity } : identity;
+  const cvtEvidence = useCvtEvidenceSession(JSON.stringify([evidenceContext, cvtIdentity]), cvtIdentity, profile,
+    cvtLiveIdentity !== null);
   // Only an explicit EV confirmation/reselection creates a new lifetime for the same immutable raw ID.
   const evidenceCurrent = useEvidenceContext(evidenceContext, profile?.isElectric
     ? evMeasurement.evidenceId ? JSON.stringify([evMeasurement.evidenceId, evMeasurement.evidenceLifetime]) : null
     : engine.observation?.id ?? null);
   const inputSnapshot = useMemo(() => ({ carId, goal, season, profile,
-    ...(usesCvt(profile) ? { transmissionModel: 'cvt-foundation/v1' } : profile?.isElectric
+    ...(usesCvt(profile) ? { transmissionModel: 'cvt-foundation/v1', ...cvtEvidence.snapshot } : profile?.isElectric
       ? { powertrainModel: 'ev/v1', evMeasurement: evMeasurement.state, evResult: evMeasurement.result, evEvidence: evidenceCurrent && evMeasurement.evidenceId ? { kind: 'saved-ev', evidenceId: evMeasurement.evidenceId } : null,
         ...(evMeasurement.confirmation ? { evEvidenceConfirmation: evMeasurement.confirmation } : {}) }
       : { powertrainModel: 'ice', engineObservation: evidenceCurrent && engine.observation ? { ...engine.observation, capture: undefined } : null, engineCalculation: calculation }),
-  }), [carId, goal, season, profile, engine.observation, calculation, evMeasurement.result, evMeasurement.evidenceId, evMeasurement.confirmation, evidenceCurrent]);
+  }), [carId, goal, season, profile, engine.observation, calculation, evMeasurement.result, evMeasurement.evidenceId, evMeasurement.confirmation, evidenceCurrent, cvtEvidence.snapshot.identity, cvtEvidence.snapshot.cvtConfiguration, cvtEvidence.snapshot.cvtEvidence]);
   const { result, status: calculationStatus } = useWorkflowCalculation(carId, goal, season, profile, calculation ? {
     engineMaxRpm: calculation.engineMaxRpm!, peakPowerRpm: calculation.peakPower!.rpm,
     peakTorqueRpm: calculation.peakTorque!.rpm, peakTorqueNm: calculation.peakTorque!.value,
@@ -620,6 +627,7 @@ export function TuneSessionProvider({ children }: { children: ReactNode }) {
     },
     engine,
     evMeasurement,
+    cvtEvidence,
     engineMeasurement: {
       ...measurementRuntime,
       ensureStarted: ensureMeasurementStarted,
@@ -654,6 +662,7 @@ export function TuneSessionProvider({ children }: { children: ReactNode }) {
     developerSurface,
     engine,
     evMeasurement,
+    cvtEvidence,
     ensureMeasurementStarted,
     finishAdditionalMeasurement,
     goal,

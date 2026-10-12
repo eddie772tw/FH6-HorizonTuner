@@ -8,6 +8,13 @@ pub fn request(
     request: &ApiRequest,
     evidence: &super::evidence::EvidenceService,
 ) -> ApiResult<Option<ApiResponse>> {
+    if request.method == "GET" && request.path == "/api/tuning/cvt-evidence" {
+        return Ok(Some(ApiResponse::json(evidence.list_cvt()?)));
+    }
+    if request.method == "GET" && request.path.starts_with("/api/tuning/cvt-evidence/") {
+        let id = request.path.trim_start_matches("/api/tuning/cvt-evidence/");
+        return Ok(Some(ApiResponse::json(evidence.read_cvt(id)?)));
+    }
     if request.method == "POST" && request.path == "/api/tuning/ev-selection" {
         return Ok(Some(ApiResponse::json(
             evidence.select_ev(&request.json()?)?,

@@ -169,6 +169,24 @@ impl RoadStore {
         } else {
             "document"
         };
+        Self::list_from_connection(&c, wf, kind, projection)
+    }
+    /// CVT discovery projects metadata without opening a writable connection or loading frames.
+    pub fn list_cvt_read_only(&self) -> ApiResult<Vec<Value>> {
+        let c = Connection::open_with_flags(&self.db_path, OpenFlags::SQLITE_OPEN_READ_ONLY)?;
+        Self::list_from_connection(
+            &c,
+            Some("cvt-evidence"),
+            Some("cvt-evidence/v1"),
+            "json_remove(document, '$.capture.frames')",
+        )
+    }
+    fn list_from_connection(
+        c: &Connection,
+        wf: Option<&str>,
+        kind: Option<&str>,
+        projection: &str,
+    ) -> ApiResult<Vec<Value>> {
         let (filters, args): (&str, Vec<&str>) = match (wf, kind) {
             (Some(w), Some(k)) => ("WHERE workflow_id=?1 AND kind=?2", vec![w, k]),
             (Some(w), None) => ("WHERE workflow_id=?1", vec![w]),

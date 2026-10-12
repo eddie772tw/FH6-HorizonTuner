@@ -95,7 +95,7 @@ it('rejects late ICE results and old servers after an explicit CVT selection', a
   expect(host.textContent).toBe('error:null');
 });
 it('consumes the Rust CVT diagnostics while keeping application unavailable', async () => {
-  fetchMock.mockResolvedValue({ ok: true, json: async () => ({ schemaVersion: 'tuning-workflow-result/v2', cvt: { schemaVersion: 'cvt-qualification/v1', status: 'unsupported', captureStatus: 'missing', diagnostics: [{ code: 'raw-capture-required' }] }, gearing: null, recommendation: null, readiness: { measuredEngine: false, gearingAvailable: false } }) } as Response);
+  fetchMock.mockResolvedValue({ ok: true, json: async () => ({ schemaVersion: 'tuning-workflow-result/v2', cvt: { schemaVersion: 'cvt-qualification/v1', status: 'unsupported', captureStatus: 'missing', ratioPreview: null, diagnostics: [{ code: 'raw-capture-required' }] }, gearing: null, recommendation: null, readiness: { measuredEngine: false, gearingAvailable: false } }) } as Response);
   await act(async () => root.render(<Probe carId="1" cvt />));
   expect(host.textContent).toContain('ready:');
   expect(host.textContent).toContain('raw-capture-required');
