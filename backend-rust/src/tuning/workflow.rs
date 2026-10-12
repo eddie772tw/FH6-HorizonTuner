@@ -136,18 +136,57 @@ pub(crate) fn calculate_qualified_version(
     proof: Option<&super::evidence::QualifiedEvidence>,
     legacy_road: bool,
 ) -> Result<WorkflowResult, String> {
+    calculate_with_replay_policy(input, proof, legacy_road, false)
+}
+pub(crate) fn calculate_historical(
+    input: WorkflowRequest,
+    proof: &super::evidence::QualifiedEvidence,
+    legacy_road: bool,
+) -> Result<WorkflowResult, String> {
+    calculate_with_replay_policy(input, Some(proof), legacy_road, true)
+}
+fn calculate_with_replay_policy(
+    input: WorkflowRequest,
+    proof: Option<&super::evidence::QualifiedEvidence>,
+    legacy_road: bool,
+    historical_replay: bool,
+) -> Result<WorkflowResult, String> {
+    if !historical_replay
+        && input.schema_version == "tuning-workflow-result/v3"
+        && input.profile["isElectric"] == true
+        && proof.is_some()
+        && !input.input_snapshot["evEvidenceConfirmation"].is_object()
+    {
+        return Err(
+            "Current EV workflow requires independently confirmed identity and configuration"
+                .into(),
+        );
+    }
     if let Some(proof) = proof {
         proof.validate(&input)?;
     }
     let qualified_ev = proof.map(|p| p.ev_input(&input)).transpose()?.flatten();
     let qualified_engine = proof.and_then(|p| p.engine());
-    if !["tuning-workflow-result/v1", "tuning-workflow-result/v2"]
-        .contains(&input.schema_version.as_str())
+    if ![
+        "tuning-workflow-result/v1",
+        "tuning-workflow-result/v2",
+        "tuning-workflow-result/v3",
+    ]
+    .contains(&input.schema_version.as_str())
     {
         return Err("Unsupported tuning calculation schema".into());
     }
-    let current_chassis = input.schema_version == "tuning-workflow-result/v2";
-    let schema_version = if current_chassis {
+    let confirmed_ev = input.schema_version == "tuning-workflow-result/v3";
+    if confirmed_ev && (input.profile["isElectric"] != true || super::cvt::selected(&input.profile))
+    {
+        return Err(
+            "Workflow v3 is reserved for independently confirmed fixed-ratio EV evidence".into(),
+        );
+    }
+    let current_chassis = input.schema_version != "tuning-workflow-result/v1";
+    let schema_version = if confirmed_ev {
+        "tuning-workflow-result/v3"
+    } else if current_chassis {
         "tuning-workflow-result/v2"
     } else {
         "tuning-workflow-result/v1"
@@ -318,7 +357,9 @@ pub(crate) fn calculate_qualified_version(
             new_road,
         );
         if current_chassis {
-            rec["formulaVersion"] = json!(if electric {
+            rec["formulaVersion"] = json!(if confirmed_ev {
+                "rust/ev-measured-workflow-v3"
+            } else if electric {
                 "rust/ev-measured-workflow-v2"
             } else {
                 "rust/ice-measured-workflow-v3"

@@ -441,6 +441,7 @@ fn ev_persistence_replays_frames_and_locked_ratios_remain_unapplied() {
         r["profile"]["isElectric"] = json!(true);
         r["profile"]["evGearbox"] = raw["setup"].clone();
         r["inputSnapshot"]["carId"] = json!("3445");
+        r["inputSnapshot"]["evEvidenceConfirmation"] = json!({"schemaVersion":"ev-context/v1","carId":"3445","identity":{"ordinal":3445,"performanceIndex":795,"carClass":4},"setup":raw["setup"],"powertrain":{"drivetrain":"AWD","maxHp":75,"maxTorque":1}});
         r["evidence"] = json!({"kind":"saved-ev","evidenceId":proof["evidenceId"]});
         let result = call(&app, "/api/tuning/workflow", r.clone()).unwrap();
         let road = call(

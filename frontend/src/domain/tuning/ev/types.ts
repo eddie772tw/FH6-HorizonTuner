@@ -8,6 +8,16 @@ export interface EvGearboxSetup {
 }
 
 export interface EvIdentity { ordinal: number; performanceIndex: number; carClass: number }
+export interface EvPowertrainContext { drivetrain: string | null; maxHp: number | null; maxTorque: number | null }
+export interface EvEvidenceConfirmation {
+  schemaVersion: 'ev-context/v1'; carId: string; identity: EvIdentity;
+  setup: EvGearboxSetup; powertrain: EvPowertrainContext;
+}
+export interface EvEvidenceMetadata {
+  evidenceId: string; carId: string; identity: EvIdentity; setup: EvGearboxSetup;
+  powertrain: EvPowertrainContext | null; savedAt?: number; analysisVersion?: string;
+}
+export interface EvQualificationDiagnostic { gear: number; reasons: string[] }
 export interface EvMoments { count: number; mean: number; m2: number }
 export interface EvCurveBin { rpm: number; powerWatts: number; torqueNewtons: number; count: number }
 export interface EvGearMeasurement {

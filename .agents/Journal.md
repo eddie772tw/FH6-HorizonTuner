@@ -897,3 +897,12 @@
 - **Learning**：`assembleRelease` 成功不表示正式維護者簽章。正式入口須 fail closed，且 Android code/name 與 desktop label/runtime 分開映射。Delivery overrides 必須只作用 release variant，避免維護者 shell 殘留設定改变 debug identity。建置後重取 source contract，複製後重取 APK hash，防止 evidence 記錄先前內容。
 - **Evidence**：uv/Python 3.13 delivery 行為測試 27 passed（加 PR tooling 共 36）；全量 frontend 1785 passed／1 skipped、production build 通過；Rust 214 passed。Ruff check／format、Rust fmt、version/path case、bash syntax、diff checks 通過。獨立 reviewer 原 P2 source mutation 與 debug 邊界建議已納入修正及回歸。實際 Android release 正反 gates 使用既有 hosted CI，結果記錄在 PR／artifact，不將本地 fixture 當成實際簽署證據。
 - **Boundary**：僅 CI temporary NON-PRODUCTION key；production configuration／key 未提供或建立，沒有 secrets／security／Release 操作。Android／WebView／TalkBack、安裝升級與資料保留仍 NOT_RUN。維護者步驟與工具限制見 [交付契約](../docs/guides/companion-apk-delivery.md)。
+
+## 2026-10-12 / EV 證據生命週期與 Rust owner 護欄（Codex）
+
+- **Learning**：保存 qualified moments 不等於保存後仍可 raw replay；main 的隔離 HTTP 實際重現刪空 EV raw 仍 ready。saved-ev 必須重新資格審核，raw 缺失不可退回 cache。capture-time/profile provenance 缺值與使用者現在確認需分開。
+- **Contract**：EV current workflow／recommendation v3要求獨立 ev-context/v1；v1/v2保留歷史shape與數值。新capture保存動力配置，未知歷史不猜值。private exact-request token只在鎖外驗證後提供，Road保存不可把重播放進receiver mutex；尾slash與重複prefix也需盤點。
+- **Lifecycle**：明確重新確認同raw需新selection lifetime，不能由A→B→A自動復活。decoded短窗身分變更與provider-scope connectivity都取消延遲回覆，不能依賴Step3是否掛載。未知來源的saved export不補為decoded-websocket。
+- **Evidence**：獨立只讀審查已重現並複測上述lifecycle問題；Rust產品負向矩陣、三版本HTTP／CLI／MCP／restart契約與 mounted React測試見[詳細範圍](../docs/tuning/issue-435-ev-completeness.md)。精確gate及CI數據附PR body。凍結fixtures未更動。
+- **Boundary**：真正單速FD A→B→A、fresh game與廣泛optimizer仍NOT_RUN；Chromium既有sandbox helper使完整browser驗收受阻，未停用sandbox或改安全權限。未修改#518/#519分支、遊戲設備、release或Issue狀態。
+- **Skills**：physics-tuning-math、modular-refactoring、halfmoon-design-system、cross-agent-collaboration、pr-author-maintainer。

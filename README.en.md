@@ -7,6 +7,8 @@ The [Road/Rally chassis engineering baseline](docs/tuning/chassis-engineering-ba
 The versioned [Road launch-envelope correction for #462](docs/tuning/aego-road-launch-v3.md) preserves low-power and historical models; its engineering priors do not establish optimal in-game launches.
 
 EV tuning now has an independent measured powertrain model, selected with a persisted EV switch instead of the conventional gear-count input. The same four-step workflow supports single-speed and multi-speed EV scans and final-drive previews. Launch/shift optimization and attainable top-speed prediction remain uncalibrated. See the [model contract and validation notes](docs/calibration/ev-foundation.md).
+
+Saved EV raw evidence can be selected or imported on the desktop, requalified by Rust, and used after independently confirming the current configuration. Missing historical provenance stays unknown. See the [EV evidence lifecycle contract](docs/tuning/issue-435-ev-completeness.md).
 > **Forza Horizon 6 Real-Time Telemetry Analyzer, Vehicle Tuning Workbench & Custom Racing Dashboard Overlay**
 
 [![Language](https://img.shields.io/badge/Rust-2021-DEA584.svg?logo=rust&logoColor=white)](https://www.rust-lang.org/)

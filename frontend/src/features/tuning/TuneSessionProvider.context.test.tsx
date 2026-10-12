@@ -6,12 +6,12 @@ import { TuneSessionProvider, useTuneSession } from './TuneSessionProvider';
 import type { TelemetryData } from '../../hooks/useTelemetry';
 import type { CarParams } from '../../context/CarParamsContext';
 
-const fixture=vi.hoisted(()=>({profile:{weight:1400,weight_distribution:48,drivetrain:'RWD',maxHp:300,maxTorque:400,spring_front_min:30},listener:undefined as undefined|((frame:TelemetryData)=>void)}));
-vi.mock('../../context/CarParamsContext',()=>({useCarParams:()=>({carId:'42',loadedCarId:'42',carParams:fixture.profile as CarParams})}));
+const fixture=vi.hoisted(()=>({profile:{weight:1400,weight_distribution:48,drivetrain:'RWD',maxHp:300,maxTorque:400,spring_front_min:30} as Record<string,unknown>,ev:{} as Record<string,unknown>,workflowSnapshot:{} as Record<string,unknown>,listener:undefined as undefined|((frame:TelemetryData)=>void)}));
+vi.mock('../../context/CarParamsContext',()=>({useCarParams:()=>({carId:'42',loadedCarId:'42',carParams:fixture.profile as unknown as CarParams})}));
 vi.mock('../../hooks/useTelemetry',()=>({useTelemetry:()=>({data:null,isConnected:true}),subscribeToDecodedTelemetry:(listener:(frame:TelemetryData)=>void)=>{fixture.listener=listener;return()=>{fixture.listener=undefined;};}}));
 vi.mock('./useEngineMeasurementArchive',()=>({useEngineMeasurementArchive:()=>({observation:null,current:null,calculation:null,invalidate:vi.fn(),complete:vi.fn()})}));
-vi.mock('./useEvMeasurementSession',()=>({useEvMeasurementSession:()=>({state:{gears:[]},result:null})}));
-vi.mock('./useWorkflowCalculation',()=>({useWorkflowCalculation:()=>({result:null,status:'pending'})}));
+vi.mock('./useEvMeasurementSession',()=>({useEvMeasurementSession:()=>({state:{gears:[]},result:null,...fixture.ev})}));
+vi.mock('./useWorkflowCalculation',()=>({useWorkflowCalculation:(_a:unknown,_b:unknown,_c:unknown,_d:unknown,_e:unknown,_f:unknown,snapshot:Record<string,unknown>)=>{fixture.workflowSnapshot=snapshot;return {result:null,status:'pending'};}}));
 vi.mock('./engineBatch',()=>({requestEngineBatch:()=>new Promise(()=>{})}));
 
 it('a suspension edit invalidates the existing capture and measurement instead of mixing configurations',async()=>{
@@ -33,4 +33,15 @@ it('a suspension edit invalidates the existing capture and measurement instead o
     await act(async()=>{session.engineMeasurement.restart(true);fixture.listener!({...frame,TimestampMS:200});});
     expect(session.engineMeasurement.captureSnapshot().samples.map(s=>s.timestampMS)).toEqual([200]);
   } finally {await act(async()=>root.unmount());fixture.profile={...fixture.profile,spring_front_min:30};}
+});
+it('allows the same immutable EV raw ID only after a new explicit confirmation lifetime on setup A→B→A',async()=>{
+  Object.assign(globalThis,{IS_REACT_ACT_ENVIRONMENT:true});const root=createRoot(document.createElement('div'));const before=fixture.profile;
+  fixture.profile={...before,isElectric:true};fixture.ev={evidenceId:'raw-A',evidenceLifetime:1,confirmation:{schemaVersion:'ev-context/v1'}};
+  try {
+    await act(async()=>root.render(<TuneSessionProvider><span/></TuneSessionProvider>));expect(fixture.workflowSnapshot.evEvidence).toEqual({kind:'saved-ev',evidenceId:'raw-A'});
+    fixture.profile={...fixture.profile,spring_front_min:35};await act(async()=>root.render(<TuneSessionProvider><span/></TuneSessionProvider>));expect(fixture.workflowSnapshot.evEvidence).toBeNull();
+    fixture.profile={...fixture.profile,spring_front_min:30};await act(async()=>root.render(<TuneSessionProvider><span/></TuneSessionProvider>));expect(fixture.workflowSnapshot.evEvidence).toBeNull();
+    fixture.ev={...fixture.ev,evidenceLifetime:2};await act(async()=>root.render(<TuneSessionProvider><span/></TuneSessionProvider>));
+    expect(fixture.workflowSnapshot.evEvidence).toEqual({kind:'saved-ev',evidenceId:'raw-A'});expect(fixture.workflowSnapshot.evEvidenceConfirmation).toEqual(fixture.ev.confirmation);
+  }finally{await act(async()=>root.unmount());fixture.profile=before;fixture.ev={};}
 });
