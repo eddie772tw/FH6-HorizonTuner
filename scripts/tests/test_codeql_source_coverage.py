@@ -19,6 +19,7 @@ def git(repo, *args):
 @pytest.fixture
 def repo(tmp_path):
     git(tmp_path, "init")
+    git(tmp_path, "config", "core.autocrlf", "false")
     git(tmp_path, "config", "user.name", "Coverage test")
     git(tmp_path, "config", "user.email", "test@example.invalid")
     files = {
@@ -33,7 +34,7 @@ def repo(tmp_path):
     for name, content in files.items():
         path = tmp_path / name
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(content)
+        path.write_bytes(content.encode("utf-8"))
     git(tmp_path, "add", ".")
     git(tmp_path, "commit", "-m", "Test source inventory")
     return tmp_path
@@ -64,8 +65,8 @@ def evidence(repo, tmp_path):
 
 def test_inventory_uses_commit_bytes_and_excludes_untracked(repo):
     baseline = inventory(repo, "HEAD")
-    (repo / "companion/app/src/main/kotlin/App.kt").write_text("changed\n")
-    (repo / "Untracked.kt").write_text("class Untracked\n")
+    (repo / "companion/app/src/main/kotlin/App.kt").write_bytes(b"changed\n")
+    (repo / "Untracked.kt").write_bytes(b"class Untracked\n")
     assert inventory(repo, "HEAD") == baseline
     assert baseline["status"] == "NOT_RUN"
     assert baseline["counts"] == {
