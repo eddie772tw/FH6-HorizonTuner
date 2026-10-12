@@ -882,3 +882,10 @@
 - **Evidence**：完整 Cargo 214 passed／3 ignored；新底盤契約 8 項與推薦重播、防偽、CLI／MCP／API 一致性契約通過。正式 CLI 重播完整 7 台／8 份／40,324 幀，24 次數值與定案表一致；原檔雜湊未變。前端可選欄位、三語 Companion 診斷與過期回覆保護已測試；本機元件預覽確認七核心日夜模式、三語、空白／0／單雙軸欄位切換。
 - **Boundary**：量測重播、UI fixture 與數值契約不是新底盤設定的實機操控證據。沒有新增量測、修改原始車檔或另建 worktree。Windows 全套編譯曾因多個 linker 記憶體競爭拖慢並造成 Vitest worker 啟動失敗，降低 Cargo `-j 2`、Vitest `--maxWorkers=2` 後重新驗證；失敗程序不算通過。
 - **Skills**：`physics-tuning-math`、`ponytail`、`halfmoon-design-system`、`huge-component-refactoring`、`modular-refactoring`、`pr-author-maintainer`、`agent-governance-audit`。
+
+## 2026-10-12 / #434 既有 CVT evidence 選取（Mihaly as Codex）
+
+- **Learning**：初次 live identity hydration 會使正在讀取的 discovery 回覆過期；需重讀清單，不能把過期讀取綁回新身分。共享 foundation 面板也用於 Companion；桌面才注入 evidence session，避免遠端面板依賴 desktop context 或擴大 LAN 白名單。
+- **Evidence**：Rust 新增 cold discovery／raw read／restart、未知與損壞 schema／envelope、非法 ID 和 stale 身分／設定契約；mounted provider 測試驗證空白獨立確認、保存傳輸、live identity、A→B→A 與過期回覆。完整命令與結果見 Draft PR 及 `docs/tuning/cvt-evidence-selection.md`。
+- **Boundary**：沿用現有保存／資格與 Rust owner，不變更 #515 公式或全局選車入口，不新增 live recorder／solver。WAL 輔助檔生命週期不等於主庫改寫；缺庫／壞庫仍核對完整檔案 snapshot。真實 CVT、設備與瀏覽器視覺 gate 為 NOT_RUN；既有 Chromium sandbox 配置未變。
+- **Skills**：`cross-agent-collaboration`、`physics-tuning-math`、`halfmoon-design-system`、`pr-author-maintainer`。

@@ -404,12 +404,7 @@ impl EvidenceService {
         }
         if super::cvt::selected(&input.profile) {
             if let Some(EvidenceRequest::SavedCvt { evidence_id }) = &input.evidence {
-                if !std::path::Path::new(&self.store.db_path).is_file() {
-                    return Err(ApiError::new(404, "Saved evidence database is unavailable"));
-                }
-                let saved = self
-                    .store
-                    .get_read_only(evidence_id, Some("cvt-evidence/v1"), None)?;
+                let saved = self.read_cvt(evidence_id)?;
                 // Replay the immutable raw capture; saved qualification is never trusted.
                 input.evidence = Some(EvidenceRequest::CvtCapture {
                     capture: saved["capture"].clone(),
@@ -461,6 +456,47 @@ impl EvidenceService {
             None,
         )?;
         Ok(json!({"evidenceId":saved["id"],"qualification":result}))
+    }
+    fn cvt_store_available(&self) -> ApiResult<()> {
+        if !std::path::Path::new(&self.store.db_path).is_file() {
+            return Err(ApiError::new(404, "Saved evidence database is unavailable"));
+        }
+        Ok(())
+    }
+    fn check_cvt_document(document: &Value) -> ApiResult<()> {
+        if document["schema"] != crate::road::ROAD_SCHEMA
+            || document["kind"] != "cvt-evidence/v1"
+            || document["workflowId"] != "cvt-evidence"
+            || document["id"].as_str().is_none_or(str::is_empty)
+            || !document["capture"].is_object()
+        {
+            return Err(ApiError::invalid("Unsupported saved CVT document"));
+        }
+        Ok(())
+    }
+    pub fn list_cvt(&self) -> ApiResult<Value> {
+        self.cvt_store_available()?;
+        let mut items = Vec::new();
+        for document in self.store.list_cvt_read_only()? {
+            Self::check_cvt_document(&document)?;
+            // Discovery is metadata only, never a cached qualification or current setup.
+            items.push(json!({"evidenceId":document["id"],"capture":document["capture"]}));
+        }
+        Ok(json!({"schemaVersion":"cvt-evidence-list/v1","items":items}))
+    }
+    pub fn read_cvt(&self, evidence_id: &str) -> ApiResult<Value> {
+        self.cvt_store_available()?;
+        // IDs are SQL parameters, never filenames or relative paths.
+        let document =
+            self.store
+                .get_read_only(evidence_id, Some("cvt-evidence/v1"), Some("cvt-evidence"))?;
+        Self::check_cvt_document(&document)?;
+        if document["id"] != evidence_id {
+            return Err(ApiError::invalid("Saved CVT identity is inconsistent"));
+        }
+        Ok(
+            json!({"schemaVersion":"cvt-evidence-read/v1","evidenceId":evidence_id,"capture":document["capture"]}),
+        )
     }
     pub fn verify_recommendation(&self, rec: &Value, identity: Option<&Value>) -> ApiResult<()> {
         let current = match rec["formulaVersion"].as_str() {
