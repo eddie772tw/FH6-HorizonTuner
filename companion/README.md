@@ -41,4 +41,6 @@ Desktop development builds the frontend distribution before compiling the Rust s
 
 The Android build and protocol tests are validation gates. They do not constitute physical-device, USB, LAN, QR, mDNS, RFCOMM, or end-to-end gameplay acceptance.
 
+Release APK delivery uses the [explicit signing, version, and provenance contract](../docs/guides/companion-apk-delivery.md). Run `scripts/build_companion_apk.py --mode production` from the repository root with maintainer-provided settings. Missing signing configuration fails closed; release builds no longer fall back to debug signing. Debug/local CI validation is unchanged. CI contract APKs use a separate `.contracttest` package and `-test-only` version and are **TEST-ONLY**, not production releases. Android/WebView/TalkBack device acceptance remains **NOT_RUN**.
+
 See [the implementation boundary](../docs/architecture/companion-implementation-boundary.md) for current behavior and pending work. The [architecture evaluation](../docs/architecture/companion-app-evaluation.md) preserves the original design study.

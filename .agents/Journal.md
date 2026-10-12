@@ -1,5 +1,13 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-10-12 / Companion 橢圓背景與 Rhine 導覽（Codex as Codex）
+
+- **Scope**：由 main `c1e86317` 建立 `codex/issue-485-native-theme-parity`；採用 `halfmoon-design-system`、`pr-author-maintainer`、`cross-agent-collaboration`。限原生 Halfmoon background、Rhine marker／underline 與相應測試／[差異矩陣](../docs/frontend/companion-native-theme-parity/README.md)，不改 Gradle、release、CI、字型或 bridge。
+- **Learning**：CSS corner ellipse 的 farthest-corner 半徑為 `width×√2`／`height×√2`，需要兩軸獨立縮放；日間 135deg 也不能用矩形端點對角線冒充固定角度。原生頁各自繪製背景會重新定位 anchor；只在 shell 繪製並隱藏已掛載的 WebView pixels，可避免 alpha 面板露出舊 document，無需重建 WebView。alpha 並非輸入／焦點／accessibility 隔離，相關裝置驗收仍需實測。
+- **Motion**：已核對 Compose 1.9.4 的 WindowRecomposer sources，其 coroutine context 會動態接收 `ANIMATOR_DURATION_SCALE`。Rhine tween 沿用此倍率，不另讀 Settings、不重複乘 duration；animation State 只在 draw 讀取，marker／underline 不改文字或量測。
+- **Evidence**：本地完整 Vitest 1,785 passed／1 skipped、TypeScript／Windows profile production build 通過；Gradle protocol 5 tests 通過。Kotlin 2.2.21／Compose compiler、實際 Android AAR 與 android-all 的 JVM 編譯及 theme／ThemeSession 22 tests 通過（shell compile-only 使用 Activity enums／BuildConfig／R 的最小 stubs；不是 MainActivity／Android Gradle build）。獨立 reviewer 核對 CSS、實際 1.9.4 sources、分層與文件，無阻塞 findings；最終 published head／CI actual checkout／tree 結果保存於 Draft PR，不引用舊 main CI。
+- **Boundary**：本地 Android unit／lint／assemble 因 SDK location not found 未執行，未下載 SDK 或接受新條款。MiSans 原始資產／授權與 Halfmoon backdrop blur 均明列殘留，不作永久降級決定。Android／WebView／TalkBack／native＋Web 同框／GPU／實機矩陣全部 NOT_RUN；純 JVM、前端或 APK 建置均不代替裝置驗收。
+
 ## 2026-10-12 / 底盤 PR 的既有 CI 阻擋修復（Mihaly as Codex）
 
 - **Scope**：沿用 `pr-author-maintainer`、`ponytail`、`halfmoon-design-system`；修復 PR #515 從 main 繼承的 Ruff 排序及 R34 間距失敗，不調整底盤定案。
@@ -882,6 +890,13 @@
 - **Evidence**：完整 Cargo 214 passed／3 ignored；新底盤契約 8 項與推薦重播、防偽、CLI／MCP／API 一致性契約通過。正式 CLI 重播完整 7 台／8 份／40,324 幀，24 次數值與定案表一致；原檔雜湊未變。前端可選欄位、三語 Companion 診斷與過期回覆保護已測試；本機元件預覽確認七核心日夜模式、三語、空白／0／單雙軸欄位切換。
 - **Boundary**：量測重播、UI fixture 與數值契約不是新底盤設定的實機操控證據。沒有新增量測、修改原始車檔或另建 worktree。Windows 全套編譯曾因多個 linker 記憶體競爭拖慢並造成 Vitest worker 啟動失敗，降低 Cargo `-j 2`、Vitest `--maxWorkers=2` 後重新驗證；失敗程序不算通過。
 - **Skills**：`physics-tuning-math`、`ponytail`、`halfmoon-design-system`、`huge-component-refactoring`、`modular-refactoring`、`pr-author-maintainer`、`agent-governance-audit`。
+
+## 2026-10-12 / Companion APK 正式交付契約（APK Contract as Codex）
+
+- **Scope／ownership**：從 main `c1e86317` 建立 `codex/issue-485-release-apk-contract`；只處理 #485 signing／version／artifact provenance，排除 Kotlin CodeQL、安全設定、native 視覺及發布。採用 `pr-author-maintainer`、`cross-agent-collaboration`。
+- **Learning**：`assembleRelease` 成功不表示正式維護者簽章。正式入口須 fail closed，且 Android code/name 與 desktop label/runtime 分開映射。Delivery overrides 必須只作用 release variant，避免維護者 shell 殘留設定改变 debug identity。建置後重取 source contract，複製後重取 APK hash，防止 evidence 記錄先前內容。
+- **Evidence**：uv/Python 3.13 delivery 行為測試 27 passed（加 PR tooling 共 36）；全量 frontend 1785 passed／1 skipped、production build 通過；Rust 214 passed。Ruff check／format、Rust fmt、version/path case、bash syntax、diff checks 通過。獨立 reviewer 原 P2 source mutation 與 debug 邊界建議已納入修正及回歸。實際 Android release 正反 gates 使用既有 hosted CI，結果記錄在 PR／artifact，不將本地 fixture 當成實際簽署證據。
+- **Boundary**：僅 CI temporary NON-PRODUCTION key；production configuration／key 未提供或建立，沒有 secrets／security／Release 操作。Android／WebView／TalkBack、安裝升級與資料保留仍 NOT_RUN。維護者步驟與工具限制見 [交付契約](../docs/guides/companion-apk-delivery.md)。
 
 ## 2026-10-12 / EV 證據生命週期與 Rust owner 護欄（Codex）
 
