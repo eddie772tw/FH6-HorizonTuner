@@ -882,3 +882,12 @@
 - **Evidence**：完整 Cargo 214 passed／3 ignored；新底盤契約 8 項與推薦重播、防偽、CLI／MCP／API 一致性契約通過。正式 CLI 重播完整 7 台／8 份／40,324 幀，24 次數值與定案表一致；原檔雜湊未變。前端可選欄位、三語 Companion 診斷與過期回覆保護已測試；本機元件預覽確認七核心日夜模式、三語、空白／0／單雙軸欄位切換。
 - **Boundary**：量測重播、UI fixture 與數值契約不是新底盤設定的實機操控證據。沒有新增量測、修改原始車檔或另建 worktree。Windows 全套編譯曾因多個 linker 記憶體競爭拖慢並造成 Vitest worker 啟動失敗，降低 Cargo `-j 2`、Vitest `--maxWorkers=2` 後重新驗證；失敗程序不算通過。
 - **Skills**：`physics-tuning-math`、`ponytail`、`halfmoon-design-system`、`huge-component-refactoring`、`modular-refactoring`、`pr-author-maintainer`、`agent-governance-audit`。
+
+## 2026-10-12 / EV 證據生命週期與 Rust owner 護欄（Codex）
+
+- **Learning**：保存 qualified moments 不等於保存後仍可 raw replay；main 的隔離 HTTP 實際重現刪空 EV raw 仍 ready。saved-ev 必須重新資格審核，raw 缺失不可退回 cache。capture-time/profile provenance 缺值與使用者現在確認需分開。
+- **Contract**：EV current workflow／recommendation v3要求獨立 ev-context/v1；v1/v2保留歷史shape與數值。新capture保存動力配置，未知歷史不猜值。private exact-request token只在鎖外驗證後提供，Road保存不可把重播放進receiver mutex；尾slash與重複prefix也需盤點。
+- **Lifecycle**：明確重新確認同raw需新selection lifetime，不能由A→B→A自動復活。decoded短窗身分變更與provider-scope connectivity都取消延遲回覆，不能依賴Step3是否掛載。未知來源的saved export不補為decoded-websocket。
+- **Evidence**：獨立只讀審查已重現並複測上述lifecycle問題；Rust產品負向矩陣、三版本HTTP／CLI／MCP／restart契約與 mounted React測試見[詳細範圍](../docs/tuning/issue-435-ev-completeness.md)。精確gate及CI數據附PR body。凍結fixtures未更動。
+- **Boundary**：真正單速FD A→B→A、fresh game與廣泛optimizer仍NOT_RUN；Chromium既有sandbox helper使完整browser驗收受阻，未停用sandbox或改安全權限。未修改#518/#519分支、遊戲設備、release或Issue狀態。
+- **Skills**：physics-tuning-math、modular-refactoring、halfmoon-design-system、cross-agent-collaboration、pr-author-maintainer。

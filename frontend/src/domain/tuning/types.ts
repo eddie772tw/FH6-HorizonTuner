@@ -164,7 +164,7 @@ export interface GearingResult {
 }
 
 export interface WorkflowRecommendation {
-  formulaVersion: 'tuningMath/measured-workflow-v1' | 'ev/measured-workflow-v1' | 'rust/ice-measured-workflow-v1' | 'rust/ice-measured-workflow-v2' | 'rust/ev-measured-workflow-v1';
+  formulaVersion: 'tuningMath/measured-workflow-v1' | 'ev/measured-workflow-v1' | 'rust/ice-measured-workflow-v1' | 'rust/ice-measured-workflow-v2' | 'rust/ice-measured-workflow-v3' | 'rust/ev-measured-workflow-v1' | 'rust/ev-measured-workflow-v2' | 'rust/ev-measured-workflow-v3';
   inputSnapshot: Record<string, unknown>;
   fields: Record<string, { value: number; unit: string }>;
 }
