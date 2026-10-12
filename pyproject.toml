@@ -1,6 +1,8 @@
 [tool.ruff]
 # 設定每行最大長度（符合 Black Style 標準）
 line-length = 88
+target-version = "py313"
+
 
 # 設定排除的目錄
 exclude = [
