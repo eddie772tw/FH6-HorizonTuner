@@ -65,3 +65,8 @@ test ! -e build/official-apk/test-only/delivery.json
 printf 'PASS: actual signed APK with wrong certificate pin; exit=1; stale receipt removed\n' >> build/verification/release-negative-control.txt
 "${python_command[@]}" --mode test-only --verify-apk "$apk" | tee -a build/verification/release-positive-control.txt
 cat build/verification/release-negative-control.txt
+# Public evidence only: no signing passwords, keystore path/bytes, or private key.
+# Keep the receipt inspectable even when a review environment cannot transfer artifact bytes.
+printf '%s\n' 'BEGIN TEST-ONLY DELIVERY RECEIPT'
+cat build/official-apk/test-only/delivery.json
+printf '%s\n' 'END TEST-ONLY DELIVERY RECEIPT'
