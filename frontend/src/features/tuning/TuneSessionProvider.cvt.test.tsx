@@ -73,6 +73,7 @@ it('mounts import/source hints and saves raw without copying imported metadata i
   expect(saved.inputSnapshot.cvtConfiguration).toEqual(independentlyEntered);
   expect(saved.evidence.capture).toEqual(capture);
   expect(session.cvtEvidence.selection?.evidence).toEqual({ kind: 'saved-cvt', evidenceId: 'saved-synthetic' });
+  expect(session.cvtEvidence.items.filter(item => item.evidenceId === 'saved-synthetic').length).toBe(1);
   expect(session.result?.gearing).toBeNull(); expect(session.result?.recommendation).toBeNull();
 });
 

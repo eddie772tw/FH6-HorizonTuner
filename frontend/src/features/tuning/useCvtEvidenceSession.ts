@@ -115,7 +115,7 @@ export function useCvtEvidenceSession(context: string, identity: TuneSessionIden
         || result.qualification.ratioPreview !== null) throw new Error('Unsupported CVT evidence response.');
       if (current()) {
         const saved = { evidenceId: result.evidenceId, capture: selection.metadata };
-        setItems(previous => [...previous, saved]);
+        setItems(previous => [...previous.filter(item => item.evidenceId !== result.evidenceId), saved]);
         setSelection({ ...selection, evidence: { kind: 'saved-cvt', evidenceId: result.evidenceId } });
       }
     });
