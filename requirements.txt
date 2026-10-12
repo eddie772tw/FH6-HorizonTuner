@@ -1,4 +1,4 @@
 # Optional repository maintenance, diagnostics and test tools; no product runtime.
 ruff
 pytest
-websockets>=17.1,<18.0
+websockets>=17.2,<18.0

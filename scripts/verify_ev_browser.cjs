@@ -47,7 +47,8 @@ async function api(endpoint, body) {
   return result;
 }
 async function openBrowser() {
-  browser = await chromium.launch({headless:true,channel:process.env.EV_BROWSER_CHANNEL || 'msedge'});
+  browser = await chromium.launch({headless:true,chromiumSandbox:true,
+    ...(process.env.EV_BROWSER_EXECUTABLE ? {executablePath:process.env.EV_BROWSER_EXECUTABLE} : {channel:process.env.EV_BROWSER_CHANNEL || 'msedge'})});
   page = await browser.newPage({viewport:{width:1440,height:1100}});
   page.on('pageerror', e=>{errors.push(e.message);console.log('PAGE ERROR',e.stack)});
   page.setDefaultTimeout(20000);
@@ -110,11 +111,24 @@ async function openBrowser() {
   await page.screenshot({path:'scratch/ev-result-light.png',fullPage:true});
   await page.getByText('Boundary speed',{exact:true}).scrollIntoViewIfNeeded();
   await page.screenshot({path:'scratch/ev-result-detail.png',fullPage:true});
+  // Raw export/import uses the same Rust owner; metadata never fills current settings.
+  const importedPath = path.join(dataDir, 'imported-ev.json');
+  const currentProfile = await api('/api/car_params/3445');
+  fs.writeFileSync(importedPath, JSON.stringify({schema:'ev-capture/v1',carId:'3445',setup:currentProfile.evGearbox,
+    powertrain:{drivetrain:currentProfile.drivetrain,maxHp:currentProfile.maxHp,maxTorque:currentProfile.maxTorque},
+    recording:null,frames:replay.runs[0].rows.map(makeFrame)}));
+  await page.getByLabel('Import raw EV JSON',{exact:true}).setInputFiles(importedPath);
+  await page.getByLabel('I independently verified that the current vehicle, installed build, powertrain and gearbox match this capture.').check();
+  await page.getByRole('button',{name:'Use confirmed EV evidence',exact:true}).click();
+  await page.getByRole('button',{name:'Calculate EV model',exact:true}).click();
+  await page.getByRole('heading',{name:'Measured EV baseline',exact:true}).waitFor();
   await page.getByRole('button',{name:'4. Setup verification',exact:true}).click();
   assert.equal(await page.getByRole('button',{name:'4. Setup verification',exact:true}).getAttribute('aria-current'),'step');
   for(let attempt=0;!latestWorkflow && attempt<100;attempt++) await delay(100);
   assert.ok(latestWorkflow?.recommendation, 'UI must obtain an authoritative Rust recommendation');
-  assert.equal(latestWorkflow.recommendation.formulaVersion,'rust/ev-measured-workflow-v1');
+  assert.equal(latestWorkflow.schemaVersion,'tuning-workflow-result/v3');
+  assert.equal(latestWorkflow.recommendation.formulaVersion,'rust/ev-measured-workflow-v3');
+  assert.equal(latestWorkflow.recommendation.inputSnapshot.chassisModelVersion,'rust/chassis-load-baseline/v1');
   const savedWorkflow = await api('/api/road/workflows', {
     identity:{ordinal:3445,performanceIndex:795,drivetrain:2},carName:'Taycan',
     event:{name:'EV replay acceptance',format:'circuit'},recommendation:latestWorkflow.recommendation});
@@ -124,6 +138,13 @@ async function openBrowser() {
     setup:(await api('/api/car_params/3445')).evGearbox,candidateFinalDrive:4.03});
   const savedSetup = (await api('/api/car_params/3445')).evGearbox;
   const savedEvidenceId = latestWorkflow.recommendation.inputSnapshot.evidenceId;
+  const snapshot = latestWorkflow.recommendation.inputSnapshot;
+  const legacySnapshot = {...snapshot}; delete legacySnapshot.evEvidenceConfirmation;
+  const historical = await api('/api/tuning/workflow', {schemaVersion:'tuning-workflow-result/v2',goal:snapshot.goal,season:snapshot.season,
+    profile:snapshot.profile,inputSnapshot:legacySnapshot,evidence:{kind:'saved-ev',evidenceId:savedEvidenceId}});
+  assert.equal(historical.schemaVersion,'tuning-workflow-result/v2');
+  assert.equal(historical.recommendation.formulaVersion,'rust/ev-measured-workflow-v2');
+  assert.deepEqual(historical.gearing,latestWorkflow.gearing);
   // Single-speed contract: replay only the held-first-gear observations.
   // This verifies the workflow shape, not a real single-speed car calibration.
   await page.getByRole('button',{name:'3. Engine data & gearing',exact:true}).click();

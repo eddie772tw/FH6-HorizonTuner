@@ -25,3 +25,7 @@ React／TypeScript／Vite 提供桌面 Full／Lite 與 Companion Web 的共用�
 | Android 原生外殼與 WebView 邊界 | [Companion README](../companion/README.md) |
 
 Vitest 案例通常與模組並列，命名為 `*.test.ts`／`*.test.tsx`；主題入口案例為 [ThemeContext.test.ts](src/context/ThemeContext.test.ts) 與 [themeDocument.test.tsx](src/context/themeDocument.test.tsx)。凍結的 TypeScript 調校模型位於 [test-reference/tuning](test-reference/tuning/README.md)，不得由產品 runtime 匯入。完整測試分流見[測試策略](../.agents/rules/testing-strategy.md)。
+
+## 保存車輛的離線調校
+
+Tune 標頭的「已保存車輛／設定檔」可在沒有遊戲 Data Out 時載入現有 profile；Step 3 仍透過原 archive 與動力配置確認選取保存觀測。「跟隨 Data Out」、新的遊戲車輛或重新連線會恢復即時選車並使舊選取失效。離線指未使用遊戲遙測，本地 Rust sidecar 仍須執行。生命週期、合成 UI 驗證與尚未完成的真實資料 gate 見[離線選車契約](../docs/frontend/offline-tune-selection.md)。

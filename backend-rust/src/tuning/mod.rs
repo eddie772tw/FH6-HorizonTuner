@@ -9,6 +9,7 @@ pub mod cvt;
 pub mod developer;
 pub mod dyno_guidance;
 pub mod ev;
+pub mod ev_archive;
 pub mod ev_measurement;
 pub mod evidence;
 pub mod gearing;

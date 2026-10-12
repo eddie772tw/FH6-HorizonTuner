@@ -774,6 +774,53 @@ impl Backend for App {
         lock(&self.metrics).client_delta(channel, delta);
     }
     fn request(&self, request: ApiRequest) -> ApiResult<ApiResponse> {
+        if request
+            .path
+            .strip_prefix("/api/road")
+            .is_some_and(|p| p.starts_with("/api/road"))
+        {
+            return Err(ApiError::invalid(
+                "Repeated Road API prefixes are unsupported",
+            ));
+        }
+        let road_path = request.path.strip_prefix("/api/road").map(|p| {
+            p.split('/')
+                .filter(|s| !s.is_empty())
+                .collect::<Vec<_>>()
+                .join("/")
+        });
+        if request.method == "POST"
+            && road_path
+                .as_deref()
+                .is_some_and(|p| ["workflows", "compatibility"].contains(&p))
+        {
+            let body = request.json()?;
+            let rec = &body["recommendation"];
+            if rec["formulaVersion"]
+                .as_str()
+                .is_some_and(|v| v.starts_with("rust/"))
+            {
+                let workflow = road_path.as_deref() == Some("workflows");
+                crate::road::validate_request(
+                    if workflow {
+                        "workflow"
+                    } else {
+                        "compatibility"
+                    },
+                    &body,
+                )?;
+                let identity = workflow.then(|| &body["identity"]);
+                // Bounded raw replay and SQLite reads finish before the telemetry engine lock.
+                let verified = self.tuning_evidence.verify_for_road(rec, identity)?;
+                let result = lock(&self.engine).road.handle_verified(
+                    "POST",
+                    request.path.strip_prefix("/api/road").unwrap(),
+                    Some(&body),
+                    Some(&verified),
+                )?;
+                return Ok(ApiResponse::json(result));
+            }
+        }
         if let Some(response) = crate::tuning::api::request(&request, &self.tuning_evidence)? {
             return Ok(response);
         }

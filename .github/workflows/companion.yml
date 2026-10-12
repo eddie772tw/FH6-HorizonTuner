@@ -4,13 +4,18 @@ on:
   pull_request:
     paths:
       - "companion/**"
+      - "scripts/build_companion_apk.py"
+      - "scripts/tests/test_build_companion_apk.py"
       - ".github/workflows/companion.yml"
   push:
     branches:
       - main
       - "feature/**"
+      - "codex/issue-485-release-apk-contract"
     paths:
       - "companion/**"
+      - "scripts/build_companion_apk.py"
+      - "scripts/tests/test_build_companion_apk.py"
       - ".github/workflows/companion.yml"
 
 permissions:
@@ -37,6 +42,19 @@ jobs:
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+
+      - name: Set up uv and managed Python 3.13 for delivery tools
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          python-version: "3.13"
+          activate-environment: true
+          no-project: true
+
+      - name: Test delivery preflight and inspected artifact rejection
+        working-directory: .
+        run: |
+          uv pip install pytest
+          uv run --no-project --active python -m pytest scripts/tests/test_build_companion_apk.py
 
       - name: Run protocol, theme and app tests, Android lint, and debug assemble
         run: bash ./gradlew --no-daemon --stacktrace :protocol-core:test :theme:testDebugUnitTest :app:testDebugUnitTest :app:lintDebug :app:assembleDebug
@@ -87,6 +105,23 @@ jobs:
           test -s app/build/outputs/apk/debug/app-debug.apk
           (cd app/build/outputs/apk/debug && sha256sum app-debug.apk) | tee build/verification/APK-SHA256.txt
           cat build/verification/head-sha.txt build/verification/checkout-sha.txt build/verification/source-sha256.txt build/verification/java-version.txt
+
+      - name: Verify release delivery with disposable test-only signing and negative controls
+        env:
+          COMPANION_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: bash scripts/TestReleaseApkContract.sh
+
+      - name: Upload test-only release contract evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: companion-release-contract-TEST-ONLY-${{ github.event.pull_request.head.sha || github.sha }}
+          path: |
+            companion/build/official-apk/test-only/*.apk
+            companion/build/official-apk/test-only/delivery.json
+            companion/build/verification/release-*.txt
+          if-no-files-found: error
+          retention-days: 14
 
       - name: Upload Android test, lint, and APK evidence
         if: always()

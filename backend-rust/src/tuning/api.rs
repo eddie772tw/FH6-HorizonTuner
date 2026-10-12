@@ -15,6 +15,31 @@ pub fn request(
         let id = request.path.trim_start_matches("/api/tuning/cvt-evidence/");
         return Ok(Some(ApiResponse::json(evidence.read_cvt(id)?)));
     }
+    if request.method == "POST" && request.path == "/api/tuning/ev-selection" {
+        return Ok(Some(ApiResponse::json(
+            evidence.select_ev(&request.json()?)?,
+        )));
+    }
+    if request.method == "GET" && request.path == "/api/tuning/ev-evidence" {
+        let car = request
+            .query
+            .get("carId")
+            .ok_or_else(|| ApiError::invalid("carId required"))?;
+        return Ok(Some(ApiResponse::json(evidence.list_ev(car)?)));
+    }
+    if request.method == "GET" {
+        if let Some(id) = request.path.strip_prefix("/api/tuning/ev-evidence/") {
+            return Ok(Some(ApiResponse::json(evidence.read_ev(id)?)));
+        }
+    }
+    if request.method == "POST" && request.path == "/api/tuning/ev-import" {
+        if request.body.len() > 8 * 1024 * 1024 {
+            return Err(ApiError::invalid("EV import exceeds 8 MiB"));
+        }
+        return Ok(Some(ApiResponse::json(
+            evidence.import_ev(&request.json()?)?,
+        )));
+    }
     if request.method == "POST" && request.path == "/api/tuning/cvt-evidence" {
         return Ok(Some(ApiResponse::json(
             evidence.save_cvt(&request.json()?)?,

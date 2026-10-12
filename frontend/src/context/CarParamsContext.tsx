@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useRef, useCallback } from 'react';
 import { useTelemetry } from '../hooks/useTelemetry';
 import { useSettings } from './SettingsContext';
 import { backendFetch } from '../services/backend';
@@ -91,6 +91,11 @@ interface CarParamsContextType {
   loadedCarId: string | null;
   carsWithParams: { id: string; name: string }[];
   telemetryCarId: string;
+  selectionSource: 'default' | 'saved' | 'live';
+  selectionGeneration: number;
+  followLiveCar: () => void;
+  profileError: boolean;
+  savedCarsStatus: 'loading' | 'ready' | 'error';
 }
 
 export const mergeDynoPollResult = (
@@ -105,14 +110,30 @@ export const mergeDynoPollResult = (
 const CarParamsContext = createContext<CarParamsContextType | undefined>(undefined);
 
 export const CarParamsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const { data } = useTelemetry();
-  const telemetryCarId = data?.CarOrdinal ? data.CarOrdinal.toString() : '';
+  const { data, isConnected } = useTelemetry();
+  const telemetryCarId = Number.isInteger(data?.CarOrdinal) && (data?.CarOrdinal ?? 0) > 0 ? String(data!.CarOrdinal) : '';
   const { settings, updateSettings } = useSettings();
 
-  const [carId, setCarId] = useState<string>('default_car');
-  const [carParams, setCarParams] = useState<CarParams | null>(null);
+  const [selection, setSelection] = useState({ carId: 'default_car', source: 'default' as CarParamsContextType['selectionSource'], generation: 0 });
+  const { carId, source: selectionSource, generation: selectionGeneration } = selection;
+  const selectionRef = useRef(selection);
+  selectionRef.current = selection;
+  const selectCar = useCallback((id: string, source: CarParamsContextType['selectionSource']) => {
+    setSelection(previous => previous.carId === id && previous.source === source ? previous
+      : { carId: id, source, generation: previous.generation + 1 });
+  }, []);
+  const setCarId = useCallback((id: string) => selectCar(id, 'saved'), [selectCar]);
+  const followLiveCar = useCallback(() => { if (telemetryCarId) selectCar(telemetryCarId, 'live'); }, [telemetryCarId, selectCar]);
+  const [storedParams, setStoredParams] = useState<CarParams | null>(null);
+  const [loadedGeneration, setLoadedGeneration] = useState<number | null>(null);
+  const carParams = loadedGeneration === selectionGeneration ? storedParams : null;
+  const setCarParams = (params: CarParams) => {
+    if (loadedGeneration === selectionGeneration && selectionRef.current.generation === selectionGeneration) setStoredParams(params);
+  };
   const [isLoading, setIsLoading] = useState(false);
-  const [loadedCarId, setLoadedCarId] = useState<string | null>(null);
+  const loadedCarId = loadedGeneration === selectionGeneration ? carId : null;
+  const [profileError, setProfileError] = useState(false);
+  const [savedCarsStatus, setSavedCarsStatus] = useState<CarParamsContextType['savedCarsStatus']>('loading');
   const [carDb, setCarDb] = useState<Record<string, any>>({});
   const [carsWithParams, setCarsWithParams] = useState<{ id: string; name: string }[]>([]);
 
@@ -120,10 +141,12 @@ export const CarParamsProvider: React.FC<{ children: ReactNode }> = ({ children 
     try {
       const res = await backendFetch('/api/cars/with_params');
       const data = await res.json();
-      if (Array.isArray(data)) {
+      if (res.ok && Array.isArray(data)) {
         setCarsWithParams(data);
-      }
+        setSavedCarsStatus('ready');
+      } else throw new Error('Saved vehicles unavailable');
     } catch (e) {
+      setSavedCarsStatus('error');
       console.error("Failed to fetch cars with params", e);
     }
   };
@@ -137,19 +160,21 @@ export const CarParamsProvider: React.FC<{ children: ReactNode }> = ({ children 
     fetchCarsWithParams();
   }, []);
 
-  const carName = carDb[carId]?.display_name || 'Unknown Car';
+  const carName = carDb[carId]?.display_name || carsWithParams.find(car => car.id === carId)?.name || 'Unknown Car';
 
   const prevTelemetryCarIdRef = useRef<string>('');
+  const previousConnection = useRef(isConnected);
 
   // Auto-switch to telemetry car id if it's active and has actually changed
   useEffect(() => {
-    if (telemetryCarId && telemetryCarId !== '0') {
-      if (telemetryCarId !== prevTelemetryCarIdRef.current) {
-        setCarId(telemetryCarId);
+    if (isConnected && telemetryCarId) {
+      if (telemetryCarId !== prevTelemetryCarIdRef.current || !previousConnection.current) {
+        selectCar(telemetryCarId, 'live');
       }
     }
     prevTelemetryCarIdRef.current = telemetryCarId;
-  }, [telemetryCarId]);
+    previousConnection.current = isConnected;
+  }, [telemetryCarId, isConnected, selectCar]);
 
   // Load params when carId changes
   useEffect(() => {
@@ -158,46 +183,52 @@ export const CarParamsProvider: React.FC<{ children: ReactNode }> = ({ children 
     const controller = new AbortController();
     const fetchParams = async () => {
       setIsLoading(true);
+      setProfileError(false);
       try {
         const res = await backendFetch(`/api/car_params/${carId}`, { signal: controller.signal });
         const result = await res.json();
         if (!res.ok) throw new Error('Car parameters unavailable');
+        if (result.error && selectionSource === 'saved') throw new Error('Saved vehicle profile unavailable');
         const normalized = await backendFetch('/api/tuning/profile', { method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(result.error ? {} : result), signal: controller.signal });
         if (!normalized.ok) throw new Error('Car profile normalization unavailable');
         const profile = await normalized.json() as CarParams;
-        if (active) { setCarParams(profile); setLoadedCarId(carId); }
+        if (active && selectionRef.current.generation === selectionGeneration) {
+          setStoredParams(profile); setLoadedGeneration(selectionGeneration);
+        }
       } catch (e) {
-        if (active) { console.error("Failed to load car params", e); retry = setTimeout(fetchParams, 2000); }
+        if (active) { setProfileError(true); console.error("Failed to load car params", e); retry = setTimeout(fetchParams, 2000); }
       } finally {
         if (active) setIsLoading(false);
       }
     };
     if (carId) fetchParams();
     return () => { active = false; controller.abort(); clearTimeout(retry); };
-  }, [carId]);
+  }, [carId, selectionGeneration]);
 
   // Poll live dyno fields only, without overwriting user-edited car params.
   useEffect(() => {
-    if (telemetryCarId === carId && telemetryCarId !== '0') {
+    if (selectionSource === 'live' && telemetryCarId === carId && loadedCarId === carId) {
+      let active = true;
+      const controller = new AbortController();
       const interval = setInterval(async () => {
         try {
-          const res = await backendFetch(`/api/car_params/${carId}`);
+          const res = await backendFetch(`/api/car_params/${carId}`, { signal: controller.signal });
           const result = await res.json();
-          if (!result.error) {
-            setCarParams(prev => {
-              if (!prev) return result;
+          if (res.ok && !result.error && active && selectionRef.current.generation === selectionGeneration) {
+            setStoredParams(prev => {
+              if (!prev) return prev;
               return mergeDynoPollResult(prev, result);
             });
           }
         } catch (e) { }
       }, 5000);
-      return () => clearInterval(interval);
+      return () => { active = false; controller.abort(); clearInterval(interval); };
     }
-  }, [telemetryCarId, carId]);
+  }, [telemetryCarId, carId, loadedCarId, selectionSource, selectionGeneration]);
 
   const saveCarParams = async (snapshot = carParams) => {
-    if (!snapshot) return;
+    if (!snapshot || loadedCarId !== carId || selectionRef.current.generation !== selectionGeneration) return;
     try {
       const response = await backendFetch(`/api/car_params/${carId}`, {
         method: 'POST',
@@ -218,8 +249,8 @@ export const CarParamsProvider: React.FC<{ children: ReactNode }> = ({ children 
         method: 'DELETE'
       });
       const result = await res.json();
-      if (!result.error) {
-        setCarParams(prev => prev ? { ...prev, dyno_curve: {} } : prev);
+      if (!result.error && selectionRef.current.generation === selectionGeneration) {
+        setStoredParams(prev => prev ? { ...prev, dyno_curve: {} } : prev);
       }
     } catch (e) {
       console.error("Failed to clear dyno curve", e);
@@ -234,7 +265,9 @@ export const CarParamsProvider: React.FC<{ children: ReactNode }> = ({ children 
       const response = await backendFetch('/api/tuning/dyno-peaks', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(carParams.dyno_curve) });
       if (!response.ok) return;
       const peaks = await response.json();
-      setCarParams(current => current === requestedProfile ? { ...current, ...peaks } : current);
+      if (selectionRef.current.generation === selectionGeneration) {
+        setStoredParams(current => current === requestedProfile ? { ...current, ...peaks } : current);
+      }
     } catch { /* Retain the draft until authoritative values are available. */ }
   };
 
@@ -245,7 +278,7 @@ export const CarParamsProvider: React.FC<{ children: ReactNode }> = ({ children 
       carId, setCarId, carName, carParams, setCarParams,
       saveCarParams, clearDynoCurve, importDynoValues,
       settings, updateSettings, isLoading, loadedCarId,
-      carsWithParams, telemetryCarId
+      carsWithParams, telemetryCarId, selectionSource, selectionGeneration, followLiveCar, profileError, savedCarsStatus
     }}>
       {children}
     </CarParamsContext.Provider>

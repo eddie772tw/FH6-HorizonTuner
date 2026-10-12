@@ -1,5 +1,5 @@
 import { RoadWorkflowView } from '../road/RoadWorkflowView';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useCarParams } from '../../context/CarParamsContext';
 import { ScopedUnitSettingsProvider, useSettings } from '../../context/SettingsContext';
 import type { Season } from '../../domain/tuning/types';
@@ -17,13 +17,16 @@ import { unavailableReadiness } from './useWorkflowCalculation';
 import { usesCvt } from '../../domain/tuning/transmission';
 import { CvtFoundationPanel } from './components/CvtFoundationPanel';
 import { BaselinePreviewPanel } from './components/BaselinePreviewPanel';
+import { TuneVehicleSelector } from './components/TuneVehicleSelector';
 
 export function TuningViewContent({ unitPreference, onUnitPreferenceChange }: {
     unitPreference: UnitPreferenceOverride; onUnitPreferenceChange: (value: UnitPreferenceOverride) => void;
   }) {
-  const { carId, carName, carParams: liveCarParams, setCarParams, saveCarParams } = useCarParams();
+  const { carId, carName, carParams: liveCarParams, setCarParams, saveCarParams, selectionGeneration = 0 } = useCarParams();
   const { t } = useSettings();
   const session = useTuneSession();
+  const selectionGenerationRef = useRef(selectionGeneration);
+  selectionGenerationRef.current = selectionGeneration;
   const [showUnits, setShowUnits] = useState(false);
   const currentStep = session.workflow.step;
   const goal = session.workflow.goal;
@@ -47,6 +50,7 @@ export function TuningViewContent({ unitPreference, onUnitPreferenceChange }: {
   }, [session.calculationStatus, currentStep, readiness.mechanical, readiness.engineInputs, readiness.measuredEngine, readiness.gearingAvailable]);
   return <div className="tuning-workflow container-fluid h-100 d-flex flex-column gap-3 p-0 overflow-auto">
     <header>
+      <TuneVehicleSelector />
       <div className="workspace-toolbar mb-2">
         <div className="small text-body-secondary" style={{ minWidth: 0, overflowWrap: 'anywhere' }}>{carName} · {carId}</div>
         <div className="d-flex flex-wrap gap-2">
@@ -71,13 +75,13 @@ export function TuningViewContent({ unitPreference, onUnitPreferenceChange }: {
         if (updated) setCarParams(updated);
       }}
       hasCoreParams={readiness.mechanical} onOpenUnitSettings={() => setShowUnits(true)}
-      onProceed={async () => { await saveCarParams(); setCurrentStep(2); }} />}
+      onProceed={async () => { await saveCarParams(); if (selectionGenerationRef.current === selectionGeneration) setCurrentStep(2); }} />}
     {!reviewHistory && [2, 4].includes(currentStep) && session.calculationStatus !== 'ready' && <div className="alert alert-info" role="status">{t(session.calculationStatus === 'error' ? 'Tuning calculation is unavailable. Retrying…' : 'Calculating tuning results…')}</div>}
     {!reviewHistory && currentStep === 2 && session.calculationStatus === 'ready' && <Step2ChassisTuner selectedRaceGoal={goal} season={season} carParams={profile}
       chassis={chassis} alignment={alignment} tireEvidence={session.result?.tireEvidence ?? null} evidenceProvenance={session.result?.evidenceProvenance ?? null} saveCarParams={saveCarParams} />}
     {!reviewHistory && currentStep === 3 && (usesCvt(profile) ? <CvtFoundationPanel result={session.result?.cvt} t={t} evidenceSession={session.cvtEvidence} /> : profile?.isElectric
       ? <EvPowertrainStep enabled={readiness.engineInputs} />
-      : <EngineDataStep carId={carId} profile={profile} engine={engine} gearing={gearing && !('model' in gearing) ? gearing : null} enabled={readiness.engineInputs} />)}
+      : <EngineDataStep key={JSON.stringify([carId, selectionGeneration, session.identityGeneration, profile])} carId={carId} profile={profile} engine={engine} gearing={gearing && !('model' in gearing) ? gearing : null} enabled={readiness.engineInputs} />)}
     {!reviewHistory && currentStep === 4 && session.calculationStatus === 'ready' && <SetupVerificationStep goal={goal} carId={carId} recommendation={session.result?.recommendation ?? null} />}
     {reviewHistory && <RoadWorkflowView recommendation={null} carId={carId} />}
     <UnitSettingsSidebar idPrefix="tuning-units" show={showUnits} title={t('Tuning Workflow Unit Settings')}

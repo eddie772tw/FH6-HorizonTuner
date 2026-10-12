@@ -2,7 +2,11 @@ import { usesCvt } from '../../domain/tuning/transmission';
 import type { CarParams } from '../../context/CarParamsContext';
 import type { TelemetryData } from '../../hooks/useTelemetry';
 import { evIdentity, sameEvIdentity } from '../../domain/tuning/ev/sessionIdentity';
-import type { EvMeasurement } from '../../domain/tuning/ev/types';
+import type { EvMeasurement, EvPowertrainContext } from '../../domain/tuning/ev/types';
+
+export function evPowertrainContext(profile: CarParams | null): EvPowertrainContext {
+  return { drivetrain: profile?.drivetrain ?? null, maxHp: profile?.maxHp ?? null, maxTorque: profile?.maxTorque ?? null };
+}
 
 export function evDependencyKey(carId: string, profile: CarParams | null): string {
   return JSON.stringify([carId, profile?.isElectric === true, profile?.drivetrain,

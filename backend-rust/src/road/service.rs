@@ -133,6 +133,13 @@ impl RoadService {
         self.observe(frame)
     }
     pub fn create(&self, request: Value) -> ApiResult<Value> {
+        self.create_verified(request, None)
+    }
+    fn create_verified(
+        &self,
+        request: Value,
+        verified: Option<&crate::tuning::evidence::VerifiedRecommendation>,
+    ) -> ApiResult<Value> {
         validate_request("workflow", &request)?;
         let id = Uuid::new_v4().simple().to_string();
         let mut payload = request.as_object().cloned().unwrap_or_default();
@@ -150,7 +157,9 @@ impl RoadService {
         let workflow = RoadStore::document("workflow", &id, &Value::Object(payload), Some(&id));
         let rec = request.get("recommendation");
         if let Some(rec) = rec.filter(|v| !v.is_null()) {
-            self.validate_recommendation(rec, request.get("identity"))?;
+            if !verified.is_some_and(|v| v.matches(rec, request.get("identity"))) {
+                self.validate_recommendation(rec, request.get("identity"))?;
+            }
         }
         let mut fields = serde_json::Map::new();
         if let Some(rec) = rec.and_then(|v| v.get("fields")).and_then(Value::as_object) {
@@ -184,9 +193,11 @@ impl RoadService {
                     | "rust/ice-measured-workflow-v3"
                     | "rust/ev-measured-workflow-v1"
                     | "rust/ev-measured-workflow-v2"
+                    | "rust/ev-measured-workflow-v3"
             )
         ) {
-            // Only already-qualified immutable metadata is loaded here. No capture replay.
+            // Direct service callers have no receiver lock. App dispatch pre-verifies
+            // exact Rust recommendations outside that lock and passes a private token.
             return crate::tuning::evidence::EvidenceService {
                 store: self.store.clone(),
             }
@@ -229,6 +240,15 @@ impl RoadService {
         Ok(())
     }
     pub fn handle(&mut self, method: &str, path: &str, body: Option<&Value>) -> ApiResult<Value> {
+        self.handle_verified(method, path, body, None)
+    }
+    pub(crate) fn handle_verified(
+        &mut self,
+        method: &str,
+        path: &str,
+        body: Option<&Value>,
+        verified: Option<&crate::tuning::evidence::VerifiedRecommendation>,
+    ) -> ApiResult<Value> {
         let b = body.cloned().unwrap_or_else(|| json!({}));
         let normalized = path.strip_prefix("/api/road").unwrap_or(path);
         let p = normalized
@@ -264,7 +284,9 @@ impl RoadService {
         }
         if method == "POST" && p == ["compatibility"] {
             validate_request("compatibility", &b)?;
-            self.validate_recommendation(&b["recommendation"], None)?;
+            if !verified.is_some_and(|v| v.matches(&b["recommendation"], None)) {
+                self.validate_recommendation(&b["recommendation"], None)?;
+            }
             let mut x = b.as_object().cloned().unwrap_or_default();
             x.insert("status".into(), Value::String("compatibility-only".into()));
             return self
@@ -283,7 +305,7 @@ impl RoadService {
             )?));
         }
         if method == "POST" && p == ["workflows"] {
-            return self.create(b);
+            return self.create_verified(b, verified);
         }
         if p.len() >= 2 && p[0] == "workflows" {
             let wf = p[1];

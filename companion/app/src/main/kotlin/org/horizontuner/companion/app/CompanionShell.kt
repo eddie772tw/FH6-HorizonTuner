@@ -17,15 +17,8 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.IntrinsicSize
-import androidx.compose.ui.semantics.Role
-import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
-import androidx.compose.foundation.layout.height
 import androidx.compose.material3.MaterialTheme
 import org.horizontuner.companion.theme.LocalCompanionTokens
 import org.horizontuner.companion.theme.LocalCompanionTypography
@@ -41,8 +34,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
+import org.horizontuner.companion.theme.DesignSystem
 
 
 internal data class CompanionShellState(
@@ -83,13 +81,16 @@ internal fun CompanionShell(
     actions: CompanionShellActions,
     webContent: @Composable () -> Unit,
 ) {
+    val showNativePage = state.page == OfflinePage.CONNECTION || !state.webConnected
     Column(
         modifier = Modifier.fillMaxSize().background(LocalCompanionTokens.current.backgroundBrush).windowInsetsPadding(WindowInsets.safeDrawing),
     ) {
         ShellTabs(state, actions.selectPage)
         Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
-            webContent()
-            if (state.page == OfflinePage.CONNECTION || !state.webConnected) {
+            // Keep the WebView mounted, but hide its pixels behind a native page.
+            // Transparent native surfaces must see the shell background, not a stale Web document.
+            Box(Modifier.fillMaxSize().graphicsLayer { alpha = if (showNativePage) 0f else 1f }) { webContent() }
+            if (showNativePage) {
                 if (state.page == OfflinePage.CONNECTION) ConnectionPage(state, actions)
                 else OfflinePageContent(state.page, actions.selectPage)
             }
@@ -100,33 +101,19 @@ internal fun CompanionShell(
 @Composable
 private fun ShellTabs(state: CompanionShellState, onSelect: (OfflinePage) -> Unit) {
     val tokens = LocalCompanionTokens.current
+    val rhine = tokens.system == DesignSystem.RHINE
     val (indicatorColor, _) = aggregateStatus(state)
     Row(
         modifier = Modifier.fillMaxWidth().background(tokens.surface)
-            .horizontalScroll(rememberScrollState()).selectableGroup().padding(horizontal = 12.dp, vertical = 4.dp),
+            .drawBehind {
+                if (rhine) drawRect(tokens.border, Offset(0f, size.height - 1.dp.toPx()), Size(size.width, 1.dp.toPx()))
+            }
+            .horizontalScroll(rememberScrollState()).selectableGroup()
+            .padding(start = 12.dp, end = 12.dp, top = if (rhine) 0.dp else 4.dp, bottom = if (rhine) 1.dp else 4.dp),
         horizontalArrangement = Arrangement.spacedBy(if (tokens.solidTabs) 8.dp else 0.dp),
     ) {
         OfflinePage.entries.forEach { page ->
-            val selected = page == state.page
-            Column(
-                modifier = Modifier.widthIn(max = tokens.tabMaxWidth).width(IntrinsicSize.Max).heightIn(min = tokens.touchTarget)
-                    .background(if (selected && tokens.solidTabs) tokens.primary else if (selected && tokens.system == org.horizontuner.companion.theme.DesignSystem.SWISS) tokens.surface1 else Color.Transparent, tokens.controlShape)
-                    .selectable(selected = selected, role = Role.Tab, onClick = { onSelect(page) }),
-            ) {
-                // Rhine's tick remains distinct from Swiss's plain underline.
-                if (tokens.system == org.horizontuner.companion.theme.DesignSystem.RHINE) {
-                    Box(Modifier.padding(start = 12.dp).size(1.dp, 4.dp).background(tokens.border))
-                }
-                Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text(page.label, style = if (selected) LocalCompanionTypography.current.selectedTab else MaterialTheme.typography.labelLarge,
-                        color = if (selected && tokens.solidTabs) foreground(tokens.primary) else if (selected) tokens.text else tokens.textSecondary)
-                    if (page == OfflinePage.CONNECTION) {
-                        Spacer(Modifier.size(5.dp))
-                        Box(Modifier.size(7.dp).background(indicatorColor, RoundedCornerShape(50)))
-                    }
-                }
-                if (!tokens.solidTabs) Box(Modifier.fillMaxWidth().height(if (tokens.system == org.horizontuner.companion.theme.DesignSystem.RHINE) 2.dp else 3.dp).background(if (selected) tokens.primary else Color.Transparent))
-            }
+            ShellTab(page, selected = page == state.page, indicatorColor, onSelect)
         }
     }
 }
@@ -134,7 +121,7 @@ private fun ShellTabs(state: CompanionShellState, onSelect: (OfflinePage) -> Uni
 @Composable
 private fun OfflinePageContent(page: OfflinePage, onSelect: (OfflinePage) -> Unit) {
     Column(
-        modifier = Modifier.fillMaxSize().background(LocalCompanionTokens.current.backgroundBrush).padding(12.dp),
+        modifier = Modifier.fillMaxSize().padding(12.dp),
     ) {
         Column(
             modifier = Modifier.fillMaxWidth().background(LocalCompanionTokens.current.surface, LocalCompanionTokens.current.panelShape)
@@ -151,7 +138,7 @@ private fun OfflinePageContent(page: OfflinePage, onSelect: (OfflinePage) -> Uni
 @Composable
 private fun ConnectionPage(state: CompanionShellState, actions: CompanionShellActions) {
     Column(
-        modifier = Modifier.fillMaxSize().background(LocalCompanionTokens.current.backgroundBrush).verticalScroll(rememberScrollState()).padding(12.dp),
+        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(12.dp),
     ) {
         Column(
             modifier = Modifier.fillMaxWidth().background(LocalCompanionTokens.current.surface, LocalCompanionTokens.current.panelShape)

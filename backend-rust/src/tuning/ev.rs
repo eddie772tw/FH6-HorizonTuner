@@ -88,24 +88,41 @@ fn stable(s: &EvMoments) -> bool {
         && (s.m2 / s.count as f64).sqrt() / s.mean <= 0.02
 }
 pub fn ready(g: &EvGearMeasurement) -> bool {
-    g.accepted_ms.is_finite()
-        && g.accepted_ms >= 3000.0
-        && g.positive_samples >= 90
-        && positive(g.reported_max_rpm)
+    qualification_reasons(g).is_empty()
+}
+pub fn qualification_reasons(g: &EvGearMeasurement) -> Vec<&'static str> {
+    let mut reasons = vec![];
+    if !g.accepted_ms.is_finite() || g.accepted_ms < 3000.0 {
+        reasons.push("EV needs more continuous output data");
+    }
+    if g.positive_samples < 90 {
+        reasons.push("EV needs more positive output samples");
+    }
+    if !(positive(g.reported_max_rpm)
         && g.reported_max_rpm <= 100_000.0
         && positive(g.lowest_rpm)
         && positive(g.highest_rpm)
         && g.lowest_rpm <= g.reported_max_rpm * 0.4
         && g.highest_rpm >= g.reported_max_rpm * 0.85
-        && g.highest_rpm <= g.reported_max_rpm * 1.03
-        && g.curve.iter().filter(|b| b.count >= 3).count() >= 8
+        && g.highest_rpm <= g.reported_max_rpm * 1.03)
+    {
+        reasons.push("EV needs low and high RPM coverage");
+    }
+    if !(g.curve.iter().filter(|b| b.count >= 3).count() >= 8
         && g.curve.len() <= 207
         && g.curve.iter().all(|b| {
             b.count > 0 && positive(b.rpm) && positive(b.power_watts) && positive(b.torque_newtons)
-        })
-        && stable(&g.rpm_per_kmh)
-        && stable(&g.front_ratio)
-        && stable(&g.rear_ratio)
+        }))
+    {
+        reasons.push("EV needs a valid observed power curve");
+    }
+    if !stable(&g.rpm_per_kmh) {
+        reasons.push("EV needs stable low-slip speed data and steering channels");
+    }
+    if !stable(&g.front_ratio) || !stable(&g.rear_ratio) {
+        reasons.push("EV needs valid stable wheel-speed channels");
+    }
+    reasons
 }
 
 pub fn calculate_ev_gearing(input: &EvGearingInput) -> Option<EvGearingResult> {

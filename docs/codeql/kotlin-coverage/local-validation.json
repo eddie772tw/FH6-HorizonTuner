@@ -1,0 +1,248 @@
+{
+  "schema_version": 1,
+  "scope": "independent_tool_fixtures_only",
+  "date": "2026-10-12",
+  "companion_production_traced_extraction": "NOT_RUN",
+  "advanced_workflow_activation": "NOT_RUN",
+  "advanced_sarif_upload": "NOT_RUN",
+  "tool_checks": {
+    "focused_tests_passed": 17,
+    "full_scripts_tests_passed": 66,
+    "full_scripts_tests_skipped": 4,
+    "ruff_check": "PASS",
+    "ruff_format_files": 251,
+    "path_case": "PASS",
+    "actionlint_version": "1.7.7",
+    "actionlint": "PASS",
+    "ql_compile": "PASS",
+    "independent_review": "No blocking findings; query-lock provenance improvement applied"
+  },
+  "tools": {
+    "codeql": "2.27.2",
+    "codeql_library_git_commit": "a7057b836bf29767461026718b14d20790b9085f",
+    "java": "Temurin 17.0.16+8",
+    "kotlin_compiler": "2.2.21"
+  },
+  "fixture_sources": {
+    "companion/app/src/main/kotlin/App.kt": "class App(val value: Int)\n",
+    "companion/app/src/main/kotlin/Empty.kt": "// An empty source is still a compilation input.\n",
+    "companion/app/src/test/kotlin/AppTest.kt": "class AppTest { fun check() = App(1).value }\n",
+    "companion/scripts/Tool.java": "class Tool {}\n",
+    "companion/build.gradle.kts": "plugins {}\n"
+  },
+  "fixture_build": "javac -d build companion/scripts/Tool.java; kotlinc companion/app/src/main/kotlin/App.kt companion/app/src/main/kotlin/Empty.kt companion/app/src/test/kotlin/AppTest.kt -d build/kotlin.jar",
+  "fixture_notes": [
+    "Complete fixture uses a1dda4efbffe102395b9a0ef2653b6d20dac96d7, never the HorizonTuner commit.",
+    "Stale negative changes App.kt to class App(val value: Int, val changed: Boolean = false).",
+    "Missing Kotlin negative traces javac only; inventory and source archive do not count as extraction."
+  ],
+  "results": [
+    {
+      "name": "complete_fixture",
+      "exit_code": 0,
+      "status": "PASS_SOURCE_COVERAGE",
+      "fixture_revision": "a1dda4efbffe102395b9a0ef2653b6d20dac96d7",
+      "failures": [],
+      "archive_sha256": "f4eeb2c6e9d8f04252f60f06c38291b7431fdd545250ec2c34f938cea0a9102f",
+      "query_sha256": "822efee57b6aab5b0dd08abbe1bd098387ef890f3d415715c1b998ee12db0ade",
+      "extracted_csv_sha256": "cf316176ccc6c37a944eee75a60c1770b7dfd65f11570ed63eddf20cb3d76166",
+      "sources": [
+        {
+          "path": "companion/app/src/main/kotlin/App.kt",
+          "processed": true,
+          "source_matches_revision": true,
+          "sha256": "41de936b930bb4cdd453dd545c24a2d90820ed56e0d4b6aec6243404f5d6955b",
+          "archive_sha256": "41de936b930bb4cdd453dd545c24a2d90820ed56e0d4b6aec6243404f5d6955b",
+          "extraction_states": [
+            [
+              "kotlin",
+              "successful"
+            ]
+          ]
+        },
+        {
+          "path": "companion/app/src/main/kotlin/Empty.kt",
+          "processed": true,
+          "source_matches_revision": true,
+          "sha256": "8a1006c2c30a32353b666dfc7098a77cd44e057b8f2999237b9970b2ec32604f",
+          "archive_sha256": "8a1006c2c30a32353b666dfc7098a77cd44e057b8f2999237b9970b2ec32604f",
+          "extraction_states": [
+            [
+              "kotlin",
+              "successful"
+            ]
+          ]
+        },
+        {
+          "path": "companion/app/src/test/kotlin/AppTest.kt",
+          "processed": true,
+          "source_matches_revision": true,
+          "sha256": "8a44403d53992d0a79efd147668e5f19a0a67848bb7f451a9ae62671b9c5cbeb",
+          "archive_sha256": "8a44403d53992d0a79efd147668e5f19a0a67848bb7f451a9ae62671b9c5cbeb",
+          "extraction_states": [
+            [
+              "kotlin",
+              "successful"
+            ]
+          ]
+        },
+        {
+          "path": "companion/build.gradle.kts",
+          "processed": false,
+          "source_matches_revision": false,
+          "sha256": "1ef0cc51bc1bd0279ce43d958f3e5e8cb4e96cd00dfe15869d95b7c83d868df3",
+          "archive_sha256": null,
+          "extraction_states": []
+        },
+        {
+          "path": "companion/scripts/Tool.java",
+          "processed": true,
+          "source_matches_revision": true,
+          "sha256": "d73fedb16d36c58753b8f0aaf1b3b268daeb0c12d7501cff757ddeaabd562d94",
+          "archive_sha256": "d73fedb16d36c58753b8f0aaf1b3b268daeb0c12d7501cff757ddeaabd562d94",
+          "extraction_states": [
+            [
+              "java",
+              "compilation_unit"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "name": "stale_revision_negative",
+      "exit_code": 1,
+      "status": "FAIL_SOURCE_COVERAGE",
+      "fixture_revision": "a03ad0a90a0ff2cab751630cb6a232514ed4e0c4",
+      "failures": [
+        "companion/app/src/main/kotlin/App.kt"
+      ],
+      "archive_sha256": "f4eeb2c6e9d8f04252f60f06c38291b7431fdd545250ec2c34f938cea0a9102f",
+      "query_sha256": "822efee57b6aab5b0dd08abbe1bd098387ef890f3d415715c1b998ee12db0ade",
+      "extracted_csv_sha256": "cf316176ccc6c37a944eee75a60c1770b7dfd65f11570ed63eddf20cb3d76166",
+      "sources": [
+        {
+          "path": "companion/app/src/main/kotlin/App.kt",
+          "processed": true,
+          "source_matches_revision": false,
+          "sha256": "b5bb79ea9d83c53ae978c600a76840b5987a2a88cb6ce083a07687b182fd241b",
+          "archive_sha256": "41de936b930bb4cdd453dd545c24a2d90820ed56e0d4b6aec6243404f5d6955b",
+          "extraction_states": [
+            [
+              "kotlin",
+              "successful"
+            ]
+          ]
+        },
+        {
+          "path": "companion/app/src/main/kotlin/Empty.kt",
+          "processed": true,
+          "source_matches_revision": true,
+          "sha256": "8a1006c2c30a32353b666dfc7098a77cd44e057b8f2999237b9970b2ec32604f",
+          "archive_sha256": "8a1006c2c30a32353b666dfc7098a77cd44e057b8f2999237b9970b2ec32604f",
+          "extraction_states": [
+            [
+              "kotlin",
+              "successful"
+            ]
+          ]
+        },
+        {
+          "path": "companion/app/src/test/kotlin/AppTest.kt",
+          "processed": true,
+          "source_matches_revision": true,
+          "sha256": "8a44403d53992d0a79efd147668e5f19a0a67848bb7f451a9ae62671b9c5cbeb",
+          "archive_sha256": "8a44403d53992d0a79efd147668e5f19a0a67848bb7f451a9ae62671b9c5cbeb",
+          "extraction_states": [
+            [
+              "kotlin",
+              "successful"
+            ]
+          ]
+        },
+        {
+          "path": "companion/build.gradle.kts",
+          "processed": false,
+          "source_matches_revision": false,
+          "sha256": "1ef0cc51bc1bd0279ce43d958f3e5e8cb4e96cd00dfe15869d95b7c83d868df3",
+          "archive_sha256": null,
+          "extraction_states": []
+        },
+        {
+          "path": "companion/scripts/Tool.java",
+          "processed": true,
+          "source_matches_revision": true,
+          "sha256": "d73fedb16d36c58753b8f0aaf1b3b268daeb0c12d7501cff757ddeaabd562d94",
+          "archive_sha256": "d73fedb16d36c58753b8f0aaf1b3b268daeb0c12d7501cff757ddeaabd562d94",
+          "extraction_states": [
+            [
+              "java",
+              "compilation_unit"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "name": "missing_kotlin_negative",
+      "exit_code": 1,
+      "status": "FAIL_SOURCE_COVERAGE",
+      "fixture_revision": "a03ad0a90a0ff2cab751630cb6a232514ed4e0c4",
+      "failures": [
+        "companion/app/src/main/kotlin/App.kt",
+        "companion/app/src/main/kotlin/Empty.kt",
+        "companion/app/src/test/kotlin/AppTest.kt"
+      ],
+      "archive_sha256": "01306b25bc1ef91033beaef37250d3dbb3a1eb427716112094a13a693364bc8b",
+      "query_sha256": "822efee57b6aab5b0dd08abbe1bd098387ef890f3d415715c1b998ee12db0ade",
+      "extracted_csv_sha256": "d5016a58afe0d36151fad50a86fb97f36afe6f1af74be1c6451e551b1c3fef4e",
+      "sources": [
+        {
+          "path": "companion/app/src/main/kotlin/App.kt",
+          "processed": false,
+          "source_matches_revision": false,
+          "sha256": "b5bb79ea9d83c53ae978c600a76840b5987a2a88cb6ce083a07687b182fd241b",
+          "archive_sha256": null,
+          "extraction_states": []
+        },
+        {
+          "path": "companion/app/src/main/kotlin/Empty.kt",
+          "processed": false,
+          "source_matches_revision": false,
+          "sha256": "8a1006c2c30a32353b666dfc7098a77cd44e057b8f2999237b9970b2ec32604f",
+          "archive_sha256": null,
+          "extraction_states": []
+        },
+        {
+          "path": "companion/app/src/test/kotlin/AppTest.kt",
+          "processed": false,
+          "source_matches_revision": false,
+          "sha256": "8a44403d53992d0a79efd147668e5f19a0a67848bb7f451a9ae62671b9c5cbeb",
+          "archive_sha256": null,
+          "extraction_states": []
+        },
+        {
+          "path": "companion/build.gradle.kts",
+          "processed": false,
+          "source_matches_revision": false,
+          "sha256": "1ef0cc51bc1bd0279ce43d958f3e5e8cb4e96cd00dfe15869d95b7c83d868df3",
+          "archive_sha256": null,
+          "extraction_states": []
+        },
+        {
+          "path": "companion/scripts/Tool.java",
+          "processed": true,
+          "source_matches_revision": true,
+          "sha256": "d73fedb16d36c58753b8f0aaf1b3b268daeb0c12d7501cff757ddeaabd562d94",
+          "archive_sha256": "d73fedb16d36c58753b8f0aaf1b3b268daeb0c12d7501cff757ddeaabd562d94",
+          "extraction_states": [
+            [
+              "java",
+              "compilation_unit"
+            ]
+          ]
+        }
+      ]
+    }
+  ]
+}
