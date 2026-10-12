@@ -19,6 +19,7 @@
 | 查看 HUD 技術參考 | [Stack ST8100 外觀、設定與遙測契約](hud/stack-st8100.md)、[S650 媒體欄位契約](hud/s650-media-properties-contract.md)、[FH6 畫面安全區觀測](hud/fh6-ui-safe-zones.md) |
 | 開始調校開發 (Rust SSOT) | [調校程式與驗證入口](tuning/README.md)、[Road v3 起步模型](tuning/aego-road-launch-v3.md) |
 | 前端主題、CSS 架構、擴充與送審驗證 | [主題與設計系統開發指南](frontend/design-systems.md) |
+| Companion Kotlin CodeQL inventory／extraction 證據與未啟用範本 | [Kotlin coverage 準備](codeql/kotlin-coverage/README.md) |
 | 查閱 2026-09-24 版型一致化背景 | [版型研究與階段紀錄](frontend/ui-layout-refinement-20260924.md) |
 | 收集實機資料、規劃人工驗收 | [校準資料與流程](calibration/README.md) |
 | 查找外部 HUD 研究 | [外部專案參考索引](reference-projects/README.md) |

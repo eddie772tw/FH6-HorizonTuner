@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "observed_on": "2026-10-12",
+  "checkout_sha": "c1e86317b43aa328a075760e3f6d683dc179583b",
+  "run_id": 38161536676,
+  "job_id": 114535305617,
+  "setup": "default",
+  "build_mode": "none",
+  "unprocessed_kotlin_warning_count": 36,
+  "scanned_java": 2,
+  "jar_fetch_diagnostics": 44,
+  "production_traced_extraction": "NOT_RUN",
+  "excerpts": [
+    "2026-10-11T17:53:50.4435540Z c1e86317b43aa328a075760e3f6d683dc179583b",
+    "2026-10-11T17:53:50.7733570Z c1e86317b43aa328a075760e3f6d683dc179583b",
+    "2026-10-11T17:54:13.9495871Z WARNING: Detected 36 Kotlin files in your project that could not be processed without a build. To process these files:",
+    "2026-10-11T17:55:27.0561894Z CodeQL scanned 2 out of 2 Java files in this invocation. Check the status page for overall coverage information: https://github.com/eddie772tw/FH6-HorizonTuner/security/code-scanning/tools/CodeQL/status/",
+    "2026-10-11T17:55:27.0653287Z ##[group]Some build-system suggested dependencies could not be fetched (1 result)"
+  ]
+}
