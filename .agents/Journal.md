@@ -882,3 +882,10 @@
 - **Evidence**：完整 Cargo 214 passed／3 ignored；新底盤契約 8 項與推薦重播、防偽、CLI／MCP／API 一致性契約通過。正式 CLI 重播完整 7 台／8 份／40,324 幀，24 次數值與定案表一致；原檔雜湊未變。前端可選欄位、三語 Companion 診斷與過期回覆保護已測試；本機元件預覽確認七核心日夜模式、三語、空白／0／單雙軸欄位切換。
 - **Boundary**：量測重播、UI fixture 與數值契約不是新底盤設定的實機操控證據。沒有新增量測、修改原始車檔或另建 worktree。Windows 全套編譯曾因多個 linker 記憶體競爭拖慢並造成 Vitest worker 啟動失敗，降低 Cargo `-j 2`、Vitest `--maxWorkers=2` 後重新驗證；失敗程序不算通過。
 - **Skills**：`physics-tuning-math`、`ponytail`、`halfmoon-design-system`、`huge-component-refactoring`、`modular-refactoring`、`pr-author-maintainer`、`agent-governance-audit`。
+
+## 2026-10-12 / Companion APK 正式交付契約（APK Contract as Codex）
+
+- **Scope／ownership**：從 main `c1e86317` 建立 `codex/issue-485-release-apk-contract`；只處理 #485 signing／version／artifact provenance，排除 Kotlin CodeQL、安全設定、native 視覺及發布。採用 `pr-author-maintainer`、`cross-agent-collaboration`。
+- **Learning**：`assembleRelease` 成功不表示正式維護者簽章。正式入口須 fail closed，且 Android code/name 與 desktop label/runtime 分開映射。Delivery overrides 必須只作用 release variant，避免維護者 shell 殘留設定改变 debug identity。建置後重取 source contract，複製後重取 APK hash，防止 evidence 記錄先前內容。
+- **Evidence**：uv/Python 3.13 delivery 行為測試 27 passed（加 PR tooling 共 36）；全量 frontend 1785 passed／1 skipped、production build 通過；Rust 214 passed。Ruff check／format、Rust fmt、version/path case、bash syntax、diff checks 通過。獨立 reviewer 原 P2 source mutation 與 debug 邊界建議已納入修正及回歸。實際 Android release 正反 gates 使用既有 hosted CI，結果記錄在 PR／artifact，不將本地 fixture 當成實際簽署證據。
+- **Boundary**：僅 CI temporary NON-PRODUCTION key；production configuration／key 未提供或建立，沒有 secrets／security／Release 操作。Android／WebView／TalkBack、安裝升級與資料保留仍 NOT_RUN。維護者步驟與工具限制見 [交付契約](../docs/guides/companion-apk-delivery.md)。

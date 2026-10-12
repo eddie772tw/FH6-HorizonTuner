@@ -4,6 +4,29 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose")
 }
 
+// Release builds are available only through the checked delivery entry point.
+// Debug builds keep their existing local/CI version and signing behavior.
+val deliveryMode = providers.environmentVariable("HORIZONTUNER_APK_DELIVERY_MODE").orNull
+val deliveryVersionCode = providers.environmentVariable("HORIZONTUNER_ANDROID_VERSION_CODE").orNull
+val deliveryVersionName = providers.environmentVariable("HORIZONTUNER_ANDROID_VERSION_NAME").orNull
+val deliveryAssets = layout.buildDirectory.dir("generated/delivery-assets")
+val validateOfficialApkConfiguration = tasks.register("validateOfficialApkConfiguration") {
+    doLast {
+        require(deliveryMode in listOf("production", "test-only")) {
+            "Release requires scripts/build_companion_apk.py and explicit signing configuration; no debug fallback."
+        }
+        for (name in listOf("HORIZONTUNER_KEYSTORE_PATH", "HORIZONTUNER_KEYSTORE_PASSWORD", "HORIZONTUNER_KEY_ALIAS", "HORIZONTUNER_KEY_PASSWORD")) {
+            require(!System.getenv(name).isNullOrBlank()) { "Missing release setting: $name" }
+        }
+        require(file(System.getenv("HORIZONTUNER_KEYSTORE_PATH")).isFile) { "Release keystore must exist." }
+        require(deliveryVersionCode?.toIntOrNull()?.let { it in 2..2100000000 } == true) { "Invalid Android versionCode." }
+        require(!deliveryVersionName.isNullOrBlank()) { "Missing Android versionName." }
+        require(deliveryAssets.get().file("delivery-source.json").asFile.isFile) {
+            "Missing delivery-source.json; use scripts/build_companion_apk.py."
+        }
+    }
+}
+
 android {
     namespace = "org.horizontuner.companion.app"
     compileSdk = 36
@@ -21,22 +44,11 @@ android {
     signingConfigs {
         create("release") {
             val keystoreFile = System.getenv("HORIZONTUNER_KEYSTORE_PATH")
-                ?: (project.findProperty("HORIZONTUNER_KEYSTORE_PATH") as? String)
-            if (keystoreFile != null && file(keystoreFile).exists()) {
+            if (!keystoreFile.isNullOrBlank()) {
                 storeFile = file(keystoreFile)
                 storePassword = System.getenv("HORIZONTUNER_KEYSTORE_PASSWORD")
-                    ?: (project.findProperty("HORIZONTUNER_KEYSTORE_PASSWORD") as? String) ?: ""
                 keyAlias = System.getenv("HORIZONTUNER_KEY_ALIAS")
-                    ?: (project.findProperty("HORIZONTUNER_KEY_ALIAS") as? String) ?: ""
                 keyPassword = System.getenv("HORIZONTUNER_KEY_PASSWORD")
-                    ?: (project.findProperty("HORIZONTUNER_KEY_PASSWORD") as? String) ?: ""
-            } else {
-                // Fallback to debug signing config for repeatable local/CI verification if upload key is not present
-                val debugConfig = signingConfigs.getByName("debug")
-                storeFile = debugConfig.storeFile
-                storePassword = debugConfig.storePassword
-                keyAlias = debugConfig.keyAlias
-                keyPassword = debugConfig.keyPassword
             }
         }
     }
@@ -44,6 +56,10 @@ android {
     buildTypes {
         release {
             isMinifyEnabled = false
+            isDebuggable = false
+            if (deliveryMode == "test-only") {
+                applicationIdSuffix = ".contracttest"
+            }
             signingConfig = signingConfigs.getByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
@@ -60,10 +76,32 @@ android {
         buildConfig = true
     }
 
+    sourceSets.getByName("release").assets.srcDir(deliveryAssets)
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
+}
+
+androidComponents {
+    onVariants(selector().withBuildType("release")) { variant ->
+        variant.outputs.forEach { output ->
+            output.versionCode.set(deliveryVersionCode?.toIntOrNull() ?: 1)
+            output.versionName.set(
+                (deliveryVersionName ?: "0.1.0") + if (deliveryMode == "test-only") "-test-only" else "",
+            )
+        }
+    }
+}
+
+tasks.matching { it.name == "preReleaseBuild" }.configureEach {
+    dependsOn(validateOfficialApkConfiguration)
+}
+tasks.register("assembleOfficialRelease") {
+    group = "build"
+    description = "Build the signed APK through scripts/build_companion_apk.py (no debug fallback)."
+    dependsOn("assembleRelease")
 }
 
 kotlin {

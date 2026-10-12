@@ -8,6 +8,7 @@
 | --- | --- |
 | 啟動 Full／Lite 開發環境、打包 | [開發啟動指南](guides/development.md) |
 | Windows／Linux 發行、LAN Data Out 與獨立 OTA | [跨平台發行指南](guides/cross-platform-release.md) |
+| Companion APK 正式簽章、版本映射與 artifact provenance | [APK 交付契約](guides/companion-apk-delivery.md) |
 | Rust 後端架構、遷移契約與測試分層 | [Rust 後端指南](backend-rust/README.md) |
 | Python 效能工作如何由 Rust 承接、單機量測與資料完整性證據 | [效能承接盤查](backend-rust/performance-inheritance.md) |
 | 匯出檔案、另存新檔與儲存位置 | [檔案匯出指南](guides/file-exports.md) |
