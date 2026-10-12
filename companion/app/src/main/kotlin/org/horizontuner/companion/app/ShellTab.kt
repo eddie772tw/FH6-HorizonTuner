@@ -95,4 +95,3 @@ internal fun ShellTab(page: OfflinePage, selected: Boolean, indicatorColor: Colo
         }
     }
 }
-
