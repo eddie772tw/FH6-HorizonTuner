@@ -1,5 +1,12 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-10-12 / Issue #487 正常保存車輛離線入口（Codex as Codex）
+
+- **Scope**：從 main `c1e86317` 建立 `codex/issue-487-offline-vehicle-selection`；採用 `cross-agent-collaboration`、`halfmoon-design-system`、`huge-component-refactoring`、`modular-refactoring`、`pr-author-maintainer`。不寫入 Jules 分支、Rust evidence／新底盤模型或 CVT 面板。
+- **Learning**：同一 carId 的 saved→live 切換也需要 generation；只依 ID 或 loadedCarId 相等會讓較早的 profile／dyno 回覆污染新選取。同步 render 隱藏舊 profile，再依 generation 接受 normalize 回覆，可守住 A→B→A。
+- **Evidence**：12 個 actual-provider synthetic tests；完整 Vitest 1,797 passed／1 skipped、TypeScript／Vite、Cargo default／no-default-features、fmt／Ruff／版本／路徑／diff checks。獨立審查重現同 ID 舊 evidence 分析 ready 但 recommendation 不可用的提示缺口；補上三語 review-only 原因與完成後分析測試，不放寬既有 stale owner。
+- **UI／Boundary**：390px 繁中／英文七核心 × 日夜 28 組正常 selector 操作；兩份合成 profile 前後 hash 不變。DB11／2527 原始資料未提供，qualified tire card／真實 provenance／A/B／遊戲與原生 GUI 均 NOT_RUN。詳細契約與工作樹證據見 [離線選車](../docs/frontend/offline-tune-selection.md)。
+
 ## 2026-10-12 / 底盤 PR 的既有 CI 阻擋修復（Mihaly as Codex）
 
 - **Scope**：沿用 `pr-author-maintainer`、`ponytail`、`halfmoon-design-system`；修復 PR #515 從 main 繼承的 Ruff 排序及 R34 間距失敗，不調整底盤定案。

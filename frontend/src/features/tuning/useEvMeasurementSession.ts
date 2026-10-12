@@ -11,7 +11,7 @@ type Phase = 'idle' | 'collecting' | 'paused' | 'complete' | 'invalidated';
 interface Runtime { calculationError?: string; evidenceId?: string; readyGears?: number[]; key: string; phase: Phase; state: EvMeasurement; result: EvGearingResult | null }
 
 /** Mounted at TuneSession scope: navigating between steps never unmounts a recording. */
-export function useEvMeasurementSession(carId: string, profile: CarParams | null, live: TelemetryData | null, setupContext = '') {
+export function useEvMeasurementSession(carId: string, profile: CarParams | null, live: TelemetryData | null, setupContext = '', allowLiveCollection = true) {
   // Setup changes invalidate async display state even when the measured powertrain
   // dependency key is unchanged. EV qualification/projection remains Rust-owned.
   const key = JSON.stringify([evDependencyKey(carId, profile), setupContext]);
@@ -22,7 +22,7 @@ export function useEvMeasurementSession(carId: string, profile: CarParams | null
   const cursor = useRef(0);
   const calculationSequence = useRef(0);
   const keyRef = useRef(key); keyRef.current = key;
-  const enabled = useRef(false); enabled.current = profile?.isElectric === true && !usesCvt(profile);
+  const enabled = useRef(false); enabled.current = allowLiveCollection && profile?.isElectric === true && !usesCvt(profile);
   const lastPublish = useRef(0);
   const publish = useCallback((force = false) => {
     const now = performance.now();
@@ -81,7 +81,7 @@ export function useEvMeasurementSession(carId: string, profile: CarParams | null
   }, [publish]);
 
   const restart = () => {
-    if (key !== keyRef.current || (usesCvt(profile) || !profile?.isElectric) || !profile.evGearbox?.allForwardGearsConfirmed) return;
+    if (!enabled.current || key !== keyRef.current || (usesCvt(profile) || !profile?.isElectric) || !profile.evGearbox?.allForwardGearsConfirmed) return;
     calculationSequence.current++;
     ref.current = { key, phase: 'collecting', state: createEvMeasurement(carId), result: null };
     frames.current = [];
@@ -90,7 +90,7 @@ export function useEvMeasurementSession(carId: string, profile: CarParams | null
   };
   const calculate = async (candidateFinalDrive: number | null = profile?.evGearbox?.finalDrive ?? null) => {
     const r = ref.current;
-    if ((usesCvt(profile) || !profile?.isElectric) || !profile.evGearbox || r.key !== key || r.phase === 'collecting' ||
+    if (!enabled.current || (usesCvt(profile) || !profile?.isElectric) || !profile.evGearbox || r.key !== key || r.phase === 'collecting' ||
       r.phase === 'invalidated' || cursor.current !== frames.current.length || r.state.status === 'blocked' || !evMeasurementMatchesLive(r.state, live)) return;
     const token = ++calculationSequence.current;
     try {

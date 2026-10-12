@@ -7,7 +7,7 @@ import { canFinishAdditionalMeasurement } from '../tuneSessionController';
 import { useTuneSession } from '../TuneSessionProvider';
 import { guidanceText } from '../measurementGuidance';
 
-export function TuningMeasurementStep({ carId, enabled }: { carId: string; enabled: boolean }) {
+export function TuningMeasurementStep({ carId, enabled, offline = false }: { carId: string; enabled: boolean; offline?: boolean }) {
   const { t } = useSettings();
   const { save, isSaving } = useFileSave();
   const session = useTuneSession();
@@ -35,7 +35,7 @@ export function TuningMeasurementStep({ carId, enabled }: { carId: string; enabl
       <p>{t('Drive one or more smooth full-throttle runs on a clear straight, starting low in the rev range and holding the gear toward the engine limit. The app reads the numbers for you; no target speed or RPM entry is needed.')}</p>
       <p className="small" style={{ color: 'var(--text-secondary)' }}>{t('Decoded frames and the measured summary are saved together when you continue. Collection is limited to 30,000 frames. Collected frames remain available while you switch Tune steps; export them before restarting collection or closing the app.')}</p>
       <div role="status" aria-live="polite" className="mb-3" style={{ minHeight: '3rem' }}>
-        {!enabled ? t('Enter valid weight, front weight percentage and power in Step 1 first.') :
+        {offline ? t('Offline selection does not supply live telemetry. Follow Data Out to collect new data.') : !enabled ? t('Enter valid weight, front weight percentage and power in Step 1 first.') :
           canFinishExtra ? t('A usable result is retained. Continue driving to add data, or finish additional collection before calculating.') :
             measurement.phase === 'paused' ? t('Collection paused. Resume when you are ready to drive.') :
               (guidance === 'ready' || guidance === 'timestamp-stalled' || guidance === 'telemetry-disconnected')

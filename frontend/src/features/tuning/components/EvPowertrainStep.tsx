@@ -11,7 +11,8 @@ import { EvGearboxSetup } from './EvGearboxSetup';
 
 export function EvPowertrainStep({ enabled }: { enabled: boolean }) {
   const { t } = useSettings();
-  const { carId, carParams, setCarParams, saveCarParams } = useCarParams();
+  const { carId, carParams, setCarParams, saveCarParams, selectionSource } = useCarParams();
+  const offline = selectionSource === 'saved';
   const { isConnected } = useTelemetry();
   const session = useTuneSession();
   const m = session.evMeasurement;
@@ -46,7 +47,7 @@ export function EvPowertrainStep({ enabled }: { enabled: boolean }) {
     </div>
     <div className="glass-panel p-3">
       <div role="status" aria-live="polite" style={{ minHeight: '3rem' }}>
-        {error || m.calculationError ? t(error || m.calculationError!) : m.phase === 'invalidated' ? t('The vehicle, build or driving session changed. Restart EV collection.') :
+        {offline ? t('Offline selection does not supply live telemetry. Follow Data Out to collect new data.') : error || m.calculationError ? t(error || m.calculationError!) : m.phase === 'invalidated' ? t('The vehicle, build or driving session changed. Restart EV collection.') :
           !isConnected ? t('Connect the game and enable Data Out to start receiving driving data.') :
           setupValidation.status === 'error' ? t('Tuning calculation is unavailable. Retrying…') :
           setupValidation.status === 'pending' ? t('Calculating tuning results…') :
@@ -67,7 +68,7 @@ export function EvPowertrainStep({ enabled }: { enabled: boolean }) {
       </div>
       <p className="small text-body-secondary">{t('Each gear needs 3 seconds of output data, low and high RPM coverage, and a stable low-slip straight-line speed relationship. Zero idle RPM is valid. Constant positive power is not a limiter signal.')}</p>
       <div className="d-flex flex-wrap gap-2">
-        <button className="btn btn-primary" disabled={!enabled || !setupValid || recording || saving}
+        <button className="btn btn-primary" disabled={offline || !enabled || !setupValid || recording || saving}
           onClick={() => void start()}>{t(m.sampleCount ? 'Restart EV collection' : 'Start EV collection')}</button>
         <button className="btn btn-outline-secondary" disabled={!['collecting', 'paused'].includes(m.phase)}
           onClick={m.pauseOrResume}>{t(recording ? 'Pause collection' : 'Resume collection')}</button>
@@ -83,7 +84,7 @@ export function EvPowertrainStep({ enabled }: { enabled: boolean }) {
         value={candidate ?? ''} onChange={e => setCandidate(e.target.value === '' ? null : Number(e.target.value))} />
       <p className="small text-body-secondary">{t('A locked or unknown final drive still allows a measured baseline. A ratio preview requires a known, adjustable final drive. Locked gears are excluded from settings to apply.')}</p>
       <p className="small text-body-secondary">{t('Keep the measured final drive for a baseline, or enter a candidate to preview the same RPM envelope at a different ratio. Confirm slider limits in game.')}</p>
-      <button className="btn btn-primary" disabled={!enabled || recording || m.phase === 'invalidated' || !preview}
+      <button className="btn btn-primary" disabled={offline || !enabled || recording || m.phase === 'invalidated' || !preview}
         onClick={() => m.calculate(candidate)}>{t('Calculate EV model')}</button>
       {previewRequest.status === 'pending' && <p role="status">{t('Calculating tuning results…')}</p>}
       {previewRequest.status === 'error' && <p role="status">{t('Tuning calculation is unavailable. Retrying…')}</p>}

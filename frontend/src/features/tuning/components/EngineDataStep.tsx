@@ -1,4 +1,5 @@
 import type { CarParams } from '../../../context/CarParamsContext';
+import { useCarParams } from '../../../context/CarParamsContext';
 import { useSettings } from '../../../context/SettingsContext';
 import type { GearingResult } from '../../../domain/tuning/types';
 import type { useEngineMeasurementArchive } from '../useEngineMeasurementArchive';
@@ -15,7 +16,8 @@ export function EngineDataStep({ carId, profile, engine, gearing, enabled }: {
   gearing: GearingResult | null; enabled: boolean;
 }) {
   const { t } = useSettings();
-  const { engineMeasurement, result } = useTuneSession();
+  const offline = useCarParams().selectionSource === 'saved';
+  const { engineMeasurement, result, calculationStatus } = useTuneSession();
   const measured = engine.current;
   const calculation = engine.calculation;
   return <section className="d-flex flex-column gap-3">
@@ -23,6 +25,9 @@ export function EngineDataStep({ carId, profile, engine, gearing, enabled }: {
       <p className="mb-0">{t('Engine limit and peak output RPM come from measured acceleration. Missing measurements do not use an estimated redline.')}</p>
     </div>
     <EngineCalculationStatus hasObservation={Boolean(measured)} calculation={calculation} gearing={gearing} t={t} />
+    {measured && calculation?.status === 'ready' && calculationStatus === 'ready' && !result?.readiness.measuredEngine && <p className="small text-body-secondary" role="status">
+      {t('This saved observation is review-only in the current vehicle/setup context. Follow Data Out to collect new evidence; selecting it again does not restore an invalidated recommendation.')}
+    </p>}
     {gearing && !gearing.unsupported && calculation?.status === 'ready' && <div className="glass-panel p-3"><GearingTuner showCorrections={false} numGears={gearing.gears.length}
       tuning={{ gearing: { ...gearing, maxRpm: calculation.engineMaxRpm, effectiveRedline: calculation.effectiveRedline } }}
       carParams={{ ...profile, maxHpRpm: calculation.peakPower!.rpm, maxTorqueRpm: calculation.peakTorque!.rpm, effectiveRedline: calculation.effectiveRedline }} /></div>}
@@ -31,8 +36,8 @@ export function EngineDataStep({ carId, profile, engine, gearing, enabled }: {
     {measured ? <div className="glass-panel p-3"><p>{t('Recorded instantaneous peaks are historical observations, not the new AEGO calculation inputs.')}</p>
       <p>{t('Measured engine limit')}: {measured.engineMaxRpm} RPM · {t('Peak power RPM')}: {Math.round(measured.observedPeakPower!.rpm)} · {t('Peak torque RPM')}: {Math.round(measured.observedPeakTorque!.rpm)}</p>
       <TireEvidencePanel evidence={result?.tireEvidence ?? null} provenance={result?.evidenceProvenance ?? null} />
-      <button className="btn btn-outline-secondary" onClick={() => engineMeasurement.restart(enabled)}>{t('Collect driving data again')}</button></div>
-      : <TuningMeasurementStep carId={carId} enabled={enabled} />}
+      <button className="btn btn-outline-secondary" disabled={offline} onClick={() => engineMeasurement.restart(enabled)}>{t('Collect driving data again')}</button></div>
+      : <TuningMeasurementStep carId={carId} enabled={enabled && !offline} offline={offline} />}
     <EngineObservationHistory entries={engine.archive} compatibleIds={engine.compatible.map(item => item.id)} reuse={engine.reuse} storageError={engine.storageError} />
     <LegacyTuningHistory carId={carId} />
   </section>;

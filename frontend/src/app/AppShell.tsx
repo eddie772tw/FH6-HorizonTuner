@@ -32,10 +32,10 @@ interface SessionOpenRequest {
 /** Transport and car synchronization outlive the active page and its canvases. */
 function AppRuntime({ activeWorkspace }: { activeWorkspace: WorkspaceId }) {
   useTelemetry();
-  const { carId, setCarId, telemetryCarId } = useCarParams();
+  const { carId, followLiveCar, telemetryCarId, selectionSource } = useCarParams();
   useEffect(() => {
-    if (activeWorkspace === 'live' && telemetryCarId && telemetryCarId !== '0' && carId !== telemetryCarId) setCarId(telemetryCarId);
-  }, [activeWorkspace, telemetryCarId, carId, setCarId]);
+    if (activeWorkspace === 'live' && telemetryCarId && (carId !== telemetryCarId || selectionSource !== 'live')) followLiveCar();
+  }, [activeWorkspace, telemetryCarId, carId, followLiveCar, selectionSource]);
   return <HudRuntime />;
 }
 

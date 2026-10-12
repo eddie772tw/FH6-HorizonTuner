@@ -1,0 +1,430 @@
+{
+  "syntheticProfilesOnly": true,
+  "qualifiedDB11Gate": "NOT_RUN: original DB11/carId2527 database and profile not supplied",
+  "browser": "151.0.7922.173",
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "before": {
+    "990001": "3c25587fee641fdad9ac076c48f71cdf8d6fb2e6c929f08a6b3a688771155f76",
+    "990002": "6aa4edadababc6bc93580b2c30a8ae2d5995b56e0fe4071741c819a8ff9e787f"
+  },
+  "after": {
+    "990001": "3c25587fee641fdad9ac076c48f71cdf8d6fb2e6c929f08a6b3a688771155f76",
+    "990002": "6aa4edadababc6bc93580b2c30a8ae2d5995b56e0fe4071741c819a8ff9e787f"
+  },
+  "unchanged": true,
+  "errors": [],
+  "runs": [
+    {
+      "lang": "zh-tw",
+      "core": "default",
+      "mode": "light",
+      "source": "已保存車輛 · 離線 · 車輛設定檔已載入",
+      "geometry": {
+        "viewport": 390,
+        "left": 33,
+        "right": 240.09375,
+        "labelFor": "tune-saved-vehicle",
+        "fieldId": "tune-saved-vehicle",
+        "source": "已保存車輛 · 離線 · 車輛設定檔已載入"
+      }
+    },
+    {
+      "lang": "zh-tw",
+      "core": "default",
+      "mode": "dark",
+      "source": "已保存車輛 · 離線 · 車輛設定檔已載入",
+      "geometry": {
+        "viewport": 390,
+        "left": 33,
+        "right": 240.09375,
+        "labelFor": "tune-saved-vehicle",
+        "fieldId": "tune-saved-vehicle",
+        "source": "已保存車輛 · 離線 · 車輛設定檔已載入"
+      }
+    },
+    {
+      "lang": "zh-tw",
+      "core": "modern",
+      "mode": "light",
+      "source": "已保存車輛 · 離線 · 車輛設定檔已載入",
+      "geometry": {
+        "viewport": 390,
+        "left": 33,
+        "right": 240.09375,
+        "labelFor": "tune-saved-vehicle",
+        "fieldId": "tune-saved-vehicle",
+        "source": "已保存車輛 · 離線 · 車輛設定檔已載入"
+      }
+    },
+    {
+      "lang": "zh-tw",
+      "core": "modern",
+      "mode": "dark",
+      "source": "已保存車輛 · 離線 · 車輛設定檔已載入",
+      "geometry": {
+        "viewport": 390,
+        "left": 33,
+        "right": 240.09375,
+        "labelFor": "tune-saved-vehicle",
+        "fieldId": "tune-saved-vehicle",
+        "source": "已保存車輛 · 離線 · 車輛設定檔已載入"
+      }
+    },
+    {
+      "lang": "zh-tw",
+      "core": "elegant",
+      "mode": "light",
+      "source": "已保存車輛 · 離線 · 車輛設定檔已載入",
+      "geometry": {
+        "viewport": 390,
+        "left": 33,
+        "right": 240.09375,
+        "labelFor": "tune-saved-vehicle",
+        "fieldId": "tune-saved-vehicle",
+        "source": "已保存車輛 · 離線 · 車輛設定檔已載入"
+      }
+    },
+    {
+      "lang": "zh-tw",
+      "core": "elegant",
+      "mode": "dark",
+      "source": "已保存車輛 · 離線 · 車輛設定檔已載入",
+      "geometry": {
+        "viewport": 390,
+        "left": 33,
+        "right": 240.09375,
+        "labelFor": "tune-saved-vehicle",
+        "fieldId": "tune-saved-vehicle",
+        "source": "已保存車輛 · 離線 · 車輛設定檔已載入"
+      }
+    },
+    {
+      "lang": "zh-tw",
+      "core": "swiss",
+      "mode": "light",
+      "source": "已保存車輛 · 離線 · 車輛設定檔已載入",
+      "geometry": {
+        "viewport": 390,
+        "left": 33,
+        "right": 236.921875,
+        "labelFor": "tune-saved-vehicle",
+        "fieldId": "tune-saved-vehicle",
+        "source": "已保存車輛 · 離線 · 車輛設定檔已載入"
+      }
+    },
+    {
+      "lang": "zh-tw",
+      "core": "swiss",
+      "mode": "dark",
+      "source": "已保存車輛 · 離線 · 車輛設定檔已載入",
+      "geometry": {
+        "viewport": 390,
+        "left": 33,
+        "right": 236.921875,
+        "labelFor": "tune-saved-vehicle",
+        "fieldId": "tune-saved-vehicle",
+        "source": "已保存車輛 · 離線 · 車輛設定檔已載入"
+      }
+    },
+    {
+      "lang": "zh-tw",
+      "core": "swiss-editorial",
+      "mode": "light",
+      "source": "已保存車輛 · 離線 · 車輛設定檔已載入",
+      "geometry": {
+        "viewport": 390,
+        "left": 33,
+        "right": 240.765625,
+        "labelFor": "tune-saved-vehicle",
+        "fieldId": "tune-saved-vehicle",
+        "source": "已保存車輛 · 離線 · 車輛設定檔已載入"
+      }
+    },
+    {
+      "lang": "zh-tw",
+      "core": "swiss-editorial",
+      "mode": "dark",
+      "source": "已保存車輛 · 離線 · 車輛設定檔已載入",
+      "geometry": {
+        "viewport": 390,
+        "left": 33,
+        "right": 240.765625,
+        "labelFor": "tune-saved-vehicle",
+        "fieldId": "tune-saved-vehicle",
+        "source": "已保存車輛 · 離線 · 車輛設定檔已載入"
+      }
+    },
+    {
+      "lang": "zh-tw",
+      "core": "swiss-contrast",
+      "mode": "light",
+      "source": "已保存車輛 · 離線 · 車輛設定檔已載入",
+      "geometry": {
+        "viewport": 390,
+        "left": 33,
+        "right": 237.6875,
+        "labelFor": "tune-saved-vehicle",
+        "fieldId": "tune-saved-vehicle",
+        "source": "已保存車輛 · 離線 · 車輛設定檔已載入"
+      }
+    },
+    {
+      "lang": "zh-tw",
+      "core": "swiss-contrast",
+      "mode": "dark",
+      "source": "已保存車輛 · 離線 · 車輛設定檔已載入",
+      "geometry": {
+        "viewport": 390,
+        "left": 33,
+        "right": 237.6875,
+        "labelFor": "tune-saved-vehicle",
+        "fieldId": "tune-saved-vehicle",
+        "source": "已保存車輛 · 離線 · 車輛設定檔已載入"
+      }
+    },
+    {
+      "lang": "zh-tw",
+      "core": "rhine-lab",
+      "mode": "light",
+      "source": "已保存車輛 · 離線 · 車輛設定檔已載入",
+      "geometry": {
+        "viewport": 390,
+        "left": 33,
+        "right": 235.421875,
+        "labelFor": "tune-saved-vehicle",
+        "fieldId": "tune-saved-vehicle",
+        "source": "已保存車輛 · 離線 · 車輛設定檔已載入"
+      }
+    },
+    {
+      "lang": "zh-tw",
+      "core": "rhine-lab",
+      "mode": "dark",
+      "source": "已保存車輛 · 離線 · 車輛設定檔已載入",
+      "geometry": {
+        "viewport": 390,
+        "left": 33,
+        "right": 235.421875,
+        "labelFor": "tune-saved-vehicle",
+        "fieldId": "tune-saved-vehicle",
+        "source": "已保存車輛 · 離線 · 車輛設定檔已載入"
+      }
+    },
+    {
+      "lang": "en-us",
+      "core": "default",
+      "mode": "light",
+      "source": "Saved vehicle · offline · Vehicle profile loaded",
+      "geometry": {
+        "viewport": 390,
+        "left": 33,
+        "right": 357,
+        "labelFor": "tune-saved-vehicle",
+        "fieldId": "tune-saved-vehicle",
+        "source": "Saved vehicle · offline · Vehicle profile loaded"
+      }
+    },
+    {
+      "lang": "en-us",
+      "core": "default",
+      "mode": "dark",
+      "source": "Saved vehicle · offline · Vehicle profile loaded",
+      "geometry": {
+        "viewport": 390,
+        "left": 33,
+        "right": 357,
+        "labelFor": "tune-saved-vehicle",
+        "fieldId": "tune-saved-vehicle",
+        "source": "Saved vehicle · offline · Vehicle profile loaded"
+      }
+    },
+    {
+      "lang": "en-us",
+      "core": "modern",
+      "mode": "light",
+      "source": "Saved vehicle · offline · Vehicle profile loaded",
+      "geometry": {
+        "viewport": 390,
+        "left": 33,
+        "right": 357,
+        "labelFor": "tune-saved-vehicle",
+        "fieldId": "tune-saved-vehicle",
+        "source": "Saved vehicle · offline · Vehicle profile loaded"
+      }
+    },
+    {
+      "lang": "en-us",
+      "core": "modern",
+      "mode": "dark",
+      "source": "Saved vehicle · offline · Vehicle profile loaded",
+      "geometry": {
+        "viewport": 390,
+        "left": 33,
+        "right": 357,
+        "labelFor": "tune-saved-vehicle",
+        "fieldId": "tune-saved-vehicle",
+        "source": "Saved vehicle · offline · Vehicle profile loaded"
+      }
+    },
+    {
+      "lang": "en-us",
+      "core": "elegant",
+      "mode": "light",
+      "source": "Saved vehicle · offline · Vehicle profile loaded",
+      "geometry": {
+        "viewport": 390,
+        "left": 33,
+        "right": 357,
+        "labelFor": "tune-saved-vehicle",
+        "fieldId": "tune-saved-vehicle",
+        "source": "Saved vehicle · offline · Vehicle profile loaded"
+      }
+    },
+    {
+      "lang": "en-us",
+      "core": "elegant",
+      "mode": "dark",
+      "source": "Saved vehicle · offline · Vehicle profile loaded",
+      "geometry": {
+        "viewport": 390,
+        "left": 33,
+        "right": 357,
+        "labelFor": "tune-saved-vehicle",
+        "fieldId": "tune-saved-vehicle",
+        "source": "Saved vehicle · offline · Vehicle profile loaded"
+      }
+    },
+    {
+      "lang": "en-us",
+      "core": "swiss",
+      "mode": "light",
+      "source": "Saved vehicle · offline · Vehicle profile loaded",
+      "geometry": {
+        "viewport": 390,
+        "left": 33,
+        "right": 357,
+        "labelFor": "tune-saved-vehicle",
+        "fieldId": "tune-saved-vehicle",
+        "source": "Saved vehicle · offline · Vehicle profile loaded"
+      }
+    },
+    {
+      "lang": "en-us",
+      "core": "swiss",
+      "mode": "dark",
+      "source": "Saved vehicle · offline · Vehicle profile loaded",
+      "geometry": {
+        "viewport": 390,
+        "left": 33,
+        "right": 357,
+        "labelFor": "tune-saved-vehicle",
+        "fieldId": "tune-saved-vehicle",
+        "source": "Saved vehicle · offline · Vehicle profile loaded"
+      }
+    },
+    {
+      "lang": "en-us",
+      "core": "swiss-editorial",
+      "mode": "light",
+      "source": "Saved vehicle · offline · Vehicle profile loaded",
+      "geometry": {
+        "viewport": 390,
+        "left": 33,
+        "right": 224.4375,
+        "labelFor": "tune-saved-vehicle",
+        "fieldId": "tune-saved-vehicle",
+        "source": "Saved vehicle · offline · Vehicle profile loaded"
+      }
+    },
+    {
+      "lang": "en-us",
+      "core": "swiss-editorial",
+      "mode": "dark",
+      "source": "Saved vehicle · offline · Vehicle profile loaded",
+      "geometry": {
+        "viewport": 390,
+        "left": 33,
+        "right": 224.4375,
+        "labelFor": "tune-saved-vehicle",
+        "fieldId": "tune-saved-vehicle",
+        "source": "Saved vehicle · offline · Vehicle profile loaded"
+      }
+    },
+    {
+      "lang": "en-us",
+      "core": "swiss-contrast",
+      "mode": "light",
+      "source": "Saved vehicle · offline · Vehicle profile loaded",
+      "geometry": {
+        "viewport": 390,
+        "left": 33,
+        "right": 357,
+        "labelFor": "tune-saved-vehicle",
+        "fieldId": "tune-saved-vehicle",
+        "source": "Saved vehicle · offline · Vehicle profile loaded"
+      }
+    },
+    {
+      "lang": "en-us",
+      "core": "swiss-contrast",
+      "mode": "dark",
+      "source": "Saved vehicle · offline · Vehicle profile loaded",
+      "geometry": {
+        "viewport": 390,
+        "left": 33,
+        "right": 357,
+        "labelFor": "tune-saved-vehicle",
+        "fieldId": "tune-saved-vehicle",
+        "source": "Saved vehicle · offline · Vehicle profile loaded"
+      }
+    },
+    {
+      "lang": "en-us",
+      "core": "rhine-lab",
+      "mode": "light",
+      "source": "Saved vehicle · offline · Vehicle profile loaded",
+      "geometry": {
+        "viewport": 390,
+        "left": 33,
+        "right": 357,
+        "labelFor": "tune-saved-vehicle",
+        "fieldId": "tune-saved-vehicle",
+        "source": "Saved vehicle · offline · Vehicle profile loaded"
+      }
+    },
+    {
+      "lang": "en-us",
+      "core": "rhine-lab",
+      "mode": "dark",
+      "source": "Saved vehicle · offline · Vehicle profile loaded",
+      "geometry": {
+        "viewport": 390,
+        "left": 33,
+        "right": 357,
+        "labelFor": "tune-saved-vehicle",
+        "fieldId": "tune-saved-vehicle",
+        "source": "Saved vehicle · offline · Vehicle profile loaded"
+      }
+    }
+  ],
+  "baseSha": "c1e86317b43aa328a075760e3f6d683dc179583b",
+  "source": "Pre-commit working tree on codex/issue-487-offline-vehicle-selection",
+  "sourceSha256": {
+    "frontend/src/context/CarParamsContext.tsx": "57dd498cc3d227b2160f8caa96370582ed4c8fe66f0bd29b6f9c31548fc58287",
+    "frontend/src/features/tuning/TuneSessionProvider.tsx": "cd886aff0668a06e073a7692700a109e7205c9b99e6bc890e09513f79944f80a",
+    "frontend/src/features/tuning/TuningView.tsx": "1e2a2f2c31e81284ec8e73eeeff6d645f5f67abe257a3344d0bcd1b45d8e8381",
+    "frontend/src/features/tuning/components/TuneVehicleSelector.tsx": "2598a3d9f17d9577fd11341c477dcd772276cc465af326feb1d5548a7a185e31",
+    "frontend/src/features/tuning/components/EngineDataStep.tsx": "551a5177484cfff91013ecb921768bdf7c41b6c525c935c2922dac786bb8cee3",
+    "frontend/src/features/tuning/components/EngineObservationHistory.tsx": "50f290dbcc3bf074332ef338000851b7ddf20bd50c26f7d6c182b2d621fdd901",
+    "frontend/src/features/tuning/components/EvPowertrainStep.tsx": "8f042cc62ab6360e000a292d9466de5283c1e0d6ffbb7a4c121b194edb846bfe",
+    "frontend/src/features/tuning/components/TuningMeasurementStep.tsx": "5b9668b6129cb6aea3fa5adb6d8046d851f3d2243d7094841220ded5778c5adb",
+    "frontend/src/features/tuning/useEvMeasurementSession.ts": "0e1353ec5d67c8d3c1287b350cea99673f01726a68290f62cbd8fe7ddb89cf00",
+    "frontend/src/app/AppShell.tsx": "1d9b7cf6c0519d93b919644fb70ca29091c42f60833268fffc36dcf36fb83443",
+    "lang/en-us.json": "31af7164c3603f922645c319cfa410720c2dbf4e8263826490e69a5292aebd90",
+    "lang/ja-jp.json": "a9d43710eace3febf3ff1e28192cd408f32e94623991d856a242de06130f144b",
+    "lang/zh-tw.json": "05b5f34519552cb75aa436ec1a238795bcf50e980d9957b5caf617461b7a32d0"
+  }
+}
