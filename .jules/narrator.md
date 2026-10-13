@@ -1,36 +1,3 @@
-## 2025-05-24 - Avoid AI-Generated Translations
-**Learning:** Automatically translating missing strings using scripts or AI often leads to regressions or unverified translations.
-**Action:** When working on i18n features, never commit machine-generated translations to `lang/*.json` files unless human verification is performed, as these can easily introduce subtle errors. Instead, focus on extracting hardcoded UI text into proper translation function wrappers like `t("...")`.
-
-## 2025-02-26 - Translated Status Badges
-**Learning:** Found several UI text badges acting as status flags (`READY`, `EXPERIMENTAL`, `REQUIRED`, `SYNCED`, `PAUSED`) that were hardcoded in English, rendering them inaccessible to users in other languages.
-**Action:** Replaced the hardcoded values inside badges with translation wrappers `{t("...")}` and mapped them safely across `en-us.json`, `ja-jp.json`, and `zh-tw.json` using explicit translation entries.
-
-## 2026-09-05 - Missing diagnostic string extraction
-**Learning:** Found several un-translated hardcoded strings in DiagnosticConsole.tsx, specifically around alert/error messages and support bundle buttons. While developers often forget to translate error boundary logs, leaving UI buttons (like "Download Support Bundle") un-translated degrades the experience for non-English support scenarios.
-**Action:** Always scan `alert()`, `window.confirm()`, and conditionally rendered `{status === 'x' ? '...' : '...'}` blocks when hunting for missing i18n keys in UI components.
-
-## 2024-03-24 - Extracting Data Storage Overview text
-**Learning:** Found an entire Settings subsection (`DataStorageOverview.tsx`) filled with completely hardcoded English strings, including non-visible ones like `aria-label`. We should always check nested partial components (not just the main views) for missing translations.
-**Action:** Next time looking for hardcoded values, grep for patterns like `aria-label=` inside frontend components that don't already import the `useSettings` hook.
-## 2024-05-18 - App Brand Name i18n
-**Learning:** App and brand names like "FH6-Horizon Tuner" and "FH6 HorizonTuner Lite" were hardcoded in the primary Navigation components because they don't typically change across locales. However, wrapping them in translation helpers `t()` is a best practice that gives localization teams full control over spacing, subtitle inclusion, or regional brand adaptations without requiring code changes.
-**Action:** When auditing high-level structural components (like Navbars or Footers) for i18n coverage, proactively extract and map hardcoded brand or app names, even if the base English values are duplicated across locale files, to ensure 100% localization surface area.
-## 2025-02-27 - Safe Updates to JSON Locale Files
-**Learning:** When automating the extraction and update of translation keys into `json` locale files using Python `json.load()` / `json.dump()`, or Node `JSON.parse()`, any duplicate keys that previously existed in the file may be implicitly deleted, causing a regression.
-**Action:** Always verify the diff after programmatically updating localization files to ensure that only the targeted additions are made and no existing unrelated keys are lost. If existing files have duplicate keys or formatting quirks, use text-based replacement or append operations instead of parsing the entire object.
-## 2024-11-13 - Translation Parameterization support
-**Learning:** Hardcoded text that contain numbers or values in UI elements must be extracted via `t` variables, for this project we must use string replacement. E.g `t(text, params)` inside the `SettingsContext.tsx`
-**Action:** Extract text using `t(A · {number} · {date}, { number: i + 1, date: ... })` and pass the mapped `Record<string, string | number>` object.
-## 2024-05-24 - Variable interpolation in translation function
-
-**Learning:** When passing variables to custom `t()` function, ensure the variables are properly enclosed in an object as the second argument, e.g., `t('{activeCount} Companion device(s) connected', { activeCount })`.
-
-**Action:** Ensure proper variable interpolation when refactoring hardcoded text to i18n usage.
-
-## 2024-05-24 - Double Translation Prevention in Custom Components
-**Learning:** Custom UI components like `AppDialog` may already wrap string props (like `title`) in the translation function `t()` internally. Passing an already translated string `t('Settings')` as a prop leads to double-translation or missing key warnings.
-**Action:** When applying i18n to component props, first inspect the component's internal implementation (e.g., `AppDialog.tsx`) to verify if it handles translation itself, preventing redundant double-translations.
-## 2024-10-05 - [Hardcoded Text Pattern Extraction]
-**Learning:** Found several hardcoded, context-specific UI strings like 'GitHub Releases (Ed25519 Signed)', 'P05 / P50 / P95', and 'Endpoint' that were missed in standard i18n sweeps.
-**Action:** Always scan for generic punctuation-only structures and domain-specific acronyms that appear directly as child nodes in React components.
+## 2023-10-13 - Extracting punctuation-heavy hardcoded UI structures
+**Learning:** Hardcoded text structures like "P05 / P50 / P95" that rely on non-translated characters (e.g. forward slashes) limit the accuracy and context of translations, as translators receive the entire string to translate.
+**Action:** Extract these structural elements into individual translation keys (e.g. `{t('P05')} / {t('P50')} / {t('P95')}`) inside the UI component instead of pushing the structural format (slashes, spacing) to the locale string itself.
