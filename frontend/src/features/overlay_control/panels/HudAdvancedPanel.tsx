@@ -139,7 +139,7 @@ function SystemSettings({ config, onConfigPatch, audioDevices, loadingAudioDevic
           <label htmlFor={`${id}-source`} className="form-label fs-7 text-body-secondary mb-0">{t('Audio Capture Source')}:</label>
           <span className="d-inline-flex" title={loadingAudioDevices ? t('Refreshing...') : undefined} style={loadingAudioDevices ? { cursor: 'not-allowed' } : undefined}>
             <button type="button" className="btn btn-outline-secondary btn-sm py-0 px-2 fs-8" disabled={loadingAudioDevices} style={loadingAudioDevices ? { pointerEvents: 'none' } : undefined}
-              aria-busy={loadingAudioDevices} onClick={onRefreshAudioDevices}>
+              aria-busy={loadingAudioDevices} aria-label={loadingAudioDevices ? t('Refreshing...') : t('Refresh Audio Devices')} onClick={onRefreshAudioDevices}>
               <span className="hud-status-labels">
                 <span className={loadingAudioDevices ? 'hud-status-reserved' : ''} aria-hidden={loadingAudioDevices}>{t('Refresh Audio Devices')}</span>
                 <span className={loadingAudioDevices ? '' : 'hud-status-reserved'} aria-hidden={!loadingAudioDevices}>{t('Refreshing...')}</span>

@@ -64,6 +64,7 @@ export function HudSetupPanel({
                   : undefined
               }
               aria-busy={busy}
+              aria-label={t(config.enabled ? 'Close HUD Overlay' : 'Launch HUD Overlay')}
               onClick={() => onToggleHud(!config.enabled)}
             >
               <span className={`hud-window-action-icon${busy ? ' spinner-border spinner-border-sm' : ''}`} aria-hidden="true" />
