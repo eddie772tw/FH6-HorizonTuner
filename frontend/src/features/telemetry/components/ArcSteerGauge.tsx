@@ -74,17 +74,30 @@ const ArcSteerGauge: React.FC<{ size?: number }> = React.memo(() => {
       // Tick marks
       const tickCount = theme.linear ? 25 : 9;
       ctx.lineWidth = 1.4 * dpr;
+
+      // Batch non-center ticks
+      ctx.beginPath();
       for (let i = 0; i < tickCount; i++) {
+        if (i === (tickCount - 1) / 2) continue; // Skip center tick
         const tickAngle = startAngle + (i / (tickCount - 1)) * (endAngle - startAngle);
-        const isCenter = i === (tickCount - 1) / 2;
-        const innerR = radius - (isCenter ? 8 * dpr : 4.5 * dpr);
+        const innerR = radius - 4.5 * dpr;
         const outerR = radius + 3 * dpr;
-        ctx.beginPath();
         ctx.moveTo(cx + innerR * Math.cos(tickAngle), cy + innerR * Math.sin(tickAngle));
         ctx.lineTo(cx + outerR * Math.cos(tickAngle), cy + outerR * Math.sin(tickAngle));
-        ctx.strokeStyle = isCenter ? primaryHex : theme.tick;
-        ctx.stroke();
       }
+      ctx.strokeStyle = theme.tick;
+      ctx.stroke();
+
+      // Draw center tick
+      const centerIdx = (tickCount - 1) / 2;
+      const centerTickAngle = startAngle + (centerIdx / (tickCount - 1)) * (endAngle - startAngle);
+      const centerInnerR = radius - 8 * dpr;
+      const centerOuterR = radius + 3 * dpr;
+      ctx.beginPath();
+      ctx.moveTo(cx + centerInnerR * Math.cos(centerTickAngle), cy + centerInnerR * Math.sin(centerTickAngle));
+      ctx.lineTo(cx + centerOuterR * Math.cos(centerTickAngle), cy + centerOuterR * Math.sin(centerTickAngle));
+      ctx.strokeStyle = primaryHex;
+      ctx.stroke();
 
       // 2. Active Steering Arc（primaryHex 已從快取取得）
       const targetAngle = centerAngle + (steerRatio * (endAngle - startAngle)) / 2;

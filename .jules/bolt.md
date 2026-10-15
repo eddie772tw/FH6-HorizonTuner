@@ -139,3 +139,7 @@ Additionally, attempting to optimize 60Hz telemetry data copying in `FrameInterp
 ## 2026-10-10 - Loaded-session aggregation (PR #502 feature)
 **Learning:** The reviewed calculateLapsFromPoints change aggregates loaded telemetry sessions once per lap, avoiding temporary arrays used only for min/max/sum. This is not a measured live 60Hz receiver performance result.
 **Action:** Preserve finite-sample filtering, observed start/closing boundaries, and the first positive finite LastLap in the next lap; use product lap-contract tests and recorded-session comparison before claiming a broader performance improvement.
+
+## 2024-11-26 - Batching Canvas Path Constructs in HUD Elements
+**Learning:** High-frequency Canvas rendering loops in components like `EngineRpmDisplay`, `ArcSteerGauge`, and `GForceRadar` individually invoke `ctx.beginPath()`, `ctx.stroke()`, and `ctx.fill()` for numerous sub-elements (segments, ticks, markers). This forces 30-90 canvas state transitions per frame, leading to CPU overhead and poor rendering efficiency.
+**Action:** Extract `ctx.beginPath()` and its terminating paint functions (`fill`, `stroke`) out of loops where segments share the same style. Batch multiple `ctx.arc()` calls together into one path by appending `ctx.moveTo()` to skip unwanted lines between arcs. This drastically reduces paint commands and optimizes render pipeline performance.
