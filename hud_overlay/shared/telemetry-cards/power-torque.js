@@ -46,8 +46,7 @@ export function renderPowerTorque(data, powerTorqueHist, now, domCache) {
     // Draw Torque Trace (Yellow / Contrast Theme Color)
     ptCtx.fillStyle = 'rgba(255, 235, 59, 0.75)';
     for (var k = 0; k < powerTorqueHist.length; k++) {
-        var logicalIdx = (powerTorqueHist._offset + k) % powerTorqueHist.length;
-        var pt = powerTorqueHist[logicalIdx];
+        var pt = powerTorqueHist[k];
         var tx = (pt.rpm / mRpm) * pw;
         var clampedTQ = clamp(pt.torque, 0, combinedMax);
         var ty = ph - (clampedTQ / combinedMax) * (ph - 4 * dpr) - 2 * dpr;
@@ -72,8 +71,7 @@ export function renderPowerTorque(data, powerTorqueHist, now, domCache) {
     }
     ptCtx.fillStyle = primaryColor;
     for (var k = 0; k < powerTorqueHist.length; k++) {
-        var logicalIdxHP = (powerTorqueHist._offset + k) % powerTorqueHist.length;
-        var pt = powerTorqueHist[logicalIdxHP];
+        var pt = powerTorqueHist[k];
         var px = (pt.rpm / mRpm) * pw;
         var clampedHP = clamp(pt.power, 0, combinedMax);
         var py = ph - (clampedHP / combinedMax) * (ph - 4 * dpr) - 2 * dpr;
