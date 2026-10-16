@@ -76,21 +76,6 @@ const EngineRpmDisplay: React.FC = React.memo(() => {
         lastFlashTimeRef.current = now;
       }
 
-      let currentFill = '';
-      let currentShadow = '';
-      let currentBlur = 0;
-      let pathStarted = false;
-
-      const flushPath = () => {
-        if (pathStarted) {
-          ctx.fillStyle = currentFill;
-          ctx.shadowColor = currentShadow;
-          ctx.shadowBlur = currentBlur;
-          ctx.fill();
-          pathStarted = false;
-        }
-      };
-
       for (let i = 0; i < numSegments; i++) {
         const segRatio = i / (numSegments - 1);
         const isActive = i < activeSegs;
@@ -105,46 +90,31 @@ const EngineRpmDisplay: React.FC = React.memo(() => {
           activeColor = secondary;
         }
 
-        let targetFill = '';
-        let targetShadow = 'transparent';
-        let targetBlur = 0;
-
-        if (isActive) {
-          if (isShiftAlert && segRatio >= 0.85) {
-            targetFill = theme.alertFlash && lastFlashRef.current ? theme.pointer : theme.danger;
-            targetShadow = theme.danger;
-            targetBlur = glowStrength * 10 * dpr;
-          } else {
-            targetFill = activeColor;
-            targetShadow = activeColor;
-            targetBlur = glowStrength * 6 * dpr;
-          }
-        } else {
-          targetFill = theme.inactive;
-        }
-
-        if (pathStarted && (currentFill !== targetFill || currentShadow !== targetShadow || currentBlur !== targetBlur)) {
-          flushPath();
-        }
-
-        if (!pathStarted) {
-          ctx.beginPath();
-          currentFill = targetFill;
-          currentShadow = targetShadow;
-          currentBlur = targetBlur;
-          pathStarted = true;
-        }
-
+        ctx.beginPath();
         const slant = (theme.flat ? 0 : 3) * dpr;
         ctx.moveTo(x + slant, y);
         ctx.lineTo(x + segWidth + slant, y);
         ctx.lineTo(x + segWidth, y + segHeight);
         ctx.lineTo(x, y + segHeight);
         ctx.closePath();
-      }
 
-      flushPath();
-      ctx.shadowBlur = 0;
+        if (isActive) {
+          if (isShiftAlert && segRatio >= 0.85) {
+            ctx.fillStyle = theme.alertFlash && lastFlashRef.current ? theme.pointer : theme.danger;
+            ctx.shadowColor = theme.danger;
+            ctx.shadowBlur = glowStrength * 10 * dpr;
+          } else {
+            ctx.fillStyle = activeColor;
+            ctx.shadowColor = activeColor;
+            ctx.shadowBlur = glowStrength * 6 * dpr;
+          }
+          ctx.fill();
+          ctx.shadowBlur = 0;
+        } else {
+          ctx.fillStyle = theme.inactive;
+          ctx.fill();
+        }
+      }
     };
 
     const handleUpdate = (e: any) => {

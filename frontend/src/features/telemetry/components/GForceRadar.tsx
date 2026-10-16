@@ -169,19 +169,15 @@ const GForceRadar: React.FC<GForceRadarProps> = React.memo(({ size: propSize, re
       const markers = [maxLatL, maxLatR, maxLonB, maxLonA, maxL_B, maxL_A, maxR_B, maxR_A];
 
       ctx.fillStyle = theme.marker;
-      ctx.beginPath();
       for (const p of markers) {
         const offset = calculateGPointOffset(p.lat, p.lon, radius, 3);
         const cx = (radius + offset.dx) * dpr;
         const cy = (radius + offset.dy) * dpr;
-        if (theme.linear) {
-          ctx.rect(cx - 2.5 * dpr, cy - 2.5 * dpr, 5 * dpr, 5 * dpr);
-        } else {
-          ctx.moveTo(cx + 3 * dpr, cy);
-          ctx.arc(cx, cy, 3 * dpr, 0, Math.PI * 2);
-        }
+        ctx.beginPath();
+        if (theme.linear) ctx.rect(cx - 2.5 * dpr, cy - 2.5 * dpr, 5 * dpr, 5 * dpr);
+        else ctx.arc(cx, cy, 3 * dpr, 0, Math.PI * 2);
+        ctx.fill();
       }
-      ctx.fill();
     };
 
     const tickMarkers = (now: number) => {
