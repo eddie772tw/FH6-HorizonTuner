@@ -45,14 +45,15 @@ export function renderPowerTorque(data, powerTorqueHist, now, domCache) {
 
     // Draw Torque Trace (Yellow / Contrast Theme Color)
     ptCtx.fillStyle = 'rgba(255, 235, 59, 0.75)';
+    ptCtx.beginPath();
     for (var k = 0; k < powerTorqueHist.length; k++) {
-        var logicalIdx = (powerTorqueHist._offset + k) % powerTorqueHist.length;
-        var pt = powerTorqueHist[logicalIdx];
+        var pt = powerTorqueHist[k];
         var tx = (pt.rpm / mRpm) * pw;
         var clampedTQ = clamp(pt.torque, 0, combinedMax);
         var ty = ph - (clampedTQ / combinedMax) * (ph - 4 * dpr) - 2 * dpr;
-        ptCtx.fillRect(tx, ty, dotSize, dotSize);
+        ptCtx.rect(tx, ty, dotSize, dotSize);
     }
+    ptCtx.fill();
 
     // Draw Power Trace (Primary Theme Color)
     var wrapperEl = domCache ? domCache.wrapper : document.getElementById('tcClusterWrapper');
@@ -71,13 +72,14 @@ export function renderPowerTorque(data, powerTorqueHist, now, domCache) {
         }
     }
     ptCtx.fillStyle = primaryColor;
+    ptCtx.beginPath();
     for (var k = 0; k < powerTorqueHist.length; k++) {
-        var logicalIdxHP = (powerTorqueHist._offset + k) % powerTorqueHist.length;
-        var pt = powerTorqueHist[logicalIdxHP];
+        var pt = powerTorqueHist[k];
         var px = (pt.rpm / mRpm) * pw;
         var clampedHP = clamp(pt.power, 0, combinedMax);
         var py = ph - (clampedHP / combinedMax) * (ph - 4 * dpr) - 2 * dpr;
-        ptCtx.fillRect(px, py, dotSize, dotSize);
+        ptCtx.rect(px, py, dotSize, dotSize);
     }
+    ptCtx.fill();
 }
 
