@@ -45,6 +45,7 @@ function setupDOMMock() {
                 clearRect: () => {},
                 setTransform: () => {},
                 fillRect: () => {},
+                rect: () => {},
                 stroke: () => {},
                 beginPath: () => {},
                 moveTo: () => {},
