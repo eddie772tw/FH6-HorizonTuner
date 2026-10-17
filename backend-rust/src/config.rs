@@ -299,6 +299,16 @@ pub fn normalize_hud(data: &Value) -> Value {
             value["r34Lighting"] = json!("night");
         }
     }
+    if style == "gamepad_overlay"
+        && !["xbox", "dualsense"].contains(&value["gamepadLayout"].as_str().unwrap_or(""))
+    {
+        value["gamepadLayout"] = json!("xbox");
+    }
+    if style == "minimap_overlay"
+        && !["heading_up", "north_up"].contains(&value["minimapMode"].as_str().unwrap_or(""))
+    {
+        value["minimapMode"] = json!("heading_up");
+    }
     value
 }
 pub fn hud_for_frontend(data: &Value, settings: &Value) -> Value {

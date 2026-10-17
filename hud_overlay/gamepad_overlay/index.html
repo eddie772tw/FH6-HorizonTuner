@@ -1,4 +1,10 @@
 <!DOCTYPE html>
+<!--
+  [設計決策紀錄 / Design Decision Note]
+  1. 溫度與油壓模型基準：本專案 HUD 體系若涉及水溫顯示，統一使用四輪平均胎溫 (`TireTemp`)；油溫與油壓則依確定性熱力學與油壓代理模型模擬（本手把輸入面板僅消費轉向、油門、煞車、手煞車與檔位遙測）。
+  2. D3D11 手把底圖與搖桿座標校準：採用 `res_121.dxbc` 渲染並強化深色對比之 Xbox 與 PS5 DualSense 底圖，校準左右類比搖桿凹槽中心與手煞車按鍵發光位置，移除覆蓋 Xbox 標誌之錯位白點。
+  3. 子模式切換整合：移除 HUD 內部無法於穿透視窗點擊之切換按鈕，改由主視窗 HUD 進階設定 (`gamepadLayout`: `xbox` / `dualsense`) 控制手把樣式。
+-->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -6,54 +12,33 @@
     <title>Gamepad Input & Telemetry Overlay</title>
     <link rel="stylesheet" href="../shared/hud-base.css">
     <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: transparent !important;
+        }
         .gamepad-container {
             width: 480px;
             height: 380px;
             position: relative;
-            pointer-events: all;
+            pointer-events: none;
             user-select: none;
-        }
-        .mode-tabs {
-            position: absolute;
-            top: -28px;
-            right: 10px;
-            display: flex;
-            gap: 6px;
-            z-index: 10;
-        }
-        .mode-btn {
-            background: rgba(15, 23, 42, 0.85);
-            border: 1px solid rgba(0, 240, 255, 0.3);
-            color: #94a3b8;
-            font-size: 11px;
-            font-weight: 700;
-            padding: 4px 10px;
-            border-radius: 4px 4px 0 0;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .mode-btn.active {
-            background: rgba(0, 240, 255, 0.2);
-            color: #00f0ff;
-            border-bottom: 1px solid transparent;
         }
         #gamepadCanvas {
             display: block;
             width: 480px;
             height: 380px;
+            pointer-events: none;
             filter: drop-shadow(0 0 16px rgba(0, 240, 255, calc(var(--hud-glow-intensity, 1.0) * 0.35)));
         }
     </style>
 </head>
 <body>
-    <div id="teleCardsMount"></div>
-
     <div class="hud-root-wrapper">
         <div class="hud-gauge-container gamepad-container" id="gamepadContainer">
-            <div class="mode-tabs">
-                <button class="mode-btn active" id="btnXbox" onclick="switchController(0)">Xbox Controller</button>
-                <button class="mode-btn" id="btnDualSense" onclick="switchController(1)">PS5 DualSense</button>
-            </div>
             <canvas id="gamepadCanvas" width="480" height="380"></canvas>
         </div>
     </div>
@@ -61,22 +46,19 @@
     <script src="../shared/hud-core.js"></script>
     <script>
         var currentLayout = 0; // 0 = Xbox, 1 = DualSense
+        function resolveGamepadLayout(mode) {
+            if (mode === 1 || mode === '1' || mode === 'dualsense' || mode === 'ps5') return 1;
+            return 0;
+        }
         function switchController(mode) {
-            currentLayout = mode;
-            var bx = document.getElementById('btnXbox');
-            var bd = document.getElementById('btnDualSense');
-            if (bx) bx.className = 'mode-btn' + (mode === 0 ? ' active' : '');
-            if (bd) bd.className = 'mode-btn' + (mode === 1 ? ' active' : '');
+            currentLayout = resolveGamepadLayout(mode);
             if (window._renderGamepad) window._renderGamepad();
         }
         window.switchController = switchController;
 
         var urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('mode') === 'dualsense' || urlParams.get('mode') === '1') {
-            currentLayout = 1;
-            window.addEventListener('DOMContentLoaded', function() {
-                switchController(1);
-            });
+        if (urlParams.get('mode') !== null) {
+            currentLayout = resolveGamepadLayout(urlParams.get('mode'));
         }
 
         (function() {
@@ -91,32 +73,29 @@
             dualSenseImg.src = 'assets/controller_dualsense.png';
 
             var telemetryData = {
-                steer: 0.0,      // -1.0 to 1.0
-                accel: 0.0,      // 0.0 to 1.0
-                brake: 0.0,      // 0.0 to 1.0
-                clutch: 0.0,     // 0.0 to 1.0
-                handbrake: 0.0,  // 0.0 to 1.0
+                steer: 0.0,
+                accel: 0.0,
+                brake: 0.0,
+                clutch: 0.0,
+                handbrake: 0.0,
                 gear: 1,
                 speed_kmh: 0
             };
 
             function drawStick(cx, cy, radius, defX, defY, glowColor) {
-                // Outer ring
                 ctx.save();
-                ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
-                ctx.lineWidth = 2;
+                ctx.strokeStyle = 'rgba(0, 240, 255, 0.25)';
+                ctx.lineWidth = 1.5;
                 ctx.beginPath();
-                ctx.arc(cx, cy, radius + 4, 0, Math.PI * 2);
+                ctx.arc(cx, cy, radius + 5, 0, Math.PI * 2);
                 ctx.stroke();
 
-                // Stick center displacement
-                var sx = cx + defX * radius;
-                var sy = cy + defY * radius;
+                var sx = cx + defX * (radius * 0.85);
+                var sy = cy + defY * (radius * 0.85);
 
-                // Glowing stick cap
                 var grad = ctx.createRadialGradient(sx, sy, 2, sx, sy, radius);
                 grad.addColorStop(0, '#38bdf8');
-                grad.addColorStop(0.6, '#0284c7');
+                grad.addColorStop(0.65, '#0284c7');
                 grad.addColorStop(1, '#0f172a');
 
                 ctx.fillStyle = grad;
@@ -126,53 +105,51 @@
                 ctx.arc(sx, sy, radius, 0, Math.PI * 2);
                 ctx.fill();
 
-                // Center pip
+                ctx.shadowBlur = 0;
                 ctx.fillStyle = '#ffffff';
                 ctx.beginPath();
-                ctx.arc(sx, sy, 3, 0, Math.PI * 2);
+                ctx.arc(sx, sy, 2.8, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.restore();
             }
 
             function drawTriggerBar(x, y, w, h, val, isBrake) {
                 ctx.save();
-                // Background track
-                ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
-                ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+                ctx.fillStyle = 'rgba(15, 23, 42, 0.88)';
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.22)';
                 ctx.lineWidth = 1;
                 ctx.beginPath();
                 ctx.roundRect(x, y, w, h, 4);
                 ctx.fill();
                 ctx.stroke();
 
-                // Fill from bottom up
-                var fillH = Math.max(0, Math.min(h, h * val));
-                var fillY = y + h - fillH;
+                var fillH = Math.max(0, Math.min(h - 4, (h - 4) * val));
+                var fillY = y + h - 2 - fillH;
 
-                var grad = ctx.createLinearGradient(x, fillY + fillH, x, fillY);
-                if (isBrake) {
-                    grad.addColorStop(0, '#f87171');
-                    grad.addColorStop(1, '#ef4444');
-                    ctx.shadowColor = '#ef4444';
-                } else {
-                    grad.addColorStop(0, '#4ade80');
-                    grad.addColorStop(1, '#22c55e');
-                    ctx.shadowColor = '#22c55e';
+                if (fillH > 0.5) {
+                    var grad = ctx.createLinearGradient(x, fillY + fillH, x, fillY);
+                    if (isBrake) {
+                        grad.addColorStop(0, '#f87171');
+                        grad.addColorStop(1, '#ef4444');
+                        ctx.shadowColor = '#ef4444';
+                    } else {
+                        grad.addColorStop(0, '#4ade80');
+                        grad.addColorStop(1, '#22c55e');
+                        ctx.shadowColor = '#22c55e';
+                    }
+                    ctx.shadowBlur = val > 0.1 ? 8 : 0;
+                    ctx.fillStyle = grad;
+                    ctx.beginPath();
+                    ctx.roundRect(x + 2, fillY, w - 4, fillH, 2);
+                    ctx.fill();
                 }
-                ctx.shadowBlur = val > 0.1 ? 8 : 0;
-                ctx.fillStyle = grad;
 
-                ctx.beginPath();
-                ctx.roundRect(x + 2, fillY + 2, w - 4, Math.max(0, fillH - 4), 2);
-                ctx.fill();
-
-                // Percentage label
+                ctx.shadowBlur = 0;
                 ctx.fillStyle = '#ffffff';
                 ctx.font = 'bold 10px Consolas, monospace';
                 ctx.textAlign = 'center';
                 ctx.fillText((val * 100).toFixed(0) + '%', x + w / 2, y + h + 14);
 
-                // Label header (LT/RT)
                 ctx.fillStyle = isBrake ? '#f87171' : '#4ade80';
                 ctx.fillText(isBrake ? 'BRAKE' : 'THROTTLE', x + w / 2, y - 6);
                 ctx.restore();
@@ -186,99 +163,71 @@
                 var isDualSense = (currentLayout === 1);
                 var img = isDualSense ? dualSenseImg : xboxImg;
 
-                var imgW = isDualSense ? 437 : 435;
-                var imgH = isDualSense ? 337 : 349;
+                var imgW = isDualSense ? 372 : 370;
+                var imgH = isDualSense ? 287 : 297;
                 var ox = Math.round((w - imgW) / 2);
-                var oy = Math.round((h - imgH) / 2) + 10;
+                var oy = 24;
 
-                if (img.complete) {
+                if (img.complete && img.naturalWidth > 0) {
                     ctx.drawImage(img, ox, oy, imgW, imgH);
                 }
 
-                // Trigger meters on outer edges
-                drawTriggerBar(16, oy + 40, 24, 110, telemetryData.brake, true);
-                drawTriggerBar(w - 40, oy + 40, 24, 110, telemetryData.accel, false);
+                drawTriggerBar(14, oy + 42, 24, 120, telemetryData.brake, true);
+                drawTriggerBar(w - 38, oy + 42, 24, 120, telemetryData.accel, false);
 
                 if (!isDualSense) {
-                    // ==========================================
-                    // XBOX CONTROLLER
-                    // ==========================================
-                    // Left Stick (Steering): ox + 122, oy + 140
-                    var steerDef = telemetryData.steer;
-                    drawStick(ox + 122, oy + 140, 20, steerDef, 0, '#00f0ff');
+                    // XBOX CONTROLLER (scaled 370x297 from 435x349 -> factor 0.8505)
+                    drawStick(ox + 97, oy + 114, 18, telemetryData.steer, 0, '#00f0ff');
+                    drawStick(ox + 236, oy + 168, 18, 0, 0, 'rgba(0, 240, 255, 0.4)');
 
-                    // Right Stick: ox + 265, oy + 210
-                    drawStick(ox + 265, oy + 210, 20, 0, 0, 'rgba(0, 240, 255, 0.4)');
-
-                    // Face button A (Handbrake active): ox + 312, oy + 172
                     if (telemetryData.handbrake > 0.1) {
                         ctx.save();
-                        ctx.fillStyle = 'rgba(34, 197, 94, 0.6)';
+                        ctx.fillStyle = 'rgba(34, 197, 94, 0.65)';
                         ctx.shadowColor = '#22c55e';
                         ctx.shadowBlur = 12;
                         ctx.beginPath();
-                        ctx.arc(ox + 312, oy + 172, 12, 0, Math.PI * 2);
+                        ctx.arc(ox + 253, oy + 117, 11, 0, Math.PI * 2);
                         ctx.fill();
                         ctx.restore();
                     }
-
-                    // Xbox Logo glow center
-                    ctx.save();
-                    ctx.fillStyle = '#ffffff';
-                    ctx.shadowColor = '#00f0ff';
-                    ctx.shadowBlur = 8;
-                    ctx.beginPath();
-                    ctx.arc(ox + 217, oy + 95, 7, 0, Math.PI * 2);
-                    ctx.fill();
-                    ctx.restore();
-
                 } else {
-                    // ==========================================
-                    // PLAYSTATION 5 DUALSENSE
-                    // ==========================================
-                    // Left Stick: ox + 160, oy + 205
-                    var steerDef = telemetryData.steer;
-                    drawStick(ox + 160, oy + 205, 18, steerDef, 0, '#38bdf8');
+                    // PLAYSTATION 5 DUALSENSE (scaled 372x287 from 437x337 -> factor 0.8513)
+                    drawStick(ox + 132, oy + 165, 17, telemetryData.steer, 0, '#38bdf8');
+                    drawStick(ox + 247, oy + 165, 17, 0, 0, 'rgba(56, 189, 248, 0.4)');
 
-                    // Right Stick: ox + 277, oy + 205
-                    drawStick(ox + 277, oy + 205, 18, 0, 0, 'rgba(56, 189, 248, 0.4)');
-
-                    // Touchpad lightbar glow
                     ctx.save();
-                    var lightbarGrad = ctx.createLinearGradient(ox + 150, oy + 95, ox + 287, oy + 95);
-                    lightbarGrad.addColorStop(0, 'rgba(0, 240, 255, 0.1)');
-                    lightbarGrad.addColorStop(0.5, 'rgba(0, 240, 255, 0.8)');
-                    lightbarGrad.addColorStop(1, 'rgba(0, 240, 255, 0.1)');
+                    var lightbarGrad = ctx.createLinearGradient(ox + 132, oy + 66, ox + 245, oy + 66);
+                    lightbarGrad.addColorStop(0, 'rgba(0, 240, 255, 0.15)');
+                    lightbarGrad.addColorStop(0.5, 'rgba(0, 240, 255, 0.85)');
+                    lightbarGrad.addColorStop(1, 'rgba(0, 240, 255, 0.15)');
                     ctx.strokeStyle = lightbarGrad;
                     ctx.shadowColor = '#00f0ff';
-                    ctx.shadowBlur = 10;
-                    ctx.lineWidth = 3;
+                    ctx.shadowBlur = 8;
+                    ctx.lineWidth = 2.5;
                     ctx.beginPath();
-                    ctx.moveTo(ox + 155, oy + 96);
-                    ctx.lineTo(ox + 282, oy + 96);
+                    ctx.moveTo(ox + 134, oy + 66);
+                    ctx.lineTo(ox + 243, oy + 66);
                     ctx.stroke();
                     ctx.restore();
 
-                    // Cross Button (Handbrake): ox + 322, oy + 166
                     if (telemetryData.handbrake > 0.1) {
                         ctx.save();
-                        ctx.fillStyle = 'rgba(56, 189, 248, 0.6)';
+                        ctx.fillStyle = 'rgba(56, 189, 248, 0.65)';
                         ctx.shadowColor = '#38bdf8';
                         ctx.shadowBlur = 12;
                         ctx.beginPath();
-                        ctx.arc(ox + 322, oy + 166, 10, 0, Math.PI * 2);
+                        ctx.arc(ox + 303, oy + 143, 10, 0, Math.PI * 2);
                         ctx.fill();
                         ctx.restore();
                     }
                 }
 
-                // Telemetry Data Banner at bottom
                 ctx.save();
-                ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
-                ctx.strokeStyle = 'rgba(0, 240, 255, 0.3)';
+                ctx.fillStyle = 'rgba(15, 23, 42, 0.88)';
+                ctx.strokeStyle = 'rgba(0, 240, 255, 0.35)';
                 ctx.lineWidth = 1;
                 ctx.beginPath();
-                ctx.roundRect(w / 2 - 130, h - 36, 260, 28, 6);
+                ctx.roundRect(w / 2 - 135, h - 38, 270, 28, 6);
                 ctx.fill();
                 ctx.stroke();
 
@@ -286,8 +235,9 @@
                 ctx.font = 'bold 11px Consolas, monospace';
                 ctx.textAlign = 'center';
                 var steerDeg = (telemetryData.steer * 45).toFixed(1);
-                var sign = steerDeg >= 0 ? '+' : '';
-                ctx.fillText('STEER: ' + sign + steerDeg + '°  |  GEAR: ' + (telemetryData.gear === 0 ? 'R' : telemetryData.gear), w / 2, h - 18);
+                var sign = telemetryData.steer >= 0 ? '+' : '';
+                var gearTxt = telemetryData.gear === 0 ? 'R' : (telemetryData.gear === 'N' ? 'N' : telemetryData.gear);
+                ctx.fillText('STEER: ' + sign + steerDeg + '°  |  GEAR: ' + gearTxt, w / 2, h - 20);
                 ctx.restore();
             }
 
@@ -295,25 +245,48 @@
             xboxImg.onload = render;
             dualSenseImg.onload = render;
 
-            function animLoop() {
-                render();
-                requestAnimationFrame(animLoop);
-            }
-            requestAnimationFrame(animLoop);
-
             HUDCore.registerStyle('gamepad_overlay', {
                 containerId: 'gamepadContainer',
                 scaleMultiplier: 0.95,
 
+                onInit: function(cfg) {
+                    if (cfg && cfg.gamepadLayout !== undefined) {
+                        currentLayout = resolveGamepadLayout(cfg.gamepadLayout);
+                        render();
+                    }
+                },
+
                 onFrame: function(data) {
                     if (!data) return;
-                    if (data.steer !== undefined) telemetryData.steer = Number(data.steer) || 0;
-                    if (data.accel !== undefined) telemetryData.accel = Math.max(0, Math.min(1, Number(data.accel) || 0));
-                    if (data.brake !== undefined) telemetryData.brake = Math.max(0, Math.min(1, Number(data.brake) || 0));
-                    if (data.clutch !== undefined) telemetryData.clutch = Math.max(0, Math.min(1, Number(data.clutch) || 0));
-                    if (data.handbrake !== undefined) telemetryData.handbrake = Math.max(0, Math.min(1, Number(data.handbrake) || 0));
-                    if (data.gear !== undefined) telemetryData.gear = Number(data.gear) || 1;
+                    if (data.steer !== undefined) {
+                        var st = Number(data.steer) || 0;
+                        if (Math.abs(st) > 1.5) st = st / 100.0;
+                        telemetryData.steer = Math.max(-1, Math.min(1, st));
+                    }
+                    var rawAccel = data.throttle !== undefined ? data.throttle : data.accel;
+                    if (rawAccel !== undefined) {
+                        var ac = Number(rawAccel) || 0;
+                        if (ac > 1.5) ac = ac / 100.0;
+                        telemetryData.accel = Math.max(0, Math.min(1, ac));
+                    }
+                    if (data.brake !== undefined) {
+                        var br = Number(data.brake) || 0;
+                        if (br > 1.5) br = br / 100.0;
+                        telemetryData.brake = Math.max(0, Math.min(1, br));
+                    }
+                    if (data.clutch !== undefined) {
+                        var cl = Number(data.clutch) || 0;
+                        if (cl > 1.5) cl = cl / 100.0;
+                        telemetryData.clutch = Math.max(0, Math.min(1, cl));
+                    }
+                    if (data.handbrake !== undefined) {
+                        var hb = Number(data.handbrake) || 0;
+                        if (hb > 1.5) hb = hb / 100.0;
+                        telemetryData.handbrake = Math.max(0, Math.min(1, hb));
+                    }
+                    if (data.gear !== undefined) telemetryData.gear = data.gear;
                     if (data.speed !== undefined) telemetryData.speed_kmh = Number(data.speed) || 0;
+                    render();
                 },
 
                 onElementsChange: function(elements) {
@@ -326,23 +299,25 @@
                     var t = 0;
                     var sweepInterval = setInterval(function() {
                         t += 0.08;
-                        telemetryData.steer = Math.sin(t);
+                        telemetryData.steer = Math.sin(t * 2) * 0.9;
                         telemetryData.accel = Math.max(0, Math.sin(t));
                         telemetryData.brake = Math.max(0, -Math.sin(t));
-                        telemetryData.handbrake = Math.sin(t * 2) > 0.7 ? 1.0 : 0.0;
+                        telemetryData.handbrake = (t > 2.5 && t < 3.5) ? 1.0 : 0.0;
+                        render();
                         if (t > Math.PI * 2) {
                             clearInterval(sweepInterval);
                             telemetryData.steer = 0;
                             telemetryData.accel = 0;
                             telemetryData.brake = 0;
                             telemetryData.handbrake = 0;
+                            render();
                         }
                     }, 16);
                 }
             });
 
             HUDCore.init('gamepad_overlay');
-            render();
+            switchController(currentLayout);
         })();
     </script>
 </body>

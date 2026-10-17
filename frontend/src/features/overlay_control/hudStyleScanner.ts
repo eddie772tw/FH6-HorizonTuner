@@ -37,6 +37,11 @@ export const HUD_DISPLAY_NAMES: Record<string, string> = {
   simple: 'Simple Gauge',
   classic_jdm: 'Classic JDM Arcade',
   r34_mfd: 'Skyline R34 MFD',
+  gamepad_overlay: 'Gamepad Telemetry Overlay',
+  minimap_overlay: 'GPS Minimap Radar',
+  touge_pacenotes: 'Touge Pacenotes & Prompts',
+  telemetry_cards: 'Telemetry Data Cards',
+  speed_effects: 'Speed Sense FX',
 };
 
 /**

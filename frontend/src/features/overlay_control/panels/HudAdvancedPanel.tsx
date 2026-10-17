@@ -105,6 +105,26 @@ function StyleSettings({ config, appUnits, onConfigPatch, isWipActive, wipForced
       {config.hudStyle === CLASSIC_JDM_STYLE_ID && <ClassicJdmSettingsCard config={config} onChange={onConfigPatch} t={t} />}
       {config.hudStyle === LFA_CENTER_RING_STYLE_ID && <LfaExpansionSettingsCard config={config} onChange={onConfigPatch} t={t} />}
       {config.hudStyle === 'r34_mfd' && <R34MfdSettingsCard config={config} onChange={onConfigPatch} t={t} />}
+      {config.hudStyle === 'gamepad_overlay' && (
+        <div className="border-top pt-2">
+          <label htmlFor={`${id}-gamepad-layout`} className="form-label fs-7 text-body-secondary mb-1">{t('Controller Layout')}:</label>
+          <select id={`${id}-gamepad-layout`} className="form-select form-select-sm fw-bold" value={config.gamepadLayout ?? 'xbox'}
+            onChange={event => onConfigPatch({ hudStyle: 'gamepad_overlay', gamepadLayout: event.target.value as 'xbox' | 'dualsense' })}>
+            <option value="xbox">{t('Xbox Wireless Controller')}</option>
+            <option value="dualsense">{t('PlayStation DualSense')}</option>
+          </select>
+        </div>
+      )}
+      {config.hudStyle === 'minimap_overlay' && (
+        <div className="border-top pt-2">
+          <label htmlFor={`${id}-minimap-mode`} className="form-label fs-7 text-body-secondary mb-1">{t('Minimap Orientation')}:</label>
+          <select id={`${id}-minimap-mode`} className="form-select form-select-sm fw-bold" value={config.minimapMode ?? 'heading_up'}
+            onChange={event => onConfigPatch({ hudStyle: 'minimap_overlay', minimapMode: event.target.value as 'heading_up' | 'north_up' })}>
+            <option value="heading_up">{t('Heading Up (Rotate Map)')}</option>
+            <option value="north_up">{t('North Up (Rotate Arrow)')}</option>
+          </select>
+        </div>
+      )}
       {config.hudStyle === 'vfd' && (
         <div className="border-top pt-2 d-flex flex-column gap-3">
           <div>

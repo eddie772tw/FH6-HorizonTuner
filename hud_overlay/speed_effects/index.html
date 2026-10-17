@@ -1,4 +1,9 @@
 <!DOCTYPE html>
+<!--
+  [設計決策紀錄 / Design Decision Note]
+  1. 溫度與油壓模型基準：本專案 HUD 體系若涉及水溫顯示，統一使用四輪平均胎溫 (`TireTemp`)；油溫與油壓則依確定性熱力學與油壓代理模型模擬（本速度特效面板僅消費即時車速）。
+  2. 全螢幕速度線與鏡頭震動隔離：將 Canvas 擴展為全視窗尺寸 (`1920x1080`)，並將鏡頭震動位移作用於內部 `#effectsCanvas` 而非 `#speedEffectsContainer`，避免覆寫 `HUDCore` 之縮放與定位矩陣。
+-->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -6,27 +11,35 @@
     <title>High-Speed Effects & Camera Shake</title>
     <link rel="stylesheet" href="../shared/hud-base.css">
     <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: transparent !important;
+        }
         .speed-effects-container {
-            width: 720px;
-            height: 380px;
-            position: relative;
-            pointer-events: all;
+            width: 100vw;
+            height: 100vh;
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
             user-select: none;
             overflow: hidden;
         }
         #effectsCanvas {
             display: block;
-            width: 720px;
-            height: 380px;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
         }
     </style>
 </head>
 <body>
-    <div id="teleCardsMount"></div>
-
     <div class="hud-root-wrapper">
         <div class="hud-gauge-container speed-effects-container" id="speedEffectsContainer">
-            <canvas id="effectsCanvas" width="720" height="380"></canvas>
+            <canvas id="effectsCanvas" width="1920" height="1080"></canvas>
         </div>
     </div>
 
@@ -39,6 +52,8 @@
 
             var fxState = {
                 speed_kmh: 245,
+                speedDisplay: 245,
+                speedUnit: 'KM/H',
                 speed_start: 120,
                 speed_end: 320,
                 intensity: 0.62,
@@ -46,14 +61,13 @@
                 shakeY: 0
             };
 
-            // Initialize speed streak particles
             var particles = [];
-            for (var i = 0; i < 70; i++) {
+            for (var i = 0; i < 85; i++) {
                 particles.push({
                     angle: Math.random() * Math.PI * 2,
-                    dist: Math.random() * 400 + 40,
-                    speed: Math.random() * 12 + 6,
-                    len: Math.random() * 40 + 20,
+                    dist: Math.random() * 750 + 120,
+                    speed: Math.random() * 18 + 8,
+                    len: Math.random() * 70 + 30,
                     alpha: Math.random() * 0.7 + 0.3
                 });
             }
@@ -66,35 +80,29 @@
 
                 ctx.clearRect(0, 0, w, h);
 
-                // Compute speed intensity (0.0 to 1.0)
                 var norm = (fxState.speed_kmh - fxState.speed_start) / (fxState.speed_end - fxState.speed_start);
                 fxState.intensity = Math.max(0, Math.min(1.0, norm));
 
                 if (fxState.intensity > 0.05) {
-                    // 1. Dynamic Camera Shake
                     var shakeAmp = fxState.intensity * 6.0;
                     fxState.shakeX = (Math.random() - 0.5) * shakeAmp;
                     fxState.shakeY = (Math.random() - 0.5) * shakeAmp;
 
-                    if (container) {
-                        container.style.transform = 'translate(' + fxState.shakeX.toFixed(1) + 'px, ' + fxState.shakeY.toFixed(1) + 'px)';
-                    }
+                    canvas.style.transform = 'translate(' + fxState.shakeX.toFixed(1) + 'px, ' + fxState.shakeY.toFixed(1) + 'px)';
 
-                    // 2. Motion Vignette / Tunnel focus
-                    var vigGrad = ctx.createRadialGradient(cx, cy, 100, cx, cy, Math.max(w, h) * 0.65);
+                    var vigGrad = ctx.createRadialGradient(cx, cy, 240, cx, cy, Math.max(w, h) * 0.65);
                     vigGrad.addColorStop(0, 'rgba(0, 0, 0, 0)');
-                    vigGrad.addColorStop(0.7, 'rgba(0, 0, 0, ' + (fxState.intensity * 0.25) + ')');
-                    vigGrad.addColorStop(1, 'rgba(2, 6, 23, ' + (fxState.intensity * 0.65) + ')');
+                    vigGrad.addColorStop(0.7, 'rgba(0, 0, 0, ' + (fxState.intensity * 0.22) + ')');
+                    vigGrad.addColorStop(1, 'rgba(2, 6, 23, ' + (fxState.intensity * 0.58) + ')');
                     ctx.fillStyle = vigGrad;
                     ctx.fillRect(0, 0, w, h);
 
-                    // 3. Radial Speed Warp Streaks
                     ctx.save();
                     for (var i = 0; i < particles.length; i++) {
                         var p = particles[i];
                         p.dist += p.speed * (1 + fxState.intensity * 3.5);
-                        if (p.dist > 450) {
-                            p.dist = 40 + Math.random() * 40;
+                        if (p.dist > 1100) {
+                            p.dist = 120 + Math.random() * 90;
                             p.angle = Math.random() * Math.PI * 2;
                         }
 
@@ -104,14 +112,13 @@
                         var y2 = cy + Math.sin(p.angle) * (p.dist + p.len * fxState.intensity);
 
                         var streakAlpha = p.alpha * fxState.intensity;
-                        // Chromatic aberration / color tint
-                        ctx.strokeStyle = (i % 3 === 0) 
-                            ? 'rgba(0, 240, 255, ' + streakAlpha + ')' 
+                        ctx.strokeStyle = (i % 3 === 0)
+                            ? 'rgba(0, 240, 255, ' + streakAlpha + ')'
                             : (i % 3 === 1)
                             ? 'rgba(255, 255, 255, ' + streakAlpha + ')'
                             : 'rgba(239, 68, 68, ' + (streakAlpha * 0.6) + ')';
 
-                        ctx.lineWidth = 1.5 + fxState.intensity * 1.5;
+                        ctx.lineWidth = 1.8 + fxState.intensity * 1.8;
                         ctx.beginPath();
                         ctx.moveTo(x1, y1);
                         ctx.lineTo(x2, y2);
@@ -119,37 +126,35 @@
                     }
                     ctx.restore();
 
-                    // 4. Peripheral Chromatic Fringe Lines at outer edges
                     ctx.save();
                     var edgeGrad = ctx.createLinearGradient(0, 0, w, 0);
-                    edgeGrad.addColorStop(0, 'rgba(0, 240, 255, ' + (fxState.intensity * 0.4) + ')');
+                    edgeGrad.addColorStop(0, 'rgba(0, 240, 255, ' + (fxState.intensity * 0.35) + ')');
                     edgeGrad.addColorStop(0.08, 'transparent');
                     edgeGrad.addColorStop(0.92, 'transparent');
-                    edgeGrad.addColorStop(1, 'rgba(239, 68, 68, ' + (fxState.intensity * 0.4) + ')');
+                    edgeGrad.addColorStop(1, 'rgba(239, 68, 68, ' + (fxState.intensity * 0.35) + ')');
                     ctx.fillStyle = edgeGrad;
                     ctx.fillRect(0, 0, w, h);
                     ctx.restore();
                 } else {
-                    if (container) container.style.transform = 'none';
+                    canvas.style.transform = 'none';
                 }
 
-                // 5. Diagnostics Overlay Pill at bottom center
                 ctx.save();
-                ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+                ctx.fillStyle = 'rgba(15, 23, 42, 0.88)';
                 ctx.strokeStyle = 'rgba(0, 240, 255, 0.35)';
                 ctx.lineWidth = 1;
                 ctx.beginPath();
-                ctx.roundRect(cx - 150, h - 38, 300, 28, 6);
+                ctx.roundRect(cx - 160, h - 54, 320, 32, 6);
                 ctx.fill();
                 ctx.stroke();
 
                 ctx.fillStyle = '#00f0ff';
-                ctx.font = 'bold 11px Consolas, monospace';
+                ctx.font = 'bold 13px Consolas, monospace';
                 ctx.textAlign = 'center';
                 ctx.fillText(
-                    'SPEED: ' + Math.round(fxState.speed_kmh) + ' KM/H  |  WARP: ' + Math.round(fxState.intensity * 100) + '%',
+                    'SPEED: ' + Math.round(fxState.speedDisplay) + ' ' + fxState.speedUnit + '  |  WARP: ' + Math.round(fxState.intensity * 100) + '%',
                     cx,
-                    h - 20
+                    h - 34
                 );
                 ctx.restore();
             }
@@ -164,11 +169,17 @@
 
             HUDCore.registerStyle('speed_effects', {
                 containerId: 'speedEffectsContainer',
-                scaleMultiplier: 0.95,
+                scaleMultiplier: 1.0,
 
-                onFrame: function(data) {
+                onFrame: function(data, payload) {
                     if (!data) return;
-                    if (data.speed !== undefined) fxState.speed_kmh = Number(data.speed) || 0;
+                    var isMph = (payload && payload.unit === 'mph') || data.unit === 'mph';
+                    var rawSpd = data.speed !== undefined ? Number(data.speed) : (Number(data.speed_kmh) || 0);
+                    fxState.speedDisplay = rawSpd;
+                    fxState.speedUnit = isMph ? 'MPH' : 'KM/H';
+                    fxState.speed_kmh = data.speed_kmh !== undefined
+                        ? Number(data.speed_kmh)
+                        : (isMph ? rawSpd * 1.60934 : rawSpd);
                 },
 
                 onElementsChange: function(elements) {
@@ -182,9 +193,11 @@
                     var sweepInterval = setInterval(function() {
                         t += 0.08;
                         fxState.speed_kmh = 100 + Math.sin(t) * 220;
+                        fxState.speedDisplay = fxState.speed_kmh;
                         if (t > Math.PI * 2) {
                             clearInterval(sweepInterval);
                             fxState.speed_kmh = 245;
+                            fxState.speedDisplay = 245;
                         }
                     }, 16);
                 }
