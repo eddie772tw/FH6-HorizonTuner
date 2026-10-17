@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FH5 Mexico World Road Minimap</title>
+    <link rel="stylesheet" href="../shared/hud-base.css">
+    <style>
+        .minimap-container {
+            width: 360px;
+            height: 380px;
+            position: relative;
+            pointer-events: all;
+            user-select: none;
+        }
+        .mode-tabs {
+            position: absolute;
+            top: -28px;
+            right: 10px;
+            display: flex;
+            gap: 6px;
+            z-index: 10;
+        }
+        .mode-btn {
+            background: rgba(15, 23, 42, 0.85);
+            border: 1px solid rgba(0, 240, 255, 0.3);
+            color: #94a3b8;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 4px 4px 0 0;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .mode-btn.active {
+            background: rgba(0, 240, 255, 0.2);
+            color: #00f0ff;
+            border-bottom: 1px solid transparent;
+        }
+        #mapCanvas {
+            display: block;
+            width: 360px;
+            height: 360px;
+            filter: drop-shadow(0 0 16px rgba(0, 240, 255, calc(var(--hud-glow-intensity, 1.0) * 0.4)));
+        }
+    </style>
+</head>
+<body>
+    <div id="teleCardsMount"></div>
+
+    <div class="hud-root-wrapper">
+        <div class="hud-gauge-container minimap-container" id="minimapContainer">
+            <div class="mode-tabs">
+                <button class="mode-btn active" id="btnHeadingUp" onclick="switchMode(0)">Heading Up</button>
+                <button class="mode-btn" id="btnNorthUp" onclick="switchMode(1)">North Up</button>
+            </div>
+            <canvas id="mapCanvas" width="360" height="360"></canvas>
+        </div>
+    </div>
+
+    <script src="../shared/hud-core.js"></script>
+    <script>
+        var currentMapMode = 0; // 0 = Heading Up, 1 = North Up
+        function switchMode(mode) {
+            currentMapMode = mode;
+            var bh = document.getElementById('btnHeadingUp');
+            var bn = document.getElementById('btnNorthUp');
+            if (bh) bh.className = 'mode-btn' + (mode === 0 ? ' active' : '');
+            if (bn) bn.className = 'mode-btn' + (mode === 1 ? ' active' : '');
+            if (window._renderMinimap) window._renderMinimap();
+        }
+        window.switchMode = switchMode;
+
+        (function() {
+            var canvas = document.getElementById('mapCanvas');
+            var ctx = canvas.getContext('2d');
+            var container = document.getElementById('minimapContainer');
+
+            var mapImg = new Image();
+            mapImg.src = 'assets/minimap_clean.png';
+
+            var navState = {
+                headingRad: 0.0,
+                speed_kmh: 0,
+                elevation: 615,
+                scanAngle: 0.0
+            };
+
+            function getCardinal(deg) {
+                deg = (deg % 360 + 360) % 360;
+                var dirs = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+                var idx = Math.round(deg / 45) % 8;
+                return dirs[idx];
+            }
+
+            function render() {
+                var w = canvas.width;
+                var h = canvas.height;
+                var cx = w / 2;
+                var cy = h / 2;
+                var radius = 145;
+
+                ctx.clearRect(0, 0, w, h);
+
+                // Update radar sweep angle
+                navState.scanAngle += 0.04;
+
+                // 1. Draw Circular Radar Bezel & Mask
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+                ctx.clip();
+
+                // Dark radar background
+                ctx.fillStyle = '#050c18';
+                ctx.fillRect(0, 0, w, h);
+
+                // Render Map Image
+                ctx.save();
+                ctx.translate(cx, cy);
+
+                if (currentMapMode === 0) {
+                    // Heading Up: rotate map counter to heading
+                    ctx.rotate(-navState.headingRad);
+                }
+
+                if (mapImg.complete) {
+                    // Center and scale map
+                    var mw = 335 * 1.15;
+                    var mh = 310 * 1.15;
+                    ctx.drawImage(mapImg, -mw / 2, -mh / 2, mw, mh);
+                }
+                ctx.restore();
+
+                // Concentric range circles
+                ctx.strokeStyle = 'rgba(0, 240, 255, 0.18)';
+                ctx.lineWidth = 1;
+                [45, 90, 135].forEach(function(r) {
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+                    ctx.stroke();
+                });
+
+                // Crosshairs
+                ctx.strokeStyle = 'rgba(0, 240, 255, 0.12)';
+                ctx.beginPath();
+                ctx.moveTo(cx - radius, cy);
+                ctx.lineTo(cx + radius, cy);
+                ctx.moveTo(cx, cy - radius);
+                ctx.lineTo(cx, cy + radius);
+                ctx.stroke();
+
+                // Animated Radar sweep sector
+                ctx.save();
+                ctx.translate(cx, cy);
+                ctx.rotate(navState.scanAngle);
+                var sweepGrad = ctx.createLinearGradient(0, 0, radius, 0);
+                sweepGrad.addColorStop(0, 'rgba(0, 240, 255, 0.0)');
+                sweepGrad.addColorStop(1, 'rgba(0, 240, 255, 0.25)');
+                ctx.fillStyle = sweepGrad;
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.arc(0, 0, radius, 0, 0.4);
+                ctx.closePath();
+                ctx.fill();
+                ctx.restore();
+
+                ctx.restore(); // Restore clip
+
+                // 2. Outer Ring Bezel
+                ctx.save();
+                ctx.strokeStyle = '#00f0ff';
+                ctx.shadowColor = '#00f0ff';
+                ctx.shadowBlur = 10;
+                ctx.lineWidth = 2.5;
+                ctx.beginPath();
+                ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+                ctx.stroke();
+
+                // Compass Tick Marks & Cardinal Labels
+                var headingDeg = (navState.headingRad * 180 / Math.PI);
+                var baseRot = (currentMapMode === 0) ? -navState.headingRad : 0;
+
+                ctx.font = 'bold 10px Consolas, monospace';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+
+                for (var i = 0; i < 360; i += 30) {
+                    var ang = (i * Math.PI / 180) + baseRot - Math.PI / 2;
+                    var tx1 = cx + Math.cos(ang) * (radius - 2);
+                    var ty1 = cy + Math.sin(ang) * (radius - 2);
+                    var tx2 = cx + Math.cos(ang) * (radius - 8);
+                    var ty2 = cy + Math.sin(ang) * (radius - 8);
+
+                    ctx.strokeStyle = (i % 90 === 0) ? '#00f0ff' : 'rgba(0, 240, 255, 0.4)';
+                    ctx.lineWidth = (i % 90 === 0) ? 2 : 1;
+                    ctx.beginPath();
+                    ctx.moveTo(tx1, ty1);
+                    ctx.lineTo(tx2, ty2);
+                    ctx.stroke();
+
+                    if (i % 90 === 0) {
+                        var lx = cx + Math.cos(ang) * (radius - 16);
+                        var ly = cy + Math.sin(ang) * (radius - 16);
+                        var label = (i === 0) ? 'N' : (i === 90) ? 'E' : (i === 180) ? 'S' : 'W';
+                        ctx.fillStyle = (label === 'N') ? '#ef4444' : '#00f0ff';
+                        ctx.fillText(label, lx, ly);
+                    }
+                }
+                ctx.restore();
+
+                // 3. Center Player Chevron Indicator
+                ctx.save();
+                ctx.translate(cx, cy);
+                if (currentMapMode === 1) {
+                    // North Up: arrow rotates with heading
+                    ctx.rotate(navState.headingRad);
+                }
+                // Cyan illuminated delta arrow
+                ctx.fillStyle = '#00f0ff';
+                ctx.shadowColor = '#00f0ff';
+                ctx.shadowBlur = 12;
+                ctx.beginPath();
+                ctx.moveTo(0, -12);
+                ctx.lineTo(8, 8);
+                ctx.lineTo(0, 4);
+                ctx.lineTo(-8, 8);
+                ctx.closePath();
+                ctx.fill();
+
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.arc(0, 0, 2.5, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+
+                // 4. Corner Telemetry Chips
+                // Top-left: Compass heading
+                ctx.save();
+                ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+                ctx.strokeStyle = 'rgba(0, 240, 255, 0.3)';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.roundRect(14, 14, 75, 24, 4);
+                ctx.fill();
+                ctx.stroke();
+                ctx.fillStyle = '#38bdf8';
+                ctx.font = 'bold 11px Consolas, monospace';
+                ctx.textAlign = 'center';
+                var curDeg = Math.round((navState.headingRad * 180 / Math.PI) % 360);
+                if (curDeg < 0) curDeg += 360;
+                ctx.fillText(getCardinal(curDeg) + ' ' + curDeg + '°', 51, 30);
+
+                // Top-right: Elevation
+                ctx.beginPath();
+                ctx.roundRect(w - 95, 14, 80, 24, 4);
+                ctx.fill();
+                ctx.stroke();
+                ctx.fillText(navState.elevation + ' M', w - 55, 30);
+
+                // Bottom: Speed
+                ctx.beginPath();
+                ctx.roundRect(cx - 55, h - 34, 110, 24, 4);
+                ctx.fill();
+                ctx.stroke();
+                ctx.fillStyle = '#00f0ff';
+                ctx.fillText(Math.round(navState.speed_kmh) + ' KM/H', cx, h - 18);
+                ctx.restore();
+            }
+
+            window._renderMinimap = render;
+            mapImg.onload = render;
+
+            function animLoop() {
+                render();
+                requestAnimationFrame(animLoop);
+            }
+            requestAnimationFrame(animLoop);
+
+            HUDCore.registerStyle('minimap_overlay', {
+                containerId: 'minimapContainer',
+                scaleMultiplier: 0.95,
+
+                onFrame: function(data) {
+                    if (!data) return;
+                    if (data.speed !== undefined) navState.speed_kmh = Number(data.speed) || 0;
+                    if (data.steer !== undefined) {
+                        navState.headingRad += Number(data.steer) * 0.03;
+                    }
+                    if (data.elevation !== undefined) navState.elevation = Math.round(Number(data.elevation) || 615);
+                },
+
+                onElementsChange: function(elements) {
+                    if (container) {
+                        container.style.display = elements.showGauge === false ? 'none' : 'block';
+                    }
+                },
+
+                onAnimate: function() {
+                    var t = 0;
+                    var sweepInterval = setInterval(function() {
+                        t += 0.05;
+                        navState.headingRad += 0.08;
+                        navState.speed_kmh = Math.sin(t) * 120 + 120;
+                        if (t > Math.PI * 2) {
+                            clearInterval(sweepInterval);
+                        }
+                    }, 16);
+                }
+            });
+
+            HUDCore.init('minimap_overlay');
+            render();
+        })();
+    </script>
+</body>
+</html>

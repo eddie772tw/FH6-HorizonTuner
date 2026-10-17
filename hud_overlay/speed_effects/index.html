@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>High-Speed Effects & Camera Shake</title>
+    <link rel="stylesheet" href="../shared/hud-base.css">
+    <style>
+        .speed-effects-container {
+            width: 720px;
+            height: 380px;
+            position: relative;
+            pointer-events: all;
+            user-select: none;
+            overflow: hidden;
+        }
+        #effectsCanvas {
+            display: block;
+            width: 720px;
+            height: 380px;
+        }
+    </style>
+</head>
+<body>
+    <div id="teleCardsMount"></div>
+
+    <div class="hud-root-wrapper">
+        <div class="hud-gauge-container speed-effects-container" id="speedEffectsContainer">
+            <canvas id="effectsCanvas" width="720" height="380"></canvas>
+        </div>
+    </div>
+
+    <script src="../shared/hud-core.js"></script>
+    <script>
+        (function() {
+            var canvas = document.getElementById('effectsCanvas');
+            var ctx = canvas.getContext('2d');
+            var container = document.getElementById('speedEffectsContainer');
+
+            var fxState = {
+                speed_kmh: 245,
+                speed_start: 120,
+                speed_end: 320,
+                intensity: 0.62,
+                shakeX: 0,
+                shakeY: 0
+            };
+
+            // Initialize speed streak particles
+            var particles = [];
+            for (var i = 0; i < 70; i++) {
+                particles.push({
+                    angle: Math.random() * Math.PI * 2,
+                    dist: Math.random() * 400 + 40,
+                    speed: Math.random() * 12 + 6,
+                    len: Math.random() * 40 + 20,
+                    alpha: Math.random() * 0.7 + 0.3
+                });
+            }
+
+            function render() {
+                var w = canvas.width;
+                var h = canvas.height;
+                var cx = w / 2;
+                var cy = h / 2;
+
+                ctx.clearRect(0, 0, w, h);
+
+                // Compute speed intensity (0.0 to 1.0)
+                var norm = (fxState.speed_kmh - fxState.speed_start) / (fxState.speed_end - fxState.speed_start);
+                fxState.intensity = Math.max(0, Math.min(1.0, norm));
+
+                if (fxState.intensity > 0.05) {
+                    // 1. Dynamic Camera Shake
+                    var shakeAmp = fxState.intensity * 6.0;
+                    fxState.shakeX = (Math.random() - 0.5) * shakeAmp;
+                    fxState.shakeY = (Math.random() - 0.5) * shakeAmp;
+
+                    if (container) {
+                        container.style.transform = 'translate(' + fxState.shakeX.toFixed(1) + 'px, ' + fxState.shakeY.toFixed(1) + 'px)';
+                    }
+
+                    // 2. Motion Vignette / Tunnel focus
+                    var vigGrad = ctx.createRadialGradient(cx, cy, 100, cx, cy, Math.max(w, h) * 0.65);
+                    vigGrad.addColorStop(0, 'rgba(0, 0, 0, 0)');
+                    vigGrad.addColorStop(0.7, 'rgba(0, 0, 0, ' + (fxState.intensity * 0.25) + ')');
+                    vigGrad.addColorStop(1, 'rgba(2, 6, 23, ' + (fxState.intensity * 0.65) + ')');
+                    ctx.fillStyle = vigGrad;
+                    ctx.fillRect(0, 0, w, h);
+
+                    // 3. Radial Speed Warp Streaks
+                    ctx.save();
+                    for (var i = 0; i < particles.length; i++) {
+                        var p = particles[i];
+                        p.dist += p.speed * (1 + fxState.intensity * 3.5);
+                        if (p.dist > 450) {
+                            p.dist = 40 + Math.random() * 40;
+                            p.angle = Math.random() * Math.PI * 2;
+                        }
+
+                        var x1 = cx + Math.cos(p.angle) * p.dist;
+                        var y1 = cy + Math.sin(p.angle) * p.dist;
+                        var x2 = cx + Math.cos(p.angle) * (p.dist + p.len * fxState.intensity);
+                        var y2 = cy + Math.sin(p.angle) * (p.dist + p.len * fxState.intensity);
+
+                        var streakAlpha = p.alpha * fxState.intensity;
+                        // Chromatic aberration / color tint
+                        ctx.strokeStyle = (i % 3 === 0) 
+                            ? 'rgba(0, 240, 255, ' + streakAlpha + ')' 
+                            : (i % 3 === 1)
+                            ? 'rgba(255, 255, 255, ' + streakAlpha + ')'
+                            : 'rgba(239, 68, 68, ' + (streakAlpha * 0.6) + ')';
+
+                        ctx.lineWidth = 1.5 + fxState.intensity * 1.5;
+                        ctx.beginPath();
+                        ctx.moveTo(x1, y1);
+                        ctx.lineTo(x2, y2);
+                        ctx.stroke();
+                    }
+                    ctx.restore();
+
+                    // 4. Peripheral Chromatic Fringe Lines at outer edges
+                    ctx.save();
+                    var edgeGrad = ctx.createLinearGradient(0, 0, w, 0);
+                    edgeGrad.addColorStop(0, 'rgba(0, 240, 255, ' + (fxState.intensity * 0.4) + ')');
+                    edgeGrad.addColorStop(0.08, 'transparent');
+                    edgeGrad.addColorStop(0.92, 'transparent');
+                    edgeGrad.addColorStop(1, 'rgba(239, 68, 68, ' + (fxState.intensity * 0.4) + ')');
+                    ctx.fillStyle = edgeGrad;
+                    ctx.fillRect(0, 0, w, h);
+                    ctx.restore();
+                } else {
+                    if (container) container.style.transform = 'none';
+                }
+
+                // 5. Diagnostics Overlay Pill at bottom center
+                ctx.save();
+                ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+                ctx.strokeStyle = 'rgba(0, 240, 255, 0.35)';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.roundRect(cx - 150, h - 38, 300, 28, 6);
+                ctx.fill();
+                ctx.stroke();
+
+                ctx.fillStyle = '#00f0ff';
+                ctx.font = 'bold 11px Consolas, monospace';
+                ctx.textAlign = 'center';
+                ctx.fillText(
+                    'SPEED: ' + Math.round(fxState.speed_kmh) + ' KM/H  |  WARP: ' + Math.round(fxState.intensity * 100) + '%',
+                    cx,
+                    h - 20
+                );
+                ctx.restore();
+            }
+
+            window._renderSpeedEffects = render;
+
+            function animLoop() {
+                render();
+                requestAnimationFrame(animLoop);
+            }
+            requestAnimationFrame(animLoop);
+
+            HUDCore.registerStyle('speed_effects', {
+                containerId: 'speedEffectsContainer',
+                scaleMultiplier: 0.95,
+
+                onFrame: function(data) {
+                    if (!data) return;
+                    if (data.speed !== undefined) fxState.speed_kmh = Number(data.speed) || 0;
+                },
+
+                onElementsChange: function(elements) {
+                    if (container) {
+                        container.style.display = elements.showGauge === false ? 'none' : 'block';
+                    }
+                },
+
+                onAnimate: function() {
+                    var t = 0;
+                    var sweepInterval = setInterval(function() {
+                        t += 0.08;
+                        fxState.speed_kmh = 100 + Math.sin(t) * 220;
+                        if (t > Math.PI * 2) {
+                            clearInterval(sweepInterval);
+                            fxState.speed_kmh = 245;
+                        }
+                    }, 16);
+                }
+            });
+
+            HUDCore.init('speed_effects');
+            render();
+        })();
+    </script>
+</body>
+</html>

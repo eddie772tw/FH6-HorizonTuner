@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vehicle Dynamics & Telemetry Cards</title>
+    <link rel="stylesheet" href="../shared/hud-base.css">
+    <style>
+        .telemetry-container {
+            width: 740px;
+            height: 320px;
+            position: relative;
+            pointer-events: all;
+            user-select: none;
+        }
+        #telemetryCanvas {
+            display: block;
+            width: 740px;
+            height: 320px;
+            filter: drop-shadow(0 0 16px rgba(0, 240, 255, calc(var(--hud-glow-intensity, 1.0) * 0.35)));
+        }
+    </style>
+</head>
+<body>
+    <div id="teleCardsMount"></div>
+
+    <div class="hud-root-wrapper">
+        <div class="hud-gauge-container telemetry-container" id="telemetryContainer">
+            <canvas id="telemetryCanvas" width="740" height="320"></canvas>
+        </div>
+    </div>
+
+    <script src="../shared/hud-core.js"></script>
+    <script>
+        (function() {
+            var canvas = document.getElementById('telemetryCanvas');
+            var ctx = canvas.getContext('2d');
+            var container = document.getElementById('telemetryContainer');
+
+            var vehicleData = {
+                accelG: 0.25,     // Long G (-1.5 to 1.5)
+                latG: 0.65,       // Lat G (-2.0 to 2.0)
+                peakG: 1.25,
+                rpm: 6500,
+                maxRpm: 8500,
+                speed_kmh: 168,
+                boost_bar: 1.42,
+                accel: 0.85,
+                brake: 0.0,
+                clutch: 0.0,
+                suspension: [0.45, 0.42, 0.55, 0.52], // FL, FR, RL, RR (0.0 to 1.0)
+                tireSlip: [0.08, 0.12, 0.22, 0.19],   // FL, FR, RL, RR
+                tireTemp: [88, 92, 104, 101]          // deg C
+            };
+
+            var gHistory = [];
+
+            function drawCardBg(x, y, w, h, title) {
+                ctx.save();
+                ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
+                ctx.strokeStyle = 'rgba(0, 240, 255, 0.35)';
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.roundRect(x, y, w, h, 8);
+                ctx.fill();
+                ctx.stroke();
+
+                ctx.fillStyle = '#38bdf8';
+                ctx.font = 'bold 11px Consolas, monospace';
+                ctx.textAlign = 'left';
+                ctx.fillText(title, x + 14, y + 22);
+                ctx.restore();
+            }
+
+            function drawGBowl(x, y, w, h) {
+                drawCardBg(x, y, w, h, 'G-FORCE FRICTION CIRCLE');
+
+                var cx = x + w / 2;
+                var cy = y + 75;
+                var maxR = 50; // 2.0 G radius
+
+                // Limit Rings
+                ctx.save();
+                [0.5, 1.0, 1.5, 2.0].forEach(function(g) {
+                    var r = (g / 2.0) * maxR;
+                    ctx.strokeStyle = (g === 1.0) ? 'rgba(0, 240, 255, 0.4)' : 'rgba(255, 255, 255, 0.1)';
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+                    ctx.stroke();
+
+                    if (g === 1.0) {
+                        ctx.fillStyle = 'rgba(0, 240, 255, 0.6)';
+                        ctx.font = '8px Consolas, monospace';
+                        ctx.fillText('1.0G', cx + r + 2, cy - 2);
+                    }
+                });
+
+                // Crosshairs
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+                ctx.beginPath();
+                ctx.moveTo(cx - maxR, cy);
+                ctx.lineTo(cx + maxR, cy);
+                ctx.moveTo(cx, cy - maxR);
+                ctx.lineTo(cx, cy + maxR);
+                ctx.stroke();
+
+                // G trail
+                gHistory.push({ x: vehicleData.latG, y: vehicleData.accelG });
+                if (gHistory.length > 15) gHistory.shift();
+
+                for (var i = 0; i < gHistory.length; i++) {
+                    var alpha = (i / gHistory.length) * 0.4;
+                    var pt = gHistory[i];
+                    var px = cx + (pt.x / 2.0) * maxR;
+                    var py = cy - (pt.y / 2.0) * maxR;
+                    ctx.fillStyle = 'rgba(0, 240, 255, ' + alpha + ')';
+                    ctx.beginPath();
+                    ctx.arc(px, py, 3, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                // Current G vector point
+                var curX = cx + (vehicleData.latG / 2.0) * maxR;
+                var curY = cy - (vehicleData.accelG / 2.0) * maxR;
+
+                ctx.fillStyle = '#00f0ff';
+                ctx.shadowColor = '#00f0ff';
+                ctx.shadowBlur = 10;
+                ctx.beginPath();
+                ctx.arc(curX, curY, 6, 0, Math.PI * 2);
+                ctx.fill();
+
+                var currentTotalG = Math.sqrt(vehicleData.latG * vehicleData.latG + vehicleData.accelG * vehicleData.accelG);
+                if (currentTotalG > vehicleData.peakG) vehicleData.peakG = currentTotalG;
+
+                // Readout banner
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 12px Consolas, monospace';
+                ctx.textAlign = 'center';
+                ctx.fillText('TOTAL: ' + currentTotalG.toFixed(2) + ' G', cx, y + h - 16);
+                ctx.fillStyle = '#f59e0b';
+                ctx.font = '10px Consolas, monospace';
+                ctx.fillText('PEAK: ' + vehicleData.peakG.toFixed(2) + ' G', cx, y + h - 4);
+                ctx.restore();
+            }
+
+            function drawSuspensionCard(x, y, w, h) {
+                drawCardBg(x, y, w, h, 'SUSPENSION TRAVEL (FL/FR/RL/RR)');
+
+                var labels = ['FL', 'FR', 'RL', 'RR'];
+                var barW = 24;
+                var barMaxH = 80;
+                var startX = x + 24;
+                var gap = (w - 48 - (barW * 4)) / 3;
+
+                ctx.save();
+                for (var i = 0; i < 4; i++) {
+                    var bx = startX + i * (barW + gap);
+                    var by = y + 42;
+                    var val = vehicleData.suspension[i];
+
+                    // Outer track
+                    ctx.fillStyle = 'rgba(15, 23, 42, 0.8)';
+                    ctx.strokeStyle = '#334155';
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.roundRect(bx, by, barW, barMaxH, 3);
+                    ctx.fill();
+                    ctx.stroke();
+
+                    // Compression fill
+                    var fillH = barMaxH * val;
+                    var fillY = by + barMaxH - fillH;
+
+                    var sGrad = ctx.createLinearGradient(bx, by + barMaxH, bx, by);
+                    sGrad.addColorStop(0, '#38bdf8');
+                    sGrad.addColorStop(0.7, '#f59e0b');
+                    sGrad.addColorStop(1, '#ef4444');
+
+                    ctx.fillStyle = sGrad;
+                    ctx.beginPath();
+                    ctx.roundRect(bx + 2, fillY + 2, barW - 4, Math.max(0, fillH - 4), 2);
+                    ctx.fill();
+
+                    // Label & value
+                    ctx.fillStyle = '#94a3b8';
+                    ctx.font = 'bold 10px Consolas, monospace';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(labels[i], bx + barW / 2, by + barMaxH + 16);
+
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillText(Math.round(val * 100) + '%', bx + barW / 2, by + barMaxH + 28);
+                }
+                ctx.restore();
+            }
+
+            function drawTiresCard(x, y, w, h) {
+                drawCardBg(x, y, w, h, 'TIRE SLIP & THERMAL MAP');
+
+                var tireW = 32;
+                var tireH = 46;
+                var cx = x + w / 2;
+                var cy = y + 80;
+
+                var positions = [
+                    { x: cx - 55, y: cy - 35, label: 'FL' },
+                    { x: cx + 23, y: cy - 35, label: 'FR' },
+                    { x: cx - 55, y: cy + 25, label: 'RL' },
+                    { x: cx + 23, y: cy + 25, label: 'RR' }
+                ];
+
+                ctx.save();
+                for (var i = 0; i < 4; i++) {
+                    var p = positions[i];
+                    var slip = vehicleData.tireSlip[i];
+                    var temp = vehicleData.tireTemp[i];
+
+                    // Color based on slip
+                    var tColor = slip > 0.2 ? '#ef4444' : (slip > 0.1 ? '#f59e0b' : '#22c55e');
+
+                    ctx.fillStyle = tColor;
+                    ctx.shadowColor = tColor;
+                    ctx.shadowBlur = slip > 0.15 ? 8 : 0;
+                    ctx.beginPath();
+                    ctx.roundRect(p.x, p.y, tireW, tireH, 5);
+                    ctx.fill();
+
+                    // Tire tread lines
+                    ctx.strokeStyle = '#090d16';
+                    ctx.lineWidth = 1.5;
+                    ctx.beginPath();
+                    ctx.moveTo(p.x + 6, p.y + 10);
+                    ctx.lineTo(p.x + 26, p.y + 10);
+                    ctx.moveTo(p.x + 6, p.y + 22);
+                    ctx.lineTo(p.x + 26, p.y + 22);
+                    ctx.moveTo(p.x + 6, p.y + 34);
+                    ctx.lineTo(p.x + 26, p.y + 34);
+                    ctx.stroke();
+
+                    // Temp readout
+                    ctx.fillStyle = '#ffffff';
+                    ctx.font = 'bold 9px Consolas, monospace';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(temp + '°C', p.x + tireW / 2, p.y - 4);
+                }
+                ctx.restore();
+            }
+
+            function drawPowertrainCard(x, y, w, h) {
+                drawCardBg(x, y, w, h, 'POWERTRAIN DYNAMICS');
+
+                var estHp = Math.round((vehicleData.rpm / 8500) * 580 * (vehicleData.accel || 0.1));
+                var estTorque = Math.round(estHp * 1.35);
+
+                ctx.save();
+                ctx.fillStyle = '#94a3b8';
+                ctx.font = '10px Consolas, monospace';
+                ctx.fillText('ESTIMATED OUTPUT', x + 16, y + 46);
+
+                ctx.fillStyle = '#00f0ff';
+                ctx.font = 'bold 22px Consolas, monospace';
+                ctx.fillText(estHp + ' HP', x + 16, y + 74);
+
+                ctx.fillStyle = '#38bdf8';
+                ctx.font = 'bold 15px Consolas, monospace';
+                ctx.fillText(estTorque + ' NM', x + 16, y + 96);
+
+                // Boost meter bar
+                ctx.fillStyle = '#94a3b8';
+                ctx.font = '10px Consolas, monospace';
+                ctx.fillText('TURBO BOOST: ' + vehicleData.boost_bar.toFixed(2) + ' BAR', x + 16, y + 120);
+
+                var barX = x + 16;
+                var barY = y + 126;
+                var barW = w - 32;
+                var barH = 12;
+
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+                ctx.beginPath();
+                ctx.roundRect(barX, barY, barW, barH, 3);
+                ctx.fill();
+
+                var bNorm = Math.max(0, Math.min(1, (vehicleData.boost_bar + 1.0) / 3.5));
+                var bGrad = ctx.createLinearGradient(barX, 0, barX + barW, 0);
+                bGrad.addColorStop(0, '#00f0ff');
+                bGrad.addColorStop(0.7, '#eab308');
+                bGrad.addColorStop(1, '#ef4444');
+                ctx.fillStyle = bGrad;
+                ctx.beginPath();
+                ctx.roundRect(barX, barY, barW * bNorm, barH, 3);
+                ctx.fill();
+                ctx.restore();
+            }
+
+            function render() {
+                var w = canvas.width;
+                var h = canvas.height;
+                ctx.clearRect(0, 0, w, h);
+
+                // Top row: G-Bowl (Left), Suspension (Right)
+                drawGBowl(10, 10, 350, 145);
+                drawSuspensionCard(375, 10, 355, 145);
+
+                // Bottom row: Tire Thermals (Left), Powertrain Output (Right)
+                drawTiresCard(10, 165, 350, 145);
+                drawPowertrainCard(375, 165, 355, 145);
+            }
+
+            window._renderTelemetry = render;
+
+            function animLoop() {
+                render();
+                requestAnimationFrame(animLoop);
+            }
+            requestAnimationFrame(animLoop);
+
+            HUDCore.registerStyle('telemetry_cards', {
+                containerId: 'telemetryContainer',
+                scaleMultiplier: 0.95,
+
+                onFrame: function(data) {
+                    if (!data) return;
+                    if (data.rpm !== undefined) vehicleData.rpm = Number(data.rpm) || 0;
+                    if (data.speed !== undefined) vehicleData.speed_kmh = Number(data.speed) || 0;
+                    if (data.accel !== undefined) vehicleData.accel = Math.max(0, Math.min(1, Number(data.accel) || 0));
+                    if (data.brake !== undefined) vehicleData.brake = Math.max(0, Math.min(1, Number(data.brake) || 0));
+                    if (data.steer !== undefined) {
+                        var st = Number(data.steer) || 0;
+                        vehicleData.latG = st * 1.4;
+                        vehicleData.tireSlip[2] = Math.abs(st) * 0.35;
+                        vehicleData.tireSlip[3] = Math.abs(st) * 0.32;
+                    }
+                    if (data.boost !== undefined) vehicleData.boost_bar = Number(data.boost) || 1.4;
+                    vehicleData.accelG = (vehicleData.accel * 0.8) - (vehicleData.brake * 1.2);
+                },
+
+                onElementsChange: function(elements) {
+                    if (container) {
+                        container.style.display = elements.showGauge === false ? 'none' : 'block';
+                    }
+                },
+
+                onAnimate: function() {
+                    var t = 0;
+                    var sweepInterval = setInterval(function() {
+                        t += 0.08;
+                        vehicleData.latG = Math.sin(t) * 1.6;
+                        vehicleData.accelG = Math.cos(t) * 0.9;
+                        vehicleData.boost_bar = 0.5 + Math.abs(Math.sin(t)) * 1.5;
+                        vehicleData.suspension = [
+                            0.4 + Math.sin(t) * 0.25,
+                            0.4 - Math.sin(t) * 0.25,
+                            0.5 + Math.cos(t) * 0.2,
+                            0.5 - Math.cos(t) * 0.2
+                        ];
+                        if (t > Math.PI * 2) {
+                            clearInterval(sweepInterval);
+                        }
+                    }, 16);
+                }
+            });
+
+            HUDCore.init('telemetry_cards');
+            render();
+        })();
+    </script>
+</body>
+</html>
