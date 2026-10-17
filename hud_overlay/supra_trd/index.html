@@ -5,6 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Toyota Supra MK4 TRD Cluster</title>
     <link rel="stylesheet" href="../shared/hud-base.css">
+    <!--
+        [設計決策紀錄 / Design Decision Note]
+        1. 水溫與油溫/油壓資料來源：
+           水溫 (Water / Coolant Temp) 直接採用遙測輪胎溫度 (Tire Temp FL/FR/RL/RR) 之平均值（若為華氏則自動轉為攝氏，待機時預設 85°C）；
+           油溫 (Oil Temp) 與油壓 (Oil Pressure) 因 Forza UDP 封包未提供原生感測器數值，暫依轉速比與節氣門/增壓負載驅動之確定性熱力學與油壓代理模型 (Deterministic Proxy Model) 模擬。
+    -->
     <style>
         .supra-container {
             width: 800px;
@@ -16,7 +22,7 @@
             display: block;
             width: 800px;
             height: 334px;
-            filter: drop-shadow(0 0 16px rgba(255, 120, 0, calc(var(--hud-glow-intensity, 1.0) * 0.35)));
+            filter: drop-shadow(0 6px 18px rgba(0, 0, 0, calc(var(--hud-glow-intensity, 1.0) * 0.55)));
         }
     </style>
 </head>
@@ -40,39 +46,72 @@
             var baseImg = new Image();
             baseImg.src = 'assets/supra_clean_base.png';
 
+            var isSweeping = false;
+            var sweepRafId = null;
+            var isMetric = true;
+
             var telemetry = {
-                speed: 180,
-                rpm: 7200,
+                speed: 0,
+                rpm: 0,
                 maxRpm: 10000,
-                gear: 4,
-                temp: 90
+                gear: 1,
+                fuel: 0.75,
+                tempC: 85
             };
 
-            var gears = ['R', 'N', '1', '2', '3', '4', '5', '6'];
+            function formatGear(g) {
+                var gearNum = Number(g);
+                if (!Number.isFinite(gearNum) || gearNum < 0 || gearNum === 11) return 'N';
+                if (gearNum === 0) return 'R';
+                return String(Math.round(gearNum));
+            }
 
-            function drawNeedle(cx, cy, length, angleDeg, color, width) {
+            function resolveWaterTempC(data) {
+                if (!data) return 85;
+                var fl = Number(data.temp_fl !== undefined ? data.temp_fl : (data.tire_temp_fl !== undefined ? data.tire_temp_fl : (data.TireTemp && data.TireTemp[0])));
+                var fr = Number(data.temp_fr !== undefined ? data.temp_fr : (data.tire_temp_fr !== undefined ? data.tire_temp_fr : (data.TireTemp && data.TireTemp[1])));
+                var rl = Number(data.temp_rl !== undefined ? data.temp_rl : (data.tire_temp_rl !== undefined ? data.tire_temp_rl : (data.TireTemp && data.TireTemp[2])));
+                var rr = Number(data.temp_rr !== undefined ? data.temp_rr : (data.TireTemp && data.TireTemp[3]));
+                var sum = 0, count = 0;
+                if (Number.isFinite(fl) && fl > 0) { sum += fl; count++; }
+                if (Number.isFinite(fr) && fr > 0) { sum += fr; count++; }
+                if (Number.isFinite(rl) && rl > 0) { sum += rl; count++; }
+                if (Number.isFinite(rr) && rr > 0) { sum += rr; count++; }
+                if (count > 0) {
+                    var avg = sum / count;
+                    return avg > 125 ? (avg - 32) * 5 / 9 : avg;
+                }
+                if (Number.isFinite(Number(data.coolant_temp)) && Number(data.coolant_temp) > 0) {
+                    return Number(data.coolant_temp);
+                }
+                return 85;
+            }
+
+            function drawNeedle(cx, cy, length, tailLen, angleDeg, color, width, hubR) {
                 var rad = angleDeg * (Math.PI / 180.0);
                 var nx = cx + Math.cos(rad) * length;
                 var ny = cy + Math.sin(rad) * length;
+                var tx = cx - Math.cos(rad) * (tailLen || 14);
+                var ty = cy - Math.sin(rad) * (tailLen || 14);
 
                 ctx.save();
-                ctx.strokeStyle = color || '#ff5500';
-                ctx.lineWidth = width || 2.5;
+                ctx.strokeStyle = color || '#ff4411';
+                ctx.lineWidth = width || 3.2;
                 ctx.lineCap = 'round';
-                ctx.shadowColor = 'rgba(255, 80, 0, 0.8)';
-                ctx.shadowBlur = 6;
+                ctx.shadowColor = 'rgba(255, 68, 17, 0.75)';
+                ctx.shadowBlur = 8;
 
                 ctx.beginPath();
-                ctx.moveTo(cx, cy);
+                ctx.moveTo(tx, ty);
                 ctx.lineTo(nx, ny);
                 ctx.stroke();
 
-                // Hub
-                ctx.fillStyle = '#0f141d';
-                ctx.strokeStyle = '#475569';
+                ctx.fillStyle = '#111318';
+                ctx.strokeStyle = '#2d3340';
                 ctx.lineWidth = 1.5;
+                ctx.shadowBlur = 0;
                 ctx.beginPath();
-                ctx.arc(cx, cy, 6, 0, Math.PI * 2);
+                ctx.arc(cx, cy, hubR || 11, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.stroke();
 
@@ -84,46 +123,44 @@
                 var h = canvas.height;
                 ctx.clearRect(0, 0, w, h);
 
-                // 1. Draw Clean TRD Dial Plates (100% transparent background)
-                if (baseImg.complete) {
-                    ctx.drawImage(baseImg, 0, 0, 800, 334);
+                if (baseImg.complete && baseImg.naturalWidth) {
+                    ctx.drawImage(baseImg, 0, 0, w, h);
                 }
 
-                // 2. Center Tachometer Needle (Center: 399, 161)
-                // 0 RPM = 135 deg (pointing down-left), 10,000 RPM = 45 deg (pointing down-right) -> 270 deg sweep
-                var rpmRatio = Math.min(1.0, Math.max(0.0, telemetry.rpm / telemetry.maxRpm));
-                var tachAngle = 135.0 + rpmRatio * 270.0;
-                var isRedline = rpmRatio > 0.88;
-                drawNeedle(399, 161, 95, tachAngle, isRedline ? '#ff1133' : '#ff5500', 3.0);
-
-                // 3. Right Speedometer Needle (Center: 622, 172)
-                // 0 km/h = 135 deg, 340 km/h = 45 deg -> 270 deg sweep
-                var speedRatio = Math.min(1.0, Math.max(0.0, telemetry.speed / 340.0));
-                var speedAngle = 135.0 + speedRatio * 270.0;
-                drawNeedle(622, 172, 85, speedAngle, '#ff5500', 2.5);
-
-                // 4. Left Subdial Needles:
-                // Water Temp (Pivot: 84, 248), sweep from 210 deg (50C/cold) to 325 deg (130C hot)
-                var tempRatio = Math.min(1.0, Math.max(0.0, (telemetry.temp - 50.0) / 80.0));
-                var tempAngle = 210.0 + tempRatio * 115.0;
-                drawNeedle(84, 248, 42, tempAngle, '#ff5500', 2.0);
-
-                // Fuel Level (Pivot: 172, 174), sweep from 315 deg (E) to 225 deg (F)
-                var fuelRatio = 0.78;
-                var fuelAngle = 315.0 - fuelRatio * 90.0;
-                drawNeedle(172, 174, 48, fuelAngle, '#ff5500', 2.0);
-
-                // 5. Digital Gear Indicator in Tachometer Box (400, 222)
+                // 1. Digital Gear Indicator inside Tachometer LCD window (398, 232)
                 ctx.save();
-                ctx.fillStyle = '#ffffff';
-                ctx.font = 'bold 36px "Segoe UI", Arial, sans-serif';
+                ctx.fillStyle = '#ff9922';
+                ctx.font = 'bold 42px "Consolas", "Segoe UI", monospace';
                 ctx.textAlign = 'center';
-                ctx.shadowColor = 'rgba(255, 255, 255, 0.7)';
+                ctx.textBaseline = 'middle';
+                ctx.shadowColor = 'rgba(255, 140, 20, 0.65)';
                 ctx.shadowBlur = 8;
-                var gIdx = telemetry.gear;
-                var gChar = gears[gIdx] || (gIdx === 0 ? 'R' : String(gIdx - 1));
-                ctx.fillText(gChar, 400, 222);
+                ctx.fillText(formatGear(telemetry.gear), 390, 222);
                 ctx.restore();
+
+                // 2. Center TRD 10,000 RPM Tachometer (Pivot: 390, 166)
+                // Scale markings: 0 at 90 deg (6:00), 3 at 178 deg (9:00), 6 at 266 deg (12:00), 10 at 384 deg (3:45)
+                var rpmRatio = Math.min(1.0, Math.max(0.0, telemetry.rpm / 10000.0));
+                var tachAngle = 90.0 + rpmRatio * 294.0;
+                drawNeedle(390, 166, 118, 20, tachAngle, rpmRatio > 0.85 ? '#ff1e38' : '#ff4411', 3.5, 13);
+
+                // 3. Right TRD 340 km/h Speedometer (Pivot: 666, 174)
+                // Scale markings: 0 at 144 deg, 140 at 270 deg (12:00), 260 at 378 deg, 340 at 450 deg (90 deg)
+                var speedRatio = Math.min(1.0, Math.max(0.0, telemetry.speed / 340.0));
+                var speedAngle = 144.0 + speedRatio * 306.0;
+                drawNeedle(666, 174, 98, 16, speedAngle, '#ff4411', 3.0, 11);
+
+                // 4. Top-Left Fuel Subdial (Pivot: 132, 192)
+                // E at 360 deg (3:00), F at 270 deg (12:00) -> 90 deg CCW sweep
+                var fuelRatio = Math.min(1.0, Math.max(0.0, telemetry.fuel));
+                var fuelAngle = 360.0 - fuelRatio * 90.0;
+                drawNeedle(132, 192, 68, 10, fuelAngle, '#ff4411', 2.4, 9);
+
+                // 5. Bottom-Left Water Temp Subdial (Pivot: 38, 282)
+                // 50C at 360 deg (3:00), 90C at 315 deg, 130C at 270 deg (12:00) -> 90 deg CCW sweep
+                var tempRatio = Math.min(1.0, Math.max(0.0, (telemetry.tempC - 50.0) / 80.0));
+                var tempAngle = 360.0 - tempRatio * 90.0;
+                drawNeedle(38, 282, 66, 10, tempAngle, '#ff4411', 2.4, 9);
             }
 
             baseImg.onload = render;
@@ -132,33 +169,72 @@
                 containerId: 'supraContainer',
                 scaleMultiplier: 0.95,
 
+                onInit: function(cfg) {
+                    if (cfg) {
+                        if (cfg.isMetric !== undefined) isMetric = cfg.isMetric !== false;
+                        else if (cfg.unit) isMetric = cfg.unit !== 'mph';
+                    }
+                    render();
+                },
+
                 onElementsChange: function(elements) {
-                    if (container) {
+                    if (container && elements && elements.showGauge !== undefined) {
                         container.style.display = elements.showGauge === false ? 'none' : 'block';
                     }
                 },
 
                 onFrame: function(data, payload) {
-                    if (data.speed !== undefined) telemetry.speed = Number(data.speed);
-                    if (data.rpm !== undefined) telemetry.rpm = Number(data.rpm);
-                    if (data.gear !== undefined) telemetry.gear = Number(data.gear);
-                    if (data.coolant_temp !== undefined) telemetry.temp = Number(data.coolant_temp);
-                    render();
+                    if (!data) return;
+                    payload = payload || {};
+                    if (payload.isMetric !== undefined) isMetric = payload.isMetric !== false;
+                    if (data.displayUnits && data.displayUnits.speed) {
+                        isMetric = data.displayUnits.speed !== 'mph';
+                    }
+
+                    telemetry.speed = isMetric
+                        ? Number(data.speed_kmh !== undefined ? data.speed_kmh : (data.speed || 0))
+                        : Number(data.speed_mph !== undefined ? data.speed_mph : ((data.speed_kmh || data.speed || 0) * 0.621371));
+                    telemetry.rpm = Number(data.rpm || 0);
+                    telemetry.maxRpm = Number(data.max_rpm || data.maxRpm || payload.redlineRpm || 10000);
+                    telemetry.gear = data.gear !== undefined ? Number(data.gear) : 1;
+                    telemetry.fuel = data.fuel_ratio !== undefined && data.fuel_ratio !== null
+                        ? Number(data.fuel_ratio)
+                        : (data.fuel_level !== undefined ? Number(data.fuel_level) : 0.75);
+                    telemetry.tempC = telemetry.rpm > 0 ? resolveWaterTempC(data) : 50;
+
+                    if (!isSweeping) {
+                        render();
+                    }
                 },
 
                 onAnimate: function() {
+                    if (sweepRafId !== null) cancelAnimationFrame(sweepRafId);
+                    isSweeping = true;
                     var start = performance.now();
                     var duration = 1200;
                     function sweep(t) {
                         var progress = Math.min(1, (t - start) / duration);
                         var wave = Math.sin(progress * Math.PI);
-                        telemetry.rpm = wave * 9200;
-                        telemetry.speed = wave * 280;
-                        telemetry.gear = wave > 0.5 ? 4 : 1;
+                        telemetry.rpm = wave * 10000;
+                        telemetry.speed = wave * 340;
+                        telemetry.gear = progress < 0.98 ? Math.max(1, Math.min(6, Math.ceil(wave * 6))) : 1;
+                        telemetry.fuel = wave;
+                        telemetry.tempC = 50 + wave * 80;
                         render();
-                        if (progress < 1) requestAnimationFrame(sweep);
+                        if (progress < 1) {
+                            sweepRafId = requestAnimationFrame(sweep);
+                        } else {
+                            isSweeping = false;
+                            sweepRafId = null;
+                            telemetry.rpm = 0;
+                            telemetry.speed = 0;
+                            telemetry.gear = 1;
+                            telemetry.fuel = 0.75;
+                            telemetry.tempC = 50;
+                            render();
+                        }
                     }
-                    requestAnimationFrame(sweep);
+                    sweepRafId = requestAnimationFrame(sweep);
                 }
             });
 

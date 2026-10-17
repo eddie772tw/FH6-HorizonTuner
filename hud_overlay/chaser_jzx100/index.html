@@ -5,34 +5,33 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Toyota Chaser JZX100 Optitron Digital Cluster</title>
     <link rel="stylesheet" href="../shared/hud-base.css">
+    <!--
+        [設計決策紀錄 / Design Decision Note]
+        1. 水溫與油溫/油壓資料來源：
+           水溫 (Water / Coolant Temp) 直接採用遙測輪胎溫度 (Tire Temp FL/FR/RL/RR) 之平均值（若為華氏則自動轉為攝氏，待機時預設 85°C）；
+           油溫 (Oil Temp) 與油壓 (Oil Pressure) 因 Forza UDP 封包未提供原生感測器數值，暫依轉速比與節氣門/增壓負載驅動之確定性熱力學與油壓代理模型 (Deterministic Proxy Model) 模擬。
+    -->
     <style>
-        body, html {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            background: transparent !important;
-        }
         .chaser-container {
-            position: absolute;
-            bottom: 24px;
-            right: 24px;
-            width: 937px;
-            height: 247px;
+            width: 940px;
+            height: 150px;
+            position: relative;
             pointer-events: none;
         }
-        canvas {
+        #chaserCanvas {
             display: block;
-            width: 100%;
-            height: 100%;
+            width: 940px;
+            height: 150px;
+            filter: drop-shadow(0 6px 18px rgba(0, 0, 0, calc(var(--hud-glow-intensity, 1.0) * 0.55)));
         }
     </style>
 </head>
 <body>
+    <div id="teleCardsMount"></div>
+
     <div class="hud-root-wrapper">
         <div class="hud-gauge-container chaser-container" id="chaserContainer">
-            <canvas id="chaserCanvas" width="937" height="247"></canvas>
+            <canvas id="chaserCanvas" width="940" height="150"></canvas>
         </div>
     </div>
 
@@ -46,138 +45,196 @@
             var baseImg = new Image();
             baseImg.src = 'assets/chaser_clean_base.png';
 
-            var tachoStrip = new Image();
-            tachoStrip.src = 'assets/chaser_tacho_strip.png';
+            var barsImg = new Image();
+            barsImg.src = 'assets/chaser_bars_full.png';
 
-            var fuelStrip = new Image();
-            fuelStrip.src = 'assets/chaser_fuel_strip.png';
-
-            var tempStrip = new Image();
-            tempStrip.src = 'assets/chaser_temp_strip.png';
+            var isSweeping = false;
+            var sweepRafId = null;
+            var isMetric = true;
 
             var telemetry = {
-                speed: 150,
-                rpm: 6200,
+                speed: 0,
+                rpm: 0,
                 maxRpm: 8000,
-                gear: 4,
-                fuel: 0.75,
-                temp: 88
+                gear: 1,
+                fuel: 0,
+                tempC: 40
             };
 
-            var gears = ['R', 'N', '1', '2', '3', '4', '5', '6', '7', '8'];
+            function formatGear(g) {
+                var gearNum = Number(g);
+                if (!Number.isFinite(gearNum) || gearNum < 0 || gearNum === 11) return 'N';
+                if (gearNum === 0) return 'R';
+                return String(Math.round(gearNum));
+            }
+
+            function resolveWaterTempC(data) {
+                if (!data) return 85;
+                var fl = Number(data.temp_fl !== undefined ? data.temp_fl : (data.tire_temp_fl !== undefined ? data.tire_temp_fl : (data.TireTemp && data.TireTemp[0])));
+                var fr = Number(data.temp_fr !== undefined ? data.temp_fr : (data.tire_temp_fr !== undefined ? data.tire_temp_fr : (data.TireTemp && data.TireTemp[1])));
+                var rl = Number(data.temp_rl !== undefined ? data.temp_rl : (data.tire_temp_rl !== undefined ? data.tire_temp_rl : (data.TireTemp && data.TireTemp[2])));
+                var rr = Number(data.temp_rr !== undefined ? data.temp_rr : (data.tire_temp_rr !== undefined ? data.tire_temp_rr : (data.TireTemp && data.TireTemp[3])));
+                var sum = 0, count = 0;
+                if (Number.isFinite(fl) && fl > 0) { sum += fl; count++; }
+                if (Number.isFinite(fr) && fr > 0) { sum += fr; count++; }
+                if (Number.isFinite(rl) && rl > 0) { sum += rl; count++; }
+                if (Number.isFinite(rr) && rr > 0) { sum += rr; count++; }
+                if (count > 0) {
+                    var avg = sum / count;
+                    return avg > 125 ? (avg - 32) * 5 / 9 : avg;
+                }
+                if (Number.isFinite(Number(data.coolant_temp)) && Number(data.coolant_temp) > 0) {
+                    return Number(data.coolant_temp);
+                }
+                return 85;
+            }
 
             function render() {
                 var w = canvas.width;
                 var h = canvas.height;
                 ctx.clearRect(0, 0, w, h);
 
-                // 1. Clean vector base
-                if (baseImg.complete) {
-                    ctx.drawImage(baseImg, 0, 0, 937, 247);
+                if (baseImg.complete && baseImg.naturalWidth) {
+                    ctx.drawImage(baseImg, 0, 0, w, h);
                 }
 
-                // 2. Dynamic Linear Optitron Tachometer Bar (y = 175)
-                if (tachoStrip.complete) {
-                    var rpmRatio = Math.min(1.0, Math.max(0.0, telemetry.rpm / telemetry.maxRpm));
-                    var stripW = 625;
-                    var stripH = 20;
-                    var stripX = 155;
-                    var stripY = 175;
+                if (barsImg.complete && barsImg.naturalWidth) {
+                    // 1. Center Optitron Tachometer Bar (x=160..780, y=106..130)
+                    var maxRpm = Math.max(4000, telemetry.maxRpm || 8000);
+                    var rpmRatio = Math.min(1.0, Math.max(0.0, telemetry.rpm / maxRpm));
+                    if (rpmRatio > 0.002) {
+                        ctx.save();
+                        ctx.beginPath();
+                        ctx.rect(160, 106, 620 * rpmRatio, 26);
+                        ctx.clip();
+                        ctx.drawImage(barsImg, 0, 0, w, h);
+                        ctx.restore();
+                    }
 
-                    ctx.save();
-                    ctx.beginPath();
-                    ctx.rect(stripX, stripY, stripW * rpmRatio, stripH);
-                    ctx.clip();
-                    ctx.drawImage(tachoStrip, stripX, stripY, stripW, stripH);
-                    ctx.restore();
-                }
-
-                // 3. Left Fuel Arc Bar
-                if (fuelStrip.complete) {
+                    // 2. Left Fuel Ladder Bar (x=16..92, y=28..136, bottom-to-top)
                     var fuelRatio = Math.min(1.0, Math.max(0.0, telemetry.fuel));
-                    var fW = 48;
-                    var fH = 100;
-                    var fX = 40;
-                    var fY = 80;
+                    if (fuelRatio > 0.002) {
+                        var fyTop = 136 - fuelRatio * (136 - 28);
+                        ctx.save();
+                        ctx.beginPath();
+                        ctx.rect(16, fyTop, 78, 136 - fyTop);
+                        ctx.clip();
+                        ctx.drawImage(barsImg, 0, 0, w, h);
+                        ctx.restore();
+                    }
 
-                    ctx.save();
-                    ctx.beginPath();
-                    // Clip from bottom up
-                    var visibleH = fH * fuelRatio;
-                    ctx.rect(fX, fY + fH - visibleH, fW, visibleH);
-                    ctx.clip();
-                    ctx.drawImage(fuelStrip, fX, fY, fW, fH);
-                    ctx.restore();
+                    // 3. Right Coolant Temp Ladder Bar (x=850..928, y=28..132, bottom-to-top)
+                    var tempRatio = Math.min(1.0, Math.max(0.0, (telemetry.tempC - 40.0) / 90.0));
+                    if (tempRatio > 0.002) {
+                        var tyTop = 132 - tempRatio * (132 - 28);
+                        ctx.save();
+                        ctx.beginPath();
+                        ctx.rect(850, tyTop, 80, 132 - tyTop);
+                        ctx.clip();
+                        ctx.drawImage(barsImg, 0, 0, w, h);
+                        ctx.restore();
+                    }
                 }
 
-                // 4. Right Coolant Temp Arc Bar
-                if (tempStrip.complete) {
-                    var tempRatio = Math.min(1.0, Math.max(0.0, (telemetry.temp - 40.0) / 80.0));
-                    var tW = 48;
-                    var tH = 100;
-                    var tX = 850;
-                    var tY = 80;
-
-                    ctx.save();
-                    ctx.beginPath();
-                    var visibleH = tH * tempRatio;
-                    ctx.rect(tX, tY + tH - visibleH, tW, visibleH);
-                    ctx.clip();
-                    ctx.drawImage(tempStrip, tX, tY, tW, tH);
-                    ctx.restore();
-                }
-
-                // 5. Digital Speedometer (Center: 490, 80)
+                // 4. Digital Readouts
                 ctx.save();
-                ctx.fillStyle = '#b0f4ff';
-                ctx.font = 'bold 64px "Consolas", monospace';
-                ctx.textAlign = 'center';
-                ctx.shadowColor = 'rgba(176, 244, 255, 0.9)';
-                ctx.shadowBlur = 12;
-                ctx.fillText(String(Math.round(telemetry.speed)), 490, 80);
+                ctx.fillStyle = '#c8f8ff';
+                ctx.shadowColor = 'rgba(140, 240, 255, 0.85)';
+                ctx.shadowBlur = 10;
+                ctx.textBaseline = 'middle';
 
-                // 6. Gear Indicator (Shift Box: 315, 78)
-                ctx.font = 'bold 38px "Consolas", monospace';
-                var gIdx = telemetry.gear;
-                var gChar = gears[gIdx] || (gIdx === 0 ? 'R' : String(gIdx - 1));
-                ctx.fillText(gChar, 315, 78);
+                // Gear inside SHIFT box (x=226..330, y=14..52 -> right half at x=304, y=33)
+                ctx.textAlign = 'center';
+                ctx.font = 'bold 30px "Consolas", "Segoe UI", monospace';
+                ctx.fillText(formatGear(telemetry.gear), 305, 34);
+
+                // Speed readout above center tachometer (x=540, y=36)
+                ctx.textAlign = 'right';
+                ctx.font = 'bold 52px "Consolas", "Segoe UI", monospace';
+                ctx.fillText(String(Math.max(0, Math.round(telemetry.speed))), 540, 38);
+
+                ctx.textAlign = 'left';
+                ctx.font = 'bold 16px "Segoe UI", Arial, sans-serif';
+                ctx.fillStyle = '#8ec8d8';
+                ctx.shadowBlur = 0;
+                ctx.fillText(isMetric ? 'km/h' : 'mph', 548, 46);
                 ctx.restore();
             }
 
             baseImg.onload = render;
+            barsImg.onload = render;
 
             HUDCore.registerStyle('chaser_jzx100', {
                 containerId: 'chaserContainer',
                 scaleMultiplier: 0.95,
 
+                onInit: function(cfg) {
+                    if (cfg) {
+                        if (cfg.isMetric !== undefined) isMetric = cfg.isMetric !== false;
+                        else if (cfg.unit) isMetric = cfg.unit !== 'mph';
+                    }
+                    render();
+                },
+
                 onElementsChange: function(elements) {
-                    if (container) {
+                    if (container && elements && elements.showGauge !== undefined) {
                         container.style.display = elements.showGauge === false ? 'none' : 'block';
                     }
                 },
 
                 onFrame: function(data, payload) {
-                    if (data.speed !== undefined) telemetry.speed = Number(data.speed);
-                    if (data.rpm !== undefined) telemetry.rpm = Number(data.rpm);
-                    if (data.gear !== undefined) telemetry.gear = Number(data.gear);
-                    if (data.coolant_temp !== undefined) telemetry.temp = Number(data.coolant_temp);
-                    if (data.fuel_level !== undefined) telemetry.fuel = Number(data.fuel_level);
-                    render();
+                    if (!data) return;
+                    payload = payload || {};
+                    if (payload.isMetric !== undefined) isMetric = payload.isMetric !== false;
+                    if (data.displayUnits && data.displayUnits.speed) {
+                        isMetric = data.displayUnits.speed !== 'mph';
+                    }
+
+                    telemetry.speed = isMetric
+                        ? Number(data.speed_kmh !== undefined ? data.speed_kmh : (data.speed || 0))
+                        : Number(data.speed_mph !== undefined ? data.speed_mph : ((data.speed_kmh || data.speed || 0) * 0.621371));
+                    telemetry.rpm = Number(data.rpm || 0);
+                    telemetry.maxRpm = Number(data.max_rpm || data.maxRpm || payload.redlineRpm || 8000);
+                    telemetry.gear = data.gear !== undefined ? Number(data.gear) : 1;
+                    telemetry.fuel = data.fuel_ratio !== undefined && data.fuel_ratio !== null
+                        ? Number(data.fuel_ratio)
+                        : (data.fuel_level !== undefined ? Number(data.fuel_level) : (telemetry.rpm > 0 ? 0.75 : 0));
+                    telemetry.tempC = telemetry.rpm > 0 ? resolveWaterTempC(data) : 40;
+
+                    if (!isSweeping) {
+                        render();
+                    }
                 },
 
                 onAnimate: function() {
+                    if (sweepRafId !== null) cancelAnimationFrame(sweepRafId);
+                    isSweeping = true;
                     var start = performance.now();
                     var duration = 1200;
                     function sweep(t) {
                         var progress = Math.min(1, (t - start) / duration);
                         var wave = Math.sin(progress * Math.PI);
-                        telemetry.rpm = wave * 7800;
-                        telemetry.speed = wave * 220;
-                        telemetry.gear = wave > 0.5 ? 4 : 1;
+                        telemetry.rpm = wave * 8000;
+                        telemetry.maxRpm = 8000;
+                        telemetry.speed = wave * 240;
+                        telemetry.gear = progress < 0.98 ? Math.max(1, Math.min(6, Math.ceil(wave * 6))) : 1;
+                        telemetry.fuel = wave;
+                        telemetry.tempC = 40 + wave * 90;
                         render();
-                        if (progress < 1) requestAnimationFrame(sweep);
+                        if (progress < 1) {
+                            sweepRafId = requestAnimationFrame(sweep);
+                        } else {
+                            isSweeping = false;
+                            sweepRafId = null;
+                            telemetry.rpm = 0;
+                            telemetry.speed = 0;
+                            telemetry.gear = 1;
+                            telemetry.fuel = 0;
+                            telemetry.tempC = 40;
+                            render();
+                        }
                     }
-                    requestAnimationFrame(sweep);
+                    sweepRafId = requestAnimationFrame(sweep);
                 }
             });
 
