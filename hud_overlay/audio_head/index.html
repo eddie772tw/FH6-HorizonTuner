@@ -1,4 +1,10 @@
 <!DOCTYPE html>
+<!--
+  [設計決策紀錄 / Design Decision Note]
+  1. 溫度與油壓模型基準：本專案 HUD 體系若涉及水溫顯示，統一使用四輪平均胎溫 (`TireTemp`)；油溫與油壓則依確定性熱力學與油壓代理模型模擬（本音響主機面板僅消費音訊頻譜 `/ws/audio` 與媒體資訊 `/ws/media`）。
+  2. D3D11 底圖與動態頻譜分離：9 款經典車用音響主機底圖均以 0% 頻譜與 7 幀指針中位數由 `res_123.dxbc` 重新提取，移除覆蓋原面板圖示之實心黑框，將動態 EQ 頻譜、OEL 海豚動畫與 Panasonic 雙類比 VU 指針精確繪製於各主機原生視窗區域內。
+  3. 子模式切換整合：移除 HUD 內部無法於穿透視窗點擊之 `<select>` 選單，改由主視窗 HUD 進階設定 (`audioHeadDeck`) 切換 9 款主機型號 (`0..8`)。
+-->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -6,81 +12,68 @@
     <title>Car Audio Head Unit Suite (9 Classic Decks)</title>
     <link rel="stylesheet" href="../shared/hud-base.css">
     <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: transparent !important;
+        }
         .audio-head-container {
             width: 510px;
-            height: 180px;
+            height: 150px;
             position: relative;
-            pointer-events: all;
+            pointer-events: none;
             user-select: none;
-        }
-        .mode-selector {
-            position: absolute;
-            top: -32px;
-            left: 0;
-            right: 0;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            background: rgba(15, 23, 42, 0.9);
-            border: 1px solid rgba(0, 240, 255, 0.35);
-            border-radius: 6px;
-            padding: 2px 8px;
-            z-index: 10;
-        }
-        .mode-selector label {
-            font-size: 11px;
-            font-weight: 700;
-            color: #38bdf8;
-            letter-spacing: 0.5px;
-        }
-        .mode-selector select {
-            background: #0f172a;
-            color: #f1f5f9;
-            border: 1px solid #334155;
-            font-size: 11px;
-            padding: 3px 8px;
-            border-radius: 4px;
-            outline: none;
-            cursor: pointer;
         }
         #radioCanvas {
             display: block;
             width: 500px;
             height: 140px;
+            pointer-events: none;
             filter: drop-shadow(0 0 14px rgba(0, 240, 255, calc(var(--hud-glow-intensity, 1.0) * 0.35)));
         }
     </style>
 </head>
 <body>
-    <div id="teleCardsMount"></div>
-
     <div class="hud-root-wrapper">
         <div class="hud-gauge-container audio-head-container" id="audioHeadContainer">
-            <div class="mode-selector">
-                <label>DECK SELECT:</label>
-                <select id="deckSelect" onchange="switchMode(parseInt(this.value))">
-                    <option value="0">0. Pioneer DEH-P6100R (OEL Dolphins & 32-Band EQ)</option>
-                    <option value="1">1. Panasonic CQ-VX5500K (Dual Analog VU Needles)</option>
-                    <option value="2">2. Pioneer DEX-P1R (Copper Chassis Reference OEL)</option>
-                    <option value="3">3. Pioneer DEH-P835R (Multi-Color Organic EL Deck)</option>
-                    <option value="4">4. Sony CDX-CA860X (Active Black Panel Blue/Red Matrix)</option>
-                    <option value="5">5. Alpine CDA-7848 (Classic 6-Key Green Illumination)</option>
-                    <option value="6">6. Alpine CDA-9815RB (BassEngine Pro Bioluminescent)</option>
-                    <option value="7">7. Kenwood KRC-759R (D-MASK Motorized Stealth Face)</option>
-                    <option value="8">8. JVC KD-LX50R (El Kameleon Touch LCD Deck)</option>
-                </select>
-            </div>
             <canvas id="radioCanvas" width="500" height="140"></canvas>
         </div>
     </div>
 
     <script src="../shared/hud-core.js"></script>
     <script>
+        var DECK_KEY_MAP = {
+            pioneer: 0,
+            p6100r: 0,
+            panasonic: 1,
+            vx5500k: 1,
+            dexp1r: 2,
+            p835r: 3,
+            sony: 4,
+            ca860x: 4,
+            alpine7848: 5,
+            alpine9815: 6,
+            kenwood: 7,
+            jvc: 8
+        };
         var currentMode = 0;
+
+        function resolveDeckMode(mode) {
+            if (typeof mode === 'number' && mode >= 0 && mode <= 8) return Math.floor(mode);
+            if (typeof mode === 'string') {
+                var key = mode.trim().toLowerCase();
+                if (DECK_KEY_MAP[key] !== undefined) return DECK_KEY_MAP[key];
+                var mNum = parseInt(key, 10);
+                if (!isNaN(mNum) && mNum >= 0 && mNum <= 8) return mNum;
+            }
+            return 0;
+        }
+
         function switchMode(mode) {
-            currentMode = mode;
-            var sel = document.getElementById('deckSelect');
-            if (sel) sel.value = String(mode);
+            currentMode = resolveDeckMode(mode);
             if (window._renderRadio) window._renderRadio();
         }
         window.switchMode = switchMode;
@@ -88,14 +81,7 @@
         var urlParams = new URLSearchParams(window.location.search);
         var paramMode = urlParams.get('mode');
         if (paramMode !== null) {
-            var mNum = parseInt(paramMode);
-            if (!isNaN(mNum) && mNum >= 0 && mNum <= 8) {
-                currentMode = mNum;
-            } else if (paramMode === 'panasonic') {
-                currentMode = 1;
-            } else if (paramMode === 'pioneer') {
-                currentMode = 0;
-            }
+            currentMode = resolveDeckMode(paramMode);
         }
 
         (function() {
@@ -103,7 +89,6 @@
             var ctx = canvas.getContext('2d');
             var container = document.getElementById('audioHeadContainer');
 
-            // Preload all 9 deck assets
             var decks = [
                 { id: 0, name: 'Pioneer DEH-P6100R', file: 'assets/pioneer_clean.png', w: 380, h: 98 },
                 { id: 1, name: 'Panasonic CQ-VX5500K', file: 'assets/panasonic_clean.png', w: 438, h: 110 },
@@ -147,17 +132,28 @@
             var animT = 0;
 
             function updateVU(state, target, dt) {
-                var attack = 0.02;
-                var release = 0.35;
+                var attack = 0.025;
+                var release = 0.28;
                 var rate = target > state.val ? (dt / attack) : (dt / release);
                 rate = Math.min(1.0, Math.max(0.0, rate));
-                state.vel += (target - state.val) * rate * 0.9;
-                state.vel *= 0.70;
+                state.vel += (target - state.val) * rate * 0.85;
+                state.vel *= 0.68;
                 state.val += state.vel;
                 return Math.max(0.0, Math.min(1.0, state.val));
             }
 
-            function drawVUNeedle(cx, cy, len, normVal, clipTop) {
+            function updatePeaks() {
+                for (var i = 0; i < 32; i++) {
+                    var val = audioState.spectrum[i];
+                    if (val > audioState.peaks[i]) {
+                        audioState.peaks[i] = val;
+                    } else {
+                        audioState.peaks[i] = Math.max(0, audioState.peaks[i] - 0.015);
+                    }
+                }
+            }
+
+            function drawVUNeedle(cx, cy, len, normVal, clipX, clipY, clipW, clipH) {
                 var angleDeg = -132.0 + normVal * 84.0;
                 var rad = angleDeg * (Math.PI / 180.0);
                 var nx = cx + Math.cos(rad) * len;
@@ -165,12 +161,13 @@
 
                 ctx.save();
                 ctx.beginPath();
-                ctx.rect(0, 0, canvas.width, clipTop);
+                ctx.rect(clipX, clipY, clipW, clipH);
                 ctx.clip();
 
-                ctx.strokeStyle = '#e63946';
-                ctx.lineWidth = 1.8;
-                ctx.shadowColor = 'rgba(230, 57, 70, 0.7)';
+                ctx.strokeStyle = '#e11d48';
+                ctx.lineWidth = 2.0;
+                ctx.lineCap = 'round';
+                ctx.shadowColor = 'rgba(225, 29, 72, 0.65)';
                 ctx.shadowBlur = 4;
 
                 ctx.beginPath();
@@ -181,28 +178,70 @@
                 ctx.restore();
             }
 
+            function drawOelDolphin(cx, cy, pitchRad, scale) {
+                ctx.save();
+                ctx.translate(cx, cy);
+                ctx.rotate(pitchRad);
+                ctx.scale(scale, scale);
+
+                ctx.fillStyle = '#00f0ff';
+                ctx.strokeStyle = '#7dd3fc';
+                ctx.lineWidth = 1.1;
+                ctx.shadowColor = '#00e5ff';
+                ctx.shadowBlur = 6;
+
+                // Streamlined dolphin body + dorsal fin + tail fluke + bottle snout
+                ctx.beginPath();
+                ctx.moveTo(18, 0);
+                ctx.quadraticCurveTo(23, 1, 24, 2.5);
+                ctx.quadraticCurveTo(19, 4, 14, 3.5);
+                ctx.quadraticCurveTo(4, 6, -8, 3);
+                ctx.quadraticCurveTo(-15, 2, -20, 4);
+                ctx.lineTo(-24, 7);
+                ctx.lineTo(-21, 1);
+                ctx.lineTo(-25, -4);
+                ctx.lineTo(-19, -1);
+                ctx.quadraticCurveTo(-12, -3, -4, -4.5);
+                ctx.lineTo(-1, -10);
+                ctx.quadraticCurveTo(2, -7, 4, -4.5);
+                ctx.quadraticCurveTo(12, -4, 18, 0);
+                ctx.closePath();
+                ctx.fill();
+
+                // Pectoral fin highlight
+                ctx.fillStyle = '#0284c7';
+                ctx.beginPath();
+                ctx.moveTo(6, 2);
+                ctx.lineTo(2, 8);
+                ctx.lineTo(9, 4);
+                ctx.closePath();
+                ctx.fill();
+
+                ctx.restore();
+            }
+
             function render() {
                 var cw = canvas.width;
                 var ch = canvas.height;
                 ctx.clearRect(0, 0, cw, ch);
 
-                animT += 0.03;
+                animT += 0.035;
+                updatePeaks();
+
                 var deck = decks[currentMode] || decks[0];
                 var img = images[deck.id];
 
-                // Center deck in 500x140 canvas
                 var dx = Math.round((cw - deck.w) / 2);
                 var dy = Math.round((ch - deck.h) / 2);
 
-                if (img && img.complete) {
-                    ctx.drawImage(img, dx, dy, deck.w, deck.h);
-                }
+                if (!img || !img.complete || img.naturalWidth === 0) return;
+                ctx.drawImage(img, dx, dy, deck.w, deck.h);
+
+                var fullTrack = (mediaState.artist ? mediaState.artist + ' - ' : '') + mediaState.title;
 
                 switch (currentMode) {
                     case 0: {
-                        // ==========================================
-                        // 0. PIONEER DEH-P6100R
-                        // ==========================================
+                        // 0. PIONEER DEH-P6100R (OEL Dolphins + 32-Band EQ inside 256x48 OEL screen)
                         var oelX = dx + 13;
                         var oelY = dy + 23;
                         var oelW = 256;
@@ -213,340 +252,250 @@
                         ctx.rect(oelX, oelY, oelW, oelH);
                         ctx.clip();
 
-                        // OEL Dark Blue Background
-                        ctx.fillStyle = '#010814';
-                        ctx.fillRect(oelX, oelY, oelW, oelH);
-
-                        // Scanlines
-                        ctx.strokeStyle = 'rgba(0, 150, 255, 0.1)';
+                        // OEL scanlines
+                        ctx.strokeStyle = 'rgba(0, 210, 255, 0.08)';
                         ctx.lineWidth = 1;
-                        for (var ly = oelY; ly < oelY + oelH; ly += 3) {
+                        for (var ly = oelY; ly < oelY + oelH; ly += 2) {
                             ctx.beginPath();
                             ctx.moveTo(oelX, ly);
                             ctx.lineTo(oelX + oelW, ly);
                             ctx.stroke();
                         }
 
-                        // Animated Dolphin
-                        var dolX = oelX + 15 + (Math.sin(animT * 0.8) * 0.5 + 0.5) * 120;
-                        var dolY = oelY + 14 + Math.cos(animT * 1.6) * 5;
+                        // Animated OEL wave + jumping dolphin on left half (x: oelX..oelX+118)
+                        var phase = animT * 0.9;
+                        var dolX = oelX + 34 + (Math.sin(phase) * 0.5 + 0.5) * 58;
+                        var dolY = oelY + 21 - Math.sin(phase * 2.0) * 8;
+                        var pitch = -Math.cos(phase * 2.0) * 0.32;
+                        drawOelDolphin(dolX, dolY, pitch, 1.05);
 
-                        ctx.fillStyle = '#00f0ff';
-                        ctx.shadowColor = '#00f0ff';
-                        ctx.shadowBlur = 6;
-                        ctx.beginPath();
-                        ctx.ellipse(dolX + 16, dolY, 14, 5, 0.15, 0, Math.PI * 2);
-                        ctx.fill();
-                        ctx.beginPath();
-                        ctx.moveTo(dolX + 2, dolY - 1);
-                        ctx.lineTo(dolX - 5, dolY - 4);
-                        ctx.lineTo(dolX - 5, dolY + 3);
-                        ctx.closePath();
-                        ctx.fill();
+                        // Secondary background dolphin
+                        var phase2 = phase - 1.2;
+                        var dol2X = oelX + 24 + (Math.sin(phase2) * 0.5 + 0.5) * 54;
+                        var dol2Y = oelY + 28 - Math.sin(phase2 * 2.0) * 5;
+                        drawOelDolphin(dol2X, dol2Y, -Math.cos(phase2 * 2.0) * 0.25, 0.68);
 
-                        // 32-Band Visualizer
-                        var specStartX = oelX + 120;
+                        // 32-Band Visualizer on right half (x: oelX+122..oelX+250)
+                        var specStartX = oelX + 122;
                         var barW = 3;
                         var barGap = 1;
-                        var specBaseY = oelY + oelH - 4;
+                        var specBaseY = oelY + 35;
 
                         for (var i = 0; i < 32; i++) {
                             var val = audioState.spectrum[i];
-                            if (val > audioState.peaks[i]) {
-                                audioState.peaks[i] = val;
-                            } else {
-                                audioState.peaks[i] = Math.max(0, audioState.peaks[i] - 0.02);
-                            }
-                            var bH = val * 22;
+                            var bH = Math.round(val * 26);
                             var bx = specStartX + i * (barW + barGap);
-                            ctx.fillStyle = (i > 24) ? '#ff3366' : ((i > 16) ? '#00e5ff' : '#00aaff');
-                            ctx.fillRect(bx, specBaseY - bH, barW, bH);
-                            var py = specBaseY - (audioState.peaks[i] * 22);
-                            ctx.fillStyle = '#ffffff';
-                            ctx.fillRect(bx, py - 1, barW, 1.5);
+                            ctx.fillStyle = (i > 24) ? '#38bdf8' : '#00f0ff';
+                            if (bH > 0) {
+                                ctx.fillRect(bx, specBaseY - bH, barW, bH);
+                            }
+                            var py = specBaseY - Math.round(audioState.peaks[i] * 26);
+                            ctx.fillStyle = '#e0f2fe';
+                            ctx.fillRect(bx, py - 2, barW, 1.5);
                         }
 
                         ctx.fillStyle = '#00f0ff';
                         ctx.font = 'bold 9px Consolas, monospace';
+                        ctx.shadowColor = '#00e5ff';
                         ctx.shadowBlur = 4;
-                        ctx.fillText('TRACK: ' + mediaState.title, oelX + 8, oelY + oelH - 5);
+                        ctx.fillText(fullTrack.slice(0, 36), oelX + 6, oelY + oelH - 3);
                         ctx.restore();
                         break;
                     }
 
                     case 1: {
-                        // ==========================================
-                        // 1. PANASONIC CQ-VX5500K
-                        // ==========================================
+                        // 1. PANASONIC CQ-VX5500K (Dual Analog VU Needles clipped to scale window + bottom VFD)
                         var vl = updateVU(vuPhysics.left, audioState.vu_left, 0.016);
                         var vr = updateVU(vuPhysics.right, audioState.vu_right, 0.016);
 
-                        // Pivot points relative to chassis: (103, 118) and (333, 118)
-                        drawVUNeedle(dx + 103, dy + 118, 65, vl, dy + 77);
-                        drawVUNeedle(dx + 333, dy + 118, 65, vr, dy + 77);
+                        // Left scale window: x=dx+16..dx+194, y=dy+22..dy+55; pivot at (dx+104, dy+116)
+                        drawVUNeedle(dx + 104, dy + 116, 94, vl, dx + 16, dy + 22, 178, 33);
+                        // Right scale window: x=dx+244..dx+422, y=dy+22..dy+55; pivot at (dx+334, dy+116)
+                        drawVUNeedle(dx + 334, dy + 116, 94, vr, dx + 244, dy + 22, 178, 33);
 
-                        // VFD Marquee text
+                        // Bottom VFD window: x=dx+100..dx+338, y=dy+86..dy+106
                         ctx.save();
-                        ctx.fillStyle = '#4ade80';
+                        ctx.fillStyle = '#5eead4';
                         ctx.font = 'bold 11px Consolas, monospace';
                         ctx.textAlign = 'center';
-                        ctx.shadowColor = 'rgba(74, 222, 128, 0.8)';
+                        ctx.shadowColor = 'rgba(94, 234, 212, 0.8)';
                         ctx.shadowBlur = 6;
-                        var trackTxt = (mediaState.artist ? mediaState.artist + ' - ' : '') + mediaState.title;
-                        ctx.fillText(trackTxt.slice(0, 24), dx + 219, dy + 98);
+                        ctx.fillText(fullTrack.slice(0, 28), dx + 219, dy + 100);
                         ctx.restore();
                         break;
                     }
 
                     case 2: {
-                        // ==========================================
-                        // 2. PIONEER DEX-P1R (High-End White OEL)
-                        // ==========================================
-                        var dispX = dx + 70;
-                        var dispY = dy + 22;
-                        var dispW = 270;
-                        var dispH = 50;
-
+                        // 2. PIONEER DEX-P1R (Left 15-col yellow dot-matrix EQ + center icy OEL display)
                         ctx.save();
-                        ctx.beginPath();
-                        ctx.rect(dispX, dispY, dispW, dispH);
-                        ctx.clip();
-                        ctx.fillStyle = '#040d1a';
-                        ctx.fillRect(dispX, dispY, dispW, dispH);
-
-                        // Pure white / icy blue OEL high resolution graphics
-                        ctx.fillStyle = '#e2f1ff';
-                        ctx.shadowColor = '#90cdf4';
-                        ctx.shadowBlur = 4;
-                        ctx.font = 'bold 10px Consolas, monospace';
-                        ctx.fillText('CD1 - TR 04   [DSP: STUDIO]', dispX + 8, dispY + 14);
-
-                        // Fine 24-band EQ
-                        for (var i = 0; i < 24; i++) {
-                            var v = audioState.spectrum[i];
-                            var bw = 5;
-                            var bx = dispX + 12 + i * 7;
-                            var bh = v * 22;
-                            ctx.fillStyle = '#93c5fd';
-                            ctx.fillRect(bx, dispY + 44 - bh, bw, bh);
-                            var pky = dispY + 44 - (audioState.peaks[i] * 22);
-                            ctx.fillStyle = '#ffffff';
-                            ctx.fillRect(bx, pky - 1, bw, 1.5);
+                        // Left 15-col yellow dot matrix: x=dx+7..dx+72, y=dy+22..dy+70
+                        for (var c = 0; c < 15; c++) {
+                            var sVal = audioState.spectrum[c * 2];
+                            var rows = Math.round(sVal * 10);
+                            var cxCol = dx + 7 + c * 4.4;
+                            for (var r = 0; r < rows; r++) {
+                                ctx.fillStyle = (r >= 8) ? '#f97316' : '#fef08a';
+                                ctx.fillRect(cxCol, dy + 66 - r * 4.4, 3.2, 3.2);
+                            }
                         }
 
+                        // Center black OEL window: x=dx+86..dx+334, y=dy+22..dy+72
+                        ctx.fillStyle = '#e0f2fe';
+                        ctx.shadowColor = '#7dd3fc';
+                        ctx.shadowBlur = 4;
+                        ctx.font = 'bold 10px Consolas, monospace';
+                        ctx.fillText('DEX-P1R  [AUTO EQ / DSP STUDIO]', dx + 92, dy + 35);
+
                         ctx.fillStyle = '#ffffff';
-                        ctx.font = 'bold 11px Consolas, monospace';
-                        ctx.fillText(mediaState.title.slice(0, 18), dispX + 184, dispY + 36);
+                        ctx.font = 'bold 12px Consolas, monospace';
+                        ctx.fillText(fullTrack.slice(0, 26), dx + 92, dy + 54);
+
+                        // Horizontal L/R peak bar at y=dy+62..68
+                        var lW = Math.round(audioState.vu_left * 110);
+                        var rW = Math.round(audioState.vu_right * 110);
+                        ctx.fillStyle = '#38bdf8';
+                        ctx.fillRect(dx + 92, dy + 61, lW, 3);
+                        ctx.fillRect(dx + 92, dy + 66, rW, 3);
                         ctx.restore();
                         break;
                     }
 
                     case 3: {
-                        // ==========================================
-                        // 3. PIONEER DEH-P835R (Multi-Color OEL)
-                        // ==========================================
-                        var pX = dx + 85;
-                        var pY = dy + 25;
-                        var pW = 280;
-                        var pH = 65;
-
+                        // 3. PIONEER DEH-P835R (Center 15-column spectral grid x=158..324, y=23..81)
                         ctx.save();
-                        ctx.beginPath();
-                        ctx.rect(pX, pY, pW, pH);
-                        ctx.clip();
-                        ctx.fillStyle = '#020617';
-                        ctx.fillRect(pX, pY, pW, pH);
-
-                        // Dual-color EQ (Cyan left, Orange right)
-                        for (var i = 0; i < 28; i++) {
-                            var v = audioState.spectrum[i];
-                            var bx = pX + 10 + i * 9;
-                            var bh = v * 32;
-                            ctx.fillStyle = (i > 18) ? '#fb923c' : '#38bdf8';
-                            ctx.fillRect(bx, pY + 48 - bh, 6, bh);
+                        for (var c3 = 0; c3 < 15; c3++) {
+                            var v3 = audioState.spectrum[c3 * 2];
+                            var litRows = Math.round(v3 * 10);
+                            var bx3 = dx + 158 + c3 * 11.1;
+                            for (var r3 = 0; r3 < litRows; r3++) {
+                                ctx.fillStyle = (r3 >= 8) ? '#fb923c' : '#38bdf8';
+                                ctx.fillRect(bx3, dy + 76 - r3 * 5.6, 9.2, 4.2);
+                            }
                         }
-
-                        ctx.fillStyle = '#38bdf8';
+                        // Bottom center text area: x=dx+96..dx+360, y=dy+108
+                        ctx.fillStyle = '#7dd3fc';
+                        ctx.shadowColor = '#38bdf8';
+                        ctx.shadowBlur = 4;
                         ctx.font = 'bold 11px Consolas, monospace';
-                        ctx.fillText('MD PLAY: ' + mediaState.title.slice(0, 20), pX + 10, pY + 60);
+                        ctx.textAlign = 'center';
+                        ctx.fillText(fullTrack.slice(0, 28), dx + 230, dy + 108);
                         ctx.restore();
                         break;
                     }
 
                     case 4: {
-                        // ==========================================
-                        // 4. SONY CDX-CA860X (Active Black Panel)
-                        // ==========================================
-                        var sX = dx + 90;
-                        var sY = dy + 32;
-                        var sW = 250;
-                        var sH = 60;
-
+                        // 4. SONY CDX-CA860X (Center dot-matrix grid x=172..267, y=36..74 + top track text)
                         ctx.save();
-                        ctx.beginPath();
-                        ctx.rect(sX, sY, sW, sH);
-                        ctx.clip();
-                        ctx.fillStyle = '#050505';
-                        ctx.fillRect(sX, sY, sW, sH);
-
-                        // Dot matrix blue and red neon
-                        ctx.fillStyle = '#3b82f6';
-                        ctx.font = 'bold 11px Consolas, monospace';
-                        ctx.shadowColor = '#3b82f6';
-                        ctx.shadowBlur = 5;
-                        ctx.fillText('SONY DSO - CD TEXT', sX + 10, sY + 16);
-
-                        for (var i = 0; i < 16; i++) {
-                            var v = audioState.spectrum[i * 2];
-                            var bx = sX + 10 + i * 14;
-                            var bh = v * 24;
-                            ctx.fillStyle = (v > 0.75) ? '#ef4444' : '#3b82f6';
-                            ctx.fillRect(bx, sY + 46 - bh, 10, bh);
+                        for (var c4 = 0; c4 < 16; c4++) {
+                            var v4 = audioState.spectrum[c4 * 2];
+                            var h4 = Math.round(v4 * 34);
+                            var bx4 = dx + 173 + c4 * 5.9;
+                            ctx.fillStyle = (v4 > 0.75) ? '#f87171' : '#60a5fa';
+                            if (h4 > 0) {
+                                ctx.fillRect(bx4, dy + 73 - h4, 4.2, h4);
+                            }
+                            var pk4 = dy + 73 - Math.round(audioState.peaks[c4 * 2] * 34);
+                            ctx.fillStyle = '#ffffff';
+                            ctx.fillRect(bx4, pk4 - 2, 4.2, 2);
                         }
-
                         ctx.fillStyle = '#93c5fd';
+                        ctx.shadowColor = '#3b82f6';
+                        ctx.shadowBlur = 4;
                         ctx.font = 'bold 10px Consolas, monospace';
-                        ctx.fillText(mediaState.artist + ' - ' + mediaState.title, sX + 10, sY + 56);
+                        ctx.fillText(fullTrack.slice(0, 26), dx + 140, dy + 22);
                         ctx.restore();
                         break;
                     }
 
                     case 5: {
-                        // ==========================================
-                        // 5. ALPINE CDA-7848 (Classic Green LCD)
-                        // ==========================================
-                        var aX = dx + 92;
-                        var aY = dy + 28;
-                        var aW = 245;
-                        var aH = 50;
-
+                        // 5. ALPINE CDA-7848 (Right LCD area x=116..420, y=46..84)
                         ctx.save();
-                        ctx.beginPath();
-                        ctx.rect(aX, aY, aW, aH);
-                        ctx.clip();
-                        ctx.fillStyle = '#0a1f0a';
-                        ctx.fillRect(aX, aY, aW, aH);
-
-                        // Iconic Alpine Amber/Green Dot Matrix
-                        ctx.fillStyle = '#22c55e';
-                        ctx.font = 'bold 12px Consolas, monospace';
+                        ctx.fillStyle = '#bbf7d0';
                         ctx.shadowColor = '#22c55e';
                         ctx.shadowBlur = 4;
-                        ctx.fillText('DISC 1  TR 03  44.1k', aX + 8, aY + 18);
+                        ctx.font = 'bold 12px Consolas, monospace';
+                        ctx.fillText(fullTrack.slice(0, 28), dx + 116, dy + 60);
 
-                        for (var i = 0; i < 18; i++) {
-                            var v = audioState.spectrum[i];
-                            var bx = aX + 8 + i * 12;
-                            var bh = v * 20;
-                            ctx.fillStyle = (i > 12) ? '#eab308' : '#22c55e';
-                            ctx.fillRect(bx, aY + 44 - bh, 8, bh);
+                        for (var c5 = 0; c5 < 24; c5++) {
+                            var v5 = audioState.spectrum[c5];
+                            var h5 = Math.round(v5 * 16);
+                            var bx5 = dx + 116 + c5 * 12;
+                            ctx.fillStyle = (c5 > 18) ? '#facc15' : '#4ade80';
+                            if (h5 > 0) {
+                                ctx.fillRect(bx5, dy + 82 - h5, 8, h5);
+                            }
                         }
                         ctx.restore();
                         break;
                     }
 
                     case 6: {
-                        // ==========================================
-                        // 6. ALPINE CDA-9815RB (BassEngine Pro Blue)
-                        // ==========================================
-                        var bX = dx + 110;
-                        var bY = dy + 24;
-                        var bW = 270;
-                        var bH = 55;
-
+                        // 6. ALPINE CDA-9815RB (Left main bioluminescent window x=18..285, y=42..84)
                         ctx.save();
-                        ctx.beginPath();
-                        ctx.rect(bX, bY, bW, bH);
-                        ctx.clip();
-                        ctx.fillStyle = '#031026';
-                        ctx.fillRect(bX, bY, bW, bH);
-
-                        ctx.fillStyle = '#38bdf8';
+                        ctx.fillStyle = '#67e8f9';
+                        ctx.shadowColor = '#06b6d4';
+                        ctx.shadowBlur = 5;
                         ctx.font = 'bold 11px Consolas, monospace';
-                        ctx.shadowColor = '#38bdf8';
-                        ctx.shadowBlur = 6;
-                        ctx.fillText('BassEngine Pro [V-DRIVE 60Wx4]', bX + 8, bY + 16);
+                        ctx.fillText(fullTrack.slice(0, 26), dx + 20, dy + 56);
 
-                        for (var i = 0; i < 24; i++) {
-                            var v = audioState.spectrum[i];
-                            var bx = bX + 8 + i * 10;
-                            var bh = v * 22;
-                            ctx.fillStyle = '#0ea5e9';
-                            ctx.fillRect(bx, bY + 44 - bh, 7, bh);
+                        for (var c6 = 0; c6 < 22; c6++) {
+                            var v6 = audioState.spectrum[c6];
+                            var h6 = Math.round(v6 * 20);
+                            var bx6 = dx + 20 + c6 * 11.5;
+                            ctx.fillStyle = (c6 > 16) ? '#e0f2fe' : '#22d3ee';
+                            if (h6 > 0) {
+                                ctx.fillRect(bx6, dy + 82 - h6, 8, h6);
+                            }
                         }
-                        ctx.fillStyle = '#ffffff';
-                        ctx.font = 'bold 10px Consolas, monospace';
-                        ctx.fillText(mediaState.title.slice(0, 22), bX + 8, bY + 52);
                         ctx.restore();
                         break;
                     }
 
                     case 7: {
-                        // ==========================================
-                        // 7. KENWOOD KRC-759R (D-MASK Flip Face)
-                        // ==========================================
-                        var kX = dx + 65;
-                        var kY = dy + 30;
-                        var kW = 250;
-                        var kH = 55;
-
+                        // 7. KENWOOD KRC-759R (Upper fluorescent window x=24..368, y=24..64 + bottom center 23-col grid x=132..276, y=76..118)
                         ctx.save();
-                        ctx.beginPath();
-                        ctx.rect(kX, kY, kW, kH);
-                        ctx.clip();
-                        ctx.fillStyle = '#0f172a';
-                        ctx.fillRect(kX, kY, kW, kH);
+                        ctx.fillStyle = '#38bdf8';
+                        ctx.shadowColor = '#0284c7';
+                        ctx.shadowBlur = 5;
+                        ctx.font = 'bold 12px Consolas, monospace';
+                        ctx.textAlign = 'center';
+                        ctx.fillText(fullTrack.slice(0, 28), dx + 196, dy + 48);
 
-                        ctx.fillStyle = '#f59e0b';
-                        ctx.font = 'bold 11px Consolas, monospace';
-                        ctx.shadowColor = '#f59e0b';
-                        ctx.shadowBlur = 4;
-                        ctx.fillText('D-MASK KENWOOD [CR-759R]', kX + 8, kY + 16);
-
-                        for (var i = 0; i < 20; i++) {
-                            var v = audioState.spectrum[i];
-                            var bx = kX + 8 + i * 11;
-                            var bh = v * 22;
-                            ctx.fillStyle = (i % 2 === 0) ? '#f59e0b' : '#10b981';
-                            ctx.fillRect(bx, kY + 44 - bh, 7, bh);
+                        for (var c7 = 0; c7 < 23; c7++) {
+                            var v7 = audioState.spectrum[Math.min(31, Math.floor(c7 * 1.35))];
+                            var h7 = Math.round(v7 * 38);
+                            var bx7 = dx + 133 + c7 * 6.2;
+                            ctx.fillStyle = (v7 > 0.7) ? '#f43f5e' : '#2dd4bf';
+                            if (h7 > 0) {
+                                ctx.fillRect(bx7, dy + 116 - h7, 4.2, h7);
+                            }
                         }
                         ctx.restore();
                         break;
                     }
 
                     case 8: {
-                        // ==========================================
-                        // 8. JVC KD-LX50R (El Kameleon)
-                        // ==========================================
-                        var jX = dx + 95;
-                        var jY = dy + 22;
-                        var jW = 270;
-                        var jH = 50;
-
+                        // 8. JVC KD-LX50R (Upper text area x=24..376, y=14..40 + center 16-col EQ x=76..384, y=44..74)
                         ctx.save();
-                        ctx.beginPath();
-                        ctx.rect(jX, jY, jW, jH);
-                        ctx.clip();
-                        ctx.fillStyle = '#020617';
-                        ctx.fillRect(jX, jY, jW, jH);
-
-                        ctx.fillStyle = '#06b6d4';
-                        ctx.font = 'bold 11px Consolas, monospace';
+                        ctx.fillStyle = '#67e8f9';
                         ctx.shadowColor = '#06b6d4';
-                        ctx.shadowBlur = 6;
-                        ctx.fillText('EL KAMELEON TOUCH SENSOR', jX + 8, jY + 16);
+                        ctx.shadowBlur = 5;
+                        ctx.font = 'bold 12px Consolas, monospace';
+                        ctx.textAlign = 'center';
+                        ctx.fillText(fullTrack.slice(0, 28), dx + 215, dy + 30);
 
-                        for (var i = 0; i < 26; i++) {
-                            var v = audioState.spectrum[i];
-                            var bx = jX + 8 + i * 9;
-                            var bh = v * 20;
-                            ctx.fillStyle = '#06b6d4';
-                            ctx.fillRect(bx, jY + 42 - bh, 6, bh);
+                        for (var c8 = 0; c8 < 16; c8++) {
+                            var v8 = audioState.spectrum[c8 * 2];
+                            var h8 = Math.round(v8 * 26);
+                            var bx8 = dx + 82 + c8 * 18.5;
+                            ctx.fillStyle = '#22d3ee';
+                            if (h8 > 0) {
+                                ctx.fillRect(bx8, dy + 74 - h8, 13, h8);
+                            }
+                            var pk8 = dy + 74 - Math.round(audioState.peaks[c8 * 2] * 26);
+                            ctx.fillStyle = '#ffffff';
+                            ctx.fillRect(bx8, pk8 - 2, 13, 2);
                         }
-
-                        ctx.fillStyle = '#e0f2fe';
-                        ctx.font = 'bold 9px Consolas, monospace';
-                        ctx.fillText('TRACK: ' + mediaState.title, jX + 8, jY + 48);
                         ctx.restore();
                         break;
                     }
@@ -564,6 +513,13 @@
             HUDCore.registerStyle('audio_head', {
                 containerId: 'audioHeadContainer',
                 scaleMultiplier: 0.95,
+
+                onInit: function(cfg) {
+                    if (cfg && cfg.audioHeadDeck !== undefined) {
+                        currentMode = resolveDeckMode(cfg.audioHeadDeck);
+                        render();
+                    }
+                },
 
                 onAudio: function(data) {
                     if (!data) return;
