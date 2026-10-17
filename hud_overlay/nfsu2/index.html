@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFS Underground 2 HUD</title>
+    <link rel="stylesheet" href="../shared/hud-base.css">
+    <style>
+        .nfsu2-container {
+            width: 562px;
+            height: 363px;
+            position: relative;
+            pointer-events: all;
+        }
+        #nfsu2Canvas {
+            display: block;
+            width: 562px;
+            height: 363px;
+            filter: drop-shadow(0 0 16px rgba(0, 240, 255, calc(var(--hud-glow-intensity, 1.0) * 0.4)));
+        }
+        .face-selector {
+            position: absolute;
+            top: -28px;
+            right: 0;
+            display: flex;
+            gap: 4px;
+            z-index: 10;
+        }
+        .face-btn {
+            background: rgba(10, 15, 26, 0.85);
+            border: 1px solid rgba(0, 240, 255, 0.3);
+            color: #94a3b8;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .face-btn.active {
+            background: #00f0ff;
+            color: #020617;
+            font-weight: 900;
+        }
+    </style>
+</head>
+<body>
+    <div id="teleCardsMount"></div>
+
+    <div class="hud-root-wrapper">
+        <div class="hud-gauge-container nfsu2-container" id="nfsu2Container">
+            <div class="face-selector">
+                <button class="face-btn active" onclick="setFace(3)">Tabby</button>
+                <button class="face-btn" onclick="setFace(1)">Flames</button>
+                <button class="face-btn" onclick="setFace(0)">Stock</button>
+                <button class="face-btn" onclick="setFace(9)">Circuit</button>
+                <button class="face-btn" onclick="setFace(10)">Bling</button>
+            </div>
+            <canvas id="nfsu2Canvas" width="562" height="363"></canvas>
+        </div>
+    </div>
+
+    <script src="../shared/hud-core.js"></script>
+
+    <script>
+        var activeFace = 3;
+        var faceNames = [
+            'assets/res_660.png', 'assets/res_661.png', 'assets/res_662.png',
+            'assets/res_663.png', 'assets/res_664.png', 'assets/res_665.png',
+            'assets/res_666.png', 'assets/res_667.png', 'assets/res_668.png',
+            'assets/res_669.png', 'assets/res_670.png'
+        ];
+
+        function setFace(idx) {
+            activeFace = idx;
+            var btns = document.querySelectorAll('.face-btn');
+            btns.forEach(function(b, i) {
+                b.className = 'face-btn' + (i === idx ? ' active' : '');
+            });
+            currentFaceImg.src = faceNames[activeFace];
+        }
+        window.setFace = setFace;
+
+        var currentFaceImg = new Image();
+        currentFaceImg.src = faceNames[activeFace];
+
+        (function() {
+            var canvas = document.getElementById('nfsu2Canvas');
+            var ctx = canvas.getContext('2d');
+            var container = document.getElementById('nfsu2Container');
+
+            var baseImg = new Image();
+            baseImg.src = 'assets/nfsu2_clean_base.png';
+
+            var telemetry = {
+                speed: 155,
+                rpm: 7100,
+                maxRpm: 8500,
+                gear: 4,
+                drift: 0
+            };
+
+            var gears = ['R', 'N', '1', '2', '3', '4', '5', '6', '7'];
+
+            function render() {
+                var w = canvas.width;
+                var h = canvas.height;
+                ctx.clearRect(0, 0, w, h);
+
+                // 1. Draw Clean NFSU2 Base Cluster (1:1 Native Scale, 100% Alpha Transparent Outside)
+                if (baseImg.complete) {
+                    ctx.drawImage(baseImg, 0, 0, 562, 363);
+                }
+
+                // 2. Main Gauge Needle Pointer (Rotating along the cyan arc)
+                // Measured D3D11 dial center: (369.0, 196.5), radius: 115
+                var rpmRatio = Math.min(1.0, Math.max(0.0, telemetry.rpm / telemetry.maxRpm));
+                // In NFSU2: 0 RPM is at ~ 220 deg, 8500 RPM is at ~ -40 deg (sweep 260 deg)
+                var needleDeg = 220.0 - rpmRatio * 260.0;
+                var rad = needleDeg * (Math.PI / 180.0);
+                var ptrX = 369.0 + Math.cos(rad) * 115.0;
+                var ptrY = 196.5 - Math.sin(rad) * 115.0;
+
+                // Draw red arrow cursor
+                ctx.save();
+                ctx.translate(ptrX, ptrY);
+                ctx.rotate(-rad + Math.PI / 2);
+                ctx.fillStyle = '#ff1133';
+                ctx.shadowColor = 'rgba(255, 30, 50, 0.8)';
+                ctx.shadowBlur = 6;
+                ctx.beginPath();
+                ctx.moveTo(0, -9);
+                ctx.lineTo(-7, 7);
+                ctx.lineTo(7, 7);
+                ctx.closePath();
+                ctx.fill();
+                ctx.restore();
+
+                // 3. Dynamic Text Overlays (Exact ground truth alignment)
+                ctx.save();
+                ctx.fillStyle = '#ffffff';
+                ctx.textAlign = 'right';
+
+                // Gear (italic bold)
+                ctx.font = 'italic bold 38px "Arial Black", Arial, sans-serif';
+                ctx.shadowColor = 'rgba(255, 255, 255, 0.7)';
+                ctx.shadowBlur = 6;
+                var gIdx = telemetry.gear;
+                var gChar = gears[gIdx] || (gIdx === 0 ? 'R' : String(gIdx - 1));
+                ctx.fillText(gChar, 482, 180);
+
+                // Speed
+                ctx.font = 'italic bold 36px "Arial Black", Arial, sans-serif';
+                ctx.shadowColor = 'rgba(0, 240, 255, 0.8)';
+                ctx.shadowBlur = 8;
+                ctx.fillText(Math.round(telemetry.speed), 485, 222);
+
+                ctx.font = 'italic bold 13px "Arial Black", Arial, sans-serif';
+                ctx.fillStyle = '#94a3b8';
+                ctx.shadowBlur = 0;
+                ctx.fillText('KM/H', 482, 240);
+
+                // Drift angle on the left paw gauge (centered on wing plate at 101, 308)
+                ctx.font = 'italic bold 26px "Arial Black", Arial, sans-serif';
+                ctx.fillStyle = '#ffffff';
+                ctx.textAlign = 'center';
+                ctx.shadowColor = 'rgba(255, 255, 255, 0.6)';
+                ctx.shadowBlur = 6;
+                ctx.fillText(Math.round(Math.abs(telemetry.drift)) + '°', 101, 308);
+
+                ctx.restore();
+            }
+
+            baseImg.onload = render;
+            currentFaceImg.onload = render;
+
+            HUDCore.registerStyle('nfsu2', {
+                containerId: 'nfsu2Container',
+                scaleMultiplier: 0.95,
+
+                onElementsChange: function(elements) {
+                    if (container) {
+                        container.style.display = elements.showGauge === false ? 'none' : 'block';
+                    }
+                },
+
+                onFrame: function(data, payload) {
+                    if (data.speed !== undefined) telemetry.speed = Number(data.speed);
+                    if (data.rpm !== undefined) telemetry.rpm = Number(data.rpm);
+                    if (data.gear !== undefined) telemetry.gear = Number(data.gear);
+                    if (data.drift_angle !== undefined) telemetry.drift = Number(data.drift_angle);
+                    render();
+                },
+
+                onAnimate: function() {
+                    var start = performance.now();
+                    var duration = 1200;
+                    function sweep(t) {
+                        var progress = Math.min(1, (t - start) / duration);
+                        var wave = Math.sin(progress * Math.PI);
+                        telemetry.rpm = wave * 7800;
+                        telemetry.speed = wave * 200;
+                        telemetry.gear = wave > 0.5 ? 4 : 1;
+                        render();
+                        if (progress < 1) requestAnimationFrame(sweep);
+                    }
+                    requestAnimationFrame(sweep);
+                }
+            });
+
+            HUDCore.init('nfsu2');
+            render();
+        })();
+    </script>
+</body>
+</html>
