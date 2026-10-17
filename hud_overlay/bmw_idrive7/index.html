@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BMW Live Cockpit iDrive 7 HUD</title>
+    <link rel="stylesheet" href="../shared/hud-base.css">
+    <style>
+        .bmw-idrive-container {
+            width: 363px;
+            height: 304px;
+            position: relative;
+            pointer-events: none;
+        }
+        #bmwCanvas {
+            display: block;
+            width: 363px;
+            height: 304px;
+            filter: drop-shadow(0 0 16px rgba(0, 180, 255, calc(var(--hud-glow-intensity, 1.0) * 0.4)));
+        }
+        .redline-alert {
+            animation: redlinePulse 0.15s infinite alternate ease-in-out;
+        }
+        @keyframes redlinePulse {
+            0% { transform: scale(1); filter: drop-shadow(0 0 20px rgba(255, 0, 50, 0.9)); }
+            100% { transform: scale(1.02); filter: drop-shadow(0 0 35px rgba(255, 0, 50, 1.0)); }
+        }
+    </style>
+</head>
+<body>
+    <div id="teleCardsMount"></div>
+
+    <div class="hud-root-wrapper">
+        <div class="hud-gauge-container bmw-idrive-container" id="bmwIdriveContainer">
+            <canvas id="bmwCanvas" width="363" height="304"></canvas>
+        </div>
+    </div>
+
+    <script src="../shared/hud-core.js"></script>
+
+    <script>
+        (function() {
+            var canvas = document.getElementById('bmwCanvas');
+            var ctx = canvas.getContext('2d');
+            var container = document.getElementById('bmwIdriveContainer');
+
+            var baseImg = new Image();
+            baseImg.src = 'assets/bmw_clean_base.png';
+
+            var telemetry = {
+                speed: 158,
+                rpm: 6400,
+                maxRpm: 8000,
+                gear: 4,
+                boost: 1.25,
+                temp: 90
+            };
+
+            var gears = ['R', 'N', '1', '2', '3', '4', '5', '6', '7', '8'];
+
+            function render() {
+                var w = canvas.width;
+                var h = canvas.height;
+                ctx.clearRect(0, 0, w, h);
+
+                // 1. Draw Clean Base Cluster Frame (100% alpha transparent outside)
+                if (baseImg.complete) {
+                    ctx.drawImage(baseImg, 0, 0, 363, 304);
+                }
+
+                // 2. Dynamic Center Readouts (Mathematically aligned to D3D11 centers: 272, 142 and 272, 192)
+                var rpmRatio = Math.min(1.0, Math.max(0.0, telemetry.rpm / telemetry.maxRpm));
+                var isRedline = rpmRatio > 0.88;
+
+                ctx.save();
+                ctx.textAlign = 'center';
+
+                // Gear
+                var gIdx = telemetry.gear;
+                var gearChar = gears[gIdx] || (gIdx === 0 ? 'R' : String(gIdx - 1));
+                ctx.fillStyle = isRedline ? '#ff1133' : '#ffffff';
+                ctx.font = 'bold 44px "Segoe UI", Arial, sans-serif';
+                ctx.shadowColor = isRedline ? '#ff1133' : 'rgba(255, 255, 255, 0.6)';
+                ctx.shadowBlur = 8;
+                ctx.fillText(gearChar, 190, 166);
+
+                // Speed
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 30px "Segoe UI", Arial, sans-serif';
+                ctx.shadowColor = 'rgba(0, 240, 255, 0.7)';
+                ctx.shadowBlur = 6;
+                ctx.fillText(Math.round(telemetry.speed), 200, 208);
+
+                ctx.font = 'bold 9px "Segoe UI", Arial, sans-serif';
+                ctx.fillStyle = '#94a3b8';
+                ctx.shadowBlur = 0;
+                ctx.fillText('km/h', 236, 207);
+
+                ctx.restore();
+
+                if (isRedline) {
+                    container.classList.add('redline-alert');
+                } else {
+                    container.classList.remove('redline-alert');
+                }
+            }
+
+            baseImg.onload = render;
+
+            HUDCore.registerStyle('bmw_idrive7', {
+                containerId: 'bmwIdriveContainer',
+                scaleMultiplier: 0.95,
+
+                onElementsChange: function(elements) {
+                    if (container) {
+                        container.style.display = elements.showGauge === false ? 'none' : 'block';
+                    }
+                },
+
+                onFrame: function(data, payload) {
+                    payload = payload || {};
+                    if (data.speed !== undefined) telemetry.speed = Number(data.speed);
+                    if (data.rpm !== undefined) telemetry.rpm = Number(data.rpm);
+                    if (payload.redlineRpm) telemetry.maxRpm = Number(payload.redlineRpm);
+                    if (data.gear !== undefined) telemetry.gear = Number(data.gear);
+                    if (data.boost !== undefined) telemetry.boost = Number(data.boost);
+                    render();
+                },
+
+                onAnimate: function() {
+                    var start = performance.now();
+                    var duration = 1200;
+                    function sweep(t) {
+                        var progress = Math.min(1, (t - start) / duration);
+                        var wave = Math.sin(progress * Math.PI);
+                        telemetry.rpm = wave * 7600;
+                        telemetry.speed = wave * 210;
+                        telemetry.gear = wave > 0.5 ? 4 : 1;
+                        render();
+                        if (progress < 1) requestAnimationFrame(sweep);
+                    }
+                    requestAnimationFrame(sweep);
+                }
+            });
+
+            HUDCore.init('bmw_idrive7');
+            render();
+        })();
+    </script>
+</body>
+</html>
