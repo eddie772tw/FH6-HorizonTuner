@@ -105,6 +105,25 @@ function StyleSettings({ config, appUnits, onConfigPatch, isWipActive, wipForced
       {config.hudStyle === CLASSIC_JDM_STYLE_ID && <ClassicJdmSettingsCard config={config} onChange={onConfigPatch} t={t} />}
       {config.hudStyle === LFA_CENTER_RING_STYLE_ID && <LfaExpansionSettingsCard config={config} onChange={onConfigPatch} t={t} />}
       {config.hudStyle === 'r34_mfd' && <R34MfdSettingsCard config={config} onChange={onConfigPatch} t={t} />}
+      {config.hudStyle === 'nfsu2' && (
+        <div className="border-top pt-2">
+          <label htmlFor={`${id}-nfsu2-face`} className="form-label fs-7 text-body-secondary mb-1">{t('NFSU2 Custom Faceplate')}:</label>
+          <select id={`${id}-nfsu2-face`} className="form-select form-select-sm fw-bold" value={config.nfsu2Face ?? 3}
+            onChange={event => onConfigPatch({ hudStyle: 'nfsu2', nfsu2Face: Number(event.target.value) })}>
+            <option value={3}>{t('Tabby Cat (Ice Blue)')}</option>
+            <option value={0}>{t('Stock OEM (Ice Blue)')}</option>
+            <option value={1}>{t('Hot Rod Flames (Orange)')}</option>
+            <option value={2}>{t('Street Tribal (Cyan)')}</option>
+            <option value={4}>{t('Biohazard Skull (Lime)')}</option>
+            <option value={5}>{t('Redline Classic (Crimson)')}</option>
+            <option value={6}>{t('Gold Chrono (Gold)')}</option>
+            <option value={7}>{t('Techno Arc (Aqua)')}</option>
+            <option value={8}>{t('Speed Pulse (Indigo)')}</option>
+            <option value={9}>{t('Circuit Board (Emerald)')}</option>
+            <option value={10}>{t('Bling Edition (Gold)')}</option>
+          </select>
+        </div>
+      )}
       {config.hudStyle === 'vfd' && (
         <div className="border-top pt-2 d-flex flex-column gap-3">
           <div>
