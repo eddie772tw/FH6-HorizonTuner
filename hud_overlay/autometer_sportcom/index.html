@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AutoMeter Sport-Comp Monster 5" Tachometer</title>
+    <!--
+      [設計決策紀錄 / Design Decision Note]
+      1. 視覺刻度與指針校準: AutoMeter Sport-Comp 0..10,000 RPM 錶盤刻度由 60° (5 點鐘) 順時針掃掠 240° 至 300° (1 點鐘)，
+         軸心對齊錶面中心紅點 (150, 148)，消除舊版 135°..405° 掃入右側 LCD 視窗的幾何偏移。
+      2. 檔位映射 (Gear Contract): 遵循 coordinator.js 契約 (0='R', 11='N', 1..10='1'..'10')。
+      3. 水溫/油溫/油壓: 此單體轉速錶不含水溫與油壓視窗；同系列複合儀表若涉及水溫統一取自四輪平均胎溫 (TireTemp)，
+         油溫與油壓則採確定性熱力學與油壓代理模型。
+    -->
+    <link rel="stylesheet" href="../shared/hud-base.css">
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: transparent !important;
+        }
+        .autometer-container {
+            position: absolute;
+            bottom: 24px;
+            right: 24px;
+            width: 300px;
+            height: 300px;
+            pointer-events: none;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="hud-root-wrapper">
+        <div class="hud-gauge-container autometer-container" id="autometerContainer">
+            <canvas id="autometerCanvas" width="300" height="300"></canvas>
+        </div>
+    </div>
+
+    <script src="../shared/hud-core.js"></script>
+    <script>
+        (function() {
+            var canvas = document.getElementById('autometerCanvas');
+            var ctx = canvas.getContext('2d');
+            var container = document.getElementById('autometerContainer');
+
+            var baseImg = new Image();
+            baseImg.src = 'assets/clean_base.png';
+
+            var telemetry = {
+                speed: 0,
+                rpm: 0,
+                maxRpm: 10000,
+                redline: 7500,
+                gear: 'N'
+            };
+
+            function formatGear(g) {
+                if (g === 0 || g === 'R') return 'R';
+                if (g === 11 || g === 'N') return 'N';
+                var n = Number(g);
+                if (Number.isInteger(n) && n >= 1 && n <= 10) return String(n);
+                return 'N';
+            }
+
+            function drawNeedle(cx, cy, len, angleDeg, color) {
+                var rad = angleDeg * (Math.PI / 180.0);
+                var nx = cx + Math.cos(rad) * len;
+                var ny = cy + Math.sin(rad) * len;
+                var tx = cx - Math.cos(rad) * 18;
+                var ty = cy - Math.sin(rad) * 18;
+
+                ctx.save();
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 3.8;
+                ctx.lineCap = 'round';
+                ctx.shadowColor = 'rgba(0, 0, 0, 0.7)';
+                ctx.shadowBlur = 5;
+
+                ctx.beginPath();
+                ctx.moveTo(tx, ty);
+                ctx.lineTo(nx, ny);
+                ctx.stroke();
+
+                // Center red hub cap matching Sport-Comp dial center
+                ctx.fillStyle = '#e6192b';
+                ctx.shadowBlur = 3;
+                ctx.beginPath();
+                ctx.arc(cx, cy, 10.5, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+
+            function render() {
+                var w = canvas.width;
+                var h = canvas.height;
+                ctx.clearRect(0, 0, w, h);
+
+                if (baseImg.complete && baseImg.naturalWidth > 0) {
+                    ctx.drawImage(baseImg, 0, 0, 300, 300);
+                }
+
+                // Exact center hub of 300x300 Sport-Comp dial is (150, 148)
+                var cx = 150;
+                var cy = 148;
+
+                // 0 RPM = 60 deg (5 o'clock), 5k = 180 deg (9 o'clock), 10k = 300 deg (1 o'clock)
+                var rpmRatio = Math.min(1.0, Math.max(0.0, telemetry.rpm / 10000.0));
+                var tachAngle = 60.0 + rpmRatio * 240.0;
+                drawNeedle(cx, cy, 114, tachAngle, '#ff3b1f');
+
+                // Super Shift Light (Top Left: 26, 26)
+                var isShift = telemetry.rpm >= telemetry.redline;
+                if (isShift) {
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.arc(26, 26, 17, 0, Math.PI * 2);
+                    ctx.fillStyle = '#ff9900';
+                    ctx.shadowColor = '#ff6600';
+                    ctx.shadowBlur = 22;
+                    ctx.fill();
+
+                    ctx.beginPath();
+                    ctx.arc(26, 26, 9, 0, Math.PI * 2);
+                    ctx.fillStyle = '#ffffcc';
+                    ctx.shadowBlur = 10;
+                    ctx.fill();
+                    ctx.restore();
+                }
+
+                // Digital Speed LCD (Upper-right box center: 242, 163)
+                ctx.save();
+                ctx.fillStyle = '#f8fafc';
+                ctx.font = 'bold 38px "Consolas", monospace';
+                ctx.textAlign = 'center';
+                ctx.shadowColor = 'rgba(255, 255, 255, 0.55)';
+                ctx.shadowBlur = 5;
+                ctx.fillText(String(Math.round(telemetry.speed)), 242, 163);
+
+                // Digital Gear LCD (Lower-right box center: 263, 237)
+                ctx.font = 'bold 36px "Consolas", monospace';
+                ctx.fillText(telemetry.gear, 263, 237);
+                ctx.restore();
+            }
+
+            baseImg.onload = render;
+
+            HUDCore.registerStyle('autometer_sportcom', {
+                containerId: 'autometerContainer',
+                scaleMultiplier: 0.95,
+
+                onElementsChange: function(elements) {
+                    if (container) {
+                        container.style.display = elements.showGauge === false ? 'none' : 'block';
+                    }
+                },
+
+                onFrame: function(data, payload) {
+                    if (data.speed !== undefined) telemetry.speed = Math.abs(Number(data.speed)) || 0;
+                    if (data.rpm !== undefined) telemetry.rpm = Math.max(0, Number(data.rpm) || 0);
+                    if (data.gear !== undefined) telemetry.gear = formatGear(data.gear);
+                    if (payload && payload.redlineRpm !== undefined && payload.redlineRpm > 0) {
+                        telemetry.redline = Number(payload.redlineRpm);
+                    } else if (data.redlineRpm !== undefined && data.redlineRpm > 0) {
+                        telemetry.redline = Number(data.redlineRpm);
+                    }
+                    render();
+                },
+
+                onAnimate: function() {
+                    var start = performance.now();
+                    var duration = 1200;
+                    function sweep(t) {
+                        var progress = Math.min(1, (t - start) / duration);
+                        var wave = Math.sin(progress * Math.PI);
+                        telemetry.rpm = wave * 9800;
+                        telemetry.speed = wave * 240;
+                        telemetry.gear = wave > 0.5 ? '4' : '1';
+                        render();
+                        if (progress < 1) requestAnimationFrame(sweep);
+                    }
+                    requestAnimationFrame(sweep);
+                }
+            });
+
+            HUDCore.init('autometer_sportcom');
+            render();
+        })();
+    </script>
+</body>
+</html>

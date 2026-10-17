@@ -1,0 +1,9 @@
+{
+    "id": "greddy_trust",
+    "name": "GReddy TRUST Sirius Tachometer",
+    "author": "GReddy Trust / JC & HorizonTuner Team",
+    "version": "1.0.0",
+    "category": "Standalone Tachometers",
+    "description": "High-contrast Japanese GReddy Trust Sirius 9,000 RPM competition tachometer with pure white luminous dial face, glowing amber needle, and inset gear and speed readouts.",
+    "tags": ["greddy", "trust", "sirius", "jdm", "tacho", "tuning"]
+}
