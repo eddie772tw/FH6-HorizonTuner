@@ -1,37 +1,187 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>AP1 Rev Arc HUD</title>
-  <link rel="stylesheet" href="../shared/hud-base.css">
-  <link rel="stylesheet" href="./style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Honda S2000 AP1 ID4Motion Rev Arc</title>
+    <link rel="stylesheet" href="../shared/hud-base.css">
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: transparent !important;
+        }
+        .ap1-container {
+            position: absolute;
+            bottom: 24px;
+            right: 24px;
+            width: 799px;
+            height: 229px;
+            pointer-events: none;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
 </head>
 <body>
-  <div class="hud-root-wrapper">
-    <div class="hud-gauge-container ap1-cluster" id="ap1Cluster" role="img" aria-label="AP1 Rev Arc. Waiting for telemetry">
-      <img class="ap1-fascia" src="./assets/fascia.png" alt="" draggable="false">
-      <svg id="ap1Display" viewBox="0 0 720 300" aria-hidden="true">
-        <g id="rpmSegments"></g>
-        <g id="rpmTicks"></g>
-        <text class="ap1-unit" id="rpmUnit" x="88.428" y="159.639">×1000 r/min</text>
-        <text class="ap1-label" x="106" y="205">GEAR</text>
-        <text class="ap1-gear" id="gearValue" x="126" y="245" text-anchor="middle">—</text>
-        <path class="ap1-divider" d="M168 192V245 M541 176V245"/>
-        <g id="speedDigits" transform="translate(236 128)"></g>
-        <text class="ap1-speed-unit ap1-choice-label" id="speedUnitMph" x="458" y="188" text-anchor="start" data-active="false">mph</text>
-        <text class="ap1-speed-unit ap1-choice-label" id="speedUnit" x="458" y="214" text-anchor="start" data-active="true">km/h</text>
-        <text class="ap1-boost-caption ap1-choice-label" id="vacModeLabel" x="591" y="162" text-anchor="start" data-active="false">VAC</text>
-        <text class="ap1-boost-caption ap1-choice-label" id="boostModeLabel" x="591" y="178" text-anchor="start" data-active="false">BOOST</text>
-        <g id="boostSegments"></g>
-        <g id="boostTicks"></g>
-        <text class="ap1-boost-value" id="boostValue" x="617" y="245" text-anchor="middle">-- bar</text>
-        <text class="ap1-status" id="signalStatus" x="355" y="245" text-anchor="middle">WAITING FOR DATA</text>
-        <text class="ap1-shift" id="shiftLamp" x="487" y="121" text-anchor="end"></text>
-      </svg>
+    <div class="hud-root-wrapper">
+        <div class="hud-gauge-container ap1-container" id="ap1Container">
+            <canvas id="ap1Canvas" width="799" height="229"></canvas>
+        </div>
     </div>
-  </div>
-  <script src="../shared/hud-core.js"></script>
-  <script type="module" src="./controller.js"></script>
+
+    <script src="../shared/hud-core.js"></script>
+    <script>
+        (function() {
+            var canvas = document.getElementById('ap1Canvas');
+            var ctx = canvas.getContext('2d');
+            var container = document.getElementById('ap1Container');
+
+            var baseImg = new Image();
+            baseImg.src = 'assets/ap1_clean_base.png';
+
+            var telemetry = {
+                speed: 152,
+                rpm: 8100,
+                maxRpm: 9200,
+                gear: 4,
+                fuel: 0.75,
+                temp: 87,
+                oilPress: 54,
+                oilTemp: 93
+            };
+
+            var gears = ['R', 'N', '1', '2', '3', '4', '5', '6', '7', '8'];
+
+            function render() {
+                var w = canvas.width;
+                var h = canvas.height;
+                ctx.clearRect(0, 0, w, h);
+
+                // 1. Clean vector base
+                if (baseImg.complete) {
+                    ctx.drawImage(baseImg, 0, 0, 799, 229);
+                }
+
+                // 2. Curved Tachometer LED Segment Bar
+                // Total 48 ticks along the curve from 0..11,000 RPM
+                // Redline starts at 9,000 RPM (tick ~ 38)
+                var numTicks = 48;
+                var rpmRatio = Math.min(1.0, Math.max(0.0, telemetry.rpm / 11000.0));
+                var activeTicks = Math.round(rpmRatio * numTicks);
+
+                ctx.save();
+                for (var i = 0; i < activeTicks; i++) {
+                    var t = i / (numTicks - 1);
+                    // Approximate AP1 arc bezier
+                    var px = 40 + t * 450;
+                    var py = 195 - Math.sin(t * Math.PI * 0.9) * 165;
+                    var angle = (t * 0.7 - 0.35) * Math.PI;
+
+                    var isRed = i >= 38;
+                    var col = isRed ? '#ff2233' : '#44ff66';
+
+                    ctx.save();
+                    ctx.translate(px, py);
+                    ctx.rotate(angle);
+                    ctx.fillStyle = col;
+                    ctx.shadowColor = col;
+                    ctx.shadowBlur = isRed ? 8 : 5;
+                    ctx.fillRect(-2, -10, 4, 20);
+                    ctx.restore();
+                }
+                ctx.restore();
+
+                // 3. VTEC Indicator Lamp (488, 118)
+                var isVtec = telemetry.rpm >= 6000;
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(488, 118, 10, 0, Math.PI * 2);
+                if (isVtec) {
+                    ctx.fillStyle = '#22ff55';
+                    ctx.shadowColor = '#22ff55';
+                    ctx.shadowBlur = 12;
+                } else {
+                    ctx.fillStyle = '#1c3a22';
+                    ctx.shadowBlur = 0;
+                }
+                ctx.fill();
+                ctx.restore();
+
+                // 4. Digital Speedometer (Center: 410, 150)
+                ctx.save();
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 56px "Consolas", monospace';
+                ctx.textAlign = 'center';
+                ctx.shadowColor = 'rgba(255, 255, 255, 0.85)';
+                ctx.shadowBlur = 10;
+                ctx.fillText(String(Math.round(telemetry.speed)), 410, 150);
+
+                // 5. Gear Indicator (270, 146)
+                ctx.font = 'bold 36px "Consolas", monospace';
+                var gIdx = telemetry.gear;
+                var gChar = gears[gIdx] || (gIdx === 0 ? 'R' : String(gIdx - 1));
+                ctx.fillText(gChar, 270, 146);
+
+                // 6. Clock (155, 168)
+                ctx.font = 'bold 20px "Consolas", monospace';
+                ctx.fillStyle = '#a0aec0';
+                ctx.fillText('21:38', 155, 168);
+
+                // 7. Engine Vitals Numeric Readouts
+                ctx.font = 'bold 24px "Consolas", monospace';
+                ctx.fillStyle = '#ffffff';
+                ctx.fillText(String(Math.round(telemetry.oilPress)), 610, 135);
+                ctx.fillText(String(Math.round(telemetry.oilTemp)), 610, 165);
+                ctx.restore();
+            }
+
+            baseImg.onload = render;
+
+            HUDCore.registerStyle('ap1_rev_arc', {
+                containerId: 'ap1Container',
+                scaleMultiplier: 0.95,
+
+                onElementsChange: function(elements) {
+                    if (container) {
+                        container.style.display = elements.showGauge === false ? 'none' : 'block';
+                    }
+                },
+
+                onFrame: function(data, payload) {
+                    if (data.speed !== undefined) telemetry.speed = Number(data.speed);
+                    if (data.rpm !== undefined) telemetry.rpm = Number(data.rpm);
+                    if (data.gear !== undefined) telemetry.gear = Number(data.gear);
+                    if (data.coolant_temp !== undefined) telemetry.temp = Number(data.coolant_temp);
+                    if (data.fuel_level !== undefined) telemetry.fuel = Number(data.fuel_level);
+                    render();
+                },
+
+                onAnimate: function() {
+                    var start = performance.now();
+                    var duration = 1200;
+                    function sweep(t) {
+                        var progress = Math.min(1, (t - start) / duration);
+                        var wave = Math.sin(progress * Math.PI);
+                        telemetry.rpm = wave * 10500;
+                        telemetry.speed = wave * 250;
+                        telemetry.gear = wave > 0.5 ? 4 : 1;
+                        render();
+                        if (progress < 1) requestAnimationFrame(sweep);
+                    }
+                    requestAnimationFrame(sweep);
+                }
+            });
+
+            HUDCore.init('ap1_rev_arc');
+            render();
+        })();
+    </script>
 </body>
 </html>
