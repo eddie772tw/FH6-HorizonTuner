@@ -4,6 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ford GT 2017 Race Cluster</title>
+    <!--
+      [設計決策紀錄 / Design Decision Note]
+      1. 視覺固定單位 (Hardcoded PSI / °C): Ford GT 2017 賽道儀表右側面板已原生刻印 °C、°C、psi、psi 單位標記，
+         故增壓值強制綁定 data.boost_psi（忽視外部單位設定），避免重複疊字或單位失真。
+      2. 水溫 (Water Temp °C): 由於 Forza UDP 遙測未提供引擎水溫欄位，統一使用四輪平均胎溫 (temp_fl..rr / TireTemp) 轉換為攝氏溫度驅動。
+      3. 機油溫度 (Oil Temp °C) 與機油壓力 (Oil Pressure psi): 採用確定性熱力學與油壓代理模型 (Deterministic Proxy Model)，
+         依據轉速比例 (rpmRatio) 與油門開度 (throttle) 計算平滑且具物理合理性的模擬數值。
+    -->
     <link rel="stylesheet" href="../shared/hud-base.css">
     <style>
         body, html {
@@ -45,110 +53,113 @@
 
             var baseImg = new Image();
             baseImg.src = 'assets/ford_gt_clean.png';
+            var barsImg = new Image();
+            barsImg.src = 'assets/ford_gt_bars_full.png';
 
             var telemetry = {
-                speed: 172,
-                rpm: 6600,
-                maxRpm: 7800,
-                gear: 4,
-                fuel: 0.75,
-                temp: 89,
-                oilTemp: 99,
-                oilPress: 61,
-                boost: 17.4
+                speed: 0,
+                rpm: 0,
+                maxRpm: 8000,
+                gear: 'N',
+                fuelRatio: 0.75,
+                tempC: 89,
+                oilTempC: 99,
+                oilPressPsi: 61,
+                boostPsi: 0.0
             };
 
-            var gears = ['R', 'N', '1', '2', '3', '4', '5', '6', '7', '8'];
+            function formatGear(g) {
+                if (g === 0 || g === 'R') return 'R';
+                if (g === 11 || g === 'N') return 'N';
+                var n = Number(g);
+                if (Number.isInteger(n) && n >= 1 && n <= 10) return String(n);
+                return 'N';
+            }
 
             function render() {
                 var w = canvas.width;
                 var h = canvas.height;
                 ctx.clearRect(0, 0, w, h);
 
-                // 1. Clean base
-                if (baseImg.complete) {
+                // 1. Clean D3D11 dark-glass binnacle base (0% bars)
+                if (baseImg.complete && baseImg.naturalWidth > 0) {
                     ctx.drawImage(baseImg, 0, 0, 586, 220);
                 }
 
-                // 2. Rising Yellow RPM Track Fill (1..4 rising, 4..8 flat)
-                var rpmRatio = Math.min(1.0, Math.max(0.0, telemetry.rpm / telemetry.maxRpm));
-                var isRedline = rpmRatio > 0.88;
-                var barColor = isRedline ? '#ff2233' : '#ffd152';
+                if (barsImg.complete && barsImg.naturalWidth > 0) {
+                    // 2. Rising & Horizontal RPM Track Fill (0..8,500 RPM, x = 6..576)
+                    var rpmRatio = Math.min(1.0, Math.max(0.0, telemetry.rpm / 8500.0));
+                    if (rpmRatio > 0.002) {
+                        var rpmX = Math.round(6 + rpmRatio * 570);
+                        ctx.save();
+                        ctx.beginPath();
+                        // Clip RPM track while excluding bottom-left Fuel bar box (55..170, 160..220)
+                        ctx.rect(6, 14, rpmX - 6, 146);
+                        ctx.rect(6, 160, Math.min(rpmX - 6, 48), 45);
+                        ctx.clip();
+                        ctx.drawImage(barsImg, 0, 0, 586, 220);
+                        ctx.restore();
 
-                ctx.save();
-                ctx.beginPath();
-                // Define track path
-                ctx.moveTo(30, 168);
-                ctx.quadraticCurveTo(110, 100, 175, 55);
-                ctx.lineTo(440, 55);
+                        // Vertical cursor line at the leading edge of the RPM bar
+                        if (rpmX > 120) {
+                            ctx.save();
+                            var isRed = telemetry.rpm >= 7200;
+                            ctx.strokeStyle = isRed ? '#ff2a3a' : '#ffe47a';
+                            ctx.lineWidth = 1.6;
+                            ctx.beginPath();
+                            ctx.moveTo(rpmX, 34);
+                            ctx.lineTo(rpmX, 118);
+                            ctx.stroke();
+                            ctx.restore();
+                        }
+                    }
 
-                // Clip to active ratio
-                var clipW = 30 + rpmRatio * 410;
-                ctx.save();
-                ctx.beginPath();
-                ctx.rect(0, 0, clipW, 220);
-                ctx.clip();
-
-                ctx.strokeStyle = barColor;
-                ctx.lineWidth = 4;
-                ctx.shadowColor = barColor;
-                ctx.shadowBlur = 10;
-                ctx.beginPath();
-                ctx.moveTo(30, 168);
-                ctx.quadraticCurveTo(110, 100, 175, 55);
-                ctx.lineTo(440, 55);
-                ctx.stroke();
-
-                // Under-glow area
-                ctx.lineTo(440, 75);
-                ctx.lineTo(175, 75);
-                ctx.quadraticCurveTo(110, 115, 30, 175);
-                ctx.closePath();
-                ctx.fillStyle = isRedline ? 'rgba(255, 34, 51, 0.25)' : 'rgba(255, 209, 82, 0.25)';
-                ctx.fill();
-                ctx.restore();
-                ctx.restore();
-
-                // 3. Digital Gear (Left: 55, 80)
-                ctx.save();
-                ctx.fillStyle = '#ffffff';
-                ctx.font = 'bold 72px "Consolas", monospace';
-                ctx.textAlign = 'center';
-                ctx.shadowColor = 'rgba(255, 255, 255, 0.8)';
-                ctx.shadowBlur = 10;
-                var gIdx = telemetry.gear;
-                var gChar = gears[gIdx] || (gIdx === 0 ? 'R' : String(gIdx - 1));
-                ctx.fillText(gChar, 55, 82);
-
-                // 4. Digital Speed (Center: 290, 142)
-                ctx.font = 'bold 84px "Consolas", monospace';
-                ctx.fillText(String(Math.round(telemetry.speed)), 290, 145);
-
-                // 5. Numeric RPM (Top right: 520, 62)
-                ctx.font = 'bold 26px "Consolas", monospace';
-                ctx.fillText(String(Math.round(telemetry.rpm)), 520, 62);
-
-                // 6. Right Telemetry Stack
-                ctx.font = 'bold 18px "Consolas", monospace';
-                ctx.textAlign = 'right';
-                ctx.fillText(String(Math.round(telemetry.temp)), 510, 114);
-                ctx.fillText(String(Math.round(telemetry.oilTemp)), 510, 137);
-                ctx.fillText(String(Math.round(telemetry.oilPress)), 510, 160);
-                ctx.fillText(telemetry.boost.toFixed(1), 510, 183);
-
-                // 7. Fuel Bar Segments (Bottom Left: 90, 182)
-                var fRatio = Math.min(1.0, Math.max(0.0, telemetry.fuel));
-                var fSegs = 5;
-                var activeSegs = Math.round(fRatio * fSegs);
-                ctx.fillStyle = '#ffffff';
-                ctx.shadowBlur = 0;
-                for (var s = 0; s < activeSegs; s++) {
-                    ctx.fillRect(100 + s * 16, 178, 12, 4);
+                    // 3. Fuel Bar Segments (x = 59..151, y = 192..208)
+                    var fRatio = Math.min(1.0, Math.max(0.0, telemetry.fuelRatio));
+                    if (fRatio > 0.01) {
+                        var fuelW = Math.round(fRatio * (151 - 59));
+                        ctx.save();
+                        ctx.beginPath();
+                        ctx.rect(59, 192, fuelW, 16);
+                        ctx.clip();
+                        ctx.drawImage(barsImg, 0, 0, 586, 220);
+                        ctx.restore();
+                    }
                 }
+
+                ctx.save();
+                ctx.fillStyle = '#ffffff';
+                ctx.shadowColor = 'rgba(255, 255, 255, 0.45)';
+                ctx.shadowBlur = 6;
+
+                // 4. Digital Gear (Top-left: x=54, y=94)
+                ctx.font = 'bold 64px "Consolas", monospace';
+                ctx.textAlign = 'center';
+                ctx.fillText(telemetry.gear, 54, 94);
+
+                // 5. Digital Speed (Center: x=295, y=150)
+                ctx.font = 'bold 82px "Consolas", monospace';
+                ctx.fillText(String(Math.round(telemetry.speed)), 295, 150);
+
+                // 6. Numeric RPM (Above 'RPM' label at x=529..572, y=77..90)
+                ctx.font = 'bold 25px "Consolas", monospace';
+                ctx.textAlign = 'right';
+                ctx.shadowBlur = 3;
+                ctx.fillText(String(Math.round(telemetry.rpm)), 572, 71);
+
+                // 7. Right Telemetry Stack (Between icons at x=470..487 and unit labels at x=553..572)
+                ctx.font = 'bold 19px "Consolas", monospace';
+                ctx.fillStyle = '#f1f5f9';
+                ctx.shadowBlur = 0;
+                ctx.fillText(String(Math.round(telemetry.tempC)), 546, 128);
+                ctx.fillText(String(Math.round(telemetry.oilTempC)), 546, 152);
+                ctx.fillText(String(Math.round(telemetry.oilPressPsi)), 546, 176);
+                ctx.fillText(telemetry.boostPsi.toFixed(1), 546, 200);
                 ctx.restore();
             }
 
             baseImg.onload = render;
+            barsImg.onload = render;
 
             HUDCore.registerStyle('ford_gt', {
                 containerId: 'fordGtContainer',
@@ -160,12 +171,41 @@
                     }
                 },
 
-                onFrame: function(data, payload) {
-                    if (data.speed !== undefined) telemetry.speed = Number(data.speed);
-                    if (data.rpm !== undefined) telemetry.rpm = Number(data.rpm);
-                    if (data.gear !== undefined) telemetry.gear = Number(data.gear);
-                    if (data.coolant_temp !== undefined) telemetry.temp = Number(data.coolant_temp);
-                    if (data.boost !== undefined) telemetry.boost = Number(data.boost) * 14.5038;
+                onFrame: function(data) {
+                    if (data.speed !== undefined) telemetry.speed = Math.abs(Number(data.speed)) || 0;
+                    if (data.rpm !== undefined) telemetry.rpm = Math.max(0, Number(data.rpm) || 0);
+                    if (data.maxRpm !== undefined && data.maxRpm > 0) telemetry.maxRpm = Number(data.maxRpm);
+                    if (data.gear !== undefined) telemetry.gear = formatGear(data.gear);
+
+                    // Water temp from 4-wheel average TireTemp
+                    if (data.temp_fl !== undefined) {
+                        var avgT = ((Number(data.temp_fl) || 0) + (Number(data.temp_fr) || 0) + (Number(data.temp_rl) || 0) + (Number(data.temp_rr) || 0)) * 0.25;
+                        if (avgT > 0) {
+                            var tempC = avgT > 125 ? (avgT - 32) * (5 / 9) : avgT;
+                            telemetry.tempC = Math.min(130, Math.max(40, tempC));
+                        }
+                    } else if (data.coolant_temp !== undefined) {
+                        telemetry.tempC = Number(data.coolant_temp) || 89;
+                    }
+
+                    // Deterministic thermodynamic & oil pressure proxy model
+                    var rpmRatio = Math.min(1, Math.max(0, telemetry.rpm / (telemetry.maxRpm || 8000)));
+                    var thr = data.throttle !== undefined ? Math.min(1, Math.max(0, Number(data.throttle))) : 0.25;
+                    telemetry.oilTempC = Math.min(140, Math.max(55, telemetry.tempC + 5 + rpmRatio * 12 + thr * 4));
+                    telemetry.oilPressPsi = Math.min(95, Math.max(18, 22 + rpmRatio * 48 + thr * 8));
+
+                    // Hardcoded PSI faceplate marking: always read data.boost_psi
+                    if (data.boost_psi !== undefined) {
+                        telemetry.boostPsi = Math.max(0, Number(data.boost_psi) || 0);
+                    } else if (data.boost !== undefined) {
+                        telemetry.boostPsi = Math.max(0, Number(data.boost) || 0);
+                    }
+
+                    if (data.fuel_ratio !== undefined) {
+                        telemetry.fuelRatio = Number(data.fuel_ratio);
+                    } else if (data.fuel_level !== undefined) {
+                        telemetry.fuelRatio = Number(data.fuel_level);
+                    }
                     render();
                 },
 
@@ -175,10 +215,14 @@
                     function sweep(t) {
                         var progress = Math.min(1, (t - start) / duration);
                         var wave = Math.sin(progress * Math.PI);
-                        telemetry.rpm = wave * 7600;
-                        telemetry.speed = wave * 280;
-                        telemetry.boost = wave * 22.0;
-                        telemetry.gear = wave > 0.5 ? 4 : 1;
+                        telemetry.rpm = wave * 8200;
+                        telemetry.speed = wave * 310;
+                        telemetry.boostPsi = wave * 22.0;
+                        telemetry.fuelRatio = 0.25 + wave * 0.75;
+                        telemetry.tempC = 65 + wave * 35;
+                        telemetry.oilTempC = 75 + wave * 35;
+                        telemetry.oilPressPsi = 25 + wave * 55;
+                        telemetry.gear = wave > 0.5 ? '4' : '1';
                         render();
                         if (progress < 1) requestAnimationFrame(sweep);
                     }
