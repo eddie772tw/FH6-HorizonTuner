@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Toyota Altezza TRD Chronograph Cluster</title>
+    <link rel="stylesheet" href="../shared/hud-base.css">
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: transparent !important;
+        }
+        .altezza-container {
+            position: absolute;
+            bottom: 24px;
+            right: 24px;
+            width: 505px;
+            height: 276px;
+            pointer-events: none;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="hud-root-wrapper">
+        <div class="hud-gauge-container altezza-container" id="altezzaContainer">
+            <canvas id="altezzaCanvas" width="505" height="276"></canvas>
+        </div>
+    </div>
+
+    <script src="../shared/hud-core.js"></script>
+    <script>
+        (function() {
+            var canvas = document.getElementById('altezzaCanvas');
+            var ctx = canvas.getContext('2d');
+            var container = document.getElementById('altezzaContainer');
+
+            var baseImg = new Image();
+            baseImg.src = 'assets/altezza_clean_base.png';
+
+            var telemetry = {
+                speed: 146,
+                rpm: 6900,
+                maxRpm: 10000,
+                gear: 4,
+                fuel: 0.78,
+                temp: 88,
+                oilTemp: 94,
+                oilPress: 5.5
+            };
+
+            var gears = ['R', 'N', '1', '2', '3', '4', '5', '6', '7', '8'];
+
+            function drawNeedle(cx, cy, len, angleDeg, color, width, hubR) {
+                var rad = angleDeg * (Math.PI / 180.0);
+                var nx = cx + Math.cos(rad) * len;
+                var ny = cy + Math.sin(rad) * len;
+
+                ctx.save();
+                ctx.strokeStyle = color;
+                ctx.lineWidth = width;
+                ctx.lineCap = 'round';
+                ctx.shadowColor = color;
+                ctx.shadowBlur = 4;
+
+                ctx.beginPath();
+                ctx.moveTo(cx, cy);
+                ctx.lineTo(nx, ny);
+                ctx.stroke();
+
+                if (hubR) {
+                    ctx.fillStyle = '#1c1c1e';
+                    ctx.strokeStyle = '#48484a';
+                    ctx.lineWidth = 1.2;
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, hubR, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.stroke();
+                }
+
+                ctx.restore();
+            }
+
+            function render() {
+                var w = canvas.width;
+                var h = canvas.height;
+                ctx.clearRect(0, 0, w, h);
+
+                // 1. Clean vector base
+                if (baseImg.complete) {
+                    ctx.drawImage(baseImg, 0, 0, 505, 276);
+                }
+
+                // 2. Main Center Tachometer (268, 148), radius 98, 0..10,000 RPM (135..405 deg)
+                var rpmRatio = Math.min(1.0, Math.max(0.0, telemetry.rpm / telemetry.maxRpm));
+                var tachAngle = 135.0 + rpmRatio * 270.0;
+                drawNeedle(268, 148, 92, tachAngle, '#ff4422', 2.8, 10);
+
+                // 3. Left Speedometer (108, 150), radius 68, 0..260 km/h (135..405 deg)
+                var spdRatio = Math.min(1.0, Math.max(0.0, telemetry.speed / 260.0));
+                var spdAngle = 135.0 + spdRatio * 270.0;
+                drawNeedle(108, 150, 62, spdAngle, '#ff4422', 2.2, 8);
+
+                // 4. Subdial 1: Water Temp (266, 92), 70..130 C (210..330 deg)
+                var wtRatio = Math.min(1.0, Math.max(0.0, (telemetry.temp - 70.0) / 60.0));
+                var wtAngle = 210.0 + wtRatio * 120.0;
+                drawNeedle(266, 92, 18, wtAngle, '#ffffff', 1.5, 4);
+
+                // 5. Subdial 2: Oil Temp (320, 150), 70..150 C (210..330 deg)
+                var otRatio = Math.min(1.0, Math.max(0.0, (telemetry.oilTemp - 70.0) / 80.0));
+                var otAngle = 210.0 + otRatio * 120.0;
+                drawNeedle(320, 150, 18, otAngle, '#ffffff', 1.5, 4);
+
+                // 6. Subdial 3: Oil Press (266, 206), 0..10 bar (210..330 deg)
+                var opRatio = Math.min(1.0, Math.max(0.0, telemetry.oilPress / 10.0));
+                var opAngle = 210.0 + opRatio * 120.0;
+                drawNeedle(266, 206, 18, opAngle, '#ffffff', 1.5, 4);
+
+                // 7. Right Fuel Level (433, 212), E..F (315..225 deg)
+                var fuelRatio = Math.min(1.0, Math.max(0.0, telemetry.fuel));
+                var fuelAngle = 315.0 - fuelRatio * 90.0;
+                drawNeedle(433, 212, 32, fuelAngle, '#ff4422', 2.0, 6);
+
+                // 8. Gear Indicator (Brown box: 133, 230)
+                ctx.save();
+                ctx.fillStyle = '#1c140e';
+                ctx.font = 'bold 32px "Consolas", monospace';
+                ctx.textAlign = 'center';
+                var gIdx = telemetry.gear;
+                var gChar = gears[gIdx] || (gIdx === 0 ? 'R' : String(gIdx - 1));
+                ctx.fillText(gChar, 134, 236);
+
+                // 9. Clock (Right box: 453, 246)
+                ctx.font = 'bold 15px "Consolas", monospace';
+                ctx.fillText('21:38', 453, 248);
+                ctx.restore();
+            }
+
+            baseImg.onload = render;
+
+            HUDCore.registerStyle('altezza_trd', {
+                containerId: 'altezzaContainer',
+                scaleMultiplier: 0.95,
+
+                onElementsChange: function(elements) {
+                    if (container) {
+                        container.style.display = elements.showGauge === false ? 'none' : 'block';
+                    }
+                },
+
+                onFrame: function(data, payload) {
+                    if (data.speed !== undefined) telemetry.speed = Number(data.speed);
+                    if (data.rpm !== undefined) telemetry.rpm = Number(data.rpm);
+                    if (data.gear !== undefined) telemetry.gear = Number(data.gear);
+                    if (data.coolant_temp !== undefined) telemetry.temp = Number(data.coolant_temp);
+                    if (data.fuel_level !== undefined) telemetry.fuel = Number(data.fuel_level);
+                    render();
+                },
+
+                onAnimate: function() {
+                    var start = performance.now();
+                    var duration = 1200;
+                    function sweep(t) {
+                        var progress = Math.min(1, (t - start) / duration);
+                        var wave = Math.sin(progress * Math.PI);
+                        telemetry.rpm = wave * 9200;
+                        telemetry.speed = wave * 240;
+                        telemetry.gear = wave > 0.5 ? 4 : 1;
+                        render();
+                        if (progress < 1) requestAnimationFrame(sweep);
+                    }
+                    requestAnimationFrame(sweep);
+                }
+            });
+
+            HUDCore.init('altezza_trd');
+            render();
+        })();
+    </script>
+</body>
+</html>
