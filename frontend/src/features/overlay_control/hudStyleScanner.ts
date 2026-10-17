@@ -37,6 +37,7 @@ export const HUD_DISPLAY_NAMES: Record<string, string> = {
   simple: 'Simple Gauge',
   classic_jdm: 'Classic JDM Arcade',
   r34_mfd: 'Skyline R34 MFD',
+  auxiliary_gauges: 'Competition Aux Gauges',
 };
 
 /**

@@ -105,6 +105,20 @@ function StyleSettings({ config, appUnits, onConfigPatch, isWipActive, wipForced
       {config.hudStyle === CLASSIC_JDM_STYLE_ID && <ClassicJdmSettingsCard config={config} onChange={onConfigPatch} t={t} />}
       {config.hudStyle === LFA_CENTER_RING_STYLE_ID && <LfaExpansionSettingsCard config={config} onChange={onConfigPatch} t={t} />}
       {config.hudStyle === 'r34_mfd' && <R34MfdSettingsCard config={config} onChange={onConfigPatch} t={t} />}
+      {config.hudStyle === 'auxiliary_gauges' && (
+        <div className="border-top pt-2 d-flex flex-column gap-2" role="group" aria-label={t('Auxiliary Gauges Layout')}>
+          <label htmlFor={`${id}-aux-mode`} className="form-label fs-7 text-body-secondary mb-0">{t('Auxiliary Gauges Layout')}:</label>
+          <select id={`${id}-aux-mode`} className="form-select form-select-sm fw-bold" value={config.auxGaugeMode ?? 'triple'}
+            onChange={event => onConfigPatch({ auxGaugeMode: event.target.value as typeof config.auxGaugeMode })}>
+            <option value="triple">{t('Triple Pod (AEM Boost + GReddy Oil.P + Defi Water.T)')}</option>
+            <option value="aem">{t('AEM 30-4408 Boost (PSI)')}</option>
+            <option value="greddy">{t('GReddy Trust Oil Pressure (PSI)')}</option>
+            <option value="blitz">{t('Blitz Racing Meter Oil Temp (C)')}</option>
+            <option value="defi">{t('Defi Advance Water Temp (C)')}</option>
+            <option value="speedhut">{t('Speedhut Boost (BAR)')}</option>
+          </select>
+        </div>
+      )}
       {config.hudStyle === 'vfd' && (
         <div className="border-top pt-2 d-flex flex-column gap-3">
           <div>

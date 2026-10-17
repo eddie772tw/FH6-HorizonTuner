@@ -52,6 +52,7 @@ export interface HudConfig extends Partial<StackSt8100Settings> {
   r34MfdMode?: R34MfdMode;
   r34ShowCluster?: boolean;
   r34Lighting?: R34Lighting;
+  auxGaugeMode?: 'triple' | 'aem' | 'greddy' | 'blitz' | 'defi' | 'speedhut';
   /** LFA only: manual expansion overrides automatic race detection. */
   lfaManualExpand?: boolean;
   /** LFA only: expand while confirmed lap timing is present. */
@@ -107,6 +108,7 @@ export const DEFAULT_HUD_CONFIG: HudConfig = {
   r34MfdMode: 'single',
   r34ShowCluster: true,
   r34Lighting: 'night',
+  auxGaugeMode: 'triple',
   lfaManualExpand: DEFAULT_LFA_MANUAL_EXPAND,
   lfaAutoExpand: DEFAULT_LFA_AUTO_EXPAND,
   audioDeviceId: 'default',
