@@ -299,6 +299,13 @@ pub fn normalize_hud(data: &Value) -> Value {
             value["r34Lighting"] = json!("night");
         }
     }
+    if style == "audio_head" {
+        let deck = value["audioHeadDeck"]
+            .as_i64()
+            .filter(|v| (0..=8).contains(v))
+            .unwrap_or(0);
+        value["audioHeadDeck"] = json!(deck);
+    }
     value
 }
 pub fn hud_for_frontend(data: &Value, settings: &Value) -> Value {
