@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blitz Racing Meter SD Tachometer</title>
+    <link rel="stylesheet" href="../shared/hud-base.css">
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: transparent !important;
+        }
+        .blitz-container {
+            position: absolute;
+            bottom: 24px;
+            right: 24px;
+            width: 344px;
+            height: 345px;
+            pointer-events: none;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="hud-root-wrapper">
+        <div class="hud-gauge-container blitz-container" id="blitzContainer">
+            <canvas id="blitzCanvas" width="344" height="345"></canvas>
+        </div>
+    </div>
+
+    <script src="../shared/hud-core.js"></script>
+    <script>
+        (function() {
+            var canvas = document.getElementById('blitzCanvas');
+            var ctx = canvas.getContext('2d');
+            var container = document.getElementById('blitzContainer');
+
+            var baseImg = new Image();
+            baseImg.src = 'assets/clean_base.png';
+
+            var telemetry = {
+                speed: 150,
+                rpm: 6600,
+                maxRpm: 9000,
+                redline: 7500,
+                gear: 4
+            };
+
+            var gears = ['R', 'N', '1', '2', '3', '4', '5', '6', '7', '8'];
+
+            function drawNeedle(cx, cy, len, angleDeg) {
+                var rad = angleDeg * (Math.PI / 180.0);
+                var nx = cx + Math.cos(rad) * len;
+                var ny = cy + Math.sin(rad) * len;
+
+                ctx.save();
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 3.6;
+                ctx.lineCap = 'round';
+                ctx.shadowColor = '#ffffff';
+                ctx.shadowBlur = 10;
+
+                ctx.beginPath();
+                ctx.moveTo(cx, cy);
+                ctx.lineTo(nx, ny);
+                ctx.stroke();
+
+                // Center hub
+                ctx.fillStyle = '#111318';
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.arc(cx, cy, 14, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+
+                ctx.restore();
+            }
+
+            function render() {
+                var w = canvas.width;
+                var h = canvas.height;
+                ctx.clearRect(0, 0, w, h);
+
+                // 1. Clean base
+                if (baseImg.complete) {
+                    ctx.drawImage(baseImg, 0, 0, 344, 345);
+                }
+
+                var cx = 172;
+                var cy = 172;
+
+                // 2. Main Needle (0..9000 RPM, 135..405 deg)
+                var rpmRatio = Math.min(1.0, Math.max(0.0, telemetry.rpm / telemetry.maxRpm));
+                var tachAngle = 135.0 + rpmRatio * 270.0;
+                drawNeedle(cx, cy, 130, tachAngle);
+
+                // 3. Shift Warning Lamp (Top Left: 55, 55)
+                var isShift = telemetry.rpm >= telemetry.redline;
+                if (isShift) {
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.arc(55, 55, 16, 0, Math.PI * 2);
+                    ctx.fillStyle = '#ff2233';
+                    ctx.shadowColor = '#ff1122';
+                    ctx.shadowBlur = 20;
+                    ctx.fill();
+
+                    ctx.beginPath();
+                    ctx.arc(55, 55, 8, 0, Math.PI * 2);
+                    ctx.fillStyle = '#ffcccc';
+                    ctx.shadowBlur = 10;
+                    ctx.fill();
+                    ctx.restore();
+                }
+
+                // 4. Digital Gear (Top Right LCD: 292, 58)
+                ctx.save();
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 36px "Consolas", monospace';
+                ctx.textAlign = 'center';
+                ctx.shadowColor = 'rgba(255, 255, 255, 0.8)';
+                ctx.shadowBlur = 8;
+                var gIdx = telemetry.gear;
+                var gChar = gears[gIdx] || (gIdx === 0 ? 'R' : String(gIdx - 1));
+                ctx.fillText(gChar, 292, 58);
+
+                // 5. Digital Speed (Bottom Right LCD: 255, 272)
+                ctx.font = 'bold 42px "Consolas", monospace';
+                ctx.fillText(String(Math.round(telemetry.speed)), 255, 272);
+                ctx.restore();
+            }
+
+            baseImg.onload = render;
+
+            HUDCore.registerStyle('blitz_racing_meter', {
+                containerId: 'blitzContainer',
+                scaleMultiplier: 0.95,
+
+                onElementsChange: function(elements) {
+                    if (container) {
+                        container.style.display = elements.showGauge === false ? 'none' : 'block';
+                    }
+                },
+
+                onFrame: function(data, payload) {
+                    if (data.speed !== undefined) telemetry.speed = Number(data.speed);
+                    if (data.rpm !== undefined) telemetry.rpm = Number(data.rpm);
+                    if (data.gear !== undefined) telemetry.gear = Number(data.gear);
+                    if (payload && payload.redlineRpm !== undefined) telemetry.redline = Number(payload.redlineRpm);
+                    render();
+                },
+
+                onAnimate: function() {
+                    var start = performance.now();
+                    var duration = 1200;
+                    function sweep(t) {
+                        var progress = Math.min(1, (t - start) / duration);
+                        var wave = Math.sin(progress * Math.PI);
+                        telemetry.rpm = wave * 8800;
+                        telemetry.speed = wave * 220;
+                        telemetry.gear = wave > 0.5 ? 4 : 1;
+                        render();
+                        if (progress < 1) requestAnimationFrame(sweep);
+                    }
+                    requestAnimationFrame(sweep);
+                }
+            });
+
+            HUDCore.init('blitz_racing_meter');
+            render();
+        })();
+    </script>
+</body>
+</html>
