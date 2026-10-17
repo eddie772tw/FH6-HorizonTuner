@@ -1,9 +1,4 @@
 {
-    "id": "mclaren_720s",
-    "name": "McLaren 720S Folding Slim Cluster",
-    "author": "McLaren Automotive / JC & HorizonTuner Team",
-    "version": "1.0.0",
-    "category": "Dashboard Clusters",
-    "description": "Ultra-sleek McLaren 720S folding driver display in slim track mode, featuring high-contrast Papaya Orange gear indicator, linear horizontal rev strip with dynamic red indicator, and digital speed display.",
-    "tags": ["mclaren", "720s", "supercar", "track", "folding", "minimalist"]
+  "author": "eddie772tw ft. Gemini Argon",
+  "description": "Ultra-sleek McLaren 720S folding driver display in slim track mode, featuring high-contrast Papaya Orange gear indicator, linear horizontal rev strip with dynamic red indicator, and digital speed display."
 }

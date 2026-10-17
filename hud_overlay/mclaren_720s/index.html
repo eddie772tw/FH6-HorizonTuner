@@ -4,6 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>McLaren 720S Folding Slim Cluster</title>
+    <!--
+      [設計決策紀錄 / Design Decision Note]
+      1. 視覺固定單位 (Hardcoded KMH): 720S 折疊式極簡錶頭底圖右側已原生刻印 "KMH" 標記，
+         故時速讀數強制採用 data.speed_kmh（忽視外部英里單位設定），且不在 Canvas 重複疊印 "KMH" 字串。
+      2. 檔位映射 (Gear Contract): 遵循 coordinator.js 契約 (0='R', 11='N', 1..10='1'..'10')。
+      3. 水溫/油溫/油壓: 此極簡賽道折疊模式僅顯示檔位、0..8500 RPM 線性轉速與車速；若未來擴充展開模式，
+         水溫統一取自四輪平均胎溫 (TireTemp)，油溫與油壓則採確定性熱力學與油壓代理模型。
+    -->
     <link rel="stylesheet" href="../shared/hud-base.css">
     <style>
         body, html {
@@ -47,65 +55,87 @@
             baseImg.src = 'assets/mclaren_clean_base.png';
 
             var telemetry = {
-                speed: 185,
-                rpm: 7400,
+                speedKmh: 0,
+                rpm: 0,
                 maxRpm: 8500,
-                gear: 5
+                gear: 'N'
             };
 
-            var gears = ['R', 'N', '1', '2', '3', '4', '5', '6', '7', '8'];
+            function formatGear(g) {
+                if (g === 0 || g === 'R') return 'R';
+                if (g === 11 || g === 'N') return 'N';
+                var n = Number(g);
+                if (Number.isInteger(n) && n >= 1 && n <= 10) return String(n);
+                return 'N';
+            }
 
             function render() {
                 var w = canvas.width;
                 var h = canvas.height;
                 ctx.clearRect(0, 0, w, h);
 
-                // 1. Clean base
-                if (baseImg.complete) {
+                // 1. Clean D3D11 base (includes '1..8' RPM scale numbers and 'KMH' label)
+                if (baseImg.complete && baseImg.naturalWidth > 0) {
                     ctx.drawImage(baseImg, 0, 0, 918, 120);
                 }
 
-                // 2. Dynamic Red Needle Marker across linear track (x: 180..750, y: 35..65)
-                var rpmRatio = Math.min(1.0, Math.max(0.0, (telemetry.rpm - 1000.0) / 7500.0));
-                var needleX = 180 + rpmRatio * 570;
+                // 2. Linear Tachometer Track & Vertical Cursor Blade
+                // Scale ticks 1..8 are spaced by 70.7px starting at x=211.0 (so 0 RPM is at x=140.3, 8,000 RPM is at x=706.0)
+                var clampedRpm = Math.min(8600, Math.max(0, telemetry.rpm));
+                var needleX = 140.3 + (clampedRpm / 1000.0) * 70.7;
+                var isRedZone = clampedRpm >= 6800;
 
                 ctx.save();
-                // Red sweep trail
-                var grad = ctx.createLinearGradient(needleX - 60, 48, needleX, 48);
-                grad.addColorStop(0, 'rgba(255, 34, 51, 0.0)');
-                grad.addColorStop(1, 'rgba(255, 34, 51, 0.6)');
-                ctx.fillStyle = grad;
-                ctx.fillRect(needleX - 60, 42, 60, 12);
+                if (needleX > 142) {
+                    var trackGrad = ctx.createLinearGradient(140, 44, needleX, 44);
+                    trackGrad.addColorStop(0, 'rgba(255, 255, 255, 0.04)');
+                    if (isRedZone) {
+                        trackGrad.addColorStop(0.7, 'rgba(255, 110, 40, 0.22)');
+                        trackGrad.addColorStop(1, 'rgba(255, 34, 51, 0.68)');
+                    } else {
+                        trackGrad.addColorStop(1, 'rgba(226, 232, 240, 0.32)');
+                    }
+                    ctx.fillStyle = trackGrad;
+                    ctx.fillRect(140, 38, needleX - 140, 14);
+                }
 
-                // Red needle blade
-                ctx.fillStyle = '#ff2233';
-                ctx.shadowColor = '#ff2233';
-                ctx.shadowBlur = 8;
-                ctx.fillRect(needleX - 2, 28, 4, 38);
+                // Vertical diamond-tipped cursor blade (matching D3D11 shader cursor geometry)
+                var bladeColor = isRedZone ? '#ff2636' : '#e2e8f0';
+                ctx.fillStyle = bladeColor;
+                ctx.shadowColor = isRedZone ? 'rgba(255, 38, 54, 0.95)' : 'rgba(255, 255, 255, 0.75)';
+                ctx.shadowBlur = isRedZone ? 10 : 6;
+                ctx.beginPath();
+                ctx.moveTo(needleX, 23);
+                ctx.lineTo(needleX + 4, 29);
+                ctx.lineTo(needleX + 2.5, 69);
+                ctx.lineTo(needleX, 74);
+                ctx.lineTo(needleX - 2.5, 69);
+                ctx.lineTo(needleX - 4, 29);
+                ctx.closePath();
+                ctx.fill();
+
+                // Bright inner highlight core
+                ctx.shadowBlur = 0;
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(needleX - 0.9, 27, 1.8, 43);
                 ctx.restore();
 
-                // 3. Papaya Orange Gear Indicator (Left: 55, 75)
+                // 3. Papaya Orange Gear Indicator (Left box: x=56, y=82)
                 ctx.save();
-                ctx.fillStyle = '#ff6b00';
-                ctx.font = 'bold 64px "Segoe UI", Arial, sans-serif';
+                ctx.fillStyle = '#ff7300';
+                ctx.font = 'bold 68px "Consolas", "Segoe UI", sans-serif';
                 ctx.textAlign = 'center';
-                ctx.shadowColor = 'rgba(255, 107, 0, 0.8)';
-                ctx.shadowBlur = 10;
-                var gIdx = telemetry.gear;
-                var gChar = gears[gIdx] || (gIdx === 0 ? 'R' : String(gIdx - 1));
-                ctx.fillText(gChar, 55, 75);
-
-                // 4. Digital Speedometer (Right: 835, 68)
-                ctx.fillStyle = '#ffffff';
-                ctx.font = 'bold 58px "Segoe UI", Arial, sans-serif';
-                ctx.shadowColor = 'rgba(255, 255, 255, 0.7)';
+                ctx.shadowColor = 'rgba(255, 115, 0, 0.55)';
                 ctx.shadowBlur = 8;
-                ctx.fillText(String(Math.round(telemetry.speed)), 835, 68);
+                ctx.fillText(telemetry.gear, 58, 82);
 
-                ctx.font = 'bold 18px "Segoe UI", Arial, sans-serif';
-                ctx.fillStyle = '#a0aec0';
-                ctx.shadowBlur = 0;
-                ctx.fillText('KMH', 835, 96);
+                // 4. Digital Speedometer in KMH (Right box above native 'KMH' label)
+                ctx.fillStyle = '#f1f5f9';
+                ctx.font = 'bold 60px "Consolas", "Segoe UI", sans-serif';
+                ctx.textAlign = 'right';
+                ctx.shadowColor = 'rgba(255, 255, 255, 0.4)';
+                ctx.shadowBlur = 6;
+                ctx.fillText(String(Math.round(telemetry.speedKmh)), 898, 69);
                 ctx.restore();
             }
 
@@ -121,10 +151,15 @@
                     }
                 },
 
-                onFrame: function(data, payload) {
-                    if (data.speed !== undefined) telemetry.speed = Number(data.speed);
-                    if (data.rpm !== undefined) telemetry.rpm = Number(data.rpm);
-                    if (data.gear !== undefined) telemetry.gear = Number(data.gear);
+                onFrame: function(data) {
+                    if (data.speed_kmh !== undefined) {
+                        telemetry.speedKmh = Math.abs(Number(data.speed_kmh)) || 0;
+                    } else if (data.speed !== undefined) {
+                        telemetry.speedKmh = Math.abs(Number(data.speed)) || 0;
+                    }
+                    if (data.rpm !== undefined) telemetry.rpm = Math.max(0, Number(data.rpm) || 0);
+                    if (data.maxRpm !== undefined && data.maxRpm > 0) telemetry.maxRpm = Number(data.maxRpm);
+                    if (data.gear !== undefined) telemetry.gear = formatGear(data.gear);
                     render();
                 },
 
@@ -135,8 +170,8 @@
                         var progress = Math.min(1, (t - start) / duration);
                         var wave = Math.sin(progress * Math.PI);
                         telemetry.rpm = wave * 8400;
-                        telemetry.speed = wave * 290;
-                        telemetry.gear = wave > 0.5 ? 5 : 1;
+                        telemetry.speedKmh = wave * 310;
+                        telemetry.gear = wave > 0.5 ? '5' : '1';
                         render();
                         if (progress < 1) requestAnimationFrame(sweep);
                     }
