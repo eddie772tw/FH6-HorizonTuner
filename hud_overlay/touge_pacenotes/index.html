@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<!--
+  [設計決策紀錄 / Design Decision Note]
+  1. 溫度與油壓模型基準：本專案 HUD 體系若涉及水溫顯示，統一使用四輪平均胎溫 (`TireTemp`)；油溫與油壓則依確定性熱力學與油壓代理模型模擬（本山道領航面板主要消費車速、側滑角/甩尾角與世界海拔 `pos_y`）。
+  2. 山道地圖與路書圖集修復：修正 `touge_routes.png` 裁切座標以避開 `(0,0)` 格之 `"Route map unavailable"` 佔位圖，改取真實火山山道衛星路線格 `(col=1, row=1)` 並疊加即時進度與 `pacenotes_atlas.png` 彎道標誌。
+-->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Touge Routes & Co-Driver Pacenotes</title>
+    <link rel="stylesheet" href="../shared/hud-base.css">
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: transparent !important;
+        }
+        .touge-container {
+            width: 720px;
+            height: 280px;
+            position: relative;
+            pointer-events: none;
+            user-select: none;
+            display: flex;
+            gap: 16px;
+        }
+        #tougeCanvas {
+            display: block;
+            width: 720px;
+            height: 280px;
+            pointer-events: none;
+            filter: drop-shadow(0 0 16px rgba(0, 240, 255, calc(var(--hud-glow-intensity, 1.0) * 0.35)));
+        }
+    </style>
+</head>
+<body>
+    <div class="hud-root-wrapper">
+        <div class="hud-gauge-container touge-container" id="tougeContainer">
+            <canvas id="tougeCanvas" width="720" height="280"></canvas>
+        </div>
+    </div>
+
+    <script src="../shared/hud-core.js"></script>
+    <script>
+        (function() {
+            var canvas = document.getElementById('tougeCanvas');
+            var ctx = canvas.getContext('2d');
+            var container = document.getElementById('tougeContainer');
+
+            var routesImg = new Image();
+            routesImg.src = 'assets/touge_routes.png';
+
+            var pacenotesImg = new Image();
+            pacenotesImg.src = 'assets/pacenotes_atlas.png';
+
+            var CORNERS = [
+                { type: 'HAIRPIN LEFT', severity: 2, gear: 2, targetSpeed: 58, caution: true, atlasCol: 0, atlasRow: 2 },
+                { type: 'MEDIUM RIGHT 4', severity: 4, gear: 3, targetSpeed: 96, caution: false, atlasCol: 0, atlasRow: 1 },
+                { type: 'SHARP LEFT 3', severity: 3, gear: 3, targetSpeed: 78, caution: true, atlasCol: 1, atlasRow: 2 },
+                { type: 'FAST RIGHT 5', severity: 5, gear: 4, targetSpeed: 128, caution: false, atlasCol: 2, atlasRow: 4 }
+            ];
+
+            var tougeState = {
+                stageName: 'VOLCÁN CALDERA DOWNHILL',
+                elevation: 2840,
+                progress: 0.42,
+                cornerIdx: 0,
+                nextCorner: {
+                    type: 'HAIRPIN LEFT',
+                    severity: 2,
+                    distance: 85,
+                    gear: 2,
+                    targetSpeed: 58,
+                    caution: true,
+                    atlasCol: 0,
+                    atlasRow: 2
+                },
+                driftAngle: 18.5,
+                driftScore: 48250,
+                driftMultiplier: 2.5,
+                speedDisplay: 88,
+                speedUnit: 'KM/H',
+                steer: -0.35
+            };
+
+            function drawCornerBadge(x, y, w, h, corner) {
+                ctx.save();
+                ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
+                ctx.strokeStyle = corner.caution ? '#f59e0b' : 'rgba(0, 240, 255, 0.4)';
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.roundRect(x, y, w, h, 8);
+                ctx.fill();
+                ctx.stroke();
+
+                ctx.fillStyle = corner.caution ? '#f59e0b' : '#38bdf8';
+                ctx.font = 'bold 12px Consolas, monospace';
+                ctx.textAlign = 'left';
+                ctx.fillText('NEXT: ' + corner.type, x + 16, y + 24);
+
+                var iconBoxX = x + 16;
+                var iconBoxY = y + 36;
+                ctx.fillStyle = '#090d16';
+                ctx.strokeStyle = corner.caution ? '#f59e0b' : '#334155';
+                ctx.lineWidth = 1.2;
+                ctx.beginPath();
+                ctx.roundRect(iconBoxX, iconBoxY, 92, 92, 6);
+                ctx.fill();
+                ctx.stroke();
+
+                if (pacenotesImg.complete && pacenotesImg.naturalWidth > 0) {
+                    var tileW = 552 / 7;
+                    var tileH = 395 / 5;
+                    var sx = (corner.atlasCol || 0) * tileW + 2;
+                    var sy = (corner.atlasRow || 2) * tileH + 2;
+                    ctx.drawImage(pacenotesImg, sx, sy, tileW - 4, tileH - 4, iconBoxX + 6, iconBoxY + 6, 80, 80);
+                }
+
+                var barX = x + 122;
+                var barY = y + 40;
+                var barW = w - 138;
+                var barH = 14;
+
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+                ctx.beginPath();
+                ctx.roundRect(barX, barY, barW, barH, 4);
+                ctx.fill();
+
+                var distNorm = Math.max(0.05, Math.min(1, 1 - (corner.distance / 200)));
+                var fillW = barW * distNorm;
+                var distGrad = ctx.createLinearGradient(barX, 0, barX + barW, 0);
+                distGrad.addColorStop(0, '#22c55e');
+                distGrad.addColorStop(0.7, '#eab308');
+                distGrad.addColorStop(1, '#ef4444');
+                ctx.fillStyle = distGrad;
+                ctx.beginPath();
+                ctx.roundRect(barX, barY, fillW, barH, 4);
+                ctx.fill();
+
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 18px Consolas, monospace';
+                ctx.textAlign = 'left';
+                ctx.fillText(Math.round(corner.distance) + ' M', barX, barY + 36);
+
+                ctx.fillStyle = '#94a3b8';
+                ctx.font = '10px Consolas, monospace';
+                ctx.fillText('RECOMMENDED ENTRY', barX, barY + 54);
+
+                ctx.fillStyle = '#38bdf8';
+                ctx.font = 'bold 14px Consolas, monospace';
+                ctx.fillText('GEAR ' + corner.gear + '  |  ' + corner.targetSpeed + ' ' + tougeState.speedUnit, barX, barY + 74);
+                ctx.restore();
+            }
+
+            function drawDriftCard(x, y, w, h) {
+                ctx.save();
+                ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
+                ctx.strokeStyle = 'rgba(0, 240, 255, 0.4)';
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.roundRect(x, y, w, h, 8);
+                ctx.fill();
+                ctx.stroke();
+
+                ctx.fillStyle = '#00f0ff';
+                ctx.font = 'bold 12px Consolas, monospace';
+                ctx.textAlign = 'left';
+                ctx.fillText('DRIFT TELEMETRY', x + 16, y + 24);
+
+                var arcCx = x + 65;
+                var arcCy = y + 84;
+                var arcR = 38;
+
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+                ctx.lineWidth = 5;
+                ctx.beginPath();
+                ctx.arc(arcCx, arcCy, arcR, Math.PI, 0);
+                ctx.stroke();
+
+                var angleNorm = Math.min(1, Math.abs(tougeState.driftAngle) / 60);
+                var angleColor = angleNorm > 0.6 ? '#ef4444' : (angleNorm > 0.3 ? '#eab308' : '#38bdf8');
+                ctx.strokeStyle = angleColor;
+                ctx.shadowColor = angleColor;
+                ctx.shadowBlur = 8;
+                ctx.beginPath();
+                ctx.arc(arcCx, arcCy, arcR, Math.PI, Math.PI + angleNorm * Math.PI);
+                ctx.stroke();
+
+                ctx.shadowBlur = 0;
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 14px Consolas, monospace';
+                ctx.textAlign = 'center';
+                ctx.fillText(Math.abs(tougeState.driftAngle).toFixed(1) + '°', arcCx, arcCy - 4);
+
+                ctx.textAlign = 'left';
+                ctx.fillStyle = '#94a3b8';
+                ctx.font = '10px Consolas, monospace';
+                ctx.fillText('ACTIVE SCORE', x + 125, y + 54);
+
+                ctx.fillStyle = '#00f0ff';
+                ctx.font = 'bold 20px Consolas, monospace';
+                ctx.fillText(Math.round(tougeState.driftScore).toLocaleString(), x + 125, y + 78);
+
+                ctx.fillStyle = '#f59e0b';
+                ctx.font = 'bold 13px Consolas, monospace';
+                ctx.fillText('x' + tougeState.driftMultiplier.toFixed(1) + ' COMBO', x + 125, y + 100);
+                ctx.restore();
+            }
+
+            function drawRouteCard(x, y, w, h) {
+                ctx.save();
+                ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
+                ctx.strokeStyle = 'rgba(0, 240, 255, 0.4)';
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.roundRect(x, y, w, h, 8);
+                ctx.fill();
+                ctx.stroke();
+
+                ctx.fillStyle = '#38bdf8';
+                ctx.font = 'bold 11px Consolas, monospace';
+                ctx.fillText('PASS: ' + tougeState.stageName, x + 16, y + 22);
+
+                var mapX = x + 16;
+                var mapY = y + 30;
+                var mapW = w - 32;
+                var mapH = h - 42;
+
+                ctx.save();
+                ctx.beginPath();
+                ctx.roundRect(mapX, mapY, mapW, mapH, 6);
+                ctx.clip();
+                ctx.fillStyle = '#06101e';
+                ctx.fillRect(mapX, mapY, mapW, mapH);
+
+                if (routesImg.complete && routesImg.naturalWidth > 0) {
+                    // Cell (col=1, row=1) at x=430, y=360 is a full horizontal touge pass with cyan route line
+                    ctx.drawImage(routesImg, 430, 360, 400, 180, mapX, mapY - 18, mapW, mapH + 36);
+                }
+
+                ctx.fillStyle = 'rgba(15, 23, 42, 0.88)';
+                ctx.fillRect(mapX, mapY + mapH - 22, mapW, 22);
+                ctx.fillStyle = '#cbd5e1';
+                ctx.font = 'bold 10px Consolas, monospace';
+                ctx.fillText(
+                    'ALT: ' + tougeState.elevation + 'm  |  PROGRESS: ' + (tougeState.progress * 100).toFixed(1) + '%  |  SECTOR 2/4',
+                    mapX + 10,
+                    mapY + mapH - 7
+                );
+                ctx.restore();
+                ctx.restore();
+            }
+
+            function render() {
+                var w = canvas.width;
+                var h = canvas.height;
+                ctx.clearRect(0, 0, w, h);
+
+                drawCornerBadge(10, 10, 390, 145, tougeState.nextCorner);
+                drawDriftCard(415, 10, 295, 145);
+                drawRouteCard(10, 165, 700, 105);
+            }
+
+            window._renderTouge = render;
+            routesImg.onload = render;
+            pacenotesImg.onload = render;
+
+            HUDCore.registerStyle('touge_pacenotes', {
+                containerId: 'tougeContainer',
+                scaleMultiplier: 0.95,
+
+                onFrame: function(data, payload) {
+                    if (!data) return;
+                    var isMph = (payload && payload.unit === 'mph') || data.unit === 'mph';
+                    var spd = data.speed !== undefined ? Number(data.speed) : (Number(data.speed_kmh) || 0);
+                    tougeState.speedDisplay = spd;
+                    tougeState.speedUnit = isMph ? 'MPH' : 'KM/H';
+
+                    var spdMps = isMph ? (spd / 2.23694) : (spd / 3.6);
+                    tougeState.nextCorner.distance -= Math.max(0.2, spdMps * 0.016);
+                    if (tougeState.nextCorner.distance <= 12) {
+                        tougeState.cornerIdx = (tougeState.cornerIdx + 1) % CORNERS.length;
+                        var next = CORNERS[tougeState.cornerIdx];
+                        tougeState.nextCorner = {
+                            type: next.type,
+                            severity: next.severity,
+                            distance: 140,
+                            gear: next.gear,
+                            targetSpeed: next.targetSpeed,
+                            caution: next.caution,
+                            atlasCol: next.atlasCol,
+                            atlasRow: next.atlasRow
+                        };
+                        tougeState.progress = (tougeState.progress + 0.04) % 1.0;
+                    }
+
+                    if (data.slip_angle !== undefined && Number.isFinite(Number(data.slip_angle))) {
+                        tougeState.driftAngle = Math.abs(Number(data.slip_angle));
+                    } else if (data.steer !== undefined) {
+                        var st = Number(data.steer) || 0;
+                        if (Math.abs(st) > 1.5) st = st / 100.0;
+                        tougeState.steer = st;
+                        tougeState.driftAngle = Math.abs(st) * 38.0;
+                    }
+
+                    if (tougeState.driftAngle > 8.0 && spd > 25) {
+                        tougeState.driftScore += Math.round(tougeState.driftAngle * 1.8);
+                        tougeState.driftMultiplier = Math.min(5.0, 1.0 + Math.floor(tougeState.driftScore / 15000) * 0.5);
+                    }
+
+                    if (data.pos_y !== undefined && Number.isFinite(Number(data.pos_y)) && Number(data.pos_y) !== 0) {
+                        tougeState.elevation = Math.round(Number(data.pos_y));
+                    } else if (data.elevation !== undefined) {
+                        tougeState.elevation = Math.round(Number(data.elevation) || 2840);
+                    }
+                    render();
+                },
+
+                onElementsChange: function(elements) {
+                    if (container) {
+                        container.style.display = elements.showGauge === false ? 'none' : 'flex';
+                    }
+                },
+
+                onAnimate: function() {
+                    var t = 0;
+                    var sweepInterval = setInterval(function() {
+                        t += 0.08;
+                        tougeState.driftAngle = Math.abs(Math.sin(t)) * 45;
+                        tougeState.driftScore += 150;
+                        tougeState.nextCorner.distance = Math.max(15, 130 - t * 18);
+                        render();
+                        if (t > Math.PI * 2) {
+                            clearInterval(sweepInterval);
+                        }
+                    }, 16);
+                }
+            });
+
+            HUDCore.init('touge_pacenotes');
+            render();
+        })();
+    </script>
+</body>
+</html>
