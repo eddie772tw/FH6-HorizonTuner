@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ford GT 2017 Race Cluster</title>
+    <!--
+      [設計決策紀錄 / Design Decision Note]
+      1. 視覺固定單位 (Hardcoded PSI / °C): Ford GT 2017 賽道儀表右側面板已原生刻印 °C、°C、psi、psi 單位標記，
+         故增壓值強制綁定 data.boost_psi（忽視外部單位設定），避免重複疊字或單位失真。
+      2. 水溫 (Water Temp °C): 由於 Forza UDP 遙測未提供引擎水溫欄位，統一使用四輪平均胎溫 (temp_fl..rr / TireTemp) 轉換為攝氏溫度驅動。
+      3. 機油溫度 (Oil Temp °C) 與機油壓力 (Oil Pressure psi): 採用確定性熱力學與油壓代理模型 (Deterministic Proxy Model)，
+         依據轉速比例 (rpmRatio) 與油門開度 (throttle) 計算平滑且具物理合理性的模擬數值。
+    -->
+    <link rel="stylesheet" href="../shared/hud-base.css">
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: transparent !important;
+        }
+        .fordgt-container {
+            position: absolute;
+            bottom: 24px;
+            right: 24px;
+            width: 586px;
+            height: 220px;
+            pointer-events: none;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="hud-root-wrapper">
+        <div class="hud-gauge-container fordgt-container" id="fordGtContainer">
+            <canvas id="fordGtCanvas" width="586" height="220"></canvas>
+        </div>
+    </div>
+
+    <script src="../shared/hud-core.js"></script>
+    <script>
+        (function() {
+            var canvas = document.getElementById('fordGtCanvas');
+            var ctx = canvas.getContext('2d');
+            var container = document.getElementById('fordGtContainer');
+
+            var baseImg = new Image();
+            baseImg.src = 'assets/ford_gt_clean.png';
+            var barsImg = new Image();
+            barsImg.src = 'assets/ford_gt_bars_full.png';
+
+            var telemetry = {
+                speed: 0,
+                rpm: 0,
+                maxRpm: 8000,
+                gear: 'N',
+                fuelRatio: 0.75,
+                tempC: 89,
+                oilTempC: 99,
+                oilPressPsi: 61,
+                boostPsi: 0.0
+            };
+
+            function formatGear(g) {
+                if (g === 0 || g === 'R') return 'R';
+                if (g === 11 || g === 'N') return 'N';
+                var n = Number(g);
+                if (Number.isInteger(n) && n >= 1 && n <= 10) return String(n);
+                return 'N';
+            }
+
+            function render() {
+                var w = canvas.width;
+                var h = canvas.height;
+                ctx.clearRect(0, 0, w, h);
+
+                // 1. Clean D3D11 dark-glass binnacle base (0% bars)
+                if (baseImg.complete && baseImg.naturalWidth > 0) {
+                    ctx.drawImage(baseImg, 0, 0, 586, 220);
+                }
+
+                if (barsImg.complete && barsImg.naturalWidth > 0) {
+                    // 2. Rising & Horizontal RPM Track Fill (0..8,500 RPM, x = 6..576)
+                    var rpmRatio = Math.min(1.0, Math.max(0.0, telemetry.rpm / 8500.0));
+                    if (rpmRatio > 0.002) {
+                        var rpmX = Math.round(6 + rpmRatio * 570);
+                        ctx.save();
+                        ctx.beginPath();
+                        // Clip RPM track while excluding bottom-left Fuel bar box (55..170, 160..220)
+                        ctx.rect(6, 14, rpmX - 6, 146);
+                        ctx.rect(6, 160, Math.min(rpmX - 6, 48), 45);
+                        ctx.clip();
+                        ctx.drawImage(barsImg, 0, 0, 586, 220);
+                        ctx.restore();
+
+                        // Vertical cursor line at the leading edge of the RPM bar
+                        if (rpmX > 120) {
+                            ctx.save();
+                            var isRed = telemetry.rpm >= 7200;
+                            ctx.strokeStyle = isRed ? '#ff2a3a' : '#ffe47a';
+                            ctx.lineWidth = 1.6;
+                            ctx.beginPath();
+                            ctx.moveTo(rpmX, 34);
+                            ctx.lineTo(rpmX, 118);
+                            ctx.stroke();
+                            ctx.restore();
+                        }
+                    }
+
+                    // 3. Fuel Bar Segments (x = 59..151, y = 192..208)
+                    var fRatio = Math.min(1.0, Math.max(0.0, telemetry.fuelRatio));
+                    if (fRatio > 0.01) {
+                        var fuelW = Math.round(fRatio * (151 - 59));
+                        ctx.save();
+                        ctx.beginPath();
+                        ctx.rect(59, 192, fuelW, 16);
+                        ctx.clip();
+                        ctx.drawImage(barsImg, 0, 0, 586, 220);
+                        ctx.restore();
+                    }
+                }
+
+                ctx.save();
+                ctx.fillStyle = '#ffffff';
+                ctx.shadowColor = 'rgba(255, 255, 255, 0.45)';
+                ctx.shadowBlur = 6;
+
+                // 4. Digital Gear (Top-left: x=54, y=94)
+                ctx.font = 'bold 64px "Consolas", monospace';
+                ctx.textAlign = 'center';
+                ctx.fillText(telemetry.gear, 54, 94);
+
+                // 5. Digital Speed (Center: x=295, y=150)
+                ctx.font = 'bold 82px "Consolas", monospace';
+                ctx.fillText(String(Math.round(telemetry.speed)), 295, 150);
+
+                // 6. Numeric RPM (Above 'RPM' label at x=529..572, y=77..90)
+                ctx.font = 'bold 25px "Consolas", monospace';
+                ctx.textAlign = 'right';
+                ctx.shadowBlur = 3;
+                ctx.fillText(String(Math.round(telemetry.rpm)), 572, 71);
+
+                // 7. Right Telemetry Stack (Between icons at x=470..487 and unit labels at x=553..572)
+                ctx.font = 'bold 19px "Consolas", monospace';
+                ctx.fillStyle = '#f1f5f9';
+                ctx.shadowBlur = 0;
+                ctx.fillText(String(Math.round(telemetry.tempC)), 546, 128);
+                ctx.fillText(String(Math.round(telemetry.oilTempC)), 546, 152);
+                ctx.fillText(String(Math.round(telemetry.oilPressPsi)), 546, 176);
+                ctx.fillText(telemetry.boostPsi.toFixed(1), 546, 200);
+                ctx.restore();
+            }
+
+            baseImg.onload = render;
+            barsImg.onload = render;
+
+            HUDCore.registerStyle('ford_gt', {
+                containerId: 'fordGtContainer',
+                scaleMultiplier: 0.95,
+
+                onElementsChange: function(elements) {
+                    if (container) {
+                        container.style.display = elements.showGauge === false ? 'none' : 'block';
+                    }
+                },
+
+                onFrame: function(data) {
+                    if (data.speed !== undefined) telemetry.speed = Math.abs(Number(data.speed)) || 0;
+                    if (data.rpm !== undefined) telemetry.rpm = Math.max(0, Number(data.rpm) || 0);
+                    if (data.maxRpm !== undefined && data.maxRpm > 0) telemetry.maxRpm = Number(data.maxRpm);
+                    if (data.gear !== undefined) telemetry.gear = formatGear(data.gear);
+
+                    // Water temp from 4-wheel average TireTemp
+                    if (data.temp_fl !== undefined) {
+                        var avgT = ((Number(data.temp_fl) || 0) + (Number(data.temp_fr) || 0) + (Number(data.temp_rl) || 0) + (Number(data.temp_rr) || 0)) * 0.25;
+                        if (avgT > 0) {
+                            var tempC = avgT > 125 ? (avgT - 32) * (5 / 9) : avgT;
+                            telemetry.tempC = Math.min(130, Math.max(40, tempC));
+                        }
+                    } else if (data.coolant_temp !== undefined) {
+                        telemetry.tempC = Number(data.coolant_temp) || 89;
+                    }
+
+                    // Deterministic thermodynamic & oil pressure proxy model
+                    var rpmRatio = Math.min(1, Math.max(0, telemetry.rpm / (telemetry.maxRpm || 8000)));
+                    var thr = data.throttle !== undefined ? Math.min(1, Math.max(0, Number(data.throttle))) : 0.25;
+                    telemetry.oilTempC = Math.min(140, Math.max(55, telemetry.tempC + 5 + rpmRatio * 12 + thr * 4));
+                    telemetry.oilPressPsi = Math.min(95, Math.max(18, 22 + rpmRatio * 48 + thr * 8));
+
+                    // Hardcoded PSI faceplate marking: always read data.boost_psi
+                    if (data.boost_psi !== undefined) {
+                        telemetry.boostPsi = Math.max(0, Number(data.boost_psi) || 0);
+                    } else if (data.boost !== undefined) {
+                        telemetry.boostPsi = Math.max(0, Number(data.boost) || 0);
+                    }
+
+                    if (data.fuel_ratio !== undefined) {
+                        telemetry.fuelRatio = Number(data.fuel_ratio);
+                    } else if (data.fuel_level !== undefined) {
+                        telemetry.fuelRatio = Number(data.fuel_level);
+                    }
+                    render();
+                },
+
+                onAnimate: function() {
+                    var start = performance.now();
+                    var duration = 1200;
+                    function sweep(t) {
+                        var progress = Math.min(1, (t - start) / duration);
+                        var wave = Math.sin(progress * Math.PI);
+                        telemetry.rpm = wave * 8200;
+                        telemetry.speed = wave * 310;
+                        telemetry.boostPsi = wave * 22.0;
+                        telemetry.fuelRatio = 0.25 + wave * 0.75;
+                        telemetry.tempC = 65 + wave * 35;
+                        telemetry.oilTempC = 75 + wave * 35;
+                        telemetry.oilPressPsi = 25 + wave * 55;
+                        telemetry.gear = wave > 0.5 ? '4' : '1';
+                        render();
+                        if (progress < 1) requestAnimationFrame(sweep);
+                    }
+                    requestAnimationFrame(sweep);
+                }
+            });
+
+            HUDCore.init('ford_gt');
+            render();
+        })();
+    </script>
+</body>
+</html>
