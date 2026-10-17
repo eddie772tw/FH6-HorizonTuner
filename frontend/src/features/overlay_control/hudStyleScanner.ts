@@ -37,6 +37,7 @@ export const HUD_DISPLAY_NAMES: Record<string, string> = {
   simple: 'Simple Gauge',
   classic_jdm: 'Classic JDM Arcade',
   r34_mfd: 'Skyline R34 MFD',
+  audio_head: 'Car Audio Head Unit (9 Classic Decks)',
 };
 
 /**
