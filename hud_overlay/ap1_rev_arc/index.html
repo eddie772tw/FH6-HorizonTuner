@@ -1,37 +1,234 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>AP1 Rev Arc HUD</title>
-  <link rel="stylesheet" href="../shared/hud-base.css">
-  <link rel="stylesheet" href="./style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Honda S2000 AP1 ID4Motion Rev Arc</title>
+    <!--
+      [設計決策紀錄 / Design Decision Note]
+      1. 水溫 (Water Temp C..H): Forza UDP 遙測未提供引擎水溫，統一採用四輪平均胎溫 (temp_fl..rr / TireTemp) 轉換為攝氏溫度驅動。
+      2. 機油壓力 (kPa OIL PRESS.) 與機油溫度 (°C OIL TEMP.): 採用確定性熱力學與油壓代理模型 (Deterministic Proxy Model)，
+         依據轉速比例 (rpmRatio) 與油門開度 (throttle) 計算平滑且具物理合理性的模擬數值。
+      3. 視覺元素與動態格段: 底圖 (ap1_clean_base.png) 與全亮格段層 (ap1_bars_full.png) 均由原生 D3D11 Pixel Shader (res_125.dxbc)
+         提取，透過精確座標裁切呈現 0..11,000 RPM 弧形格段、C..H 水溫格段、E..F 油量格段與 VTEC 指示燈。
+    -->
+    <link rel="stylesheet" href="../shared/hud-base.css">
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: transparent !important;
+        }
+        .ap1-container {
+            position: absolute;
+            bottom: 24px;
+            right: 24px;
+            width: 799px;
+            height: 229px;
+            pointer-events: none;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
 </head>
 <body>
-  <div class="hud-root-wrapper">
-    <div class="hud-gauge-container ap1-cluster" id="ap1Cluster" role="img" aria-label="AP1 Rev Arc. Waiting for telemetry">
-      <img class="ap1-fascia" src="./assets/fascia.png" alt="" draggable="false">
-      <svg id="ap1Display" viewBox="0 0 720 300" aria-hidden="true">
-        <g id="rpmSegments"></g>
-        <g id="rpmTicks"></g>
-        <text class="ap1-unit" id="rpmUnit" x="88.428" y="159.639">×1000 r/min</text>
-        <text class="ap1-label" x="106" y="205">GEAR</text>
-        <text class="ap1-gear" id="gearValue" x="126" y="245" text-anchor="middle">—</text>
-        <path class="ap1-divider" d="M168 192V245 M541 176V245"/>
-        <g id="speedDigits" transform="translate(236 128)"></g>
-        <text class="ap1-speed-unit ap1-choice-label" id="speedUnitMph" x="458" y="188" text-anchor="start" data-active="false">mph</text>
-        <text class="ap1-speed-unit ap1-choice-label" id="speedUnit" x="458" y="214" text-anchor="start" data-active="true">km/h</text>
-        <text class="ap1-boost-caption ap1-choice-label" id="vacModeLabel" x="591" y="162" text-anchor="start" data-active="false">VAC</text>
-        <text class="ap1-boost-caption ap1-choice-label" id="boostModeLabel" x="591" y="178" text-anchor="start" data-active="false">BOOST</text>
-        <g id="boostSegments"></g>
-        <g id="boostTicks"></g>
-        <text class="ap1-boost-value" id="boostValue" x="617" y="245" text-anchor="middle">-- bar</text>
-        <text class="ap1-status" id="signalStatus" x="355" y="245" text-anchor="middle">WAITING FOR DATA</text>
-        <text class="ap1-shift" id="shiftLamp" x="487" y="121" text-anchor="end"></text>
-      </svg>
+    <div class="hud-root-wrapper">
+        <div class="hud-gauge-container ap1-container" id="ap1Container">
+            <canvas id="ap1Canvas" width="799" height="229"></canvas>
+        </div>
     </div>
-  </div>
-  <script src="../shared/hud-core.js"></script>
-  <script type="module" src="./controller.js"></script>
+
+    <script src="../shared/hud-core.js"></script>
+    <script src="ap1-model.js"></script>
+    <script>
+        (function() {
+            var canvas = document.getElementById('ap1Canvas');
+            var ctx = canvas.getContext('2d');
+            var container = document.getElementById('ap1Container');
+            var Model = window.Ap1Model;
+
+            var baseImg = new Image();
+            baseImg.src = 'assets/ap1_clean_base.png';
+            var barsImg = new Image();
+            barsImg.src = 'assets/ap1_bars_full.png';
+
+            var telemetry = {
+                speed: 0,
+                rpm: 0,
+                maxRpm: 9000,
+                gear: 'N',
+                fuelRatio: 0.75,
+                tempC: 87,
+                oilPress: 54,
+                oilTemp: 93,
+                clockText: '21:38'
+            };
+
+            function updateClock() {
+                var now = new Date();
+                var hh = String(now.getHours()).padStart(2, '0');
+                var mm = String(now.getMinutes()).padStart(2, '0');
+                telemetry.clockText = hh + ':' + mm;
+            }
+            updateClock();
+
+            function render() {
+                var w = canvas.width;
+                var h = canvas.height;
+                ctx.clearRect(0, 0, w, h);
+
+                // 1. Clean D3D11 dark-glass base plate (0% bars, no baked center '0')
+                if (baseImg.complete && baseImg.naturalWidth > 0) {
+                    ctx.drawImage(baseImg, 0, 0, 799, 229);
+                }
+
+                if (barsImg.complete && barsImg.naturalWidth > 0) {
+                    // 2. Curved Tachometer LED Segment Bar (0..11,000 RPM, x = 27..507)
+                    var rpmRatio = Model.calculateRpmRatio(telemetry.rpm, Model.MAX_SCALE_RPM);
+                    if (rpmRatio > 0.002) {
+                        var rpmW = Math.round(rpmRatio * (507 - 27));
+                        ctx.save();
+                        ctx.beginPath();
+                        // Upper band + lower left band excluding VTEC lamp region (472..502, 94..124)
+                        ctx.rect(27, 21, rpmW, 71);
+                        ctx.rect(27, 92, Math.min(rpmW, 440), 81);
+                        ctx.clip();
+                        ctx.drawImage(barsImg, 0, 0, 799, 229);
+                        ctx.restore();
+                    }
+
+                    // 3. VTEC Indicator Lamp (472..502, 94..124)
+                    if (Model.isVtecActive(telemetry.rpm)) {
+                        ctx.drawImage(barsImg, 472, 94, 30, 30, 472, 94, 30, 30);
+                    }
+
+                    // 4. Water Temp Segment Bar (C at right x=649 -> H at left x=538)
+                    var tempRatio = Model.calculateWaterTempRatio(telemetry.tempC);
+                    if (tempRatio > 0.01) {
+                        var tempW = Math.round(tempRatio * (649 - 538));
+                        ctx.save();
+                        ctx.beginPath();
+                        ctx.rect(649 - tempW, 38, tempW, 60);
+                        ctx.clip();
+                        ctx.drawImage(barsImg, 0, 0, 799, 229);
+                        ctx.restore();
+                    }
+
+                    // 5. Fuel Segment Bar (E at right x=775 -> F at left x=672)
+                    var fuelRatio = Math.min(1, Math.max(0, telemetry.fuelRatio));
+                    if (fuelRatio > 0.01) {
+                        var fuelW = Math.round(fuelRatio * (775 - 672));
+                        ctx.save();
+                        ctx.beginPath();
+                        ctx.rect(775 - fuelW, 93, fuelW, 83);
+                        ctx.clip();
+                        ctx.drawImage(barsImg, 0, 0, 799, 229);
+                        ctx.restore();
+                    }
+                }
+
+                // 6. Digital Speedometer & Subtle Floor Reflection (Center: 399, 162)
+                var spdStr = String(Math.round(Math.max(0, telemetry.speed)));
+                ctx.save();
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 64px "Consolas", monospace';
+                ctx.textAlign = 'center';
+                ctx.shadowColor = 'rgba(255, 255, 255, 0.45)';
+                ctx.shadowBlur = 8;
+                ctx.fillText(spdStr, 399, 162);
+
+                // Subtle reflection above km/h
+                ctx.save();
+                ctx.translate(399, 166);
+                ctx.scale(1, -0.24);
+                ctx.globalAlpha = 0.14;
+                ctx.shadowBlur = 0;
+                ctx.fillText(spdStr, 0, 0);
+                ctx.restore();
+
+                // 7. Gear Indicator (to the right of 'gear' label at x=205..238)
+                ctx.font = 'bold 42px "Consolas", monospace';
+                ctx.textAlign = 'center';
+                ctx.fillText(telemetry.gear, 272, 166);
+
+                // 8. Clock (bottom-left at x=148, y=188)
+                ctx.font = 'bold 19px "Consolas", monospace';
+                ctx.fillStyle = '#c4cdd8';
+                ctx.shadowBlur = 0;
+                ctx.fillText(telemetry.clockText, 148, 188);
+
+                // 9. Engine Vitals Numeric Readouts (to the right of kPa OIL PRESS. and °C OIL TEMP.)
+                ctx.font = 'bold 24px "Consolas", monospace';
+                ctx.fillStyle = '#e2e8f0';
+                ctx.textAlign = 'left';
+                ctx.fillText(String(Math.round(telemetry.oilPress)), 554, 159);
+                ctx.fillText(String(Math.round(telemetry.oilTemp)), 604, 189);
+                ctx.restore();
+            }
+
+            baseImg.onload = render;
+            barsImg.onload = render;
+
+            HUDCore.registerStyle('ap1_rev_arc', {
+                containerId: 'ap1Container',
+                scaleMultiplier: 0.95,
+
+                onElementsChange: function(elements) {
+                    if (container) {
+                        container.style.display = elements.showGauge === false ? 'none' : 'block';
+                    }
+                },
+
+                onFrame: function(data) {
+                    if (data.speed !== undefined) telemetry.speed = Math.abs(Number(data.speed)) || 0;
+                    if (data.rpm !== undefined) telemetry.rpm = Math.max(0, Number(data.rpm) || 0);
+                    if (data.maxRpm !== undefined && data.maxRpm > 0) telemetry.maxRpm = Number(data.maxRpm);
+                    if (data.gear !== undefined) telemetry.gear = Model.formatGear(data.gear);
+
+                    telemetry.tempC = Model.resolveWaterTempFromTireTemp(data);
+                    telemetry.fuelRatio = Model.resolveFuelRatio(data);
+
+                    var vitals = Model.calculateOilVitalsProxy(
+                        telemetry.rpm,
+                        telemetry.maxRpm,
+                        data.throttle !== undefined ? data.throttle : 0.25,
+                        telemetry.tempC
+                    );
+                    telemetry.oilPress = vitals.oilPress;
+                    telemetry.oilTemp = vitals.oilTemp;
+                    render();
+                },
+
+                onAnimate: function() {
+                    var start = performance.now();
+                    var duration = 1200;
+                    function sweep(t) {
+                        var elapsed = t - start;
+                        var wave = Model.calculateSweepProgress(elapsed, duration);
+                        telemetry.rpm = wave * 11000;
+                        telemetry.speed = wave * 260;
+                        telemetry.gear = wave > 0.5 ? '6' : '1';
+                        telemetry.tempC = 40 + wave * 85;
+                        telemetry.fuelRatio = wave;
+                        var vitals = Model.calculateOilVitalsProxy(telemetry.rpm, 9000, wave, telemetry.tempC);
+                        telemetry.oilPress = vitals.oilPress;
+                        telemetry.oilTemp = vitals.oilTemp;
+                        render();
+                        if (elapsed < duration) requestAnimationFrame(sweep);
+                    }
+                    requestAnimationFrame(sweep);
+                }
+            });
+
+            HUDCore.init('ap1_rev_arc');
+            render();
+        })();
+    </script>
 </body>
 </html>
