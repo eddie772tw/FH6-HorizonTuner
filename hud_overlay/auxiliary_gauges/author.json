@@ -1,0 +1,9 @@
+{
+    "id": "auxiliary_gauges",
+    "name": "Competition Auxiliary Gauges Suite (AEM / GReddy / Blitz / Defi / Speedhut)",
+    "author": "JC & HorizonTuner Team",
+    "version": "1.0.0",
+    "category": "Auxiliary Gauges",
+    "description": "Modular 5-in-1 competition auxiliary gauge suite supporting AEM 30-4408 digital LED ring, GReddy Sirius, Blitz SD, Defi BF, and Speedhut Datsun Z with live boost, oil pressure, oil temperature, and coolant temperature readouts.",
+    "tags": ["aux", "gauges", "aem", "greddy", "blitz", "defi", "speedhut", "boost", "oilpress", "watertemp"]
+}

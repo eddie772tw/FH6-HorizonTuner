@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Competition Auxiliary Gauges Suite</title>
+    <link rel="stylesheet" href="../shared/hud-base.css">
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: transparent !important;
+        }
+        .aux-container {
+            position: absolute;
+            bottom: 24px;
+            right: 24px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 8px;
+            pointer-events: auto;
+        }
+        .aux-tabs {
+            display: flex;
+            gap: 4px;
+            background: rgba(15, 23, 42, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            padding: 3px;
+        }
+        .aux-btn {
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .aux-btn:hover {
+            color: #ffffff;
+            background: rgba(255, 255, 255, 0.08);
+        }
+        .aux-btn.active {
+            color: #00f0ff;
+            background: rgba(0, 240, 255, 0.15);
+            box-shadow: 0 0 8px rgba(0, 240, 255, 0.3);
+        }
+        canvas {
+            display: block;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="hud-root-wrapper">
+        <div class="hud-gauge-container aux-container" id="auxContainer">
+            <div class="aux-tabs" id="auxTabs">
+                <button class="aux-btn active" onclick="switchAux(0)">AEM Boost</button>
+                <button class="aux-btn" onclick="switchAux(1)">GReddy Oil.P</button>
+                <button class="aux-btn" onclick="switchAux(2)">Blitz Oil.T</button>
+                <button class="aux-btn" onclick="switchAux(3)">Defi Water.T</button>
+                <button class="aux-btn" onclick="switchAux(4)">Speedhut Boost</button>
+                <button class="aux-btn" onclick="switchAux(5)">Triple Pod</button>
+            </div>
+            <canvas id="auxCanvas" width="850" height="285"></canvas>
+        </div>
+    </div>
+
+    <script src="../shared/hud-core.js"></script>
+    <script>
+        var currentAuxMode = 0;
+        function switchAux(mode) {
+            currentAuxMode = mode;
+            var btns = document.querySelectorAll('.aux-btn');
+            btns.forEach(function(b, idx) {
+                b.className = 'aux-btn' + (idx === mode ? ' active' : '');
+            });
+            if (window._renderAux) window._renderAux();
+        }
+        window.switchAux = switchAux;
+
+        var urlParams = new URLSearchParams(window.location.search);
+        var qm = urlParams.get('mode');
+        if (qm === 'greddy') currentAuxMode = 1;
+        else if (qm === 'blitz') currentAuxMode = 2;
+        else if (qm === 'defi') currentAuxMode = 3;
+        else if (qm === 'speedhut') currentAuxMode = 4;
+        else if (qm === 'pod' || qm === 'triple') currentAuxMode = 5;
+
+        (function() {
+            var canvas = document.getElementById('auxCanvas');
+            var ctx = canvas.getContext('2d');
+            var container = document.getElementById('auxContainer');
+
+            var imgAEM = new Image(); imgAEM.src = 'assets/aux_aem.png';
+            var imgGReddy = new Image(); imgGReddy.src = 'assets/aux_greddy.png';
+            var imgBlitz = new Image(); imgBlitz.src = 'assets/aux_blitz.png';
+            var imgDefi = new Image(); imgDefi.src = 'assets/aux_defi.png';
+            var imgSpeedhut = new Image(); imgSpeedhut.src = 'assets/aux_speedhut.png';
+
+            var telemetry = {
+                boostPsi: 14.5,
+                boostBar: 1.0,
+                oilPress: 58.0,
+                oilTemp: 96.0,
+                waterTemp: 88.0
+            };
+
+            function drawNeedle(cx, cy, len, angleDeg, color, width, hubR) {
+                var rad = angleDeg * (Math.PI / 180.0);
+                var nx = cx + Math.cos(rad) * len;
+                var ny = cy + Math.sin(rad) * len;
+
+                ctx.save();
+                ctx.strokeStyle = color;
+                ctx.lineWidth = width;
+                ctx.lineCap = 'round';
+                ctx.shadowColor = color;
+                ctx.shadowBlur = 6;
+
+                ctx.beginPath();
+                ctx.moveTo(cx, cy);
+                ctx.lineTo(nx, ny);
+                ctx.stroke();
+
+                if (hubR) {
+                    ctx.fillStyle = '#181a20';
+                    ctx.strokeStyle = color;
+                    ctx.lineWidth = 1.2;
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, hubR, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.stroke();
+                }
+                ctx.restore();
+            }
+
+            function drawSingleAEM(ox, oy) {
+                if (imgAEM.complete) {
+                    ctx.drawImage(imgAEM, ox, oy, 260, 260);
+                }
+                var cx = ox + 130;
+                var cy = oy + 130;
+
+                // Sweeping green LED ring (24 LEDs around perimeter)
+                var ratio = Math.min(1.0, Math.max(0.0, (telemetry.boostPsi + 15.0) / 65.0));
+                var leds = Math.round(ratio * 28);
+                ctx.save();
+                for (var i = 0; i < leds; i++) {
+                    var ang = (135.0 + (i / 27.0) * 270.0) * (Math.PI / 180.0);
+                    var lx = cx + Math.cos(ang) * 98;
+                    var ly = cy + Math.sin(ang) * 98;
+                    ctx.fillStyle = '#22ff44';
+                    ctx.shadowColor = '#22ff44';
+                    ctx.shadowBlur = 8;
+                    ctx.beginPath();
+                    ctx.arc(lx, ly, 3.5, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                ctx.restore();
+
+                // 7-segment digital red readout in center (130, 138)
+                ctx.save();
+                ctx.fillStyle = '#ff2233';
+                ctx.font = 'bold 36px "Consolas", monospace';
+                ctx.textAlign = 'center';
+                ctx.shadowColor = 'rgba(255, 34, 51, 0.9)';
+                ctx.shadowBlur = 10;
+                ctx.fillText(telemetry.boostPsi.toFixed(1), cx, cy + 12);
+                ctx.restore();
+            }
+
+            function drawSingleGReddy(ox, oy) {
+                if (imgGReddy.complete) {
+                    ctx.drawImage(imgGReddy, ox, oy, 264, 267);
+                }
+                var cx = ox + 132;
+                var cy = oy + 133;
+                // 0..80 psi (135..405 deg)
+                var ratio = Math.min(1.0, Math.max(0.0, telemetry.oilPress / 80.0));
+                var ang = 135.0 + ratio * 270.0;
+                drawNeedle(cx, cy, 95, ang, '#ff6600', 3.0, 14);
+            }
+
+            function drawSingleBlitz(ox, oy) {
+                if (imgBlitz.complete) {
+                    ctx.drawImage(imgBlitz, ox, oy, 283, 282);
+                }
+                var cx = ox + 141;
+                var cy = oy + 141;
+                // 40..150 C (135..405 deg)
+                var ratio = Math.min(1.0, Math.max(0.0, (telemetry.oilTemp - 40.0) / 110.0));
+                var ang = 135.0 + ratio * 270.0;
+                drawNeedle(cx, cy, 100, ang, '#ffffff', 3.2, 14);
+            }
+
+            function drawSingleDefi(ox, oy) {
+                if (imgDefi.complete) {
+                    ctx.drawImage(imgDefi, ox, oy, 274, 274);
+                }
+                var cx = ox + 137;
+                var cy = oy + 137;
+                // 40..130 C (135..405 deg)
+                var ratio = Math.min(1.0, Math.max(0.0, (telemetry.waterTemp - 40.0) / 90.0));
+                var ang = 135.0 + ratio * 270.0;
+                drawNeedle(cx, cy, 98, ang, '#ff2233', 3.2, 12);
+            }
+
+            function drawSingleSpeedhut(ox, oy) {
+                if (imgSpeedhut.complete) {
+                    ctx.drawImage(imgSpeedhut, ox, oy, 258, 260);
+                }
+                var cx = ox + 129;
+                var cy = oy + 130;
+                // -0.5..2.0 bar (135..405 deg)
+                var ratio = Math.min(1.0, Math.max(0.0, (telemetry.boostBar + 0.5) / 2.5));
+                var ang = 135.0 + ratio * 270.0;
+                drawNeedle(cx, cy, 90, ang, '#ff3322', 2.8, 14);
+            }
+
+            function render() {
+                var w = canvas.width;
+                var h = canvas.height;
+                ctx.clearRect(0, 0, w, h);
+
+                if (currentAuxMode === 0) {
+                    // Single AEM Boost (aligned to right)
+                    drawSingleAEM(w - 270, 10);
+                } else if (currentAuxMode === 1) {
+                    drawSingleGReddy(w - 274, 10);
+                } else if (currentAuxMode === 2) {
+                    drawSingleBlitz(w - 290, 5);
+                } else if (currentAuxMode === 3) {
+                    drawSingleDefi(w - 280, 5);
+                } else if (currentAuxMode === 4) {
+                    drawSingleSpeedhut(w - 270, 10);
+                } else if (currentAuxMode === 5) {
+                    // Triple Pod: AEM Boost (Left), GReddy Oil.P (Center), Defi Water.T (Right)
+                    drawSingleAEM(10, 10);
+                    drawSingleGReddy(285, 10);
+                    drawSingleDefi(565, 5);
+                }
+            }
+
+            window._renderAux = render;
+            imgAEM.onload = render;
+
+            HUDCore.registerStyle('auxiliary_gauges', {
+                containerId: 'auxContainer',
+                scaleMultiplier: 0.95,
+
+                onElementsChange: function(elements) {
+                    if (container) {
+                        container.style.display = elements.showGauge === false ? 'none' : 'block';
+                    }
+                },
+
+                onFrame: function(data, payload) {
+                    if (data.boost !== undefined) {
+                        telemetry.boostBar = Number(data.boost);
+                        telemetry.boostPsi = telemetry.boostBar * 14.5038;
+                    }
+                    if (data.oil_press !== undefined) telemetry.oilPress = Number(data.oil_press);
+                    if (data.oil_temp !== undefined) telemetry.oilTemp = Number(data.oil_temp);
+                    if (data.coolant_temp !== undefined) telemetry.waterTemp = Number(data.coolant_temp);
+                    render();
+                },
+
+                onAnimate: function() {
+                    var start = performance.now();
+                    var duration = 1200;
+                    function sweep(t) {
+                        var progress = Math.min(1, (t - start) / duration);
+                        var wave = Math.sin(progress * Math.PI);
+                        telemetry.boostPsi = wave * 28.0;
+                        telemetry.boostBar = wave * 1.9;
+                        telemetry.oilPress = wave * 75.0;
+                        telemetry.oilTemp = 40.0 + wave * 90.0;
+                        telemetry.waterTemp = 40.0 + wave * 80.0;
+                        render();
+                        if (progress < 1) requestAnimationFrame(sweep);
+                    }
+                    requestAnimationFrame(sweep);
+                }
+            });
+
+            HUDCore.init('auxiliary_gauges');
+            render();
+        })();
+    </script>
+</body>
+</html>
