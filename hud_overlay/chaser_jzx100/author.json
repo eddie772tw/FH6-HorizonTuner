@@ -1,9 +1,4 @@
 {
-    "id": "chaser_jzx100",
-    "name": "Toyota Chaser JZX100 Optitron Digital",
-    "author": "JC & HorizonTuner Team",
-    "version": "1.0.0",
-    "category": "Dashboard Clusters",
-    "description": "Legendary Toyota Chaser JZX100 Tourer V digital Optitron cluster featuring high-contrast blue/cyan backlighting, horizontal linear RPM sweep bar, and dual arc fuel/temperature readouts.",
-    "tags": ["toyota", "chaser", "jzx100", "1jz", "optitron", "jdm", "digital"]
+  "author": "eddie772tw ft. Gemini Argon",
+  "description": "Legendary Toyota Chaser JZX100 Tourer V digital Optitron cluster featuring high-contrast blue/cyan backlighting, horizontal linear RPM sweep bar, and dual arc fuel/temperature readouts."
 }

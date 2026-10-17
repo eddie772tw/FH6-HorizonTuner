@@ -1,9 +1,4 @@
 {
-    "id": "soarer_z20",
-    "name": "Toyota Soarer Z20 Digital LCD VFD",
-    "author": "JC & HorizonTuner Team",
-    "version": "1.0.0",
-    "category": "Dashboard Clusters",
-    "description": "Authentic 1980s Toyota Soarer Z20 digital cluster with curved vacuum fluorescent tachometer sweep, 7-segment digital speedometer, step-ladder fuel and temperature gauges.",
-    "tags": ["toyota", "soarer", "jdm", "vfd", "digital", "retro"]
+  "author": "eddie772tw ft. Gemini Argon",
+  "description": "Authentic 1980s Toyota Soarer Z20 digital cluster with curved vacuum fluorescent tachometer sweep, 7-segment digital speedometer, step-ladder fuel and temperature gauges."
 }
