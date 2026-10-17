@@ -299,6 +299,12 @@ pub fn normalize_hud(data: &Value) -> Value {
             value["r34Lighting"] = json!("night");
         }
     }
+    if style == "auxiliary_gauges"
+        && !["triple", "aem", "greddy", "blitz", "defi", "speedhut"]
+            .contains(&value["auxGaugeMode"].as_str().unwrap_or(""))
+    {
+        value["auxGaugeMode"] = json!("triple");
+    }
     value
 }
 pub fn hud_for_frontend(data: &Value, settings: &Value) -> Value {

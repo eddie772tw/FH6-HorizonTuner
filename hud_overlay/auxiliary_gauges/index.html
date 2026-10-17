@@ -1,4 +1,11 @@
 <!DOCTYPE html>
+<!--
+  [設計決策紀錄 / Design Decision Note]
+  1. 水溫 (Water Temp, Defi Advance 錶頭)：Forza Horizon UDP 遙測封包未提供引擎水溫欄位，依專案決策統一採用四輪平均胎溫 (`temp_fl`..`temp_rr`，原生 °F 自動轉為 °C) 作為溫度資料來源。
+  2. 油溫與油壓 (Oil Temp / Oil Press, Blitz & GReddy 錶頭)：採用基於轉速比 (`rpmRatio`) 與油門開度 (`throttle`) 的確定性熱力學與油壓代理模型 (Deterministic Thermodynamic & Oil Pressure Proxy Model) 進行擬真模擬。
+  3. 錶面固定單位鎖定：AEM 30-4408 錶面印有固定 `PSI`、Speedhut 錶面印有固定 `BAR`、Blitz 與 Defi 錶面印有固定 `°C`，故忽略外部傳遞之單位設定，始終採用錶面標記之物理單位。
+  4. 子模式切換整合：移除 HUD 內部無法於穿透視窗點擊之 DOM 按鈕，改由主視窗 HUD 進階設定 (`auxGaugeMode`) 控制單錶或三聯錶 (`triple` / `aem` / `greddy` / `blitz` / `defi` / `speedhut`)。
+-->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -21,36 +28,7 @@
             display: flex;
             flex-direction: column;
             align-items: flex-end;
-            gap: 8px;
-            pointer-events: auto;
-        }
-        .aux-tabs {
-            display: flex;
-            gap: 4px;
-            background: rgba(15, 23, 42, 0.85);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 6px;
-            padding: 3px;
-        }
-        .aux-btn {
-            background: transparent;
-            border: none;
-            color: #94a3b8;
-            font-size: 11px;
-            font-weight: 700;
-            padding: 4px 8px;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: all 0.15s;
-        }
-        .aux-btn:hover {
-            color: #ffffff;
-            background: rgba(255, 255, 255, 0.08);
-        }
-        .aux-btn.active {
-            color: #00f0ff;
-            background: rgba(0, 240, 255, 0.15);
-            box-shadow: 0 0 8px rgba(0, 240, 255, 0.3);
+            pointer-events: none;
         }
         canvas {
             display: block;
@@ -61,38 +39,45 @@
 <body>
     <div class="hud-root-wrapper">
         <div class="hud-gauge-container aux-container" id="auxContainer">
-            <div class="aux-tabs" id="auxTabs">
-                <button class="aux-btn active" onclick="switchAux(0)">AEM Boost</button>
-                <button class="aux-btn" onclick="switchAux(1)">GReddy Oil.P</button>
-                <button class="aux-btn" onclick="switchAux(2)">Blitz Oil.T</button>
-                <button class="aux-btn" onclick="switchAux(3)">Defi Water.T</button>
-                <button class="aux-btn" onclick="switchAux(4)">Speedhut Boost</button>
-                <button class="aux-btn" onclick="switchAux(5)">Triple Pod</button>
-            </div>
-            <canvas id="auxCanvas" width="850" height="285"></canvas>
+            <canvas id="auxCanvas" width="850" height="290"></canvas>
         </div>
     </div>
 
     <script src="../shared/hud-core.js"></script>
     <script>
-        var currentAuxMode = 0;
+        var AUX_MODE_MAP = {
+            aem: 0,
+            greddy: 1,
+            blitz: 2,
+            defi: 3,
+            speedhut: 4,
+            pod: 5,
+            triple: 5
+        };
+        var currentAuxMode = 5;
+
+        function resolveAuxMode(mode) {
+            if (typeof mode === 'number' && mode >= 0 && mode <= 5) return mode;
+            if (typeof mode === 'string') {
+                var key = mode.trim().toLowerCase();
+                if (AUX_MODE_MAP[key] !== undefined) return AUX_MODE_MAP[key];
+                var parsed = parseInt(key, 10);
+                if (!isNaN(parsed) && parsed >= 0 && parsed <= 5) return parsed;
+            }
+            return 5;
+        }
+
         function switchAux(mode) {
-            currentAuxMode = mode;
-            var btns = document.querySelectorAll('.aux-btn');
-            btns.forEach(function(b, idx) {
-                b.className = 'aux-btn' + (idx === mode ? ' active' : '');
-            });
+            currentAuxMode = resolveAuxMode(mode);
             if (window._renderAux) window._renderAux();
         }
         window.switchAux = switchAux;
 
         var urlParams = new URLSearchParams(window.location.search);
         var qm = urlParams.get('mode');
-        if (qm === 'greddy') currentAuxMode = 1;
-        else if (qm === 'blitz') currentAuxMode = 2;
-        else if (qm === 'defi') currentAuxMode = 3;
-        else if (qm === 'speedhut') currentAuxMode = 4;
-        else if (qm === 'pod' || qm === 'triple') currentAuxMode = 5;
+        if (qm !== null) {
+            currentAuxMode = resolveAuxMode(qm);
+        }
 
         (function() {
             var canvas = document.getElementById('auxCanvas');
@@ -100,40 +85,62 @@
             var container = document.getElementById('auxContainer');
 
             var imgAEM = new Image(); imgAEM.src = 'assets/aux_aem.png';
+            var imgAEMLeds = new Image(); imgAEMLeds.src = 'assets/aux_aem_leds.png';
             var imgGReddy = new Image(); imgGReddy.src = 'assets/aux_greddy.png';
             var imgBlitz = new Image(); imgBlitz.src = 'assets/aux_blitz.png';
             var imgDefi = new Image(); imgDefi.src = 'assets/aux_defi.png';
             var imgSpeedhut = new Image(); imgSpeedhut.src = 'assets/aux_speedhut.png';
 
             var telemetry = {
-                boostPsi: 14.5,
-                boostBar: 1.0,
-                oilPress: 58.0,
-                oilTemp: 96.0,
-                waterTemp: 88.0
+                boostPsi: 0.0,
+                boostBar: 0.0,
+                oilPress: 28.0,
+                oilTemp: 86.0,
+                waterTemp: 82.0
             };
 
-            function drawNeedle(cx, cy, len, angleDeg, color, width, hubR) {
+            function clamp(v, lo, hi) {
+                return Math.min(hi, Math.max(lo, v));
+            }
+
+            function extractTireTempC(data) {
+                var temps = [data.temp_fl, data.temp_fr, data.temp_rl, data.temp_rr]
+                    .map(Number)
+                    .filter(function(v) { return Number.isFinite(v) && v > 0; });
+                if (temps.length > 0) {
+                    var avg = temps.reduce(function(a, b) { return a + b; }, 0) / temps.length;
+                    return avg > 125 ? (avg - 32.0) * 5.0 / 9.0 : avg;
+                }
+                if (data.coolant_temp !== undefined && Number.isFinite(Number(data.coolant_temp))) {
+                    return Number(data.coolant_temp);
+                }
+                return 82.0;
+            }
+
+            function drawNeedle(cx, cy, len, tailLen, angleDeg, color, width, hubR, hubColor) {
                 var rad = angleDeg * (Math.PI / 180.0);
                 var nx = cx + Math.cos(rad) * len;
                 var ny = cy + Math.sin(rad) * len;
+                var tx = cx - Math.cos(rad) * tailLen;
+                var ty = cy - Math.sin(rad) * tailLen;
 
                 ctx.save();
                 ctx.strokeStyle = color;
                 ctx.lineWidth = width;
                 ctx.lineCap = 'round';
                 ctx.shadowColor = color;
-                ctx.shadowBlur = 6;
+                ctx.shadowBlur = 7;
 
                 ctx.beginPath();
-                ctx.moveTo(cx, cy);
+                ctx.moveTo(tx, ty);
                 ctx.lineTo(nx, ny);
                 ctx.stroke();
 
                 if (hubR) {
-                    ctx.fillStyle = '#181a20';
+                    ctx.shadowBlur = 0;
+                    ctx.fillStyle = hubColor || '#151821';
                     ctx.strokeStyle = color;
-                    ctx.lineWidth = 1.2;
+                    ctx.lineWidth = 1.4;
                     ctx.beginPath();
                     ctx.arc(cx, cy, hubR, 0, Math.PI * 2);
                     ctx.fill();
@@ -143,86 +150,82 @@
             }
 
             function drawSingleAEM(ox, oy) {
-                if (imgAEM.complete) {
-                    ctx.drawImage(imgAEM, ox, oy, 260, 260);
-                }
+                if (!imgAEM.complete || imgAEM.naturalWidth === 0) return;
+                ctx.drawImage(imgAEM, ox, oy, 260, 260);
+
                 var cx = ox + 130;
                 var cy = oy + 130;
 
-                // Sweeping green LED ring (24 LEDs around perimeter)
-                var ratio = Math.min(1.0, Math.max(0.0, (telemetry.boostPsi + 15.0) / 65.0));
-                var leds = Math.round(ratio * 28);
-                ctx.save();
-                for (var i = 0; i < leds; i++) {
-                    var ang = (135.0 + (i / 27.0) * 270.0) * (Math.PI / 180.0);
-                    var lx = cx + Math.cos(ang) * 98;
-                    var ly = cy + Math.sin(ang) * 98;
-                    ctx.fillStyle = '#22ff44';
-                    ctx.shadowColor = '#22ff44';
-                    ctx.shadowBlur = 8;
+                // AEM 30-4408 Boost scale: -15 PSI (-30 inHg) to +35 PSI across 135..405 deg
+                var ratio = clamp((telemetry.boostPsi + 15.0) / 50.0, 0.0, 1.0);
+                if (ratio > 0.005 && imgAEMLeds.complete && imgAEMLeds.naturalWidth > 0) {
+                    var startRad = 128.0 * (Math.PI / 180.0);
+                    var endRad = (135.0 + ratio * 272.0) * (Math.PI / 180.0);
+                    ctx.save();
                     ctx.beginPath();
-                    ctx.arc(lx, ly, 3.5, 0, Math.PI * 2);
-                    ctx.fill();
+                    ctx.moveTo(cx, cy);
+                    ctx.arc(cx, cy, 128, startRad, endRad, false);
+                    ctx.closePath();
+                    ctx.clip();
+                    ctx.drawImage(imgAEMLeds, ox, oy, 260, 260);
+                    ctx.restore();
                 }
-                ctx.restore();
 
-                // 7-segment digital red readout in center (130, 138)
+                // 7-segment style red digital readout in center window
                 ctx.save();
-                ctx.fillStyle = '#ff2233';
-                ctx.font = 'bold 36px "Consolas", monospace';
+                ctx.fillStyle = '#ff2a2a';
+                ctx.font = '900 34px "Consolas", "Courier New", monospace';
                 ctx.textAlign = 'center';
-                ctx.shadowColor = 'rgba(255, 34, 51, 0.9)';
+                ctx.textBaseline = 'middle';
+                ctx.shadowColor = 'rgba(255, 38, 38, 0.85)';
                 ctx.shadowBlur = 10;
-                ctx.fillText(telemetry.boostPsi.toFixed(1), cx, cy + 12);
+                var txt = telemetry.boostPsi >= 9.95 ? telemetry.boostPsi.toFixed(0) : telemetry.boostPsi.toFixed(1);
+                ctx.fillText(txt, cx, cy + 2);
                 ctx.restore();
             }
 
             function drawSingleGReddy(ox, oy) {
-                if (imgGReddy.complete) {
-                    ctx.drawImage(imgGReddy, ox, oy, 264, 267);
-                }
+                if (!imgGReddy.complete || imgGReddy.naturalWidth === 0) return;
+                ctx.drawImage(imgGReddy, ox, oy, 264, 267);
                 var cx = ox + 132;
-                var cy = oy + 133;
-                // 0..80 psi (135..405 deg)
-                var ratio = Math.min(1.0, Math.max(0.0, telemetry.oilPress / 80.0));
-                var ang = 135.0 + ratio * 270.0;
-                drawNeedle(cx, cy, 95, ang, '#ff6600', 3.0, 14);
+                var cy = oy + 133.5;
+                // GReddy Oil Press: 0..80 psi across 120..420 deg (300 deg sweep)
+                var ratio = clamp(telemetry.oilPress / 80.0, 0.0, 1.0);
+                var ang = 120.0 + ratio * 300.0;
+                drawNeedle(cx, cy, 88, 18, ang, '#ff5511', 3.2, 13, '#1a1d24');
             }
 
             function drawSingleBlitz(ox, oy) {
-                if (imgBlitz.complete) {
-                    ctx.drawImage(imgBlitz, ox, oy, 283, 282);
-                }
-                var cx = ox + 141;
+                if (!imgBlitz.complete || imgBlitz.naturalWidth === 0) return;
+                ctx.drawImage(imgBlitz, ox, oy, 283, 282);
+                var cx = ox + 141.5;
                 var cy = oy + 141;
-                // 40..150 C (135..405 deg)
-                var ratio = Math.min(1.0, Math.max(0.0, (telemetry.oilTemp - 40.0) / 110.0));
-                var ang = 135.0 + ratio * 270.0;
-                drawNeedle(cx, cy, 100, ang, '#ffffff', 3.2, 14);
+                // Blitz Oil Temp: 40..150 °C across 90..360 deg (270 deg sweep)
+                var ratio = clamp((telemetry.oilTemp - 40.0) / 110.0, 0.0, 1.0);
+                var ang = 90.0 + ratio * 270.0;
+                drawNeedle(cx, cy, 94, 18, ang, '#ff2222', 3.2, 14, '#1a1c22');
             }
 
             function drawSingleDefi(ox, oy) {
-                if (imgDefi.complete) {
-                    ctx.drawImage(imgDefi, ox, oy, 274, 274);
-                }
+                if (!imgDefi.complete || imgDefi.naturalWidth === 0) return;
+                ctx.drawImage(imgDefi, ox, oy, 274, 274);
                 var cx = ox + 137;
                 var cy = oy + 137;
-                // 40..130 C (135..405 deg)
-                var ratio = Math.min(1.0, Math.max(0.0, (telemetry.waterTemp - 40.0) / 90.0));
-                var ang = 135.0 + ratio * 270.0;
-                drawNeedle(cx, cy, 98, ang, '#ff2233', 3.2, 12);
+                // Defi Advance Water Temp: 40..130 °C across 90..360 deg (270 deg sweep)
+                var ratio = clamp((telemetry.waterTemp - 40.0) / 90.0, 0.0, 1.0);
+                var ang = 90.0 + ratio * 270.0;
+                drawNeedle(cx, cy, 92, 18, ang, '#ff2233', 3.2, 13, '#181a20');
             }
 
             function drawSingleSpeedhut(ox, oy) {
-                if (imgSpeedhut.complete) {
-                    ctx.drawImage(imgSpeedhut, ox, oy, 258, 260);
-                }
+                if (!imgSpeedhut.complete || imgSpeedhut.naturalWidth === 0) return;
+                ctx.drawImage(imgSpeedhut, ox, oy, 258, 260);
                 var cx = ox + 129;
                 var cy = oy + 130;
-                // -0.5..2.0 bar (135..405 deg)
-                var ratio = Math.min(1.0, Math.max(0.0, (telemetry.boostBar + 0.5) / 2.5));
+                // Speedhut Boost: -1.0..2.0 BAR across 135..405 deg (270 deg sweep)
+                var ratio = clamp((telemetry.boostBar + 1.0) / 3.0, 0.0, 1.0);
                 var ang = 135.0 + ratio * 270.0;
-                drawNeedle(cx, cy, 90, ang, '#ff3322', 2.8, 14);
+                drawNeedle(cx, cy, 86, 16, ang, '#ff3322', 3.0, 13, '#1a1c22');
             }
 
             function render() {
@@ -231,45 +234,83 @@
                 ctx.clearRect(0, 0, w, h);
 
                 if (currentAuxMode === 0) {
-                    // Single AEM Boost (aligned to right)
-                    drawSingleAEM(w - 270, 10);
+                    drawSingleAEM(w - 270, 15);
                 } else if (currentAuxMode === 1) {
-                    drawSingleGReddy(w - 274, 10);
+                    drawSingleGReddy(w - 274, 12);
                 } else if (currentAuxMode === 2) {
-                    drawSingleBlitz(w - 290, 5);
+                    drawSingleBlitz(w - 290, 4);
                 } else if (currentAuxMode === 3) {
-                    drawSingleDefi(w - 280, 5);
+                    drawSingleDefi(w - 282, 8);
                 } else if (currentAuxMode === 4) {
-                    drawSingleSpeedhut(w - 270, 10);
-                } else if (currentAuxMode === 5) {
-                    // Triple Pod: AEM Boost (Left), GReddy Oil.P (Center), Defi Water.T (Right)
-                    drawSingleAEM(10, 10);
-                    drawSingleGReddy(285, 10);
-                    drawSingleDefi(565, 5);
+                    drawSingleSpeedhut(w - 268, 15);
+                } else {
+                    // Triple Pod: AEM Boost PSI (Left), GReddy Oil Press PSI (Center), Defi Water Temp °C (Right)
+                    drawSingleAEM(10, 15);
+                    drawSingleGReddy(285, 12);
+                    drawSingleDefi(565, 8);
                 }
             }
 
             window._renderAux = render;
-            imgAEM.onload = render;
+            [imgAEM, imgAEMLeds, imgGReddy, imgBlitz, imgDefi, imgSpeedhut].forEach(function(img) {
+                img.onload = render;
+            });
 
             HUDCore.registerStyle('auxiliary_gauges', {
                 containerId: 'auxContainer',
                 scaleMultiplier: 0.95,
 
-                onElementsChange: function(elements) {
-                    if (container) {
-                        container.style.display = elements.showGauge === false ? 'none' : 'block';
+                onInit: function(cfg) {
+                    if (cfg && cfg.auxGaugeMode !== undefined) {
+                        currentAuxMode = resolveAuxMode(cfg.auxGaugeMode);
+                        render();
                     }
                 },
 
-                onFrame: function(data, payload) {
-                    if (data.boost !== undefined) {
-                        telemetry.boostBar = Number(data.boost);
+                onElementsChange: function(elements) {
+                    if (container) {
+                        container.style.display = elements.showGauge === false ? 'none' : 'flex';
+                    }
+                },
+
+                onFrame: function(data) {
+                    if (data.boost_psi !== undefined && Number.isFinite(Number(data.boost_psi))) {
+                        telemetry.boostPsi = Number(data.boost_psi);
+                        telemetry.boostBar = data.boost_bar !== undefined
+                            ? Number(data.boost_bar)
+                            : telemetry.boostPsi / 14.5038;
+                    } else if (data.boost_bar !== undefined && Number.isFinite(Number(data.boost_bar))) {
+                        telemetry.boostBar = Number(data.boost_bar);
+                        telemetry.boostPsi = telemetry.boostBar * 14.5038;
+                    } else if (data.boost !== undefined && Number.isFinite(Number(data.boost))) {
+                        var rawBoost = Number(data.boost);
+                        telemetry.boostBar = rawBoost > 4.5 ? rawBoost / 14.5038 : rawBoost;
                         telemetry.boostPsi = telemetry.boostBar * 14.5038;
                     }
-                    if (data.oil_press !== undefined) telemetry.oilPress = Number(data.oil_press);
-                    if (data.oil_temp !== undefined) telemetry.oilTemp = Number(data.oil_temp);
-                    if (data.coolant_temp !== undefined) telemetry.waterTemp = Number(data.coolant_temp);
+
+                    telemetry.waterTemp = extractTireTempC(data);
+
+                    var rpm = Number(data.rpm) || 0;
+                    var maxRpm = Number(data.max_rpm) || 8000;
+                    var rpmRatio = clamp(maxRpm > 0 ? rpm / maxRpm : 0, 0, 1.2);
+                    var thr = Number(data.throttle) || 0;
+                    if (thr > 1.5) thr = thr / 100.0;
+                    thr = clamp(thr, 0, 1);
+
+                    if (data.oil_press !== undefined && Number.isFinite(Number(data.oil_press))) {
+                        telemetry.oilPress = Number(data.oil_press);
+                    } else {
+                        var targetPress = rpm > 100 ? (18.0 + rpmRatio * 54.0 + thr * 6.0) : 0.0;
+                        telemetry.oilPress += (targetPress - telemetry.oilPress) * 0.25;
+                    }
+
+                    if (data.oil_temp !== undefined && Number.isFinite(Number(data.oil_temp))) {
+                        telemetry.oilTemp = Number(data.oil_temp);
+                    } else {
+                        var targetOilTemp = Math.max(telemetry.waterTemp + 4.0, 78.0 + rpmRatio * 34.0 + thr * 14.0);
+                        telemetry.oilTemp += (targetOilTemp - telemetry.oilTemp) * 0.08;
+                    }
+
                     render();
                 },
 
@@ -279,11 +320,11 @@
                     function sweep(t) {
                         var progress = Math.min(1, (t - start) / duration);
                         var wave = Math.sin(progress * Math.PI);
-                        telemetry.boostPsi = wave * 28.0;
-                        telemetry.boostBar = wave * 1.9;
-                        telemetry.oilPress = wave * 75.0;
-                        telemetry.oilTemp = 40.0 + wave * 90.0;
-                        telemetry.waterTemp = 40.0 + wave * 80.0;
+                        telemetry.boostPsi = -15.0 + wave * 50.0;
+                        telemetry.boostBar = -1.0 + wave * 3.0;
+                        telemetry.oilPress = wave * 80.0;
+                        telemetry.oilTemp = 40.0 + wave * 110.0;
+                        telemetry.waterTemp = 40.0 + wave * 90.0;
                         render();
                         if (progress < 1) requestAnimationFrame(sweep);
                     }
