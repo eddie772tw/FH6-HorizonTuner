@@ -37,6 +37,12 @@ export const HUD_DISPLAY_NAMES: Record<string, string> = {
   simple: 'Simple Gauge',
   classic_jdm: 'Classic JDM Arcade',
   r34_mfd: 'Skyline R34 MFD',
+  autometer_sportcom: 'AutoMeter Sport-Comp Monster',
+  greddy_trust: 'GReddy TRUST Sirius Tacho',
+  blitz_racing_meter: 'Blitz Racing Meter SD',
+  defi_advance: 'Defi Advance BF Tacho',
+  datsun_z_classic: 'Speedhut Datsun 240Z Classic',
+  datsun_z_modern: 'Speedhut Datsun 240Z Modern',
 };
 
 /**

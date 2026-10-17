@@ -4,6 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GReddy TRUST Sirius Tachometer</title>
+    <!--
+      [設計決策紀錄 / Design Decision Note]
+      1. 視覺刻度與指針校準: GReddy TRUST 0..9,000 RPM 錶盤刻度由 120° (7 點鐘) 順時針掃掠 300° 至 420° (5 點鐘，中點 4,500 RPM 位於正上方 270°)，
+         修正舊版 135°..405° 造成的刻度錯位。
+      2. 檔位映射 (Gear Contract): 遵循 coordinator.js 契約 (0='R', 11='N', 1..10='1'..'10')。
+      3. 水溫/油溫/油壓: 此單體轉速錶不含水溫與油壓視窗；同系列複合儀表若涉及水溫統一取自四輪平均胎溫 (TireTemp)，
+         油溫與油壓則採確定性熱力學與油壓代理模型。
+    -->
     <link rel="stylesheet" href="../shared/hud-base.css">
     <style>
         body, html {
@@ -47,40 +55,47 @@
             baseImg.src = 'assets/clean_base.png';
 
             var telemetry = {
-                speed: 155,
-                rpm: 6800,
+                speed: 0,
+                rpm: 0,
                 maxRpm: 9000,
-                gear: 4
+                gear: 'N'
             };
 
-            var gears = ['R', 'N', '1', '2', '3', '4', '5', '6', '7', '8'];
+            function formatGear(g) {
+                if (g === 0 || g === 'R') return 'R';
+                if (g === 11 || g === 'N') return 'N';
+                var n = Number(g);
+                if (Number.isInteger(n) && n >= 1 && n <= 10) return String(n);
+                return 'N';
+            }
 
             function drawNeedle(cx, cy, len, angleDeg) {
                 var rad = angleDeg * (Math.PI / 180.0);
                 var nx = cx + Math.cos(rad) * len;
                 var ny = cy + Math.sin(rad) * len;
+                var tx = cx - Math.cos(rad) * 18;
+                var ty = cy - Math.sin(rad) * 18;
 
                 ctx.save();
-                ctx.strokeStyle = '#ff7700';
-                ctx.lineWidth = 3.4;
+                ctx.strokeStyle = '#ff6a00';
+                ctx.lineWidth = 3.6;
                 ctx.lineCap = 'round';
-                ctx.shadowColor = '#ff5500';
+                ctx.shadowColor = 'rgba(255, 106, 0, 0.85)';
                 ctx.shadowBlur = 10;
 
                 ctx.beginPath();
-                ctx.moveTo(cx, cy);
+                ctx.moveTo(tx, ty);
                 ctx.lineTo(nx, ny);
                 ctx.stroke();
 
-                // Center hub
                 ctx.fillStyle = '#111318';
-                ctx.strokeStyle = '#ff7700';
+                ctx.strokeStyle = '#2d323e';
                 ctx.lineWidth = 1.5;
+                ctx.shadowBlur = 0;
                 ctx.beginPath();
-                ctx.arc(cx, cy, 14, 0, Math.PI * 2);
+                ctx.arc(cx, cy, 16, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.stroke();
-
                 ctx.restore();
             }
 
@@ -89,36 +104,33 @@
                 var h = canvas.height;
                 ctx.clearRect(0, 0, w, h);
 
-                // 1. Clean base
-                if (baseImg.complete) {
+                if (baseImg.complete && baseImg.naturalWidth > 0) {
                     ctx.drawImage(baseImg, 0, 0, 331, 331);
                 }
 
-                var cx = 165;
-                var cy = 165;
+                var cx = 165.5;
+                var cy = 165.5;
 
-                // 2. Main Needle (0..9000 RPM, 135..405 deg)
-                var rpmRatio = Math.min(1.0, Math.max(0.0, telemetry.rpm / telemetry.maxRpm));
-                var tachAngle = 135.0 + rpmRatio * 270.0;
-                drawNeedle(cx, cy, 125, tachAngle);
+                // 0 RPM = 120 deg (7 o'clock), 4500 RPM = 270 deg (12 o'clock), 9000 RPM = 420 deg (5 o'clock)
+                var rpmRatio = Math.min(1.0, Math.max(0.0, telemetry.rpm / 9000.0));
+                var tachAngle = 120.0 + rpmRatio * 300.0;
+                drawNeedle(cx, cy, 128, tachAngle);
 
-                // 3. Digital Gear (Top Left LCD: 35, 42)
+                // Digital Gear (Top Left LCD window: 38, 48)
                 ctx.save();
-                ctx.fillStyle = '#ff2233';
-                ctx.font = 'bold 26px "Consolas", monospace';
+                ctx.fillStyle = '#ff2838';
+                ctx.font = 'bold 30px "Consolas", monospace';
                 ctx.textAlign = 'center';
-                ctx.shadowColor = 'rgba(255, 34, 51, 0.9)';
+                ctx.shadowColor = 'rgba(255, 40, 56, 0.8)';
                 ctx.shadowBlur = 6;
-                var gIdx = telemetry.gear;
-                var gChar = gears[gIdx] || (gIdx === 0 ? 'R' : String(gIdx - 1));
-                ctx.fillText(gChar, 35, 42);
+                ctx.fillText(telemetry.gear, 38, 48);
 
-                // 4. Digital Speed (Bottom Center LCD: 155, 276)
+                // Digital Speed (Bottom Center LCD window: 165.5, 281)
                 ctx.fillStyle = '#ffffff';
-                ctx.font = 'bold 36px "Consolas", monospace';
-                ctx.shadowColor = 'rgba(255, 255, 255, 0.9)';
+                ctx.font = 'bold 38px "Consolas", monospace';
+                ctx.shadowColor = 'rgba(255, 255, 255, 0.75)';
                 ctx.shadowBlur = 8;
-                ctx.fillText(String(Math.round(telemetry.speed)), 155, 276);
+                ctx.fillText(String(Math.round(telemetry.speed)), 165.5, 281);
                 ctx.restore();
             }
 
@@ -134,10 +146,10 @@
                     }
                 },
 
-                onFrame: function(data, payload) {
-                    if (data.speed !== undefined) telemetry.speed = Number(data.speed);
-                    if (data.rpm !== undefined) telemetry.rpm = Number(data.rpm);
-                    if (data.gear !== undefined) telemetry.gear = Number(data.gear);
+                onFrame: function(data) {
+                    if (data.speed !== undefined) telemetry.speed = Math.abs(Number(data.speed)) || 0;
+                    if (data.rpm !== undefined) telemetry.rpm = Math.max(0, Number(data.rpm) || 0);
+                    if (data.gear !== undefined) telemetry.gear = formatGear(data.gear);
                     render();
                 },
 
@@ -147,9 +159,9 @@
                     function sweep(t) {
                         var progress = Math.min(1, (t - start) / duration);
                         var wave = Math.sin(progress * Math.PI);
-                        telemetry.rpm = wave * 8800;
+                        telemetry.rpm = wave * 8900;
                         telemetry.speed = wave * 240;
-                        telemetry.gear = wave > 0.5 ? 4 : 1;
+                        telemetry.gear = wave > 0.5 ? '4' : '1';
                         render();
                         if (progress < 1) requestAnimationFrame(sweep);
                     }

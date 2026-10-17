@@ -1,9 +1,4 @@
 {
-    "id": "blitz_racing_meter",
-    "name": "Blitz Racing Meter SD Tachometer",
-    "author": "Blitz Co., Ltd. / JC & HorizonTuner Team",
-    "version": "1.0.0",
-    "category": "Standalone Tachometers",
-    "description": "Authentic Blitz Racing Meter SD carbon fiber tachometer featuring stepping motor drive simulation, high-visibility shift warning LED, and digital speed and gear displays.",
-    "tags": ["blitz", "carbon", "steppingmotor", "jdm", "tacho", "tuning"]
+  "author": "eddie772tw ft. Gemini Argon",
+  "description": "Authentic Blitz Racing Meter SD carbon fiber tachometer featuring stepping motor drive simulation, high-visibility shift warning LED, and digital speed and gear displays."
 }

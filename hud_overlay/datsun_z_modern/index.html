@@ -4,6 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Speedhut Datsun 240Z Modern LED Gauge</title>
+    <!--
+      [設計決策紀錄 / Design Decision Note]
+      1. 視覺固定單位 (Hardcoded km/h): 錶面中央 LCD 下方已原生刻印 "km/h"，故數位車速讀數強制綁定 data.speed_kmh（忽視外部英里單位設定）。
+      2. 底圖去針與雙軸幾何校準: 底圖透過 7 幀全狀態中位數去針完全消除 3/4 油量針殘影；
+         主轉速錶 (0..10k RPM) 為 125°..310°，右側油量小錶 (E..F) 為 90°..270°。
+      3. 水溫/油溫/油壓: 此錶頭僅含轉速、數位時速、檔位與油量；同系列若涉及水溫統一取自四輪平均胎溫 (TireTemp)，油溫與油壓則採確定性代理模型。
+    -->
     <link rel="stylesheet" href="../shared/hud-base.css">
     <style>
         body, html {
@@ -47,35 +54,44 @@
             baseImg.src = 'assets/clean_base.png';
 
             var telemetry = {
-                speed: 142,
-                rpm: 6200,
+                speedKmh: 0,
+                rpm: 0,
                 maxRpm: 10000,
                 redline: 7500,
-                gear: 4,
+                gear: 'N',
                 fuel: 0.75
             };
 
-            var gears = ['R', 'N', '1', '2', '3', '4', '5', '6', '7', '8'];
+            function formatGear(g) {
+                if (g === 0 || g === 'R') return 'R';
+                if (g === 11 || g === 'N') return 'N';
+                var n = Number(g);
+                if (Number.isInteger(n) && n >= 1 && n <= 10) return String(n);
+                return 'N';
+            }
 
             function drawNeedle(cx, cy, len, angleDeg, color, width, hubR) {
                 var rad = angleDeg * (Math.PI / 180.0);
                 var nx = cx + Math.cos(rad) * len;
                 var ny = cy + Math.sin(rad) * len;
+                var tx = cx - Math.cos(rad) * (hubR ? hubR * 0.7 : 10);
+                var ty = cy - Math.sin(rad) * (hubR ? hubR * 0.7 : 10);
 
                 ctx.save();
                 ctx.strokeStyle = color;
                 ctx.lineWidth = width;
                 ctx.lineCap = 'round';
                 ctx.shadowColor = color;
-                ctx.shadowBlur = 6;
+                ctx.shadowBlur = 5;
 
                 ctx.beginPath();
-                ctx.moveTo(cx, cy);
+                ctx.moveTo(tx, ty);
                 ctx.lineTo(nx, ny);
                 ctx.stroke();
 
                 if (hubR) {
-                    ctx.fillStyle = '#1c1c1e';
+                    ctx.fillStyle = '#1c1d22';
+                    ctx.shadowBlur = 0;
                     ctx.beginPath();
                     ctx.arc(cx, cy, hubR, 0, Math.PI * 2);
                     ctx.fill();
@@ -88,51 +104,48 @@
                 var h = canvas.height;
                 ctx.clearRect(0, 0, w, h);
 
-                // 1. Clean base
-                if (baseImg.complete) {
+                if (baseImg.complete && baseImg.naturalWidth > 0) {
                     ctx.drawImage(baseImg, 0, 0, 299, 300);
                 }
 
-                var cx = 150;
+                var cx = 148;
                 var cy = 150;
 
-                // 2. Main Tachometer Needle (150, 150), radius 110 (135..405 deg)
-                var rpmRatio = Math.min(1.0, Math.max(0.0, telemetry.rpm / telemetry.maxRpm));
-                var tachAngle = 135.0 + rpmRatio * 270.0;
-                drawNeedle(cx, cy, 105, tachAngle, '#ff3322', 3.2, 18);
+                // 1. Main Tachometer Needle: hub (148, 150), 0..10k RPM -> 125..310 deg
+                var rpmRatio = Math.min(1.0, Math.max(0.0, telemetry.rpm / 10000.0));
+                var tachAngle = 125.0 + rpmRatio * 185.0;
+                drawNeedle(cx, cy, 114, tachAngle, '#ff3322', 3.4, 21);
 
-                // 3. Shift Warning LED (Top Right: 255, 52)
+                // 2. Shift Warning LED (Top Right: 277, 29)
                 var isShift = telemetry.rpm >= telemetry.redline;
                 if (isShift) {
                     ctx.save();
                     ctx.beginPath();
-                    ctx.arc(255, 52, 14, 0, Math.PI * 2);
+                    ctx.arc(277, 29, 12, 0, Math.PI * 2);
                     ctx.fillStyle = '#ff2211';
                     ctx.shadowColor = '#ff1100';
-                    ctx.shadowBlur = 18;
+                    ctx.shadowBlur = 16;
                     ctx.fill();
                     ctx.restore();
                 }
 
-                // 4. Fuel Subdial on Right (235, 148), radius 24 (E..F, 225..315 deg)
+                // 3. Fuel Subdial on Right: hub (250, 150), E..F -> 90..270 deg
                 var fuelRatio = Math.min(1.0, Math.max(0.0, telemetry.fuel));
-                var fuelAngle = 225.0 + fuelRatio * 90.0;
-                drawNeedle(235, 148, 22, fuelAngle, '#ff3322', 2.0, 10);
+                var fuelAngle = 90.0 + fuelRatio * 180.0;
+                drawNeedle(250, 150, 34, fuelAngle, '#ff3322', 2.4, 14);
 
-                // 5. Digital Speedometer LCD (152, 222)
+                // 4. Digital Speedometer LCD (Center box above 'km/h': 150, 240)
                 ctx.save();
                 ctx.fillStyle = '#f8fafc';
                 ctx.font = 'bold 36px "Consolas", monospace';
                 ctx.textAlign = 'center';
-                ctx.shadowColor = 'rgba(255, 255, 255, 0.7)';
-                ctx.shadowBlur = 6;
-                ctx.fillText(String(Math.round(telemetry.speed)), 152, 230);
+                ctx.shadowColor = 'rgba(255, 255, 255, 0.65)';
+                ctx.shadowBlur = 5;
+                ctx.fillText(String(Math.round(telemetry.speedKmh)), 150, 240);
 
-                // 6. Digital Gear LCD (242, 240)
-                ctx.font = 'bold 34px "Consolas", monospace';
-                var gIdx = telemetry.gear;
-                var gChar = gears[gIdx] || (gIdx === 0 ? 'R' : String(gIdx - 1));
-                ctx.fillText(gChar, 242, 252);
+                // 5. Digital Gear LCD (Bottom-right box: 251, 267)
+                ctx.font = 'bold 36px "Consolas", monospace';
+                ctx.fillText(telemetry.gear, 251, 267);
                 ctx.restore();
             }
 
@@ -149,11 +162,23 @@
                 },
 
                 onFrame: function(data, payload) {
-                    if (data.speed !== undefined) telemetry.speed = Number(data.speed);
-                    if (data.rpm !== undefined) telemetry.rpm = Number(data.rpm);
-                    if (data.gear !== undefined) telemetry.gear = Number(data.gear);
-                    if (data.fuel_level !== undefined) telemetry.fuel = Number(data.fuel_level);
-                    if (payload && payload.redlineRpm !== undefined) telemetry.redline = Number(payload.redlineRpm);
+                    if (data.speed_kmh !== undefined) {
+                        telemetry.speedKmh = Math.abs(Number(data.speed_kmh)) || 0;
+                    } else if (data.speed !== undefined) {
+                        telemetry.speedKmh = Math.abs(Number(data.speed)) || 0;
+                    }
+                    if (data.rpm !== undefined) telemetry.rpm = Math.max(0, Number(data.rpm) || 0);
+                    if (data.gear !== undefined) telemetry.gear = formatGear(data.gear);
+                    if (data.fuel_ratio !== undefined) {
+                        telemetry.fuel = Number(data.fuel_ratio);
+                    } else if (data.fuel_level !== undefined) {
+                        telemetry.fuel = Number(data.fuel_level);
+                    }
+                    if (payload && payload.redlineRpm !== undefined && payload.redlineRpm > 0) {
+                        telemetry.redline = Number(payload.redlineRpm);
+                    } else if (data.redlineRpm !== undefined && data.redlineRpm > 0) {
+                        telemetry.redline = Number(data.redlineRpm);
+                    }
                     render();
                 },
 
@@ -163,9 +188,10 @@
                     function sweep(t) {
                         var progress = Math.min(1, (t - start) / duration);
                         var wave = Math.sin(progress * Math.PI);
-                        telemetry.rpm = wave * 9400;
-                        telemetry.speed = wave * 220;
-                        telemetry.gear = wave > 0.5 ? 4 : 1;
+                        telemetry.rpm = wave * 9600;
+                        telemetry.speedKmh = wave * 250;
+                        telemetry.fuel = wave;
+                        telemetry.gear = wave > 0.5 ? '4' : '1';
                         render();
                         if (progress < 1) requestAnimationFrame(sweep);
                     }

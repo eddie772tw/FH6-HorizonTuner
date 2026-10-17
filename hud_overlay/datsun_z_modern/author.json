@@ -1,9 +1,4 @@
 {
-    "id": "datsun_z_modern",
-    "name": "Speedhut Datsun 240Z Modern LED Gauge",
-    "author": "Speedhut Inc. / JC & HorizonTuner Team",
-    "version": "1.0.0",
-    "category": "Standalone Tachometers",
-    "description": "Modern competition LED edition of the Speedhut Datsun 240Z gauge featuring 10,000 RPM dial, sub-dial fuel level gauge, shift alert light, and digital speed and gear readouts.",
-    "tags": ["speedhut", "datsun", "240z", "fairlady", "modern", "led", "analog"]
+  "author": "eddie772tw ft. Gemini Argon",
+  "description": "Modern competition LED edition of the Speedhut Datsun 240Z gauge featuring 10,000 RPM dial, sub-dial fuel level gauge, shift alert light, and digital speed and gear readouts."
 }

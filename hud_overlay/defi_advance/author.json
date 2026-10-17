@@ -1,9 +1,4 @@
 {
-    "id": "defi_advance",
-    "name": "Defi Advance BF Tachometer",
-    "author": "Nippon Seiki / JC & HorizonTuner Team",
-    "version": "1.0.0",
-    "category": "Standalone Tachometers",
-    "description": "Premium Japanese Defi Advance BF competition 11,000 RPM tachometer with blackout glass face, brilliant red illuminated pointer, sequential shift warning LED, and digital readouts.",
-    "tags": ["defi", "advance", "bf", "nipponseiki", "jdm", "tacho", "tuning"]
+  "author": "eddie772tw ft. Gemini Argon",
+  "description": "Premium Japanese Defi Advance BF competition 11,000 RPM tachometer with blackout glass face, brilliant red illuminated pointer, sequential shift warning LED, and digital readouts."
 }
