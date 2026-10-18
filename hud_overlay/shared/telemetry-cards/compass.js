@@ -140,7 +140,12 @@ export function renderCompass(canvas, data, config, domCache) {
     var startTick = Math.floor(minAngle / 5) * 5;
     var endTick = Math.ceil(maxAngle / 5) * 5;
 
-    // Draw ticks and labels
+    // [PERF] Batch path operations by shared styling to eliminate context state change overhead
+    var cardinalTicks = [];
+    var majorTicks = [];
+    var minorTicks = [];
+
+    // First pass: extract labels and sort ticks into groups
     for (var tickDeg = startTick; tickDeg <= endTick; tickDeg += 5) {
         var diff = tickDeg - headingDeg;
         var x = centerX + diff * pixelsPerDegree;
@@ -154,23 +159,10 @@ export function renderCompass(canvas, data, config, domCache) {
         // Grade 1: Major Tick (14px length, 2px stroke width)
         // Grade 2: Minor Tick (7px length, 1px stroke width)
         var tickLength = isMajor ? 14 : 7;
-        var tickWidth = isMajor ? 2.0 : 1.0;
 
-        ctx.beginPath();
-        ctx.moveTo(x, baselineY);
-        ctx.lineTo(x, baselineY + tickLength);
-
-        if (isCardinal) {
-            ctx.strokeStyle = primaryColor;
-            ctx.lineWidth = 2.5;
-        } else if (isMajor) {
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
-            ctx.lineWidth = tickWidth;
-        } else {
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
-            ctx.lineWidth = tickWidth;
-        }
-        ctx.stroke();
+        if (isCardinal) cardinalTicks.push({x: x, len: tickLength});
+        else if (isMajor) majorTicks.push({x: x, len: tickLength});
+        else minorTicks.push({x: x, len: tickLength});
 
         // Labels for Major Ticks
         if (isCardinal) {
@@ -195,6 +187,42 @@ export function renderCompass(canvas, data, config, domCache) {
             ctx.textBaseline = 'top';
             ctx.fillText(normalizedTick.toString(), x, baselineY + tickLength + 3);
         }
+    }
+
+    // Draw grouped minor ticks
+    if (minorTicks.length > 0) {
+        ctx.beginPath();
+        for (var i = 0; i < minorTicks.length; i++) {
+            ctx.moveTo(minorTicks[i].x, baselineY);
+            ctx.lineTo(minorTicks[i].x, baselineY + minorTicks[i].len);
+        }
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
+        ctx.lineWidth = 1.0;
+        ctx.stroke();
+    }
+
+    // Draw grouped major ticks
+    if (majorTicks.length > 0) {
+        ctx.beginPath();
+        for (var j = 0; j < majorTicks.length; j++) {
+            ctx.moveTo(majorTicks[j].x, baselineY);
+            ctx.lineTo(majorTicks[j].x, baselineY + majorTicks[j].len);
+        }
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+        ctx.lineWidth = 2.0;
+        ctx.stroke();
+    }
+
+    // Draw grouped cardinal ticks
+    if (cardinalTicks.length > 0) {
+        ctx.beginPath();
+        for (var k = 0; k < cardinalTicks.length; k++) {
+            ctx.moveTo(cardinalTicks[k].x, baselineY);
+            ctx.lineTo(cardinalTicks[k].x, baselineY + cardinalTicks[k].len);
+        }
+        ctx.strokeStyle = primaryColor;
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
     }
 
     // Center Lubber Line / Pointer Triangle Indicator
