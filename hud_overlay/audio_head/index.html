@@ -115,10 +115,22 @@
             ];
 
             var images = {};
+            var backgrounds = {};
             decks.forEach(function(d) {
                 var img = new Image();
                 img.src = d.file;
-                img.onload = function() { render(); };
+                img.onload = function() {
+                    // Composite the complete rectangular material once, then apply 75% as one layer.
+                    var surface = document.createElement('canvas');
+                    surface.width = d.w;
+                    surface.height = d.h;
+                    var background = surface.getContext('2d');
+                    background.fillStyle = '#000000';
+                    background.fillRect(0, 0, d.w, d.h);
+                    background.drawImage(img, 0, 0, d.w, d.h);
+                    backgrounds[d.id] = surface;
+                    render();
+                };
                 images[d.id] = img;
             });
 
@@ -246,18 +258,15 @@
                 }
                 var cw = deck.w;
                 var ch = deck.h;
-                // Original res_123 head units use a black rectangular display surface.
-                // Clean PNG alpha holes must reveal this backing, not the game.
-                ctx.fillStyle = "#000000";
-                ctx.fillRect(0, 0, cw, ch);
-
-                var img = images[deck.id];
-
-                var dx = Math.round((cw - deck.w) / 2);
-                var dy = Math.round((ch - deck.h) / 2);
-
-                if (!img || !img.complete || img.naturalWidth === 0) return;
-                ctx.drawImage(img, dx, dy, deck.w, deck.h);
+                ctx.clearRect(0, 0, cw, ch);
+                var background = backgrounds[deck.id];
+                if (!background) return;
+                var dx = 0;
+                var dy = 0;
+                ctx.save();
+                ctx.globalAlpha = 0.75;
+                ctx.drawImage(background, dx, dy, deck.w, deck.h);
+                ctx.restore();
 
                 var fullTrack = (mediaState.artist ? mediaState.artist + ' - ' : '') + mediaState.title;
 

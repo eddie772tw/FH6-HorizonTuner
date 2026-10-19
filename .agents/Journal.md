@@ -956,3 +956,9 @@
 - **修正／Learning**：對照 D:/ForzaHUD 的九款 radio acceptance 截圖、res_123 的研究說明及清理底圖；清理 PNG 的透明區不等於主機背景應透明。繪製前先填完整不透明黑色矩形，再疊原始素材，保留 Panasonic 金色面板，移除額外青色外光暈，沿用時間域動畫。
 - **驗證界線**：先跑完整 frontend Vitest 與 build，再保存最後提交的實際 Forza 漫遊截圖與設定；靜態圖片不作為動態駕駛或跨更新率效能證據。未新增個別樣式測試。
 - **Skills**：`huge-component-refactoring`、`halfmoon-design-system`、`pr-author-maintainer`、`ponytail`。
+
+
+### 2026-10-19 Audio Head 矩形面板 75%
+
+- 九款靜態面板先於載入時合成完整黑色矩形與原材質，再作為單層以 alpha=0.75 繪製；每幀先 clear，避免多次疊色變不透明。動態頻譜、文字、海豚、VU 保持原 alpha、單調時間與大小／位置。
+- 採用技能：`ponytail`、`pr-author-maintainer`、`halfmoon-design-system`、`huge-component-refactoring`。完整前端測試與 build 於提交前驗證，日誌 round4-541；不新增樣式測試。
