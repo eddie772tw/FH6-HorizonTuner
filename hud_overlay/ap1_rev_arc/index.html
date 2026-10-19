@@ -23,9 +23,9 @@
             background: transparent !important;
         }
         .ap1-container {
-            position: absolute;
-            bottom: 24px;
-            right: 24px;
+            align-self: center;
+            transform-origin: bottom center;
+            position: relative;
             width: 799px;
             height: 229px;
             pointer-events: none;
@@ -45,6 +45,7 @@
     </div>
 
     <script src="../shared/hud-core.js"></script>
+    <script src="../shared/hud-artwork.js"></script>
     <script src="ap1-model.js"></script>
     <script>
         (function() {
@@ -53,10 +54,8 @@
             var container = document.getElementById('ap1Container');
             var Model = window.Ap1Model;
 
-            var baseImg = new Image();
-            baseImg.src = 'assets/ap1_clean_base.png';
-            var barsImg = new Image();
-            barsImg.src = 'assets/ap1_bars_full.png';
+            var baseImg = HUDArtwork.loadImage('assets/ap1_clean_base.png');
+            var barsImg = HUDArtwork.loadImage('assets/ap1_bars_full.png', 0);
 
             var telemetry = {
                 speed: 0,
@@ -79,8 +78,8 @@
             updateClock();
 
             function render() {
-                var w = canvas.width;
-                var h = canvas.height;
+                var w = 799;
+                var h = 229;
                 ctx.clearRect(0, 0, w, h);
 
                 // 1. Clean D3D11 dark-glass base plate (0% bars, no baked center '0')
@@ -177,7 +176,9 @@
 
             HUDCore.registerStyle('ap1_rev_arc', {
                 containerId: 'ap1Container',
+                scaleBaseline: 2.1,
                 scaleMultiplier: 0.95,
+                onScale: HUDArtwork.watchCanvas(canvas, render),
 
                 onElementsChange: function(elements) {
                     if (container) {
