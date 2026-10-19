@@ -945,3 +945,8 @@
 - 四款水溫表統一共用四輪 raw °F 平均轉 °C，移除猜單位、coolant fallback 與 RPM=0 改寫；Altezza 油溫／油壓代理維持原模型。Altezza 底板 alpha=0.5，刻度與指針保留。
 - 採用技能：`ponytail`、`pr-author-maintainer`、`halfmoon-design-system`、`huge-component-refactoring`、`telemetry-udp-protocol`。共用 helper 與兩個共用測試和 iDrive PR 相同；不新增樣式測試。
 - 完整前端測試與 build 於提交前驗證，日誌 round4-535。
+
+### 2026-10-19 Altezza 幾何底板
+
+- 毛邊來自依貼圖亮度產生的輪廓。底板改為三個整圓與兩個LCD矩形的單一Path2D聯集，以alpha=0.5填一次，再疊原圖的標記層；移除外圍CSS陰影，重疊區不增加alpha。圖層只在載入時快取。
+- 技能：`ponytail`、`pr-author-maintainer`、`halfmoon-design-system`、`huge-component-refactoring`。基線及修改後完整前端1811 passed／1 skipped、build通過。棋盤格離線預覽無JS錯誤；另做真實遊戲截圖，不新增樣式測試。

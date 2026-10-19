@@ -22,7 +22,7 @@
             display: block;
             width: 505px;
             height: 276px;
-            filter: drop-shadow(0 6px 18px rgba(0, 0, 0, calc(var(--hud-glow-intensity, 1.0) * 0.55)));
+            filter: none;
         }
     </style>
 </head>
@@ -43,7 +43,9 @@
             var ctx = canvas.getContext('2d');
             var container = document.getElementById('altezzaContainer');
 
-            var baseImg = HUDArtwork.loadImage('assets/altezza_clean_base.png', 0.5);
+            // The plate silhouette is geometry, never the brightness contour of its lettering.
+            var baseImg = HUDArtwork.loadImage('assets/altezza_clean_base.png', 0);
+            var basePlate = null;
 
             var isSweeping = false;
             var sweepRafId = null;
@@ -105,8 +107,8 @@
                 var h = 276;
                 ctx.clearRect(0, 0, w, h);
 
-                if (baseImg.complete && baseImg.naturalWidth) {
-                    ctx.drawImage(baseImg, 0, 0, w, h);
+                if (basePlate) {
+                    ctx.drawImage(basePlate, 0, 0);
                 }
 
                 // 1. Subdial 1: Water Temp (Pivot: 266, 91), left-half scale 70..130 C (125..235 deg)
@@ -158,7 +160,25 @@
                 ctx.restore();
             }
 
-            baseImg.onload = render;
+            baseImg.onload = function() {
+                basePlate = document.createElement('canvas');
+                basePlate.width = 505;
+                basePlate.height = 276;
+                var plate = basePlate.getContext('2d');
+                var silhouette = new Path2D();
+                silhouette.arc(105, 149, 101, 0, Math.PI * 2);
+                silhouette.moveTo(392, 149);
+                silhouette.arc(266, 149, 126, 0, Math.PI * 2);
+                silhouette.moveTo(495, 215);
+                silhouette.arc(435, 215, 60, 0, Math.PI * 2);
+                silhouette.rect(115, 215, 39, 40);
+                silhouette.rect(407, 239, 88, 34);
+                // One union fill avoids increasing opacity where circles overlap.
+                plate.fillStyle = 'rgba(8, 10, 15, 0.5)';
+                plate.fill(silhouette);
+                plate.drawImage(baseImg, 0, 0, 505, 276);
+                render();
+            };
 
             HUDCore.registerStyle('altezza_trd', {
                 containerId: 'altezzaContainer',
