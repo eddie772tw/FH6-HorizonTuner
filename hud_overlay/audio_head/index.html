@@ -52,6 +52,7 @@
     </div>
 
     <script src="../shared/hud-core.js"></script>
+    <script src="../shared/audio-motion.js"></script>
     <script>
         var DECK_KEY_MAP = {
             pioneer: 0,
@@ -130,8 +131,8 @@
             };
 
             var vuPhysics = {
-                left: { val: 0, vel: 0 },
-                right: { val: 0, vel: 0 }
+                left: { val: 0 },
+                right: { val: 0 }
             };
 
             var mediaState = {
@@ -142,25 +143,24 @@
             };
 
             var animT = 0;
+            var animationStart = performance.now();
+            var lastAnimationTime = animationStart;
+            var demoStart = null;
 
             function updateVU(state, target, dt) {
                 var attack = 0.025;
                 var release = 0.28;
-                var rate = target > state.val ? (dt / attack) : (dt / release);
-                rate = Math.min(1.0, Math.max(0.0, rate));
-                state.vel += (target - state.val) * rate * 0.85;
-                state.vel *= 0.68;
-                state.val += state.vel;
+                state.val = HUDAudioMotion.follow(state.val, target, dt, target > state.val ? attack : release);
                 return Math.max(0.0, Math.min(1.0, state.val));
             }
 
-            function updatePeaks() {
+            function updatePeaks(dt) {
                 for (var i = 0; i < 32; i++) {
                     var val = audioState.spectrum[i];
                     if (val > audioState.peaks[i]) {
                         audioState.peaks[i] = val;
                     } else {
-                        audioState.peaks[i] = Math.max(0, audioState.peaks[i] - 0.015);
+                        audioState.peaks[i] = HUDAudioMotion.peak(audioState.peaks[i], val, dt, 0.9);
                     }
                 }
             }
@@ -248,9 +248,6 @@
                 var ch = deck.h;
                 ctx.clearRect(0, 0, cw, ch);
 
-                animT += 0.035;
-                updatePeaks();
-
                 var img = images[deck.id];
 
                 var dx = Math.round((cw - deck.w) / 2);
@@ -327,8 +324,8 @@
 
                     case 1: {
                         // 1. PANASONIC CQ-VX5500K (Dual Analog VU Needles clipped to scale window + bottom VFD)
-                        var vl = updateVU(vuPhysics.left, audioState.vu_left, 0.016);
-                        var vr = updateVU(vuPhysics.right, audioState.vu_right, 0.016);
+                        var vl = vuPhysics.left.val;
+                        var vr = vuPhysics.right.val;
 
                         // Left scale window: x=dx+16..dx+194, y=dy+22..dy+55; pivot at (dx+104, dy+116)
                         drawVUNeedle(dx + 104, dy + 116, 94, vl, dx + 16, dy + 22, 178, 33);
@@ -526,7 +523,22 @@
 
             window._renderRadio = render;
 
-            function animLoop() {
+            function animLoop(now) {
+                var dt = Math.max(0, (now - lastAnimationTime) / 1000);
+                lastAnimationTime = now;
+                animT = HUDAudioMotion.phase((now - animationStart) / 1000, 2.1);
+                if (demoStart !== null) {
+                    var t = HUDAudioMotion.phase((now - demoStart) / 1000, 5);
+                    if (t >= Math.PI * 2) demoStart = null;
+                    else {
+                        audioState.vu_left = Math.abs(Math.sin(t));
+                        audioState.vu_right = audioState.vu_left * 0.9;
+                        for (var i = 0; i < 32; i++) audioState.spectrum[i] = Math.abs(Math.sin(t + i * 0.2));
+                    }
+                }
+                updatePeaks(dt);
+                updateVU(vuPhysics.left, audioState.vu_left, dt);
+                updateVU(vuPhysics.right, audioState.vu_right, dt);
                 render();
                 requestAnimationFrame(animLoop);
             }
@@ -562,6 +574,7 @@
                 onAudio: function(data) {
                     if (!data) return;
                     audioState.has_audio = data.has_audio === true;
+                    if (audioState.has_audio) demoStart = null;
                     audioState.vu_left = Math.max(0, Math.min(1, Number(data.vu_left) || 0));
                     audioState.vu_right = Math.max(0, Math.min(1, Number(data.vu_right) || 0));
                     if (Array.isArray(data.spectrum) && data.spectrum.length === 32) {
@@ -586,19 +599,8 @@
                 },
 
                 onAnimate: function() {
-                    var t = 0;
-                    var sweepInterval = setInterval(function() {
-                        t += 0.08;
-                        var s = Math.abs(Math.sin(t));
-                        audioState.vu_left = s;
-                        audioState.vu_right = s * 0.9;
-                        for (var i = 0; i < 32; i++) {
-                            audioState.spectrum[i] = Math.abs(Math.sin(t + i * 0.2));
-                        }
-                        if (t > Math.PI * 2) {
-                            clearInterval(sweepInterval);
-                        }
-                    }, 16);
+                    // Preview uses the same monotonic clock; real audio cancels it immediately.
+                    demoStart = performance.now();
                 }
             });
 

@@ -943,3 +943,10 @@
 - **驗證順序**：前端平台 build 會替換 `dist` 中的 hash 檔名，不可與同一工作樹的 Rust 資源嵌入／文件測試平行執行；固定前端輸出後，依序執行 Cargo 驗證。
 - **Boundary**：未新增個別音響樣式測試；測試補在共用設定、選單與事件傳輸契約。瀏覽器截圖介面逾時，沒有有效畫面截圖；未宣稱 Tauri、實體音訊裝置或遊戲內驗收。
 - **Skills**：`halfmoon-design-system`、`huge-component-refactoring`、`modular-refactoring`、`pr-author-maintainer`、`ponytail`。
+
+## 2026-10-19 / Audio Head 動畫時間尺度（Codex as Codex）
+
+- **Learning**：`render()` 每次加固定相位、固定 peak 衰減，以及 VU 使用固定 0.016 秒，會讓動畫時間尺度跟隨 rAF 次數；設定／圖片載入額外重畫也會推進動畫。60Hz 改到 144Hz 時，原海豚相位速度理論上會變為 2.4 倍。
+- **修正**：繪圖不再修改時間狀態；相位從單調時鐘計算（2.1 rad/s），peak 下降 0.9/s，VU 使用實際 dt 的指數 attack／release。預覽共用同一 rAF 時鐘，以秒計算並由真實音訊取消，不開 interval。rAF 繪製不設固定 60Hz 上限。
+- **Evidence**：共用 `audio-motion.js` 的時間域測試涵蓋 30／60／120／144／240Hz 的等時長相位、peak 與 VU 結果，另涵蓋不規則間距、重複時間戳與背景暫停。這是數值契約證據，不能當成實機跨更新率的 DWM／VRR／流暢度量測。
+- **Skills**：`huge-component-refactoring`、`pr-author-maintainer`、`ponytail`。
