@@ -131,10 +131,11 @@
                 ctx.shadowColor = 'rgba(255, 255, 255, 0.45)';
                 ctx.shadowBlur = 6;
 
-                // 4. Gear sits inside the clear left readout, below the rising RPM arc.
+                // 4. Restore the original D3D11 gear readout above the left RPM ramp.
+                // Reference: ForzaHUD/raw_renders/dash_ford_gt_raw.png (gear bounds x=15..49, y=58..98).
                 ctx.font = 'bold 64px "Consolas", monospace';
                 ctx.textAlign = 'center';
-                ctx.fillText(telemetry.gear, 110, 150);
+                ctx.fillText(telemetry.gear, 33, 99);
 
                 // 5. Digital Speed (Center: x=295, y=150)
                 ctx.font = 'bold 82px "Consolas", monospace';
