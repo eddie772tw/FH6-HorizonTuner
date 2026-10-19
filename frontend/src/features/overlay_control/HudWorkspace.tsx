@@ -6,13 +6,14 @@ export interface HudWorkspaceCompositionProps extends Omit<HudWorkspaceProps, 'c
   t: (key: string) => string;
   setup: ReactNode;
   audioHead?: ReactNode;
+  auxiliaryGauges?: ReactNode;
   layout: ReactNode;
   advanced: ReactNode;
   status: ReactNode;
   children?: ReactNode;
 }
 
-export function HudWorkspace({ setup, audioHead, layout, advanced, status, children, t, className = '', testId }: HudWorkspaceCompositionProps) {
+export function HudWorkspace({ setup, audioHead, auxiliaryGauges, layout, advanced, status, children, t, className = '', testId }: HudWorkspaceCompositionProps) {
   return (
     <div className={`hud-workspace container-fluid h-100 w-100 d-flex flex-column p-0 ${className}`.trim()} data-testid={testId}>
       <div className="workspace-toolbar hud-workspace-toolbar">
@@ -22,6 +23,7 @@ export function HudWorkspace({ setup, audioHead, layout, advanced, status, child
       <div className="hud-workspace-content d-flex flex-column gap-4 p-2">
         {setup}
         {audioHead}
+        {auxiliaryGauges}
         {layout}
         <details className="hud-advanced-settings border-top pt-3">
           <summary className="text-primary fs-6 fw-bold">{t('Advanced settings')}</summary>

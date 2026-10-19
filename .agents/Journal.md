@@ -976,3 +976,10 @@
 - **Materials**：完整矩形、Panasonic 金色和下方材質先在同一 SVG 群組合成，再以 opacity=.75 呈現；裝飾／文字在另一層。避免兩個75%背景重疊成93.75%，也不再以亮度猜測背景。複雜標記保留原圖輪廓路徑，來源區域與SHA列於panel-glyphs.json；不宣稱可恢復原圖不存在的細節或完整原作字型。
 - **Validation**：基線與修改後完整frontend Vitest均1821 passed／1 skipped，TypeScript／Vite build通過。九款SVG於100%／200% scale及DPR1／1.25／1.5／2共45組離線載入／版面檢查無JS錯誤；產物可由無額外相依的Node腳本重建並以--check確認一致。無新增個別樣式單元測試；離線圖與遊戲證據分列。
 - **Skills**：`ponytail`、`pr-author-maintainer`、`halfmoon-design-system`、`huge-component-refactoring`；實際Windows畫面擷取採`computer-use:computer-use`。
+## 2026-10-19 / Auxiliary 獨立排列與共用數值來源（Codex as Codex）
+
+- **Scope**：PR #540 接續 #541 的獨立元素基礎；輔助儀表另設複選選單與開關，預設右側中央。Audio Head 的位移輸入改由共用元件維持負號草稿。既有 CI 的 base branch filter 加入 `feat/hud-audio-head`，使 stacked PR 能執行同一組檢查。
+- **Learning**：表頭僅讀取語意值，`gaugeValueSources` 在 launcher 分發前統一對應欄位、描述與來源單位。AEM／Speedhut 共用 boost 對應。Forza 缺少的油溫、油壓不再以轉速模型補值；水溫預設讀取有明確標示的平均胎溫。缺值須優先使用 nullable 原始胎溫，避免 legacy 的零值填補被誤認為實際量測。
+- **排列／生命週期**：以每排上限建立向上成長的格線；橫向逐列、直向逐欄由下往上填入，幾何與文字僅於設定改變時計算。外層錨點使用螢幕像素，Canvas 依 DPR 配置。關閉或空選取移除 iframe，既有主儀表及音響保留。
+- **Evidence**：完整前端 1,823 passed／1 skipped，Windows 與 LAN build；Rust 預設全量 228 passed／3 ignored、無 HUD 全量 220 passed／2 ignored。共用測試涵蓋設定遷移／保存／重啟、來源轉換／缺值、選單與排列。隔離瀏覽器確認五表頭複選、來源同步、四邊 24px／中心 -32px、主儀表切換與獨立開關。
+- **Boundary**：沒有新增個別樣式繪圖測試。瀏覽器截圖仍逾時，DOM／版面證據與合成傳輸不代表 Tauri 或遊戲內驗收。詳細操作契約見 [獨立元素說明](../docs/hud-independent-elements.md)。

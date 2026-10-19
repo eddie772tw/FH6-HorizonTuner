@@ -5,7 +5,7 @@ import { normalizeR34MfdConfig } from './r34_mfd/config';
 import { normalizeStackSt8100Config } from './stack_st8100/config';
 import { normalizeLfaExpansionConfig } from './lfa_center_ring/config';
 import type { HudDisplayUnits } from './HudUnitSettingsSidebar';
-import { normalizeAudioHeadConfig } from '../../../../hud_overlay/shared/overlay-config.js';
+import { normalizeAudioHeadConfig, normalizeAuxiliaryConfig } from '../../../../hud_overlay/shared/overlay-config.js';
 
 export type HudConfigRecord = HudConfig & Record<string, unknown>;
 
@@ -81,7 +81,7 @@ async function responseIsSuccessful(response: ResponseLike, action: string): Pro
 }
 
 export function normalizeHudRuntimeConfig(input: unknown): HudConfigRecord {
-  const raw = normalizeAudioHeadConfig(isRecord(input) ? withoutDerivedChannelFields(input) : {});
+  const raw = normalizeAuxiliaryConfig(normalizeAudioHeadConfig(isRecord(input) ? withoutDerivedChannelFields(input) : {}));
   const normalized = normalizeR34MfdConfig(
     normalizeStackSt8100Config(
       normalizeLfaExpansionConfig(

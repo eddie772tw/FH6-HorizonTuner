@@ -12,6 +12,12 @@ import {
 } from './hudStyleScanner';
 
 describe('hudStyleScanner frontend module tests', () => {
+  it('keeps independent elements out of the speedometer selector, including a saved current selection', () => {
+    const styles: HudStyleEntry[] = ['vfd', 'audio_head', 'auxiliary_gauges'].map(id => ({ id, source: 'builtin', urlPrefix: '/hud' }));
+    expect(formatHudDropdownOptions(styles, undefined, { includeWip: true, currentStyle: 'auxiliary_gauges' }).map(option => option.value)).toEqual(['vfd']);
+    expect(formatHudDropdownOptions([]).some(option => option.value === 'auxiliary_gauges')).toBe(false);
+    expect(formatHudDropdownOptions([], {}, { includeWip: true, wipDisplayNames: { auxiliary_gauges: 'Aux', audio_head: 'Audio' } })).toEqual([]);
+  });
   it('fetchHudStylesList should correctly call backend API and return parsed styles', async () => {
     const mockResponse: HudStyleEntry[] = [
       { id: 'simple', source: 'builtin', urlPrefix: '/hud' },

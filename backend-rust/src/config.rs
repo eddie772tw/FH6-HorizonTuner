@@ -231,6 +231,8 @@ fn normalize_stack_st8100(value: &mut Value) {
     }
 }
 
+mod gauges;
+
 fn normalize_audio_head(value: &mut Value) {
     let legacy = value["hudStyle"] == "audio_head";
     let has_settings = value
@@ -345,6 +347,7 @@ pub fn normalize_hud(data: &Value) -> Value {
         }
     }
     normalize_audio_head(&mut value);
+    gauges::normalize(&mut value);
     value
 }
 pub fn hud_for_frontend(data: &Value, settings: &Value) -> Value {

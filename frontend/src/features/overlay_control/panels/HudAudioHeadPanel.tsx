@@ -1,4 +1,5 @@
-import { useEffect, useId, useState } from 'react';
+import { useId } from 'react';
+import { HudOffsetInput as OffsetInput } from './HudOffsetInput';
 import type { HudPanelSharedProps } from '../hudPanelTypes';
 import type { HudConfig } from '../hudConfig';
 
@@ -11,22 +12,6 @@ const DECKS = [
 type Props = Pick<HudPanelSharedProps, 'config' | 'disabled' | 'onConfigPatch'> & {
   t: (key: string) => string;
 };
-
-function OffsetInput({ id, value, min, onCommit }: {
-  id: string; value: number; min: number; onCommit: (value: number) => void;
-}) {
-  const [draft, setDraft] = useState(String(value));
-  useEffect(() => { setDraft(String(value)); }, [value]);
-  const commit = () => {
-    const number = Number(draft);
-    const next = Number.isFinite(number) ? Math.max(min, Math.min(4000, number)) : value;
-    setDraft(String(next));
-    onCommit(next);
-  };
-  return <input id={id} type="number" className="form-control form-control-sm" min={min} max={4000} step={1}
-    value={draft} onChange={event => setDraft(event.target.value)} onBlur={commit}
-    onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); event.currentTarget.blur(); } }} />;
-}
 
 export function HudAudioHeadPanel({ config, disabled, onConfigPatch, t }: Props) {
   const id = useId();

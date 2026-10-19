@@ -11,6 +11,31 @@ function response(data: unknown, ok = true, status = 200): ResponseLike {
   return { ok, status, json: async () => data };
 }
 
+it('migrates legacy independent gauges and preserves shared mappings across main gauge changes', () => {
+  const config = normalizeHudRuntimeConfig({ hudStyle: 'auxiliary_gauges', auxGaugeMode: 'blitz', elements: { showGauge: false } });
+  expect(config).toMatchObject({ hudStyle: 'vfd', auxGaugeFaces: ['blitz'], auxGaugeEdge: 'right', elements: { showAuxiliaryGauges: false } });
+  expect(config).not.toHaveProperty('auxGaugeMode');
+  const changed = applyHudConfigPatch(config, {
+    hudStyle: 'gt7', auxGaugeFaces: ['aem', 'speedhut'],
+    gaugeValueSources: { ...config.gaugeValueSources!, boost: { field: 'power_kw', unit: 'native', label: 'Power' } },
+    elements: { showAuxiliaryGauges: true, showGauge: false },
+  });
+  const broadcast = normalizeHudRuntimeConfig(changed);
+  expect(broadcast).toMatchObject({ hudStyle: 'gt7', auxGaugeFaces: ['aem', 'speedhut'], gaugeValueSources: { boost: { field: 'power_kw', label: 'Power' } }, elements: { showGauge: false, showAuxiliaryGauges: true } });
+});
+
+it('normalizes independent selection, arrangement and offsets without coupling visibility to the main gauge', () => {
+  const config = normalizeHudRuntimeConfig({
+    auxGaugeFaces: ['aem', 'bad', 'aem', 'defi'], auxGaugeMaxPerRow: 99,
+    auxGaugeOrientation: 'bad', auxGaugeEdge: 'bad', auxGaugeOffset: -1, auxGaugeCenterOffset: -9999,
+    elements: { showAuxiliaryGauges: 'true' },
+  });
+  expect(config).toMatchObject({ auxGaugeFaces: ['aem', 'defi'], auxGaugeMaxPerRow: 5,
+    auxGaugeOrientation: 'horizontal', auxGaugeEdge: 'right', auxGaugeOffset: 0, auxGaugeCenterOffset: -4000,
+    elements: { showAuxiliaryGauges: false } });
+  expect(normalizeHudRuntimeConfig({ auxGaugeFaces: [], auxGaugeMaxPerRow: '2' })).toMatchObject({ auxGaugeFaces: [], auxGaugeMaxPerRow: 3 });
+});
+
 function deferred<T>() {
   let resolve!: (value: T) => void;
   const promise = new Promise<T>(nextResolve => { resolve = nextResolve; });

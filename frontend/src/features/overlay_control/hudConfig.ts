@@ -1,4 +1,5 @@
 import type { S650CenterWidget, S650HmiTheme } from './s650/config';
+import { normalizeGaugeValueSources } from '../../../../hud_overlay/shared/gauge-sources.js';
 import type { ClassicJdmAuxGauge, ClassicJdmDefiTheme, ClassicJdmTachStyle } from './classic_jdm/config';
 import type { R34MfdMode, R34Lighting } from './r34_mfd/config';
 import type { StackSt8100Settings } from './stack_st8100/config';
@@ -9,6 +10,7 @@ export interface HudElements {
   showTeleMaster?: boolean;
   showGauge: boolean;
   showAudioHead?: boolean;
+  showAuxiliaryGauges?: boolean;
   showCenterInfo: boolean;
   showRPM: boolean;
   showSpeed: boolean;
@@ -53,6 +55,13 @@ export interface HudConfig extends Partial<StackSt8100Settings> {
   r34MfdMode?: R34MfdMode;
   r34ShowCluster?: boolean;
   r34Lighting?: R34Lighting;
+  auxGaugeFaces?: ('aem' | 'greddy' | 'blitz' | 'defi' | 'speedhut')[];
+  auxGaugeMaxPerRow?: number;
+  auxGaugeOrientation?: 'horizontal' | 'vertical';
+  auxGaugeEdge?: 'left' | 'right' | 'top' | 'bottom';
+  auxGaugeOffset?: number;
+  auxGaugeCenterOffset?: number;
+  gaugeValueSources?: import('../../../../hud_overlay/shared/gauge-sources.js').GaugeValueSources;
   audioHeadDeck?: number;
   audioHeadEdge?: 'left' | 'right' | 'top' | 'bottom';
   /** Screen pixels inward from the selected edge. */
@@ -114,6 +123,13 @@ export const DEFAULT_HUD_CONFIG: HudConfig = {
   r34MfdMode: 'single',
   r34ShowCluster: true,
   r34Lighting: 'night',
+  auxGaugeFaces: ['aem', 'greddy', 'defi'],
+  auxGaugeMaxPerRow: 3,
+  auxGaugeOrientation: 'horizontal',
+  auxGaugeEdge: 'right',
+  auxGaugeOffset: 0,
+  auxGaugeCenterOffset: 0,
+  gaugeValueSources: normalizeGaugeValueSources(undefined),
   audioHeadDeck: 0,
   audioHeadEdge: 'left',
   audioHeadOffset: 0,
@@ -157,6 +173,7 @@ export const DEFAULT_HUD_CONFIG: HudConfig = {
     showTeleMaster: true,
     showGauge: true,
     showAudioHead: false,
+    showAuxiliaryGauges: false,
     showCenterInfo: true,
     showRPM: true,
     showSpeed: true,

@@ -1,5 +1,7 @@
 import { backendFetch } from '../../services/backend';
 
+const INDEPENDENT_HUD_IDS = new Set(['audio_head', 'auxiliary_gauges']);
+
 export interface HudStyleEntry {
   id: string;
   source: 'builtin' | 'user';
@@ -135,14 +137,14 @@ export function formatHudDropdownOptions(
   } = options;
 
   if (!hudStyles || hudStyles.length === 0) {
-    const baseList = Object.entries(displayNames).filter(([id]) => id !== 'audio_head').map(([id, label]) => ({
+    const baseList = Object.entries(displayNames).filter(([id]) => !INDEPENDENT_HUD_IDS.has(id)).map(([id, label]) => ({
       value: id,
       label,
       isCustom: false,
     }));
 
     if (includeWip) {
-      const wipList = Object.entries(wipDisplayNames).map(([id, label]) => ({
+      const wipList = Object.entries(wipDisplayNames).filter(([id]) => !INDEPENDENT_HUD_IDS.has(id)).map(([id, label]) => ({
         value: id,
         label,
         isCustom: false,
@@ -150,7 +152,7 @@ export function formatHudDropdownOptions(
       return [...baseList, ...wipList];
     }
 
-    if (currentStyle && wipDisplayNames[currentStyle] && !displayNames[currentStyle]) {
+    if (currentStyle && !INDEPENDENT_HUD_IDS.has(currentStyle) && wipDisplayNames[currentStyle] && !displayNames[currentStyle]) {
       return [
         ...baseList,
         { value: currentStyle, label: wipDisplayNames[currentStyle], isCustom: false },
@@ -162,7 +164,7 @@ export function formatHudDropdownOptions(
 
   return hudStyles
     .filter((s) => {
-      if (s.id === 'audio_head') return false;
+      if (INDEPENDENT_HUD_IDS.has(s.id)) return false;
       if (s.source === 'user') return true;
       if (WIP_HUD_IDS.has(s.id)) {
         return includeWip || currentStyle === s.id;
