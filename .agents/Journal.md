@@ -938,3 +938,9 @@
 - **修正／Learning**：對照 D:/ForzaHUD/horizontuner_integration/raw_renders/dash_ford_gt_raw.png 與 docs/acceptance_screenshots/10_dash_Ford_GT.png；依使用者確認恢復左上檔位，位於 RPM 上升弧外側。
 - **驗證界線**：先跑完整 frontend Vitest 與 build，再保存最後提交的實際 Forza 漫遊截圖與設定；靜態圖片不作為動態駕駛或跨更新率效能證據。未新增個別樣式測試。
 - **Skills**：`huge-component-refactoring`、`halfmoon-design-system`、`pr-author-maintainer`、`ponytail`。
+
+
+### 2026-10-19 Ford GT 面板背景 25%
+
+- 暗底板 alpha 改 0.25，保留原生刻度、指針、亮標記與原始左上檔位位置 (33,99)。
+- 採用技能：`ponytail`、`pr-author-maintainer`、`halfmoon-design-system`。完整前端測試與 build 於提交前驗證，日誌 round4-538；不新增樣式測試。
