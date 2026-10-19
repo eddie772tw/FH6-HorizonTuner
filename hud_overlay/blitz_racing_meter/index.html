@@ -52,7 +52,8 @@
             var ctx = canvas.getContext('2d');
             var container = document.getElementById('blitzContainer');
 
-            var baseImg = HUDArtwork.loadImage('assets/clean_base.png');
+            var baseImg = new Image();
+            baseImg.src = 'assets/clean_base.png';
 
             var telemetry = {
                 speed: 0,
