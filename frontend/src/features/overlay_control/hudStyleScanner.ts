@@ -37,7 +37,6 @@ export const HUD_DISPLAY_NAMES: Record<string, string> = {
   simple: 'Simple Gauge',
   classic_jdm: 'Classic JDM Arcade',
   r34_mfd: 'Skyline R34 MFD',
-  audio_head: 'Car Audio Head Unit (9 Classic Decks)',
 };
 
 /**
@@ -136,7 +135,7 @@ export function formatHudDropdownOptions(
   } = options;
 
   if (!hudStyles || hudStyles.length === 0) {
-    const baseList = Object.entries(displayNames).map(([id, label]) => ({
+    const baseList = Object.entries(displayNames).filter(([id]) => id !== 'audio_head').map(([id, label]) => ({
       value: id,
       label,
       isCustom: false,
@@ -163,6 +162,7 @@ export function formatHudDropdownOptions(
 
   return hudStyles
     .filter((s) => {
+      if (s.id === 'audio_head') return false;
       if (s.source === 'user') return true;
       if (WIP_HUD_IDS.has(s.id)) {
         return includeWip || currentStyle === s.id;

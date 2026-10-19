@@ -8,6 +8,7 @@ import { DEFAULT_LFA_AUTO_EXPAND, DEFAULT_LFA_MANUAL_EXPAND } from './lfa_center
 export interface HudElements {
   showTeleMaster?: boolean;
   showGauge: boolean;
+  showAudioHead?: boolean;
   showCenterInfo: boolean;
   showRPM: boolean;
   showSpeed: boolean;
@@ -53,6 +54,11 @@ export interface HudConfig extends Partial<StackSt8100Settings> {
   r34ShowCluster?: boolean;
   r34Lighting?: R34Lighting;
   audioHeadDeck?: number;
+  audioHeadEdge?: 'left' | 'right' | 'top' | 'bottom';
+  /** Screen pixels inward from the selected edge. */
+  audioHeadOffset?: number;
+  /** Screen pixels along the edge, relative to its center. */
+  audioHeadCenterOffset?: number;
   /** LFA only: manual expansion overrides automatic race detection. */
   lfaManualExpand?: boolean;
   /** LFA only: expand while confirmed lap timing is present. */
@@ -109,6 +115,9 @@ export const DEFAULT_HUD_CONFIG: HudConfig = {
   r34ShowCluster: true,
   r34Lighting: 'night',
   audioHeadDeck: 0,
+  audioHeadEdge: 'left',
+  audioHeadOffset: 0,
+  audioHeadCenterOffset: 0,
   lfaManualExpand: DEFAULT_LFA_MANUAL_EXPAND,
   lfaAutoExpand: DEFAULT_LFA_AUTO_EXPAND,
   audioDeviceId: 'default',
@@ -147,6 +156,7 @@ export const DEFAULT_HUD_CONFIG: HudConfig = {
   elements: {
     showTeleMaster: true,
     showGauge: true,
+    showAudioHead: false,
     showCenterInfo: true,
     showRPM: true,
     showSpeed: true,

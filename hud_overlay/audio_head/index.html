@@ -21,23 +21,31 @@
             background: transparent !important;
         }
         .audio-head-container {
-            width: 510px;
-            height: 150px;
             position: relative;
             pointer-events: none;
             user-select: none;
+            transition: none !important;
+        }
+        #audioHeadAnchor {
+            position: fixed;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: max-content;
+            height: max-content;
+            pointer-events: none;
         }
         #radioCanvas {
             display: block;
-            width: 500px;
-            height: 140px;
             pointer-events: none;
+            transition: none !important;
+            animation: none !important;
             filter: drop-shadow(0 0 14px rgba(0, 240, 255, calc(var(--hud-glow-intensity, 1.0) * 0.35)));
         }
     </style>
 </head>
 <body>
-    <div class="hud-root-wrapper">
+    <div id="audioHeadAnchor">
         <div class="hud-gauge-container audio-head-container" id="audioHeadContainer">
             <canvas id="radioCanvas" width="500" height="140"></canvas>
         </div>
@@ -88,6 +96,9 @@
             var canvas = document.getElementById('radioCanvas');
             var ctx = canvas.getContext('2d');
             var container = document.getElementById('audioHeadContainer');
+            var anchor = document.getElementById('audioHeadAnchor');
+            var canvasMode = -1;
+            var canvasDpr = 0;
 
             var decks = [
                 { id: 0, name: 'Pioneer DEH-P6100R', file: 'assets/pioneer_clean.png', w: 380, h: 98 },
@@ -112,21 +123,21 @@
             var audioState = {
                 spectrum: new Float32Array(32),
                 peaks: new Float32Array(32),
-                vu_left: 0.35,
-                vu_right: 0.42,
-                has_audio: true
+                vu_left: 0,
+                vu_right: 0,
+                has_audio: false
             };
 
             var vuPhysics = {
-                left: { val: 0.35, vel: 0 },
-                right: { val: 0.42, vel: 0 }
+                left: { val: 0, vel: 0 },
+                right: { val: 0, vel: 0 }
             };
 
             var mediaState = {
-                title: 'RUNNING IN THE 90S',
-                artist: 'MAX COVERI',
-                album: 'INITIAL D SELECTION',
-                status: 'playing'
+                title: '',
+                artist: '',
+                album: '',
+                status: 'stopped'
             };
 
             var animT = 0;
@@ -221,14 +232,24 @@
             }
 
             function render() {
-                var cw = canvas.width;
-                var ch = canvas.height;
+                var deck = decks[currentMode] || decks[0];
+                var dpr = window.devicePixelRatio || 1;
+                if (canvasMode !== currentMode || canvasDpr !== dpr) {
+                    canvasMode = currentMode;
+                    canvasDpr = dpr;
+                    canvas.width = Math.round(deck.w * dpr);
+                    canvas.height = Math.round(deck.h * dpr);
+                    canvas.style.width = container.style.width = deck.w + 'px';
+                    canvas.style.height = container.style.height = deck.h + 'px';
+                    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+                }
+                var cw = deck.w;
+                var ch = deck.h;
                 ctx.clearRect(0, 0, cw, ch);
 
                 animT += 0.035;
                 updatePeaks();
 
-                var deck = decks[currentMode] || decks[0];
                 var img = images[deck.id];
 
                 var dx = Math.round((cw - deck.w) / 2);
@@ -515,6 +536,20 @@
                 scaleMultiplier: 0.95,
 
                 onInit: function(cfg) {
+                    var edge = cfg.audioHeadEdge || 'left';
+                    var offset = (cfg.audioHeadOffset || 0) + 'px';
+                    var center = 'calc(50% + ' + (cfg.audioHeadCenterOffset || 0) + 'px)';
+                    anchor.style.left = anchor.style.right = anchor.style.top = anchor.style.bottom = 'auto';
+                    if (edge === 'top' || edge === 'bottom') {
+                        anchor.style[edge] = offset;
+                        anchor.style.left = center;
+                        anchor.style.transform = 'translateX(-50%)';
+                    } else {
+                        anchor.style[edge === 'right' ? 'right' : 'left'] = offset;
+                        anchor.style.top = center;
+                        anchor.style.transform = 'translateY(-50%)';
+                    }
+                    container.style.display = cfg.elements?.showAudioHead === true ? 'block' : 'none';
                     if (cfg && cfg.audioHeadDeck !== undefined) {
                         currentMode = resolveDeckMode(cfg.audioHeadDeck);
                         render();
@@ -535,14 +570,15 @@
 
                 onMedia: function(data) {
                     if (!data) return;
-                    if (data.title) mediaState.title = data.title;
-                    if (data.artist) mediaState.artist = data.artist;
-                    if (data.album) mediaState.album = data.album;
+                    mediaState.title = data.title || '';
+                    mediaState.artist = data.artist || '';
+                    mediaState.album = data.album_title || data.album || '';
+                    mediaState.status = data.status || 'stopped';
                 },
 
                 onElementsChange: function(elements) {
                     if (container) {
-                        container.style.display = elements.showGauge === false ? 'none' : 'block';
+                        container.style.display = elements.showAudioHead === true ? 'block' : 'none';
                     }
                 },
 

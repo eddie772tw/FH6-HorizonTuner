@@ -30,6 +30,40 @@ async function flushTasks() {
 }
 
 describe('overlay control runtime', () => {
+  it('migrates an auxiliary-only selection and keeps auxiliary visibility independent of gauge changes', () => {
+    const migrated = normalizeHudRuntimeConfig({
+      hudStyle: 'audio_head', audioHeadDeck: 6, elements: { showGauge: true }, pluginField: 42,
+    });
+    expect(migrated.hudStyle).toBe('vfd');
+    expect(migrated.elements.showAudioHead).toBe(true);
+    expect(migrated.audioHeadDeck).toBe(6);
+    const changed = applyHudConfigPatch(migrated, { hudStyle: 'gt7', elements: { showGauge: false } });
+    expect(changed.hudStyle).toBe('gt7');
+    expect(changed.elements.showGauge).toBe(false);
+    expect(changed.elements.showAudioHead).toBe(true);
+    expect(changed.pluginField).toBe(42);
+    const hidden = applyHudConfigPatch(changed, { elements: { showAudioHead: false } });
+    expect(hidden.hudStyle).toBe('gt7');
+    expect(hidden.elements.showAudioHead).toBe(false);
+    expect(normalizeHudRuntimeConfig({ hudStyle: 'audio_head', elements: { showGauge: false } }).elements.showAudioHead).toBe(false);
+  });
+
+  it.each(['left', 'right', 'top', 'bottom'] as const)('preserves %s auxiliary alignment across nested edits', edge => {
+    const config = normalizeHudRuntimeConfig({
+      hudStyle: 'vfd', audioHeadEdge: edge, audioHeadOffset: 24, audioHeadCenterOffset: -32,
+    });
+    const changed = applyHudConfigPatch(config, { elements: { showAudioHead: true } });
+    expect(changed).toMatchObject({ hudStyle: 'vfd', audioHeadEdge: edge, audioHeadOffset: 24, audioHeadCenterOffset: -32 });
+  });
+
+  it('bounds auxiliary position fields and rejects invalid persisted values', () => {
+    expect(normalizeHudRuntimeConfig({ audioHeadDeck: 99, audioHeadEdge: 'invalid', audioHeadOffset: -20, audioHeadCenterOffset: 9000 }))
+      .toMatchObject({ audioHeadDeck: 8, audioHeadEdge: 'left', audioHeadOffset: 0, audioHeadCenterOffset: 4000 });
+    expect(normalizeHudRuntimeConfig({ audioHeadDeck: '3', audioHeadOffset: Infinity, audioHeadCenterOffset: null }))
+      .toMatchObject({ audioHeadDeck: 0, audioHeadOffset: 0, audioHeadCenterOffset: 0 });
+    expect(normalizeHudRuntimeConfig({ hudStyle: 'audio_head', elements: { showAudioHead: false } }).elements.showAudioHead).toBe(false);
+  });
+
   it.each([
     [undefined, 'C'], [null, 'C'], ['', 'C'], ['c', 'C'], ['f', 'C'],
     ['°F', 'C'], ['K', 'C'], [true, 'C'], [32, 'C'], [{}, 'C'], [[], 'C'],

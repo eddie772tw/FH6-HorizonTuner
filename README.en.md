@@ -52,6 +52,7 @@ AEGO Road now uses qualified moving-sweep bin averages and jointly allocates fir
   - **Arcade Multi-Gauge Layout & Standardized 1080p Scaling**: Supports side-by-side modular gauges with unified anchor points and adaptive proportional scaling across resolutions.
   - **[Stack ST8100 Inspired](docs/hud/stack-st8100.md)**: Original compressed analog tachometer and green dot-matrix LCD, with four selectable telemetry fields, session tell-tales, configurable warnings and real GUI settings. No fabricated engine sensors.
   - **Multi-Style Overlay Support**: Features Ford Mustang S650 HMI (with Windows GSMTC media widget), GT7 style, Retro VFD vacuum fluorescent display, 093 Drift HUD, and 5 popular community overlay styles.
+  - **Independent Audio Head**: Select one of 9 audio decks in its own HUD settings menu and toggle it alongside any gauge style. It defaults to the center of the left edge; choose any of the four edges and set the inward edge offset and the offset along the edge's center in screen pixels.
   - **Lite Standalone Client (`FH6-HorizonTuner_lite.exe`)**: Provides Telemetry Dashboard, HUD Overlay, and Settings tabs while sharing existing frontend features and backend lifecycle with the Full client.
   - 100% injection-free, zero hook, zero anti-cheat ban risk. Multi-channel WebSocket telemetry streaming and fullscreen adaptive auto-scaling.
   - **WYSIWYG Dashboard Designer**: Drag-and-drop layout editor, property panels, conditional threshold styling, and one-click import/export presets.

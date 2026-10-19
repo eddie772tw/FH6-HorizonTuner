@@ -105,23 +105,6 @@ function StyleSettings({ config, appUnits, onConfigPatch, isWipActive, wipForced
       {config.hudStyle === CLASSIC_JDM_STYLE_ID && <ClassicJdmSettingsCard config={config} onChange={onConfigPatch} t={t} />}
       {config.hudStyle === LFA_CENTER_RING_STYLE_ID && <LfaExpansionSettingsCard config={config} onChange={onConfigPatch} t={t} />}
       {config.hudStyle === 'r34_mfd' && <R34MfdSettingsCard config={config} onChange={onConfigPatch} t={t} />}
-      {config.hudStyle === 'audio_head' && (
-        <div className="border-top pt-2 d-flex flex-column gap-2" role="group" aria-label={t('Car Audio Head Unit Model')}>
-          <label htmlFor={`${id}-audio-deck`} className="form-label fs-7 text-body-secondary mb-0">{t('Car Audio Head Unit Model')}:</label>
-          <select id={`${id}-audio-deck`} className="form-select form-select-sm fw-bold" value={config.audioHeadDeck ?? 0}
-            onChange={event => onConfigPatch({ audioHeadDeck: Number(event.target.value) })}>
-            <option value={0}>{t('Pioneer DEH-P6100R (OEL Dolphins & 32-Band EQ)')}</option>
-            <option value={1}>{t('Panasonic CQ-VX5500K (Dual Analog VU Needles)')}</option>
-            <option value={2}>{t('Pioneer DEX-P1R (Copper Chassis Reference OEL)')}</option>
-            <option value={3}>{t('Pioneer DEH-P835R (Multi-Color Organic EL Deck)')}</option>
-            <option value={4}>{t('Sony CDX-CA860X (Active Black Panel Blue/Red Matrix)')}</option>
-            <option value={5}>{t('Alpine CDA-7848 (Classic 6-Key Green Illumination)')}</option>
-            <option value={6}>{t('Alpine CDA-9815RB (BassEngine Pro Bioluminescent)')}</option>
-            <option value={7}>{t('Kenwood KRC-759R (D-MASK Motorized Stealth Face)')}</option>
-            <option value={8}>{t('JVC KD-LX50R (El Kameleon Touch LCD Deck)')}</option>
-          </select>
-        </div>
-      )}
       {config.hudStyle === 'vfd' && (
         <div className="border-top pt-2 d-flex flex-column gap-3">
           <div>

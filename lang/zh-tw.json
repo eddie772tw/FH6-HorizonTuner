@@ -2191,5 +2191,16 @@
   "EV needs stable low-slip speed data and steering channels": "EV 需要穩定低打滑速度資料與轉向通道",
   "EV needs valid stable wheel-speed channels": "EV 需要有效且穩定的輪速通道",
   "EV raw frames are missing required channels": "EV 原始幀缺少必要通道",
-  "EV needs forward full-throttle positive output without brake, clutch or regeneration": "EV 需要前進檔全油門正輸出；不能夾雜煞車、離合器或回充"
+  "EV needs forward full-throttle positive output without brake, clutch or regeneration": "EV 需要前進檔全油門正輸出；不能夾雜煞車、離合器或回充",
+  "Audio Head": "音響面板",
+  "Show Audio Head": "顯示音響面板",
+  "Show alongside any speedometer style.": "可與任何儀表樣式同時顯示。",
+  "Car Audio Head Unit Model": "車用音響主機型號",
+  "Audio Head Alignment": "音響面板對齊邊緣",
+  "Audio Head Edge Offset": "音響面板邊緣 Offset",
+  "Audio Head Center Offset": "音響面板中心 Offset",
+  "Top Edge": "上側邊緣",
+  "Bottom Edge": "下側邊緣",
+  "Distance inward from the selected edge.": "從所選邊緣向內的距離。",
+  "Along the edge: positive moves down or right; negative moves up or left.": "沿邊緣移動：正值向下或向右，負值向上或向左。"
 }

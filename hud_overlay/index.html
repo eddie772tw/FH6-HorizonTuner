@@ -61,6 +61,7 @@
         import { createOverlayEventForwarder }                                                  from './shared/overlay-forwarding.js';
         import { initPhysics }                                                                  from './shared/physics.js';
         import { initUtils, isMetric, setSpeedUnit }                                            from './shared/utils.js';
+        import { normalizeAudioHeadConfig }                                                     from './shared/overlay-config.js';
 
         // Initialize Host-level Central Telemetry Cluster
         if (TelemetryCardsManager) {
@@ -80,7 +81,7 @@
         const isLegacyS650Style = (name) => typeof name === 'string' && name !== 's650_hmi' && name.startsWith('s650_');
 
         function normalizeHudConfig(config) {
-            const normalized = { ...(config || {}) };
+            const normalized = normalizeAudioHeadConfig(config || {});
             if (normalized.hudStyle === 'initial_d') {
                 normalized.hudStyle = 'classic_jdm';
                 if (!normalized.classicJdmTachStyle) normalized.classicJdmTachStyle = 'trd';
@@ -110,12 +111,15 @@
         }
 
         function normalizeHudStyle(name) {
+            if (name === 'audio_head') return 'vfd';
             if (name === 'initial_d' || name === 'defi_triple') return 'classic_jdm';
             return LEGACY_S650_STYLE_MAP[name] || isLegacyS650Style(name) ? 's650_hmi' : name;
         }
 
         let activeHud = normalizeHudStyle(localStorage.getItem('forza_hud_active') || 'simple');
         const hudIframe = document.getElementById('hud-iframe');
+        let audioHeadIframe = null;
+        const audioHeadEvents = new Set(['config', 'hud:elements', 'hud:audio', 'hud:media', 'hud:animate', 'hud:reload']);
 
         async function loadHudStyles() {
             const host = window.location.port ? window.location.host : '127.0.0.1:8001';
@@ -137,12 +141,53 @@
             }
         }
 
-        // Post a message to the active HUD iframe
+        function postToFrame(frame, type, detail = {}) {
+            frame.contentWindow?.postMessage({ type, ...detail }, '*');
+        }
+
+        // Both renderers share the host's single telemetry/audio connection.
         function postToHud(type, detail = {}) {
-            hudIframe.contentWindow?.postMessage({ type, ...detail }, '*');
+            const message = { type, ...detail };
+            hudIframe.contentWindow?.postMessage(message, '*');
+            if (audioHeadIframe && audioHeadEvents.has(type)) {
+                audioHeadIframe.contentWindow?.postMessage(message, '*');
+            }
         }
 
         const overlayEventForwarder = createOverlayEventForwarder(postToHud);
+
+        function initializeFrame(frame) {
+            const post = (type, detail) => postToFrame(frame, type, detail);
+            post('hud:init', { isMetric: window.isMetric?.() ?? true });
+            if (window._currentHudConfig) post('config', { data: window._currentHudConfig });
+            if (window._currentHudElements) post('hud:elements', window._currentHudElements);
+            post('hud:frame', {
+                data: { rpm: 0, maxRpm: 8000, redlineRpm: 7200, speed_kmh: 0,
+                    speed_mph: 0, gear: 0, throttle: 0, brake: 0 },
+                lockup: { fl: false, fr: false, rl: false, rr: false },
+            });
+            overlayEventForwarder.replay(post);
+            setTimeout(() => post('hud:scale'), 30);
+        }
+
+        function syncAudioHead(config, force = false) {
+            if (config?.elements?.showAudioHead !== true) {
+                audioHeadIframe?.remove();
+                audioHeadIframe = null;
+                return;
+            }
+            if (audioHeadIframe && !force) return;
+            audioHeadIframe?.remove();
+            const frame = document.createElement('iframe');
+            frame.id = 'audio-head-iframe';
+            frame.title = 'Audio Head';
+            frame.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;border:0;background:transparent;pointer-events:none;z-index:1000;';
+            frame.onload = () => initializeFrame(frame);
+            const url = hudStyles.audio_head || './audio_head/index.html';
+            frame.src = url + (url.includes('?') ? '&' : '?') + 't=' + Date.now();
+            audioHeadIframe = frame;
+            document.body.appendChild(frame);
+        }
 
         async function loadHud(name, force = false) {
             if (window.demoActive) window.dispatchEvent(new CustomEvent('demo:stop'));
@@ -156,42 +201,12 @@
             // Always refresh that iframe URL with a timestamp cache-buster so
             // WebViews and browsers never keep an older HTML/renderer after edits.
             const cacheBuster = `${targetUrl.includes('?') ? '&' : '?'}t=${Date.now()}`;
-            hudIframe.src = targetUrl + cacheBuster;
-
             hudIframe.onload = async () => {
                 initPhysics();
-
-                // Send initial state the HUD needs on first render
-                postToHud('hud:init', {
-                    isMetric: window.isMetric?.() ?? true,
-                });
-
-                if (window._currentHudConfig) {
-                    postToHud('config', { data: window._currentHudConfig });
-                }
-
-                if (window._currentHudElements) {
-                    postToHud('hud:elements', window._currentHudElements);
-                }
-
-                // Send immediate zero standby initial frame for clean load
-                postToHud('hud:frame', {
-                    data: {
-                        rpm: 0,
-                        maxRpm: 8000,
-                        redlineRpm: 7200,
-                        speed_kmh: 0,
-                        speed_mph: 0,
-                        gear: 0,
-                        throttle: 0,
-                        brake: 0
-                    },
-                    lockup: { fl: false, fr: false, rl: false, rr: false }
-                });
-
-                setTimeout(() => postToHud('hud:scale'), 30);
+                initializeFrame(hudIframe);
                 console.log(`[Launcher] Loaded HUD: ${name} (${targetUrl})`);
             };
+            hudIframe.src = targetUrl + cacheBuster;
         }
 
         // ── Boot ──────────────────────────────────────────────────────────
@@ -210,6 +225,7 @@
         }
 
         await loadHud(activeHud);
+        syncAudioHead(window._currentHudConfig);
         initUtils();
         initWebSocket();
         initCoordinator();
@@ -263,6 +279,7 @@
             applyHudUnit(config);
             applyHudSmoothing(config);
             window._currentHudConfig = config;
+            syncAudioHead(config);
             if (window.TelemetryCardsManager) {
                 window.TelemetryCardsManager.update(null, config);
             }
@@ -290,11 +307,14 @@
                 console.log('[Launcher] Received hud:reload, reloading HUD:', activeHud);
                 postToHud('hud:reload');
                 loadHud(activeHud, true);
+                syncAudioHead(window._currentHudConfig, true);
             } else if (ev.data && ev.data.type === 'config') {
                 const config = normalizeHudConfig(ev.data.data || {});
                 applyHudUnit(config);
                 applyHudSmoothing(config);
                 window._currentHudConfig = config;
+                if (config.elements) window._currentHudElements = config.elements;
+                syncAudioHead(config);
                 if (window.TelemetryCardsManager) {
                     window.TelemetryCardsManager.update(null, config);
                 }
@@ -306,7 +326,6 @@
                 if (requestedHud !== activeHud) {
                     console.log('[Launcher] BroadcastChannel requested HUD style change to:', requestedHud);
                     loadHud(requestedHud);
-                    return;
                 }
 
                 postToHud('config', { data: config });
@@ -319,7 +338,7 @@
 
         // ── Message listener — receive requests from active HUD iframe ────────
         window.addEventListener('message', (e) => {
-            if (e.source !== hudIframe.contentWindow) return;
+            if (e.source !== hudIframe.contentWindow && e.source !== audioHeadIframe?.contentWindow) return;
             const { type, ...payload } = e.data ?? {};
 
             if (type === 'notification') {

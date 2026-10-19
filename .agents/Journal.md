@@ -932,3 +932,14 @@
   2. 修改 `scripts/build_companion_apk.py` 與 `scripts/validate_version_consistency.py`：將 `import tomllib` 依字母順序收整至標準庫 import 區塊。
 - **Evidence**：本地 `uv run --no-project ruff check .` 與 `uv run --no-project ruff format --check .` 通過；`uv run --no-project pytest scripts/tests/` 97 passed；GitHub Actions CI Pipeline run `38257562846` 之 `Backend Lint & Static Check` (11s) 與 `Frontend Build Test & Audit` (19s) 均通過轉綠。
 - **Skills**：`agent-governance-audit`、`modular-refactoring`。
+
+## 2026-10-19 / Audio Head 獨立元素與共用訊息重播（Codex as Codex）
+
+- **來源／狀態**：`local`／`verified`；PR #541 將音響主機從互斥的儀表選單改為獨立選單及 `elements.showAudioHead`。
+- **Learning**：獨立 iframe 必須在載入時重播最新音訊與歌曲快照；原 WebSocket 的去重機制可能不再傳送未變更的歌曲資訊。切換儀表只重載儀表 iframe，關閉音響則移除其 iframe，使動畫與監聽器隨視窗生命週期結束。
+- **位置契約**：外層錨點使用螢幕像素，內層音響保留共用縮放；預設左側中央、邊緣與中心 Offset 皆為 0。Canvas 依主機外框尺寸與 DPR 設定 backing store，避免透明留白影響邊緣對齊。
+- **設定契約**：舊 `hudStyle: audio_head` 遷移為 `hudStyle: vfd` 與獨立音響開關；保留原關閉狀態。前端及 launcher 共用正規化入口，Rust 在儲存／載入時驗證相同欄位；無關樣式的稀疏設定不新增音響欄位。
+- **Evidence**：前端 1,815 passed／1 skipped，Windows 與 LAN 前端 build 通過；Rust 預設功能全量 226 passed／3 ignored，無 HUD 功能全量 218 passed／2 ignored（含文件測試），共用設定契約 13 passed。隔離瀏覽器以合成 HTTP／WebSocket 驗證四邊與 Offset、VFD／GT7 並存、互不影響的顯示開關，以及負值 Offset 的鍵盤輸入。
+- **驗證順序**：前端平台 build 會替換 `dist` 中的 hash 檔名，不可與同一工作樹的 Rust 資源嵌入／文件測試平行執行；固定前端輸出後，依序執行 Cargo 驗證。
+- **Boundary**：未新增個別音響樣式測試；測試補在共用設定、選單與事件傳輸契約。瀏覽器截圖介面逾時，沒有有效畫面截圖；未宣稱 Tauri、實體音訊裝置或遊戲內驗收。
+- **Skills**：`halfmoon-design-system`、`huge-component-refactoring`、`modular-refactoring`、`pr-author-maintainer`、`ponytail`。
