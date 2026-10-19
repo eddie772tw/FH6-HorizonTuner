@@ -45,6 +45,7 @@
     </div>
 
     <script src="../shared/hud-core.js"></script>
+    <script src="../shared/hud-artwork.js"></script>
 
     <script>
         (function() {
@@ -52,10 +53,8 @@
             var ctx = canvas.getContext('2d');
             var container = document.getElementById('bmwIdriveContainer');
 
-            var baseImg = new Image();
-            baseImg.src = 'assets/bmw_clean_base.png';
-            var barsImg = new Image();
-            barsImg.src = 'assets/bmw_bars_full.png';
+            var baseImg = HUDArtwork.loadImage('assets/bmw_clean_base.png');
+            var barsImg = HUDArtwork.loadImage('assets/bmw_bars_full.png', 0);
 
             var isSweeping = false;
             var sweepRafId = null;
@@ -113,10 +112,10 @@
                 ctx.clip();
 
                 ctx.beginPath();
-                ctx.rect(0, yCut, canvas.width, yBottom - yCut + 4);
+                ctx.rect(0, yCut, 638, yBottom - yCut + 4);
                 ctx.clip();
 
-                ctx.drawImage(barsImg, 0, 0, canvas.width, canvas.height);
+                ctx.drawImage(barsImg, 0, 0, 638, 522);
                 ctx.restore();
             }
 
@@ -135,8 +134,8 @@
             ];
 
             function render() {
-                var w = canvas.width;
-                var h = canvas.height;
+                var w = 638;
+                var h = 522;
                 ctx.clearRect(0, 0, w, h);
 
                 if (baseImg.complete && baseImg.naturalWidth) {
@@ -193,7 +192,9 @@
 
             HUDCore.registerStyle('bmw_idrive7', {
                 containerId: 'bmwIdriveContainer',
+                scaleBaseline: 2.1,
                 scaleMultiplier: 0.95,
+                onScale: HUDArtwork.watchCanvas(canvas, render),
 
                 onInit: function(cfg) {
                     if (cfg) {
