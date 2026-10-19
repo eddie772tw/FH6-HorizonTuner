@@ -178,22 +178,36 @@ const CustomCSSEditorPanel: React.FC = () => {
 
       <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mt-3">
         <div className="d-flex flex-wrap gap-2">
-          <button
-            type="button"
-            className="btn btn-primary btn-sm fw-bold"
-            onClick={handleApply}
-            disabled={!isDirty || !cssValidation.isValid}
+          <span
+            className="d-inline-flex"
+            title={(!isDirty || !cssValidation.isValid) ? (!isDirty ? t('No changes to apply') : t('Fix CSS errors to apply')) : undefined}
+            style={(!isDirty || !cssValidation.isValid) ? { cursor: 'not-allowed' } : undefined}
           >
-            {t('Apply')}
-          </button>
-          <button
-            type="button"
-            className="btn btn-outline-secondary btn-sm"
-            onClick={handleDiscard}
-            disabled={!isDirty}
+            <button
+              type="button"
+              className="btn btn-primary btn-sm fw-bold"
+              onClick={handleApply}
+              disabled={!isDirty || !cssValidation.isValid}
+              style={(!isDirty || !cssValidation.isValid) ? { pointerEvents: 'none' } : undefined}
+            >
+              {t('Apply')}
+            </button>
+          </span>
+          <span
+            className="d-inline-flex"
+            title={!isDirty ? t('No changes to discard') : undefined}
+            style={!isDirty ? { cursor: 'not-allowed' } : undefined}
           >
-            {t('Cancel')}
-          </button>
+            <button
+              type="button"
+              className="btn btn-outline-secondary btn-sm"
+              onClick={handleDiscard}
+              disabled={!isDirty}
+              style={!isDirty ? { pointerEvents: 'none' } : undefined}
+            >
+              {t('Cancel')}
+            </button>
+          </span>
           <button
             type="button"
             className="btn btn-outline-secondary btn-sm"
@@ -201,14 +215,21 @@ const CustomCSSEditorPanel: React.FC = () => {
           >
             {t('Insert Starter CSS')}
           </button>
-          <button
-            type="button"
-            className="btn btn-outline-danger btn-sm"
-            onClick={() => setDraftCSS('')}
-            disabled={!draftCSS}
+          <span
+            className="d-inline-flex"
+            title={!draftCSS ? t('Editor is already empty') : undefined}
+            style={!draftCSS ? { cursor: 'not-allowed' } : undefined}
           >
-            {t('Clear Current')}
-          </button>
+            <button
+              type="button"
+              className="btn btn-outline-danger btn-sm"
+              onClick={() => setDraftCSS('')}
+              disabled={!draftCSS}
+              style={!draftCSS ? { pointerEvents: 'none' } : undefined}
+            >
+              {t('Clear Current')}
+            </button>
+          </span>
         </div>
 
         <div className="d-flex flex-wrap gap-2">
