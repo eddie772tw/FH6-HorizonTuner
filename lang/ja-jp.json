@@ -1573,6 +1573,8 @@
   "EV raw frames are missing required channels": "EV生フレームに必要なチャンネルがありません",
   "EV needs forward full-throttle positive output without brake, clutch or regeneration": "EVには前進ギアの全開正出力が必要です。ブレーキ、クラッチ、回生を含めないでください。",
     "Controller Telemetry Card": "コントローラーテレメトリーカード",
+    "Controller X-Offset": "コントローラーカードのXオフセット",
+    "Controller Y-Offset": "コントローラーカードのYオフセット",
     "Controller Layout": "コントローラーの種類",
     "Xbox Wireless Controller": "Xbox ワイヤレス コントローラー",
     "PlayStation DualSense": "PlayStation DualSense"

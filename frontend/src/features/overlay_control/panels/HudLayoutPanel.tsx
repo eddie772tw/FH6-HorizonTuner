@@ -22,6 +22,7 @@ interface RangeSetting {
   fallback: number;
   percent?: boolean;
   numericInput?: boolean;
+  suffix?: string;
 }
 
 const CORNER_OFFSETS: readonly RangeSetting[] = [
@@ -68,7 +69,7 @@ function RangeControl({ setting, config, onConfigPatch, t }: Pick<HudLayoutPanel
               style={{ width: '65px' }} onChange={event => change(Number(event.target.value) / 100)} />
             <span className="text-primary fw-bold fs-7">%</span>
           </div>
-        ) : <span className="text-primary fw-bold fs-7 text-nowrap">{setting.percent ? `${Math.round(value * 100)}%` : `${value} px`}</span>}
+        ) : <span className="text-primary fw-bold fs-7 text-nowrap">{setting.percent ? `${Math.round(value * 100)}%` : `${value} ${setting.suffix ?? 'px'}`}</span>}
       </div>
       <input id={id} type="range" className="form-range" min={setting.min} max={setting.max} step={setting.step}
         value={value} aria-label={t(setting.ariaLabel ?? setting.label)} onChange={event => change(Number(event.target.value))} />
@@ -231,6 +232,12 @@ export function HudLayoutPanel({ config, disabled = false, onConfigPatch, onElem
             <option value="xbox">{t('Xbox Wireless Controller')}</option>
             <option value="dualsense">{t('PlayStation DualSense')}</option>
           </select>
+          <fieldset className="border-0 p-0 m-0 d-flex flex-column gap-3 mb-3"
+            disabled={config.elements.showTeleMaster === false || config.elements.showTeleGamepad !== true}>
+            <legend className="visually-hidden">{t('Controller Layout')}</legend>
+            <RangeControl setting={{ key: 'gamepadOffsetX', label: 'Controller X-Offset', min: -50, max: 50, step: 0.5, fallback: 0, suffix: '%' }} {...rangeProps} />
+            <RangeControl setting={{ key: 'gamepadOffsetY', label: 'Controller Y-Offset', min: -50, max: 50, step: 0.5, fallback: 0, suffix: '%' }} {...rangeProps} />
+          </fieldset>
           <h4 className="fs-7 fw-bold text-primary mb-2">{t('Speedometer Settings')}</h4>
           <Toggle label={t('Enabled')} checked={config.elements.showGauge !== false} onToggle={() => onElementToggle('showGauge')} />
         </div>

@@ -18,8 +18,13 @@ export function normalizeSubsystemConfig(config) {
         normalized.elements = elements;
     }
     if (Object.hasOwn(config, 'hudStyle')) normalized.hudStyle = normalizeSubsystemStyle(config.hudStyle);
-    if (legacy || Object.hasOwn(config, 'gamepadLayout') || Object.hasOwn(config.elements || {}, 'showTeleGamepad')) {
+    if (legacy || Object.hasOwn(config, 'gamepadOffsetX') || Object.hasOwn(config, 'gamepadOffsetY') || Object.hasOwn(config, 'gamepadLayout') || Object.hasOwn(config.elements || {}, 'showTeleGamepad')) {
         normalized.gamepadLayout = config.gamepadLayout === 'dualsense' ? 'dualsense' : 'xbox';
+        for (const key of ['gamepadOffsetX', 'gamepadOffsetY']) {
+            const value = config[key];
+            normalized[key] = typeof value === 'number' && Number.isFinite(value)
+                ? Math.max(-50, Math.min(50, value)) : 0;
+        }
         if (normalized.elements && Object.hasOwn(normalized.elements, 'showTeleGamepad')) {
             normalized.elements = { ...normalized.elements, showTeleGamepad: normalized.elements.showTeleGamepad === true };
         }

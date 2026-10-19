@@ -1,5 +1,7 @@
 # Controller telemetry card and deferred subsystems
 
+Both controller layouts start centered with X/Y offsets of 0%. Controller X/Y Offset settings accept -50..50% of viewport width/height from that center, independently of the main gauge and its scale. Positive values move right/down and negative values move left/up; the anchor tracks the center of the card. Choose offsets to keep the card clear of the game minimap. The card uses a calibrated scale baseline and rebuilds its backing canvas at the effective zoom and display DPR.
+
 The HUD control panel exposes the Controller Telemetry Card in Telemetry HUD
 Elements. It can be toggled alongside any speedometer, with Xbox and PlayStation
 DualSense artwork. The telemetry master switch also controls this card; the main

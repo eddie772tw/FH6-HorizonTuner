@@ -22,7 +22,9 @@ it('hides deferred subsystem selections without dropping retained module setting
 
 it('migrates the legacy controller to a telemetry card and preserves visibility and layout across gauge changes', () => {
   const legacy = normalizeHudRuntimeConfig({ hudStyle: 'gamepad_overlay', gamepadLayout: 'dualsense', elements: { showGauge: true } });
-  expect(legacy).toMatchObject({ hudStyle: 'vfd', gamepadLayout: 'dualsense', elements: { showTeleGamepad: true } });
+  expect(legacy).toMatchObject({ hudStyle: 'vfd', gamepadLayout: 'dualsense', gamepadOffsetX: 0, gamepadOffsetY: 0, elements: { showTeleGamepad: true } });
+  expect(normalizeHudRuntimeConfig({ gamepadOffsetX: -20, gamepadOffsetY: 12.5 })).toMatchObject({ gamepadOffsetX: -20, gamepadOffsetY: 12.5 });
+  expect(normalizeHudRuntimeConfig({ gamepadOffsetX: 9000, gamepadOffsetY: NaN })).toMatchObject({ gamepadOffsetX: 50, gamepadOffsetY: 0 });
   expect(applyHudConfigPatch(legacy, { hudStyle: 'gt7', elements: { showGauge: false } })).toMatchObject({
     hudStyle: 'gt7', gamepadLayout: 'dualsense', elements: { showTeleGamepad: true, showGauge: false },
   });

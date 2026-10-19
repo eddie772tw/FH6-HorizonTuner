@@ -15,7 +15,7 @@
             overflow: hidden;
             background: transparent !important;
         }
-        .gamepad-card-root { position: fixed; left: 30px; bottom: 30px; width: max-content; pointer-events: none; }
+        .gamepad-card-root { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); width: max-content; pointer-events: none; }
         .gamepad-container {
             width: 480px;
             height: 380px;
@@ -62,6 +62,7 @@
             var ctx = canvas.getContext('2d');
             var container = document.getElementById('gamepadContainer');
             var lastDpr = 0;
+            var canvasScale = 1;
 
             var xboxImg = new Image();
             xboxImg.src = 'assets/controller_xbox.png';
@@ -112,7 +113,7 @@
 
             function drawTriggerBar(x, y, w, h, val, isBrake) {
                 ctx.save();
-                ctx.fillStyle = 'rgba(15, 23, 42, 0.88)';
+                ctx.fillStyle = 'rgba(15, 23, 42, 0.35)';
                 ctx.strokeStyle = 'rgba(255, 255, 255, 0.22)';
                 ctx.lineWidth = 1;
                 ctx.beginPath();
@@ -153,7 +154,7 @@
             }
 
             function render() {
-                var dpr = window.devicePixelRatio || 1;
+                var dpr = (window.devicePixelRatio || 1) * canvasScale;
                 if (lastDpr !== dpr) {
                     lastDpr = dpr;
                     canvas.width = Math.round(480 * dpr);
@@ -227,7 +228,7 @@
                 }
 
                 ctx.save();
-                ctx.fillStyle = 'rgba(15, 23, 42, 0.88)';
+                ctx.fillStyle = 'rgba(15, 23, 42, 0.35)';
                 ctx.strokeStyle = 'rgba(0, 240, 255, 0.35)';
                 ctx.lineWidth = 1;
                 ctx.beginPath();
@@ -251,9 +252,17 @@
 
             HUDCore.registerStyle('gamepad_overlay', {
                 containerId: 'gamepadContainer',
+                scaleBaseline: 1.4,
                 scaleMultiplier: 0.95,
+                onScale: function(scale) { canvasScale = scale; render(); },
 
                 onInit: function(cfg) {
+                    var anchor = container.parentElement;
+                    ['X', 'Y'].forEach(function(axis) {
+                        var value = cfg?.['gamepadOffset' + axis];
+                        var offset = typeof value === 'number' && Number.isFinite(value) ? Math.max(-50, Math.min(50, value)) : 0;
+                        anchor.style[axis === 'X' ? 'left' : 'top'] = (50 + offset) + '%';
+                    });
                     if (cfg && cfg.gamepadLayout !== undefined) {
                         currentLayout = resolveGamepadLayout(cfg.gamepadLayout);
                         canvas.setAttribute('aria-label', 'Controller Telemetry Card: ' + (currentLayout === 1 ? 'PlayStation DualSense' : 'Xbox'));

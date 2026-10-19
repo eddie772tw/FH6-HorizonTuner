@@ -1731,6 +1731,8 @@
   "EV raw frames are missing required channels": "EV raw frames are missing required channels",
   "EV needs forward full-throttle positive output without brake, clutch or regeneration": "EV needs forward full-throttle positive output without brake, clutch or regeneration",
     "Controller Telemetry Card": "Controller Telemetry Card",
+    "Controller X-Offset": "Controller X-Offset",
+    "Controller Y-Offset": "Controller Y-Offset",
     "Controller Layout": "Controller Layout",
     "Xbox Wireless Controller": "Xbox Wireless Controller",
     "PlayStation DualSense": "PlayStation DualSense"
