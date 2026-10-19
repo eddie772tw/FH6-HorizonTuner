@@ -22,7 +22,7 @@
             display: block;
             width: 562px;
             height: 363px;
-            filter: drop-shadow(0 0 16px rgba(0, 240, 255, calc(var(--hud-glow-intensity, 1.0) * 0.35)));
+            filter: none;
         }
     </style>
 </head>
@@ -47,8 +47,8 @@
             var activeFace = 3; // Default: Tabby Cat (0..10)
             var faceImgs = [];
             for (var i = 0; i <= 10; i++) {
-                var img = new Image();
-            img.src = 'assets/nfsu2_face_' + i + '.png';
+                // Preserve the face artwork; black background uses 15% alpha.
+                var img = HUDArtwork.loadImage('assets/nfsu2_face_' + i + '.png', 0.15);
                 faceImgs.push(img);
             }
 
