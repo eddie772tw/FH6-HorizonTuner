@@ -962,3 +962,9 @@
 
 - 九款靜態面板先於載入時合成完整黑色矩形與原材質，再作為單層以 alpha=0.75 繪製；每幀先 clear，避免多次疊色變不透明。動態頻譜、文字、海豚、VU 保持原 alpha、單調時間與大小／位置。
 - 採用技能：`ponytail`、`pr-author-maintainer`、`halfmoon-design-system`、`huge-component-refactoring`。完整前端測試與 build 於提交前驗證，日誌 round4-541；不新增樣式測試。
+
+### 2026-10-19 Audio 面板與黯淡裝飾分層
+
+- 整張底圖globalAlpha=0.75會連暗色文字、線條一起變淡。改於載入時快取RGBA：只對原生純黑、研究renderer清底RGB(9,11,17)及Panasonic上方金色材質填色套alpha191；其他圖案保留RGB與原生覆蓋，單層繪出完整矩形，沒有一般亮度門檻或逐幀像素處理。
+- 九款離線原生尺寸對照均保有黯淡裝飾的原RGB／alpha255與alpha191底色；動態頻譜／VU重疊像素另列，無JS錯誤。
+- 技能：`ponytail`、`pr-author-maintainer`、`halfmoon-design-system`、`huge-component-refactoring`。基線及修改後完整前端1821 passed／1 skipped、build通過；另做真實遊戲截圖，不新增樣式測試。

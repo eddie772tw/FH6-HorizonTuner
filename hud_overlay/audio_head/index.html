@@ -120,7 +120,8 @@
                 var img = new Image();
                 img.src = d.file;
                 img.onload = function() {
-                    // Composite the complete rectangular material once, then apply 75% as one layer.
+                    // Cache the rectangle once. Only known matte/material pixels lose opacity;
+                    // dim lettering and decorative traces retain their original RGB and coverage.
                     var surface = document.createElement('canvas');
                     surface.width = d.w;
                     surface.height = d.h;
@@ -128,6 +129,20 @@
                     background.fillStyle = '#000000';
                     background.fillRect(0, 0, d.w, d.h);
                     background.drawImage(img, 0, 0, d.w, d.h);
+                    var pixels = background.getImageData(0, 0, d.w, d.h);
+                    var rgba = pixels.data;
+                    for (var i = 0; i < rgba.length; i += 4) {
+                        var r = rgba[i];
+                        var g = rgba[i + 1];
+                        var b = rgba[i + 2];
+                        // Exact native black and the research renderer's clear colour.
+                        // No luminance cutoff: even very dim non-matte decoration stays intact.
+                        var matte = (r === 0 && g === 0 && b === 0) || (r === 9 && g === 11 && b === 17);
+                        // Panasonic's warm gold meter material is a surface, its neutral ink is not.
+                        var goldMaterial = d.id === 1 && i / 4 < d.w * 80 && r > g * 1.2 && g > b * 1.6;
+                        if (matte || goldMaterial) rgba[i + 3] = 191;
+                    }
+                    background.putImageData(pixels, 0, 0);
                     backgrounds[d.id] = surface;
                     render();
                 };
@@ -264,7 +279,6 @@
                 var dx = 0;
                 var dy = 0;
                 ctx.save();
-                ctx.globalAlpha = 0.75;
                 ctx.drawImage(background, dx, dy, deck.w, deck.h);
                 ctx.restore();
 
