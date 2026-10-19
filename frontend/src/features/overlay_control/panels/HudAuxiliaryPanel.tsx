@@ -73,7 +73,7 @@ export function HudAuxiliaryPanel({ config, disabled, onConfigPatch, t }: Props)
       <fieldset className="border-0 border-top p-0 pt-3 mt-3">
         <legend className="fs-7 fw-bold">{t('Shared Gauge Value Sources')}</legend>
         <p className="text-body-secondary fs-7">{t('Mappings apply to every face reading that value. Source units are converted to the printed gauge units. Native interprets the number as C or PSI.')}</p>
-        <p className="text-body-secondary fs-7">{t('Forza does not provide water temperature, oil temperature or oil pressure. Water defaults to average tire temperature; unassigned values show a dash.')}</p>
+        <p className="text-body-secondary fs-7">{t('Oil pressure defaults to a damped engine-load estimate. Oil and water temperature default to average tire temperature. These are substitutes for unavailable engine sensors; custom sources take priority.')}</p>
         {GAUGE_VALUE_KEYS.map(key => <fieldset key={key} className="border-0 p-0 mb-3">
           <legend className="fs-7 text-body-secondary">{t(READINGS[key])}</legend>
           <div className="row g-2">

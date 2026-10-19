@@ -36,11 +36,21 @@ such as `temp_fl`–`temp_rr`, `tire_temp_avg`, `boost_psi`, `rpm`, `power_kw` a
 (C for temperature, PSI for pressure). Choosing an unrelated numeric field is an
 explicit reinterpretation, not a measurement of that engine sensor.
 
-Forza does not supply water temperature, oil temperature or oil pressure. The
-initial water reading uses average tire temperature, labelled accordingly. Oil
-temperature and oil pressure start unassigned and show a dash. Missing/non-numeric
-samples also show a dash; there is no synthesized oil sensor model. Tire temperature
+Forza does not supply water temperature, oil temperature or oil pressure. Both
+temperature readings default to average tire temperature, labelled accordingly;
 conversion always uses declared Fahrenheit, without a magnitude heuristic.
+Oil pressure defaults to the shared virtual source `estimated_oil_pressure_psi`.
+Its visual load proxy is clamped throttle × clamped RPM/maxRPM; the target is
+20 + 60 × load PSI while running, and zero when stopped. This is an explicitly
+simulated gauge reading, not a measured sensor or a vehicle tuning model.
+The launcher applies a first-order response with a 1.5-second time constant using
+monotonic elapsed time, independent of render frequency. Missing inputs, leaving
+live race telemetry, switching vehicles or restarting the clock clear its state.
+The same damped value is distributed to every faceplate; temperature substitutes
+are read directly and do not use the pressure filter. A custom source bypasses
+the simulated reading and its damping. Missing/non-numeric or deliberately
+unassigned sources show a dash. Exact former unassigned defaults migrate to the
+new defaults, while deliberately changed descriptions or sources are preserved.
 
 Legacy `hudStyle: auxiliary_gauges` configurations migrate to an independent
 element alongside VFD. `auxGaugeMode` migrates to the equivalent selection (the

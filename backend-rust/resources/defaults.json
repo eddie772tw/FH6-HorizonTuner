@@ -153,8 +153,8 @@
     "auxGaugeCenterOffset": 0,
     "gaugeValueSources": {
       "boost": {"field": "boost_psi", "unit": "psi", "label": "Boost"},
-      "oilPressure": {"field": "", "unit": "psi", "label": "Oil pressure (unassigned)"},
-      "oilTemperature": {"field": "", "unit": "C", "label": "Oil temperature (unassigned)"},
+      "oilPressure": {"field": "estimated_oil_pressure_psi", "unit": "psi", "label": "Estimated oil pressure (engine load)"},
+      "oilTemperature": {"field": "tire_temp_avg", "unit": "F", "label": "Average tire temperature"},
       "waterTemperature": {"field": "tire_temp_avg", "unit": "F", "label": "Average tire temperature"}
     },
     "position": {

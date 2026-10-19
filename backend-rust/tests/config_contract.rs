@@ -76,10 +76,56 @@ fn shared_gauge_contract_bounds_invalid_input_without_inventing_missing_telemetr
         hud["gaugeValueSources"]["boost"],
         json!({"field":"boost_psi","unit":"psi","label":"Boost"})
     );
-    assert_eq!(hud["gaugeValueSources"]["oilPressure"]["field"], "");
+    assert_eq!(
+        hud["gaugeValueSources"]["oilPressure"]["field"],
+        "estimated_oil_pressure_psi"
+    );
+    assert_eq!(
+        hud["gaugeValueSources"]["oilTemperature"]["field"],
+        "tire_temp_avg"
+    );
+    assert_eq!(hud["gaugeValueSources"]["oilTemperature"]["unit"], "F");
     assert_eq!(
         config::normalize_hud(&json!({"auxGaugeFaces":[]}))["auxGaugeFaces"],
         json!([])
+    );
+}
+
+#[test]
+fn shared_gauge_old_defaults_migrate_without_replacing_deliberate_custom_sources() {
+    let directory = tempfile::tempdir().unwrap();
+    let service = ConfigService::new(directory.path()).unwrap();
+    service
+        .handle(
+            "POST",
+            "/api/overlay/config",
+            &json!({
+                "auxGaugeFaces":["greddy", "blitz", "defi"],
+                "gaugeValueSources": {
+                    "oilPressure":{"field":"","unit":"psi","label":"Oil pressure (unassigned)"},
+                    "oilTemperature":{"field":"","unit":"C","label":"Oil temperature (unassigned)"}
+                }
+            }),
+        )
+        .unwrap()
+        .unwrap();
+    let restarted = ConfigService::new(directory.path()).unwrap().hud();
+    assert_eq!(
+        restarted["gaugeValueSources"]["oilPressure"]["field"],
+        "estimated_oil_pressure_psi"
+    );
+    assert_eq!(
+        restarted["gaugeValueSources"]["oilTemperature"],
+        restarted["gaugeValueSources"]["waterTemperature"]
+    );
+    let custom = config::normalize_hud(&json!({"gaugeValueSources":{
+        "oilPressure":{"field":"","unit":"psi","label":"Disabled intentionally"},
+        "oilTemperature":{"field":"power_kw","unit":"native","label":"Power"}
+    }}));
+    assert_eq!(custom["gaugeValueSources"]["oilPressure"]["field"], "");
+    assert_eq!(
+        custom["gaugeValueSources"]["oilTemperature"]["field"],
+        "power_kw"
     );
 }
 

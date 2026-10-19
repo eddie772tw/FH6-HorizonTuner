@@ -68,8 +68,18 @@ pub(super) fn normalize(value: &mut Value) {
     let mut sources = json!({});
     for (key, field, unit, label) in [
         ("boost", "boost_psi", "psi", "Boost"),
-        ("oilPressure", "", "psi", "Oil pressure (unassigned)"),
-        ("oilTemperature", "", "C", "Oil temperature (unassigned)"),
+        (
+            "oilPressure",
+            "estimated_oil_pressure_psi",
+            "psi",
+            "Estimated oil pressure (engine load)",
+        ),
+        (
+            "oilTemperature",
+            "tire_temp_avg",
+            "F",
+            "Average tire temperature",
+        ),
         (
             "waterTemperature",
             "tire_temp_avg",
@@ -78,6 +88,18 @@ pub(super) fn normalize(value: &mut Value) {
         ),
     ] {
         let source = &value["gaugeValueSources"][key];
+        let legacy_unassigned = source["field"] == ""
+            && ((key == "oilPressure"
+                && source["unit"] == "psi"
+                && source["label"] == "Oil pressure (unassigned)")
+                || (key == "oilTemperature"
+                    && source["unit"] == "C"
+                    && source["label"] == "Oil temperature (unassigned)"));
+        let source = if legacy_unassigned {
+            &Value::Null
+        } else {
+            source
+        };
         let field = source["field"]
             .as_str()
             .filter(|s| {

@@ -990,3 +990,10 @@
 - **Learning**：只改填入順序、仍以每排上限計算相同格線，會使直排外觀仍是橫排；五項、容量三的實機畫面可重現。直排須將容量套用到每欄，使同一組設定由三欄兩列轉為兩欄三列，UI 數量標籤同步切換為「每欄最多表頭數」。
 - **修正／Evidence**：共用排列函式保留設定鍵相容性，依方向改變幾何；共用測試覆蓋容量 1／3／5、四邊短列對齊、邊界與向內延伸。橫排不變；直排靠右時新增欄向左，靠上時由上往下填入。實機截圖另存版本、完整設定與即時遙測，不以數值單元測試代替渲染證據。
 - **Skills**：`halfmoon-design-system`、`huge-component-refactoring`、`pr-author-maintainer`、`ponytail`。
+
+## 2026-10-19 / 共用表頭的負載油壓與平均胎溫（Codex as Codex）
+
+- **Scope／Learning**：依使用者確認，阻尼只套用推算油壓；油溫、水溫均直接讀平均胎溫。共用launcher建立單一reader，將油門×RPM/maxRPM的視覺負載指標映射為運轉時20–80PSI，熄火目標為零，以monotonic elapsed time、1.5秒時間常數推進，不依render次數。這是明示模擬，並非感測油壓或車輛調校公式；原始遙測保持不動，個別表頭不自行計算。
+- **來源與狀態**：共用虛擬來源`estimated_oil_pressure_psi`加入來源選單。自訂來源直接讀值，不套模擬濾波；缺值、離開race、換車或時鐘重啟清除狀態。JS與Rust僅遷移完全吻合的舊unassigned預設，保留使用者改過的來源／描述；設定存讀與重啟均驗證。
+- **Evidence**：基線1843 passed／1 skipped；修改後完整前端1848 passed／1 skipped、build通過；Rust預設全量229 passed／3 ignored、fmt與diff檢查通過。共用契約驗證30／60／120／144／240Hz相同經過時間的壓力一致、升降載響應、override與reset；未新增個別樣式測試。離線控制輸入五表圖及真實遊戲圖分開保存第六輪，靜態圖不等同真實油壓或跨更新率實機驗收。
+- **Skills**：`ponytail`、`pr-author-maintainer`、`halfmoon-design-system`、`huge-component-refactoring`。

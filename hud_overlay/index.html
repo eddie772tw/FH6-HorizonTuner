@@ -62,7 +62,7 @@
         import { initPhysics }                                                                  from './shared/physics.js';
         import { initUtils, isMetric, setSpeedUnit }                                            from './shared/utils.js';
         import { normalizeAudioHeadConfig, normalizeAuxiliaryConfig }                           from './shared/overlay-config.js';
-        import { readGaugeValues, normalizeGaugeValueSources }                                  from './shared/gauge-sources.js';
+        import { createGaugeValueReader, normalizeGaugeValueSources }                          from './shared/gauge-sources.js';
 
         // Initialize Host-level Central Telemetry Cluster
         if (TelemetryCardsManager) {
@@ -122,6 +122,7 @@
         let audioHeadIframe = null;
         let auxiliaryIframe = null;
         const gaugeValues = {};
+        const readGaugeValues = createGaugeValueReader();
         let gaugeSources = normalizeGaugeValueSources();
         let sourceConfig = null;
         const audioHeadEvents = new Set(['config', 'hud:elements', 'hud:audio', 'hud:media', 'hud:animate', 'hud:reload']);
