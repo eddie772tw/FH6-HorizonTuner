@@ -52,7 +52,6 @@
     </div>
 
     <script src="../shared/hud-core.js"></script>
-  <script src="../shared/hud-artwork.js"></script>
     <script>
         var DECK_KEY_MAP = {
             pioneer: 0,
@@ -116,7 +115,8 @@
 
             var images = {};
             decks.forEach(function(d) {
-                var img = HUDArtwork.loadImage(d.file);
+                var img = new Image();
+                img.src = d.file;
                 img.onload = function() { render(); };
                 images[d.id] = img;
             });
