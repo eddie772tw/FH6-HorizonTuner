@@ -968,3 +968,11 @@
 - 整張底圖globalAlpha=0.75會連暗色文字、線條一起變淡。改於載入時快取RGBA：只對原生純黑、研究renderer清底RGB(9,11,17)及Panasonic上方金色材質填色套alpha191；其他圖案保留RGB與原生覆蓋，單層繪出完整矩形，沒有一般亮度門檻或逐幀像素處理。
 - 九款離線原生尺寸對照均保有黯淡裝飾的原RGB／alpha255與alpha191底色；動態頻譜／VU重疊像素另列，無JS錯誤。
 - 技能：`ponytail`、`pr-author-maintainer`、`halfmoon-design-system`、`huge-component-refactoring`。基線及修改後完整前端1821 passed／1 skipped、build通過；另做真實遊戲截圖，不新增樣式測試。
+
+### 2026-10-20 Audio Head 向量素材與原始解析度核對
+
+- **Scope**：使用者限縮本輪只改 Audio Head。九款面板重繪為獨立 SVG；靜態圖片直接由瀏覽器按 zoom／DPR 呈現，動態 Canvas 繼續使用原有邏輯座標、時間域動畫、音訊及媒體來源。其他儀表只做來源盤點。
+- **Learning**：研究文件的圖集尺寸不能取代 DDS header／PNG IHDR：本機 res_220 實際為524×988，面板寬380–490px。重設 PNG 尺寸不會還原細節；即使日後換成 SVG，若仍在載入時縮成 deck.w×deck.h 的 Canvas，也會重新失去向量的縮放品質。
+- **Materials**：完整矩形、Panasonic 金色和下方材質先在同一 SVG 群組合成，再以 opacity=.75 呈現；裝飾／文字在另一層。避免兩個75%背景重疊成93.75%，也不再以亮度猜測背景。複雜標記保留原圖輪廓路徑，來源區域與SHA列於panel-glyphs.json；不宣稱可恢復原圖不存在的細節或完整原作字型。
+- **Validation**：基線與修改後完整frontend Vitest均1821 passed／1 skipped，TypeScript／Vite build通過。九款SVG於100%／200% scale及DPR1／1.25／1.5／2共45組離線載入／版面檢查無JS錯誤；產物可由無額外相依的Node腳本重建並以--check確認一致。無新增個別樣式單元測試；離線圖與遊戲證據分列。
+- **Skills**：`ponytail`、`pr-author-maintainer`、`halfmoon-design-system`、`huge-component-refactoring`；實際Windows畫面擷取採`computer-use:computer-use`。
