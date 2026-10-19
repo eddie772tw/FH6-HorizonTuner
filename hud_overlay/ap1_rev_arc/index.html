@@ -75,7 +75,7 @@
             // Rebuild only on image load / car max-RPM change, never at telemetry rate.
             function prepareArtwork() {
                 var maximum = Math.round(telemetry.maxRpm);
-                if (!basePixels || !litPixels || artworkMaxRpm === maximum) return;
+                if (!basePixels || !litPixels || !bitmapFont || !nativeAtlas.complete || !nativeAtlas.naturalWidth || artworkMaxRpm === maximum) return;
                 artworkMaxRpm = maximum;
                 var off = new ImageData(new Uint8ClampedArray(basePixels.data), 799, 229);
                 var on = new ImageData(new Uint8ClampedArray(litPixels.data), 799, 229);
@@ -113,17 +113,65 @@
                 plate.fillRect(484, 141, 67, 24);
                 plate.clearRect(540, 171, 63, 23);
                 plate.fillRect(540, 171, 63, 23);
-                plate.fillStyle = '#c4cdd8';
-                plate.font = '11px Consolas, monospace';
-                plate.textAlign = 'right';
-                plate.fillText('kPa', 548, 148);
-                plate.fillText('BOOST', 548, 160);
-                plate.fillText('°C', 600, 178);
-                plate.fillText('TIRE TEMP.', 600, 190);
+                plate.globalAlpha = 0.8;
+                var sx = nativeAtlas.naturalWidth / 900;
+                var sy = nativeAtlas.naturalHeight / 700;
+                plate.drawImage(nativeAtlas, 829 * sx, 48 * sy, 41 * sx, 24 * sy, 512, 134, 41, 24);
+                plate.drawImage(nativeAtlas, 870 * sx, 48 * sy, 28 * sx, 24 * sy, 573, 165, 28, 24);
+                drawBitmapText(plate, 'BOOST', 548, 151, 12, 9.12, true);
+                drawBitmapText(plate, 'TIRE TEMP.', 600, 182, 8.5, 6.46, true);
                 litPlate = document.createElement('canvas');
                 litPlate.width = 799;
                 litPlate.height = 229;
                 litPlate.getContext('2d').putImageData(on, 0, 0);
+            }
+
+            var nativeAtlas = new Image();
+            var bitmapFont = null;
+            nativeAtlas.onload = function() { artworkMaxRpm = null; render(); };
+            nativeAtlas.src = 'assets/ap1_native_atlas.png';
+            var fontImage = new Image();
+            fontImage.onload = function() {
+                bitmapFont = document.createElement('canvas');
+                bitmapFont.width = fontImage.naturalWidth;
+                bitmapFont.height = fontImage.naturalHeight;
+                var font = bitmapFont.getContext('2d');
+                font.drawImage(fontImage, 0, 0);
+                var pixels = font.getImageData(0, 0, bitmapFont.width, bitmapFont.height);
+                // t65 is a single-channel glyph mask; the shader uses its red channel as coverage.
+                for (var i = 0; i < pixels.data.length; i += 4) {
+                    pixels.data[i + 3] = pixels.data[i];
+                    pixels.data[i] = pixels.data[i + 1] = pixels.data[i + 2] = 255;
+                }
+                font.putImageData(pixels, 0, 0);
+                artworkMaxRpm = null;
+                render();
+            };
+            fontImage.src = 'assets/ap1_ascii_font.png';
+
+            function drawBitmapText(target, text, x, y, size, advance, right) {
+                if (!bitmapFont) return;
+                text = String(text);
+                if (right) x -= size + Math.max(0, text.length - 1) * advance;
+                var cellW = bitmapFont.width / 16;
+                var cellH = bitmapFont.height / 8;
+                for (var i = 0; i < text.length; i++) {
+                    var code = text.charCodeAt(i);
+                    if (code >= 128) continue;
+                    target.drawImage(bitmapFont, (code % 16) * cellW, Math.floor(code / 16) * cellH,
+                        cellW, cellH, x + i * advance, y, size, size);
+                }
+            }
+
+            function drawSpeed(text) {
+                if (!nativeAtlas.complete || !nativeAtlas.naturalWidth) return;
+                var sx = nativeAtlas.naturalWidth / 900;
+                var sy = nativeAtlas.naturalHeight / 700;
+                var x = 400 - (12 + text.length * 56) * 0.5;
+                for (var i = 0; i < text.length; i++) {
+                    ctx.drawImage(nativeAtlas, Number(text[i]) * 68 * sx, 630 * sy, 68 * sx, 68 * sy,
+                        x + i * 56, 110, 68, 68);
+                }
             }
 
             // res_125.asm style 10: shared circle (390.747,594.75), radius 567.749,
@@ -202,43 +250,12 @@
                     drawSegments(fuelClips, Math.floor(fuelRatio * 20));
                 }
 
-                // 6. Digital Speedometer & Subtle Floor Reflection (Center: 399, 162)
-                var spdStr = String(Math.round(Math.max(0, telemetry.speed)));
-                ctx.save();
-                ctx.fillStyle = '#ffffff';
-                ctx.font = 'bold 64px "Consolas", monospace';
-                ctx.textAlign = 'center';
-                ctx.shadowColor = 'rgba(255, 255, 255, 0.45)';
-                ctx.shadowBlur = 8;
-                ctx.fillText(spdStr, 399, 162);
-
-                // Subtle reflection above km/h
-                ctx.save();
-                ctx.translate(399, 166);
-                ctx.scale(1, -0.24);
-                ctx.globalAlpha = 0.14;
-                ctx.shadowBlur = 0;
-                ctx.fillText(spdStr, 0, 0);
-                ctx.restore();
-
-                // 7. Gear Indicator (to the right of 'gear' label at x=205..238)
-                ctx.font = 'bold 42px "Consolas", monospace';
-                ctx.textAlign = 'center';
-                ctx.fillText(telemetry.gear, 272, 166);
-
-                // 8. Clock (bottom-left at x=148, y=188)
-                ctx.font = 'bold 19px "Consolas", monospace';
-                ctx.fillStyle = '#c4cdd8';
-                ctx.shadowBlur = 0;
-                ctx.fillText(telemetry.clockText, 148, 188);
-
-                // 9. Actual boost kPa and average tire temperature C.
-                ctx.font = 'bold 24px "Consolas", monospace';
-                ctx.fillStyle = '#e2e8f0';
-                ctx.textAlign = 'left';
-                ctx.fillText(String(Math.round(telemetry.boostKpa)), 554, 159);
-                ctx.fillText(String(Math.round(telemetry.tempC)), 604, 189);
-                ctx.restore();
+                // Original bitmap glyphs, cell sizes and advances from res_125 style 10.
+                drawSpeed(String(Math.round(Math.max(0, telemetry.speed))));
+                drawBitmapText(ctx, telemetry.gear, 248, 132, 48, 24, false);
+                drawBitmapText(ctx, telemetry.clockText, 110, 180, 19.2, 15.6, false);
+                drawBitmapText(ctx, String(Math.round(telemetry.boostKpa)), 554, 144, 26.88, 20.42, false);
+                drawBitmapText(ctx, String(Math.round(telemetry.tempC)), 603, 174, 26.88, 20.42, false);
             }
 
             baseImg.onload = function() { basePixels = readArtwork(baseImg); artworkMaxRpm = null; render(); };
