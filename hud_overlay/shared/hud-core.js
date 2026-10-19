@@ -20,6 +20,7 @@ window.HUD_ANIM_CONFIG = {
     var currentFullConfig = {};
     var currentElements = {};
     var DEFAULT_GLOBAL_SCALE_FACTOR = 0.75;
+    var TIRE_TEMPERATURE_FIELDS = ['temp_fl', 'temp_fr', 'temp_rl', 'temp_rr'];
 
     function readPositiveScale(value, fallback) {
         var parsed = Number(value);
@@ -27,6 +28,19 @@ window.HUD_ANIM_CONFIG = {
     }
 
     var HUDCore = {
+        // The shared frame preserves Forza's raw Fahrenheit contract, including cold tires.
+        getAverageTireTemperatureC: function (data) {
+            if (!data) return null;
+            var temperatures = data.tire_temp_f || data.TireTemp;
+            var sum = 0;
+            for (var i = 0; i < 4; i++) {
+                var value = temperatures ? temperatures[i] : data[TIRE_TEMPERATURE_FIELDS[i]];
+                if (typeof value !== 'number' || !Number.isFinite(value)) return null;
+                sum += value;
+            }
+            return (sum * 0.25 - 32) * 5 / 9;
+        },
+
         /**
          * Register a new HUD Style Definition into the Registry.
          * @param {string} id Unique identifier for the HUD style (e.g., 'simple', 'advanced')

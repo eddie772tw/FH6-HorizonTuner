@@ -938,3 +938,10 @@
 - **修正／Learning**：JZX100／Soarer 縮小 10%；Supra 底圖原始 tick 半徑約為 X=130、Y=142，將錶面高度校正為 306／334，指針圓形幾何不隨底圖拉伸，樞軸與 LCD 位置按相同高度比例定位，整體再縮小 20%。
 - **驗證界線**：先跑完整 frontend Vitest 與 build，再保存最後提交的實際 Forza 漫遊截圖與設定；靜態圖片不作為動態駕駛或跨更新率效能證據。未新增個別樣式測試。
 - **Skills**：`huge-component-refactoring`、`halfmoon-design-system`、`pr-author-maintainer`、`ponytail`。
+
+
+### 2026-10-19 Toyota Classic 平均胎溫與面板透明度
+
+- 四款水溫表統一共用四輪 raw °F 平均轉 °C，移除猜單位、coolant fallback 與 RPM=0 改寫；Altezza 油溫／油壓代理維持原模型。Altezza 底板 alpha=0.5，刻度與指針保留。
+- 採用技能：`ponytail`、`pr-author-maintainer`、`halfmoon-design-system`、`huge-component-refactoring`、`telemetry-udp-protocol`。共用 helper 與兩個共用測試和 iDrive PR 相同；不新增樣式測試。
+- 完整前端測試與 build 於提交前驗證，日誌 round4-535。

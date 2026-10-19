@@ -8,7 +8,7 @@
     <!--
         [設計決策紀錄 / Design Decision Note]
         1. 水溫與油溫/油壓資料來源：
-           水溫 (Water / Coolant Temp) 直接採用遙測輪胎溫度 (Tire Temp FL/FR/RL/RR) 之平均值（若為華氏則自動轉為攝氏，待機時預設 85°C）；
+           水溫 (Water / Coolant Temp) 直接採用遙測輪胎溫度 (Tire Temp FL/FR/RL/RR) 之平均值（依 raw °F 契約固定轉 °C；缺資料顯示冷端）；
            油溫 (Oil Temp) 與油壓 (Oil Pressure) 因 Forza UDP 封包未提供原生感測器數值，暫依轉速比與節氣門/增壓負載驅動之確定性熱力學與油壓代理模型 (Deterministic Proxy Model) 模擬。
     -->
     <style>
@@ -43,7 +43,7 @@
             var ctx = canvas.getContext('2d');
             var container = document.getElementById('altezzaContainer');
 
-            var baseImg = HUDArtwork.loadImage('assets/altezza_clean_base.png');
+            var baseImg = HUDArtwork.loadImage('assets/altezza_clean_base.png', 0.5);
 
             var isSweeping = false;
             var sweepRafId = null;
@@ -65,27 +65,6 @@
                 if (!Number.isFinite(gearNum) || gearNum < 0 || gearNum === 11) return 'N';
                 if (gearNum === 0) return 'R';
                 return String(Math.round(gearNum));
-            }
-
-            function resolveWaterTempC(data) {
-                if (!data) return 85;
-                var fl = Number(data.temp_fl !== undefined ? data.temp_fl : (data.tire_temp_fl !== undefined ? data.tire_temp_fl : (data.TireTemp && data.TireTemp[0])));
-                var fr = Number(data.temp_fr !== undefined ? data.temp_fr : (data.tire_temp_fr !== undefined ? data.tire_temp_fr : (data.TireTemp && data.TireTemp[1])));
-                var rl = Number(data.temp_rl !== undefined ? data.temp_rl : (data.tire_temp_rl !== undefined ? data.tire_temp_rl : (data.TireTemp && data.TireTemp[2])));
-                var rr = Number(data.temp_rr !== undefined ? data.temp_rr : (data.tire_temp_rr !== undefined ? data.tire_temp_rr : (data.TireTemp && data.TireTemp[3])));
-                var sum = 0, count = 0;
-                if (Number.isFinite(fl) && fl > 0) { sum += fl; count++; }
-                if (Number.isFinite(fr) && fr > 0) { sum += fr; count++; }
-                if (Number.isFinite(rl) && rl > 0) { sum += rl; count++; }
-                if (Number.isFinite(rr) && rr > 0) { sum += rr; count++; }
-                if (count > 0) {
-                    var avg = sum / count;
-                    return avg > 125 ? (avg - 32) * 5 / 9 : avg;
-                }
-                if (Number.isFinite(Number(data.coolant_temp)) && Number(data.coolant_temp) > 0) {
-                    return Number(data.coolant_temp);
-                }
-                return 85;
             }
 
             function drawNeedle(cx, cy, len, tailLen, angleDeg, color, width, hubR) {
@@ -221,12 +200,11 @@
 
                     var rpmRatio = Math.min(1, Math.max(0, telemetry.rpm / Math.max(1000, telemetry.maxRpm)));
                     var throttle = Number(data.throttle || 0);
+                    telemetry.tempC = HUDCore.getAverageTireTemperatureC(data) ?? 0;
                     if (telemetry.rpm > 0) {
-                        telemetry.tempC = resolveWaterTempC(data);
                         telemetry.oilTempC = Math.min(140, Math.max(60, telemetry.tempC + 8 + rpmRatio * 18 + throttle * 6));
                         telemetry.oilPressBar = Math.min(8.5, Math.max(1.2, 1.8 + rpmRatio * 5.2 + throttle * 0.8));
                     } else {
-                        telemetry.tempC = 55;
                         telemetry.oilTempC = 55;
                         telemetry.oilPressBar = 0;
                     }
