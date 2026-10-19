@@ -951,3 +951,8 @@
 - 離線 Edge 控制輸入保存 6 組 RPM、4 組 maxRPM 與重觸發掃描驗證，均無 JS 錯誤；此證據不能當成真實遊戲截圖。
 
 - 字體審查追加：AP1 時速改直接繪製 res_507 的 68×68 點陣字形與反射，字距56；其餘數字／檔位／時鐘／新標籤改 t65=res_266 ASCII atlas，去除通用 Consolas 與額外 glow。已讀四份內嵌向量 font name table，但未有位圖 family 歸屬證據，採原位圖而不猜字型。來源 SHA 與通道解碼記於 assets/README.md。
+
+### 2026-10-19 AP1 下緣間隔修訂
+
+- 視覺審查要求下移：只將該樣式 wrapper 的 padding-bottom 從共用30px覆寫為15px；縮放與置中不變。
+- 技能：`ponytail`、`pr-author-maintainer`、`halfmoon-design-system`、`huge-component-refactoring`。基線及修改後完整前端1714 passed／1 skipped，build通過；無新增樣式測試。
