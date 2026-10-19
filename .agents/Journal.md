@@ -938,3 +938,14 @@
 - **修正／Learning**：AP1 在前輪視覺基準上縮小 10%，保留中下位置及 DPR backing。
 - **驗證界線**：先跑完整 frontend Vitest 與 build，再保存最後提交的實際 Forza 漫遊截圖與設定；靜態圖片不作為動態駕駛或跨更新率效能證據。未新增個別樣式測試。
 - **Skills**：`huge-component-refactoring`、`halfmoon-design-system`、`pr-author-maintainer`、`ponytail`。
+
+
+### 2026-10-19 AP1 原生弧形 LED 推進
+
+- 原 res_125.asm style=10 使用共用圓心 (390.747,594.75)、半徑 567.749，素材 crop padding=10；RPM 0..110 段，每 100 RPM 推進；水溫 50..130°C 每 4°C 一段，油量 20 段。改以預建 Path2D 弧形整段裁切，避免水平裁切穿過斜 LED。
+- 三組裁切僅於初始化配置；動畫使用時間差，重觸發取消舊 RAF，掃描期間不接受即時幀覆蓋，結束恢復即時資料。保留原刻度素材與 baseline=1.89。
+- 採用技能：`ponytail`、`pr-author-maintainer`、`halfmoon-design-system`、`huge-component-refactoring`。完整前端測試與 build 於提交前驗證，日誌 round4-536；不新增樣式測試。
+
+- 追加：右側數字改為實際增壓 kPa 與四輪平均胎溫 °C；載入時覆寫烘焙標籤並保留底板 RGBA，移除未使用油壓／油溫代理。共用平均胎溫 helper 與共用測試沿用 iDrive 修正。
+- 紅線起點改為 maxRPM−2000（最低 0），超過 maxRPM 的剩餘刻度同為紅區；0..11000 原刻度固定。僅影像載入／maxRPM 改變時重建暗／亮 LED RGB，保留 alpha、外框與數字；不在每幀掃像素。
+- 離線 Edge 控制輸入保存 6 組 RPM、4 組 maxRPM 與重觸發掃描驗證，均無 JS 錯誤；此證據不能當成真實遊戲截圖。

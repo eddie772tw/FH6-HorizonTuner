@@ -3,8 +3,7 @@
  *
  * [設計決策紀錄 / Design Decision Note]
  * 1. 水溫 (Water Temp): 由於 Forza UDP 遙測未提供引擎水溫欄位，統一使用四輪平均胎溫 (TireTemp) 轉換為攝氏溫度驅動 C..H 水溫條。
- * 2. 機油壓力 (Oil Pressure kPa) 與機油溫度 (Oil Temp °C): 採用確定性熱力學與油壓代理模型 (Deterministic Proxy Model)，
- *    依據轉速比例 (rpmRatio) 與油門開度 (throttle) 計算平滑且具物理合理性的數值。
+ * 2. 增壓 kPa 與四輪平均胎溫 °C 由共用遙測契約直接讀取。
  */
 (function (root, factory) {
   if (typeof module === 'object' && module.exports) {
@@ -39,46 +38,20 @@
     return clamp(r / scale, 0, 1);
   }
 
+  function calculateRedlineRpm(maxRpm) {
+    var maximum = Number(maxRpm);
+    return Math.max(0, (Number.isFinite(maximum) && maximum > 0 ? maximum : 9000) - 2000);
+  }
+
   function isVtecActive(rpm) {
     var r = Number(rpm);
     return Number.isFinite(r) && r >= VTEC_ENGAGE_RPM;
   }
 
-  function resolveWaterTempFromTireTemp(data) {
-    if (!data || typeof data !== 'object') return 87;
-    if (data.temp_fl !== undefined) {
-      var fl = Number(data.temp_fl) || 0;
-      var fr = Number(data.temp_fr !== undefined ? data.temp_fr : fl);
-      var rl = Number(data.temp_rl !== undefined ? data.temp_rl : fl);
-      var rr = Number(data.temp_rr !== undefined ? data.temp_rr : fl);
-      var avg = (fl + fr + rl + rr) * 0.25;
-      if (avg > 0) {
-        var tempC = avg > 125 ? (avg - 32) * (5 / 9) : avg;
-        return clamp(tempC, 40, 130);
-      }
-    }
-    if (Array.isArray(data.TireTemp) && data.TireTemp.length >= 4) {
-      var sum =
-        (Number(data.TireTemp[0]) || 0) +
-        (Number(data.TireTemp[1]) || 0) +
-        (Number(data.TireTemp[2]) || 0) +
-        (Number(data.TireTemp[3]) || 0);
-      var avgF = sum * 0.25;
-      if (avgF > 0) {
-        var c = avgF > 125 ? (avgF - 32) * (5 / 9) : avgF;
-        return clamp(c, 40, 130);
-      }
-    }
-    if (data.coolant_temp !== undefined && Number.isFinite(Number(data.coolant_temp))) {
-      return clamp(Number(data.coolant_temp), 40, 130);
-    }
-    return 87;
-  }
-
   function calculateWaterTempRatio(tempC) {
     var t = Number(tempC);
     if (!Number.isFinite(t)) return 0.5;
-    return clamp((t - 40) / 85, 0, 1);
+    return clamp((t - 50) / 80, 0, 1);
   }
 
   function resolveFuelRatio(data) {
@@ -96,21 +69,6 @@
     return 0.75;
   }
 
-  function calculateOilVitalsProxy(rpm, maxRpm, throttle, waterTempC) {
-    var scale = maxRpm > 1000 ? Number(maxRpm) : 9000;
-    var rpmRatio = clamp((Number(rpm) || 0) / scale, 0, 1);
-    var thr = clamp(Number(throttle) || 0, 0, 1);
-    var baseTemp = Number.isFinite(Number(waterTempC)) ? Number(waterTempC) : 87;
-    // Deterministic proxy: oil pressure in kPa (displayed as bar*10 or kPa/10 class on ID4Motion: 20..85)
-    var oilPress = Math.round(clamp(18 + rpmRatio * 56 + thr * 8, 15, 95));
-    // Deterministic proxy: oil temp in °C tracks water temp + load thermal delta
-    var oilTemp = Math.round(clamp(baseTemp + 4 + rpmRatio * 14 + thr * 4, 50, 145));
-    return {
-      oilPress: oilPress,
-      oilTemp: oilTemp
-    };
-  }
-
   function calculateSweepProgress(elapsedMs, durationMs) {
     var dur = durationMs > 0 ? durationMs : 1200;
     var p = clamp((Number(elapsedMs) || 0) / dur, 0, 1);
@@ -123,10 +81,9 @@
     formatGear: formatGear,
     calculateRpmRatio: calculateRpmRatio,
     isVtecActive: isVtecActive,
-    resolveWaterTempFromTireTemp: resolveWaterTempFromTireTemp,
+    calculateRedlineRpm: calculateRedlineRpm,
     calculateWaterTempRatio: calculateWaterTempRatio,
     resolveFuelRatio: resolveFuelRatio,
-    calculateOilVitalsProxy: calculateOilVitalsProxy,
     calculateSweepProgress: calculateSweepProgress
   };
 });
