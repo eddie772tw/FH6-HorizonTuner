@@ -45,14 +45,14 @@
     </div>
 
     <script src="../shared/hud-core.js"></script>
+    <script src="../shared/hud-artwork.js"></script>
     <script>
         (function() {
             var canvas = document.getElementById('autometerCanvas');
             var ctx = canvas.getContext('2d');
             var container = document.getElementById('autometerContainer');
 
-            var baseImg = new Image();
-            baseImg.src = 'assets/clean_base.png';
+            var baseImg = HUDArtwork.loadImage('assets/clean_base.png');
 
             var telemetry = {
                 speed: 0,
@@ -99,8 +99,8 @@
             }
 
             function render() {
-                var w = canvas.width;
-                var h = canvas.height;
+                var w = 300;
+                var h = 300;
                 ctx.clearRect(0, 0, w, h);
 
                 if (baseImg.complete && baseImg.naturalWidth > 0) {
@@ -154,7 +154,9 @@
 
             HUDCore.registerStyle('autometer_sportcom', {
                 containerId: 'autometerContainer',
+                scaleBaseline: 2.1,
                 scaleMultiplier: 0.95,
+                onScale: HUDArtwork.watchCanvas(canvas, render),
 
                 onElementsChange: function(elements) {
                     if (container) {
