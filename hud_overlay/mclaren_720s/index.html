@@ -52,8 +52,7 @@
             var ctx = canvas.getContext('2d');
             var container = document.getElementById('mclarenContainer');
 
-            var baseImg = new Image();
-            baseImg.src = 'assets/mclaren_clean_base.png';
+            var baseImg = HUDArtwork.loadImage('assets/mclaren_clean_base.png', 0.75);
 
             var telemetry = {
                 speedKmh: 0,
