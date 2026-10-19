@@ -36,14 +36,14 @@
     </div>
 
     <script src="../shared/hud-core.js"></script>
+    <script src="../shared/hud-artwork.js"></script>
     <script>
         (function() {
             var canvas = document.getElementById('altezzaCanvas');
             var ctx = canvas.getContext('2d');
             var container = document.getElementById('altezzaContainer');
 
-            var baseImg = new Image();
-            baseImg.src = 'assets/altezza_clean_base.png';
+            var baseImg = HUDArtwork.loadImage('assets/altezza_clean_base.png');
 
             var isSweeping = false;
             var sweepRafId = null;
@@ -122,8 +122,8 @@
             }
 
             function render() {
-                var w = canvas.width;
-                var h = canvas.height;
+                var w = 505;
+                var h = 276;
                 ctx.clearRect(0, 0, w, h);
 
                 if (baseImg.complete && baseImg.naturalWidth) {
@@ -183,7 +183,9 @@
 
             HUDCore.registerStyle('altezza_trd', {
                 containerId: 'altezzaContainer',
+                scaleBaseline: 2.1,
                 scaleMultiplier: 0.95,
+                onScale: HUDArtwork.watchCanvas(canvas, render),
 
                 onInit: function(cfg) {
                     if (cfg) {

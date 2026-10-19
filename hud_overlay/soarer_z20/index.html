@@ -13,6 +13,8 @@
     -->
     <style>
         .soarer-container {
+            align-self: center;
+            transform-origin: bottom center;
             width: 932px;
             height: 190px;
             position: relative;
@@ -36,17 +38,16 @@
     </div>
 
     <script src="../shared/hud-core.js"></script>
+    <script src="../shared/hud-artwork.js"></script>
     <script>
         (function() {
             var canvas = document.getElementById('soarerCanvas');
             var ctx = canvas.getContext('2d');
             var container = document.getElementById('soarerContainer');
 
-            var baseImg = new Image();
-            baseImg.src = 'assets/soarer_clean_base.png';
+            var baseImg = HUDArtwork.loadImage('assets/soarer_clean_base.png');
 
-            var barsImg = new Image();
-            barsImg.src = 'assets/soarer_bars_full.png';
+            var barsImg = HUDArtwork.loadImage('assets/soarer_bars_full.png', 0);
 
             var isSweeping = false;
             var sweepRafId = null;
@@ -96,13 +97,13 @@
                 ctx.beginPath();
                 ctx.rect(x0, y0, w * r, h);
                 ctx.clip();
-                ctx.drawImage(barsImg, 0, 0, canvas.width, canvas.height);
+                ctx.drawImage(barsImg, 0, 0, 932, 190);
                 ctx.restore();
             }
 
             function render() {
-                var w = canvas.width;
-                var h = canvas.height;
+                var w = 932;
+                var h = 190;
                 ctx.clearRect(0, 0, w, h);
 
                 if (baseImg.complete && baseImg.naturalWidth) {
@@ -153,7 +154,9 @@
 
             HUDCore.registerStyle('soarer_z20', {
                 containerId: 'soarerContainer',
+                scaleBaseline: 2.1,
                 scaleMultiplier: 0.95,
+                onScale: HUDArtwork.watchCanvas(canvas, render),
 
                 onInit: function(cfg) {
                     if (cfg) {

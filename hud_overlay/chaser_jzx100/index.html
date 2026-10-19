@@ -13,6 +13,8 @@
     -->
     <style>
         .chaser-container {
+            align-self: center;
+            transform-origin: bottom center;
             width: 940px;
             height: 150px;
             position: relative;
@@ -36,17 +38,16 @@
     </div>
 
     <script src="../shared/hud-core.js"></script>
+    <script src="../shared/hud-artwork.js"></script>
     <script>
         (function() {
             var canvas = document.getElementById('chaserCanvas');
             var ctx = canvas.getContext('2d');
             var container = document.getElementById('chaserContainer');
 
-            var baseImg = new Image();
-            baseImg.src = 'assets/chaser_clean_base.png';
+            var baseImg = HUDArtwork.loadImage('assets/chaser_clean_base.png');
 
-            var barsImg = new Image();
-            barsImg.src = 'assets/chaser_bars_full.png';
+            var barsImg = HUDArtwork.loadImage('assets/chaser_bars_full.png', 0);
 
             var isSweeping = false;
             var sweepRafId = null;
@@ -90,8 +91,8 @@
             }
 
             function render() {
-                var w = canvas.width;
-                var h = canvas.height;
+                var w = 940;
+                var h = 150;
                 ctx.clearRect(0, 0, w, h);
 
                 if (baseImg.complete && baseImg.naturalWidth) {
@@ -166,7 +167,9 @@
 
             HUDCore.registerStyle('chaser_jzx100', {
                 containerId: 'chaserContainer',
+                scaleBaseline: 2.1,
                 scaleMultiplier: 0.95,
+                onScale: HUDArtwork.watchCanvas(canvas, render),
 
                 onInit: function(cfg) {
                     if (cfg) {

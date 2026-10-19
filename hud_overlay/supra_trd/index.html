@@ -36,6 +36,7 @@
     </div>
 
     <script src="../shared/hud-core.js"></script>
+    <script src="../shared/hud-artwork.js"></script>
 
     <script>
         (function() {
@@ -43,8 +44,7 @@
             var ctx = canvas.getContext('2d');
             var container = document.getElementById('supraContainer');
 
-            var baseImg = new Image();
-            baseImg.src = 'assets/supra_clean_base.png';
+            var baseImg = HUDArtwork.loadImage('assets/supra_clean_base.png');
 
             var isSweeping = false;
             var sweepRafId = null;
@@ -119,8 +119,8 @@
             }
 
             function render() {
-                var w = canvas.width;
-                var h = canvas.height;
+                var w = 800;
+                var h = 334;
                 ctx.clearRect(0, 0, w, h);
 
                 if (baseImg.complete && baseImg.naturalWidth) {
@@ -167,7 +167,9 @@
 
             HUDCore.registerStyle('supra_trd', {
                 containerId: 'supraContainer',
+                scaleBaseline: 2.1,
                 scaleMultiplier: 0.95,
+                onScale: HUDArtwork.watchCanvas(canvas, render),
 
                 onInit: function(cfg) {
                     if (cfg) {
