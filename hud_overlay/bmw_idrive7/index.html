@@ -27,11 +27,7 @@
             filter: drop-shadow(0 6px 18px rgba(0, 0, 0, calc(var(--hud-glow-intensity, 1.0) * 0.55)));
         }
         .redline-alert {
-            animation: redlinePulse 0.15s infinite alternate ease-in-out;
-        }
-        @keyframes redlinePulse {
-            0% { transform: scale(1); filter: drop-shadow(0 0 18px rgba(255, 20, 50, 0.85)); }
-            100% { transform: scale(1.015); filter: drop-shadow(0 0 30px rgba(255, 20, 50, 1.0)); }
+            filter: drop-shadow(0 0 24px rgba(255, 20, 50, 0.9));
         }
     </style>
 </head>

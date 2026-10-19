@@ -932,3 +932,9 @@
   2. 修改 `scripts/build_companion_apk.py` 與 `scripts/validate_version_consistency.py`：將 `import tomllib` 依字母順序收整至標準庫 import 區塊。
 - **Evidence**：本地 `uv run --no-project ruff check .` 與 `uv run --no-project ruff format --check .` 通過；`uv run --no-project pytest scripts/tests/` 97 passed；GitHub Actions CI Pipeline run `38257562846` 之 `Backend Lint & Static Check` (11s) 與 `Frontend Build Test & Audit` (19s) 均通過轉綠。
 - **Skills**：`agent-governance-audit`、`modular-refactoring`。
+
+## 2026-10-19 / 第二輪 HUD 視覺審查 PR #534（Codex as Codex）
+
+- **修正／Learning**：BMW 超轉僅保留固定紅光，移除會改變整體縮放的 CSS 脈動。
+- **驗證界線**：先跑完整 frontend Vitest 與 build，再保存最後提交的實際 Forza 漫遊截圖與設定；靜態圖片不作為動態駕駛或跨更新率效能證據。未新增個別樣式測試。
+- **Skills**：`huge-component-refactoring`、`halfmoon-design-system`、`pr-author-maintainer`、`ponytail`。
