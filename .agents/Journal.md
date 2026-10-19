@@ -950,3 +950,9 @@
 - **修正**：繪圖不再修改時間狀態；相位從單調時鐘計算（2.1 rad/s），peak 下降 0.9/s，VU 使用實際 dt 的指數 attack／release。預覽共用同一 rAF 時鐘，以秒計算並由真實音訊取消，不開 interval。rAF 繪製不設固定 60Hz 上限。
 - **Evidence**：共用 `audio-motion.js` 的時間域測試涵蓋 30／60／120／144／240Hz 的等時長相位、peak 與 VU 結果，另涵蓋不規則間距、重複時間戳與背景暫停。這是數值契約證據，不能當成實機跨更新率的 DWM／VRR／流暢度量測。
 - **Skills**：`huge-component-refactoring`、`pr-author-maintainer`、`ponytail`。
+
+## 2026-10-19 / 第二輪 HUD 視覺審查 PR #541（Codex as Codex）
+
+- **修正／Learning**：對照 D:/ForzaHUD 的九款 radio acceptance 截圖、res_123 的研究說明及清理底圖；清理 PNG 的透明區不等於主機背景應透明。繪製前先填完整不透明黑色矩形，再疊原始素材，保留 Panasonic 金色面板，移除額外青色外光暈，沿用時間域動畫。
+- **驗證界線**：先跑完整 frontend Vitest 與 build，再保存最後提交的實際 Forza 漫遊截圖與設定；靜態圖片不作為動態駕駛或跨更新率效能證據。未新增個別樣式測試。
+- **Skills**：`huge-component-refactoring`、`halfmoon-design-system`、`pr-author-maintainer`、`ponytail`。

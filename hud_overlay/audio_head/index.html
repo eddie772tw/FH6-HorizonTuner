@@ -40,7 +40,7 @@
             pointer-events: none;
             transition: none !important;
             animation: none !important;
-            filter: drop-shadow(0 0 14px rgba(0, 240, 255, calc(var(--hud-glow-intensity, 1.0) * 0.35)));
+            filter: none;
         }
     </style>
 </head>
@@ -246,7 +246,10 @@
                 }
                 var cw = deck.w;
                 var ch = deck.h;
-                ctx.clearRect(0, 0, cw, ch);
+                // Original res_123 head units use a black rectangular display surface.
+                // Clean PNG alpha holes must reveal this backing, not the game.
+                ctx.fillStyle = "#000000";
+                ctx.fillRect(0, 0, cw, ch);
 
                 var img = images[deck.id];
 
