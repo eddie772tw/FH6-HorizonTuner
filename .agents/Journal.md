@@ -944,3 +944,8 @@
 
 - 暗底板 alpha 改 0.25，保留原生刻度、指針、亮標記與原始左上檔位位置 (33,99)。
 - 採用技能：`ponytail`、`pr-author-maintainer`、`halfmoon-design-system`。完整前端測試與 build 於提交前驗證，日誌 round4-538；不新增樣式測試。
+
+### 2026-10-19 Ford GT 四列真實遙測
+
+- 右側依序為平均胎溫°C、增壓psi、扭力N·m、馬力hp，清除舊烘焙圖示／單位，移除水溫閾值猜測與油液代理。只取有單位的別名或canonical raw欄位；缺值顯示破折號。胎溫沿用共用四輪raw°F helper與兩項共用測試。
+- 技能：`ponytail`、`pr-author-maintainer`、`halfmoon-design-system`、`huge-component-refactoring`、`telemetry-udp-protocol`。基線1809／1、修改後1811／1完整前端通過，build通過。離線95°C／12.3psi／456Nm／321hp畫面無JS錯誤；另做實機驗證，未新增樣式測試。
