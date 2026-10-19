@@ -16,7 +16,6 @@
 <body>
   <div id="auxAnchor"><div id="auxContainer"><canvas id="auxCanvas" role="img" aria-label="Auxiliary Gauges"></canvas></div></div>
   <script src="../shared/hud-core.js"></script>
-  <script src="../shared/hud-artwork.js"></script>
   <script type="module">
     import { normalizeAuxiliaryConfig } from '../shared/overlay-config.js';
     import { positionOverlay, layoutOverlayItems } from '../shared/overlay-layout.js';
@@ -25,12 +24,12 @@
     const container = document.getElementById('auxContainer');
     const anchor = document.getElementById('auxAnchor');
     let config, layout, dpr = 0, canvasScale = 1;
-    const imgAEM = HUDArtwork.loadImage('assets/aux_aem.png');
-    const imgAEMLeds = HUDArtwork.loadImage('assets/aux_aem_leds.png', 0);
-    const imgGReddy = HUDArtwork.loadImage('assets/aux_greddy.png');
-    const imgBlitz = HUDArtwork.loadImage('assets/aux_blitz.png');
-    const imgDefi = HUDArtwork.loadImage('assets/aux_defi.png');
-    const imgSpeedhut = HUDArtwork.loadImage('assets/aux_speedhut.png');
+    const imgAEM = new Image(); imgAEM.src = 'assets/aux_aem.png';
+    const imgAEMLeds = new Image(); imgAEMLeds.src = 'assets/aux_aem_leds.png';
+    const imgGReddy = new Image(); imgGReddy.src = 'assets/aux_greddy.png';
+    const imgBlitz = new Image(); imgBlitz.src = 'assets/aux_blitz.png';
+    const imgDefi = new Image(); imgDefi.src = 'assets/aux_defi.png';
+    const imgSpeedhut = new Image(); imgSpeedhut.src = 'assets/aux_speedhut.png';
     const telemetry = { boostPsi: null, boostBar: null, oilPress: null, oilTemp: null, waterTemp: null };
     function clamp(v, lo, hi) { return Math.min(hi, Math.max(lo, v)); }
             function drawNeedle(cx, cy, len, tailLen, angleDeg, color, width, hubR, hubColor) {
