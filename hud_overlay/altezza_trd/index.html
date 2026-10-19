@@ -13,15 +13,15 @@
     -->
     <style>
         .altezza-container {
-            width: 505px;
-            height: 276px;
+            width: 545px;
+            height: 330px;
             position: relative;
             pointer-events: none;
         }
         #altezzaCanvas {
             display: block;
-            width: 505px;
-            height: 276px;
+            width: 545px;
+            height: 330px;
             filter: none;
         }
     </style>
@@ -31,7 +31,7 @@
 
     <div class="hud-root-wrapper">
         <div class="hud-gauge-container altezza-container" id="altezzaContainer">
-            <canvas id="altezzaCanvas" width="505" height="276"></canvas>
+            <canvas id="altezzaCanvas" width="545" height="330"></canvas>
         </div>
     </div>
 
@@ -46,6 +46,25 @@
             // The plate silhouette is geometry, never the brightness contour of its lettering.
             var baseImg = HUDArtwork.loadImage('assets/altezza_clean_base.png', 0);
             var basePlate = null;
+            var lcdGlyphs = null;
+            var lcdAtlas = new Image();
+            lcdAtlas.onload = function() {
+                lcdGlyphs = document.createElement('canvas');
+                lcdGlyphs.width = lcdAtlas.naturalWidth;
+                lcdGlyphs.height = lcdAtlas.naturalHeight;
+                var glyphContext = lcdGlyphs.getContext('2d');
+                glyphContext.drawImage(lcdAtlas, 0, 0);
+                var glyphPixels = glyphContext.getImageData(0, 0, lcdGlyphs.width, lcdGlyphs.height);
+                for (var i = 0; i < glyphPixels.data.length; i += 4) {
+                    glyphPixels.data[i + 3] *= glyphPixels.data[i] / 255;
+                    glyphPixels.data[i] = 32;
+                    glyphPixels.data[i + 1] = 26;
+                    glyphPixels.data[i + 2] = 23;
+                }
+                glyphContext.putImageData(glyphPixels, 0, 0);
+                render();
+            };
+            lcdAtlas.src = 'assets/res_256.png';
 
             var isSweeping = false;
             var sweepRafId = null;
@@ -102,14 +121,25 @@
                 ctx.restore();
             }
 
+            function drawLcdText(text, cx, cy, size, advance) {
+                if (!lcdGlyphs) return;
+                var x = cx - ((text.length - 1) * advance + size) / 2;
+                for (var i = 0; i < text.length; i++) {
+                    var code = text.charCodeAt(i);
+                    ctx.drawImage(lcdGlyphs, (code % 16) * 64, Math.floor(code / 16) * 64,
+                        64, 64, x + i * advance, cy - size / 2, size, size);
+                }
+            }
+
             function render() {
-                var w = 505;
-                var h = 276;
-                ctx.clearRect(0, 0, w, h);
+                ctx.clearRect(0, 0, 545, 330);
 
                 if (basePlate) {
                     ctx.drawImage(basePlate, 0, 0);
                 }
+                // Keep the original artwork/needle coordinates inside a padded viewport.
+                ctx.save();
+                ctx.translate(20, 20);
 
                 // 1. Subdial 1: Water Temp (Pivot: 266, 91), left-half scale 70..130 C (125..235 deg)
                 var wtRatio = Math.min(1.0, Math.max(0.0, (telemetry.tempC - 55.0) / 75.0));
@@ -141,36 +171,29 @@
                 var fuelAngle = 360.0 - fuelRatio * 90.0;
                 drawNeedle(435, 215, 38, 6, fuelAngle, '#ff5511', 2.2, 7);
 
-                // 7. Gear Indicator (Amber LCD box at 134, 229) & Clock (Amber LCD box at 453, 250)
-                ctx.save();
-                ctx.fillStyle = '#ffaa44';
-                ctx.shadowColor = 'rgba(255, 150, 40, 0.55)';
-                ctx.shadowBlur = 4;
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-
-                ctx.font = 'bold 30px "Consolas", "Segoe UI", monospace';
-                ctx.fillText(formatGear(telemetry.gear), 134, 230);
+                // 7. Original res_256 LCD glyphs, centered inside the two baked display windows.
+                drawLcdText(formatGear(telemetry.gear), 134, 232, 32, 20);
 
                 var now = new Date();
                 var hh = String(now.getHours()).padStart(2, '0');
                 var mm = String(now.getMinutes()).padStart(2, '0');
-                ctx.font = 'bold 15px "Consolas", "Segoe UI", monospace';
-                ctx.fillText(hh + ':' + mm, 453, 251);
+                drawLcdText(hh + ':' + mm, 460, 248, 20, 12);
                 ctx.restore();
             }
 
             baseImg.onload = function() {
                 basePlate = document.createElement('canvas');
-                basePlate.width = 505;
-                basePlate.height = 276;
+                basePlate.width = 545;
+                basePlate.height = 330;
                 var plate = basePlate.getContext('2d');
+                plate.translate(20, 20);
                 var silhouette = new Path2D();
-                silhouette.arc(105, 149, 101, 0, Math.PI * 2);
-                silhouette.moveTo(392, 149);
-                silhouette.arc(266, 149, 126, 0, Math.PI * 2);
-                silhouette.moveTo(495, 215);
-                silhouette.arc(435, 215, 60, 0, Math.PI * 2);
+                // Include the outer numerals, tick tips and labels, with breathing room.
+                silhouette.arc(105, 149, 108, 0, Math.PI * 2);
+                silhouette.moveTo(418, 149);
+                silhouette.arc(266, 149, 152, 0, Math.PI * 2);
+                silhouette.moveTo(510, 215);
+                silhouette.arc(435, 215, 75, 0, Math.PI * 2);
                 silhouette.rect(115, 215, 39, 40);
                 silhouette.rect(407, 239, 88, 34);
                 // One union fill avoids increasing opacity where circles overlap.

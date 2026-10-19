@@ -950,3 +950,9 @@
 
 - 毛邊來自依貼圖亮度產生的輪廓。底板改為三個整圓與兩個LCD矩形的單一Path2D聯集，以alpha=0.5填一次，再疊原圖的標記層；移除外圍CSS陰影，重疊區不增加alpha。圖層只在載入時快取。
 - 技能：`ponytail`、`pr-author-maintainer`、`halfmoon-design-system`、`huge-component-refactoring`。基線及修改後完整前端1811 passed／1 skipped、build通過。棋盤格離線預覽無JS錯誤；另做真實遊戲截圖，不新增樣式測試。
+
+### 2026-10-19 Altezza 外圍標記與 LCD 原始比例
+
+- 三個圓形半徑改為108／152／75，納入外側數字及刻度；畫布545×330、座標整體留白20px，避免擴大後的完整圓被裁切。幾何底板仍以50%單次聯集填色，貼圖及指針保持原尺寸與相對座標。
+- res_125.asm 的Altezza分支t3對應res_256分段字形；檔位與時間改用原圖、深色LCD、顯示窗內置中。字形格使用同一縮放因子，字距獨立，避免非等比縮放造成窄字。
+- 技能：`ponytail`、`pr-author-maintainer`、`halfmoon-design-system`、`huge-component-refactoring`。基線及最後等比修正後完整前端1811 passed／1 skipped、build通過；離線預覽無JS錯誤，未新增個別樣式測試。真實遊戲證據另存第六輪，前輪封存保持原狀。
