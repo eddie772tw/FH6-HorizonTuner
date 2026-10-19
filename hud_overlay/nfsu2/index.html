@@ -36,6 +36,7 @@
     </div>
 
     <script src="../shared/hud-core.js"></script>
+    <script src="../shared/hud-artwork.js"></script>
 
     <script>
         (function() {
@@ -46,8 +47,7 @@
             var activeFace = 3; // Default: Tabby Cat (0..10)
             var faceImgs = [];
             for (var i = 0; i <= 10; i++) {
-                var img = new Image();
-                img.src = 'assets/nfsu2_face_' + i + '.png';
+                var img = HUDArtwork.loadImage('assets/nfsu2_face_' + i + '.png');
                 faceImgs.push(img);
             }
 
@@ -150,8 +150,8 @@
             }
 
             function render() {
-                var w = canvas.width;
-                var h = canvas.height;
+                var w = 562;
+                var h = 363;
                 ctx.clearRect(0, 0, w, h);
 
                 // 1. Clean D3D11 NFSU2 faceplate cluster (zero baked needles, zero baked digits)
@@ -255,7 +255,9 @@
 
             HUDCore.registerStyle('nfsu2', {
                 containerId: 'nfsu2Container',
+                scaleBaseline: 2.1,
                 scaleMultiplier: 0.95,
+                onScale: HUDArtwork.watchCanvas(canvas, render),
 
                 onInit: function(cfg) {
                     if (cfg && cfg.nfsu2Face !== undefined) {
