@@ -23,9 +23,9 @@
             background: transparent !important;
         }
         .mclaren-container {
-            position: absolute;
-            bottom: 24px;
-            right: 24px;
+            position: relative;
+            align-self: center;
+            transform-origin: bottom center;
             width: 918px;
             height: 120px;
             pointer-events: none;
@@ -144,7 +144,7 @@
 
             HUDCore.registerStyle('mclaren_720s', {
                 containerId: 'mclarenContainer',
-                scaleBaseline: 2.1,
+                scaleBaseline: 1.575,
                 scaleMultiplier: 0.95,
                 onScale: HUDArtwork.watchCanvas(canvas, render),
 
