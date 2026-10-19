@@ -52,6 +52,7 @@
     </div>
 
     <script src="../shared/hud-core.js"></script>
+  <script src="../shared/hud-artwork.js"></script>
     <script>
         var DECK_KEY_MAP = {
             pioneer: 0,
@@ -99,6 +100,7 @@
             var anchor = document.getElementById('audioHeadAnchor');
             var canvasMode = -1;
             var canvasDpr = 0;
+            var canvasScale = 1;
 
             var decks = [
                 { id: 0, name: 'Pioneer DEH-P6100R', file: 'assets/pioneer_clean.png', w: 380, h: 98 },
@@ -114,8 +116,7 @@
 
             var images = {};
             decks.forEach(function(d) {
-                var img = new Image();
-                img.src = d.file;
+                var img = HUDArtwork.loadImage(d.file);
                 img.onload = function() { render(); };
                 images[d.id] = img;
             });
@@ -233,7 +234,7 @@
 
             function render() {
                 var deck = decks[currentMode] || decks[0];
-                var dpr = window.devicePixelRatio || 1;
+                var dpr = (window.devicePixelRatio || 1) * canvasScale;
                 if (canvasMode !== currentMode || canvasDpr !== dpr) {
                     canvasMode = currentMode;
                     canvasDpr = dpr;
@@ -533,7 +534,9 @@
 
             HUDCore.registerStyle('audio_head', {
                 containerId: 'audioHeadContainer',
+                scaleBaseline: 2.1,
                 scaleMultiplier: 0.95,
+                onScale: function(scale) { canvasScale = scale; render(); },
 
                 onInit: function(cfg) {
                     var edge = cfg.audioHeadEdge || 'left';
