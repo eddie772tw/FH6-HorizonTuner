@@ -1571,5 +1571,9 @@
   "EV needs stable low-slip speed data and steering channels": "EVには安定した低スリップ速度データと操舵チャンネルが必要です",
   "EV needs valid stable wheel-speed channels": "EVには有効で安定した車輪速度チャンネルが必要です",
   "EV raw frames are missing required channels": "EV生フレームに必要なチャンネルがありません",
-  "EV needs forward full-throttle positive output without brake, clutch or regeneration": "EVには前進ギアの全開正出力が必要です。ブレーキ、クラッチ、回生を含めないでください。"
+  "EV needs forward full-throttle positive output without brake, clutch or regeneration": "EVには前進ギアの全開正出力が必要です。ブレーキ、クラッチ、回生を含めないでください。",
+    "Controller Telemetry Card": "コントローラーテレメトリーカード",
+    "Controller Layout": "コントローラーの種類",
+    "Xbox Wireless Controller": "Xbox ワイヤレス コントローラー",
+    "PlayStation DualSense": "PlayStation DualSense"
 }

@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<!-- Controller inputs visualize the shared Forza telemetry contract; this is not physical gamepad polling. -->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gamepad Input & Telemetry Overlay</title>
+    <link rel="stylesheet" href="../shared/hud-base.css">
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: transparent !important;
+        }
+        .gamepad-card-root { position: fixed; left: 30px; bottom: 30px; width: max-content; pointer-events: none; }
+        .gamepad-container {
+            width: 480px;
+            height: 380px;
+            position: relative;
+            pointer-events: none;
+            user-select: none;
+        }
+        #gamepadCanvas {
+            display: block;
+            width: 480px;
+            height: 380px;
+            pointer-events: none;
+            filter: drop-shadow(0 0 16px rgba(0, 240, 255, calc(var(--hud-glow-intensity, 1.0) * 0.35)));
+        }
+    </style>
+</head>
+<body>
+    <div class="gamepad-card-root">
+        <div class="gamepad-container" id="gamepadContainer">
+            <canvas role="img" aria-label="Controller Telemetry Card: Xbox" id="gamepadCanvas" width="480" height="380"></canvas>
+        </div>
+    </div>
+
+    <script src="../shared/hud-core.js"></script>
+    <script>
+        var currentLayout = 0; // 0 = Xbox, 1 = DualSense
+        function resolveGamepadLayout(mode) {
+            if (mode === 1 || mode === '1' || mode === 'dualsense' || mode === 'ps5') return 1;
+            return 0;
+        }
+        function switchController(mode) {
+            currentLayout = resolveGamepadLayout(mode);
+            if (window._renderGamepad) window._renderGamepad();
+        }
+        window.switchController = switchController;
+
+        var urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('mode') !== null) {
+            currentLayout = resolveGamepadLayout(urlParams.get('mode'));
+        }
+
+        (function() {
+            var canvas = document.getElementById('gamepadCanvas');
+            var ctx = canvas.getContext('2d');
+            var container = document.getElementById('gamepadContainer');
+            var lastDpr = 0;
+
+            var xboxImg = new Image();
+            xboxImg.src = 'assets/controller_xbox.png';
+
+            var dualSenseImg = new Image();
+            dualSenseImg.src = 'assets/controller_dualsense.png';
+
+            var telemetryData = {
+                steer: 0.0,
+                accel: 0.0,
+                brake: 0.0,
+                clutch: 0.0,
+                handbrake: 0.0,
+                gear: 1,
+                speed_kmh: 0
+            };
+
+            function drawStick(cx, cy, radius, defX, defY, glowColor) {
+                ctx.save();
+                ctx.strokeStyle = 'rgba(0, 240, 255, 0.25)';
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.arc(cx, cy, radius + 5, 0, Math.PI * 2);
+                ctx.stroke();
+
+                var sx = cx + defX * (radius * 0.85);
+                var sy = cy + defY * (radius * 0.85);
+
+                var grad = ctx.createRadialGradient(sx, sy, 2, sx, sy, radius);
+                grad.addColorStop(0, '#38bdf8');
+                grad.addColorStop(0.65, '#0284c7');
+                grad.addColorStop(1, '#0f172a');
+
+                ctx.fillStyle = grad;
+                ctx.shadowColor = glowColor || '#00f0ff';
+                ctx.shadowBlur = 10;
+                ctx.beginPath();
+                ctx.arc(sx, sy, radius, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.shadowBlur = 0;
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.arc(sx, sy, 2.8, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+
+            function drawTriggerBar(x, y, w, h, val, isBrake) {
+                ctx.save();
+                ctx.fillStyle = 'rgba(15, 23, 42, 0.88)';
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.22)';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.roundRect(x, y, w, h, 4);
+                ctx.fill();
+                ctx.stroke();
+
+                var fillH = Math.max(0, Math.min(h - 4, (h - 4) * val));
+                var fillY = y + h - 2 - fillH;
+
+                if (fillH > 0.5) {
+                    var grad = ctx.createLinearGradient(x, fillY + fillH, x, fillY);
+                    if (isBrake) {
+                        grad.addColorStop(0, '#f87171');
+                        grad.addColorStop(1, '#ef4444');
+                        ctx.shadowColor = '#ef4444';
+                    } else {
+                        grad.addColorStop(0, '#4ade80');
+                        grad.addColorStop(1, '#22c55e');
+                        ctx.shadowColor = '#22c55e';
+                    }
+                    ctx.shadowBlur = val > 0.1 ? 8 : 0;
+                    ctx.fillStyle = grad;
+                    ctx.beginPath();
+                    ctx.roundRect(x + 2, fillY, w - 4, fillH, 2);
+                    ctx.fill();
+                }
+
+                ctx.shadowBlur = 0;
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 10px Consolas, monospace';
+                ctx.textAlign = 'center';
+                ctx.fillText((val * 100).toFixed(0) + '%', x + w / 2, y + h + 14);
+
+                ctx.fillStyle = isBrake ? '#f87171' : '#4ade80';
+                ctx.fillText(isBrake ? 'BRAKE' : 'THROTTLE', x + w / 2, y - 6);
+                ctx.restore();
+            }
+
+            function render() {
+                var dpr = window.devicePixelRatio || 1;
+                if (lastDpr !== dpr) {
+                    lastDpr = dpr;
+                    canvas.width = Math.round(480 * dpr);
+                    canvas.height = Math.round(380 * dpr);
+                    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+                }
+                var w = 480;
+                var h = 380;
+                ctx.clearRect(0, 0, w, h);
+
+                var isDualSense = (currentLayout === 1);
+                var img = isDualSense ? dualSenseImg : xboxImg;
+
+                var imgW = isDualSense ? 372 : 370;
+                var imgH = isDualSense ? 287 : 297;
+                var ox = Math.round((w - imgW) / 2);
+                var oy = 24;
+
+                if (img.complete && img.naturalWidth > 0) {
+                    ctx.drawImage(img, ox, oy, imgW, imgH);
+                }
+
+                drawTriggerBar(14, oy + 42, 24, 120, telemetryData.brake, true);
+                drawTriggerBar(w - 38, oy + 42, 24, 120, telemetryData.accel, false);
+
+                if (!isDualSense) {
+                    // XBOX CONTROLLER (scaled 370x297 from 435x349 -> factor 0.8505)
+                    drawStick(ox + 97, oy + 114, 18, telemetryData.steer, 0, '#00f0ff');
+                    drawStick(ox + 236, oy + 168, 18, 0, 0, 'rgba(0, 240, 255, 0.4)');
+
+                    if (telemetryData.handbrake > 0.1) {
+                        ctx.save();
+                        ctx.fillStyle = 'rgba(34, 197, 94, 0.65)';
+                        ctx.shadowColor = '#22c55e';
+                        ctx.shadowBlur = 12;
+                        ctx.beginPath();
+                        ctx.arc(ox + 253, oy + 117, 11, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.restore();
+                    }
+                } else {
+                    // PLAYSTATION 5 DUALSENSE (scaled 372x287 from 437x337 -> factor 0.8513)
+                    drawStick(ox + 132, oy + 165, 17, telemetryData.steer, 0, '#38bdf8');
+                    drawStick(ox + 247, oy + 165, 17, 0, 0, 'rgba(56, 189, 248, 0.4)');
+
+                    ctx.save();
+                    var lightbarGrad = ctx.createLinearGradient(ox + 132, oy + 66, ox + 245, oy + 66);
+                    lightbarGrad.addColorStop(0, 'rgba(0, 240, 255, 0.15)');
+                    lightbarGrad.addColorStop(0.5, 'rgba(0, 240, 255, 0.85)');
+                    lightbarGrad.addColorStop(1, 'rgba(0, 240, 255, 0.15)');
+                    ctx.strokeStyle = lightbarGrad;
+                    ctx.shadowColor = '#00f0ff';
+                    ctx.shadowBlur = 8;
+                    ctx.lineWidth = 2.5;
+                    ctx.beginPath();
+                    ctx.moveTo(ox + 134, oy + 66);
+                    ctx.lineTo(ox + 243, oy + 66);
+                    ctx.stroke();
+                    ctx.restore();
+
+                    if (telemetryData.handbrake > 0.1) {
+                        ctx.save();
+                        ctx.fillStyle = 'rgba(56, 189, 248, 0.65)';
+                        ctx.shadowColor = '#38bdf8';
+                        ctx.shadowBlur = 12;
+                        ctx.beginPath();
+                        ctx.arc(ox + 303, oy + 143, 10, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.restore();
+                    }
+                }
+
+                ctx.save();
+                ctx.fillStyle = 'rgba(15, 23, 42, 0.88)';
+                ctx.strokeStyle = 'rgba(0, 240, 255, 0.35)';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.roundRect(w / 2 - 135, h - 38, 270, 28, 6);
+                ctx.fill();
+                ctx.stroke();
+
+                ctx.fillStyle = '#38bdf8';
+                ctx.font = 'bold 11px Consolas, monospace';
+                ctx.textAlign = 'center';
+                var steerPercent = (telemetryData.steer * 100).toFixed(1);
+                var sign = telemetryData.steer >= 0 ? '+' : '';
+                var gearTxt = telemetryData.gear === 0 ? 'R' : (telemetryData.gear === 'N' ? 'N' : telemetryData.gear);
+                ctx.fillText('STEER: ' + sign + steerPercent + '%  |  GEAR: ' + gearTxt, w / 2, h - 20);
+                ctx.restore();
+            }
+
+            window._renderGamepad = render;
+            xboxImg.onload = render;
+            dualSenseImg.onload = render;
+
+            HUDCore.registerStyle('gamepad_overlay', {
+                containerId: 'gamepadContainer',
+                scaleMultiplier: 0.95,
+
+                onInit: function(cfg) {
+                    if (cfg && cfg.gamepadLayout !== undefined) {
+                        currentLayout = resolveGamepadLayout(cfg.gamepadLayout);
+                        canvas.setAttribute('aria-label', 'Controller Telemetry Card: ' + (currentLayout === 1 ? 'PlayStation DualSense' : 'Xbox'));
+                        render();
+                    }
+                    container.style.display = cfg?.elements?.showTeleMaster !== false && cfg?.elements?.showTeleGamepad === true ? 'block' : 'none';
+                },
+
+                onFrame: function(data) {
+                    if (!data) return;
+                    if (data.steer !== undefined) {
+                        var st = (Number(data.steer) || 0) / 127;
+                        telemetryData.steer = Math.max(-1, Math.min(1, st));
+                    }
+                    var rawAccel = data.throttle !== undefined ? data.throttle : data.accel;
+                    if (rawAccel !== undefined) {
+                        var ac = Number(rawAccel) || 0;
+                        telemetryData.accel = Math.max(0, Math.min(1, ac));
+                    }
+                    if (data.brake !== undefined) {
+                        var br = Number(data.brake) || 0;
+                        telemetryData.brake = Math.max(0, Math.min(1, br));
+                    }
+                    if (data.clutch !== undefined) {
+                        var cl = Number(data.clutch) || 0;
+                        telemetryData.clutch = Math.max(0, Math.min(1, cl));
+                    }
+                    if (data.hand_brake !== undefined) {
+                        var hb = (Number(data.hand_brake) || 0) / 255;
+                        telemetryData.handbrake = Math.max(0, Math.min(1, hb));
+                    }
+                    if (data.gear !== undefined) telemetryData.gear = data.gear;
+                    if (data.speed_kmh !== undefined) telemetryData.speed_kmh = Number(data.speed_kmh) || 0;
+                    render();
+                },
+
+                onElementsChange: function(elements) {
+                    if (container) {
+                        container.style.display = elements.showTeleMaster !== false && elements.showTeleGamepad === true ? 'block' : 'none';
+                    }
+                },
+
+                onAnimate: render
+            });
+
+            HUDCore.init('gamepad_overlay');
+            switchController(currentLayout);
+        })();
+    </script>
+</body>
+</html>

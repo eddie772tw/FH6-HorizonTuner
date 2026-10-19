@@ -2,6 +2,50 @@ use fh6_backend::{config, config_service::ConfigService, storage};
 use serde_json::{json, Value};
 
 #[test]
+fn deferred_subsystems_stay_hidden_and_retain_settings_after_restart() {
+    for style in [
+        "minimap_overlay",
+        "touge_pacenotes",
+        "telemetry_cards",
+        "speed_effects",
+    ] {
+        let directory = tempfile::tempdir().unwrap();
+        let service = ConfigService::new(directory.path()).unwrap();
+        service.handle("POST", "/api/overlay/config", &json!({
+            "hudStyle":style, "minimapMode":"north_up", "gamepadLayout":"bad", "pluginKey":"keep"
+        })).unwrap().unwrap();
+        let hud = ConfigService::new(directory.path()).unwrap().hud();
+        assert_eq!(hud["hudStyle"], "vfd");
+        assert_eq!(hud["gamepadLayout"], "xbox");
+        assert_eq!(hud["minimapMode"], "north_up");
+        assert_eq!(hud["pluginKey"], "keep");
+    }
+}
+
+#[test]
+fn controller_telemetry_card_migrates_and_stays_independent_after_restart() {
+    let directory = tempfile::tempdir().unwrap();
+    let service = ConfigService::new(directory.path()).unwrap();
+    service.handle("POST", "/api/overlay/config", &json!({
+        "hudStyle":"gamepad_overlay", "gamepadLayout":"dualsense", "elements":{"showGauge":true}
+    })).unwrap().unwrap();
+    let mut hud = service.hud();
+    assert_eq!(hud["hudStyle"], "vfd");
+    assert_eq!(hud["elements"]["showTeleGamepad"], true);
+    hud["hudStyle"] = json!("gt7");
+    hud["elements"]["showGauge"] = json!(false);
+    service
+        .handle("POST", "/api/overlay/config", &hud)
+        .unwrap()
+        .unwrap();
+    let restarted = ConfigService::new(directory.path()).unwrap().hud();
+    assert_eq!(restarted["hudStyle"], "gt7");
+    assert_eq!(restarted["elements"]["showGauge"], false);
+    assert_eq!(restarted["elements"]["showTeleGamepad"], true);
+    assert_eq!(restarted["gamepadLayout"], "dualsense");
+}
+
+#[test]
 fn python_settings_and_hud_outputs_are_preserved() {
     let cases: Value = serde_json::from_str(include_str!("fixtures/config.json")).unwrap();
     for case in cases["settings"].as_array().unwrap() {

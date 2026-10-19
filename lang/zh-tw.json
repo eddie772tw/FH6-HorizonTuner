@@ -2191,5 +2191,9 @@
   "EV needs stable low-slip speed data and steering channels": "EV 需要穩定低打滑速度資料與轉向通道",
   "EV needs valid stable wheel-speed channels": "EV 需要有效且穩定的輪速通道",
   "EV raw frames are missing required channels": "EV 原始幀缺少必要通道",
-  "EV needs forward full-throttle positive output without brake, clutch or regeneration": "EV 需要前進檔全油門正輸出；不能夾雜煞車、離合器或回充"
+  "EV needs forward full-throttle positive output without brake, clutch or regeneration": "EV 需要前進檔全油門正輸出；不能夾雜煞車、離合器或回充",
+    "Controller Telemetry Card": "手把遙測卡片",
+    "Controller Layout": "手把樣式",
+    "Xbox Wireless Controller": "Xbox 無線控制器",
+    "PlayStation DualSense": "PlayStation DualSense"
 }

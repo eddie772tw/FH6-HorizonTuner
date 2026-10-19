@@ -93,6 +93,7 @@ const TELEMETRY_TOGGLES: readonly { key: keyof HudElements; label: string; defau
   { key: 'showTelePedals', label: 'Throttle & Brake Trace' },
   { key: 'showPowerTorque', label: 'Power & Torque Trace', defaultOn: true },
   { key: 'showTeleCompass', label: 'Tape Compass HUD', defaultOn: true },
+  { key: 'showTeleGamepad', label: 'Controller Telemetry Card' },
 ];
 
 function PositionControl({ label, value, onChange, t }: { label: string; value: 'top' | 'bottom'; onChange: (position: 'top' | 'bottom') => void; t: HudLayoutPanelProps['t'] }) {
@@ -223,6 +224,13 @@ export function HudLayoutPanel({ config, disabled = false, onConfigPatch, onElem
           ))}
         </div>
         <div className="border-top pt-3">
+          <label htmlFor={`${id}-controller`} className="form-label fs-7">{t('Controller Layout')}</label>
+          <select id={`${id}-controller`} className="form-select form-select-sm mb-3" value={config.gamepadLayout ?? 'xbox'}
+            disabled={config.elements.showTeleMaster === false || config.elements.showTeleGamepad !== true}
+            onChange={event => onConfigPatch({ gamepadLayout: event.target.value as 'xbox' | 'dualsense' })}>
+            <option value="xbox">{t('Xbox Wireless Controller')}</option>
+            <option value="dualsense">{t('PlayStation DualSense')}</option>
+          </select>
           <h4 className="fs-7 fw-bold text-primary mb-2">{t('Speedometer Settings')}</h4>
           <Toggle label={t('Enabled')} checked={config.elements.showGauge !== false} onToggle={() => onElementToggle('showGauge')} />
         </div>
