@@ -13,11 +13,12 @@ export function positionOverlay(anchor, edge, offset, centerOffset) {
 
 // Grow inward from the selected screen edge; incomplete rows hug that edge.
 // Called only when item selection or layout changes, never on a telemetry tick.
-export function layoutOverlayItems(items, maxPerRow, orientation, cellWidth, cellHeight, edge = 'right') {
-    const capacity = Math.min(Math.max(1, Math.trunc(maxPerRow)), items.length || 1);
-    const rows = Math.ceil(items.length / capacity);
+export function layoutOverlayItems(items, maxPerLine, orientation, cellWidth, cellHeight, edge = 'right') {
+    const capacity = Math.min(Math.max(1, Math.trunc(maxPerLine)), items.length || 1);
     const vertical = orientation === 'vertical';
-    const columns = vertical && rows ? Math.ceil(items.length / rows) : capacity;
+    const lines = Math.ceil(items.length / capacity);
+    const rows = vertical ? capacity : lines;
+    const columns = vertical ? lines : capacity;
     return {
         width: columns * cellWidth,
         height: rows * cellHeight,

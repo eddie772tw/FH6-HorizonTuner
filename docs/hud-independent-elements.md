@@ -5,12 +5,15 @@ the launcher's connections with the speedometer and remain visible when the main
 gauge or central telemetry cards are hidden. Disabling an element removes its iframe.
 
 Auxiliary Gauges defaults to the right edge center with zero offset. Pick any of the
-five faceplates with checkboxes. The selection order is preserved. A row holds at
-most 1–5 gauges. Incomplete rows align to the left/right edge, or stay centered
+five faceplates with checkboxes. The selection order is preserved. The count limit
+is per row in horizontal mode and per column in vertical mode (1–5 gauges). The
+settings label changes with the arrangement; the stored `auxGaugeMaxPerRow` key
+is retained for configuration compatibility. Incomplete rows align to the left/right edge, or stay centered
 when anchored at the top/bottom. Top anchoring grows downward; bottom and side
 anchoring grow upward. Horizontal order fills each row left to right. Vertical
-order fills columns, adding columns toward the screen interior from a side edge,
-within the same row-width limit. All four edge centers, inward edge
+order fills columns up to the selected capacity, adding columns toward the screen
+interior from a side edge. Top anchoring fills columns downward; other edges fill
+them upward. All four edge centers, inward edge
 offset and signed center offset are available. Offsets are screen pixels; gauge
 size follows the shared HUD scale.
 

@@ -3,6 +3,15 @@ import { describe, expect, it } from 'vitest';
 import { layoutOverlayItems, positionOverlay } from '../../../hud_overlay/shared/overlay-layout.js';
 
 describe('shared independent overlay layout', () => {
+    it.each([1, 3, 5])('uses a real vertical grid with a per-column limit of %i', capacity => {
+        const ids = ['a', 'b', 'c', 'd', 'e'];
+        const horizontal = layoutOverlayItems(ids, capacity, 'horizontal', 1, 1);
+        const vertical = layoutOverlayItems(ids, capacity, 'vertical', 1, 1);
+        expect(vertical.width).toBe(horizontal.height);
+        expect(vertical.height).toBe(horizontal.width);
+        const columns = new Set(vertical.items.map(item => item.x));
+        for (const x of columns) expect(vertical.items.filter(item => item.x === x).length).toBeLessThanOrEqual(capacity);
+    });
     for (const orientation of ['horizontal', 'vertical'] as const) {
         it.each(['left', 'right'] as const)(`${orientation} keeps incomplete rows aligned %s`, edge => {
             const layout = layoutOverlayItems(['a', 'b', 'c', 'd', 'e'], 3, orientation, 1, 1, edge);

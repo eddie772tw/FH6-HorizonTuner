@@ -38,7 +38,7 @@ export function HudAuxiliaryPanel({ config, disabled, onConfigPatch, t }: Props)
       </fieldset>
       <div className="row g-3">
         <div className="col-12 col-lg-6">
-          <label htmlFor={`${id}-count`} className="form-label fs-7">{t('Maximum Gauges Per Row')}</label>
+          <label htmlFor={`${id}-count`} className="form-label fs-7">{t(config.auxGaugeOrientation === 'vertical' ? 'Maximum Gauges Per Column' : 'Maximum Gauges Per Row')}</label>
           <select id={`${id}-count`} className="form-select form-select-sm" value={config.auxGaugeMaxPerRow ?? 3}
             onChange={event => onConfigPatch({ auxGaugeMaxPerRow: Number(event.target.value) })}>
             {[1, 2, 3, 4, 5].map(count => <option key={count} value={count}>{count}</option>)}
@@ -48,8 +48,8 @@ export function HudAuxiliaryPanel({ config, disabled, onConfigPatch, t }: Props)
           <label htmlFor={`${id}-orientation`} className="form-label fs-7">{t('Gauge Arrangement')}</label>
           <select id={`${id}-orientation`} className="form-select form-select-sm" value={config.auxGaugeOrientation ?? 'horizontal'}
             onChange={event => onConfigPatch({ auxGaugeOrientation: event.target.value as HudConfig['auxGaugeOrientation'] })}>
-            <option value="horizontal">{t('Horizontal (rows upward)')}</option>
-            <option value="vertical">{t('Vertical (columns upward)')}</option>
+            <option value="horizontal">{t('Horizontal')}</option>
+            <option value="vertical">{t('Vertical')}</option>
           </select>
         </div>
         <div className="col-12">

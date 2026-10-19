@@ -984,3 +984,9 @@
 - **Evidence**：完整前端 1,824 passed／1 skipped，Windows 與 LAN build；Rust 預設全量 228 passed／3 ignored、無 HUD 全量 220 passed／2 ignored。共用測試涵蓋設定遷移／保存／重啟、來源轉換／缺值、選單、排列與表單草稿。隔離瀏覽器確認五表頭複選、來源同步、四邊 24px／中心 -32px、主儀表切換與獨立開關。
 - **輸入草稿**：描述正規化會 trim 字串，逐字保存會吃掉尚在輸入的字詞間空格。共用 `HudTextInput` 保留草稿，blur／Enter 才保存；mounted 表單測試及瀏覽器逐字輸入、Enter 與 reload 讀回均已確認。
 - **Boundary**：沒有新增個別樣式繪圖測試。瀏覽器截圖仍逾時，DOM／版面證據與合成傳輸不代表 Tauri 或遊戲內驗收。詳細操作契約見 [獨立元素說明](../docs/hud-independent-elements.md)。
+
+## 2026-10-19 / 獨立元素直排的實機檢查（Codex as Codex）
+
+- **Learning**：只改填入順序、仍以每排上限計算相同格線，會使直排外觀仍是橫排；五項、容量三的實機畫面可重現。直排須將容量套用到每欄，使同一組設定由三欄兩列轉為兩欄三列，UI 數量標籤同步切換為「每欄最多表頭數」。
+- **修正／Evidence**：共用排列函式保留設定鍵相容性，依方向改變幾何；共用測試覆蓋容量 1／3／5、四邊短列對齊、邊界與向內延伸。橫排不變；直排靠右時新增欄向左，靠上時由上往下填入。實機截圖另存版本、完整設定與即時遙測，不以數值單元測試代替渲染證據。
+- **Skills**：`halfmoon-design-system`、`huge-component-refactoring`、`pr-author-maintainer`、`ponytail`。
