@@ -2,6 +2,7 @@ import { useId } from 'react';
 import type { HudPanelSharedProps } from '../hudPanelTypes';
 import type { HudConfig } from '../hudConfig';
 import { HudOffsetInput as OffsetInput } from './HudOffsetInput';
+import { HudTextInput } from './HudTextInput';
 import { GAUGE_VALUE_KEYS, GAUGE_TELEMETRY_FIELDS, normalizeGaugeValueSources } from '../../../../../hud_overlay/shared/gauge-sources.js';
 
 const FACES = [
@@ -78,8 +79,8 @@ export function HudAuxiliaryPanel({ config, disabled, onConfigPatch, t }: Props)
           <div className="row g-2">
             <div className="col-12 col-lg-4">
               <label htmlFor={`${id}-${key}-label`} className="form-label fs-7">{t('Value Description')}</label>
-              <input id={`${id}-${key}-label`} className="form-control form-control-sm" maxLength={64} value={sources[key].label}
-                onChange={event => onConfigPatch({ gaugeValueSources: { ...sources, [key]: { ...sources[key], label: event.target.value } } })} />
+              <HudTextInput id={`${id}-${key}-label`} value={sources[key].label}
+                onCommit={label => onConfigPatch({ gaugeValueSources: { ...sources, [key]: { ...sources[key], label } } })} />
             </div>
             <div className="col-12 col-lg-5">
               <label htmlFor={`${id}-${key}-field`} className="form-label fs-7">{t('Telemetry Field')}</label>

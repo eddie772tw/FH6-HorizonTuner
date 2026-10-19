@@ -981,5 +981,6 @@
 - **Scope**：PR #540 接續 #541 的獨立元素基礎；輔助儀表另設複選選單與開關，預設右側中央。Audio Head 的位移輸入改由共用元件維持負號草稿。既有 CI 的 base branch filter 加入 `feat/hud-audio-head`，使 stacked PR 能執行同一組檢查。
 - **Learning**：表頭僅讀取語意值，`gaugeValueSources` 在 launcher 分發前統一對應欄位、描述與來源單位。AEM／Speedhut 共用 boost 對應。Forza 缺少的油溫、油壓不再以轉速模型補值；水溫預設讀取有明確標示的平均胎溫。缺值須優先使用 nullable 原始胎溫，避免 legacy 的零值填補被誤認為實際量測。
 - **排列／生命週期**：以每排上限建立向上成長的格線；橫向逐列、直向逐欄由下往上填入，幾何與文字僅於設定改變時計算。外層錨點使用螢幕像素，Canvas 依 DPR 配置。關閉或空選取移除 iframe，既有主儀表及音響保留。
-- **Evidence**：完整前端 1,823 passed／1 skipped，Windows 與 LAN build；Rust 預設全量 228 passed／3 ignored、無 HUD 全量 220 passed／2 ignored。共用測試涵蓋設定遷移／保存／重啟、來源轉換／缺值、選單與排列。隔離瀏覽器確認五表頭複選、來源同步、四邊 24px／中心 -32px、主儀表切換與獨立開關。
+- **Evidence**：完整前端 1,824 passed／1 skipped，Windows 與 LAN build；Rust 預設全量 228 passed／3 ignored、無 HUD 全量 220 passed／2 ignored。共用測試涵蓋設定遷移／保存／重啟、來源轉換／缺值、選單、排列與表單草稿。隔離瀏覽器確認五表頭複選、來源同步、四邊 24px／中心 -32px、主儀表切換與獨立開關。
+- **輸入草稿**：描述正規化會 trim 字串，逐字保存會吃掉尚在輸入的字詞間空格。共用 `HudTextInput` 保留草稿，blur／Enter 才保存；mounted 表單測試及瀏覽器逐字輸入、Enter 與 reload 讀回均已確認。
 - **Boundary**：沒有新增個別樣式繪圖測試。瀏覽器截圖仍逾時，DOM／版面證據與合成傳輸不代表 Tauri 或遊戲內驗收。詳細操作契約見 [獨立元素說明](../docs/hud-independent-elements.md)。

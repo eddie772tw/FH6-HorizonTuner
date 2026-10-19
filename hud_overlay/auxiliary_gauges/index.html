@@ -176,9 +176,6 @@
         ctx.font = '16px Arial, sans-serif';
         ctx.textAlign = 'center';
         if (telemetry[face.value] === null) ctx.fillText('—', item.x + 150, item.y + 150);
-        ctx.fillText(item.label, item.x + 150, item.y + 307, 286);
-        ctx.font = '12px Consolas, monospace';
-        ctx.fillText(item.source, item.x + 150, item.y + 325, 286);
         ctx.restore();
       }
     }
@@ -188,7 +185,7 @@
       onInit(cfg) {
         if (!cfg?.elements) return;
         config = normalizeAuxiliaryConfig(cfg);
-        layout = layoutOverlayItems(config.auxGaugeFaces, config.auxGaugeMaxPerRow, config.auxGaugeOrientation, 300, 330);
+        layout = layoutOverlayItems(config.auxGaugeFaces, config.auxGaugeMaxPerRow, config.auxGaugeOrientation, 300, 290, config.auxGaugeEdge);
         for (const item of layout.items) {
           const source = config.gaugeValueSources[faces[item.id].key];
           item.label = source.label;
