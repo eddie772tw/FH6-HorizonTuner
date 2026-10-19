@@ -47,7 +47,8 @@
             var activeFace = 3; // Default: Tabby Cat (0..10)
             var faceImgs = [];
             for (var i = 0; i <= 10; i++) {
-                var img = HUDArtwork.loadImage('assets/nfsu2_face_' + i + '.png');
+                var img = new Image();
+            img.src = 'assets/nfsu2_face_' + i + '.png';
                 faceImgs.push(img);
             }
 
