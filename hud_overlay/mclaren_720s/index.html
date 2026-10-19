@@ -45,6 +45,7 @@
     </div>
 
     <script src="../shared/hud-core.js"></script>
+    <script src="../shared/hud-artwork.js"></script>
     <script>
         (function() {
             var canvas = document.getElementById('mclarenCanvas');
@@ -70,8 +71,8 @@
             }
 
             function render() {
-                var w = canvas.width;
-                var h = canvas.height;
+                var w = 918;
+                var h = 120;
                 ctx.clearRect(0, 0, w, h);
 
                 // 1. Clean D3D11 base (includes '1..8' RPM scale numbers and 'KMH' label)
@@ -143,7 +144,9 @@
 
             HUDCore.registerStyle('mclaren_720s', {
                 containerId: 'mclarenContainer',
+                scaleBaseline: 2.1,
                 scaleMultiplier: 0.95,
+                onScale: HUDArtwork.watchCanvas(canvas, render),
 
                 onElementsChange: function(elements) {
                     if (container) {
