@@ -47,8 +47,10 @@
             var activeFace = 3; // Default: Tabby Cat (0..10)
             var faceImgs = [];
             for (var i = 0; i <= 10; i++) {
-                // Preserve the face artwork; black background uses 15% alpha.
-                var img = HUDArtwork.loadImage('assets/nfsu2_face_' + i + '.png', 0.15);
+                // Prepared from the original material alpha: artwork stays solid,
+                // only the backing plate uses 15% alpha. Do not key dark artwork by RGB.
+                var img = new Image();
+                img.src = 'assets/nfsu2_face_' + i + '.png';
                 faceImgs.push(img);
             }
 

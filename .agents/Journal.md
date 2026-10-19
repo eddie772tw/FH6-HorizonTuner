@@ -938,3 +938,10 @@
 - **修正／Learning**：NFSU2 使用既有共用 artwork 載入處理，純黑區 alpha 設為 0.15，亮色盤面／刻度保留；移除 CSS 外緣輪廓光。
 - **驗證界線**：先跑完整 frontend Vitest 與 build，再保存最後提交的實際 Forza 漫遊截圖與設定；靜態圖片不作為動態駕駛或跨更新率效能證據。未新增個別樣式測試。
 - **Skills**：`huge-component-refactoring`、`halfmoon-design-system`、`pr-author-maintainer`、`ponytail`。
+
+## 2026-10-19 / NFSU2 實心材質與半透明底板修正（Codex as Codex）
+
+- **Learning／根因**：第二輪以 RGB 亮度判斷底板，會破壞原 t61 錶面內的實心黑色圖案與半透明環框。原 D3D11 `res_125` 將 t61（11 款圖案／環框）與 t62（共同底板／N2O）分層混合，必須依來源 alpha 區分。
+- **修正**：以原 shader 建立每款靜態圖案 alpha，先去除字型與指針取樣，核對 DDS／decoded atlas 完整輸出 alpha 最大差異 0。離線準備 11 張 PNG，保留圖案覆蓋量，僅剩餘暗底用 alpha=0.15；執行時普通 Image 載入，沒有每幀影像處理。
+- **驗證**：完整 frontend Vitest 修改前／後均 1809 passed、1 skipped；TypeScript／Vite build 通過。離線產生流程驗證 RGB、外部透明區與實心暗圖案不變、alpha 不增加、無圖案純黑底為 38/255；原素材來源雜湊與逐款影響數據在 `hud_overlay/nfsu2/tools/material-audit.json`。未新增個別樣式單元測試；實際漫遊截圖另附最終 SHA 與有效設定。
+- **Skills**：`huge-component-refactoring`、`halfmoon-design-system`、`pr-author-maintainer`、`ponytail`、`computer-use:computer-use`。
