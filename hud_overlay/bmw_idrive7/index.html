@@ -54,7 +54,6 @@
 
             var isSweeping = false;
             var sweepRafId = null;
-            var isMetric = true;
 
             var telemetry = {
                 speed: 0,
@@ -117,9 +116,8 @@
                     ctx.drawImage(baseImg, 0, 0, w, h);
                 }
 
-                var maxRpm = Math.max(4000, telemetry.maxRpm || 8000);
-                // The dial face prints 0..8 (8000 RPM scale); map RPM against maxRpm
-                var rpmRatio = Math.min(1.0, Math.max(0.0, telemetry.rpm / maxRpm));
+                // The printed 0..8 scale is fixed; the vehicle limit only drives the alert.
+                var rpmRatio = Math.min(1.0, Math.max(0.0, telemetry.rpm / 8000));
                 var tempRatio = Math.min(1.0, Math.max(0.0, (telemetry.tempC - 50) / 100));
                 var psiRatio = Math.min(1.0, Math.max(0.0, telemetry.boostPsi / 29.0));
                 var hpRatio = Math.min(1.0, Math.max(0.0, telemetry.powerHp / 750.0));
@@ -130,7 +128,7 @@
                 drawClippedBar(POLY_PSI, 179, 393, psiRatio);
                 drawClippedBar(POLY_HP, 179, 393, hpRatio);
 
-                var isRedline = rpmRatio > 0.88;
+                var isRedline = telemetry.rpm > Math.max(4000, telemetry.maxRpm || 8000) * 0.88;
 
                 // Dynamic Center Readouts (Gear & Speed in 638x522 coordinate space)
                 ctx.save();
@@ -171,11 +169,7 @@
                 scaleMultiplier: 0.95,
                 onScale: HUDArtwork.watchCanvas(canvas, render),
 
-                onInit: function(cfg) {
-                    if (cfg) {
-                        if (cfg.isMetric !== undefined) isMetric = cfg.isMetric !== false;
-                        else if (cfg.unit) isMetric = cfg.unit !== 'mph';
-                    }
+                onInit: function() {
                     render();
                 },
 
@@ -188,14 +182,8 @@
                 onFrame: function(data, payload) {
                     if (!data) return;
                     payload = payload || {};
-                    if (payload.isMetric !== undefined) isMetric = payload.isMetric !== false;
-                    if (data.displayUnits && data.displayUnits.speed) {
-                        isMetric = data.displayUnits.speed !== 'mph';
-                    }
-
-                    telemetry.speed = isMetric
-                        ? Number(data.speed_kmh !== undefined ? data.speed_kmh : (data.speed || 0))
-                        : Number(data.speed_mph !== undefined ? data.speed_mph : ((data.speed_kmh || data.speed || 0) * 0.621371));
+                    // The native artwork is permanently labelled km/h.
+                    telemetry.speed = Number(data.speed_kmh || 0);
                     telemetry.rpm = Number(data.rpm || 0);
                     telemetry.maxRpm = Number(data.max_rpm || data.maxRpm || payload.redlineRpm || 8000);
                     telemetry.gear = data.gear !== undefined ? Number(data.gear) : 1;

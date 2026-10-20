@@ -12,6 +12,14 @@ import {
 } from './hudStyleScanner';
 
 describe('hudStyleScanner frontend module tests', () => {
+  it('keeps independent and deferred subsystem modules out of the speedometer selector, including WIP', () => {
+    const hidden = ['minimap_overlay', 'touge_pacenotes', 'telemetry_cards', 'speed_effects'];
+    const styles: HudStyleEntry[] = ['vfd', 'gamepad_overlay', ...hidden].map(id => ({ id, source: 'builtin', urlPrefix: '/hud' }));
+    for (const includeWip of [false, true]) {
+      expect(formatHudDropdownOptions(styles, undefined, { includeWip, currentStyle: 'minimap_overlay' }).map(option => option.value)).toEqual(['vfd']);
+      expect(formatHudDropdownOptions([], undefined, { includeWip }).some(option => hidden.includes(option.value))).toBe(false);
+    }
+  });
   it('fetchHudStylesList should correctly call backend API and return parsed styles', async () => {
     const mockResponse: HudStyleEntry[] = [
       { id: 'simple', source: 'builtin', urlPrefix: '/hud' },

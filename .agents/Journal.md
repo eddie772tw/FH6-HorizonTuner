@@ -945,3 +945,24 @@
 - 水溫表來源使用共用 `HUDCore.getAverageTireTemperatureC`，四個有限數值才成立；依 raw °F 合約固定轉 °C，不能以 125 閾值猜單位。零度仍是數值，缺資料回冷端，不加 RPM 補正。
 - 採用技能：`ponytail`、`pr-author-maintainer`、`halfmoon-design-system`、`huge-component-refactoring`、`telemetry-udp-protocol`。共用純函式涵蓋冷／熱、aliases、缺值；沒有新增個別樣式測試。
 - 修改前前端 1809 passed / 1 skipped；修改後完整前端測試與 build 於提交前驗證，詳見本機 round4-534 日誌。
+
+## 2026-10-19 / WASAPI 高取樣率頻譜範圍（Codex as Codex）
+
+- **Learning**：頻譜 JSON 有完整 32 段，不代表頻段涵蓋範圍正確。實機 endpoint 為 192 kHz；將正頻率 FFT 全部配置到顯示時，右半部涵蓋約 24–96 kHz，導致一般音訊只在左側活動。同一 2 kHz 音調在舊版 44.1／96 kHz 下的峰值位置也會改變。
+- **Contract**：WASAPI 使用 `GetMixFormat().nSamplesPerSec`，將顯示範圍上限限制為 20 kHz 或較低 Nyquist；保留 32 段、平方頻段分配、增益與 VU。診斷新增 `native.audio.sampleRate`。無取樣率參數的 external PCM fixture 維持舊相容輸出，不能代替原生取樣率回歸。
+- **Evidence**：受控 2／8 kHz 音調跨 44.1／48／96／192 kHz 維持頻段位置，另驗證超音頻排除與 16 kHz 低取樣率邊界。實機 WASAPI 複測的後半 16 段皆有活動；這是 API 資料證據，與完整 HUD 畫面、播放裝置普遍驗收及遊戲效能分開記錄。
+- **Skills**：`pr-author-maintainer`、`cross-agent-collaboration`、`ponytail`；`computer-use:computer-use` 僅用於將既有遊戲帶回前景取得真實音訊。
+## 2026-10-19 / 手把遙測卡片與延後 Subsystems（Codex as Codex）
+
+- **Scope**：PR #542 僅公開可與主儀表並存的手把卡片，Xbox／DualSense 在遙測元素區切換。Minimap、Touge Pacenotes、Telemetry Data Cards 與 Speed Sense FX 保留原碼／資產及 TODO，不在一般、WIP 或 fallback 選單顯示。
+- **Learning**：卡片應由共用 telemetry manager 管理 iframe／設定／資料重播，使用同一條遙測串流。主儀表切換不重載卡片；卡片與遙測總開關、destroy 會移除 iframe，HTML reload 後重播最新設定與資料。手把圖顯示遊戲遙測輸入而非實體手把連線狀態；`steer` 依 signed byte／127、`hand_brake` 依 byte／255 正規化，轉向標示百分比而非臆測輪角。
+- **設定契約**：舊 gamepad 樣式遷移為 VFD＋`showTeleGamepad`；保留明確卡片開關、總開關及版型。延後模組遷移回 VFD 並保存其設定。Rust、GUI 與 launcher 共用相同語意，兩欄 author metadata 與指定作者名稱保留。
+- **Evidence**：完整前端 1,811 passed／1 skipped，Windows 與獨立輸出的 LAN build 通過；Rust 預設全量 227 passed／3 ignored、無 HUD 全量 219 passed／2 ignored。共用設定／選單／frame lifecycle 契約涵蓋遷移、保存、重啟、主儀表並存、晚載入與清理。隔離瀏覽器核對雙版型、WIP 排除、獨立／總開關、左下位置、主儀表隱藏及 HTML reload 後仍保留卡片。
+- **Boundary**：未新增個別樣式的 Canvas 測試。瀏覽器截圖逾時；合成串流與 DOM／版面讀值不代表實體控制器、Tauri 或遊戲驗收。行為及延後範圍見 [說明](../docs/hud-subsystems.md)。
+
+## 2026-10-19 / HUD 視覺校準與螢幕百分比位移（Codex as Codex）
+
+- **Learning**：透明視窗與透明 body 正確，仍可能被 PNG 中不透明的暗色背景蓋住。新樣式共用素材載入處理只在圖片解碼時軟化暗色 alpha，保留亮色刻度；亮燈覆蓋層需移除重複暗底，避免疊圖再次加深背景。Forza 實機 Ford GT 與 Toyota 儀表已可透出道路。
+- **Scale**：使用既有 HUDCore 的 baseline × multiplier × global × user scale，不能直接改共用全域倍率。放大時 backing canvas 必須跟隨實際 zoom 與 DPR，繪圖座標仍維持原始設計單位，避免再縮放一次或變模糊。
+- **Controller**：依使用者修訂，手把卡片錨點預設為螢幕中心，X／Y 位移預設 0%，限制 −50..50%；分別相對視窗寬／高，正值往右／下。外層中心錨點不受內部儀表 zoom 影響。共用 normalizer 與 runtime 測試涵蓋預設值、正負小數、上限與非有限數。
+- **Skills**：`pr-author-maintainer`、`cross-agent-collaboration`、`huge-component-refactoring`、`halfmoon-design-system`、`ponytail`、`computer-use`。
