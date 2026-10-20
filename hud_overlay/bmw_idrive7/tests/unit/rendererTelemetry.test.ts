@@ -1,9 +1,11 @@
 import { readFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
 import { runInNewContext } from 'node:vm';
 import { describe, expect, it } from 'vitest';
 
 const hud = resolve(import.meta.dirname, '../../..');
+const { JSDOM } = createRequire(resolve(hud, '../frontend/package.json'))('jsdom');
 function coordinatorFrame(unit: 'kmh' | 'mph', overrides: Record<string, unknown> = {}) {
   const source = readFileSync(resolve(hud, 'shared/coordinator.js'), 'utf8')
     .replace(/^import .*;\r?\n/gm, '').replace(/^export /gm, '');
@@ -14,6 +16,13 @@ function coordinatorFrame(unit: 'kmh' | 'mph', overrides: Record<string, unknown
     CurrentEngineRpm: 4000, EngineMaxRpm: 6000, Gear: 3, VelocityX: 10, VelocityZ: 20,
     TireTemp: [212, 212, 212, 212], Fuel: .5, ...overrides });
 }
+// Parse in an inert fragment with no browsing context or resource loading.
+// Only the extracted checked-in inline source runs later in the explicit VM scope.
+function inlineScriptSource(html: string) {
+  const parsed: DocumentFragment = JSDOM.fragment(html);
+  return Array.from(parsed.querySelectorAll('script:not([src])'), script => script.textContent ?? '').join('\n');
+}
+
 // Execute the checked-in renderer, not a second copy of its mapping formulas.
 // Expose display state and the computed RPM ratio for semantic assertions only;
 // no Canvas call-count or pixel-coordinate contracts are asserted here.
@@ -56,8 +65,7 @@ function renderer(style: string) {
   scope.window = scope;
   if (style === 'ap1_rev_arc') runInNewContext(readFileSync(resolve(hud, style, 'ap1-model.js'), 'utf8'), scope);
   const html = readFileSync(resolve(hud, style, 'index.html'), 'utf8');
-  const source = [...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)]
-    .map(match => match[1]).join('\n')
+  const source = inlineScriptSource(html)
     .replace(/(var rpmRatio = [^;]+;)/g, '$1 window.__rpmRatio = rpmRatio;')
     .replace(/\}\)\(\);\s*$/, 'window.__telemetry = telemetry; })();');
   runInNewContext(source, scope);
@@ -67,6 +75,29 @@ function renderer(style: string) {
     emit: (type: string, event?: any) => { for (const callback of listeners.get(type) || []) callback(event); },
   };
 }
+
+describe('renderer inline script parsing', () => {
+  it('keeps HTML script order and raw text without executing or loading scripts', () => {
+    const first = 'globalThis.__rendererParserExecuted = true;';
+    const second = 'const label = "&amp;second";';
+    const html = `
+      <!-- <script>throw new Error('comment');</script> -->
+      <textarea><script>throw new Error('text');</script></textarea>
+      <template><script>throw new Error('template');</script></template>
+      <ScRiPt data-label="a > b">${first}</sCrIpT \t>
+      <SCRIPT SRC="https://example.invalid/never-load.js">throw new Error('external');</SCRIPT>
+      <script src="">throw new Error('empty src');</script>
+      <SCRIPT>${second}</SCRIPT\n>
+    `;
+    expect('__rendererParserExecuted' in globalThis).toBe(false);
+    expect(inlineScriptSource(html)).toBe(`${first}\n${second}`);
+    expect('__rendererParserExecuted' in globalThis).toBe(false);
+  });
+
+  it('returns no executable source when the document has no inline scripts', () => {
+    expect(inlineScriptSource('<p>No renderer</p><script src="renderer.js"></script>')).toBe('');
+  });
+});
 
 describe('BMW native artwork telemetry contract', () => {
   it('keeps km/h speed with either global speed preference', () => {
