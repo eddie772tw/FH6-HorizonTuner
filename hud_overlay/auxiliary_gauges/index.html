@@ -19,6 +19,7 @@
   <script type="module">
     import { normalizeAuxiliaryConfig } from '../shared/overlay-config.js';
     import { positionOverlay, layoutOverlayItems } from '../shared/overlay-layout.js';
+    import { GREDDY_DIAL_CENTER, greddyOilPressureAngle } from './greddy-calibration.js';
     const canvas = document.getElementById('auxCanvas');
     const ctx = canvas.getContext('2d');
     const container = document.getElementById('auxContainer');
@@ -104,11 +105,9 @@
                 if (!imgGReddy.complete || imgGReddy.naturalWidth === 0) return;
                 ctx.drawImage(imgGReddy, ox, oy, 264, 267);
                 if (telemetry.oilPress === null) return;
-                var cx = ox + 132;
-                var cy = oy + 133.5;
-                // GReddy Oil Press: 0..80 psi across 120..420 deg (300 deg sweep)
-                var ratio = clamp(telemetry.oilPress / 80.0, 0.0, 1.0);
-                var ang = 120.0 + ratio * 300.0;
+                var cx = ox + GREDDY_DIAL_CENTER.x;
+                var cy = oy + GREDDY_DIAL_CENTER.y;
+                var ang = greddyOilPressureAngle(telemetry.oilPress);
                 drawNeedle(cx, cy, 88, 18, ang, '#ff5511', 3.2, 13, '#1a1d24');
             }
 

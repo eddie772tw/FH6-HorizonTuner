@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="zh-Hant">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GReddy 油壓表校準驗證</title>
+<style>
+  :root { color-scheme: dark; font: 16px system-ui, sans-serif; }
+  body { margin: 32px; background: Canvas; color: CanvasText; }
+  h1 { font-size: 24px; margin-bottom: 8px; }
+  p { max-width: 900px; line-height: 1.5; }
+  main { display: flex; flex-wrap: wrap; gap: 24px; }
+  figure { margin: 0; text-align: center; }
+  iframe { display: block; width: 300px; height: 290px; border: 0; }
+  figcaption { padding: 12px; font-weight: 600; }
+  output { display: block; margin-top: 24px; }
+</style>
+<h1>GReddy 油壓表：原始底圖與實際 HUD 指針</h1>
+<p>以受控 gaugeValues 驅動原始 HUDCore 與實際 auxiliary_gauges renderer。這不是遊戲畫面或 Windows 原生 HUD 驗收；未修改底圖，未繪製替代指針。</p>
+<main>
+  <figure><iframe src="../../index.html" data-psi="0" title="0 PSI"></iframe><figcaption>最小值：0 PSI</figcaption></figure>
+  <figure><iframe src="../../index.html" data-psi="40" title="40 PSI"></iframe><figcaption>中點：40 PSI</figcaption></figure>
+  <figure><iframe src="../../index.html" data-psi="80" title="80 PSI"></iframe><figcaption>最大值：80 PSI</figcaption></figure>
+</main>
+<output id="status">載入中…</output>
+<script type="module">
+  let ready = 0;
+  const frames = [...document.querySelectorAll('iframe')];
+  for (const frame of frames) {
+    let initialized = false;
+    const initialize = () => {
+      const core = frame.contentWindow.HUDCore;
+      if (initialized || !core?.getActiveStyle()) return;
+      initialized = true;
+      core.handleMessage('config', { data: {
+        scale: 1 / (1.25 * 0.95 * 0.75),
+        elements: { showAuxiliaryGauges: true },
+        auxGaugeFaces: ['greddy'], auxGaugeEdge: 'left',
+      } });
+      core.handleMessage('hud:frame', { data: {
+        gaugeValues: { oilPressure: Number(frame.dataset.psi) },
+      } });
+      document.getElementById('status').textContent = `已載入 ${++ready} / 3 個實際 HUD。`;
+    };
+    frame.addEventListener('load', initialize, { once: true });
+    initialize();
+  }
+</script>
+</html>
