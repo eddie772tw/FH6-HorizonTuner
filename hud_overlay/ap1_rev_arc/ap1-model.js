@@ -69,6 +69,43 @@
     return 0.75;
   }
 
+  // Source timestamp progression, not repeated Coordinator RAF frames, proves freshness.
+  var STALE_AFTER_MS = 1500;
+  function createSignalState() {
+    var timestamp = null;
+    var lastTimestamp = null;
+    var lastProgressAt = -Infinity;
+    var error = false;
+    var paused = false;
+    var destroyed = false;
+    return {
+      receive: function(data, payload, now) {
+        if (destroyed) return;
+        data = data || {};
+        payload = payload || {};
+        var supplied = data.timestamp_ms ?? data.TimestampMS;
+        timestamp = typeof supplied === 'number' && Number.isFinite(supplied) && supplied >= 0 ? supplied : null;
+        error = data.success === false || payload.success === false || Boolean(data.error);
+        var raceOn = data.isRaceOn ?? data.is_race_on ?? data.IsRaceOn;
+        paused = raceOn === 0 || raceOn === false;
+        if (timestamp !== null && timestamp !== lastTimestamp) {
+          lastTimestamp = timestamp;
+          lastProgressAt = now;
+        }
+      },
+      snapshot: function(now) {
+        var status = destroyed ? 'OFFLINE'
+          : error ? 'DATA ERROR'
+          : paused ? 'SESSION PAUSED'
+          : timestamp === null ? 'WAITING FOR DATA'
+          : now - lastProgressAt >= STALE_AFTER_MS ? 'SIGNAL LOST'
+          : '';
+        return { live: status === '', status: status };
+      },
+      destroy: function() { destroyed = true; }
+    };
+  }
+
   function calculateSweepProgress(elapsedMs, durationMs) {
     var dur = durationMs > 0 ? durationMs : 1200;
     var p = clamp((Number(elapsedMs) || 0) / dur, 0, 1);
@@ -76,6 +113,8 @@
   }
 
   return {
+    STALE_AFTER_MS: STALE_AFTER_MS,
+    createSignalState: createSignalState,
     MAX_SCALE_RPM: MAX_SCALE_RPM,
     VTEC_ENGAGE_RPM: VTEC_ENGAGE_RPM,
     formatGear: formatGear,

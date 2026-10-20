@@ -1,0 +1,4 @@
+{
+  "author": "eddie772tw ft. Gemini Argon",
+  "description": "Independent controller telemetry card with Xbox and PlayStation DualSense artwork, showing Forza steering input percentage, throttle, brake, clutch, handbrake and gear alongside any main gauge. Uses the shared telemetry stream rather than physical controller polling."
+}

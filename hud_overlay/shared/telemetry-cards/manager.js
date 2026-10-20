@@ -19,6 +19,10 @@ export function createTelemetryCardsManager() {
     return {
         initialized: false,
         containerEl: null,
+        gamepadFrame: null,
+        gamepadConfig: null,
+        gamepadData: null,
+        gamepadPayload: { type: 'hud:frame', data: null },
 
         lastOpacity: parseFloat((typeof localStorage !== 'undefined' && localStorage.getItem('forza_hud_tele_opacity')) || '0.85'),
 
@@ -38,6 +42,8 @@ export function createTelemetryCardsManager() {
         // -----------------------------------------------------------------------
 init: function (parentEl) {
             if (!parentEl) return;
+            this.gamepadFrame?.remove();
+            this.gamepadFrame = this.gamepadConfig = this.gamepadData = null;
             this.containerEl = parentEl;
 
             var initialOpacity = this.lastOpacity;
@@ -88,12 +94,54 @@ init: function (parentEl) {
             }
         },
 
+        // A telemetry card shares this manager's stream; it owns no socket or timer.
+        updateGamepadCard: function (data, config, visible) {
+            if (!visible) {
+                this.gamepadFrame?.remove();
+                this.gamepadFrame = this.gamepadConfig = this.gamepadData = null;
+                this.gamepadPayload.data = null;
+                return;
+            }
+            if (data) this.gamepadData = data;
+            if (!this.gamepadFrame) {
+                const frame = document.createElement('iframe');
+                frame.id = 'tcGamepadCard';
+                frame.title = 'Controller Telemetry Card';
+                frame.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;border:0;background:transparent;pointer-events:none;';
+                frame.src = new URL('../../gamepad_overlay/index.html', import.meta.url).href;
+                frame.onload = () => {
+                    if (this.gamepadFrame !== frame) return;
+                    frame.contentWindow?.postMessage({ type: 'config', data: this.gamepadConfig }, '*');
+                    if (this.gamepadData) {
+                        this.gamepadPayload.data = this.gamepadData;
+                        frame.contentWindow?.postMessage(this.gamepadPayload, '*');
+                    }
+                };
+                this.gamepadFrame = frame;
+                this.containerEl.appendChild(frame);
+            }
+            if (this.gamepadConfig !== config) {
+                this.gamepadConfig = config;
+                this.gamepadFrame.style.opacity = config.telemetryOpacity ?? this.lastOpacity;
+                this.gamepadFrame.contentWindow?.postMessage({ type: 'config', data: config }, '*');
+            }
+            if (data) {
+                this.gamepadPayload.data = data;
+                this.gamepadFrame.contentWindow?.postMessage(this.gamepadPayload, '*');
+            }
+        },
+
+        reloadFrames: function () {
+            this.gamepadFrame?.contentWindow?.postMessage({ type: 'hud:reload' }, '*');
+        },
+
         // -----------------------------------------------------------------------
         update: function (data, config) {
             if (!this.containerEl) return;
 
             var fullConfig = config || (typeof window !== 'undefined' && window._currentFullConfig) || {};
             var elements   = fullConfig.elements || (typeof window !== 'undefined' && window._currentHudElements) || {};
+            this.updateGamepadCard(data, fullConfig, elements.showTeleMaster !== false && elements.showTeleGamepad === true);
 
             if (fullConfig.telemetryOpacity !== undefined) {
                 this.lastOpacity = fullConfig.telemetryOpacity;
@@ -403,6 +451,9 @@ init: function (parentEl) {
 
         // -----------------------------------------------------------------------
         destroy: function () {
+            this.gamepadFrame?.remove();
+            this.gamepadFrame = this.gamepadConfig = this.gamepadData = null;
+            this.gamepadPayload.data = null;
             this.suspHist = [[], [], [], []];
             this.suspMinMax = [
                 { min: null, max: null },
@@ -419,6 +470,7 @@ init: function (parentEl) {
                 this.containerEl.innerHTML = '';
             }
             this.initialized = false;
+            this.containerEl = null;
         }
     };
 }

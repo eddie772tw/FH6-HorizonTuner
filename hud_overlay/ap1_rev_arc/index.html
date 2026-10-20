@@ -61,6 +61,8 @@
             var barsImg = HUDArtwork.loadImage('assets/ap1_bars_full.png', 0);
             var isSweeping = false;
             var sweepRafId = null;
+            var destroyed = false;
+            var signal = Model.createSignalState();
             var basePixels = null;
             var litPixels = null;
             var faceplate = null;
@@ -168,6 +170,10 @@
             }
 
             function drawSpeed(text) {
+                if (!/^\d+$/.test(text)) {
+                    drawBitmapText(ctx, text, 322, 120, 60, 48, false);
+                    return;
+                }
                 if (!nativeAtlas.complete || !nativeAtlas.naturalWidth) return;
                 var sx = nativeAtlas.naturalWidth / 900;
                 var sy = nativeAtlas.naturalHeight / 700;
@@ -213,18 +219,25 @@
                 fuelRatio: 0.75,
                 tempC: 87,
                 boostKpa: 0,
-                clockText: '21:38'
+                clockText: '',
+                live: false,
+                status: 'WAITING FOR DATA'
             };
 
             function updateClock() {
                 var now = new Date();
                 var hh = String(now.getHours()).padStart(2, '0');
                 var mm = String(now.getMinutes()).padStart(2, '0');
-                telemetry.clockText = hh + ':' + mm;
+                var next = hh + ':' + mm;
+                var changed = next !== telemetry.clockText;
+                telemetry.clockText = next;
+                return changed;
             }
             updateClock();
 
             function render() {
+                if (destroyed) return;
+                updateClock();
                 prepareArtwork();
                 var w = 799;
                 var h = 229;
@@ -235,7 +248,7 @@
                     ctx.drawImage(faceplate, 0, 0, 799, 229);
                 }
 
-                if (litPlate) {
+                if (litPlate && telemetry.live) {
                     // 2. Native angular LED thresholds: one complete segment per 100 RPM.
                     var rpmRatio = Model.calculateRpmRatio(telemetry.rpm, Model.MAX_SCALE_RPM);
                     drawSegments(rpmClips, Math.floor(rpmRatio * 110) + 1);
@@ -255,12 +268,60 @@
                 }
 
                 // Original bitmap glyphs, cell sizes and advances from res_125 style 10.
-                drawSpeed(String(Math.round(Math.max(0, telemetry.speed))));
-                drawBitmapText(ctx, telemetry.gear, 248, 132, 48, 24, false);
+                drawSpeed(telemetry.live ? String(Math.round(Math.max(0, telemetry.speed))) : '---');
+                drawBitmapText(ctx, telemetry.live ? telemetry.gear : '-', 248, 132, 48, 24, false);
                 drawBitmapText(ctx, telemetry.clockText, 110, 180, 19.2, 15.6, false);
-                drawBitmapText(ctx, String(Math.round(telemetry.boostKpa)), 554, 144, 26.88, 20.42, false);
-                drawBitmapText(ctx, String(Math.round(telemetry.tempC)), 603, 174, 26.88, 20.42, false);
+                drawBitmapText(ctx, telemetry.live ? String(Math.round(telemetry.boostKpa)) : '-', 554, 144, 26.88, 20.42, false);
+                drawBitmapText(ctx, telemetry.live ? String(Math.round(telemetry.tempC)) : '-', 603, 174, 26.88, 20.42, false);
+                if (telemetry.status) {
+                    drawBitmapText(ctx, telemetry.status, 400 - telemetry.status.length * 6, 198, 16, 12, false);
+                }
+                canvas.setAttribute('aria-label', telemetry.live
+                    ? Math.round(telemetry.speed) + ' km/h, ' + Math.round(telemetry.rpm) + ' RPM, ' + telemetry.clockText
+                    : telemetry.status + ', ' + telemetry.clockText);
             }
+
+            function stopSweep() {
+                if (sweepRafId !== null) cancelAnimationFrame(sweepRafId);
+                sweepRafId = null;
+                isSweeping = false;
+            }
+
+            function applySignalState() {
+                var next = signal.snapshot(performance.now());
+                var changed = telemetry.live !== next.live || telemetry.status !== next.status;
+                telemetry.live = next.live;
+                telemetry.status = next.status;
+                if (!next.live) {
+                    telemetry.speed = telemetry.rpm = telemetry.boostKpa = 0;
+                    telemetry.tempC = telemetry.fuelRatio = 0;
+                    telemetry.gear = 'N';
+                }
+                return changed;
+            }
+
+            // Keep both source freshness and the clock alive without telemetry events.
+            var watchdog = setInterval(function() {
+                if (destroyed) return;
+                var clockChanged = updateClock();
+                var signalChanged = !isSweeping && applySignalState();
+                if (clockChanged || signalChanged) render();
+            }, 250);
+
+            function destroy() {
+                if (destroyed) return;
+                destroyed = true;
+                stopSweep();
+                clearInterval(watchdog);
+                signal.destroy();
+                window.removeEventListener('message', onLifecycleMessage);
+                window.removeEventListener('pagehide', destroy);
+            }
+            function onLifecycleMessage(event) {
+                if (event.data && event.data.type === 'hud:destroy') destroy();
+            }
+            window.addEventListener('message', onLifecycleMessage);
+            window.addEventListener('pagehide', destroy);
 
             baseImg.onload = function() { basePixels = readArtwork(baseImg); artworkMaxRpm = null; render(); };
             barsImg.onload = function() { litPixels = readArtwork(barsImg); artworkMaxRpm = null; render(); };
@@ -277,9 +338,17 @@
                     }
                 },
 
-                onFrame: function(data) {
-                    if (isSweeping) return;
-                    if (data.speed !== undefined) telemetry.speed = Math.abs(Number(data.speed)) || 0;
+                onFrame: function(data, payload) {
+                    if (destroyed) return;
+                    data = data || {};
+                    signal.receive(data, payload, performance.now());
+                    var next = signal.snapshot(performance.now());
+                    if (isSweeping && (next.live || next.status === 'WAITING FOR DATA')) return;
+                    stopSweep();
+                    applySignalState();
+                    if (!telemetry.live) { render(); return; }
+                    // Native faceplate speed text is permanently labelled km/h.
+                    telemetry.speed = Math.abs(Number(data.speed_kmh)) || 0;
                     if (data.rpm !== undefined) telemetry.rpm = Math.max(0, Number(data.rpm) || 0);
                     if (data.maxRpm !== undefined && data.maxRpm > 0) telemetry.maxRpm = Number(data.maxRpm);
                     if (data.gear !== undefined) telemetry.gear = Model.formatGear(data.gear);
@@ -292,8 +361,11 @@
                 },
 
                 onAnimate: function() {
-                    if (sweepRafId !== null) cancelAnimationFrame(sweepRafId);
+                    if (destroyed) return;
+                    stopSweep();
                     isSweeping = true;
+                    telemetry.live = true;
+                    telemetry.status = 'DISPLAY CHECK';
                     var start = performance.now();
                     var duration = 1200;
                     function sweep(t) {
@@ -307,7 +379,7 @@
                         telemetry.boostKpa = wave * 200;
                         render();
                         if (elapsed < duration) sweepRafId = requestAnimationFrame(sweep);
-                        else { isSweeping = false; sweepRafId = null; }
+                        else { stopSweep(); applySignalState(); render(); }
                     }
                     sweepRafId = requestAnimationFrame(sweep);
                 }
