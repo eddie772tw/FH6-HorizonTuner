@@ -12,6 +12,13 @@ import {
 } from './hudStyleScanner';
 
 describe('hudStyleScanner frontend module tests', () => {
+  it('keeps independent elements out of the speedometer selector, including a saved current selection', () => {
+    const styles: HudStyleEntry[] = ['vfd', 'audio_head', 'auxiliary_gauges'].map(id => ({ id, source: 'builtin', urlPrefix: '/hud' }));
+    expect(formatHudDropdownOptions(styles, undefined, { includeWip: true, currentStyle: 'auxiliary_gauges' }).map(option => option.value)).toEqual(['vfd']);
+    expect(formatHudDropdownOptions([]).some(option => option.value === 'auxiliary_gauges')).toBe(false);
+    expect(formatHudDropdownOptions([], {}, { includeWip: true, wipDisplayNames: { auxiliary_gauges: 'Aux', audio_head: 'Audio' } })).toEqual([]);
+});
+
   it('keeps independent and deferred subsystem modules out of the speedometer selector, including WIP', () => {
     const hidden = ['minimap_overlay', 'touge_pacenotes', 'telemetry_cards', 'speed_effects'];
     const styles: HudStyleEntry[] = ['vfd', 'gamepad_overlay', ...hidden].map(id => ({ id, source: 'builtin', urlPrefix: '/hud' }));

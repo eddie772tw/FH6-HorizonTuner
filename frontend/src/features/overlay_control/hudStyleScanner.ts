@@ -1,6 +1,8 @@
 import { backendFetch } from '../../services/backend';
 import { DEFERRED_HUD_STYLES } from '../../../../hud_overlay/shared/deferred-styles.js';
 
+const INDEPENDENT_HUD_IDS = new Set(['audio_head', 'auxiliary_gauges']);
+
 export interface HudStyleEntry {
   id: string;
   source: 'builtin' | 'user';
@@ -140,14 +142,14 @@ export function formatHudDropdownOptions(
   } = options;
 
   if (!hudStyles || hudStyles.length === 0) {
-    const baseList = Object.entries(displayNames).filter(([id]) => id !== 'audio_head' && id !== 'gamepad_overlay' && !DEFERRED_HUD_STYLES.has(id)).map(([id, label]) => ({
+    const baseList = Object.entries(displayNames).filter(([id]) => !INDEPENDENT_HUD_IDS.has(id) && id !== 'gamepad_overlay' && !DEFERRED_HUD_STYLES.has(id)).map(([id, label]) => ({
       value: id,
       label,
       isCustom: false,
     }));
 
     if (includeWip) {
-      const wipList = Object.entries(wipDisplayNames).filter(([id]) => id !== 'gamepad_overlay' && !DEFERRED_HUD_STYLES.has(id)).map(([id, label]) => ({
+      const wipList = Object.entries(wipDisplayNames).filter(([id]) => !INDEPENDENT_HUD_IDS.has(id) && id !== 'gamepad_overlay' && !DEFERRED_HUD_STYLES.has(id)).map(([id, label]) => ({
         value: id,
         label,
         isCustom: false,
@@ -155,7 +157,7 @@ export function formatHudDropdownOptions(
       return [...baseList, ...wipList];
     }
 
-    if (currentStyle && currentStyle !== 'gamepad_overlay' && !DEFERRED_HUD_STYLES.has(currentStyle) && wipDisplayNames[currentStyle] && !displayNames[currentStyle]) {
+    if (currentStyle && !INDEPENDENT_HUD_IDS.has(currentStyle) && currentStyle !== 'gamepad_overlay' && !DEFERRED_HUD_STYLES.has(currentStyle) && wipDisplayNames[currentStyle] && !displayNames[currentStyle]) {
       return [
         ...baseList,
         { value: currentStyle, label: wipDisplayNames[currentStyle], isCustom: false },
@@ -167,7 +169,7 @@ export function formatHudDropdownOptions(
 
   return hudStyles
     .filter((s) => {
-      if (s.id === 'audio_head' || s.id === 'gamepad_overlay') return false;
+      if (INDEPENDENT_HUD_IDS.has(s.id) || s.id === 'gamepad_overlay') return false;
       if (s.source === 'user') return true;
       if (DEFERRED_HUD_STYLES.has(s.id)) return false;
       if (WIP_HUD_IDS.has(s.id)) {

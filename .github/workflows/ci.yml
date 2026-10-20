@@ -4,8 +4,8 @@ on:
   push:
     branches: [ "master", "main" ]
   pull_request:
-    # IA feature PRs target the reviewed contract/shell branch before main.
-    branches: [ "master", "main", "codex/frontend-ia-*", "feat/issue-423-*" ]
+    # Stacked feature PRs target their reviewed foundation before main.
+    branches: [ "master", "main", "codex/frontend-ia-*", "feat/issue-423-*", "feat/hud-audio-head" ]
 
 permissions:
   contents: read

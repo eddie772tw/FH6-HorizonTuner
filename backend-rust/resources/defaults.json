@@ -148,6 +148,18 @@
     "audioHeadEdge": "left",
     "audioHeadOffset": 0,
     "audioHeadCenterOffset": 0,
+    "auxGaugeFaces": ["aem", "greddy", "defi"],
+    "auxGaugeMaxPerRow": 3,
+    "auxGaugeOrientation": "horizontal",
+    "auxGaugeEdge": "right",
+    "auxGaugeOffset": 0,
+    "auxGaugeCenterOffset": 0,
+    "gaugeValueSources": {
+      "boost": {"field": "boost_psi", "unit": "psi", "label": "Boost"},
+      "oilPressure": {"field": "estimated_oil_pressure_psi", "unit": "psi", "label": "Estimated oil pressure (engine load)"},
+      "oilTemperature": {"field": "tire_temp_avg", "unit": "F", "label": "Average tire temperature"},
+      "waterTemperature": {"field": "tire_temp_avg", "unit": "F", "label": "Average tire temperature"}
+    },
     "position": {
       "x": 100,
       "y": 100
@@ -179,6 +191,7 @@
       "showTeleMaster": true,
       "showGauge": true,
       "showAudioHead": false,
+      "showAuxiliaryGauges": false,
       "showCenterInfo": true,
       "showRPM": true,
       "showSpeed": true,

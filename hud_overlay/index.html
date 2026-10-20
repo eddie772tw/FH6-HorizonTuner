@@ -61,7 +61,8 @@
         import { createOverlayEventForwarder }                                                  from './shared/overlay-forwarding.js';
         import { initPhysics }                                                                  from './shared/physics.js';
         import { initUtils, isMetric, setSpeedUnit }                                            from './shared/utils.js';
-        import { normalizeAudioHeadConfig }                                                     from './shared/overlay-config.js';
+        import { normalizeAudioHeadConfig, normalizeAuxiliaryConfig }                           from './shared/overlay-config.js';
+        import { createGaugeValueReader, normalizeGaugeValueSources }                          from './shared/gauge-sources.js';
 
         import { normalizeSubsystemStyle, normalizeSubsystemConfig } from './shared/deferred-styles.js';
 
@@ -83,7 +84,7 @@
         const isLegacyS650Style = (name) => typeof name === 'string' && name !== 's650_hmi' && name.startsWith('s650_');
 
         function normalizeHudConfig(config) {
-            const normalized = normalizeSubsystemConfig(normalizeAudioHeadConfig(config || {}));
+            const normalized = normalizeSubsystemConfig(normalizeAuxiliaryConfig(normalizeAudioHeadConfig(config || {})));
             if (normalized.hudStyle === 'initial_d') {
                 normalized.hudStyle = 'classic_jdm';
                 if (!normalized.classicJdmTachStyle) normalized.classicJdmTachStyle = 'trd';
@@ -113,7 +114,7 @@
         }
 
         function normalizeHudStyle(name) {
-            if (name === 'audio_head') return 'vfd';
+            if (name === 'audio_head' || name === 'auxiliary_gauges') return 'vfd';
             name = normalizeSubsystemStyle(name);
             if (name === 'initial_d' || name === 'defi_triple') return 'classic_jdm';
             return LEGACY_S650_STYLE_MAP[name] || isLegacyS650Style(name) ? 's650_hmi' : name;
@@ -122,6 +123,11 @@
         let activeHud = normalizeHudStyle(localStorage.getItem('forza_hud_active') || 'simple');
         const hudIframe = document.getElementById('hud-iframe');
         let audioHeadIframe = null;
+        let auxiliaryIframe = null;
+        const gaugeValues = {};
+        const readGaugeValues = createGaugeValueReader();
+        let gaugeSources = normalizeGaugeValueSources();
+        let sourceConfig = null;
         const audioHeadEvents = new Set(['config', 'hud:elements', 'hud:audio', 'hud:media', 'hud:animate', 'hud:reload']);
 
         async function loadHudStyles() {
@@ -150,10 +156,20 @@
 
         // Both renderers share the host's single telemetry/audio connection.
         function postToHud(type, detail = {}) {
+            if (type === 'hud:frame' && detail.data) {
+                if (sourceConfig !== window._currentHudConfig) {
+                    sourceConfig = window._currentHudConfig;
+                    gaugeSources = normalizeGaugeValueSources(sourceConfig?.gaugeValueSources);
+                }
+                detail.data.gaugeValues = readGaugeValues(detail.data, gaugeSources, gaugeValues);
+            }
             const message = { type, ...detail };
             hudIframe.contentWindow?.postMessage(message, '*');
             if (audioHeadIframe && audioHeadEvents.has(type)) {
                 audioHeadIframe.contentWindow?.postMessage(message, '*');
+            }
+            if (auxiliaryIframe && type !== 'hud:audio' && type !== 'hud:media') {
+                auxiliaryIframe.contentWindow?.postMessage(message, '*');
             }
         }
 
@@ -192,6 +208,30 @@
             document.body.appendChild(frame);
         }
 
+        function syncAuxiliaryGauges(config, force = false) {
+            if (config?.elements?.showAuxiliaryGauges !== true || !config.auxGaugeFaces?.length) {
+                auxiliaryIframe?.remove();
+                auxiliaryIframe = null;
+                return;
+            }
+            if (auxiliaryIframe && !force) return;
+            auxiliaryIframe?.remove();
+            const frame = document.createElement('iframe');
+            frame.id = 'auxiliary-gauges-iframe';
+            frame.title = 'Auxiliary Gauges';
+            frame.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;border:0;background:transparent;pointer-events:none;z-index:1000;';
+            frame.onload = () => initializeFrame(frame);
+            const url = hudStyles.auxiliary_gauges || './auxiliary_gauges/index.html';
+            frame.src = url + (url.includes('?') ? '&' : '?') + 't=' + Date.now();
+            auxiliaryIframe = frame;
+            document.body.appendChild(frame);
+        }
+
+        function syncIndependentElements(config, force = false) {
+            syncAudioHead(config, force);
+            syncAuxiliaryGauges(config, force);
+        }
+
         async function loadHud(name, force = false) {
             if (window.demoActive) window.dispatchEvent(new CustomEvent('demo:stop'));
 
@@ -228,7 +268,7 @@
         }
 
         await loadHud(activeHud);
-        syncAudioHead(window._currentHudConfig);
+        syncIndependentElements(window._currentHudConfig);
         TelemetryCardsManager?.update(null, window._currentHudConfig || {});
         initUtils();
         initWebSocket();
@@ -283,7 +323,7 @@
             applyHudUnit(config);
             applyHudSmoothing(config);
             window._currentHudConfig = config;
-            syncAudioHead(config);
+            syncIndependentElements(config);
             if (window.TelemetryCardsManager) {
                 window.TelemetryCardsManager.update(null, config);
             }
@@ -312,14 +352,14 @@
                 TelemetryCardsManager?.reloadFrames();
                 postToHud('hud:reload');
                 loadHud(activeHud, true);
-                syncAudioHead(window._currentHudConfig, true);
+                syncIndependentElements(window._currentHudConfig, true);
             } else if (ev.data && ev.data.type === 'config') {
                 const config = normalizeHudConfig(ev.data.data || {});
                 applyHudUnit(config);
                 applyHudSmoothing(config);
                 window._currentHudConfig = config;
                 if (config.elements) window._currentHudElements = config.elements;
-                syncAudioHead(config);
+                syncIndependentElements(config);
                 if (window.TelemetryCardsManager) {
                     window.TelemetryCardsManager.update(null, config);
                 }
@@ -343,7 +383,7 @@
 
         // ── Message listener — receive requests from active HUD iframe ────────
         window.addEventListener('message', (e) => {
-            if (e.source !== hudIframe.contentWindow && e.source !== audioHeadIframe?.contentWindow) return;
+            if (e.source !== hudIframe.contentWindow && e.source !== audioHeadIframe?.contentWindow && e.source !== auxiliaryIframe?.contentWindow) return;
             const { type, ...payload } = e.data ?? {};
 
             if (type === 'notification') {

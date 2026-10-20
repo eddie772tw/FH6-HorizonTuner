@@ -11,6 +11,7 @@ import { useHudController } from './useHudController';
 import { useHudMetadata } from './useHudMetadata';
 import { HudSetupPanel } from './panels/HudSetupPanel';
 import { HudAudioHeadPanel } from './panels/HudAudioHeadPanel';
+import { HudAuxiliaryPanel } from './panels/HudAuxiliaryPanel';
 import { HudLayoutPanel } from './panels/HudLayoutPanel';
 import { HudAdvancedPanel } from './panels/HudAdvancedPanel';
 import { HudStatusIndicator } from './HudStatusIndicator';
@@ -188,6 +189,7 @@ const OverlayViewContent: React.FC = () => {
         onStyleChange={hudStyle => void updateConfig({ hudStyle })} onMonitorChange={handleMonitorChange}
         onReloadHud={() => void handleReloadHud()} onOpenUnitSettings={() => setShowUnitSettings(true)} />}
       audioHead={<HudAudioHeadPanel {...panelProps} />}
+      auxiliaryGauges={<HudAuxiliaryPanel {...panelProps} />}
       layout={<HudLayoutPanel {...panelProps} onElementToggle={handleElementToggle} />}
       advanced={<HudAdvancedPanel {...panelProps} appUnits={settings.units} audioDevices={audioDevices} loadingAudioDevices={loadingAudioDevices}
         isWipActive={isWipActive} wipForced={wipForced}

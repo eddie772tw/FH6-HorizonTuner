@@ -2,6 +2,134 @@ use fh6_backend::{config, config_service::ConfigService, storage};
 use serde_json::{json, Value};
 
 #[test]
+fn shared_gauge_sources_and_independent_selection_survive_save_restart_and_main_style_changes() {
+    let directory = tempfile::tempdir().unwrap();
+    let service = ConfigService::new(directory.path()).unwrap();
+    service.handle("POST", "/api/overlay/config", &json!({
+        "hudStyle":"auxiliary_gauges", "auxGaugeMode":"blitz", "elements":{"showGauge":true}, "pluginField":42
+    })).unwrap().unwrap();
+    let mut hud = service.hud();
+    assert_eq!(hud["hudStyle"], "vfd");
+    assert_eq!(hud["auxGaugeFaces"], json!(["blitz"]));
+    assert_eq!(hud["elements"]["showAuxiliaryGauges"], true);
+    assert_eq!(hud["auxGaugeEdge"], "right");
+    assert!(hud.get("auxGaugeMode").is_none());
+    for edge in ["left", "right", "top", "bottom"] {
+        hud["hudStyle"] = json!("gt7");
+        hud["elements"]["showGauge"] = json!(false);
+        hud["auxGaugeFaces"] = json!(["aem", "defi", "speedhut"]);
+        hud["auxGaugeMaxPerRow"] = json!(2);
+        hud["auxGaugeOrientation"] = json!("vertical");
+        hud["auxGaugeEdge"] = json!(edge);
+        hud["auxGaugeOffset"] = json!(24);
+        hud["auxGaugeCenterOffset"] = json!(-32);
+        hud["gaugeValueSources"]["boost"] =
+            json!({"field":"power_kw","unit":"native","label":"Power"});
+        let mut receiver = service.overlay.subscribe();
+        service
+            .handle("POST", "/api/overlay/config", &hud)
+            .unwrap()
+            .unwrap();
+        let relayed = receiver.try_recv().unwrap();
+        assert_eq!(
+            relayed["data"]["gaugeValueSources"]["boost"]["field"],
+            "power_kw"
+        );
+        let restarted = ConfigService::new(directory.path()).unwrap().hud();
+        assert_eq!(restarted["hudStyle"], "gt7");
+        assert_eq!(restarted["elements"]["showAuxiliaryGauges"], true);
+        assert_eq!(restarted["elements"]["showGauge"], false);
+        assert_eq!(
+            restarted["auxGaugeFaces"],
+            json!(["aem", "defi", "speedhut"])
+        );
+        assert_eq!(restarted["auxGaugeMaxPerRow"], 2);
+        assert_eq!(restarted["auxGaugeOrientation"], "vertical");
+        assert_eq!(restarted["auxGaugeEdge"], edge);
+        assert_eq!(restarted["auxGaugeCenterOffset"], -32.0);
+        assert_eq!(
+            restarted["gaugeValueSources"]["boost"],
+            hud["gaugeValueSources"]["boost"]
+        );
+        assert_eq!(restarted["pluginField"], 42);
+    }
+}
+
+#[test]
+fn shared_gauge_contract_bounds_invalid_input_without_inventing_missing_telemetry() {
+    let unrelated = json!({"hudStyle":"vfd","pluginField":42});
+    assert_eq!(config::normalize_hud(&unrelated), unrelated);
+    let hud = config::normalize_hud(&json!({
+        "auxGaugeFaces":["aem","bad","aem","defi"], "auxGaugeMaxPerRow":99,
+        "auxGaugeOrientation":"bad", "auxGaugeEdge":"bad", "auxGaugeOffset":-1, "auxGaugeCenterOffset":-9999,
+        "gaugeValueSources":{"boost":{"field":"../bad","unit":"C","label":" "}},
+        "elements":{"showAuxiliaryGauges":"true"}
+    }));
+    assert_eq!(hud["auxGaugeFaces"], json!(["aem", "defi"]));
+    assert_eq!(hud["auxGaugeMaxPerRow"], 5);
+    assert_eq!(hud["auxGaugeOrientation"], "horizontal");
+    assert_eq!(hud["auxGaugeEdge"], "right");
+    assert_eq!(hud["auxGaugeOffset"], 0.0);
+    assert_eq!(hud["auxGaugeCenterOffset"], -4000.0);
+    assert_eq!(hud["elements"]["showAuxiliaryGauges"], false);
+    assert_eq!(
+        hud["gaugeValueSources"]["boost"],
+        json!({"field":"boost_psi","unit":"psi","label":"Boost"})
+    );
+    assert_eq!(
+        hud["gaugeValueSources"]["oilPressure"]["field"],
+        "estimated_oil_pressure_psi"
+    );
+    assert_eq!(
+        hud["gaugeValueSources"]["oilTemperature"]["field"],
+        "tire_temp_avg"
+    );
+    assert_eq!(hud["gaugeValueSources"]["oilTemperature"]["unit"], "F");
+    assert_eq!(
+        config::normalize_hud(&json!({"auxGaugeFaces":[]}))["auxGaugeFaces"],
+        json!([])
+    );
+}
+
+#[test]
+fn shared_gauge_old_defaults_migrate_without_replacing_deliberate_custom_sources() {
+    let directory = tempfile::tempdir().unwrap();
+    let service = ConfigService::new(directory.path()).unwrap();
+    service
+        .handle(
+            "POST",
+            "/api/overlay/config",
+            &json!({
+                "auxGaugeFaces":["greddy", "blitz", "defi"],
+                "gaugeValueSources": {
+                    "oilPressure":{"field":"","unit":"psi","label":"Oil pressure (unassigned)"},
+                    "oilTemperature":{"field":"","unit":"C","label":"Oil temperature (unassigned)"}
+                }
+            }),
+        )
+        .unwrap()
+        .unwrap();
+    let restarted = ConfigService::new(directory.path()).unwrap().hud();
+    assert_eq!(
+        restarted["gaugeValueSources"]["oilPressure"]["field"],
+        "estimated_oil_pressure_psi"
+    );
+    assert_eq!(
+        restarted["gaugeValueSources"]["oilTemperature"],
+        restarted["gaugeValueSources"]["waterTemperature"]
+    );
+    let custom = config::normalize_hud(&json!({"gaugeValueSources":{
+        "oilPressure":{"field":"","unit":"psi","label":"Disabled intentionally"},
+        "oilTemperature":{"field":"power_kw","unit":"native","label":"Power"}
+    }}));
+    assert_eq!(custom["gaugeValueSources"]["oilPressure"]["field"], "");
+    assert_eq!(
+        custom["gaugeValueSources"]["oilTemperature"]["field"],
+        "power_kw"
+    );
+}
+
+#[test]
 fn independent_elements_migrate_and_survive_config_save_restart_and_gauge_changes() {
     let directory = tempfile::tempdir().unwrap();
     let service = ConfigService::new(directory.path()).unwrap();

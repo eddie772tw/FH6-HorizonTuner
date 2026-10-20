@@ -231,6 +231,8 @@ fn normalize_stack_st8100(value: &mut Value) {
     }
 }
 
+mod gauges;
+
 fn normalize_audio_head(value: &mut Value) {
     let legacy = value["hudStyle"] == "audio_head";
     let has_settings = value
@@ -356,6 +358,7 @@ pub fn normalize_hud(data: &Value) -> Value {
         }
     }
     normalize_audio_head(&mut value);
+    gauges::normalize(&mut value);
     if style == "gamepad_overlay" {
         value["hudStyle"] = json!("vfd");
         if !value["elements"].is_object() {
