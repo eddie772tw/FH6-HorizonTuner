@@ -81,6 +81,15 @@ describe('bounded brand-fragment normalization', () => {
     expect(() => normalizeBrandFragment('<!--first--!>' + geometry + '-->')).toThrow(/Unresolved/);
   });
 
+  it('preserves geometry when the ordinary comment ending precedes the alternate ending', () => {
+    expect(normalizeBrandFragment('<!--first-->' + geometry + '<!--second--!>')).toBe(geometry);
+    expect(() => normalizeBrandFragment('<!--first-->' + geometry + '--!>')).toThrow(/Unresolved/);
+  });
+
+  it('keeps greater-than signs inside single-quoted attributes within the tag', () => {
+    expect(normalizeBrandFragment("<style data-label='> <title>'>discard</style>" + geometry)).toBe(geometry);
+  });
+
   it('preserves geometry, fill=none, non-fill styles and internal whitespace', () => {
     const input = '  <path id="p" class="ink" fill="none" style="fill:#abc;fill-opacity:1;stroke:none" d="M0 0 L1 1"/>  \n';
     expect(normalizeBrandFragment(input)).toBe('  <path fill="none" style="fill-opacity:1;stroke:none" d="M0 0 L1 1"/>\n');
