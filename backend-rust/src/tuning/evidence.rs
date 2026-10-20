@@ -554,8 +554,8 @@ impl EvidenceService {
                 "Use the EV import endpoint for versioned raw exports",
             ));
         }
-        let raw: EvidenceRequest =
-            serde_json::from_value(input.clone()).map_err(|_| ApiError::invalid("Invalid EV capture data"))?;
+        let raw: EvidenceRequest = serde_json::from_value(input.clone())
+            .map_err(|_| ApiError::invalid("Invalid EV capture data"))?;
         if !matches!(raw, EvidenceRequest::EvCapture { .. }) {
             return Err(ApiError::invalid("Raw EV capture required"));
         }
