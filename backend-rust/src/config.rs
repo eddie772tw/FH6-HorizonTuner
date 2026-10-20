@@ -280,6 +280,17 @@ pub fn normalize_hud(data: &Value) -> Value {
             value.as_object_mut().unwrap().entry(key).or_insert(v);
         }
     }
+    // TODO(subsystems): public UX/data contracts for deferred modules need further evaluation.
+    if [
+        "minimap_overlay",
+        "touge_pacenotes",
+        "telemetry_cards",
+        "speed_effects",
+    ]
+    .contains(&style.as_str())
+    {
+        value["hudStyle"] = json!("vfd");
+    }
     normalize_stack_st8100(&mut value);
     if style == "lfa_center_ring" {
         for key in ["lfaManualExpand", "lfaAutoExpand"] {
@@ -298,6 +309,33 @@ pub fn normalize_hud(data: &Value) -> Value {
         if !["day", "night"].contains(&value["r34Lighting"].as_str().unwrap_or("")) {
             value["r34Lighting"] = json!("night");
         }
+    }
+    if style == "gamepad_overlay" {
+        value["hudStyle"] = json!("vfd");
+        if !value["elements"].is_object() {
+            value["elements"] = json!({});
+        }
+        if value["elements"].get("showTeleGamepad").is_none() {
+            value["elements"]["showTeleGamepad"] = json!(value["elements"]["showGauge"] != false);
+        }
+    }
+    if style == "gamepad_overlay"
+        || value.get("gamepadLayout").is_some()
+        || value["elements"].get("showTeleGamepad").is_some()
+    {
+        if !["xbox", "dualsense"].contains(&value["gamepadLayout"].as_str().unwrap_or("")) {
+            value["gamepadLayout"] = json!("xbox");
+        }
+        if value["elements"].get("showTeleGamepad").is_some() {
+            value["elements"]["showTeleGamepad"] = json!(value["elements"]["showTeleGamepad"]
+                .as_bool()
+                .unwrap_or(false));
+        }
+    }
+    if style == "minimap_overlay"
+        && !["heading_up", "north_up"].contains(&value["minimapMode"].as_str().unwrap_or(""))
+    {
+        value["minimapMode"] = json!("heading_up");
     }
     value
 }
