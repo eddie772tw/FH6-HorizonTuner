@@ -80,8 +80,8 @@
 
                 if (barsImg.complete && barsImg.naturalWidth) {
                     // 1. Center Optitron Tachometer Bar (x=160..780, y=106..130)
-                    var maxRpm = Math.max(4000, telemetry.maxRpm || 8000);
-                    var rpmRatio = Math.min(1.0, Math.max(0.0, telemetry.rpm / maxRpm));
+                    // Native tachometer artwork has a fixed 0..8 (8000 RPM) scale.
+                    var rpmRatio = Math.min(1.0, Math.max(0.0, telemetry.rpm / 8000));
                     if (rpmRatio > 0.002) {
                         ctx.save();
                         ctx.beginPath();

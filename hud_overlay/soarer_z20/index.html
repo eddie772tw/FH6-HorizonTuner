@@ -51,7 +51,6 @@
 
             var isSweeping = false;
             var sweepRafId = null;
-            var isMetric = true;
 
             var telemetry = {
                 speed: 0,
@@ -90,8 +89,8 @@
                 }
 
                 // 1. Curved VFD Tachometer Bar (x=160..776, y=58..114)
-                var maxRpm = Math.max(4000, telemetry.maxRpm || 8000);
-                var rpmRatio = Math.min(1.0, Math.max(0.0, telemetry.rpm / maxRpm));
+                // Native tachometer artwork has a fixed 0..8 (8000 RPM) scale.
+                var rpmRatio = Math.min(1.0, Math.max(0.0, telemetry.rpm / 8000));
                 drawClippedX(160, 58, 616, 56, rpmRatio);
 
                 // 2. Left Fuel Ladder Bar (x=18..120, y=68..98)
@@ -137,11 +136,7 @@
                 scaleMultiplier: 0.95,
                 onScale: HUDArtwork.watchCanvas(canvas, render),
 
-                onInit: function(cfg) {
-                    if (cfg) {
-                        if (cfg.isMetric !== undefined) isMetric = cfg.isMetric !== false;
-                        else if (cfg.unit) isMetric = cfg.unit !== 'mph';
-                    }
+                onInit: function() {
                     render();
                 },
 
@@ -154,14 +149,8 @@
                 onFrame: function(data, payload) {
                     if (!data) return;
                     payload = payload || {};
-                    if (payload.isMetric !== undefined) isMetric = payload.isMetric !== false;
-                    if (data.displayUnits && data.displayUnits.speed) {
-                        isMetric = data.displayUnits.speed !== 'mph';
-                    }
-
-                    telemetry.speed = isMetric
-                        ? Number(data.speed_kmh !== undefined ? data.speed_kmh : (data.speed || 0))
-                        : Number(data.speed_mph !== undefined ? data.speed_mph : ((data.speed_kmh || data.speed || 0) * 0.621371));
+                    // The native artwork is permanently labelled km/h.
+                    telemetry.speed = Number(data.speed_kmh || 0);
                     telemetry.rpm = Number(data.rpm || 0);
                     telemetry.maxRpm = Number(data.max_rpm || data.maxRpm || payload.redlineRpm || 8000);
                     telemetry.gear = data.gear !== undefined ? Number(data.gear) : 1;

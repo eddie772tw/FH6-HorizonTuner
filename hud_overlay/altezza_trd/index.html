@@ -68,7 +68,6 @@
 
             var isSweeping = false;
             var sweepRafId = null;
-            var isMetric = true;
 
             var telemetry = {
                 speed: 0,
@@ -209,11 +208,7 @@
                 scaleMultiplier: 0.95,
                 onScale: HUDArtwork.watchCanvas(canvas, render),
 
-                onInit: function(cfg) {
-                    if (cfg) {
-                        if (cfg.isMetric !== undefined) isMetric = cfg.isMetric !== false;
-                        else if (cfg.unit) isMetric = cfg.unit !== 'mph';
-                    }
+                onInit: function() {
                     render();
                 },
 
@@ -226,14 +221,8 @@
                 onFrame: function(data, payload) {
                     if (!data) return;
                     payload = payload || {};
-                    if (payload.isMetric !== undefined) isMetric = payload.isMetric !== false;
-                    if (data.displayUnits && data.displayUnits.speed) {
-                        isMetric = data.displayUnits.speed !== 'mph';
-                    }
-
-                    telemetry.speed = isMetric
-                        ? Number(data.speed_kmh !== undefined ? data.speed_kmh : (data.speed || 0))
-                        : Number(data.speed_mph !== undefined ? data.speed_mph : ((data.speed_kmh || data.speed || 0) * 0.621371));
+                    // The native artwork is permanently labelled km/h.
+                    telemetry.speed = Number(data.speed_kmh || 0);
                     telemetry.rpm = Number(data.rpm || 0);
                     telemetry.maxRpm = Number(data.max_rpm || data.maxRpm || payload.redlineRpm || 10000);
                     telemetry.gear = data.gear !== undefined ? Number(data.gear) : 1;
