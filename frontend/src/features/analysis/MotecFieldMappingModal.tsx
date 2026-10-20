@@ -72,7 +72,7 @@ export const MotecFieldMappingModal: React.FC<MotecFieldMappingModalProps> = ({
           <div className="modal-content">
             <div className="modal-header">
               <h5 className="modal-title">{t("MoTeC i2 CSV Channel Mapping (41 Channels)")}</h5>
-              <button type="button" className="btn-close" aria-label="Close" onClick={onClose} />
+              <button type="button" className="btn-close" aria-label={t("Close")} onClick={onClose} />
             </div>
             <div className="modal-body">
               <p className="text-secondary" style={{ fontSize: "0.85rem" }}>
