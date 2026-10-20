@@ -22,7 +22,7 @@ node hud_overlay/audio_head/assets/build-panels.mjs --check
 
 修改 `build-panels.mjs` 或 `panel-glyphs.json` 後應重新產生九款 SVG。`--check` 只比對產物是否與可編輯來源一致，不改寫檔案。
 
-`normalize-brand-fragment.mjs` 只處理已審查、納入版本控制的品牌片段，不是任意 SVG 的通用 sanitizer。移除標籤、註解及既有屬性清理會重複至固定點；成對標籤名稱必須相符。每段限制 65,536 個 UTF-16 code units、最多 32 輪，未收斂或殘留禁止／不完整 markup 就拋錯；六段全部通過後才開始寫入面板。保留 Alpine `cls-1` 幾何選取、`fill="none"`、CDDA 非 fill inline styles 與既有空白格式。
+`normalize-brand-fragment.mjs` 只處理已審查、納入版本控制的品牌片段，不是任意 SVG 的通用 sanitizer。移除標籤、註解及既有屬性清理會重複至固定點；以 token／range 掃描及合併區間處理成對標籤，名稱必須相符；註解採 `-->`／`--!>` 中最早的結尾，保留其後內容。錯配或無法完整辨識的片段留待最終拒絕，並非一般 XML well-formedness 檢查。每段限制 65,536 個 UTF-16 code units、最多 32 輪，未收斂或殘留禁止／不完整 markup 就拋錯；六段全部通過後才開始寫入面板。保留 Alpine `cls-1` 幾何選取、`fill="none"`、CDDA 非 fill inline styles 與既有空白格式。
 
 安全回歸與重建測試位於 `../tests/unit/brandNormalization.test.ts`，由完整 frontend Vitest 入口執行；涵蓋 delimiter 重組、拒絕不完整輸入、失敗時不寫入任何面板，以及六段既有片段與九張重建 SVG 的位元組相容性。
 

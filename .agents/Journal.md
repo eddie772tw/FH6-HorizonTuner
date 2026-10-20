@@ -1046,3 +1046,16 @@
 - 合併 #541 的有界固定點修復與 28 個回歸案例；僅 Journal 附加段落衝突並保留雙方內容。輔助儀表、GReddy 校正、共用來源、品牌原檔與九款面板未變更。
 - frontend 1891 passed／1 skipped；Windows／LAN build 通過；Cargo 預設 233 passed／2 ignored、無預設 223 passed／2 ignored；fmt、diff、generator --check 與九款原始位元組 SHA-256 通過。無 CodeQL CLI，未執行掃描或遠端寫入。
 - Skills：github-security-audit、pr-author-maintainer、pr-review-evaluation。
+
+## 2026-10-20 / SVG 禁止 delimiter 的 token／range 修復（Bagley as dot）
+
+- 前版 763b1fdf 雖通過本機驗證，CodeQL gate 仍失敗：54（未處理 `--!>`）、55／56（comment／style 不完整清洗）。保留失敗紀錄，不以本機測試宣稱掃描通過；51／52 由 securitybot 自動標記過時／解決，非人工 Resolve。
+- 改為顯式 token／range 掃描與重疊區間合併，移除匹配標籤及註解；使用 `-->`／`--!>` 最早結尾，避免吞掉中間幾何。每輪完整清理再 tokenize，保留 65,536 code units／32 輪限制與穩定結果的禁止 delimiter 拒絕。僅限已審核品牌，非通用 SVG sanitizer 或完整 XML 驗證。無新依賴或 suppression。
+- 42 個回歸案例、frontend 1867 passed／1 skipped；Windows／LAN build 通過；Cargo 預設 230 passed／2 ignored、無預設 220 passed／2 ignored；fmt／diff／generator check 通過。六個片段與九款實際重建原始位元組 SHA-256 完全相同。本機無 CodeQL CLI，新掃描待發佈後確認。
+- Skills：github-security-audit、pr-author-maintainer、pr-review-evaluation。
+
+## 2026-10-20 / #540 同步 token／range 修復（Bagley as dot）
+
+- 同步 #541 41a9a7df 的禁止 delimiter 掃描與 42 個回歸案例；Journal 保留雙方紀錄，輔助儀表校正／來源與品牌／面板位元組不變。
+- frontend 1905 passed／1 skipped；Windows／LAN build 通過；Cargo 預設 233 passed／2 ignored、無預設 223 passed／2 ignored；fmt、diff、generator check 及原始位元組比對通過。保留前版失敗 CodeQL 紀錄，新掃描尚未執行，未寫入遠端。
+- Skills：github-security-audit、pr-author-maintainer、pr-review-evaluation。
