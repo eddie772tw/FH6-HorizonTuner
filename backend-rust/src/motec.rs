@@ -244,7 +244,7 @@ pub fn import(bytes: &[u8]) -> ApiResult<(Value, Vec<Value>)> {
     let mut units = false;
     let mut normalized = false;
     for row in reader.records() {
-        let row = row.map_err(|e| ApiError::invalid(e.to_string()))?;
+        let row = row.map_err(|_| ApiError::invalid("Invalid CSV data"))?;
         if !headers {
             if row.get(0) == Some("Time") {
                 headers = true;

@@ -555,7 +555,7 @@ impl EvidenceService {
             ));
         }
         let raw: EvidenceRequest =
-            serde_json::from_value(input.clone()).map_err(|e| ApiError::invalid(&e.to_string()))?;
+            serde_json::from_value(input.clone()).map_err(|_| ApiError::invalid("Invalid EV capture data"))?;
         if !matches!(raw, EvidenceRequest::EvCapture { .. }) {
             return Err(ApiError::invalid("Raw EV capture required"));
         }
@@ -574,7 +574,7 @@ impl EvidenceService {
     }
     pub fn save_cvt(&self, input: &Value) -> ApiResult<Value> {
         let raw: EvidenceRequest = serde_json::from_value(input["evidence"].clone())
-            .map_err(|e| ApiError::invalid(&e.to_string()))?;
+            .map_err(|_| ApiError::invalid("Invalid CVT capture data"))?;
         let EvidenceRequest::CvtCapture { capture } = raw else {
             return Err(ApiError::invalid("Raw CVT capture required"));
         };
@@ -675,7 +675,7 @@ impl EvidenceService {
                 }
             }
         }
-        let request:WorkflowRequest=serde_json::from_value(json!({"schemaVersion":if confirmed_ev{"tuning-workflow-result/v3"}else if current{"tuning-workflow-result/v2"}else{"tuning-workflow-result/v1"},"goal":snapshot["goal"],"season":snapshot["season"],"profile":snapshot["profile"],"engine":null,"ev":if proof.kind=="ev"{json!({"setup":proof.setup,"measurements":[],"candidateFinalDrive":snapshot["evResult"]["finalDrive"]})}else{Value::Null},"inputSnapshot":snapshot})).map_err(|e|ApiError::invalid(&e.to_string()))?;
+        let request:WorkflowRequest=serde_json::from_value(json!({"schemaVersion":if confirmed_ev{"tuning-workflow-result/v3"}else if current{"tuning-workflow-result/v2"}else{"tuning-workflow-result/v1"},"goal":snapshot["goal"],"season":snapshot["season"],"profile":snapshot["profile"],"engine":null,"ev":if proof.kind=="ev"{json!({"setup":proof.setup,"measurements":[],"candidateFinalDrive":snapshot["evResult"]["finalDrive"]})}else{Value::Null},"inputSnapshot":snapshot})).map_err(|_|ApiError::invalid("Invalid workflow request"))?;
         let expected = super::workflow::calculate_historical(
             request,
             &proof,

@@ -101,7 +101,7 @@ pub fn request(
     if request.method == "POST" && request.path == "/api/tuning/workflow" {
         let input: crate::tuning::workflow::WorkflowRequest =
             serde_json::from_value(request.json()?)
-                .map_err(|error| ApiError::invalid(&error.to_string()))?;
+                .map_err(|_| ApiError::invalid("Invalid workflow request"))?;
         let result = evidence.calculate(input)?;
         return Ok(Some(ApiResponse::json(serde_json::to_value(result)?)));
     }
@@ -112,7 +112,7 @@ pub fn request(
     }
     if request.method == "POST" && request.path == "/api/tuning/ev-preview" {
         let input: crate::tuning::ev::EvGearingInput = serde_json::from_value(request.json()?)
-            .map_err(|e| ApiError::invalid(&e.to_string()))?;
+            .map_err(|_| ApiError::invalid("Invalid EV gearing input"))?;
         return Ok(Some(ApiResponse::json(
             json!({"evidenceStatus":"unverified-preview","result":crate::tuning::ev::calculate_ev_gearing(&input)}),
         )));
@@ -120,7 +120,7 @@ pub fn request(
     if request.method == "POST" && request.path == "/api/tuning/mechanical" {
         let input: crate::tuning::calculation::MechanicalRequest =
             serde_json::from_value(request.json()?)
-                .map_err(|error| ApiError::invalid(&error.to_string()))?;
+                .map_err(|_| ApiError::invalid("Invalid mechanical request"))?;
         let result =
             crate::tuning::calculation::calculate_mechanical(&input).map_err(ApiError::invalid)?;
         return Ok(Some(ApiResponse::json(serde_json::to_value(result)?)));

@@ -358,7 +358,7 @@ impl App {
             ("POST", ["api", "analysis", "routes", "arm"]) => {
                 let route_id = data.get("route_id").and_then(Value::as_str).ok_or_else(|| ApiError::invalid("route_id is required"))?;
                 let route_val = self.database.get_route(route_id).map_err(database_error)?.ok_or_else(|| ApiError::new(404, "Route not found"))?;
-                let route = serde_json::from_value::<crate::telemetry::ActiveRoute>(route_val).map_err(|e| ApiError::invalid(e.to_string()))?;
+                let route = serde_json::from_value::<crate::telemetry::ActiveRoute>(route_val).map_err(|_| ApiError::invalid("Invalid route data"))?;
                 if data.get("mode").and_then(Value::as_str).is_some_and(|mode| mode != route.mode) {
                     return Err(ApiError::invalid("Route mode does not match recording mode"));
                 }
