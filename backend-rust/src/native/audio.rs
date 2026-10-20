@@ -11,6 +11,7 @@ use serde_json::{json, Value};
 use super::NativeError;
 
 const BAND_COUNT: usize = 32;
+const MAX_SPECTRUM_HZ: u32 = 20_000;
 const DISCOVERY_WAIT: Duration = Duration::from_secs(1);
 const CACHE_TTL: Duration = Duration::from_secs(30);
 const RETRY_BACKOFF: Duration = Duration::from_secs(5);
@@ -153,6 +154,7 @@ struct AudioState {
     capture_error: Option<String>,
     resolved_device: Option<String>,
     using_default_fallback: bool,
+    sample_rate: Option<u32>,
 }
 
 pub struct AudioService {
@@ -180,6 +182,7 @@ impl AudioService {
             capture_error: None,
             resolved_device: None,
             using_default_fallback: false,
+            sample_rate: None,
         }));
         Self {
             capture: CaptureWorker::new(state.clone()),
@@ -228,6 +231,7 @@ impl AudioService {
             }
             state.selected_device = selected.to_owned();
             state.last_update = None;
+            state.sample_rate = None;
             state.source = "unavailable";
             state.capture_error = None;
             if state.active {
@@ -240,7 +244,9 @@ impl AudioService {
     }
 
     pub fn update_pcm(&self, samples: &[f32]) {
-        let (spectrum, left, right) = compute_fft_bands(samples);
+        // Injected PCM has no rate in its frozen compatibility contract.
+        // WASAPI supplies its actual endpoint rate instead.
+        let (spectrum, left, right) = compute_fft_bands(samples, None);
         let has_audio = left > 0.01 || right > 0.01 || spectrum.iter().any(|x| *x > 0.02);
         if let Ok(mut state) = self.state.lock() {
             state.spectrum = spectrum;
@@ -251,6 +257,7 @@ impl AudioService {
             state.captured_at_ms = unix_ms();
             state.sequence = state.sequence.saturating_add(1);
             state.source = "external";
+            state.sample_rate = None;
         }
     }
 
@@ -313,7 +320,7 @@ impl AudioService {
         json!({"active":state.active,"selectedDevice":state.selected_device,
             "resolvedDevice":state.resolved_device,"usingDefaultFallback":state.using_default_fallback,
             "source":state.source,"sequence":state.sequence,"error":state.capture_error,
-            "discoveryFailed":state.last_error})
+            "discoveryFailed":state.last_error,"sampleRate":state.sample_rate})
     }
 }
 
@@ -336,7 +343,7 @@ fn unix_ms() -> u64 {
         .unwrap_or(0)
 }
 
-fn compute_fft_bands(samples: &[f32]) -> ([f32; BAND_COUNT], f32, f32) {
+fn compute_fft_bands(samples: &[f32], sample_rate: Option<u32>) -> ([f32; BAND_COUNT], f32, f32) {
     if samples.len() < 32 {
         return ([0.0; BAND_COUNT], 0.0, 0.0);
     }
@@ -368,7 +375,14 @@ fn compute_fft_bands(samples: &[f32]) -> ([f32; BAND_COUNT], f32, f32) {
         })
         .collect::<Vec<_>>();
     fft.process(&mut buffer);
-    let bins = n / 2 + 1;
+    // A high-rate endpoint can have most of its FFT above audible frequencies.
+    // Keep all 32 display bands within 20 kHz (or Nyquist on low-rate devices),
+    // rather than spending the right half of the display on ultrasonic bins.
+    let nyquist_bins = n / 2 + 1;
+    let bins = sample_rate
+        .filter(|rate| *rate > 0)
+        .map(|rate| (MAX_SPECTRUM_HZ as usize * n / rate as usize + 1).min(nyquist_bins))
+        .unwrap_or(nyquist_bins);
     let mut result = [0.0; BAND_COUNT];
     for band in 0..BAND_COUNT {
         let start = ((band as f32 / BAND_COUNT as f32).powi(2) * bins as f32) as usize;
@@ -492,6 +506,7 @@ fn wasapi_capture_once(
         state.resolved_device = Some(resolved_id.clone());
         state.using_default_fallback = fallback;
         state.capture_error = None;
+        state.sample_rate = Some(format_copy.nSamplesPerSec);
     }
     let mut endpoint_check = Instant::now();
     loop {
@@ -525,7 +540,8 @@ fn wasapi_capture_once(
                 decode_wasapi_samples(data, frames as usize, channels, &format_copy)
             };
             unsafe { capture.ReleaseBuffer(frames) }.map_err(|e| e.to_string())?;
-            let (mut spectrum, left, right) = compute_fft_bands(&samples);
+            let (mut spectrum, left, right) =
+                compute_fft_bands(&samples, Some(format_copy.nSamplesPerSec));
             // The historical WASAPI path uses a different meter response and
             // FFT gain from externally supplied PCM. Keep both wire contracts.
             let left = (left / 2.8 * 30.0).powf(0.65);
@@ -735,6 +751,67 @@ fn enumerate_platform() -> Result<Vec<AudioDevice>, Box<dyn std::error::Error + 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn audible_tones_keep_their_bands_across_endpoint_sample_rates() {
+        for frequency in [2_000.0, 8_000.0] {
+            let mut reference = None;
+            for rate in [44_100, 48_000, 96_000, 192_000] {
+                let samples: Vec<f32> = (0..rate / 100)
+                    .flat_map(|i| {
+                        let value = (std::f32::consts::TAU * frequency * i as f32 / rate as f32)
+                            .sin()
+                            * 0.05;
+                        [value, value]
+                    })
+                    .collect();
+                let (bands, _, _) = compute_fft_bands(&samples, Some(rate));
+                let peak = bands
+                    .iter()
+                    .enumerate()
+                    .max_by(|a, b| a.1.total_cmp(b.1))
+                    .unwrap()
+                    .0;
+                assert!(bands[peak] > 0.1);
+                if frequency > 5_000.0 {
+                    assert!(
+                        peak >= BAND_COUNT / 2,
+                        "{frequency} Hz collapsed into band {peak} at {rate} Hz"
+                    );
+                }
+                if let Some(expected) = reference {
+                    assert!(
+                        peak.abs_diff(expected) <= 1,
+                        "{frequency} Hz moved from {expected} to {peak} at {rate} Hz"
+                    );
+                } else {
+                    reference = Some(peak);
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn native_spectrum_excludes_ultrasonic_bins_and_stays_below_nyquist() {
+        for (rate, frequency, audible) in [(192_000, 40_000.0, false), (16_000, 6_000.0, true)] {
+            let samples: Vec<f32> = (0..rate / 100)
+                .flat_map(|i| {
+                    let value = (std::f64::consts::TAU * frequency * i as f64 / rate as f64).sin()
+                        as f32
+                        * 0.05;
+                    [value, value]
+                })
+                .collect();
+            let (bands, left, right) = compute_fft_bands(&samples, Some(rate));
+            assert!(left > 0.01 && right > 0.01);
+            assert!(bands.iter().all(|value| value.is_finite() && *value >= 0.0));
+            if audible {
+                assert!(bands[BAND_COUNT * 3 / 4..].iter().any(|value| *value > 0.1));
+            } else {
+                assert!(bands.iter().all(|value| *value < 0.02));
+            }
+        }
+    }
 
     #[test]
     fn expired_audio_cannot_return_a_frozen_nonzero_spectrum() {

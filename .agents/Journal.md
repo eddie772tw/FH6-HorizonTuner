@@ -933,6 +933,12 @@
 - **Evidence**：本地 `uv run --no-project ruff check .` 與 `uv run --no-project ruff format --check .` 通過；`uv run --no-project pytest scripts/tests/` 97 passed；GitHub Actions CI Pipeline run `38257562846` 之 `Backend Lint & Static Check` (11s) 與 `Frontend Build Test & Audit` (19s) 均通過轉綠。
 - **Skills**：`agent-governance-audit`、`modular-refactoring`。
 
+## 2026-10-19 / WASAPI 高取樣率頻譜範圍（Codex as Codex）
+
+- **Learning**：頻譜 JSON 有完整 32 段，不代表頻段涵蓋範圍正確。實機 endpoint 為 192 kHz；將正頻率 FFT 全部配置到顯示時，右半部涵蓋約 24–96 kHz，導致一般音訊只在左側活動。同一 2 kHz 音調在舊版 44.1／96 kHz 下的峰值位置也會改變。
+- **Contract**：WASAPI 使用 `GetMixFormat().nSamplesPerSec`，將顯示範圍上限限制為 20 kHz 或較低 Nyquist；保留 32 段、平方頻段分配、增益與 VU。診斷新增 `native.audio.sampleRate`。無取樣率參數的 external PCM fixture 維持舊相容輸出，不能代替原生取樣率回歸。
+- **Evidence**：受控 2／8 kHz 音調跨 44.1／48／96／192 kHz 維持頻段位置，另驗證超音頻排除與 16 kHz 低取樣率邊界。實機 WASAPI 複測的後半 16 段皆有活動；這是 API 資料證據，與完整 HUD 畫面、播放裝置普遍驗收及遊戲效能分開記錄。
+- **Skills**：`pr-author-maintainer`、`cross-agent-collaboration`、`ponytail`；`computer-use:computer-use` 僅用於將既有遊戲帶回前景取得真實音訊。
 ## 2026-10-19 / 手把遙測卡片與延後 Subsystems（Codex as Codex）
 
 - **Scope**：PR #542 僅公開可與主儀表並存的手把卡片，Xbox／DualSense 在遙測元素區切換。Minimap、Touge Pacenotes、Telemetry Data Cards 與 Speed Sense FX 保留原碼／資產及 TODO，不在一般、WIP 或 fallback 選單顯示。
