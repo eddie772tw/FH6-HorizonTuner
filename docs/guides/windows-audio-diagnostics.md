@@ -39,11 +39,13 @@ Microsoft 要求每個使用 COM 的執行緒各自初始化；成功結果包�
 2026-09-26：Python 後端已移除。音訊由 `backend-rust/src/native/audio.rs` 的 WASAPI worker 提供，媒體由 `native/media.rs` 的 WinRT GSMTC worker 提供。以下 Python／SoundCard／PyInstaller 記錄是歷史調查，來源保存於 Git `ec7d769`。
 
 - `/api/audio/devices`：裝置清單；`POST /api/audio/device` 保存選擇。失效的已選裝置會退回系統預設，裝置恢復或預設裝置改變時重新擷取。
-- `/api/overlay/audio_spectrum`：32 段頻譜、VU、sequence；過期資料歸零並標記 unavailable。
+- `/api/overlay/audio_spectrum`：32 段頻譜、VU、sequence；WASAPI 依裝置實際取樣率，將 32 段限制在 20 kHz 或較低的 Nyquist 頻率內。過期資料歸零並標記 unavailable。
 - `/api/overlay/system_media`：非同步快取的 GSMTC metadata；首次呼叫可能是 unavailable，稍後讀取更新。
-- `/api/diagnostics/overlay` 的 `native.audio`／`native.media`：實際裝置、fallback、錯誤及 query 狀態。資料來源失效不阻塞 HTTP 或音訊廣播。
+- `/api/diagnostics/overlay` 的 `native.audio`／`native.media`：實際裝置、fallback、錯誤及 query 狀態；音訊的 `sampleRate` 為已開啟 WASAPI endpoint 的實際取樣率。資料來源失效不阻塞 HTTP 或音訊廣播。
 - 自行啟動可提供 GSMTC 與音訊的播放器後，執行 `cargo test --locked --manifest-path backend-rust/Cargo.toml --test process_contract windows_native -- --ignored --nocapture`。測試只啟動隔離後端，不控制播放器或啟動前端。
 
 現行驗證結果見 [Rust 接替紀錄](../backend-rust/parity-hardening.md)。
+
+2026-10-19 頻譜修復：舊版將所有正頻率 FFT bins 均分至顯示頻段，未使用 endpoint 取樣率。高取樣率裝置因而把大量顯示空間分配給超音頻，造成可聽音調集中在左側。修正只改 WASAPI 的頻率範圍；32 段 JSON、VU、既有增益與平方頻段配置維持不變。沒有取樣率參數的 external PCM fixture 保留舊相容輸出，不能用它取代原生高取樣率回歸驗證。
 
 ---
