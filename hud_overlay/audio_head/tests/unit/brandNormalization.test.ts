@@ -50,6 +50,13 @@ describe('bounded brand-fragment normalization', () => {
     '<sty class="discard"le>bad</style>',
     '<sty fill="#fff"le>bad</style>',
     '<STyLE>bad</sTyLe>',
+    '<!--bad--!>',
+    '<sty<!--bad--!>le>bad</style>',
+    '<!<!--x--!>--evil--!>',
+    '<styfill:#fff;le>bad</style>',
+    '<style><style>x</style></style>',
+    '<style data-label=">">x</style>',
+    '<!--first--!><!--second-->',
     '<style>x</style><title>y</title><!--z--><metadata>m</metadata>',
     '<metadata><title>nested</title></metadata>',
     '<style>x</style\t\n>',
@@ -60,10 +67,18 @@ describe('bounded brand-fragment normalization', () => {
   it.each([
     '<!--unfinished', '<!-', '-->', '<style>', '<style', '</style>',
     '<style>x</title>', '<title>x</metadata>', '<STyLE>x</TITLE>',
-    '<style><style>x</style></style>', '<metadata>missing close',
+    '<metadata>missing close',
     '<sty', '<title>x</title attribute>', '<style/>',
+    '--!>', '<!--unfinished--!', '<!-', '<style>x</metadata>',
+    '<sty<!--x-->le>unfinished', '<sty id="x"le>unfinished',
+    '<title data-label="unfinished>x</title>',
   ])('fails closed on unresolved markup: %s', fragment => {
     expect(() => normalizeBrandFragment(fragment)).toThrow(/Unresolved/);
+  });
+
+  it('uses the earliest comment ending and preserves intervening geometry', () => {
+    expect(normalizeBrandFragment('<!--first--!>' + geometry + '<!--second-->')).toBe(geometry);
+    expect(() => normalizeBrandFragment('<!--first--!>' + geometry + '-->')).toThrow(/Unresolved/);
   });
 
   it('preserves geometry, fill=none, non-fill styles and internal whitespace', () => {
