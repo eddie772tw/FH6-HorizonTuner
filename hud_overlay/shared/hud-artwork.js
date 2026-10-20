@@ -38,6 +38,9 @@
         var height = canvas.height;
         function resize() {
             var bounds = canvas.getBoundingClientRect();
+            // A hidden gauge has no layout box. Keep its last valid bitmap until
+            // HUDCore restores visibility and requests a fresh measurement.
+            if (!(bounds.width > 0) || !(bounds.height > 0)) return;
             var dpr = window.devicePixelRatio || 1;
             var pixelWidth = Math.max(1, Math.round(bounds.width * dpr));
             var pixelHeight = Math.max(1, Math.round(bounds.height * dpr));

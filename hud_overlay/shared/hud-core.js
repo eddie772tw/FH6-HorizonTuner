@@ -167,12 +167,19 @@ window.HUD_ANIM_CONFIG = {
 
                     // Standard Gauge Container Visibility
                     var container = cachedContainer || (activeStyle.containerId ? (cachedContainer = document.getElementById(activeStyle.containerId)) : null);
+                    var wasGaugeHidden = container && container.style.display === 'none';
                     if (container) {
                         container.style.display = currentElements.showGauge === false ? 'none' : 'block';
                     }
 
                     if (activeStyle.onElementsChange) {
                         activeStyle.onElementsChange(currentElements);
+                    }
+
+                    // Config arrives before elements, so onScale may have run while
+                    // hidden. Resize after the style has restored its layout/visibility.
+                    if (wasGaugeHidden && container.style.display !== 'none' && activeStyle.onScale) {
+                        activeStyle.onScale(readPositiveScale(window._currentHudScale, 1));
                     }
 
                     if (window.TelemetryCardsManager) {
