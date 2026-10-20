@@ -27,6 +27,7 @@ export interface HudElements {
   showTeleCenterAnchor: boolean;
   showTeleGridLines: boolean;
   showTeleCompass?: boolean;
+  showTeleGamepad?: boolean;
 }
 
 export interface MonitorOption {
@@ -63,6 +64,10 @@ export interface HudConfig extends Partial<StackSt8100Settings> {
   lfaManualExpand?: boolean;
   /** LFA only: expand while confirmed lap timing is present. */
   lfaAutoExpand?: boolean;
+  gamepadLayout?: 'xbox' | 'dualsense';
+  gamepadOffsetX?: number;
+  gamepadOffsetY?: number;
+  minimapMode?: 'heading_up' | 'north_up';
   audioDeviceId?: string;
   selectedMonitorIndex: number;
   scale: number;
@@ -120,6 +125,10 @@ export const DEFAULT_HUD_CONFIG: HudConfig = {
   audioHeadCenterOffset: 0,
   lfaManualExpand: DEFAULT_LFA_MANUAL_EXPAND,
   lfaAutoExpand: DEFAULT_LFA_AUTO_EXPAND,
+  gamepadLayout: 'xbox',
+  gamepadOffsetX: 0,
+  gamepadOffsetY: 0,
+  minimapMode: 'heading_up',
   audioDeviceId: 'default',
   selectedMonitorIndex: 0,
   scale: 1.0,
@@ -173,6 +182,7 @@ export const DEFAULT_HUD_CONFIG: HudConfig = {
     showTeleEngine: true,
     showTelePedals: true,
     showTeleCompass: true,
+    showTeleGamepad: false,
     showTeleCenterAnchor: false,
     showTeleGridLines: false,
   },

@@ -1,3 +1,4 @@
+import { normalizeSubsystemConfig } from '../../../../hud_overlay/shared/deferred-styles.js';
 import { DEFAULT_HUD_CONFIG, type HudConfig, type HudElements } from './hudConfig';
 import { normalizeS650HmiConfig } from './s650/config';
 import { normalizeClassicJdmConfig } from './classic_jdm/config';
@@ -97,6 +98,7 @@ export function normalizeHudRuntimeConfig(input: unknown): HudConfigRecord {
     classicJdmDefiTheme?: unknown;
     [key: string]: unknown;
   })))));
+  Object.assign(normalized, normalizeSubsystemConfig(normalized));
   const configuredUnits = isRecord(normalized.units) ? normalized.units : {};
   return {
     ...DEFAULT_HUD_CONFIG,
