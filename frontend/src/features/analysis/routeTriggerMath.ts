@@ -152,12 +152,37 @@ export function filterTrimmedPoints(
   if (trimmedSampleCount === 0) return [];
   if (points.length === 0) return [];
   if (!Number.isFinite(validStartTime) || !Number.isFinite(validEndTime)) return points;
-  return points.filter((p) => {
+
+  // [PERF] Unrolled points.filter() and validLapWindows.some() to eliminate intermediate array
+  // allocations and closure overhead when processing large datasets in the hot path.
+  const result: AnalysisDataPoint[] = [];
+  const numPoints = points.length;
+  const hasWindows = validLapWindows != null;
+  const numWindows = hasWindows ? validLapWindows.length : 0;
+
+  for (let i = 0; i < numPoints; i++) {
+    const p = points[i];
     const t = p.time;
-    if (t === null || t === undefined || !Number.isFinite(t)) return false;
-    return t >= validStartTime && t <= validEndTime
-      && (!validLapWindows || validLapWindows.some((w) => t >= w.start_time && t <= w.end_time));
-  });
+    if (typeof t !== "number" || !Number.isFinite(t)) continue;
+
+    if (t >= validStartTime && t <= validEndTime) {
+      if (!hasWindows) {
+        result.push(p);
+      } else {
+        let inWindow = false;
+        for (let j = 0; j < numWindows; j++) {
+          const w = validLapWindows[j];
+          if (t >= w.start_time && t <= w.end_time) {
+            inWindow = true;
+            break;
+          }
+        }
+        if (inWindow) result.push(p);
+      }
+    }
+  }
+
+  return result;
 }
 
 export function calculateLapsFromPoints(
@@ -180,12 +205,23 @@ export function calculateLapsFromPoints(
 
   const sortedLaps = Array.from(lapMap.keys()).sort((a, b) => a - b);
   const result: LapSummary[] = [];
-  const ordered = points.every((point, index) => index === 0 || (
-    typeof point.time === "number" && Number.isFinite(point.time)
-    && typeof points[index - 1].time === "number"
-    && point.time > points[index - 1].time!
-    && (point.LapNumber ?? 1) >= (points[index - 1].LapNumber ?? 1)
-  ));
+
+  // [PERF] Unrolled points.every() to a manual for loop to avoid intermediate array iteration
+  // closures when verifying the chronological ordering of massive datasets.
+  let ordered = true;
+  for (let i = 1; i < points.length; i++) {
+    const point = points[i];
+    const prev = points[i - 1];
+    if (
+      typeof point.time !== "number" || !Number.isFinite(point.time)
+      || typeof prev.time !== "number"
+      || !(point.time > prev.time!)
+      || (point.LapNumber ?? 1) < (prev.LapNumber ?? 1)
+    ) {
+      ordered = false;
+      break;
+    }
+  }
 
   for (let i = 0; i < sortedLaps.length; i++) {
     const lapNum = sortedLaps[i];

@@ -139,3 +139,7 @@ Additionally, attempting to optimize 60Hz telemetry data copying in `FrameInterp
 ## 2026-10-10 - Loaded-session aggregation (PR #502 feature)
 **Learning:** The reviewed calculateLapsFromPoints change aggregates loaded telemetry sessions once per lap, avoiding temporary arrays used only for min/max/sum. This is not a measured live 60Hz receiver performance result.
 **Action:** Preserve finite-sample filtering, observed start/closing boundaries, and the first positive finite LastLap in the next lap; use product lap-contract tests and recorded-session comparison before claiming a broader performance improvement.
+
+## 2024-11-26 - Null Safety when Unrolling Array Methods
+**Learning:** When unrolling higher-order array methods (like `.some()` or `.every()`) into manual `for` loops in TypeScript/JavaScript to prevent closure overhead, extreme care must be taken with logic containing truthiness checks like `!arr || arr.some(...)`. Because `[]` is truthy in JavaScript, `![]` evaluates to `false`, allowing the `.some()` call to correctly handle the empty array. Replacing this with a manual length check like `arr != null && arr.length > 0` accidentally flips the logic for empty arrays, causing a functional regression.
+**Action:** When manually unrolling JavaScript/TypeScript array methods, carefully preserve the behavior of short-circuiting logic. Explicitly handle the empty array case (e.g., by checking `arr != null` without appending `.length > 0`) and preserve the exact boolean fallbacks to prevent functional regressions.
