@@ -2,6 +2,7 @@
 // Coordinates and colours follow the native res_220 atlas / clean plates. No raster embedding.
 import {readFileSync, writeFileSync} from 'node:fs';
 import {fileURLToPath} from 'node:url';
+import {normalizeBrandFragment} from './normalize-brand-fragment.mjs';
 
 const out = fileURLToPath(new URL('.', import.meta.url));
 const glyphs = JSON.parse(readFileSync(out + 'panel-glyphs.json', 'utf8'));
@@ -11,10 +12,7 @@ for (const [name, width, height] of [['alpine',734.51,89.73],['pioneer',107,16],
     const source = readFileSync(out + 'brands/' + name + '.svg', 'utf8').replaceAll('\r\n', '\n');
     let body = source.match(/<svg\b[^>]*>([\s\S]*?)<\/svg>/)[1];
     if (name === 'alpine') body = Array.from(body.matchAll(/<(?:rect|polygon|path)\b(?=[^>]*class="cls-1")[^>]*\/>/g), match => match[0]).join('');
-    body = body.replace(/<(?:style|metadata|title)\b[^>]*>[\s\S]*?<\/(?:style|metadata|title)>/g, '')
-        .replace(/<!--[\s\S]*?-->/g, '').replace(/\s(?:class|id)="[^"]*"/g, '')
-        .replace(/\sfill="(?!none)[^"]*"/g, '').replace(/fill:#[\da-f]+;?/gi, '')
-        .replace(/[ \t]+$/gm, '');
+    body = normalizeBrandFragment(body);
     brands[name] = { width, height, body };
 }
 const n = value => Number(value.toFixed(3));

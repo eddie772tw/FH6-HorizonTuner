@@ -1004,3 +1004,10 @@
 - Linux x64、Node 24.19.0、pnpm 11.19.0、Rust 1.99.1：frontend Vitest 1825 passed／1 skipped；Windows 與 LAN frontend build 通過；SVG generator --check 九款一致；Cargo 預設功能 230 passed／2 ignored、無預設功能 220 passed／2 ignored；cargo fmt 與 git diff --check 通過。
 - 前端 build 與 Cargo 測試依序執行，未變更測試 timeout、assertion 或既有 skip；未執行 Windows 原生視覺驗收。
 - Skills：pr-author-maintainer、pr-review-evaluation、halfmoon-design-system。
+
+## 2026-10-20 / Audio Head SVG 正規化修復（Bagley as dot）
+
+- 一次性刪除 style／comment 可重新拼成禁用標記；改為整條正規化流程達固定點，限制輸入 64 Ki code units 與 32 次迭代，未收斂或殘留不完整／錯配標記即拒絕。所有品牌先完成檢查才寫面板；僅適用已審核品牌片段，非通用 SVG sanitizer。
+- 28 個回歸案例通過，涵蓋重組、混合大小寫、巢狀／相鄰、錯配／不完整、資源上限與寫入前拒絕。六個原始正規化片段及九款輸出 SVG 的 SHA-256 原始位元組完全一致，未依賴 CRLF 正規化。
+- frontend 1853 passed／1 skipped；Windows／LAN build 通過；Cargo 預設 230 passed／2 ignored，無預設 220 passed／2 ignored；cargo fmt、generator --check 與 git diff --check 通過。未修改依賴、既有 timeout／skip 或 CodeQL suppression；本機無 CodeQL CLI，掃描確認另行處理。
+- Skills：github-security-audit、pr-author-maintainer、pr-review-evaluation。
