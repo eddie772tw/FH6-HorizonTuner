@@ -139,3 +139,7 @@ Additionally, attempting to optimize 60Hz telemetry data copying in `FrameInterp
 ## 2026-10-10 - Loaded-session aggregation (PR #502 feature)
 **Learning:** The reviewed calculateLapsFromPoints change aggregates loaded telemetry sessions once per lap, avoiding temporary arrays used only for min/max/sum. This is not a measured live 60Hz receiver performance result.
 **Action:** Preserve finite-sample filtering, observed start/closing boundaries, and the first positive finite LastLap in the next lap; use product lap-contract tests and recorded-session comparison before claiming a broader performance improvement.
+
+## 2026-10-24 - HTML5 Canvas Path Batching by Style in Render Loops
+**Learning:** In high-frequency HTML5 Canvas rendering loops (like HUD overlay compass ticks and slip radar crosshairs), calling `ctx.beginPath()` and `ctx.stroke()` for individual line segments is a massive performance bottleneck due to CPU overhead from state changes. Grouping paths by shared styling (e.g., `strokeStyle`, `lineWidth`) and executing a single `ctx.beginPath()` followed by multiple `ctx.moveTo()` and `ctx.lineTo()` calls, then a single `ctx.stroke()` significantly reduces execution time.
+**Action:** Batch drawing commands by styles instead of objects. In `for` loops, push path definitions (`x`, `y`, `length`) to intermediate arrays grouped by style, or combine `moveTo`/`lineTo` operations for static groups (like crosshairs), and issue a single `beginPath()` and `stroke()` per group to minimize overhead.

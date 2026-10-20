@@ -104,8 +104,10 @@ export function renderCorners(data, showSusp, showSlip, showTemp, tireHist, susp
                     // Crosshairs
                     rCtx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
                     rCtx.lineWidth = 1 * dpr;
-                    rCtx.beginPath(); rCtx.moveTo(rx0, ry0 - rRad); rCtx.lineTo(rx0, ry0 + rRad); rCtx.stroke();
-                    rCtx.beginPath(); rCtx.moveTo(rx0 - rRad, ry0); rCtx.lineTo(rx0 + rRad, ry0); rCtx.stroke();
+                    rCtx.beginPath();
+                    rCtx.moveTo(rx0, ry0 - rRad); rCtx.lineTo(rx0, ry0 + rRad);
+                    rCtx.moveTo(rx0 - rRad, ry0); rCtx.lineTo(rx0 + rRad, ry0);
+                    rCtx.stroke();
 
                     // Map slip angle → X, slip ratio → Y
                     var maxTRadius = Math.max(0, rRad - 3 * dpr);

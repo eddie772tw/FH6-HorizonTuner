@@ -140,6 +140,12 @@ export function renderCompass(canvas, data, config, domCache) {
     var startTick = Math.floor(minAngle / 5) * 5;
     var endTick = Math.ceil(maxAngle / 5) * 5;
 
+    // Arrays to collect ticks and labels for batched rendering
+    var cardinalTicks = [];
+    var majorTicks = [];
+    var minorTicks = [];
+    var labels = [];
+
     // Draw ticks and labels
     for (var tickDeg = startTick; tickDeg <= endTick; tickDeg += 5) {
         var diff = tickDeg - headingDeg;
@@ -154,46 +160,81 @@ export function renderCompass(canvas, data, config, domCache) {
         // Grade 1: Major Tick (14px length, 2px stroke width)
         // Grade 2: Minor Tick (7px length, 1px stroke width)
         var tickLength = isMajor ? 14 : 7;
-        var tickWidth = isMajor ? 2.0 : 1.0;
 
-        ctx.beginPath();
-        ctx.moveTo(x, baselineY);
-        ctx.lineTo(x, baselineY + tickLength);
+        var tickData = { x: x, y: baselineY, len: tickLength };
 
         if (isCardinal) {
-            ctx.strokeStyle = primaryColor;
-            ctx.lineWidth = 2.5;
+            cardinalTicks.push(tickData);
         } else if (isMajor) {
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
-            ctx.lineWidth = tickWidth;
+            majorTicks.push(tickData);
         } else {
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
-            ctx.lineWidth = tickWidth;
+            minorTicks.push(tickData);
         }
-        ctx.stroke();
 
         // Labels for Major Ticks
         if (isCardinal) {
-            var cardinalName = CARDINAL_POINTS[normalizedTick];
+            labels.push({ type: 'cardinal', text: CARDINAL_POINTS[normalizedTick], x: x, y: baselineY - 3, deg: normalizedTick.toString(), yDeg: baselineY + tickLength + 3 });
+        } else if (isMajor) {
+            labels.push({ type: 'major', text: normalizedTick.toString(), x: x, y: baselineY + tickLength + 3 });
+        }
+    }
+
+    // Batch render minor ticks
+    if (minorTicks.length > 0) {
+        ctx.beginPath();
+        for (var i = 0; i < minorTicks.length; i++) {
+            ctx.moveTo(minorTicks[i].x, minorTicks[i].y);
+            ctx.lineTo(minorTicks[i].x, minorTicks[i].y + minorTicks[i].len);
+        }
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
+        ctx.lineWidth = 1.0;
+        ctx.stroke();
+    }
+
+    // Batch render major ticks
+    if (majorTicks.length > 0) {
+        ctx.beginPath();
+        for (var i = 0; i < majorTicks.length; i++) {
+            ctx.moveTo(majorTicks[i].x, majorTicks[i].y);
+            ctx.lineTo(majorTicks[i].x, majorTicks[i].y + majorTicks[i].len);
+        }
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+        ctx.lineWidth = 2.0;
+        ctx.stroke();
+    }
+
+    // Batch render cardinal ticks
+    if (cardinalTicks.length > 0) {
+        ctx.beginPath();
+        for (var i = 0; i < cardinalTicks.length; i++) {
+            ctx.moveTo(cardinalTicks[i].x, cardinalTicks[i].y);
+            ctx.lineTo(cardinalTicks[i].x, cardinalTicks[i].y + cardinalTicks[i].len);
+        }
+        ctx.strokeStyle = primaryColor;
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+    }
+
+    // Render labels
+    for (var i = 0; i < labels.length; i++) {
+        var label = labels[i];
+        if (label.type === 'cardinal') {
             ctx.font = 'bold 12px "ForzaGear", Arial, sans-serif';
             ctx.fillStyle = primaryColor;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'bottom';
-            // Cardinal Abbreviation (N, NE, E, SE, S, SW, W, NW)
-            ctx.fillText(cardinalName, x, baselineY - 3);
+            ctx.fillText(label.text, label.x, label.y);
 
-            // Auxiliary Degree Number below the tick
             ctx.font = '9px monospace';
             ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
             ctx.textBaseline = 'top';
-            ctx.fillText(normalizedTick.toString(), x, baselineY + tickLength + 3);
-        } else if (isMajor) {
-            // Auxiliary Degree Number below major tick (e.g. 15, 30, 60, 75...)
+            ctx.fillText(label.deg, label.x, label.yDeg);
+        } else {
             ctx.font = '10px monospace';
             ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'top';
-            ctx.fillText(normalizedTick.toString(), x, baselineY + tickLength + 3);
+            ctx.fillText(label.text, label.x, label.y);
         }
     }
 
