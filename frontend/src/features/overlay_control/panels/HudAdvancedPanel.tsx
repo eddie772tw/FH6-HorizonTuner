@@ -124,6 +124,7 @@ function StyleSettings({ config, appUnits, onConfigPatch, isWipActive, wipForced
           </select>
         </div>
       )}
+      {/* TODO(subsystems): restore minimap controls only after module evaluation. */}
       {config.hudStyle === 'vfd' && (
         <div className="border-top pt-2 d-flex flex-column gap-3">
           <div>

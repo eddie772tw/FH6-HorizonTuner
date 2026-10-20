@@ -945,3 +945,31 @@
 - **修正**：以原 shader 建立每款靜態圖案 alpha，先去除字型與指針取樣，核對 DDS／decoded atlas 完整輸出 alpha 最大差異 0。離線準備 11 張 PNG，保留圖案覆蓋量，僅剩餘暗底用 alpha=0.15；執行時普通 Image 載入，沒有每幀影像處理。
 - **驗證**：完整 frontend Vitest 修改前／後均 1809 passed、1 skipped；TypeScript／Vite build 通過。離線產生流程驗證 RGB、外部透明區與實心暗圖案不變、alpha 不增加、無圖案純黑底為 38/255；原素材來源雜湊與逐款影響數據在 `hud_overlay/nfsu2/tools/material-audit.json`。未新增個別樣式單元測試；實際漫遊截圖另附最終 SHA 與有效設定。
 - **Skills**：`huge-component-refactoring`、`halfmoon-design-system`、`pr-author-maintainer`、`ponytail`、`computer-use:computer-use`。
+## 2026-10-19 / WASAPI 高取樣率頻譜範圍（Codex as Codex）
+
+- **Learning**：頻譜 JSON 有完整 32 段，不代表頻段涵蓋範圍正確。實機 endpoint 為 192 kHz；將正頻率 FFT 全部配置到顯示時，右半部涵蓋約 24–96 kHz，導致一般音訊只在左側活動。同一 2 kHz 音調在舊版 44.1／96 kHz 下的峰值位置也會改變。
+- **Contract**：WASAPI 使用 `GetMixFormat().nSamplesPerSec`，將顯示範圍上限限制為 20 kHz 或較低 Nyquist；保留 32 段、平方頻段分配、增益與 VU。診斷新增 `native.audio.sampleRate`。無取樣率參數的 external PCM fixture 維持舊相容輸出，不能代替原生取樣率回歸。
+- **Evidence**：受控 2／8 kHz 音調跨 44.1／48／96／192 kHz 維持頻段位置，另驗證超音頻排除與 16 kHz 低取樣率邊界。實機 WASAPI 複測的後半 16 段皆有活動；這是 API 資料證據，與完整 HUD 畫面、播放裝置普遍驗收及遊戲效能分開記錄。
+- **Skills**：`pr-author-maintainer`、`cross-agent-collaboration`、`ponytail`；`computer-use:computer-use` 僅用於將既有遊戲帶回前景取得真實音訊。
+## 2026-10-19 / 手把遙測卡片與延後 Subsystems（Codex as Codex）
+
+- **Scope**：PR #542 僅公開可與主儀表並存的手把卡片，Xbox／DualSense 在遙測元素區切換。Minimap、Touge Pacenotes、Telemetry Data Cards 與 Speed Sense FX 保留原碼／資產及 TODO，不在一般、WIP 或 fallback 選單顯示。
+- **Learning**：卡片應由共用 telemetry manager 管理 iframe／設定／資料重播，使用同一條遙測串流。主儀表切換不重載卡片；卡片與遙測總開關、destroy 會移除 iframe，HTML reload 後重播最新設定與資料。手把圖顯示遊戲遙測輸入而非實體手把連線狀態；`steer` 依 signed byte／127、`hand_brake` 依 byte／255 正規化，轉向標示百分比而非臆測輪角。
+- **設定契約**：舊 gamepad 樣式遷移為 VFD＋`showTeleGamepad`；保留明確卡片開關、總開關及版型。延後模組遷移回 VFD 並保存其設定。Rust、GUI 與 launcher 共用相同語意，兩欄 author metadata 與指定作者名稱保留。
+- **Evidence**：完整前端 1,811 passed／1 skipped，Windows 與獨立輸出的 LAN build 通過；Rust 預設全量 227 passed／3 ignored、無 HUD 全量 219 passed／2 ignored。共用設定／選單／frame lifecycle 契約涵蓋遷移、保存、重啟、主儀表並存、晚載入與清理。隔離瀏覽器核對雙版型、WIP 排除、獨立／總開關、左下位置、主儀表隱藏及 HTML reload 後仍保留卡片。
+- **Boundary**：未新增個別樣式的 Canvas 測試。瀏覽器截圖逾時；合成串流與 DOM／版面讀值不代表實體控制器、Tauri 或遊戲驗收。行為及延後範圍見 [說明](../docs/hud-subsystems.md)。
+
+## 2026-10-19 / HUD 視覺校準與螢幕百分比位移（Codex as Codex）
+
+- **Learning**：透明視窗與透明 body 正確，仍可能被 PNG 中不透明的暗色背景蓋住。新樣式共用素材載入處理只在圖片解碼時軟化暗色 alpha，保留亮色刻度；亮燈覆蓋層需移除重複暗底，避免疊圖再次加深背景。Forza 實機 Ford GT 與 Toyota 儀表已可透出道路。
+- **Scale**：使用既有 HUDCore 的 baseline × multiplier × global × user scale，不能直接改共用全域倍率。放大時 backing canvas 必須跟隨實際 zoom 與 DPR，繪圖座標仍維持原始設計單位，避免再縮放一次或變模糊。
+- **Controller**：依使用者修訂，手把卡片錨點預設為螢幕中心，X／Y 位移預設 0%，限制 −50..50%；分別相對視窗寬／高，正值往右／下。外層中心錨點不受內部儀表 zoom 影響。共用 normalizer 與 runtime 測試涵蓋預設值、正負小數、上限與非有限數。
+- **Skills**：`pr-author-maintainer`、`cross-agent-collaboration`、`huge-component-refactoring`、`halfmoon-design-system`、`ponytail`、`computer-use`。
+
+## 2026-10-20 / PR #543 單位與漂移契約重建驗證（Bagley as dot）
+
+- 與 main 35a60078 獨立整合；保留完整 NFSU2 normalization 與 main gamepad／minimap sibling blocks、遙測卡片與 deferred filters。選單與設定欄位採聯集，無重複註冊；Rust config 相對 main 僅增加原 NFSU2 七行驗證。
+- 依提供的來源 patch 重建 renderer 與 inert-fragment parser 測試，兩個檔案 SHA256 與提供值一致；速度採 displayUnits.speed，漂移採既有 body velocity 慣例。共用 Canvas 修正與測試只移植 #534 的相關變更。
+- Linux x64、Node 24.19.0、pnpm 11.19.0、Rust 1.99.1：完整 frontend 1823 passed／1 skipped；Windows 與 LAN build 通過；Cargo 預設 229 passed／2 ignored、無預設 219 passed／2 ignored；fmt 與 diff 檢查通過。main 手把遷移與延後模組保存契約均通過。
+- 未放寬 timeout、assertion 或 skip；不宣稱重現舊整棵 tree 或完成 Windows 原生視覺驗收。來源來自提供的 patch，不是 Library 下載。
+- Skills：pr-author-maintainer、pr-review-evaluation、halfmoon-design-system。

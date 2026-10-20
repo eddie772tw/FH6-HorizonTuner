@@ -290,7 +290,8 @@
                     if (payload && payload.nfsu2Face !== undefined && Number(payload.nfsu2Face) !== activeFace) {
                         setFace(payload.nfsu2Face);
                     }
-                    var useMph = (payload && payload.unit === 'mph') || (data.speed_unit === 'mph');
+                    var speedUnit = data.displayUnits && data.displayUnits.speed;
+                    var useMph = speedUnit ? speedUnit === 'mph' : Boolean(payload && payload.isMetric === false);
                     telemetry.speedUnit = useMph ? 'MPH' : 'KM/H';
                     if (useMph && data.speed_mph !== undefined) {
                         telemetry.speed = Number(data.speed_mph);
@@ -315,11 +316,13 @@
                         telemetry.boostPsi = Number(data.boost) * 14.5038;
                     }
 
-                    if (data.drift_angle !== undefined) {
-                        telemetry.drift = Number(data.drift_angle);
-                    } else if (data.slip_angle !== undefined) {
-                        telemetry.drift = Number(data.slip_angle);
-                    }
+                    // Body-velocity angle matches the existing Drift HUD convention.
+                    // Per-wheel slip_angle_* values describe tires, not vehicle drift.
+                    var vx = Number(data.vel_x) || 0;
+                    var vz = Number(data.vel_z) || 0;
+                    telemetry.drift = Math.hypot(vx, vz) > 0.5
+                        ? Math.max(-90, Math.min(90, Math.atan2(vx, vz) * 180 / Math.PI))
+                        : 0;
 
                     // Water temp from 4-wheel average tire temperature (Forza UDP native °F -> °C)
                     if (data.temp_fl !== undefined) {
