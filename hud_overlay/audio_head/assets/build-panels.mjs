@@ -5,6 +5,18 @@ import {fileURLToPath} from 'node:url';
 
 const out = fileURLToPath(new URL('.', import.meta.url));
 const glyphs = JSON.parse(readFileSync(out + 'panel-glyphs.json', 'utf8'));
+// Reuse upstream vector outlines. Original downloads and provenance live in brands/.
+const brands = {};
+for (const [name, width, height] of [['alpine',734.51,89.73],['pioneer',107,16],['pioneer_1969',7112,1000],['sony',100,18],['kenwood',460.5,74],['cdda',437.33334,268]]) {
+    const source = readFileSync(out + 'brands/' + name + '.svg', 'utf8').replaceAll('\r\n', '\n');
+    let body = source.match(/<svg\b[^>]*>([\s\S]*?)<\/svg>/)[1];
+    if (name === 'alpine') body = Array.from(body.matchAll(/<(?:rect|polygon|path)\b(?=[^>]*class="cls-1")[^>]*\/>/g), match => match[0]).join('');
+    body = body.replace(/<(?:style|metadata|title)\b[^>]*>[\s\S]*?<\/(?:style|metadata|title)>/g, '')
+        .replace(/<!--[\s\S]*?-->/g, '').replace(/\s(?:class|id)="[^"]*"/g, '')
+        .replace(/\sfill="(?!none)[^"]*"/g, '').replace(/fill:#[\da-f]+;?/gi, '')
+        .replace(/[ \t]+$/gm, '');
+    brands[name] = { width, height, body };
+}
 const n = value => Number(value.toFixed(3));
 const esc = value => String(value).replaceAll('&', '&amp;').replaceAll('<', '&lt;');
 const rect = (x, y, w, h, fill, radius = 0, extra = '') =>
@@ -29,9 +41,12 @@ function glyph(name, x, y, w, h, fill) {
     return `<path transform="translate(${x} ${y}) scale(${n(w/g.region.width)} ${n(h/g.region.height)})" fill="${fill || g.fill}" fill-rule="evenodd" d="${g.d}"/>`;
 }
 function alpine(x, y, color = '#a48b22', width = 88) {
-    let s = '';
-    for (let i = 0; i < 6; i++) s += line(x + i * 4, y, x + 12 + i * 4, y - 12, color, 1.4);
-    return s + text('ALPINE', x + 30, y, 14, color, width - 30);
+    return brand('alpine', x, y, width, 14, color);
+}
+function brand(name, x, baseline, width, height, color) {
+    const art = brands[name];
+    const scale = Math.min(width / art.width, height / art.height);
+    return `<g transform="translate(${n(x + (width-art.width*scale)/2)} ${n(baseline-art.height*scale)}) scale(${scale})" fill="${color}" fill-rule="evenodd">${art.body}</g>`;
 }
 function grid(x, y, cols, rows, stepX, stepY, w, h, color) {
     let s = '';
@@ -40,7 +55,7 @@ function grid(x, y, cols, rows, stepX, stepY, w, h, color) {
     return s;
 }
 function pioneer(x, y, width = 66, height = 10) {
-    return text('Pioneer', x, y, height, '#e5e8e8', width, 'font-family="Arial,sans-serif" font-style="italic" font-weight="900"');
+    return brand('pioneer', x, y, width, height, '#e5e8e8');
 }
 function corners(x, y, w, h, color) {
     return path(`M${x} ${y+8}V${y}H${x+8}M${x+w-8} ${y}H${x+w}V${y+8}M${x+w} ${y+h-8}V${y+h}H${x+w-8}M${x+8} ${y+h}H${x}V${y+h-8}`, color, 1);
@@ -62,7 +77,7 @@ function pane(name, w, h, content, defs = '', material = '') {
 {
     let s = frame(7, 2, 61, 13, '#424849', 3, .55) + pioneer(11, 12, 52, 9) + label('DEH-P6100R', 72, 13, 35, '#d2d4d3', 6);
     s += label('MOSFET 50W×4', 211, 11, 47, '#d5d6d6', 6) + label('DAB control', 262, 11, 36, '#d5d6d6', 6);
-    s += rds(303, 3, .7) + text('R·D·S', 320, 12, 9, '#c5c8c9', 26, italic) + label('COMPACT', 350, 7, 18, '#667073', 4) + label('disc', 350, 12, 18, '#667073', 5);
+    s += rds(303, 3, .7) + text('R·D·S', 320, 12, 9, '#c5c8c9', 26, italic) + brand('cdda', 350, 13, 18, 11, '#667073');
     s += frame(6, 18, 367, 71, '#292b27', 4, .65);
     s += path('M291 23H278Q274 23 274 28V41Q274 47 279 47H291M350 23H363Q368 23 368 28V41Q368 47 363 47H350', '#00b81a', 1.25);
     s += path('M306 28L311 23H323L328 28ZM306 44L311 49H323L328 44ZM305 31L297 35L305 39ZM337 31L345 35L337 39Z', '#00c52e', 1.1);
@@ -108,7 +123,7 @@ function pane(name, w, h, content, defs = '', material = '') {
 
 {
     let s = label('DEX-P1R', 6, 11, 37, '#d0d6db', 9) + label('MULTI-CD CONTROL', 49, 11, 65, '#cbd0d2', 6) + pioneer(120, 11, 58, 10);
-    s += label('SUPER-TUNER', 280, 11, 48, '#b7c0c5', 7) + rds(339, 2, .7) + text('R·D·S', 358, 11, 9, '#c9ced2', 31, italic) + label('COMPACT', 392, 6, 15, '#3b4050', 3) + label('disc', 392, 11, 15, '#3b4050', 4);
+    s += label('SUPER-TUNER', 280, 11, 48, '#b7c0c5', 7) + rds(339, 2, .7) + text('R·D·S', 358, 11, 9, '#c9ced2', 31, italic) + brand('cdda', 392, 12, 15, 10, '#3b4050');
     s += grid(6, 22, 15, 10, 4.4, 4.4, 3.2, 3.2, '#100c21') + label('Hz 25 ─ 500 ─ 16kHz', 6, 79, 68, '#bfbbd7', 6);
     s += frame(6, 83, 68, 11, '#aa39ef', 0, .8) + label('B·B·U·D·J·V·U', 14, 91, 54, '#bb6af0', 6);
     s += label('RTA   STEREO', 81, 94, 64, '#00bd72', 9) + frame(145, 85, 5, 8, '#00bd72', 2) + frame(149, 85, 5, 8, '#00bd72', 2);
@@ -119,7 +134,7 @@ function pane(name, w, h, content, defs = '', material = '') {
 }
 
 {
-    let s = pioneer(16, 12, 85, 12) + label('DEH-P835R', 111, 12, 38, '#ccd2d2', 7);
+    let s = brand('pioneer_1969', 1, 14, 104, 14, '#e5e8e8') + label('DEH-P835R', 111, 12, 38, '#ccd2d2', 7);
     s += label('MULTI-CD CONTROL', 158, 12, 54, '#c3c9cc', 5) + label('HIGH-POWER 40W×4', 218, 12, 75, '#e6e7e8', 7) + label('SOUND RETRIEVAL SYSTEM', 303, 12, 81, '#d2d6d8', 5) + label('DSP CONTROL', 402, 12, 48, '#c3c8d0', 7);
     s += corners(6, 25, 83, 58, '#4b8991') + label('ON  ▲  BT', 29, 33, 39, '#28525a', 6) + label('TRK       SEEK', 18, 45, 60, '#5e9da7', 6);
     s += path('M12 52L20 47V57ZM22 52L30 47V57ZM59 47L67 52L59 57ZM69 47L77 52L69 57ZM42 30V70M38 35L42 30L46 35M38 65L42 70L46 65', '#38797c', 1);
@@ -135,7 +150,7 @@ function pane(name, w, h, content, defs = '', material = '') {
 }
 
 {
-    let s = text('SONY', 194, 129, 12, '#c3c4c7', 50, 'font-family="Georgia,serif" font-weight="700"');
+    let s = brand('sony', 194, 129, 50, 12, '#c3c4c7');
     s += path('M8 17H84L91 10M15 11H89L94 6M349 17H432M352 11H425L420 6M8 109H79L91 116M349 109H432M356 116H416L423 111', '#164582', 1);
     for (const x of [8, 407]) {
         for (let j = 0; j < 7; j++) s += path(`M${x+j*4} 23V36M${x+j*4} 42V55M${x+j*4} 61V74M${x+j*4} 80V93`, '#283d50', 1.4);
@@ -187,13 +202,13 @@ function pane(name, w, h, content, defs = '', material = '') {
         s += grid(355, y, 36, 6, 2.3, 1.7, .85, .7, '#163e5c');
         s += grid(355, y, 13+row*4, 6, 2.3, 1.7, .85, .7, '#418a92');
     }
-    s += text('DAB', 453, 20, 12, '#bdc1c0', 29) + label('SYSTEM', 454, 28, 27, '#b0b7b8', 4) + rds(459, 43, .65) + label('RDS', 461, 61, 14, '#a4abad', 5) + label('COMPACT', 452, 77, 28, '#999fa0', 4) + text('disc', 450, 88, 12, '#a3acad', 34) + label('DIGITAL AUDIO', 451, 93, 33, '#939a9c', 4);
+    s += text('DAB', 453, 20, 12, '#bdc1c0', 29) + label('SYSTEM', 454, 28, 27, '#b0b7b8', 4) + rds(459, 43, .65) + label('RDS', 461, 61, 14, '#a4abad', 5) + brand('cdda', 450, 93, 34, 22, '#a3acad');
     s += text('V-DRIVE 60W×4', 108, 110, 10, '#acb5bd', 99, italic) + label('CD RECEIVER', 230, 110, 72, '#9ca8af', 10) + label('CDA-9815RB', 315, 110, 73, '#b9c1c6', 10) + alpine(404, 110, '#b9bec3', 83);
     pane('alpine_9815', 490, 110, s, '', path('M0 96L129 110H490V96Z', 'none', 0, '#080d13'));
 }
 
 {
-    let s = text('KENWOOD', 4, 12, 14, '#d4d6d6', 81) + text('40W×4', 94, 12, 9, '#c8cdce', 38, italic) + text('KRC-759R', 144, 12, 9, '#b9c1c6', 59, italic) + text('CR2-K2i TUNER', 216, 12, 9, '#c8cccf', 87, italic) + frame(325, 4, 56, 8, '#b7c0c6', 0, .6) + label('◧ DOLBY B NR', 328, 10, 50, '#c5cbd1', 5);
+    let s = brand('kenwood', 4, 13, 81, 13, '#d4d6d6') + text('40W×4', 94, 12, 9, '#c8cdce', 38, italic) + text('KRC-759R', 144, 12, 9, '#b9c1c6', 59, italic) + text('CR2-K2i TUNER', 216, 12, 9, '#c8cccf', 87, italic) + frame(325, 4, 56, 8, '#b7c0c6', 0, .6) + label('◧ DOLBY B NR', 328, 10, 50, '#c5cbd1', 5);
     s += rect(7, 81, 27, 14, '#dd9c27', 2) + text('RDS', 9, 92, 11, '#181d0e', 23, italic) + label('DAB', 38, 93, 24, '#343021', 11) + label('MTL', 67, 93, 24, '#083e2c', 11) + label('REG', 96, 93, 25, '#a7b8c4', 11);
     s += label('TP  NEWS', 74, 106, 49, '#3b3d36', 9) + label('DUAL TP', 69, 121, 55, '#073f2f', 11) + rect(7, 103, 36, 14, '#242016', 1) + label('LOUD', 10, 114, 30, '#51411b', 10);
     s += grid(132, 83, 49, 15, 2.8, 2.5, .85, 1, '#122a35');

@@ -64,6 +64,8 @@
         import { normalizeAudioHeadConfig, normalizeAuxiliaryConfig }                           from './shared/overlay-config.js';
         import { createGaugeValueReader, normalizeGaugeValueSources }                          from './shared/gauge-sources.js';
 
+        import { normalizeSubsystemStyle, normalizeSubsystemConfig } from './shared/deferred-styles.js';
+
         // Initialize Host-level Central Telemetry Cluster
         if (TelemetryCardsManager) {
             TelemetryCardsManager.init(document.getElementById('teleCardsMount'));
@@ -82,7 +84,7 @@
         const isLegacyS650Style = (name) => typeof name === 'string' && name !== 's650_hmi' && name.startsWith('s650_');
 
         function normalizeHudConfig(config) {
-            const normalized = normalizeAuxiliaryConfig(normalizeAudioHeadConfig(config || {}));
+            const normalized = normalizeSubsystemConfig(normalizeAuxiliaryConfig(normalizeAudioHeadConfig(config || {})));
             if (normalized.hudStyle === 'initial_d') {
                 normalized.hudStyle = 'classic_jdm';
                 if (!normalized.classicJdmTachStyle) normalized.classicJdmTachStyle = 'trd';
@@ -113,6 +115,7 @@
 
         function normalizeHudStyle(name) {
             if (name === 'audio_head' || name === 'auxiliary_gauges') return 'vfd';
+            name = normalizeSubsystemStyle(name);
             if (name === 'initial_d' || name === 'defi_triple') return 'classic_jdm';
             return LEGACY_S650_STYLE_MAP[name] || isLegacyS650Style(name) ? 's650_hmi' : name;
         }
@@ -266,6 +269,7 @@
 
         await loadHud(activeHud);
         syncIndependentElements(window._currentHudConfig);
+        TelemetryCardsManager?.update(null, window._currentHudConfig || {});
         initUtils();
         initWebSocket();
         initCoordinator();
@@ -345,6 +349,7 @@
                     activeHud = normalizeHudStyle(ev.data.hudStyle);
                 }
                 console.log('[Launcher] Received hud:reload, reloading HUD:', activeHud);
+                TelemetryCardsManager?.reloadFrames();
                 postToHud('hud:reload');
                 loadHud(activeHud, true);
                 syncIndependentElements(window._currentHudConfig, true);

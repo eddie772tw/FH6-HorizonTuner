@@ -974,8 +974,37 @@
 - **Scope**：使用者限縮本輪只改 Audio Head。九款面板重繪為獨立 SVG；靜態圖片直接由瀏覽器按 zoom／DPR 呈現，動態 Canvas 繼續使用原有邏輯座標、時間域動畫、音訊及媒體來源。其他儀表只做來源盤點。
 - **Learning**：研究文件的圖集尺寸不能取代 DDS header／PNG IHDR：本機 res_220 實際為524×988，面板寬380–490px。重設 PNG 尺寸不會還原細節；即使日後換成 SVG，若仍在載入時縮成 deck.w×deck.h 的 Canvas，也會重新失去向量的縮放品質。
 - **Materials**：完整矩形、Panasonic 金色和下方材質先在同一 SVG 群組合成，再以 opacity=.75 呈現；裝飾／文字在另一層。避免兩個75%背景重疊成93.75%，也不再以亮度猜測背景。複雜標記保留原圖輪廓路徑，來源區域與SHA列於panel-glyphs.json；不宣稱可恢復原圖不存在的細節或完整原作字型。
+- **Brands**：依追加指示沿用Alpine／Pioneer／Sony／Kenwood官網SVG，P835R採Commons保存、經官方沿革核對的舊版Pioneer；Compact Disc Digital Audio亦沿用Philips來源向量。保留長寬比、圖形與來源SHA，僅套主機原配色；Alpine移除原主機沒有的標語，避免以一般字型重新拼出商標。來源SVG固定LF，正規化換行及行尾空白前後各留SHA，避免Windows checkout使來源校驗漂移。
 - **Validation**：基線與修改後完整frontend Vitest均1821 passed／1 skipped，TypeScript／Vite build通過。九款SVG於100%／200% scale及DPR1／1.25／1.5／2共45組離線載入／版面檢查無JS錯誤；產物可由無額外相依的Node腳本重建並以--check確認一致。無新增個別樣式單元測試；離線圖與遊戲證據分列。
 - **Skills**：`ponytail`、`pr-author-maintainer`、`halfmoon-design-system`、`huge-component-refactoring`；實際Windows畫面擷取採`computer-use:computer-use`。
+## 2026-10-19 / WASAPI 高取樣率頻譜範圍（Codex as Codex）
+
+- **Learning**：頻譜 JSON 有完整 32 段，不代表頻段涵蓋範圍正確。實機 endpoint 為 192 kHz；將正頻率 FFT 全部配置到顯示時，右半部涵蓋約 24–96 kHz，導致一般音訊只在左側活動。同一 2 kHz 音調在舊版 44.1／96 kHz 下的峰值位置也會改變。
+- **Contract**：WASAPI 使用 `GetMixFormat().nSamplesPerSec`，將顯示範圍上限限制為 20 kHz 或較低 Nyquist；保留 32 段、平方頻段分配、增益與 VU。診斷新增 `native.audio.sampleRate`。無取樣率參數的 external PCM fixture 維持舊相容輸出，不能代替原生取樣率回歸。
+- **Evidence**：受控 2／8 kHz 音調跨 44.1／48／96／192 kHz 維持頻段位置，另驗證超音頻排除與 16 kHz 低取樣率邊界。實機 WASAPI 複測的後半 16 段皆有活動；這是 API 資料證據，與完整 HUD 畫面、播放裝置普遍驗收及遊戲效能分開記錄。
+- **Skills**：`pr-author-maintainer`、`cross-agent-collaboration`、`ponytail`；`computer-use:computer-use` 僅用於將既有遊戲帶回前景取得真實音訊。
+## 2026-10-19 / 手把遙測卡片與延後 Subsystems（Codex as Codex）
+
+- **Scope**：PR #542 僅公開可與主儀表並存的手把卡片，Xbox／DualSense 在遙測元素區切換。Minimap、Touge Pacenotes、Telemetry Data Cards 與 Speed Sense FX 保留原碼／資產及 TODO，不在一般、WIP 或 fallback 選單顯示。
+- **Learning**：卡片應由共用 telemetry manager 管理 iframe／設定／資料重播，使用同一條遙測串流。主儀表切換不重載卡片；卡片與遙測總開關、destroy 會移除 iframe，HTML reload 後重播最新設定與資料。手把圖顯示遊戲遙測輸入而非實體手把連線狀態；`steer` 依 signed byte／127、`hand_brake` 依 byte／255 正規化，轉向標示百分比而非臆測輪角。
+- **設定契約**：舊 gamepad 樣式遷移為 VFD＋`showTeleGamepad`；保留明確卡片開關、總開關及版型。延後模組遷移回 VFD 並保存其設定。Rust、GUI 與 launcher 共用相同語意，兩欄 author metadata 與指定作者名稱保留。
+- **Evidence**：完整前端 1,811 passed／1 skipped，Windows 與獨立輸出的 LAN build 通過；Rust 預設全量 227 passed／3 ignored、無 HUD 全量 219 passed／2 ignored。共用設定／選單／frame lifecycle 契約涵蓋遷移、保存、重啟、主儀表並存、晚載入與清理。隔離瀏覽器核對雙版型、WIP 排除、獨立／總開關、左下位置、主儀表隱藏及 HTML reload 後仍保留卡片。
+- **Boundary**：未新增個別樣式的 Canvas 測試。瀏覽器截圖逾時；合成串流與 DOM／版面讀值不代表實體控制器、Tauri 或遊戲驗收。行為及延後範圍見 [說明](../docs/hud-subsystems.md)。
+
+## 2026-10-19 / HUD 視覺校準與螢幕百分比位移（Codex as Codex）
+
+- **Learning**：透明視窗與透明 body 正確，仍可能被 PNG 中不透明的暗色背景蓋住。新樣式共用素材載入處理只在圖片解碼時軟化暗色 alpha，保留亮色刻度；亮燈覆蓋層需移除重複暗底，避免疊圖再次加深背景。Forza 實機 Ford GT 與 Toyota 儀表已可透出道路。
+- **Scale**：使用既有 HUDCore 的 baseline × multiplier × global × user scale，不能直接改共用全域倍率。放大時 backing canvas 必須跟隨實際 zoom 與 DPR，繪圖座標仍維持原始設計單位，避免再縮放一次或變模糊。
+- **Controller**：依使用者修訂，手把卡片錨點預設為螢幕中心，X／Y 位移預設 0%，限制 −50..50%；分別相對視窗寬／高，正值往右／下。外層中心錨點不受內部儀表 zoom 影響。共用 normalizer 與 runtime 測試涵蓋預設值、正負小數、上限與非有限數。
+- **Skills**：`pr-author-maintainer`、`cross-agent-collaboration`、`huge-component-refactoring`、`halfmoon-design-system`、`ponytail`、`computer-use`。
+
+## 2026-10-20 / PR #541 與 main 整合驗證（Bagley as dot）
+
+- 保留 Audio Head 與 main 手把遙測卡片／延後模組的正規化、選單過濾、啟動更新、測試與翻譯；僅整合衝突，不處置 CodeQL 討論。
+- Linux x64、Node 24.19.0、pnpm 11.19.0、Rust 1.99.1：frontend Vitest 1825 passed／1 skipped；Windows 與 LAN frontend build 通過；SVG generator --check 九款一致；Cargo 預設功能 230 passed／2 ignored、無預設功能 220 passed／2 ignored；cargo fmt 與 git diff --check 通過。
+- 前端 build 與 Cargo 測試依序執行，未變更測試 timeout、assertion 或既有 skip；未執行 Windows 原生視覺驗收。
+- Skills：pr-author-maintainer、pr-review-evaluation、halfmoon-design-system。
+
 ## 2026-10-19 / Auxiliary 獨立排列與共用數值來源（Codex as Codex）
 
 - **Scope**：PR #540 接續 #541 的獨立元素基礎；輔助儀表另設複選選單與開關，預設右側中央。Audio Head 的位移輸入改由共用元件維持負號草稿。既有 CI 的 base branch filter 加入 `feat/hud-audio-head`，使 stacked PR 能執行同一組檢查。
@@ -997,3 +1026,10 @@
 - **來源與狀態**：共用虛擬來源`estimated_oil_pressure_psi`加入來源選單。自訂來源直接讀值，不套模擬濾波；缺值、離開race、換車或時鐘重啟清除狀態。JS與Rust僅遷移完全吻合的舊unassigned預設，保留使用者改過的來源／描述；設定存讀與重啟均驗證。
 - **Evidence**：基線1843 passed／1 skipped；修改後完整前端1848 passed／1 skipped、build通過；Rust預設全量229 passed／3 ignored、fmt與diff檢查通過。共用契約驗證30／60／120／144／240Hz相同經過時間的壓力一致、升降載響應、override與reset；未新增個別樣式測試。離線控制輸入五表圖及真實遊戲圖分開保存第六輪，靜態圖不等同真實油壓或跨更新率實機驗收。
 - **Skills**：`ponytail`、`pr-author-maintainer`、`halfmoon-design-system`、`huge-component-refactoring`。
+
+## 2026-10-20 / PR #540 整合已驗證的 #541（Bagley as dot）
+
+- 保留輔助儀表、共用數值來源與 af51eb5 的 GReddy 校正；Audio Head 素材、來源、generator 與輸出完整採用 #541，與 main 手把／延後模組設定、選單、launcher、測試及翻譯並存。
+- Linux x64、Node 24.19.0、pnpm 11.19.0、Rust 1.99.1：frontend Vitest 1863 passed／1 skipped；Windows 與 LAN build 通過；SVG generator --check 九款一致；Cargo 預設功能 233 passed／2 ignored、無預設功能 223 passed／2 ignored；fmt 與 diff 檢查通過。
+- 全量驗證依序執行，未放寬 timeout、assertion 或 skip；未執行 Windows 原生視覺驗收，未處置 CodeQL 討論。
+- Skills：pr-author-maintainer、pr-review-evaluation、halfmoon-design-system。

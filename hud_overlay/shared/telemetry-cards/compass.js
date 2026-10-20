@@ -140,7 +140,51 @@ export function renderCompass(canvas, data, config, domCache) {
     var startTick = Math.floor(minAngle / 5) * 5;
     var endTick = Math.ceil(maxAngle / 5) * 5;
 
-    // Draw ticks and labels
+    // Draw ticks
+    ctx.beginPath();
+    for (var tickDeg = startTick; tickDeg <= endTick; tickDeg += 5) {
+        var diff = tickDeg - headingDeg;
+        var x = centerX + diff * pixelsPerDegree;
+        if (x < -20 || x > w + 20) continue;
+        if (normalizeAngle(tickDeg) % 45 === 0) {
+            ctx.moveTo(x, baselineY);
+            ctx.lineTo(x, baselineY + 14);
+        }
+    }
+    ctx.strokeStyle = primaryColor;
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+
+    ctx.beginPath();
+    for (var tickDeg = startTick; tickDeg <= endTick; tickDeg += 5) {
+        var diff = tickDeg - headingDeg;
+        var x = centerX + diff * pixelsPerDegree;
+        if (x < -20 || x > w + 20) continue;
+        var norm = normalizeAngle(tickDeg);
+        if (norm % 15 === 0 && norm % 45 !== 0) {
+            ctx.moveTo(x, baselineY);
+            ctx.lineTo(x, baselineY + 14);
+        }
+    }
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+    ctx.lineWidth = 2.0;
+    ctx.stroke();
+
+    ctx.beginPath();
+    for (var tickDeg = startTick; tickDeg <= endTick; tickDeg += 5) {
+        var diff = tickDeg - headingDeg;
+        var x = centerX + diff * pixelsPerDegree;
+        if (x < -20 || x > w + 20) continue;
+        if (normalizeAngle(tickDeg) % 15 !== 0) {
+            ctx.moveTo(x, baselineY);
+            ctx.lineTo(x, baselineY + 7);
+        }
+    }
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
+    ctx.lineWidth = 1.0;
+    ctx.stroke();
+
+    // Draw labels
     for (var tickDeg = startTick; tickDeg <= endTick; tickDeg += 5) {
         var diff = tickDeg - headingDeg;
         var x = centerX + diff * pixelsPerDegree;
@@ -150,45 +194,21 @@ export function renderCompass(canvas, data, config, domCache) {
         var normalizedTick = normalizeAngle(tickDeg);
         var isCardinal = (normalizedTick % 45 === 0);
         var isMajor = (normalizedTick % 15 === 0);
-
-        // Grade 1: Major Tick (14px length, 2px stroke width)
-        // Grade 2: Minor Tick (7px length, 1px stroke width)
         var tickLength = isMajor ? 14 : 7;
-        var tickWidth = isMajor ? 2.0 : 1.0;
 
-        ctx.beginPath();
-        ctx.moveTo(x, baselineY);
-        ctx.lineTo(x, baselineY + tickLength);
-
-        if (isCardinal) {
-            ctx.strokeStyle = primaryColor;
-            ctx.lineWidth = 2.5;
-        } else if (isMajor) {
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
-            ctx.lineWidth = tickWidth;
-        } else {
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
-            ctx.lineWidth = tickWidth;
-        }
-        ctx.stroke();
-
-        // Labels for Major Ticks
         if (isCardinal) {
             var cardinalName = CARDINAL_POINTS[normalizedTick];
             ctx.font = 'bold 12px "ForzaGear", Arial, sans-serif';
             ctx.fillStyle = primaryColor;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'bottom';
-            // Cardinal Abbreviation (N, NE, E, SE, S, SW, W, NW)
             ctx.fillText(cardinalName, x, baselineY - 3);
 
-            // Auxiliary Degree Number below the tick
             ctx.font = '9px monospace';
             ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
             ctx.textBaseline = 'top';
             ctx.fillText(normalizedTick.toString(), x, baselineY + tickLength + 3);
         } else if (isMajor) {
-            // Auxiliary Degree Number below major tick (e.g. 15, 30, 60, 75...)
             ctx.font = '10px monospace';
             ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
             ctx.textAlign = 'center';

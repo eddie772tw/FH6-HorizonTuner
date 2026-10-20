@@ -17,6 +17,15 @@ describe('hudStyleScanner frontend module tests', () => {
     expect(formatHudDropdownOptions(styles, undefined, { includeWip: true, currentStyle: 'auxiliary_gauges' }).map(option => option.value)).toEqual(['vfd']);
     expect(formatHudDropdownOptions([]).some(option => option.value === 'auxiliary_gauges')).toBe(false);
     expect(formatHudDropdownOptions([], {}, { includeWip: true, wipDisplayNames: { auxiliary_gauges: 'Aux', audio_head: 'Audio' } })).toEqual([]);
+});
+
+  it('keeps independent and deferred subsystem modules out of the speedometer selector, including WIP', () => {
+    const hidden = ['minimap_overlay', 'touge_pacenotes', 'telemetry_cards', 'speed_effects'];
+    const styles: HudStyleEntry[] = ['vfd', 'gamepad_overlay', ...hidden].map(id => ({ id, source: 'builtin', urlPrefix: '/hud' }));
+    for (const includeWip of [false, true]) {
+      expect(formatHudDropdownOptions(styles, undefined, { includeWip, currentStyle: 'minimap_overlay' }).map(option => option.value)).toEqual(['vfd']);
+      expect(formatHudDropdownOptions([], undefined, { includeWip }).some(option => hidden.includes(option.value))).toBe(false);
+    }
   });
   it('fetchHudStylesList should correctly call backend API and return parsed styles', async () => {
     const mockResponse: HudStyleEntry[] = [

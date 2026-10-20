@@ -36,6 +36,26 @@ it('normalizes independent selection, arrangement and offsets without coupling v
   expect(normalizeHudRuntimeConfig({ auxGaugeFaces: [], auxGaugeMaxPerRow: '2' })).toMatchObject({ auxGaugeFaces: [], auxGaugeMaxPerRow: 3 });
 });
 
+it('hides deferred subsystem selections without dropping retained module settings', () => {
+  for (const hudStyle of ['minimap_overlay', 'touge_pacenotes', 'telemetry_cards', 'speed_effects']) {
+    expect(normalizeHudRuntimeConfig({ hudStyle, minimapMode: 'north_up', pluginKey: 'keep' })).toMatchObject({
+      hudStyle: 'vfd', minimapMode: 'north_up', pluginKey: 'keep',
+    });
+  }
+  expect(normalizeHudRuntimeConfig({ hudStyle: 'vfd' }).hudStyle).toBe('vfd');
+});
+
+it('migrates the legacy controller to a telemetry card and preserves visibility and layout across gauge changes', () => {
+  const legacy = normalizeHudRuntimeConfig({ hudStyle: 'gamepad_overlay', gamepadLayout: 'dualsense', elements: { showGauge: true } });
+  expect(legacy).toMatchObject({ hudStyle: 'vfd', gamepadLayout: 'dualsense', gamepadOffsetX: 0, gamepadOffsetY: 0, elements: { showTeleGamepad: true } });
+  expect(normalizeHudRuntimeConfig({ gamepadOffsetX: -20, gamepadOffsetY: 12.5 })).toMatchObject({ gamepadOffsetX: -20, gamepadOffsetY: 12.5 });
+  expect(normalizeHudRuntimeConfig({ gamepadOffsetX: 9000, gamepadOffsetY: NaN })).toMatchObject({ gamepadOffsetX: 50, gamepadOffsetY: 0 });
+  expect(applyHudConfigPatch(legacy, { hudStyle: 'gt7', elements: { showGauge: false } })).toMatchObject({
+    hudStyle: 'gt7', gamepadLayout: 'dualsense', elements: { showTeleGamepad: true, showGauge: false },
+  });
+  expect(normalizeHudRuntimeConfig({ hudStyle: 'gamepad_overlay', elements: { showTeleGamepad: false } }).elements.showTeleGamepad).toBe(false);
+});
+
 function deferred<T>() {
   let resolve!: (value: T) => void;
   const promise = new Promise<T>(nextResolve => { resolve = nextResolve; });

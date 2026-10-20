@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<!-- TODO(subsystems): evaluate data inputs and independent-element UX before public UI exposure. Renderer retained for evaluation. -->
+<!--
+  [設計決策紀錄 / Design Decision Note]
+  1. 溫度與油壓模型基準：本專案 HUD 體系若涉及水溫顯示，統一使用四輪平均胎溫 (`TireTemp`)；油溫與油壓則依確定性熱力學與油壓代理模型模擬（本速度特效面板僅消費即時車速）。
+  2. 全螢幕速度線與鏡頭震動隔離：將 Canvas 擴展為全視窗尺寸 (`1920x1080`)，並將鏡頭震動位移作用於內部 `#effectsCanvas` 而非 `#speedEffectsContainer`，避免覆寫 `HUDCore` 之縮放與定位矩陣。
+-->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>High-Speed Effects & Camera Shake</title>
+    <link rel="stylesheet" href="../shared/hud-base.css">
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: transparent !important;
+        }
+        .speed-effects-container {
+            width: 100vw;
+            height: 100vh;
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            user-select: none;
+            overflow: hidden;
+        }
+        #effectsCanvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="hud-root-wrapper">
+        <div class="hud-gauge-container speed-effects-container" id="speedEffectsContainer">
+            <canvas id="effectsCanvas" width="1920" height="1080"></canvas>
+        </div>
+    </div>
+
+    <script src="../shared/hud-core.js"></script>
+    <script>
+        (function() {
+            var canvas = document.getElementById('effectsCanvas');
+            var ctx = canvas.getContext('2d');
+            var container = document.getElementById('speedEffectsContainer');
+
+            var fxState = {
+                speed_kmh: 245,
+                speedDisplay: 245,
+                speedUnit: 'KM/H',
+                speed_start: 120,
+                speed_end: 320,
+                intensity: 0.62,
+                shakeX: 0,
+                shakeY: 0
+            };
+
+            var particles = [];
+            for (var i = 0; i < 85; i++) {
+                particles.push({
+                    angle: Math.random() * Math.PI * 2,
+                    dist: Math.random() * 750 + 120,
+                    speed: Math.random() * 18 + 8,
+                    len: Math.random() * 70 + 30,
+                    alpha: Math.random() * 0.7 + 0.3
+                });
+            }
+
+            function render() {
+                var w = canvas.width;
+                var h = canvas.height;
+                var cx = w / 2;
+                var cy = h / 2;
+
+                ctx.clearRect(0, 0, w, h);
+
+                var norm = (fxState.speed_kmh - fxState.speed_start) / (fxState.speed_end - fxState.speed_start);
+                fxState.intensity = Math.max(0, Math.min(1.0, norm));
+
+                if (fxState.intensity > 0.05) {
+                    var shakeAmp = fxState.intensity * 6.0;
+                    fxState.shakeX = (Math.random() - 0.5) * shakeAmp;
+                    fxState.shakeY = (Math.random() - 0.5) * shakeAmp;
+
+                    canvas.style.transform = 'translate(' + fxState.shakeX.toFixed(1) + 'px, ' + fxState.shakeY.toFixed(1) + 'px)';
+
+                    var vigGrad = ctx.createRadialGradient(cx, cy, 240, cx, cy, Math.max(w, h) * 0.65);
+                    vigGrad.addColorStop(0, 'rgba(0, 0, 0, 0)');
+                    vigGrad.addColorStop(0.7, 'rgba(0, 0, 0, ' + (fxState.intensity * 0.22) + ')');
+                    vigGrad.addColorStop(1, 'rgba(2, 6, 23, ' + (fxState.intensity * 0.58) + ')');
+                    ctx.fillStyle = vigGrad;
+                    ctx.fillRect(0, 0, w, h);
+
+                    ctx.save();
+                    for (var i = 0; i < particles.length; i++) {
+                        var p = particles[i];
+                        p.dist += p.speed * (1 + fxState.intensity * 3.5);
+                        if (p.dist > 1100) {
+                            p.dist = 120 + Math.random() * 90;
+                            p.angle = Math.random() * Math.PI * 2;
+                        }
+
+                        var x1 = cx + Math.cos(p.angle) * p.dist;
+                        var y1 = cy + Math.sin(p.angle) * p.dist;
+                        var x2 = cx + Math.cos(p.angle) * (p.dist + p.len * fxState.intensity);
+                        var y2 = cy + Math.sin(p.angle) * (p.dist + p.len * fxState.intensity);
+
+                        var streakAlpha = p.alpha * fxState.intensity;
+                        ctx.strokeStyle = (i % 3 === 0)
+                            ? 'rgba(0, 240, 255, ' + streakAlpha + ')'
+                            : (i % 3 === 1)
+                            ? 'rgba(255, 255, 255, ' + streakAlpha + ')'
+                            : 'rgba(239, 68, 68, ' + (streakAlpha * 0.6) + ')';
+
+                        ctx.lineWidth = 1.8 + fxState.intensity * 1.8;
+                        ctx.beginPath();
+                        ctx.moveTo(x1, y1);
+                        ctx.lineTo(x2, y2);
+                        ctx.stroke();
+                    }
+                    ctx.restore();
+
+                    ctx.save();
+                    var edgeGrad = ctx.createLinearGradient(0, 0, w, 0);
+                    edgeGrad.addColorStop(0, 'rgba(0, 240, 255, ' + (fxState.intensity * 0.35) + ')');
+                    edgeGrad.addColorStop(0.08, 'transparent');
+                    edgeGrad.addColorStop(0.92, 'transparent');
+                    edgeGrad.addColorStop(1, 'rgba(239, 68, 68, ' + (fxState.intensity * 0.35) + ')');
+                    ctx.fillStyle = edgeGrad;
+                    ctx.fillRect(0, 0, w, h);
+                    ctx.restore();
+                } else {
+                    canvas.style.transform = 'none';
+                }
+
+                ctx.save();
+                ctx.fillStyle = 'rgba(15, 23, 42, 0.88)';
+                ctx.strokeStyle = 'rgba(0, 240, 255, 0.35)';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.roundRect(cx - 160, h - 54, 320, 32, 6);
+                ctx.fill();
+                ctx.stroke();
+
+                ctx.fillStyle = '#00f0ff';
+                ctx.font = 'bold 13px Consolas, monospace';
+                ctx.textAlign = 'center';
+                ctx.fillText(
+                    'SPEED: ' + Math.round(fxState.speedDisplay) + ' ' + fxState.speedUnit + '  |  WARP: ' + Math.round(fxState.intensity * 100) + '%',
+                    cx,
+                    h - 34
+                );
+                ctx.restore();
+            }
+
+            window._renderSpeedEffects = render;
+
+            function animLoop() {
+                render();
+                requestAnimationFrame(animLoop);
+            }
+            requestAnimationFrame(animLoop);
+
+            HUDCore.registerStyle('speed_effects', {
+                containerId: 'speedEffectsContainer',
+                scaleMultiplier: 1.0,
+
+                onFrame: function(data, payload) {
+                    if (!data) return;
+                    var isMph = (payload && payload.unit === 'mph') || data.unit === 'mph';
+                    var rawSpd = data.speed !== undefined ? Number(data.speed) : (Number(data.speed_kmh) || 0);
+                    fxState.speedDisplay = rawSpd;
+                    fxState.speedUnit = isMph ? 'MPH' : 'KM/H';
+                    fxState.speed_kmh = data.speed_kmh !== undefined
+                        ? Number(data.speed_kmh)
+                        : (isMph ? rawSpd * 1.60934 : rawSpd);
+                },
+
+                onElementsChange: function(elements) {
+                    if (container) {
+                        container.style.display = elements.showGauge === false ? 'none' : 'block';
+                    }
+                },
+
+                onAnimate: function() {
+                    var t = 0;
+                    var sweepInterval = setInterval(function() {
+                        t += 0.08;
+                        fxState.speed_kmh = 100 + Math.sin(t) * 220;
+                        fxState.speedDisplay = fxState.speed_kmh;
+                        if (t > Math.PI * 2) {
+                            clearInterval(sweepInterval);
+                            fxState.speed_kmh = 245;
+                            fxState.speedDisplay = 245;
+                        }
+                    }, 16);
+                }
+            });
+
+            HUDCore.init('speed_effects');
+            render();
+        })();
+    </script>
+</body>
+</html>
