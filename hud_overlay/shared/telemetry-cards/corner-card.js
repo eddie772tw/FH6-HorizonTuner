@@ -158,7 +158,7 @@ export function renderCorners(data, showSusp, showSlip, showTemp, tireHist, susp
                     var bins = _sharedBins;
 
                     for (var hi = 0; hi < tHist.length; hi++) {
-                        var p = tHist[(tHist._offset + hi) % tHist.length];
+                        var p = tHist[hi];
                         if (p.temp <= 0) continue;
                         var normT = clamp((p.temp - TEMP_HIST_MIN_F) / tempRange, 0, 1);
                         var bIdx  = Math.min(numBins - 1, Math.floor(normT * numBins));
