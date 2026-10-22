@@ -6,6 +6,8 @@
 export function createOverlayEventForwarder(postToHud, schedule = setTimeout) {
     let pendingAudio = null;
     let audioFlushScheduled = false;
+    let latestAudio = null;
+    let latestMedia = null;
 
     function flushAudio() {
         audioFlushScheduled = false;
@@ -18,6 +20,7 @@ export function createOverlayEventForwarder(postToHud, schedule = setTimeout) {
 
     return {
         onAudio(data) {
+            latestAudio = data;
             pendingAudio = data;
             if (!audioFlushScheduled) {
                 audioFlushScheduled = true;
@@ -25,7 +28,12 @@ export function createOverlayEventForwarder(postToHud, schedule = setTimeout) {
             }
         },
         onMedia(data) {
+            latestMedia = data;
             postToHud('hud:media', { data });
+        },
+        replay(post) {
+            if (latestAudio !== null) post('hud:audio', { data: latestAudio });
+            if (latestMedia !== null) post('hud:media', { data: latestMedia });
         },
         flushAudio,
     };

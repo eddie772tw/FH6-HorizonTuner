@@ -140,7 +140,7 @@ export function formatHudDropdownOptions(
   } = options;
 
   if (!hudStyles || hudStyles.length === 0) {
-    const baseList = Object.entries(displayNames).filter(([id]) => id !== 'gamepad_overlay' && !DEFERRED_HUD_STYLES.has(id)).map(([id, label]) => ({
+    const baseList = Object.entries(displayNames).filter(([id]) => id !== 'audio_head' && id !== 'gamepad_overlay' && !DEFERRED_HUD_STYLES.has(id)).map(([id, label]) => ({
       value: id,
       label,
       isCustom: false,
@@ -167,7 +167,7 @@ export function formatHudDropdownOptions(
 
   return hudStyles
     .filter((s) => {
-      if (s.id === 'gamepad_overlay') return false;
+      if (s.id === 'audio_head' || s.id === 'gamepad_overlay') return false;
       if (s.source === 'user') return true;
       if (DEFERRED_HUD_STYLES.has(s.id)) return false;
       if (WIP_HUD_IDS.has(s.id)) {

@@ -231,6 +231,51 @@ fn normalize_stack_st8100(value: &mut Value) {
     }
 }
 
+fn normalize_audio_head(value: &mut Value) {
+    let legacy = value["hudStyle"] == "audio_head";
+    let has_settings = value
+        .as_object()
+        .is_some_and(|object| object.keys().any(|key| key.starts_with("audioHead")))
+        || value["elements"].get("showAudioHead").is_some();
+    if !legacy && !has_settings {
+        return;
+    }
+    if legacy {
+        value["hudStyle"] = json!("vfd");
+        if !value["elements"].is_object() {
+            value["elements"] = json!({});
+        }
+        if value["elements"].get("showAudioHead").is_none() {
+            value["elements"]["showAudioHead"] = json!(value["elements"]["showGauge"] != false);
+        }
+    }
+    if value["elements"].get("showAudioHead").is_some() {
+        value["elements"]["showAudioHead"] = json!(value["elements"]["showAudioHead"]
+            .as_bool()
+            .unwrap_or(false));
+    }
+    for (key, min, max) in [
+        ("audioHeadDeck", 0.0, 8.0),
+        ("audioHeadOffset", 0.0, 4000.0),
+        ("audioHeadCenterOffset", -4000.0, 4000.0),
+    ] {
+        let number = value[key]
+            .as_f64()
+            .filter(|n| n.is_finite())
+            .unwrap_or(0.0)
+            .clamp(min, max);
+        value[key] = if key == "audioHeadDeck" {
+            json!(number as i64)
+        } else {
+            json!(number)
+        };
+    }
+    if !["left", "right", "top", "bottom"].contains(&value["audioHeadEdge"].as_str().unwrap_or(""))
+    {
+        value["audioHeadEdge"] = json!("left");
+    }
+}
+
 pub fn normalize_hud(data: &Value) -> Value {
     let mut value = if data.is_object() {
         data.clone()
@@ -310,6 +355,7 @@ pub fn normalize_hud(data: &Value) -> Value {
             value["r34Lighting"] = json!("night");
         }
     }
+    normalize_audio_head(&mut value);
     if style == "gamepad_overlay" {
         value["hudStyle"] = json!("vfd");
         if !value["elements"].is_object() {

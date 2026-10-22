@@ -144,6 +144,10 @@
     "lfaManualExpand": false,
     "lfaAutoExpand": false,
     "audioDeviceId": "default",
+    "audioHeadDeck": 0,
+    "audioHeadEdge": "left",
+    "audioHeadOffset": 0,
+    "audioHeadCenterOffset": 0,
     "position": {
       "x": 100,
       "y": 100
@@ -174,6 +178,7 @@
     "elements": {
       "showTeleMaster": true,
       "showGauge": true,
+      "showAudioHead": false,
       "showCenterInfo": true,
       "showRPM": true,
       "showSpeed": true,

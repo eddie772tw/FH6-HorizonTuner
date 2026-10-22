@@ -933,6 +933,50 @@
 - **Evidence**：本地 `uv run --no-project ruff check .` 與 `uv run --no-project ruff format --check .` 通過；`uv run --no-project pytest scripts/tests/` 97 passed；GitHub Actions CI Pipeline run `38257562846` 之 `Backend Lint & Static Check` (11s) 與 `Frontend Build Test & Audit` (19s) 均通過轉綠。
 - **Skills**：`agent-governance-audit`、`modular-refactoring`。
 
+## 2026-10-19 / Audio Head 獨立元素與共用訊息重播（Codex as Codex）
+
+- **來源／狀態**：`local`／`verified`；PR #541 將音響主機從互斥的儀表選單改為獨立選單及 `elements.showAudioHead`。
+- **Learning**：獨立 iframe 必須在載入時重播最新音訊與歌曲快照；原 WebSocket 的去重機制可能不再傳送未變更的歌曲資訊。切換儀表只重載儀表 iframe，關閉音響則移除其 iframe，使動畫與監聽器隨視窗生命週期結束。
+- **位置契約**：外層錨點使用螢幕像素，內層音響保留共用縮放；預設左側中央、邊緣與中心 Offset 皆為 0。Canvas 依主機外框尺寸與 DPR 設定 backing store，避免透明留白影響邊緣對齊。
+- **設定契約**：舊 `hudStyle: audio_head` 遷移為 `hudStyle: vfd` 與獨立音響開關；保留原關閉狀態。前端及 launcher 共用正規化入口，Rust 在儲存／載入時驗證相同欄位；無關樣式的稀疏設定不新增音響欄位。
+- **Evidence**：前端 1,815 passed／1 skipped，Windows 與 LAN 前端 build 通過；Rust 預設功能全量 226 passed／3 ignored，無 HUD 功能全量 218 passed／2 ignored（含文件測試），共用設定契約 13 passed。隔離瀏覽器以合成 HTTP／WebSocket 驗證四邊與 Offset、VFD／GT7 並存、互不影響的顯示開關，以及負值 Offset 的鍵盤輸入。
+- **驗證順序**：前端平台 build 會替換 `dist` 中的 hash 檔名，不可與同一工作樹的 Rust 資源嵌入／文件測試平行執行；固定前端輸出後，依序執行 Cargo 驗證。
+- **Boundary**：未新增個別音響樣式測試；測試補在共用設定、選單與事件傳輸契約。瀏覽器截圖介面逾時，沒有有效畫面截圖；未宣稱 Tauri、實體音訊裝置或遊戲內驗收。
+- **Skills**：`halfmoon-design-system`、`huge-component-refactoring`、`modular-refactoring`、`pr-author-maintainer`、`ponytail`。
+
+## 2026-10-19 / Audio Head 動畫時間尺度（Codex as Codex）
+
+- **Learning**：`render()` 每次加固定相位、固定 peak 衰減，以及 VU 使用固定 0.016 秒，會讓動畫時間尺度跟隨 rAF 次數；設定／圖片載入額外重畫也會推進動畫。60Hz 改到 144Hz 時，原海豚相位速度理論上會變為 2.4 倍。
+- **修正**：繪圖不再修改時間狀態；相位從單調時鐘計算（2.1 rad/s），peak 下降 0.9/s，VU 使用實際 dt 的指數 attack／release。預覽共用同一 rAF 時鐘，以秒計算並由真實音訊取消，不開 interval。rAF 繪製不設固定 60Hz 上限。
+- **Evidence**：共用 `audio-motion.js` 的時間域測試涵蓋 30／60／120／144／240Hz 的等時長相位、peak 與 VU 結果，另涵蓋不規則間距、重複時間戳與背景暫停。這是數值契約證據，不能當成實機跨更新率的 DWM／VRR／流暢度量測。
+- **Skills**：`huge-component-refactoring`、`pr-author-maintainer`、`ponytail`。
+
+## 2026-10-19 / 第二輪 HUD 視覺審查 PR #541（Codex as Codex）
+
+- **修正／Learning**：對照 D:/ForzaHUD 的九款 radio acceptance 截圖、res_123 的研究說明及清理底圖；清理 PNG 的透明區不等於主機背景應透明。繪製前先填完整不透明黑色矩形，再疊原始素材，保留 Panasonic 金色面板，移除額外青色外光暈，沿用時間域動畫。
+- **驗證界線**：先跑完整 frontend Vitest 與 build，再保存最後提交的實際 Forza 漫遊截圖與設定；靜態圖片不作為動態駕駛或跨更新率效能證據。未新增個別樣式測試。
+- **Skills**：`huge-component-refactoring`、`halfmoon-design-system`、`pr-author-maintainer`、`ponytail`。
+
+
+### 2026-10-19 Audio Head 矩形面板 75%
+
+- 九款靜態面板先於載入時合成完整黑色矩形與原材質，再作為單層以 alpha=0.75 繪製；每幀先 clear，避免多次疊色變不透明。動態頻譜、文字、海豚、VU 保持原 alpha、單調時間與大小／位置。
+- 採用技能：`ponytail`、`pr-author-maintainer`、`halfmoon-design-system`、`huge-component-refactoring`。完整前端測試與 build 於提交前驗證，日誌 round4-541；不新增樣式測試。
+
+### 2026-10-19 Audio 面板與黯淡裝飾分層
+
+- 整張底圖globalAlpha=0.75會連暗色文字、線條一起變淡。改於載入時快取RGBA：只對原生純黑、研究renderer清底RGB(9,11,17)及Panasonic上方金色材質填色套alpha191；其他圖案保留RGB與原生覆蓋，單層繪出完整矩形，沒有一般亮度門檻或逐幀像素處理。
+- 九款離線原生尺寸對照均保有黯淡裝飾的原RGB／alpha255與alpha191底色；動態頻譜／VU重疊像素另列，無JS錯誤。
+- 技能：`ponytail`、`pr-author-maintainer`、`halfmoon-design-system`、`huge-component-refactoring`。基線及修改後完整前端1821 passed／1 skipped、build通過；另做真實遊戲截圖，不新增樣式測試。
+
+### 2026-10-20 Audio Head 向量素材與原始解析度核對
+
+- **Scope**：使用者限縮本輪只改 Audio Head。九款面板重繪為獨立 SVG；靜態圖片直接由瀏覽器按 zoom／DPR 呈現，動態 Canvas 繼續使用原有邏輯座標、時間域動畫、音訊及媒體來源。其他儀表只做來源盤點。
+- **Learning**：研究文件的圖集尺寸不能取代 DDS header／PNG IHDR：本機 res_220 實際為524×988，面板寬380–490px。重設 PNG 尺寸不會還原細節；即使日後換成 SVG，若仍在載入時縮成 deck.w×deck.h 的 Canvas，也會重新失去向量的縮放品質。
+- **Materials**：完整矩形、Panasonic 金色和下方材質先在同一 SVG 群組合成，再以 opacity=.75 呈現；裝飾／文字在另一層。避免兩個75%背景重疊成93.75%，也不再以亮度猜測背景。複雜標記保留原圖輪廓路徑，來源區域與SHA列於panel-glyphs.json；不宣稱可恢復原圖不存在的細節或完整原作字型。
+- **Brands**：依追加指示沿用Alpine／Pioneer／Sony／Kenwood官網SVG，P835R採Commons保存、經官方沿革核對的舊版Pioneer；Compact Disc Digital Audio亦沿用Philips來源向量。保留長寬比、圖形與來源SHA，僅套主機原配色；Alpine移除原主機沒有的標語，避免以一般字型重新拼出商標。來源SVG固定LF，正規化換行及行尾空白前後各留SHA，避免Windows checkout使來源校驗漂移。
+- **Validation**：基線與修改後完整frontend Vitest均1821 passed／1 skipped，TypeScript／Vite build通過。九款SVG於100%／200% scale及DPR1／1.25／1.5／2共45組離線載入／版面檢查無JS錯誤；產物可由無額外相依的Node腳本重建並以--check確認一致。無新增個別樣式單元測試；離線圖與遊戲證據分列。
+- **Skills**：`ponytail`、`pr-author-maintainer`、`halfmoon-design-system`、`huge-component-refactoring`；實際Windows畫面擷取採`computer-use:computer-use`。
 ## 2026-10-19 / WASAPI 高取樣率頻譜範圍（Codex as Codex）
 
 - **Learning**：頻譜 JSON 有完整 32 段，不代表頻段涵蓋範圍正確。實機 endpoint 為 192 kHz；將正頻率 FFT 全部配置到顯示時，右半部涵蓋約 24–96 kHz，導致一般音訊只在左側活動。同一 2 kHz 音調在舊版 44.1／96 kHz 下的峰值位置也會改變。
@@ -953,3 +997,24 @@
 - **Scale**：使用既有 HUDCore 的 baseline × multiplier × global × user scale，不能直接改共用全域倍率。放大時 backing canvas 必須跟隨實際 zoom 與 DPR，繪圖座標仍維持原始設計單位，避免再縮放一次或變模糊。
 - **Controller**：依使用者修訂，手把卡片錨點預設為螢幕中心，X／Y 位移預設 0%，限制 −50..50%；分別相對視窗寬／高，正值往右／下。外層中心錨點不受內部儀表 zoom 影響。共用 normalizer 與 runtime 測試涵蓋預設值、正負小數、上限與非有限數。
 - **Skills**：`pr-author-maintainer`、`cross-agent-collaboration`、`huge-component-refactoring`、`halfmoon-design-system`、`ponytail`、`computer-use`。
+
+## 2026-10-20 / PR #541 與 main 整合驗證（Bagley as dot）
+
+- 保留 Audio Head 與 main 手把遙測卡片／延後模組的正規化、選單過濾、啟動更新、測試與翻譯；僅整合衝突，不處置 CodeQL 討論。
+- Linux x64、Node 24.19.0、pnpm 11.19.0、Rust 1.99.1：frontend Vitest 1825 passed／1 skipped；Windows 與 LAN frontend build 通過；SVG generator --check 九款一致；Cargo 預設功能 230 passed／2 ignored、無預設功能 220 passed／2 ignored；cargo fmt 與 git diff --check 通過。
+- 前端 build 與 Cargo 測試依序執行，未變更測試 timeout、assertion 或既有 skip；未執行 Windows 原生視覺驗收。
+- Skills：pr-author-maintainer、pr-review-evaluation、halfmoon-design-system。
+
+## 2026-10-20 / Audio Head SVG 正規化修復（Bagley as dot）
+
+- 一次性刪除 style／comment 可重新拼成禁用標記；改為整條正規化流程達固定點，限制輸入 64 Ki code units 與 32 次迭代，未收斂或殘留不完整／錯配標記即拒絕。所有品牌先完成檢查才寫面板；僅適用已審核品牌片段，非通用 SVG sanitizer。
+- 28 個回歸案例通過，涵蓋重組、混合大小寫、巢狀／相鄰、錯配／不完整、資源上限與寫入前拒絕。六個原始正規化片段及九款輸出 SVG 的 SHA-256 原始位元組完全一致，未依賴 CRLF 正規化。
+- frontend 1853 passed／1 skipped；Windows／LAN build 通過；Cargo 預設 230 passed／2 ignored，無預設 220 passed／2 ignored；cargo fmt、generator --check 與 git diff --check 通過。未修改依賴、既有 timeout／skip 或 CodeQL suppression；本機無 CodeQL CLI，掃描確認另行處理。
+- Skills：github-security-audit、pr-author-maintainer、pr-review-evaluation。
+
+## 2026-10-20 / SVG 禁止 delimiter 的 token／range 修復（Bagley as dot）
+
+- 前版 763b1fdf 雖通過本機驗證，CodeQL gate 仍失敗：54（未處理 `--!>`）、55／56（comment／style 不完整清洗）。保留失敗紀錄，不以本機測試宣稱掃描通過；51／52 由 securitybot 自動標記過時／解決，非人工 Resolve。
+- 改為顯式 token／range 掃描與重疊區間合併，移除匹配標籤及註解；使用 `-->`／`--!>` 最早結尾，避免吞掉中間幾何。每輪完整清理再 tokenize，保留 65,536 code units／32 輪限制與穩定結果的禁止 delimiter 拒絕。僅限已審核品牌，非通用 SVG sanitizer 或完整 XML 驗證。無新依賴或 suppression。
+- 42 個回歸案例、frontend 1867 passed／1 skipped；Windows／LAN build 通過；Cargo 預設 230 passed／2 ignored、無預設 220 passed／2 ignored；fmt／diff／generator check 通過。六個片段與九款實際重建原始位元組 SHA-256 完全相同。本機無 CodeQL CLI，新掃描待發佈後確認。
+- Skills：github-security-audit、pr-author-maintainer、pr-review-evaluation。

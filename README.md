@@ -44,6 +44,8 @@
   - **街機多聯錶版面 (Arcade Multi-Gauge Layout) 與 1080p 響應縮放**：支援多聯錶並排顯示，統一所有 HUD 儀表的座標錨點與自適應等比縮放機制。
   - **[Stack ST8100 Inspired](docs/hud/stack-st8100.md)**：原創壓縮類比轉速錶與綠色點陣 LCD，支援四格遙測欄位、session 峰值、可設定車況警示及真正 GUI 設定；不模擬不存在的引擎感測器。
   - **多風格儀表支援**：整合 Ford Mustang S650 HMI（支援 Windows GSMTC 音樂小工具）、Gran Turismo 7 風格、Retro VFD 擬真螢光顯示、093 Drift 甩尾專用儀表與 5 款社群熱門 HUD 樣式。
+  - **獨立音響面板 (Audio Head)**：在 HUD 控制面板的獨立選單選擇 9 種音響主機，可與任何儀表樣式同時顯示並單獨開關。預設貼齊左側中央；可改對齊右側、上側或下側，設定向內的邊緣 Offset 與沿邊緣的中心 Offset（螢幕像素）。
+    海豚動畫、頻譜 peak 衰減與 VU attack／release 以單調時鐘的經過時間推進，繪製仍跟隨 WebView 的 requestAnimationFrame；更新率影響流暢度，不改變動畫時間尺度。保留各主機原本的矩形背景。
   - **手把遙測卡片**：在遙測元素區獨立開關 Xbox／DualSense 卡片，可與主儀表同時顯示；其餘 Subsystems 模組保留程式碼與 TODO，暫不提供選單入口。詳見[卡片與延後模組說明](docs/hud-subsystems.md)。
   - **精簡獨立客戶端 (`FH6-HorizonTuner_lite.exe`)**：提供 Telemetry Dashboard、HUD Overlay 與 Settings 三個分頁，與完整客戶端共用前端功能與後端生命週期。
   - 100% 免注入、免 Hook 零作弊風險；支援多頻道 WebSocket 數據透傳與全螢幕自適應放縮。
