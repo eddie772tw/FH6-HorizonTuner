@@ -933,6 +933,29 @@
 - **Evidence**：本地 `uv run --no-project ruff check .` 與 `uv run --no-project ruff format --check .` 通過；`uv run --no-project pytest scripts/tests/` 97 passed；GitHub Actions CI Pipeline run `38257562846` 之 `Backend Lint & Static Check` (11s) 與 `Frontend Build Test & Audit` (19s) 均通過轉綠。
 - **Skills**：`agent-governance-audit`、`modular-refactoring`。
 
+## 2026-10-19 / 第二輪 HUD 視覺審查 PR #536（Codex as Codex）
+
+- **修正／Learning**：AP1 在前輪視覺基準上縮小 10%，保留中下位置及 DPR backing。
+- **驗證界線**：先跑完整 frontend Vitest 與 build，再保存最後提交的實際 Forza 漫遊截圖與設定；靜態圖片不作為動態駕駛或跨更新率效能證據。未新增個別樣式測試。
+- **Skills**：`huge-component-refactoring`、`halfmoon-design-system`、`pr-author-maintainer`、`ponytail`。
+
+
+### 2026-10-19 AP1 原生弧形 LED 推進
+
+- 原 res_125.asm style=10 使用共用圓心 (390.747,594.75)、半徑 567.749，素材 crop padding=10；RPM 0..110 段，每 100 RPM 推進；水溫 50..130°C 每 4°C 一段，油量 20 段。改以預建 Path2D 弧形整段裁切，避免水平裁切穿過斜 LED。
+- 三組裁切僅於初始化配置；動畫使用時間差，重觸發取消舊 RAF，掃描期間不接受即時幀覆蓋，結束恢復即時資料。保留原刻度素材與 baseline=1.89。
+- 採用技能：`ponytail`、`pr-author-maintainer`、`halfmoon-design-system`、`huge-component-refactoring`。完整前端測試與 build 於提交前驗證，日誌 round4-536；不新增樣式測試。
+
+- 追加：右側數字改為實際增壓 kPa 與四輪平均胎溫 °C；載入時覆寫烘焙標籤並保留底板 RGBA，移除未使用油壓／油溫代理。共用平均胎溫 helper 與共用測試沿用 iDrive 修正。
+- 紅線起點改為 maxRPM−2000（最低 0），超過 maxRPM 的剩餘刻度同為紅區；0..11000 原刻度固定。僅影像載入／maxRPM 改變時重建暗／亮 LED RGB，保留 alpha、外框與數字；不在每幀掃像素。
+- 離線 Edge 控制輸入保存 6 組 RPM、4 組 maxRPM 與重觸發掃描驗證，均無 JS 錯誤；此證據不能當成真實遊戲截圖。
+
+- 字體審查追加：AP1 時速改直接繪製 res_507 的 68×68 點陣字形與反射，字距56；其餘數字／檔位／時鐘／新標籤改 t65=res_266 ASCII atlas，去除通用 Consolas 與額外 glow。已讀四份內嵌向量 font name table，但未有位圖 family 歸屬證據，採原位圖而不猜字型。來源 SHA 與通道解碼記於 assets/README.md。
+
+### 2026-10-19 AP1 下緣間隔修訂
+
+- 視覺審查要求下移：只將該樣式 wrapper 的 padding-bottom 從共用30px覆寫為15px；縮放與置中不變。
+- 技能：`ponytail`、`pr-author-maintainer`、`halfmoon-design-system`、`huge-component-refactoring`。基線及修改後完整前端1714 passed／1 skipped，build通過；無新增樣式測試。
 ## 2026-10-19 / WASAPI 高取樣率頻譜範圍（Codex as Codex）
 
 - **Learning**：頻譜 JSON 有完整 32 段，不代表頻段涵蓋範圍正確。實機 endpoint 為 192 kHz；將正頻率 FFT 全部配置到顯示時，右半部涵蓋約 24–96 kHz，導致一般音訊只在左側活動。同一 2 kHz 音調在舊版 44.1／96 kHz 下的峰值位置也會改變。
@@ -953,3 +976,11 @@
 - **Scale**：使用既有 HUDCore 的 baseline × multiplier × global × user scale，不能直接改共用全域倍率。放大時 backing canvas 必須跟隨實際 zoom 與 DPR，繪圖座標仍維持原始設計單位，避免再縮放一次或變模糊。
 - **Controller**：依使用者修訂，手把卡片錨點預設為螢幕中心，X／Y 位移預設 0%，限制 −50..50%；分別相對視窗寬／高，正值往右／下。外層中心錨點不受內部儀表 zoom 影響。共用 normalizer 與 runtime 測試涵蓋預設值、正負小數、上限與非有限數。
 - **Skills**：`pr-author-maintainer`、`cross-agent-collaboration`、`huge-component-refactoring`、`halfmoon-design-system`、`ponytail`、`computer-use`。
+
+## 2026-10-20 / PR #536 遙測與生命週期修正重建驗證（Bagley as dot）
+
+- 以原 PR head 與 main 35a60078 獨立整合，保留兩側 Journal。透過提供的來源 patch 重建 AP1 renderer、model 與測試，三個檔案 SHA256 與提供值一致；不是 Library 下載成功，也不宣稱與遺失的整棵 tree 相同。
+- 固定 km/h 讀值、來源 timestamp freshness、無資料／暫停／錯誤狀態、獨立時鐘與清理；保留手動 sweep。共用 Canvas 修正只移植 #534 的隱藏保留 bitmap／顯示重新量測及 lifecycle 測試。
+- Linux x64、Node 24.19.0、pnpm 11.19.0、Rust 1.99.1：完整 frontend 1738 passed／1 skipped；Windows 與 LAN build 通過；Cargo 預設 229 passed／2 ignored、無預設 219 passed／2 ignored；fmt 與 diff 檢查通過。全量測試依序執行，未放寬 timeout、assertion 或 skip。
+- Rust defaults、config、native audio 與 config tests 與指定 main 完全一致；本輪不代表 Windows 原生視覺驗收。
+- Skills：pr-author-maintainer、pr-review-evaluation、halfmoon-design-system。

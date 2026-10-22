@@ -1,37 +1,393 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>AP1 Rev Arc HUD</title>
-  <link rel="stylesheet" href="../shared/hud-base.css">
-  <link rel="stylesheet" href="./style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Honda S2000 AP1 ID4Motion Rev Arc</title>
+    <!--
+      [設計決策紀錄 / Design Decision Note]
+      1. 水溫 (Water Temp C..H): Forza UDP 遙測未提供引擎水溫，統一採用四輪平均胎溫 (temp_fl..rr / TireTemp) 轉換為攝氏溫度驅動。
+      2. 右側數字直接顯示增壓 kPa 與四輪平均胎溫 °C；面板標籤同步更新，不再計算油壓／油溫代理。
+      3. 視覺元素與動態格段: 底圖 (ap1_clean_base.png) 與全亮格段層 (ap1_bars_full.png) 均由原生 D3D11 Pixel Shader (res_125.dxbc)
+         提取，透過精確座標裁切呈現 0..11,000 RPM 弧形格段、C..H 水溫格段、E..F 油量格段與 VTEC 指示燈。
+    -->
+    <link rel="stylesheet" href="../shared/hud-base.css">
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: transparent !important;
+        }
+        /* Keep half the shared 30px bottom inset without changing scale. */
+        .hud-root-wrapper {
+            padding-bottom: 15px;
+        }
+        .ap1-container {
+            align-self: center;
+            transform-origin: bottom center;
+            position: relative;
+            width: 799px;
+            height: 229px;
+            pointer-events: none;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
 </head>
 <body>
-  <div class="hud-root-wrapper">
-    <div class="hud-gauge-container ap1-cluster" id="ap1Cluster" role="img" aria-label="AP1 Rev Arc. Waiting for telemetry">
-      <img class="ap1-fascia" src="./assets/fascia.png" alt="" draggable="false">
-      <svg id="ap1Display" viewBox="0 0 720 300" aria-hidden="true">
-        <g id="rpmSegments"></g>
-        <g id="rpmTicks"></g>
-        <text class="ap1-unit" id="rpmUnit" x="88.428" y="159.639">×1000 r/min</text>
-        <text class="ap1-label" x="106" y="205">GEAR</text>
-        <text class="ap1-gear" id="gearValue" x="126" y="245" text-anchor="middle">—</text>
-        <path class="ap1-divider" d="M168 192V245 M541 176V245"/>
-        <g id="speedDigits" transform="translate(236 128)"></g>
-        <text class="ap1-speed-unit ap1-choice-label" id="speedUnitMph" x="458" y="188" text-anchor="start" data-active="false">mph</text>
-        <text class="ap1-speed-unit ap1-choice-label" id="speedUnit" x="458" y="214" text-anchor="start" data-active="true">km/h</text>
-        <text class="ap1-boost-caption ap1-choice-label" id="vacModeLabel" x="591" y="162" text-anchor="start" data-active="false">VAC</text>
-        <text class="ap1-boost-caption ap1-choice-label" id="boostModeLabel" x="591" y="178" text-anchor="start" data-active="false">BOOST</text>
-        <g id="boostSegments"></g>
-        <g id="boostTicks"></g>
-        <text class="ap1-boost-value" id="boostValue" x="617" y="245" text-anchor="middle">-- bar</text>
-        <text class="ap1-status" id="signalStatus" x="355" y="245" text-anchor="middle">WAITING FOR DATA</text>
-        <text class="ap1-shift" id="shiftLamp" x="487" y="121" text-anchor="end"></text>
-      </svg>
+    <div class="hud-root-wrapper">
+        <div class="hud-gauge-container ap1-container" id="ap1Container">
+            <canvas id="ap1Canvas" width="799" height="229"></canvas>
+        </div>
     </div>
-  </div>
-  <script src="../shared/hud-core.js"></script>
-  <script type="module" src="./controller.js"></script>
+
+    <script src="../shared/hud-core.js"></script>
+    <script src="../shared/hud-artwork.js"></script>
+    <script src="ap1-model.js"></script>
+    <script>
+        (function() {
+            var canvas = document.getElementById('ap1Canvas');
+            var ctx = canvas.getContext('2d');
+            var container = document.getElementById('ap1Container');
+            var Model = window.Ap1Model;
+
+            var baseImg = HUDArtwork.loadImage('assets/ap1_clean_base.png');
+            var barsImg = HUDArtwork.loadImage('assets/ap1_bars_full.png', 0);
+            var isSweeping = false;
+            var sweepRafId = null;
+            var destroyed = false;
+            var signal = Model.createSignalState();
+            var basePixels = null;
+            var litPixels = null;
+            var faceplate = null;
+            var litPlate = null;
+            var artworkMaxRpm = null;
+
+            function readArtwork(image) {
+                var surface = document.createElement('canvas');
+                surface.width = 799;
+                surface.height = 229;
+                var context = surface.getContext('2d');
+                context.drawImage(image, 0, 0);
+                return context.getImageData(0, 0, 799, 229);
+            }
+
+            // Rebuild only on image load / car max-RPM change, never at telemetry rate.
+            function prepareArtwork() {
+                var maximum = Math.round(telemetry.maxRpm);
+                if (!basePixels || !litPixels || !bitmapFont || !nativeAtlas.complete || !nativeAtlas.naturalWidth || artworkMaxRpm === maximum) return;
+                artworkMaxRpm = maximum;
+                var off = new ImageData(new Uint8ClampedArray(basePixels.data), 799, 229);
+                var on = new ImageData(new Uint8ClampedArray(litPixels.data), 799, 229);
+                var redline = Model.calculateRedlineRpm(maximum);
+                for (var y = 0; y < 229; y++) {
+                    for (var x = 0; x < 799; x++) {
+                        var dx = x - 400.747;
+                        var dy = y - 604.75;
+                        var radius = Math.hypot(dx, dy);
+                        if (Math.abs(radius - 567.749) > 14) continue;
+                        var segment = Math.round((Math.atan2(dy, dx) * 180 / Math.PI + 130.075638) * 2.176454);
+                        if (segment < 0 || segment > 110) continue;
+                        var pixel = (y * 799 + x) * 4;
+                        var dim = Math.max(off.data[pixel], off.data[pixel + 1], off.data[pixel + 2]);
+                        var bright = Math.max(on.data[pixel], on.data[pixel + 1], on.data[pixel + 2]);
+                        // Only LEDs that differ between on/off; frame and scale numbers stay intact.
+                        if (!on.data[pixel + 3] || bright <= dim + 4) continue;
+                        var red = segment * 100 >= redline;
+                        off.data[pixel] = dim;
+                        off.data[pixel + 1] = red ? Math.round(dim * 0.12) : dim;
+                        off.data[pixel + 2] = red ? Math.round(dim * 0.10) : dim;
+                        on.data[pixel] = bright;
+                        on.data[pixel + 1] = red ? Math.round(bright * 0.12) : bright;
+                        on.data[pixel + 2] = red ? Math.round(bright * 0.10) : bright;
+                    }
+                }
+                faceplate = document.createElement('canvas');
+                faceplate.width = 799;
+                faceplate.height = 229;
+                var plate = faceplate.getContext('2d');
+                plate.putImageData(off, 0, 0);
+                var background = plate.getImageData(650, 180, 1, 1).data;
+                plate.fillStyle = 'rgba(' + background[0] + ',' + background[1] + ',' + background[2] + ',' + background[3] / 255 + ')';
+                plate.clearRect(484, 141, 67, 24);
+                plate.fillRect(484, 141, 67, 24);
+                plate.clearRect(540, 171, 63, 23);
+                plate.fillRect(540, 171, 63, 23);
+                plate.globalAlpha = 0.8;
+                var sx = nativeAtlas.naturalWidth / 900;
+                var sy = nativeAtlas.naturalHeight / 700;
+                plate.drawImage(nativeAtlas, 829 * sx, 48 * sy, 41 * sx, 24 * sy, 512, 134, 41, 24);
+                plate.drawImage(nativeAtlas, 870 * sx, 48 * sy, 28 * sx, 24 * sy, 573, 165, 28, 24);
+                drawBitmapText(plate, 'BOOST', 548, 151, 12, 9.12, true);
+                drawBitmapText(plate, 'TIRE TEMP.', 600, 182, 8.5, 6.46, true);
+                litPlate = document.createElement('canvas');
+                litPlate.width = 799;
+                litPlate.height = 229;
+                litPlate.getContext('2d').putImageData(on, 0, 0);
+            }
+
+            var nativeAtlas = new Image();
+            var bitmapFont = null;
+            nativeAtlas.onload = function() { artworkMaxRpm = null; render(); };
+            nativeAtlas.src = 'assets/ap1_native_atlas.png';
+            var fontImage = new Image();
+            fontImage.onload = function() {
+                bitmapFont = document.createElement('canvas');
+                bitmapFont.width = fontImage.naturalWidth;
+                bitmapFont.height = fontImage.naturalHeight;
+                var font = bitmapFont.getContext('2d');
+                font.drawImage(fontImage, 0, 0);
+                var pixels = font.getImageData(0, 0, bitmapFont.width, bitmapFont.height);
+                // t65 is a single-channel glyph mask; the shader uses its red channel as coverage.
+                for (var i = 0; i < pixels.data.length; i += 4) {
+                    pixels.data[i + 3] = pixels.data[i];
+                    pixels.data[i] = pixels.data[i + 1] = pixels.data[i + 2] = 255;
+                }
+                font.putImageData(pixels, 0, 0);
+                artworkMaxRpm = null;
+                render();
+            };
+            fontImage.src = 'assets/ap1_ascii_font.png';
+
+            function drawBitmapText(target, text, x, y, size, advance, right) {
+                if (!bitmapFont) return;
+                text = String(text);
+                if (right) x -= size + Math.max(0, text.length - 1) * advance;
+                var cellW = bitmapFont.width / 16;
+                var cellH = bitmapFont.height / 8;
+                for (var i = 0; i < text.length; i++) {
+                    var code = text.charCodeAt(i);
+                    if (code >= 128) continue;
+                    target.drawImage(bitmapFont, (code % 16) * cellW, Math.floor(code / 16) * cellH,
+                        cellW, cellH, x + i * advance, y, size, size);
+                }
+            }
+
+            function drawSpeed(text) {
+                if (!/^\d+$/.test(text)) {
+                    drawBitmapText(ctx, text, 322, 120, 60, 48, false);
+                    return;
+                }
+                if (!nativeAtlas.complete || !nativeAtlas.naturalWidth) return;
+                var sx = nativeAtlas.naturalWidth / 900;
+                var sy = nativeAtlas.naturalHeight / 700;
+                var x = 400 - (12 + text.length * 56) * 0.5;
+                for (var i = 0; i < text.length; i++) {
+                    ctx.drawImage(nativeAtlas, Number(text[i]) * 68 * sx, 630 * sy, 68 * sx, 68 * sy,
+                        x + i * 56, 110, 68, 68);
+                }
+            }
+
+            // res_125.asm style 10: shared circle (390.747,594.75), radius 567.749,
+            // plus the clean asset's 10px crop padding. Clip at gaps between whole LEDs.
+            function segmentClips(startDegrees, stepDegrees, count) {
+                var clips = [null];
+                var start = (startDegrees - stepDegrees * 0.5) * Math.PI / 180;
+                for (var i = 1; i <= count; i++) {
+                    var end = (startDegrees + stepDegrees * (i - 0.5)) * Math.PI / 180;
+                    var path = new Path2D();
+                    path.arc(400.747, 604.75, 581.749, start, end, stepDegrees < 0);
+                    path.arc(400.747, 604.75, 553.749, end, start, stepDegrees > 0);
+                    path.closePath();
+                    clips.push(path);
+                }
+                return clips;
+            }
+            var rpmClips = segmentClips(-130.075638, 1 / 2.176454, 111);
+            var waterClips = segmentClips(-64.825249, -1 / 1.818089, 20);
+            var fuelClips = segmentClips(-50.075390, -1 / 1.818076, 20);
+
+            function drawSegments(clips, count) {
+                if (count <= 0) return;
+                ctx.save();
+                ctx.clip(clips[Math.min(clips.length - 1, count)]);
+                ctx.drawImage(litPlate, 0, 0, 799, 229);
+                ctx.restore();
+            }
+
+            var telemetry = {
+                speed: 0,
+                rpm: 0,
+                maxRpm: 9000,
+                gear: 'N',
+                fuelRatio: 0.75,
+                tempC: 87,
+                boostKpa: 0,
+                clockText: '',
+                live: false,
+                status: 'WAITING FOR DATA'
+            };
+
+            function updateClock() {
+                var now = new Date();
+                var hh = String(now.getHours()).padStart(2, '0');
+                var mm = String(now.getMinutes()).padStart(2, '0');
+                var next = hh + ':' + mm;
+                var changed = next !== telemetry.clockText;
+                telemetry.clockText = next;
+                return changed;
+            }
+            updateClock();
+
+            function render() {
+                if (destroyed) return;
+                updateClock();
+                prepareArtwork();
+                var w = 799;
+                var h = 229;
+                ctx.clearRect(0, 0, w, h);
+
+                // 1. Clean D3D11 dark-glass base plate (0% bars, no baked center '0')
+                if (faceplate) {
+                    ctx.drawImage(faceplate, 0, 0, 799, 229);
+                }
+
+                if (litPlate && telemetry.live) {
+                    // 2. Native angular LED thresholds: one complete segment per 100 RPM.
+                    var rpmRatio = Model.calculateRpmRatio(telemetry.rpm, Model.MAX_SCALE_RPM);
+                    drawSegments(rpmClips, Math.floor(rpmRatio * 110) + 1);
+
+                    // 3. VTEC Indicator Lamp (472..502, 94..124)
+                    if (Model.isVtecActive(telemetry.rpm)) {
+                        ctx.drawImage(litPlate, 472, 94, 30, 30, 472, 94, 30, 30);
+                    }
+
+                    // 4. Native C->H angular segments: 50..130 C, 4 C per LED.
+                    var tempRatio = Model.calculateWaterTempRatio(telemetry.tempC);
+                    drawSegments(waterClips, Math.floor(tempRatio * 20));
+
+                    // 5. Fuel Segment Bar (E at right x=775 -> F at left x=672)
+                    var fuelRatio = Math.min(1, Math.max(0, telemetry.fuelRatio));
+                    drawSegments(fuelClips, Math.floor(fuelRatio * 20));
+                }
+
+                // Original bitmap glyphs, cell sizes and advances from res_125 style 10.
+                drawSpeed(telemetry.live ? String(Math.round(Math.max(0, telemetry.speed))) : '---');
+                drawBitmapText(ctx, telemetry.live ? telemetry.gear : '-', 248, 132, 48, 24, false);
+                drawBitmapText(ctx, telemetry.clockText, 110, 180, 19.2, 15.6, false);
+                drawBitmapText(ctx, telemetry.live ? String(Math.round(telemetry.boostKpa)) : '-', 554, 144, 26.88, 20.42, false);
+                drawBitmapText(ctx, telemetry.live ? String(Math.round(telemetry.tempC)) : '-', 603, 174, 26.88, 20.42, false);
+                if (telemetry.status) {
+                    drawBitmapText(ctx, telemetry.status, 400 - telemetry.status.length * 6, 198, 16, 12, false);
+                }
+                canvas.setAttribute('aria-label', telemetry.live
+                    ? Math.round(telemetry.speed) + ' km/h, ' + Math.round(telemetry.rpm) + ' RPM, ' + telemetry.clockText
+                    : telemetry.status + ', ' + telemetry.clockText);
+            }
+
+            function stopSweep() {
+                if (sweepRafId !== null) cancelAnimationFrame(sweepRafId);
+                sweepRafId = null;
+                isSweeping = false;
+            }
+
+            function applySignalState() {
+                var next = signal.snapshot(performance.now());
+                var changed = telemetry.live !== next.live || telemetry.status !== next.status;
+                telemetry.live = next.live;
+                telemetry.status = next.status;
+                if (!next.live) {
+                    telemetry.speed = telemetry.rpm = telemetry.boostKpa = 0;
+                    telemetry.tempC = telemetry.fuelRatio = 0;
+                    telemetry.gear = 'N';
+                }
+                return changed;
+            }
+
+            // Keep both source freshness and the clock alive without telemetry events.
+            var watchdog = setInterval(function() {
+                if (destroyed) return;
+                var clockChanged = updateClock();
+                var signalChanged = !isSweeping && applySignalState();
+                if (clockChanged || signalChanged) render();
+            }, 250);
+
+            function destroy() {
+                if (destroyed) return;
+                destroyed = true;
+                stopSweep();
+                clearInterval(watchdog);
+                signal.destroy();
+                window.removeEventListener('message', onLifecycleMessage);
+                window.removeEventListener('pagehide', destroy);
+            }
+            function onLifecycleMessage(event) {
+                if (event.data && event.data.type === 'hud:destroy') destroy();
+            }
+            window.addEventListener('message', onLifecycleMessage);
+            window.addEventListener('pagehide', destroy);
+
+            baseImg.onload = function() { basePixels = readArtwork(baseImg); artworkMaxRpm = null; render(); };
+            barsImg.onload = function() { litPixels = readArtwork(barsImg); artworkMaxRpm = null; render(); };
+
+            HUDCore.registerStyle('ap1_rev_arc', {
+                containerId: 'ap1Container',
+                scaleBaseline: 1.89,
+                scaleMultiplier: 0.95,
+                onScale: HUDArtwork.watchCanvas(canvas, render),
+
+                onElementsChange: function(elements) {
+                    if (container) {
+                        container.style.display = elements.showGauge === false ? 'none' : 'block';
+                    }
+                },
+
+                onFrame: function(data, payload) {
+                    if (destroyed) return;
+                    data = data || {};
+                    signal.receive(data, payload, performance.now());
+                    var next = signal.snapshot(performance.now());
+                    if (isSweeping && (next.live || next.status === 'WAITING FOR DATA')) return;
+                    stopSweep();
+                    applySignalState();
+                    if (!telemetry.live) { render(); return; }
+                    // Native faceplate speed text is permanently labelled km/h.
+                    telemetry.speed = Math.abs(Number(data.speed_kmh)) || 0;
+                    if (data.rpm !== undefined) telemetry.rpm = Math.max(0, Number(data.rpm) || 0);
+                    if (data.maxRpm !== undefined && data.maxRpm > 0) telemetry.maxRpm = Number(data.maxRpm);
+                    if (data.gear !== undefined) telemetry.gear = Model.formatGear(data.gear);
+
+                    telemetry.tempC = HUDCore.getAverageTireTemperatureC(data) ?? 0;
+                    telemetry.boostKpa = Math.max(0, Number(data.boost_kpa ?? ((data.boost_psi ?? data.Boost ?? 0) * 6.89476)) || 0);
+                    telemetry.fuelRatio = Model.resolveFuelRatio(data);
+
+                    render();
+                },
+
+                onAnimate: function() {
+                    if (destroyed) return;
+                    stopSweep();
+                    isSweeping = true;
+                    telemetry.live = true;
+                    telemetry.status = 'DISPLAY CHECK';
+                    var start = performance.now();
+                    var duration = 1200;
+                    function sweep(t) {
+                        var elapsed = t - start;
+                        var wave = Model.calculateSweepProgress(elapsed, duration);
+                        telemetry.rpm = wave * 11000;
+                        telemetry.speed = wave * 260;
+                        telemetry.gear = wave > 0.5 ? '6' : '1';
+                        telemetry.tempC = 50 + wave * 80;
+                        telemetry.fuelRatio = wave;
+                        telemetry.boostKpa = wave * 200;
+                        render();
+                        if (elapsed < duration) sweepRafId = requestAnimationFrame(sweep);
+                        else { stopSweep(); applySignalState(); render(); }
+                    }
+                    sweepRafId = requestAnimationFrame(sweep);
+                }
+            });
+
+            HUDCore.init('ap1_rev_arc');
+            render();
+        })();
+    </script>
 </body>
 </html>
