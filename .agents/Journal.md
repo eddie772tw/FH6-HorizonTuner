@@ -933,6 +933,30 @@
 - **Evidence**：本地 `uv run --no-project ruff check .` 與 `uv run --no-project ruff format --check .` 通過；`uv run --no-project pytest scripts/tests/` 97 passed；GitHub Actions CI Pipeline run `38257562846` 之 `Backend Lint & Static Check` (11s) 與 `Frontend Build Test & Audit` (19s) 均通過轉綠。
 - **Skills**：`agent-governance-audit`、`modular-refactoring`。
 
+## 2026-10-19 / 第二輪 HUD 視覺審查 PR #535（Codex as Codex）
+
+- **修正／Learning**：JZX100／Soarer 縮小 10%；Supra 底圖原始 tick 半徑約為 X=130、Y=142，將錶面高度校正為 306／334，指針圓形幾何不隨底圖拉伸，樞軸與 LCD 位置按相同高度比例定位，整體再縮小 20%。
+- **驗證界線**：先跑完整 frontend Vitest 與 build，再保存最後提交的實際 Forza 漫遊截圖與設定；靜態圖片不作為動態駕駛或跨更新率效能證據。未新增個別樣式測試。
+- **Skills**：`huge-component-refactoring`、`halfmoon-design-system`、`pr-author-maintainer`、`ponytail`。
+
+
+### 2026-10-19 Toyota Classic 平均胎溫與面板透明度
+
+- 四款水溫表統一共用四輪 raw °F 平均轉 °C，移除猜單位、coolant fallback 與 RPM=0 改寫；Altezza 油溫／油壓代理維持原模型。Altezza 底板 alpha=0.5，刻度與指針保留。
+- 採用技能：`ponytail`、`pr-author-maintainer`、`halfmoon-design-system`、`huge-component-refactoring`、`telemetry-udp-protocol`。共用 helper 與兩個共用測試和 iDrive PR 相同；不新增樣式測試。
+- 完整前端測試與 build 於提交前驗證，日誌 round4-535。
+
+### 2026-10-19 Altezza 幾何底板
+
+- 毛邊來自依貼圖亮度產生的輪廓。底板改為三個整圓與兩個LCD矩形的單一Path2D聯集，以alpha=0.5填一次，再疊原圖的標記層；移除外圍CSS陰影，重疊區不增加alpha。圖層只在載入時快取。
+- 技能：`ponytail`、`pr-author-maintainer`、`halfmoon-design-system`、`huge-component-refactoring`。基線及修改後完整前端1811 passed／1 skipped、build通過。棋盤格離線預覽無JS錯誤；另做真實遊戲截圖，不新增樣式測試。
+
+### 2026-10-19 Altezza 外圍標記與 LCD 原始比例
+
+- 三個圓形半徑改為108／152／75，納入外側數字及刻度；畫布545×330、座標整體留白20px，避免擴大後的完整圓被裁切。幾何底板仍以50%單次聯集填色，貼圖及指針保持原尺寸與相對座標。
+- res_125.asm 的Altezza分支t3對應res_256分段字形；檔位與時間改用原圖、深色LCD、顯示窗內置中。字形格使用同一縮放因子，字距獨立，避免非等比縮放造成窄字。
+- 技能：`ponytail`、`pr-author-maintainer`、`halfmoon-design-system`、`huge-component-refactoring`。基線及最後等比修正後完整前端1811 passed／1 skipped、build通過；離線預覽無JS錯誤，未新增個別樣式測試。真實遊戲證據另存第六輪，前輪封存保持原狀。
+
 ## 2026-10-19 / WASAPI 高取樣率頻譜範圍（Codex as Codex）
 
 - **Learning**：頻譜 JSON 有完整 32 段，不代表頻段涵蓋範圍正確。實機 endpoint 為 192 kHz；將正頻率 FFT 全部配置到顯示時，右半部涵蓋約 24–96 kHz，導致一般音訊只在左側活動。同一 2 kHz 音調在舊版 44.1／96 kHz 下的峰值位置也會改變。
