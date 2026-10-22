@@ -57,6 +57,7 @@ export interface HudConfig extends Partial<StackSt8100Settings> {
   lfaManualExpand?: boolean;
   /** LFA only: expand while confirmed lap timing is present. */
   lfaAutoExpand?: boolean;
+  nfsu2Face?: number;
   gamepadLayout?: 'xbox' | 'dualsense';
   gamepadOffsetX?: number;
   gamepadOffsetY?: number;
@@ -114,6 +115,7 @@ export const DEFAULT_HUD_CONFIG: HudConfig = {
   r34Lighting: 'night',
   lfaManualExpand: DEFAULT_LFA_MANUAL_EXPAND,
   lfaAutoExpand: DEFAULT_LFA_AUTO_EXPAND,
+  nfsu2Face: 3,
   gamepadLayout: 'xbox',
   gamepadOffsetX: 0,
   gamepadOffsetY: 0,

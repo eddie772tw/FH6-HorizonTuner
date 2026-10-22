@@ -38,6 +38,7 @@ export const HUD_DISPLAY_NAMES: Record<string, string> = {
   simple: 'Simple Gauge',
   classic_jdm: 'Classic JDM Arcade',
   r34_mfd: 'Skyline R34 MFD',
+  nfsu2: 'NFS Underground 2 Custom',
   minimap_overlay: 'GPS Minimap Radar',
   touge_pacenotes: 'Touge Pacenotes & Prompts',
   telemetry_cards: 'Telemetry Data Cards',
