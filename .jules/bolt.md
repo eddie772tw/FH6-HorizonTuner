@@ -143,3 +143,7 @@ Additionally, attempting to optimize 60Hz telemetry data copying in `FrameInterp
 ## 2026-10-17 - Optimize Canvas Path Rendering
 **Learning:** In high-frequency Canvas loops, drawing lines individually by calling ctx.beginPath() and ctx.stroke() per segment is inefficient. Batching segments of the same stroke style into a single path significantly reduces CPU overhead.
 **Action:** Group lines by styling (e.g., lineWidth, strokeStyle) and construct them in a single path before stroking, avoiding unnecessary path and state changes.
+
+## 2024-11-26 - Modulo Arithmetic is Required for Alpha Fading in Circular Buffers
+**Learning:** In telemetry cards like `corner-card.js` (histograms) and `power-torque.js` (scatter plots), removing circular buffer modulo arithmetic (`(offset + k) % length`) and replacing it with direct linear iteration (`[k]`) causes critical functional regressions. Even though they may seem order-independent, iterating chronologically (oldest to newest) is strictly required to preserve alpha fading and prevent severe visual flickering when new data is received.
+**Action:** Do not remove modulo traversal from circular buffers in rendering loops unless you are absolutely certain the operation is completely order-independent (e.g., finding a pure min/max value without drawing order dependencies).
