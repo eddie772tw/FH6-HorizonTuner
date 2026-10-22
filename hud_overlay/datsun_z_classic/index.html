@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Speedhut Datsun 240Z Classic Dual Gauge</title>
+    <!--
+      [設計決策紀錄 / Design Decision Note]
+      1. 視覺固定單位 (Hardcoded km/h): 右側時速錶盤已原生刻印 "km/h" 與 0..260 刻度，故時速指針強制綁定 data.speed_kmh（忽視外部英里單位設定）。
+      2. 底圖去針與三軸幾何校準: 底圖透過 7 幀全狀態中位數去針完全消除 0 km/h 時速針與 3/4 油量針殘影；
+         左轉速錶 (0..10k RPM) 為 120°..320°、右時速錶 (0..260 km/h) 為 45°..315°、油量小錶 (E..F) 為 90°..270°。
+      3. 水溫/油溫/油壓: 此雙圓錶僅含轉速、時速與油量；同系列若涉及水溫統一取自四輪平均胎溫 (TireTemp)，油溫與油壓則採確定性代理模型。
+    -->
+    <link rel="stylesheet" href="../shared/hud-base.css">
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: transparent !important;
+        }
+        .datsun-classic-container {
+            position: absolute;
+            bottom: 24px;
+            right: 24px;
+            width: 468px;
+            height: 300px;
+            pointer-events: none;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="hud-root-wrapper">
+        <div class="hud-gauge-container datsun-classic-container" id="datsunClassicContainer">
+            <canvas id="datsunClassicCanvas" width="468" height="300"></canvas>
+        </div>
+    </div>
+
+    <script src="../shared/hud-core.js"></script>
+    <script src="../shared/hud-artwork.js"></script>
+    <script>
+        (function() {
+            var canvas = document.getElementById('datsunClassicCanvas');
+            var ctx = canvas.getContext('2d');
+            var container = document.getElementById('datsunClassicContainer');
+
+            var baseImg = new Image();
+            baseImg.src = 'assets/clean_base.png';
+
+            var telemetry = {
+                speedKmh: 0,
+                rpm: 0,
+                maxRpm: 10000,
+                redline: 7000,
+                gear: 'N',
+                fuel: 0.75
+            };
+
+            function formatGear(g) {
+                if (g === 0 || g === 'R') return 'R';
+                if (g === 11 || g === 'N') return 'N';
+                var n = Number(g);
+                if (Number.isInteger(n) && n >= 1 && n <= 10) return String(n);
+                return 'N';
+            }
+
+            function drawNeedle(cx, cy, len, angleDeg, color, width, hubR) {
+                var rad = angleDeg * (Math.PI / 180.0);
+                var nx = cx + Math.cos(rad) * len;
+                var ny = cy + Math.sin(rad) * len;
+                var tx = cx - Math.cos(rad) * (hubR ? hubR * 0.7 : 10);
+                var ty = cy - Math.sin(rad) * (hubR ? hubR * 0.7 : 10);
+
+                ctx.save();
+                ctx.strokeStyle = color;
+                ctx.lineWidth = width;
+                ctx.lineCap = 'round';
+                ctx.shadowColor = color;
+                ctx.shadowBlur = 5;
+
+                ctx.beginPath();
+                ctx.moveTo(tx, ty);
+                ctx.lineTo(nx, ny);
+                ctx.stroke();
+
+                if (hubR) {
+                    ctx.fillStyle = '#1c1d22';
+                    ctx.shadowBlur = 0;
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, hubR, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                ctx.restore();
+            }
+
+            function render() {
+                var w = 468;
+                var h = 300;
+                ctx.clearRect(0, 0, w, h);
+
+                if (baseImg.complete && baseImg.naturalWidth > 0) {
+                    ctx.drawImage(baseImg, 0, 0, 468, 300);
+                }
+
+                // 1. Left Tachometer Needle: hub (126, 175), 0..10k RPM -> 120..320 deg
+                var rpmRatio = Math.min(1.0, Math.max(0.0, telemetry.rpm / 10000.0));
+                var tachAngle = 120.0 + rpmRatio * 200.0;
+                drawNeedle(126, 175, 96, tachAngle, '#ff3322', 3.4, 18);
+
+                // 2. Shift Warning Lamp (191, 35)
+                var isShift = telemetry.rpm >= telemetry.redline;
+                if (isShift) {
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.arc(191, 35, 12, 0, Math.PI * 2);
+                    ctx.fillStyle = '#ff2211';
+                    ctx.shadowColor = '#ff1100';
+                    ctx.shadowBlur = 16;
+                    ctx.fill();
+                    ctx.restore();
+                }
+
+                // 3. Digital Gear in Tachometer LCD box (125, 249)
+                ctx.save();
+                ctx.fillStyle = '#f8fafc';
+                ctx.font = 'bold 34px "Consolas", monospace';
+                ctx.textAlign = 'center';
+                ctx.shadowColor = 'rgba(255, 255, 255, 0.65)';
+                ctx.shadowBlur = 5;
+                ctx.fillText(telemetry.gear, 125, 249);
+                ctx.restore();
+
+                // 4. Right Speedometer Needle: hub (322, 150), 0..260 km/h -> 45..315 deg
+                var spdRatio = Math.min(1.0, Math.max(0.0, telemetry.speedKmh / 260.0));
+                var spdAngle = 45.0 + spdRatio * 270.0;
+                drawNeedle(322, 150, 112, spdAngle, '#ff3322', 3.4, 21);
+
+                // 5. Fuel Subdial on Right Dial: hub (420, 150), E..F -> 90..270 deg
+                var fuelRatio = Math.min(1.0, Math.max(0.0, telemetry.fuel));
+                var fuelAngle = 90.0 + fuelRatio * 180.0;
+                drawNeedle(420, 150, 34, fuelAngle, '#ff3322', 2.4, 14);
+            }
+
+            baseImg.onload = render;
+
+            HUDCore.registerStyle('datsun_z_classic', {
+                containerId: 'datsunClassicContainer',
+                scaleBaseline: 2.1,
+                scaleMultiplier: 0.95,
+                onScale: HUDArtwork.watchCanvas(canvas, render),
+
+                onElementsChange: function(elements) {
+                    if (container) {
+                        container.style.display = elements.showGauge === false ? 'none' : 'block';
+                    }
+                },
+
+                onFrame: function(data, payload) {
+                    if (data.speed_kmh !== undefined) {
+                        telemetry.speedKmh = Math.abs(Number(data.speed_kmh)) || 0;
+                    } else if (data.speed !== undefined) {
+                        telemetry.speedKmh = Math.abs(Number(data.speed)) || 0;
+                    }
+                    if (data.rpm !== undefined) telemetry.rpm = Math.max(0, Number(data.rpm) || 0);
+                    if (data.gear !== undefined) telemetry.gear = formatGear(data.gear);
+                    if (data.fuel_ratio !== undefined) {
+                        telemetry.fuel = Number(data.fuel_ratio);
+                    } else if (data.fuel_level !== undefined) {
+                        telemetry.fuel = Number(data.fuel_level);
+                    }
+                    if (payload && payload.redlineRpm !== undefined && payload.redlineRpm > 0) {
+                        telemetry.redline = Number(payload.redlineRpm);
+                    } else if (data.redlineRpm !== undefined && data.redlineRpm > 0) {
+                        telemetry.redline = Number(data.redlineRpm);
+                    }
+                    render();
+                },
+
+                onAnimate: function() {
+                    var start = performance.now();
+                    var duration = 1200;
+                    function sweep(t) {
+                        var progress = Math.min(1, (t - start) / duration);
+                        var wave = Math.sin(progress * Math.PI);
+                        telemetry.rpm = wave * 9600;
+                        telemetry.speedKmh = wave * 250;
+                        telemetry.fuel = wave;
+                        telemetry.gear = wave > 0.5 ? '4' : '1';
+                        render();
+                        if (progress < 1) requestAnimationFrame(sweep);
+                    }
+                    requestAnimationFrame(sweep);
+                }
+            });
+
+            HUDCore.init('datsun_z_classic');
+            render();
+        })();
+    </script>
+</body>
+</html>
