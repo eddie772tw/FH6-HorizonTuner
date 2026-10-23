@@ -30,6 +30,7 @@
             height: 120px;
             pointer-events: none;
         }
+        .artwork-motion { width: 100%; height: 100%; }
         canvas {
             display: block;
             width: 100%;
@@ -40,12 +41,13 @@
 <body>
     <div class="hud-root-wrapper">
         <div class="hud-gauge-container mclaren-container" id="mclarenContainer">
-            <canvas id="mclarenCanvas" width="918" height="120"></canvas>
+            <div class="artwork-motion" id="artworkMotion"><canvas id="mclarenCanvas" width="918" height="120"></canvas></div>
         </div>
     </div>
 
     <script src="../shared/hud-core.js"></script>
     <script src="../shared/hud-artwork.js"></script>
+    <script src="../shared/artwork-effects.js"></script>
     <script>
         (function() {
             var canvas = document.getElementById('mclarenCanvas');
@@ -54,12 +56,35 @@
 
             var baseImg = HUDArtwork.loadImage('assets/mclaren_clean_base.png', 0.75);
 
+            var isSweeping = false;
+            var sweepRafId = null;
+
             var telemetry = {
                 speedKmh: 0,
                 rpm: 0,
                 maxRpm: 8500,
                 gear: 'N'
             };
+
+            // Keep accepted live readings separate from temporary display-check values.
+            var liveTelemetry = telemetry;
+            var effects = HUDArtworkEffects.create(document.getElementById('artworkMotion'));
+            var destroyed = false;
+
+            function destroy() {
+                destroyed = true;
+                effects.destroy();
+                if (sweepRafId !== null) cancelAnimationFrame(sweepRafId);
+                sweepRafId = null;
+                isSweeping = false;
+                window.removeEventListener('message', onLifecycleMessage);
+                window.removeEventListener('pagehide', destroy);
+            }
+            function onLifecycleMessage(event) {
+                if (event.data && event.data.type === 'hud:destroy') destroy();
+            }
+            window.addEventListener('message', onLifecycleMessage);
+            window.addEventListener('pagehide', destroy);
 
             function formatGear(g) {
                 if (g === 0 || g === 'R') return 'R';
@@ -70,6 +95,7 @@
             }
 
             function render() {
+                if (destroyed) return;
                 var w = 918;
                 var h = 120;
                 ctx.clearRect(0, 0, w, h);
@@ -100,10 +126,10 @@
                 }
 
                 // Vertical diamond-tipped cursor blade (matching D3D11 shader cursor geometry)
-                var bladeColor = isRedZone ? '#ff2636' : '#e2e8f0';
+                var bladeColor = isRedZone ? '#ff2636' : effects.accent('#e2e8f0');
                 ctx.fillStyle = bladeColor;
-                ctx.shadowColor = isRedZone ? 'rgba(255, 38, 54, 0.95)' : 'rgba(255, 255, 255, 0.75)';
-                ctx.shadowBlur = isRedZone ? 10 : 6;
+                ctx.shadowColor = isRedZone ? 'rgba(255, 38, 54, 0.95)' : effects.accent('rgba(255, 255, 255, 0.75)');
+                ctx.shadowBlur = effects.glow(isRedZone ? 10 : 6);
                 ctx.beginPath();
                 ctx.moveTo(needleX, 23);
                 ctx.lineTo(needleX + 4, 29);
@@ -115,18 +141,18 @@
                 ctx.fill();
 
                 // Bright inner highlight core
-                ctx.shadowBlur = 0;
+                ctx.shadowBlur = effects.glow(0);
                 ctx.fillStyle = '#ffffff';
                 ctx.fillRect(needleX - 0.9, 27, 1.8, 43);
                 ctx.restore();
 
                 // 3. Papaya Orange Gear Indicator (Left box: x=56, y=82)
                 ctx.save();
-                ctx.fillStyle = '#ff7300';
+                ctx.fillStyle = effects.accent('#ff7300');
                 ctx.font = 'bold 68px "Consolas", "Segoe UI", sans-serif';
                 ctx.textAlign = 'center';
-                ctx.shadowColor = 'rgba(255, 115, 0, 0.55)';
-                ctx.shadowBlur = 8;
+                ctx.shadowColor = effects.accent('rgba(255, 115, 0, 0.55)');
+                ctx.shadowBlur = effects.glow(8);
                 ctx.fillText(telemetry.gear, 58, 82);
 
                 // 4. Digital Speedometer in KMH (Right box above native 'KMH' label)
@@ -134,7 +160,7 @@
                 ctx.font = 'bold 60px "Consolas", "Segoe UI", sans-serif';
                 ctx.textAlign = 'right';
                 ctx.shadowColor = 'rgba(255, 255, 255, 0.4)';
-                ctx.shadowBlur = 6;
+                ctx.shadowBlur = effects.glow(6);
                 ctx.fillText(String(Math.round(telemetry.speedKmh)), 898, 69);
                 ctx.restore();
             }
@@ -147,25 +173,42 @@
                 scaleMultiplier: 0.95,
                 onScale: HUDArtwork.watchCanvas(canvas, render),
 
+                onInit: function() {
+                    if (destroyed) return;
+                    effects.sync();
+                    render();
+                },
+
                 onElementsChange: function(elements) {
+                    if (destroyed) return;
+                    effects.sync(elements);
                     if (container) {
                         container.style.display = elements.showGauge === false ? 'none' : 'block';
                     }
                 },
 
                 onFrame: function(data) {
+                    if (destroyed) return;
+                    effects.update(data);
                     if (data.speed_kmh !== undefined) {
-                        telemetry.speedKmh = Math.abs(Number(data.speed_kmh)) || 0;
+                        liveTelemetry.speedKmh = Math.abs(Number(data.speed_kmh)) || 0;
                     } else if (data.speed !== undefined) {
-                        telemetry.speedKmh = Math.abs(Number(data.speed)) || 0;
+                        liveTelemetry.speedKmh = Math.abs(Number(data.speed)) || 0;
                     }
-                    if (data.rpm !== undefined) telemetry.rpm = Math.max(0, Number(data.rpm) || 0);
-                    if (data.maxRpm !== undefined && data.maxRpm > 0) telemetry.maxRpm = Number(data.maxRpm);
-                    if (data.gear !== undefined) telemetry.gear = formatGear(data.gear);
-                    render();
+                    if (data.rpm !== undefined) liveTelemetry.rpm = Math.max(0, Number(data.rpm) || 0);
+                    if (data.maxRpm !== undefined && data.maxRpm > 0) liveTelemetry.maxRpm = Number(data.maxRpm);
+                    if (data.gear !== undefined) liveTelemetry.gear = formatGear(data.gear);
+                    if (!isSweeping) {
+                        telemetry = liveTelemetry;
+                        render();
+                    }
                 },
 
                 onAnimate: function() {
+                    if (destroyed) return;
+                    if (sweepRafId !== null) cancelAnimationFrame(sweepRafId);
+                    isSweeping = true;
+                    telemetry = Object.assign({}, liveTelemetry);
                     var start = performance.now();
                     var duration = 1200;
                     function sweep(t) {
@@ -174,10 +217,17 @@
                         telemetry.rpm = wave * 8400;
                         telemetry.speedKmh = wave * 310;
                         telemetry.gear = wave > 0.5 ? '5' : '1';
-                        render();
-                        if (progress < 1) requestAnimationFrame(sweep);
+                        if (progress < 1) {
+                            render();
+                            sweepRafId = requestAnimationFrame(sweep);
+                        } else {
+                            isSweeping = false;
+                            sweepRafId = null;
+                            telemetry = liveTelemetry;
+                            render();
+                        }
                     }
-                    requestAnimationFrame(sweep);
+                    sweepRafId = requestAnimationFrame(sweep);
                 }
             });
 
