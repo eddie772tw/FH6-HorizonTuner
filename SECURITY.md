@@ -13,9 +13,9 @@ We actively provide security patches and updates for the following versions of *
 
 | Version         | Supported          | Status / Recommendation |
 | --------------- | ------------------ | ----------------------- |
-| `1.7.x`         | :white_check_mark: | Currently supported with active security fixes |
-| `1.6.x`         | :warning:          | Maintenance phase; upgrade to `1.7.x` or higher recommended |
-| `< 1.6`         | :x:                | Unsupported |
+| `1.8.x`         | :white_check_mark: | Currently supported with active security fixes |
+| `1.7.x`         | :warning:          | Maintenance phase; upgrade to `1.7.x` or higher recommended |
+| `< 1.7`         | :x:                | Unsupported |
 
 If you are using an older build or development branch, please upgrade to the latest stable release (`1.7.x` or later) before reporting a vulnerability.
 

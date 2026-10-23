@@ -1575,5 +1575,6 @@
   "No changes to apply": "適用する変更がありません",
   "Fix CSS errors to apply": "適用する前にCSSエラーを修正してください",
   "No changes to discard": "破棄する変更がありません",
-  "Editor is already empty": "エディタはすでに空です"
+  "Editor is already empty": "エディタはすでに空です",
+  "Requires an active drag run with collected points to calculate.": "計算するには、有効な計測データを含むドラッグ走行が必要です。"
 }
