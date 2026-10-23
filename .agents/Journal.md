@@ -936,6 +936,10 @@
 ## 2026-10-19 / 第二輪 HUD 視覺審查 PR #534（Codex as Codex）
 
 - **修正／Learning**：BMW 超轉僅保留固定紅光，移除會改變整體縮放的 CSS 脈動。
+
+## 2026-10-19 / 第二輪 HUD 視覺審查 PR #537（Codex as Codex）
+
+- **修正／Learning**：McLaren 在前輪視覺基準上縮小 25%，改為中下置中，保留面板背景。
 - **驗證界線**：先跑完整 frontend Vitest 與 build，再保存最後提交的實際 Forza 漫遊截圖與設定；靜態圖片不作為動態駕駛或跨更新率效能證據。未新增個別樣式測試。
 - **Skills**：`huge-component-refactoring`、`halfmoon-design-system`、`pr-author-maintainer`、`ponytail`。
 
@@ -946,6 +950,11 @@
 - 採用技能：`ponytail`、`pr-author-maintainer`、`halfmoon-design-system`、`huge-component-refactoring`、`telemetry-udp-protocol`。共用純函式涵蓋冷／熱、aliases、缺值；沒有新增個別樣式測試。
 - 修改前前端 1809 passed / 1 skipped；修改後完整前端測試與 build 於提交前驗證，詳見本機 round4-534 日誌。
 
+
+### 2026-10-19 McLaren 面板背景 75%
+
+- 使用既有載入時 artwork 處理將暗底板 alpha 設為 0.75，亮刻度、動態數字／游標、原生外框與 baseline=1.575／中下位置保留。
+- 採用技能：`ponytail`、`pr-author-maintainer`、`halfmoon-design-system`。完整前端測試與 build 於提交前驗證，日誌 round4-537；不新增樣式測試。
 ## 2026-10-19 / WASAPI 高取樣率頻譜範圍（Codex as Codex）
 
 - **Learning**：頻譜 JSON 有完整 32 段，不代表頻段涵蓋範圍正確。實機 endpoint 為 192 kHz；將正頻率 FFT 全部配置到顯示時，右半部涵蓋約 24–96 kHz，導致一般音訊只在左側活動。同一 2 kHz 音調在舊版 44.1／96 kHz 下的峰值位置也會改變。
