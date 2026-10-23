@@ -933,11 +933,22 @@
 - **Evidence**：本地 `uv run --no-project ruff check .` 與 `uv run --no-project ruff format --check .` 通過；`uv run --no-project pytest scripts/tests/` 97 passed；GitHub Actions CI Pipeline run `38257562846` 之 `Backend Lint & Static Check` (11s) 與 `Frontend Build Test & Audit` (19s) 均通過轉綠。
 - **Skills**：`agent-governance-audit`、`modular-refactoring`。
 
+## 2026-10-19 / 第二輪 HUD 視覺審查 PR #534（Codex as Codex）
+
+- **修正／Learning**：BMW 超轉僅保留固定紅光，移除會改變整體縮放的 CSS 脈動。
+
 ## 2026-10-19 / 第二輪 HUD 視覺審查 PR #537（Codex as Codex）
 
 - **修正／Learning**：McLaren 在前輪視覺基準上縮小 25%，改為中下置中，保留面板背景。
 - **驗證界線**：先跑完整 frontend Vitest 與 build，再保存最後提交的實際 Forza 漫遊截圖與設定；靜態圖片不作為動態駕駛或跨更新率效能證據。未新增個別樣式測試。
 - **Skills**：`huge-component-refactoring`、`halfmoon-design-system`、`pr-author-maintainer`、`ponytail`。
+
+
+### 2026-10-19 HUD 四輪平均胎溫與原始單位
+
+- 水溫表來源使用共用 `HUDCore.getAverageTireTemperatureC`，四個有限數值才成立；依 raw °F 合約固定轉 °C，不能以 125 閾值猜單位。零度仍是數值，缺資料回冷端，不加 RPM 補正。
+- 採用技能：`ponytail`、`pr-author-maintainer`、`halfmoon-design-system`、`huge-component-refactoring`、`telemetry-udp-protocol`。共用純函式涵蓋冷／熱、aliases、缺值；沒有新增個別樣式測試。
+- 修改前前端 1809 passed / 1 skipped；修改後完整前端測試與 build 於提交前驗證，詳見本機 round4-534 日誌。
 
 
 ### 2026-10-19 McLaren 面板背景 75%
