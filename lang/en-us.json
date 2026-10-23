@@ -1733,5 +1733,9 @@
   "Fix CSS errors to apply": "Fix CSS errors to apply",
   "No changes to discard": "No changes to discard",
   "Editor is already empty": "Editor is already empty",
-  "Requires an active drag run with collected points to calculate.": "Requires an active drag run with collected points to calculate."
+  "Requires an active drag run with collected points to calculate.": "Requires an active drag run with collected points to calculate.",
+  "Ratio Balance": "Ratio Balance",
+  "Tall FD": "Tall FD",
+  "Short FD": "Short FD",
+  "Reset": "Reset"
 }

@@ -2195,5 +2195,9 @@
   "Fix CSS errors to apply": "請先修正 CSS 錯誤以進行套用",
   "No changes to discard": "沒有可捨棄的變更",
   "Editor is already empty": "編輯器目前已是空白",
-  "Requires an active drag run with collected points to calculate.": "需要包含有效採樣點的直線加速記錄以進行計算。"
+  "Requires an active drag run with collected points to calculate.": "需要包含有效採樣點的直線加速記錄以進行計算。",
+  "Ratio Balance": "齒比比例平衡",
+  "Tall FD": "長終傳",
+  "Short FD": "短終傳",
+  "Reset": "重設"
 }

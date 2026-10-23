@@ -1,7 +1,8 @@
-import React, { memo, useMemo } from 'react';
+import React, { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { LineChart, Line, XAxis, YAxis, ReferenceLine, ReferenceArea, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { useSettings } from '../../../context/SettingsContext';
 import { computeGearingChartData } from './gearingChartData';
+import { applyRatioBalance, calculateRatioBalanceBounds } from './gearRatioBalance';
 
 interface GearingTunerProps {
   tuning: any;
@@ -37,6 +38,32 @@ const GearingTunerComponent: React.FC<GearingTunerProps> = ({
   const displaySpeed = (kmh: number) => settings.units.speed === 'mph' ? kmh * 0.621371 : kmh;
   const speedToKmh = (value: number) => settings.units.speed === 'mph' ? value / 0.621371 : value;
 
+  const baseFd = tuning?.gearing?.finalDrive || 3.40;
+  const baseGears: number[] = useMemo(() => tuning?.gearing?.gears || [], [tuning?.gearing?.gears]);
+
+  // Ratio balance scale factor (1.0 = baseline calculated by AEGO)
+  const [ratioScale, setRatioScale] = useState(1.0);
+  const prevBaseFd = useRef(baseFd);
+  if (prevBaseFd.current !== baseFd) {
+    prevBaseFd.current = baseFd;
+    setRatioScale(1.0);
+  }
+
+  const bounds = useMemo(() => {
+    return calculateRatioBalanceBounds(baseFd, baseGears);
+  }, [baseFd, baseGears]);
+
+  const { finalDrive: adjustedFd, gears: adjustedGears } = useMemo(() => {
+    return applyRatioBalance(baseFd, baseGears, ratioScale);
+  }, [baseFd, baseGears, ratioScale]);
+
+  useEffect(() => {
+    if (updateSection && ratioScale !== 1.0) {
+      updateSection('gearing', 'finalDrive', adjustedFd);
+      updateSection('gearing', 'gears', adjustedGears);
+    }
+  }, [adjustedFd, adjustedGears, ratioScale, updateSection]);
+
   // Compute speed-rpm chart data with shift-chained starting points (Gear N starts at Gear N-1 cutoffRpm speed)
   const { chartData, xMax, yMax, cutoffRpm } = useMemo(() => {
     // 1. Calculate Rear Tire Radius in meters
@@ -52,8 +79,8 @@ const GearingTunerComponent: React.FC<GearingTunerProps> = ({
 
     return computeGearingChartData({
       numGears,
-      gears: tuning?.gearing?.gears || [],
-      finalDrive: tuning?.gearing?.finalDrive || 3.40,
+      gears: adjustedGears,
+      finalDrive: adjustedFd,
       maxRpm: tuning?.gearing?.maxRpm,
       effectiveRedline,
       maxHpRpm: carParams?.maxHpRpm,
@@ -64,8 +91,8 @@ const GearingTunerComponent: React.FC<GearingTunerProps> = ({
       softMaxSpeed: tuning?.gearing?.softMaxSpeed
     });
   }, [
-    tuning?.gearing?.finalDrive,
-    tuning?.gearing?.gears,
+    adjustedFd,
+    adjustedGears,
     tuning?.gearing?.maxRpm,
     tuning?.gearing?.effectiveRedline,
     tuning?.gearing?.simulatedTopSpeed,
@@ -87,13 +114,56 @@ const GearingTunerComponent: React.FC<GearingTunerProps> = ({
         {/* Left Column: Final Drive & Gears Table */}
         <div className="col-12 col-md-4 d-flex flex-column gap-3">
           <div style={{ background: 'var(--surface-1)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--glass-border)' }}>
+            {/* Ratio Balance Slider */}
+            <div style={{ marginBottom: '0.8rem', paddingBottom: '0.8rem', borderBottom: '1px solid var(--glass-border)' }}>
+              <div style={{ ...formRowStyle, marginBottom: '0.4rem' }}>
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-primary)', fontWeight: 600 }}>
+                  {t("Ratio Balance")}
+                </span>
+                {ratioScale !== 1 && (
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-outline-secondary py-0 px-2"
+                    style={{ fontSize: '0.75rem', height: '22px', lineHeight: '20px' }}
+                    onClick={() => setRatioScale(1.0)}
+                  >
+                    {t("Reset")}
+                  </button>
+                )}
+              </div>
+              <input
+                type="range"
+                className="form-range"
+                min={bounds.minScale}
+                max={bounds.maxScale}
+                step={0.01}
+                value={ratioScale}
+                onChange={e => setRatioScale(parseFloat(e.target.value) || 1.0)}
+                onInput={e => setRatioScale(parseFloat((e.target as HTMLInputElement).value) || 1.0)}
+                aria-label={t("Ratio Balance")}
+                style={{ transition: 'none', animation: 'none' }}
+              />
+              <div className="d-flex justify-content-between text-body-secondary fs-8 mt-1">
+                <span>{t("Tall FD")} ({bounds.minFd.toFixed(2)})</span>
+                <span className="text-primary fw-semibold">{ratioScale.toFixed(2)}x</span>
+                <span>{t("Short FD")} ({bounds.maxFd.toFixed(2)})</span>
+              </div>
+            </div>
+
             <div style={{ ...formRowStyle, marginBottom: '0.8rem', borderBottom: '1px solid var(--glass-border)', paddingBottom: '0.5rem' }}>
               <span style={{ fontSize: '0.9rem', color: 'var(--text-primary)', fontWeight: 600 }}>{t("Final Drive Ratio (FD)")}</span>
               <input
-                type="number" step="0.01" value={tuning.gearing.finalDrive}
-                readOnly
-                title={t("Auto-calculated by AEGO algorithm")}
-                style={{ ...inputStyle, width: '80px', padding: '0.3rem', fontSize: '0.9rem', textAlign: 'right', border: '1px solid var(--primary)', opacity: 0.85, cursor: 'not-allowed' }}
+                type="number" step="0.01" min={bounds.minFd} max={bounds.maxFd}
+                value={adjustedFd}
+                onChange={e => {
+                  const val = parseFloat(e.target.value);
+                  if (Number.isFinite(val) && val > 0 && baseFd > 0) {
+                    const nextScale = Math.min(bounds.maxScale, Math.max(bounds.minScale, Number((val / baseFd).toFixed(2))));
+                    setRatioScale(nextScale);
+                  }
+                }}
+                title={t("Final Drive Ratio (FD)")}
+                style={{ ...inputStyle, width: '80px', padding: '0.3rem', fontSize: '0.9rem', textAlign: 'right', border: '1px solid var(--primary)' }}
               />
             </div>
 
@@ -102,10 +172,10 @@ const GearingTunerComponent: React.FC<GearingTunerProps> = ({
                 <div key={`gear-in-${i}`} style={{ ...formRowStyle, background: 'var(--surface-2)', padding: '0.4rem 0.6rem', borderRadius: '4px' }}>
                   <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t("Gear")} {i + 1}</span>
                   <input
-                    type="number" step="0.01" value={tuning.gearing.gears[i] || 0.0}
+                    type="number" step="0.01" value={adjustedGears[i] || 0.0}
                     readOnly
-                    title={t("Auto-calculated by AEGO algorithm")}
-                    style={{ ...inputStyle, width: '65px', padding: '0.25rem', fontSize: '0.85rem', textAlign: 'right', opacity: 0.85, cursor: 'not-allowed' }}
+                    title={`${t("Gear")} ${i + 1}`}
+                    style={{ ...inputStyle, width: '65px', padding: '0.25rem', fontSize: '0.85rem', textAlign: 'right', opacity: 0.85 }}
                   />
                 </div>
               ))}
