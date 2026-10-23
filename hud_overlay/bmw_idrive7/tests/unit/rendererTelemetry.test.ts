@@ -68,6 +68,7 @@ function renderer(style: string) {
   const source = inlineScriptSource(html)
     .replace(/(var rpmRatio = [^;]+;)/g, '$1 window.__rpmRatio = rpmRatio;')
     .replace(/\}\)\(\);\s*$/, 'window.__telemetry = telemetry; })();');
+  runInNewContext(readFileSync(resolve(hud, 'shared/artwork-effects.js'), 'utf8'), scope);
   runInNewContext(source, scope);
   return { hooks, attributes, classes, timers, rafs, state: () => scope.__telemetry,
     ratio: () => scope.__rpmRatio,

@@ -36,12 +36,13 @@
 
     <div class="hud-root-wrapper">
         <div class="hud-gauge-container bmw-idrive-container" id="bmwIdriveContainer">
-            <canvas id="bmwCanvas" width="638" height="522"></canvas>
+            <div class="artwork-motion" id="artworkMotion"><canvas id="bmwCanvas" width="638" height="522"></canvas></div>
         </div>
     </div>
 
     <script src="../shared/hud-core.js"></script>
     <script src="../shared/hud-artwork.js"></script>
+    <script src="../shared/artwork-effects.js"></script>
 
     <script>
         (function() {
@@ -64,6 +65,26 @@
                 powerHp: 0,
                 tempC: 85
             };
+
+            // Keep accepted live readings separate from temporary display-check values.
+            var liveTelemetry = telemetry;
+            var effects = HUDArtworkEffects.create(document.getElementById('artworkMotion'));
+            var destroyed = false;
+
+            function destroy() {
+                destroyed = true;
+                effects.destroy();
+                if (sweepRafId !== null) cancelAnimationFrame(sweepRafId);
+                sweepRafId = null;
+                isSweeping = false;
+                window.removeEventListener('message', onLifecycleMessage);
+                window.removeEventListener('pagehide', destroy);
+            }
+            function onLifecycleMessage(event) {
+                if (event.data && event.data.type === 'hud:destroy') destroy();
+            }
+            window.addEventListener('message', onLifecycleMessage);
+            window.addEventListener('pagehide', destroy);
 
             function formatGear(g) {
                 var gearNum = Number(g);
@@ -108,6 +129,7 @@
             ];
 
             function render() {
+                if (destroyed) return;
                 var w = 638;
                 var h = 522;
                 ctx.clearRect(0, 0, w, h);
@@ -137,10 +159,10 @@
 
                 // Gear indicator (left of the 3 shift chevrons at x=335, y=268)
                 var gearChar = formatGear(telemetry.gear);
-                ctx.fillStyle = isRedline ? '#ff2244' : '#ff9911';
+                ctx.fillStyle = isRedline ? '#ff2244' : effects.accent('#ff9911');
                 ctx.font = 'italic 900 76px "Segoe UI", Arial, sans-serif';
-                ctx.shadowColor = isRedline ? 'rgba(255, 20, 50, 0.75)' : 'rgba(255, 150, 20, 0.45)';
-                ctx.shadowBlur = 12;
+                ctx.shadowColor = isRedline ? 'rgba(255, 20, 50, 0.75)' : effects.accent('rgba(255, 150, 20, 0.45)');
+                ctx.shadowBlur = effects.glow(12);
                 ctx.fillText(gearChar, 330, 272);
 
                 // Speed readout (left of the native 'km/h' label at x=436, y=334)
@@ -148,7 +170,7 @@
                 ctx.fillStyle = '#ffffff';
                 ctx.font = 'italic 800 66px "Segoe UI", Arial, sans-serif';
                 ctx.shadowColor = 'rgba(0, 200, 255, 0.45)';
-                ctx.shadowBlur = 10;
+                ctx.shadowBlur = effects.glow(10);
                 ctx.fillText(String(Math.max(0, Math.round(telemetry.speed))), 408, 352);
 
                 ctx.restore();
@@ -170,44 +192,52 @@
                 onScale: HUDArtwork.watchCanvas(canvas, render),
 
                 onInit: function() {
+                    if (destroyed) return;
+                    effects.sync();
                     render();
                 },
 
                 onElementsChange: function(elements) {
+                    if (destroyed) return;
+                    effects.sync(elements);
                     if (container && elements && elements.showGauge !== undefined) {
                         container.style.display = elements.showGauge === false ? 'none' : 'block';
                     }
                 },
 
                 onFrame: function(data, payload) {
-                    if (!data) return;
+                    if (destroyed || !data) return;
+                    effects.update(data);
                     payload = payload || {};
                     // The native artwork is permanently labelled km/h.
-                    telemetry.speed = Number(data.speed_kmh || 0);
-                    telemetry.rpm = Number(data.rpm || 0);
-                    telemetry.maxRpm = Number(data.max_rpm || data.maxRpm || payload.redlineRpm || 8000);
-                    telemetry.gear = data.gear !== undefined ? Number(data.gear) : 1;
+                    liveTelemetry.speed = Number(data.speed_kmh || 0);
+                    liveTelemetry.rpm = Number(data.rpm || 0);
+                    liveTelemetry.maxRpm = Number(data.max_rpm || data.maxRpm || payload.redlineRpm || 8000);
+                    liveTelemetry.gear = data.gear !== undefined ? Number(data.gear) : 1;
 
                     // Hardcoded PSI on dial face: always use PSI
                     var rawPsi = data.boost_psi !== undefined
                         ? Number(data.boost_psi)
                         : (data.Boost !== undefined ? Number(data.Boost) : Number(data.boost || 0));
-                    telemetry.boostPsi = Math.max(0, rawPsi);
+                    liveTelemetry.boostPsi = Math.max(0, rawPsi);
 
                     // Hardcoded HP on dial face: always use HP
-                    telemetry.powerHp = Math.max(0, Number(data.power_hp !== undefined ? data.power_hp : (data.power || 0)));
+                    liveTelemetry.powerHp = Math.max(0, Number(data.power_hp !== undefined ? data.power_hp : (data.power || 0)));
 
                     // Display the four-wheel average directly; no RPM-derived heat offset.
-                    telemetry.tempC = HUDCore.getAverageTireTemperatureC(data) ?? 0;
+                    liveTelemetry.tempC = HUDCore.getAverageTireTemperatureC(data) ?? 0;
 
                     if (!isSweeping) {
+                        telemetry = liveTelemetry;
                         render();
                     }
                 },
 
                 onAnimate: function() {
+                    if (destroyed) return;
                     if (sweepRafId !== null) cancelAnimationFrame(sweepRafId);
                     isSweeping = true;
+                    telemetry = Object.assign({}, liveTelemetry);
                     var start = performance.now();
                     var duration = 1200;
                     function sweep(t) {
@@ -220,18 +250,13 @@
                         telemetry.boostPsi = wave * 28;
                         telemetry.powerHp = wave * 720;
                         telemetry.tempC = 50 + wave * 95;
-                        render();
                         if (progress < 1) {
+                            render();
                             sweepRafId = requestAnimationFrame(sweep);
                         } else {
                             isSweeping = false;
                             sweepRafId = null;
-                            telemetry.rpm = 0;
-                            telemetry.speed = 0;
-                            telemetry.gear = 1;
-                            telemetry.boostPsi = 0;
-                            telemetry.powerHp = 0;
-                            telemetry.tempC = 50;
+                            telemetry = liveTelemetry;
                             render();
                         }
                     }
