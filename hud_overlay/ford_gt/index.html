@@ -28,6 +28,7 @@
             height: 220px;
             pointer-events: none;
         }
+        .artwork-motion { width: 100%; height: 100%; }
         canvas {
             display: block;
             width: 100%;
@@ -38,12 +39,13 @@
 <body>
     <div class="hud-root-wrapper">
         <div class="hud-gauge-container fordgt-container" id="fordGtContainer">
-            <canvas id="fordGtCanvas" width="586" height="220"></canvas>
+            <div class="artwork-motion" id="artworkMotion"><canvas id="fordGtCanvas" width="586" height="220"></canvas></div>
         </div>
     </div>
 
     <script src="../shared/hud-core.js"></script>
     <script src="../shared/hud-artwork.js"></script>
+    <script src="../shared/artwork-effects.js"></script>
     <script>
         (function() {
             var canvas = document.getElementById('fordGtCanvas');
@@ -53,6 +55,9 @@
             var baseImg = HUDArtwork.loadImage('assets/ford_gt_clean.png', 0.25);
             var barsImg = HUDArtwork.loadImage('assets/ford_gt_bars_full.png', 0);
             var basePlate = null;
+
+            var isSweeping = false;
+            var sweepRafId = null;
 
             var telemetry = {
                 speed: 0,
@@ -65,6 +70,26 @@
                 torqueNm: null,
                 powerHp: null
             };
+
+            // Keep accepted live readings separate from temporary display-check values.
+            var liveTelemetry = telemetry;
+            var effects = HUDArtworkEffects.create(document.getElementById('artworkMotion'));
+            var destroyed = false;
+
+            function destroy() {
+                destroyed = true;
+                effects.destroy();
+                if (sweepRafId !== null) cancelAnimationFrame(sweepRafId);
+                sweepRafId = null;
+                isSweeping = false;
+                window.removeEventListener('message', onLifecycleMessage);
+                window.removeEventListener('pagehide', destroy);
+            }
+            function onLifecycleMessage(event) {
+                if (event.data && event.data.type === 'hud:destroy') destroy();
+            }
+            window.addEventListener('message', onLifecycleMessage);
+            window.addEventListener('pagehide', destroy);
 
             function finiteReading(value) {
                 return typeof value === 'number' && Number.isFinite(value) ? value : null;
@@ -90,6 +115,7 @@
             }
 
             function render() {
+                if (destroyed) return;
                 var w = 586;
                 var h = 220;
                 ctx.clearRect(0, 0, w, h);
@@ -106,8 +132,9 @@
                         var rpmX = Math.round(6 + rpmRatio * 570);
                         ctx.save();
                         ctx.beginPath();
-                        // Clip RPM track while excluding bottom-left Fuel bar box (55..170, 160..220)
-                        ctx.rect(6, 14, rpmX - 6, 146);
+                        // Exclude the fuel box and relabelled auxiliary region from baked artwork.
+                        ctx.rect(6, 14, rpmX - 6, 94);
+                        ctx.rect(6, 108, Math.min(rpmX - 6, 456), 52);
                         ctx.rect(6, 160, Math.min(rpmX - 6, 48), 45);
                         ctx.clip();
                         ctx.drawImage(barsImg, 0, 0, 586, 220);
@@ -117,7 +144,7 @@
                         if (rpmX > 120) {
                             ctx.save();
                             var isRed = telemetry.rpm >= 7200;
-                            ctx.strokeStyle = isRed ? '#ff2a3a' : '#ffe47a';
+                            ctx.strokeStyle = isRed ? '#ff2a3a' : effects.accent('#ffe47a');
                             ctx.lineWidth = 1.6;
                             ctx.beginPath();
                             ctx.moveTo(rpmX, 34);
@@ -143,14 +170,16 @@
                 ctx.save();
                 ctx.fillStyle = '#ffffff';
                 ctx.shadowColor = 'rgba(255, 255, 255, 0.45)';
-                ctx.shadowBlur = 6;
+                ctx.shadowBlur = effects.glow(6);
 
+                ctx.fillStyle = effects.accent('#ffffff');
                 // 4. Restore the original D3D11 gear readout above the left RPM ramp.
                 // Reference: ForzaHUD/raw_renders/dash_ford_gt_raw.png (gear bounds x=15..49, y=58..98).
                 ctx.font = 'bold 64px "Consolas", monospace';
                 ctx.textAlign = 'center';
                 ctx.fillText(telemetry.gear, 33, 99);
 
+                ctx.fillStyle = '#ffffff';
                 // 5. Digital Speed (Center: x=295, y=150)
                 ctx.font = 'bold 82px "Consolas", monospace';
                 ctx.fillText(String(Math.round(telemetry.speed)), 295, 150);
@@ -158,12 +187,12 @@
                 // 6. Numeric RPM (Above 'RPM' label at x=529..572, y=77..90)
                 ctx.font = 'bold 25px "Consolas", monospace';
                 ctx.textAlign = 'right';
-                ctx.shadowBlur = 3;
+                ctx.shadowBlur = effects.glow(3);
                 ctx.fillText(String(Math.round(telemetry.rpm)), 572, 71);
 
                 // 7. Explicit labels and fixed units agree with the four real telemetry sources.
                 ctx.fillStyle = '#f1f5f9';
-                ctx.shadowBlur = 0;
+                ctx.shadowBlur = effects.glow(0);
                 drawReading('TIRE AVG', telemetry.tempC, '°C', 128, 0);
                 drawReading('BOOST', telemetry.boostPsi, 'psi', 152, 1);
                 drawReading('TORQUE', telemetry.torqueNm, 'N·m', 176, 0);
@@ -172,6 +201,7 @@
             }
 
             baseImg.onload = function() {
+                if (destroyed) return;
                 basePlate = document.createElement('canvas');
                 basePlate.width = 586;
                 basePlate.height = 220;
@@ -191,33 +221,50 @@
                 scaleMultiplier: 0.95,
                 onScale: HUDArtwork.watchCanvas(canvas, render),
 
+                onInit: function() {
+                    if (destroyed) return;
+                    effects.sync();
+                    render();
+                },
+
                 onElementsChange: function(elements) {
+                    if (destroyed) return;
+                    effects.sync(elements);
                     if (container) {
                         container.style.display = elements.showGauge === false ? 'none' : 'block';
                     }
                 },
 
                 onFrame: function(data) {
-                    if (data.speed !== undefined) telemetry.speed = Math.abs(Number(data.speed)) || 0;
-                    if (data.rpm !== undefined) telemetry.rpm = Math.max(0, Number(data.rpm) || 0);
-                    if (data.maxRpm !== undefined && data.maxRpm > 0) telemetry.maxRpm = Number(data.maxRpm);
-                    if (data.gear !== undefined) telemetry.gear = formatGear(data.gear);
+                    if (destroyed) return;
+                    effects.update(data);
+                    if (data.speed !== undefined) liveTelemetry.speed = Math.abs(Number(data.speed)) || 0;
+                    if (data.rpm !== undefined) liveTelemetry.rpm = Math.max(0, Number(data.rpm) || 0);
+                    if (data.maxRpm !== undefined && data.maxRpm > 0) liveTelemetry.maxRpm = Number(data.maxRpm);
+                    if (data.gear !== undefined) liveTelemetry.gear = formatGear(data.gear);
 
-                    telemetry.tempC = HUDCore.getAverageTireTemperatureC(data);
-                    telemetry.boostPsi = finiteReading(data.boost_psi ?? data.Boost);
-                    telemetry.torqueNm = finiteReading(data.torque_nm ?? data.TorqueNewtons);
+                    liveTelemetry.tempC = HUDCore.getAverageTireTemperatureC(data);
+                    liveTelemetry.boostPsi = finiteReading(data.boost_psi ?? data.Boost);
+                    liveTelemetry.torqueNm = finiteReading(data.torque_nm ?? data.TorqueNewtons);
                     var watts = finiteReading(data.PowerWatts);
-                    telemetry.powerHp = finiteReading(data.power_hp ?? (watts === null ? null : watts / 745.7));
+                    liveTelemetry.powerHp = finiteReading(data.power_hp ?? (watts === null ? null : watts / 745.7));
 
                     if (data.fuel_ratio !== undefined) {
-                        telemetry.fuelRatio = Number(data.fuel_ratio);
+                        liveTelemetry.fuelRatio = Number(data.fuel_ratio);
                     } else if (data.fuel_level !== undefined) {
-                        telemetry.fuelRatio = Number(data.fuel_level);
+                        liveTelemetry.fuelRatio = Number(data.fuel_level);
                     }
-                    render();
+                    if (!isSweeping) {
+                        telemetry = liveTelemetry;
+                        render();
+                    }
                 },
 
                 onAnimate: function() {
+                    if (destroyed) return;
+                    if (sweepRafId !== null) cancelAnimationFrame(sweepRafId);
+                    isSweeping = true;
+                    telemetry = Object.assign({}, liveTelemetry);
                     var start = performance.now();
                     var duration = 1200;
                     function sweep(t) {
@@ -231,10 +278,17 @@
                         telemetry.torqueNm = wave * 550;
                         telemetry.powerHp = wave * 600;
                         telemetry.gear = wave > 0.5 ? '4' : '1';
-                        render();
-                        if (progress < 1) requestAnimationFrame(sweep);
+                        if (progress < 1) {
+                            render();
+                            sweepRafId = requestAnimationFrame(sweep);
+                        } else {
+                            isSweeping = false;
+                            sweepRafId = null;
+                            telemetry = liveTelemetry;
+                            render();
+                        }
                     }
-                    requestAnimationFrame(sweep);
+                    sweepRafId = requestAnimationFrame(sweep);
                 }
             });
 
