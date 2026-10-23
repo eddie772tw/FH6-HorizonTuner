@@ -302,11 +302,14 @@ const TireRadar: React.FC<TireRadarProps> = React.memo(({ title, isLeft, tireIdx
             ctx.fillStyle = theme.glowStrength === 0 ? 'transparent' : dotGlowColor;
             ctx.fill();
 
-            ctx.beginPath();
-            if (theme.linear) ctx.rect(dotCenterX - 3 * dpr, dotCenterY - 3 * dpr, 6 * dpr, 6 * dpr);
-            else ctx.arc(dotCenterX, dotCenterY, 3.5 * dpr, 0, Math.PI * 2);
             ctx.fillStyle = dotColor;
-            ctx.fill();
+            if (theme.linear) {
+              ctx.fillRect(dotCenterX - 3 * dpr, dotCenterY - 3 * dpr, 6 * dpr, 6 * dpr);
+            } else {
+              ctx.beginPath();
+              ctx.arc(dotCenterX, dotCenterY, 3.5 * dpr, 0, Math.PI * 2);
+              ctx.fill();
+            }
           }
         }
       }

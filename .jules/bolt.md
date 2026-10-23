@@ -143,3 +143,7 @@ Additionally, attempting to optimize 60Hz telemetry data copying in `FrameInterp
 ## 2026-10-17 - Optimize Canvas Path Rendering
 **Learning:** In high-frequency Canvas loops, drawing lines individually by calling ctx.beginPath() and ctx.stroke() per segment is inefficient. Batching segments of the same stroke style into a single path significantly reduces CPU overhead.
 **Action:** Group lines by styling (e.g., lineWidth, strokeStyle) and construct them in a single path before stroking, avoiding unnecessary path and state changes.
+
+## 2026-10-21 - Canvas Render Loop Optimization via Loop Unswitching and Path Batching
+**Learning:** In high-frequency JavaScript rendering loops (e.g., Canvas2D telemetry scatter plots), use 'loop unswitching' by hoisting invariant conditions (like checking a theme configuration) outside the loop. This prevents the JavaScript engine from evaluating the condition on every iteration (which can happen thousands of times per frame), noticeably reducing CPU overhead. Furthermore, when drawing multiple paths, replace `ctx.rect()` + `ctx.fill()` with direct `ctx.fillRect()` when `theme.linear` is true to avoid path batching overhead and preserve alpha compositing. For arcs (`theme.linear` is false), correctly batch them by moving `ctx.beginPath()` and `ctx.fill()` outside the loop, preceded by `ctx.moveTo()`.
+**Action:** Identify tight rendering loops that contain invariant conditions and extract them into separate loop bodies, applying path batching or direct drawing operations optimally for each branch.
