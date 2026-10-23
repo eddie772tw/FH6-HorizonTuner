@@ -39,6 +39,8 @@ export const HUD_DISPLAY_NAMES: Record<string, string> = {
   classic_jdm: 'Classic JDM Arcade',
   r34_mfd: 'Skyline R34 MFD',
   mclaren_720s: 'McLaren 720S Folding Cluster',
+  ford_gt: 'Ford GT 2017 Race Cluster',
+  bmw_idrive7: 'BMW Live Cockpit iDrive 7',
   minimap_overlay: 'GPS Minimap Radar',
   touge_pacenotes: 'Touge Pacenotes & Prompts',
   telemetry_cards: 'Telemetry Data Cards',

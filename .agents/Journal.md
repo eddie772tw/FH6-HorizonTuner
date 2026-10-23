@@ -944,6 +944,39 @@
 
 - 使用既有載入時 artwork 處理將暗底板 alpha 設為 0.75，亮刻度、動態數字／游標、原生外框與 baseline=1.575／中下位置保留。
 - 採用技能：`ponytail`、`pr-author-maintainer`、`halfmoon-design-system`。完整前端測試與 build 於提交前驗證，日誌 round4-537；不新增樣式測試。
+
+## 2026-10-19 / 第二輪 HUD 視覺審查 PR #538（Codex as Codex）
+
+- **修正／Learning**：對照 D:/ForzaHUD/horizontuner_integration/raw_renders/dash_ford_gt_raw.png 與 docs/acceptance_screenshots/10_dash_Ford_GT.png；依使用者確認恢復左上檔位，位於 RPM 上升弧外側。
+- **驗證界線**：先跑完整 frontend Vitest 與 build，再保存最後提交的實際 Forza 漫遊截圖與設定；靜態圖片不作為動態駕駛或跨更新率效能證據。未新增個別樣式測試。
+- **Skills**：`huge-component-refactoring`、`halfmoon-design-system`、`pr-author-maintainer`、`ponytail`。
+
+
+### 2026-10-19 Ford GT 面板背景 25%
+
+- 暗底板 alpha 改 0.25，保留原生刻度、指針、亮標記與原始左上檔位位置 (33,99)。
+- 採用技能：`ponytail`、`pr-author-maintainer`、`halfmoon-design-system`。完整前端測試與 build 於提交前驗證，日誌 round4-538；不新增樣式測試。
+
+### 2026-10-19 Ford GT 四列真實遙測
+
+- 右側依序為平均胎溫°C、增壓psi、扭力N·m、馬力hp，清除舊烘焙圖示／單位，移除水溫閾值猜測與油液代理。只取有單位的別名或canonical raw欄位；缺值顯示破折號。胎溫沿用共用四輪raw°F helper與兩項共用測試。
+- 技能：`ponytail`、`pr-author-maintainer`、`halfmoon-design-system`、`huge-component-refactoring`、`telemetry-udp-protocol`。基線1809／1、修改後1811／1完整前端通過，build通過。離線95°C／12.3psi／456Nm／321hp畫面無JS錯誤；另做實機驗證，未新增樣式測試。
+
+
+## 2026-10-19 / 第二輪 HUD 視覺審查 PR #534（Codex as Codex）
+
+- **修正／Learning**：BMW 超轉僅保留固定紅光，移除會改變整體縮放的 CSS 脈動。
+- **驗證界線**：先跑完整 frontend Vitest 與 build，再保存最後提交的實際 Forza 漫遊截圖與設定；靜態圖片不作為動態駕駛或跨更新率效能證據。未新增個別樣式測試。
+- **Skills**：`huge-component-refactoring`、`halfmoon-design-system`、`pr-author-maintainer`、`ponytail`。
+
+
+### 2026-10-19 HUD 四輪平均胎溫與原始單位
+
+- 水溫表來源使用共用 `HUDCore.getAverageTireTemperatureC`，四個有限數值才成立；依 raw °F 合約固定轉 °C，不能以 125 閾值猜單位。零度仍是數值，缺資料回冷端，不加 RPM 補正。
+- 採用技能：`ponytail`、`pr-author-maintainer`、`halfmoon-design-system`、`huge-component-refactoring`、`telemetry-udp-protocol`。共用純函式涵蓋冷／熱、aliases、缺值；沒有新增個別樣式測試。
+- 修改前前端 1809 passed / 1 skipped；修改後完整前端測試與 build 於提交前驗證，詳見本機 round4-534 日誌。
+
+
 ## 2026-10-19 / WASAPI 高取樣率頻譜範圍（Codex as Codex）
 
 - **Learning**：頻譜 JSON 有完整 32 段，不代表頻段涵蓋範圍正確。實機 endpoint 為 192 kHz；將正頻率 FFT 全部配置到顯示時，右半部涵蓋約 24–96 kHz，導致一般音訊只在左側活動。同一 2 kHz 音調在舊版 44.1／96 kHz 下的峰值位置也會改變。
@@ -964,3 +997,17 @@
 - **Scale**：使用既有 HUDCore 的 baseline × multiplier × global × user scale，不能直接改共用全域倍率。放大時 backing canvas 必須跟隨實際 zoom 與 DPR，繪圖座標仍維持原始設計單位，避免再縮放一次或變模糊。
 - **Controller**：依使用者修訂，手把卡片錨點預設為螢幕中心，X／Y 位移預設 0%，限制 −50..50%；分別相對視窗寬／高，正值往右／下。外層中心錨點不受內部儀表 zoom 影響。共用 normalizer 與 runtime 測試涵蓋預設值、正負小數、上限與非有限數。
 - **Skills**：`pr-author-maintainer`、`cross-agent-collaboration`、`huge-component-refactoring`、`halfmoon-design-system`、`ponytail`、`computer-use`。
+
+## 2026-10-23 / 首批 HUD display-check 與 live telemetry 交錯（Bagley as dot）
+
+- **Learning**：示範 sweep 與 live frame 不能寫入同一個狀態物件；只記最新 raw packet 也會破壞 partial update 的正規化欄位。`hud:destroy` 只清空 body，不會觸發 unload。
+- **處理**：BMW、McLaren、Ford 維護獨立的正規化 live state；動畫只寫顯示副本，正常 frame 不打斷手動 sweep，結束即還原最新 live state。重複動畫取消前一 RAF；各款式自行處理 hud:destroy/pagehide 清理與防止復活，沒有改 shared core、暫停政策、刻度或外觀。
+- **驗證**：22 項 regression 在原 head 失敗、修正後通過，含連續資料、partial updates、初始基準、resize/image-load、BMW redline、Ford 缺值與卸載。整合最新 main 44b1f526：1847 passed / 1 skipped，tsc 和 Windows-target build 通過，Chromium 實際訊息路徑通過。不代表 Windows／真遊戲驗收。
+- **Skills**：`pr-review-evaluation`、`halfmoon-design-system`、`pr-author-maintainer`。
+
+## 2026-10-23 / PNG-backed HUD 局部效果相容性（Bagley as dot）
+
+- **Learning**：VFD motion 是 canonical G-force translate/blur，與 glow 或 physics spring 不同；三款 compositor 的 PNG 色條不能全畫面 hue-shift。獨立 nested motion wrapper 避免覆寫 BMW redline filter 與 HUDCore zoom。
+- **處理**：三款 opt-in artwork-effects，重用既有色彩、glow 與 motion 設定；只變程序 accent，保留白色讀值／素材／語意警告。VFD 原 3.5px blur 在 Ford 小字明顯失讀，compact helper 降為 0.75px；VFD 本身不變。無新 RAF。另裁切 Ford RPM lit PNG 排除重新標示的輔助區，避免高轉時舊圖示污染；destroy 後 render/image callback 立即退出。
+- **驗證**：預設畫面對原 head pixel hash 相同（中轉基準）；18 組尺寸/DPR 高 G/reset/redline 共存通過，3 款 combined sweep/config 測試通過；原 Ford 輔助區隨 RPM 變動，修正後穩定。完整前端1850 passed/1 skipped、tsc、Windows-target build 通過；原生 Windows/真遊戲未測。720S/Ford 向量小原型未達像素保真，不進產品。
+- **Skills**：`pr-review-evaluation`、`halfmoon-design-system`、`pr-author-maintainer`、`huge-component-refactoring`、`modular-refactoring`。
