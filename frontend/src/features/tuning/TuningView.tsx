@@ -68,7 +68,6 @@ export function TuningViewContent({ unitPreference, onUnitPreferenceChange }: {
       <div className="small text-body-secondary mt-2" role="status">{t(session.calculationStatus === 'pending' ? 'Calculating tuning results…' : session.calculationStatus === 'error' ? 'Tuning calculation is unavailable. Retrying…' : usesCvt(profile) ? 'CVT recommendations are unavailable pending real capture and solver validation.' : !readiness.mechanical ? 'Complete the vehicle weight and distribution first.' : !readiness.measuredEngine ? 'Mechanical estimates are available. Engine data and gearing still require measurement.' : !readiness.gearingAvailable ? 'Engine analysis is ready, but the gearing model has no feasible result. Review Step 3.' : 'Engine measurement is ready. Confirm game settings before recording a validation run.')}</div>
       {!reviewHistory && session.calculationStatus === 'ready' && <WorkflowGuide readiness={readiness} currentStep={currentStep} openStep={step => setCurrentStep(step)} />}
     </header>
-    {!reviewHistory && [1, 2].includes(currentStep) && <BaselinePreviewPanel carId={carId} profile={profile} season={season} draft={session.baseline} showTargetSelector={currentStep !== 1} />}
     {!reviewHistory && currentStep === 1 && <Step1GoalSetup measuredEngineInputs selectedRaceGoal={session.baseline.goal} setSelectedRaceGoal={session.baseline.setDraftGoal} season={season} setSeason={session.workflow.setSeason}
       carParams={profile} updateParam={(key, value) => {
         const updated = profile && updateWorkflowProfile(liveCarParams, key, value);
@@ -78,11 +77,12 @@ export function TuningViewContent({ unitPreference, onUnitPreferenceChange }: {
       onProceed={async () => { await saveCarParams(); if (selectionGenerationRef.current === selectionGeneration) setCurrentStep(2); }} />}
     {!reviewHistory && [2, 4].includes(currentStep) && session.calculationStatus !== 'ready' && <div className="alert alert-info" role="status">{t(session.calculationStatus === 'error' ? 'Tuning calculation is unavailable. Retrying…' : 'Calculating tuning results…')}</div>}
     {!reviewHistory && currentStep === 2 && session.calculationStatus === 'ready' && <Step2ChassisTuner selectedRaceGoal={goal} season={season} carParams={profile}
-      chassis={chassis} alignment={alignment} tireEvidence={session.result?.tireEvidence ?? null} evidenceProvenance={session.result?.evidenceProvenance ?? null} saveCarParams={saveCarParams} />}
+      chassis={chassis} alignment={alignment} saveCarParams={saveCarParams} />}
     {!reviewHistory && currentStep === 3 && (usesCvt(profile) ? <CvtFoundationPanel result={session.result?.cvt} t={t} evidenceSession={session.cvtEvidence} /> : profile?.isElectric
       ? <EvPowertrainStep enabled={readiness.engineInputs} />
       : <EngineDataStep key={JSON.stringify([carId, selectionGeneration, session.identityGeneration, profile])} carId={carId} profile={profile} engine={engine} gearing={gearing && !('model' in gearing) ? gearing : null} enabled={readiness.engineInputs} />)}
     {!reviewHistory && currentStep === 4 && session.calculationStatus === 'ready' && <SetupVerificationStep goal={goal} carId={carId} recommendation={session.result?.recommendation ?? null} />}
+    {!reviewHistory && [1, 2].includes(currentStep) && <BaselinePreviewPanel carId={carId} profile={profile} season={season} draft={session.baseline} showTargetSelector={currentStep !== 1} />}
     {reviewHistory && <RoadWorkflowView recommendation={null} carId={carId} />}
     <UnitSettingsSidebar idPrefix="tuning-units" show={showUnits} title={t('Tuning Workflow Unit Settings')}
       preference={unitPreference} onChange={onUnitPreferenceChange} onClose={() => setShowUnits(false)} />

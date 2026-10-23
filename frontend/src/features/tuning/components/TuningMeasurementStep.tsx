@@ -32,8 +32,6 @@ export function TuningMeasurementStep({ carId, enabled, offline = false }: { car
   return (
     <section className="glass-panel p-4" style={{ color: 'var(--text-primary)' }}>
       <h3 className="fs-5">{t('Prepare engine data for gearing')}</h3>
-      <p>{t('Drive one or more smooth full-throttle runs on a clear straight, starting low in the rev range and holding the gear toward the engine limit. The app reads the numbers for you; no target speed or RPM entry is needed.')}</p>
-      <p className="small" style={{ color: 'var(--text-secondary)' }}>{t('Decoded frames and the measured summary are saved together when you continue. Collection is limited to 30,000 frames. Collected frames remain available while you switch Tune steps; export them before restarting collection or closing the app.')}</p>
       <div role="status" aria-live="polite" className="mb-3" style={{ minHeight: '3rem' }}>
         {offline ? t('Offline selection does not supply live telemetry. Follow Data Out to collect new data.') : !enabled ? t('Enter valid weight, front weight percentage and power in Step 1 first.') :
           canFinishExtra ? t('A usable result is retained. Continue driving to add data, or finish additional collection before calculating.') :
@@ -59,8 +57,6 @@ export function TuningMeasurementStep({ carId, enabled, offline = false }: { car
           <li>{t('Observed powerband')}: {Math.round(state.powerbandStartRpm)} - {Math.round(state.powerbandEndRpm)} RPM</li>
         )}
       </ul>
-      <p className="small" style={{ color: 'var(--text-secondary)' }}>{t('Engine-output collection checks throttle, controls, gear changes and rev-range coverage. Tire slip is recorded as context, not used as an engine-output rejection threshold. This does not validate road grip or gearing against vehicle speed.')}</p>
-      <p className="small">{t('Meeting the collection requirements allows calculation; it does not prove that engine peaks are stable. You can keep the collected data and add another run.')}</p>
       {!measurement.autoFinish && measurement.phase !== 'complete' && <p role="status">{t('Additional collection is active. Finish when you have completed another run; the last usable result remains available after returning to the menu.')}</p>}
       {state.maxObservedNormalizedSlip !== undefined && <p className="small">
         {t('Maximum observed normalized tire slip')}: {state.maxObservedNormalizedSlip.toFixed(2)}
