@@ -140,33 +140,50 @@ const PowerTorqueCanvas: React.FC<PowerTorqueCanvasProps> = React.memo(({ height
 
       // 1. Draw Torque Scatter Points (Secondary Theme Color)
       ctx.fillStyle = secondaryHex;
-      ctx.beginPath();
-      for (let k = 0; k < len; k++) {
-        const pt = hist.current[k];
-        const px = (pt.rpm / maxRpm) * (w - 24 * dpr) + 12 * dpr;
-        const py = h - padBottom - (pt.torque / combinedMax) * plotH;
-
-        if (theme.linear) {
-          ctx.rect(px - 1.8 * dpr, py - 1.8 * dpr, 3.6 * dpr, 3.6 * dpr);
-        } else {
+      // [PERF] Loop unswitching: hoisting condition outside loop avoids evaluating theme.linear inside a 350-iteration loop.
+      // Additionally, using ctx.fillRect immediately writes to canvas without path batching overhead and preserves alpha compositing.
+      if (theme.linear) {
+        for (let k = 0; k < len; k++) {
+          const pt = hist.current[k];
+          const px = (pt.rpm / maxRpm) * (w - 24 * dpr) + 12 * dpr;
+          const py = h - padBottom - (pt.torque / combinedMax) * plotH;
+          ctx.fillRect(px - 1.8 * dpr, py - 1.8 * dpr, 3.6 * dpr, 3.6 * dpr);
+        }
+      } else {
+        // [PERF] Path batching: moving ctx.beginPath() and ctx.fill() outside loop and preceding ctx.arc() with ctx.moveTo()
+        // to minimize state changes and drastically reduce CPU overhead during high-frequency render loops.
+        ctx.beginPath();
+        for (let k = 0; k < len; k++) {
+          const pt = hist.current[k];
+          const px = (pt.rpm / maxRpm) * (w - 24 * dpr) + 12 * dpr;
+          const py = h - padBottom - (pt.torque / combinedMax) * plotH;
           ctx.moveTo(px + 1.8 * dpr, py);
           ctx.arc(px, py, 1.8 * dpr, 0, Math.PI * 2);
         }
+        ctx.fill();
       }
-      ctx.fill();
 
       // 2. Draw Power Scatter Points (Primary Theme Color)
       ctx.fillStyle = primaryHex;
-      ctx.beginPath();
-      for (let k = 0; k < len; k++) {
-        const pt = hist.current[k];
-        const px = (pt.rpm / maxRpm) * (w - 24 * dpr) + 12 * dpr;
-        const py = h - padBottom - (pt.power / combinedMax) * plotH;
-
-        ctx.moveTo(px + 2.0 * dpr, py);
-        ctx.arc(px, py, 2.0 * dpr, 0, Math.PI * 2);
+      // [PERF] See torque scatter loop above for optimization details.
+      if (theme.linear) {
+        for (let k = 0; k < len; k++) {
+          const pt = hist.current[k];
+          const px = (pt.rpm / maxRpm) * (w - 24 * dpr) + 12 * dpr;
+          const py = h - padBottom - (pt.power / combinedMax) * plotH;
+          ctx.fillRect(px - 2.0 * dpr, py - 2.0 * dpr, 4.0 * dpr, 4.0 * dpr);
+        }
+      } else {
+        ctx.beginPath();
+        for (let k = 0; k < len; k++) {
+          const pt = hist.current[k];
+          const px = (pt.rpm / maxRpm) * (w - 24 * dpr) + 12 * dpr;
+          const py = h - padBottom - (pt.power / combinedMax) * plotH;
+          ctx.moveTo(px + 2.0 * dpr, py);
+          ctx.arc(px, py, 2.0 * dpr, 0, Math.PI * 2);
+        }
+        ctx.fill();
       }
-      ctx.fill();
 
       // 3. Highlight Current Active Telemetry Point (Glowing Ring & Dot)
       if (len > 0) {
