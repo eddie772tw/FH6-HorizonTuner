@@ -74,17 +74,26 @@ const ArcSteerGauge: React.FC<{ size?: number }> = React.memo(() => {
       // Tick marks
       const tickCount = theme.linear ? 25 : 9;
       ctx.lineWidth = 1.4 * dpr;
+
+      const normalTickPath = new Path2D();
+      const centerTickPath = new Path2D();
+
       for (let i = 0; i < tickCount; i++) {
         const tickAngle = startAngle + (i / (tickCount - 1)) * (endAngle - startAngle);
         const isCenter = i === (tickCount - 1) / 2;
         const innerR = radius - (isCenter ? 8 * dpr : 4.5 * dpr);
         const outerR = radius + 3 * dpr;
-        ctx.beginPath();
-        ctx.moveTo(cx + innerR * Math.cos(tickAngle), cy + innerR * Math.sin(tickAngle));
-        ctx.lineTo(cx + outerR * Math.cos(tickAngle), cy + outerR * Math.sin(tickAngle));
-        ctx.strokeStyle = isCenter ? primaryHex : theme.tick;
-        ctx.stroke();
+
+        const targetPath = isCenter ? centerTickPath : normalTickPath;
+        targetPath.moveTo(cx + innerR * Math.cos(tickAngle), cy + innerR * Math.sin(tickAngle));
+        targetPath.lineTo(cx + outerR * Math.cos(tickAngle), cy + outerR * Math.sin(tickAngle));
       }
+
+      ctx.strokeStyle = theme.tick;
+      ctx.stroke(normalTickPath);
+
+      ctx.strokeStyle = primaryHex;
+      ctx.stroke(centerTickPath);
 
       // 2. Active Steering Arc（primaryHex 已從快取取得）
       const targetAngle = centerAngle + (steerRatio * (endAngle - startAngle)) / 2;

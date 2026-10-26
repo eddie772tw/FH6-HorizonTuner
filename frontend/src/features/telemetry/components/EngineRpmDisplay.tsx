@@ -76,45 +76,68 @@ const EngineRpmDisplay: React.FC = React.memo(() => {
         lastFlashTimeRef.current = now;
       }
 
+      // [PERF] Batched Canvas Rendering
+      // Grouping RPM bar segments by styling to avoid calling ctx.beginPath() and ctx.fill()
+      // for every single segment. This significantly reduces CPU overhead during 60Hz high-frequency rendering.
+      const inactivePath = new Path2D();
+      const primaryPath = new Path2D();
+      const secondaryPath = new Path2D();
+      const dangerPath = new Path2D();
+      const alertPath = new Path2D();
+
       for (let i = 0; i < numSegments; i++) {
         const segRatio = i / (numSegments - 1);
         const isActive = i < activeSegs;
         const x = i * (segWidth + gap);
         const y = 2 * dpr;
         const segHeight = h - 4 * dpr;
-
-        let activeColor = primary;
-        if (segRatio >= 0.88) {
-          activeColor = theme.danger;
-        } else if (segRatio >= 0.72) {
-          activeColor = secondary;
-        }
-
-        ctx.beginPath();
         const slant = (theme.flat ? 0 : 3) * dpr;
-        ctx.moveTo(x + slant, y);
-        ctx.lineTo(x + segWidth + slant, y);
-        ctx.lineTo(x + segWidth, y + segHeight);
-        ctx.lineTo(x, y + segHeight);
-        ctx.closePath();
 
-        if (isActive) {
-          if (isShiftAlert && segRatio >= 0.85) {
-            ctx.fillStyle = theme.alertFlash && lastFlashRef.current ? theme.pointer : theme.danger;
-            ctx.shadowColor = theme.danger;
-            ctx.shadowBlur = glowStrength * 10 * dpr;
-          } else {
-            ctx.fillStyle = activeColor;
-            ctx.shadowColor = activeColor;
-            ctx.shadowBlur = glowStrength * 6 * dpr;
-          }
-          ctx.fill();
-          ctx.shadowBlur = 0;
+        let targetPath: Path2D;
+        if (!isActive) {
+          targetPath = inactivePath;
         } else {
-          ctx.fillStyle = theme.inactive;
-          ctx.fill();
+          if (isShiftAlert && segRatio >= 0.85) {
+             targetPath = alertPath;
+          } else if (segRatio >= 0.88) {
+             targetPath = dangerPath;
+          } else if (segRatio >= 0.72) {
+             targetPath = secondaryPath;
+          } else {
+             targetPath = primaryPath;
+          }
         }
+
+        targetPath.moveTo(x + slant, y);
+        targetPath.lineTo(x + segWidth + slant, y);
+        targetPath.lineTo(x + segWidth, y + segHeight);
+        targetPath.lineTo(x, y + segHeight);
+        targetPath.closePath();
       }
+
+      ctx.fillStyle = theme.inactive;
+      ctx.fill(inactivePath);
+
+      ctx.shadowBlur = glowStrength * 6 * dpr;
+
+      ctx.fillStyle = primary;
+      ctx.shadowColor = primary;
+      ctx.fill(primaryPath);
+
+      ctx.fillStyle = secondary;
+      ctx.shadowColor = secondary;
+      ctx.fill(secondaryPath);
+
+      ctx.fillStyle = theme.danger;
+      ctx.shadowColor = theme.danger;
+      ctx.fill(dangerPath);
+
+      ctx.shadowBlur = glowStrength * 10 * dpr;
+      ctx.fillStyle = theme.alertFlash && lastFlashRef.current ? theme.pointer : theme.danger;
+      ctx.shadowColor = theme.danger;
+      ctx.fill(alertPath);
+
+      ctx.shadowBlur = 0;
     };
 
     const handleUpdate = (e: any) => {
