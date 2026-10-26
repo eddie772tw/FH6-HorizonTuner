@@ -126,7 +126,7 @@ const AnalysisSessionToolbar: React.FC<AnalysisSessionToolbarProps> = ({
         {getRuntimeCapabilities().localMotecLaunch && (
           <span
             className="d-inline-flex"
-            title={t("Launch session in local MoTeC i2 viewer")}
+            title={selectedFilename === "local" ? t("Imported CSV is previewed locally; use the original file in MoTeC.") : t("Launch session in local MoTeC i2 viewer")}
             style={selectedFilename === "local" ? { cursor: 'not-allowed' } : undefined}
           >
             <button
