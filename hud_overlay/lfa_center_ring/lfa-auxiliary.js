@@ -17,7 +17,7 @@
         const v2 = finite(value[2]);
         const v3 = finite(value[3]);
         if (v0 === null || v1 === null || v2 === null || v3 === null) return null;
-        return finite((v0 + v1 + v2 + v3) / 4);
+        return finite(0 + v0 / 4 + v1 / 4 + v2 / 4 + v3 / 4);
     }
     function boostPsi(data) {
         // Shared JSON coordinator preserves raw Boost but clamps aliases and fills missing with zero.
