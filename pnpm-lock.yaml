@@ -9,6 +9,8 @@ overrides:
 
 importers:
 
+  .: {}
+
   frontend:
     dependencies:
       '@tauri-apps/api':

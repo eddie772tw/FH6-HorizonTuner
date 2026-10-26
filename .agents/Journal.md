@@ -1011,3 +1011,11 @@
 - **處理**：三款 opt-in artwork-effects，重用既有色彩、glow 與 motion 設定；只變程序 accent，保留白色讀值／素材／語意警告。VFD 原 3.5px blur 在 Ford 小字明顯失讀，compact helper 降為 0.75px；VFD 本身不變。無新 RAF。另裁切 Ford RPM lit PNG 排除重新標示的輔助區，避免高轉時舊圖示污染；destroy 後 render/image callback 立即退出。
 - **驗證**：預設畫面對原 head pixel hash 相同（中轉基準）；18 組尺寸/DPR 高 G/reset/redline 共存通過，3 款 combined sweep/config 測試通過；原 Ford 輔助區隨 RPM 變動，修正後穩定。完整前端1850 passed/1 skipped、tsc、Windows-target build 通過；原生 Windows/真遊戲未測。720S/Ford 向量小原型未達像素保真，不進產品。
 - **Skills**：`pr-review-evaluation`、`halfmoon-design-system`、`pr-author-maintainer`、`huge-component-refactoring`、`modular-refactoring`。
+
+## 2026-10-26 / Dependabot 的 pnpm workspace 根目錄契約（Aster as Codex）
+
+- **根因**：前端 manifest 位於 `frontend/package.json`，但 `pnpm-workspace.yaml` 與共用鎖檔位於根目錄。從 `/frontend` 執行 updater 會產生 `misconfigured_tooling`，只改為 `/` 又會因缺少根 `package.json` 產生 `dependency_file_not_found`；須一併修正入口與 workspace manifest。
+- **處理**：新增無依賴的 private 根 manifest，使用 `packageManager: pnpm@11.27.0` 與 CI 對齊；npm 更新統一由 `/` 讀取，前端 manifest 由既有 workspace packages 發現。鎖檔僅新增空的根 importer，現有依賴解析未變。移除 npm 區塊的冗餘 `target-branch: main`，讓設定適用於預設分支的安全更新；移除兩個不存在的 label 引用。
+- **歷史界線**：2026-09-30 日誌中建議 `/frontend` 的路徑屬當時判斷；目前共享 pnpm workspace 必須從根目錄更新，不能沿用該舊建議推論現行入口。
+- **本地驗證**：Node 24.19.0／pnpm 11.27.0；frozen install 可辨識兩個 workspace projects，audit 各級 0；完整前端 1850 passed／1 個既有 skipped，Windows／LAN production build 與 diff-check 通過。GitHub 原生更新 job 與精確 main CI 的結果須在推送後另行核對，不以靜態 YAML 字串測試替代 updater 行為。
+- **Skills**：`github-security-audit`、`ponytail`。未修改產品程式、runtime 或任何依賴解析版本。
