@@ -108,13 +108,16 @@ const ArcSteerGauge: React.FC<{ size?: number }> = React.memo(() => {
       const dotX = cx + radius * Math.cos(targetAngle);
       const dotY = cy + radius * Math.sin(targetAngle);
 
-      ctx.beginPath();
-      if (theme.linear) ctx.rect(dotX - 4 * dpr, dotY - 4 * dpr, 8 * dpr, 8 * dpr);
-      else ctx.arc(dotX, dotY, 5.5 * dpr, 0, Math.PI * 2);
       ctx.fillStyle = primaryHex;
       ctx.shadowColor = primaryHex;
       ctx.shadowBlur = theme.glowStrength * 10 * dpr;
-      ctx.fill();
+      if (theme.linear) {
+        ctx.fillRect(dotX - 4 * dpr, dotY - 4 * dpr, 8 * dpr, 8 * dpr);
+      } else {
+        ctx.beginPath();
+        ctx.arc(dotX, dotY, 5.5 * dpr, 0, Math.PI * 2);
+        ctx.fill();
+      }
       ctx.shadowBlur = 0;
     };
 
