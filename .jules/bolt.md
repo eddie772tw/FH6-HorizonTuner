@@ -151,3 +151,7 @@ Additionally, attempting to optimize 60Hz telemetry data copying in `FrameInterp
 ## 2024-11-26 - Batched Canvas Rendering
 **Learning:** In high-frequency 60Hz Canvas rendering loops (e.g., `EngineRpmDisplay` and `ArcSteerGauge`), making multiple repeated calls to `ctx.beginPath()`, `ctx.stroke()`, and `ctx.fill()` within a loop for individual visual segments severely degrades performance due to JavaScript context state changes.
 **Action:** Group segments by shared styles, use `Path2D` objects to pre-build complex paths inside loops, and invoke `ctx.fill()` or `ctx.stroke()` exactly once per style group outside the inner rendering paths.
+
+## 2024-11-26 - Rejected Optimization: Batched Canvas Path2D with overlapping glows
+**Learning:** While batching line segments via `Path2D` and a single `ctx.fill()` reduces CPU draw calls, doing this in loops that render shapes with `shadowBlur` (glow effects) changes the visual output because the `source-over` blending of overlapping shadow areas is altered when drawn as one path vs iteratively. Additionally, instantiating `new Path2D()` every frame increases GC pressure, counteracting some CPU savings.
+**Action:** Revert the batching optimization for `EngineRpmDisplay.tsx` and `ArcSteerGauge.tsx`. Do not batch paths in Canvas loops if the shapes rely on `shadowBlur` or overlapping alpha compositing, unless you can restrict batching strictly to non-glowing themes and aggressively cache the `Path2D` geometry to avoid per-frame allocations.
