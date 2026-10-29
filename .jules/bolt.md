@@ -151,3 +151,7 @@ Additionally, attempting to optimize 60Hz telemetry data copying in `FrameInterp
 ## 2026-10-21 - Eliminating Chained Array Methods in High-Frequency Math Adapters
 **Learning:** In high-frequency rendering and data preparation loops (e.g., `averageTireF`, `boostPsi`, `pedal`), using array methods like `.some()` or `.reduce()` creates intermediate arrays and forces closure allocations. This contributes to GC pressure in tight UI paths.
 **Action:** Replace `Array.reduce` and `.some` with explicit bound checks and unwound mathematical operations on array elements (e.g., `v0 + v1 + v2 + v3`) along with unrolled property lookup chains.
+
+## 2026-10-28 - Optimizing path rendering by replacing rect+fill with fillRect
+**Learning:** In high-frequency 60Hz Canvas rendering loops (e.g., telemetry visualizations), calling `ctx.rect()` followed by `ctx.fill()` introduces path state management overhead. Since `ctx.rect()` modifies the current path rather than rendering directly, it relies on the canvas context maintaining and rasterizing the path object.
+**Action:** Replace `ctx.rect()` + `ctx.fill()` with the direct `ctx.fillRect()` method whenever rendering standalone rectangles that don't need to be grouped in complex paths. This avoids path building overhead and draws directly to the bitmap, slightly improving execution speed.
