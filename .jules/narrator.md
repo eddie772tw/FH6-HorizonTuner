@@ -34,3 +34,6 @@
 ## 2024-10-05 - [Hardcoded Text Pattern Extraction]
 **Learning:** Found several hardcoded, context-specific UI strings like 'GitHub Releases (Ed25519 Signed)', 'P05 / P50 / P95', and 'Endpoint' that were missed in standard i18n sweeps.
 **Action:** Always scan for generic punctuation-only structures and domain-specific acronyms that appear directly as child nodes in React components.
+## 2025-05-24 - Extracting Domain-Specific Statistical Labels
+**Learning:** Found numerous hardcoded context-specific domain labels and punctuation-heavy strings like `Ride height F/R`, `Damping rebound F/R`, `Samples`, `Bins`, and `Peak power` within the Companion app's `CompanionMeasurement.tsx` and `CompanionResults.tsx`. These strings act as labels for statistical values, and leaving them un-translated breaks the UI's accessibility and usability for non-English tuning audiences.
+**Action:** When auditing telemetry or tuning UI components, always proactively scan for and extract hardcoded domain-specific statistical labels and properties (like `F/R` abbreviations or specific tuning terms) into proper translation function wrappers like `t("companion....")` and add them to the base English locale file to enable complete translations.
