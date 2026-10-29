@@ -1,372 +1,218 @@
-# FH6-HorizonTuner 🏎️
+<h1 align="center">FH6-HorizonTuner</h1>
 
-V1.7.2 release preparation (runtime 11.45.22) integrates the merged HUD, telemetry, race-analysis and tuning workflow changes. The latest published release remains v1.7.1. See the [candidate notes](docs/releases/v1.7.2.md) and [acceptance ledger](docs/releases/v1.7.2-acceptance.md) for WIP / Known Issues and remaining artifact gates. Rust remains the [tuning owner](docs/contracts/tuning_responsibilities.md).
+<p align="center">
+  <strong>Telemetry, tuning and custom HUDs for Forza Horizon 6</strong><br>
+  See how your car behaves, tune from measured data and build your own racing dashboard.
+</p>
 
-The [Road/Rally chassis engineering baseline](docs/tuning/chassis-engineering-baseline-v1.md) makes downforce optional, resolves a missing axle from explicit aero balance, and adjusts springs and damping by relative load. Workflow v2 reports missing inputs and limits while preserving historical replay. Existing complete configurations are checked for a reasonable Road or Rally baseline; this is not in-game performance validation of the new settings.
+<p align="center">
+  <a href="https://github.com/eddie772tw/FH6-HorizonTuner/releases/latest"><img src="https://img.shields.io/github/v/release/eddie772tw/FH6-HorizonTuner?label=release" alt="Latest stable release"></a>
+  <a href="https://github.com/eddie772tw/FH6-HorizonTuner/actions/workflows/ci.yml"><img src="https://github.com/eddie772tw/FH6-HorizonTuner/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI status on main"></a>
+  <a href="https://github.com/eddie772tw/FH6-HorizonTuner/releases"><img src="https://img.shields.io/github/downloads/eddie772tw/FH6-HorizonTuner/total" alt="GitHub Release downloads"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/eddie772tw/FH6-HorizonTuner" alt="MIT license"></a>
+</p>
 
-The versioned [Road launch-envelope correction for #462](docs/tuning/aego-road-launch-v3.md) preserves low-power and historical models; its engineering priors do not establish optimal in-game launches.
+<p align="center">
+  <a href="README.md">繁體中文</a> · <strong>English</strong>
+</p>
 
-EV tuning now has an independent measured powertrain model, selected with a persisted EV switch instead of the conventional gear-count input. The same four-step workflow supports single-speed and multi-speed EV scans and final-drive previews. Launch/shift optimization and attainable top-speed prediction remain uncalibrated. See the [model contract and validation notes](docs/calibration/ev-foundation.md).
+<p align="center">
+  <a href="#readme-download">Download</a> ·
+  <a href="#readme-quick-start">Quick start</a> ·
+  <a href="#readme-features">Features</a> ·
+  <a href="#readme-documentation">Docs</a> ·
+  <a href="#readme-development">Development</a> ·
+  <a href="#readme-contributing">Contributing</a>
+</p>
 
-Saved EV raw evidence can be selected or imported on the desktop, requalified by Rust, and used after independently confirming the current configuration. Missing historical provenance stays unknown. See the [EV evidence lifecycle contract](docs/tuning/issue-435-ev-completeness.md).
-> **Forza Horizon 6 Real-Time Telemetry Analyzer, Vehicle Tuning Workbench & Custom Racing Dashboard Overlay**
+FH6-HorizonTuner receives vehicle data through the game's **Data Out UDP telemetry** and brings together live dashboards, a four-step tuning workflow, recording and race analysis. On Windows, customizable transparent HUDs run in separate windows without injecting into the game process.
 
-[![Language](https://img.shields.io/badge/Rust-2021-DEA584.svg?logo=rust&logoColor=white)](https://www.rust-lang.org/)
-[![Backend](https://img.shields.io/badge/Backend-Axum%20%2B%20Tokio-009688.svg)](backend-rust/)
-[![Frontend](https://img.shields.io/badge/Frontend-Tauri%20%2B%20React%2018-24C8D8.svg?logo=tauri&logoColor=white)](https://tauri.app/)
-[![UI](https://img.shields.io/badge/UI-Halfmoon%20CSS-593196.svg)](https://www.gethalfmoon.com/)
-[![Overlay](https://img.shields.io/badge/Overlay-HTML5%20Canvas-E34F26.svg?logo=html5&logoColor=white)](hud_overlay/)
-[![Tests](https://img.shields.io/badge/Tests-Cargo%20%2B%20Vitest-46A2F1.svg?logo=vitest&logoColor=white)](tests/)
-[![Code Style](https://img.shields.io/badge/Code%20Style-Ruff-261230.svg)](https://github.com/astral-sh/ruff)
-[![Package](https://img.shields.io/badge/Distribution-Standalone%20EXE-red.svg)](build_all.bat)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+The desktop interface uses Tauri, React and TypeScript. A Rust backend handles telemetry, storage and tuning calculations.
 
----
+<a id="readme-screenshots"></a>
 
-## Introduction
+## Preview
 
-`FH6-HorizonTuner` is a dedicated telemetry data analysis and vehicle tuning assistant tool developed for *Forza Horizon 6*. This project integrates a high-performance Rust Axum backend UDP packet listener service, a modern Tauri desktop graphical user interface, and a fully injection-free HTML5 Canvas / Tauri transparent racing overlay engine.
+| AP1 Rev Arc | LFA Center Ring |
+| :---: | :---: |
+| ![Offline preview of the AP1 Rev Arc amber tachometer HUD](docs/releases/assets/v1.7.2/hud-ap1-rev-arc.png) | ![Offline preview of the LFA Center Ring tachometer HUD](docs/releases/assets/v1.7.2/hud-lfa-center-ring.png) |
+| **Stack ST8100** | **R34 MFD** |
+| ![Offline preview of the Stack ST8100 analogue and dot-matrix HUD](docs/releases/assets/v1.7.2/hud-stack-st8100.png) | ![Offline preview of the R34 MFD multi-channel display](docs/releases/assets/v1.7.2/hud-r34-mfd-multi.png) |
 
-The current release provides **real-time telemetry dashboards**, a **customizable racing dashboard overlay (with a WYSIWYG visual editor)**, a **vehicle tuning workbench**, and **drag launch testing** — helping players monitor vehicle physics and dynamic feedback in real time.
+*These HUD previews come from the v1.7.2 documentation and use synthetic telemetry. They are offline renders, not in-game screenshots. See [image provenance](docs/releases/assets/v1.7.2/README.md) and the [full gallery](docs/releases/v1.7.2.md).*
 
----
+<a id="readme-download"></a>
 
-## Core Features
+## Download
 
-CVT foundation adds explicit transmission and adjustability selection with Rust-owned raw capture provenance, qualification and replay. Desktop, Companion and workflow CLI share the restrictions. Real CVT captures and the solver remain unvalidated; applicable recommendations and ratio previews are unavailable. See the [contract and acceptance boundaries](docs/tuning/cvt-foundation.md).
+**[Get the latest stable release →](https://github.com/eddie772tw/FH6-HorizonTuner/releases/latest)**
 
-AEGO Road now uses qualified moving-sweep bin averages and jointly allocates first gear, final drive and top gear. Historical observations remain readable; insufficient captures or infeasible model targets block recommendations. On 2026-09-28, the user confirmed completion of all six in-game acceptance items. Engineering priors, evidence attribution and scope limitations are documented in the [low-power Road fix record](docs/tuning/aego-low-power-20260927.md).
+| Edition | Use it for | Download |
+| --- | --- | --- |
+| **Windows Full** · x86_64 | Live telemetry, tuning, recording, race analysis and HUDs | [Installer](https://github.com/eddie772tw/FH6-HorizonTuner/releases/latest/download/FH6-HorizonTuner-Full-Installer.exe) · [Portable](https://github.com/eddie772tw/FH6-HorizonTuner/releases/latest/download/FH6-HorizonTuner-Full-Portable.exe) |
+| **Windows Lite** · x86_64 | Live telemetry, HUDs and settings | [Installer](https://github.com/eddie772tw/FH6-HorizonTuner/releases/latest/download/FH6-HorizonTuner-Lite-Installer.exe) · [Portable](https://github.com/eddie772tw/FH6-HorizonTuner/releases/latest/download/FH6-HorizonTuner-Lite-Portable.exe) |
+| **Linux Full** · x86_64 | Telemetry from another device on the same LAN, tuning, recording and analysis; excludes HUDs, audio spectrum and system media integration | [AppImage](https://github.com/eddie772tw/FH6-HorizonTuner/releases/latest/download/FH6-HorizonTuner-Full-Linux-x86_64.AppImage) |
 
-* **Real-time Telemetry & Dynamics (60Hz Live Data)**:
-  - High-frequency 60Hz UDP telemetry packet ingestion and high-performance visual rendering.
-  - Live charts for vehicle speed, engine RPM, power/torque curves, boost pressure, pedal inputs (Throttle/Brake/Clutch), and steering angle.
-  - 2D G-Force motion radar, 4-wheel independent surface tire temperatures, hot pressures, and normalized suspension travel.
-  - Bounded backend pipeline metrics, with initial dyno-profile reads and persistence kept off the realtime telemetry loop.
-* **Four-Stage Verifiable Tuning Workflow (V2)**:
-  - **4-Stage 3-Column Streamlined Layout**: Overhauled tuning interface providing a clear 4-stage 3-column layout with immediate telemetry feedback and solver outputs.
-  - **Driven by Observed Race Telemetry (Race Evidence)**: Replaced static tire compound inputs with real driving tire load and observed telemetry evidence to drive camber, alignment, and tire pressure solving.
-  - **Multi-Discipline Physics Models**: Added Road FWD chassis and electric/hybrid (AEGO) front/rear torque split calculations; separated mixed-surface Rally and long-travel Cross Country baselines; derived Drift dynamic chassis and gearing from observed RPM bands; support full Drag transmission ratios and finish-speed evidence. See the [tuning development index](docs/tuning/README.md) for formula research, sources, and limitations.
-* **Racing HUD Overlay & Full/Lite Clients**:
-  - **Skyline R34 MFD**: Original 1999 V-spec analogue cluster plus five NISMO Ver.II-inspired MFD layouts, with honest game telemetry, peak/memory and observed-lap history. [Prototype and data contract](docs/hud/r34-mfd.md).
-  - **All-New Classic JDM Gauge Cluster**: High-contrast vintage white-dial tachometer, shift lights, dual trip meters, and boost gauge delivering an authentic 90s Japanese sports car dashboard feel.
-  - **Arcade Multi-Gauge Layout & Standardized 1080p Scaling**: Supports side-by-side modular gauges with unified anchor points and adaptive proportional scaling across resolutions.
-  - **[Stack ST8100 Inspired](docs/hud/stack-st8100.md)**: Original compressed analog tachometer and green dot-matrix LCD, with four selectable telemetry fields, session tell-tales, configurable warnings and real GUI settings. No fabricated engine sensors.
-  - **Multi-Style Overlay Support**: Features Ford Mustang S650 HMI (with Windows GSMTC media widget), GT7 style, Retro VFD vacuum fluorescent display, 093 Drift HUD, and 5 popular community overlay styles.
-  - **Controller Telemetry Card**: Toggle an Xbox/DualSense card alongside any main gauge in Telemetry HUD Elements. Other subsystem renderers remain packaged with TODO markers and no menu entry. See [card behavior and deferred modules](docs/hud-subsystems.md).
-  - **Lite Standalone Client (`FH6-HorizonTuner_lite.exe`)**: Provides Telemetry Dashboard, HUD Overlay, and Settings tabs while sharing existing frontend features and backend lifecycle with the Full client.
-  - 100% injection-free, zero hook, zero anti-cheat ban risk. Multi-channel WebSocket telemetry streaming and fullscreen adaptive auto-scaling.
-  - **WYSIWYG Dashboard Designer**: Drag-and-drop layout editor, property panels, conditional threshold styling, and one-click import/export presets.
-* **HorizonTuner-cli AI Agent Command-Line Tool (HorizonTuner-cli)**:
-  - Official Rust CLI (`fh6-agent.bat` / `fh6-agent.exe`) for AI agents and automation. The backend, MCP server and CLI require no Python runtime.
-  - Dual online/offline workflow: supports online readiness/telemetry probe (`status`), live dynamics diagnosis (`diagnose`), car specifications (`spec`), and offline deterministic tuning solvers (`tune`) with `--json` machine-readable output. See [Agent CLI Guide](docs/guides/agent-cli-guide.md).
-* **Android Companion (Beta)**:
-  - A native Jetpack Compose connection shell hosts an Android WebView that loads the shared `frontend/dist/companion/index.html`, reusing the desktop five telemetry cards and four-step workflow.
-  - Supports local network QR code pairing (LAN Pairing) and low-latency USB/ADB connection modes with automated reverse port forwarding and host lease protection.
-  - The first theme slice receives a bounded visual projection through authenticated workflow GET, with endpoint cache/bootstrap and generation checks shared by Web/native. Seven-core native tokens live in `:theme`; native font/material fidelity and device acceptance remain pending. See [the Companion theme contract](companion/theme/README.md).
-  - Note: Pre-compiled APK binaries are not included in GitHub Release assets during the Beta phase; users can build from source in `companion/` via `./gradlew :app:assembleRelease` or `:app:assembleDebug`. See [Companion architecture and acceptance boundary](docs/architecture/companion-app-evaluation.md) and [Companion README](companion/README.md).
-* **Drag Launch Test & Acceleration Analyzer**:
-  - Automatic timing tests for 0-100 km/h, 0-200 km/h, and 1/4 mile (400m) launch acceleration.
-  - Speed/RPM timeline chart playback and historical session comparison.
-* **Telemetry Persistence, Race Analysis & MoTeC i2 Exporter**:
-  - Automated backend SQLite telemetry history logging, supporting Circuit races, Time Trials, and point-to-point Free Roam route recording.
-  - Features 3D spherical gate triggers (5m–50m adjustable radius with 20% exit hysteresis) and non-destructive lead-in / post-stop trimming.
-  - Time Trial and Free Roam recordings start at the next valid gate crossing after arming. Adjacent valid telemetry segments detect fast passes through a gate; recording eligibility does not depend on `IsRaceOn`. Default analysis excludes unfinished tails and laps with known telemetry gaps while preserving the raw session.
-  - Provides 41-channel CSV, an i2 XML workspace template, and experimental `.ld` / `.ldx` ZIP export. Binary structure is tested; compatibility in a real MoTeC i2 installation remains unverified. See the [race analysis guide](docs/guides/race-analysis.md) for operation and limits.
-* **Localhost Read-Only MCP Server (Model Context Protocol)**:
-  - The running Rust backend provides a Streamable HTTP MCP endpoint at `/mcp`, offering 26 dedicated read-only tools and 5 Resource URI templates in the same process as telemetry.
-  - Enables AI Agents (Claude Desktop, Cursor, Cline, Antigravity) to query live telemetry (aligned with `TelemetryView`), track sessions, A/B run delta comparisons, car specs, and tuning solvers.
-  - The standard MCP `initialize` response automatically provides Agent-facing configuration and usage guidance; Settings now shows the current endpoint and status without copy-based JSON/CLI setup actions. A client still needs a one-time endpoint bootstrap for the first connection.
-* **Over-The-Air (OTA) Updates & Automated Release Management**:
-  - Integrated with Tauri v2 official Updater plugin and Ed25519 asymmetric cryptographic verification.
-  - Supports silent startup checks and manual checks via Settings with a Glassmorphism racing modal and dynamic download progress bar.
-  - Sidecar lifecycle protection: ensures Rust sidecar process is gracefully killed and UDP 8000 / HTTP 8001 ports are cleanly released before restart.
-  - **Automated Web-Triggered Release Pipeline**: Maintainers simply publish a release on GitHub Web; Actions builds and signs the Full installer and attaches both Full/Lite portable executables, their Portable ZIP, `.sig`, and `latest.json`.
-* **Diagnostics Console, Theme System & i18n**:
-  - **Diagnostic Console**: Live log viewer with DEBUG / INFO / WARNING / ERROR level filtering and automated Traceback stitching.
-  - **Design System & Theme**: Core Theme defines the overall palette, surfaces and component design. Default, Modern and Elegant belong to Halfmoon; Swiss Technical, Editorial and Contrast belong to Swiss; Rhine Lab belongs to Rhine. Halfmoon retains rounded glass surfaces; Swiss offers cool technical, warm paper and neutral contrast day/night appearances with shared matte controls and panel headers. General tabs use capped content widths; tuning keeps numbered, equal-width steps filling the row. App menu → Appearance groups cores by system, previews Swiss headers/buttons/badges, and combines three swatch/HEX controls with 11 Color Presets under Colors. Native controls and charts share the palette, which persists when switching cores. The CSS editor and cheatsheet are collapsed by default for advanced users. Rhine Lab adds MiSans paper surfaces, consistent desktop paper dialogs, marked navigation, themed Canvas instruments that redraw on theme changes, and brief animations that respect reduced motion. Swiss instruments add flat RPM segments, steady alerts and solid legends. AEGO gearing, engine curves, session analysis and drag charts share core-specific chart styles. See the [Rhine Lab guide](docs/frontend/rhine-lab.md) for assets, attribution and validation boundaries. `themeCatalog.ts` owns core membership and `styles/design-systems/` isolates system styles, allowing new modules without copying page CSS while preserving saved themes and import/export compatibility.
-  - **Dynamic i18n**: Multi-language framework supporting Traditional Chinese (`zh-tw`), English (`en-us`), Japanese (`ja-jp`), and more.
+- **Windows portable bundle**: [Download Full + Lite ZIP](https://github.com/eddie772tw/FH6-HorizonTuner/releases/latest/download/FH6-HorizonTuner-Portable-Bundle.zip). Extract and run the edition you need; no separate backend download is required.
+- **Runtime requirements**: Windows requires WebView2 Runtime. Linux requires compatible GTK/WebKitGTK libraries and an AppImage runtime environment. macOS is currently unsupported. See [platform requirements and limitations](docs/guides/cross-platform-release.md).
+- **Android Companion (Beta)**: Android 13+ with Windows Full kept running; supports LAN QR pairing and USB/ADB. Published releases currently have no APK. See the [Companion README](companion/README.md) for builds and acceptance status.
 
----
+> [!NOTE]
+> This page describes `main`. Available features and assets depend on the [release you download](https://github.com/eddie772tw/FH6-HorizonTuner/releases). A successful build does not establish acceptance across every platform or gameplay scenario.
 
-## Project Architecture
+<a id="readme-quick-start"></a>
 
-The shared `AppShell` owns workspace navigation and the application menu. Full provides Live, Tune, Sessions, and HUD; Lite provides Live and HUD. Only the active workspace mounts. Feature providers own the longer-lived Tune, Road, Sessions, and HUD state so navigation can preserve measurements and unsaved drafts. The application menu contains Settings, Appearance, Diagnostics, Updates, and About. Historical panel decomposition and native acceptance records are preserved in the archived [Shell handoff](docs/archive/frontend/ia-refactor-20260913/handoffs/shell-20260914.md).
+## Quick start
 
-```text
-FH6-HorizonTuner/
-├── .github/workflows/       # GitHub CI/CD workflows (ci.yml gatekeeping + release.yml automated packaging)
-├── backend-rust/            # Independent Rust HTTP / WebSocket / UDP sidecar
-│   ├── src/runtime.rs       # Process lifecycle, ports and bounded UDP delivery
-│   ├── src/network.rs       # HTTP / WebSocket transport and origin checks
-│   ├── src/telemetry/       # Packet codec, recorders, dyno and SQLite
-│   ├── src/road/            # Road workflow, observations, matching and captures
-│   ├── src/mcp/             # Existing read-only MCP tools and resources
-│   ├── src/native/          # WASAPI, GSMTC and Discord workers
-│   ├── src/config_service.rs # Settings, files and HUD API
-│   └── tests/               # Contract fixtures and loopback process tests
-├── backend/                 # Car resources and existing development data path; no Python server
-├── frontend/                # Tauri frontend code (Vite + React + TypeScript)
-│   ├── lite/                # Lite frontend HTML entrypoint
-│   ├── src/app/             # Shared shell, capability contract, workspace and application-surface navigation
-│   ├── src/features/        # Business Domain Modules (Features Domain)
-│   │   ├── live/            # Live workspace entry and Full/Lite capability projection
-│   │   ├── sessions/        # Session selection state, IO, and race-completion navigation
-│   │   ├── road/            # Road workflow controller and prepare/run/review state
-│   │   ├── telemetry/       # Live telemetry view (TelemetryView) & 5 expandable cards
-│   │   ├── tuning/          # Vehicle tuning wizard (TuningView & Step 1~4 tabs)
-│   │   ├── overlay_control/ # WYSIWYG dashboard layout editor (OverlayView)
-│   │   ├── drag_test/       # Drag launch test view (DragTestView)
-│   │   ├── analysis/        # Post-Race Debrief & MoTeC Ecosystem Bridge (AnalysisView, Debrief & LapDelta)
-│   │   ├── car_params/      # Vehicle parameters configuration (CarParamsView)
-│   │   ├── settings/        # Global system settings (SettingsView)
-│   │   └── theme/           # Theme color & skin view (ThemeView)
-│   ├── src/components/      # Shared UI components (ModalPortal, DiagnosticConsole, etc.)
-│   ├── src/domain/tuning/    # Pure tuning domain (tires, load transfer, chassis, gearing, differential)
-│   │   ├── chassis/          # Suspension and Phase 4B four-wheel load-transfer estimates
-│   │   └── tires/            # Friction ellipse, tire geometry, and vertical-stiffness priors
-│   ├── src/utils/           # Display and transport utilities; tuning decisions belong to Rust
-│   ├── test-reference/tuning/ # Frozen TS models and characterization tests
-│   └── src-tauri/           # Tauri window & Full/Lite packaging configuration
-├── hud_overlay/             # HTML5 Canvas custom racing HUD overlays
-│   ├── index.html           # HUD launcher & Viewport renderer entry
-│   ├── classic_jdm/         # Classic JDM vintage Japanese cluster & arcade multi-gauge
-│   ├── gt7/                 # Gran Turismo 7 style racing dashboard
-│   ├── vfd/                 # Retro VFD simulated fluorescent gauge
-│   ├── drift/               # 093 Drift professional drift dashboard
-│   └── shared/              # Shared Canvas drawing & geometry math library
-├── scripts/                 # Automated release & telemetry metrics scripts (prepare_release_assets.py, release_metrics.py)
-├── lang/                    # Multi-language translation dictionaries (zh-tw, ja-jp, etc.)
-├── tests/                   # Golden fixtures and selected release-tool tests
-├── backend-rust/tests/      # Rust backend and CLI product contract tests
-├── pyproject.toml           # Ruff / Pytest configuration for optional Python tools
-├── requirements.txt         # Optional maintenance and diagnostics tools
-├── fh6-agent.bat            # HorizonTuner-cli AI Agent entry script
-├── setup_dev.bat           # Download Rust and frontend dependencies
-├── dev_full.bat            # Full dev entry; compiles and launches the Rust sidecar
-├── dev_lite.bat            # Lite dev entry; compiles and launches the Rust sidecar
-├── setup_build.bat         # Install packaging dependencies
-└── build_all.bat            # One-click standalone release bundler
-```
+1. **Launch HorizonTuner**: Choose Full or Lite. Run the portable executable directly, or complete the installer.
+2. **Enable Data Out in the game**: Open **Settings → HUD and Gameplay**, enable Data Out and enter the values below.
+3. **Check incoming data**: Drive briefly, then check the app's Data Out guide and live telemetry view for incoming packets, speed and RPM updates.
 
----
+| In-game setting | Game and app on the same Windows PC | Game on another LAN device |
+| --- | --- | --- |
+| Data Out | `ON` | `ON` |
+| Data Out IP Address | `127.0.0.1` | Receiver PC's LAN IP shown in the Data Out guide |
+| Data Out Port | `8000` by default | UDP port shown in the guide; default `8000` |
 
-## Quick Start
+For LAN use, connect both devices to the same network and allow the receiving UDP port through the receiver's firewall. If you changed the port, use the value shown in the guide. **The game sends to the UDP telemetry port, not HTTP/MCP port `8001`.** See [LAN Data Out setup](docs/guides/cross-platform-release.md#遊戲端設定).
 
-### 1. In-game UDP Telemetry Configuration
+Start with the live dashboard, then use Full's tuning workspace to configure the car and collect measurements. Apply tuning recommendations manually in the game.
 
-To receive telemetry data, enable the data output feature in *Forza Horizon 6*:
-1. Start the game and go to **Settings** -> **HUD and Gameplay**.
-2. Locate **Data Out** and set it to **ON**.
-3. Set **Data Out IP Address** to `127.0.0.1`.
-4. Set **Data Out Port** to `8000`.
+<a id="readme-features"></a>
 
-### 2. Launching the Tool
+## Features
 
-Install Node.js/pnpm, and the Windows Rust/Tauri prerequisites, then run `setup_dev.bat` once. Run setup again when dependency declarations change.
+- **Live telemetry**: Follow speed, RPM, power/torque, boost, driver inputs, G-force, four-wheel tire temperatures and suspension travel through live charts.
+- **Four-step tuning**: Work through goal and setup, chassis and tires, engine measurement and gearing, then setup verification. Road, Rally, Cross Country, Drift and Drag workflows account for measurement quality and available adjustments.
+- **Windows HUDs and editor**: Choose from Classic JDM, S650, GT7, Retro VFD, R34 MFD and other styles, plus auxiliary gauges, audio decks and controller telemetry cards. Adjust position, scale and colors, and import or export layouts.
+- **Recording, analysis and acceleration tests**: Save telemetry in SQLite, compare laps and historical sessions, define Time Trial/Free Roam gates, trim recordings non-destructively and time 0–100 km/h, 0–200 km/h and quarter-mile runs.
+- **CLI and AI integration**: The Rust `fh6-agent` CLI provides status, telemetry diagnostics and tuning commands. A localhost read-only MCP server exposes live and historical data, vehicle specifications and solvers. [CLI guide](docs/guides/agent-cli-guide.md) · [MCP setup](docs/guides/mcp-setup-guide.md).
+- **Themes, languages and updates**: Halfmoon, Swiss and Rhine Lab design systems; Traditional Chinese, English, Japanese and extensible translations; a diagnostic console and OTA updates with signature verification.
 
-- **Full**: run `dev_full.bat`.
-- **Lite**: run `dev_lite.bat` for Dashboard, HUD Overlay, and Settings.
+### Models and experimental features
 
-Both development entrypoints incrementally compile the independent Rust sidecar, then let Tauri manage its lifetime. Vite HMR remains available; restart the launcher after Rust edits. Full and Lite share development ports. Product development and packaging do not require Python. The optional Agent CLI, migration reference tests and some maintenance tools still use uv.
+| Feature | Current scope and limitations |
+| --- | --- |
+| Road/Rally and AEGO | Engineering baselines and qualified measurements inform recommendations; insufficient evidence or infeasible targets block them. See [tuning docs](docs/tuning/README.md), the [chassis baseline](docs/tuning/chassis-engineering-baseline-v1.md) and [Road launch model](docs/tuning/aego-road-launch-v3.md). |
+| EV | Single/multi-speed measurement, saved evidence replay and final-drive previews. Optimal shift points, attainable top-speed prediction and some vehicle acceptance work remain pending. [EV model](docs/calibration/ev-foundation.md) · [Evidence lifecycle](docs/tuning/issue-435-ev-completeness.md). |
+| CVT | Capability selection, capture and replay contracts exist. Applicable recommendations, final-drive solving and ratio previews are not available. [CVT notes](docs/tuning/cvt-foundation.md). |
+| MoTeC export | CSV, i2 XML templates and experimental `.ld`/`.ldx` ZIP export. Native-format compatibility still awaits acceptance in MoTeC i2. [Race analysis guide](docs/guides/race-analysis.md). |
+| Android Companion | Shares telemetry cards and the tuning workflow. Android HUDs are deferred; native appearance and device experience still have pending acceptance items. [Implementation boundary](docs/architecture/companion-implementation-boundary.md). |
 
-Launching does not install packages, format source, update the vehicle database, or terminate other processes. Occupied HTTP `8001` or UDP `8000` ports cause an error. Close the existing instance before retrying. See the [development guide](docs/guides/development.md) for standalone backend, external frontend, and troubleshooting commands.
+<a id="readme-documentation"></a>
 
----
+## Documentation
 
-## Standalone Release Bundling
+Use the **[documentation index](docs/README.md)** to find guides, architecture references and historical records. Most detailed guides are currently in Traditional Chinese.
 
-Run `setup_build.bat`, then `build_all.bat`. The build compiles the shared frontend, standalone Rust sidecar, and Full/Lite Tauri hosts, producing `dist/FH6-HorizonTuner.exe` and `dist/FH6-HorizonTuner_lite.exe`.
+| I want to… | Start here |
+| --- | --- |
+| Record races, compare laps and export data | [Race analysis](docs/guides/race-analysis.md) · [File exports](docs/guides/file-exports.md) |
+| Install custom HUDs or understand their fields | [Custom HUD packages](docs/guides/portable-custom-hud.md) · [R34 MFD](docs/hud/r34-mfd.md) · [Stack ST8100](docs/hud/stack-st8100.md) |
+| Connect agents or automation tools | [CLI](docs/guides/agent-cli-guide.md) · [MCP](docs/guides/mcp-setup-guide.md) |
+| Study tuning formulas and collect evidence | [Tuning development](docs/tuning/README.md) · [Calibration](docs/calibration/README.md) |
+| Develop the UI, themes or backend | [Frontend](frontend/README.md) · [Design systems](docs/frontend/design-systems.md) · [Rust backend](docs/backend-rust/README.md) |
+| Build, publish or troubleshoot startup | [Development](docs/guides/development.md) · [Cross-platform releases/OTA](docs/guides/cross-platform-release.md) |
+| Find past releases and research | [GitHub Releases](https://github.com/eddie772tw/FH6-HorizonTuner/releases) · [Historical docs](docs/archive/README.md) |
 
-The sidecar uses `cargo build --locked --release`; `backend-rust/build.rs` embeds the HUD, language and vehicle resources. Packaging no longer uses PyInstaller. Existing settings, SQLite sessions and custom HUD data keep their paths. Release HTTP prefers 8001 and reports any fallback port through its readiness event; UDP telemetry remains independently configured.
+<a id="readme-development"></a>
 
-See the [Rust migration and contract test guide](docs/backend-rust/README.md) and [development commands](docs/guides/development.md).
+## Development
 
-The [backend performance audit](docs/backend-rust/performance-audit.md) records historical optimization principles, API/JSON copy findings, and candidates that still need measurement. Release comparisons use matching data and real HTTP/MCP responses, separately from functional contract tests.
-
----
-
-## Prerequisites
-
-* **uv**: Optional, for Python 3.13 management, virtual environment creation, and package installation. Follow the [Python / uv toolchain policy](.agents/rules/python-uv.md).
-* **Node.js**: 20 or higher
-* **Rust / Cargo**: Required for the independent backend and Tauri host
-
----
-
-## Developer Guide & Formatting
-
-Start with the [documentation index](docs/README.md) for CLI/MCP guides, HUD contracts, tuning development, and calibration procedures. Previous plans and research are kept in the [archive index](docs/archive/README.md), separate from current development guidance.
-
-For frontend work, use the [frontend development entry](frontend/README.md) and [theme/design-system guide](docs/frontend/design-systems.md), covering all seven cores, CSS ownership, extension steps and the review validation matrix.
-
-Agent collaboration rules are in [`.agents/AGENTS.md`](.agents/AGENTS.md); read them before making changes. Project decisions and learnings are maintained in [`.agents/Journal.md`](.agents/Journal.md).
-
-Optional Python maintenance tools use **[Ruff](https://github.com/astral-sh/ruff)** for formatting and linting. These commands apply to Python tools; they are not the Rust product backend CI gate.
-
-### Python Formatting (Ruff)
-
-* **Reformat all code**:
-    ```bash
-    uv run --no-project --python .venv\Scripts\python.exe ruff format .
-    ```
-* **Verify formatting (CI also runs this)**:
-    ```bash
-    uv run --no-project --python .venv\Scripts\python.exe ruff format --check .
-    ```
-* **Static code analysis (Lint)**:
-    ```bash
-    uv run --no-project --python .venv\Scripts\python.exe ruff check .
-    ```
-
-> [!TIP]
-> Run formatting and checks explicitly. Development launchers do not modify source files.
-
-### Rust Backend and CLI Tests (Cargo)
-
-The product backend, telemetry, REST/WebSocket, MCP, and Agent CLI use Cargo as their primary verification gate:
+The steps below target Windows. Install **Git, Node.js 22, pnpm, Rust stable, MSVC Build Tools, Windows SDK and WebView2**. Match pnpm to the version in the [CI workflow](.github/workflows/ci.yml). For Linux builds, use the [cross-platform guide](docs/guides/cross-platform-release.md).
 
 ```powershell
-cargo test --locked --manifest-path backend-rust/Cargo.toml
-cargo fmt --manifest-path backend-rust/Cargo.toml -- --check
+git clone https://github.com/eddie772tw/FH6-HorizonTuner.git
+cd FH6-HorizonTuner
+.\setup_dev.bat
+.\dev_full.bat
+# For Lite, use .\dev_lite.bat
 ```
 
-For platform-native changes, also run `cargo test --locked --manifest-path backend-rust/Cargo.toml --no-default-features` when applicable. See the [testing strategy](.agents/rules/testing-strategy.md) for scope and limits.
+Run `setup_dev.bat` to prepare dependencies, then launch with `dev_full.bat` or `dev_lite.bat`, one at a time. Vite provides frontend HMR; restart after Rust changes. The product backend, MCP server and CLI do not require Python. Optional maintenance tools use the [Python 3.13/uv environment](.agents/rules/python-uv.md).
 
-### Frontend Unit Testing (Vitest)
+### Build and validate
 
-Frontend uses **[Vitest](https://vitest.dev/)** as unit test runner.
-```bash
-cmd /c "pnpm -C frontend run test"
+Build Windows Full/Lite portable executables:
+
+```powershell
+.\setup_build.bat
+.\build_all.bat
 ```
 
-Representative frontend test areas are listed below; file and case counts change over time:
-| Test File | Coverage Area |
-| :--- | :--- |
-| `frontend/test-reference/tuning/` | Frozen historical numerical tests; Rust product contracts live in `backend-rust/tests/` |
-| `tuningDiagnosis.test.ts` | Real-time telemetry diagnosis and chassis problem detection logic |
-| `loadTransfer.test.ts` / `tireGeometry.test.ts` | Phase 4B four-wheel normal-load estimates, load transfer, and tire-geometry priors |
-| `driftMath.test.ts` | Drift scoring and dynamic slip angle math |
-| `telemetryCards.test.ts` | Telemetry cards formatting and status mapping |
-| `telemetryHistory.test.ts` / `telemetryDetailMath.test.ts` | Bounded history, tire/dynamics detail mapping, and suspension summary tests |
-| `tireModel.test.ts` | Friction ellipse boundary, zero-capacity fix & feasible guard (7 tests) |
-| `suspensionSolver.test.ts` | Critical damping, damping-ratio priors & FH6 slider mapping layers (3 tests) |
-| `timestampIntegration.test.ts` | Phase 6 timestamp integration - airtime, drift ratio, impact window & non-monotonic unknown |
-| `thermalDiagnosis.test.ts` | Phase 6 four-wheel tire temperature gradient, camber & pressure advice |
-| `dynamicsDiagnosis.test.ts` | Phase 6 ARB / damping / differential combined-slip diagnosis & confidence tiers |
-| `capabilityFilter.test.ts` | Phase 7 capability filter function (unlocked / locked / unknown keys) |
-| `presetSerializer.test.ts` | Phase 7 `tuning-preset/v1` serialization round-trip & schema version validation |
-| Other `*.test.ts` | Additional test suites covering ExprTk, VFD gauge, audio & CSS validation |
+Outputs are `dist/FH6-HorizonTuner.exe` and `dist/FH6-HorizonTuner_lite.exe`. Installers, OTA signing and publication follow the separate [release workflow](docs/guides/cross-platform-release.md).
 
----
+Run checks that match your changes:
 
-## Contributing Guidelines
+| Changed area | Local check |
+| --- | --- |
+| Documentation | `git diff --check` |
+| Rust backend/CLI | `cargo test --locked --manifest-path backend-rust/Cargo.toml` |
+| Rust formatting | `cargo fmt --manifest-path backend-rust/Cargo.toml -- --check` |
+| React/TypeScript | `pnpm -C frontend run test`, `pnpm -C frontend run build` |
+| Platforms without HUDs | Also test the backend with `--no-default-features` and follow the cross-platform guide |
+| Python maintenance tools | Run the relevant tool tests and Ruff through the [uv workflow](.agents/rules/python-uv.md) |
 
-### Branch & Commit Conventions
+[CI Pipeline](https://github.com/eddie772tw/FH6-HorizonTuner/actions/workflows/ci.yml) runs automated checks. [Host Diagnostics](https://github.com/eddie772tw/FH6-HorizonTuner/actions/workflows/diagnostics.yml) provides scheduled and manual startup diagnostics. Release candidates also need native desktop smoke tests and applicable game/device acceptance; unit tests and offline images cannot replace them.
 
-1. **Branch naming**: Create feature branches from `main` using `feature/<feature-name>` or `fix/<issue-description>`.
-2. **Commit messages**: Follow [Conventional Commits](https://www.conventionalcommits.org/):
-   ```
-   feat: add new component type for overlay
-   fix: resolve HDR color space detection issue
-   test: add Rust backend or frontend contract coverage
-   docs: update README with contribution guidelines
-   refactor: extract expression engine into separate module
-   ```
-3. **Pull Requests**: Clearly describe changes, motivation, and test results in the PR description.
+<details>
+<summary><strong>Project structure and data flow</strong></summary>
 
-### Pre-submission Checklist
+```text
+FH6 Data Out (UDP) → Rust backend → HTTP / WebSocket → Tauri / React / HUD
+                                 → SQLite / MCP / Agent CLI
 
-Before submitting a Pull Request, please verify the following:
+backend-rust/src/    Telemetry, storage, APIs, MCP and production tuning formulas
+frontend/src/        React workspaces, workflow and presentation
+frontend/src-tauri/  Desktop windows, backend lifecycle and packaging
+hud_overlay/        Windows HUD renderers and assets
+companion/          Android connection shell and WebView
+lang/               Translation dictionaries
+docs/               Guides, contracts and calibration records
+scripts/            Build, release and maintenance tools
+```
 
-- [ ] Code passes `uv run --no-project --python .venv\Scripts\python.exe ruff format --check .`
-- [ ] Code passes `uv run --no-project --python .venv\Scripts\python.exe ruff check .`
-- [ ] Rust backend / CLI contract tests pass with `cargo test --locked --manifest-path backend-rust/Cargo.toml`
-- [ ] If new API routes or core logic were added, corresponding unit tests have been written
-- [ ] Changes to Rust tuning decisions include Rust contract tests; frontend type or flow changes pass Vitest and the production boundary build.
-- [ ] If significant architectural changes or core modules were added, `README.md` & `README.en.md` have been updated
-- [ ] If UI components or frontend logic were modified, functionality has been locally verified
-- [ ] If new translation keys were added, both `lang/zh-tw.json` and `lang/ja-jp.json` have been updated
-- [ ] Commit messages follow Conventional Commits conventions
+Production tuning decisions belong to `backend-rust/src/tuning/`. The frontend owns workflow, drafts and display conversions; historical TypeScript models remain test references. See the [responsibility contract](docs/contracts/tuning_responsibilities.md).
 
-### Adding New Language Support
+</details>
 
-The project supports a fully dynamic multi-language framework. Contributors can add new languages without changing any code:
+<details>
+<summary><strong>Ports, updates and data locations</strong></summary>
 
-1. **Create a locale file**: Create a JSON file named after the ISO 639 locale code (e.g. `fr-fr.json`) inside the `lang/` directory. Copy `lang/en-us.json` as a starting template.
-2. **Register the locale name**: Edit `lang/iso639.json` and append your locale code mapping. Example:
-   ```json
-   {
-     "fr-fr": "Français (French)"
-   }
-   ```
-3. **Translation PR format**: When submitting a language support PR, use:
-   - **PR Title**: `feat(i18n): add <locale-name> language support` (e.g. `feat(i18n): add French (fr-fr) language support`)
+| Purpose | Protocol | Default |
+| --- | --- | --- |
+| Game Data Out | UDP | `8000` |
+| Optional raw telemetry forwarding | UDP | `127.0.0.1:5300` |
+| REST/WebSocket/MCP | HTTP/WebSocket | localhost `8001` |
+| Vite development server | HTTP | `1420` |
 
----
+Development uses HTTP `8001`. Release builds try `8001`, then fall back to an available dynamic port. Find the actual endpoint in Settings' MCP section or `logs/web_port.txt` under the data directory. `TELEMETRY_PORT` overrides the UDP port. HTTP and MCP remain localhost-only; Companion uses a separate authenticated pairing endpoint.
 
-## CI/CD Pipeline
+Windows installers and portable builds embed the Rust backend. Portable builds prefer writable storage beside the executable, with an AppData fallback for protected directories. Full and Lite installers are independent; their OTA manifests are `latest.json` and `latest-lite.json`. Linux uses `latest-linux.json`. See the [release and data-path contract](docs/guides/cross-platform-release.md).
 
-Optional Python tooling and reference tests follow the [Python / uv toolchain policy](.agents/rules/python-uv.md): managed Python 3.13, `uv pip`, and `uv run`. Product launch and local packaging use Cargo and pnpm directly.
+</details>
 
-The project uses GitHub Actions for automated quality control. Every push to `main`/`master` or Pull Request triggers:
+<a id="readme-contributing"></a>
 
-| Stage | Description |
-| :--- | :--- |
-| **Lint** | uv-managed Ruff checks for Python tools and Cargo fmt for Rust |
-| **Test (Backend)** | Rust Cargo product contract tests (including no-HUD build); CI also runs frozen Python migration-compatibility and release-validation cases, not a Python backend |
-| **Test (Frontend)** | `cd frontend && pnpm run test` Vitest for UI contracts, frozen references, and build boundaries |
+## Contributing
 
-> [!IMPORTANT]
-> The current CI workflows define the required gates. Run Cargo, Vitest, and build checks for the changed scope; CI also runs the frozen Python compatibility/release cases and Ruff checks.
+Bug reports, documentation improvements, translations and fixes are welcome.
 
----
+- **Report a problem**: Open an [issue](https://github.com/eddie772tw/FH6-HorizonTuner/issues) with your version, operating system, reproduction steps and relevant diagnostics.
+- **Submit changes**: For normal contributions, branch from `main`, use Conventional Commits and describe the purpose, changes and validation in your PR. Read the [project rules](.agents/AGENTS.md) and [testing strategy](.agents/rules/testing-strategy.md) first.
+- **Add a translation**: Copy `lang/en-us.json`, translate the new locale file, register its name in `lang/iso639.json` and verify complete keys and language switching.
+- **Keep docs current**: Update both READMEs when usage or architecture changes, and place detailed material in the relevant `docs/` guide.
 
-## License
+<a id="readme-security"></a>
 
-This project is licensed under the [MIT License](LICENSE).
+## Security
 
-Copyright (c) 2026 罐頭 (eddie772tw) & Contributors.
+Report vulnerabilities privately through GitHub Private Vulnerability Reporting, following [SECURITY.md](SECURITY.md).
 
----
+<a id="readme-license"></a>
 
-## Security Policy
+## License and acknowledgements
 
-We are committed to the security of our users and project. If you discover a security vulnerability, please refer to [SECURITY.md](SECURITY.md) to report it privately via GitHub Private Vulnerability Reporting.
+Licensed under the [MIT License](LICENSE). Copyright © 2026 罐頭 (eddie772tw) and contributors.
 
----
-
-## Credits & Acknowledgements
-
-* **Credits**: [Paburrito/forza-horizon-6-custom-hud](https://github.com/Paburrito/forza-horizon-6-custom-hud)
-  Special thanks to Paburrito for the original "Forza Horizon 6 - Custom HUD" design and inspiration.
-
----
-
-## Release Build Contract
-
-The Release Action also builds **Linux x86_64 Full AppImage**. It retains tuning, Live telemetry, recording, analysis, export and MCP, while excluding HUD, audio spectrum and system media integration. FH6 runs on another device on the same LAN. The Data Out guide lists receiver addresses and the actual UDP port; HTTP and MCP remain localhost-only.
-
-Linux builds on Ubuntu 22.04 and requires compatible system graphics libraries. Windows and Linux publish independently with their own OTA channels; configured builds do not constitute native or real-game acceptance. macOS is unsupported. See the [cross-platform release guide](docs/guides/cross-platform-release.md) for assets, limits and maintenance. The EXE and Full/Lite portable contract below applies to Windows.
-
-The release artifact is a single `FH6-HorizonTuner.exe`. No installer and no
-separate sidecar file are required. The Rust backend is embedded into
-the Tauri host and extracted to a versioned temporary directory at startup.
-User data is stored beside the executable when that directory is writable,
-with an AppData fallback for protected locations.
-
-## Development Ports
-
-This project uses two separate localhost ports; do not configure them interchangeably:
-
-| Service / Purpose | Protocol | Default Port / Notes |
-| :--- | :--- | :--- |
-| Forza Horizon Data Out telemetry | UDP | `8000` (Receives game telemetry) |
-| UDP Telemetry Forwarding (Passthrough) | UDP | `5300` (Forwards raw bytes to SimHub / dashboards) |
-| Rust REST API / WebSocket | HTTP / WebSocket | `8001` (Broadcasts parsed data to UI/HUD) |
-
-In the game, set **Data Out IP Address** to `127.0.0.1` and **Data Out Port** to `8000`. The development frontend connects to `http://127.0.0.1:8001` and `ws://127.0.0.1:8001`. Development uses `8001` as its fixed HTTP port. `TELEMETRY_PORT` remains available for changing the UDP port; `BACKEND_PORT` is retained for explicit test and external-backend workflows. To forward raw datagrams to SimHub or other tools, enable "Telemetry UDP Forwarding" in Settings and configure the destination host and port (defaults to `127.0.0.1:5300`, customizable via `TELEMETRY_FORWARD_ENABLED` / `TELEMETRY_FORWARD_PORT`).
-
-In a Release Build, the Rust HTTP service first attempts to bind `8001`. If another process owns that port, it falls back to an available dynamic TCP port. The actual bound port is written to `logs/web_port.txt` under the data directory after binding succeeds, and the frontend uses that value directly. Forza UDP telemetry still listens on `8000` by default. When fallback occurs, the application displays a Settings/MCP popover so the current endpoint can be confirmed before a client's one-time endpoint bootstrap. After the first connection, a compatible Agent receives configuration guidance through the standard MCP `initialize` response; MCP does not define a cross-client API for injecting the initial URL.
-After the Tauri sidecar reports ready, the frontend configures that actual port through a centralized transport contract. REST and WebSocket calls do not rely on global `fetch` or `WebSocket` interception, so HUD assets and other non-backend connections are never rewritten.
-
-V1.7.2 candidate scope and acceptance: [release notes](docs/releases/v1.7.2.md), [acceptance ledger](docs/releases/v1.7.2-acceptance.md). This preparation does not publish a tag, Release or OTA manifest. Historical v1.7.1 evidence remains in its [original ledger](docs/releases/v1.7.1-acceptance.md).
+Thanks to [Paburrito/forza-horizon-6-custom-hud](https://github.com/Paburrito/forza-horizon-6-custom-hud) for the original Custom HUD design and inspiration. Additional asset and design references are documented in the [reference-project index](docs/reference-projects/README.md) and the individual feature guides.

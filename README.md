@@ -1,445 +1,218 @@
-# FH6-HorizonTuner 🏎️
-> **Forza Horizon 6 Real-Time Telemetry Analyzer, Vehicle Tuning Workbench & Custom Racing Dashboard Overlay**
-> **《極限競速：地平線 6》即時遙測分析、車輛調校工作台與賽車客製化儀表覆蓋層**
+<h1 align="center">FH6-HorizonTuner</h1>
 
-[![Language](https://img.shields.io/badge/Rust-2021-DEA584.svg?logo=rust&logoColor=white)](https://www.rust-lang.org/)
-[![Backend](https://img.shields.io/badge/Backend-Axum%20%2B%20Tokio-009688.svg)](backend-rust/)
-[![Frontend](https://img.shields.io/badge/Frontend-Tauri%20%2B%20React%2018-24C8D8.svg?logo=tauri&logoColor=white)](https://tauri.app/)
-[![UI](https://img.shields.io/badge/UI-Halfmoon%20CSS-593196.svg)](https://www.gethalfmoon.com/)
-[![Overlay](https://img.shields.io/badge/Overlay-HTML5%20Canvas-E34F26.svg?logo=html5&logoColor=white)](hud_overlay/)
-[![Tests](https://img.shields.io/badge/Tests-Cargo%20%2B%20Vitest-46A2F1.svg?logo=vitest&logoColor=white)](tests/)
-[![Code Style](https://img.shields.io/badge/Code%20Style-Ruff-261230.svg)](https://github.com/astral-sh/ruff)
-[![Package](https://img.shields.io/badge/Distribution-Standalone%20EXE-red.svg)](build_all.bat)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+<p align="center">
+  <strong>《極限競速：地平線 6》的遙測、調校與 HUD 工作台</strong><br>
+  觀察車輛動態、用實測資料調校，打造自己的賽車儀表。
+</p>
 
----
+<p align="center">
+  <a href="https://github.com/eddie772tw/FH6-HorizonTuner/releases/latest"><img src="https://img.shields.io/github/v/release/eddie772tw/FH6-HorizonTuner?label=release" alt="最新正式版本"></a>
+  <a href="https://github.com/eddie772tw/FH6-HorizonTuner/actions/workflows/ci.yml"><img src="https://github.com/eddie772tw/FH6-HorizonTuner/actions/workflows/ci.yml/badge.svg?branch=main" alt="main 分支 CI 狀態"></a>
+  <a href="https://github.com/eddie772tw/FH6-HorizonTuner/releases"><img src="https://img.shields.io/github/downloads/eddie772tw/FH6-HorizonTuner/total" alt="GitHub Release 下載次數"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/eddie772tw/FH6-HorizonTuner" alt="MIT 授權"></a>
+</p>
 
-## 簡介 / Introduction
+<p align="center">
+  <strong>繁體中文</strong> · <a href="README.en.md">English</a>
+</p>
 
-`FH6-HorizonTuner` 是一款專為《極限競速：地平線 6》開發的專屬遙測資料分析與車輛調校輔助工具。此專案整合了高效能的 Rust Axum 後端封包監聽服務、現代化的 Tauri 桌面端圖形介面，以及完全免注入的 HTML5 Canvas / Tauri 透明儀表覆蓋層引擎。
+<p align="center">
+  <a href="#readme-download">下載</a> ·
+  <a href="#readme-quick-start">快速開始</a> ·
+  <a href="#readme-features">功能</a> ·
+  <a href="#readme-documentation">文件</a> ·
+  <a href="#readme-development">開發</a> ·
+  <a href="#readme-contributing">參與貢獻</a>
+</p>
 
-目前此專案提供**即時遙測面板**、**自定義賽車儀表覆蓋層 (含視覺化編輯器)**、**車輛調校輔助**與**彈射起步測試**等核心功能，幫助玩家在操駕時即時監控車輛物理與動態反饋。
+FH6-HorizonTuner 透過遊戲的 **Data Out UDP 遙測**接收車輛資料，整合即時儀表、四步調校流程、賽事紀錄與分析。Windows 版另提供可自訂的透明 HUD 覆蓋層，使用獨立視窗呈現，不注入遊戲程序。
 
----
+桌面介面使用 Tauri、React 與 TypeScript；遙測接收、資料儲存與調校計算由 Rust 後端負責。
 
-## 核心功能 / Core Features
+<a id="readme-screenshots"></a>
 
-* **AEGO Road 聯合齒比與量測保護**：AEGO Road 已加入行進加速分箱分析與一檔／終傳／最高檔共同求解；舊觀測保留、資料不足或模型無解時阻止推薦。使用者已於 2026-09-28 確認六項遊戲內驗收完成；工程先驗、驗收來源與適用範圍見 [低功率 Road 修正紀錄](docs/tuning/aego-low-power-20260927.md)。
-* **EV 獨立量測模型**：車輛參數的 EV 開關與傳統檔位數互斥，沿用四步調校流程，支援單速及多速 EV 的逐檔量測與終傳比預覽。這是實測基礎模型，尚不提供最佳換檔點或實際極速預測。[使用方式、模型邊界與驗證](docs/calibration/ev-foundation.md)。
-  保存證據可在電腦端選取或匯入原始 JSON，經 Rust 重播與獨立目前配置確認後使用；缺少的歷史來源保持未知。[EV 證據生命週期](docs/tuning/issue-435-ev-completeness.md)。
-* **CVT 安全 foundation**：使用者可明確選擇 CVT 及遊戲可調能力；Rust 定義 raw capture 的來源、資格與保存重播契約，桌面／Companion／CLI 共用限制。尚無真實 CVT capture 與 solver 驗收，故不產生可套用建議或 ratio preview。[契約與後續驗收界線](docs/tuning/cvt-foundation.md)。
+## 畫面預覽
 
-* **即時遙測與物理動態分析 (60Hz Live Telemetry & Dynamics)**:
-  - 60Hz 高頻 UDP 遙測封包接收與極致效能視效渲染。
-  - 包含車速、轉速 (RPM)、馬力/扭力雙曲線、渦輪增壓值 (Boost) 與油門/煞車/方向盤輸入即時圖表。
-  - 2D G-Force 運動雷達圖、4 輪獨立表面胎溫 (Tire Temp)、熱胎壓 (Hot Pressure) 與 4 輪正規化懸吊行程 (Suspension Travel)。
-  - 後端提供有界的 pipeline metrics，並將 dyno profile 的首次讀取與持久化移出即時遙測迴圈。
-* **4 階段可驗證車輛調校工作流 (Four-Stage Tuning Workflow V2)**：
-  - **4 階段 3 欄位精簡佈局**：重構調校介面為 4 階段 3 欄位清晰佈局，即時呈現車輛狀態與求解反饋。
-  - **實車測試圈遙測特徵驅動 (Race Evidence)**：徹底捨棄原先的手動輪胎抓地力係數輸入，改由真實操駕之輪胎載荷與遙測特徵自動觀察並驅動定位角度與胎壓求解。
-  - **多元賽事模型與底盤支援**：新增 Road 前驅 (FWD) 底盤與全電/混合動力 (AEGO) 前後軸扭力分配；獨立拆分混合路面拉力 (Rally) 與大衝程越野 (Cross Country) 基準；實測轉速區間衍生甩尾 (Drift) 設定與全齒比；支援完整直線加速 (Drag) 變速箱各檔齒比梯度與終點時速推導。公式研究、來源與限制見[調校開發入口](docs/tuning/README.md)。
-* **客製化賽車儀表覆蓋層與雙前端客戶端 (Racing HUD Overlay & Full/Lite Clients)**:
-  - **Skyline R34 MFD**：1999 V·spec 原廠雙段轉速錶與五種 NISMO Ver.II 風格 MFD 模式，真實遊戲遙測、峰值記憶與已觀察圈速紀錄。[原型與資料契約](docs/hud/r34-mfd.md)。
-  - **全新 Classic JDM 儀表群組**：高對比度復古白底轉速儀表盤、超轉換檔提示燈、雙計程儀與渦輪壓力表，提供沉浸式 90 年代日系經典性能車儀表視覺。
-  - **街機多聯錶版面 (Arcade Multi-Gauge Layout) 與 1080p 響應縮放**：支援多聯錶並排顯示，統一所有 HUD 儀表的座標錨點與自適應等比縮放機制。
-  - **[Stack ST8100 Inspired](docs/hud/stack-st8100.md)**：原創壓縮類比轉速錶與綠色點陣 LCD，支援四格遙測欄位、session 峰值、可設定車況警示及真正 GUI 設定；不模擬不存在的引擎感測器。
-  - **多風格儀表支援**：整合 Ford Mustang S650 HMI（支援 Windows GSMTC 音樂小工具）、Gran Turismo 7 風格、Retro VFD 擬真螢光顯示、093 Drift 甩尾專用儀表與 5 款社群熱門 HUD 樣式。
-  - **手把遙測卡片**：在遙測元素區獨立開關 Xbox／DualSense 卡片，可與主儀表同時顯示；其餘 Subsystems 模組保留程式碼與 TODO，暫不提供選單入口。詳見[卡片與延後模組說明](docs/hud-subsystems.md)。
-  - **精簡獨立客戶端 (`FH6-HorizonTuner_lite.exe`)**：提供 Telemetry Dashboard、HUD Overlay 與 Settings 三個分頁，與完整客戶端共用前端功能與後端生命週期。
-  - 100% 免注入、免 Hook 零作弊風險；支援多頻道 WebSocket 數據透傳與全螢幕自適應放縮。
-  - **WYSIWYG 儀表編輯器**：拖曳式佈局編輯器、屬性面板、條件色彩規則與一鍵匯入/匯出設定。
-* **HorizonTuner-cli AI Agent 命令列工具 (HorizonTuner-cli)**:
-  - 提供專為 AI Agent、自動化腳本與終端開發打造的 Rust 工具 `fh6-agent.bat`／`fh6-agent.exe`，後端、MCP 與 CLI 均不需要 Python。
-  - 具備線上即時遙測與離線純數學計算雙模式，支援連接埠就緒探測（`status`）、即時動態診斷（`diagnose`）、車輛規格檢索（`spec`）與底盤算牌（`tune`），並提供 `--json` 結構化輸出。詳細說明參閱 [Agent CLI 使用指南](docs/guides/agent-cli-guide.md)。
-* **Android Companion App（Beta）**:
-  - 原生 Jetpack Compose 連線外殼搭配 Android WebView，載入共用 `frontend/dist/companion/index.html`，重用桌面端五大遙測卡片與四步工作流。
-  - 支援區網 QR Code 一鍵掃碼配對 (LAN Pairing) 與低延遲 USB/ADB 連線模式，具備自動反向轉發與主機租約保護。
-  - 主題同步第一切片使用 authenticated workflow GET 的受限視覺投影；Web/native 共用 endpoint 快取與 generation 防護，七核心 tokens 集中於 `:theme`。原生字體／材質及裝置驗收仍待完成，見 [Companion 主題契約](companion/theme/README.md)。
-  - 注意：Beta 階段 GitHub Release 產物未包含預編譯 APK，若欲體驗請於 `companion/` 目錄由原始碼手動編譯（`./gradlew :app:assembleRelease` 或 `:app:assembleDebug`）。詳見 [Companion 架構與驗收界線](docs/architecture/companion-app-evaluation.md) 與 [Companion README](companion/README.md)。
-* **彈射起步測試與加速度分析 (Drag Launch Test & Acceleration Analyzer)**:
-  - 0-100 km/h, 0-200 km/h, 1/4 英里 (400m) 加速度自動計時測試。
-  - 速度/轉速時間軸圖表回放與歷史 Session 紀錄對比。
-* **遙測持久化與賽事分析 (SQLite Storage, Race Analysis & MoTeC i2 Exporter)**:
-  - 後端 SQLite 遙測歷程資料庫自動記錄，支援常規賽事、計時賽 (Time Trial) 與點對點漫遊路線 (Free Roam) 錄製。
-  - 具備 3D 球體閘門觸發 (支援 5m–50m 觸發半徑與遲滯保護) 及非破壞性停止後修剪 (Non-Destructive Trimming)。
-  - 計時賽與漫遊先武裝路線，下次有效穿越起點才起錄；高速穿越使用相鄰有效遙測點的線段與球體交集，錄製資格不依賴 `IsRaceOn`。停止後預設排除未閉合尾圈與中途資料缺口，原始 session 仍保留。
-  - 提供 41 通道 CSV、i2 XML 工作區範本及實驗性 `.ld`／`.ldx` ZIP 匯出；原生格式已驗證檔案結構，尚未完成 MoTeC i2 實機相容性驗收。操作與限制見[賽事分析指南](docs/guides/race-analysis.md)。
-* **Localhost 唯讀 MCP Server (Model Context Protocol)**:
-  - 由執行中的 Rust backend 提供 Streamable HTTP MCP endpoint（`/mcp`），提供 27 個專屬唯讀工具與 5 類 Resource URI；MCP 與 telemetry 共用同一個 backend process。
-  - 支援 AI Agent（Claude Desktop、Cursor、Cline 等）結構化查詢即時遙測（對齊 `TelemetryView`）、歷史單圈、A/B 跑圈差異比對、車輛規格與調校求解器。
-  - MCP 標準 `initialize` 回應會自動提供 Agent-facing 配置與使用說明；Settings 僅顯示目前 endpoint 與連線狀態，不再要求複製 JSON/CLI 設定。首次連線仍須由客戶端完成一次性 endpoint bootstrap。
-* **OTA 自動更新與版本管理 (Over-The-Air Update & Release Management)**:
-  - 整合 Tauri v2 官方 Updater 插件與 Ed25519 非對稱數位簽章防篡改校驗。
-  - 支援「啟動時自動背景檢查」與「設定頁面手動檢查更新」，提供 Glassmorphism 賽車風格更新對話框與動態下載進度條。
-  - 具備 Sidecar 生命週期協同保護：重啟升級前自動銷毀 Rust sidecar 子行程，確保 UDP 8000 與 HTTP 8001 連接埠 100% 釋放。
-  - **自動化發布架構**：維護者僅需在 GitHub 網頁建立 Release，GitHub Actions 即自動觸發編譯與簽名。`FH6-HorizonTuner-Full-Installer.exe` 與 `FH6-HorizonTuner-Lite-Installer.exe` 是可直接安裝的正式 NSIS installer，也是 OTA updater 重用的同一個經簽署 payload；Full/Lite portable EXE 與 Portable ZIP 則清楚標示為可攜版。兩個 OTA 管道分別使用 `latest.json`（Full）與 `latest-lite.json`（Lite），可獨立下載與安裝，不依賴另一個版本。
-* **診斷主控台與主題 / 多語言系統 (Diagnostics, Theme & i18n)**:
-  - **診斷主控台**：內建即時日誌檢視器，支援 DEBUG / INFO / WARNING / ERROR 層級篩選與 Traceback 自動拼接。
-  - **設計系統與主題**：Core Theme 同時決定整體配色、材質與元件設計；Default／Modern／Elegant 屬於 Halfmoon，Swiss Technical／Editorial／Contrast 屬於 Swiss，Rhine Lab 屬於 Rhine。Halfmoon 保留圓角玻璃風格；Swiss 提供冷色工程、暖紙編排與中性反差三種日夜外觀，共用消光元件與跨頁標頭。一般分頁依內容寬度且設最大值，調校保留編號與等寬滿列。從「應用程式選單 → 外觀」按系統分組選擇核心，Swiss 選擇卡可預覽標頭、按鈕與徽章；系統色彩調配整合三個色票／HEX 欄位及 11 組 Color Presets，同步原生控制項與圖表，切換核心保留三色。CSS 編輯器與速查指南預設折疊供進階使用。Rhine Lab 提供 MiSans 紙面工作台、統一的桌面紙頁設定面板、刻度導覽、同步重繪的平面 Canvas 儀表及 reduced-motion 相容短暫動畫。Swiss 五卡以資料網格、平直 RPM、穩定警示與實色圖例形成差異；AEGO 齒比、引擎曲線、賽事分析及直線加速圖表也共用核心圖表樣式。素材、授權與驗收方式見 [Rhine Lab 指南](docs/frontend/rhine-lab.md)。`themeCatalog.ts` 管理核心歸屬，`styles/design-systems/` 隔離系統樣式，未來可新增模組而不複製各頁 CSS；舊主題設定及匯入／匯出格式保持相容。
-  - **動態多語言**：預設支援繁體中文 (zh-tw)、英文 (en-us)、日文 (ja-jp) 等。
+| AP1 Rev Arc | LFA Center Ring |
+| :---: | :---: |
+| ![AP1 Rev Arc 琥珀色弧形轉速 HUD 離線預覽](docs/releases/assets/v1.7.2/hud-ap1-rev-arc.png) | ![LFA Center Ring 中央轉速環 HUD 離線預覽](docs/releases/assets/v1.7.2/hud-lfa-center-ring.png) |
+| **Stack ST8100** | **R34 MFD** |
+| ![Stack ST8100 指針與點陣 LCD HUD 離線預覽](docs/releases/assets/v1.7.2/hud-stack-st8100.png) | ![R34 MFD 多通道儀表離線預覽](docs/releases/assets/v1.7.2/hud-r34-mfd-multi.png) |
 
----
+*以上為 v1.7.2 文件中的 HUD 離線示意，使用合成遙測，並非遊戲實機截圖。查看[圖片來源](docs/releases/assets/v1.7.2/README.md)與[完整圖集](docs/releases/v1.7.2.md)。*
 
-## 專案架構 / Project Architecture
+<a id="readme-download"></a>
 
-前端由共用 `AppShell` 管理工作區與應用程式選單：Full 提供即時、調校、賽事紀錄、HUD，Lite 提供即時與 HUD。一次只掛載目前工作區；Tune、Road、Sessions 與 HUD 的長生命週期狀態由各功能 provider 持有，避免切頁中斷量測或清空未保存草稿。全域選單提供設定、外觀、診斷、更新與關於。早期 IA 遷移與原生驗收的歷史紀錄見 [Shell 交接](docs/archive/frontend/ia-refactor-20260913/handoffs/shell-20260914.md)。
+## 下載與版本選擇
+
+**[前往最新正式版 →](https://github.com/eddie772tw/FH6-HorizonTuner/releases/latest)**
+
+| 版本 | 適合用途 | 下載 |
+| --- | --- | --- |
+| **Windows Full** · x86_64 | 即時遙測、調校、賽事紀錄與分析、HUD | [安裝版](https://github.com/eddie772tw/FH6-HorizonTuner/releases/latest/download/FH6-HorizonTuner-Full-Installer.exe) · [可攜版](https://github.com/eddie772tw/FH6-HorizonTuner/releases/latest/download/FH6-HorizonTuner-Full-Portable.exe) |
+| **Windows Lite** · x86_64 | 只需要即時遙測、HUD 與設定 | [安裝版](https://github.com/eddie772tw/FH6-HorizonTuner/releases/latest/download/FH6-HorizonTuner-Lite-Installer.exe) · [可攜版](https://github.com/eddie772tw/FH6-HorizonTuner/releases/latest/download/FH6-HorizonTuner-Lite-Portable.exe) |
+| **Linux Full** · x86_64 | 在同一區網接收另一台裝置的遊戲遙測，進行調校、錄製與分析；不含 HUD、音訊頻譜及系統媒體整合 | [AppImage](https://github.com/eddie772tw/FH6-HorizonTuner/releases/latest/download/FH6-HorizonTuner-Full-Linux-x86_64.AppImage) |
+
+- **Windows 可攜版組合包**：[下載 Full + Lite ZIP](https://github.com/eddie772tw/FH6-HorizonTuner/releases/latest/download/FH6-HorizonTuner-Portable-Bundle.zip)。解壓縮後執行所需版本，無須另下載後端。
+- **執行環境**：Windows 需要 WebView2 Runtime；Linux 需要相容的 GTK／WebKitGTK 與 AppImage 執行環境。macOS 目前不支援，詳見[平台需求與限制](docs/guides/cross-platform-release.md)。
+- **Android Companion（Beta）**：Android 13+，搭配持續運行的 Windows Full，支援 LAN QR 配對與 USB／ADB。目前正式 Release 未附 APK；建置與驗收狀態見 [Companion README](companion/README.md)。
+
+> [!NOTE]
+> 本頁描述 `main` 的功能。下載版本的功能與可用資產以該 [Release 說明](https://github.com/eddie772tw/FH6-HorizonTuner/releases)為準；建置通過不代表所有平台與遊戲情境均已完成驗收。
+
+<a id="readme-quick-start"></a>
+
+## 快速開始
+
+1. **啟動 HorizonTuner**：選擇 Full 或 Lite；可攜版直接執行，安裝版依安裝精靈完成設定。
+2. **啟用遊戲 Data Out**：進入遊戲的「設定 → HUD 與遊戲操作」，開啟資料輸出並填入下表。
+3. **確認收到資料**：回到遊戲短暫駕駛，在應用程式的 Data Out 引導與即時遙測頁確認封包、車速及轉速有更新。
+
+| 遊戲內設定 | 遊戲與工具在同一台 Windows 電腦 | 遊戲在另一台區網裝置 |
+| --- | --- | --- |
+| Data Out | `ON` | `ON` |
+| Data Out IP Address | `127.0.0.1` | Data Out 引導顯示的接收電腦 LAN IP |
+| Data Out Port | `8000`（預設） | 引導顯示的 UDP port（預設 `8000`） |
+
+跨機連線時，兩台裝置需在同一區網，接收電腦的防火牆需允許該 UDP port。若已自訂連接埠，以引導畫面為準。**遊戲使用 UDP 遙測埠，不是 HTTP／MCP 的 `8001`。** 詳細步驟見 [LAN Data Out 設定](docs/guides/cross-platform-release.md#遊戲端設定)。
+
+首次使用可先觀察即時遙測，再在 Full 的調校工作區完成車輛設定與量測。調校建議須由使用者在遊戲內手動套用。
+
+<a id="readme-features"></a>
+
+## 功能一覽
+
+- **即時遙測**：檢視車速、RPM、馬力／扭力、增壓、駕駛輸入、G 值、四輪胎溫與懸吊行程；以圖表追蹤車輛動態。
+- **四步調校流程**：從目標與車輛設定、底盤與輪胎、引擎量測與齒比，到設定驗證。支援 Road、Rally、Cross Country、Drift、Drag 等用途，依量測品質與可調能力提供結果。
+- **Windows HUD 與編輯器**：提供 Classic JDM、S650、GT7、Retro VFD、R34 MFD 等風格，以及輔助儀表、音響面板與手把遙測卡片；可調整位置、縮放、色彩並匯入／匯出佈局。
+- **錄製、分析與加速測試**：保存 SQLite 遙測紀錄，比較單圈與歷史 session，設定計時賽／漫遊路線閘門，進行非破壞性修剪與 0–100、0–200 km/h、1/4 英里加速計時。
+- **CLI 與 AI 工具整合**：Rust `fh6-agent` 提供狀態查詢、遙測診斷與調校命令；localhost 唯讀 MCP 提供即時與歷史資料、車輛規格及求解工具。[CLI 指南](docs/guides/agent-cli-guide.md) · [MCP 設定](docs/guides/mcp-setup-guide.md)。
+- **主題、多語言與更新**：Halfmoon、Swiss、Rhine Lab 三套設計系統，支援繁體中文、英文、日文及擴充語系；整合診斷主控台與具簽章驗證的 OTA 更新。
+
+### 模型與實驗功能的範圍
+
+| 功能 | 目前範圍與限制 |
+| --- | --- |
+| Road／Rally 與 AEGO | 以工程基準與合格量測求解；資料不足或目標無解時不產生推薦。參閱[調校文件](docs/tuning/README.md)、[底盤基準](docs/tuning/chassis-engineering-baseline-v1.md)與 [Road 起步模型](docs/tuning/aego-road-launch-v3.md)。 |
+| EV | 支援單速／多速量測、證據保存重播與終傳比預覽；最佳換檔點、實際極速預測及部分實車驗收仍待完成。[EV 模型](docs/calibration/ev-foundation.md) · [證據生命週期](docs/tuning/issue-435-ev-completeness.md)。 |
+| CVT | 已有能力選擇、採集與重播契約；尚未提供可套用推薦、終傳求解與 ratio preview。[CVT 說明](docs/tuning/cvt-foundation.md)。 |
+| MoTeC 匯出 | 提供 CSV、i2 XML 範本及實驗性 `.ld`／`.ldx` ZIP；原生格式的 MoTeC i2 實機相容性仍待驗收。[賽事分析指南](docs/guides/race-analysis.md)。 |
+| Android Companion | 共用遙測卡片與調校流程；Android HUD 延後，原生外觀及裝置體驗仍有待驗收項目。[實作邊界](docs/architecture/companion-implementation-boundary.md)。 |
+
+<a id="readme-documentation"></a>
+
+## 文件
+
+從 **[完整文件索引](docs/README.md)** 依用途查找操作說明、架構與歷史紀錄。
+
+| 我想要… | 文件入口 |
+| --- | --- |
+| 錄製賽事、比較單圈、匯出資料 | [賽事分析](docs/guides/race-analysis.md) · [檔案匯出](docs/guides/file-exports.md) |
+| 安裝自訂儀表或了解 HUD 欄位 | [自訂 HUD 套件](docs/guides/portable-custom-hud.md) · [R34 MFD](docs/hud/r34-mfd.md) · [Stack ST8100](docs/hud/stack-st8100.md) |
+| 串接 Agent 或自動化工具 | [CLI](docs/guides/agent-cli-guide.md) · [MCP](docs/guides/mcp-setup-guide.md) |
+| 研究調校公式與採集證據 | [調校開發](docs/tuning/README.md) · [校準流程](docs/calibration/README.md) |
+| 開發介面、主題或後端 | [前端](frontend/README.md) · [設計系統](docs/frontend/design-systems.md) · [Rust 後端](docs/backend-rust/README.md) |
+| 建置、發布或排查啟動問題 | [開發啟動](docs/guides/development.md) · [跨平台 Release／OTA](docs/guides/cross-platform-release.md) |
+| 查找過去版本與研究 | [GitHub Releases](https://github.com/eddie772tw/FH6-HorizonTuner/releases) · [歷史文件](docs/archive/README.md) |
+
+<a id="readme-development"></a>
+
+## 從原始碼開發
+
+以下為 Windows 開發流程。先安裝 **Git、Node.js 22、pnpm、Rust stable、MSVC Build Tools、Windows SDK 與 WebView2**；pnpm 版本請與 [CI workflow](.github/workflows/ci.yml)保持一致。Linux 建置請見[跨平台指南](docs/guides/cross-platform-release.md)。
+
+```powershell
+git clone https://github.com/eddie772tw/FH6-HorizonTuner.git
+cd FH6-HorizonTuner
+.\setup_dev.bat
+.\dev_full.bat
+# Lite 改用 .\dev_lite.bat
+```
+
+`setup_dev.bat` 準備依賴；日常以 `dev_full.bat` 或 `dev_lite.bat` 啟動，兩者一次執行一個。前端支援 Vite HMR，Rust 修改後需重新啟動。產品後端、MCP 與 CLI 不需要 Python；選用維護工具請使用 [Python 3.13／uv 環境](.agents/rules/python-uv.md)。
+
+### 建置與驗證
+
+建立 Windows Full／Lite 可攜版：
+
+```powershell
+.\setup_build.bat
+.\build_all.bat
+```
+
+輸出為 `dist/FH6-HorizonTuner.exe` 與 `dist/FH6-HorizonTuner_lite.exe`。安裝包、OTA 簽章與正式發行另依[發行流程](docs/guides/cross-platform-release.md)處理。
+
+依變更範圍執行對應檢查：
+
+| 變更範圍 | 本地檢查 |
+| --- | --- |
+| 文件 | `git diff --check` |
+| Rust 後端／CLI | `cargo test --locked --manifest-path backend-rust/Cargo.toml` |
+| Rust 格式 | `cargo fmt --manifest-path backend-rust/Cargo.toml -- --check` |
+| React／TypeScript | `pnpm -C frontend run test`、`pnpm -C frontend run build` |
+| 無 HUD 平台 | 後端測試另加 `--no-default-features`，並依跨平台指南驗證 |
+| Python 維護工具 | 依 [uv 規範](.agents/rules/python-uv.md)執行對應工具測試與 Ruff |
+
+[CI Pipeline](https://github.com/eddie772tw/FH6-HorizonTuner/actions/workflows/ci.yml)執行自動檢查；[Host Diagnostics](https://github.com/eddie772tw/FH6-HorizonTuner/actions/workflows/diagnostics.yml)提供排程與手動啟動診斷。正式發行仍需對候選產物進行原生桌面 smoke test 與適用的遊戲／裝置驗收，不能以單元測試或離線圖片替代。
+
+<details>
+<summary><strong>專案結構與資料流</strong></summary>
 
 ```text
-FH6-HorizonTuner/
-├── .github/workflows/       # GitHub CI/CD 工作流 (ci.yml 門禁測試 + release.yml 自動發行)
-├── backend-rust/            # Independent Rust HTTP / WebSocket / UDP sidecar
-│   ├── src/runtime.rs       # Process lifecycle, ports and bounded UDP delivery
-│   ├── src/network.rs       # HTTP / WebSocket transport and origin checks
-│   ├── src/telemetry/       # Packet codec, recorders, dyno and SQLite
-│   ├── src/road/            # Road workflow, observations, matching and captures
-│   ├── src/mcp/             # Existing read-only MCP tools and resources
-│   ├── src/native/          # WASAPI, GSMTC and Discord workers
-│   ├── src/config_service.rs # Settings, files and HUD API
-│   └── tests/               # Contract fixtures and loopback process tests
-├── backend/                 # 車庫資源與沿用的開發資料路徑；無 Python 後端
-├── frontend/                # Tauri 前端代碼 (Vite + React + TypeScript)
-│   ├── lite/                # Lite 前端 HTML entrypoint
-│   ├── src/app/             # 共用 Shell、能力契約、工作區與全域 surface 導覽
-│   ├── src/features/        # 業務領域模組 (Features Domain)
-│   │   ├── live/            # Live 工作區入口；Full/Lite 能力投影
-│   │   ├── sessions/        # Sessions 選取狀態、IO 與賽後完成導覽
-│   │   ├── road/            # Road 工作流控制器及 prepare/run/review 狀態
-│   │   ├── telemetry/       # 即時遙測視圖 (TelemetryView) 與 5 大可展開動態卡片
-│   │   ├── tuning/          # 車輛調校嚮導 (TuningView & Step 1~4 分頁)
-│   │   ├── overlay_control/ # WYSIWYG 儀表佈局編輯器 (OverlayView)
-│   │   ├── drag_test/       # 彈射起步測試 (DragTestView)
-│   │   ├── analysis/        # 賽後復盤與 MoTeC 生態系橋接器 (AnalysisView, Debrief & LapDelta)
-│   │   ├── car_params/      # 車輛參數設定 (CarParamsView)
-│   │   ├── settings/        # 系統全域設定 (SettingsView)
-│   │   └── theme/           # 主題色調與皮膚視圖 (ThemeView)
-│   ├── src/components/      # 通用 UI 元件 (ModalPortal, DiagnosticConsole 等)
-│   ├── src/domain/tuning/    # 純函數調校 domain（輪胎、載荷轉移、懸吊、齒比與差速器）
-│   │   ├── chassis/          # 懸吊與 Phase 4B 四輪載荷轉移估算
-│   │   └── tires/            # 摩擦橢圓、輪胎幾何與垂直剛度先驗
-│   ├── src/utils/           # 顯示與傳輸工具；調校決策由 Rust 擁有
-│   ├── test-reference/tuning/ # 凍結 TS 模型與歷史特徵測試
-│   └── src-tauri/           # Tauri 視窗與 Full/Lite 打包設定
-├── hud_overlay/             # HTML5 Canvas 客製化賽車儀表覆蓋層
-│   ├── index.html           # HUD 載入與 Viewport 渲染入口
-│   ├── classic_jdm/         # Classic JDM 經典日系儀表與街機多聯錶
-│   ├── gt7/                 # Gran Turismo 7 風格賽車儀表
-│   ├── vfd/                 # Retro VFD 擬真螢光顯示儀表
-│   ├── drift/               # 093 Drift 專業甩尾賽車儀表
-│   └── shared/              # 共用 Canvas 幾何繪圖與數學庫
-├── scripts/                 # 自動化發行與度量腳本 (prepare_release_assets.py, release_metrics.py)
-├── lang/                    # 系統多語言翻譯字典 (zh-tw, ja-jp 等)
-├── tests/                   # 跨語言黃金資料與選用發行工具驗證
-├── backend-rust/tests/      # Rust 後端與 CLI 產品契約測試
-├── pyproject.toml           # 選用 Python 工具的 Ruff / Pytest 設定
-├── requirements.txt         # 選用的維護／診斷工具依賴
-├── fh6-agent.bat            # HorizonTuner-cli AI Agent 命令列工具入口
-├── setup_dev.bat           # 下載 Rust 與前端開發依賴
-├── dev_full.bat            # Full 開發入口，編譯並啟動 Rust sidecar
-├── dev_lite.bat            # Lite 開發入口，編譯並啟動 Rust sidecar
-├── setup_build.bat         # 安裝打包依賴
-└── build_all.bat            # 一鍵打包發行腳本
+FH6 Data Out (UDP) → Rust backend → HTTP / WebSocket → Tauri / React / HUD
+                                 → SQLite / MCP / Agent CLI
+
+backend-rust/src/    遙測、儲存、API、MCP 與正式調校公式
+frontend/src/        React 工作區、流程與顯示
+frontend/src-tauri/  桌面視窗、後端生命週期與打包
+hud_overlay/        Windows HUD renderer 與素材
+companion/          Android 連線外殼與 WebView
+lang/               語系字典
+docs/               操作指南、契約與校準紀錄
+scripts/            建置、發行與維護工具
 ```
 
----
+正式調校決策由 `backend-rust/src/tuning/` 擁有，前端只處理流程、草稿與顯示轉換；舊 TypeScript 模型保留為測試參考。詳見[責任契約](docs/contracts/tuning_responsibilities.md)。
 
-## 快速開始 / Quick Start
+</details>
 
-### 1. 遊戲內 UDP 遙測設定
+<details>
+<summary><strong>連接埠、更新與資料位置</strong></summary>
 
-要接收遙測數據，您必須在《極限競速：地平線 6》遊戲中啟用資料輸出功能：
-1. 啟動遊戲，進入**設定** -> **HUD 與遊戲操作 (HUD and Gameplay)**。
-2. 尋找 **資料輸出 (Data Out)**，將其設為 **開啟 (ON)**。
-3. 將 **資料輸出 IP 位址 (Data Out IP Address)** 填入 `127.0.0.1`。
-4. 將 **資料輸出連接埠 (Data Out Port)** 填入 `8000`。
+| 用途 | 協定 | 預設值 |
+| --- | --- | --- |
+| 遊戲 Data Out | UDP | `8000` |
+| 選用的原始遙測轉發 | UDP | `127.0.0.1:5300` |
+| REST／WebSocket／MCP | HTTP／WebSocket | localhost `8001` |
+| Vite 開發伺服器 | HTTP | `1420` |
 
-### 2. 啟動本工具
+開發模式固定使用 HTTP `8001`；Release 優先使用 `8001`，占用時改用可用的動態埠。實際端點見 Settings 的 MCP 區塊或資料目錄的 `logs/web_port.txt`。可透過 `TELEMETRY_PORT` 覆寫 UDP port；HTTP 與 MCP 保持 localhost，Companion 使用另外的授權配對入口。
 
-先安裝 Node.js／pnpm 與 Rust／Tauri 的 Windows 開發工具，再執行一次 `setup_dev.bat`。相依宣告有變更時，重新執行 setup。
+Windows 安裝版與可攜版均內嵌 Rust 後端。可攜版優先在可寫的執行檔旁保存資料，受保護目錄則回退至 AppData。Full／Lite 安裝版各自獨立，OTA 分別使用 `latest.json`／`latest-lite.json`；Linux 使用 `latest-linux.json`。詳見[發行與資料路徑契約](docs/guides/cross-platform-release.md)。
 
-- **Full**：執行 `dev_full.bat`。
-- **Lite**：執行 `dev_lite.bat`；僅提供 Dashboard、HUD Overlay、Settings。
+</details>
 
-兩個入口先增量編譯獨立的 Rust 後端，再由 Tauri 管理該程序的啟停。前端仍使用 Vite HMR；修改 Rust 後重新啟動開發入口。Full／Lite 共用開發 port，請一次啟動一個。日常開發與產品打包不需要 Python；Agent CLI、舊實作參考測試與部分維護工具仍可透過選用的 uv 環境執行。
+<a id="readme-contributing"></a>
 
-日常啟動不安裝套件、不格式化程式、不更新車輛資料、不清除其他程序。HTTP `8001` 或 UDP `8000` 被占用時會回報失敗，請關閉原有執行個體後重試。單獨執行後端、外接前端與故障排查請見[開發啟動指南](docs/guides/development.md)。
+## 參與貢獻
 
----
+歡迎回報問題、改善文件、翻譯與提交修正。
 
-## 一鍵打包可攜版 / Build Portable Executables (.exe)
+- **回報問題**：請在 [Issues](https://github.com/eddie772tw/FH6-HorizonTuner/issues)附上版本、作業系統、重現步驟及相關診斷資訊。
+- **提交修改**：一般貢獻從 `main` 建立功能分支，使用 Conventional Commits，並在 PR 說明目的、變更與驗證結果。先閱讀[專案開發守則](.agents/AGENTS.md)及[測試策略](.agents/rules/testing-strategy.md)。
+- **新增翻譯**：以 `lang/en-us.json` 為範本新增語系檔，於 `lang/iso639.json` 註冊名稱，確認鍵值完整且介面可切換。
+- **維護文件**：涉及使用方式或架構的變更，請同步更新繁體中文與英文 README，詳細內容放在對應的 `docs/` 指南。
 
-執行 `setup_build.bat` 準備 Rust／前端依賴，再執行 `build_all.bat`。流程依序建置共用前端、獨立 Rust sidecar，以及 Full／Lite Tauri host，輸出 `dist/FH6-HorizonTuner.exe` 與 `dist/FH6-HorizonTuner_lite.exe`。
+<a id="readme-security"></a>
 
-sidecar 由 `cargo build --locked --release` 編譯；HUD、語言、車輛資料透過 `backend-rust/build.rs` 嵌入，不再使用 PyInstaller。使用者的設定、SQLite 紀錄與自訂 HUD 沿用既有資料路徑。正式版 HTTP 優先使用 8001，必要時透過 readiness event 宣告動態埠；UDP 遙測埠仍獨立設定。
+## 安全性
 
-詳細架構、Python 參考實作的保留用途與測試分層見 [Rust 後端遷移](docs/backend-rust/README.md)；命令見[開發指南](docs/guides/development.md)。
+發現安全漏洞時，請依 [SECURITY.md](SECURITY.md) 透過 GitHub Private Vulnerability Reporting 私密通報。
 
-歷史效能 PR 的移植原則、API／JSON 複製盤查與尚待量測項目，見[後端效能盤查](docs/backend-rust/performance-audit.md)。Release 對照使用相同資料的真實 HTTP／MCP 回應，與功能契約測試分開記錄。
+<a id="readme-license"></a>
 
----
+## 授權與致謝
 
-## 選用 Python / uv 工具規範
+本專案採用 [MIT License](LICENSE)。Copyright © 2026 罐頭（eddie772tw）與貢獻者。
 
-選用 Python 工具固定使用 Python 3.13，並由 `uv` 管理 Python interpreter、`.venv` 與所有 Python 套件。請先安裝 uv，再使用 [Python / uv 工具鏈規範](.agents/rules/python-uv.md) 中的命令；不要使用裸 `python`、`pip`、`pytest` 或 `ruff`。
-
-選用 Python 工具並非產品後端。產品後端／CLI 使用 Cargo 測試，前端使用 Vitest；維護工具僅執行其對應的工具測試：
-
-```powershell
-uv run --no-project --python .venv\Scripts\python.exe python -m pytest scripts/tests/
-uv run --no-project --python .venv\Scripts\python.exe ruff check .
-uv run --no-project --python .venv\Scripts\python.exe ruff format --check .
-```
-
-## 開發環境要求 / Prerequisites
-
-* **uv**：選用 Python 3.13、`.venv` 與 Python 套件安裝的必要管理工具。詳細規範請參閱 [Python / uv 工具鏈規範](.agents/rules/python-uv.md)。
-* **Node.js**: 20 或以上版本
-* **Rust / Cargo**：獨立後端與 Tauri host 的必要編譯工具。
-
----
-
-## 開發者規範與程式碼格式化 / Developer Guide & Formatting
-
-操作指南、HUD 契約、調校開發及校準流程統一由 [文件索引](docs/README.md) 查找；舊計畫與研究已分流至 [歷史索引](docs/archive/README.md)，不代表目前開發進度。
-
-前端工作從[前端開發入口](frontend/README.md)與[主題／設計系統指南](docs/frontend/design-systems.md)開始，包含七個核心、CSS 模組責任、擴充方式及送審驗收矩陣。
-
-協作代理規範位於 [`.agents/AGENTS.md`](.agents/AGENTS.md)，變更前請先閱讀；專案決策與經驗紀錄維護於 [`.agents/Journal.md`](.agents/Journal.md)。
-
-選用 Python 維護工具採用 **[Ruff](https://github.com/astral-sh/ruff)** 格式化與檢查。這些命令只適用於 Python 工具，不是 Rust 產品後端的 CI gate。
-
-### Python 格式化 (Ruff)
-
-* **全量格式化代碼**：
-    ```bash
-    # 在虛擬環境外
-    uv run --no-project --python .venv\Scripts\python.exe ruff format .
-
-    # 在 Windows 虛擬環境內
-    uv run --no-project --python .venv\Scripts\python.exe ruff format .
-    ```
-* **驗證排版格式（CI 也會執行此步驟）**：
-    ```bash
-    uv run --no-project --python .venv\Scripts\python.exe ruff format --check .
-    ```
-* **靜態代碼檢查（Lint）**：
-    ```bash
-    uv run --no-project --python .venv\Scripts\python.exe ruff check .
-    ```
-
-> [!TIP]
-> 格式化與檢查由開發者明確執行；開發啟動不會修改原始碼。
-
-### Rust 後端與 CLI 測試 (Cargo)
-
-產品後端、遙測、REST/WebSocket、MCP 與 Agent CLI 的主要驗證入口為：
-
-```powershell
-cargo test --locked --manifest-path backend-rust/Cargo.toml
-cargo fmt --manifest-path backend-rust/Cargo.toml -- --check
-```
-
-平台原生功能另依變更範圍執行 `cargo test --locked --manifest-path backend-rust/Cargo.toml --no-default-features`。測試層級與限制見[測試策略](.agents/rules/testing-strategy.md)。
-
-### 前端單元測試 (Vitest)
-
-前端使用 **[Vitest](https://vitest.dev/)** 作為單元測試框架，與 Vite 工具鏈緊密整合、零額外設定。測試檔與被測模組同目錄，命名為 `<模組名>.test.ts`。
-
-```bash
-# 從專案根目錄執行
-cmd /c "pnpm -C frontend run test"
-
-# 或從 frontend/ 目錄執行
-cd frontend && pnpm run test
-```
-
-前端測試涵蓋下列代表性領域；測試檔案與案例數會隨版本變動：
-| 測試檔案 | 覆蓋範圍 |
-| :--- | :--- |
-| `frontend/test-reference/tuning/` | 凍結歷史數值測試；正式 Rust 產品契約位於 `backend-rust/tests/` |
-| `tuningDiagnosis.test.ts` | 底盤遙測即時問題與動態調校診斷邏輯測試 |
-| `loadTransfer.test.ts` / `tireGeometry.test.ts` | Phase 4B 四輪估計垂直載荷、載荷轉移與輪胎幾何先驗 |
-| `driftMath.test.ts` | 甩尾分數與甩尾角度計算邏輯測試 |
-| `telemetryCards.test.ts` | 遙測數據卡片格式化與狀態映射測試 |
-| `telemetryHistory.test.ts` / `telemetryDetailMath.test.ts` | 有界遙測歷史、輪胎／動力學 detail 映射與懸吊統計測試 |
-| `tireModel.test.ts` | 摩擦橢圓邊界、零容量正需求修復與 feasible 判斷（7 tests） |
-| `suspensionSolver.test.ts` | 臨界阻尼、阻尼比先驗與 FH6 滑桿映射分層（3 tests） |
-| `timestampIntegration.test.ts` | Phase 6 時間戳積分—滑空、漂移時間、衝擊窗口與非單調 unknown |
-| `thermalDiagnosis.test.ts` | Phase 6 四輪胎溫梯度、Camber 與胎壓修正建議 |
-| `dynamicsDiagnosis.test.ts` | Phase 6 ARB / 阻尼 / 差速器復合滑移診斷與 confidence 分層 |
-| `capabilityFilter.test.ts` | Phase 7 改裝能力篩選函式（unlocked / locked / unknown keys） |
-| `presetSerializer.test.ts` | Phase 7 `tuning-preset/v1` 存檔序列化往返與版本驗證 |
-| 其它 `*.test.ts` 模組 | 包含 Express引擎、VFD 儀表、音訊、CSS 驗證與 RDP 簡化器等測試套件 |
-
-> [!TIP]
-> 新增或修改 `frontend/src/utils/` 下的物理計算模組時，請同步新增對應的 `.test.ts` 單元測試，確保所有測試通過後才提交 PR。
-
----
-
-## 貢獻指南 / Contributing Guidelines
-
-### 分支與提交規範
-
-1. **分支命名**：請基於 `main` 分支建立功能分支，命名格式為 `feature/<功能名稱>` 或 `fix/<問題描述>`。
-2. **Commit Message 規範**：採用 [Conventional Commits](https://www.conventionalcommits.org/) 格式：
-   ```
-   feat: add new component type for overlay
-   fix: resolve HDR color space detection issue
-   test: add Rust backend or frontend contract coverage
-   docs: update README with contribution guidelines
-   refactor: extract expression engine into separate module
-   ```
-3. **Pull Request**：請在 PR 描述中清楚說明變更內容、動機與測試結果。
-
-### 提交前檢查清單
-
-在提交 Pull Request 之前，請確認以下事項：
-
-- [ ] 代碼已通過 `uv run --no-project --python .venv\\Scripts\\python.exe ruff format --check .` 格式驗證
-- [ ] 代碼已通過 `uv run --no-project --python .venv\\Scripts\\python.exe ruff check .` 靜態檢查（無 Error / Warning）
-- [ ] Rust 後端／CLI 已通過 `cargo test --locked --manifest-path backend-rust/Cargo.toml`
-- [ ] 前端單元測試已全數通過 (`cmd /c "pnpm -C frontend run test"`)
-- [ ] 若新增 API 路由或後端核心邏輯，已補充對應的 Rust Cargo 契約測試
-- [ ] 若修改 Rust 調校決策，已補充 Rust 契約；前端型別／流程變更通過 Vitest 與 production boundary build。
-- [ ] 若本次任務包含重大架構變更、核心模組增修或 API 重構，已同步維護並更新 `README.md` 與 `README.en.md`
-- [ ] 若修改了 UI 元件或前端邏輯，已在本地驗證功能運作正常
-- [ ] 若新增了多語言鍵值，已同步更新 `lang/zh-tw.json` 與 `lang/ja-jp.json`
-- [ ] Commit message 符合 Conventional Commits 規範
-
-### 新增自訂語系支援
-
-本專案支援完全動態加載的多語言框架，貢獻者無需修改任何程式碼即可新增新語系：
-
-1. **建立語系檔**：
-   在 `lang/` 目錄下建立一個符合 ISO 639 與 locale 定義的 JSON 檔案（例如 `fr-fr.json`）。可以直接複製 `lang/en-us.json` 作為範本進行翻譯。
-
-2. **註冊語言名稱**：
-   編輯 `lang/iso639.json`，在字典中加入該語系代碼與對應的人性化易讀名稱。例如：
-   ```json
-   {
-     "fr-fr": "Français (French)"
-   }
-   ```
-
-3. **語系 PR 提交規範**：
-   當提交新的語系支援 PR 時，請遵循以下標準化格式：
-   - **PR 標題格式**: `feat(i18n): add <locale-name> language support` (例如 `feat(i18n): add French (fr-fr) language support`)。
-   - **PR 說明內容**:
-     ```markdown
-     ## 語系新增說明 / Translation Details
-     - 新增語系代碼 / Added Locale Code: `fr-fr`
-     - 語系顯示名稱 / Display Language Name: `Français (French)`
-
-     ## 檢查清單 / Checklist
-     - [ ] 已在 `lang/` 目錄建立對應的 `<locale-code>.json` 檔案
-     - [ ] 已在 `lang/iso639.json` 中註冊此語系代碼與對照名稱
-     - [ ] 翻譯 JSON 中的所有翻譯鍵（Keys）皆已完整對齊 `en-us.json`
-     - [ ] 確認翻譯內容中無殘留的中文字元或錯位
-     - [ ] 已在本地測試過，選單能正常加載並正確切換該語系
-     ```
-
----
-
-## CI/CD 自動化流程 / Continuous Integration
-
-本專案使用 GitHub Actions 進行自動化品質控管。每次推送至 `main` / `master` 或提交 Pull Request 時，CI 會自動執行以下兩個階段：
-
-| 階段 | 說明 |
-| :--- | :--- |
-| **Lint** | uv 管理的 `ruff check`／`ruff format --check` 檢查 Python 工具，以及 Cargo fmt 檢查 Rust |
-| **Test (Backend)** | Rust Cargo 產品契約測試（含 no-HUD 建置）；CI 另執行凍結的 Python 遷移相容與發行驗證案例，並非 Python 後端 |
-| **Test (Frontend)** | 執行 `cd frontend && pnpm run test` 前端 Vitest（UI 契約、凍結參考與建置邊界） |
-
-> [!IMPORTANT]
-> CI workflow 是目前 gate 的準據。依變更範圍在本地執行 Cargo、Vitest 與 build；Python 相容／發行案例與 Ruff 也由 CI 執行，Python 產品維護工作只限其對應範圍。
-
----
-
-## 授權條款 / License
-
-本專案採用 [MIT 授權條款](LICENSE) 發行。
-
-Copyright (c) 2026 罐頭 (eddie772tw) & Contributors.
-
----
-
-## 安全性政策 / Security Policy
-
-本專案設有完善的安全性維護政策與通報流程。若發現潛在漏洞，請參閱 [SECURITY.md](SECURITY.md) 透過 GitHub Private Vulnerability Reporting 私密回報。
-
----
-
-## 致謝與專案參考 / Credits & Acknowledgements
-
-* **Credits**: [Paburrito/forza-horizon-6-custom-hud](https://github.com/Paburrito/forza-horizon-6-custom-hud)
-  Special thanks to Paburrito for the original "Forza Horizon 6 - Custom HUD" design and inspiration.
-
----
-
-## Release Build Contract
-
-Release Action 現在另建置 **Linux x86_64 Full AppImage**。此版本保留調校、Live、錄製、分析、匯出與 MCP，移除 HUD、音訊頻譜及系統媒體整合；遊戲預期在同一區域網路的其他裝置執行。請在 Data Out 引導中選擇本機實際接收的 LAN IP 與 UDP port，HTTP／MCP 仍僅監聽 localhost。
-
-Linux 以 Ubuntu 22.04 建置，AppImage 仍需相容的系統圖形函式庫。Windows 與 Linux 可獨立成功發布，並使用獨立 OTA manifest；原生建置或遊戲跨機驗證尚未成功前，不代表已完成該平台驗收。macOS 不在支援範圍內。下載名稱、支援邊界與維護流程見[跨平台發行指南](docs/guides/cross-platform-release.md)。以下 EXE／Full-Lite portable 契約適用 Windows。
-
-Each GitHub Release publishes the following Windows download choices:
-
-| Asset | Intended use |
-| --- | --- |
-| `FH6-HorizonTuner-Full-Installer.exe` | Standard Full NSIS installer. This is also the signed payload used by Full OTA updates. |
-| `FH6-HorizonTuner-Lite-Installer.exe` | Standard Lite NSIS installer. This is also the signed payload used by Lite OTA updates. |
-| `FH6-HorizonTuner-Full-Portable.exe` | Full portable executable; run it without an installation step. |
-| `FH6-HorizonTuner-Lite-Portable.exe` | Lite portable executable; run it without an installation step. |
-| `FH6-HorizonTuner-Full-Lite-Portable.zip` | Convenience archive containing both portable executables. |
-
-Full and Lite installers are self-contained alternatives, not prerequisites for
-each other. The Tauri updater consumes `latest.json` for Full and
-`latest-lite.json` for Lite; each manifest names its matching installer and
-embeds the corresponding signature. The detached `.sig` assets are for
-verification and are not needed when manually launching an installer.
-
-Both installer and portable builds embed the Rust backend into the Tauri
-host; no separate sidecar download is required. At startup the backend is
-extracted to a versioned temporary directory. User data is stored beside a
-portable executable when that directory is writable, with an AppData fallback
-for protected locations.
-
-## 開發環境連接埠
-
-本專案使用兩個不同的本機連接埠，請勿將它們混用：
-
-| 服務名稱 | 協議 | 預設連接埠 / 說明 |
-| :--- | :--- | :--- |
-| Forza Horizon Data Out Telemetry | UDP | `8000` (接收遊戲遙測數據) |
-| UDP Telemetry Forwarding (Passthrough) | UDP | `5300` (可轉發 raw 封包至 SimHub / 外部儀表) |
-| Rust REST API / WebSocket | HTTP / WebSocket | `8001` (前端與 HUD 數據推播) |
-
-在遊戲中請將 **Data Out IP Address** 設為 `127.0.0.1`、**Data Out Port** 設為 `8000`。前端開發模式固定連線至 `http://127.0.0.1:8001` 與 `ws://127.0.0.1:8001`。可透過 `TELEMETRY_PORT` 修改 UDP 連接埠；`BACKEND_PORT` 僅保留給明確的測試與外部 backend workflow。如需將 raw 遙測數據轉發至 SimHub 或第三方軟體，可於「系統設定 (Settings)」開啟「Telemetry 遙測封包轉發」並設定目標 Host 與 Port（預設 `127.0.0.1:5300`，亦支援 `TELEMETRY_FORWARD_ENABLED` / `TELEMETRY_FORWARD_PORT` 環境變數）。
-
-Release Build 會優先使用 `8001` 作為 Rust HTTP 連接埠；若 `8001` 已被占用，才會 fallback 到可用的動態 TCP 連接埠。實際連接埠會在 backend bind 成功後寫入資料目錄的 `logs/web_port.txt`，前端直接使用該值；Forza UDP Telemetry 預設仍監聽 `8000`。若發生 fallback，應前往 Settings 的 MCP Server 區塊確認目前 endpoint。Agent 完成初次 endpoint 連線後，會透過 MCP 標準 `initialize` 回應自動取得配置說明，不需再次複製 JSON 或 CLI 設定；但 MCP 本身沒有跨客戶端注入首次 URL 的通用 API。
-前端會在 Tauri sidecar 回報 ready 後，透過集中式 transport 契約設定該實際連接埠；REST 與 WebSocket 呼叫不依賴全域 `fetch` / `WebSocket` 攔截，因此不會重寫 HUD 靜態資源或其他非後端連線。
-
-
----
-
-## Testing & Diagnostics
-
-### CI & PR Blocking
-Our standard CI pipeline blocks pull requests on package existence and metadata validation to ensure that dependencies and compilation processes succeed. However, tests that verify the headless launch of the Release Build Tauri host are historically flaky in Windows GitHub Actions runners.
-
-### Release Build Host Diagnostics Workflow
-To debug and monitor headless host behavior without blocking PRs, we run the **FH6 HorizonTuner Host Diagnostics** workflow.
-- **Scheduled:** Runs nightly via cron.
-- **Manual Trigger:** Maintainers can manually trigger this workflow via the `workflow_dispatch` event on the Actions tab. You can optionally specify a `repeat_count` (between 1 and 10, defaulting to 1) to repeatedly probe host startup using the same compiled binaries, and a `timeout` (between 15 and 120 seconds, defaulting to 120) to accommodate slow or loaded headless Windows runners.
-
-If a diagnostics run fails, the workflow uploads a diagnostic artifact (retained for several days) containing:
-- Output from `stdout` and `stderr`
-- Parent PID, Exit codes, and a full child process tree (collected via PowerShell `Get-CimInstance`)
-- Executable SHA-256 hashes
-- The generated `backend.log` and `web_port.txt`
-
-### Release Candidate Approval
-To sign off on a new release candidate, you must ensure:
-1. **One successful automated diagnostics run** via GitHub Actions.
-2. **Manual Release Build smoke testing** performed on a clean Windows environment.
-
-V1.7.2 候選範圍與驗收見[發行說明](docs/releases/v1.7.2.md)、[驗收紀錄](docs/releases/v1.7.2-acceptance.md)；此準備不發布正式 tag、Release 或 OTA manifest。v1.7.1 歷史證據保留於[原驗收紀錄](docs/releases/v1.7.1-acceptance.md)。
+感謝 [Paburrito/forza-horizon-6-custom-hud](https://github.com/Paburrito/forza-horizon-6-custom-hud) 提供原始 Custom HUD 設計與靈感；外部素材與設計參考另見[參考專案索引](docs/reference-projects/README.md)及各功能文件。
