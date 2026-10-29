@@ -202,22 +202,29 @@ const DiagnosticConsole: React.FC<DiagnosticConsoleProps> = ({ show, onClose }) 
           </div>
 
           <div className="d-flex align-items-center gap-2 flex-wrap">
-            <button
-              type="button"
-              onClick={handleExportSupportBundle}
-              className="btn btn-outline-primary btn-sm fw-bold"
-              disabled={isSaving}
+            <span
+              className="d-inline-flex"
               title={t(SUPPORT_BUNDLE_PRIVACY_NOTICE)}
+              style={isSaving ? { cursor: 'not-allowed' } : undefined}
             >
-              {isSaving ? (
-                <>
-                  <span className="spinner-border spinner-border-sm me-1" aria-hidden="true" />
-                  {t('Preparing Support Bundle...')}
-                </>
-              ) : (
-                t('Download Support Bundle')
-              )}
-            </button>
+              <button
+                type="button"
+                onClick={handleExportSupportBundle}
+                className="btn btn-outline-primary btn-sm fw-bold"
+                disabled={isSaving}
+                title={t(SUPPORT_BUNDLE_PRIVACY_NOTICE)}
+                style={isSaving ? { pointerEvents: 'none' } : undefined}
+              >
+                {isSaving ? (
+                  <>
+                    <span className="spinner-border spinner-border-sm me-1" aria-hidden="true" />
+                    {t('Preparing Support Bundle...')}
+                  </>
+                ) : (
+                  t('Download Support Bundle')
+                )}
+              </button>
+            </span>
             <button
               onClick={handleClearLogs}
               className="btn btn-outline-danger btn-sm fw-bold"
