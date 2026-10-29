@@ -76,82 +76,53 @@ const EngineRpmDisplay: React.FC = React.memo(() => {
         lastFlashTimeRef.current = now;
       }
 
-      // [PERF] Path batching: group segments into Path2D objects to drastically reduce the number of path changes
-      // and stroke/fill calls per frame on Canvas.
-      const inactivePath = new Path2D();
-      const primaryPath = new Path2D();
-      const secondaryPath = new Path2D();
-      const dangerPath = new Path2D();
-      const alertPath = new Path2D();
-
-      let hasPrimary = false, hasSecondary = false, hasDanger = false, hasAlert = false, hasInactive = false;
-
       const slant = (theme.flat ? 0 : 3) * dpr;
 
-      for (let i = 0; i < numSegments; i++) {
+      // Draw all inactive segments in one batch first
+      ctx.beginPath();
+      for (let i = activeSegs; i < numSegments; i++) {
+        const x = i * (segWidth + gap);
+        const y = 2 * dpr;
+        const segHeight = h - 4 * dpr;
+        ctx.moveTo(x + slant, y);
+        ctx.lineTo(x + segWidth + slant, y);
+        ctx.lineTo(x + segWidth, y + segHeight);
+        ctx.lineTo(x, y + segHeight);
+      }
+      ctx.fillStyle = theme.inactive;
+      ctx.fill();
+
+      // Draw active segments individually to preserve overlapping glow effects
+      for (let i = 0; i < activeSegs; i++) {
         const segRatio = i / (numSegments - 1);
-        const isActive = i < activeSegs;
         const x = i * (segWidth + gap);
         const y = 2 * dpr;
         const segHeight = h - 4 * dpr;
 
-        const path = new Path2D();
-        path.moveTo(x + slant, y);
-        path.lineTo(x + segWidth + slant, y);
-        path.lineTo(x + segWidth, y + segHeight);
-        path.lineTo(x, y + segHeight);
-        path.closePath();
-
-        if (isActive) {
-          if (isShiftAlert && segRatio >= 0.85) {
-            alertPath.addPath(path);
-            hasAlert = true;
-          } else if (segRatio >= 0.88) {
-            dangerPath.addPath(path);
-            hasDanger = true;
-          } else if (segRatio >= 0.72) {
-            secondaryPath.addPath(path);
-            hasSecondary = true;
-          } else {
-            primaryPath.addPath(path);
-            hasPrimary = true;
-          }
-        } else {
-          inactivePath.addPath(path);
-          hasInactive = true;
+        let activeColor = primary;
+        if (segRatio >= 0.88) {
+          activeColor = theme.danger;
+        } else if (segRatio >= 0.72) {
+          activeColor = secondary;
         }
-      }
 
-      if (hasInactive) {
-        ctx.fillStyle = theme.inactive;
-        ctx.fill(inactivePath);
-      }
-      if (hasPrimary) {
-        ctx.fillStyle = primary;
-        ctx.shadowColor = primary;
-        ctx.shadowBlur = glowStrength * 6 * dpr;
-        ctx.fill(primaryPath);
-        ctx.shadowBlur = 0;
-      }
-      if (hasSecondary) {
-        ctx.fillStyle = secondary;
-        ctx.shadowColor = secondary;
-        ctx.shadowBlur = glowStrength * 6 * dpr;
-        ctx.fill(secondaryPath);
-        ctx.shadowBlur = 0;
-      }
-      if (hasDanger) {
-        ctx.fillStyle = theme.danger;
-        ctx.shadowColor = theme.danger;
-        ctx.shadowBlur = glowStrength * 6 * dpr;
-        ctx.fill(dangerPath);
-        ctx.shadowBlur = 0;
-      }
-      if (hasAlert) {
-        ctx.fillStyle = theme.alertFlash && lastFlashRef.current ? theme.pointer : theme.danger;
-        ctx.shadowColor = theme.danger;
-        ctx.shadowBlur = glowStrength * 10 * dpr;
-        ctx.fill(alertPath);
+        ctx.beginPath();
+        ctx.moveTo(x + slant, y);
+        ctx.lineTo(x + segWidth + slant, y);
+        ctx.lineTo(x + segWidth, y + segHeight);
+        ctx.lineTo(x, y + segHeight);
+        ctx.closePath();
+
+        if (isShiftAlert && segRatio >= 0.85) {
+          ctx.fillStyle = theme.alertFlash && lastFlashRef.current ? theme.pointer : theme.danger;
+          ctx.shadowColor = theme.danger;
+          ctx.shadowBlur = glowStrength * 10 * dpr;
+        } else {
+          ctx.fillStyle = activeColor;
+          ctx.shadowColor = activeColor;
+          ctx.shadowBlur = glowStrength * 6 * dpr;
+        }
+        ctx.fill();
         ctx.shadowBlur = 0;
       }
     };
