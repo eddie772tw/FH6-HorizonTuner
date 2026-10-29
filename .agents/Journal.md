@@ -1019,3 +1019,10 @@
 - **歷史界線**：2026-09-30 日誌中建議 `/frontend` 的路徑屬當時判斷；目前共享 pnpm workspace 必須從根目錄更新，不能沿用該舊建議推論現行入口。
 - **本地驗證**：Node 24.19.0／pnpm 11.27.0；frozen install 可辨識兩個 workspace projects，audit 各級 0；完整前端 1850 passed／1 個既有 skipped，Windows／LAN production build 與 diff-check 通過。GitHub 原生更新 job 與精確 main CI 的結果須在推送後另行核對，不以靜態 YAML 字串測試替代 updater 行為。
 - **Skills**：`github-security-audit`、`ponytail`。未修改產品程式、runtime 或任何依賴解析版本。
+
+## 2026-10-29 / Dependabot #26 的 Tauri updater 間接 ZIP 依賴（Aster as Codex）
+
+- **根因**：`frontend/src-tauri/Cargo.lock` 的 `zip 4.6.1` 由 `tauri-plugin-updater 2.14.0` 的 `zip ^4` 引入；直接執行 `cargo update -p zip --precise 9.0.5` 可重現 SemVer 衝突。後端的獨立鎖檔已使用 `zip 9.0.5`，不能據此推定桌面鎖檔已修復。
+- **處理**：採用官方穩定版 `tauri-plugin-updater 2.14.1`（MIT／Apache-2.0，MSRV 1.90），提高 manifest 最低版本並定向更新鎖檔；`cargo tree --locked --target all -i zip` 確認桌面僅解析 `zip 9.1.3`，高於 GHSA-m665-v7pm-7grj 的受影響範圍 `<=9.0.4`。不使用 fork、patch 或 dismissed 取代修復。
+- **驗證界線**：frozen install、前端 1850 passed／1 個既有 skipped、Windows-target production build 與 Rust 格式檢查通過；Cargo、Windows／Linux CI 打包與精確 PR head 檢查另見 PR 驗證紀錄。安全警報須待修復進入預設分支後由 GitHub 更新，PR 通過不代表正式 OTA 或實機升級驗收。
+- **Skills**：`github-security-audit`、`pr-author-maintainer`、`pr-review-evaluation`、`ponytail`。
