@@ -203,13 +203,16 @@ const PowerTorqueCanvas: React.FC<PowerTorqueCanvasProps> = React.memo(({ height
         ctx.shadowBlur = 0;
 
         // Current Torque Active Marker
-        ctx.beginPath();
-        if (theme.linear) ctx.rect(pxRpm - 4 * dpr, pyTorque - 4 * dpr, 8 * dpr, 8 * dpr);
-        else ctx.arc(pxRpm, pyTorque, 4 * dpr, 0, Math.PI * 2);
         ctx.fillStyle = secondaryHex;
         ctx.shadowColor = secondaryHex;
         ctx.shadowBlur = theme.glowStrength * 10 * dpr;
-        ctx.fill();
+        if (theme.linear) {
+          ctx.fillRect(pxRpm - 4 * dpr, pyTorque - 4 * dpr, 8 * dpr, 8 * dpr);
+        } else {
+          ctx.beginPath();
+          ctx.arc(pxRpm, pyTorque, 4 * dpr, 0, Math.PI * 2);
+          ctx.fill();
+        }
         ctx.shadowBlur = 0;
       }
     };
