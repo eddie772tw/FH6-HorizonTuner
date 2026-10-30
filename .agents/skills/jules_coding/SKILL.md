@@ -3,7 +3,10 @@ name: jules_coding
 description: 當使用者明確授權且 Jules connector/API client 可用時，委派高風險重構、大型相依升級、資源密集測試或需要遠端工作區的任務；也用於辨識與驗收遠端排程 Jules 產出的 Session 與 PR。
 ---
 
-# Google Jules 委派與產出收件流程
+# [已棄用 / Deprecated] Google Jules 委派與產出收件流程
+
+> [!WARNING]
+> **歷史相容與棄用說明**：Google Jules 外部委派機制現已全面由 Antigravity 本地自主代理體系（Bolt, Palette, Sentinel, Narrator, Mechanic, Vector）接管並正式棄用。本技能僅保留作為歷史相容與合約解析參考。
 
 本技能提供 Google Jules 雙軌工作流程路由器（手動委派 vs 排程收件）與驗收護欄。
 

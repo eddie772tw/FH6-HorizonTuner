@@ -46,6 +46,8 @@ Risk and rollback: Revert the single documentation change.
         ("pallete", "palette"),
         ("Narrator", "narrator"),
         ("Sentinel", "sentinel"),
+        ("Mechanic", "mechanic"),
+        ("Vector", "vector"),
     ],
 )
 def test_known_personas_are_scheduled_likely(persona: str, canonical: str) -> None:
