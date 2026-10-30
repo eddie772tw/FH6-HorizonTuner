@@ -127,6 +127,7 @@ const EngineRpmDisplay: React.FC = React.memo(() => {
       ctx.fill(dangerPath);
 
       ctx.shadowBlur = glowStrength * 10 * dpr;
+      ctx.shadowColor = theme.danger;
       ctx.fillStyle = theme.alertFlash && lastFlashRef.current ? theme.pointer : theme.danger;
       ctx.fill(alertPath);
 
