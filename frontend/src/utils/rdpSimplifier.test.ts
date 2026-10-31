@@ -38,4 +38,26 @@ describe('simplifyPathRDP Vector Path Simplification', () => {
     expect(simplified[0]).toEqual({ x: 0, z: 0 });
     expect(simplified[simplified.length - 1]).toEqual({ x: 0, z: 60 });
   });
+
+  it('should safely simplify dense telemetry datasets without call stack overflow and preserve order', () => {
+    const densePoints: Point2D[] = [];
+    for (let i = 0; i < 5000; i++) {
+      densePoints.push({
+        x: i * 0.1,
+        z: Math.sin(i * 0.05) * 10,
+        customMeta: i
+      });
+    }
+
+    const simplified = simplifyPathRDP(densePoints, 0.5);
+    expect(simplified.length).toBeLessThan(densePoints.length);
+    expect(simplified.length).toBeGreaterThan(2);
+    expect(simplified[0].customMeta).toBe(0);
+    expect(simplified[simplified.length - 1].customMeta).toBe(4999);
+
+    // Verify monotonic index ordering is strictly preserved
+    for (let i = 1; i < simplified.length; i++) {
+      expect(simplified[i].customMeta).toBeGreaterThan(simplified[i - 1].customMeta);
+    }
+  });
 });
