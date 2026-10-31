@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { backendFetch } from "./backend";
 import {
+  exportFilename,
   fetchExportBlob,
   saveFile,
   type SavePlatform,
@@ -280,5 +281,40 @@ describe("fetchExportBlob", () => {
     expect(blob.type.startsWith(mimeType)).toBe(true);
     expect(await blob.arrayBuffer()).toEqual(await new Response(content).arrayBuffer());
     expect(mockedBackendFetch).toHaveBeenCalledWith("/api/export", init);
+  });
+});
+
+describe("exportFilename (security)", () => {
+  it("preserves standard safe filenames and extensions", () => {
+    expect(exportFilename("capture.csv")).toBe("capture.csv");
+    expect(exportFilename("session_2026-11-01.json")).toBe("session_2026-11-01.json");
+  });
+
+  it("escapes Windows reserved device names with a prefix to prevent native IO hangs", () => {
+    expect(exportFilename("CON.json")).toBe("_CON.json");
+    expect(exportFilename("aux.csv")).toBe("_aux.csv");
+    expect(exportFilename("nul")).toBe("_nul");
+    expect(exportFilename("com1.zip")).toBe("_com1.zip");
+    expect(exportFilename("LPT9.txt")).toBe("_LPT9.txt");
+  });
+
+  it("strips path traversal characters, illegal symbols, and leading/trailing dots", () => {
+    expect(exportFilename("../../secret.json")).toBe("____secret.json");
+    expect(exportFilename(".hidden.json")).toBe("hidden.json");
+    expect(exportFilename("...bad...")).toBe("_bad_");
+    expect(exportFilename("invalid:name*with?chars.json")).toBe("invalid_name_with_chars.json");
+  });
+
+  it("falls back to default when input contains only whitespace or dots", () => {
+    expect(exportFilename("")).toBe("export.json");
+    expect(exportFilename("   ")).toBe("export.json");
+    expect(exportFilename("...")).toBe("export.json");
+  });
+
+  it("truncates names exceeding 255 characters while preserving the extension", () => {
+    const longName = `${"a".repeat(300)}.csv`;
+    const sanitized = exportFilename(longName);
+    expect(sanitized.length).toBe(255);
+    expect(sanitized.endsWith(".csv")).toBe(true);
   });
 });

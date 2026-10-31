@@ -23,8 +23,31 @@ export interface SavePlatform {
 }
 const MAX_EXPORT_BYTES = 64 * 1024 * 1024;
 
+const WINDOWS_RESERVED_NAMES = /^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])$/i;
+const MAX_FILENAME_LENGTH = 255;
+
+/** Sanitize export filenames against path traversal, reserved device names, and length boundaries. */
 export function exportFilename(value: string): string {
-  const name = value.replace(/[<>:"/\\|?*\u0000-\u001f]/g, '_').replace(/[. ]+$/, '');
+  let name = value
+    .replace(/[<>:"/\\|?*\u0000-\u001f]/g, '_')
+    .replace(/\.{2,}/g, '_')
+    .replace(/^[. ]+|[. ]+$/g, '');
+  if (!name || !name.replace(/[._ ]/g, '')) return 'export.json';
+
+  const dotIndex = name.lastIndexOf('.');
+  const base = dotIndex > 0 ? name.slice(0, dotIndex) : name;
+  const ext = dotIndex > 0 ? name.slice(dotIndex) : '';
+
+  // Defend against Windows DOS device names (e.g., CON, AUX, NUL) causing native I/O hangs or crashes.
+  if (WINDOWS_RESERVED_NAMES.test(base)) {
+    name = `_${base}${ext}`;
+  }
+
+  // Bound filename length to NTFS/FAT32 255-character limits while preserving extension.
+  if (name.length > MAX_FILENAME_LENGTH) {
+    name = ext ? `${name.slice(0, MAX_FILENAME_LENGTH - ext.length)}${ext}` : name.slice(0, MAX_FILENAME_LENGTH);
+  }
+
   return name || 'export.json';
 }
 
