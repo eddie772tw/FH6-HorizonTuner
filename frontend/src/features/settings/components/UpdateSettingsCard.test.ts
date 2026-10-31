@@ -5,7 +5,13 @@ import * as updaterService from '../../../services/updaterService';
 import { UpdateSettingsCard } from './UpdateSettingsCard';
 
 vi.mock('../../../context/SettingsContext', () => ({
-  useSettings: () => ({ settings: {}, updateSettings: vi.fn(), t: (text: string) => text }),
+  useSettings: () => ({
+    settings: {},
+    updateSettings: vi.fn(),
+    t: (text: string, params?: Record<string, string | number>) => (
+      params ? Object.entries(params).reduce((acc, [k, v]) => acc.replace(`{${k}}`, String(v)), text) : text
+    ),
+  }),
 }));
 
 vi.mock('../../../context/ToastContext', () => ({
@@ -47,5 +53,14 @@ describe('UpdateSettingsCard logic', () => {
     const result = await updaterService.checkForAppUpdates();
     expect(result?.version).toBe('1.5.0');
     expect(updaterService.checkForAppUpdates).toHaveBeenCalledTimes(1);
+  });
+
+  it('interpolates version parameters into notification and status strings', async () => {
+    const { useSettings } = await import('../../../context/SettingsContext');
+    const { t } = useSettings();
+    expect(t('New version {version} is ready for download.', { version: '1.5.0' }))
+      .toBe('New version 1.5.0 is ready for download.');
+    expect(t('Version {version} is available!', { version: '1.5.0' }))
+      .toBe('Version 1.5.0 is available!');
   });
 });
