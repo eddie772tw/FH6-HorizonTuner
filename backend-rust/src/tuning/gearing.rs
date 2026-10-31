@@ -320,21 +320,11 @@ fn calculate_gearing(
     } else {
         car_params
     };
-    if race_goal == RaceGoal::Road {
-        if !max_rpm.is_finite() || max_rpm <= 0.0 {
-            max_rpm = 7500.0;
-        }
-        if !(1..=10).contains(&num_gears) {
-            num_gears = 6;
-        }
+    if !max_rpm.is_finite() || max_rpm <= 0.0 {
+        max_rpm = 7500.0;
     }
-    if race_goal == RaceGoal::Rally {
-        if !(1..=10).contains(&num_gears) {
-            num_gears = 6;
-        }
-        if max_rpm <= 0.0 {
-            max_rpm = 7500.0;
-        }
+    if !(1..=10).contains(&num_gears) {
+        num_gears = 6;
     }
 
     let weight = car_params.weight.unwrap_or(1400.0).max(1.0);
@@ -414,7 +404,12 @@ fn calculate_gearing(
             && finish_speed_provenance.map_or(false, |prov| prov == "telemetry" || prov == "manual")
     });
 
-    let c = ((((w_tire * ar) / 100.0) * 2.0 + s_rim * 25.4) * PI) / 1000.0;
+    let raw_c = ((((w_tire * ar) / 100.0) * 2.0 + s_rim * 25.4) * PI) / 1000.0;
+    let c = if raw_c.is_finite() && raw_c > 0.1 {
+        raw_c
+    } else {
+        2.0
+    };
     let f_drive = match dt {
         Drivetrain::AWD => 1.0,
         Drivetrain::RWD => 0.6,
@@ -694,7 +689,7 @@ fn calculate_gearing(
         let max_allowed_ratio = (r2(rounded_gears[i - 1] - 0.01))
             .min((rounded_gears[i - 1] * max_step_ratio_rounded * 100.0).floor() / 100.0);
         if rounded_gears[i] > max_allowed_ratio {
-            rounded_gears[i] = (0.40_f64).max(max_allowed_ratio);
+            rounded_gears[i] = max_allowed_ratio.max(0.10);
         }
     }
 
