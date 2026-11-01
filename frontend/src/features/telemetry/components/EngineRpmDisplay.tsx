@@ -23,6 +23,14 @@ const EngineRpmDisplay: React.FC = React.memo(() => {
 
   const { t, convertSpeed } = useSettings();
 
+  const pathsRef = useRef({
+    inactivePath: new Path2D(),
+    primaryPath: new Path2D(),
+    secondaryPath: new Path2D(),
+    dangerPath: new Path2D(),
+    alertPath: new Path2D(),
+  });
+
   useEffect(() => {
     let theme = readCanvasTheme();
     const stopThemeObserver = observeCanvasTheme(() => { theme = readCanvasTheme(); drawRpmGauge(); });
@@ -77,11 +85,18 @@ const EngineRpmDisplay: React.FC = React.memo(() => {
       }
 
       // [PERF] Use Path2D for batching segments by color instead of state flipping on every segment
-      const inactivePath = new Path2D();
-      const primaryPath = new Path2D();
-      const secondaryPath = new Path2D();
-      const dangerPath = new Path2D();
-      const alertPath = new Path2D();
+      // Reset path primitives by recreating them to clear previous frame geometries
+      pathsRef.current.inactivePath = new Path2D();
+      pathsRef.current.primaryPath = new Path2D();
+      pathsRef.current.secondaryPath = new Path2D();
+      pathsRef.current.dangerPath = new Path2D();
+      pathsRef.current.alertPath = new Path2D();
+
+      const nextInactivePath = pathsRef.current.inactivePath;
+      const nextPrimaryPath = pathsRef.current.primaryPath;
+      const nextSecondaryPath = pathsRef.current.secondaryPath;
+      const nextDangerPath = pathsRef.current.dangerPath;
+      const nextAlertPath = pathsRef.current.alertPath;
 
       for (let i = 0; i < numSegments; i++) {
         const segRatio = i / (numSegments - 1);
@@ -90,15 +105,15 @@ const EngineRpmDisplay: React.FC = React.memo(() => {
         const y = 2 * dpr;
         const segHeight = h - 4 * dpr;
 
-        let targetPath = primaryPath;
+        let targetPath = nextPrimaryPath;
         if (!isActive) {
-          targetPath = inactivePath;
+          targetPath = nextInactivePath;
         } else if (isShiftAlert && segRatio >= 0.85) {
-          targetPath = alertPath;
+          targetPath = nextAlertPath;
         } else if (segRatio >= 0.88) {
-          targetPath = dangerPath;
+          targetPath = nextDangerPath;
         } else if (segRatio >= 0.72) {
-          targetPath = secondaryPath;
+          targetPath = nextSecondaryPath;
         }
 
         const slant = (theme.flat ? 0 : 3) * dpr;
@@ -111,25 +126,25 @@ const EngineRpmDisplay: React.FC = React.memo(() => {
 
       ctx.shadowBlur = 0;
       ctx.fillStyle = theme.inactive;
-      ctx.fill(inactivePath);
+      ctx.fill(nextInactivePath);
 
       ctx.shadowBlur = glowStrength * 6 * dpr;
       ctx.fillStyle = primary;
       ctx.shadowColor = primary;
-      ctx.fill(primaryPath);
+      ctx.fill(nextPrimaryPath);
 
       ctx.fillStyle = secondary;
       ctx.shadowColor = secondary;
-      ctx.fill(secondaryPath);
+      ctx.fill(nextSecondaryPath);
 
       ctx.fillStyle = theme.danger;
       ctx.shadowColor = theme.danger;
-      ctx.fill(dangerPath);
+      ctx.fill(nextDangerPath);
 
       ctx.shadowBlur = glowStrength * 10 * dpr;
       ctx.shadowColor = theme.danger;
       ctx.fillStyle = theme.alertFlash && lastFlashRef.current ? theme.pointer : theme.danger;
-      ctx.fill(alertPath);
+      ctx.fill(nextAlertPath);
 
       ctx.shadowBlur = 0;
     };

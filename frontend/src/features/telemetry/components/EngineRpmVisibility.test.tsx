@@ -15,6 +15,7 @@ vi.mock('../../../context/SettingsContext', () => ({ useSettings: () => ({
 it('starts neutral, renders explicit reverse and restores the latest hidden gear without another packet', async () => {
   Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
   vi.stubGlobal('ResizeObserver', class { observe() {} disconnect() {} });
+  vi.stubGlobal('Path2D', class { addPath() {} moveTo() {} lineTo() {} closePath() {} arc() {} rect() {} });
   vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);
   let visible = true;
   const listeners = new Set<() => void>();

@@ -15,6 +15,11 @@ const ArcSteerGauge: React.FC<{ size?: number }> = React.memo(() => {
   const dirTextRef = useRef<HTMLSpanElement>(null);
   const { t } = useSettings();
 
+  const pathsRef = useRef({
+    regularTicksPath: new Path2D(),
+    centerTickPath: new Path2D(),
+  });
+
   useEffect(() => {
     const canvas = canvasRef.current;
     const container = containerRef.current;
@@ -75,8 +80,11 @@ const ArcSteerGauge: React.FC<{ size?: number }> = React.memo(() => {
       const tickCount = theme.linear ? 25 : 9;
       ctx.lineWidth = 1.4 * dpr;
 
-      const regularTicksPath = new Path2D();
-      const centerTickPath = new Path2D();
+      pathsRef.current.regularTicksPath = new Path2D();
+      pathsRef.current.centerTickPath = new Path2D();
+
+      const nextRegularTicksPath = pathsRef.current.regularTicksPath;
+      const nextCenterTickPath = pathsRef.current.centerTickPath;
 
       for (let i = 0; i < tickCount; i++) {
         const tickAngle = startAngle + (i / (tickCount - 1)) * (endAngle - startAngle);
@@ -84,16 +92,16 @@ const ArcSteerGauge: React.FC<{ size?: number }> = React.memo(() => {
         const innerR = radius - (isCenter ? 8 * dpr : 4.5 * dpr);
         const outerR = radius + 3 * dpr;
 
-        const targetPath = isCenter ? centerTickPath : regularTicksPath;
+        const targetPath = isCenter ? nextCenterTickPath : nextRegularTicksPath;
         targetPath.moveTo(cx + innerR * Math.cos(tickAngle), cy + innerR * Math.sin(tickAngle));
         targetPath.lineTo(cx + outerR * Math.cos(tickAngle), cy + outerR * Math.sin(tickAngle));
       }
 
       ctx.strokeStyle = theme.tick;
-      ctx.stroke(regularTicksPath);
+      ctx.stroke(nextRegularTicksPath);
 
       ctx.strokeStyle = primaryHex;
-      ctx.stroke(centerTickPath);
+      ctx.stroke(nextCenterTickPath);
 
       // 2. Active Steering Arc（primaryHex 已從快取取得）
       const targetAngle = centerAngle + (steerRatio * (endAngle - startAngle)) / 2;
