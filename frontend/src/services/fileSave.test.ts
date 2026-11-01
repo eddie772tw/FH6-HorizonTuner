@@ -296,6 +296,10 @@ describe("exportFilename (security)", () => {
     expect(exportFilename("nul")).toBe("_nul");
     expect(exportFilename("com1.zip")).toBe("_com1.zip");
     expect(exportFilename("LPT9.txt")).toBe("_LPT9.txt");
+    expect(exportFilename("CON.backup.json")).toBe("_CON.backup.json");
+    expect(exportFilename("NUL.tar.gz")).toBe("_NUL.tar.gz");
+    expect(exportFilename("CON .json")).toBe("_CON.json");
+    expect(exportFilename("COM¹.csv")).toBe("_COM¹.csv");
   });
 
   it("strips path traversal characters, illegal symbols, and leading/trailing dots", () => {
@@ -311,10 +315,26 @@ describe("exportFilename (security)", () => {
     expect(exportFilename("...")).toBe("export.json");
   });
 
-  it("truncates names exceeding 255 characters while preserving the extension", () => {
+  it("bounds filenames to the native 240-byte limit while preserving the extension", () => {
     const longName = `${"a".repeat(300)}.csv`;
     const sanitized = exportFilename(longName);
-    expect(sanitized.length).toBe(255);
+    expect(sanitized.length).toBe(240);
     expect(sanitized.endsWith(".csv")).toBe(true);
+    for (const stem of ["測".repeat(100), "🚗".repeat(100)]) {
+      const filename = exportFilename(`${stem}.csv`);
+      expect(new TextEncoder().encode(filename).length).toBeLessThanOrEqual(240);
+      expect(filename.endsWith(".csv")).toBe(true);
+      expect(new TextDecoder('utf-8', { fatal: true }).decode(new TextEncoder().encode(filename))).toBe(filename);
+    }
+  });
+
+  it("uses a safe fallback when the extension cannot fit the native byte budget", () => {
+    expect(exportFilename(`report.${"a".repeat(300)}`)).toBe("export.json");
+    expect(exportFilename(`report.${"測".repeat(100)}`)).toBe("export.json");
+  });
+
+  it("rechecks reserved names and trailing punctuation after truncating the stem", () => {
+    expect(exportFilename(`CON${" ".repeat(300)}x.json`)).toBe("_CON.json");
+    expect(exportFilename(`${"a".repeat(239)}.extra`)).not.toMatch(/[. ]$/);
   });
 });

@@ -23,8 +23,9 @@ export interface SavePlatform {
 }
 const MAX_EXPORT_BYTES = 64 * 1024 * 1024;
 
-const WINDOWS_RESERVED_NAMES = /^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])$/i;
-const MAX_FILENAME_LENGTH = 255;
+const WINDOWS_RESERVED_NAMES = /^(CON|PRN|AUX|NUL|COM[1-9¹²³]|LPT[1-9¹²³])$/i;
+// Match the native validate_export UTF-8 byte limit, including the extension.
+const MAX_FILENAME_BYTES = 240;
 
 /** Sanitize export filenames against path traversal, reserved device names, and length boundaries. */
 export function exportFilename(value: string): string {
@@ -37,15 +38,24 @@ export function exportFilename(value: string): string {
   const dotIndex = name.lastIndexOf('.');
   const base = dotIndex > 0 ? name.slice(0, dotIndex) : name;
   const ext = dotIndex > 0 ? name.slice(dotIndex) : '';
+  const encoder = new TextEncoder();
+  let bytes = encoder.encode(ext).length;
+  if (bytes >= MAX_FILENAME_BYTES) return 'export.json';
 
-  // Defend against Windows DOS device names (e.g., CON, AUX, NUL) causing native I/O hangs or crashes.
-  if (WINDOWS_RESERVED_NAMES.test(base)) {
-    name = `_${base}${ext}`;
+  // Iterate code points so truncation cannot split a surrogate pair or UTF-8 sequence.
+  let stem = '';
+  for (const character of base) {
+    const size = encoder.encode(character).length;
+    if (bytes + size > MAX_FILENAME_BYTES) break;
+    stem += character;
+    bytes += size;
   }
+  name = stem.replace(/[. ]+$/g, '') + ext;
 
-  // Bound filename length to NTFS/FAT32 255-character limits while preserving extension.
-  if (name.length > MAX_FILENAME_LENGTH) {
-    name = ext ? `${name.slice(0, MAX_FILENAME_LENGTH - ext.length)}${ext}` : name.slice(0, MAX_FILENAME_LENGTH);
+  // Device names remain reserved before multiple extensions (for example NUL.tar.gz).
+  if (WINDOWS_RESERVED_NAMES.test(name.split('.')[0].trimEnd())) {
+    name = `_${name}`;
+    if (encoder.encode(name).length > MAX_FILENAME_BYTES) return 'export.json';
   }
 
   return name || 'export.json';
