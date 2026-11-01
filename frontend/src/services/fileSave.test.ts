@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { backendFetch } from "./backend";
 import {
+  exportFilename,
   fetchExportBlob,
   saveFile,
   type SavePlatform,
@@ -280,5 +281,60 @@ describe("fetchExportBlob", () => {
     expect(blob.type.startsWith(mimeType)).toBe(true);
     expect(await blob.arrayBuffer()).toEqual(await new Response(content).arrayBuffer());
     expect(mockedBackendFetch).toHaveBeenCalledWith("/api/export", init);
+  });
+});
+
+describe("exportFilename (security)", () => {
+  it("preserves standard safe filenames and extensions", () => {
+    expect(exportFilename("capture.csv")).toBe("capture.csv");
+    expect(exportFilename("session_2026-11-01.json")).toBe("session_2026-11-01.json");
+  });
+
+  it("escapes Windows reserved device names with a prefix to prevent native IO hangs", () => {
+    expect(exportFilename("CON.json")).toBe("_CON.json");
+    expect(exportFilename("aux.csv")).toBe("_aux.csv");
+    expect(exportFilename("nul")).toBe("_nul");
+    expect(exportFilename("com1.zip")).toBe("_com1.zip");
+    expect(exportFilename("LPT9.txt")).toBe("_LPT9.txt");
+    expect(exportFilename("CON.backup.json")).toBe("_CON.backup.json");
+    expect(exportFilename("NUL.tar.gz")).toBe("_NUL.tar.gz");
+    expect(exportFilename("CON .json")).toBe("_CON.json");
+    expect(exportFilename("COM¹.csv")).toBe("_COM¹.csv");
+  });
+
+  it("strips path traversal characters, illegal symbols, and leading/trailing dots", () => {
+    expect(exportFilename("../../secret.json")).toBe("____secret.json");
+    expect(exportFilename(".hidden.json")).toBe("hidden.json");
+    expect(exportFilename("...bad...")).toBe("_bad_");
+    expect(exportFilename("invalid:name*with?chars.json")).toBe("invalid_name_with_chars.json");
+  });
+
+  it("falls back to default when input contains only whitespace or dots", () => {
+    expect(exportFilename("")).toBe("export.json");
+    expect(exportFilename("   ")).toBe("export.json");
+    expect(exportFilename("...")).toBe("export.json");
+  });
+
+  it("bounds filenames to the native 240-byte limit while preserving the extension", () => {
+    const longName = `${"a".repeat(300)}.csv`;
+    const sanitized = exportFilename(longName);
+    expect(sanitized.length).toBe(240);
+    expect(sanitized.endsWith(".csv")).toBe(true);
+    for (const stem of ["測".repeat(100), "🚗".repeat(100)]) {
+      const filename = exportFilename(`${stem}.csv`);
+      expect(new TextEncoder().encode(filename).length).toBeLessThanOrEqual(240);
+      expect(filename.endsWith(".csv")).toBe(true);
+      expect(new TextDecoder('utf-8', { fatal: true }).decode(new TextEncoder().encode(filename))).toBe(filename);
+    }
+  });
+
+  it("uses a safe fallback when the extension cannot fit the native byte budget", () => {
+    expect(exportFilename(`report.${"a".repeat(300)}`)).toBe("export.json");
+    expect(exportFilename(`report.${"測".repeat(100)}`)).toBe("export.json");
+  });
+
+  it("rechecks reserved names and trailing punctuation after truncating the stem", () => {
+    expect(exportFilename(`CON${" ".repeat(300)}x.json`)).toBe("_CON.json");
+    expect(exportFilename(`${"a".repeat(239)}.extra`)).not.toMatch(/[. ]$/);
   });
 });
