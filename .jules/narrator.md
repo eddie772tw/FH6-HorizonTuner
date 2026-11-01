@@ -42,3 +42,8 @@
 **學習 (Learning):** 避免將含有動態數值或版本的單一完整句子切碎成多個片段進行字串拼接（例如 `${t('New version')} ${ver} ${t('is ready...')}` 或 `{t('Version')} {ver} {t('is available!')}`）。切碎拼接會破壞日文或德文等倒裝語序，且容易遺漏未納入字典的懸空碎片字串（如 `'is available!'`），導致介面出現英文穿透。
 **行動 (Action):** 遇到包含動態變數的通知或狀態字串時，一律採用參數化內插格式 `t('New version {version} is ready for download.', { version })`，並將帶有具名變數的完整句子鍵值同步對齊至所有語系字典中。
 **署名:** Narrator as Antigravity
+
+## 2026-11-02 - WCAG Bypass Links & Dialog Title Prop Single-Pass Translation
+**學習 (Learning):** 新增的無障礙旁路連結（如 `Skip to main content`）與全域 Suspense 狀態（`Loading...`）若未即時在各語言字典中對齊，會造成螢幕閱讀器與輔助鍵盤使用者在非英文環境下遭遇未翻譯的英文穿透；同時，客製化對話框（如 `AppDialog`）若內部已實作 `t(title)`，父層元件傳遞 prop 時切勿預先包裝 `t(...)`，否則在切換語系後會將已翻譯字串作為鍵名傳入造成二次翻譯失效。
+**行動 (Action):** 當審查無障礙屬性（aria-label、skip link）或頂層 Suspense fallback 時，務必將其通用字詞同步收錄至 `en-us.json`、`zh-tw.json` 與 `ja-jp.json`；且凡使用自帶 `t()` 的對話框或抽屜元件時，一律傳遞原始鍵名（raw key），維持單次翻譯責任邊界。
+**署名:** Narrator as Antigravity
