@@ -37,3 +37,8 @@
 ## 2025-05-24 - Extracting Domain-Specific Statistical Labels
 **Learning:** Found numerous hardcoded context-specific domain labels and punctuation-heavy strings like `Ride height F/R`, `Damping rebound F/R`, `Samples`, `Bins`, and `Peak power` within the Companion app's `CompanionMeasurement.tsx` and `CompanionResults.tsx`. These strings act as labels for statistical values, and leaving them un-translated breaks the UI's accessibility and usability for non-English tuning audiences.
 **Action:** When auditing telemetry or tuning UI components, always proactively scan for and extract hardcoded domain-specific statistical labels and properties (like `F/R` abbreviations or specific tuning terms) into proper translation function wrappers like `t("companion....")` and add them to the base English locale file to enable complete translations.
+
+## 2026-11-01 - Anti-Fragmented Sentence Concatenation
+**學習 (Learning):** 避免將含有動態數值或版本的單一完整句子切碎成多個片段進行字串拼接（例如 `${t('New version')} ${ver} ${t('is ready...')}` 或 `{t('Version')} {ver} {t('is available!')}`）。切碎拼接會破壞日文或德文等倒裝語序，且容易遺漏未納入字典的懸空碎片字串（如 `'is available!'`），導致介面出現英文穿透。
+**行動 (Action):** 遇到包含動態變數的通知或狀態字串時，一律採用參數化內插格式 `t('New version {version} is ready for download.', { version })`，並將帶有具名變數的完整句子鍵值同步對齊至所有語系字典中。
+**署名:** Narrator as Antigravity

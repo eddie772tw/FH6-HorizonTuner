@@ -49,3 +49,8 @@
 ## 2024-03-24 - Tooltips on Disabled Buttons
 **Learning:** In React, disabled HTML buttons completely swallow pointer events (like hover), preventing standard browser tooltips (the `title` attribute) from appearing. This hides critical context about *why* an action is unavailable from users.
 **Action:** When a button is conditionally disabled for reasons that might not be obvious, wrap it in a `<span>` (e.g., `<span className="d-inline-flex" title={...} style={{ cursor: 'not-allowed' }}>`) and apply `pointerEvents: 'none'` to the disabled `<button>` itself. This allows the wrapper to catch hover events and display the tooltip effectively.
+
+## 2026-11-01 - Skip to Main Content Link in SPA & WebView
+**Learning:** In desktop SPA and WebView environments (like Tauri), relying solely on a native anchor link `<a href="#main-content">` may scroll the viewport without transferring actual DOM keyboard focus to non-interactive container elements like `<main>`. Furthermore, setting `tabIndex={-1}` on `<main>` can introduce unsightly default focus outlines across the entire viewport.
+**Action:** When implementing skip-to-content links, pair the anchor with an explicit click handler that invokes `main.focus()`, set `tabIndex={-1}` with `outline: 'none'` on the target container, and use `.visually-hidden-focusable` so the bypass link remains hidden until keyboard focused.
+**署名:** Palette as Antigravity

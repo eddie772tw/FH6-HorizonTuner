@@ -155,3 +155,8 @@ Additionally, attempting to optimize 60Hz telemetry data copying in `FrameInterp
 ## 2026-10-28 - Optimizing path rendering by replacing rect+fill with fillRect
 **Learning:** In high-frequency 60Hz Canvas rendering loops (e.g., telemetry visualizations), calling `ctx.rect()` followed by `ctx.fill()` introduces path state management overhead. Since `ctx.rect()` modifies the current path rather than rendering directly, it relies on the canvas context maintaining and rasterizing the path object.
 **Action:** Replace `ctx.rect()` + `ctx.fill()` with the direct `ctx.fillRect()` method whenever rendering standalone rectangles that don't need to be grouped in complex paths. This avoids path building overhead and draws directly to the bitmap, slightly improving execution speed.
+
+## 2026-11-01 - Iterative Stack and Squared-Distance Vector Simplification in Telemetry RDP
+**Learning:** In telemetry track mapping and vector path simplification (`simplifyPathRDP`), the naive recursive Ramer-Douglas-Peucker algorithm repeatedly invokes `.slice()` and spread operator array reconstructions on every sub-division. For long telemetry laps (thousands of GPS points), this introduces heavy Garbage Collection (GC) churn, redundant inner `Math.sqrt()` and repeated vector segment denominator recalculations, and carries a recursion stack overflow risk.
+**Action:** Replace recursive sub-array slicing with an explicit range stack and `Uint8Array` bitmap markers. Hoist line segment invariants (`dx`, `dz`, inverted line length squared) outside candidate scanning loops, and compare squared perpendicular distances (`distSq > sqEpsilon`) to eliminate all square root calculations in the hot scanning path.
+**署名:** Bolt as Antigravity
