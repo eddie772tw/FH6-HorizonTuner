@@ -165,3 +165,7 @@ Additionally, attempting to optimize 60Hz telemetry data copying in `FrameInterp
 **學習：** 將 Path2D 放進 useRef 後，若每次 draw 仍以 new Path2D 清空幾何，配置仍位於高頻更新路徑。RPM 相同樣式的段落是連續區間，可直接以 Canvas current path 批次繪製，保留 inactive、primary、secondary、danger/alert 的合成順序與各自光暈，且不需暫態群組或 Path2D。轉向儀表沿用 #584 的已合併實作。
 **驗證界線：** 減少呼叫與移除 Path2D 配置不代表已量得遊戲 FPS、GC 或高刷新率流暢度改善。
 **署名：** Mihaly as Codex
+
+## 2026-11-20 - Using Continuous Sub-paths Over Path2D for High-Frequency State Rendering
+**Learning:** When trying to batch rendering paths in a high-frequency loop (like `EngineRpmDisplay`), using `Path2D` inside a `useRef` and re-instantiating it with `new Path2D()` on every frame still creates transient allocations and GC pressure. If the segments to be rendered share contiguous states (e.g. inactive, primary, danger), the default Canvas context sub-path (`ctx.beginPath()`) is already sufficient.
+**Action:** Instead of `Path2D` abstractions, find the continuous segment index boundaries (e.g., `secondaryStart`, `redStart`). Loop over the contiguous ranges directly, invoking a single `ctx.beginPath()`, constructing the continuous `moveTo` / `lineTo` blocks, and closing with one `ctx.fill()`. This guarantees zero temporary object allocations and maintains identical visual output.
