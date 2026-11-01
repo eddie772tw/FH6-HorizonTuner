@@ -54,3 +54,9 @@
 **Learning:** In desktop SPA and WebView environments (like Tauri), relying solely on a native anchor link `<a href="#main-content">` may scroll the viewport without transferring actual DOM keyboard focus to non-interactive container elements like `<main>`. Furthermore, setting `tabIndex={-1}` on `<main>` can introduce unsightly default focus outlines across the entire viewport.
 **Action:** When implementing skip-to-content links, pair the anchor with an explicit click handler that invokes `main.focus()`, set `tabIndex={-1}` with `outline: 'none'` on the target container, and use `.visually-hidden-focusable` so the bypass link remains hidden until keyboard focused.
 **署名:** Palette as Antigravity
+
+
+## 2026-11-02 - Toast Notifications Live Region Calibration & Disambiguation
+**學習 (Learning):** In global toast systems, assigning `role="alert"` and `aria-live="assertive"` indiscriminately across all toast categories causes assistive technologies to abruptly interrupt ongoing speech upon mundane events (like routine settings saves or success notifications). Furthermore, identical generic `aria-label="Close"` buttons create severe ambiguity in screen reader element lists when multiple toasts are visible simultaneously.
+**行動 (Action):** Differentiate notification urgency: use `role="status"` and `aria-live="polite"` for non-critical types (`info`, `success`), reserving `role="alert"` and `aria-live="assertive"` strictly for destructive or unexpected conditions (`danger`, `warning`). Disambiguate dismiss controls by incorporating the specific toast title into its accessible name, bind `aria-labelledby` to the header title ID, and support `Escape` key dismissal when focus is contained within the toast.
+**署名:** Palette as Antigravity
