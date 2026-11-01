@@ -40,7 +40,7 @@ export const UpdateSettingsCard: React.FC = () => {
         addToast({
           type: 'success',
           title: t('Update Available'),
-          message: `${t('New version')} ${update.version} ${t('is ready for download.')}`,
+          message: t('New version {version} is ready for download.', { version: update.version }),
           duration: 5000,
           anchor: 'build-info',
         });
@@ -110,7 +110,7 @@ export const UpdateSettingsCard: React.FC = () => {
             </span>
             {availableUpdate && (
               <span className="fs-7 text-warning fw-bold mt-1">
-                {t('Version')} {availableUpdate.version} {t('is available!')}
+                {t('Version {version} is available!', { version: availableUpdate.version })}
               </span>
             )}
           </div>
