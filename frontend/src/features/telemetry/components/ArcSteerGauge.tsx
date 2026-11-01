@@ -15,11 +15,6 @@ const ArcSteerGauge: React.FC<{ size?: number }> = React.memo(() => {
   const dirTextRef = useRef<HTMLSpanElement>(null);
   const { t } = useSettings();
 
-  const pathsRef = useRef({
-    regularTicksPath: new Path2D(),
-    centerTickPath: new Path2D(),
-  });
-
   useEffect(() => {
     const canvas = canvasRef.current;
     const container = containerRef.current;
@@ -27,16 +22,6 @@ const ArcSteerGauge: React.FC<{ size?: number }> = React.memo(() => {
     const surface = createTelemetryCanvasSurface(canvas);
 
     let theme = readCanvasTheme();
-    const stopThemeObserver = observeCanvasTheme(() => { theme = readCanvasTheme(); drawGauge(lastSteer.current); });
-
-    const resizeObserver = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        const { width, height } = entry.contentRect;
-        surface.resize(width, height);
-        drawGauge(lastSteer.current);
-      }
-    });
-    resizeObserver.observe(container);
 
     const drawGauge = (steerRatio: number) => {
       if (!paint.canPaint()) return;
@@ -58,8 +43,9 @@ const ArcSteerGauge: React.FC<{ size?: number }> = React.memo(() => {
       const dpr = window.devicePixelRatio || 1;
       ctx.clearRect(0, 0, w, h);
 
-      const cx = w / 2;
-      const cy = h / 2 + 2 * dpr;
+      ctx.save();
+      const cx = Math.round(w / 2);
+      const cy = Math.round(h / 2 + 2 * dpr);
       // Dynamically fit full container bounds with adaptive padding
       const radius = Math.max(15 * dpr, Math.min(cx, cy) - 6 * dpr);
 
@@ -76,32 +62,29 @@ const ArcSteerGauge: React.FC<{ size?: number }> = React.memo(() => {
       ctx.strokeStyle = theme.track;
       ctx.stroke();
 
-      // Tick marks
+      // Tick marks: batch standard ticks into a single path, then draw center marker
       const tickCount = theme.linear ? 25 : 9;
+      const centerIdx = (tickCount - 1) / 2;
       ctx.lineWidth = 1.4 * dpr;
-
-      pathsRef.current.regularTicksPath = new Path2D();
-      pathsRef.current.centerTickPath = new Path2D();
-
-      const nextRegularTicksPath = pathsRef.current.regularTicksPath;
-      const nextCenterTickPath = pathsRef.current.centerTickPath;
-
-      for (let i = 0; i < tickCount; i++) {
-        const tickAngle = startAngle + (i / (tickCount - 1)) * (endAngle - startAngle);
-        const isCenter = i === (tickCount - 1) / 2;
-        const innerR = radius - (isCenter ? 8 * dpr : 4.5 * dpr);
-        const outerR = radius + 3 * dpr;
-
-        const targetPath = isCenter ? nextCenterTickPath : nextRegularTicksPath;
-        targetPath.moveTo(cx + innerR * Math.cos(tickAngle), cy + innerR * Math.sin(tickAngle));
-        targetPath.lineTo(cx + outerR * Math.cos(tickAngle), cy + outerR * Math.sin(tickAngle));
-      }
-
+      ctx.lineCap = theme.linear ? 'butt' : 'round';
       ctx.strokeStyle = theme.tick;
-      ctx.stroke(nextRegularTicksPath);
+      ctx.beginPath();
+      for (let i = 0; i < tickCount; i++) {
+        if (i === centerIdx) continue;
+        const tickAngle = startAngle + (i / (tickCount - 1)) * (endAngle - startAngle);
+        const innerR = radius - 4.5 * dpr;
+        const outerR = radius + 3 * dpr;
+        ctx.moveTo(cx + innerR * Math.cos(tickAngle), cy + innerR * Math.sin(tickAngle));
+        ctx.lineTo(cx + outerR * Math.cos(tickAngle), cy + outerR * Math.sin(tickAngle));
+      }
+      ctx.stroke();
 
+      // Prominent top-center alignment marker
+      ctx.beginPath();
+      ctx.moveTo(cx + (radius - 8 * dpr) * Math.cos(centerAngle), cy + (radius - 8 * dpr) * Math.sin(centerAngle));
+      ctx.lineTo(cx + (radius + 3.5 * dpr) * Math.cos(centerAngle), cy + (radius + 3.5 * dpr) * Math.sin(centerAngle));
       ctx.strokeStyle = primaryHex;
-      ctx.stroke(nextCenterTickPath);
+      ctx.stroke();
 
       // 2. Active Steering Arc（primaryHex 已從快取取得）
       const targetAngle = centerAngle + (steerRatio * (endAngle - startAngle)) / 2;
@@ -114,6 +97,7 @@ const ArcSteerGauge: React.FC<{ size?: number }> = React.memo(() => {
           ctx.arc(cx, cy, radius, targetAngle, centerAngle, false);
         }
         ctx.lineWidth = (theme.linear ? 2 : 5) * dpr;
+        ctx.lineCap = theme.linear ? 'butt' : 'round';
         ctx.strokeStyle = primaryHex;
         ctx.shadowColor = primaryHex;
         ctx.shadowBlur = theme.glowStrength * 8 * dpr;
@@ -135,8 +119,19 @@ const ArcSteerGauge: React.FC<{ size?: number }> = React.memo(() => {
         ctx.arc(dotX, dotY, 5.5 * dpr, 0, Math.PI * 2);
         ctx.fill();
       }
-      ctx.shadowBlur = 0;
+      ctx.restore();
     };
+
+    const stopThemeObserver = observeCanvasTheme(() => { theme = readCanvasTheme(); drawGauge(lastSteer.current); });
+
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { width, height } = entry.contentRect;
+        surface.resize(width, height);
+        drawGauge(lastSteer.current);
+      }
+    });
+    resizeObserver.observe(container);
 
     const handleUpdate = (e: any) => {
       const liveData = e.detail;

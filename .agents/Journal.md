@@ -1,5 +1,24 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-10-30 / 自主排程代理陣容擴充與 Jules 委派規範正式棄用（Gemini as Antigravity）
+
+- **Scope**：更新專案合約驗證腳本 `.agents/skills/jules_coding/scripts/validate_jules_intake.py`、合約測試 `tests/test_jules_intake_contract.py`、`.jules/README.md`、`.agents/AGENTS.md`，並正式標記 `jules_coding` 為已棄用。同時初始化 `.jules/mechanic.md` 與 `.jules/vector.md`。
+- **Context & Architecture Decision**：
+  1. **Jules 外部委派機制棄用**：專案歷史上的 Google Jules 外部委派與收件流程，已全面由 Antigravity 本地自主排程代理陣容取代。原 `jules_coding` 技能標註為 Deprecated 僅保留歷史相容。
+  2. **代理陣容細化與職責分工**：
+     - `Bolt` (00:00)：極致高頻效能與 React memoization。
+     - `Palette` (01:00)：微體驗 (Micro-UX) 與無障礙 (a11y) 拋光。
+     - `Sentinel` (02:00)：漏洞防禦與敏感資料保護。
+     - `Narrator` (03:00)：多語系在地化抽取與 `lang/*.json` 對齊。
+     - `Mechanic` (04:00)：純函式底盤與齒輪比物理演算法、金標契約維持。
+     - `Vector` (05:00)：HUD 賽車儀表板與 Canvas 2D 高頻渲染（零每幀物件配置、發光順序保護）。
+  3. **階梯式改動預算模型 (Tiered LOC Budget)**：打破單一硬性 `< 50 行` 限制，改採「核心生產代碼 50~90 行 + 測試/語系字典 60~150 行 + 核心檔案 ≤ 3 個」之雙軌預算，避免代理為達標而被迫閹割單元測試。
+- **Evidence**：
+  - `validate_jules_intake.py` 納入 `mechanic` 與 `vector` 規範別名與日誌對照。
+  - `pytest tests/test_jules_intake_contract.py` 21 項測試 100% 通過。
+  - 全域 `pytest` 32 項測試 100% 通過。
+  - `ruff check` 檢查無任何違規。
+
 ## 2026-10-12 / Companion 橢圓背景與 Rhine 導覽（Codex as Codex）
 
 - **Scope**：由 main `c1e86317` 建立 `codex/issue-485-native-theme-parity`；採用 `halfmoon-design-system`、`pr-author-maintainer`、`cross-agent-collaboration`。限原生 Halfmoon background、Rhine marker／underline 與相應測試／[差異矩陣](../docs/frontend/companion-native-theme-parity/README.md)，不改 Gradle、release、CI、字型或 bridge。

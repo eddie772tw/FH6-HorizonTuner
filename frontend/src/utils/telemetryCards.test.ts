@@ -53,7 +53,6 @@ function setupDOMMock() {
                 arc: () => {},
                 fill: () => {},
                 fillText: () => {},
-                addPath: () => {},
                 measureText: () => ({ width: 10 }),
                 save: () => {},
                 restore: () => {},

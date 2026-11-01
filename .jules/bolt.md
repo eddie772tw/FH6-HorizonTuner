@@ -156,6 +156,12 @@ Additionally, attempting to optimize 60Hz telemetry data copying in `FrameInterp
 **Learning:** In high-frequency 60Hz Canvas rendering loops (e.g., telemetry visualizations), calling `ctx.rect()` followed by `ctx.fill()` introduces path state management overhead. Since `ctx.rect()` modifies the current path rather than rendering directly, it relies on the canvas context maintaining and rasterizing the path object.
 **Action:** Replace `ctx.rect()` + `ctx.fill()` with the direct `ctx.fillRect()` method whenever rendering standalone rectangles that don't need to be grouped in complex paths. This avoids path building overhead and draws directly to the bitmap, slightly improving execution speed.
 
-## 2026-11-20 - Reducing Canvas State Changes in High-Frequency Paths via Path2D Batching
-**Learning:** In high-frequency HTML5 Canvas rendering loops (e.g., rendering segmented ticks or gauges), repeatedly flipping `ctx.fillStyle`, `ctx.shadowColor`, and invoking `ctx.beginPath()`, `ctx.fill()`, or `ctx.stroke()` for every single segment generates significant state-switching and CPU overhead.
-**Action:** Use `Path2D` objects to pre-group geometries that share the same visual style. Construct these paths sequentially within the loop, and then execute a single `ctx.fill(path)` or `ctx.stroke(path)` for each distinct style group outside the loop. Avoid creating a new `Path2D` instance inside the loop solely to append it; instead, resolve the target `Path2D` reference (e.g., `let targetPath = isActive ? primaryPath : inactivePath; targetPath.moveTo(...)`) and mutate it directly to prevent unnecessary object allocation and garbage collection.
+## 2026-11-01 - Iterative Stack and Squared-Distance Vector Simplification in Telemetry RDP
+**Learning:** In telemetry track mapping and vector path simplification (`simplifyPathRDP`), the naive recursive Ramer-Douglas-Peucker algorithm repeatedly invokes `.slice()` and spread operator array reconstructions on every sub-division. For long telemetry laps (thousands of GPS points), this introduces heavy Garbage Collection (GC) churn, redundant inner `Math.sqrt()` and repeated vector segment denominator recalculations, and carries a recursion stack overflow risk.
+**Action:** Replace recursive sub-array slicing with an explicit range stack and `Uint8Array` bitmap markers. Hoist line segment invariants (`dx`, `dz`, inverted line length squared) outside candidate scanning loops, and compare squared perpendicular distances (`distSq > sqEpsilon`) to eliminate all square root calculations in the hot scanning path.
+**署名:** Bolt as Antigravity
+
+## 2026-11-01 - RPM 分段批次繪製不建立每幀 Path2D
+**學習：** 將 Path2D 放進 useRef 後，若每次 draw 仍以 new Path2D 清空幾何，配置仍位於高頻更新路徑。RPM 相同樣式的段落是連續區間，可直接以 Canvas current path 批次繪製，保留 inactive、primary、secondary、danger/alert 的合成順序與各自光暈，且不需暫態群組或 Path2D。轉向儀表沿用 #584 的已合併實作。
+**驗證界線：** 減少呼叫與移除 Path2D 配置不代表已量得遊戲 FPS、GC 或高刷新率流暢度改善。
+**署名：** Mihaly as Codex

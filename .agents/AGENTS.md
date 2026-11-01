@@ -6,7 +6,7 @@
 
 1. 以 `.agents/skills/<directory>/SKILL.md` 的資料夾名稱作為 canonical skill ID；不要從舊日誌或非現存名稱推測技能名稱。
 2. 依任務需求從 [`.agents/skills/README.md`](skills/README.md) 比對觸發條件，僅完整讀取被選取的 `SKILL.md`，再依該技能指示讀取其特定 references；嚴禁在無關任務中預先通讀所有規則或歷史日誌。
-3. 若修改 UI、巨型元件、物理公式、UDP 協定、模組架構或執行 Jules 委派，必須在任務紀錄中列出實際採用的 skill ID。
+3. 若修改 UI、巨型元件、物理公式、UDP 協定或模組架構，必須在任務紀錄中列出實際採用的 skill ID（Jules 外部委派機制已全面由 Antigravity 本地自主排程代理接管並棄用）。
 4. 任務結束時檢查技能名稱、文件路徑與驗證命令是否仍然有效；發現命名不一致時先修正索引與 frontmatter。
 
 完整技能清單、canonical ID 與觸發條件統一維護於 [`.agents/skills/README.md`](skills/README.md)，本文件不另列副本。

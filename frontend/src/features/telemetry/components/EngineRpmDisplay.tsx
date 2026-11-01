@@ -23,14 +23,6 @@ const EngineRpmDisplay: React.FC = React.memo(() => {
 
   const { t, convertSpeed } = useSettings();
 
-  const pathsRef = useRef({
-    inactivePath: new Path2D(),
-    primaryPath: new Path2D(),
-    secondaryPath: new Path2D(),
-    dangerPath: new Path2D(),
-    alertPath: new Path2D(),
-  });
-
   useEffect(() => {
     let theme = readCanvasTheme();
     const stopThemeObserver = observeCanvasTheme(() => { theme = readCanvasTheme(); drawRpmGauge(); });
@@ -84,68 +76,36 @@ const EngineRpmDisplay: React.FC = React.memo(() => {
         lastFlashTimeRef.current = now;
       }
 
-      // [PERF] Use Path2D for batching segments by color instead of state flipping on every segment
-      // Reset path primitives by recreating them to clear previous frame geometries
-      pathsRef.current.inactivePath = new Path2D();
-      pathsRef.current.primaryPath = new Path2D();
-      pathsRef.current.secondaryPath = new Path2D();
-      pathsRef.current.dangerPath = new Path2D();
-      pathsRef.current.alertPath = new Path2D();
+      // Each color occupies a contiguous range. Reuse the context's current path;
+      // no Path2D objects or temporary groups are allocated during telemetry paints.
+      const secondaryStart = Math.ceil(0.72 * (numSegments - 1));
+      const redStart = Math.ceil((isShiftAlert ? 0.85 : 0.88) * (numSegments - 1));
+      for (let group = 0; group < 4; group++) {
+        const start = group === 0 ? activeSegs : group === 1 ? 0 : group === 2 ? secondaryStart : redStart;
+        const end = group === 0 ? numSegments : group === 1 ? Math.min(activeSegs, secondaryStart)
+          : group === 2 ? Math.min(activeSegs, redStart) : activeSegs;
+        if (start >= end) continue;
 
-      const nextInactivePath = pathsRef.current.inactivePath;
-      const nextPrimaryPath = pathsRef.current.primaryPath;
-      const nextSecondaryPath = pathsRef.current.secondaryPath;
-      const nextDangerPath = pathsRef.current.dangerPath;
-      const nextAlertPath = pathsRef.current.alertPath;
-
-      for (let i = 0; i < numSegments; i++) {
-        const segRatio = i / (numSegments - 1);
-        const isActive = i < activeSegs;
-        const x = i * (segWidth + gap);
-        const y = 2 * dpr;
-        const segHeight = h - 4 * dpr;
-
-        let targetPath = nextPrimaryPath;
-        if (!isActive) {
-          targetPath = nextInactivePath;
-        } else if (isShiftAlert && segRatio >= 0.85) {
-          targetPath = nextAlertPath;
-        } else if (segRatio >= 0.88) {
-          targetPath = nextDangerPath;
-        } else if (segRatio >= 0.72) {
-          targetPath = nextSecondaryPath;
+        ctx.beginPath();
+        for (let i = start; i < end; i++) {
+          const x = i * (segWidth + gap);
+          const y = 2 * dpr;
+          const segHeight = h - 4 * dpr;
+          const slant = (theme.flat ? 0 : 3) * dpr;
+          ctx.moveTo(x + slant, y);
+          ctx.lineTo(x + segWidth + slant, y);
+          ctx.lineTo(x + segWidth, y + segHeight);
+          ctx.lineTo(x, y + segHeight);
+          ctx.closePath();
         }
 
-        const slant = (theme.flat ? 0 : 3) * dpr;
-        targetPath.moveTo(x + slant, y);
-        targetPath.lineTo(x + segWidth + slant, y);
-        targetPath.lineTo(x + segWidth, y + segHeight);
-        targetPath.lineTo(x, y + segHeight);
-        targetPath.closePath();
+        const color = group === 0 ? theme.inactive : group === 1 ? primary : group === 2 ? secondary : theme.danger;
+        const alert = group === 3 && isShiftAlert;
+        ctx.fillStyle = alert && theme.alertFlash && lastFlashRef.current ? theme.pointer : color;
+        ctx.shadowColor = color;
+        ctx.shadowBlur = group === 0 ? 0 : glowStrength * (alert ? 10 : 6) * dpr;
+        ctx.fill();
       }
-
-      ctx.shadowBlur = 0;
-      ctx.fillStyle = theme.inactive;
-      ctx.fill(nextInactivePath);
-
-      ctx.shadowBlur = glowStrength * 6 * dpr;
-      ctx.fillStyle = primary;
-      ctx.shadowColor = primary;
-      ctx.fill(nextPrimaryPath);
-
-      ctx.fillStyle = secondary;
-      ctx.shadowColor = secondary;
-      ctx.fill(nextSecondaryPath);
-
-      ctx.fillStyle = theme.danger;
-      ctx.shadowColor = theme.danger;
-      ctx.fill(nextDangerPath);
-
-      ctx.shadowBlur = glowStrength * 10 * dpr;
-      ctx.shadowColor = theme.danger;
-      ctx.fillStyle = theme.alertFlash && lastFlashRef.current ? theme.pointer : theme.danger;
-      ctx.fill(nextAlertPath);
-
       ctx.shadowBlur = 0;
     };
 
