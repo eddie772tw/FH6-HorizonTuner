@@ -320,10 +320,11 @@ fn calculate_gearing(
     } else {
         car_params
     };
-    if !max_rpm.is_finite() || max_rpm <= 0.0 {
+    // Drag must validate the caller's gear count and redline before any fallback.
+    if race_goal != RaceGoal::Drag && (!max_rpm.is_finite() || max_rpm <= 0.0) {
         max_rpm = 7500.0;
     }
-    if !(1..=10).contains(&num_gears) {
+    if race_goal != RaceGoal::Drag && !(1..=10).contains(&num_gears) {
         num_gears = 6;
     }
 
@@ -337,6 +338,7 @@ fn calculate_gearing(
 
     if race_goal == RaceGoal::Drag {
         let is_valid = (4..=10).contains(&num_gears)
+            && max_rpm.is_finite()
             && max_rpm > 0.0
             && car_params.weight.map_or(false, |v| v > 0.0)
             && car_params.max_hp.map_or(false, |v| v > 0.0)

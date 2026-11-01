@@ -377,3 +377,34 @@ fn gearing_boundary_singular_protection_and_monotonicity() {
         assert!(res_nan_rpm.gears.iter().all(|g| g.is_finite() && *g > 0.0));
     }
 }
+
+#[test]
+fn drag_rejects_original_invalid_inputs_before_gearing_fallbacks() {
+    let params = TuningCarParams {
+        weight: Some(1200.0),
+        max_hp: Some(450.0),
+        max_torque: Some(500.0),
+        max_hp_rpm: Some(6500.0),
+        max_torque_rpm: Some(4000.0),
+        ..Default::default()
+    };
+    for solver in [
+        calculate_aego_gearing,
+        fh6_backend::tuning::calculate_aego_gearing,
+    ] {
+        for count in [0, 1, 3, 11, usize::MAX] {
+            let result = solver(RaceGoal::Drag, count, &params, 7000.0, None);
+            assert_eq!(result.unsupported, Some(true), "count={count}");
+            assert!(result.gears.is_empty());
+        }
+        for rpm in [0.0, -1.0, f64::NAN, f64::INFINITY, f64::NEG_INFINITY] {
+            let result = solver(RaceGoal::Drag, 6, &params, rpm, None);
+            assert_eq!(result.unsupported, Some(true), "rpm={rpm}");
+            assert!(result.gears.is_empty());
+        }
+        let valid = solver(RaceGoal::Drag, 6, &params, 7000.0, None);
+        assert_ne!(valid.unsupported, Some(true));
+        assert_eq!(valid.gears.len(), 6);
+        assert!(valid.gears.windows(2).all(|pair| pair[0] > pair[1]));
+    }
+}
