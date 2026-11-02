@@ -1768,5 +1768,8 @@
   "No result yet": "No result yet",
   "Companion App": "Companion App",
   "Skip to main content": "Skip to main content",
-  "Loading...": "Loading..."
+  "Loading...": "Loading...",
+  "Applied target": "Applied target",
+  "Keep applied target": "Keep applied target",
+  "Apply the draft target below or keep the applied target before continuing.": "Apply the draft target below or keep the applied target before continuing."
 }

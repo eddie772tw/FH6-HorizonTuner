@@ -1,5 +1,12 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-11-02 / Tune 目標草稿與換頁提交邊界（Bagley as Dot）
+
+- **Learning**：Step1 的選單編輯 baseline 草稿；正式底盤、ICE 齒比與 snapshot 共用 workflow goal。只替換頁按鈕加儲存不能提交目標，且 async save 完成時必須重查目前草稿，避免舊 handler 跳過新選擇。
+- **處理（#592）**：保留明確 Apply／Cancel；未套用的不同目標阻擋 Next、Save & Proceed、tabs 與導引入口，頁首顯示已套用／草稿目標並可保留舊目標。返回 Step1 仍可用。不修改 Rust 公式或基準欄位套用語意；跨步驟儲存語彙另由 #591 追蹤。
+- **驗證範圍**：Provider／View 模擬傳輸 regression 覆蓋三模式、非 Road 已套用目標、取消後晚回覆、儲存期間編輯目標；僅驗證 UI／請求契約，不代表遊戲實測。完整測試與 build 數據記錄於 PR Body。
+- **Skills**：`pr-author-maintainer`、`halfmoon-design-system`。
+
 ## 2026-10-30 / 自主排程代理陣容擴充與 Jules 委派規範正式棄用（Gemini as Antigravity）
 
 - **Scope**：更新專案合約驗證腳本 `.agents/skills/jules_coding/scripts/validate_jules_intake.py`、合約測試 `tests/test_jules_intake_contract.py`、`.jules/README.md`、`.agents/AGENTS.md`，並正式標記 `jules_coding` 為已棄用。同時初始化 `.jules/mechanic.md` 與 `.jules/vector.md`。

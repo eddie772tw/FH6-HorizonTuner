@@ -2201,5 +2201,8 @@
   "Requires an active drag run with collected points to calculate.": "需要包含有效採樣點的直線加速記錄以進行計算。",
   "Companion App": "隨行應用程式",
   "Skip to main content": "跳至主要內容",
-  "Loading...": "載入中..."
+  "Loading...": "載入中...",
+  "Applied target": "目前套用目標",
+  "Keep applied target": "保留目前套用目標",
+  "Apply the draft target below or keep the applied target before continuing.": "請先套用下方的目標草稿，或保留目前套用目標，再繼續。"
 }

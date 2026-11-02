@@ -1582,5 +1582,8 @@
   "Requires an active drag run with collected points to calculate.": "計算するには、有効な計測データを含むドラッグ走行が必要です。",
   "Companion App": "コンパニオンアプリ",
   "Skip to main content": "メインコンテンツへスキップ",
-  "Loading...": "読み込み中..."
+  "Loading...": "読み込み中...",
+  "Applied target": "適用中の目標",
+  "Keep applied target": "適用中の目標を維持",
+  "Apply the draft target below or keep the applied target before continuing.": "続行する前に、下の目標の下書きを適用するか、適用中の目標を維持してください。"
 }

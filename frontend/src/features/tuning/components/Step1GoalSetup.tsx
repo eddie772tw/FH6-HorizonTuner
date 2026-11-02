@@ -22,6 +22,7 @@ interface Step1GoalSetupProps {
   hasCoreParams: boolean;
   onOpenUnitSettings: () => void;
   onProceed: () => Promise<void>;
+  proceedBlockedReason?: string;
 }
 
 export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
@@ -35,6 +36,7 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
   hasCoreParams,
   onOpenUnitSettings,
   onProceed,
+  proceedBlockedReason,
 }) => {
   const {
     settings,
@@ -86,17 +88,17 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
             {t('Workflow Units')}
           </button>
           <span
-            title={!hasCoreParams ? t('Please set basic vehicle parameters in Step 1 to proceed.') : undefined}
-            tabIndex={!hasCoreParams ? 0 : undefined}
-            role={!hasCoreParams ? 'group' : undefined}
-            aria-label={!hasCoreParams ? t('Please set basic vehicle parameters in Step 1 to proceed.') : undefined}
-            style={{ display: 'inline-flex', cursor: !hasCoreParams ? 'not-allowed' : 'auto' }}
+            title={proceedBlockedReason || (!hasCoreParams ? t('Please set basic vehicle parameters in Step 1 to proceed.') : undefined)}
+            tabIndex={!hasCoreParams || proceedBlockedReason ? 0 : undefined}
+            role={!hasCoreParams || proceedBlockedReason ? 'group' : undefined}
+            aria-label={proceedBlockedReason || (!hasCoreParams ? t('Please set basic vehicle parameters in Step 1 to proceed.') : undefined)}
+            style={{ display: 'inline-flex', cursor: !hasCoreParams || proceedBlockedReason ? 'not-allowed' : 'auto' }}
           >
             <button
               type="button"
               className="btn btn-primary btn-sm fw-bold"
-              disabled={!hasCoreParams}
-              style={{ pointerEvents: !hasCoreParams ? 'none' : 'auto' }}
+              disabled={!hasCoreParams || Boolean(proceedBlockedReason)}
+              style={{ pointerEvents: !hasCoreParams || proceedBlockedReason ? 'none' : 'auto' }}
               onClick={() => void onProceed()}
             >
               {t('Save & Proceed')} &gt;
