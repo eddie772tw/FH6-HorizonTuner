@@ -38,3 +38,41 @@ it('redraws the latest tire sample after chart toggles and unit changes without 
     vi.restoreAllMocks(); vi.unstubAllGlobals();
   }
 });
+it('accurately renders historical trajectory and clamps points exceeding grip limits', async () => {
+  Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
+  vi.stubGlobal('ResizeObserver', class { observe() {} disconnect() {} });
+  const lineToSpy = vi.fn();
+  const moveToSpy = vi.fn();
+  const arcSpy = vi.fn();
+  const context = new Proxy({}, {
+    get: (_target, prop) => {
+      if (prop === 'lineTo') return lineToSpy;
+      if (prop === 'moveTo') return moveToSpy;
+      if (prop === 'arc') return arcSpy;
+      return () => {};
+    }
+  });
+  vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(context as CanvasRenderingContext2D);
+  const host = document.createElement('div');
+  document.body.append(host);
+  const root = createRoot(host);
+  try {
+    await act(async () => root.render(<TireRadar title="Front Right" isLeft={false} tireIdx={1} renderCharts={true} />));
+    // Packet 1: Normal grip
+    telemetryEmitter.dispatchEvent(new CustomEvent('update', { detail: {
+      IsRaceOn: 1, CarOrdinal: 1, TireTemp: [0, 180, 0, 0], TireSlipRatio: [0, 0.4, 0, 0], TireSlipAngle: [0, 0.3, 0, 0],
+    } }));
+    // Packet 2: Beyond limit (triggers clamping path)
+    telemetryEmitter.dispatchEvent(new CustomEvent('update', { detail: {
+      IsRaceOn: 1, CarOrdinal: 1, TireTemp: [0, 240, 0, 0], TireSlipRatio: [0, 3.5, 0, 0], TireSlipAngle: [0, 3.5, 0, 0],
+    } }));
+    expect(moveToSpy).toHaveBeenCalled();
+    expect(lineToSpy).toHaveBeenCalled();
+    expect(arcSpy).toHaveBeenCalled();
+  } finally {
+    await act(async () => root.unmount());
+    host.remove();
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  }
+});
