@@ -408,3 +408,58 @@ fn drag_rejects_original_invalid_inputs_before_gearing_fallbacks() {
         assert!(valid.gears.windows(2).all(|pair| pair[0] > pair[1]));
     }
 }
+
+#[test]
+#[test]
+fn chassis_boundary_singular_protection_and_spring_inversion() {
+    let inverted_params = TuningCarParams {
+        weight: Some(-500.0),
+        weight_distribution: Some(150.0),
+        drivetrain: Some("AWD".into()),
+        spring_front_min: Some(60.0),
+        spring_front_max: Some(20.0),
+        spring_rear_min: Some(70.0),
+        spring_rear_max: Some(30.0),
+        height_front_min: Some(20.0),
+        height_front_max: Some(10.0),
+        height_rear_min: Some(22.0),
+        height_rear_max: Some(12.0),
+        ..Default::default()
+    };
+
+    for goal in [
+        RaceGoal::Road,
+        RaceGoal::Rally,
+        RaceGoal::Drift,
+        RaceGoal::Drag,
+        RaceGoal::DangerSign,
+    ] {
+        let aero = resolve_aero_downforce(&inverted_params);
+        assert!(aero.front.is_finite() && aero.front > 0.0);
+        assert!(aero.rear.is_finite() && aero.rear > 0.0);
+
+        let res = calculate_chassis_tuning(goal, &inverted_params);
+        assert!(res.springs.front.is_finite() && res.springs.front >= 60.0);
+        assert!(res.springs.rear.is_finite() && res.springs.rear >= 70.0);
+        assert!(res.springs.height_f.is_finite() && res.springs.height_f >= 20.0);
+        assert!(res.springs.height_r.is_finite() && res.springs.height_r >= 22.0);
+        assert!(res.damping.rebound_f >= 1.0 && res.damping.rebound_f <= 20.0);
+        assert!(res.damping.rebound_r >= 1.0 && res.damping.rebound_r <= 20.0);
+        assert!(res.damping.bump_f >= 1.0 && res.damping.bump_f <= 20.0);
+        assert!(res.damping.bump_r >= 1.0 && res.damping.bump_r <= 20.0);
+    }
+
+    for wd in [0.0, 100.0, -10.0, f64::NAN] {
+        let p = TuningCarParams {
+            weight: Some(f64::NAN),
+            weight_distribution: Some(wd),
+            ..Default::default()
+        };
+        let aero = resolve_aero_downforce(&p);
+        assert!(aero.front.is_finite() && aero.front > 0.0);
+        assert!(aero.rear.is_finite() && aero.rear > 0.0);
+        let chassis = calculate_chassis_tuning(RaceGoal::Road, &p);
+        assert!(chassis.arb.front.is_finite() && chassis.arb.front >= 1.0);
+        assert!(chassis.arb.rear.is_finite() && chassis.arb.rear >= 1.0);
+    }
+}
