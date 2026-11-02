@@ -1582,5 +1582,10 @@
   "Requires an active drag run with collected points to calculate.": "計算するには、有効な計測データを含むドラッグ走行が必要です。",
   "Companion App": "コンパニオンアプリ",
   "Skip to main content": "メインコンテンツへスキップ",
-  "Loading...": "読み込み中..."
+  "Loading...": "読み込み中...",
+  "HorizonTuner Companion": "HorizonTuner Companion",
+  "Companion sections": "Companion セクション",
+  "Connection settings": "接続設定",
+  "Connection mode": "接続モード",
+  "Unavailable": "利用不可"
 }
