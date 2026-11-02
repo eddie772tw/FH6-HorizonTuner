@@ -54,6 +54,7 @@ Agent 文件、技能說明、工作日誌與規範內容以繁體中文為主�
 ## 開發邊界限制與有條件授權 (Boundary Guardrails & Bounded Authorizations)
 
 * **必須做的事 (Mandatory Practices)**：
+  - **提案前查閱既有 PR 防重複 (Pre-Proposal PR Deduplication)**：自主代理或開發者在鎖定優化/修復標的與建立新分支前，必須先執行 `gh pr list --state open`（以及可檢閱近期 PR）查閱所有開啟中之 Pull Request，確認提案標的與改動檔案未與進行中 PR 重疊衝突，避免重複提案與 Merge Conflict。
   - 遵循變更範圍分流驗證：修改前端/物理執行前端測試，修改後端執行後端測試。
   - 前端 UI 開發或變更時，必須遵循 [ui-architecture.md](rules/ui-architecture.md) 與 [halfmoon-design-system](skills/halfmoon-design-system/SKILL.md)。
   - 任務結束後若發現具體且可重現的架構學習點，登錄至 [Journal.md](Journal.md)。
