@@ -1579,5 +1579,8 @@
   "Fix CSS errors to apply": "適用する前にCSSエラーを修正してください",
   "No changes to discard": "破棄する変更がありません",
   "Editor is already empty": "エディタはすでに空です",
-  "Requires an active drag run with collected points to calculate.": "計算するには、有効な計測データを含むドラッグ走行が必要です。"
+  "Requires an active drag run with collected points to calculate.": "計算するには、有効な計測データを含むドラッグ走行が必要です。",
+  "Companion App": "コンパニオンアプリ",
+  "Skip to main content": "メインコンテンツへスキップ",
+  "Loading...": "読み込み中..."
 }

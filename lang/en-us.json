@@ -1765,5 +1765,8 @@
   "Final drive": "Final drive",
   "Gear {index}": "Gear {index}",
   "Complete a valid engine measurement to calculate gear ratios. Current phase: {measurementPhase}.": "Complete a valid engine measurement to calculate gear ratios. Current phase: {measurementPhase}.",
-  "No result yet": "No result yet"
+  "No result yet": "No result yet",
+  "Companion App": "Companion App",
+  "Skip to main content": "Skip to main content",
+  "Loading...": "Loading..."
 }

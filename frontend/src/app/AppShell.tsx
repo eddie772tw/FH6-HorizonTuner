@@ -100,7 +100,7 @@ export function AppShell({ variant, workspaces, Runtime, prepareSession }: {
       </div>
     </div>}
     {surface === 'settings' && <AppDialog className="app-dialog--settings" title="Settings" onClose={closeSurface}><SettingsView allowDeveloperTuning={getAppCapabilities(variant).developerTuning} /></AppDialog>}
-    {surface === 'companion' && <AppDialog className="app-dialog--companion" title={t('Companion App')} onClose={closeSurface}><CompanionSettingsCard /></AppDialog>}
+    {surface === 'companion' && <AppDialog className="app-dialog--companion" title="Companion App" onClose={closeSurface}><CompanionSettingsCard /></AppDialog>}
     {surface === 'mcp' && <AppDialog className="app-dialog--mcp" title="MCP" onClose={closeSurface}><McpSettingsCard /></AppDialog>}
     {surface === 'about' && <AppDialog className="app-dialog--about" title="About" onClose={closeSurface}><AppAbout variant={variant} /></AppDialog>}
     <DiagnosticConsole show={surface === 'diagnostics'} onClose={closeSurface} />
