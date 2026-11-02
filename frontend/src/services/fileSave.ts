@@ -23,7 +23,8 @@ export interface SavePlatform {
 }
 const MAX_EXPORT_BYTES = 64 * 1024 * 1024;
 
-const WINDOWS_RESERVED_NAMES = /^(CON|PRN|AUX|NUL|COM[1-9¹²³]|LPT[1-9¹²³])$/i;
+// Defense-in-depth: Disallow MS-DOS devices, CLOCK$, CONIN$/CONOUT$, and port 0
+const WINDOWS_RESERVED_NAMES = /^(CON|PRN|AUX|NUL|CLOCK\$|CONIN\$|CONOUT\$|COM[0-9¹²³]|LPT[0-9¹²³])$/i;
 // Match the native validate_export UTF-8 byte limit, including the extension.
 const MAX_FILENAME_BYTES = 240;
 
