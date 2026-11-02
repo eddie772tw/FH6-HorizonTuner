@@ -1045,3 +1045,10 @@
 - **處理**：採用官方穩定版 `tauri-plugin-updater 2.14.1`（MIT／Apache-2.0，MSRV 1.90），提高 manifest 最低版本並定向更新鎖檔；`cargo tree --locked --target all -i zip` 確認桌面僅解析 `zip 9.1.3`，高於 GHSA-m665-v7pm-7grj 的受影響範圍 `<=9.0.4`。不使用 fork、patch 或 dismissed 取代修復。
 - **驗證界線**：frozen install、前端 1850 passed／1 個既有 skipped、Windows-target production build 與 Rust 格式檢查通過；Cargo、Windows／Linux CI 打包與精確 PR head 檢查另見 PR 驗證紀錄。安全警報須待修復進入預設分支後由 GitHub 更新，PR 通過不代表正式 OTA 或實機升級驗收。
 - **Skills**：`github-security-audit`、`pr-author-maintainer`、`pr-review-evaluation`、`ponytail`。
+
+## 2026-11-02 / Step1 數值顯示與編輯分離（Bagley as Dot）
+
+- **重現**：DecimalInput 的 `value=12.56, precision=1` 顯示 12.6；未編輯只 focus/blur 就回寫 12.6。單位換算值與匯入的窄彈簧範圍不能把顯示取位當成資料編輯。
+- **處理**：追蹤實際輸入事件，未編輯離焦不 emit；聚焦顯示原始數值。原生 min/max 與說明關聯透傳，Step1 單欄及前後軸範圍補齊名稱。顯示 precision 仍不等於遊戲刻度，不推測未知車型／配件格點。
+- **驗證界線**：DOM 回歸涵蓋四模式名稱、限制、清空／Enter 與單位顯示往返；真實遊戲公英制刻度、Windows 原生鍵盤及讀屏驗收留在 #593。
+- **Skills**：`halfmoon-design-system`、`pr-author-maintainer`。

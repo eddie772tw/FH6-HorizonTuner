@@ -146,8 +146,9 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
           </div>
 
           <div className="d-flex flex-column gap-2">
-            <label className="text-body-secondary fs-7 fw-semibold">{t('Current Season:')}</label>
+            <label htmlFor="step1-season" className="text-body-secondary fs-7 fw-semibold">{t('Current Season:')}</label>
             <select
+              id="step1-season"
               value={season}
               onChange={(e) => setSeason(e.target.value as Season)}
               className="form-select form-select-sm"
@@ -169,6 +170,8 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
               </div>
               <div style={{ width: '90px' }}>
                 <DecimalInput
+                  id="step1-aeroEfficiency"
+                  aria-label={t('Aero Efficiency (E)')}
                   value={carParams?.aeroEfficiency ?? 0.5}
                   onChange={(val) => updateParam('aeroEfficiency', val ?? 0.5)}
                   precision={2}
@@ -190,9 +193,11 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
 
           <div className="d-flex flex-column gap-2">
             <div className="d-flex justify-content-between align-items-center">
-              <label className="text-body-secondary fs-7 mb-0">{t('Weight')} ({settings.units.weight})</label>
+              <label htmlFor="step1-weight" className="text-body-secondary fs-7 mb-0">{t('Weight')} ({settings.units.weight})</label>
               <div style={{ width: '130px' }}>
                 <DecimalInput
+                  id="step1-weight"
+                  aria-label={`${t('Weight')} (${settings.units.weight})`}
                   value={carParams?.weight ? (settings.units.weight === 'lbs' ? carParams.weight * 2.20462 : carParams.weight) : undefined}
                   onChange={(val) => updateParam('weight', val !== undefined ? (settings.units.weight === 'lbs' ? val / 2.20462 : val) : 0)}
                   precision={0}
@@ -204,9 +209,11 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
             </div>
 
             <div className="d-flex justify-content-between align-items-center">
-              <label className="text-body-secondary fs-7 mb-0">{t('Weight Distribution')} (%)</label>
+              <label htmlFor="step1-weight_distribution" className="text-body-secondary fs-7 mb-0">{t('Weight Distribution')} (%)</label>
               <div style={{ width: '130px' }}>
                 <DecimalInput
+                  id="step1-weight_distribution"
+                  aria-label={`${t('Weight Distribution')} (%)`}
                   value={carParams?.weight_distribution}
                   onChange={(val) => updateParam('weight_distribution', val ?? 0)}
                   precision={1}
@@ -218,9 +225,10 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
             </div>
 
             <div className="d-flex justify-content-between align-items-center">
-              <label className="text-body-secondary fs-7 mb-0">{t('Drivetrain')}</label>
+              <label htmlFor="step1-drivetrain" className="text-body-secondary fs-7 mb-0">{t('Drivetrain')}</label>
               <div style={{ width: '130px' }}>
                 <select
+                  id="step1-drivetrain"
                   value={carParams?.drivetrain || 'RWD'}
                   onChange={(e) => updateParam('drivetrain', e.target.value)}
                   className="form-select form-select-sm"
@@ -239,12 +247,15 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
             <EvModeSwitch t={t} checked={carParams?.isElectric === true} onChange={value => updateParam('isElectric', value)} />
             <TransmissionSetup t={t} value={carParams?.transmission} onChange={value => updateParam('transmission', value)} />
             {!carParams?.isElectric && !usesCvt(carParams) && <div className="d-flex justify-content-between align-items-center">
-              <label className="text-body-secondary fs-7 mb-0">{t('Gears Count')}</label>
+              <label htmlFor="step1-adjustability" className="text-body-secondary fs-7 mb-0">{t('Gears Count')}</label>
               <div style={{ width: '130px' }}>
                 <DecimalInput
+                  id="step1-adjustability"
+                  aria-label={t('Gears Count')}
                   value={carParams?.adjustability?.gears || 6}
                   onChange={(val) => updateParam('adjustability', { ...carParams?.adjustability, gears: val ? Math.round(val) : 6 })}
                   precision={0}
+                  step={1}
                   min={4}
                   max={10}
                 />
@@ -252,9 +263,10 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
             </div>}
 
             <div className="d-flex justify-content-between align-items-center">
-              <label className="text-body-secondary fs-7 mb-0">{t('Induction Type')}</label>
+              <label htmlFor="step1-induction" className="text-body-secondary fs-7 mb-0">{t('Induction Type')}</label>
               <div style={{ width: '130px' }}>
                 <select
+                  id="step1-induction"
                   value={carParams?.induction || 'NA'}
                   onChange={(e) => updateParam('induction', e.target.value)}
                   className="form-select form-select-sm"
@@ -269,9 +281,11 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
             </div>
 
             <div className="d-flex justify-content-between align-items-center">
-              <label className="text-body-secondary fs-7 mb-0">{t('Max Power')} ({displayPower(0).label})</label>
+              <label htmlFor="step1-maxHp" className="text-body-secondary fs-7 mb-0">{t('Max Power')} ({displayPower(0).label})</label>
               <div style={{ width: '130px' }}>
                 <DecimalInput
+                  id="step1-maxHp"
+                  aria-label={`${t('Max Power')} (${displayPower(0).label})`}
                   value={carParams?.maxHp ? displayPower(carParams.maxHp).value : undefined}
                   onChange={(val) => updateParam('maxHp', val !== undefined ? powerToHp(val) : 0)}
                   precision={0}
@@ -283,9 +297,11 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
             </div>
 
             <div className="d-flex justify-content-between align-items-center">
-              <label className="text-body-secondary fs-7 mb-0">{t('Max Torque')} ({convertTorque(0).label})</label>
+              <label htmlFor="step1-maxTorque" className="text-body-secondary fs-7 mb-0">{t('Max Torque')} ({convertTorque(0).label})</label>
               <div style={{ width: '130px' }}>
                 <DecimalInput
+                  id="step1-maxTorque"
+                  aria-label={`${t('Max Torque')} (${convertTorque(0).label})`}
                   value={carParams?.maxTorque ? convertTorque(carParams.maxTorque).value : undefined}
                   onChange={(val) => updateParam('maxTorque', val !== undefined ? torqueToNm(val) : 0)}
                   precision={0}
@@ -299,9 +315,11 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
             {!measuredEngineInputs && (
               <>
                 <div className="d-flex justify-content-between align-items-center">
-                  <label className="text-body-secondary fs-7 mb-0">{t('Max HP RPM (rpm)')}</label>
+                  <label htmlFor="step1-maxHpRpm" className="text-body-secondary fs-7 mb-0">{t('Max HP RPM (rpm)')}</label>
                   <div style={{ width: '130px' }}>
                     <DecimalInput
+                      id="step1-maxHpRpm"
+                      aria-label={t('Max HP RPM (rpm)')}
                       value={carParams?.maxHpRpm || 0}
                       onChange={(val) => updateParam('maxHpRpm', val ? Math.round(val) : 0)}
                       precision={0}
@@ -311,9 +329,11 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
                 </div>
 
                 <div className="d-flex justify-content-between align-items-center">
-                  <label className="text-body-secondary fs-7 mb-0">{t('Max Torque RPM (rpm)')}</label>
+                  <label htmlFor="step1-maxTorqueRpm" className="text-body-secondary fs-7 mb-0">{t('Max Torque RPM (rpm)')}</label>
                   <div style={{ width: '130px' }}>
                     <DecimalInput
+                      id="step1-maxTorqueRpm"
+                      aria-label={t('Max Torque RPM (rpm)')}
                       value={carParams?.maxTorqueRpm || 0}
                       onChange={(val) => updateParam('maxTorqueRpm', val ? Math.round(val) : 0)}
                       precision={0}
@@ -343,6 +363,8 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
               <div className="d-flex align-items-center gap-2">
                 <div className="flex-grow-1">
                   <DecimalInput
+                    id="step1-spring_front_min"
+                    aria-label={`${t('Front Spring Range')} — ${t('Min')} (${convertSpringRate(1).label})`}
                     value={carParams?.spring_front_min != null ? convertSpringRate(carParams.spring_front_min).value : undefined}
                     onChange={(val) => updateParam('spring_front_min', val !== undefined ? convertSpringRateToKgfmm(val) : null)}
                     precision={1}
@@ -353,6 +375,8 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
                 <span className="text-body-secondary fs-7">-</span>
                 <div className="flex-grow-1">
                   <DecimalInput
+                    id="step1-spring_front_max"
+                    aria-label={`${t('Front Spring Range')} — ${t('Max')} (${convertSpringRate(1).label})`}
                     value={carParams?.spring_front_max != null ? convertSpringRate(carParams.spring_front_max).value : undefined}
                     onChange={(val) => updateParam('spring_front_max', val !== undefined ? convertSpringRateToKgfmm(val) : null)}
                     precision={1}
@@ -371,6 +395,8 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
               <div className="d-flex align-items-center gap-2">
                 <div className="flex-grow-1">
                   <DecimalInput
+                    id="step1-spring_rear_min"
+                    aria-label={`${t('Rear Spring Range')} — ${t('Min')} (${convertSpringRate(1).label})`}
                     value={carParams?.spring_rear_min != null ? convertSpringRate(carParams.spring_rear_min).value : undefined}
                     onChange={(val) => updateParam('spring_rear_min', val !== undefined ? convertSpringRateToKgfmm(val) : null)}
                     precision={1}
@@ -381,6 +407,8 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
                 <span className="text-body-secondary fs-7">-</span>
                 <div className="flex-grow-1">
                   <DecimalInput
+                    id="step1-spring_rear_max"
+                    aria-label={`${t('Rear Spring Range')} — ${t('Max')} (${convertSpringRate(1).label})`}
                     value={carParams?.spring_rear_max != null ? convertSpringRate(carParams.spring_rear_max).value : undefined}
                     onChange={(val) => updateParam('spring_rear_max', val !== undefined ? convertSpringRateToKgfmm(val) : null)}
                     precision={1}
@@ -399,6 +427,8 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
               <div className="d-flex align-items-center gap-2">
                 <div className="flex-grow-1">
                   <DecimalInput
+                    id="step1-height_front_min"
+                    aria-label={`${t('Front Height Range')} — ${t('Min')} (${convertHeight(1).label})`}
                     value={carParams?.height_front_min !== undefined ? convertHeight(carParams.height_front_min).value : undefined}
                     onChange={(val) => updateParam('height_front_min', val !== undefined ? convertHeightToCm(val) : undefined)}
                     precision={1}
@@ -409,6 +439,8 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
                 <span className="text-body-secondary fs-7">-</span>
                 <div className="flex-grow-1">
                   <DecimalInput
+                    id="step1-height_front_max"
+                    aria-label={`${t('Front Height Range')} — ${t('Max')} (${convertHeight(1).label})`}
                     value={carParams?.height_front_max !== undefined ? convertHeight(carParams.height_front_max).value : undefined}
                     onChange={(val) => updateParam('height_front_max', val !== undefined ? convertHeightToCm(val) : undefined)}
                     precision={1}
@@ -427,6 +459,8 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
               <div className="d-flex align-items-center gap-2">
                 <div className="flex-grow-1">
                   <DecimalInput
+                    id="step1-height_rear_min"
+                    aria-label={`${t('Rear Height Range')} — ${t('Min')} (${convertHeight(1).label})`}
                     value={carParams?.height_rear_min !== undefined ? convertHeight(carParams.height_rear_min).value : undefined}
                     onChange={(val) => updateParam('height_rear_min', val !== undefined ? convertHeightToCm(val) : undefined)}
                     precision={1}
@@ -437,6 +471,8 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
                 <span className="text-body-secondary fs-7">-</span>
                 <div className="flex-grow-1">
                   <DecimalInput
+                    id="step1-height_rear_max"
+                    aria-label={`${t('Rear Height Range')} — ${t('Max')} (${convertHeight(1).label})`}
                     value={carParams?.height_rear_max !== undefined ? convertHeight(carParams.height_rear_max).value : undefined}
                     onChange={(val) => updateParam('height_rear_max', val !== undefined ? convertHeightToCm(val) : undefined)}
                     precision={1}
@@ -450,10 +486,12 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
             {['Road', 'Rally'].includes(selectedRaceGoal) ? <OptionalAeroInputs value={carParams} onChange={updateParam} /> : <>
             {/* Downforce */}
             <div className="d-flex justify-content-between align-items-center">
-              <label className="text-body-secondary fs-8 mb-0">{t('Front Downforce')} ({convertForce(0).label})</label>
+              <label htmlFor="step1-aero_downforce_front" className="text-body-secondary fs-8 mb-0">{t('Front Downforce')} ({convertForce(0).label})</label>
               <div className="d-flex gap-2 align-items-center">
                 <div style={{ width: '90px' }}>
                   <DecimalInput
+                    id="step1-aero_downforce_front"
+                    aria-label={`${t('Front Downforce')} (${convertForce(0).label})`}
                     disabled={isFrontAutoAero}
                     value={isFrontAutoAero ? 0 : Number(convertForce(carParams?.aero_downforce_front || 0).value.toFixed(1))}
                     onChange={(val) => updateParam('aero_downforce_front', Math.max(0, convertForceToKgf(val || 0)))}
@@ -464,6 +502,7 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
                   <input
                     type="checkbox"
                     className="form-check-input mt-0"
+                    aria-label={`${t('Front Downforce')} — ${t('Auto')}`}
                     checked={isFrontAutoAero}
                     onChange={(e) => updateParam('aero_downforce_front', e.target.checked ? null : 50)}
                   />
@@ -473,10 +512,12 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
             </div>
 
             <div className="d-flex justify-content-between align-items-center">
-              <label className="text-body-secondary fs-8 mb-0">{t('Rear Downforce')} ({convertForce(0).label})</label>
+              <label htmlFor="step1-aero_downforce_rear" className="text-body-secondary fs-8 mb-0">{t('Rear Downforce')} ({convertForce(0).label})</label>
               <div className="d-flex gap-2 align-items-center">
                 <div style={{ width: '90px' }}>
                   <DecimalInput
+                    id="step1-aero_downforce_rear"
+                    aria-label={`${t('Rear Downforce')} (${convertForce(0).label})`}
                     disabled={isRearAutoAero}
                     value={isRearAutoAero ? 0 : Number(convertForce(carParams?.aero_downforce_rear || 0).value.toFixed(1))}
                     onChange={(val) => updateParam('aero_downforce_rear', Math.max(0, convertForceToKgf(val || 0)))}
@@ -487,6 +528,7 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
                   <input
                     type="checkbox"
                     className="form-check-input mt-0"
+                    aria-label={`${t('Rear Downforce')} — ${t('Auto')}`}
                     checked={isRearAutoAero}
                     onChange={(e) => updateParam('aero_downforce_rear', e.target.checked ? null : 50)}
                   />
@@ -503,6 +545,8 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
               <div className="d-flex align-items-center gap-1">
                 <div style={{ width: '80px' }}>
                   <DecimalInput
+                    id="step1-frontTireWidth"
+                    aria-label={t('companion.frontTireWidth')}
                     value={carParams?.frontTireWidth || 245}
                     onChange={(val) => updateParam('frontTireWidth', val ? Math.round(val) : 245)}
                     precision={0}
@@ -512,6 +556,8 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
                 <span className="text-body-secondary fs-7">/</span>
                 <div style={{ width: '60px' }}>
                   <DecimalInput
+                    id="step1-frontTireAspect"
+                    aria-label={t('companion.frontTireAspect')}
                     value={carParams?.frontTireAspect || 40}
                     onChange={(val) => updateParam('frontTireAspect', val ? Math.round(val) : 40)}
                     precision={0}
@@ -521,6 +567,8 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
                 <span className="text-body-secondary fs-7">R</span>
                 <div style={{ width: '60px' }}>
                   <DecimalInput
+                    id="step1-frontTireRim"
+                    aria-label={t('companion.frontTireRim')}
                     value={carParams?.frontTireRim || 18}
                     onChange={(val) => updateParam('frontTireRim', val ? Math.round(val) : 18)}
                     precision={0}
@@ -536,6 +584,8 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
               <div className="d-flex align-items-center gap-1">
                 <div style={{ width: '80px' }}>
                   <DecimalInput
+                    id="step1-rearTireWidth"
+                    aria-label={t('companion.rearTireWidth')}
                     value={carParams?.rearTireWidth || 245}
                     onChange={(val) => updateParam('rearTireWidth', val ? Math.round(val) : 245)}
                     precision={0}
@@ -545,6 +595,8 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
                 <span className="text-body-secondary fs-7">/</span>
                 <div style={{ width: '60px' }}>
                   <DecimalInput
+                    id="step1-rearTireAspect"
+                    aria-label={t('companion.rearTireAspect')}
                     value={carParams?.rearTireAspect || 40}
                     onChange={(val) => updateParam('rearTireAspect', val ? Math.round(val) : 40)}
                     precision={0}
@@ -554,6 +606,8 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
                 <span className="text-body-secondary fs-7">R</span>
                 <div style={{ width: '60px' }}>
                   <DecimalInput
+                    id="step1-rearTireRim"
+                    aria-label={t('companion.rearTireRim')}
                     value={carParams?.rearTireRim || 18}
                     onChange={(val) => updateParam('rearTireRim', val ? Math.round(val) : 18)}
                     precision={0}
