@@ -39,8 +39,6 @@ export function EvPowertrainStep({ enabled }: { enabled: boolean }) {
   return <section className="d-flex flex-column gap-3">
     <div className="workspace-section">
       <h3 className="workspace-section-heading workspace-panel-header">{t('EV measurement & gearing')} <span className="badge text-bg-secondary">{t('Foundation model')}</span></h3>
-      <p>{t('Record a separate full-throttle run in each fixed gear, from low RPM toward the motor limit. Do not shift during a run. Pause when finished, then calculate.')}</p>
-      <p className="small text-body-secondary mb-0">{t('This model measures power bands and RPM-to-speed relationships. It does not yet optimize launch grip, shift points or lap time.')}</p>
     </div>
     <div className="glass-panel p-3">
       <EvGearboxSetup key={carId} value={setup} disabled={recording || saving} t={t}
@@ -70,7 +68,6 @@ export function EvPowertrainStep({ enabled }: { enabled: boolean }) {
           })}</tbody>
         </table>
       </div>
-      <p className="small text-body-secondary">{t('Each gear needs 3 seconds of output data, low and high RPM coverage, and a stable low-slip straight-line speed relationship. Zero idle RPM is valid. Constant positive power is not a limiter signal.')}</p>
       <div className="d-flex flex-wrap gap-2">
         <button className="btn btn-primary" disabled={offline || !enabled || !setupValid || recording || saving}
           onClick={() => void start()}>{t(m.sampleCount ? 'Restart EV collection' : 'Start EV collection')}</button>
@@ -79,20 +76,16 @@ export function EvPowertrainStep({ enabled }: { enabled: boolean }) {
         <button className="btn btn-outline-secondary" disabled={!m.sampleCount || isSaving}
           onClick={() => void save(captureSaveRequest(m.snapshot(), 'ev-measurement.json'))}>{t('Export EV data')}</button>
       </div>
-      <p className="small text-body-secondary mt-2 mb-0">{t('EV scans stay available while switching steps during this app session. Export before restarting collection or closing the app.')}</p>
     </div>
     <div className="glass-panel p-3">
       <label className="form-label" htmlFor="ev-candidate-fd">{t('Candidate final drive')}</label>
       <input id="ev-candidate-fd" type="number" className="form-control mb-2" min="0.01" max="20" step="0.01"
         disabled={!setup?.finalDriveAdjustable || setup.finalDrive === null} placeholder={t('Unknown / not shown')}
         value={candidate ?? ''} onChange={e => setCandidate(e.target.value === '' ? null : Number(e.target.value))} />
-      <p className="small text-body-secondary">{t('A locked or unknown final drive still allows a measured baseline. A ratio preview requires a known, adjustable final drive. Locked gears are excluded from settings to apply.')}</p>
-      <p className="small text-body-secondary">{t('Keep the measured final drive for a baseline, or enter a candidate to preview the same RPM envelope at a different ratio. Confirm slider limits in game.')}</p>
       <button className="btn btn-primary" disabled={offline || !enabled || recording || m.phase === 'invalidated' || !preview}
         onClick={() => m.calculate(candidate)}>{t('Calculate EV model')}</button>
       {previewRequest.status === 'pending' && <p role="status">{t('Calculating tuning results…')}</p>}
       {previewRequest.status === 'error' && <p role="status">{t('Tuning calculation is unavailable. Retrying…')}</p>}
-      {previewRequest.status === 'ready' && !preview && <p className="small text-body-secondary mt-2">{t('Calculation needs every confirmed gear, enough RPM coverage and a stable speed relationship consistent with the entered ratios.')}</p>}
     </div>
     {result && <div className="glass-panel p-3">
       <h4 className="fs-6">{t(result.basis === 'measured-baseline' ? 'Measured EV baseline' : 'EV ratio preview')}</h4>

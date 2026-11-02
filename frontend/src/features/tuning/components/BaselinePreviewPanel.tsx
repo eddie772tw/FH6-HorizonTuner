@@ -28,8 +28,6 @@ export function BaselinePreviewPanel({ carId, profile, season, draft, showTarget
       </select></label> : <span>{t('Draft target')}: {t(draft.goal)}</span>}
       <span>{t('Stiffness')}: {t('Neutral')} · {t('Balance')}: {t('Neutral')}</span>
     </div>
-    <p className="small text-body-secondary mt-2">{t('Other stiffness and balance preferences are unavailable until a calibrated Rust contract exists.')}</p>
-    <p className="small">{t('Current values are the local applied baseline; unconfirmed game settings remain unknown. Apply keeps a local baseline only. Confirm values manually in game.')}</p>
     <p role="status">{t(draft.phase === 'cancelled' ? 'Draft cancelled. Current baseline retained.' : draft.phase === 'applied' ? 'Local baseline applied.' : 'Draft — current baseline retained.')}</p>
     {request.status !== 'ready' && <p role="status">{t(request.status === 'error' ? 'Tuning calculation is unavailable. Retrying…' : 'Calculating tuning results…')}</p>}
     {preview && <>

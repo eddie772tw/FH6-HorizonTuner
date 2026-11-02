@@ -53,19 +53,20 @@ const SuspensionBar: React.FC<SuspensionBarProps> = React.memo(({ title, isLeft,
     if (!canvas) return;
     const surface = createTelemetryCanvasSurface(canvas);
     let theme = readCanvasTheme();
-    const stopThemeObserver = observeCanvasTheme(() => { theme = readCanvasTheme(); draw(); });
+    let cachedGrad: { h: number; primary: string; danger: string; grad: CanvasGradient } | null = null;
+    const stopThemeObserver = observeCanvasTheme(() => { theme = readCanvasTheme(); cachedGrad = null; draw(); });
 
-    const drawBackground = (ctx: CanvasRenderingContext2D, w: number, h: number) => {
+    const drawBackground = (ctx: CanvasRenderingContext2D, w: number, h: number, dpr: number) => {
       ctx.clearRect(0, 0, w, h);
-      const warningH = h * 0.08;
+      const warningH = Math.round(h * 0.08);
       ctx.fillStyle = theme.warningFill;
       ctx.fillRect(0, 0, w, warningH);
       ctx.fillRect(0, h - warningH, w, warningH);
       
       ctx.beginPath();
-      ctx.setLineDash(theme.linear ? [] : [3, 3]);
+      ctx.setLineDash(theme.linear ? [] : [3 * dpr, 3 * dpr]);
       ctx.strokeStyle = theme.warningLine;
-      ctx.lineWidth = 1;
+      ctx.lineWidth = Math.max(1, Math.round(1 * dpr));
       ctx.moveTo(0, warningH); ctx.lineTo(w, warningH);
       ctx.moveTo(0, h - warningH); ctx.lineTo(w, h - warningH);
       ctx.stroke();
@@ -134,21 +135,31 @@ const SuspensionBar: React.FC<SuspensionBarProps> = React.memo(({ title, isLeft,
           const h = canvas.height;
           const dpr = window.devicePixelRatio || 1;
           
-          drawBackground(ctx, w, h);
+          ctx.save();
+          drawBackground(ctx, w, h, dpr);
 
           if (renderHistoryTrace && history.size > 0) {
             ctx.beginPath();
-            if (theme.flat) ctx.strokeStyle = theme.primary;
-            else {
-              const grad = ctx.createLinearGradient(0, 0, 0, h);
-              grad.addColorStop(0, theme.danger);
-              grad.addColorStop(0.08, theme.primary);
-              grad.addColorStop(0.92, theme.primary);
-              grad.addColorStop(1, theme.danger);
-              ctx.strokeStyle = grad;
+            if (theme.flat) {
+              ctx.strokeStyle = theme.primary;
+            } else {
+              if (!cachedGrad || cachedGrad.h !== h || cachedGrad.primary !== theme.primary || cachedGrad.danger !== theme.danger) {
+                const grad = ctx.createLinearGradient(0, 0, 0, h);
+                grad.addColorStop(0, theme.danger);
+                grad.addColorStop(0.08, theme.primary);
+                grad.addColorStop(0.92, theme.primary);
+                grad.addColorStop(1, theme.danger);
+                cachedGrad = { h, primary: theme.primary, danger: theme.danger, grad };
+              }
+              ctx.strokeStyle = cachedGrad.grad;
             }
             ctx.lineWidth = 2 * dpr;
+            ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
+            if (!theme.flat && theme.glowStrength > 0) {
+              ctx.shadowColor = theme.primary;
+              ctx.shadowBlur = theme.glowStrength * 4 * dpr;
+            }
     
             const len = history.size;
             const latestIdx = (history.offset - 1 + len) % len;
@@ -162,7 +173,9 @@ const SuspensionBar: React.FC<SuspensionBarProps> = React.memo(({ title, isLeft,
               else ctx.lineTo(x, y);
             }
             ctx.stroke();
+            ctx.shadowBlur = 0;
           }
+          ctx.restore();
         }
       }
     };

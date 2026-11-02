@@ -35,8 +35,6 @@ const DragGearingSetupContent: React.FC<DragGearingSetupProps> = ({ carParams, u
       <option value="">{t('Source (unconfirmed)')}</option>
       <option value="manual">{t('Manual record')}</option>
     </select>
-    <div className="fs-8 text-body-secondary">{t('Use a recorded finish speed from a repeatable strip test when refining Drag gearing.')}</div>
-    <div className="fs-8 text-body-secondary">{t('If the requested finish speed is outside the current gear limits, the wizard will mark Drag gearing unavailable. Clear or adjust the value.')}</div>
   </div>
   );
 };

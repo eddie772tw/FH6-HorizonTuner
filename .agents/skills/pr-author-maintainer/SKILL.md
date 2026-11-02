@@ -7,20 +7,22 @@ description: 以 PR 作者或維護者身分建立 PR、同步 PR 內文、回�
 
 本技能提供以 PR 作者或維護者（Author / Maintainer）身分進行 PR 建立、內文同步、審查回覆與標題維護之核心規範與工具鏈。
 
-## 四大核心契約 (Core Invariants)
+## 五大核心契約 (Core Invariants)
 
-1. **禁止自我斷言可合併 (No Self-Asserted Mergeability)**：
+1. **提案前查閱既有 PR 防重複 (Pre-Proposal PR Deduplication Check)**：
+   - 在鎖定修改標的或建立分支前，必須先執行 `gh pr list --state open` 查閱既有開啟中 PR，確認提案標的與改動檔案未與進行中 PR 重疊衝突，嚴禁重複提案。
+2. **禁止自我斷言可合併 (No Self-Asserted Mergeability)**：
    - 絕不在 PR 內文或留言中自我宣稱「Ready to merge」、「LGTM」或自行下定論；客觀陳述變更與驗證數據，將審核結論交由 Reviewer。
-2. **嚴格 Commit 前驗證門檻 (Strict Pre-Commit Gate)**：
+3. **嚴格 Commit 前驗證門檻 (Strict Pre-Commit Gate)**：
    - Commit 或 push 前必須 100% 通過本地檢查：
      - Rust 後端／CLI：`cargo test --locked --manifest-path backend-rust/Cargo.toml`；平台或原生功能變更另加 `--no-default-features`。
      - 前端：`cmd /c "pnpm -C frontend run test"`；UI 或打包整合變更依範圍執行 build。
      - 只有修改 Python 維護／發行工具時，才依 `.agents/rules/python-uv.md` 執行對應 Ruff 與 `scripts/tests/` 測試。不得以 Pytest 取代 Rust 產品 gate。
-3. **PR Body 活文件原則 (Living PR Body / Continuous Sync)**：
+4. **PR Body 活文件原則 (Living PR Body / Continuous Sync)**：
    - 隨著多次 commit 或重構，必須即時更新頂層 PR Body，杜絕資訊偏差。
-4. **雙軌審查與 Inline Comments 防漏盤點 (Anti-Omission Review Gate)**：
+5. **雙軌審查與 Inline Comments 防漏盤點 (Anti-Omission Review Gate)**：
    - 嚴禁僅看頂層 PR Body；必須同時盤點行內評論：`manage_pr_author.py --pr <number> --list-comments`，逐條核對處置。
-5. **跨 Agent 身分標記**：
+6. **跨 Agent 身分標記**：
    - PR Body 結尾標註 `Author / Maintainer: {代號} as {Agent}`；回覆開頭標註 `### {代號} as {Agent} response`。
 
 ---
@@ -28,9 +30,10 @@ description: 以 PR 作者或維護者身分建立 PR、同步 PR 內文、回�
 ## 工作流程路由器 (Author & Maintainer SOP)
 
 ### 流程 1：建立新 PR
-1. 完成功能開發並確認 Pre-Commit Gate 全數通過。
-2. 執行 `manage_pr_author.py --generate-template --identity "{代號} as {Agent}"` 產生 PR Body 草稿。
-3. 遵循 Conventional Commits 格式設定 PR 標題並建立 PR。PR 範本規格詳見 [references/pr_templates_and_replies.md](references/pr_templates_and_replies.md)。
+1. 執行 `gh pr list --state open` 檢閱既有開啟中 PR，確認提案標的與改動檔案無重複或衝突。
+2. 完成功能開發並確認 Pre-Commit Gate 全數通過。
+3. 執行 `manage_pr_author.py --generate-template --identity "{代號} as {Agent}"` 產生 PR Body 草稿。
+4. 遵循 Conventional Commits 格式設定 PR 標題並建立 PR。PR 範本規格詳見 [references/pr_templates_and_replies.md](references/pr_templates_and_replies.md)。
 
 ### 流程 2：PR 內文持續同步
 1. 依據最新變更編輯本地 PR Body。

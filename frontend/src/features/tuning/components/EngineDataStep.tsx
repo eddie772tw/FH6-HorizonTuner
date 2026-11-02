@@ -22,7 +22,6 @@ export function EngineDataStep({ carId, profile, engine, gearing, enabled }: {
   const calculation = engine.calculation;
   return <section className="d-flex flex-column gap-3">
     <div className="workspace-section"><h3 className="workspace-section-heading workspace-panel-header">{t('Engine data & gearing')}</h3>
-      <p className="mb-0">{t('Engine limit and peak output RPM come from measured acceleration. Missing measurements do not use an estimated redline.')}</p>
     </div>
     <EngineCalculationStatus hasObservation={Boolean(measured)} calculation={calculation} gearing={gearing} t={t} />
     {measured && calculation?.status === 'ready' && calculationStatus === 'ready' && !result?.readiness.measuredEngine && <p className="small text-body-secondary" role="status">
@@ -33,7 +32,7 @@ export function EngineDataStep({ carId, profile, engine, gearing, enabled }: {
       carParams={{ ...profile, maxHpRpm: calculation.peakPower!.rpm, maxTorqueRpm: calculation.peakTorque!.rpm, effectiveRedline: calculation.effectiveRedline }} /></div>}
     {!enabled && <p>{t('Enter the game-reported vehicle power before collecting engine data.')}</p>}
     {engine.storageError && <p role="status">{t('The observation could not be saved. Retry Continue after the error; collected frames remain available while this app session is open.')}</p>}
-    {measured ? <div className="glass-panel p-3"><p>{t('Recorded instantaneous peaks are historical observations, not the new AEGO calculation inputs.')}</p>
+    {measured ? <div className="glass-panel p-3">
       <p>{t('Measured engine limit')}: {measured.engineMaxRpm} RPM · {t('Peak power RPM')}: {Math.round(measured.observedPeakPower!.rpm)} · {t('Peak torque RPM')}: {Math.round(measured.observedPeakTorque!.rpm)}</p>
       <TireEvidencePanel evidence={result?.tireEvidence ?? null} provenance={result?.evidenceProvenance ?? null} />
       <button className="btn btn-outline-secondary" disabled={offline} onClick={() => engineMeasurement.restart(enabled)}>{t('Collect driving data again')}</button></div>

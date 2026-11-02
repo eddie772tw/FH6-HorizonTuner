@@ -8,7 +8,6 @@ import { CarParams } from '../../../context/CarParamsContext';
 import { DragGearingSetup } from './DragGearingSetup';
 import type { Season } from '../../../domain/tuning/types';
 import { DecimalInput } from '../../../components/common/DecimalInput';
-import { DriftModeGuidance } from './DriftModeGuidance';
 import { OptionalAeroInputs } from './OptionalAeroInputs';
 import { EvModeSwitch } from '../../car_params/components/EvModeSwitch';
 
@@ -81,9 +80,6 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
           <h3 className="workspace-section-heading mb-1">
             Step 1: {t('Define tuning goals & check parameters')}
           </h3>
-          <span className="text-body-secondary fs-7">
-            {t('Configure tuning objective, core powertrain specifications, and chassis geometry boundaries')}
-          </span>
         </div>
         <div className="d-flex gap-2 align-items-center">
           <button type="button" className="btn btn-outline-secondary btn-sm fw-semibold" onClick={onOpenUnitSettings}>
@@ -146,17 +142,6 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
               <option value="Rally">{t('Rally / Off-Road')}</option>
               <option value="Drag">{t('Drag')}</option>
             </select>
-            {selectedRaceGoal === 'Drift' && <DriftModeGuidance carParams={carParams} />}
-            <div className="p-2 rounded bg-body-tertiary border fs-8 text-body-secondary" style={{ lineHeight: '1.4' }}>
-              {selectedRaceGoal === 'Road' &&
-                t('Road / Circuit setting optimizes chassis roll stability, aerodynamic downforce compensation, and gear ratio continuity.')}
-              {selectedRaceGoal === 'Drift' &&
-                t('Drift baseline adapts gearing to the measured RPM band and differential settings to the driven axles.')}
-              {selectedRaceGoal === 'Rally' &&
-                t('Rally mode softens anti-roll bars and springs for max suspension travel, and increases ride height for off-road landings.')}
-              {selectedRaceGoal === 'Drag' &&
-                t('Drag baseline uses drivetrain-specific launch suspension and differential starting points; refine gearing and tire pressure with strip tests.')}
-            </div>
             {selectedRaceGoal === 'Drag' && <DragGearingSetup carParams={carParams} updateParam={updateParam} />}
           </div>
 
@@ -173,13 +158,6 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
               <option value="Spring">{t('Spring')} (+{seasonalPressure.value.toFixed(2)} {seasonalPressure.label})</option>
               <option value="Winter">{t('Winter')} (+{seasonalPressure.value.toFixed(2)} {seasonalPressure.label})</option>
             </select>
-            <div className="p-2 rounded bg-body-tertiary border fs-8 text-body-secondary" style={{ lineHeight: '1.4' }}>
-              {t(
-                measuredEngineInputs
-                  ? 'Seasonal pressure adjustments are estimates for the tire baseline. Confirm actual cold and hot pressures in game.'
-                  : 'Game season directly affects ambient temperatures and tire pressure fermentation offsets, fitting into Step 2 static setup recommendations.'
-              )}
-            </div>
           </div>
 
           {selectedRaceGoal === 'Rally' && <RallyProfileSetup value={carParams?.rallyProfile} onChange={value => updateParam('rallyProfile', value)} />}
@@ -188,7 +166,6 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
             <div className="p-2 rounded border bg-body-tertiary d-flex justify-content-between align-items-center">
               <div>
                 <div className="fs-7 fw-semibold text-primary">{t('Aero Efficiency (E)')}</div>
-                <div className="fs-8 text-body-secondary">{t('(Circuit top speed aero drag scaling)')}</div>
               </div>
               <div style={{ width: '90px' }}>
                 <DecimalInput
@@ -348,11 +325,6 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
             )}
           </div>
 
-          {measuredEngineInputs && (
-            <div className="mt-auto p-2 rounded bg-body-tertiary border fs-8 text-body-secondary" style={{ lineHeight: '1.4' }}>
-              {t('Engine limit and peak output RPM will be collected via live telemetry in Step 3. Enter only the power and torque shown in game here.')}
-            </div>
-          )}
         </div>
 
         {/* Column 3: Chassis Limits & Tires */}

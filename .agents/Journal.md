@@ -1,5 +1,24 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-10-30 / 自主排程代理陣容擴充與 Jules 委派規範正式棄用（Gemini as Antigravity）
+
+- **Scope**：更新專案合約驗證腳本 `.agents/skills/jules_coding/scripts/validate_jules_intake.py`、合約測試 `tests/test_jules_intake_contract.py`、`.jules/README.md`、`.agents/AGENTS.md`，並正式標記 `jules_coding` 為已棄用。同時初始化 `.jules/mechanic.md` 與 `.jules/vector.md`。
+- **Context & Architecture Decision**：
+  1. **Jules 外部委派機制棄用**：專案歷史上的 Google Jules 外部委派與收件流程，已全面由 Antigravity 本地自主排程代理陣容取代。原 `jules_coding` 技能標註為 Deprecated 僅保留歷史相容。
+  2. **代理陣容細化與職責分工**：
+     - `Bolt` (00:00)：極致高頻效能與 React memoization。
+     - `Palette` (01:00)：微體驗 (Micro-UX) 與無障礙 (a11y) 拋光。
+     - `Sentinel` (02:00)：漏洞防禦與敏感資料保護。
+     - `Narrator` (03:00)：多語系在地化抽取與 `lang/*.json` 對齊。
+     - `Mechanic` (04:00)：純函式底盤與齒輪比物理演算法、金標契約維持。
+     - `Vector` (05:00)：HUD 賽車儀表板與 Canvas 2D 高頻渲染（零每幀物件配置、發光順序保護）。
+  3. **階梯式改動預算模型 (Tiered LOC Budget)**：打破單一硬性 `< 50 行` 限制，改採「核心生產代碼 50~90 行 + 測試/語系字典 60~150 行 + 核心檔案 ≤ 3 個」之雙軌預算，避免代理為達標而被迫閹割單元測試。
+- **Evidence**：
+  - `validate_jules_intake.py` 納入 `mechanic` 與 `vector` 規範別名與日誌對照。
+  - `pytest tests/test_jules_intake_contract.py` 21 項測試 100% 通過。
+  - 全域 `pytest` 32 項測試 100% 通過。
+  - `ruff check` 檢查無任何違規。
+
 ## 2026-10-12 / Companion 橢圓背景與 Rhine 導覽（Codex as Codex）
 
 - **Scope**：由 main `c1e86317` 建立 `codex/issue-485-native-theme-parity`；採用 `halfmoon-design-system`、`pr-author-maintainer`、`cross-agent-collaboration`。限原生 Halfmoon background、Rhine marker／underline 與相應測試／[差異矩陣](../docs/frontend/companion-native-theme-parity/README.md)，不改 Gradle、release、CI、字型或 bridge。
@@ -936,6 +955,9 @@
 ## 2026-10-19 / 第二輪 HUD 視覺審查 PR #536（Codex as Codex）
 
 - **修正／Learning**：AP1 在前輪視覺基準上縮小 10%，保留中下位置及 DPR backing。
+## 2026-10-19 / 第二輪 HUD 視覺審查 PR #537（Codex as Codex）
+
+- **修正／Learning**：McLaren 在前輪視覺基準上縮小 25%，改為中下置中，保留面板背景。
 - **驗證界線**：先跑完整 frontend Vitest 與 build，再保存最後提交的實際 Forza 漫遊截圖與設定；靜態圖片不作為動態駕駛或跨更新率效能證據。未新增個別樣式測試。
 - **Skills**：`huge-component-refactoring`、`halfmoon-design-system`、`pr-author-maintainer`、`ponytail`。
 
@@ -956,6 +978,43 @@
 
 - 視覺審查要求下移：只將該樣式 wrapper 的 padding-bottom 從共用30px覆寫為15px；縮放與置中不變。
 - 技能：`ponytail`、`pr-author-maintainer`、`halfmoon-design-system`、`huge-component-refactoring`。基線及修改後完整前端1714 passed／1 skipped，build通過；無新增樣式測試。
+### 2026-10-19 McLaren 面板背景 75%
+
+- 使用既有載入時 artwork 處理將暗底板 alpha 設為 0.75，亮刻度、動態數字／游標、原生外框與 baseline=1.575／中下位置保留。
+- 採用技能：`ponytail`、`pr-author-maintainer`、`halfmoon-design-system`。完整前端測試與 build 於提交前驗證，日誌 round4-537；不新增樣式測試。
+
+## 2026-10-19 / 第二輪 HUD 視覺審查 PR #538（Codex as Codex）
+
+- **修正／Learning**：對照 D:/ForzaHUD/horizontuner_integration/raw_renders/dash_ford_gt_raw.png 與 docs/acceptance_screenshots/10_dash_Ford_GT.png；依使用者確認恢復左上檔位，位於 RPM 上升弧外側。
+- **驗證界線**：先跑完整 frontend Vitest 與 build，再保存最後提交的實際 Forza 漫遊截圖與設定；靜態圖片不作為動態駕駛或跨更新率效能證據。未新增個別樣式測試。
+- **Skills**：`huge-component-refactoring`、`halfmoon-design-system`、`pr-author-maintainer`、`ponytail`。
+
+
+### 2026-10-19 Ford GT 面板背景 25%
+
+- 暗底板 alpha 改 0.25，保留原生刻度、指針、亮標記與原始左上檔位位置 (33,99)。
+- 採用技能：`ponytail`、`pr-author-maintainer`、`halfmoon-design-system`。完整前端測試與 build 於提交前驗證，日誌 round4-538；不新增樣式測試。
+
+### 2026-10-19 Ford GT 四列真實遙測
+
+- 右側依序為平均胎溫°C、增壓psi、扭力N·m、馬力hp，清除舊烘焙圖示／單位，移除水溫閾值猜測與油液代理。只取有單位的別名或canonical raw欄位；缺值顯示破折號。胎溫沿用共用四輪raw°F helper與兩項共用測試。
+- 技能：`ponytail`、`pr-author-maintainer`、`halfmoon-design-system`、`huge-component-refactoring`、`telemetry-udp-protocol`。基線1809／1、修改後1811／1完整前端通過，build通過。離線95°C／12.3psi／456Nm／321hp畫面無JS錯誤；另做實機驗證，未新增樣式測試。
+
+
+## 2026-10-19 / 第二輪 HUD 視覺審查 PR #534（Codex as Codex）
+
+- **修正／Learning**：BMW 超轉僅保留固定紅光，移除會改變整體縮放的 CSS 脈動。
+- **驗證界線**：先跑完整 frontend Vitest 與 build，再保存最後提交的實際 Forza 漫遊截圖與設定；靜態圖片不作為動態駕駛或跨更新率效能證據。未新增個別樣式測試。
+- **Skills**：`huge-component-refactoring`、`halfmoon-design-system`、`pr-author-maintainer`、`ponytail`。
+
+
+### 2026-10-19 HUD 四輪平均胎溫與原始單位
+
+- 水溫表來源使用共用 `HUDCore.getAverageTireTemperatureC`，四個有限數值才成立；依 raw °F 合約固定轉 °C，不能以 125 閾值猜單位。零度仍是數值，缺資料回冷端，不加 RPM 補正。
+- 採用技能：`ponytail`、`pr-author-maintainer`、`halfmoon-design-system`、`huge-component-refactoring`、`telemetry-udp-protocol`。共用純函式涵蓋冷／熱、aliases、缺值；沒有新增個別樣式測試。
+- 修改前前端 1809 passed / 1 skipped；修改後完整前端測試與 build 於提交前驗證，詳見本機 round4-534 日誌。
+
+
 ## 2026-10-19 / WASAPI 高取樣率頻譜範圍（Codex as Codex）
 
 - **Learning**：頻譜 JSON 有完整 32 段，不代表頻段涵蓋範圍正確。實機 endpoint 為 192 kHz；將正頻率 FFT 全部配置到顯示時，右半部涵蓋約 24–96 kHz，導致一般音訊只在左側活動。同一 2 kHz 音調在舊版 44.1／96 kHz 下的峰值位置也會改變。
@@ -984,3 +1043,31 @@
 - Linux x64、Node 24.19.0、pnpm 11.19.0、Rust 1.99.1：完整 frontend 1738 passed／1 skipped；Windows 與 LAN build 通過；Cargo 預設 229 passed／2 ignored、無預設 219 passed／2 ignored；fmt 與 diff 檢查通過。全量測試依序執行，未放寬 timeout、assertion 或 skip。
 - Rust defaults、config、native audio 與 config tests 與指定 main 完全一致；本輪不代表 Windows 原生視覺驗收。
 - Skills：pr-author-maintainer、pr-review-evaluation、halfmoon-design-system。
+## 2026-10-23 / 首批 HUD display-check 與 live telemetry 交錯（Bagley as dot）
+
+- **Learning**：示範 sweep 與 live frame 不能寫入同一個狀態物件；只記最新 raw packet 也會破壞 partial update 的正規化欄位。`hud:destroy` 只清空 body，不會觸發 unload。
+- **處理**：BMW、McLaren、Ford 維護獨立的正規化 live state；動畫只寫顯示副本，正常 frame 不打斷手動 sweep，結束即還原最新 live state。重複動畫取消前一 RAF；各款式自行處理 hud:destroy/pagehide 清理與防止復活，沒有改 shared core、暫停政策、刻度或外觀。
+- **驗證**：22 項 regression 在原 head 失敗、修正後通過，含連續資料、partial updates、初始基準、resize/image-load、BMW redline、Ford 缺值與卸載。整合最新 main 44b1f526：1847 passed / 1 skipped，tsc 和 Windows-target build 通過，Chromium 實際訊息路徑通過。不代表 Windows／真遊戲驗收。
+- **Skills**：`pr-review-evaluation`、`halfmoon-design-system`、`pr-author-maintainer`。
+
+## 2026-10-23 / PNG-backed HUD 局部效果相容性（Bagley as dot）
+
+- **Learning**：VFD motion 是 canonical G-force translate/blur，與 glow 或 physics spring 不同；三款 compositor 的 PNG 色條不能全畫面 hue-shift。獨立 nested motion wrapper 避免覆寫 BMW redline filter 與 HUDCore zoom。
+- **處理**：三款 opt-in artwork-effects，重用既有色彩、glow 與 motion 設定；只變程序 accent，保留白色讀值／素材／語意警告。VFD 原 3.5px blur 在 Ford 小字明顯失讀，compact helper 降為 0.75px；VFD 本身不變。無新 RAF。另裁切 Ford RPM lit PNG 排除重新標示的輔助區，避免高轉時舊圖示污染；destroy 後 render/image callback 立即退出。
+- **驗證**：預設畫面對原 head pixel hash 相同（中轉基準）；18 組尺寸/DPR 高 G/reset/redline 共存通過，3 款 combined sweep/config 測試通過；原 Ford 輔助區隨 RPM 變動，修正後穩定。完整前端1850 passed/1 skipped、tsc、Windows-target build 通過；原生 Windows/真遊戲未測。720S/Ford 向量小原型未達像素保真，不進產品。
+- **Skills**：`pr-review-evaluation`、`halfmoon-design-system`、`pr-author-maintainer`、`huge-component-refactoring`、`modular-refactoring`。
+
+## 2026-10-26 / Dependabot 的 pnpm workspace 根目錄契約（Aster as Codex）
+
+- **根因**：前端 manifest 位於 `frontend/package.json`，但 `pnpm-workspace.yaml` 與共用鎖檔位於根目錄。從 `/frontend` 執行 updater 會產生 `misconfigured_tooling`，只改為 `/` 又會因缺少根 `package.json` 產生 `dependency_file_not_found`；須一併修正入口與 workspace manifest。
+- **處理**：新增無依賴的 private 根 manifest，使用 `packageManager: pnpm@11.27.0` 與 CI 對齊；npm 更新統一由 `/` 讀取，前端 manifest 由既有 workspace packages 發現。鎖檔僅新增空的根 importer，現有依賴解析未變。移除 npm 區塊的冗餘 `target-branch: main`，讓設定適用於預設分支的安全更新；移除兩個不存在的 label 引用。
+- **歷史界線**：2026-09-30 日誌中建議 `/frontend` 的路徑屬當時判斷；目前共享 pnpm workspace 必須從根目錄更新，不能沿用該舊建議推論現行入口。
+- **本地驗證**：Node 24.19.0／pnpm 11.27.0；frozen install 可辨識兩個 workspace projects，audit 各級 0；完整前端 1850 passed／1 個既有 skipped，Windows／LAN production build 與 diff-check 通過。GitHub 原生更新 job 與精確 main CI 的結果須在推送後另行核對，不以靜態 YAML 字串測試替代 updater 行為。
+- **Skills**：`github-security-audit`、`ponytail`。未修改產品程式、runtime 或任何依賴解析版本。
+
+## 2026-10-29 / Dependabot #26 的 Tauri updater 間接 ZIP 依賴（Aster as Codex）
+
+- **根因**：`frontend/src-tauri/Cargo.lock` 的 `zip 4.6.1` 由 `tauri-plugin-updater 2.14.0` 的 `zip ^4` 引入；直接執行 `cargo update -p zip --precise 9.0.5` 可重現 SemVer 衝突。後端的獨立鎖檔已使用 `zip 9.0.5`，不能據此推定桌面鎖檔已修復。
+- **處理**：採用官方穩定版 `tauri-plugin-updater 2.14.1`（MIT／Apache-2.0，MSRV 1.90），提高 manifest 最低版本並定向更新鎖檔；`cargo tree --locked --target all -i zip` 確認桌面僅解析 `zip 9.1.3`，高於 GHSA-m665-v7pm-7grj 的受影響範圍 `<=9.0.4`。不使用 fork、patch 或 dismissed 取代修復。
+- **驗證界線**：frozen install、前端 1850 passed／1 個既有 skipped、Windows-target production build 與 Rust 格式檢查通過；Cargo、Windows／Linux CI 打包與精確 PR head 檢查另見 PR 驗證紀錄。安全警報須待修復進入預設分支後由 GitHub 更新，PR 通過不代表正式 OTA 或實機升級驗收。
+- **Skills**：`github-security-audit`、`pr-author-maintainer`、`pr-review-evaluation`、`ponytail`。

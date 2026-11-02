@@ -6,7 +6,7 @@
 
 1. 以 `.agents/skills/<directory>/SKILL.md` 的資料夾名稱作為 canonical skill ID；不要從舊日誌或非現存名稱推測技能名稱。
 2. 依任務需求從 [`.agents/skills/README.md`](skills/README.md) 比對觸發條件，僅完整讀取被選取的 `SKILL.md`，再依該技能指示讀取其特定 references；嚴禁在無關任務中預先通讀所有規則或歷史日誌。
-3. 若修改 UI、巨型元件、物理公式、UDP 協定、模組架構或執行 Jules 委派，必須在任務紀錄中列出實際採用的 skill ID。
+3. 若修改 UI、巨型元件、物理公式、UDP 協定或模組架構，必須在任務紀錄中列出實際採用的 skill ID（Jules 外部委派機制已全面由 Antigravity 本地自主排程代理接管並棄用）。
 4. 任務結束時檢查技能名稱、文件路徑與驗證命令是否仍然有效；發現命名不一致時先修正索引與 frontmatter。
 
 完整技能清單、canonical ID 與觸發條件統一維護於 [`.agents/skills/README.md`](skills/README.md)，本文件不另列副本。
@@ -54,6 +54,7 @@ Agent 文件、技能說明、工作日誌與規範內容以繁體中文為主�
 ## 開發邊界限制與有條件授權 (Boundary Guardrails & Bounded Authorizations)
 
 * **必須做的事 (Mandatory Practices)**：
+  - **提案前查閱既有 PR 防重複 (Pre-Proposal PR Deduplication)**：自主代理或開發者在鎖定優化/修復標的與建立新分支前，必須先執行 `gh pr list --state open`（以及可檢閱近期 PR）查閱所有開啟中之 Pull Request，確認提案標的與改動檔案未與進行中 PR 重疊衝突，避免重複提案與 Merge Conflict。
   - 遵循變更範圍分流驗證：修改前端/物理執行前端測試，修改後端執行後端測試。
   - 前端 UI 開發或變更時，必須遵循 [ui-architecture.md](rules/ui-architecture.md) 與 [halfmoon-design-system](skills/halfmoon-design-system/SKILL.md)。
   - 任務結束後若發現具體且可重現的架構學習點，登錄至 [Journal.md](Journal.md)。

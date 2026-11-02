@@ -75,12 +75,18 @@ export function AppShell({ variant, workspaces, Runtime, prepareSession }: {
     setSurface(requested);
   }, []);
   const closeSurface = useCallback(() => setSurface(null), []);
+  const handleSkipToContent = () => {
+    const main = document.getElementById('main-content');
+    if (main) main.focus();
+  };
   const Workspace = workspaces[resolveWorkspace(variant, activeWorkspace)];
   return <div className="app-shell d-flex flex-column vh-100" style={{ background: 'var(--bg-gradient)', color: 'var(--text-primary)' }}>
+    <a href="#main-content" className="skip-to-content visually-hidden-focusable btn btn-primary position-absolute top-0 start-0 m-2"
+      style={{ zIndex: 2000 }} onClick={handleSkipToContent}>{t('Skip to main content')}</a>
     <AppRuntime activeWorkspace={activeWorkspace} />
     <AppHeader variant={variant} activeWorkspace={activeWorkspace} onSelect={selectWorkspace} onOpenSurface={openSurface} />
     {Runtime && <Runtime activeWorkspace={activeWorkspace} onOpenSessions={openSessions} />}
-    <main className="d-flex flex-column flex-grow-1 overflow-hidden p-3" style={{ minHeight: 0 }} data-workspace={activeWorkspace}>
+    <main id="main-content" tabIndex={-1} className="d-flex flex-column flex-grow-1 overflow-hidden p-3" style={{ minHeight: 0, outline: 'none' }} data-workspace={activeWorkspace}>
       <Suspense fallback={<div role="status" className="p-3">{t('Loading...')}</div>}>
         {Workspace && <Workspace variant={variant} onOpenSessions={openSessions} onOpenTune={() => selectWorkspace('tune')} />}
       </Suspense>
@@ -94,7 +100,7 @@ export function AppShell({ variant, workspaces, Runtime, prepareSession }: {
       </div>
     </div>}
     {surface === 'settings' && <AppDialog className="app-dialog--settings" title="Settings" onClose={closeSurface}><SettingsView allowDeveloperTuning={getAppCapabilities(variant).developerTuning} /></AppDialog>}
-    {surface === 'companion' && <AppDialog className="app-dialog--companion" title={t('Companion App')} onClose={closeSurface}><CompanionSettingsCard /></AppDialog>}
+    {surface === 'companion' && <AppDialog className="app-dialog--companion" title="Companion App" onClose={closeSurface}><CompanionSettingsCard /></AppDialog>}
     {surface === 'mcp' && <AppDialog className="app-dialog--mcp" title="MCP" onClose={closeSurface}><McpSettingsCard /></AppDialog>}
     {surface === 'about' && <AppDialog className="app-dialog--about" title="About" onClose={closeSurface}><AppAbout variant={variant} /></AppDialog>}
     <DiagnosticConsole show={surface === 'diagnostics'} onClose={closeSurface} />
