@@ -409,7 +409,7 @@ fn drag_rejects_original_invalid_inputs_before_gearing_fallbacks() {
     }
 }
 
-
+#[test]
 #[test]
 fn chassis_boundary_singular_protection_and_spring_inversion() {
     let inverted_params = TuningCarParams {
