@@ -1582,5 +1582,11 @@
   "Requires an active drag run with collected points to calculate.": "計算するには、有効な計測データを含むドラッグ走行が必要です。",
   "Companion App": "コンパニオンアプリ",
   "Skip to main content": "メインコンテンツへスキップ",
-  "Loading...": "読み込み中..."
+  "Loading...": "読み込み中...",
+  "Front tire width (mm)": "フロントタイヤ幅 (mm)",
+  "Front tire aspect (%)": "フロントタイヤ扁平率 (%)",
+  "Front rim (in)": "フロントリム (in)",
+  "Rear tire width (mm)": "リアタイヤ幅 (mm)",
+  "Rear tire aspect (%)": "リアタイヤ扁平率 (%)",
+  "Rear rim (in)": "リアリム (in)"
 }

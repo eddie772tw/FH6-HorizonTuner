@@ -546,7 +546,7 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
                 <div style={{ width: '80px' }}>
                   <DecimalInput
                     id="step1-frontTireWidth"
-                    aria-label={t('companion.frontTireWidth')}
+                    aria-label={t('Front tire width (mm)')}
                     value={carParams?.frontTireWidth || 245}
                     onChange={(val) => updateParam('frontTireWidth', val ? Math.round(val) : 245)}
                     precision={0}
@@ -557,7 +557,7 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
                 <div style={{ width: '60px' }}>
                   <DecimalInput
                     id="step1-frontTireAspect"
-                    aria-label={t('companion.frontTireAspect')}
+                    aria-label={t('Front tire aspect (%)')}
                     value={carParams?.frontTireAspect || 40}
                     onChange={(val) => updateParam('frontTireAspect', val ? Math.round(val) : 40)}
                     precision={0}
@@ -568,7 +568,7 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
                 <div style={{ width: '60px' }}>
                   <DecimalInput
                     id="step1-frontTireRim"
-                    aria-label={t('companion.frontTireRim')}
+                    aria-label={t('Front rim (in)')}
                     value={carParams?.frontTireRim || 18}
                     onChange={(val) => updateParam('frontTireRim', val ? Math.round(val) : 18)}
                     precision={0}
@@ -585,7 +585,7 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
                 <div style={{ width: '80px' }}>
                   <DecimalInput
                     id="step1-rearTireWidth"
-                    aria-label={t('companion.rearTireWidth')}
+                    aria-label={t('Rear tire width (mm)')}
                     value={carParams?.rearTireWidth || 245}
                     onChange={(val) => updateParam('rearTireWidth', val ? Math.round(val) : 245)}
                     precision={0}
@@ -596,7 +596,7 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
                 <div style={{ width: '60px' }}>
                   <DecimalInput
                     id="step1-rearTireAspect"
-                    aria-label={t('companion.rearTireAspect')}
+                    aria-label={t('Rear tire aspect (%)')}
                     value={carParams?.rearTireAspect || 40}
                     onChange={(val) => updateParam('rearTireAspect', val ? Math.round(val) : 40)}
                     precision={0}
@@ -607,7 +607,7 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
                 <div style={{ width: '60px' }}>
                   <DecimalInput
                     id="step1-rearTireRim"
-                    aria-label={t('companion.rearTireRim')}
+                    aria-label={t('Rear rim (in)')}
                     value={carParams?.rearTireRim || 18}
                     onChange={(val) => updateParam('rearTireRim', val ? Math.round(val) : 18)}
                     precision={0}

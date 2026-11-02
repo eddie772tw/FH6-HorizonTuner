@@ -1052,3 +1052,5 @@
 - **處理**：追蹤實際輸入事件，未編輯離焦不 emit；聚焦顯示原始數值。原生 min/max 與說明關聯透傳，Step1 單欄及前後軸範圍補齊名稱。顯示 precision 仍不等於遊戲刻度，不推測未知車型／配件格點。
 - **驗證界線**：DOM 回歸涵蓋四模式名稱、限制、清空／Enter 與單位顯示往返；真實遊戲公英制刻度、Windows 原生鍵盤及讀屏驗收留在 #593。
 - **Skills**：`halfmoon-design-system`、`pr-author-maintainer`。
+
+- **#593 複查補充**：`SettingsContext.t` 在 en-us 直接回傳來源文字；Companion 的內部鍵名不能直接拿到 Step1 當 accessible name。輪胎名稱改用可讀來源文字，並以真正 SettingsProvider 及三份語系字典驗證，不能只檢查 aria-label 非空。
