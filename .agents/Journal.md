@@ -1099,3 +1099,9 @@
 - **Skills**：`halfmoon-design-system`、`pr-author-maintainer`。
 
 - **#593 複查補充**：`SettingsContext.t` 在 en-us 直接回傳來源文字；Companion 的內部鍵名不能直接拿到 Step1 當 accessible name。輪胎名稱改用可讀來源文字，並以真正 SettingsProvider 及三份語系字典驗證，不能只檢查 aria-label 非空。
+
+## 2026-11-03 / Canvas 狀態還原的行為驗證（Jonas as  Codex）
+
+- **Learning**：save／restore 呼叫次數相等不能證明樣式隔離。測試 context 必須真正保存與還原樣式及 line dash；繪製後的 lineCap／lineJoin 應回到原狀，不能期待仍是 renderer 使用的 round。
+- **驗證界線**：PedalTraceCanvas 的有光暈／扁平主題均檢查同步 resize、telemetry 更新與卸載後狀態；暫停 mock 的樣式還原可讓兩項測試失敗。這是狀態契約與生命週期 smoke，不能代替真實 Canvas 畫面、讀屏或遊戲效能驗收。
+- **Skills**：`huge-component-refactoring`、`halfmoon-design-system`、`pr-author-maintainer`、`pr-review-evaluation`、`cross-agent-collaboration`、`ponytail`。
