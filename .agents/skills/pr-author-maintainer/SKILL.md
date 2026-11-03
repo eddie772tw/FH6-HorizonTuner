@@ -22,8 +22,9 @@ description: 以 PR 作者或維護者身分建立 PR、同步 PR 內文、回�
    - 隨著多次 commit 或重構，必須即時更新頂層 PR Body，杜絕資訊偏差。
 5. **雙軌審查與 Inline Comments 防漏盤點 (Anti-Omission Review Gate)**：
    - 嚴禁僅看頂層 PR Body；必須同時盤點行內評論：`manage_pr_author.py --pr <number> --list-comments`，逐條核對處置。
-6. **跨 Agent 身分標記**：
+6. **跨 Agent 身分標記與標題純淨性**：
    - PR Body 結尾標註 `Author / Maintainer: {代號} as {Agent}`；回覆開頭標註 `### {代號} as {Agent} response`。
+   - **PR 標題純淨性**：PR 標題嚴格遵守 Conventional Commits，嚴禁出現 `[{代號} as {Agent}]` 或任何身分標籤後綴；身分標記僅限於 PR 內文結尾。
 
 ---
 
@@ -33,7 +34,7 @@ description: 以 PR 作者或維護者身分建立 PR、同步 PR 內文、回�
 1. 執行 `gh pr list --state open` 檢閱既有開啟中 PR，確認提案標的與改動檔案無重複或衝突。
 2. 完成功能開發並確認 Pre-Commit Gate 全數通過。
 3. 執行 `manage_pr_author.py --generate-template --identity "{代號} as {Agent}"` 產生 PR Body 草稿。
-4. 遵循 Conventional Commits 格式設定 PR 標題並建立 PR。PR 範本規格詳見 [references/pr_templates_and_replies.md](references/pr_templates_and_replies.md)。
+4. 遵循 Conventional Commits 格式設定 PR 標題並建立 PR（嚴禁在 PR 標題添加身分後綴；署名置於 PR Body 結尾）。PR 範本規格詳見 [references/pr_templates_and_replies.md](references/pr_templates_and_replies.md)。
 
 ### 流程 2：PR 內文持續同步
 1. 依據最新變更編輯本地 PR Body。

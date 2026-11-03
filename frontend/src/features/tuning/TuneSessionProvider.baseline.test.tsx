@@ -74,7 +74,7 @@ const editNumber = async (label: string, value: number) => act(async () => {
   element.dispatchEvent(new Event('input', { bubbles: true }));
 });
 beforeEach(() => {
-  Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true }); localStorage.clear(); model.data = null;
+  Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true }); localStorage.clear(); model.data = null; model.saveCarParams = async () => {};
   host = document.createElement('div'); root = createRoot(host); pending = [];
   vi.mocked(backendFetch).mockImplementation((_path, options) => new Promise(resolve => pending.push({ input: JSON.parse(options!.body as string), resolve })));
 });
@@ -228,4 +228,86 @@ it('keeps Drag through parameter edits and initial identity hydration, but reset
   expect(session.baseline.goal).toBe('Road');
   expect(session.baseline.fields).toEqual({});
   expect(host.querySelector('#rally-profile')).toBeNull();
+});
+
+// Synthetic transport validates submission/navigation, not Rust numerical calibration.
+const settleWorkflow = async (goal: string) => {
+  const matches = pending.filter(item => item.input.goal === goal && item.input.inputSnapshot.baselineCurrent == null);
+  const item = matches[matches.length - 1]!;
+  await act(async () => item.resolve({ ok: true, json: async () => ({
+    schemaVersion: 'tuning-workflow-result/v2', chassis: null, alignment: null, gearing: null,
+    readiness: { mechanical: true, engineInputs: true, measuredEngine: false, gearingAvailable: false },
+    baselinePreview: preview(goal),
+  }) } as Response));
+};
+
+it.each(['Rally', 'Drift', 'Drag'])('requires applying or cancelling %s before any forward navigation', async goal => {
+  await act(async () => root.render(<Harness />));
+  await settleWorkflow('Road');
+  await select('#tuning-draft-goal', goal);
+  await settle(latestPreview(goal));
+  expect(host.querySelector('#tuning-target-status')!.textContent).toContain('Applied target: Road');
+  expect(host.querySelector('#tuning-target-status')!.textContent).toContain('Draft target: ' + goal);
+  for (const label of ['Next', 'Save & Proceed >']) {
+    expect(button(label).disabled).toBe(true);
+    await act(async () => button(label).click());
+    expect(session.workflow.step).toBe(1);
+  }
+  for (const tab of host.querySelectorAll<HTMLButtonElement>('.tuning-workflow__steps button')) {
+    if (tab.textContent!.startsWith('1.')) continue;
+    expect(tab.disabled).toBe(true);
+    await act(async () => tab.click());
+    expect(session.workflow.step).toBe(1);
+  }
+  await act(async () => button('Measure or reuse engine data').click());
+  expect(session.workflow.step).toBe(1);
+  expect(session.workflow.goal).toBe('Road');
+  await act(async () => button('Apply local baseline').click());
+  expect(session.workflow.goal).toBe(goal);
+  const requests = pending.filter(item => item.input.inputSnapshot.baselineCurrent == null);
+  const official = requests[requests.length - 1]!;
+  expect(official.input.goal).toBe(goal);
+  expect(official.input.inputSnapshot.goal).toBe(goal);
+  await settleWorkflow(goal);
+  expect(button('Next').disabled).toBe(false);
+  await act(async () => button('Next').click());
+  expect(session.workflow.step).toBe(2);
+});
+
+it('retains an applied Rally target when cancelling a Drag draft and allows going back to edit', async () => {
+  await act(async () => root.render(<Harness />));
+  await settleWorkflow('Road');
+  await select('#tuning-draft-goal', 'Rally');
+  await settle(latestPreview('Rally'));
+  await act(async () => button('Apply local baseline').click());
+  const fields = session.baseline.fields;
+  await settleWorkflow('Rally');
+  await act(async () => button('Next').click());
+  await select('[aria-label="Neutral baseline preview"] select', 'Drag');
+  expect(button('Next').disabled).toBe(true);
+  await act(async () => button('Previous').click());
+  expect(session.workflow.step).toBe(1);
+  expect(session.baseline.goal).toBe('Drag');
+  const latePreview = latestPreview('Drag');
+  await act(async () => button('Keep applied target').click());
+  await settle(latePreview);
+  expect(session.baseline.goal).toBe('Rally');
+  expect(session.workflow.goal).toBe('Rally');
+  expect(session.baseline.fields).toEqual(fields);
+  expect(button('Save & Proceed >').disabled).toBe(false);
+  await act(async () => button('Save & Proceed >').click());
+  expect(session.workflow.step).toBe(2);
+});
+
+it('does not leave Step1 if a different target is drafted while saving parameters', async () => {
+  let finish!: () => void;
+  model.saveCarParams = () => new Promise<void>(resolve => { finish = resolve; });
+  await act(async () => root.render(<Harness />));
+  await settleWorkflow('Road');
+  await act(async () => button('Save & Proceed >').click());
+  await select('#tuning-draft-goal', 'Rally');
+  await act(async () => finish());
+  expect(session.workflow.step).toBe(1);
+  expect(session.workflow.goal).toBe('Road');
+  model.saveCarParams = async () => {};
 });

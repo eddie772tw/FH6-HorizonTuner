@@ -757,3 +757,128 @@ fn road_model_versions_validate_with_their_own_owner_and_do_not_rewrite_history(
         .verify_recommendation(&current, None)
         .unwrap();
 }
+
+#[test]
+fn ratio_balance_replays_authoritative_base_and_rejects_tampering() {
+    let temp = tempfile::tempdir().unwrap();
+    let app = App::new(temp.path()).unwrap();
+    save_engine(&app);
+    let mut request = saved_request();
+    request["schemaVersion"] = json!("tuning-workflow-result/v2");
+    let original = call(&app, "/api/tuning/workflow", request.clone()).unwrap();
+    request["inputSnapshot"]["ratioBalance"] = json!({"schemaVersion":"ratio-balance/v1",
+        "bounds":{"source":"user-observed","finalDrive":{"min":1.0,"max":10.0,"step":0.01},
+        "gears":vec![json!({"min":0.01,"max":20.0,"step":0.01});6]}});
+    let preview = call(&app, "/api/tuning/workflow", request.clone()).unwrap();
+    assert_eq!(preview["ratioBalance"]["status"], "available");
+    assert_eq!(preview["gearing"], original["gearing"]);
+    let fd = preview["ratioBalance"]["legalFinalDrives"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|fd| **fd != original["gearing"]["finalDrive"])
+        .unwrap()
+        .clone();
+    request["inputSnapshot"]["ratioBalance"]["candidateFinalDrive"] = fd;
+    let adjusted = call(&app, "/api/tuning/workflow", request.clone()).unwrap();
+    assert_eq!(adjusted["ratioBalance"]["base"], original["gearing"]);
+    assert_ne!(adjusted["gearing"], original["gearing"]);
+    let rec = &adjusted["recommendation"];
+    let saved = call(
+        &app,
+        "/api/road/workflows",
+        json!({"identity":{"ordinal":1435,"performanceIndex":400,"drivetrain":2},"carName":"Beetle","event":{"name":"Ratio balance","format":"circuit"},"recommendation":rec}),
+    ).unwrap();
+    assert_eq!(
+        rec["fields"]["gearing.finalDrive"]["value"],
+        adjusted["gearing"]["finalDrive"]
+    );
+    assert_eq!(
+        rec["fields"]["gearing.gear1"]["value"],
+        adjusted["gearing"]["gears"][0]
+    );
+    call(
+        &app,
+        "/api/road/compatibility",
+        json!({"discipline":"Drag","recommendation":rec}),
+    )
+    .unwrap();
+    let recovered = App::new(temp.path()).unwrap();
+    let response = recovered
+        .request(ApiRequest {
+            method: "GET".into(),
+            path: "/api/road/workflows".into(),
+            query: Default::default(),
+            headers: Default::default(),
+            body: vec![],
+            upload_filename: None,
+        })
+        .unwrap();
+    let workflows: Value = serde_json::from_slice(&response.body).unwrap();
+    let restored = workflows
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|w| w["id"] == saved["id"])
+        .unwrap();
+    assert_eq!(restored["recommendation"], *rec);
+    assert_eq!(
+        call(&recovered, "/api/tuning/workflow", request.clone()).unwrap(),
+        adjusted
+    );
+    call(
+        &recovered,
+        "/api/road/compatibility",
+        json!({"discipline":"Drag","recommendation":rec}),
+    )
+    .unwrap();
+    for (path, value) in [
+        (
+            "/inputSnapshot/ratioBalance/candidateFinalDrive",
+            json!(3.501),
+        ),
+        (
+            "/inputSnapshot/ratioBalance/bounds/source",
+            json!("server-verified"),
+        ),
+        (
+            "/inputSnapshot/ratioBalance/bounds/finalDrive/max",
+            json!(0.1),
+        ),
+        (
+            "/inputSnapshot/profile/adjustability/gearbox",
+            json!("FinalDrive"),
+        ),
+        ("/fields/gearing.finalDrive/value", json!(9.99)),
+    ] {
+        let mut forged = rec.clone();
+        *forged.pointer_mut(path).unwrap() = value;
+        assert!(
+            call(
+                &recovered,
+                "/api/road/compatibility",
+                json!({"discipline":"Drag","recommendation":forged})
+            )
+            .is_err(),
+            "{path}"
+        );
+    }
+    let mut forged = rec.clone();
+    forged["inputSnapshot"]["ratioBalance"]["base"] = json!({"finalDrive":4,"gears":[4,3,2,1]});
+    assert!(call(
+        &recovered,
+        "/api/road/compatibility",
+        json!({"discipline":"Drag","recommendation":forged})
+    )
+    .is_err());
+    request["inputSnapshot"]["ratioBalance"]
+        .as_object_mut()
+        .unwrap()
+        .remove("candidateFinalDrive");
+    let reset = call(&recovered, "/api/tuning/workflow", request.clone()).unwrap();
+    assert_eq!(reset["gearing"], original["gearing"]);
+    request["evidence"] = Value::Null;
+    let invalidated = call(&recovered, "/api/tuning/workflow", request).unwrap();
+    assert!(invalidated["recommendation"].is_null());
+    assert_eq!(invalidated["ratioBalance"]["status"], "unavailable");
+}
