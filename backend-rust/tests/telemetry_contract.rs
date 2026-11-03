@@ -1263,7 +1263,6 @@ fn test_motec_ld_edge_cases_and_beacon_robustness() {
     assert!(xml_empty.contains("<String Id=\"Total Laps\" Value=\"0\"/>"));
 }
 
-
 #[test]
 fn test_parse_packet_preallocation_and_array_parity() {
     let mut packet = vec![0u8; 324];
@@ -1280,9 +1279,15 @@ fn test_parse_packet_preallocation_and_array_parity() {
         let obj = parsed.as_object().expect("parsed should be an object");
         assert_eq!(obj.get("IsRaceOn").and_then(Value::as_i64), Some(1));
         assert_eq!(obj.get("TimestampMS").and_then(Value::as_u64), Some(12345));
-        assert_eq!(obj.get("CurrentEngineRpm").and_then(Value::as_f64), Some(6500.0));
+        assert_eq!(
+            obj.get("CurrentEngineRpm").and_then(Value::as_f64),
+            Some(6500.0)
+        );
 
-        let susp = obj.get("NormalizedSuspensionTravel").and_then(Value::as_array).unwrap();
+        let susp = obj
+            .get("NormalizedSuspensionTravel")
+            .and_then(Value::as_array)
+            .unwrap();
         assert_eq!(susp.len(), 4);
         assert!((susp[0].as_f64().unwrap() - 0.45).abs() < 1e-5);
         assert!((susp[1].as_f64().unwrap() - 0.46).abs() < 1e-5);
