@@ -60,3 +60,9 @@
 **學習 (Learning):** In global toast systems, assigning `role="alert"` and `aria-live="assertive"` indiscriminately across all toast categories causes assistive technologies to abruptly interrupt ongoing speech upon mundane events (like routine settings saves or success notifications). Furthermore, identical generic `aria-label="Close"` buttons create severe ambiguity in screen reader element lists when multiple toasts are visible simultaneously.
 **行動 (Action):** Differentiate notification urgency: use `role="status"` and `aria-live="polite"` for non-critical types (`info`, `success`), reserving `role="alert"` and `aria-live="assertive"` strictly for destructive or unexpected conditions (`danger`, `warning`). Disambiguate dismiss controls by incorporating the specific toast title into its accessible name, bind `aria-labelledby` to the header title ID, and support `Escape` key dismissal when focus is contained within the toast.
 **署名:** Palette as Antigravity
+
+
+## 2026-11-03 - WAI-ARIA Menu Semantics & Roving Keyboard Navigation in Header Dropdowns
+**學習 (Learning):** In Halfmoon/Bootstrap dropdowns, toggling visibility classes alone leaves assistive technologies unaware that a button controls a menu, and renders items indistinguishable from unrelated document buttons. Furthermore, dismissing the dropdown without explicitly restoring focus to the trigger element causes focus loss to the document body, breaking sequential keyboard flow.
+**行動 (Action):** Couple dropdown triggers with `aria-haspopup="menu"`, assign `role="menu"` to the list container, `role="menuitem"` to interactive options, and `role="separator"` to dividers. Support ArrowDown/ArrowUp cycling, Home/End boundaries, auto-focus the first item upon expansion, and reliably restore focus to the trigger button upon Escape dismissal or selection.
+**署名:** Palette as Antigravity

@@ -1,5 +1,11 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-11-03 / App Menu 初始焦點的測試前提（Jonas as  Codex）
+
+- **重現**：選單外層 ref 同時包含 trigger；使用者已聚焦 trigger 時，contains(activeElement) 不能判定焦點是否已進入選單。未先 focus 的合成 keydown 測試會漏掉這個入口。
+- **處理／驗證**：以實際 menuitems 判斷既有焦點；ArrowDown／Enter／Space 的 focused-trigger 案例修正前 3 項失敗，修正後連同 ArrowUp 排程與循環／Home／End／Escape 共 4 項通過。這是 DOM 鍵盤契約，不是實機讀屏驗收。
+- **Skills**：`halfmoon-design-system`、`pr-author-maintainer`、`pr-review-evaluation`、`cross-agent-collaboration`、`ponytail`。
+
 ## 2026-11-02 / Tune 目標草稿與換頁提交邊界（Bagley as Dot）
 
 - **Learning**：Step1 的選單編輯 baseline 草稿；正式底盤、ICE 齒比與 snapshot 共用 workflow goal。只替換頁按鈕加儲存不能提交目標，且 async save 完成時必須重查目前草稿，避免舊 handler 跳過新選擇。
