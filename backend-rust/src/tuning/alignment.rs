@@ -31,9 +31,6 @@ pub struct StaticAlignment {
 fn positive(v: Option<f64>, default: f64) -> f64 {
     v.filter(|v| v.is_finite() && *v > 0.0).unwrap_or(default)
 }
-fn nonzero(v: Option<f64>, default: f64) -> f64 {
-    v.filter(|v| v.is_finite() && *v != 0.0).unwrap_or(default)
-}
 fn r1(v: f64) -> f64 {
     (v * 10.0 + 0.5).floor() / 10.0
 }
@@ -62,17 +59,22 @@ pub fn calculate_static_alignment(
     p: &TuningCarParams,
 ) -> StaticAlignment {
     let mass = positive(p.weight, 1350.0);
-    let wf = positive(p.weight_distribution, 54.0) / 100.0;
+    let wf = p
+        .weight_distribution
+        .filter(|v| v.is_finite())
+        .unwrap_or(54.0)
+        .clamp(1.0, 99.0)
+        / 100.0;
     let wr = 1.0 - wf;
     let drive = p
         .drivetrain
         .as_deref()
         .filter(|s| !s.is_empty())
         .unwrap_or("AWD");
-    let fw = nonzero(p.front_tire_width, 245.0);
-    let rw = nonzero(p.rear_tire_width, 275.0);
-    let hw_f = r1(fw * (nonzero(p.front_tire_aspect, 40.0) / 100.0));
-    let hw_r = r1(rw * (nonzero(p.rear_tire_aspect, 35.0) / 100.0));
+    let fw = positive(p.front_tire_width, 245.0);
+    let rw = positive(p.rear_tire_width, 275.0);
+    let hw_f = r1(fw * (positive(p.front_tire_aspect, 40.0) / 100.0));
+    let hw_r = r1(rw * (positive(p.rear_tire_aspect, 35.0) / 100.0));
     let bias = if matches!(season, Season::Spring | Season::Winter) {
         0.5
     } else {
@@ -130,8 +132,8 @@ pub fn calculate_static_alignment(
         }
     };
     StaticAlignment {
-        pc_f: r1(pc_f),
-        pc_r: r1(pc_r),
+        pc_f: r1(pc_f.clamp(15.0, 55.0)),
+        pc_r: r1(pc_r.clamp(15.0, 55.0)),
         target_phot: hot,
         season_bias: bias,
         camber: Axle {
