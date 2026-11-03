@@ -59,5 +59,5 @@ Agent 文件、技能說明、工作日誌與規範內容以繁體中文為主�
 - 作為 Reviewer 審查他人 PR 狀態、CI 與提出 Review / Inline Comments 時使用 `pr-review-evaluation`。
 - 作為 Author 撰寫 PR、持續同步 PR Body、Pre-Commit 測試、標題穩定性與回覆 Reviewer 時使用 `pr-author-maintainer`。
 - 手動 Jules 委派與排程 Jules 產出收件均使用 `jules_coding`；排程來源先依 Session 開頭 prompt、persona signature、task/PR 證據分類，不得把推論當成正式 schedule flag。
-- 所有 PR 審查與作者留言均須標註 `{代號} as {Agent}` 身分標記以利共用 GitHub 帳號時之識別。
+- 所有 PR 審查、PR 內文結尾與作者留言均須標註 `{代號} as {Agent}` 身分標記；PR 標題必須保持純淨 Conventional Commits，嚴禁附加身分後綴。
 - 收集、審查或修復 GitHub 自主檢測的安全警報與弱點時使用 `github-security-audit`。

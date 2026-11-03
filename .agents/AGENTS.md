@@ -11,7 +11,7 @@
 
 完整技能清單、canonical ID 與觸發條件統一維護於 [`.agents/skills/README.md`](skills/README.md)，本文件不另列副本。
 
-Agent 文件、技能說明、工作日誌與規範內容以繁體中文為主。只有技能 ID、檔名、API、CI、React、TypeScript 等技術專有名詞，以及可能造成歧義的術語保留英文。所有 PR 審查與作者留言均須以 `{代號} as {Agent}` 身分標記以區分共用 GitHub 帳號時之發言主體。
+Agent 文件、技能說明、工作日誌與規範內容以繁體中文為主。只有技能 ID、檔名、API、CI、React、TypeScript 等技術專有名詞，以及可能造成歧義的術語保留英文。所有 PR 審查、PR 內文結尾與作者留言均須以 `{代號} as {Agent}` 身分標記以區分共用 GitHub 帳號時之發言主體；但 PR 標題本身必須保持純淨之 Conventional Commits 格式，嚴禁在 PR 標題添加任何 `[{代號} as {Agent}]` 身分後綴。
 
 ---
 
@@ -71,6 +71,7 @@ Agent 文件、技能說明、工作日誌與規範內容以繁體中文為主�
     3. 套件授權為經核准之寬鬆開源授權（MIT, Apache-2.0, BSD, ISC）；
     4. 屬輕量輔助函式庫，非重型框架且不顯著增加打包負擔。若涉及非寬鬆授權 (如 GPL)、引入重量級框架或系統級原生二進位依賴，則須於計畫中提請使用者確認。
 * **絕對不做的事 (Strict Invariants)**：
+  - 嚴禁在 PR 標題（PR Title）添加任何身分標籤或方括號後綴（如 `[{代號} as {Agent}]`）。標題必須為純淨的 Conventional Commits（例如 `feat(tuning): ...` 或 `fix(ui): ...`），身分標記一律僅置於 PR 內文 (PR Body) 結尾。
   - 在接收 UDP 封包的非同步主迴圈中加入同步檔案寫入或網路請求。
   - 為了方便而在 UI 組件內直接寫死物理調校計算公式。
   - 嚴禁在 UI 字串或 UI 組件內直接加入裝飾性 Emoji 圖示。
