@@ -66,3 +66,9 @@
 **學習 (Learning):** In Halfmoon/Bootstrap dropdowns, toggling visibility classes alone leaves assistive technologies unaware that a button controls a menu, and renders items indistinguishable from unrelated document buttons. Furthermore, dismissing the dropdown without explicitly restoring focus to the trigger element causes focus loss to the document body, breaking sequential keyboard flow.
 **行動 (Action):** Couple dropdown triggers with `aria-haspopup="menu"`, assign `role="menu"` to the list container, `role="menuitem"` to interactive options, and `role="separator"` to dividers. Support ArrowDown/ArrowUp cycling, Home/End boundaries, auto-focus the first item upon expansion, and reliably restore focus to the trigger button upon Escape dismissal or selection.
 **署名:** Palette as Antigravity
+
+
+## 2026-11-04 - Modal Dialog Focus Trap and Contextual Focus Restoration
+**學習 (Learning):** Onboarding and telemetry setup dialogs often rely on naive local focus effects (e.g. focusing a close button on mount) without trapping Tab navigation or restoring focus on exit. This causes keyboard users to bleed out into background navigation during inspection, and drops focus abruptly to `document.body` upon dismissal, destroying sequential keyboard flow.
+**行動 (Action):** Connect all full-viewport and floating modals to the unified `useModalFocus` hook on the `role="dialog"` container to guarantee bidirectional focus trapping, reliable Escape dismissal, and automatic focus restoration to the trigger element upon exit. Couple introductory text with `aria-describedby` and telemetry badges with `role="status"` to ensure immediate contextual awareness for assistive technologies.
+**署名:** Palette as Antigravity
