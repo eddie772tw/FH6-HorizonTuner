@@ -543,3 +543,60 @@ fn alignment_boundary_singular_protection_and_camber_sign_invariance() {
         assert!(res.pc_r >= 15.0 && res.pc_r <= 55.0);
     }
 }
+
+#[test]
+fn aero_downforce_singular_protection_and_asymmetric_closure() {
+    use fh6_backend::tuning::chassis::get_road_awd_rear_percent;
+
+    // Case 1: Rear wing equipped (150 kgf), front aero missing/corrupted as NaN, negative, or Infinity
+    for singular_front in [f64::NAN, -20.0, f64::INFINITY, f64::NEG_INFINITY] {
+        let params = TuningCarParams {
+            weight: Some(1400.0),
+            weight_distribution: Some(54.0),
+            drivetrain: Some("RWD".into()),
+            aero_downforce_front: Some(singular_front),
+            aero_downforce_rear: Some(150.0),
+            ..Default::default()
+        };
+        let aero = resolve_aero_downforce(&params);
+        assert_eq!(aero.rear, 150.0, "Rear aero must preserve user input of 150.0 kgf");
+        assert!(aero.front.is_finite() && aero.front > 0.0, "Front aero must be positively derived");
+
+        let chassis = calculate_chassis_tuning(RaceGoal::Road, &params);
+        assert!(chassis.springs.front.is_finite() && chassis.springs.rear.is_finite());
+        assert!(chassis.damping.rebound_f.is_finite() && chassis.damping.rebound_r.is_finite());
+    }
+
+    // Case 2: Front splitter equipped (120 kgf), rear aero missing/corrupted as NaN
+    let params_front = TuningCarParams {
+        weight: Some(1400.0),
+        weight_distribution: Some(52.0),
+        drivetrain: Some("AWD".into()),
+        aero_downforce_front: Some(120.0),
+        aero_downforce_rear: Some(f64::NAN),
+        ..Default::default()
+    };
+    let aero_front = resolve_aero_downforce(&params_front);
+    assert_eq!(aero_front.front, 120.0, "Front aero must preserve user input of 120.0 kgf");
+    assert!(aero_front.rear.is_finite() && aero_front.rear > 0.0, "Rear aero must be positively derived");
+
+    // Case 3: Both aero inputs are NaN / Infinity / negative
+    let params_corrupt = TuningCarParams {
+        weight: Some(1400.0),
+        aero_downforce_front: Some(f64::NAN),
+        aero_downforce_rear: Some(f64::INFINITY),
+        ..Default::default()
+    };
+    let aero_corrupt = resolve_aero_downforce(&params_corrupt);
+    assert!(aero_corrupt.front.is_finite() && aero_corrupt.front > 0.0);
+    assert!(aero_corrupt.rear.is_finite() && aero_corrupt.rear > 0.0);
+
+    // Case 4: AWD rear torque split with NaN fallback
+    let params_awd_nan = TuningCarParams {
+        weight_distribution: Some(55.0),
+        road_awd_rear_percent: Some(f64::NAN),
+        ..Default::default()
+    };
+    let awd_rear = get_road_awd_rear_percent(&params_awd_nan);
+    assert!(awd_rear >= 60.0 && awd_rear <= 85.0, "AWD rear split with NaN must fallback to physical ratio, got {awd_rear}");
+}

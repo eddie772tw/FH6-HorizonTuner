@@ -50,8 +50,11 @@ pub fn resolve_aero_downforce(params: &TuningCarParams) -> AeroDownforceResult {
         .map(Drivetrain::from_str_loose)
         .unwrap_or(Drivetrain::RWD);
 
-    let f_val = params.aero_downforce_front.unwrap_or(0.0);
-    let r_val = params.aero_downforce_rear.unwrap_or(0.0);
+    let clean_aero = |val: Option<f64>| -> f64 {
+        val.filter(|v| v.is_finite() && *v > 0.0).unwrap_or(0.0)
+    };
+    let f_val = clean_aero(params.aero_downforce_front);
+    let r_val = clean_aero(params.aero_downforce_rear);
 
     let drivetrain_modifier = match dt {
         Drivetrain::RWD => 0.82,
@@ -103,7 +106,7 @@ pub fn get_road_awd_rear_percent(params: &TuningCarParams) -> f64 {
         .unwrap_or(50.0)
         .max(1.0)
         .min(99.0);
-    if let Some(r) = params.road_awd_rear_percent {
+    if let Some(r) = params.road_awd_rear_percent.filter(|v| v.is_finite()) {
         r.max(0.0).min(100.0)
     } else {
         (100.0 - front + 20.0).max(60.0).min(85.0)
