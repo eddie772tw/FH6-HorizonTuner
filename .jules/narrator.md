@@ -47,3 +47,9 @@
 **學習 (Learning):** 新增的無障礙旁路連結（如 `Skip to main content`）與全域 Suspense 狀態（`Loading...`）若未即時在各語言字典中對齊，會造成螢幕閱讀器與輔助鍵盤使用者在非英文環境下遭遇未翻譯的英文穿透；同時，客製化對話框（如 `AppDialog`）若內部已實作 `t(title)`，父層元件傳遞 prop 時切勿預先包裝 `t(...)`，否則在切換語系後會將已翻譯字串作為鍵名傳入造成二次翻譯失效。
 **行動 (Action):** 當審查無障礙屬性（aria-label、skip link）或頂層 Suspense fallback 時，務必將其通用字詞同步收錄至 `en-us.json`、`zh-tw.json` 與 `ja-jp.json`；且凡使用自帶 `t()` 的對話框或抽屜元件時，一律傳遞原始鍵名（raw key），維持單次翻譯責任邊界。
 **署名:** Narrator as Antigravity
+
+
+## 2026-11-03 - Companion Badge Status Parameterization & Structural Accessibility
+**學習 (Learning):** 設定介面中用作狀態徽章 (Badge) 的文字，常因開發者直接將動態數量與假想的字串進行模板拼接（如 `${count} ${t('DEVICE(S) CONNECTED')}`）而發生字典鍵缺失，導致在所有非英文環境中永遠顯示未翻譯的大寫英文；此外，Companion 應用程式頂層 `<main>`、`<nav>` 與連線模式開關等結構容器的 `aria-label` 若未包裝 `t()`，會使螢幕閱讀器使用者遭遇英文穿透，無法感知當前操作區段。
+**行動 (Action):** 審查狀態徽章時，一律優先檢查專案字典中是否已有現成參數化鍵值（如 `{activeCount} Companion device(s) connected`），並徹底取代 `${count} ${t('KEY')}` 形式之字串拼接；同時將 Companion 頂層結構與無障礙標籤全面以 `t()` 包裝並同步收錄至 `en-us.json`、`zh-tw.json` 與 `ja-jp.json`。
+**署名:** Narrator as Antigravity

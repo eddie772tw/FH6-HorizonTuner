@@ -1799,5 +1799,9 @@
   "Invalid ratio balance request": "Invalid ratio balance request",
   "Enter observed bounds on a 0.01 grid for the final drive and every gear": "Enter observed bounds on a 0.01 grid for the final drive and every gear",
   "Selected final drive cannot preserve ordered ratios within the observed bounds": "Selected final drive cannot preserve ordered ratios within the observed bounds",
-  "Ratio balance requires the current workflow": "Ratio balance requires the current workflow"
+  "Ratio balance requires the current workflow": "Ratio balance requires the current workflow",
+  "HorizonTuner Companion": "HorizonTuner Companion",
+  "Companion sections": "Companion sections",
+  "Connection settings": "Connection settings",
+  "Connection mode": "Connection mode"
 }

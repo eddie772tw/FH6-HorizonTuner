@@ -1613,5 +1613,10 @@
   "Invalid ratio balance request": "減速比バランスの要求が無効です",
   "Enter observed bounds on a 0.01 grid for the final drive and every gear": "最終減速比と各ギアについて確認済みの 0.01 刻みの範囲を入力してください",
   "Selected final drive cannot preserve ordered ratios within the observed bounds": "選択した最終減速比では確認済み範囲内でギア順序と総減速比の許容誤差を維持できません",
-  "Ratio balance requires the current workflow": "減速比バランスには現行のワークフローが必要です"
+  "Ratio balance requires the current workflow": "減速比バランスには現行のワークフローが必要です",
+  "HorizonTuner Companion": "HorizonTuner Companion",
+  "Companion sections": "Companion セクション",
+  "Connection settings": "接続設定",
+  "Connection mode": "接続モード",
+  "Unavailable": "利用不可"
 }

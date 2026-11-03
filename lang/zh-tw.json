@@ -2232,5 +2232,9 @@
   "Invalid ratio balance request": "終傳比平衡請求無效",
   "Enter observed bounds on a 0.01 grid for the final drive and every gear": "請輸入終傳比及每一檔已觀察到的 0.01 格點範圍",
   "Selected final drive cannot preserve ordered ratios within the observed bounds": "選擇的終傳比無法在觀察範圍內保持檔位順序與總比容差",
-  "Ratio balance requires the current workflow": "終傳比平衡需要目前版本的工作流"
+  "Ratio balance requires the current workflow": "終傳比平衡需要目前版本的工作流",
+  "HorizonTuner Companion": "HorizonTuner Companion",
+  "Companion sections": "Companion 區段",
+  "Connection settings": "連線設定",
+  "Connection mode": "連線模式"
 }
