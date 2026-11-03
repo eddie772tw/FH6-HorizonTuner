@@ -1,6 +1,7 @@
 use fh6_backend::tuning::{
     alignment::{calculate_static_alignment, Season},
-    calculate_chassis_tuning, gearing::calculate_aego_gearing_v2 as calculate_aego_gearing,
+    calculate_chassis_tuning,
+    gearing::calculate_aego_gearing_v2 as calculate_aego_gearing,
     resolve_aero_downforce, GearingSecondaryCorrection, RaceGoal, TuningCarParams,
 };
 use serde_json::Value;
@@ -491,13 +492,33 @@ fn alignment_boundary_singular_protection_and_camber_sign_invariance() {
             Season::Spring,
         ] {
             let res = calculate_static_alignment(goal, season, &extreme_params);
-            assert!(res.pc_f.is_finite() && res.pc_f >= 15.0 && res.pc_f <= 55.0, "pc_f={}", res.pc_f);
-            assert!(res.pc_r.is_finite() && res.pc_r >= 15.0 && res.pc_r <= 55.0, "pc_r={}", res.pc_r);
+            assert!(
+                res.pc_f.is_finite() && res.pc_f >= 15.0 && res.pc_f <= 55.0,
+                "pc_f={}",
+                res.pc_f
+            );
+            assert!(
+                res.pc_r.is_finite() && res.pc_r >= 15.0 && res.pc_r <= 55.0,
+                "pc_r={}",
+                res.pc_r
+            );
             assert!(res.hw_f.is_finite() && res.hw_f > 0.0, "hw_f={}", res.hw_f);
             assert!(res.hw_r.is_finite() && res.hw_r > 0.0, "hw_r={}", res.hw_r);
-            assert!(res.camber.front.is_finite() && res.camber.front <= 0.0, "cf={}", res.camber.front);
-            assert!(res.camber.rear.is_finite() && res.camber.rear <= 0.0, "cr={}", res.camber.rear);
-            assert!(res.caster.is_finite() && res.caster >= 5.0 && res.caster <= 7.0, "caster={}", res.caster);
+            assert!(
+                res.camber.front.is_finite() && res.camber.front <= 0.0,
+                "cf={}",
+                res.camber.front
+            );
+            assert!(
+                res.camber.rear.is_finite() && res.camber.rear <= 0.0,
+                "cr={}",
+                res.camber.rear
+            );
+            assert!(
+                res.caster.is_finite() && res.caster >= 5.0 && res.caster <= 7.0,
+                "caster={}",
+                res.caster
+            );
         }
     }
 
@@ -508,8 +529,16 @@ fn alignment_boundary_singular_protection_and_camber_sign_invariance() {
             ..Default::default()
         };
         let res = calculate_static_alignment(RaceGoal::Road, Season::Summer, &p);
-        assert!(res.camber.rear <= 0.0, "cr must remain negative for wd={wd}, got {}", res.camber.rear);
-        assert!(res.camber.front <= 0.0, "cf must remain negative for wd={wd}, got {}", res.camber.front);
+        assert!(
+            res.camber.rear <= 0.0,
+            "cr must remain negative for wd={wd}, got {}",
+            res.camber.rear
+        );
+        assert!(
+            res.camber.front <= 0.0,
+            "cf must remain negative for wd={wd}, got {}",
+            res.camber.front
+        );
         assert!(res.pc_f >= 15.0 && res.pc_f <= 55.0);
         assert!(res.pc_r >= 15.0 && res.pc_r <= 55.0);
     }
