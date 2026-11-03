@@ -1768,5 +1768,11 @@
   "No result yet": "No result yet",
   "Companion App": "Companion App",
   "Skip to main content": "Skip to main content",
-  "Loading...": "Loading..."
+  "Loading...": "Loading...",
+  "Front tire width (mm)": "Front tire width (mm)",
+  "Front tire aspect (%)": "Front tire aspect (%)",
+  "Front rim (in)": "Front rim (in)",
+  "Rear tire width (mm)": "Rear tire width (mm)",
+  "Rear tire aspect (%)": "Rear tire aspect (%)",
+  "Rear rim (in)": "Rear rim (in)"
 }
