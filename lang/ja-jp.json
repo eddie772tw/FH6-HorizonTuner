@@ -1638,5 +1638,12 @@
   "Companion sections": "Companion セクション",
   "Connection settings": "接続設定",
   "Connection mode": "接続モード",
-  "Unavailable": "利用不可"
+  "Unavailable": "利用不可",
+  "companion.telemetry_cards": "テレメトリーカード",
+  "companion.cards.driver": "ドライバー",
+  "companion.cards.traces": "トレース",
+  "companion.cards.dynamics": "ダイナミクス",
+  "companion.cards.tires": "タイヤ",
+  "companion.cards.suspension": "サスペンション",
+  "Live Telemetry Traces": "リアルタイムテレメトリトレース"
 }

@@ -2256,5 +2256,12 @@
   "HorizonTuner Companion": "HorizonTuner Companion",
   "Companion sections": "Companion 區段",
   "Connection settings": "連線設定",
-  "Connection mode": "連線模式"
+  "Connection mode": "連線模式",
+  "companion.telemetry_cards": "遙測卡片",
+  "companion.cards.driver": "駕駛",
+  "companion.cards.traces": "軌跡",
+  "companion.cards.dynamics": "動態",
+  "companion.cards.tires": "輪胎",
+  "companion.cards.suspension": "懸吊",
+  "Live Telemetry Traces": "即時遙測軌跡"
 }
