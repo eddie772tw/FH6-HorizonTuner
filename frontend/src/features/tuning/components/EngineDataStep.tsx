@@ -6,6 +6,8 @@ import type { useEngineMeasurementArchive } from '../useEngineMeasurementArchive
 import { TuningMeasurementStep } from './TuningMeasurementStep';
 import { EngineObservationHistory } from './EngineObservationHistory';
 import { GearingTuner } from './GearingTuner';
+import { RatioBalancePanel } from './RatioBalancePanel';
+import { usesCvt } from '../../../domain/tuning/transmission';
 import { LegacyTuningHistory } from './LegacyTuningHistory';
 import { TireEvidencePanel } from './TireEvidencePanel';
 import { useTuneSession } from '../TuneSessionProvider';
@@ -17,7 +19,7 @@ export function EngineDataStep({ carId, profile, engine, gearing, enabled }: {
 }) {
   const { t } = useSettings();
   const offline = useCarParams().selectionSource === 'saved';
-  const { engineMeasurement, result, calculationStatus } = useTuneSession();
+  const { engineMeasurement, result, calculationStatus, ratioBalance } = useTuneSession();
   const measured = engine.current;
   const calculation = engine.calculation;
   return <section className="d-flex flex-column gap-3">
@@ -30,6 +32,9 @@ export function EngineDataStep({ carId, profile, engine, gearing, enabled }: {
     {gearing && !gearing.unsupported && calculation?.status === 'ready' && <div className="glass-panel p-3"><GearingTuner showCorrections={false} numGears={gearing.gears.length}
       tuning={{ gearing: { ...gearing, maxRpm: calculation.engineMaxRpm, effectiveRedline: calculation.effectiveRedline } }}
       carParams={{ ...profile, maxHpRpm: calculation.peakPower!.rpm, maxTorqueRpm: calculation.peakTorque!.rpm, effectiveRedline: calculation.effectiveRedline }} /></div>}
+    {calculation?.status === 'ready' && ratioBalance.active && !profile?.isElectric && !usesCvt(profile) && profile?.adjustability?.gearbox === 'Full' && <RatioBalancePanel
+      request={ratioBalance.request} diagnostic={result?.ratioBalance} pending={calculationStatus === 'pending'}
+      storageError={ratioBalance.storageError} gearCount={profile.adjustability.gears ?? gearing?.gears.length ?? 0} onChange={ratioBalance.setRequest} />}
     {!enabled && <p>{t('Enter the game-reported vehicle power before collecting engine data.')}</p>}
     {engine.storageError && <p role="status">{t('The observation could not be saved. Retry Continue after the error; collected frames remain available while this app session is open.')}</p>}
     {measured ? <div className="glass-panel p-3">

@@ -26,6 +26,12 @@
   - 全域 `pytest` 32 項測試 100% 通過。
   - `ruff check` 檢查無任何違規。
 
+## 2026-11-02 / #594 手動終傳比等價重配（Bagley as Dot）
+
+- **Scope**：採用 `physics-tuning-math`、`modular-refactoring`、`halfmoon-design-system`、`pr-author-maintainer`；Rust owner 與 workflow、Step3 請求 UI 及 context-scoped 草稿。未合入歷史分支的 TypeScript 公式。
+- **Learning**：先取整縮放倍數會吞掉 FD 的 `.01` 編輯；逐檔取整後也可能越界或重合。從每次合格證據重算的不可變原始總比枚舉合法 FD 格點，才能同時保留範圍、嚴格順序及可解釋容差。保存的是請求，重播時仍由後端重建原推薦，不能把前一次已取整結果當成 baseline。
+- **Boundary**：現有 capability owner 並不知道遊戲齒比上下限；新入口要求 `user-observed` 範圍及 `.01` 步進確認，不拿 AEGO 模型先驗冒充遊戲範圍。正式契約與實機缺口見 [ratio-balance-v1](../docs/tuning/ratio-balance-v1.md)。
+
 ## 2026-10-12 / Companion 橢圓背景與 Rhine 導覽（Codex as Codex）
 
 - **Scope**：由 main `c1e86317` 建立 `codex/issue-485-native-theme-parity`；採用 `halfmoon-design-system`、`pr-author-maintainer`、`cross-agent-collaboration`。限原生 Halfmoon background、Rhine marker／underline 與相應測試／[差異矩陣](../docs/frontend/companion-native-theme-parity/README.md)，不改 Gradle、release、CI、字型或 bridge。

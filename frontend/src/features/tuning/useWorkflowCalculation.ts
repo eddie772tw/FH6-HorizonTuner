@@ -11,6 +11,7 @@ import { backendFetch } from '../../services/backend';
 import { usesCvt, type CvtFoundationResult } from '../../domain/tuning/transmission';
 
 export interface AuthoritativeWorkflow {
+  ratioBalance?: import('./ratioBalanceTypes').RatioBalanceDiagnostic;
   cvt?: CvtFoundationResult;
   schemaVersion: 'tuning-workflow-result/v2' | 'tuning-workflow-result/v3';
   chassis: ChassisTuningResult | null;

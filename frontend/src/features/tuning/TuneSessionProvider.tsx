@@ -2,6 +2,7 @@ import { usesCvt } from '../../domain/tuning/transmission';
 import { requestEngineBatch, type EngineBatchResult } from './engineBatch';
 import { useWorkflowCalculation } from './useWorkflowCalculation';
 import { useBaselineDraft } from './useBaselineDraft';
+import { useRatioBalanceDraft } from './useRatioBalanceDraft';
 import { useEvidenceContext } from './evidenceContext';
 import { useCvtEvidenceSession } from './useCvtEvidenceSession';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
@@ -55,6 +56,7 @@ interface RawCaptureRuntime {
 
 export interface TuneSessionValue {
   baseline: ReturnType<typeof useBaselineDraft>;
+  ratioBalance: ReturnType<typeof useRatioBalanceDraft>;
   result: ReturnType<typeof useWorkflowCalculation>['result'];
   calculationStatus: ReturnType<typeof useWorkflowCalculation>['status'];
   identity: TuneSessionIdentity;
@@ -575,12 +577,16 @@ export function TuneSessionProvider({ children }: { children: ReactNode }) {
   const evidenceCurrent = useEvidenceContext(evidenceContext, profile?.isElectric
     ? evMeasurement.evidenceId ? JSON.stringify([evMeasurement.evidenceId, evMeasurement.evidenceLifetime]) : null
     : engine.observation?.id ?? null);
+  const ratioBalanceContext = evidenceCurrent && calculation && engine.observation && !profile?.isElectric && !usesCvt(profile)
+    ? JSON.stringify([carId, staticProfileJson, goal, season, baseline.fields, engine.observation.id, identity.performanceIndex, identity.carClass]) : null;
+  const ratioBalance = useRatioBalanceDraft(ratioBalanceContext);
   const inputSnapshot = useMemo(() => ({ carId, goal, season, profile,
+    ...(ratioBalance.request ? { ratioBalance: ratioBalance.request } : {}),
     ...(usesCvt(profile) ? { transmissionModel: 'cvt-foundation/v1', ...cvtEvidence.snapshot } : profile?.isElectric
       ? { powertrainModel: 'ev/v1', evMeasurement: evMeasurement.state, evResult: evMeasurement.result, evEvidence: evidenceCurrent && evMeasurement.evidenceId ? { kind: 'saved-ev', evidenceId: evMeasurement.evidenceId } : null,
         ...(evMeasurement.confirmation ? { evEvidenceConfirmation: evMeasurement.confirmation } : {}) }
       : { powertrainModel: 'ice', engineObservation: evidenceCurrent && engine.observation ? { ...engine.observation, capture: undefined } : null, engineCalculation: calculation }),
-  }), [carId, goal, season, profile, engine.observation, calculation, evMeasurement.result, evMeasurement.evidenceId, evMeasurement.confirmation, evidenceCurrent, cvtEvidence.snapshot.identity, cvtEvidence.snapshot.cvtConfiguration, cvtEvidence.snapshot.cvtEvidence]);
+  }), [carId, goal, season, profile, ratioBalance.request, engine.observation, calculation, evMeasurement.result, evMeasurement.evidenceId, evMeasurement.confirmation, evidenceCurrent, cvtEvidence.snapshot.identity, cvtEvidence.snapshot.cvtConfiguration, cvtEvidence.snapshot.cvtEvidence]);
   const { result, status: calculationStatus } = useWorkflowCalculation(carId, goal, season, profile, calculation ? {
     engineMaxRpm: calculation.engineMaxRpm!, peakPowerRpm: calculation.peakPower!.rpm,
     peakTorqueRpm: calculation.peakTorque!.rpm, peakTorqueNm: calculation.peakTorque!.value,
@@ -590,6 +596,7 @@ export function TuneSessionProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<TuneSessionValue>(() => ({
     baseline,
+    ratioBalance,
     result,
     calculationStatus,
     identity,
@@ -648,6 +655,7 @@ export function TuneSessionProvider({ children }: { children: ReactNode }) {
     },
   }), [
     baseline,
+    ratioBalance,
     result,
     calculationStatus,
     activeCapture,
