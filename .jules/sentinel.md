@@ -14,3 +14,8 @@
 **學習 (Learning):** Win32 檔案系統將檔名中第一個小數點前符合保留名稱的標識（無論大小寫或附帶副檔名）直接解析為字元設備或硬體通訊埠。在伺服器端若未於路徑階層的每個 Normal 元件執行基底名稱檢查，防禦目錄遍歷的邊界檢驗（`starts_with(&base)`）在檔案尚不存在時仍會回傳設備路徑，使得應用層直接暴露於設備操作風險。
 **預防 (Prevention):** 核心路徑防護函式必須針對路徑的每一個 component 擷取前綴 stem，過濾 DOS 保留名稱與 Unicode 上標序號，並於非 Windows 測試環境同樣嚴格強制拒絕，確保跨平台行為一致與深度防禦（Defense in Depth）。
 **署名:** Sentinel as Antigravity
+## 2026-11-03 - Comprehensive Windows Reserved Device Names & Console Handles Defense
+**漏洞/脆弱點 (Vulnerability):** 前端 `fileSave.ts` 與後端 `storage.rs::safe_path` 雖然已防禦傳統 MS-DOS 設備名稱（`CON`, `PRN`, `AUX`, `NUL`, `COM1-9`, `LPT1-9`），但仍遺漏了 Win32 系統保留的核心時鐘設備（`CLOCK$`）、控制台輸入輸出句柄（`CONIN$`, `CONOUT$`）及通訊埠 0 設備（`COM0`, `LPT0`）。外部請求或匯出操作若提供如 `clock$.json`、`conin$.txt` 或 `child/clock$`，將會繞過保留名稱檢查，在 Windows 原生環境觸發 Win32 驅動程式設備存取異常或造成 I/O 阻塞/拒絕服務。
+**學習 (Learning):** Windows Win32 子系統中，除了標準 `1-9` 序號的串列/並列埠外，`COM0` 與 `LPT0` 同屬保留命名空間；此外以 `$` 結尾的內部字元設備（`CLOCK$`, `CONIN$`, `CONOUT$`）會被 Win32 命名解析器直接映射至控制台或時鐘中斷驅動程序，即使附帶任何副檔名依然有效。單一端點若防禦不全，將造成前後端校驗合約不一致與潛在的設備穿透風險。
+**預防 (Prevention):** 統一前後端防禦契約，將 Windows 保留設備名稱集合完整收斂為包含 `CLOCK$`, `CONIN$`, `CONOUT$`, `COM0-9`, `LPT0-9`, `COM¹-³`, `LPT¹-³` 的完整正規化集合，並於前後端單元測試中針對各大小寫、副檔名及深層子路徑補齊拒絕與轉義斷言，落實深度防禦（Defense in Depth）。
+**署名:** Sentinel as Antigravity

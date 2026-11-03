@@ -115,9 +115,9 @@ export default function CompanionApp({ themeGeneration }: { themeGeneration?: st
     pairingCode: token,
   });
   return (
-    <main className="companion-app" aria-label="HorizonTuner Companion">
+    <main className="companion-app" aria-label={t("HorizonTuner Companion")}>
       {(error || (noticeVisible && notice)) && <div className={`companion-message ${error ? 'is-error' : 'is-success is-toast'}`} role={error ? 'alert' : 'status'}>{error || notice}</div>}
-      {!nativeAvailable && <nav className="companion-tabs workspace-tabs nav" aria-label="Companion sections">
+      {!nativeAvailable && <nav className="companion-tabs workspace-tabs nav" aria-label={t("Companion sections")}>
         {(['telemetry', 'tuning', 'connection'] as const).map((item) => (
           <button key={item} className={`nav-link ${tab === item ? 'active' : ''}`} onClick={() => setTab(item)} type="button" aria-label={item === 'connection' ? `${t('Connection')}, ${t(connectionStatus.accessibleLabel)}` : undefined}>
             {item === 'telemetry' ? t('Telemetry') : item === 'tuning' ? t('Tuning') : <>
@@ -131,11 +131,11 @@ export default function CompanionApp({ themeGeneration }: { themeGeneration?: st
         {tab === 'telemetry' && <CompanionTelemetry />}
         {tab === 'tuning' && <CompanionTuning state={state} disabled={!online || commandBusy} onCommand={send} />}
         {tab === 'connection' && !nativeAvailable && (
-          <section className="companion-stack companion-connection-stack" aria-label="Connection settings">
+          <section className="companion-stack companion-connection-stack" aria-label={t("Connection settings")}>
             <article className="companion-panel companion-connection-panel">
               <h2>{t('Connection')}</h2>
               <p className="companion-connection-copy">{t('Select the local network you normally use, or select the USB debugging connection.')}</p>
-                <div className="companion-mode-switch" role="group" aria-label="Connection mode">
+                <div className="companion-mode-switch" role="group" aria-label={t("Connection mode")}>
                   {(['LAN', 'USB'] as const).map((mode) => <button key={mode} type="button" className={`btn ${nativeStatus.mode === mode || (!nativeStatus.mode && mode === 'LAN') ? 'btn-primary' : 'btn-outline-secondary'}`} aria-pressed={nativeStatus.mode === mode || (!nativeStatus.mode && mode === 'LAN')} onClick={() => { window.HorizonTunerCompanion?.setMode?.(mode); setNativeStatus((current) => ({ ...current, mode })); }}>{mode === 'LAN' ? t('Local network') : t('USB debugging')}</button>)}
                 </div>
                 <div className="companion-connection-status" role="status">

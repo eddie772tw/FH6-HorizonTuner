@@ -23,18 +23,20 @@ afterEach(async () => {
   await act(async () => root.unmount());
   host.remove();
   vi.restoreAllMocks();
+  vi.useRealTimers();
 });
 
-it('supports ARIA menu semantics, arrow navigation, and Escape dismissal', async () => {
+it.each(['ArrowDown', 'Enter', ' '])('opens from a focused trigger with %s and supports menu navigation', async key => {
   const onOpen = vi.fn();
   await act(async () => { root.render(<AppMenu onOpen={onOpen} />); });
 
   const trigger = host.querySelector<HTMLButtonElement>('button')!;
+  trigger.focus();
   expect(trigger.getAttribute('aria-haspopup')).toBe('menu');
   expect(trigger.getAttribute('aria-expanded')).toBe('false');
 
   await act(async () => {
-    trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+    trigger.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
   });
   expect(trigger.getAttribute('aria-expanded')).toBe('true');
   expect(host.querySelector('[role="menu"]')).not.toBeNull();
@@ -42,6 +44,16 @@ it('supports ARIA menu semantics, arrow navigation, and Escape dismissal', async
 
   const items = host.querySelectorAll<HTMLElement>('[role="menuitem"]');
   expect(items.length).toBeGreaterThanOrEqual(5);
+  expect(document.activeElement).toBe(items[0]);
+
+  await act(async () => {
+    document.activeElement?.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }));
+  });
+  expect(document.activeElement).toBe(items[items.length - 1]);
+
+  await act(async () => {
+    document.activeElement?.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+  });
   expect(document.activeElement).toBe(items[0]);
 
   await act(async () => {
@@ -55,8 +67,27 @@ it('supports ARIA menu semantics, arrow navigation, and Escape dismissal', async
   expect(document.activeElement).toBe(items[items.length - 1]);
 
   await act(async () => {
+    document.activeElement?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Home', bubbles: true }));
+  });
+  expect(document.activeElement).toBe(items[0]);
+
+  await act(async () => {
     document.activeElement?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
   });
   expect(trigger.getAttribute('aria-expanded')).toBe('false');
   expect(document.activeElement).toBe(trigger);
+});
+
+it('opens at the last item with ArrowUp from a focused trigger', async () => {
+  vi.useFakeTimers();
+  await act(async () => root.render(<AppMenu onOpen={vi.fn()} />));
+  const trigger = host.querySelector<HTMLButtonElement>('button')!;
+  trigger.focus();
+  await act(async () => {
+    trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }));
+  });
+  await act(async () => { await vi.advanceTimersByTimeAsync(0); });
+  const items = host.querySelectorAll<HTMLElement>('[role="menuitem"]');
+  expect(trigger.getAttribute('aria-expanded')).toBe('true');
+  expect(document.activeElement).toBe(items[items.length - 1]);
 });

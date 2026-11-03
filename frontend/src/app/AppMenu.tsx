@@ -21,7 +21,7 @@ export function AppMenu({ onOpen }: { onOpen: (surface: AppSurface) => void }) {
   useEffect(() => {
     if (!open) return;
     const items = getItems();
-    if (items.length > 0 && !menuRef.current?.contains(document.activeElement)) items[0].focus();
+    if (items.length > 0 && !items.includes(document.activeElement as HTMLElement)) items[0].focus();
     const closeOutside = (event: PointerEvent) => {
       if (event.target instanceof Node && !menuRef.current?.contains(event.target)) setOpen(false);
     };
