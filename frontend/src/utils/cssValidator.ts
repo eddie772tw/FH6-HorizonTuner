@@ -4,18 +4,34 @@ export interface CSSValidationResult {
   errorLine?: number;
 }
 
+export const MAX_CUSTOM_CSS_BYTES = 64 * 1024; // 64 KiB
+
+// Defense-in-depth: Disallow external imports, url() network probes, tag escapes, and dynamic execution
+const DANGEROUS_CSS_PATTERNS = [
+  { pattern: /<\/style/i, message: 'HTML style tag closing sequence </style> is forbidden' },
+  { pattern: /(?:@|\\0*40)\s*import\b/i, message: '@import rules are forbidden in custom CSS' },
+  { pattern: /@(?:charset|namespace)\b/i, message: '@charset and @namespace rules are forbidden' },
+  { pattern: /\burl\s*\(/i, message: 'url() functions are forbidden in custom CSS' },
+  { pattern: /\b(?:expression|behavior)\s*[:(]/i, message: 'Dynamic expressions and behaviors are forbidden' },
+];
+
 /**
-  * Validates a CSS string for syntax errors such as unmatched braces,
-  * broken comments, or unclosed string quotes.
-  */
+ * Validates a CSS string for syntax errors and security risks.
+ * Disallows external network resources, script execution, and oversized input.
+ */
 export function validateCSS(css: string): CSSValidationResult {
   if (!css || css.trim() === '') {
     return { isValid: true };
   }
 
+  if (new TextEncoder().encode(css).length > MAX_CUSTOM_CSS_BYTES) {
+    return { isValid: false, error: 'Custom CSS exceeds the 64 KiB size limit' };
+  }
+
   const lines = css.split('\n');
   let braceCount = 0;
   let inMultiLineComment = false;
+  let stripped = '';
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
@@ -38,9 +54,12 @@ export function validateCSS(css: string): CSSValidationResult {
         continue;
       }
 
-      if (line[j] === '{') {
+      const char = line[j];
+      stripped += char;
+
+      if (char === '{') {
         braceCount++;
-      } else if (line[j] === '}') {
+      } else if (char === '}') {
         braceCount--;
         if (braceCount < 0) {
           return {
@@ -52,6 +71,7 @@ export function validateCSS(css: string): CSSValidationResult {
       }
       j++;
     }
+    stripped += '\n';
   }
 
   if (inMultiLineComment) {
@@ -68,8 +88,22 @@ export function validateCSS(css: string): CSSValidationResult {
     };
   }
 
-  // DOM CSSStyleSheet validation if available
-  if (typeof document !== 'undefined' && document.createElement) {
+  // Security pattern check on code with comments stripped to defeat comment-based obfuscation
+  for (const { pattern, message } of DANGEROUS_CSS_PATTERNS) {
+    if (pattern.test(stripped)) {
+      return { isValid: false, error: message };
+    }
+  }
+
+  // Pure syntax verification without DOM injection side-effects
+  if (typeof CSSStyleSheet !== 'undefined' && typeof CSSStyleSheet.prototype.replaceSync === 'function') {
+    try {
+      const sheet = new CSSStyleSheet();
+      sheet.replaceSync(css);
+    } catch (e: any) {
+      return { isValid: false, error: e.message || 'CSS Syntax Error' };
+    }
+  } else if (typeof document !== 'undefined' && document.createElement) {
     try {
       const style = document.createElement('style');
       style.textContent = css;
