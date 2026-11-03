@@ -1588,5 +1588,8 @@
   "Front rim (in)": "フロントリム (in)",
   "Rear tire width (mm)": "リアタイヤ幅 (mm)",
   "Rear tire aspect (%)": "リアタイヤ扁平率 (%)",
-  "Rear rim (in)": "リアリム (in)"
+  "Rear rim (in)": "リアリム (in)",
+  "Applied target": "適用中の目標",
+  "Keep applied target": "適用中の目標を維持",
+  "Apply the draft target below or keep the applied target before continuing.": "続行する前に、下の目標の下書きを適用するか、適用中の目標を維持してください。"
 }

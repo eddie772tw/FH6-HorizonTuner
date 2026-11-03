@@ -2207,5 +2207,8 @@
   "Front rim (in)": "前輪圈 (in)",
   "Rear tire width (mm)": "後胎寬 (mm)",
   "Rear tire aspect (%)": "後胎扁平比 (%)",
-  "Rear rim (in)": "後輪圈 (in)"
+  "Rear rim (in)": "後輪圈 (in)",
+  "Applied target": "目前套用目標",
+  "Keep applied target": "保留目前套用目標",
+  "Apply the draft target below or keep the applied target before continuing.": "請先套用下方的目標草稿，或保留目前套用目標，再繼續。"
 }
