@@ -63,17 +63,17 @@ export function TuningMeasurementStep({ carId, enabled, offline = false }: { car
         {' · '}{t('Not a physical slip percentage')}
       </p>}
       <div className="d-flex gap-2 flex-wrap">
-        {measurement.phase === 'complete' && <button type="button" className="btn btn-outline-secondary" disabled={!complete}
+        {measurement.phase === 'complete' && <button type="button" className="btn btn-outline-secondary" disabled={!complete || session.engine.pendingSave}
           onClick={measurement.collectMore}>{t('Collect more without restarting')}</button>}
-        {!measurement.autoFinish && measurement.phase !== 'complete' && <button type="button" className="btn btn-outline-primary" disabled={!canFinishExtra}
+        {!measurement.autoFinish && measurement.phase !== 'complete' && <button type="button" className="btn btn-outline-primary" disabled={!canFinishExtra || session.engine.pendingSave}
           onClick={measurement.finishAdditional}>{t('Finish additional collection')}</button>}
-        {measurement.phase !== 'complete' && measurement.phase !== 'invalidated' && <button type="button" className="btn btn-outline-secondary" disabled={!enabled}
+        {measurement.phase !== 'complete' && measurement.phase !== 'invalidated' && <button type="button" className="btn btn-outline-secondary" disabled={!enabled || session.engine.pendingSave}
           onClick={measurement.pauseOrResume}>{t(measurement.phase === 'paused' ? 'Resume collection' : 'Pause collection')}</button>}
-        <button type="button" className="btn btn-outline-secondary" disabled={!enabled} onClick={() => measurement.restart(enabled)}>{t('Restart collection')}</button>
+        <button type="button" className="btn btn-outline-secondary" disabled={!enabled || session.engine.pendingSave} onClick={() => measurement.restart(enabled)}>{t('Restart collection')}</button>
         <button type="button" className="btn btn-outline-secondary" disabled={!measurement.sampleCount || isSaving}
           onClick={() => void save(captureSaveRequest(measurement.captureSnapshot(), 'engine-attempt.json'))}>{t('Export collected frames')}</button>
         <button type="button" className="btn btn-primary" disabled={!complete || session.engine.pendingSave}
-          onClick={measurement.complete}>{t(session.engine.pendingSave ? 'Saving engine data…' : 'Next: calculate from collected data')}</button>
+          onClick={measurement.complete}>{t(session.engine.pendingSave ? 'Saving engine data…' : 'Save engine data & calculate')}</button>
       </div>
     </section>
   );

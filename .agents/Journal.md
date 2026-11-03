@@ -1,5 +1,12 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-11-03 / Tune 保存與計算 pending 的 UI 邊界（Jonas as  Codex）
+
+- **重現**：Step1 數值輸入觸發 workflow 計算；pending 的 unavailable readiness 被誤當缺少有效車重，block alert 插入、頁首導引移除與預覽縮短共同造成位移。原生 WebView2 延遲三秒回覆即可穩定重現，並非自動保存。
+- **處理**：換頁共用車輛參數保存與版本檢查；相同快照防重複、保存期間的新編輯保留 dirty，失敗保留原頁供重試。計算狀態使用既有頁首區域，導引保留空間；預覽只保留幾何高度，舊值立即離開 DOM，不能用 stale readiness 繼續操作。
+- **證據**：原生檔案鎖重現保存失敗／解除後重試、API 讀回與鍵盤返回；測試及截圖見 `docs/frontend/tune-save-navigation-591.md`。UIA 與 DOM 回歸不等同實際讀屏朗讀理解，Issue 保留該驗收。
+- **Skills**：`halfmoon-design-system`、`huge-component-refactoring`、`pr-author-maintainer`、`cross-agent-collaboration`、`computer-use`、`ponytail`。
+
 ## 2026-11-03 / App Menu 初始焦點的測試前提（Jonas as  Codex）
 
 - **重現**：選單外層 ref 同時包含 trigger；使用者已聚焦 trigger 時，contains(activeElement) 不能判定焦點是否已進入選單。未先 focus 的合成 keydown 測試會漏掉這個入口。

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useCarParams } from '../../../context/CarParamsContext';
 import { useSettings } from '../../../context/SettingsContext';
 import { useTelemetry } from '../../../hooks/useTelemetry';
@@ -10,7 +10,7 @@ import { captureSaveRequest } from '../captureDownload';
 import { EvGearboxSetup } from './EvGearboxSetup';
 import { EvEvidencePanel } from './EvEvidencePanel';
 
-export function EvPowertrainStep({ enabled }: { enabled: boolean }) {
+export function EvPowertrainStep({ enabled, onBusyChange }: { enabled: boolean; onBusyChange?: (busy: boolean) => void }) {
   const { t } = useSettings();
   const { carId, carParams, setCarParams, saveCarParams, selectionSource } = useCarParams();
   const offline = selectionSource === 'saved';
@@ -22,6 +22,10 @@ export function EvPowertrainStep({ enabled }: { enabled: boolean }) {
   const [candidate, setCandidate] = useState<number | null>(setup?.finalDrive ?? null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const inFlight = useRef(false);
+  const mounted = useRef(true);
+  const latestKey = useRef(m.key); latestKey.current = m.key;
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; onBusyChange?.(false); }; }, [onBusyChange]);
   useEffect(() => setCandidate(setup?.finalDrive ?? null), [m.key]);
   const setupValidation = useLocalCalculationState<{ ready: boolean }>('/api/tuning/ev-profile', { isElectric: true, evGearbox: setup });
   const setupValid = setupValidation.value?.ready === true;
@@ -30,11 +34,18 @@ export function EvPowertrainStep({ enabled }: { enabled: boolean }) {
   const preview = previewRequest.value?.result ?? null;
   const recording = m.phase === 'collecting';
   const result = m.result;
-  const start = async () => {
+  const run = async (operation: () => Promise<void>) => {
+    if (inFlight.current) return;
+    inFlight.current = true; onBusyChange?.(true);
     setSaving(true); setError('');
-    try { await saveCarParams(); m.restart(); }
-    catch { setError('EV setup could not be saved. Try again.'); }
-    finally { setSaving(false); }
+    const origin = m.key;
+    try { await operation(); }
+    catch { if (mounted.current && latestKey.current === origin) setError('EV setup could not be saved. Try again.'); }
+    finally { inFlight.current = false; if (mounted.current) { setSaving(false); onBusyChange?.(false); } }
+  };
+  const start = () => {
+    const origin = m.key;
+    return run(async () => { await saveCarParams(); if (mounted.current && latestKey.current === origin) m.restart(); });
   };
   return <section className="d-flex flex-column gap-3">
     <div className="workspace-section">
@@ -47,7 +58,7 @@ export function EvPowertrainStep({ enabled }: { enabled: boolean }) {
     <EvEvidencePanel t={t} />
     <div className="glass-panel p-3">
       <div role="status" aria-live="polite" style={{ minHeight: '3rem' }}>
-        {offline ? t('Offline selection does not supply live telemetry. Follow Data Out to collect new data.') : error || m.calculationError ? t(error || m.calculationError!) : m.transportError ? t('EV measurement transport is unavailable. Pending frames are retained; retrying.') : m.phase === 'invalidated' ? t('The vehicle, build or driving session changed. Restart EV collection.') :
+        {saving ? t('Saving changes. Wait before navigating.') : offline ? t('Offline selection does not supply live telemetry. Follow Data Out to collect new data.') : error || m.calculationError ? t(error || m.calculationError!) : m.transportError ? t('EV measurement transport is unavailable. Pending frames are retained; retrying.') : m.phase === 'invalidated' ? t('The vehicle, build or driving session changed. Restart EV collection.') :
           !isConnected ? t('Connect the game and enable Data Out to start receiving driving data.') :
           setupValidation.status === 'error' ? t('Tuning calculation is unavailable. Retrying…') :
           setupValidation.status === 'pending' ? t('Calculating tuning results…') :
@@ -70,8 +81,8 @@ export function EvPowertrainStep({ enabled }: { enabled: boolean }) {
       </div>
       <div className="d-flex flex-wrap gap-2">
         <button className="btn btn-primary" disabled={offline || !enabled || !setupValid || recording || saving}
-          onClick={() => void start()}>{t(m.sampleCount ? 'Restart EV collection' : 'Start EV collection')}</button>
-        <button className="btn btn-outline-secondary" disabled={m.source === 'saved' || !['collecting', 'paused'].includes(m.phase)}
+          onClick={() => void start()}>{t(saving ? 'Saving vehicle parameters…' : m.sampleCount ? 'Save parameters & restart EV collection' : 'Save parameters & start EV collection')}</button>
+        <button className="btn btn-outline-secondary" disabled={saving || m.source === 'saved' || !['collecting', 'paused'].includes(m.phase)}
           onClick={m.pauseOrResume}>{t(recording ? 'Pause collection' : 'Resume collection')}</button>
         <button className="btn btn-outline-secondary" disabled={!m.sampleCount || isSaving}
           onClick={() => void save(captureSaveRequest(m.snapshot(), 'ev-measurement.json'))}>{t('Export EV data')}</button>
@@ -80,10 +91,10 @@ export function EvPowertrainStep({ enabled }: { enabled: boolean }) {
     <div className="glass-panel p-3">
       <label className="form-label" htmlFor="ev-candidate-fd">{t('Candidate final drive')}</label>
       <input id="ev-candidate-fd" type="number" className="form-control mb-2" min="0.01" max="20" step="0.01"
-        disabled={!setup?.finalDriveAdjustable || setup.finalDrive === null} placeholder={t('Unknown / not shown')}
+        disabled={saving || !setup?.finalDriveAdjustable || setup.finalDrive === null} placeholder={t('Unknown / not shown')}
         value={candidate ?? ''} onChange={e => setCandidate(e.target.value === '' ? null : Number(e.target.value))} />
-      <button className="btn btn-primary" disabled={offline || !enabled || recording || m.phase === 'invalidated' || !preview}
-        onClick={() => m.calculate(candidate)}>{t('Calculate EV model')}</button>
+      <button className="btn btn-primary" disabled={saving || offline || !enabled || recording || m.phase === 'invalidated' || !preview}
+        onClick={() => void run(() => m.calculate(candidate))}>{t('Calculate EV model')}</button>
       {previewRequest.status === 'pending' && <p role="status">{t('Calculating tuning results…')}</p>}
       {previewRequest.status === 'error' && <p role="status">{t('Tuning calculation is unavailable. Retrying…')}</p>}
     </div>

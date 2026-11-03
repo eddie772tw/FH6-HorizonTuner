@@ -23,6 +23,7 @@ interface Step1GoalSetupProps {
   onOpenUnitSettings: () => void;
   onProceed: () => Promise<void>;
   proceedBlockedReason?: string;
+  saving?: boolean;
 }
 
 export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
@@ -37,6 +38,7 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
   onOpenUnitSettings,
   onProceed,
   proceedBlockedReason,
+  saving = false,
 }) => {
   const {
     settings,
@@ -96,22 +98,16 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
           >
             <button
               type="button"
-              className="btn btn-primary btn-sm fw-bold"
-              disabled={!hasCoreParams || Boolean(proceedBlockedReason)}
+              className="btn btn-outline-primary btn-sm fw-bold"
+              disabled={saving || !hasCoreParams || Boolean(proceedBlockedReason)}
               style={{ pointerEvents: !hasCoreParams || proceedBlockedReason ? 'none' : 'auto' }}
               onClick={() => void onProceed()}
             >
-              {t('Save & Proceed')} &gt;
+              {t(saving ? 'Saving vehicle parameters…' : 'Save vehicle parameters')}
             </button>
           </span>
         </div>
       </div>
-
-      {!hasCoreParams && (
-        <div className="alert alert-warning py-2 px-3 mb-0 fs-7" role="alert">
-          {t('Tuning calculator requires valid vehicle weight and weight distribution parameters. Please fill them out below to unlock tuning wizard.')}
-        </div>
-      )}
 
       {/* Three-Column Layout */}
       <div
