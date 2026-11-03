@@ -4,7 +4,7 @@ import { createRoot } from 'react-dom/client';
 import { expect, it, vi } from 'vitest';
 import { TuningViewContent } from './TuningView';
 import type { UnitPreferenceOverride } from '../../utils/gameUnitSettings';
-const session = vi.hoisted(() => ({ calculationStatus: 'pending', result: null, profile: { weight: 1300, weight_distribution: 54 }, engine: {}, workflow: { step: 2, goal: 'Road', season: 'Summer', reviewHistory: false, setStep: vi.fn(), setGoal: vi.fn(), setSeason: vi.fn(), setReviewHistory: vi.fn() } }));
+const session = vi.hoisted(() => ({ baseline: { goal: 'Road', cancel: vi.fn() }, calculationStatus: 'pending', result: null, profile: { weight: 1300, weight_distribution: 54 }, engine: {}, workflow: { step: 2, goal: 'Road', season: 'Summer', reviewHistory: false, setStep: vi.fn(), setGoal: vi.fn(), setSeason: vi.fn(), setReviewHistory: vi.fn() } }));
 vi.mock('./TuneSessionProvider', () => ({ useTuneSession: () => session }));
 vi.mock('../../context/CarParamsContext', () => ({ useCarParams: () => ({ carId: '1', carName: 'Test car', carParams: session.profile, setCarParams: vi.fn(), saveCarParams: vi.fn() }) }));
 vi.mock('../../context/SettingsContext', () => ({ useSettings: () => ({ t: (s: string) => s }), ScopedUnitSettingsProvider: () => null }));

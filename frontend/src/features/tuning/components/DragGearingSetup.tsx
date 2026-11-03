@@ -17,8 +17,9 @@ const DragGearingSetupContent: React.FC<DragGearingSetupProps> = ({ carParams, u
   const { t } = useSettings();
   return (
   <div className="p-2 rounded border bg-body-tertiary d-flex flex-column gap-2">
-    <label className="text-body-secondary fs-7 fw-semibold mb-0">{t('Measured Drag finish speed (km/h)')}</label>
+    <label htmlFor="step1-drag-finish-speed" className="text-body-secondary fs-7 fw-semibold mb-0">{t('Measured Drag finish speed (km/h)')}</label>
     <DecimalInput
+      id="step1-drag-finish-speed"
       value={carParams?.dragFinishSpeedKmh}
       onChange={(value) => updateParam('dragFinishSpeedKmh', value && value > 0 ? value : undefined)}
       precision={1}

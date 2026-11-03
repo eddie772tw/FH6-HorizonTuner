@@ -300,6 +300,11 @@ describe("exportFilename (security)", () => {
     expect(exportFilename("NUL.tar.gz")).toBe("_NUL.tar.gz");
     expect(exportFilename("CON .json")).toBe("_CON.json");
     expect(exportFilename("COM¹.csv")).toBe("_COM¹.csv");
+    expect(exportFilename("CLOCK$.json")).toBe("_CLOCK$.json");
+    expect(exportFilename("conin$.txt")).toBe("_conin$.txt");
+    expect(exportFilename("CONOUT$.csv")).toBe("_CONOUT$.csv");
+    expect(exportFilename("com0.json")).toBe("_com0.json");
+    expect(exportFilename("lpt0.zip")).toBe("_lpt0.zip");
   });
 
   it("strips path traversal characters, illegal symbols, and leading/trailing dots", () => {

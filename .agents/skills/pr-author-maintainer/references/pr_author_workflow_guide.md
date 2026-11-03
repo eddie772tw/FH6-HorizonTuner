@@ -77,6 +77,10 @@ PR 標題必須遵循 Conventional Commits 格式：
 - `perf(scope): 簡短描述`（效能改善）
 - `test(scope): 簡短描述`（測試新增或修正）
 
+#### 標題嚴禁附加身分後綴 (No Identity Suffix in PR Title)
+- **嚴格禁止**：嚴禁在 PR 標題中附加 `[{代號} as {Agent}]`（例如 `perf: ... [Bolt as Antigravity]`）。
+- 身分標記（Identity Tag）僅屬於 PR 內文（PR Body）結尾與評論回覆，PR 標題必須保持純淨以利自動化 Changelog 與 Release 工具解析。
+
 #### 標題穩定性原則
 - **原則**：**不要因為微小的 Review 修正或後續 commit 而隨意修改 PR 標題**。
 - **允許修改標題的時機**：

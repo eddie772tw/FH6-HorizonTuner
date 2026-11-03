@@ -1,5 +1,7 @@
 use fh6_backend::tuning::{
-    calculate_chassis_tuning, gearing::calculate_aego_gearing_v2 as calculate_aego_gearing,
+    alignment::{calculate_static_alignment, Season},
+    calculate_chassis_tuning,
+    gearing::calculate_aego_gearing_v2 as calculate_aego_gearing,
     resolve_aero_downforce, GearingSecondaryCorrection, RaceGoal, TuningCarParams,
 };
 use serde_json::Value;
@@ -410,7 +412,6 @@ fn drag_rejects_original_invalid_inputs_before_gearing_fallbacks() {
 }
 
 #[test]
-#[test]
 fn chassis_boundary_singular_protection_and_spring_inversion() {
     let inverted_params = TuningCarParams {
         weight: Some(-500.0),
@@ -461,5 +462,84 @@ fn chassis_boundary_singular_protection_and_spring_inversion() {
         let chassis = calculate_chassis_tuning(RaceGoal::Road, &p);
         assert!(chassis.arb.front.is_finite() && chassis.arb.front >= 1.0);
         assert!(chassis.arb.rear.is_finite() && chassis.arb.rear >= 1.0);
+    }
+}
+
+#[test]
+fn alignment_boundary_singular_protection_and_camber_sign_invariance() {
+    let extreme_params = TuningCarParams {
+        weight: Some(-500.0),
+        weight_distribution: Some(150.0),
+        drivetrain: Some("RWD".into()),
+        front_tire_width: Some(-245.0),
+        rear_tire_width: Some(-275.0),
+        front_tire_aspect: Some(-40.0),
+        rear_tire_aspect: Some(-35.0),
+        ..Default::default()
+    };
+
+    for goal in [
+        RaceGoal::Road,
+        RaceGoal::Rally,
+        RaceGoal::Drift,
+        RaceGoal::Drag,
+        RaceGoal::DangerSign,
+    ] {
+        for season in [
+            Season::Summer,
+            Season::Autumn,
+            Season::Winter,
+            Season::Spring,
+        ] {
+            let res = calculate_static_alignment(goal, season, &extreme_params);
+            assert!(
+                res.pc_f.is_finite() && res.pc_f >= 15.0 && res.pc_f <= 55.0,
+                "pc_f={}",
+                res.pc_f
+            );
+            assert!(
+                res.pc_r.is_finite() && res.pc_r >= 15.0 && res.pc_r <= 55.0,
+                "pc_r={}",
+                res.pc_r
+            );
+            assert!(res.hw_f.is_finite() && res.hw_f > 0.0, "hw_f={}", res.hw_f);
+            assert!(res.hw_r.is_finite() && res.hw_r > 0.0, "hw_r={}", res.hw_r);
+            assert!(
+                res.camber.front.is_finite() && res.camber.front <= 0.0,
+                "cf={}",
+                res.camber.front
+            );
+            assert!(
+                res.camber.rear.is_finite() && res.camber.rear <= 0.0,
+                "cr={}",
+                res.camber.rear
+            );
+            assert!(
+                res.caster.is_finite() && res.caster >= 5.0 && res.caster <= 7.0,
+                "caster={}",
+                res.caster
+            );
+        }
+    }
+
+    for wd in [-50.0, 0.0, 100.0, 200.0, f64::NAN] {
+        let p = TuningCarParams {
+            weight: Some(1400.0),
+            weight_distribution: Some(wd),
+            ..Default::default()
+        };
+        let res = calculate_static_alignment(RaceGoal::Road, Season::Summer, &p);
+        assert!(
+            res.camber.rear <= 0.0,
+            "cr must remain negative for wd={wd}, got {}",
+            res.camber.rear
+        );
+        assert!(
+            res.camber.front <= 0.0,
+            "cf must remain negative for wd={wd}, got {}",
+            res.camber.front
+        );
+        assert!(res.pc_f >= 15.0 && res.pc_f <= 55.0);
+        assert!(res.pc_r >= 15.0 && res.pc_r <= 55.0);
     }
 }

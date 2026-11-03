@@ -1262,3 +1262,36 @@ fn test_motec_ld_edge_cases_and_beacon_robustness() {
     let xml_empty = String::from_utf8(ldx_empty).unwrap();
     assert!(xml_empty.contains("<String Id=\"Total Laps\" Value=\"0\"/>"));
 }
+
+#[test]
+fn test_parse_packet_preallocation_and_array_parity() {
+    let mut packet = vec![0u8; 324];
+    set_i32(&mut packet, 0, 1);
+    set_u32(&mut packet, 1, 12345);
+    set_f32(&mut packet, 4, 6500.0);
+    set_f32(&mut packet, 17, 0.45);
+    set_f32(&mut packet, 18, 0.46);
+    set_f32(&mut packet, 19, 0.47);
+    set_f32(&mut packet, 20, 0.48);
+
+    for _ in 0..100 {
+        let parsed = parse_packet(&packet).expect("packet should parse successfully");
+        let obj = parsed.as_object().expect("parsed should be an object");
+        assert_eq!(obj.get("IsRaceOn").and_then(Value::as_i64), Some(1));
+        assert_eq!(obj.get("TimestampMS").and_then(Value::as_u64), Some(12345));
+        assert_eq!(
+            obj.get("CurrentEngineRpm").and_then(Value::as_f64),
+            Some(6500.0)
+        );
+
+        let susp = obj
+            .get("NormalizedSuspensionTravel")
+            .and_then(Value::as_array)
+            .unwrap();
+        assert_eq!(susp.len(), 4);
+        assert!((susp[0].as_f64().unwrap() - 0.45).abs() < 1e-5);
+        assert!((susp[1].as_f64().unwrap() - 0.46).abs() < 1e-5);
+        assert!((susp[2].as_f64().unwrap() - 0.47).abs() < 1e-5);
+        assert!((susp[3].as_f64().unwrap() - 0.48).abs() < 1e-5);
+    }
+}

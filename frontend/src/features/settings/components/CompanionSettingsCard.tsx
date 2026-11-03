@@ -30,7 +30,7 @@ export function CompanionSettingsCard() {
   const count = error ? 0 : status?.active_connections ?? 0;
   return <SettingsSection title={t('Companion APP (Android)')} headerAside={
     <span className={`badge ${count ? 'text-bg-success' : 'text-bg-secondary'}`}>
-      {error ? t('Status unavailable') : `${count} ${t('DEVICE(S) CONNECTED')}`}
+      {error ? t('Status unavailable') : t('{activeCount} Companion device(s) connected', { activeCount: count })}
     </span>
   }>
     <div className="companion-settings-content gap-3 w-100">
