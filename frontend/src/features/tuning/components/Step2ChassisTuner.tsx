@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useSettings } from '../../../context/SettingsContext';
 import { CarParams } from '../../../context/CarParamsContext';
 import type { ChassisTuningResult, StaticTireAlignResult, Season } from '../../../domain/tuning/types';
@@ -10,6 +10,7 @@ interface Step2ChassisTunerProps {
   chassis: ChassisTuningResult | null;
   alignment: StaticTireAlignResult | null;
   saveCarParams: () => Promise<void>;
+  saving?: boolean;
 }
 
 export const Step2ChassisTuner: React.FC<Step2ChassisTunerProps> = ({
@@ -19,6 +20,7 @@ export const Step2ChassisTuner: React.FC<Step2ChassisTunerProps> = ({
   chassis,
   alignment,
   saveCarParams,
+  saving = false,
 }) => {
   const {
     settings,
@@ -27,9 +29,6 @@ export const Step2ChassisTuner: React.FC<Step2ChassisTunerProps> = ({
     convertTirePressureFromPsi,
     t,
   } = useSettings();
-
-  const [saving, setSaving] = useState(false);
-  const [savedSuccess, setSavedSuccess] = useState(false);
 
   if (!carParams || !chassis || !alignment) {
     return (
@@ -53,17 +52,6 @@ export const Step2ChassisTuner: React.FC<Step2ChassisTunerProps> = ({
   const springRearFormatted = convertSpringRate(springs.rear);
   const heightFrontFormatted = convertHeight(springs.heightF);
   const heightRearFormatted = convertHeight(springs.heightR);
-
-  const handleSave = async () => {
-    setSaving(true);
-    try {
-      await saveCarParams();
-      setSavedSuccess(true);
-      setTimeout(() => setSavedSuccess(false), 2500);
-    } finally {
-      setSaving(false);
-    }
-  };
 
   const valueBadgeStyle: React.CSSProperties = {
     background: 'var(--surface-2)',
@@ -99,18 +87,13 @@ export const Step2ChassisTuner: React.FC<Step2ChassisTunerProps> = ({
         </div>
 
         <div className="d-flex align-items-center gap-2">
-          {savedSuccess && (
-            <span className="badge text-bg-success py-1 px-2 fs-8">
-              {t('Saved')}
-            </span>
-          )}
           <button
             type="button"
             disabled={saving}
-            onClick={handleSave}
-            className="btn btn-primary btn-sm fw-bold px-3"
+            onClick={() => void saveCarParams()}
+            className="btn btn-outline-primary btn-sm fw-bold px-3"
           >
-            {saving ? t('Saving...') : t('Save Setup')}
+            {t(saving ? 'Saving vehicle parameters…' : 'Save vehicle parameters')}
           </button>
         </div>
       </div>

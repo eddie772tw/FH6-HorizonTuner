@@ -36,13 +36,13 @@ export function EngineDataStep({ carId, profile, engine, gearing, enabled }: {
       request={ratioBalance.request} diagnostic={result?.ratioBalance} pending={calculationStatus === 'pending'}
       storageError={ratioBalance.storageError} gearCount={profile.adjustability.gears ?? gearing?.gears.length ?? 0} onChange={ratioBalance.setRequest} />}
     {!enabled && <p>{t('Enter the game-reported vehicle power before collecting engine data.')}</p>}
-    {engine.storageError && <p role="status">{t('The observation could not be saved. Retry Continue after the error; collected frames remain available while this app session is open.')}</p>}
+    <div role="status" aria-live="polite" className="small" style={{ minHeight: '3em' }}>{t(engine.storageError ? 'Engine data could not be saved. Collected frames are retained. Retry Save engine data & calculate.' : engine.pendingSave ? 'Saving engine data…' : measured ? 'Engine data saved. Calculation stays in this step; use Go to setup verification when ready.' : 'Save engine data & calculate stays in this step.')}</div>
     {measured ? <div className="glass-panel p-3">
       <p>{t('Measured engine limit')}: {measured.engineMaxRpm} RPM · {t('Peak power RPM')}: {Math.round(measured.observedPeakPower!.rpm)} · {t('Peak torque RPM')}: {Math.round(measured.observedPeakTorque!.rpm)}</p>
       <TireEvidencePanel evidence={result?.tireEvidence ?? null} provenance={result?.evidenceProvenance ?? null} />
-      <button className="btn btn-outline-secondary" disabled={offline} onClick={() => engineMeasurement.restart(enabled)}>{t('Collect driving data again')}</button></div>
+      <button className="btn btn-outline-secondary" disabled={offline || engine.pendingSave} onClick={() => engineMeasurement.restart(enabled)}>{t('Collect driving data again')}</button></div>
       : <TuningMeasurementStep carId={carId} enabled={enabled && !offline} offline={offline} />}
-    <EngineObservationHistory entries={engine.archive} compatibleIds={engine.compatible.map(item => item.id)} reuse={engine.reuse} storageError={engine.storageError} />
+    <EngineObservationHistory entries={engine.archive} compatibleIds={engine.compatible.map(item => item.id)} reuse={engine.reuse} storageError={engine.storageError} busy={engine.pendingSave} />
     <LegacyTuningHistory carId={carId} />
   </section>;
 }
