@@ -20,3 +20,9 @@
 **渲染洞察 (Rendering Learning):** 踏板波形畫布（PedalTraceCanvas）在 60Hz 即時渲染下，玩家急踩或點煞時的陡峭數值變動在預設 `butt` 端點與 `miter` 轉角下易產生突波尖刺與平截截面；透過設定 `lineCap = 'round'` 與 `lineJoin = 'round'` 能確保折線與動態光暈圓潤融合。在最新採樣端點加入同軸半徑 2.5*dpr 的 Leading Pulse Marker，可顯著提升賽車即時踩踏深度感知。此外，繪圖主體改用提升之函式宣告並以成對 `try { ctx.save(); ... } finally { ctx.restore(); }` 封閉狀態範圍，能防止 `shadowBlur` 樣式滲漏，並徹底杜絕同步 ResizeObserver 觸發時的 TDZ 錯誤。
 **行動 (Action):** 所有時間序列高頻畫布均應配置 Leading Marker 提供即時焦點，繪圖邏輯強制使用 `try/finally` 成對還原 context 狀態，並優先採用具 Hoisting 特性之函式定義以防禦觀察器生命週期時序問題。
 **署名:** Vector as Antigravity
+
+
+## 2026-11-04 - 馬力扭力散點畫布同軸脈衝光環、交會透明度與狀態防護
+**渲染洞察 (Rendering Learning):** 在 60Hz 馬力扭力轉速散點畫布（PowerTorqueCanvas）中，過去即時點僅以單一微小實心圓（4*dpr）標示，在高密度散點中極易失去焦點；透過引進同軸雙層「外圈脈衝光環 (Pulse Halo Ring, 6.2*dpr) + 內核定位點 (Core Dot, 3.2*dpr)」設計，並嚴格匹配 linear 工業模式的矩形光環，大幅強化了動態轉速拉升時的即時牽引視認性。同時，在 5252 RPM 等馬力與扭力交錯區間，全不透明散點會導致後繪之 Power 散點徹底掩蓋先繪之 Torque 散點；透過在散點批次繪製前設定 `ctx.globalAlpha = 0.75`，可使雙曲線交會處呈現半透明自然疊合光彩。此外，繪圖主體改採具 Hoisting 特性之函式宣告，並以成對 `ctx.save()` / `try { ... } finally { ctx.restore(); }` 嚴格包裹，杜絕 `shadowBlur`、`shadowColor` 與透明度污染外部 Canvas 狀態。
+**行動 (Action):** 在所有散點與多曲線重疊型遙測畫布中，推行 Alpha 混合交錯透光模式以防覆蓋遮蔽；即時焦點點位統一採用同軸脈衝光環（Halo + Core）增強視覺追蹤，並強制將 `try/finally` context 狀態保護列為 Canvas 渲染標準防護契約。
+**署名:** Vector as Antigravity
