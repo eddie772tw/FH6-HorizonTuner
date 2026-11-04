@@ -9,9 +9,9 @@ export const MAX_CUSTOM_CSS_BYTES = 64 * 1024; // 64 KiB
 // Defense-in-depth: Disallow external imports, url() network probes, tag escapes, and dynamic execution
 const DANGEROUS_CSS_PATTERNS = [
   { pattern: /<\/style/i, message: 'HTML style tag closing sequence </style> is forbidden' },
-  { pattern: /(?:@|\\0*40)\s*import\b/i, message: '@import rules are forbidden in custom CSS' },
+  { pattern: /@\s*import\b/i, message: '@import rules are forbidden in custom CSS' },
   { pattern: /@(?:charset|namespace)\b/i, message: '@charset and @namespace rules are forbidden' },
-  { pattern: /\burl\s*\(/i, message: 'url() functions are forbidden in custom CSS' },
+  { pattern: /\b(?:url|image-set|image|src)\s*\(/i, message: 'External resource functions are forbidden in custom CSS' },
   { pattern: /\b(?:expression|behavior)\s*[:(]/i, message: 'Dynamic expressions and behaviors are forbidden' },
 ];
 
@@ -20,12 +20,11 @@ const DANGEROUS_CSS_PATTERNS = [
  * Disallows external network resources, script execution, and oversized input.
  */
 export function validateCSS(css: string): CSSValidationResult {
+  if (css.length > MAX_CUSTOM_CSS_BYTES || new TextEncoder().encode(css).length > MAX_CUSTOM_CSS_BYTES) {
+    return { isValid: false, error: 'Custom CSS exceeds the 64 KiB size limit' };
+  }
   if (!css || css.trim() === '') {
     return { isValid: true };
-  }
-
-  if (new TextEncoder().encode(css).length > MAX_CUSTOM_CSS_BYTES) {
-    return { isValid: false, error: 'Custom CSS exceeds the 64 KiB size limit' };
   }
 
   const lines = css.split('\n');
@@ -88,9 +87,17 @@ export function validateCSS(css: string): CSSValidationResult {
     };
   }
 
-  // Security pattern check on code with comments stripped to defeat comment-based obfuscation
+  // CSS identifiers allow both hexadecimal and single-character escapes.
+  const decoded = stripped.replace(/\\(?:([0-9a-f]{1,6})(?:\r\n|[ \t\r\n\f])?|(\r\n|[\r\n\f])|([\s\S]))/gi,
+    (_match, hex: string | undefined, newline: string | undefined, char: string | undefined) => {
+      if (hex) {
+        const code = parseInt(hex, 16);
+        return code === 0 || code > 0x10ffff || (code >= 0xd800 && code <= 0xdfff) ? '\ufffd' : String.fromCodePoint(code);
+      }
+      return newline ? '' : char ?? '';
+    });
   for (const { pattern, message } of DANGEROUS_CSS_PATTERNS) {
-    if (pattern.test(stripped)) {
+    if (pattern.test(decoded)) {
       return { isValid: false, error: message };
     }
   }
@@ -100,19 +107,6 @@ export function validateCSS(css: string): CSSValidationResult {
     try {
       const sheet = new CSSStyleSheet();
       sheet.replaceSync(css);
-    } catch (e: any) {
-      return { isValid: false, error: e.message || 'CSS Syntax Error' };
-    }
-  } else if (typeof document !== 'undefined' && document.createElement) {
-    try {
-      const style = document.createElement('style');
-      style.textContent = css;
-      document.head.appendChild(style);
-      const sheet = style.sheet as CSSStyleSheet | null;
-      document.head.removeChild(style);
-      if (!sheet) {
-        return { isValid: false, error: 'Failed to create CSS stylesheet' };
-      }
     } catch (e: any) {
       return { isValid: false, error: e.message || 'CSS Syntax Error' };
     }

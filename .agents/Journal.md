@@ -1112,3 +1112,10 @@
 - **Learning**：save／restore 呼叫次數相等不能證明樣式隔離。測試 context 必須真正保存與還原樣式及 line dash；繪製後的 lineCap／lineJoin 應回到原狀，不能期待仍是 renderer 使用的 round。
 - **驗證界線**：PedalTraceCanvas 的有光暈／扁平主題均檢查同步 resize、telemetry 更新與卸載後狀態；暫停 mock 的樣式還原可讓兩項測試失敗。這是狀態契約與生命週期 smoke，不能代替真實 Canvas 畫面、讀屏或遊戲效能驗收。
 - **Skills**：`huge-component-refactoring`、`halfmoon-design-system`、`pr-author-maintainer`、`pr-review-evaluation`、`cross-agent-collaboration`、`ponytail`。
+
+## 2026-11-04 / 自訂 CSS 的驗證與注入邊界（Aster as Codex）
+
+- **重現**：僅比對 literal `url()`／`@import` 無法阻擋 CSS escape 及 `image-set()` 字串 URL；不支援 replaceSync 時的 DOM fallback 仍會寫入樣式。ThemeProvider 載入舊設定及接收設定也會繞過編輯器驗證。
+- **處理**：解碼 CSS escape 後檢查資源函式，移除驗證階段 DOM 寫入，並在共用 style 注入點再次驗證。被拒絕的原稿保留供修正，合法純樣式仍生效。
+- **證據**：新增案例在修正前 6 failed／28 passed，修正後 34 passed；完整前端 1854 passed／1 skipped，production build 通過。這是政策與 DOM 邊界回歸，不代表已完成所有瀏覽器攻擊面的安全認證。
+- **Skills**：`halfmoon-design-system`、`pr-author-maintainer`、`pr-review-evaluation`、`ponytail`。

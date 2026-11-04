@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { validateCSS } from './cssValidator';
 
 describe('cssValidator', () => {
@@ -69,6 +69,25 @@ describe('cssValidator', () => {
       }
     `;
     expect(validateCSS(safeWithComment)).toEqual({ isValid: true });
+  });
+
+  it.each([
+    String.raw`@\69mport "https://example.invalid/theme.css";`,
+    String.raw`.card { background: u\72l("https://example.invalid/probe"); }`,
+    '.card { background: image-set("https://example.invalid/probe" 1x); }',
+    String.raw`.card { background: -webkit-\69mage-set("https://example.invalid/probe" 1x); }`,
+  ])('rejects escaped keywords and string-based image resources: %s', css => {
+    expect(validateCSS(css).isValid).toBe(false);
+  });
+
+  it('does not insert styles when constructable stylesheets are unavailable', () => {
+    vi.stubGlobal('CSSStyleSheet', undefined);
+    vi.stubGlobal('document', { createElement: () => { throw new Error('DOM injection attempted'); } });
+    try {
+      expect(validateCSS('.card { color: red; }')).toEqual({ isValid: true });
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 
   it('rejects oversized CSS exceeding the 64 KiB boundary', () => {
