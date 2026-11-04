@@ -178,36 +178,50 @@ impl App {
             }
         }
         drop(engine);
-        let mut presence = frame.clone();
-        let info = &self.config.car_database[&id];
-        let name = info["display_name"]
-            .as_str()
-            .filter(|s| !s.trim().is_empty())
-            .map(str::to_owned)
-            .unwrap_or_else(|| {
-                let name = ["year", "make", "model"]
-                    .iter()
-                    .filter_map(|k| info.get(*k))
-                    .map(|v| {
-                        v.as_str()
-                            .map(str::to_owned)
-                            .unwrap_or_else(|| v.to_string())
-                    })
-                    .filter(|s| !s.trim().is_empty())
-                    .collect::<Vec<_>>()
-                    .join(" ");
-                if name.is_empty() {
-                    if id != "0" {
-                        format!("Car #{id}")
+        // [PERF] In the 60Hz telemetry processing loop, bypass Discord presence formatting
+        // and avoid deep-cloning the entire 64-field frame when Discord IPC is disabled.
+        // Even when enabled, construct a minimal 9-field payload rather than cloning all telemetry arrays.
+        if self.native.discord_enabled() {
+            let info = &self.config.car_database[&id];
+            let name = info["display_name"]
+                .as_str()
+                .filter(|s| !s.trim().is_empty())
+                .map(str::to_owned)
+                .unwrap_or_else(|| {
+                    let name = ["year", "make", "model"]
+                        .iter()
+                        .filter_map(|k| info.get(*k))
+                        .map(|v| {
+                            v.as_str()
+                                .map(str::to_owned)
+                                .unwrap_or_else(|| v.to_string())
+                        })
+                        .filter(|s| !s.trim().is_empty())
+                        .collect::<Vec<_>>()
+                        .join(" ");
+                    if name.is_empty() {
+                        if id != "0" {
+                            format!("Car #{id}")
+                        } else {
+                            "Unknown Car".into()
+                        }
                     } else {
-                        "Unknown Car".into()
+                        name
                     }
-                } else {
-                    name
-                }
+                });
+            let presence = json!({
+                "CarOrdinal": frame.get("CarOrdinal"),
+                "CurrentRaceTime": frame.get("CurrentRaceTime"),
+                "CurrentLap": frame.get("CurrentLap"),
+                "IsRaceOn": frame.get("IsRaceOn"),
+                "CarName": name.chars().take(80).collect::<String>(),
+                "LastLap": frame.get("LastLap"),
+                "BestLap": frame.get("BestLap"),
+                "LapNumber": frame.get("LapNumber"),
+                "RacePosition": frame.get("RacePosition"),
             });
-        presence["CarName"] = json!(name.chars().take(80).collect::<String>());
-        self.native.discord_submit(presence);
+            self.native.discord_submit(presence);
+        }
         self.telemetry.send_replace(Some(Arc::new(frame)));
         let mut metrics = lock(&self.metrics);
         metrics.frames_processed += 1;
