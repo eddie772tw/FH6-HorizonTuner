@@ -12,7 +12,7 @@ export interface ManualRecordingToolbarProps {
   readonly onStopManual: () => void;
   readonly onClear: () => void;
   readonly onSave: () => void;
-  readonly t: (text: string) => string;
+  readonly t: (text: string, params?: Record<string, string | number>) => string;
 }
 
 export const ManualRecordingToolbar: React.FC<ManualRecordingToolbarProps> = ({
@@ -62,15 +62,17 @@ export const ManualRecordingToolbar: React.FC<ManualRecordingToolbarProps> = ({
 
           <div className="d-flex align-items-center gap-1 ms-2">
             {isRecording ? (
-              <span className="badge bg-danger">
-                {manualMode ? t("Manual Recording") : t("Auto Recording")} ({recordingCount} {t("samples")})
+              <span className="badge bg-danger" role="status" aria-live="polite">
+                {manualMode
+                  ? t("Manual Recording ({count} samples)", { count: recordingCount })
+                  : t("Auto Recording ({count} samples)", { count: recordingCount })}
               </span>
             ) : armed ? (
-              <span className="badge bg-warning text-dark">
+              <span className="badge bg-warning text-dark" role="status">
                 {t("Armed & Awaiting Gate Crossing")}
               </span>
             ) : (
-              <span className="badge bg-secondary">
+              <span className="badge bg-secondary" role="status">
                 {t("Idle")}
               </span>
             )}
@@ -85,7 +87,7 @@ export const ManualRecordingToolbar: React.FC<ManualRecordingToolbarProps> = ({
               onClick={onStartManual}
               disabled={armed || !canStart}
             >
-              {t(mode === "circuit" ? "Start Recording" : "Arm Route")}
+              {mode === "circuit" ? t("Start Recording") : t("Arm Route")}
             </button>
           ) : manualMode ? (
             <button
@@ -101,6 +103,7 @@ export const ManualRecordingToolbar: React.FC<ManualRecordingToolbarProps> = ({
               className="btn btn-sm btn-outline-warning"
               onClick={onSave}
               title={t("Save current recording to backend")}
+              aria-label={t("Save current recording to backend")}
             >
               {t("Save Current")}
             </button>
@@ -112,6 +115,7 @@ export const ManualRecordingToolbar: React.FC<ManualRecordingToolbarProps> = ({
             onClick={onClear}
             disabled={isRecording}
             title={t("Clear recording buffer")}
+            aria-label={t("Clear recording buffer")}
           >
             {t("Clear Buffer")}
           </button>

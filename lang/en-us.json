@@ -1871,5 +1871,10 @@
     "Monitor selection is available.": "Monitor selection is available.",
     "HUD reload requires the native HUD host.": "HUD reload requires the native HUD host.",
     "HUD reload is available with a degraded native host.": "HUD reload is available with a degraded native host.",
-    "HUD reload is available.": "HUD reload is available."
+    "HUD reload is available.": "HUD reload is available.",
+    "Arm Route": "Arm Route",
+    "Save current recording to backend": "Save current recording to backend",
+    "Clear recording buffer": "Clear recording buffer",
+    "Manual Recording ({count} samples)": "Manual Recording ({count} samples)",
+    "Auto Recording ({count} samples)": "Auto Recording ({count} samples)"
 }

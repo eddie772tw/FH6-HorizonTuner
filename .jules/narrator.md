@@ -59,3 +59,7 @@
 **學習 (Learning):** 在行動或隨行視圖中，將未翻譯的內部 ID 直接傳入 Tab 按鈕並仰賴 CSS（如 `text-transform: capitalize`）呈現大寫，是常見的在地化反模式；這會導致所有非英文語系直接暴露英文小寫 raw ID，且螢幕閱讀器使用者無法獲悉卡片的完整語義。同時，全局字典中的通用詞（如 `"Tires": "輪胎氣壓"`）可能因歷史上下文產生語意窄化，若直接復用於不同場景會造成非預期的語義偏離。
 **行動 (Action):** Companion Tab 導航按鈕應採用分層標籤架構：按鈕可視文字採用模組化命名空間（如 `companion.cards.*`）的精簡短標籤，`aria-label` 則綁定卡片全名（如 `t("Tire Grip & Status")`），同時將桌面與隨行視圖共享的標題鍵（如 `Live Telemetry Traces`）同步收錄至各語系字典，兼顧緊湊排版與無障礙語意完整性。
 **署名:** Narrator as Antigravity
+## 2026-11-05 - Parameterized Status Badges & Component Props t() Signature
+**學習 (Learning):** 分析視圖工具列（ManualRecordingToolbar）將動態採樣數與狀態標籤碎片化拼接（如 `{status} ({count} {t("samples")})`），會導致非英文語系（如日文）因詞彙缺失或倒裝語序造成介面顯示破碎，且螢幕閱讀器難以解析完整語義；同時，子組件 Props 中的 `t` 簽名若被收窄為 `(text: string) => string`，會迫使開發者在該組件內退回字串拼接。此外，工具列按鈕若僅提供 `title` 而未同步鏡像至 `aria-label`，會使純鍵盤焦點與無障礙讀屏工具遺漏操作說明。
+**行動 (Action):** 在工具列等含有動態計數的狀態徽章中，一律改用具備具名參數的完整句子鍵值（如 `t("Manual Recording ({count} samples)", { count })`），將組件 `t` prop 擴展為支援可選 params 物件；並確保 `title` 與 `aria-label` 同步對齊收錄至 `en-us.json`、`zh-tw.json` 與 `ja-jp.json` 中。
+**署名:** Narrator as Antigravity

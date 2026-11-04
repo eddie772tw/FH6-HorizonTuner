@@ -2299,5 +2299,10 @@
     "Monitor selection is available.": "螢幕選擇可用。",
     "HUD reload requires the native HUD host.": "HUD 重新載入需要原生 HUD 主程式。",
     "HUD reload is available with a degraded native host.": "原生主程式功能受限，HUD 重新載入仍可使用。",
-    "HUD reload is available.": "HUD 重新載入可用。"
+    "HUD reload is available.": "HUD 重新載入可用。",
+    "Arm Route": "路線就緒",
+    "Save current recording to backend": "將目前錄製儲存至後端",
+    "Clear recording buffer": "清空錄製緩衝區",
+    "Manual Recording ({count} samples)": "手動錄製（{count} 個樣本）",
+    "Auto Recording ({count} samples)": "自動錄製（{count} 個樣本）"
 }
