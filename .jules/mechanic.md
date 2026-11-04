@@ -24,3 +24,8 @@
 **物理洞察 (Physics Learning):** 在空氣動力學下壓力解算中，當車輛僅裝配單側空力套件（例如僅安裝後尾翼 `aero_downforce_rear = 150.0 kgf`），而另一側因遙測未就緒或未改裝傳入 `f64::NAN`、負數或極端值時，原演算法直接以 `f_val <= 0.0` 進行二分判定。依據 IEEE 754 規範，`NaN <= 0.0` 評估為 `false`，導致單側推導條件無法命中，直接跌入雙軸皆未安裝的預設分支，將使用者設定的真實下壓力徹底丟棄並錯誤覆蓋為車重 20% 推導值。此外，`INFINITY` 下壓力會直接傳播污染底盤剛度計算，造成懸吊彈簧數值溢位；AWD 後軸動力偏置若接收到 `NaN`，原 `r.max(0.0).min(100.0)` 會退化為 0.0%（全前驅），破壞驅動動力分配。
 **行動 (Action):** 下壓力解算器落實 `clean_aero` 有限正數過濾（`val.filter(|v| v.is_finite() && *v > 0.0).unwrap_or(0.0)`），確保單側空力套件的幾何推導二分覆蓋達成嚴格數學封閉性（Mathematical Closure），並將 AWD 後軸分配的非有限輸入安全回退至基於軸荷的動力學推導區間（60.0%..=85.0%）。
 **署名:** Mechanic as Antigravity
+
+## 2026-11-05 - Chassis Weight Distribution Non-Finite Singularity & Suspension Symmetry Protection
+**物理洞察 (Physics Learning):** 底盤正規化函式（`normalize_road_inputs` 與 `rally_calculation_inputs`）及 AWD 後軸動力偏置解算在處理前後配重比時，原先採用 `p.weight_distribution.unwrap_or(50.0).max(1.0).min(99.0)`。依據 IEEE 754 規範，當配重傳入 `Some(f64::NAN)` 時，`NaN.max(1.0)` 會錯誤評估為 `1.0`（即 1% 前軸 / 99% 後軸），導致原本應安全回退至 50.0% 中性配重的車輛突變為極端重尾病態模型；更嚴重的是，空力解算 `resolve_aero_downforce` 內部具備有限數過濾會正確回退至 50.0%，造成同一車輛調校流程中空力載荷依據 50% 配重解算，而底盤彈簧、防傾桿與 AWD 扭力偏置（退化至 85.0% 極限）卻依據 1% 配重解算，引發嚴重的懸吊剛性對稱性破裂（Suspension Stiffness Symmetry Breaking）與動力學不一致。同時，Road 起步齒比解算在面對零扭力或非有限扭力時，原先直接除算引發除以零產生 `INFINITY` 總齒比並癱瘓整車變速箱解算。
+**行動 (Action):** 底盤解算器與 AWD 後軸偏置全面落實 `p.weight_distribution.filter(|v| v.is_finite()).unwrap_or(50.0).clamp(1.0, 99.0)`，消除非有限數污染並保證 50.0% 中性配重下的防傾桿與阻尼完全對稱性；起步齒比解算補齊扭力有限正數防護，在無有效扭力輸出時安全由速度上限先驗平滑接管，確保動力學封閉性。
+**署名:** Mechanic as Antigravity

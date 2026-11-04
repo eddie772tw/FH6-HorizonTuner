@@ -41,9 +41,9 @@ pub fn get_target_top_gear_ratio(num_gears: usize) -> f64 {
 fn road_launch_total_ratio(params: &TuningCarParams, torque_nm: f64, radius_m: f64) -> f64 {
     let front = params
         .weight_distribution
+        .filter(|v| v.is_finite())
         .unwrap_or(50.0)
-        .max(1.0)
-        .min(99.0)
+        .clamp(1.0, 99.0)
         / 100.0;
     let dt = params
         .drivetrain
@@ -69,8 +69,19 @@ fn road_launch_total_ratio(params: &TuningCarParams, torque_nm: f64, radius_m: f
         f64::INFINITY
     };
     let acceleration_g = (1.0_f64).min(front_limit_g).min(rear_limit_g);
-    let mass = params.weight.unwrap_or(1400.0).max(1.0);
-    mass * 9.81 * acceleration_g * radius_m / (torque_nm * 0.90)
+    let mass = params
+        .weight
+        .filter(|v| v.is_finite() && *v > 0.0)
+        .unwrap_or(1400.0);
+    let r = if radius_m.is_finite() && radius_m > 0.0 {
+        radius_m
+    } else {
+        0.32
+    };
+    if !torque_nm.is_finite() || torque_nm <= 0.0 {
+        return 0.0;
+    }
+    mass * 9.81 * acceleration_g * r / (torque_nm * 0.90)
 }
 
 /// Inherited v1.6 speed at peak-power RPM (not redline or a measured speed).
