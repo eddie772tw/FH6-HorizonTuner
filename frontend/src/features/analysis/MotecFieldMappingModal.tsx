@@ -1,5 +1,6 @@
 import React from "react";
 import { ModalPortal } from "../../components/common/ModalPortal";
+import { useModalFocus } from "../../hooks/useModalFocus";
 
 export interface MotecFieldMappingModalProps {
   readonly isOpen: boolean;
@@ -46,46 +47,73 @@ export const MotecFieldMappingModal: React.FC<MotecFieldMappingModalProps> = ({
   onDownloadTemplate,
   t,
 }) => {
+  const panelRef = useModalFocus<HTMLDivElement>(isOpen, onClose);
   if (!isOpen) return null;
 
   return (
     <ModalPortal>
       <div
-        className="modal show d-block"
-        tabIndex={-1}
-        role="dialog"
-        aria-modal="true"
-        aria-label={t("MoTeC i2 CSV Channel Mapping (41 Channels)")}
+        className="modal-backdrop fade show"
         style={{
           position: "fixed",
           top: 0,
           left: 0,
           width: "100vw",
           height: "100vh",
-          backgroundColor: "rgba(0,0,0,0.75)",
+          backgroundColor: "rgba(0, 0, 0, 0.75)",
           backdropFilter: "var(--surface-filter)",
           WebkitBackdropFilter: "var(--surface-filter)",
-          zIndex: 1060,
+          zIndex: 1050,
+        }}
+        onClick={onClose}
+        aria-hidden="true"
+      />
+      <div
+        className="modal show d-block"
+        ref={panelRef}
+        tabIndex={-1}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="motec-mapping-title"
+        aria-describedby="motec-mapping-desc"
+        style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          width: "100vw",
+          height: "100vh",
+          zIndex: 1055,
+          overflowX: "hidden",
+          overflowY: "auto",
+          pointerEvents: "none",
         }}
       >
-        <div className="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" role="document">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h5 className="modal-title">{t("MoTeC i2 CSV Channel Mapping (41 Channels)")}</h5>
+        <div className="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" role="document" style={{ pointerEvents: "auto" }}>
+          <div className="modal-content glass-panel border border-primary border-opacity-25 shadow-lg">
+            <div className="modal-header border-bottom border-secondary border-opacity-25 pb-3">
+              <h5 id="motec-mapping-title" className="modal-title fw-bold text-primary mb-0 fs-5">
+                {t("MoTeC i2 CSV Channel Mapping (41 Channels)")}
+              </h5>
               <button type="button" className="btn-close" aria-label={t("Close")} onClick={onClose} />
             </div>
-            <div className="modal-body">
-              <p className="text-secondary" style={{ fontSize: "0.85rem" }}>
-          {t("HorizonTuner exports 41 telemetry channels with documented unit mappings. Native .ld export is experimental until verified in MoTeC i2.")}
+            <div className="modal-body py-3">
+              <p id="motec-mapping-desc" className="text-secondary small mb-3">
+                {t("HorizonTuner exports 41 telemetry channels with documented unit mappings. Native .ld export is experimental until verified in MoTeC i2.")}
               </p>
-              <div className="table-responsive">
-                <table className="table table-sm table-striped table-hover" style={{ fontSize: "0.8rem" }}>
+              <div
+                className="table-responsive"
+                tabIndex={0}
+                role="region"
+                aria-label={t("MoTeC Channel Mapping Table")}
+                style={{ maxHeight: "55vh" }}
+              >
+                <table className="table table-sm table-striped table-hover mb-0" style={{ fontSize: "0.8rem" }}>
                   <thead>
                     <tr>
-                      <th>{t("MoTeC Channel")}</th>
-                      <th>{t("Unit")}</th>
-                      <th>{t("Horizon UDP Source")}</th>
-                      <th>{t("Transformation / Notes")}</th>
+                      <th scope="col">{t("MoTeC Channel")}</th>
+                      <th scope="col">{t("Unit")}</th>
+                      <th scope="col">{t("Horizon UDP Source")}</th>
+                      <th scope="col">{t("Transformation / Notes")}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -101,7 +129,7 @@ export const MotecFieldMappingModal: React.FC<MotecFieldMappingModalProps> = ({
                 </table>
               </div>
             </div>
-            <div className="modal-footer">
+            <div className="modal-footer border-top border-secondary border-opacity-25 pt-3">
               <button type="button" className="btn btn-outline-primary" onClick={onDownloadTemplate}>
                 {t("Download MoTeC Workspace Template")}
               </button>
