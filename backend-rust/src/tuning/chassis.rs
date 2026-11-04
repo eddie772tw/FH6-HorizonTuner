@@ -50,9 +50,8 @@ pub fn resolve_aero_downforce(params: &TuningCarParams) -> AeroDownforceResult {
         .map(Drivetrain::from_str_loose)
         .unwrap_or(Drivetrain::RWD);
 
-    let clean_aero = |val: Option<f64>| -> f64 {
-        val.filter(|v| v.is_finite() && *v > 0.0).unwrap_or(0.0)
-    };
+    let clean_aero =
+        |val: Option<f64>| -> f64 { val.filter(|v| v.is_finite() && *v > 0.0).unwrap_or(0.0) };
     let f_val = clean_aero(params.aero_downforce_front);
     let r_val = clean_aero(params.aero_downforce_rear);
 

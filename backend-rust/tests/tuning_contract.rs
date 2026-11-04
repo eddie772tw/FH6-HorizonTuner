@@ -559,8 +559,14 @@ fn aero_downforce_singular_protection_and_asymmetric_closure() {
             ..Default::default()
         };
         let aero = resolve_aero_downforce(&params);
-        assert_eq!(aero.rear, 150.0, "Rear aero must preserve user input of 150.0 kgf");
-        assert!(aero.front.is_finite() && aero.front > 0.0, "Front aero must be positively derived");
+        assert_eq!(
+            aero.rear, 150.0,
+            "Rear aero must preserve user input of 150.0 kgf"
+        );
+        assert!(
+            aero.front.is_finite() && aero.front > 0.0,
+            "Front aero must be positively derived"
+        );
 
         let chassis = calculate_chassis_tuning(RaceGoal::Road, &params);
         assert!(chassis.springs.front.is_finite() && chassis.springs.rear.is_finite());
@@ -577,8 +583,14 @@ fn aero_downforce_singular_protection_and_asymmetric_closure() {
         ..Default::default()
     };
     let aero_front = resolve_aero_downforce(&params_front);
-    assert_eq!(aero_front.front, 120.0, "Front aero must preserve user input of 120.0 kgf");
-    assert!(aero_front.rear.is_finite() && aero_front.rear > 0.0, "Rear aero must be positively derived");
+    assert_eq!(
+        aero_front.front, 120.0,
+        "Front aero must preserve user input of 120.0 kgf"
+    );
+    assert!(
+        aero_front.rear.is_finite() && aero_front.rear > 0.0,
+        "Rear aero must be positively derived"
+    );
 
     // Case 3: Both aero inputs are NaN / Infinity / negative
     let params_corrupt = TuningCarParams {
@@ -598,5 +610,8 @@ fn aero_downforce_singular_protection_and_asymmetric_closure() {
         ..Default::default()
     };
     let awd_rear = get_road_awd_rear_percent(&params_awd_nan);
-    assert!(awd_rear >= 60.0 && awd_rear <= 85.0, "AWD rear split with NaN must fallback to physical ratio, got {awd_rear}");
+    assert!(
+        awd_rear >= 60.0 && awd_rear <= 85.0,
+        "AWD rear split with NaN must fallback to physical ratio, got {awd_rear}"
+    );
 }
