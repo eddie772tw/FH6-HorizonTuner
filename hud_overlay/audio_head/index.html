@@ -2,7 +2,7 @@
 <!--
   [設計決策紀錄 / Design Decision Note]
   1. 溫度與油壓模型基準：本專案 HUD 體系若涉及水溫顯示，統一使用四輪平均胎溫 (`TireTemp`)；油溫與油壓則依確定性熱力學與油壓代理模型模擬（本音響主機面板僅消費音訊頻譜 `/ws/audio` 與媒體資訊 `/ws/media`）。
-  2. 向量面板與動態頻譜分離：9 款主機依原始 res_220 圖集與 D3D11 底圖重繪為 SVG，由獨立圖片層直接呈現；不先烘焙成低解析度 Canvas。SVG 內材質和裝飾分開定義透明度，動態 EQ、OEL 海豚及 Panasonic VU 指針維持原有座標。
+  2. 原始素材與動態頻譜分離：9 款主機使用原有 *_clean.png，保留字樣、輪廓與裝飾；只沿用既有矩形底色及 75% 材質透明度處理，靜態 Canvas 僅在換型號時更新。動態 EQ、OEL 海豚及 Panasonic VU 指針維持原有座標。不使用整面 SVG 重繪；局部向量替換須另行確認相同來源圖形。
   3. 子模式切換整合：主視窗 HUD 的「音響系統」分頁 (`audioHeadDeck`) 切換 9 款主機型號 (`0..8`)，獨立縮放使用 `audioHeadScale`。
 -->
 <html lang="en">
@@ -55,7 +55,7 @@
 <body>
     <div id="audioHeadAnchor">
         <div class="hud-gauge-container audio-head-container" id="audioHeadContainer">
-            <img id="radioFace" alt="" aria-hidden="true">
+            <canvas id="radioFace" aria-hidden="true"></canvas>
             <canvas id="radioCanvas" width="500" height="140"></canvas>
         </div>
     </div>
@@ -105,6 +105,8 @@
         (function() {
             var canvas = document.getElementById('radioCanvas');
             var face = document.getElementById('radioFace');
+            var faceContext = face.getContext('2d');
+            var faceMode = -1;
             var ctx = canvas.getContext('2d');
             var container = document.getElementById('audioHeadContainer');
             var anchor = document.getElementById('audioHeadAnchor');
@@ -113,16 +115,46 @@
             var canvasScale = 1;
 
             var decks = [
-                { id: 0, name: 'Pioneer DEH-P6100R', file: 'assets/pioneer.svg', w: 380, h: 98 },
-                { id: 1, name: 'Panasonic CQ-VX5500K', file: 'assets/panasonic.svg', w: 438, h: 110 },
-                { id: 2, name: 'Pioneer DEX-P1R', file: 'assets/pioneer_dexp1r.svg', w: 412, h: 98 },
-                { id: 3, name: 'Pioneer DEH-P835R', file: 'assets/pioneer_p835r.svg', w: 460, h: 125 },
-                { id: 4, name: 'Sony CDX-CA860X', file: 'assets/sony_cdx.svg', w: 440, h: 133 },
-                { id: 5, name: 'Alpine CDA-7848', file: 'assets/alpine_7848.svg', w: 440, h: 112 },
-                { id: 6, name: 'Alpine CDA-9815RB', file: 'assets/alpine_9815.svg', w: 490, h: 110 },
-                { id: 7, name: 'Kenwood KRC-759R', file: 'assets/kenwood_krc.svg', w: 392, h: 125 },
-                { id: 8, name: 'JVC KD-LX50R', file: 'assets/jvc_kameleon.svg', w: 460, h: 98 }
+                { id: 0, name: 'Pioneer DEH-P6100R', file: 'assets/pioneer_clean.png', w: 380, h: 98 },
+                { id: 1, name: 'Panasonic CQ-VX5500K', file: 'assets/panasonic_clean.png', w: 438, h: 110 },
+                { id: 2, name: 'Pioneer DEX-P1R', file: 'assets/pioneer_dexp1r_clean.png', w: 412, h: 98 },
+                { id: 3, name: 'Pioneer DEH-P835R', file: 'assets/pioneer_p835r_clean.png', w: 460, h: 125 },
+                { id: 4, name: 'Sony CDX-CA860X', file: 'assets/sony_cdx_clean.png', w: 440, h: 133 },
+                { id: 5, name: 'Alpine CDA-7848', file: 'assets/alpine_7848_clean.png', w: 440, h: 112 },
+                { id: 6, name: 'Alpine CDA-9815RB', file: 'assets/alpine_9815_clean.png', w: 490, h: 110 },
+                { id: 7, name: 'Kenwood KRC-759R', file: 'assets/kenwood_krc_clean.png', w: 392, h: 125 },
+                { id: 8, name: 'JVC KD-LX50R', file: 'assets/jvc_kameleon_clean.png', w: 460, h: 98 }
             ];
+
+            // Preserve the pre-SVG raster composition (ff6baf5b). Prepare each original
+            // once; neither text nor decoration is traced, retyped or repainted.
+            var backgrounds = {};
+            decks.forEach(function(deck) {
+                var image = new Image();
+                image.onload = function() {
+                    var surface = document.createElement('canvas');
+                    surface.width = deck.w;
+                    surface.height = deck.h;
+                    var background = surface.getContext('2d');
+                    background.fillStyle = '#000000';
+                    background.fillRect(0, 0, deck.w, deck.h);
+                    background.drawImage(image, 0, 0, deck.w, deck.h);
+                    var pixels = background.getImageData(0, 0, deck.w, deck.h);
+                    var rgba = pixels.data;
+                    for (var i = 0; i < rgba.length; i += 4) {
+                        var r = rgba[i], g = rgba[i + 1], b = rgba[i + 2];
+                        // Only the original matte/clear colour and Panasonic gold material.
+                        // Dim lettering keeps its coverage; no luminance threshold.
+                        var matte = (r === 0 && g === 0 && b === 0) || (r === 9 && g === 11 && b === 17);
+                        var goldMaterial = deck.id === 1 && i / 4 < deck.w * 80 && r > g * 1.2 && g > b * 1.6;
+                        if (matte || goldMaterial) rgba[i + 3] = 191;
+                    }
+                    background.putImageData(pixels, 0, 0);
+                    backgrounds[deck.id] = surface;
+                    render();
+                };
+                image.src = deck.file;
+            });
 
             var audioState = {
                 spectrum: new Float32Array(32),
@@ -238,7 +270,12 @@
                 var deck = decks[currentMode] || decks[0];
                 var dpr = (window.devicePixelRatio || 1) * canvasScale;
                 if (canvasMode !== currentMode || canvasDpr !== dpr) {
-                    if (canvasMode !== currentMode) face.src = deck.file;
+                    if (canvasMode !== currentMode) {
+                        face.width = deck.w;
+                        face.height = deck.h;
+                        faceMode = -1;
+                        delete face.dataset.source;
+                    }
                     canvasMode = currentMode;
                     canvasDpr = dpr;
                     canvas.width = Math.round(deck.w * dpr);
@@ -246,6 +283,11 @@
                     canvas.style.width = container.style.width = deck.w + 'px';
                     canvas.style.height = container.style.height = deck.h + 'px';
                     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+                }
+                if (faceMode !== currentMode && backgrounds[deck.id]) {
+                    faceContext.drawImage(backgrounds[deck.id], 0, 0);
+                    faceMode = currentMode;
+                    face.dataset.source = deck.file;
                 }
                 var cw = deck.w;
                 var ch = deck.h;

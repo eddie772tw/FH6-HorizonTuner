@@ -1,10 +1,23 @@
 {
-  "captured": "2026-11-04",
-  "source": "PR #541 offset-slider revision on 594f993fe9fd820d4ea0b74153b98f0feb1099ed, before revision commit",
+  "captured": "2026-11-05",
+  "source": "PR #541 original-raster restoration on b8128ebab4072ec48f54b38d09d2f656029051d6, before revision commit",
+  "sourceFiles": [
+    {
+      "file": "hud_overlay/audio_head/index.html",
+      "sha256": "1b8eb5681f4219973690a21d6a4a387435bc5baf15c54277a4d4851e213226f8"
+    },
+    {
+      "file": "hud_overlay/audio_head/tests/browser/verify.cjs",
+      "sha256": "200a277d2bd2946256479e2285f7c44a18748906070e2c39e038bd72f62a93ea"
+    }
+  ],
   "environment": "Windows, sandboxed Edge, production React AppShell and HUD launcher with isolated HTTP/WebSocket fixtures",
   "viewport": "1280x720; narrow settings 320x720; Audio Head element crops at 100%, DPR 1",
+  "settings": "Traditional Chinese, Halfmoon Default / Swiss Technical / Rhine Lab, light and dark; form hidden-element configuration and right-aligned X capped at zero",
   "syntheticMedia": "HUD Demo - Night Drive",
-  "backdrop": "RGB(22, 27, 34) behind actual SVG and Canvas; no image retouching",
+  "backdrop": "RGB(22, 27, 34) behind actual original-raster and animation Canvas layers; element crops, no image retouching",
+  "reviewStatus": "Previous full-panel SVG redraws rejected by user. Original-raster revision supplied for visual re-review; automated checks are not user approval.",
+  "reproduce": "node frontend/src/features/overlay_control/tests/browser/verify.cjs (PLAYWRIGHT_MODULE_PATH task-local, PLAYWRIGHT_CHANNEL=msedge, OUTPUT_DIR)",
   "layouts": 336,
   "captures": 66,
   "saves": 90,
@@ -19,7 +32,8 @@
     "All seven cores, day/night, three locales, narrow/default/wide and reduced motion",
     "Six specialized gauge forms at 320px in all three locales",
     "Production AppShell with Live/Tune/HUD reference captures across all three design systems",
-    "Real launcher: independent sizes, four edges with inward-only sliders, nine live deck selections and audio-only unmount/remount"
+    "Real launcher: independent sizes, four edges with inward-only sliders, nine live deck selections and audio-only unmount/remount",
+    "All nine original raster faces: full-surface RGB preservation, native dimensions, single material opacity and no SVG replacements"
   ],
   "errors": [],
   "unexpectedRequests": [],
@@ -30,7 +44,22 @@
       "filename": "audio-head-00.png",
       "width": 568.5625,
       "height": 146.625,
-      "face": "assets/pioneer.svg"
+      "face": "assets/pioneer_clean.png",
+      "originalFace": {
+        "source": "assets/pioneer_clean.png",
+        "nativeSize": [
+          380,
+          98
+        ],
+        "renderedSize": [
+          380,
+          98
+        ],
+        "changedRgb": 0,
+        "translucent": 30052,
+        "opaque": 7188,
+        "invalidAlpha": 0
+      }
     },
     {
       "id": 1,
@@ -38,7 +67,22 @@
       "filename": "audio-head-01.png",
       "width": 655.34375,
       "height": 164.578125,
-      "face": "assets/panasonic.svg"
+      "face": "assets/panasonic_clean.png",
+      "originalFace": {
+        "source": "assets/panasonic_clean.png",
+        "nativeSize": [
+          438,
+          110
+        ],
+        "renderedSize": [
+          438,
+          110
+        ],
+        "changedRgb": 0,
+        "translucent": 28854,
+        "opaque": 19326,
+        "invalidAlpha": 0
+      }
     },
     {
       "id": 2,
@@ -46,7 +90,22 @@
       "filename": "audio-head-02.png",
       "width": 616.453125,
       "height": 146.625,
-      "face": "assets/pioneer_dexp1r.svg"
+      "face": "assets/pioneer_dexp1r_clean.png",
+      "originalFace": {
+        "source": "assets/pioneer_dexp1r_clean.png",
+        "nativeSize": [
+          412,
+          98
+        ],
+        "renderedSize": [
+          412,
+          98
+        ],
+        "changedRgb": 0,
+        "translucent": 25575,
+        "opaque": 14801,
+        "invalidAlpha": 0
+      }
     },
     {
       "id": 3,
@@ -54,7 +113,22 @@
       "filename": "audio-head-03.png",
       "width": 688.265625,
       "height": 187.03125,
-      "face": "assets/pioneer_p835r.svg"
+      "face": "assets/pioneer_p835r_clean.png",
+      "originalFace": {
+        "source": "assets/pioneer_p835r_clean.png",
+        "nativeSize": [
+          460,
+          125
+        ],
+        "renderedSize": [
+          460,
+          125
+        ],
+        "changedRgb": 0,
+        "translucent": 30536,
+        "opaque": 26964,
+        "invalidAlpha": 0
+      }
     },
     {
       "id": 4,
@@ -62,7 +136,22 @@
       "filename": "audio-head-04.png",
       "width": 658.34375,
       "height": 199,
-      "face": "assets/sony_cdx.svg"
+      "face": "assets/sony_cdx_clean.png",
+      "originalFace": {
+        "source": "assets/sony_cdx_clean.png",
+        "nativeSize": [
+          440,
+          133
+        ],
+        "renderedSize": [
+          440,
+          133
+        ],
+        "changedRgb": 0,
+        "translucent": 37289,
+        "opaque": 21231,
+        "invalidAlpha": 0
+      }
     },
     {
       "id": 5,
@@ -70,7 +159,22 @@
       "filename": "audio-head-05.png",
       "width": 658.34375,
       "height": 167.578125,
-      "face": "assets/alpine_7848.svg"
+      "face": "assets/alpine_7848_clean.png",
+      "originalFace": {
+        "source": "assets/alpine_7848_clean.png",
+        "nativeSize": [
+          440,
+          112
+        ],
+        "renderedSize": [
+          440,
+          112
+        ],
+        "changedRgb": 0,
+        "translucent": 37492,
+        "opaque": 11788,
+        "invalidAlpha": 0
+      }
     },
     {
       "id": 6,
@@ -78,7 +182,22 @@
       "filename": "audio-head-06.png",
       "width": 733.15625,
       "height": 164.578125,
-      "face": "assets/alpine_9815.svg"
+      "face": "assets/alpine_9815_clean.png",
+      "originalFace": {
+        "source": "assets/alpine_9815_clean.png",
+        "nativeSize": [
+          490,
+          110
+        ],
+        "renderedSize": [
+          490,
+          110
+        ],
+        "changedRgb": 0,
+        "translucent": 33920,
+        "opaque": 19980,
+        "invalidAlpha": 0
+      }
     },
     {
       "id": 7,
@@ -86,7 +205,22 @@
       "filename": "audio-head-07.png",
       "width": 586.515625,
       "height": 187.03125,
-      "face": "assets/kenwood_krc.svg"
+      "face": "assets/kenwood_krc_clean.png",
+      "originalFace": {
+        "source": "assets/kenwood_krc_clean.png",
+        "nativeSize": [
+          392,
+          125
+        ],
+        "renderedSize": [
+          392,
+          125
+        ],
+        "changedRgb": 0,
+        "translucent": 32916,
+        "opaque": 16084,
+        "invalidAlpha": 0
+      }
     },
     {
       "id": 8,
@@ -94,85 +228,169 @@
       "filename": "audio-head-08.png",
       "width": 688.265625,
       "height": 146.625,
-      "face": "assets/jvc_kameleon.svg"
+      "face": "assets/jvc_kameleon_clean.png",
+      "originalFace": {
+        "source": "assets/jvc_kameleon_clean.png",
+        "nativeSize": [
+          460,
+          98
+        ],
+        "renderedSize": [
+          460,
+          98
+        ],
+        "changedRgb": 0,
+        "translucent": 32340,
+        "opaque": 12740,
+        "invalidAlpha": 0
+      }
     }
   ],
+  "rasterSources": {
+    "originalCommit": "ff6baf5b8afd7332778bb0179432dcbfce40f68c",
+    "assets": [
+      {
+        "file": "hud_overlay/audio_head/assets/alpine_7848_clean.png",
+        "bytes": 29449,
+        "sha256": "43314b94c9d8e0f56e5e06ceec0fb379999ba14d7ef547dd0e83005c4990d22c",
+        "width": 440,
+        "height": 112
+      },
+      {
+        "file": "hud_overlay/audio_head/assets/alpine_9815_clean.png",
+        "bytes": 44076,
+        "sha256": "46ed599ebac2f22152b4a30f6f1aaf4386e114eb91b69384d3f0ebfd82e743e9",
+        "width": 490,
+        "height": 110
+      },
+      {
+        "file": "hud_overlay/audio_head/assets/jvc_kameleon_clean.png",
+        "bytes": 22526,
+        "sha256": "1928fbdd23afecbe9182acb91d89b02689b2635f1063e72976e0a299db30df4d",
+        "width": 460,
+        "height": 98
+      },
+      {
+        "file": "hud_overlay/audio_head/assets/kenwood_krc_clean.png",
+        "bytes": 35340,
+        "sha256": "4acce1b847a63b9f22a078294c99096bc9f3a898a2445a4f2437d1f18d2bd3ab",
+        "width": 392,
+        "height": 125
+      },
+      {
+        "file": "hud_overlay/audio_head/assets/panasonic_clean.png",
+        "bytes": 50819,
+        "sha256": "48a5664ac15ed58073c15c4667c85fe25ade3a52b08eae36aa79e7276bf3a56b",
+        "width": 438,
+        "height": 110
+      },
+      {
+        "file": "hud_overlay/audio_head/assets/pioneer_clean.png",
+        "bytes": 14071,
+        "sha256": "4e448d86fd622638912a943acd4165f47f1fa6fa20ef73f951021f9d8451c69b",
+        "width": 380,
+        "height": 98
+      },
+      {
+        "file": "hud_overlay/audio_head/assets/pioneer_dexp1r_clean.png",
+        "bytes": 32157,
+        "sha256": "51d5a5f8ac222a5682b5a4762adfa83e232b269181cf55d845193825921ec051",
+        "width": 412,
+        "height": 98
+      },
+      {
+        "file": "hud_overlay/audio_head/assets/pioneer_p835r_clean.png",
+        "bytes": 48568,
+        "sha256": "7a1f680b0e7d321cfe577bf688656ee1be8f232f15ce71f979054c3ca7b00ddb",
+        "width": 460,
+        "height": 125
+      },
+      {
+        "file": "hud_overlay/audio_head/assets/sony_cdx_clean.png",
+        "bytes": 39143,
+        "sha256": "d6f1e83a68dcd89fdb73b0da498b65a3bad86fef5d8930d38b4c6891bbc1b1ee",
+        "width": 440,
+        "height": 133
+      }
+    ]
+  },
+  "limits": "Isolated browser HTTP/WebSocket fixtures. No real audio/game, native cross-monitor or Narrator/NVDA acceptance.",
   "files": [
     {
       "name": "default-dark-1280-gauge.png",
-      "sha256": "ff4d31fc0d180c955aaff737fa48e69073c8f6b9a7d3fe0c412fcfc84e66e160"
+      "sha256": "ca5b501f064fb540e6dc8972af455569635fde8da85882de366736aea09e8658"
     },
     {
       "name": "default-dark-1280-telemetry.png",
-      "sha256": "f0d0d6510bb1350f39ccf4fb8bd96b93e8b904a03d10064325435f45bc1dffca"
+      "sha256": "6a79632458145951cc994d1230f070d202fdb099ac815a048172bdf71bc0a907"
     },
     {
       "name": "default-dark-1280-general.png",
-      "sha256": "10af89cf9e6476baa1f9d285c6ab6221d0b965e50966340baf5bc83364a570bc"
+      "sha256": "5b516c38c047038eb178bc7f83b6181009909891b68228681b1414a49a666c40"
     },
     {
       "name": "default-dark-320-audio-head.png",
-      "sha256": "556b7beb2276bfc86b281d3539f78849b9b7c9b3f17f9a6c9752f994f9627ce7"
+      "sha256": "ea61b6b0f0ec0df89e55e3e3fcbbef9c7d904ca56b80dae816d6387b098ba600"
     },
     {
       "name": "default-light-1280-audio-head.png",
-      "sha256": "54006c2f0968704dcd81ca8e66dc21851bfc7600bfd1240397001a618b4ade5b"
+      "sha256": "e95c1bccde45ac56b207d32317b4a1c2bd2f8d92db246d426de30288c4a8df6d"
     },
     {
       "name": "default-dark-1280-audio-head.png",
-      "sha256": "f24081095b1c36d29298d9f477dfc080019a3ae522e99b0bcc4074df5bf3ad53"
+      "sha256": "55790eb0b455708e1dfc46afffb3831942dc15357366415beb507f4e0167b368"
     },
     {
       "name": "swiss-light-1280-audio-head.png",
-      "sha256": "2ed2029573ebecfc686ce311a706fe50feea572776422eb1de344a7e893a511e"
+      "sha256": "cfbe602bf817eafc01d04dcf221fde8c6b41cdc52f761cc5f0fb8574b187f586"
     },
     {
       "name": "swiss-dark-1280-audio-head.png",
-      "sha256": "397230369e46a12907aa07dedca29c3c6e1fb68f0f720eb8bb363af7126386ab"
+      "sha256": "22fc5d7376ec94befae6d7e81210d05e9ba745feddad10760ec26fc602262ef5"
     },
     {
       "name": "rhine-lab-light-1280-audio-head.png",
-      "sha256": "7107cbc9dba17798d3cadf14c44f891e95bca03f1a5deb5d45843e8455d15a0a"
+      "sha256": "141ea6618dd95ceae20e8a5d819fa13ab1d1c7ef361cea89faeed1fed0520af0"
     },
     {
       "name": "rhine-lab-dark-1280-audio-head.png",
-      "sha256": "7e2721103e7359eabcd8592db488f40c92a852a2a4a68f600af796df9b8ef732"
+      "sha256": "4d0abcbc503aeb6ed139a01b5b59519a2b3a7800d86d45686ae6022551c41da5"
     },
     {
       "name": "audio-head-00.png",
-      "sha256": "1918117d5de81fc4cfb6c159d3628ba950d4fc4ce2d2d1f22e2c5e3f4d7d2469"
+      "sha256": "7048e476c41d180bf267b753d4a8e2bccfcb9b9ee3e8f9fd306638ba482dc741"
     },
     {
       "name": "audio-head-01.png",
-      "sha256": "5053283d76711d17ddbd7f597bc89578ef695123c138a4f92220dd7c8b7e6e71"
+      "sha256": "fdc3f49479e631508953d7524d7f4f7bff1064539713ad96a62b157933f7bc02"
     },
     {
       "name": "audio-head-02.png",
-      "sha256": "2bacceedea23fd8c2ca7c08c34af78db718a046ebbd7702f2fc212a306300c25"
+      "sha256": "072099830f42ba8bfc261a26ba77cd8f43019e5254984124872d1dcace456f0e"
     },
     {
       "name": "audio-head-03.png",
-      "sha256": "b9ed5442627db6f928db394fb786980095917a018571e8814753e88ea789e717"
+      "sha256": "0e19ff9af2cac2a08d36d3f54c408041153bc196d858c5e667dac622a9ce8158"
     },
     {
       "name": "audio-head-04.png",
-      "sha256": "6a2b68043291108d6caa9b8babedcef2cc35d7a2d2f030313173bddf7a2cb857"
+      "sha256": "dacd1a440b7d39281c00b0725fee48de1cd99f175754430c0a4dea8a2952e1ac"
     },
     {
       "name": "audio-head-05.png",
-      "sha256": "a68f79db3529cb5b03495a209fae884e9926a7846c91d85de2d106e18880ee0d"
+      "sha256": "636dfe64dcb9467e321218291f03733232d65e2acc413d718d58b8c94526db29"
     },
     {
       "name": "audio-head-06.png",
-      "sha256": "cff99d9847a7cddfa2343cc79358f4766cfc0d4db32119f3ad835a49f6b920d1"
+      "sha256": "04a067ba5a20b6b4f2258b83f05ae14cfe057d88daedf7c66ced21e20e0cf393"
     },
     {
       "name": "audio-head-07.png",
-      "sha256": "5f77330b697f4770527e3019fceaecfbd8f9e5b3493ac230a4ec847fabefd2cf"
+      "sha256": "19c1b2c1d4689fef725e54a457c321a5730a4044f5424abae4bacd5ad5303ad3"
     },
     {
       "name": "audio-head-08.png",
-      "sha256": "2c4933b1839f058c437c688598471ceaa184e2460d3ae2f71a9fb0a3596773c1"
+      "sha256": "a66ca98cb43534f711f101a331d05899c96fd7955ce8cdf7631f6da280aeb0f4"
     }
   ]
 }

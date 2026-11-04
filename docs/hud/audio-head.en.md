@@ -25,7 +25,7 @@ For existing audio configurations without `audioHeadScale`, frontend and Rust no
 
 ## Settings visual review
 
-Captured on 2026-11-04 from the production AppShell and React settings, 1280×720, Traditional Chinese. The fourth tab is named 音響系統 in this locale. These views demonstrate right alignment with X capped at zero; controls remain editable while the element is hidden.
+Captured on 2026-11-05 from the production AppShell and React settings, 1280×720, Traditional Chinese. The fourth tab is named 音響系統 in this locale. These views demonstrate right alignment with X capped at zero; controls remain editable while the element is hidden. Settings and all nine decks were recaptured together; see the [manifest](audio-head-screenshots/manifest.json) for the revision and source-file SHA-256 hashes.
 
 | Design system | Light | Dark |
 | --- | --- | --- |
@@ -50,7 +50,9 @@ Captured on 2026-11-04 from the production AppShell and React settings, 1280×72
 
 ## All nine models
 
-Each image is an element screenshot from the real HUD launcher and renderer after selecting the model in settings. Scale is 100%, DPR 1, with a neutral RGB(22, 27, 34) backdrop. Fixed synthetic WebSocket data supplies the spectrum and “HUD Demo - Night Drive” media text. The gauge and telemetry are hidden for unobstructed captures. Original rectangles, 75% background materials and separate decoration layers remain intact. See [asset documentation](../../hud_overlay/audio_head/assets/README.md) and [brand provenance](../../hud_overlay/audio_head/assets/brands/SOURCES.md).
+On 2026-11-05, user visual review rejected the full-panel vector redraws. Pioneer DEH-P835R, Alpine CDA-7848 and CDA-9815RB now use their original raster assets again. The other six decks also use their original `*_clean.png`, removing unverified retyped text, tracing and full-panel reconstruction. No partial vector replacements are active. Future replacements are limited to individual trademarks, logos or precisely described motifs with a verified matching vector source, documented provenance and before/after captures; otherwise the original image stays. See the [asset boundaries and per-deck sources](../../hud_overlay/audio_head/assets/README.md).
+
+Each image is an element screenshot from the real HUD launcher and renderer after selecting the model in settings. Scale is 100%, DPR 1, with a neutral RGB(22, 27, 34) backdrop. Fixed synthetic WebSocket data supplies the spectrum and “HUD Demo - Night Drive” media text. The gauge and telemetry are hidden for unobstructed captures. The PNG files remain unchanged; the pre-vector rectangle backing and 75% material-opacity treatment preserve decoration coverage. Spectrum, media text and VU remain on a separate animation layer. [Brand provenance](../../hud_overlay/audio_head/assets/brands/SOURCES.md) is retained as historical evidence, with no active use by the renderer.
 
 1. **Pioneer DEH-P6100R**
 
@@ -90,12 +92,13 @@ Each image is an element screenshot from the real HUD launcher and renderer afte
 
 ## Verification for this update
 
-- After the offset-slider revision: full frontend Vitest passes 1,939 tests with one existing skip; TypeScript/Vite build and `git diff --check` pass.
-- Rust verification at integration commit `594f993f`: defaults 242 passed, three ignored; `--no-default-features` 232 passed, two ignored. This slider revision changes no Rust, storage format or HUD renderer, so Cargo was not rerun.
-- `node hud_overlay/audio_head/assets/build-panels.mjs --check`: all nine vector outputs match their editable sources. This integration does not change the faceplate assets.
-- Separate R34/LFA/ST8100 browser contracts passed at `594f993f`, retaining their gauge and CJK glyph assertions. The current audio-slider revision uses the settings/launcher browser runner below.
+- After restoring raster faces: full frontend Vitest passes 1,939 tests with one existing skip; TypeScript/Vite build passes.
+- All nine original PNGs are byte-identical to pre-vector commit `ff6baf5b`. The historical SVG generator's `--check` and 44 normalization security contracts still pass; these verify the retained tools, not active SVG rendering or visual approval.
+- Rust verification at integration commit `594f993f`: defaults 242 passed, three ignored; `--no-default-features` 232 passed, two ignored. This revision changes Audio Head layers, browser verification and documentation, with no Rust or storage-format changes; Cargo was not rerun.
+- Separate R34/LFA/ST8100 browser contracts passed at `594f993f`, retaining their gauge and CJK glyph assertions. The current raster restoration uses the settings/launcher browser runner below.
 - Browser: 336 four-tab layouts (seven cores × light/dark × three locales × 1280/320px), plus 1920px, reduced motion and six specialized gauge forms. Keyboard/ARIA, drafts/scroll, hidden configuration, cross-tab writes, retry, unknown fields, reset and unit contracts pass.
 - Real launcher: independent gauge/audio scaling, four-edge placement, outward X/Y slider limits and inward movement, nine live model selections and audio-only mounting/unmounting. The run recorded 90 fixture saves, 66 captures, no page errors and no unexpected API calls. This gallery refreshes 19 images; see [manifest](audio-head-screenshots/manifest.json) for checks, dimensions and SHA-256 hashes.
+- Complete static-layer RGB comparisons pass for all nine original rasters (allowing one level of Canvas alpha-premultiplication rounding), with native dimensions and alpha 191/255 verified and no Audio Head SVG requests. The images have been inspected and supplied for user visual re-review; automated comparisons do not mean user approval.
 
 Run `node frontend/src/features/overlay_control/tests/browser/verify.cjs` with a task-local `PLAYWRIGHT_MODULE_PATH`, optionally `PLAYWRIGHT_CHANNEL=msedge` on Windows and `OUTPUT_DIR`. This runner invokes `hud_overlay/audio_head/tests/browser/verify.cjs`; browser checks remain outside Vitest.
 

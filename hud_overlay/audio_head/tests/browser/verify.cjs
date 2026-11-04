@@ -2,6 +2,38 @@
 // only HTTP/WebSocket surroundings and audio/media samples are fixtures.
 const assert = require('node:assert/strict');
 const path = require('node:path');
+const faceplates = ['pioneer', 'panasonic', 'pioneer_dexp1r', 'pioneer_p835r', 'sony_cdx',
+  'alpine_7848', 'alpine_9815', 'kenwood_krc', 'jvc_kameleon'].map(name => `assets/${name}_clean.png`);
+
+// Compare the complete static layer to the original raster, not individual drawing calls.
+// The only permitted change is material alpha; Canvas premultiplication may round RGB by 1.
+async function verifyOriginalFace(frame) {
+  const comparison = await frame.evaluate(async () => {
+    const face = document.querySelector('#radioFace');
+    const image = new Image(); image.src = face.dataset.source; await image.decode();
+    const reference = document.createElement('canvas');
+    reference.width = image.naturalWidth; reference.height = image.naturalHeight;
+    const ctx = reference.getContext('2d');
+    ctx.fillStyle = '#000'; ctx.fillRect(0, 0, reference.width, reference.height);
+    ctx.drawImage(image, 0, 0);
+    const original = ctx.getImageData(0, 0, reference.width, reference.height).data;
+    const rendered = face.getContext('2d').getImageData(0, 0, face.width, face.height).data;
+    let changedRgb = 0, translucent = 0, opaque = 0, invalidAlpha = 0;
+    for (let i = 0; i < rendered.length; i += 4) {
+      if ([0, 1, 2].some(channel => Math.abs(original[i + channel] - rendered[i + channel]) > 1)) changedRgb++;
+      if (rendered[i + 3] === 191) translucent++;
+      else if (rendered[i + 3] === 255) opaque++;
+      else invalidAlpha++;
+    }
+    return { source: face.dataset.source, nativeSize: [reference.width, reference.height],
+      renderedSize: [face.width, face.height], changedRgb, translucent, opaque, invalidAlpha };
+  });
+  assert.deepEqual(comparison.renderedSize, comparison.nativeSize);
+  assert.equal(comparison.changedRgb, 0, 'Original lettering, motifs and colours must be preserved');
+  assert.equal(comparison.invalidAlpha, 0, 'Background transparency must be applied exactly once');
+  assert(comparison.translucent > 0 && comparison.opaque > 0, 'Keep both translucent material and opaque decoration');
+  return comparison;
+}
 
 module.exports = async function verifyAudioHead({ page, context, origin, out, report }) {
   const audioTab = page.getByRole('tab', { name: 'Audio Head', exact: true });
@@ -25,7 +57,7 @@ module.exports = async function verifyAudioHead({ page, context, origin, out, re
     const renderer = () => hud.frames().find(frame => frame.url().includes('/audio_head/index.html'));
     await hud.locator('#audio-head-iframe').waitFor();
     await hud.waitForFunction(() => document.querySelector('#audio-head-iframe')?.contentWindow?.HUDCore?.getCurrentConfig()?.elements?.showAudioHead === true);
-    // Neutral review backdrop only; the actual SVG and Canvas keep their opacity.
+    // Neutral review backdrop only; the actual raster and animation layers keep their opacity.
     await hud.addStyleTag({ content: 'html { background: rgb(22, 27, 34) !important; }' });
     socket.send(JSON.stringify({ type: 'hud:media', data: { title: 'Night Drive', artist: 'HUD Demo', status: 'playing' } }));
     socket.send(JSON.stringify({ type: 'hud:audio', data: { sequence: 1, has_audio: true, state: 'live', vu_left: 0.62, vu_right: 0.48,
@@ -78,16 +110,17 @@ module.exports = async function verifyAudioHead({ page, context, origin, out, re
     report.audioHeadDecks = [];
     for (const deck of decks) {
       await model.selectOption(String(deck.id)); await idle();
-      await renderer().waitForFunction(id => HUDCore.getCurrentConfig().audioHeadDeck === id
-        && window.currentMode === id && document.querySelector('#radioFace').complete
-        && document.querySelector('#radioFace').naturalWidth > 0, deck.id);
+      await renderer().waitForFunction(({ id, source }) => HUDCore.getCurrentConfig().audioHeadDeck === id
+        && window.currentMode === id && document.querySelector('#radioFace').dataset.source === source,
+      { id: deck.id, source: faceplates[deck.id] });
+      const originalFace = await verifyOriginalFace(renderer());
       await renderer().evaluate(() => document.fonts.ready);
       await hud.waitForTimeout(100); // Let actual VU dynamics respond before capturing.
       const filename = `audio-head-${String(deck.id).padStart(2, '0')}.png`;
       await renderer().locator('#audioHeadContainer').screenshot({ path: path.join(out, filename), animations: 'disabled' });
       const rect = await renderer().locator('#audioHeadContainer').boundingBox();
       report.audioHeadDecks.push({ ...deck, filename, width: rect.width, height: rect.height,
-        face: await renderer().locator('#radioFace').getAttribute('src') });
+        face: originalFace.source, originalFace });
       report.screenshots.push(filename);
     }
     await toggle.uncheck(); await idle(); await hud.locator('#audio-head-iframe').waitFor({ state: 'detached' });
@@ -96,6 +129,10 @@ module.exports = async function verifyAudioHead({ page, context, origin, out, re
     await hud.waitForFunction(() => document.querySelector('#audio-head-iframe')?.contentWindow?.HUDCore?.getCurrentConfig()?.audioHeadDeck === 8);
     assert.equal(gauge.isDetached(), false);
     report.checks.push('Real launcher: independent sizes, four edges with inward-only sliders, nine live deck selections and audio-only unmount/remount');
+    const vectorRequests = await renderer().evaluate(() => performance.getEntriesByType('resource')
+      .map(entry => entry.name).filter(name => /\/audio_head\/assets\/.*\.svg(?:\?|$)/.test(name)));
+    assert.deepEqual(vectorRequests, [], 'Audio Head must not load rejected full-panel SVG redraws');
+    report.checks.push('All nine original raster faces: full-surface RGB preservation, native dimensions, single material opacity and no SVG replacements');
     assert.deepEqual(failures, []);
   } finally { await hud.close(); }
 };

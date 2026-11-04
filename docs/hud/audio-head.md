@@ -25,7 +25,7 @@
 
 ## 設定頁視覺審查
 
-2026-11-04，正式 AppShell 與 React 設定頁，1280×720、繁中。三種設計系統的日夜模式如下；展示靠右對齊、X 上限為 0 的拉桿，關閉音響時表單仍可編輯。
+2026-11-05，正式 AppShell 與 React 設定頁，1280×720、繁中。三種設計系統的日夜模式如下；展示靠右對齊、X 上限為 0 的拉桿，關閉音響時表單仍可編輯。與下方九款樣式同次重新擷取，版本與來源檔 SHA-256 見 [manifest](audio-head-screenshots/manifest.json)。
 
 | 設計系統 | 日間 | 夜間 |
 | --- | --- | --- |
@@ -56,7 +56,9 @@
 
 ## 九款樣式
 
-以下每張都由實際 HUD launcher 掛載 renderer，從設定頁切換型號後擷取元素；不是設計稿或重畫的截圖。縮放 100%、DPR 1，背景採中性 RGB(22, 27, 34)，曲名與頻譜來自固定模擬 WebSocket 資料「HUD Demo - Night Drive」。主儀表及遙測在擷取時隱藏，以免穿過半透明面板干擾審查。保留原始矩形、材質 75% 不透明度及獨立裝飾圖層；來源與重建方式見[素材說明](../../hud_overlay/audio_head/assets/README.md)及[品牌來源](../../hud_overlay/audio_head/assets/brands/SOURCES.md)。
+2026-11-05 使用者視覺審查否決整面向量重繪，Pioneer DEH-P835R、Alpine CDA-7848、CDA-9815RB 已回退原始素材圖。其餘六款也改回原始 `*_clean.png`，移除未確認的字型重排、描摹與整面重建；目前沒有局部向量替換。日後僅在確認存在相同圖形的向量檔時，才局部替換對應商標、標誌或可逐點描述的圖樣，並附來源及前後對照；無法確認則保留原圖。詳見[素材界線與逐款來源](../../hud_overlay/audio_head/assets/README.md)。
+
+以下每張都由實際 HUD launcher 掛載 renderer，從設定頁切換型號後擷取元素；不是設計稿或重畫的截圖。縮放 100%、DPR 1，背景採中性 RGB(22, 27, 34)，曲名與頻譜來自固定模擬 WebSocket 資料「HUD Demo - Night Drive」。主儀表及遙測在擷取時隱藏，以免穿過半透明面板干擾審查。原始 PNG 保持不變，沿用向量化之前的矩形補底及材質 75% 不透明度處理，保留裝飾覆蓋度；動態頻譜、曲名及 VU 仍獨立繪製。[品牌來源](../../hud_overlay/audio_head/assets/brands/SOURCES.md)僅作歷史備查，不在目前 renderer 使用。
 
 1. **Pioneer DEH-P6100R**
 
@@ -96,12 +98,13 @@
 
 ## 本輪驗證
 
-- 位移拉桿修訂後完整 frontend Vitest：1,939 passed、1 個既有 skip；TypeScript／Vite build 與 `git diff --check` 通過。
-- Rust 在整合版本 `594f993f` 驗證：預設功能 242 passed、3 ignored；`--no-default-features` 232 passed、2 ignored。本次拉桿修訂未改動 Rust、設定格式或 HUD renderer，未重跑 Cargo。
-- 向量產物 `node hud_overlay/audio_head/assets/build-panels.mjs --check`：九款與可編輯來源一致，本輪未修改面板素材。
-- R34／LFA／ST8100 各自的獨立設定頁瀏覽器契約在 `594f993f` 通過，保留儀表與 CJK 字形斷言。本次音響拉桿修訂由下列設定頁／launcher 瀏覽器腳本驗證。
+- 原始素材回退後完整 frontend Vitest：1,939 passed、1 個既有 skip；TypeScript／Vite build 通過。
+- 九張原始 PNG 與整面向量化前 `ff6baf5b` 逐一做位元組比對，全部相同。歷史 SVG 的 `build-panels.mjs --check` 及 44 項正規化安全契約保留通過，僅作歷史工具回歸，不代表目前執行 SVG 或視覺審查通過。
+- Rust 在整合版本 `594f993f` 驗證：預設功能 242 passed、3 ignored；`--no-default-features` 232 passed、2 ignored。本次僅修改 Audio Head 圖層、瀏覽器驗證與文件，未改動 Rust 或設定格式，未重跑 Cargo。
+- R34／LFA／ST8100 各自的獨立設定頁瀏覽器契約在 `594f993f` 通過，保留儀表與 CJK 字形斷言。本次素材回退由下列設定頁／launcher 瀏覽器腳本驗證。
 - 瀏覽器：336 組四分頁版面（七個核心 × 日夜 × 三語 × 1280／320px），另含 1920px、reduced motion、六款儀表專屬表單；分頁鍵盤／ARIA、草稿與捲動保留、關閉後設定、跨頁保存、失敗重試、未知欄位、重設及單位契約。
 - 實際 launcher：音響／主儀表獨立縮放、四邊對齊、X／Y 拉桿向外鎖定與向內移動、九款即時切換及音響單獨掛載／卸載。共 90 次 fixture 保存、66 張擷取、零 page errors、零非預期 API；此圖集更新 19 張。摘要、尺寸與 SHA-256 見 [manifest](audio-head-screenshots/manifest.json)。
+- 九款完整靜態底圖 RGB 與原素材比對通過（容許 alpha 預乘的 1 級捨入），原生尺寸及 alpha 191／255 檢查通過，未請求 Audio Head SVG。圖片已檢視並提交供使用者重新視覺審查；自動比對不代表使用者已通過審查。
 
 重現入口：`node frontend/src/features/overlay_control/tests/browser/verify.cjs`，以 `PLAYWRIGHT_MODULE_PATH` 指向任務專用 Playwright，Windows 可設 `PLAYWRIGHT_CHANNEL=msedge`，`OUTPUT_DIR` 指定輸出。音響契約由此 runner 呼叫 `hud_overlay/audio_head/tests/browser/verify.cjs`；瀏覽器腳本維持獨立執行，不混入 Vitest。
 
