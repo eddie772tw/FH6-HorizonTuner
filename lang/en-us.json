@@ -1823,5 +1823,12 @@
   "HorizonTuner Companion": "HorizonTuner Companion",
   "Companion sections": "Companion sections",
   "Connection settings": "Connection settings",
-  "Connection mode": "Connection mode"
+  "Connection mode": "Connection mode",
+  "companion.telemetry_cards": "Telemetry cards",
+  "companion.cards.driver": "Driver",
+  "companion.cards.traces": "Traces",
+  "companion.cards.dynamics": "Dynamics",
+  "companion.cards.tires": "Tires",
+  "companion.cards.suspension": "Suspension",
+  "Live Telemetry Traces": "Live Telemetry Traces"
 }

@@ -53,3 +53,9 @@
 **學習 (Learning):** 設定介面中用作狀態徽章 (Badge) 的文字，常因開發者直接將動態數量與假想的字串進行模板拼接（如 `${count} ${t('DEVICE(S) CONNECTED')}`）而發生字典鍵缺失，導致在所有非英文環境中永遠顯示未翻譯的大寫英文；此外，Companion 應用程式頂層 `<main>`、`<nav>` 與連線模式開關等結構容器的 `aria-label` 若未包裝 `t()`，會使螢幕閱讀器使用者遭遇英文穿透，無法感知當前操作區段。
 **行動 (Action):** 審查狀態徽章時，一律優先檢查專案字典中是否已有現成參數化鍵值（如 `{activeCount} Companion device(s) connected`），並徹底取代 `${count} ${t('KEY')}` 形式之字串拼接；同時將 Companion 頂層結構與無障礙標籤全面以 `t()` 包裝並同步收錄至 `en-us.json`、`zh-tw.json` 與 `ja-jp.json`。
 **署名:** Narrator as Antigravity
+
+
+## 2026-11-04 - CSS Text-Transform Anti-Pattern & Accessible Tab Labeling
+**學習 (Learning):** 在行動或隨行視圖中，將未翻譯的內部 ID 直接傳入 Tab 按鈕並仰賴 CSS（如 `text-transform: capitalize`）呈現大寫，是常見的在地化反模式；這會導致所有非英文語系直接暴露英文小寫 raw ID，且螢幕閱讀器使用者無法獲悉卡片的完整語義。同時，全局字典中的通用詞（如 `"Tires": "輪胎氣壓"`）可能因歷史上下文產生語意窄化，若直接復用於不同場景會造成非預期的語義偏離。
+**行動 (Action):** Companion Tab 導航按鈕應採用分層標籤架構：按鈕可視文字採用模組化命名空間（如 `companion.cards.*`）的精簡短標籤，`aria-label` 則綁定卡片全名（如 `t("Tire Grip & Status")`），同時將桌面與隨行視圖共享的標題鍵（如 `Live Telemetry Traces`）同步收錄至各語系字典，兼顧緊湊排版與無障礙語意完整性。
+**署名:** Narrator as Antigravity
