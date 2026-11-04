@@ -124,10 +124,21 @@ const GForceRadar: React.FC<GForceRadarProps> = React.memo(({ size: propSize, re
     let lastMarkerTime = 0;
     let rafId: number;
 
-    const drawMarkers = () => {
+    const markerSlots = [
+      { lat: 0, lon: 0 },
+      { lat: 0, lon: 0 },
+      { lat: 0, lon: 0 },
+      { lat: 0, lon: 0 },
+      { lat: 0, lon: 0 },
+      { lat: 0, lon: 0 },
+      { lat: 0, lon: 0 },
+      { lat: 0, lon: 0 },
+    ];
+
+    function drawMarkers() {
       if (!paint.canPaint() || !surface.sync()) return;
       const mCanvas = canvas;
-
+      if (!mCanvas) return;
       const ctx = mCanvas.getContext('2d');
       if (!ctx) return;
 
@@ -139,14 +150,10 @@ const GForceRadar: React.FC<GForceRadarProps> = React.memo(({ size: propSize, re
       const radius = size / 2;
 
       const histNow = performance.now();
-      let maxLatL = { lat: 0, lon: 0 },
-        maxLatR = { lat: 0, lon: 0 };
-      let maxLonB = { lat: 0, lon: 0 },
-        maxLonA = { lat: 0, lon: 0 };
-      let maxL_B = { lat: 0, lon: 0 },
-        maxL_A = { lat: 0, lon: 0 };
-      let maxR_B = { lat: 0, lon: 0 },
-        maxR_A = { lat: 0, lon: 0 };
+      for (let i = 0; i < 8; i++) {
+        markerSlots[i].lat = 0;
+        markerSlots[i].lon = 0;
+      }
       let foundAny = false;
 
       const len = hist.current.length;
@@ -154,42 +161,64 @@ const GForceRadar: React.FC<GForceRadarProps> = React.memo(({ size: propSize, re
         const p = hist.current[i];
         if (histNow - p.time > 30000) continue;
         foundAny = true;
-        if (p.lat < maxLatL.lat) maxLatL = p;
-        if (p.lat > maxLatR.lat) maxLatR = p;
-        if (p.lon < maxLonB.lon) maxLonB = p;
-        if (p.lon > maxLonA.lon) maxLonA = p;
-        if (p.lat < 0 && p.lon < 0 && p.lat + p.lon < maxL_B.lat + maxL_B.lon) maxL_B = p;
-        if (p.lat < 0 && p.lon > 0 && p.lat - p.lon < maxL_A.lat - maxL_A.lon) maxL_A = p;
-        if (p.lat > 0 && p.lon < 0 && p.lat - p.lon > maxR_B.lat - maxR_B.lon) maxR_B = p;
-        if (p.lat > 0 && p.lon > 0 && p.lat + p.lon > maxR_A.lat + maxR_A.lon) maxR_A = p;
+        const s0 = markerSlots[0], s1 = markerSlots[1], s2 = markerSlots[2], s3 = markerSlots[3];
+        const s4 = markerSlots[4], s5 = markerSlots[5], s6 = markerSlots[6], s7 = markerSlots[7];
+        if (p.lat < s0.lat) { s0.lat = p.lat; s0.lon = p.lon; }
+        if (p.lat > s1.lat) { s1.lat = p.lat; s1.lon = p.lon; }
+        if (p.lon < s2.lon) { s2.lat = p.lat; s2.lon = p.lon; }
+        if (p.lon > s3.lon) { s3.lat = p.lat; s3.lon = p.lon; }
+        if (p.lat < 0 && p.lon < 0 && p.lat + p.lon < s4.lat + s4.lon) { s4.lat = p.lat; s4.lon = p.lon; }
+        if (p.lat < 0 && p.lon > 0 && p.lat - p.lon < s5.lat - s5.lon) { s5.lat = p.lat; s5.lon = p.lon; }
+        if (p.lat > 0 && p.lon < 0 && p.lat - p.lon > s6.lat - s6.lon) { s6.lat = p.lat; s6.lon = p.lon; }
+        if (p.lat > 0 && p.lon > 0 && p.lat + p.lon > s7.lat + s7.lon) { s7.lat = p.lat; s7.lon = p.lon; }
       }
 
       if (!foundAny) return;
 
-      const markers = [maxLatL, maxLatR, maxLonB, maxLonA, maxL_B, maxL_A, maxR_B, maxR_A];
+      ctx.save();
+      try {
+        const hasGlow = !theme.flat && theme.glowStrength > 0;
+        ctx.strokeStyle = theme.marker;
+        ctx.fillStyle = theme.marker;
+        ctx.shadowColor = hasGlow ? theme.marker : 'transparent';
+        ctx.shadowBlur = hasGlow ? theme.glowStrength * 4 * dpr : 0;
+        ctx.lineWidth = 1.2 * dpr;
 
-      ctx.fillStyle = theme.marker;
-      // [PERF] Loop unswitching: hoisting condition outside loop avoids evaluating theme.linear per marker.
-      // Additionally, using ctx.fillRect immediately writes to canvas without path batching overhead and preserves alpha compositing.
-      if (theme.linear) {
-        for (const p of markers) {
-          const offset = calculateGPointOffset(p.lat, p.lon, radius, 3);
-          const cx = (radius + offset.dx) * dpr;
-          const cy = (radius + offset.dy) * dpr;
-          ctx.fillRect(cx - 2.5 * dpr, cy - 2.5 * dpr, 5 * dpr, 5 * dpr);
+        if (theme.linear) {
+          for (let i = 0; i < 8; i++) {
+            const p = markerSlots[i];
+            const offset = calculateGPointOffset(p.lat, p.lon, radius, 3);
+            const cx = (radius + offset.dx) * dpr;
+            const cy = (radius + offset.dy) * dpr;
+            ctx.strokeRect(cx - 3.5 * dpr, cy - 3.5 * dpr, 7 * dpr, 7 * dpr);
+            ctx.fillRect(cx - 1.8 * dpr, cy - 1.8 * dpr, 3.6 * dpr, 3.6 * dpr);
+          }
+        } else {
+          // Coaxial apex markers: outer glowing halo ring (4.2 * dpr) + high-contrast solid core (2.0 * dpr)
+          ctx.beginPath();
+          for (let i = 0; i < 8; i++) {
+            const p = markerSlots[i];
+            const offset = calculateGPointOffset(p.lat, p.lon, radius, 3);
+            const cx = (radius + offset.dx) * dpr;
+            const cy = (radius + offset.dy) * dpr;
+            ctx.moveTo(cx + 4.2 * dpr, cy);
+            ctx.arc(cx, cy, 4.2 * dpr, 0, Math.PI * 2);
+          }
+          ctx.stroke();
+
+          ctx.beginPath();
+          for (let i = 0; i < 8; i++) {
+            const p = markerSlots[i];
+            const offset = calculateGPointOffset(p.lat, p.lon, radius, 3);
+            const cx = (radius + offset.dx) * dpr;
+            const cy = (radius + offset.dy) * dpr;
+            ctx.moveTo(cx + 2.0 * dpr, cy);
+            ctx.arc(cx, cy, 2.0 * dpr, 0, Math.PI * 2);
+          }
+          ctx.fill();
         }
-      } else {
-        // [PERF] Path batching: moving ctx.beginPath() and ctx.fill() outside loop and preceding ctx.arc() with ctx.moveTo()
-        // to minimize state changes and drastically reduce CPU overhead during high-frequency render loops.
-        ctx.beginPath();
-        for (const p of markers) {
-          const offset = calculateGPointOffset(p.lat, p.lon, radius, 3);
-          const cx = (radius + offset.dx) * dpr;
-          const cy = (radius + offset.dy) * dpr;
-          ctx.moveTo(cx + 3 * dpr, cy);
-          ctx.arc(cx, cy, 3 * dpr, 0, Math.PI * 2);
-        }
-        ctx.fill();
+      } finally {
+        ctx.restore();
       }
     };
 
