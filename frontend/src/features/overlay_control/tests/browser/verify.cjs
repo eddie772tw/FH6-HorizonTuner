@@ -131,18 +131,49 @@ async function main() {
     await page.getByRole('slider', { name: 'Main gauge scale', exact: true }).press('Home');
     await saved({ scale: 0.5, audioHeadScale: 2 }); await idle();
     await tab('audio-head').click();
-    const offset = page.getByRole('spinbutton', { name: 'Audio Head Center Offset (px)', exact: true });
+    const audioScaleInput = page.getByRole('spinbutton', { name: 'Audio Head scale', exact: true });
     const beforeAudioDraft = report.saves.length;
-    await offset.fill('-125'); await tab('general').click(); await tab('audio-head').click();
-    assert.equal(await offset.inputValue(), '-125');
+    await audioScaleInput.fill('125'); await tab('general').click(); await tab('audio-head').click();
+    assert.equal(await audioScaleInput.inputValue(), '125');
     assert.equal(report.saves.length, beforeAudioDraft);
-    await offset.press('Enter'); await saved({ audioHeadCenterOffset: -125 }); await idle();
-    await offset.fill(''); await tab('gauge').click(); await tab('audio-head').click();
-    assert.equal(await offset.inputValue(), '');
-    await offset.press('Escape'); assert.equal(await offset.inputValue(), '-125');
+    await audioScaleInput.press('Enter'); await saved({ audioHeadScale: 1.25 }); await idle();
+    await audioScaleInput.fill(''); await tab('gauge').click(); await tab('audio-head').click();
+    assert.equal(await audioScaleInput.inputValue(), '');
+    await audioScaleInput.fill('200'); await audioScaleInput.press('Enter'); await idle();
+    const audioAlignment = page.getByRole('combobox', { name: 'Audio Head Alignment', exact: true });
+    const audioX = page.getByRole('slider', { name: 'Audio Head X-Offset', exact: true });
+    const audioY = page.getByRole('slider', { name: 'Audio Head Y-Offset', exact: true });
+    assert.equal(await audioX.isEnabled(), true); assert.equal(await audioY.isEnabled(), true);
+    // Changing anchors preserves the other screen axis and clamps the forbidden direction.
+    await audioX.press('ArrowRight'); await audioY.press('ArrowLeft'); await idle();
+    await audioAlignment.selectOption('right'); await idle();
+    assert.equal(await audioX.inputValue(), '0'); assert.equal(await audioY.inputValue(), '-1');
+    await saved({ audioHeadEdge: 'right', audioHeadOffset: 0, audioHeadCenterOffset: -1 });
+    await audioY.press('ArrowRight'); await idle();
+    for (const edge of ['left', 'right', 'top', 'bottom']) {
+      await audioAlignment.selectOption(edge); await idle();
+      const locked = edge === 'left' || edge === 'right' ? audioX : audioY;
+      const inwardPositive = edge === 'left' || edge === 'top';
+      assert.equal(await locked.getAttribute(inwardPositive ? 'min' : 'max'), '0');
+      await locked.press(inwardPositive ? 'Home' : 'End');
+      await locked.press(inwardPositive ? 'ArrowLeft' : 'ArrowRight');
+      assert.equal(await locked.inputValue(), '0', edge + ' must reject outward motion past zero');
+      await locked.press(inwardPositive ? 'ArrowRight' : 'ArrowLeft'); await idle();
+      assert.equal(await locked.inputValue(), inwardPositive ? '1' : '-1');
+      await saved({ audioHeadEdge: edge, audioHeadOffset: 1 });
+      await locked.press(inwardPositive ? 'Home' : 'End'); await idle();
+    }
+    // Values survive cross-tab edits and a reload in the original storage format.
+    await audioX.press('ArrowLeft'); await idle();
+    await tab('general').click(); await tab('audio-head').click();
+    assert.equal(await audioX.inputValue(), '-1');
+    await open(); await tab('audio-head').click();
+    assert.equal(await audioAlignment.inputValue(), 'bottom');
+    assert.equal(await audioX.inputValue(), '-1'); assert.equal(await audioY.inputValue(), '0');
+    await audioX.press('ArrowRight'); await audioAlignment.selectOption('left'); await idle();
     await page.getByRole('checkbox', { name: 'Show Audio Head', exact: true }).check(); await idle();
     assert.equal(config.audioHeadScale, 2); assert.equal(config.scale, 0.5);
-    report.checks.push('Fourth Audio Head tab: hidden configuration, independent scale and valid/empty offset drafts');
+    report.checks.push('Fourth Audio Head tab: hidden configuration, scale drafts, X/Y sliders, four directional bounds and persisted reload');
 
     await tab('telemetry').click();
     const collapsed = panel('telemetry').locator('details').first();
@@ -231,6 +262,8 @@ async function main() {
     assert.equal(config.elements.showGauge, defaults.DEFAULT_HUD_CONFIG.elements.showGauge);
     report.checks.push('Reset cancellation and confirmed defaults preserve enabled');
 
+    // The settings gallery demonstrates the right anchor with X capped at zero.
+    await tab('audio-head').click(); await audioAlignment.selectOption('right'); await idle();
     for (const language of ['en-us', 'zh-tw', 'ja-jp']) {
       await open(language);
       const dictionary = JSON.parse(fs.readFileSync(path.join(repo, 'lang', language + '.json'), 'utf8'));

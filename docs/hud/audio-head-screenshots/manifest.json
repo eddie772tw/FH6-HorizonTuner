@@ -1,16 +1,16 @@
 {
   "captured": "2026-11-04",
-  "source": "PR #541 after merging main 08f814c10c5ac3d6987276392900c02311d6ea04, before integration commit",
+  "source": "PR #541 offset-slider revision on 594f993fe9fd820d4ea0b74153b98f0feb1099ed, before revision commit",
   "environment": "Windows, sandboxed Edge, production React AppShell and HUD launcher with isolated HTTP/WebSocket fixtures",
   "viewport": "1280x720; narrow settings 320x720; Audio Head element crops at 100%, DPR 1",
   "syntheticMedia": "HUD Demo - Night Drive",
   "backdrop": "RGB(22, 27, 34) behind actual SVG and Canvas; no image retouching",
   "layouts": 336,
   "captures": 66,
-  "saves": 62,
+  "saves": 90,
   "checks": [
     "Keyboard, ARIA relationships, hidden panels and side-effect-free tab changes",
-    "Fourth Audio Head tab: hidden configuration, independent scale and valid/empty offset drafts",
+    "Fourth Audio Head tab: hidden configuration, scale drafts, X/Y sliders, four directional bounds and persisted reload",
     "Collapsed details skip hidden controls and support keyboard expansion",
     "Hidden configuration, cross-tab patches, tire dependency, G alignment and merged-chart values",
     "Retained expansion, draft and independent scroll positions",
@@ -19,7 +19,7 @@
     "All seven cores, day/night, three locales, narrow/default/wide and reduced motion",
     "Six specialized gauge forms at 320px in all three locales",
     "Production AppShell with Live/Tune/HUD reference captures across all three design systems",
-    "Real launcher: independent sizes, four edges, nine live deck selections and audio-only unmount/remount"
+    "Real launcher: independent sizes, four edges with inward-only sliders, nine live deck selections and audio-only unmount/remount"
   ],
   "errors": [],
   "unexpectedRequests": [],
@@ -100,47 +100,47 @@
   "files": [
     {
       "name": "default-dark-1280-gauge.png",
-      "sha256": "9474ad656be81eb232dd6873c275cac9e17d80efdf3dcb75112d74b18c3981ae"
+      "sha256": "ff4d31fc0d180c955aaff737fa48e69073c8f6b9a7d3fe0c412fcfc84e66e160"
     },
     {
       "name": "default-dark-1280-telemetry.png",
-      "sha256": "0ff4669f9723e8da2754e23eb7e62b9c4ad29c1a90ed3ea7248e4f9cd4d7c3f2"
+      "sha256": "f0d0d6510bb1350f39ccf4fb8bd96b93e8b904a03d10064325435f45bc1dffca"
     },
     {
       "name": "default-dark-1280-general.png",
-      "sha256": "b7a31d26cf76036c693c3cc258ba94359624e31e048a5b1d94fb64b721b2e61e"
+      "sha256": "10af89cf9e6476baa1f9d285c6ab6221d0b965e50966340baf5bc83364a570bc"
     },
     {
       "name": "default-dark-320-audio-head.png",
-      "sha256": "a595935ef96f52232552b2e1a0d61a78a865c0c060423566671fc37ab5c06a65"
+      "sha256": "556b7beb2276bfc86b281d3539f78849b9b7c9b3f17f9a6c9752f994f9627ce7"
     },
     {
       "name": "default-light-1280-audio-head.png",
-      "sha256": "bb674e31ce049f3ee47c6f529a46bbc05e9f3581bb133b3f09d31b4a754d8697"
+      "sha256": "54006c2f0968704dcd81ca8e66dc21851bfc7600bfd1240397001a618b4ade5b"
     },
     {
       "name": "default-dark-1280-audio-head.png",
-      "sha256": "4bde888300d02f422e4991cd22d9667c63f90f83e3d75d0e990090304b9c3947"
+      "sha256": "f24081095b1c36d29298d9f477dfc080019a3ae522e99b0bcc4074df5bf3ad53"
     },
     {
       "name": "swiss-light-1280-audio-head.png",
-      "sha256": "913b6649160147bfa45e088ab1bd51cd8c80efa7b6de7a47ddd3dbd15143f4ce"
+      "sha256": "2ed2029573ebecfc686ce311a706fe50feea572776422eb1de344a7e893a511e"
     },
     {
       "name": "swiss-dark-1280-audio-head.png",
-      "sha256": "f49b2aad4c755aaac4b617beeb7c6e6e92fcdb4b5b7e64d87f8d34267aa62d99"
+      "sha256": "397230369e46a12907aa07dedca29c3c6e1fb68f0f720eb8bb363af7126386ab"
     },
     {
       "name": "rhine-lab-light-1280-audio-head.png",
-      "sha256": "deb81d69b2d40237da1d546a7605f8a96ec8211f0e6b568ab30300b4107a6b7a"
+      "sha256": "7107cbc9dba17798d3cadf14c44f891e95bca03f1a5deb5d45843e8455d15a0a"
     },
     {
       "name": "rhine-lab-dark-1280-audio-head.png",
-      "sha256": "3c5583d358df169687b3a42103071a866e64c8635165c569c17fb484b1594dc1"
+      "sha256": "7e2721103e7359eabcd8592db488f40c92a852a2a4a68f600af796df9b8ef732"
     },
     {
       "name": "audio-head-00.png",
-      "sha256": "100767df0ad3dc32ba487c3aebd9bd31520ac8c7ac7d196b9005589318dbb15a"
+      "sha256": "1918117d5de81fc4cfb6c159d3628ba950d4fc4ce2d2d1f22e2c5e3f4d7d2469"
     },
     {
       "name": "audio-head-01.png",

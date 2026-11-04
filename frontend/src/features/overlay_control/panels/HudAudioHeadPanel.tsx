@@ -1,7 +1,7 @@
-import { useEffect, useId, useState } from 'react';
+import { useId } from 'react';
 import type { HudPanelActions } from '../hudPanelTypes';
 import type { HudConfig, HudElements } from '../hudConfig';
-import { isHudSettingsTab } from '../hudSettingsFocus';
+import { audioHeadOffsetBounds, readAudioHeadPosition, writeAudioHeadPosition } from '../audioHeadPosition';
 import { HudRange, HudSettingsSection, HudSwitch } from './HudSettingsControls';
 
 const DECKS = [
@@ -16,29 +16,10 @@ type Props = HudPanelActions & {
   };
 };
 
-function OffsetInput({ id, value, min, onCommit }: {
-  id: string; value: number; min: number; onCommit: (value: number) => void;
-}) {
-  const [draft, setDraft] = useState(String(value));
-  useEffect(() => { setDraft(String(value)); }, [value]);
-  const commit = () => {
-    const number = Number(draft);
-    if (!draft.trim() || !Number.isFinite(number)) return;
-    const next = Math.max(min, Math.min(4000, number));
-    setDraft(String(next));
-    if (next !== value) onCommit(next);
-  };
-  return <input id={id} type="number" className="form-control form-control-sm" min={min} max={4000} step={1}
-    value={draft} onChange={event => setDraft(event.target.value)}
-    onBlur={event => { if (!isHudSettingsTab(event.relatedTarget)) commit(); }}
-    onKeyDown={event => {
-      if (event.key === 'Enter') { event.preventDefault(); commit(); }
-      if (event.key === 'Escape') { event.preventDefault(); setDraft(String(value)); }
-    }} />;
-}
-
 export function HudAudioHeadPanel({ config, disabled, onConfigPatch, t }: Props) {
   const id = useId();
+  const { edge, x, y } = readAudioHeadPosition(config);
+  const { minX, maxX, minY, maxY } = audioHeadOffsetBounds(edge);
   return (
     <fieldset disabled={disabled} className="hud-settings-form">
       <legend className="visually-hidden">{t('Audio Head')}</legend>
@@ -62,26 +43,19 @@ export function HudAudioHeadPanel({ config, disabled, onConfigPatch, t }: Props)
         <HudSettingsSection title={t('Audio Head position')}>
           <div>
             <label htmlFor={`${id}-edge`} className="form-label fs-7 text-body-secondary">{t('Audio Head Alignment')}</label>
-            <select id={`${id}-edge`} className="form-select form-select-sm" value={config.audioHeadEdge ?? 'left'}
-              onChange={event => onConfigPatch({ audioHeadEdge: event.target.value as HudConfig['audioHeadEdge'] })}>
+            <select id={`${id}-edge`} className="form-select form-select-sm" value={edge}
+              onChange={event => onConfigPatch(writeAudioHeadPosition(event.target.value as typeof edge, x, y))}>
               <option value="left">{t('Left Edge')}</option>
               <option value="right">{t('Right Edge')}</option>
               <option value="top">{t('Top Edge')}</option>
               <option value="bottom">{t('Bottom Edge')}</option>
             </select>
           </div>
-          <div>
-            <label htmlFor={`${id}-offset`} className="form-label fs-7 text-body-secondary">{t('Audio Head Edge Offset')} (px)</label>
-            <OffsetInput id={`${id}-offset`} min={0} value={config.audioHeadOffset ?? 0}
-              onCommit={audioHeadOffset => onConfigPatch({ audioHeadOffset })} />
-            <small className="text-body-secondary">{t('Distance inward from the selected edge.')}</small>
-          </div>
-          <div>
-            <label htmlFor={`${id}-center-offset`} className="form-label fs-7 text-body-secondary">{t('Audio Head Center Offset')} (px)</label>
-            <OffsetInput id={`${id}-center-offset`} min={-4000} value={config.audioHeadCenterOffset ?? 0}
-              onCommit={audioHeadCenterOffset => onConfigPatch({ audioHeadCenterOffset })} />
-            <small className="text-body-secondary">{t('Along the edge: positive moves down or right; negative moves up or left.')}</small>
-          </div>
+          <HudRange label={t('Audio Head X-Offset')} value={x} min={minX} max={maxX} step={1}
+            onChange={next => onConfigPatch(writeAudioHeadPosition(edge, next, y))} />
+          <HudRange label={t('Audio Head Y-Offset')} value={y} min={minY} max={maxY} step={1}
+            onChange={next => onConfigPatch(writeAudioHeadPosition(edge, x, next))} />
+          <p className="text-body-secondary fs-7 m-0">{t('Positive X moves right; positive Y moves down. Alignment limits the anchored axis at zero.')}</p>
         </HudSettingsSection>
       </div>
     </fieldset>

@@ -1,5 +1,12 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-11-04 / 音響 X／Y 位移拉桿與對齊限制（Codex as Codex）
+
+- **變更**：音響位置改用共用 HudRange，X 正值向右、Y 正值向下；左／上對齊的對應軸下限為 0，右／下上限為 0。每次 1 px，保留既有 4000 px 距離範圍、鍵盤方向鍵與 Home／End、即時保存及隱藏時設定。
+- **相容學習**：UI 的螢幕 X／Y 不等於持久化的向內／沿邊位移。以純函式 read／write 投影保留 audioHeadOffset、audioHeadCenterOffset，不修改 Rust 或 renderer。切換對齊前先讀 X／Y，再按新邊緣限制值並寫回；直接沿用正的向內距離會讓右側 X 語意相反，直接交換儲存欄位也會誤換兩軸。
+- **驗證**：新增 10 項純函式契約（四邊舊設定往返、方向限制、跨軸對齊與範圍），完整前端 1,939 passed／1 既有 skip，TypeScript／Vite build 與 diff check 通過。獨立瀏覽器重跑 336 組版面與真實 launcher 的四邊向內移動、0 界限、保存重載，90 次 fixture 保存／66 張擷取／零 page errors 與非預期 API；重新選用 19 張圖，三設計系統日夜設定頁展示靠右 X 上限 0。沿用隔離模擬音訊，不作為原生、遊戲或讀屏驗收。
+- **Skills**：halfmoon-design-system、modular-refactoring、pr-author-maintainer。
+
 ## 2026-11-04 / HUD 與共用工作區樣式對齊（Codex as Codex）
 
 - **重現**：HUD 使用滿版 `card-header`，與 Tune 的內縮面板標頭不同；Swiss 的標頭 token 會清除 header padding，讓標題貼邊。內容再加一層 `p-3` 也與 AppShell 留白重複。

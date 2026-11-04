@@ -12,18 +12,20 @@ Audio Head is an independent HUD element that can coexist with any main gauge. I
 | Car Audio Head Unit Model | `audioHeadDeck`, 0–8; Pioneer DEH-P6100R by default |
 | Audio Head scale | `audioHeadScale`, 50–200%; independent of gauge `scale` |
 | Alignment | `audioHeadEdge`, left/right/top/bottom; centered on the left edge by default |
-| Edge offset | `audioHeadOffset`, 0–4000 px inward from the selected edge |
-| Center offset | `audioHeadCenterOffset`, −4000–4000 px along the edge; positive down/right |
+| X offset slider | Left: 0–4000 px; right: −4000–0 px; top/bottom: −4000–4000 px |
+| Y offset slider | Top: 0–4000 px; bottom: −4000–0 px; left/right: −4000–4000 px |
+
+The sliders use 1 px steps: positive X moves right and positive Y moves down. The anchored axis stops at zero in the outward direction. Changing alignment clamps values forbidden by the new edge to zero while preserving the other axis. Dragging or arrow keys apply immediately; Home/End reach the slider bounds. Storage retains `audioHeadOffset` (inward distance) and `audioHeadCenterOffset` (along-edge offset), so existing positions need no migration.
 
 The audio capture source remains in General. The launcher forwards the shared audio/media stream and latest snapshots to the gauge and independent Audio Head iframe. Changing settings tabs does not toggle HUD elements or recreate the runtime. Showing Audio Head again uses its saved model and position.
 
-Only the ordered registry in `OverlayView` adds the `audio-head` entry; `HudWorkspace` contains no Audio Head logic. The panel receives a narrow configuration slice and shared actions, submits nested partial patches and keeps offset drafts across tab changes. Enter or ordinary blur commits; Escape restores the saved value. See the [extension contract](../frontend/hud-settings-workspace.en.md).
+Only the ordered registry in `OverlayView` adds the `audio-head` entry; `HudWorkspace` contains no Audio Head logic. The panel receives a narrow configuration slice and shared actions and submits nested partial patches. X/Y sliders reuse `HudRange`; the scale number input still retains drafts across tab changes. See the [extension contract](../frontend/hud-settings-workspace.en.md).
 
 For existing audio configurations without `audioHeadScale`, frontend and Rust normalize before merging defaults: a valid legacy shared `scale` migrates once and is clamped to 0.5–2. An explicit invalid independent value becomes 1 instead of following the gauge again. Unrelated sparse configurations keep their fields and receive the 100% default. Legacy `hudStyle: "audio_head"` migrates to VFD plus the independent element, retaining visibility and explicit audio switches. Saving, reloading and partial updates preserve unknown fields.
 
 ## Settings visual review
 
-Captured on 2026-11-04 from the production AppShell and React settings, 1280×720, Traditional Chinese. The fourth tab is named 音響系統 in this locale. Its controls remain editable while the element is hidden.
+Captured on 2026-11-04 from the production AppShell and React settings, 1280×720, Traditional Chinese. The fourth tab is named 音響系統 in this locale. These views demonstrate right alignment with X capped at zero; controls remain editable while the element is hidden.
 
 | Design system | Light | Dark |
 | --- | --- | --- |
@@ -88,12 +90,12 @@ Each image is an element screenshot from the real HUD launcher and renderer afte
 
 ## Verification for this update
 
-- Full frontend Vitest: 1,929 passed, one existing skip; TypeScript/Vite build passed.
-- Rust defaults: 242 passed, three ignored; `--no-default-features`: 232 passed, two ignored.
+- After the offset-slider revision: full frontend Vitest passes 1,939 tests with one existing skip; TypeScript/Vite build and `git diff --check` pass.
+- Rust verification at integration commit `594f993f`: defaults 242 passed, three ignored; `--no-default-features` 232 passed, two ignored. This slider revision changes no Rust, storage format or HUD renderer, so Cargo was not rerun.
 - `node hud_overlay/audio_head/assets/build-panels.mjs --check`: all nine vector outputs match their editable sources. This integration does not change the faceplate assets.
-- The separate R34/LFA/ST8100 settings browser contracts also pass on this update, retaining their gauge and CJK glyph assertions.
+- Separate R34/LFA/ST8100 browser contracts passed at `594f993f`, retaining their gauge and CJK glyph assertions. The current audio-slider revision uses the settings/launcher browser runner below.
 - Browser: 336 four-tab layouts (seven cores × light/dark × three locales × 1280/320px), plus 1920px, reduced motion and six specialized gauge forms. Keyboard/ARIA, drafts/scroll, hidden configuration, cross-tab writes, retry, unknown fields, reset and unit contracts pass.
-- Real launcher: independent gauge/audio scaling, four-edge placement, nine live model selections and audio-only mounting/unmounting. The run recorded 62 fixture saves, 66 captures, no page errors and no unexpected API calls. This gallery selects 19 images; see [manifest](audio-head-screenshots/manifest.json) for checks, dimensions and SHA-256 hashes.
+- Real launcher: independent gauge/audio scaling, four-edge placement, outward X/Y slider limits and inward movement, nine live model selections and audio-only mounting/unmounting. The run recorded 90 fixture saves, 66 captures, no page errors and no unexpected API calls. This gallery refreshes 19 images; see [manifest](audio-head-screenshots/manifest.json) for checks, dimensions and SHA-256 hashes.
 
 Run `node frontend/src/features/overlay_control/tests/browser/verify.cjs` with a task-local `PLAYWRIGHT_MODULE_PATH`, optionally `PLAYWRIGHT_CHANNEL=msedge` on Windows and `OUTPUT_DIR`. This runner invokes `hud_overlay/audio_head/tests/browser/verify.cjs`; browser checks remain outside Vitest.
 

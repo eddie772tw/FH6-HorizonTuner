@@ -55,7 +55,7 @@ const tabs: HudSettingsTabDefinition[] = [
 { id: 'audio-head', labelKey: 'Audio Head', content: <HudAudioHeadPanel {...audioHeadProps} /> }
 ```
 
-面板使用 `HudPanelActions` 與 Audio Head 專屬設定切片，寫入 `elements: { showAudioHead }` 局部 patch。沿用 `HudSettingsSection` 與共用滑桿；Offset 草稿在切頁時保留，Enter／一般失焦提交，Escape 還原。分頁容器沒有加入 Audio Head 判斷。
+面板使用 `HudPanelActions` 與 Audio Head 專屬設定切片，寫入 `elements: { showAudioHead }` 局部 patch。沿用 `HudSettingsSection` 與共用滑桿；X／Y 位移隨對齊鎖定向外方向的 0 界限，直接對應既有向內／沿邊儲存欄位。縮放輸入草稿仍在切頁時保留。分頁容器沒有加入 Audio Head 判斷。
 
 `audioHeadScale` 控制獨立縮放。舊音響設定缺少此欄位時，從有效的 `scale` 遷移；之後兩者各自保存。HUDCore 使用樣式宣告的 `scaleConfigKey`，未宣告的主儀表維持原 `scale`。詳見[音響系統設定、遷移與圖集](../hud/audio-head.md)。#540 的分支更新及其他 HUD 功能不在此次交付範圍。
 
@@ -73,7 +73,7 @@ const tabs: HudSettingsTabDefinition[] = [
 
 ## 2026-11-04 Audio Head 接入驗證
 
-#541 接入第四頁後，完整前端 1,929 passed／1 個既有 skip、build 通過。瀏覽器擴充為 336 組版面與 66 張截圖，涵蓋獨立縮放、九款實際 renderer、四邊對齊及音響掛載／卸載；62 次 fixture 保存、零 page errors 或未預期 API。最新[音響圖集與驗證紀錄](../hud/audio-head.md)另列，不覆蓋下方 #615 的歷史證據。
+#541 接入第四頁並將位移改為 X／Y 拉桿後，完整前端 1,939 passed／1 個既有 skip、build 通過。瀏覽器涵蓋 336 組版面與 66 張截圖，包含獨立縮放、九款實際 renderer、四邊對齊的方向限制及音響掛載／卸載；90 次 fixture 保存、零 page errors 或未預期 API。最新[音響圖集與驗證紀錄](../hud/audio-head.md)另列，不覆蓋下方 #615 的歷史證據。
 
 ## 2026-11-04 基礎分頁驗證紀錄（#615）
 

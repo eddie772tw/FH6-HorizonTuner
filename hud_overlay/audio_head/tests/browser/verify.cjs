@@ -54,6 +54,19 @@ module.exports = async function verifyAudioHead({ page, context, origin, out, re
       const distance = edge === 'left' ? rect.x : edge === 'right' ? viewport.width - rect.x - rect.width
         : edge === 'top' ? rect.y : viewport.height - rect.y - rect.height;
       assert(Math.abs(distance) < 1, `${edge} alignment should touch the viewport edge`);
+      const positive = edge === 'left' || edge === 'top';
+      const axis = edge === 'left' || edge === 'right' ? 'X' : 'Y';
+      const slider = page.getByRole('slider', { name: `Audio Head ${axis}-Offset`, exact: true });
+      await slider.press(positive ? 'ArrowLeft' : 'ArrowRight');
+      assert.equal(await slider.inputValue(), '0', 'Outward keyboard input must stop at zero');
+      await slider.press(positive ? 'ArrowRight' : 'ArrowLeft'); await idle();
+      await renderer().waitForFunction(() => HUDCore.getCurrentConfig().audioHeadOffset === 1);
+      const inward = await renderer().locator('#audioHeadContainer').boundingBox();
+      const inwardDistance = edge === 'left' ? inward.x : edge === 'right' ? viewport.width - inward.x - inward.width
+        : edge === 'top' ? inward.y : viewport.height - inward.y - inward.height;
+      assert(inwardDistance > distance, `${edge} slider must move the renderer inward`);
+      await slider.press(positive ? 'Home' : 'End'); await idle();
+      await renderer().waitForFunction(() => HUDCore.getCurrentConfig().audioHeadOffset === 0);
     }
     await page.getByRole('combobox', { name: 'Audio Head Alignment', exact: true }).selectOption('left'); await idle();
     // Keep the gauge mounted but hide it and telemetry for unobstructed deck captures.
@@ -82,7 +95,7 @@ module.exports = async function verifyAudioHead({ page, context, origin, out, re
     await toggle.check(); await idle();
     await hud.waitForFunction(() => document.querySelector('#audio-head-iframe')?.contentWindow?.HUDCore?.getCurrentConfig()?.audioHeadDeck === 8);
     assert.equal(gauge.isDetached(), false);
-    report.checks.push('Real launcher: independent sizes, four edges, nine live deck selections and audio-only unmount/remount');
+    report.checks.push('Real launcher: independent sizes, four edges with inward-only sliders, nine live deck selections and audio-only unmount/remount');
     assert.deepEqual(failures, []);
   } finally { await hud.close(); }
 };

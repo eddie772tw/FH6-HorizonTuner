@@ -84,7 +84,7 @@ FH6-HorizonTuner 透過遊戲的 **Data Out UDP 遙測**接收車輛資料，整
 
 - **即時遙測**：檢視車速、RPM、馬力／扭力、增壓、駕駛輸入、G 值、四輪胎溫與懸吊行程；以圖表追蹤車輛動態。
 - **四步調校流程**：從目標與車輛設定、底盤與輪胎、引擎量測與齒比，到設定驗證。支援 Road、Rally、Cross Country、Drift、Drag 等用途，依量測品質與可調能力提供結果。
-- **Windows HUD 設定**：主儀表、遙測卡片、一般與音響系統四個分頁管理；各元素的顯示、大小與位置集中在同一區，隱藏時也能預先設定。提供 Classic JDM、S650、GT7、Retro VFD、R34 MFD 等風格與手把遙測卡片。音響系統可與主儀表並存，提供九款主機、獨立縮放及四邊對齊。[操作與擴充分頁說明](docs/frontend/hud-settings-workspace.md) · [音響系統與九款樣式圖集](docs/hud/audio-head.md)。
+- **Windows HUD 設定**：主儀表、遙測卡片、一般與音響系統四個分頁管理；各元素的顯示、大小與位置集中在同一區，隱藏時也能預先設定。提供 Classic JDM、S650、GT7、Retro VFD、R34 MFD 等風格與手把遙測卡片。音響系統可與主儀表並存，提供九款主機、獨立縮放、四邊對齊及隨對齊限制方向的 X／Y 位移拉桿。[操作與擴充分頁說明](docs/frontend/hud-settings-workspace.md) · [音響系統與九款樣式圖集](docs/hud/audio-head.md)。
 - **錄製、分析與加速測試**：保存 SQLite 遙測紀錄，比較單圈與歷史 session，設定計時賽／漫遊路線閘門，進行非破壞性修剪與 0–100、0–200 km/h、1/4 英里加速計時。
 - **CLI 與 AI 工具整合**：Rust `fh6-agent` 提供狀態查詢、遙測診斷與調校命令；localhost 唯讀 MCP 提供即時與歷史資料、車輛規格及求解工具。[CLI 指南](docs/guides/agent-cli-guide.md) · [MCP 設定](docs/guides/mcp-setup-guide.md)。
 - **主題、多語言與更新**：Halfmoon、Swiss、Rhine Lab 三套設計系統，支援繁體中文、英文、日文及擴充語系；整合診斷主控台與具簽章驗證的 OTA 更新。
