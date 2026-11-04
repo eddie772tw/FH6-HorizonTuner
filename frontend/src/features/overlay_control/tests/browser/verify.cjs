@@ -19,7 +19,7 @@ async function main() {
     fixtureUnknown: { preserved: true }, elements: { ...defaults.DEFAULT_HUD_CONFIG.elements, showTeleTires: false } };
   let appSettings = structuredClone(defaults.DEFAULT_SETTINGS);
   let rejectNextSave = false;
-  const report = { saves: [], errors: [], layouts: [], screenshots: [], metadataReads: 0, checks: [] };
+  const report = { saves: [], errors: [], unexpectedRequests: [], layouts: [], screenshots: [], metadataReads: 0, checks: [] };
   const json = (res, body, status = 200) => { res.statusCode = status; res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify(body)); };
   const parseBody = (req, callback) => { let data = ''; req.on('data', chunk => { data += chunk; }); req.on('end', () => callback(JSON.parse(data))); };
   const fixtureApi = { name: 'hud-settings-fixture', configureServer(server) {
@@ -38,6 +38,11 @@ async function main() {
         return json(res, { ...appSettings, language });
       }
       if (name === '/api/cars/database') return json(res, {});
+      if (['/api/cars/with_params', '/api/analysis/sessions', '/api/road/engine-observations', '/api/tuning/engine-archive'].includes(name)) return json(res, []);
+      if (name === '/api/car_params/default_car') return json(res, { error: 'No vehicle selected in this visual fixture' });
+      if (name === '/api/tuning/profile') return json(res, null);
+      if (name === '/api/analysis/status') return json(res, { isRecording: false, recordingCount: 0 });
+      if (name === '/api/diagnostics/telemetry-pipeline') return json(res, { input: { datagramsReceived: 0, packetsParsed: 0, packetsRejected: {}, lastDatagramAt: null } });
       if (name === '/api/runtime') return json(res, { platform: 'windows', capabilities: { systemMedia: true } });
       if (name === '/api/languages') return json(res, ['en-us', 'zh-tw', 'ja-jp'].map(code => ({ code, name: code })));
       if (name.startsWith('/api/languages/')) return json(res, JSON.parse(fs.readFileSync(path.join(repo, 'lang', name.split('/').pop() + '.json'), 'utf8')));
@@ -48,7 +53,7 @@ async function main() {
         return json(res, { styles: ['vfd', 'simple', 's650_hmi', 'classic_jdm', 'r34_mfd', 'stack_st8100', 'lfa_center_ring']
           .map(id => ({ id, source: 'builtin', urlPrefix: '/hud' })) });
       }
-      if (name.startsWith('/api/')) return json(res, { error: 'Unexpected fixture endpoint: ' + name }, 404);
+      if (name.startsWith('/api/')) { report.unexpectedRequests.push(name); return json(res, { error: 'Unexpected fixture endpoint: ' + name }, 404); }
       next();
     });
   } };
@@ -64,11 +69,14 @@ async function main() {
     browser = await chromium.launch({ headless: true, chromiumSandbox: true,
       ...(process.env.PLAYWRIGHT_CHANNEL ? { channel: process.env.PLAYWRIGHT_CHANNEL } : {}) });
     const context = await browser.newContext({ viewport: { width: 1280, height: 720 } });
+    // Connected transports with no game frames. Do not fake an active Data Out status.
+    await context.routeWebSocket(/\/ws\/(telemetry|overlay)$/, () => {});
     await context.route('https://fonts.googleapis.com/**', route => route.fulfill({ status: 200, contentType: 'text/css', body: '' }));
     page = await context.newPage();
     page.setDefaultTimeout(10000);
     page.on('pageerror', error => report.errors.push(String(error)));
     await page.addInitScript(() => {
+      localStorage.setItem('fh6-data-out-guide/v1', 'skipped');
       window.fixtureBroadcasts = [];
       const channel = new BroadcastChannel('horizon_tuner_hud_channel');
       channel.onmessage = event => window.fixtureBroadcasts.push(event.data);
@@ -76,7 +84,9 @@ async function main() {
     const tab = id => page.locator(`[role=tab][id$="-tab-${id}"]`);
     const panel = id => page.locator(`[role=tabpanel][id$="-panel-${id}"]`);
     const open = async (language = 'en-us') => {
-      await page.goto(origin + '/src/features/overlay_control/tests/browser/index.html?language=' + language);
+      await page.goto(origin + '/src/features/overlay_control/tests/browser/index.html?shell&language=' + language);
+      await page.locator('.app-header .popover .btn-close').click();
+      await page.locator('.workspace-tabs--primary').getByRole('button', { name: 'HUD', exact: true }).click();
       await page.waitForFunction(() => Boolean(window.hudSettingsFixtureTheme) && document.querySelector('.hud-status')?.dataset.state === 'synced');
     };
     const saved = expected => page.waitForFunction(async values => {
@@ -235,9 +245,9 @@ async function main() {
             }));
             assert(state.fits && state.controlsFit && !state.missing, JSON.stringify({ language, core, mode, width, id, state }));
             report.layouts.push({ language, core, mode, width, id });
-            if (language === 'zh-tw' && mode === 'dark' && ['default', 'swiss', 'rhine-lab'].includes(core)) {
+            if (language === 'zh-tw' && ['default', 'swiss', 'rhine-lab'].includes(core)) {
               await panel(id).evaluate(el => { el.scrollTop = 0; });
-              const name = `${core}-${width}-${id}.png`; await page.screenshot({ path: path.join(out, name), animations: 'disabled' }); report.screenshots.push(name);
+              const name = `${core}-${mode}-${width}-${id}.png`; await page.screenshot({ path: path.join(out, name), animations: 'disabled' }); report.screenshots.push(name);
             }
           }
         }
@@ -249,6 +259,21 @@ async function main() {
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
     report.checks.push('All seven cores, day/night, three locales, narrow/default/wide and reduced motion');
     report.checks.push('Six specialized gauge forms at 320px in all three locales');
+    await open('zh-tw');
+    await page.setViewportSize({ width: 1280, height: 720 });
+    for (const core of ['default', 'swiss', 'rhine-lab']) {
+      await page.evaluate(core => window.hudSettingsFixtureTheme.update({ mode: 'light', halfmoonCore: core }), core);
+      await page.waitForFunction(core => document.documentElement.dataset.bsCore === core, core);
+      for (const workspace of ['live', 'tune', 'hud']) {
+        const dictionary = JSON.parse(fs.readFileSync(path.join(repo, 'lang/zh-tw.json'), 'utf8'));
+        await page.locator('.workspace-tabs--primary').getByRole('button', { name: dictionary[{ live: 'Live', tune: 'Tune', hud: 'HUD' }[workspace]], exact: true }).click();
+        await page.locator(`[data-workspace=${workspace}] .workspace-panel-header, [data-workspace=${workspace}] .telemetry-card-shell`).first().waitFor();
+        const name = `${core}-light-1280-reference-${workspace}.png`;
+        await page.screenshot({ path: path.join(out, name), animations: 'disabled' }); report.screenshots.push(name);
+      }
+    }
+    report.checks.push('Production AppShell with Live/Tune/HUD reference captures across all three design systems');
+    assert.deepEqual(report.unexpectedRequests, []);
     assert.deepEqual(report.errors, []);
     fs.writeFileSync(path.join(out, 'report.json'), JSON.stringify(report, null, 2));
     console.log(JSON.stringify({ checks: report.checks, layouts: report.layouts.length, screenshots: report.screenshots.length, saves: report.saves.length, errors: report.errors, out }));

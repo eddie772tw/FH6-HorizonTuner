@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { lazy, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 import 'halfmoon/css/halfmoon.min.css';
 import 'halfmoon/css/cores/halfmoon.cores.css';
@@ -9,6 +9,11 @@ import { SettingsProvider } from '../../../../context/SettingsContext';
 import { ToastProvider } from '../../../../context/ToastContext';
 import { configureBackendTransport } from '../../../../services/backend';
 import { OverlayView } from '../../OverlayView';
+import { AppProviders } from '../../../../AppProviders';
+import { AppShell } from '../../../../app/AppShell';
+import { commonWorkspaces } from '../../../../app/commonWorkspaces';
+import { TuneSessionProvider } from '../../../tuning/TuneSessionProvider';
+import { HudProvider } from '@platform/hud';
 
 type ThemeControls = ReturnType<typeof useTheme>;
 declare global {
@@ -37,8 +42,14 @@ function FixtureThemeBridge() {
 // Production theme/settings/runtime; only external HTTP/native surroundings are fixtures.
 configureBackendTransport(Number(window.location.port));
 applyThemeEarly();
+const workspaces = { ...commonWorkspaces, tune: lazy(() => import('../../../tuning/TuningWorkspace')) };
+// Visual review includes the production header, navigation, spacing and scoped theme rules.
+// Sessions and companion transport are outside this HUD/Live/Tune fixture's scope.
+const withShell = new URLSearchParams(window.location.search).has('shell');
 createRoot(document.getElementById('root')!).render(
-  <React.StrictMode><ThemeProvider><ToastProvider><SettingsProvider>
+  <React.StrictMode>{withShell ? <AppProviders><HudProvider><TuneSessionProvider>
+    <FixtureThemeBridge /><AppShell variant="full" workspaces={workspaces} />
+  </TuneSessionProvider></HudProvider></AppProviders> : <ThemeProvider><ToastProvider><SettingsProvider>
     <FixtureThemeBridge /><OverlayView />
-  </SettingsProvider></ToastProvider></ThemeProvider></React.StrictMode>,
+  </SettingsProvider></ToastProvider></ThemeProvider>}</React.StrictMode>,
 );

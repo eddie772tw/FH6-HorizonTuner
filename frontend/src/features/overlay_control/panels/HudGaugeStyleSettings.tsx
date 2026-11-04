@@ -31,7 +31,7 @@ export function HudGaugeStyleSettings({ config, appUnits, onConfigPatch, onS650C
       {![S650_HMI_STYLE_ID, STACK_ST8100_STYLE_ID, CLASSIC_JDM_STYLE_ID, LFA_CENTER_RING_STYLE_ID, 'r34_mfd', 'vfd'].includes(config.hudStyle) &&
         <p className="fs-7 text-body-secondary m-0">{t('This style has no additional settings.')}</p>}
       {config.hudStyle === S650_HMI_STYLE_ID && (
-        <div className="border-top pt-2">
+        <div>
           <label htmlFor={`${id}-theme`} className="form-label fs-7 text-body-secondary mb-1">{t('S650 HMI Mode')}:</label>
           <select id={`${id}-theme`} className="form-select form-select-sm fw-bold" value={config.s650Theme ?? 'heritage67'}
             onChange={event => onConfigPatch({ hudStyle: S650_HMI_STYLE_ID, s650Theme: event.target.value as S650HmiTheme })}>
@@ -54,7 +54,7 @@ export function HudGaugeStyleSettings({ config, appUnits, onConfigPatch, onS650C
       {config.hudStyle === 'r34_mfd' && <R34MfdSettingsCard config={config} onChange={onConfigPatch} t={t} />}
       {/* TODO(subsystems): restore minimap controls only after module evaluation. */}
       {config.hudStyle === 'vfd' && (
-        <div className="border-top pt-2 d-flex flex-column gap-3">
+        <div className="d-flex flex-column gap-3">
           <div>
             <div className="d-flex justify-content-between align-items-center mb-1">
               <label htmlFor={`${id}-vu`} className="fs-7 text-body-secondary">{t('VU Offset:')}</label>

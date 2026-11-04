@@ -24,9 +24,9 @@ export function HudWorkspace({ tabs, status, windowAction, t }: HudWorkspaceComp
     buttons.current.get(tabs[next].id)?.focus();
   };
   return (
-    <div className="hud-workspace container-fluid h-100 w-100 d-flex flex-column p-0">
+    <div className="hud-workspace container-fluid h-100 w-100 d-flex flex-column gap-2 p-0">
       <div className="workspace-toolbar hud-workspace-toolbar">
-        <h2 className="text-primary fs-6 fw-bold m-0">{t('HUD Control Panel')}</h2>
+        <h2 className="fs-6 fw-bold m-0">{t('HUD Control Panel')}</h2>
         <div className="d-flex align-items-center flex-wrap gap-2">{windowAction}{status}</div>
       </div>
       <div className="workspace-tabs nav flex-shrink-0" role="tablist" aria-label={t('HUD Control Panel')}>
@@ -45,7 +45,7 @@ export function HudWorkspace({ tabs, status, windowAction, t }: HudWorkspaceComp
       {tabs.map(tab => (
         <div key={tab.id} id={`${id}-panel-${tab.id}`} role="tabpanel"
           aria-labelledby={`${id}-tab-${tab.id}`} tabIndex={0} hidden={active !== tab.id}
-          className="hud-workspace-content p-3">
+          className="hud-workspace-content">
           {tab.content}
         </div>
       ))}

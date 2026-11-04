@@ -39,6 +39,8 @@ const tabs: HudSettingsTabDefinition[] = [
 
 Tab changes must not create another runtime, save settings, toggle HUD elements, reload the renderer or refresh metadata. New panels must have no mounting side effects.
 
+Compose new panels with `HudSettingsSection`: the same `glass-panel`, inset `workspace-panel-header` and `workspace-section-heading` used by Tune. Design-system tokens own the surface, heading and borders. Do not add a full-bleed `card-header` or another layer of workspace horizontal padding; the production `AppShell` already supplies the outer spacing. Telemetry cards reuse this section instead of maintaining a separate header skin.
+
 Draft numeric fields commit on Enter or ordinary blur. When focus moves to a HUD tab, `isHudSettingsTab` suppresses that commit and retains the draft. Shared percentage inputs and ST8100 thresholds follow this rule. Percentage number inputs retain 1% increments independently of the slider step.
 
 ## PR #541 integration
@@ -52,6 +54,10 @@ After the base redesign merges, update #541 from main and replace its former `au
 Use `HudPanelActions` with an Audio Head configuration slice and submit `elements: { showAudioHead }` as a partial patch. #541 owns Audio Head normalization, migration, renderer/event integration, assets and tests. Independent scaling and migration from its currently shared `scale` belong in that follow-up. This base PR adds no Audio Head placeholder, settings fields or backend migration, and does not update #541 or #540.
 
 ## Verification
+
+The browser fixture mounts the production `AppShell`, Live/Tune/HUD components and providers, then navigates to HUD through the application header. HTTP responses and idle WebSockets are isolated fixtures with no game frames. Sessions and Companion are outside its scope. Captures include the real header, outer spacing and app-scoped theme rules; bare-panel captures cannot substitute for this visual review. See the [cross-system screenshot gallery and provenance](hud-settings-screenshots/README.md) for all three tabs in Halfmoon Default, Swiss Technical and Rhine Lab, light/dark, plus Tune reference views and 320px examples.
+
+The 2026-11-04 visual revision reran all 252 layout cases and interactions inside AppShell: 35 saves, no page errors or unexpected API requests, and 45 captures including Live/Tune/HUD references. Evidence: `scratch/hud-settings-theme-review/report.json`. The committed gallery selects 18 desktop tab views, three narrow views and three Tune references. Full frontend tests (1,862 passed / one existing skip) and TypeScript/Vite build passed again. Native smoke below belongs to the earlier implementation; it was not rerun for this styling-only revision.
 
 Run `pnpm -C frontend run test`, `pnpm -C frontend run build` and `git diff --check`. Browser tests are opt-in and separate from Vitest: `node frontend/src/features/overlay_control/tests/browser/verify.cjs`. Set `PLAYWRIGHT_MODULE_PATH` for a task-local Playwright install and `PLAYWRIGHT_CHANNEL=msedge` on Windows when appropriate; keep the browser sandbox enabled. `OUTPUT_DIR` defaults to `scratch/hud-settings-browser`.
 

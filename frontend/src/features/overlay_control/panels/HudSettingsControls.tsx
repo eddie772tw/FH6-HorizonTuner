@@ -46,8 +46,10 @@ export function HudRange({ label, value, min, max, step, onChange, percent = fal
 
 export function HudSettingsSection({ title, children }: { title: string; children: ReactNode }) {
   const id = useId();
-  return <section className="card hud-settings-section" aria-labelledby={id}>
-    <div className="card-header workspace-panel-header"><h3 id={id} className="fs-6 fw-bold m-0">{title}</h3></div>
-    <div className="card-body d-flex flex-column gap-3">{children}</div>
+  return <section className="glass-panel hud-settings-section p-3 d-flex flex-column gap-3" aria-labelledby={id}>
+    <div className="workspace-panel-header border-bottom pb-2">
+      <h3 id={id} className="workspace-section-heading fs-6 fw-bold m-0 p-0 border-0">{title}</h3>
+    </div>
+    <div className="d-flex flex-column gap-3">{children}</div>
   </section>;
 }

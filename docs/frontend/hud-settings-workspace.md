@@ -41,6 +41,8 @@ const tabs: HudSettingsTabDefinition[] = [
 
 新增表單要保留無副作用掛載；分頁切換不執行保存、HUD 啟閉、renderer 重載或 metadata refresh。顯示開關與編輯控制項的 disabled 狀態分開處理。
 
+新增面板沿用 `HudSettingsSection`：使用與 Tune 相同的 `glass-panel`、內縮 `workspace-panel-header` 與 `workspace-section-heading`，由設計系統 tokens 決定材質、標頭與邊線。不要再套一層滿版 `card-header` 或工作區水平 padding；正式 `AppShell` 已提供外層留白。遙測卡片也共用此面板外觀，不各自維護一套卡片標頭。
+
 需要草稿的數值欄位在 Enter 或一般失焦時提交；焦點移往 HUD 分頁按鈕時以 `isHudSettingsTab` 保留草稿，不提交。共用百分比數字輸入與 ST8100 閾值均遵守此規則，百分比數字輸入仍以 1% 步進，滑桿沿用原步進。
 
 ## PR #541 後續接入
@@ -59,13 +61,17 @@ const tabs: HudSettingsTabDefinition[] = [
 
 日常 gate：`cmd /c "pnpm -C frontend run test"`、`cmd /c "pnpm -C frontend run build"`、`git diff --check`。
 
-獨立瀏覽器驗證：`node frontend/src/features/overlay_control/tests/browser/verify.cjs`。以 `PLAYWRIGHT_MODULE_PATH` 指向既有或任務專用 Playwright，`PLAYWRIGHT_CHANNEL` 選擇已安裝的瀏覽器，例如 Windows 的 `msedge`；保持 sandbox。`OUTPUT_DIR` 可指定輸出位置，預設 `scratch/hud-settings-browser`。使用真實 React/runtime/theme provider 與隔離的 HTTP fixture，不寫入使用者設定。
+獨立瀏覽器驗證：`node frontend/src/features/overlay_control/tests/browser/verify.cjs`。以 `PLAYWRIGHT_MODULE_PATH` 指向既有或任務專用 Playwright，`PLAYWRIGHT_CHANNEL` 選擇已安裝的瀏覽器，例如 Windows 的 `msedge`；保持 sandbox。`OUTPUT_DIR` 可指定輸出位置，預設 `scratch/hud-settings-browser`。使用正式 `AppShell`、Live／Tune／HUD 元件與真實 React/runtime/theme provider，從應用程式導覽列進入 HUD。HTTP 資料與無遊戲封包的 WebSocket 為隔離 fixture，不寫入使用者設定；Sessions／Companion 不在此 fixture 範圍。截圖包含應用程式導覽、正式外層留白與 app-scoped 主題規則，不能以裸面板截圖取代。
+
+[跨設計系統截圖與來源](hud-settings-screenshots/README.md) 提供 Halfmoon Default、Swiss Technical、Rhine Lab 日夜模式的三分頁、同主題 Tune 參考畫面與 320px 範例。
 
 案例涵蓋鍵盤／ARIA、關閉後預先設定、快速跨頁修改、錯誤重試、單位、重設、保留草稿／捲動／展開，以及七核心 × 日夜 × 三語 × 1280／320px 的三分頁版面，另檢查 1920px 與 reduced motion。R34、LFA、ST8100 各自的 `tests/browser/verify.cjs` 保留原契約，入口改為分頁及內嵌單位區；Windows 字型可用性探針採 Microsoft JhengHei／YuGothic-Regular，Linux 維持 Noto CJK，均保留實際字形像素檢查。
 
 原生 Windows 啟閉、螢幕與實際設定套用另行記錄 smoke evidence。瀏覽器結果不是遊戲、實體輸入裝置或 Narrator／NVDA 驗收。
 
 ## 2026-11-04 驗證紀錄
+
+- 視覺審查修訂：HUD 改用與 Tune 共通的面板／內縮標頭，移除工作區重複留白。改在正式 AppShell 內重跑 252 組版面與全部互動案例，45 張截圖包含三套設計系統的日夜三分頁、窄幅及 Live／Tune／HUD 參考；`scratch/hud-settings-theme-review/report.json` 記錄 35 次保存、零 page errors 與零未預期 API。完整前端測試及 build 重新通過。截圖素材選用 18 張桌面分頁、3 張窄幅與 3 張 Tune 參考；原生 smoke 沿用下方先前紀錄，這次樣式修訂未重跑原生或遊戲驗收。
 
 - 前端完整 Vitest：233 個測試檔通過、1 個既有跳過；1,862 項通過、1 項既有跳過。TypeScript／Vite build 與 `git diff --check` 通過。
 - Edge 瀏覽器 fixture：252 組分頁版面檢查，涵蓋七核心、日夜、三語與 1280／320px，另檢查 1920px、reduced motion 與六種專屬表單的三語 320px 版面；包含保存失敗重試、未知欄位保留、單位、重設、折疊鍵盤焦點與跨頁草稿契約。最終完整輸出位於任務 worktree 的 `scratch/hud-settings-browser-final/report.json`。

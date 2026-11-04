@@ -1,5 +1,13 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-11-04 / HUD 與共用工作區樣式對齊（Codex as Codex）
+
+- **重現**：HUD 使用滿版 `card-header`，與 Tune 的內縮面板標頭不同；Swiss 的標頭 token 會清除 header padding，讓標題貼邊。內容再加一層 `p-3` 也與 AppShell 留白重複。
+- **處理**：改用共通 `glass-panel`、`workspace-panel-header` 與 `workspace-section-heading`，遙測卡片共用 `HudSettingsSection`；保持各設計系統 token，不另建 HUD 配色。移除重複水平 padding 與樣式設定頂端分隔線。
+- **學習**：裸面板 fixture 會漏掉 AppShell 留白與 app-scoped 標題規則；視覺驗證須掛載正式外框並從實際導覽進入，還要附同主題既有頁面供比較。
+- **驗證**：正式 AppShell 的 252 組版面／互動檢查、45 張瀏覽器截圖與零 page errors；完整 Vitest 1,862 項通過、1 項既有跳過，TypeScript／Vite build 通過。三套設計系統日夜圖及 Tune 參考見 [截圖來源與對照](../docs/frontend/hud-settings-screenshots/README.md)。本次為隔離瀏覽器資料，未重跑原生、遊戲或讀屏驗收。
+- **Skills**：`halfmoon-design-system`、`huge-component-refactoring`、`modular-refactoring`、`pr-author-maintainer`。
+
 ## 2026-11-04 / HUD 分頁與保存邊界（Codex as Codex）
 
 - **處理**：共用工具列加有序分頁定義；面板常駐掛載並各自持有捲動容器，`hidden` 排除不可見控制項。面板使用窄型別設定與巢狀局部 `HudConfigPatch`，既有 runtime 繼續唯一管理串行寫入與重試。
