@@ -1295,3 +1295,24 @@ fn test_parse_packet_preallocation_and_array_parity() {
         assert!((susp[3].as_f64().unwrap() - 0.48).abs() < 1e-5);
     }
 }
+
+#[test]
+fn race_recorder_settings_update_in_place_without_cloning() {
+    let mut r = RaceRecorder::new_with_context(
+        RaceRecorderConfig::default(),
+        json!({"race_recording": false, "max_samples": 100, "downsample_interval": 0.05}),
+        json!({}),
+    );
+    r.record_at(
+        &json!({"IsRaceOn": 1, "CurrentRaceTime": 1.0, "LapNumber": 0, "TimestampMS": 100, "CarOrdinal": 1}),
+        1.0,
+    );
+    assert!(!r.status().is_recording);
+
+    r.update_settings(&json!({"race_recording": true, "max_samples": 200, "downsample_interval": 0.1}));
+    r.record_at(
+        &json!({"IsRaceOn": 1, "CurrentRaceTime": 2.0, "LapNumber": 0, "TimestampMS": 200, "CarOrdinal": 1}),
+        2.0,
+    );
+    assert!(r.status().is_recording);
+}

@@ -75,7 +75,6 @@ pub struct RaceRecorderStatus {
 }
 pub struct RaceRecorder {
     config: RaceRecorderConfig,
-    settings: Map<String, Value>,
     car_database: Map<String, Value>,
     status: RaceRecorderStatus,
     batch: Vec<Value>,
@@ -116,9 +115,19 @@ impl RaceRecorder {
         if c.max_samples == 0 {
             c.max_samples = 50_000
         }
+        if let Some(m) = settings.as_object() {
+            if let Some(v) = m.get("race_recording").and_then(Value::as_bool) {
+                c.race_recording = v;
+            }
+            if let Some(v) = m.get("max_samples").and_then(Value::as_u64) {
+                c.max_samples = v as usize;
+            }
+            if let Some(v) = m.get("downsample_interval").and_then(Value::as_f64) {
+                c.downsample_interval_ms = v * 1000.0;
+            }
+        }
         Self {
             config: c,
-            settings: settings.as_object().cloned().unwrap_or_default(),
             car_database: car_database.as_object().cloned().unwrap_or_default(),
             status: RaceRecorderStatus::default(),
             batch: vec![],
@@ -148,7 +157,9 @@ impl RaceRecorder {
     }
     pub fn update_settings(&mut self, settings: &Value) {
         if let Some(m) = settings.as_object() {
-            self.settings = m.clone();
+            // [PERF] In the 60Hz telemetry processing loop, update config fields in-place
+            // without deep-cloning the entire settings JSON object.
+
             if let Some(v) = m.get("race_recording").and_then(Value::as_bool) {
                 self.config.race_recording = v
             }
@@ -417,11 +428,7 @@ impl RaceRecorder {
             }
         }
 
-        let auto_rec = self
-            .settings
-            .get("race_recording")
-            .and_then(Value::as_bool)
-            .unwrap_or(self.config.race_recording);
+        let auto_rec = self.config.race_recording;
 
         if !self.status.manual_mode && !self.status.armed && !auto_rec {
             if self.status.is_recording {

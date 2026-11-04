@@ -1,5 +1,15 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-11-05 / 60Hz 遙測處理迴圈之 Settings 零拷貝與 RaceRecorder 冗餘 Map 移除（Bolt as Antigravity）
+
+- **重現與效能瓶頸**：在 60Hz+ 遙測處理工作執行緒 (`App::process`) 中，每幀呼叫 `self.config.settings()` 會持有 Mutex 並深拷貝整個 `serde_json::Value` 樹；緊接著傳入 `engine.race.update_settings` 時，`RaceRecorder` 又會將整個 `settings.as_object()` 二次深拷貝至 `self.settings: Map<String, Value>`。然而 `self.settings` 在整個 `RaceRecorder` 中僅用於讀取單一布林值 `race_recording`，而該值早已儲存於 `self.config.race_recording`。在 60Hz UDP 高頻環境下，每小時產生超過 430,000 次完全冗餘的堆積記憶體配置與回收 (heap churn)。
+- **處理**：
+  1. 在 `ConfigService` 採用 `Mutex<Arc<Value>>`，提供 `settings_arc(&self) -> Arc<Value>`，以 O(1) 原子計數提供 60Hz 遙測工作者共享不可變設定，同時保留 `settings(&self) -> Value` 確保向後相容。
+  2. `App::process` 改用 `self.config.settings_arc()`，徹底消除每幀深拷貝。
+  3. `RaceRecorder` 移除完全無用的 `self.settings: Map<String, Value>` 欄位與 `self.settings = m.clone()`，直接於 `update_settings` 就地更新純量組態。
+- **驗證**：新增 `settings_arc_provides_zero_copy_atomic_sharing` 與 `race_recorder_settings_update_in_place_without_cloning` 單元測試，`config_contract` 與 `telemetry_contract` 全數通過，`cargo check` 通過。
+- **Skills**：`telemetry-udp-protocol`、`pr-author-maintainer`。
+
 ## 2026-11-04 / HUD 與共用工作區樣式對齊（Codex as Codex）
 
 - **重現**：HUD 使用滿版 `card-header`，與 Tune 的內縮面板標頭不同；Swiss 的標頭 token 會清除 header padding，讓標題貼邊。內容再加一層 `p-3` 也與 AppShell 留白重複。
