@@ -50,6 +50,26 @@ async function flushTasks() {
 }
 
 describe('overlay control runtime', () => {
+  it('migrates shared audio scaling once and preserves independent values across edits and reloads', () => {
+    for (const input of [
+      { hudStyle: 'audio_head', scale: 1.4 },
+      { hudStyle: 'vfd', scale: 1.4, audioHeadDeck: 6, elements: { showAudioHead: false } },
+    ]) {
+      const migrated = normalizeHudRuntimeConfig(input);
+      expect(migrated.audioHeadScale).toBe(1.4);
+      const changedGauge = applyHudConfigPatch(migrated, { scale: 0.8, elements: { showGauge: false } });
+      const changedAudio = applyHudConfigPatch(changedGauge, { audioHeadScale: 1.75 });
+      expect(normalizeHudRuntimeConfig(JSON.parse(JSON.stringify(changedAudio))))
+        .toMatchObject({ scale: 0.8, audioHeadScale: 1.75, elements: { showGauge: false } });
+    }
+    expect(normalizeHudRuntimeConfig({ hudStyle: 'vfd', scale: 1.4 }).audioHeadScale).toBe(1);
+  });
+
+  it.each([[null, 1], [NaN, 1], ['1.5', 1], [0, 1], [-2, 1], [0.1, 0.5], [9, 2]])(
+    'normalizes independent audio scale %j without following the main gauge', (audioHeadScale, expected) => {
+      expect(normalizeHudRuntimeConfig({ scale: 1.8, audioHeadScale }).audioHeadScale).toBe(expected);
+    });
+
   it('migrates an auxiliary-only selection and keeps auxiliary visibility independent of gauge changes', () => {
     const migrated = normalizeHudRuntimeConfig({
       hudStyle: 'audio_head', audioHeadDeck: 6, elements: { showGauge: true }, pluginField: 42,

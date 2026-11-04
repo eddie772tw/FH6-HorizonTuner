@@ -21,6 +21,11 @@ export function normalizeAudioHeadConfig(config) {
     const finite = (value, min, max) => typeof value === 'number' && Number.isFinite(value)
         ? Math.max(min, Math.min(max, value)) : 0;
     normalized.audioHeadDeck = Math.trunc(finite(config.audioHeadDeck, 0, 8));
+    // Missing means an older config that used the main gauge scale. An explicit
+    // (even invalid) independent value must never resume following the gauge.
+    const scale = Object.hasOwn(config, 'audioHeadScale') ? config.audioHeadScale : config.scale;
+    normalized.audioHeadScale = typeof scale === 'number' && Number.isFinite(scale) && scale > 0
+        ? Math.max(0.5, Math.min(2, scale)) : 1;
     normalized.audioHeadEdge = ['left', 'right', 'top', 'bottom'].includes(config.audioHeadEdge)
         ? config.audioHeadEdge : 'left';
     normalized.audioHeadOffset = finite(config.audioHeadOffset, 0, 4000);

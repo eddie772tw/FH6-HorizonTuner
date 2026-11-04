@@ -254,6 +254,14 @@ fn normalize_audio_head(value: &mut Value) {
             .as_bool()
             .unwrap_or(false));
     }
+    let scale = value
+        .get("audioHeadScale")
+        .unwrap_or(&value["scale"])
+        .as_f64()
+        .filter(|n| n.is_finite() && *n > 0.0)
+        .unwrap_or(1.0)
+        .clamp(0.5, 2.0);
+    value["audioHeadScale"] = json!(scale);
     for (key, min, max) in [
         ("audioHeadDeck", 0.0, 8.0),
         ("audioHeadOffset", 0.0, 4000.0),

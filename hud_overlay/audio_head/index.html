@@ -3,7 +3,7 @@
   [設計決策紀錄 / Design Decision Note]
   1. 溫度與油壓模型基準：本專案 HUD 體系若涉及水溫顯示，統一使用四輪平均胎溫 (`TireTemp`)；油溫與油壓則依確定性熱力學與油壓代理模型模擬（本音響主機面板僅消費音訊頻譜 `/ws/audio` 與媒體資訊 `/ws/media`）。
   2. 向量面板與動態頻譜分離：9 款主機依原始 res_220 圖集與 D3D11 底圖重繪為 SVG，由獨立圖片層直接呈現；不先烘焙成低解析度 Canvas。SVG 內材質和裝飾分開定義透明度，動態 EQ、OEL 海豚及 Panasonic VU 指針維持原有座標。
-  3. 子模式切換整合：移除 HUD 內部無法於穿透視窗點擊之 `<select>` 選單，改由主視窗 HUD 進階設定 (`audioHeadDeck`) 切換 9 款主機型號 (`0..8`)。
+  3. 子模式切換整合：主視窗 HUD 的「音響系統」分頁 (`audioHeadDeck`) 切換 9 款主機型號 (`0..8`)，獨立縮放使用 `audioHeadScale`。
 -->
 <html lang="en">
 <head>
@@ -543,6 +543,7 @@
 
             HUDCore.registerStyle('audio_head', {
                 containerId: 'audioHeadContainer',
+                scaleConfigKey: 'audioHeadScale',
                 scaleBaseline: 2.1,
                 scaleMultiplier: 0.95,
                 onScale: function(scale) { canvasScale = scale; render(); },

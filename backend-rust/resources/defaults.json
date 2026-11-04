@@ -145,6 +145,7 @@
     "lfaAutoExpand": false,
     "audioDeviceId": "default",
     "audioHeadDeck": 0,
+    "audioHeadScale": 1.0,
     "audioHeadEdge": "left",
     "audioHeadOffset": 0,
     "audioHeadCenterOffset": 0,

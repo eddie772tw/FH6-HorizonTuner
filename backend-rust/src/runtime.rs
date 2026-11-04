@@ -168,11 +168,20 @@ async fn receive_udp(
             received=socket.recv_from(&mut bytes)=>{
                 let (length,source)=match received{Ok(value)=>value,Err(_)=>{lock(&app.metrics).reject("socket_error");continue;}};
                 lock(&app.metrics).datagram(length);
-                let settings=settings.borrow_and_update().clone();
-                if settings["forward_telemetry_enabled"]==true{
-                    let host=settings["forward_telemetry_host"].as_str().unwrap_or("127.0.0.1");let port=settings["forward_telemetry_port"].as_u64().and_then(|p|u16::try_from(p).ok()).unwrap_or(5300);
-                    // Existing forwarding deliberately permits localhost destinations only.
-                    if matches!(host,"localhost"|"127.0.0.1")&&socket.local_addr().ok().is_none_or(|addr|addr.port()!=port){if let Some(forwarding)=&forwarding{let _=forwarding.try_send_to(&bytes[..length],SocketAddr::from((Ipv4Addr::LOCALHOST,port)));}}
+                // [PERF] In the 60Hz+ UDP receiver hot loop, avoid deep-cloning the entire settings JSON tree.
+                // Borrowing by reference in a scoped block avoids recurring heap allocations on every packet frame.
+                {
+                    let current_settings = settings.borrow_and_update();
+                    if current_settings["forward_telemetry_enabled"] == true {
+                        let host = current_settings["forward_telemetry_host"].as_str().unwrap_or("127.0.0.1");
+                        let port = current_settings["forward_telemetry_port"].as_u64().and_then(|p| u16::try_from(p).ok()).unwrap_or(5300);
+                        // Existing forwarding deliberately permits localhost destinations only.
+                        if matches!(host, "localhost" | "127.0.0.1") && socket.local_addr().ok().is_none_or(|addr| addr.port() != port) {
+                            if let Some(forwarding) = &forwarding {
+                                let _ = forwarding.try_send_to(&bytes[..length], SocketAddr::from((Ipv4Addr::LOCALHOST, port)));
+                            }
+                        }
+                    }
                 }
                 match telemetry::parse_packet(&bytes[..length]){Ok(frame)=>{
                     let mut metrics=lock(&app.metrics);metrics.parsed(&frame,source.to_string());

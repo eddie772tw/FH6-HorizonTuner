@@ -103,3 +103,15 @@ it('allows incomplete HEX drafts without saving them, then applies a complete co
   expect(theme.themeSettings.primaryColor).toBe('#123456');
   expect(document.documentElement.style.getPropertyValue('--primary')).toBe('#123456');
 });
+
+it('blocks unsafe saved and received CSS at the style injection boundary while preserving the draft', async () => {
+  const unsafe = '.card { background: url("https://example.invalid/probe"); }';
+  localStorage.setItem('themeSettings', JSON.stringify({ ...defaultThemeSettings, customCSS: unsafe }));
+  await mount();
+  expect(document.getElementById('custom-theme-css')?.textContent).toBe('');
+  expect(theme.themeSettings.customCSS).toBe(unsafe);
+  await act(async () => theme.receiveThemeSettings({ ...defaultThemeSettings, customCSS: '.card { border-width: 3px; }' }));
+  expect(document.getElementById('custom-theme-css')?.textContent).toBe('.card { border-width: 3px; }');
+  await act(async () => theme.receiveThemeSettings({ ...defaultThemeSettings, customCSS: unsafe }));
+  expect(document.getElementById('custom-theme-css')?.textContent).toBe('');
+});

@@ -1,0 +1,178 @@
+{
+  "captured": "2026-11-04",
+  "source": "PR #541 after merging main 08f814c10c5ac3d6987276392900c02311d6ea04, before integration commit",
+  "environment": "Windows, sandboxed Edge, production React AppShell and HUD launcher with isolated HTTP/WebSocket fixtures",
+  "viewport": "1280x720; narrow settings 320x720; Audio Head element crops at 100%, DPR 1",
+  "syntheticMedia": "HUD Demo - Night Drive",
+  "backdrop": "RGB(22, 27, 34) behind actual SVG and Canvas; no image retouching",
+  "layouts": 336,
+  "captures": 66,
+  "saves": 62,
+  "checks": [
+    "Keyboard, ARIA relationships, hidden panels and side-effect-free tab changes",
+    "Fourth Audio Head tab: hidden configuration, independent scale and valid/empty offset drafts",
+    "Collapsed details skip hidden controls and support keyboard expansion",
+    "Hidden configuration, cross-tab patches, tire dependency, G alignment and merged-chart values",
+    "Retained expansion, draft and independent scroll positions",
+    "Independent units, retry across tabs, persistence and fresh page defaults",
+    "Reset cancellation and confirmed defaults preserve enabled",
+    "All seven cores, day/night, three locales, narrow/default/wide and reduced motion",
+    "Six specialized gauge forms at 320px in all three locales",
+    "Production AppShell with Live/Tune/HUD reference captures across all three design systems",
+    "Real launcher: independent sizes, four edges, nine live deck selections and audio-only unmount/remount"
+  ],
+  "errors": [],
+  "unexpectedRequests": [],
+  "decks": [
+    {
+      "id": 0,
+      "name": "Pioneer DEH-P6100R",
+      "filename": "audio-head-00.png",
+      "width": 568.5625,
+      "height": 146.625,
+      "face": "assets/pioneer.svg"
+    },
+    {
+      "id": 1,
+      "name": "Panasonic CQ-VX5500K",
+      "filename": "audio-head-01.png",
+      "width": 655.34375,
+      "height": 164.578125,
+      "face": "assets/panasonic.svg"
+    },
+    {
+      "id": 2,
+      "name": "Pioneer DEX-P1R",
+      "filename": "audio-head-02.png",
+      "width": 616.453125,
+      "height": 146.625,
+      "face": "assets/pioneer_dexp1r.svg"
+    },
+    {
+      "id": 3,
+      "name": "Pioneer DEH-P835R",
+      "filename": "audio-head-03.png",
+      "width": 688.265625,
+      "height": 187.03125,
+      "face": "assets/pioneer_p835r.svg"
+    },
+    {
+      "id": 4,
+      "name": "Sony CDX-CA860X",
+      "filename": "audio-head-04.png",
+      "width": 658.34375,
+      "height": 199,
+      "face": "assets/sony_cdx.svg"
+    },
+    {
+      "id": 5,
+      "name": "Alpine CDA-7848",
+      "filename": "audio-head-05.png",
+      "width": 658.34375,
+      "height": 167.578125,
+      "face": "assets/alpine_7848.svg"
+    },
+    {
+      "id": 6,
+      "name": "Alpine CDA-9815RB",
+      "filename": "audio-head-06.png",
+      "width": 733.15625,
+      "height": 164.578125,
+      "face": "assets/alpine_9815.svg"
+    },
+    {
+      "id": 7,
+      "name": "Kenwood KRC-759R",
+      "filename": "audio-head-07.png",
+      "width": 586.515625,
+      "height": 187.03125,
+      "face": "assets/kenwood_krc.svg"
+    },
+    {
+      "id": 8,
+      "name": "JVC KD-LX50R",
+      "filename": "audio-head-08.png",
+      "width": 688.265625,
+      "height": 146.625,
+      "face": "assets/jvc_kameleon.svg"
+    }
+  ],
+  "files": [
+    {
+      "name": "default-dark-1280-gauge.png",
+      "sha256": "9474ad656be81eb232dd6873c275cac9e17d80efdf3dcb75112d74b18c3981ae"
+    },
+    {
+      "name": "default-dark-1280-telemetry.png",
+      "sha256": "0ff4669f9723e8da2754e23eb7e62b9c4ad29c1a90ed3ea7248e4f9cd4d7c3f2"
+    },
+    {
+      "name": "default-dark-1280-general.png",
+      "sha256": "b7a31d26cf76036c693c3cc258ba94359624e31e048a5b1d94fb64b721b2e61e"
+    },
+    {
+      "name": "default-dark-320-audio-head.png",
+      "sha256": "a595935ef96f52232552b2e1a0d61a78a865c0c060423566671fc37ab5c06a65"
+    },
+    {
+      "name": "default-light-1280-audio-head.png",
+      "sha256": "bb674e31ce049f3ee47c6f529a46bbc05e9f3581bb133b3f09d31b4a754d8697"
+    },
+    {
+      "name": "default-dark-1280-audio-head.png",
+      "sha256": "4bde888300d02f422e4991cd22d9667c63f90f83e3d75d0e990090304b9c3947"
+    },
+    {
+      "name": "swiss-light-1280-audio-head.png",
+      "sha256": "913b6649160147bfa45e088ab1bd51cd8c80efa7b6de7a47ddd3dbd15143f4ce"
+    },
+    {
+      "name": "swiss-dark-1280-audio-head.png",
+      "sha256": "f49b2aad4c755aaac4b617beeb7c6e6e92fcdb4b5b7e64d87f8d34267aa62d99"
+    },
+    {
+      "name": "rhine-lab-light-1280-audio-head.png",
+      "sha256": "deb81d69b2d40237da1d546a7605f8a96ec8211f0e6b568ab30300b4107a6b7a"
+    },
+    {
+      "name": "rhine-lab-dark-1280-audio-head.png",
+      "sha256": "3c5583d358df169687b3a42103071a866e64c8635165c569c17fb484b1594dc1"
+    },
+    {
+      "name": "audio-head-00.png",
+      "sha256": "100767df0ad3dc32ba487c3aebd9bd31520ac8c7ac7d196b9005589318dbb15a"
+    },
+    {
+      "name": "audio-head-01.png",
+      "sha256": "5053283d76711d17ddbd7f597bc89578ef695123c138a4f92220dd7c8b7e6e71"
+    },
+    {
+      "name": "audio-head-02.png",
+      "sha256": "2bacceedea23fd8c2ca7c08c34af78db718a046ebbd7702f2fc212a306300c25"
+    },
+    {
+      "name": "audio-head-03.png",
+      "sha256": "b9ed5442627db6f928db394fb786980095917a018571e8814753e88ea789e717"
+    },
+    {
+      "name": "audio-head-04.png",
+      "sha256": "6a2b68043291108d6caa9b8babedcef2cc35d7a2d2f030313173bddf7a2cb857"
+    },
+    {
+      "name": "audio-head-05.png",
+      "sha256": "a68f79db3529cb5b03495a209fae884e9926a7846c91d85de2d106e18880ee0d"
+    },
+    {
+      "name": "audio-head-06.png",
+      "sha256": "cff99d9847a7cddfa2343cc79358f4766cfc0d4db32119f3ad835a49f6b920d1"
+    },
+    {
+      "name": "audio-head-07.png",
+      "sha256": "5f77330b697f4770527e3019fceaecfbd8f9e5b3493ac230a4ec847fabefd2cf"
+    },
+    {
+      "name": "audio-head-08.png",
+      "sha256": "2c4933b1839f058c437c688598471ceaa184e2460d3ae2f71a9fb0a3596773c1"
+    }
+  ]
+}

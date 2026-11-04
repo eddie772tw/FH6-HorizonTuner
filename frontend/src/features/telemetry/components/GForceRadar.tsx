@@ -169,13 +169,26 @@ const GForceRadar: React.FC<GForceRadarProps> = React.memo(({ size: propSize, re
       const markers = [maxLatL, maxLatR, maxLonB, maxLonA, maxL_B, maxL_A, maxR_B, maxR_A];
 
       ctx.fillStyle = theme.marker;
-      for (const p of markers) {
-        const offset = calculateGPointOffset(p.lat, p.lon, radius, 3);
-        const cx = (radius + offset.dx) * dpr;
-        const cy = (radius + offset.dy) * dpr;
+      // [PERF] Loop unswitching: hoisting condition outside loop avoids evaluating theme.linear per marker.
+      // Additionally, using ctx.fillRect immediately writes to canvas without path batching overhead and preserves alpha compositing.
+      if (theme.linear) {
+        for (const p of markers) {
+          const offset = calculateGPointOffset(p.lat, p.lon, radius, 3);
+          const cx = (radius + offset.dx) * dpr;
+          const cy = (radius + offset.dy) * dpr;
+          ctx.fillRect(cx - 2.5 * dpr, cy - 2.5 * dpr, 5 * dpr, 5 * dpr);
+        }
+      } else {
+        // [PERF] Path batching: moving ctx.beginPath() and ctx.fill() outside loop and preceding ctx.arc() with ctx.moveTo()
+        // to minimize state changes and drastically reduce CPU overhead during high-frequency render loops.
         ctx.beginPath();
-        if (theme.linear) ctx.rect(cx - 2.5 * dpr, cy - 2.5 * dpr, 5 * dpr, 5 * dpr);
-        else ctx.arc(cx, cy, 3 * dpr, 0, Math.PI * 2);
+        for (const p of markers) {
+          const offset = calculateGPointOffset(p.lat, p.lon, radius, 3);
+          const cx = (radius + offset.dx) * dpr;
+          const cy = (radius + offset.dy) * dpr;
+          ctx.moveTo(cx + 3 * dpr, cy);
+          ctx.arc(cx, cy, 3 * dpr, 0, Math.PI * 2);
+        }
         ctx.fill();
       }
     };

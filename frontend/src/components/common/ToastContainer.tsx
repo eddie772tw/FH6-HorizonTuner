@@ -51,53 +51,78 @@ export const ToastContainer: React.FC = () => {
 
   if (toasts.length === 0) return null;
 
-  const renderToast = (toast: typeof toasts[number]) => (
-    <div
-      key={toast.id}
-      className="toast show glass-panel mb-2 shadow-lg border"
-      role="alert"
-      aria-live="assertive"
-      aria-atomic="true"
-      style={{
-        pointerEvents: 'auto',
-        backdropFilter: 'blur(16px)',
-        background: 'var(--glass-bg)',
-        borderColor: toast.type === 'warning'
-          ? 'var(--bs-warning)'
-          : toast.type === 'danger'
-          ? 'var(--bs-danger)'
-          : 'var(--glass-border)',
-        transition: 'all 0.25s ease-in-out'
-      }}
-    >
-      <div className="toast-header bg-transparent border-bottom border-secondary border-opacity-25 d-flex align-items-center justify-content-between py-2 px-3">
-        <div className="d-flex align-items-center">
-          {getTypeBadge(toast.type, t)}
-          <strong className="me-auto text-primary fs-7 fw-bold m-0">
-            {toast.title || (toast.type ? t(toast.type.toUpperCase()) : t('NOTIFICATION'))}
-          </strong>
+  const renderToast = (toast: typeof toasts[number]) => {
+    const isCritical = toast.type === 'danger' || toast.type === 'warning';
+    const titleText = toast.title || (toast.type ? t(toast.type.toUpperCase()) : t('NOTIFICATION'));
+    const titleId = `toast-title-${toast.id}`;
+
+    return (
+      <div
+        key={toast.id}
+        className="toast show glass-panel mb-2 shadow-lg border"
+        role={isCritical ? 'alert' : 'status'}
+        aria-live={isCritical ? 'assertive' : 'polite'}
+        aria-atomic="true"
+        aria-labelledby={titleId}
+        onKeyDown={(e) => {
+          if (e.key === 'Escape') {
+            e.stopPropagation();
+            removeToast(toast.id);
+          }
+        }}
+        style={{
+          pointerEvents: 'auto',
+          backdropFilter: 'blur(16px)',
+          background: 'var(--glass-bg)',
+          borderColor: toast.type === 'warning'
+            ? 'var(--bs-warning)'
+            : toast.type === 'danger'
+            ? 'var(--bs-danger)'
+            : 'var(--glass-border)',
+          transition: 'all 0.25s ease-in-out'
+        }}
+      >
+        <div className="toast-header bg-transparent border-bottom border-secondary border-opacity-25 d-flex align-items-center justify-content-between py-2 px-3">
+          <div className="d-flex align-items-center">
+            {getTypeBadge(toast.type, t)}
+            <strong id={titleId} className="me-auto text-primary fs-7 fw-bold m-0">
+              {titleText}
+            </strong>
+          </div>
+          <button
+            type="button"
+            className="btn-close ms-2"
+            aria-label={`${t("Close")} ${titleText}`}
+            onClick={() => removeToast(toast.id)}
+          />
         </div>
-        <button type="button" className="btn-close ms-2" aria-label={t("Close")} onClick={() => removeToast(toast.id)}></button>
+        <div className="toast-body py-2 px-3 text-start">
+          <div className="fs-7 fw-medium text-body">{toast.message}</div>
+          {toast.detail && <div className="fs-8 text-secondary mt-1" style={{ overflowWrap: 'anywhere', userSelect: 'text' }}>{toast.detail}</div>}
+          {toast.action && <button type="button" className="btn btn-sm btn-outline-secondary mt-2"
+            onClick={toast.action.onClick}>{toast.action.label}</button>}
+        </div>
       </div>
-      <div className="toast-body py-2 px-3 text-start">
-        <div className="fs-7 fw-medium text-body">{toast.message}</div>
-        {toast.detail && <div className="fs-8 text-secondary mt-1" style={{ overflowWrap: 'anywhere', userSelect: 'text' }}>{toast.detail}</div>}
-        {toast.action && <button type="button" className="btn btn-sm btn-outline-secondary mt-2"
-          onClick={toast.action.onClick}>{toast.action.label}</button>}
-      </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <>
       {globalToasts.length > 0 && (
-        <div className="toast-container position-fixed top-0 end-0 p-3" style={{ zIndex: 1060, maxWidth: '420px', width: '100%', pointerEvents: 'none' }}>
+        <div
+          className="toast-container position-fixed top-0 end-0 p-3"
+          role="region"
+          aria-label={t('Notifications')}
+          style={{ zIndex: 1060, maxWidth: '420px', width: '100%', pointerEvents: 'none' }}
+        >
           {globalToasts.map(renderToast)}
         </div>
       )}
       {buildInfoToasts.length > 0 && buildInfoAnchor && (
         <div
           className="toast-container"
+          role="region"
+          aria-label={t('Notifications')}
           style={{ position: 'fixed', zIndex: 1060, left: buildInfoAnchor.left, top: buildInfoAnchor.top, maxWidth: '420px', width: 'min(420px, calc(100vw - 2rem))', pointerEvents: 'none' }}
         >
           {buildInfoToasts.map(renderToast)}

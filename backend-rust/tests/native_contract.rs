@@ -72,6 +72,36 @@ fn discord_accepts_local_configuration_and_reports_input_before_ipc() {
 }
 
 #[test]
+fn discord_presence_enabled_guard_and_minimal_payload() {
+    let unconfigured = fh6_backend::native::DiscordPresence::for_data_root(None);
+    assert!(!unconfigured.is_enabled());
+
+    let root = tempfile::tempdir().unwrap();
+    std::fs::write(
+        root.path().join("discord.local.json"),
+        r#"{"discord_application_id":"123456789012345678"}"#,
+    )
+    .unwrap();
+    let configured = fh6_backend::native::DiscordPresence::for_data_root(Some(root.path()));
+    assert!(configured.is_enabled());
+
+    configured.submit(serde_json::json!({
+        "CarOrdinal": 42,
+        "CurrentRaceTime": 12.345,
+        "CurrentLap": 1.0,
+        "IsRaceOn": 1,
+        "CarName": "2024 Test Vehicle",
+        "LastLap": 65.432,
+        "BestLap": 64.123,
+        "LapNumber": 2,
+        "RacePosition": 1,
+    }));
+    let status = configured.status();
+    assert_eq!(status["state"], "waiting_for_discord");
+    assert!(status["lastTelemetryAt"].as_f64().unwrap() > 0.0);
+}
+
+#[test]
 #[cfg(feature = "hud")]
 fn external_pcm_updates_spectrum_without_native_audio() {
     let services = NativeServices::new();

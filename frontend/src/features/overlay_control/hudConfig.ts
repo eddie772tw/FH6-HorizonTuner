@@ -2,7 +2,7 @@ import type { S650CenterWidget, S650HmiTheme } from './s650/config';
 import type { ClassicJdmAuxGauge, ClassicJdmDefiTheme, ClassicJdmTachStyle } from './classic_jdm/config';
 import type { R34MfdMode, R34Lighting } from './r34_mfd/config';
 import type { StackSt8100Settings } from './stack_st8100/config';
-import type { HudDisplayUnits } from './HudUnitSettingsSidebar';
+import type { HudDisplayUnits } from './hudDisplayUnits';
 import { DEFAULT_LFA_AUTO_EXPAND, DEFAULT_LFA_MANUAL_EXPAND } from './lfa_center_ring/config';
 
 export interface HudElements {
@@ -55,6 +55,8 @@ export interface HudConfig extends Partial<StackSt8100Settings> {
   r34ShowCluster?: boolean;
   r34Lighting?: R34Lighting;
   audioHeadDeck?: number;
+  /** Independent user scale; legacy shared scale is migrated once. */
+  audioHeadScale?: number;
   audioHeadEdge?: 'left' | 'right' | 'top' | 'bottom';
   /** Screen pixels inward from the selected edge. */
   audioHeadOffset?: number;
@@ -120,6 +122,7 @@ export const DEFAULT_HUD_CONFIG: HudConfig = {
   r34ShowCluster: true,
   r34Lighting: 'night',
   audioHeadDeck: 0,
+  audioHeadScale: 1,
   audioHeadEdge: 'left',
   audioHeadOffset: 0,
   audioHeadCenterOffset: 0,

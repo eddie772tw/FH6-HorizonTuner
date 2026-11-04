@@ -77,12 +77,35 @@ PR 標題必須遵循 Conventional Commits 格式：
 - `perf(scope): 簡短描述`（效能改善）
 - `test(scope): 簡短描述`（測試新增或修正）
 
+#### 標題嚴禁附加身分後綴 (No Identity Suffix in PR Title)
+- **嚴格禁止**：嚴禁在 PR 標題中附加 `[{代號} as {Agent}]`（例如 `perf: ... [Bolt as Antigravity]`）。
+- 身分標記（Identity Tag）僅屬於 PR 內文（PR Body）結尾與評論回覆，PR 標題必須保持純淨以利自動化 Changelog 與 Release 工具解析。
+
 #### 標題穩定性原則
 - **原則**：**不要因為微小的 Review 修正或後續 commit 而隨意修改 PR 標題**。
 - **允許修改標題的時機**：
   - PR 的核心範疇（Scope）發生根本性轉移。
   - 經過 Review 討論後，原定的 Feature 轉為純 Refactor 或 Fix。
   - 原標題存在錯別字或無法正確描述主軸。
+
+---
+
+### 2.6 提案前防重複檢核 (Pre-Proposal PR Deduplication Check)
+
+#### 背景與原則
+在多 Agent 自動排程與多開發者平行協作環境中，避免重複提案與資源衝突是維護代碼庫健康的核心要素。
+
+#### 執行規範
+1. **排查開啟中與近期 PR**：
+   在鎖定修改目標或建立分支前，必須先執行：
+   ```powershell
+   gh pr list --state open
+   ```
+   必要時可查閱近期合併／關閉的 PR：`gh pr list --state all --limit 10`。
+2. **範疇比對與避開衝突**：
+   閱讀進行中 PR 的標題、改動範疇與涉及模組檔案。若發現已有 PR 正在處理相同或高度相鄰的元件/檔案，應主動避開，挑選其他獨立未覆蓋的機會點，嚴禁重複提案。
+3. **無獨立目標時安全退出 (Safe Abort)**：
+   若經排查後所有高價值標的皆已有 PR 處理中，且無其他合適的獨立標的，應立即執行 `git restore . && git checkout main` 乾淨還原，不建立重複或瑣碎的 PR。
 
 ---
 

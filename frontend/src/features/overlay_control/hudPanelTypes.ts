@@ -1,17 +1,16 @@
 import type { ReactNode } from 'react';
-import type { HudConfig } from './hudConfig';
-import type { HudStyleEntry } from './hudStyleScanner';
+import type { HudConfigPatch } from './overlayControlRuntime';
 
-export interface HudPanelSharedProps {
-  config: HudConfig;
-  styles: HudStyleEntry[];
+export interface HudPanelActions {
+  t: (key: string) => string;
   disabled?: boolean;
-  onConfigPatch: (patch: Partial<HudConfig>) => void;
+  onConfigPatch: (patch: HudConfigPatch) => void;
 }
 
-export interface HudWorkspaceProps {
-  children: ReactNode;
-  className?: string;
-  testId?: string;
+/** Ordered page composition; new HUD modules add an entry without changing the shell. */
+export interface HudSettingsTabDefinition {
+  readonly id: string;
+  readonly labelKey: string;
+  readonly content: ReactNode;
 }
 

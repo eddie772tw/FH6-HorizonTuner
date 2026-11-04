@@ -1,9 +1,7 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useSettings } from '../../../context/SettingsContext';
 import { CarParams } from '../../../context/CarParamsContext';
 import type { ChassisTuningResult, StaticTireAlignResult, Season } from '../../../domain/tuning/types';
-import type { TireEvidenceResult, EvidenceProvenance } from '../../../domain/tuning/types';
-import { TireEvidencePanel } from './TireEvidencePanel';
 
 interface Step2ChassisTunerProps {
   selectedRaceGoal: string;
@@ -12,8 +10,7 @@ interface Step2ChassisTunerProps {
   chassis: ChassisTuningResult | null;
   alignment: StaticTireAlignResult | null;
   saveCarParams: () => Promise<void>;
-  tireEvidence?: TireEvidenceResult | null;
-  evidenceProvenance?: EvidenceProvenance | null;
+  saving?: boolean;
 }
 
 export const Step2ChassisTuner: React.FC<Step2ChassisTunerProps> = ({
@@ -23,8 +20,7 @@ export const Step2ChassisTuner: React.FC<Step2ChassisTunerProps> = ({
   chassis,
   alignment,
   saveCarParams,
-  tireEvidence = null,
-  evidenceProvenance = null,
+  saving = false,
 }) => {
   const {
     settings,
@@ -33,9 +29,6 @@ export const Step2ChassisTuner: React.FC<Step2ChassisTunerProps> = ({
     convertTirePressureFromPsi,
     t,
   } = useSettings();
-
-  const [saving, setSaving] = useState(false);
-  const [savedSuccess, setSavedSuccess] = useState(false);
 
   if (!carParams || !chassis || !alignment) {
     return (
@@ -59,17 +52,6 @@ export const Step2ChassisTuner: React.FC<Step2ChassisTunerProps> = ({
   const springRearFormatted = convertSpringRate(springs.rear);
   const heightFrontFormatted = convertHeight(springs.heightF);
   const heightRearFormatted = convertHeight(springs.heightR);
-
-  const handleSave = async () => {
-    setSaving(true);
-    try {
-      await saveCarParams();
-      setSavedSuccess(true);
-      setTimeout(() => setSavedSuccess(false), 2500);
-    } finally {
-      setSaving(false);
-    }
-  };
 
   const valueBadgeStyle: React.CSSProperties = {
     background: 'var(--surface-2)',
@@ -105,18 +87,13 @@ export const Step2ChassisTuner: React.FC<Step2ChassisTunerProps> = ({
         </div>
 
         <div className="d-flex align-items-center gap-2">
-          {savedSuccess && (
-            <span className="badge text-bg-success py-1 px-2 fs-8">
-              {t('Saved')}
-            </span>
-          )}
           <button
             type="button"
             disabled={saving}
-            onClick={handleSave}
-            className="btn btn-primary btn-sm fw-bold px-3"
+            onClick={() => void saveCarParams()}
+            className="btn btn-outline-primary btn-sm fw-bold px-3"
           >
-            {saving ? t('Saving...') : t('Save Setup')}
+            {t(saving ? 'Saving vehicle parameters…' : 'Save vehicle parameters')}
           </button>
         </div>
       </div>
@@ -208,10 +185,6 @@ export const Step2ChassisTuner: React.FC<Step2ChassisTunerProps> = ({
             </div>
           </div>
 
-          <div className="mt-auto p-2 rounded bg-body-tertiary border fs-8 text-body-secondary" style={{ lineHeight: '1.4' }}>
-            {t('Data Out does not report tire pressure. Apply cold pressure in tuning menu and verify temperature build-up during hot laps.')}
-          </div>
-          <TireEvidencePanel evidence={tireEvidence} provenance={evidenceProvenance} />
         </div>
 
         {/* Column 2: Suspension Platform */}
@@ -220,7 +193,6 @@ export const Step2ChassisTuner: React.FC<Step2ChassisTunerProps> = ({
             <span className="workspace-section-heading fw-bold fs-6">{t('Suspension Platform')}</span>
             <span className="badge text-bg-secondary">{t('ARB & Springs')}</span>
           </div>
-          <p className="small text-body-secondary">{t('Suspension distributions: unavailable. No qualified setup-specific distribution contract is available.')}</p>
 
           {/* Anti-Roll Bars */}
           <div className="d-flex flex-column gap-2">
@@ -241,18 +213,6 @@ export const Step2ChassisTuner: React.FC<Step2ChassisTunerProps> = ({
               <span style={valueBadgeStyle}>{arb.rear.toFixed(1)}</span>
             </div>
 
-            <div className="p-2 rounded bg-body-tertiary border fs-8 text-body-secondary" style={{ lineHeight: '1.3' }}>
-              {selectedRaceGoal === 'Drift' &&
-                t('Extreme front-soft (10.0) / rear-stiff (50.0) configuration for immediate rotation.')}
-              {selectedRaceGoal === 'Road' && drivetrain === 'AWD' &&
-                t('AWD 1/65 Meta Strategy applied to minimize mid-corner understeer.')}
-              {selectedRaceGoal === 'Rally' &&
-                t('Softened by 65% to allow independent wheel travel over terrain bumps.')}
-              {selectedRaceGoal === 'Drag' &&
-                t('Front unconstrained (1.0) for max weight transfer to rear axles.')}
-              {selectedRaceGoal === 'Road' && drivetrain !== 'AWD' &&
-                t('Balanced distribution based on front weight percentage to ensure progressive breakaway.')}
-            </div>
           </div>
 
           <hr className="my-1 opacity-25" />
@@ -292,9 +252,6 @@ export const Step2ChassisTuner: React.FC<Step2ChassisTunerProps> = ({
             </div>
           </div>
 
-          <div className="mt-auto p-2 rounded bg-body-tertiary border fs-8 text-body-secondary" style={{ lineHeight: '1.4' }}>
-            {t('Recheck ride height after tire compound upgrade. Lower center of gravity reduces lateral load transfer.')}
-          </div>
         </div>
 
         {/* Column 3: Damping & Differential */}
@@ -375,9 +332,6 @@ export const Step2ChassisTuner: React.FC<Step2ChassisTunerProps> = ({
             )}
           </div>
 
-          <div className="mt-auto p-2 rounded bg-body-tertiary border fs-8 text-body-secondary" style={{ lineHeight: '1.4' }}>
-            {t('Differential locking prevents inside wheel spin on exit. Adjust deceleration lock if entry stability is affected.')}
-          </div>
         </div>
       </div>
     </div>
