@@ -1,5 +1,12 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-11-04 / 介面 PR 截圖與視覺備查成為共通規範（Codex as Codex）
+
+- **規範來源**：使用者明確要求未來所有介面調整 PR 都以截圖展示改動並保存視覺審查備查，隨 #541 提交。AGENTS 設必要交付門檻，詳細契約集中於 rules/ui-visual-review.md；UI 架構、Halfmoon、作者／審查技能與 PR 範本以連結引用，不各自維護覆蓋矩陣。
+- **內容**：Body 嵌圖、各頁／分頁／新增樣式覆蓋、跨設計系統日夜及窄幅代表圖、可追溯的版本／環境／資料／重現紀錄；明確區分 fixture、原生、遊戲及讀屏驗收。變更介面須更新圖片，文件後續提交可註明版本後沿用。
+- **本次交付**：只有規範文件變更，#541 介面仍與 4085520b 相同，沿用該版本的 19 張圖與測試紀錄；不重拍或重跑產品測試。檢查 canonical skill ID／索引、修改文件的相對連結與路徑大小寫、PR Body 格式及 git diff --check。
+- **Skills**：agent-governance-audit、pr-author-maintainer。
+
 ## 2026-11-04 / 音響 X／Y 位移拉桿與對齊限制（Codex as Codex）
 
 - **變更**：音響位置改用共用 HudRange，X 正值向右、Y 正值向下；左／上對齊的對應軸下限為 0，右／下上限為 0。每次 1 px，保留既有 4000 px 距離範圍、鍵盤方向鍵與 Home／End、即時保存及隱藏時設定。
