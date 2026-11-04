@@ -39,7 +39,7 @@ export default function CompanionTelemetry() {
           type="button"
           role="tab"
           aria-selected={card === id}
-          aria-label={t(titleKey)}
+          aria-label={`${companionText(label, labelKey)}: ${t(titleKey)}`}
           className={`nav-link ${card === id ? 'active' : ''}`}
           onClick={() => setCard(id)}
         >

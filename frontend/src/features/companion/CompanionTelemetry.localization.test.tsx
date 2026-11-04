@@ -82,7 +82,8 @@ it.each(languages)(
     ];
 
     expect(tabs.map((tab) => tab.textContent)).toEqual(expectedShortLabels);
-    expect(tabs.map((tab) => tab.getAttribute('aria-label'))).toEqual(expectedFullTitles);
+    expect(tabs.map((tab) => tab.getAttribute('aria-label'))).toEqual(expectedShortLabels.map((label, index) => `${label}: ${expectedFullTitles[index]}`));
+    for (const tab of tabs) expect(tab.getAttribute('aria-label')).toContain(tab.textContent);
 
     // Initial selected tab is driver
     expect(tabs[0].getAttribute('aria-selected')).toBe('true');
