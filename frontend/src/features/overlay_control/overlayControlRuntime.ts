@@ -5,7 +5,7 @@ import { normalizeClassicJdmConfig } from './classic_jdm/config';
 import { normalizeR34MfdConfig } from './r34_mfd/config';
 import { normalizeStackSt8100Config } from './stack_st8100/config';
 import { normalizeLfaExpansionConfig } from './lfa_center_ring/config';
-import type { HudDisplayUnits } from './HudUnitSettingsSidebar';
+import type { HudDisplayUnits } from './hudDisplayUnits';
 
 export type HudConfigRecord = HudConfig & Record<string, unknown>;
 

@@ -1,9 +1,10 @@
 import { useId } from 'react';
 import type { HudConfig } from '../hudConfig';
+import type { HudConfigPatch } from '../overlayControlRuntime';
 
 interface LfaExpansionSettingsCardProps {
-  config: HudConfig;
-  onChange: (updates: Partial<HudConfig>) => void;
+  config: Pick<HudConfig, 'lfaManualExpand' | 'lfaAutoExpand'>;
+  onChange: (updates: HudConfigPatch) => void;
   t: (key: string) => string;
 }
 

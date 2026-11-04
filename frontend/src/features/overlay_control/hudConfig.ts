@@ -2,7 +2,7 @@ import type { S650CenterWidget, S650HmiTheme } from './s650/config';
 import type { ClassicJdmAuxGauge, ClassicJdmDefiTheme, ClassicJdmTachStyle } from './classic_jdm/config';
 import type { R34MfdMode, R34Lighting } from './r34_mfd/config';
 import type { StackSt8100Settings } from './stack_st8100/config';
-import type { HudDisplayUnits } from './HudUnitSettingsSidebar';
+import type { HudDisplayUnits } from './hudDisplayUnits';
 import { DEFAULT_LFA_AUTO_EXPAND, DEFAULT_LFA_MANUAL_EXPAND } from './lfa_center_ring/config';
 
 export interface HudElements {
