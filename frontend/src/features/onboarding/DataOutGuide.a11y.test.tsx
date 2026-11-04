@@ -65,3 +65,29 @@ it('restores focus to the trigger button when dismissed with Escape', async () =
   expect(document.querySelector('[role="dialog"]')).toBeNull();
   expect(document.activeElement).toBe(trigger);
 });
+
+it('wraps Tab and Shift+Tab within the dialog and releases the keyboard scope on close', async () => {
+  const rects = vi.spyOn(HTMLElement.prototype, 'getClientRects').mockReturnValue([new DOMRect(0, 0, 20, 20)] as unknown as DOMRectList);
+  try {
+    await act(async () => root.render(<TestHarness />));
+    const trigger = document.getElementById('trigger-btn')!;
+    trigger.focus();
+    await act(async () => trigger.click());
+    const buttons = Array.from(document.querySelectorAll<HTMLButtonElement>('[role="dialog"] button:not([disabled])'));
+    const first = buttons[0], last = buttons[buttons.length - 1];
+    last.focus();
+    const forward = new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true });
+    document.dispatchEvent(forward);
+    expect(forward.defaultPrevented).toBe(true);
+    expect(document.activeElement).toBe(first);
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true, cancelable: true }));
+    expect(document.activeElement).toBe(last);
+    await act(async () => first.click());
+    expect(document.activeElement).toBe(trigger);
+    const outside = new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true });
+    document.dispatchEvent(outside);
+    expect(outside.defaultPrevented).toBe(false);
+  } finally {
+    rects.mockRestore();
+  }
+});
