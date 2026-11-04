@@ -167,22 +167,42 @@ fn lan_allowed_http(method: &Method, path: &str) -> bool {
     }
 }
 
+fn apply_security_headers(headers: &mut HeaderMap) {
+    // Defense-in-depth: Enforce MIME-type sniffing protection, prevent clickjacking via iframe,
+    // and restrict referrer leakage on all HTTP responses.
+    headers.insert(
+        "x-content-type-options",
+        HeaderValue::from_static("nosniff"),
+    );
+    headers.insert(
+        "x-frame-options",
+        HeaderValue::from_static("SAMEORIGIN"),
+    );
+    headers.insert(
+        "referrer-policy",
+        HeaderValue::from_static("strict-origin-when-cross-origin"),
+    );
+}
+
 async fn lan_http(
     backend: Arc<dyn Backend>,
     companion: Arc<CompanionService>,
     request: Request<Body>,
 ) -> Response {
-    if !lan_host_and_origin_allowed(request.headers(), &companion) {
-        return StatusCode::FORBIDDEN.into_response();
-    }
-    let path = request.uri().path();
-    if !lan_allowed_http(request.method(), path) {
-        return StatusCode::NOT_FOUND.into_response();
-    }
-    if path != "/api/companion/pair" && !lan_session(request.headers(), &companion) {
-        return StatusCode::UNAUTHORIZED.into_response();
-    }
-    http_request(backend, request).await
+    let mut response = if !lan_host_and_origin_allowed(request.headers(), &companion) {
+        StatusCode::FORBIDDEN.into_response()
+    } else {
+        let path = request.uri().path();
+        if !lan_allowed_http(request.method(), path) {
+            StatusCode::NOT_FOUND.into_response()
+        } else if path != "/api/companion/pair" && !lan_session(request.headers(), &companion) {
+            StatusCode::UNAUTHORIZED.into_response()
+        } else {
+            http_request(backend, request).await
+        }
+    };
+    apply_security_headers(response.headers_mut());
+    response
 }
 
 async fn lan_ws(
@@ -244,8 +264,10 @@ async fn origin_security(request: Request<Body>, next: Next) -> Response {
         Method::GET | Method::HEAD | Method::OPTIONS
     ) && !allowed_origin(origin.as_deref())
     {
-        return ApiError::new(403, "CSRF protection blocked request: Invalid Origin.")
+        let mut response = ApiError::new(403, "CSRF protection blocked request: Invalid Origin.")
             .into_response();
+        apply_security_headers(response.headers_mut());
+        return response;
     }
     let preflight = request.method() == Method::OPTIONS
         && request
@@ -292,6 +314,7 @@ async fn origin_security(request: Request<Body>, next: Next) -> Response {
             }
         }
     }
+    apply_security_headers(response.headers_mut());
     response
 }
 async fn http_request(backend: Arc<dyn Backend>, request: Request<Body>) -> Response {

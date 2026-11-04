@@ -26,3 +26,9 @@
 **學習 (Learning):** 自訂 CSS 雖主要用於 UI 屬性微調，但 CSS 規格中包含強大的外部資源載入能力與歷史動態表達式。在前端允許使用者輸入或匯入外部 CSS 時，除了進行基本語法括號檢查外，必須於前置作業剝離註解進行惡意特徵掃描（避免利用註解拆分關鍵字混淆繞過），並優先採用無 DOM 副作用的現代標準 `CSSStyleSheet.prototype.replaceSync`，確保驗證階段具備純淨無副作用（Side-effect-free）的安全性。
 **預防 (Prevention):** 自訂主題樣式全面禁止 `@import`、所有 `url()` 資源請求、`</style>` 閉合標籤及動態表達式，嚴格限制 UTF-8 位元組上限（64 KiB），並在任何 DOM 操作前完成安全特徵攔截，落實深度防禦（Defense in Depth）。
 **署名:** Sentinel as Antigravity
+
+## 2026-11-05 - Defense-in-Depth HTTP Security Headers & Clickjacking Mitigation
+**漏洞/脆弱點 (Vulnerability):** 後端 Axum HTTP 伺服器（`backend-rust/src/network.rs`）在 `origin_security` middleware 與 LAN 路由中，原先僅針對非安全請求方法檢查 Origin 來源及處理 CORS，但所有 HTTP 回應（包含 API、靜態 UI 資源以及錯誤拒絕回應）完全缺少標準的防禦性安全標頭（`X-Content-Type-Options: nosniff`, `X-Frame-Options: SAMEORIGIN`, `Referrer-Policy: strict-origin-when-cross-origin`），可能導致本機服務被外部惡意網站透過 `<iframe>` 進行跨來源點擊劫持（Clickjacking），或在特定瀏覽器/WebView 環境中引發 MIME 嗅探混淆攻擊。
+**學習 (Learning):** 本機桌面/Companion HTTP 服務雖主要綁定 `127.0.0.1` 或 LAN IP，但在瀏覽器環境下，任何本機瀏覽的網頁皆可透過嵌入 `<iframe>` 或探針發起無聲請求。若未在伺服器管道的全路徑（包含 CSRF 403 阻擋、401 未授權及一般 API 回應）統一注入 `SAMEORIGIN` 與 `nosniff`，即使實作了 CORS，仍會暴露於 UI 點擊劫持與 MIME 類型混淆風險。同時，保留 `SAMEORIGIN` 能完整相容 HUD overlay 內嵌同源 telemetry cards 的既有機制，達成零回歸防護。
+**預防 (Prevention):** 於後端 HTTP 網路層抽象 `apply_security_headers` 函式，對所有進出 `router` 與 `lan_router` 的 HTTP 回應強制注入 `X-Content-Type-Options: nosniff`、`X-Frame-Options: SAMEORIGIN` 及 `Referrer-Policy: strict-origin-when-cross-origin`，並透過整合測試驗證正常路徑、LAN 路由與拒絕路徑的安全標頭一致性，落實深度防禦（Defense in Depth）。
+**署名:** Sentinel as Antigravity
