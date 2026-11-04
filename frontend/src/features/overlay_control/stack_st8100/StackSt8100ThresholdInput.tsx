@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { isHudSettingsTab } from '../hudSettingsFocus';
 import { parseStackSt8100ThresholdDraft, stackSt8100ThresholdSpec, stackSt8100ThresholdToDisplay, stackSt8100ThresholdUnit,
   type StackSt8100DisplayUnits, type StackSt8100ThresholdMetric } from './units';
 
@@ -31,7 +32,8 @@ export function StackSt8100ThresholdInput({ id, metric, value, units, disabled, 
       <div className="input-group input-group-sm">
         <input id={id} type="text" inputMode="decimal" className="form-control" disabled={disabled}
           aria-describedby={`${id}-range`} value={draft}
-          onChange={event => setDraft(event.currentTarget.value)} onBlur={commit}
+          onChange={event => setDraft(event.currentTarget.value)}
+          onBlur={event => { if (!isHudSettingsTab(event.relatedTarget)) commit(); }}
           onKeyDown={event => {
             if (event.key === 'Enter') { event.preventDefault(); event.currentTarget.blur(); }
             if (event.key === 'Escape') { event.preventDefault(); setDraft(displayed); }
