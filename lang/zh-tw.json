@@ -2354,5 +2354,9 @@
     "Save current recording to backend": "將目前錄製儲存至後端",
     "Clear recording buffer": "清空錄製緩衝區",
     "Manual Recording ({count} samples)": "手動錄製（{count} 個樣本）",
-    "Auto Recording ({count} samples)": "自動錄製（{count} 個樣本）"
+    "Auto Recording ({count} samples)": "自動錄製（{count} 個樣本）",
+    "Capturing · {count} samples": "錄製中 · {count} 筆樣本",
+    "Invalidated · {count} samples": "已失效 · {count} 筆樣本",
+    "Idle · {count} samples": "閒置 · {count} 筆樣本",
+    "Clear capture buffer": "清除錄製緩衝區"
 }
