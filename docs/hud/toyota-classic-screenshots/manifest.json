@@ -1,0 +1,140 @@
+{
+  "source": "05d3586925ccaad94d5b1d84a6a8b303c1ec54d4",
+  "platform": "Windows, sandboxed Edge, DPR 1",
+  "backend": "Default-feature Rust server-sidecar; temporary data and ephemeral ports",
+  "frameData": {
+    "is_race_on": true,
+    "rpm": 4200,
+    "max_rpm": 8000,
+    "speed_kmh": 116,
+    "gear": 4,
+    "throttle": 0.55,
+    "fuel_ratio": 0.65,
+    "boost_bar": 0.45,
+    "tire_temp_f": [
+      194,
+      196,
+      198,
+      200
+    ]
+  },
+  "settingsViewport": [
+    1280,
+    720
+  ],
+  "hudViewport": [
+    1920,
+    1080
+  ],
+  "userScale": 1,
+  "background": "#161b22",
+  "styles": [
+    {
+      "id": "altezza_trd",
+      "bounds": {
+        "x": 1074.546875,
+        "y": 556.25,
+        "width": 815.453125,
+        "height": 493.75
+      },
+      "idleHash": "06af654e4939f2abd6a51406048ef2f43cf8afef8bc864e1bcb2b13eb3f62528",
+      "drivingHash": "3c231a5978d4623518361c76559450e9362a81944f5afe679b4f91b2acefe231"
+    },
+    {
+      "id": "chaser_jzx100",
+      "bounds": {
+        "x": 327.09375,
+        "y": 848.015625,
+        "width": 1265.8125,
+        "height": 201.984375
+      },
+      "idleHash": "57d24e71fd09b25fe025d503f615d1085dfe8f6b6ad86d147610927289830cdb",
+      "drivingHash": "bbe59438c0512dbcdf2cbf8b03f5a7b61e7b4d07ef41672c2a1c6d55d5c2adb2"
+    },
+    {
+      "id": "soarer_z20",
+      "bounds": {
+        "x": 332.46875,
+        "y": 794.15625,
+        "width": 1255.046875,
+        "height": 255.84375
+      },
+      "idleHash": "db2fc2b626058ef0abc71322dc000aabb77a398356cf70ef5798a37b23e56a2b",
+      "drivingHash": "4cb4c1ae20b17b2376c6f2e527c78a60a5381236cd2ff4dc7d526904c21a6f32"
+    },
+    {
+      "id": "supra_trd",
+      "bounds": {
+        "x": 932.40625,
+        "y": 683.71875,
+        "width": 957.59375,
+        "height": 366.28125
+      },
+      "idleHash": "0226fa4f4ecccea50f9d2c4c7711dd1c461e476e05c884e3dfca2e99737ededf",
+      "drivingHash": "3c0189df1cb9ee3496cd443176dfcdac48830934e058975fddec3c393c6d64b6"
+    }
+  ],
+  "images": [
+    {
+      "file": "settings-default-light.png",
+      "sha256": "1ef9ac4307f2b43e01e1254396012efa093b64f247eace6f2a12eae598b8684c"
+    },
+    {
+      "file": "settings-default-dark.png",
+      "sha256": "aad74ec09dadd34f6760fe2321c6075dd120e27b8ed602c85d9068668b95edf9"
+    },
+    {
+      "file": "settings-swiss-light.png",
+      "sha256": "ab25f921af74653aaaa3fa44ef76ea6b2efc69b36d3d3d8565e96f61326f3468"
+    },
+    {
+      "file": "settings-swiss-dark.png",
+      "sha256": "1e5559aeebb56a5a84410469e611613d47c5396090667d5b69e2be29ac1167fd"
+    },
+    {
+      "file": "settings-rhine-lab-light.png",
+      "sha256": "7ff3efa28f0987c1feeae931114487d7ecb4a3cd8a0050bfe5d5682f49ec9297"
+    },
+    {
+      "file": "settings-rhine-lab-dark.png",
+      "sha256": "0911755fd3f4566c68ab65047040d3b5f1c8f079e33b70dc93844e6020f8fd6e"
+    },
+    {
+      "file": "settings-narrow.png",
+      "sha256": "0f5bf96721a1bec98c43a10f85178173a08c2d79b72d786d0864ad1b8e49853a"
+    },
+    {
+      "file": "altezza_trd-1080p.png",
+      "sha256": "9a39f65bfc4da4d9e2e40ebd4b1aaafb485458dc3c084d9eaed349f9be67488a"
+    },
+    {
+      "file": "altezza_trd.png",
+      "sha256": "9ef9e6e592882e841805a92fa389d487aeb5f4fb4402607e4f150cd9d2a59859"
+    },
+    {
+      "file": "chaser_jzx100-1080p.png",
+      "sha256": "b4147088a00da797f960d68157eaedba74e4cf19d8bf99a1ea2c8ac92598cc12"
+    },
+    {
+      "file": "chaser_jzx100.png",
+      "sha256": "091e5c3e30d8d2a48f0bcb1d294e85975d0a02aa508089986ce38a63a77f667b"
+    },
+    {
+      "file": "soarer_z20-1080p.png",
+      "sha256": "256b90a60ed3b4de74a6b88c282819669c2e8a02882cdecf1cef56e3e1285a70"
+    },
+    {
+      "file": "soarer_z20.png",
+      "sha256": "8ae8af3bf0129ce7028b02cb237601e52d183977ef329d3d996232daf7ea7d21"
+    },
+    {
+      "file": "supra_trd-1080p.png",
+      "sha256": "874a4a0840b5c9cbabcdebfd7f0c53a857776337b1261ce89740d8fd03b75546"
+    },
+    {
+      "file": "supra_trd.png",
+      "sha256": "1c0233db01fce19018397c66dbc2e22e7f3041671dd3e40f669d157e13b2b882"
+    }
+  ],
+  "errors": []
+}
