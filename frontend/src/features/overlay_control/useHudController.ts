@@ -5,8 +5,8 @@ import {
 } from './hudCapabilities';
 import {
   createHudNativeAdapter,
+  getBrowserNativeInvoke,
   type HudNativeAdapter,
-  type HudNativeInvoke,
 } from './hudNativeAdapter';
 import {
   useOverlayControlRuntime,
@@ -15,20 +15,6 @@ import type {
   OverlayControlRuntime,
   OverlayControlSnapshot,
 } from './overlayControlRuntime';
-
-interface TauriWindow {
-  __TAURI__?: {
-    core?: {
-      invoke?: HudNativeInvoke;
-    };
-  };
-}
-
-function getBrowserNativeInvoke(): HudNativeInvoke | undefined {
-  if (typeof window === 'undefined') return undefined;
-  const candidate = (window as unknown as TauriWindow).__TAURI__?.core?.invoke;
-  return typeof candidate === 'function' ? candidate : undefined;
-}
 
 export interface HudController extends OverlayControlRuntime, OverlayControlSnapshot {
   native: HudNativeAdapter;

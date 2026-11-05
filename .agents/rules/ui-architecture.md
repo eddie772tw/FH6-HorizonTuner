@@ -4,6 +4,8 @@
 
 實作檔案與主題擴充／驗收入口見[主題與設計系統開發指南](../../docs/frontend/design-systems.md)；本文件維護架構護欄。
 
+所有介面調整 PR 的實作截圖、跨主題／尺寸覆蓋、版本追溯與視覺審查備查，統一遵循 [ui-visual-review.md](ui-visual-review.md)。
+
 ---
 
 ## 一、 雙層視覺架構 (Dual-Layer Architecture)

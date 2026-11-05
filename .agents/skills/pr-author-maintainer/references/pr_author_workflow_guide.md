@@ -62,6 +62,7 @@ PR Body 是整個 PR 的唯一事實來源 (Single Source of Truth)，不能停�
   1. 若重構了函式或新增了防護，更新 `Key Modifications` 區塊。
   2. 若修正了 Reviewer 指出的問題，在 `Living Changelog & Review Iterations` 追加一筆日期與更新摘要。
   3. 更新 `Pre-Commit & Local Verification` 中的最新測試數據。
+  4. 有介面變更時，依 [ui-visual-review.md](../../../rules/ui-visual-review.md) 更新 Visual Review 嵌圖、擷取版本與備查；只有文件或非介面後續修改時，明列沿用圖片的版本與理由。
 - **防止資訊漂移 (Documentation Drift)**：確保外部協作者只閱讀 PR Body 就能完全掌握該分支的最新狀態。
 
 ---

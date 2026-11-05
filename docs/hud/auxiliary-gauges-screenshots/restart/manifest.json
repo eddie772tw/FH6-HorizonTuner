@@ -1,0 +1,153 @@
+{
+  "source": "57ee4b8da97485eb5ec378ab2dc95ce0316074cc plus startup reconciliation changes committed with this evidence",
+  "browser": {
+    "unexpectedRequests": [],
+    "screenshots": 92,
+    "errors": [],
+    "layouts": 420,
+    "saves": 145,
+    "checks": [
+      "Keyboard, ARIA relationships, hidden panels and side-effect-free tab changes",
+      "Fourth Audio Head tab: hidden configuration, scale drafts, X/Y sliders, four directional bounds and persisted reload",
+      "Collapsed details skip hidden controls and support keyboard expansion",
+      "Hidden configuration, cross-tab patches, tire dependency, G alignment and merged-chart values",
+      "Retained expansion, draft and independent scroll positions",
+      "Independent units, retry across tabs, persistence and fresh page defaults",
+      "Reset cancellation and confirmed defaults preserve enabled",
+      "All seven cores, day/night, three locales, narrow/default/wide and reduced motion",
+      "Six specialized gauge forms at 320px in all three locales",
+      "Production AppShell with Live/Tune/HUD reference captures across all three design systems",
+      "Real launcher: independent sizes, four edges with inward-only sliders, nine live deck selections and audio-only unmount/remount",
+      "All nine original raster faces: full-surface RGB preservation, native dimensions, single material opacity and no SVG replacements",
+      "Auxiliary fifth tab: hidden settings, retained text/numeric drafts, partial source edits, layout and cross-tab persistence",
+      "Real auxiliary launcher: independent lifecycle, four edges, shared telemetry conversions, five original faces, row/column layout and reload",
+      "Native bridge fixture: saved enabled state reconciles after process restart, visible HUD survives page reload, failed launch stays disabled and Live remains unpaused after restart"
+    ]
+  },
+  "limits": "No game, real audio, multi-monitor or screen-reader acceptance",
+  "images": [
+    {
+      "file": "native-after-restart-live.png",
+      "kind": "actual-windows-tauri-host",
+      "sha256": "77804fbc8057f1b32b363d16f2b8ae046d2e4ecfa04cf8fb81d93e443e5034f4"
+    },
+    {
+      "file": "native-after-restart.png",
+      "kind": "actual-windows-tauri-host",
+      "sha256": "511410a6a2a0bcee65d01499e251ed7344364b959dedbf7c154d7707ff7bc516"
+    },
+    {
+      "file": "native-before-close.png",
+      "kind": "actual-windows-tauri-host",
+      "sha256": "01f65b0c2319fc587749b9494545bdf180f06dd54a98cf741ea778c340bf624b"
+    },
+    {
+      "file": "native-restart-default-dark.png",
+      "kind": "browser-native-bridge-fixture",
+      "sha256": "76d020720de2aedab40ab7bf63cfb33b2aa5675bf50f5518409ca695227818e4"
+    },
+    {
+      "file": "native-restart-default-light.png",
+      "kind": "browser-native-bridge-fixture",
+      "sha256": "7c61e21a36770802b9e12d737fe502e1eb4dc6e3414cc663cb0515ae851b0ec5"
+    },
+    {
+      "file": "native-restart-live-unpaused.png",
+      "kind": "browser-native-bridge-fixture",
+      "sha256": "0848673e890c4e0918b55d1faa10a588e502881b5a3a16094f85dff14cfb5db4"
+    },
+    {
+      "file": "native-restart-rhine-lab-dark.png",
+      "kind": "browser-native-bridge-fixture",
+      "sha256": "65247a1887a9caafb7e6e19aa15818676f064f100507a3df2fcddfe42d5ff34e"
+    },
+    {
+      "file": "native-restart-rhine-lab-light.png",
+      "kind": "browser-native-bridge-fixture",
+      "sha256": "9a948989255f3dc4e1a44547eeb811fb1a1758e788b00bca80e6c1010e294b47"
+    },
+    {
+      "file": "native-restart-swiss-dark.png",
+      "kind": "browser-native-bridge-fixture",
+      "sha256": "a870d34e73fb04b86db55ff3b388fd12c7dde982adac58782416b550341402ca"
+    },
+    {
+      "file": "native-restart-swiss-light.png",
+      "kind": "browser-native-bridge-fixture",
+      "sha256": "9294c1b7b13253f2808776dafe1dc2e8585b4f8a57fbe867f27dddca7f9a1c6a"
+    }
+  ],
+  "viewport": "1280x720 DPR1 English",
+  "actualNativeChecks": [
+    "Real native window is visible after launch; HTTP and disk enabled are true",
+    "Normal main-window close exited task-owned Tauri process 541788",
+    "Restarted native host corrects saved enabled=true to false while preserving other settings",
+    "Actual Live workspace is not paused after restart",
+    "Normal main-window close exited task-owned Tauri process 544424"
+  ],
+  "tauriTests": "5 passed",
+  "capturedAt": "2026-11-05",
+  "builds": [
+    "windows",
+    "lan"
+  ],
+  "unitTests": "1983 passed, 1 existing skipped",
+  "sourceHashes": [
+    {
+      "path": "frontend/src-tauri/src/lib.rs",
+      "sha256": "67329ff5834a86bf2ba9670a5a617cf32cb0c637bf87e4af481aea7fabd6dc76"
+    },
+    {
+      "path": "frontend/src/features/overlay_control/hudNativeAdapter.test.ts",
+      "sha256": "7b091253b15c162d9e9fa8b4d54b020a077249a00d7ffc2051dccb2008a6d83d"
+    },
+    {
+      "path": "frontend/src/features/overlay_control/hudNativeAdapter.ts",
+      "sha256": "3d6797b8498be2b1efea498a3dde10f27e5de2a833133be64e79302e1d560692"
+    },
+    {
+      "path": "frontend/src/features/overlay_control/overlayControlRuntime.test.ts",
+      "sha256": "505aec6a50688b62c2a1e0324624459c811af82ff614fcd3b22b0996a1cc7bad"
+    },
+    {
+      "path": "frontend/src/features/overlay_control/overlayControlRuntime.ts",
+      "sha256": "66b86a8b86177360d29a0a8391b51c35b588250228e72e2704509254f0b01aaa"
+    },
+    {
+      "path": "frontend/src/features/overlay_control/OverlayControlRuntimeProvider.tsx",
+      "sha256": "1c1910f016824cf849f87aaf8f4a2e03db1098380e51565977eb0683e9307c32"
+    },
+    {
+      "path": "frontend/src/features/overlay_control/OverlayView.tsx",
+      "sha256": "eb78712f55b67889af1a17c3b93fdfceb3c614a46df1b5b1bf9b1c6fc3e486a1"
+    },
+    {
+      "path": "frontend/src/features/overlay_control/tests/browser/verify-native-restart.cjs",
+      "sha256": "e440f1ad0db99aa8471e33bc9c2b65b27a082f71c60ebf36ccd2f71573f5856a"
+    },
+    {
+      "path": "frontend/src/features/overlay_control/tests/browser/verify-native-session.cjs",
+      "sha256": "90e522a03e60a92dbd74b75a38b32ecfae902fe3c705d4d1d23d0975c4279fc3"
+    },
+    {
+      "path": "frontend/src/features/overlay_control/tests/browser/verify.cjs",
+      "sha256": "1ccf4a7c31246ec57ea6096dbd9de5a09b39b45942af7ea243dcda2bbe8f65a2"
+    },
+    {
+      "path": "frontend/src/features/overlay_control/useHudController.ts",
+      "sha256": "d9df8d9dcd015a1d9c15079968dacc4f503daa007f4a0bb17239d55b976d7577"
+    },
+    {
+      "path": "frontend/src/features/telemetry/TelemetryView.tsx",
+      "sha256": "157e345f7ed300289f500653f0f8697f5b9fefb50feab6bb95bd7df10024ae70"
+    },
+    {
+      "path": "frontend/src/platform/hud.lan.tsx",
+      "sha256": "d1f44ee5b3138977ce738a97556ed18c565644977276ae434a9d24b8751a7cb9"
+    },
+    {
+      "path": "frontend/src/platform/hud.windows.tsx",
+      "sha256": "3d3fade8cf771a2c263635d638c5989121464918ab74fcbc7ae16dbfdc5fb6f1"
+    }
+  ]
+}
