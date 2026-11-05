@@ -1,0 +1,195 @@
+{
+  "date": "2026-11-05",
+  "implementation": "e1ee1be2dd5e4724429f196675adc4e592be893e",
+  "productBlobs": {
+    "frontend/src/features/analysis/MotecFieldMappingModal.tsx": "0d0a8c765ae5eff524963b49407ad4347a3c1e99"
+  },
+  "browser": "156.0.4314.58",
+  "capture": "Windows Edge headless, full production AppShell/providers served by Vite, DPR 1, zoom 100%. Isolated loopback backend with fixture settings, real locale dictionaries and synthetic recorder status / WebSocket telemetry. Viewport height 720 (320px width: 800). Odd cases emulate reduced motion.",
+  "reproduce": "In Sessions open Channel Mapping. From the initial close button use Shift+Tab, Tab, Tab to focus the table. Escape returns to the opener. Reopen and click the backdrop.",
+  "cases": [
+    {
+      "core": "default",
+      "mode": "light",
+      "lang": "en-us",
+      "width": 1280,
+      "save": true,
+      "file": "default-light-en-us-1280.png",
+      "dimensions": {
+        "width": 598,
+        "scrollWidth": 598
+      }
+    },
+    {
+      "core": "default",
+      "mode": "dark",
+      "lang": "ja-jp",
+      "width": 1280,
+      "save": true,
+      "file": "default-dark-ja-jp-1280.png",
+      "dimensions": {
+        "width": 598,
+        "scrollWidth": 598
+      }
+    },
+    {
+      "core": "swiss",
+      "mode": "light",
+      "lang": "ja-jp",
+      "width": 1280,
+      "save": true,
+      "file": "swiss-light-ja-jp-1280.png",
+      "dimensions": {
+        "width": 614,
+        "scrollWidth": 614
+      }
+    },
+    {
+      "core": "swiss",
+      "mode": "dark",
+      "lang": "zh-tw",
+      "width": 1280,
+      "save": true,
+      "file": "swiss-dark-zh-tw-1280.png",
+      "dimensions": {
+        "width": 614,
+        "scrollWidth": 614
+      }
+    },
+    {
+      "core": "rhine-lab",
+      "mode": "light",
+      "lang": "zh-tw",
+      "width": 1280,
+      "save": true,
+      "file": "rhine-lab-light-zh-tw-1280.png",
+      "dimensions": {
+        "width": 614,
+        "scrollWidth": 614
+      }
+    },
+    {
+      "core": "rhine-lab",
+      "mode": "dark",
+      "lang": "en-us",
+      "width": 1280,
+      "save": true,
+      "file": "rhine-lab-dark-en-us-1280.png",
+      "dimensions": {
+        "width": 614,
+        "scrollWidth": 614
+      }
+    },
+    {
+      "core": "modern",
+      "mode": "light",
+      "lang": "en-us",
+      "width": 1280,
+      "save": false,
+      "dimensions": {
+        "width": 598,
+        "scrollWidth": 598
+      }
+    },
+    {
+      "core": "modern",
+      "mode": "dark",
+      "lang": "ja-jp",
+      "width": 1280,
+      "save": false,
+      "dimensions": {
+        "width": 598,
+        "scrollWidth": 598
+      }
+    },
+    {
+      "core": "elegant",
+      "mode": "light",
+      "lang": "ja-jp",
+      "width": 1280,
+      "save": false,
+      "dimensions": {
+        "width": 598,
+        "scrollWidth": 598
+      }
+    },
+    {
+      "core": "elegant",
+      "mode": "dark",
+      "lang": "zh-tw",
+      "width": 1280,
+      "save": false,
+      "dimensions": {
+        "width": 598,
+        "scrollWidth": 598
+      }
+    },
+    {
+      "core": "swiss-editorial",
+      "mode": "light",
+      "lang": "zh-tw",
+      "width": 1280,
+      "save": false,
+      "dimensions": {
+        "width": 614,
+        "scrollWidth": 614
+      }
+    },
+    {
+      "core": "swiss-editorial",
+      "mode": "dark",
+      "lang": "en-us",
+      "width": 1280,
+      "save": false,
+      "dimensions": {
+        "width": 614,
+        "scrollWidth": 614
+      }
+    },
+    {
+      "core": "swiss-contrast",
+      "mode": "light",
+      "lang": "en-us",
+      "width": 1280,
+      "save": false,
+      "dimensions": {
+        "width": 614,
+        "scrollWidth": 614
+      }
+    },
+    {
+      "core": "swiss-contrast",
+      "mode": "dark",
+      "lang": "ja-jp",
+      "width": 1280,
+      "save": false,
+      "dimensions": {
+        "width": 614,
+        "scrollWidth": 614
+      }
+    },
+    {
+      "core": "default",
+      "mode": "light",
+      "lang": "ja-jp",
+      "width": 320,
+      "save": true,
+      "file": "default-light-ja-jp-320.png",
+      "dimensions": {
+        "width": 222,
+        "scrollWidth": 425
+      }
+    },
+    {
+      "core": "swiss",
+      "mode": "dark",
+      "lang": "zh-tw",
+      "width": 1600,
+      "save": false,
+      "dimensions": {
+        "width": 614,
+        "scrollWidth": 614
+      }
+    }
+  ]
+}
