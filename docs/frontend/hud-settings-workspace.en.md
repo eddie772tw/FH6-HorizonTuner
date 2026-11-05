@@ -2,7 +2,7 @@
 
 [繁體中文 and validation record](hud-settings-workspace.md)
 
-The persistent toolbar contains the HUD window action and synchronization/error status. Main gauge, Telemetry cards, General and Audio Head group settings by element. Changes still apply immediately and save automatically.
+The persistent toolbar contains the HUD window action and synchronization/error status. Main gauge, Telemetry cards, General, Audio Head and Auxiliary Gauges group settings by element. Changes still apply immediately and save automatically.
 
 ## Control map
 
@@ -19,6 +19,7 @@ The persistent toolbar contains the HUD window action and synchronization/error 
 | Setup monitor/unit drawer | General | Inline units retain inheritance and overrides; speed changes also update legacy `unit`. |
 | Advanced colors/audio/pause/reset; Setup reload | General | Shared color contract, audio endpoint, pause behavior and reload remain; confirmed reset preserves `enabled`. |
 | #541's separate Audio Head section | Audio Head (fourth tab) | Nine models, visibility, four edges and offsets; independent `audioHeadScale` 0.5–2 with one-time migration from shared scale. |
+| #540's separate auxiliary section | Auxiliary Gauges (fifth tab) | Five selectable faces, row/column layout, four anchors and shared sources; existing inward/along-edge offsets and shared HUD scale remain. |
 
 Each telemetry card keeps its visibility controls visible and starts with its detailed settings collapsed. Multiple cards can expand together. Disabling an element or the telemetry master controls visibility only. Loading state, inherited unit fields and native capability constraints still apply.
 
@@ -34,12 +35,15 @@ const tabs: HudSettingsTabDefinition[] = [
   { id: 'telemetry', labelKey: 'Telemetry cards', content: <HudTelemetryPanel {...telemetryProps} /> },
   { id: 'general', labelKey: 'General', content: <HudGeneralPanel {...generalProps} /> },
   { id: 'audio-head', labelKey: 'Audio Head', content: <HudAudioHeadPanel {...audioHeadProps} /> },
+  { id: 'auxiliary-gauges', labelKey: 'Auxiliary Gauges', content: <HudAuxiliaryPanel {...auxiliaryProps} /> },
 ];
 ```
 
 `OverlayView` coordinates metadata, native actions, audio and panel composition. The existing runtime remains the sole owner of persistence, serialized writes, retry, broadcasting and unit projection. Panels expose narrow configuration types and submit `HudConfigPatch`; nested `elements` and `units` updates must contain only changed fields. `HudDisplayUnits` lives in `hudDisplayUnits.ts` without a UI dependency.
 
 Tab changes must not create another runtime, save settings, toggle HUD elements, reload the renderer or refresh metadata. New panels must have no mounting side effects.
+
+`gaugeValueSources` also supports partial fields within each semantic reading. For example, `{ gaugeValueSources: { boost: { label } } }` retains the current source, unit and other readings. `HudAuxiliaryPanel` owns visibility/layout and `HudGaugeSourcesPanel` owns shared sources; the tab container remains feature-agnostic.
 
 Compose new panels with `HudSettingsSection`: the same `glass-panel`, inset `workspace-panel-header` and `workspace-section-heading` used by Tune. Design-system tokens own the surface, heading and borders. Do not add a full-bleed `card-header` or another layer of workspace horizontal padding; the production `AppShell` already supplies the outer spacing. Telemetry cards reuse this section instead of maintaining a separate header skin.
 

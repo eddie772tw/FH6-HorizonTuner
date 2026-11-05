@@ -4,3 +4,4 @@ import type { ReactNode } from 'react';
 export const hudWorkspaces = {};
 export function HudProvider({ children }: { children: ReactNode }) { return <>{children}</>; }
 export function HudRuntime() { return null; }
+export function useHudTelemetryPaused() { return false; }

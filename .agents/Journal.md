@@ -1210,6 +1210,35 @@
 - 前端 build 與 Cargo 測試依序執行，未變更測試 timeout、assertion 或既有 skip；未執行 Windows 原生視覺驗收。
 - Skills：pr-author-maintainer、pr-review-evaluation、halfmoon-design-system。
 
+## 2026-10-19 / Auxiliary 獨立排列與共用數值來源（Codex as Codex）
+
+- **Scope**：PR #540 接續 #541 的獨立元素基礎；輔助儀表另設複選選單與開關，預設右側中央。Audio Head 的位移輸入改由共用元件維持負號草稿。既有 CI 的 base branch filter 加入 `feat/hud-audio-head`，使 stacked PR 能執行同一組檢查。
+- **Learning**：表頭僅讀取語意值，`gaugeValueSources` 在 launcher 分發前統一對應欄位、描述與來源單位。AEM／Speedhut 共用 boost 對應。Forza 缺少的油溫、油壓不再以轉速模型補值；水溫預設讀取有明確標示的平均胎溫。缺值須優先使用 nullable 原始胎溫，避免 legacy 的零值填補被誤認為實際量測。
+- **排列／生命週期**：以每排上限建立向上成長的格線；橫向逐列、直向逐欄由下往上填入，幾何與文字僅於設定改變時計算。外層錨點使用螢幕像素，Canvas 依 DPR 配置。關閉或空選取移除 iframe，既有主儀表及音響保留。
+- **Evidence**：完整前端 1,824 passed／1 skipped，Windows 與 LAN build；Rust 預設全量 228 passed／3 ignored、無 HUD 全量 220 passed／2 ignored。共用測試涵蓋設定遷移／保存／重啟、來源轉換／缺值、選單、排列與表單草稿。隔離瀏覽器確認五表頭複選、來源同步、四邊 24px／中心 -32px、主儀表切換與獨立開關。
+- **輸入草稿**：描述正規化會 trim 字串，逐字保存會吃掉尚在輸入的字詞間空格。共用 `HudTextInput` 保留草稿，blur／Enter 才保存；mounted 表單測試及瀏覽器逐字輸入、Enter 與 reload 讀回均已確認。
+- **Boundary**：沒有新增個別樣式繪圖測試。瀏覽器截圖仍逾時，DOM／版面證據與合成傳輸不代表 Tauri 或遊戲內驗收。詳細操作契約見 [獨立元素說明](../docs/hud-independent-elements.md)。
+
+## 2026-10-19 / 獨立元素直排的實機檢查（Codex as Codex）
+
+- **Learning**：只改填入順序、仍以每排上限計算相同格線，會使直排外觀仍是橫排；五項、容量三的實機畫面可重現。直排須將容量套用到每欄，使同一組設定由三欄兩列轉為兩欄三列，UI 數量標籤同步切換為「每欄最多表頭數」。
+- **修正／Evidence**：共用排列函式保留設定鍵相容性，依方向改變幾何；共用測試覆蓋容量 1／3／5、四邊短列對齊、邊界與向內延伸。橫排不變；直排靠右時新增欄向左，靠上時由上往下填入。實機截圖另存版本、完整設定與即時遙測，不以數值單元測試代替渲染證據。
+- **Skills**：`halfmoon-design-system`、`huge-component-refactoring`、`pr-author-maintainer`、`ponytail`。
+
+## 2026-10-19 / 共用表頭的負載油壓與平均胎溫（Codex as Codex）
+
+- **Scope／Learning**：依使用者確認，阻尼只套用推算油壓；油溫、水溫均直接讀平均胎溫。共用launcher建立單一reader，將油門×RPM/maxRPM的視覺負載指標映射為運轉時20–80PSI，熄火目標為零，以monotonic elapsed time、1.5秒時間常數推進，不依render次數。這是明示模擬，並非感測油壓或車輛調校公式；原始遙測保持不動，個別表頭不自行計算。
+- **來源與狀態**：共用虛擬來源`estimated_oil_pressure_psi`加入來源選單。自訂來源直接讀值，不套模擬濾波；缺值、離開race、換車或時鐘重啟清除狀態。JS與Rust僅遷移完全吻合的舊unassigned預設，保留使用者改過的來源／描述；設定存讀與重啟均驗證。
+- **Evidence**：基線1843 passed／1 skipped；修改後完整前端1848 passed／1 skipped、build通過；Rust預設全量229 passed／3 ignored、fmt與diff檢查通過。共用契約驗證30／60／120／144／240Hz相同經過時間的壓力一致、升降載響應、override與reset；未新增個別樣式測試。離線控制輸入五表圖及真實遊戲圖分開保存第六輪，靜態圖不等同真實油壓或跨更新率實機驗收。
+- **Skills**：`ponytail`、`pr-author-maintainer`、`halfmoon-design-system`、`huge-component-refactoring`。
+
+## 2026-10-20 / PR #540 整合已驗證的 #541（Bagley as dot）
+
+- 保留輔助儀表、共用數值來源與 af51eb5 的 GReddy 校正；Audio Head 素材、來源、generator 與輸出完整採用 #541，與 main 手把／延後模組設定、選單、launcher、測試及翻譯並存。
+- Linux x64、Node 24.19.0、pnpm 11.19.0、Rust 1.99.1：frontend Vitest 1863 passed／1 skipped；Windows 與 LAN build 通過；SVG generator --check 九款一致；Cargo 預設功能 233 passed／2 ignored、無預設功能 223 passed／2 ignored；fmt 與 diff 檢查通過。
+- 全量驗證依序執行，未放寬 timeout、assertion 或 skip；未執行 Windows 原生視覺驗收，未處置 CodeQL 討論。
+- Skills：pr-author-maintainer、pr-review-evaluation、halfmoon-design-system。
+
 ## 2026-10-20 / Audio Head SVG 正規化修復（Bagley as dot）
 
 - 一次性刪除 style／comment 可重新拼成禁用標記；改為整條正規化流程達固定點，限制輸入 64 Ki code units 與 32 次迭代，未收斂或殘留不完整／錯配標記即拒絕。所有品牌先完成檢查才寫面板；僅適用已審核品牌片段，非通用 SVG sanitizer。
@@ -1217,6 +1246,11 @@
 - frontend 1853 passed／1 skipped；Windows／LAN build 通過；Cargo 預設 230 passed／2 ignored，無預設 220 passed／2 ignored；cargo fmt、generator --check 與 git diff --check 通過。未修改依賴、既有 timeout／skip 或 CodeQL suppression；本機無 CodeQL CLI，掃描確認另行處理。
 - Skills：github-security-audit、pr-author-maintainer、pr-review-evaluation。
 
+## 2026-10-20 / #540 同步 SVG 正規化修復（Bagley as dot）
+
+- 合併 #541 的有界固定點修復與 28 個回歸案例；僅 Journal 附加段落衝突並保留雙方內容。輔助儀表、GReddy 校正、共用來源、品牌原檔與九款面板未變更。
+- frontend 1891 passed／1 skipped；Windows／LAN build 通過；Cargo 預設 233 passed／2 ignored、無預設 223 passed／2 ignored；fmt、diff、generator --check 與九款原始位元組 SHA-256 通過。無 CodeQL CLI，未執行掃描或遠端寫入。
+- Skills：github-security-audit、pr-author-maintainer、pr-review-evaluation。
 ## 2026-11-04 / Audio Head 接入第四個 HUD 設定分頁
 
 - **範圍**：依使用者指示，以精確 head 合併 #615，再於隔離 worktree 將 main 合入 #541，保留既有提交與 SVG 安全修復。音響頁置於一般之後，繁中定義「音響系統」。分頁容器與共同主題外觀沿用 #615；#540 未更新。
@@ -1233,3 +1267,26 @@
 - 改為顯式 token／range 掃描與重疊區間合併，移除匹配標籤及註解；使用 `-->`／`--!>` 最早結尾，避免吞掉中間幾何。每輪完整清理再 tokenize，保留 65,536 code units／32 輪限制與穩定結果的禁止 delimiter 拒絕。僅限已審核品牌，非通用 SVG sanitizer 或完整 XML 驗證。無新依賴或 suppression。
 - 42 個回歸案例、frontend 1867 passed／1 skipped；Windows／LAN build 通過；Cargo 預設 230 passed／2 ignored、無預設 220 passed／2 ignored；fmt／diff／generator check 通過。六個片段與九款實際重建原始位元組 SHA-256 完全相同。本機無 CodeQL CLI，新掃描待發佈後確認。
 - Skills：github-security-audit、pr-author-maintainer、pr-review-evaluation。
+
+## 2026-10-20 / #540 同步 token／range 修復（Bagley as dot）
+
+- 同步 #541 41a9a7df 的禁止 delimiter 掃描與 42 個回歸案例；Journal 保留雙方紀錄，輔助儀表校正／來源與品牌／面板位元組不變。
+- frontend 1905 passed／1 skipped；Windows／LAN build 通過；Cargo 預設 233 passed／2 ignored、無預設 223 passed／2 ignored；fmt、diff、generator check 及原始位元組比對通過。保留前版失敗 CodeQL 紀錄，新掃描尚未執行，未寫入遠端。
+- Skills：github-security-audit、pr-author-maintainer、pr-review-evaluation。
+
+## 2026-11-05 / #540 接入第五個 HUD 設定分頁（Codex as Codex）
+
+- **範圍**：將 #541 `bb36cd68` 合入 #540 `d3b137f1`，保留原提交歷史。輔助儀表登錄為第五頁，第四頁仍為音響系統；容器不加入功能判斷。依使用者定案保留九款音響與五款輔助表頭原 PNG，Shader、銳化及 FSR 改進另案，沒有帶入研究候選或啟動 REA。
+- **架構／學習**：輔助元素與共用來源拆成窄型別面板並沿用系統 controls。來源描述需保留本地草稿，切頁造成的 blur 不提交；runtime 將 gaugeValueSources 的每項讀值局部 patch 合入最新設定，避免串行保存期間跨頁更新覆蓋。隱藏仍可預設，邊緣向內位移與沿邊中心位移沿用原欄位及範圍。
+- **驗證**：整合前完整前端 1907 passed／1 skipped；整合後 1978 passed／1 skipped、TypeScript／Vite build 通過。Rust 預設 245 passed／3 ignored、無預設功能 235 passed／2 ignored；cargo fmt 與 git diff --check 通過。未放寬 timeout、既有斷言或 skip。
+- **瀏覽器／視覺**：實際 AppShell 與 launcher 的獨立腳本通過 420 組版面（七核心、日夜、三語、1280／320px、五頁），另有寬幅與 reduced motion；五款表頭、四邊位置、橫直換排、局部來源、草稿、保存／重載及九款音響契約均通過。85 張擷取、141 次 fixture 保存、零 page errors／非預期 API；選用18張原擷取圖片並記錄 source／image SHA-256。21個音響與輔助 PNG 檔逐檔保持原值。
+- **界線／交付**：同步中英文 README、分頁擴充文件與輔助儀表指南；截圖為合成資料，未代替遊戲、真實音訊、原生跨螢幕或讀屏驗收。PR 保持開啟，依 #541 → #540 順序等待人工合併，不啟用 auto-merge。
+- **Skills**：pr-author-maintainer、halfmoon-design-system、huge-component-refactoring、modular-refactoring；PR 狀態另按 exact-head 流程核對。
+
+## 2026-11-05 / #540 原生 HUD 重啟狀態校正（Codex as Codex）
+
+- **問題**：HUD 顯示時關閉程式會留下 `enabled=true`，但新 Tauri process 預建的 overlay 實際隱藏；設定頁與 Live 的獨立 GET／廣播 owner 因而誤判。不能以 unload 非同步保存作為修復保證。
+- **修復**：Tauri 提供視窗可見查詢，唯一 runtime 載入時以真實 session 狀態校正，再用既有串行寫入／重試保存。原生 toggle 成功後才更新啟用值；Live 透過 platform adapter 訂閱同一 runtime。頁面 reload 保留真正仍可見的視窗，LAN 無原生能力時維持原行為。
+- **驗證**：完整 Vitest 1983 passed／1 skipped；Windows／LAN TypeScript＋Vite build、Tauri Rust 5 tests、cargo fmt、diff check 通過。backend-rust source 與前次245／235項測試的整合版本相同。完整獨立瀏覽器420組版面、92張擷取、145次fixture保存，零page errors／非預期API；刻意失敗的原生啟用回傳不改enabled。
+- **原生證據**：真實 Windows Tauri debug／WebView2＋Rust backend、隔離資料及port。真正啟用overlay後正常關閉main視窗，再啟動新process；校正true→false、保留其他設定及未知欄位，Live未被暫停。backend刻意維持運作以保留舊flag。測試僅清理自身process。3張原生圖與7張bridge fixture圖分開標示於restart圖集，不當作遊戲、跨螢幕、音訊或讀屏驗收。
+- **Skills**：pr-author-maintainer、halfmoon-design-system、huge-component-refactoring、modular-refactoring、portable-release-validation。

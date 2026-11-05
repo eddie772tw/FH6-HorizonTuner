@@ -2,7 +2,7 @@
 
 [English](hud-settings-workspace.en.md)
 
-HUD 設定依「主儀表／遙測卡片／一般／音響系統」分類。啟閉 HUD 與同步狀態留在共用工具列，設定即時套用並自動儲存。
+HUD 設定依「主儀表／遙測卡片／一般／音響系統／輔助儀表」分類。啟閉 HUD 與同步狀態留在共用工具列，設定即時套用並自動儲存。
 
 ## 操作與設定對照
 
@@ -21,6 +21,7 @@ HUD 設定依「主儀表／遙測卡片／一般／音響系統」分類。啟�
 | Advanced：預設／自訂配色 | 一般的共用配色 | 共用主儀表與遙測卡片的既有配色欄位，不宣稱為各元素獨立配色 |
 | Advanced：音源、暫停遙測工作區、重設；Setup：重載 | 一般的效能與系統選項 | 音源維持設定保存與專用 endpoint；重設需確認並保留 `enabled`；重載與 metadata refresh 沿用 |
 | #541 原獨立音響區塊 | 音響系統（第四頁） | 九款主機、顯示、四邊對齊及 Offset；新增獨立 `audioHeadScale` 0.5–2，舊共用縮放只遷移一次 |
+| #540 原獨立輔助儀表區塊 | 輔助儀表（第五頁） | 五款複選、橫直換排、四邊對齊與共用來源；保留既有向內／沿邊位移及共用 HUD scale |
 
 遙測卡片的顯示開關常駐，詳細設定預設收合，可同時展開。所有分頁表單維持掛載，各自保留捲動位置、展開狀態與尚未提交的輸入；隱藏面板使用 `hidden` 排除鍵盤與輔助技術導覽。分頁支援左右方向鍵、Home／End 與 roving tab index。離開整個 HUD 頁面後再進入，回到主儀表及預設收合狀態。
 
@@ -36,10 +37,13 @@ const tabs: HudSettingsTabDefinition[] = [
   { id: 'telemetry', labelKey: 'Telemetry cards', content: <HudTelemetryPanel {...telemetryProps} /> },
   { id: 'general', labelKey: 'General', content: <HudGeneralPanel {...generalProps} /> },
   { id: 'audio-head', labelKey: 'Audio Head', content: <HudAudioHeadPanel {...audioHeadProps} /> },
+  { id: 'auxiliary-gauges', labelKey: 'Auxiliary Gauges', content: <HudAuxiliaryPanel {...auxiliaryProps} /> },
 ];
 ```
 
 `OverlayView` 協調 metadata、原生視窗動作、音源及面板。`OverlayControlRuntimeProvider` 繼續唯一管理設定、串行寫入、廣播、單位投影與重試。分頁不建立自己的 store、WebSocket、native adapter 或保存佇列。各面板的設定型別只暴露相關欄位，操作使用 `HudConfigPatch`；`elements`／`units` 必須送局部 patch，不展開過期完整物件。HUD 單位型別位於 `hudDisplayUnits.ts`，不依賴表單或抽屜。
+
+輔助儀表的 `gaugeValueSources` 同樣支援每個讀值內的局部欄位更新。例如 `{ gaugeValueSources: { boost: { label } } }` 保留目前來源、單位及其他讀值。`HudAuxiliaryPanel` 負責顯示／排列，`HudGaugeSourcesPanel` 負責共用來源表單；分頁容器不加入功能判斷。
 
 新增表單要保留無副作用掛載；分頁切換不執行保存、HUD 啟閉、renderer 重載或 metadata refresh。顯示開關與編輯控制項的 disabled 狀態分開處理。
 

@@ -50,7 +50,7 @@ async function main() {
       if (name === '/api/audio/device') return json(res, { success: true });
       if (name === '/api/hud/styles') {
         report.metadataReads++;
-        return json(res, { styles: ['vfd', 'simple', 's650_hmi', 'classic_jdm', 'r34_mfd', 'stack_st8100', 'lfa_center_ring', 'audio_head']
+        return json(res, { styles: ['vfd', 'simple', 's650_hmi', 'classic_jdm', 'r34_mfd', 'stack_st8100', 'lfa_center_ring', 'audio_head', 'auxiliary_gauges']
           .map(id => ({ id, source: 'builtin', urlPrefix: '/hud' })) });
       }
       if (name.startsWith('/api/')) { report.unexpectedRequests.push(name); return json(res, { error: 'Unexpected fixture endpoint: ' + name }, 404); }
@@ -94,6 +94,13 @@ async function main() {
       return Object.entries(values).every(([key, value]) => JSON.stringify(current[key]) === JSON.stringify(value));
     }, expected);
     const idle = () => page.waitForFunction(() => document.querySelector('.hud-status')?.dataset.state === 'synced');
+    if (process.env.HUD_SESSION_ONLY === '1') {
+      await require('./verify-native-session.cjs')({ browser, origin, out, report });
+      assert.deepEqual(report.unexpectedRequests, []); assert.deepEqual(report.errors, []);
+      fs.writeFileSync(path.join(out, 'report.json'), JSON.stringify(report, null, 2));
+      console.log(JSON.stringify({ checks: report.checks, saves: report.saves.length, screenshots: report.screenshots.length, out }));
+      return;
+    }
     const rangeEnd = async name => { const input = page.getByRole('slider', { name, exact: true }); await input.focus(); await input.press('End'); };
     const expand = async name => {
       const card = page.getByRole('region', { name, exact: true });
@@ -101,21 +108,21 @@ async function main() {
     };
 
     await open();
-    assert.equal(await page.getByRole('tab').count(), 4);
-    assert.deepEqual(await page.getByRole('tab').allTextContents(), ['Main gauge', 'Telemetry cards', 'General', 'Audio Head']);
+    assert.equal(await page.getByRole('tab').count(), 5);
+    assert.deepEqual(await page.getByRole('tab').allTextContents(), ['Main gauge', 'Telemetry cards', 'General', 'Audio Head', 'Auxiliary Gauges']);
     assert.equal(await tab('gauge').getAttribute('aria-selected'), 'true');
     assert.equal(await page.getByRole('button', { name: 'Close HUD Overlay', exact: true }).isDisabled(), true);
     const beforeTabs = report.saves.length, beforeReads = report.metadataReads;
     await tab('gauge').focus(); await page.keyboard.press('ArrowRight');
     assert.equal(await tab('telemetry').getAttribute('aria-selected'), 'true');
-    await page.keyboard.press('End'); assert.equal(await tab('audio-head').getAttribute('aria-selected'), 'true');
+    await page.keyboard.press('End'); assert.equal(await tab('auxiliary-gauges').getAttribute('aria-selected'), 'true');
     await page.keyboard.press('ArrowRight'); assert.equal(await tab('gauge').getAttribute('aria-selected'), 'true');
-    await page.keyboard.press('ArrowLeft'); assert.equal(await tab('audio-head').getAttribute('aria-selected'), 'true');
+    await page.keyboard.press('ArrowLeft'); assert.equal(await tab('auxiliary-gauges').getAttribute('aria-selected'), 'true');
     await page.keyboard.press('Home');
     await page.keyboard.press('Tab');
     assert.equal(await panel('gauge').evaluate(el => document.activeElement === el), true);
     assert.equal(await page.getByRole('tabpanel').count(), 1);
-    for (const id of ['gauge', 'telemetry', 'general', 'audio-head']) {
+    for (const id of ['gauge', 'telemetry', 'general', 'audio-head', 'auxiliary-gauges']) {
       assert.equal(await tab(id).getAttribute('aria-controls'), await panel(id).getAttribute('id'));
       assert.equal(await panel(id).getAttribute('aria-labelledby'), await tab(id).getAttribute('id'));
     }
@@ -288,9 +295,9 @@ async function main() {
         await page.waitForFunction(({ mode, core }) => document.documentElement.dataset.bsTheme === mode && document.documentElement.dataset.bsCore === core, { mode, core });
         for (const width of [1280, 320]) {
           await page.setViewportSize({ width, height: 720 });
-          for (const id of ['gauge', 'telemetry', 'general', 'audio-head']) {
+          for (const id of ['gauge', 'telemetry', 'general', 'audio-head', 'auxiliary-gauges']) {
             await tab(id).click();
-            assert.equal(await tab(id).textContent(), dictionary[{ gauge: 'Main gauge', telemetry: 'Telemetry cards', general: 'General', 'audio-head': 'Audio Head' }[id]]);
+            assert.equal(await tab(id).textContent(), dictionary[{ gauge: 'Main gauge', telemetry: 'Telemetry cards', general: 'General', 'audio-head': 'Audio Head', 'auxiliary-gauges': 'Auxiliary Gauges' }[id]]);
             // Expand every telemetry card to include its controls in the layout contract.
             if (id === 'telemetry') while (await panel(id).locator('details:not([open]) > summary').count()) await panel(id).locator('details:not([open]) > summary').first().click();
             const state = await panel(id).evaluate(el => ({
@@ -331,6 +338,8 @@ async function main() {
     report.checks.push('Production AppShell with Live/Tune/HUD reference captures across all three design systems');
     await open('en-us');
     await require(path.join(repo, 'hud_overlay/audio_head/tests/browser/verify.cjs'))({ page, context, origin, out, report });
+    await require(path.join(repo, 'hud_overlay/auxiliary_gauges/tests/browser/verify.cjs'))({ page, context, origin, out, report });
+    await require('./verify-native-session.cjs')({ browser, origin, out, report });
     assert.deepEqual(report.unexpectedRequests, []);
     assert.deepEqual(report.errors, []);
     fs.writeFileSync(path.join(out, 'report.json'), JSON.stringify(report, null, 2));
