@@ -47,6 +47,7 @@ Agent 文件、技能說明、工作日誌與規範內容以繁體中文為主�
 - **[網路連接埠傳輸契約 (network-ports.md)](rules/network-ports.md)**：UDP 8000 遙測與 HTTP 8001 API 端點隔離、Release 動態 Port 機制。
 - **[測試策略與反過度測試規範 (testing-strategy.md)](rules/testing-strategy.md)**：測試金字塔三層分流、反微觀 Canvas 座標斷言、反 YAML 測試與 Vitest 單元測試合約。
 - **[前端 UI 與設計系統架構 (ui-architecture.md)](rules/ui-architecture.md)**：Halfmoon CSS 雙層架構、Anti-FOUC、全域 `ModalPortal` 護欄、向下 Popover 與 Wizard 獨立組件規範。
+- **[介面 PR 截圖與視覺審查 (ui-visual-review.md)](rules/ui-visual-review.md)**：所有介面調整 PR 的截圖展示、跨主題／尺寸覆蓋、版本追溯與證據保存合約。
 - **[第三方套件引入與防幻覺查驗協議 (dependencies.md)](rules/dependencies.md)**：Registry 官方 CLI 驗證指令、寬鬆開源授權核准與依賴鎖定。
 
 ---
@@ -57,6 +58,7 @@ Agent 文件、技能說明、工作日誌與規範內容以繁體中文為主�
   - **提案前查閱既有 PR 防重複 (Pre-Proposal PR Deduplication)**：自主代理或開發者在鎖定優化/修復標的與建立新分支前，必須先執行 `gh pr list --state open`（以及可檢閱近期 PR）查閱所有開啟中之 Pull Request，確認提案標的與改動檔案未與進行中 PR 重疊衝突，避免重複提案與 Merge Conflict。
   - 遵循變更範圍分流驗證：修改前端/物理執行前端測試，修改後端執行後端測試。
   - 前端 UI 開發或變更時，必須遵循 [ui-architecture.md](rules/ui-architecture.md) 與 [halfmoon-design-system](skills/halfmoon-design-system/SKILL.md)。
+  - **所有介面調整 PR 必須附實作截圖**：在 PR Body 直接展示改動，並保存可追溯的視覺審查備查資料；適用範圍、覆蓋矩陣與版本同步依 [ui-visual-review.md](rules/ui-visual-review.md)。不得僅以測試或 build 通過代替圖片。
   - 任務結束後若發現具體且可重現的架構學習點，登錄至 [Journal.md](Journal.md)。
   - 重大架構或核心模組變更時，主動同步更新 `README.md` 與 `README.en.md`。
   - 維護 `.gitignore`，確保快取、使用者數據與暫存檔被嚴格排除。
@@ -93,3 +95,4 @@ Agent 文件、技能說明、工作日誌與規範內容以繁體中文為主�
    - **跨端或發行變更**：同時執行前後端測試與構建檢查。
 3. **架構學習點回顧**：評估本次任務是否有值得傳承的架構學習點，依規範追加紀錄至 [Journal.md](Journal.md)。
 4. **狀態維護**：維護 `.gitignore` 與 `README.md` 說明文件狀態。
+5. **介面 PR 截圖交付**：依 [ui-visual-review.md](rules/ui-visual-review.md) 核對 Body 嵌圖、受影響畫面／樣式覆蓋、擷取版本與備查連結；缺項需明列，不宣稱視覺審查完成。

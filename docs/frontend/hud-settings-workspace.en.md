@@ -2,7 +2,7 @@
 
 [繁體中文 and validation record](hud-settings-workspace.md)
 
-The persistent toolbar contains the HUD window action and synchronization/error status. Main gauge, Telemetry cards and General group the existing settings by purpose. Changes still apply immediately and save automatically.
+The persistent toolbar contains the HUD window action and synchronization/error status. Main gauge, Telemetry cards, General, Audio Head and Auxiliary Gauges group settings by element. Changes still apply immediately and save automatically.
 
 ## Control map
 
@@ -18,6 +18,8 @@ The persistent toolbar contains the HUD window action and synchronization/error 
 | Layout compass/controller | Compass and Controller cards | Existing placement, layout, offset values and ranges. |
 | Setup monitor/unit drawer | General | Inline units retain inheritance and overrides; speed changes also update legacy `unit`. |
 | Advanced colors/audio/pause/reset; Setup reload | General | Shared color contract, audio endpoint, pause behavior and reload remain; confirmed reset preserves `enabled`. |
+| #541's separate Audio Head section | Audio Head (fourth tab) | Nine models, visibility, four edges and offsets; independent `audioHeadScale` 0.5–2 with one-time migration from shared scale. |
+| #540's separate auxiliary section | Auxiliary Gauges (fifth tab) | Five selectable faces, row/column layout, four anchors and shared sources; existing inward/along-edge offsets and shared HUD scale remain. |
 
 Each telemetry card keeps its visibility controls visible and starts with its detailed settings collapsed. Multiple cards can expand together. Disabling an element or the telemetry master controls visibility only. Loading state, inherited unit fields and native capability constraints still apply.
 
@@ -32,6 +34,8 @@ const tabs: HudSettingsTabDefinition[] = [
   { id: 'gauge', labelKey: 'Main gauge', content: <HudGaugePanel {...gaugeProps} /> },
   { id: 'telemetry', labelKey: 'Telemetry cards', content: <HudTelemetryPanel {...telemetryProps} /> },
   { id: 'general', labelKey: 'General', content: <HudGeneralPanel {...generalProps} /> },
+  { id: 'audio-head', labelKey: 'Audio Head', content: <HudAudioHeadPanel {...audioHeadProps} /> },
+  { id: 'auxiliary-gauges', labelKey: 'Auxiliary Gauges', content: <HudAuxiliaryPanel {...auxiliaryProps} /> },
 ];
 ```
 
@@ -39,21 +43,25 @@ const tabs: HudSettingsTabDefinition[] = [
 
 Tab changes must not create another runtime, save settings, toggle HUD elements, reload the renderer or refresh metadata. New panels must have no mounting side effects.
 
+`gaugeValueSources` also supports partial fields within each semantic reading. For example, `{ gaugeValueSources: { boost: { label } } }` retains the current source, unit and other readings. `HudAuxiliaryPanel` owns visibility/layout and `HudGaugeSourcesPanel` owns shared sources; the tab container remains feature-agnostic.
+
 Compose new panels with `HudSettingsSection`: the same `glass-panel`, inset `workspace-panel-header` and `workspace-section-heading` used by Tune. Design-system tokens own the surface, heading and borders. Do not add a full-bleed `card-header` or another layer of workspace horizontal padding; the production `AppShell` already supplies the outer spacing. Telemetry cards reuse this section instead of maintaining a separate header skin.
 
 Draft numeric fields commit on Enter or ordinary blur. When focus moves to a HUD tab, `isHudSettingsTab` suppresses that commit and retains the draft. Shared percentage inputs and ST8100 thresholds follow this rule. Percentage number inputs retain 1% increments independently of the slider step.
 
 ## PR #541 integration
 
-After the base redesign merges, update #541 from main and replace its former `audioHead` workspace slot with this entry immediately before General:
+After merging #615, #541 replaces the former `audioHead` slot with this entry after General, as the fourth tab. The Traditional Chinese translation of `Audio Head` is `音響系統`:
 
 ```tsx
 { id: 'audio-head', labelKey: 'Audio Head', content: <HudAudioHeadPanel {...audioHeadProps} /> }
 ```
 
-Use `HudPanelActions` with an Audio Head configuration slice and submit `elements: { showAudioHead }` as a partial patch. #541 owns Audio Head normalization, migration, renderer/event integration, assets and tests. Independent scaling and migration from its currently shared `scale` belong in that follow-up. This base PR adds no Audio Head placeholder, settings fields or backend migration, and does not update #541 or #540.
+The panel uses `HudPanelActions`, a narrow configuration slice, `HudSettingsSection` and shared sliders. It submits `elements: { showAudioHead }` as a partial patch. X/Y sliders stop outward movement at zero on the anchored axis and map to the existing inward/along-edge fields; scale drafts survive tab changes. The generic tab container needs no Audio Head logic. `audioHeadScale` migrates from a valid legacy shared `scale` only when missing in an existing audio configuration. HUDCore uses the style's `scaleConfigKey`; other gauges keep the original scale contract. See the [Audio Head guide and gallery](../hud/audio-head.en.md). Updating #540 remains outside this change.
 
 ## Verification
+
+After the fourth-tab integration and X/Y slider revision in #541, the frontend suite passes 1,939 tests with one existing skip, and the build passes. Browser coverage includes 336 layouts and 66 captures, independent scaling, nine real renderers, directional limits for all four edges and audio mounting/unmounting: 90 fixture saves, no page errors or unexpected API calls. The [Audio Head gallery and record](../hud/audio-head.en.md) describe this update separately from the historical #615 evidence below.
 
 The browser fixture mounts the production `AppShell`, Live/Tune/HUD components and providers, then navigates to HUD through the application header. HTTP responses and idle WebSockets are isolated fixtures with no game frames. Sessions and Companion are outside its scope. Captures include the real header, outer spacing and app-scoped theme rules; bare-panel captures cannot substitute for this visual review. See the [cross-system screenshot gallery and provenance](hud-settings-screenshots/README.md) for all three tabs in Halfmoon Default, Swiss Technical and Rhine Lab, light/dark, plus Tune reference views and 320px examples.
 

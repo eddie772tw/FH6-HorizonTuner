@@ -2,7 +2,7 @@
 
 [English](hud-settings-workspace.en.md)
 
-HUD 設定依「主儀表／遙測卡片／一般」分類。啟閉 HUD 與同步狀態留在共用工具列，設定即時套用並自動儲存。
+HUD 設定依「主儀表／遙測卡片／一般／音響系統／輔助儀表」分類。啟閉 HUD 與同步狀態留在共用工具列，設定即時套用並自動儲存。
 
 ## 操作與設定對照
 
@@ -20,6 +20,8 @@ HUD 設定依「主儀表／遙測卡片／一般」分類。啟閉 HUD 與同�
 | Setup：螢幕、HUD 單位抽屜 | 一般 | 單位內嵌顯示；保留全域繼承及獨立覆寫，修改速度同步舊 `unit` 欄位 |
 | Advanced：預設／自訂配色 | 一般的共用配色 | 共用主儀表與遙測卡片的既有配色欄位，不宣稱為各元素獨立配色 |
 | Advanced：音源、暫停遙測工作區、重設；Setup：重載 | 一般的效能與系統選項 | 音源維持設定保存與專用 endpoint；重設需確認並保留 `enabled`；重載與 metadata refresh 沿用 |
+| #541 原獨立音響區塊 | 音響系統（第四頁） | 九款主機、顯示、四邊對齊及 Offset；新增獨立 `audioHeadScale` 0.5–2，舊共用縮放只遷移一次 |
+| #540 原獨立輔助儀表區塊 | 輔助儀表（第五頁） | 五款複選、橫直換排、四邊對齊與共用來源；保留既有向內／沿邊位移及共用 HUD scale |
 
 遙測卡片的顯示開關常駐，詳細設定預設收合，可同時展開。所有分頁表單維持掛載，各自保留捲動位置、展開狀態與尚未提交的輸入；隱藏面板使用 `hidden` 排除鍵盤與輔助技術導覽。分頁支援左右方向鍵、Home／End 與 roving tab index。離開整個 HUD 頁面後再進入，回到主儀表及預設收合狀態。
 
@@ -34,10 +36,14 @@ const tabs: HudSettingsTabDefinition[] = [
   { id: 'gauge', labelKey: 'Main gauge', content: <HudGaugePanel {...gaugeProps} /> },
   { id: 'telemetry', labelKey: 'Telemetry cards', content: <HudTelemetryPanel {...telemetryProps} /> },
   { id: 'general', labelKey: 'General', content: <HudGeneralPanel {...generalProps} /> },
+  { id: 'audio-head', labelKey: 'Audio Head', content: <HudAudioHeadPanel {...audioHeadProps} /> },
+  { id: 'auxiliary-gauges', labelKey: 'Auxiliary Gauges', content: <HudAuxiliaryPanel {...auxiliaryProps} /> },
 ];
 ```
 
 `OverlayView` 協調 metadata、原生視窗動作、音源及面板。`OverlayControlRuntimeProvider` 繼續唯一管理設定、串行寫入、廣播、單位投影與重試。分頁不建立自己的 store、WebSocket、native adapter 或保存佇列。各面板的設定型別只暴露相關欄位，操作使用 `HudConfigPatch`；`elements`／`units` 必須送局部 patch，不展開過期完整物件。HUD 單位型別位於 `hudDisplayUnits.ts`，不依賴表單或抽屜。
+
+輔助儀表的 `gaugeValueSources` 同樣支援每個讀值內的局部欄位更新。例如 `{ gaugeValueSources: { boost: { label } } }` 保留目前來源、單位及其他讀值。`HudAuxiliaryPanel` 負責顯示／排列，`HudGaugeSourcesPanel` 負責共用來源表單；分頁容器不加入功能判斷。
 
 新增表單要保留無副作用掛載；分頁切換不執行保存、HUD 啟閉、renderer 重載或 metadata refresh。顯示開關與編輯控制項的 disabled 狀態分開處理。
 
@@ -45,17 +51,17 @@ const tabs: HudSettingsTabDefinition[] = [
 
 需要草稿的數值欄位在 Enter 或一般失焦時提交；焦點移往 HUD 分頁按鈕時以 `isHudSettingsTab` 保留草稿，不提交。共用百分比數字輸入與 ST8100 閾值均遵守此規則，百分比數字輸入仍以 1% 步進，滑桿沿用原步進。
 
-## PR #541 後續接入
+## Audio Head 接入範例（PR #541）
 
-本次只重製 main 已有設定，不包含 Audio Head。基礎 PR 合併後，#541 Update branch 時將舊 `audioHead` workspace slot 改為新的分頁登錄：
+基礎 #615 合併後，#541 已將舊 `audioHead` workspace slot 改為一般頁之後的第四個分頁。英文鍵 `Audio Head` 的繁中定義為「音響系統」：
 
 ```tsx
 { id: 'audio-head', labelKey: 'Audio Head', content: <HudAudioHeadPanel {...audioHeadProps} /> }
 ```
 
-插在 `general` 之前；移除原 PR 對舊 Setup／Layout／Advanced composition 的接線。面板使用 `HudPanelActions` 與 Audio Head 專屬設定切片，寫入 `elements: { showAudioHead }` 局部 patch。Audio Head 的設定正規化、舊樣式遷移、renderer 掛載／事件分流、素材與測試仍由 #541 擁有。
+面板使用 `HudPanelActions` 與 Audio Head 專屬設定切片，寫入 `elements: { showAudioHead }` 局部 patch。沿用 `HudSettingsSection` 與共用滑桿；X／Y 位移隨對齊鎖定向外方向的 0 界限，直接對應既有向內／沿邊儲存欄位。縮放輸入草稿仍在切頁時保留。分頁容器沒有加入 Audio Head 判斷。
 
-#541 目前仍共用 `scale`，其獨立縮放及舊值遷移須在該 PR 更新後單獨處理；本次未加入音訊設定欄位、空白頁籤或新的後端格式。#540 與其他 HUD 功能不在此次交付範圍。
+`audioHeadScale` 控制獨立縮放。舊音響設定缺少此欄位時，從有效的 `scale` 遷移；之後兩者各自保存。HUDCore 使用樣式宣告的 `scaleConfigKey`，未宣告的主儀表維持原 `scale`。詳見[音響系統設定、遷移與圖集](../hud/audio-head.md)。#540 的分支更新及其他 HUD 功能不在此次交付範圍。
 
 ## 驗證入口
 
@@ -65,11 +71,15 @@ const tabs: HudSettingsTabDefinition[] = [
 
 [跨設計系統截圖與來源](hud-settings-screenshots/README.md) 提供 Halfmoon Default、Swiss Technical、Rhine Lab 日夜模式的三分頁、同主題 Tune 參考畫面與 320px 範例。
 
-案例涵蓋鍵盤／ARIA、關閉後預先設定、快速跨頁修改、錯誤重試、單位、重設、保留草稿／捲動／展開，以及七核心 × 日夜 × 三語 × 1280／320px 的三分頁版面，另檢查 1920px 與 reduced motion。R34、LFA、ST8100 各自的 `tests/browser/verify.cjs` 保留原契約，入口改為分頁及內嵌單位區；Windows 字型可用性探針採 Microsoft JhengHei／YuGothic-Regular，Linux 維持 Noto CJK，均保留實際字形像素檢查。
+案例涵蓋鍵盤／ARIA、關閉後預先設定、快速跨頁修改、錯誤重試、單位、重設、保留草稿／捲動／展開，以及七核心 × 日夜 × 三語 × 1280／320px 的四分頁版面，另檢查 1920px 與 reduced motion。R34、LFA、ST8100 各自的 `tests/browser/verify.cjs` 保留原契約，入口改為分頁及內嵌單位區；Windows 字型可用性探針採 Microsoft JhengHei／YuGothic-Regular，Linux 維持 Noto CJK，均保留實際字形像素檢查。
 
 原生 Windows 啟閉、螢幕與實際設定套用另行記錄 smoke evidence。瀏覽器結果不是遊戲、實體輸入裝置或 Narrator／NVDA 驗收。
 
-## 2026-11-04 驗證紀錄
+## 2026-11-04 Audio Head 接入驗證
+
+#541 接入第四頁並將位移改為 X／Y 拉桿後，完整前端 1,939 passed／1 個既有 skip、build 通過。瀏覽器涵蓋 336 組版面與 66 張截圖，包含獨立縮放、九款實際 renderer、四邊對齊的方向限制及音響掛載／卸載；90 次 fixture 保存、零 page errors 或未預期 API。最新[音響圖集與驗證紀錄](../hud/audio-head.md)另列，不覆蓋下方 #615 的歷史證據。
+
+## 2026-11-04 基礎分頁驗證紀錄（#615）
 
 - 視覺審查修訂：HUD 改用與 Tune 共通的面板／內縮標頭，移除工作區重複留白。改在正式 AppShell 內重跑 252 組版面與全部互動案例，45 張截圖包含三套設計系統的日夜三分頁、窄幅及 Live／Tune／HUD 參考；`scratch/hud-settings-theme-review/report.json` 記錄 35 次保存、零 page errors 與零未預期 API。完整前端測試及 build 重新通過。截圖素材選用 18 張桌面分頁、3 張窄幅與 3 張 Tune 參考；原生 smoke 沿用下方先前紀錄，這次樣式修訂未重跑原生或遊戲驗收。
 
