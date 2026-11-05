@@ -13,9 +13,10 @@ const root = path.resolve(__dirname, '../../..');
 const frontend = path.join(root, 'frontend');
 const scratch = path.join(root, 'scratch');
 fs.mkdirSync(scratch, { recursive: true });
-const out = fs.mkdtempSync(path.join(scratch, 'toyota-render-'));
-const ids = ['altezza_trd', 'chaser_jzx100', 'soarer_z20', 'supra_trd'];
-const frameData = { is_race_on: true, rpm: 4200, max_rpm: 8000, speed_kmh: 116, gear: 4,
+const requestedStyles = process.argv.slice(2);
+const ids = requestedStyles.length ? requestedStyles : ['altezza_trd', 'chaser_jzx100', 'soarer_z20', 'supra_trd'];
+const out = fs.mkdtempSync(path.join(scratch, 'gauge-render-'));
+const frameData = { is_race_on: true, rpm: 4200, max_rpm: 8000, redlineRpm: 7600, speed: 116, speed_kmh: 116, gear: 4,
   throttle: 0.55, fuel_ratio: 0.65, boost_bar: 0.45, tire_temp_f: [194, 196, 198, 200] };
 const report = { source: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(), platform: 'Windows, sandboxed Edge, DPR 1',
   backend: 'Default-feature Rust server-sidecar; temporary data and ephemeral ports', frameData,
@@ -52,6 +53,7 @@ async function main() {
     });
     const backend = 'http://127.0.0.1:' + port;
     const { styles } = await (await fetch(backend + '/api/hud/styles')).json();
+    report.builtinStyles = styles.filter(style => style.source === 'builtin').map(style => style.id).sort();
     for (const id of ids) assert(styles.some(style => style.id === id && style.source === 'builtin'), id + ' must be shipped');
     process.env.FH6_PLATFORM = 'windows';
     process.chdir(frontend);
@@ -100,7 +102,7 @@ async function main() {
       const gauge = hud.frameLocator('iframe[src*="/' + id + '/index.html"]').locator('.hud-gauge-container');
       await gauge.waitFor({ state: 'visible' });
       await hud.waitForLoadState('networkidle');
-      // All four original renderers run a 1200 ms startup sweep.
+      // Allow the 1200 ms startup sweep to finish before sampling telemetry.
       await hud.waitForTimeout(1500);
       const frame = hud.frames().find(f => new URL(f.url()).pathname.endsWith('/' + id + '/index.html'));
       async function draw(data) {
@@ -112,7 +114,7 @@ async function main() {
           return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', pixels)), b => b.toString(16).padStart(2, '0')).join('');
         });
       }
-      const idleHash = await draw({ ...frameData, rpm: 0, speed_kmh: 0, gear: 0 });
+      const idleHash = await draw({ ...frameData, rpm: 0, speed: 0, speed_kmh: 0, gear: 0 });
       const drivingHash = await draw(frameData);
       assert.notEqual(drivingHash, idleHash, id + ' must render the supplied telemetry');
       const bounds = await gauge.boundingBox();
