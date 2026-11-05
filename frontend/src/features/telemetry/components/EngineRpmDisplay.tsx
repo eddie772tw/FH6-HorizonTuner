@@ -76,45 +76,37 @@ const EngineRpmDisplay: React.FC = React.memo(() => {
         lastFlashTimeRef.current = now;
       }
 
-      for (let i = 0; i < numSegments; i++) {
-        const segRatio = i / (numSegments - 1);
-        const isActive = i < activeSegs;
-        const x = i * (segWidth + gap);
-        const y = 2 * dpr;
-        const segHeight = h - 4 * dpr;
-
-        let activeColor = primary;
-        if (segRatio >= 0.88) {
-          activeColor = theme.danger;
-        } else if (segRatio >= 0.72) {
-          activeColor = secondary;
-        }
+      // Each color occupies a contiguous range. Reuse the context's current path;
+      // no Path2D objects or temporary groups are allocated during telemetry paints.
+      const secondaryStart = Math.ceil(0.72 * (numSegments - 1));
+      const redStart = Math.ceil((isShiftAlert ? 0.85 : 0.88) * (numSegments - 1));
+      for (let group = 0; group < 4; group++) {
+        const start = group === 0 ? activeSegs : group === 1 ? 0 : group === 2 ? secondaryStart : redStart;
+        const end = group === 0 ? numSegments : group === 1 ? Math.min(activeSegs, secondaryStart)
+          : group === 2 ? Math.min(activeSegs, redStart) : activeSegs;
+        if (start >= end) continue;
 
         ctx.beginPath();
-        const slant = (theme.flat ? 0 : 3) * dpr;
-        ctx.moveTo(x + slant, y);
-        ctx.lineTo(x + segWidth + slant, y);
-        ctx.lineTo(x + segWidth, y + segHeight);
-        ctx.lineTo(x, y + segHeight);
-        ctx.closePath();
-
-        if (isActive) {
-          if (isShiftAlert && segRatio >= 0.85) {
-            ctx.fillStyle = theme.alertFlash && lastFlashRef.current ? theme.pointer : theme.danger;
-            ctx.shadowColor = theme.danger;
-            ctx.shadowBlur = glowStrength * 10 * dpr;
-          } else {
-            ctx.fillStyle = activeColor;
-            ctx.shadowColor = activeColor;
-            ctx.shadowBlur = glowStrength * 6 * dpr;
-          }
-          ctx.fill();
-          ctx.shadowBlur = 0;
-        } else {
-          ctx.fillStyle = theme.inactive;
-          ctx.fill();
+        for (let i = start; i < end; i++) {
+          const x = i * (segWidth + gap);
+          const y = 2 * dpr;
+          const segHeight = h - 4 * dpr;
+          const slant = (theme.flat ? 0 : 3) * dpr;
+          ctx.moveTo(x + slant, y);
+          ctx.lineTo(x + segWidth + slant, y);
+          ctx.lineTo(x + segWidth, y + segHeight);
+          ctx.lineTo(x, y + segHeight);
+          ctx.closePath();
         }
+
+        const color = group === 0 ? theme.inactive : group === 1 ? primary : group === 2 ? secondary : theme.danger;
+        const alert = group === 3 && isShiftAlert;
+        ctx.fillStyle = alert && theme.alertFlash && lastFlashRef.current ? theme.pointer : color;
+        ctx.shadowColor = color;
+        ctx.shadowBlur = group === 0 ? 0 : glowStrength * (alert ? 10 : 6) * dpr;
+        ctx.fill();
       }
+      ctx.shadowBlur = 0;
     };
 
     const handleUpdate = (e: any) => {

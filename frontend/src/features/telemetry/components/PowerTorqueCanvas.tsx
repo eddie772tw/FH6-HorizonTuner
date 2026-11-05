@@ -106,8 +106,9 @@ const PowerTorqueCanvas: React.FC<PowerTorqueCanvasProps> = React.memo(({ height
       draw();
     };
 
-    const draw = () => {
-      if (!paint.canPaint() || !surface.sync()) return;
+    function draw() {
+      const canvas = canvasRef.current;
+      if (!canvas || !paint.canPaint() || !surface.sync()) return;
       if (!enabled) {
         canvas.getContext('2d')?.clearRect(0, 0, canvas.width, canvas.height);
         return;
@@ -122,6 +123,8 @@ const PowerTorqueCanvas: React.FC<PowerTorqueCanvasProps> = React.memo(({ height
 
       ctx.clearRect(0, 0, w, h);
 
+      ctx.save();
+      try {
       const padTop = TRACE_PAD_TOP * dpr;
       const padBottom = TRACE_PAD_BOTTOM * dpr;
       const plotH = Math.max(10, h - padTop - padBottom);
@@ -138,64 +141,107 @@ const PowerTorqueCanvas: React.FC<PowerTorqueCanvasProps> = React.memo(({ height
 
       // primaryHex / secondaryHex 已從快取取得，不需再呈 getComputedStyle
 
+      // [VISUAL] Preserve twin-trace transparency at overlapping RPM points (e.g. 5252 RPM crossover)
+      ctx.globalAlpha = 0.75;
+
       // 1. Draw Torque Scatter Points (Secondary Theme Color)
       ctx.fillStyle = secondaryHex;
-      ctx.beginPath();
-      for (let k = 0; k < len; k++) {
-        const pt = hist.current[k];
-        const px = (pt.rpm / maxRpm) * (w - 24 * dpr) + 12 * dpr;
-        const py = h - padBottom - (pt.torque / combinedMax) * plotH;
-
-        if (theme.linear) {
-          ctx.rect(px - 1.8 * dpr, py - 1.8 * dpr, 3.6 * dpr, 3.6 * dpr);
-        } else {
+      // [PERF] Loop unswitching: hoisting condition outside loop avoids evaluating theme.linear inside a 350-iteration loop.
+      // Additionally, using ctx.fillRect immediately writes to canvas without path batching overhead and preserves alpha compositing.
+      if (theme.linear) {
+        for (let k = 0; k < len; k++) {
+          const pt = hist.current[k];
+          const px = (pt.rpm / maxRpm) * (w - 24 * dpr) + 12 * dpr;
+          const py = h - padBottom - (pt.torque / combinedMax) * plotH;
+          ctx.fillRect(px - 1.8 * dpr, py - 1.8 * dpr, 3.6 * dpr, 3.6 * dpr);
+        }
+      } else {
+        // [PERF] Path batching: moving ctx.beginPath() and ctx.fill() outside loop and preceding ctx.arc() with ctx.moveTo()
+        // to minimize state changes and drastically reduce CPU overhead during high-frequency render loops.
+        ctx.beginPath();
+        for (let k = 0; k < len; k++) {
+          const pt = hist.current[k];
+          const px = (pt.rpm / maxRpm) * (w - 24 * dpr) + 12 * dpr;
+          const py = h - padBottom - (pt.torque / combinedMax) * plotH;
           ctx.moveTo(px + 1.8 * dpr, py);
           ctx.arc(px, py, 1.8 * dpr, 0, Math.PI * 2);
         }
+        ctx.fill();
       }
-      ctx.fill();
 
       // 2. Draw Power Scatter Points (Primary Theme Color)
       ctx.fillStyle = primaryHex;
-      ctx.beginPath();
-      for (let k = 0; k < len; k++) {
-        const pt = hist.current[k];
-        const px = (pt.rpm / maxRpm) * (w - 24 * dpr) + 12 * dpr;
-        const py = h - padBottom - (pt.power / combinedMax) * plotH;
-
-        ctx.moveTo(px + 2.0 * dpr, py);
-        ctx.arc(px, py, 2.0 * dpr, 0, Math.PI * 2);
+      // [PERF] See torque scatter loop above for optimization details.
+      if (theme.linear) {
+        for (let k = 0; k < len; k++) {
+          const pt = hist.current[k];
+          const px = (pt.rpm / maxRpm) * (w - 24 * dpr) + 12 * dpr;
+          const py = h - padBottom - (pt.power / combinedMax) * plotH;
+          ctx.fillRect(px - 2.0 * dpr, py - 2.0 * dpr, 4.0 * dpr, 4.0 * dpr);
+        }
+      } else {
+        ctx.beginPath();
+        for (let k = 0; k < len; k++) {
+          const pt = hist.current[k];
+          const px = (pt.rpm / maxRpm) * (w - 24 * dpr) + 12 * dpr;
+          const py = h - padBottom - (pt.power / combinedMax) * plotH;
+          ctx.moveTo(px + 2.0 * dpr, py);
+          ctx.arc(px, py, 2.0 * dpr, 0, Math.PI * 2);
+        }
+        ctx.fill();
       }
-      ctx.fill();
 
-      // 3. Highlight Current Active Telemetry Point (Glowing Ring & Dot)
+      ctx.globalAlpha = 1.0;
+
+      // 3. Highlight Current Active Telemetry Point with Coaxial Pulse Halo & Core
       if (len > 0) {
         const latestIdx = hist.current.length < 350 ? len - 1 : (offsetRef.current - 1 + len) % len;
         const latest = hist.current[latestIdx];
         const pxRpm = (latest.rpm / maxRpm) * (w - 24 * dpr) + 12 * dpr;
         const pyPower = h - padBottom - (latest.power / combinedMax) * plotH;
         const pyTorque = h - padBottom - (latest.torque / combinedMax) * plotH;
+        const hasGlow = !theme.flat && theme.glowStrength > 0;
+        const glowRadius = hasGlow ? theme.glowStrength * 8 * dpr : 0;
+        ctx.lineWidth = 1.6 * dpr;
 
-        // Current Power Active Marker
-        ctx.beginPath();
-        ctx.arc(pxRpm, pyPower, 4 * dpr, 0, Math.PI * 2);
+        // Current Power Active Marker (Outer Pulse Halo + Inner Core)
+        ctx.strokeStyle = primaryHex;
         ctx.fillStyle = primaryHex;
-        ctx.shadowColor = primaryHex;
-        ctx.shadowBlur = theme.glowStrength * 10 * dpr;
-        ctx.fill();
-        ctx.shadowBlur = 0;
+        ctx.shadowColor = hasGlow ? primaryHex : 'transparent';
+        ctx.shadowBlur = glowRadius;
+        if (theme.linear) {
+          ctx.strokeRect(pxRpm - 5.5 * dpr, pyPower - 5.5 * dpr, 11 * dpr, 11 * dpr);
+          ctx.fillRect(pxRpm - 2.8 * dpr, pyPower - 2.8 * dpr, 5.6 * dpr, 5.6 * dpr);
+        } else {
+          ctx.beginPath();
+          ctx.arc(pxRpm, pyPower, 6.2 * dpr, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.arc(pxRpm, pyPower, 3.2 * dpr, 0, Math.PI * 2);
+          ctx.fill();
+        }
 
-        // Current Torque Active Marker
-        ctx.beginPath();
-        if (theme.linear) ctx.rect(pxRpm - 4 * dpr, pyTorque - 4 * dpr, 8 * dpr, 8 * dpr);
-        else ctx.arc(pxRpm, pyTorque, 4 * dpr, 0, Math.PI * 2);
+        // Current Torque Active Marker (Outer Pulse Halo + Inner Core)
+        ctx.strokeStyle = secondaryHex;
         ctx.fillStyle = secondaryHex;
-        ctx.shadowColor = secondaryHex;
-        ctx.shadowBlur = theme.glowStrength * 10 * dpr;
-        ctx.fill();
-        ctx.shadowBlur = 0;
+        ctx.shadowColor = hasGlow ? secondaryHex : 'transparent';
+        ctx.shadowBlur = glowRadius;
+        if (theme.linear) {
+          ctx.strokeRect(pxRpm - 5.5 * dpr, pyTorque - 5.5 * dpr, 11 * dpr, 11 * dpr);
+          ctx.fillRect(pxRpm - 2.8 * dpr, pyTorque - 2.8 * dpr, 5.6 * dpr, 5.6 * dpr);
+        } else {
+          ctx.beginPath();
+          ctx.arc(pxRpm, pyTorque, 6.2 * dpr, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.arc(pxRpm, pyTorque, 3.2 * dpr, 0, Math.PI * 2);
+          ctx.fill();
+        }
       }
-    };
+    } finally {
+      ctx.restore();
+    }
+  }
 
     const stopPaint = paint.subscribe(draw);
     draw();

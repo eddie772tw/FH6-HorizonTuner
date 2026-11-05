@@ -297,6 +297,10 @@ impl DiscordPresence {
         }
     }
 
+    pub fn is_enabled(&self) -> bool {
+        self.application_id.is_some()
+    }
+
     pub fn start(&self) {
         if self.application_id.is_none() {
             return;

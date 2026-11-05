@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 export interface DecimalInputProps {
   value: number | undefined | null;
@@ -14,6 +14,7 @@ export interface DecimalInputProps {
   id?: string;
   name?: string;
   'aria-label'?: string;
+  'aria-describedby'?: string;
 }
 
 export const DecimalInput: React.FC<DecimalInputProps> = ({
@@ -30,7 +31,9 @@ export const DecimalInput: React.FC<DecimalInputProps> = ({
   id,
   name,
   'aria-label': ariaLabel,
+  'aria-describedby': ariaDescribedBy,
 }) => {
+  const edited = useRef(false);
   const [isFocused, setIsFocused] = useState(false);
   const [localText, setLocalText] = useState<string>(() => {
     if (value === undefined || value === null || Number.isNaN(value)) return '';
@@ -49,6 +52,7 @@ export const DecimalInput: React.FC<DecimalInputProps> = ({
   }, [value, precision, isFocused]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    edited.current = true;
     const nextText = e.target.value;
     setLocalText(nextText);
 
@@ -71,6 +75,9 @@ export const DecimalInput: React.FC<DecimalInputProps> = ({
 
   const handleBlur = () => {
     setIsFocused(false);
+    // Display rounding is not an edit: keep imported and converted precision.
+    if (!edited.current) return;
+    edited.current = false;
     if (localText.trim() === '') {
       onChange(undefined);
       setLocalText('');
@@ -97,7 +104,9 @@ export const DecimalInput: React.FC<DecimalInputProps> = ({
   };
 
   const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    edited.current = false;
     setIsFocused(true);
+    if (value != null && Number.isFinite(value)) setLocalText(String(value));
     // Select all text on focus for quick overwrite
     e.target.select();
   };
@@ -115,6 +124,9 @@ export const DecimalInput: React.FC<DecimalInputProps> = ({
       id={id}
       name={name}
       aria-label={ariaLabel}
+      aria-describedby={ariaDescribedBy}
+      min={min}
+      max={max}
       disabled={disabled}
       step={step}
       placeholder={placeholder}

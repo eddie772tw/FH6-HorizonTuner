@@ -93,7 +93,7 @@ async function main() {
     };
     const open = async (query = '') => {
       await settings.goto(origin + settingsPath + query);
-      await settings.locator('details.hud-advanced-settings > summary').click();
+      await settings.locator('[role=tab][id$="-tab-gauge"]').click();
       await settings.waitForFunction(() => !document.querySelector('select[id$="-style"]')?.disabled);
     };
     const type = async (key, text, finish = 'Enter') => {
@@ -184,11 +184,11 @@ async function main() {
     await alarm(3).getByRole('combobox', { name: 'Alarm metric', exact: true }).selectOption('torque');
     await savedAlarm(2, { metric: 'torque', threshold: 500 });
     await type('alarm-3-threshold', '737.56'); await savedAlarm(2, { threshold: 1000 });
-    await settings.getByRole('button', { name: 'HUD Unit Settings', exact: true }).click();
-    await settings.locator('#hud-follow-global-units').uncheck();
-    await settings.locator('#hud-boost-unit').selectOption('kpa');
-    await settings.locator('#hud-power-unit').selectOption('ps');
-    await settings.getByRole('button', { name: 'Close Unit Settings', exact: true }).click();
+    await settings.locator('[role=tab][id$="-tab-general"]').click();
+    await settings.locator('[id$="-hud-follow-global-units"]').uncheck();
+    await settings.locator('[id$="-hud-boost-unit"]').selectOption('kpa');
+    await settings.locator('[id$="-hud-power-unit"]').selectOption('ps');
+    await settings.locator('[role=tab][id$="-tab-gauge"]').click();
     assert.equal(await input('alarm-2-threshold').inputValue(), '225');
     await type('alarm-2-threshold', '180'); await savedAlarm(1, { threshold: 1.8 });
     await alarm(3).getByRole('combobox', { name: 'Alarm metric', exact: true }).selectOption('power');
@@ -228,13 +228,14 @@ async function main() {
     await savedAs({ stackSt8100Page: 'peaks', stackSt8100Face: 'white' });
     await savedAlarm(1, { threshold: 1.8 });
     const beforeResetCancel = saved.length;
-    settings.once('dialog', dialog => dialog.dismiss());
+    await settings.locator('[role=tab][id$="-tab-general"]').click(); settings.once('dialog', dialog => dialog.dismiss());
     await settings.getByRole('button', { name: 'Reset HUD Settings', exact: true }).click();
     assert.equal(saved.length, beforeResetCancel);
     settings.once('dialog', dialog => dialog.accept());
     await settings.getByRole('button', { name: 'Reset HUD Settings', exact: true }).click();
     await card.waitFor({ state: 'detached' }); await savedAs({ hudStyle: 'vfd' });
     assert.equal(readConfig().stackSt8100Page, undefined);
+    await settings.locator('[role=tab][id$="-tab-gauge"]').click();
     await style.selectOption('stack_st8100'); await card.waitFor({ state: 'visible' });
     await savedAs(defaults.DEFAULT_STACK_ST8100_CONFIG);
     checks.push('Persisted reload, style round-trip, reset cancellation and confirmed defaults');
@@ -244,7 +245,8 @@ async function main() {
       const translated = settings.getByRole('group', { name: translations['Stack ST8100 settings'], exact: true });
       await translated.waitFor({ state: 'visible' });
       const glyphs = await translated.evaluate(async (element, language) => {
-        const family = language === 'zh-tw' ? 'Noto Sans CJK TC' : 'Noto Sans CJK JP';
+        const windows = navigator.userAgent.includes('Windows');
+        const family = language === 'zh-tw' ? (windows ? 'Microsoft JhengHei' : 'Noto Sans CJK TC') : (windows ? 'YuGothic-Regular' : 'Noto Sans CJK JP');
         await new FontFace('StackCjkAvailabilityProbe', `local("${family}")`).load();
         await document.fonts.ready;
         const canvas = document.createElement('canvas'); canvas.width = canvas.height = 64;

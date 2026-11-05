@@ -1,13 +1,16 @@
 import type { S650CenterWidget, S650HmiTheme } from './s650/config';
+import { normalizeGaugeValueSources } from '../../../../hud_overlay/shared/gauge-sources.js';
 import type { ClassicJdmAuxGauge, ClassicJdmDefiTheme, ClassicJdmTachStyle } from './classic_jdm/config';
 import type { R34MfdMode, R34Lighting } from './r34_mfd/config';
 import type { StackSt8100Settings } from './stack_st8100/config';
-import type { HudDisplayUnits } from './HudUnitSettingsSidebar';
+import type { HudDisplayUnits } from './hudDisplayUnits';
 import { DEFAULT_LFA_AUTO_EXPAND, DEFAULT_LFA_MANUAL_EXPAND } from './lfa_center_ring/config';
 
 export interface HudElements {
   showTeleMaster?: boolean;
   showGauge: boolean;
+  showAudioHead?: boolean;
+  showAuxiliaryGauges?: boolean;
   showCenterInfo: boolean;
   showRPM: boolean;
   showSpeed: boolean;
@@ -53,6 +56,21 @@ export interface HudConfig extends Partial<StackSt8100Settings> {
   r34MfdMode?: R34MfdMode;
   r34ShowCluster?: boolean;
   r34Lighting?: R34Lighting;
+  auxGaugeFaces?: ('aem' | 'greddy' | 'blitz' | 'defi' | 'speedhut')[];
+  auxGaugeMaxPerRow?: number;
+  auxGaugeOrientation?: 'horizontal' | 'vertical';
+  auxGaugeEdge?: 'left' | 'right' | 'top' | 'bottom';
+  auxGaugeOffset?: number;
+  auxGaugeCenterOffset?: number;
+  gaugeValueSources?: import('../../../../hud_overlay/shared/gauge-sources.js').GaugeValueSources;
+  audioHeadDeck?: number;
+  /** Independent user scale; legacy shared scale is migrated once. */
+  audioHeadScale?: number;
+  audioHeadEdge?: 'left' | 'right' | 'top' | 'bottom';
+  /** Screen pixels inward from the selected edge. */
+  audioHeadOffset?: number;
+  /** Screen pixels along the edge, relative to its center. */
+  audioHeadCenterOffset?: number;
   /** LFA only: manual expansion overrides automatic race detection. */
   lfaManualExpand?: boolean;
   /** LFA only: expand while confirmed lap timing is present. */
@@ -112,6 +130,18 @@ export const DEFAULT_HUD_CONFIG: HudConfig = {
   r34MfdMode: 'single',
   r34ShowCluster: true,
   r34Lighting: 'night',
+  auxGaugeFaces: ['aem', 'greddy', 'defi'],
+  auxGaugeMaxPerRow: 3,
+  auxGaugeOrientation: 'horizontal',
+  auxGaugeEdge: 'right',
+  auxGaugeOffset: 0,
+  auxGaugeCenterOffset: 0,
+  gaugeValueSources: normalizeGaugeValueSources(undefined),
+  audioHeadDeck: 0,
+  audioHeadScale: 1,
+  audioHeadEdge: 'left',
+  audioHeadOffset: 0,
+  audioHeadCenterOffset: 0,
   lfaManualExpand: DEFAULT_LFA_MANUAL_EXPAND,
   lfaAutoExpand: DEFAULT_LFA_AUTO_EXPAND,
   gamepadLayout: 'xbox',
@@ -154,6 +184,8 @@ export const DEFAULT_HUD_CONFIG: HudConfig = {
   elements: {
     showTeleMaster: true,
     showGauge: true,
+    showAudioHead: false,
+    showAuxiliaryGauges: false,
     showCenterInfo: true,
     showRPM: true,
     showSpeed: true,

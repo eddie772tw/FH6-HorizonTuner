@@ -5,13 +5,16 @@ import { normalizeClassicJdmConfig } from './classic_jdm/config';
 import { normalizeR34MfdConfig } from './r34_mfd/config';
 import { normalizeStackSt8100Config } from './stack_st8100/config';
 import { normalizeLfaExpansionConfig } from './lfa_center_ring/config';
-import type { HudDisplayUnits } from './HudUnitSettingsSidebar';
+import { normalizeAudioHeadConfig, normalizeAuxiliaryConfig } from '../../../../hud_overlay/shared/overlay-config.js';
+import type { HudDisplayUnits } from './hudDisplayUnits';
+import { GAUGE_VALUE_KEYS, type GaugeValueSources } from '../../../../hud_overlay/shared/gauge-sources.js';
 
 export type HudConfigRecord = HudConfig & Record<string, unknown>;
 
-export type HudConfigPatch = Omit<Partial<HudConfigRecord>, 'elements' | 'units'> & {
+export type HudConfigPatch = Omit<Partial<HudConfigRecord>, 'elements' | 'units' | 'gaugeValueSources'> & {
   elements?: Partial<HudElements>;
   units?: Partial<HudDisplayUnits>;
+  gaugeValueSources?: { [Key in keyof GaugeValueSources]?: Partial<GaugeValueSources[Key]> };
 };
 
 export type OverlayControlStatus = 'loading' | 'ready' | 'saving' | 'error';
@@ -32,6 +35,8 @@ export interface ResponseLike {
 export interface OverlayControlTransport {
   readConfig(signal: AbortSignal): Promise<ResponseLike>;
   saveConfig(config: HudConfigRecord): Promise<ResponseLike>;
+  /** Native visibility is session state; a saved enabled flag cannot restore a window. */
+  readWindowVisibility?(): Promise<boolean>;
 }
 
 export interface OverlayControlChannel {
@@ -81,7 +86,7 @@ async function responseIsSuccessful(response: ResponseLike, action: string): Pro
 }
 
 export function normalizeHudRuntimeConfig(input: unknown): HudConfigRecord {
-  const raw = isRecord(input) ? withoutDerivedChannelFields(input) : {};
+  const raw = normalizeAuxiliaryConfig(normalizeAudioHeadConfig(isRecord(input) ? withoutDerivedChannelFields(input) : {}));
   const normalized = normalizeR34MfdConfig(
     normalizeStackSt8100Config(
       normalizeLfaExpansionConfig(
@@ -115,11 +120,17 @@ export function applyHudConfigPatch(config: HudConfigRecord, patch: HudConfigPat
   const persistedPatch = withoutDerivedChannelFields(patch);
   const units = isRecord(persistedPatch.units) ? persistedPatch.units : undefined;
   const elements = isRecord(persistedPatch.elements) ? persistedPatch.elements : undefined;
+  const sources = isRecord(persistedPatch.gaugeValueSources) ? persistedPatch.gaugeValueSources : undefined;
+  const gaugeValueSources = { ...config.gaugeValueSources };
+  if (sources) for (const key of GAUGE_VALUE_KEYS) {
+    if (isRecord(sources[key])) gaugeValueSources[key] = { ...gaugeValueSources[key], ...sources[key] } as GaugeValueSources[typeof key];
+  }
   const merged = {
     ...config,
     ...persistedPatch,
     units: units ? { ...config.units, ...units } : config.units,
     elements: elements ? { ...config.elements, ...elements } : config.elements,
+    gaugeValueSources,
   } as HudConfigRecord;
   return normalizeHudRuntimeConfig(merged);
 }
@@ -191,6 +202,7 @@ export function createOverlayControlRuntime(
       const response = await transport.readConfig(controller.signal);
       if (!response.ok) throw errorForResponse('Loading HUD settings', response);
       const data = await response.json();
+      const visible = await transport.readWindowVisibility?.();
       if (
         generation !== refreshGeneration ||
         revisionAtStart !== localRevision ||
@@ -202,11 +214,15 @@ export function createOverlayControlRuntime(
       }
 
       const config = normalizeHudRuntimeConfig(data);
+      const reconcileVisibility = visible !== undefined && config.enabled !== visible;
+      if (visible !== undefined) config.enabled = visible;
       hasAuthoritativeConfig = true;
       lastFailedOperation = null;
       setSnapshot({ config, status: 'ready', error: null, pendingWrites: 0 });
       publish(config);
-      return true;
+      // Use the same serialized writer/retry path; never rely on async unload
+      // cleanup, which is skipped when the application or backend is terminated.
+      return reconcileVisibility ? save(config) : true;
     } catch (error) {
       if (
         generation !== refreshGeneration ||
@@ -321,7 +337,7 @@ export function createOverlayControlRuntime(
       // BroadcastChannel has no authority revision. Once local persistence has
       // occurred, a delayed renderer payload cannot be proven newer, so use a
       // fresh GET reconciliation instead of trusting it indefinitely.
-      if (localRevision > 0) {
+      if (localRevision > 0 || transport.readWindowVisibility) {
         queueReconciliation();
         return;
       }

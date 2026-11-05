@@ -20,8 +20,15 @@ export type HudNativeInvoke = <T>(
   args?: Record<string, unknown>,
 ) => Promise<T>;
 
+export function getBrowserNativeInvoke(): HudNativeInvoke | undefined {
+  if (typeof window === 'undefined') return undefined;
+  const candidate = (window as unknown as { __TAURI__?: { core?: { invoke?: HudNativeInvoke } } }).__TAURI__?.core?.invoke;
+  return typeof candidate === 'function' ? candidate : undefined;
+}
+
 export interface HudNativeAdapter {
   readonly available: boolean;
+  getHudWindowVisible(): Promise<HudNativeResult<boolean>>;
   getAvailableMonitors(): Promise<HudNativeResult<HudMonitorOption[]>>;
   moveHudToMonitor(monitor: HudMonitorOption): Promise<HudNativeResult<void>>;
   toggleHudWindow(visible: boolean): Promise<HudNativeResult<void>>;
@@ -96,6 +103,12 @@ export function createHudNativeAdapter(invoke?: HudNativeInvoke): HudNativeAdapt
 
   return {
     available,
+    async getHudWindowVisible() {
+      const result = await run<unknown>('get_hud_window_visible', undefined, 'Reading HUD window visibility');
+      if (result.status !== 'success') return result as HudNativeResult<boolean>;
+      return typeof result.value === 'boolean' ? { status: 'success', value: result.value }
+        : { status: 'degraded', error: 'Native HUD visibility was not a boolean.' };
+    },
     async getAvailableMonitors() {
       const result = await run<unknown>('get_available_monitors', undefined, 'Reading available monitors');
       if (result.status !== 'success') return result as HudNativeResult<HudMonitorOption[]>;

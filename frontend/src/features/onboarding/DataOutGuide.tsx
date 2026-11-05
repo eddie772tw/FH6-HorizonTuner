@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useModalFocus } from '../../hooks/useModalFocus';
 import type { TelemetryHealth } from './telemetryHealth';
 import { saveDataOutGuideChoice } from './telemetryHealth';
 import { ModalPortal } from '../../components/common/ModalPortal';
@@ -63,13 +63,7 @@ export function localizeTelemetryHealth(
 
 export default function DataOutGuide({ health, open, onClose }: DataOutGuideProps) {
   const { settings, t } = useSettings();
-  const closeButton = useRef<HTMLButtonElement>(null);
-  useEffect(() => { if (open) closeButton.current?.focus(); }, [open]);
-  useEffect(() => {
-    const closeOnEscape = (event: KeyboardEvent) => { if (open && event.key === 'Escape') onClose(); };
-    window.addEventListener('keydown', closeOnEscape);
-    return () => window.removeEventListener('keydown', closeOnEscape);
-  }, [open, onClose]);
+  const panelRef = useModalFocus<HTMLDivElement>(open, onClose);
   if (!open) return null;
 
   const finish = (choice: 'completed' | 'skipped') => {
@@ -101,10 +95,12 @@ export default function DataOutGuide({ health, open, onClose }: DataOutGuideProp
       />
       <div
         className="modal show d-block"
+        ref={panelRef}
         role="dialog"
         aria-modal="true"
         tabIndex={-1}
         aria-labelledby="data-out-guide-title"
+        aria-describedby="data-out-guide-desc"
         style={{
           position: 'fixed',
           top: 0,
@@ -122,9 +118,9 @@ export default function DataOutGuide({ health, open, onClose }: DataOutGuideProp
             <div className="modal-header border-bottom border-secondary border-opacity-25 pb-3">
               <div>
                 <h2 id="data-out-guide-title" className="modal-title fs-5 fw-bold text-primary mb-1">{t("Set up Forza Data Out")}</h2>
-                <p className="mb-0 small text-secondary">{t("A local setup guide. It does not establish or verify a game connection.")}</p>
+                <p id="data-out-guide-desc" className="mb-0 small text-secondary">{t("A local setup guide. It does not establish or verify a game connection.")}</p>
               </div>
-              <button ref={closeButton} type="button" className="btn-close" aria-label={t("Close Data Out guide")} onClick={onClose} />
+              <button type="button" className="btn-close" aria-label={t("Close Data Out guide")} onClick={onClose} />
             </div>
             <div className="modal-body py-3">
               <ol className="mb-4 ps-3 text-body">
@@ -137,7 +133,7 @@ export default function DataOutGuide({ health, open, onClose }: DataOutGuideProp
               <section aria-labelledby="data-out-health-title" className="border rounded p-3" style={{ borderColor: 'var(--divider)', background: 'var(--surface-1)' }}>
                 <div className="d-flex justify-content-between align-items-start gap-2 flex-wrap">
                   <div><h3 id="data-out-health-title" className="fs-6 mb-1 fw-bold">{t("Data Out health")}</h3><p className="mb-0 small text-secondary">{localizedHealth.detail}</p></div>
-                  <span className={`badge ${badgeClass[health.state]} px-2 py-1`}>{localizedHealth.label}</span>
+                  <span role="status" className={`badge ${badgeClass[health.state]} px-2 py-1`}>{localizedHealth.label}</span>
                 </div>
                 <dl className="row small mb-0 mt-3">
                   <dt className="col-sm-4 text-secondary">{t("First packet")}</dt><dd className="col-sm-8">{health.hasObservedPacket ? t("Observed") : t("Not received")}</dd>

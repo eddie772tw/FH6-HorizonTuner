@@ -99,7 +99,7 @@ async function main() {
     const card = settings.getByRole('group', { name: 'LFA Ring Expansion', exact: true });
     async function openSettings() {
       await settings.goto(origin + settingsPath);
-      await settings.getByText('Advanced settings', { exact: true }).click();
+      await settings.locator('[role=tab][id$="-tab-gauge"]').click();
       await manual.waitFor({ state: 'visible' });
       await settings.waitForFunction(() => !document.querySelector('[role="switch"]')?.disabled);
     }
@@ -207,14 +207,17 @@ async function main() {
     await card.waitFor({ state: 'detached' });
     assert.equal(await settings.getByRole('switch', { name: 'Manually Expand LFA Ring', exact: true }).count(), 0);
     await host.waitForFunction(() => document.querySelector('#hud-iframe')?.contentWindow?.HUDCore?.getActiveStyle()?.containerId === 'simpleContainer');
+    await settings.locator('[role=tab][id$="-tab-gauge"]').click();
     await style.selectOption('lfa_center_ring');
     await card.waitFor({ state: 'visible' });
     await assertSaved(true, true); await assertDelivered(true, true);
 
     // Exercise the real reset button, including cancel before confirmation.
-    settings.once('dialog', dialog => dialog.dismiss());
+    await settings.locator('[role=tab][id$="-tab-general"]').click(); settings.once('dialog', dialog => dialog.dismiss());
     await settings.getByRole('button', { name: 'Reset HUD Settings', exact: true }).click();
+    await settings.locator('[role=tab][id$="-tab-gauge"]').click();
     await assertSaved(true, true);
+    await settings.locator('[role=tab][id$="-tab-general"]').click();
     settings.once('dialog', dialog => dialog.accept());
     await settings.getByRole('button', { name: 'Reset HUD Settings', exact: true }).click();
     await card.waitFor({ state: 'detached' });
@@ -222,6 +225,7 @@ async function main() {
       const config = await (await fetch('/api/overlay/config')).json();
       return config.hudStyle === 'vfd' && config.lfaManualExpand === false && config.lfaAutoExpand === false;
     });
+    await settings.locator('[role=tab][id$="-tab-gauge"]').click();
     await style.selectOption('lfa_center_ring');
     await card.waitFor({ state: 'visible' });
     await assertSaved(false, false); await assertDelivered(false, false);
@@ -234,12 +238,13 @@ async function main() {
       await settings.goto(origin + settingsPath + '?language=' + language);
       const translatedTitle = translation['LFA Ring Expansion'];
       await settings.getByText(translatedTitle, { exact: true }).waitFor({ state: 'attached' });
-      await settings.locator('details.hud-advanced-settings > summary').click();
+      await settings.locator('[role=tab][id$="-tab-gauge"]').click();
       const translatedCard = settings.getByRole('group', { name: translatedTitle, exact: true });
       await translatedCard.scrollIntoViewIfNeeded();
       assert.equal(await translatedCard.getByRole('switch').count(), 2);
       const glyphs = await translatedCard.evaluate(async (element, language) => {
-        const family = language === 'zh-tw' ? 'Noto Sans CJK TC' : 'Noto Sans CJK JP';
+        const windows = navigator.userAgent.includes('Windows');
+        const family = language === 'zh-tw' ? (windows ? 'Microsoft JhengHei' : 'Noto Sans CJK TC') : (windows ? 'YuGothic-Regular' : 'Noto Sans CJK JP');
         // FontFace.load rejects a missing local face; document.fonts.check alone
         // can return true for an unavailable family that falls back to tofu.
         await new FontFace('LfaCjkAvailabilityProbe', `local("${family}")`).load();
