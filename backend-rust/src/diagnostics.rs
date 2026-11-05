@@ -5,6 +5,7 @@ use serde_json::{json, Value};
 use std::{
     collections::{BTreeMap, VecDeque},
     fs,
+    net::SocketAddr,
     io::{Cursor, Write},
     path::Path,
     sync::LazyLock,
@@ -62,7 +63,7 @@ pub struct Metrics {
     schemas: BTreeMap<String, u64>,
     last_schema: Option<String>,
     previous_timestamp: Option<u32>,
-    source: Option<String>,
+    source: Option<SocketAddr>,
     duplicates: u64,
     out_of_order: u64,
     wraps: u64,
@@ -96,16 +97,24 @@ impl Metrics {
         }
         self.source = None;
     }
-    pub fn parsed(&mut self, frame: &Value, source: String) {
+    pub fn parsed(&mut self, frame: &Value, source: SocketAddr) {
         self.parsed += 1;
         if let Some(schema) = frame["TelemetrySchema"].as_str() {
-            *self.schemas.entry(schema.into()).or_default() += 1;
-            self.last_schema = Some(schema.into());
+            // [PERF] In 60Hz UDP loop, avoid into() String allocations when schema is already recorded.
+            if let Some(count) = self.schemas.get_mut(schema) {
+                *count += 1;
+            } else {
+                self.schemas.insert(schema.into(), 1);
+            }
+            if self.last_schema.as_deref() != Some(schema) {
+                self.last_schema = Some(schema.into());
+            }
         }
         let Some(timestamp) = frame["TimestampMS"].as_u64().map(|x| x as u32) else {
             return;
         };
-        if self.source.as_ref().is_some_and(|s| s != &source) {
+        // [PERF] SocketAddr is Copy and stack-allocated; avoids heap churn on every received packet.
+        if self.source.as_ref().is_some_and(|s| *s != source) {
             self.rebase();
         }
         self.source = Some(source);
@@ -139,7 +148,12 @@ impl Metrics {
         *self.drop_reasons.entry(reason.into()).or_default() += count;
     }
     pub fn stage(&mut self, name: &str, milliseconds: f64) {
-        let values = self.stages.entry(name.into()).or_default();
+        // [PERF] In 60Hz worker processing, lookup stage by &str to eliminate into() String heap allocation on every frame.
+        let values = if let Some(values) = self.stages.get_mut(name) {
+            values
+        } else {
+            self.stages.entry(name.into()).or_default()
+        };
         if values.len() >= 240 {
             values.pop_front();
         }
