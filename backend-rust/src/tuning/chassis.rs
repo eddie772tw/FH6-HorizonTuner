@@ -102,13 +102,13 @@ pub fn resolve_aero_downforce(params: &TuningCarParams) -> AeroDownforceResult {
 pub fn get_road_awd_rear_percent(params: &TuningCarParams) -> f64 {
     let front = params
         .weight_distribution
+        .filter(|v| v.is_finite())
         .unwrap_or(50.0)
-        .max(1.0)
-        .min(99.0);
+        .clamp(1.0, 99.0);
     if let Some(r) = params.road_awd_rear_percent.filter(|v| v.is_finite()) {
-        r.max(0.0).min(100.0)
+        r.clamp(0.0, 100.0)
     } else {
-        (100.0 - front + 20.0).max(60.0).min(85.0)
+        (100.0 - front + 20.0).clamp(60.0, 85.0)
     }
 }
 
@@ -119,17 +119,32 @@ fn positive(value: Option<f64>, fallback: f64) -> f64 {
         .unwrap_or(fallback)
 }
 
+#[inline]
+fn non_neg(v: Option<f64>) -> f64 {
+    v.filter(|v| v.is_finite() && *v >= 0.0).unwrap_or(0.0)
+}
+
 fn normalize_road_inputs(params: &TuningCarParams) -> TuningCarParams {
     let mut p = params.clone();
     p.weight = Some(positive(p.weight, 1400.0));
-    p.weight_distribution = Some(p.weight_distribution.unwrap_or(50.0).max(1.0).min(99.0));
+    p.weight_distribution = Some(
+        p.weight_distribution
+            .filter(|v| v.is_finite())
+            .unwrap_or(50.0)
+            .clamp(1.0, 99.0),
+    );
     p.max_hp = Some(positive(p.max_hp, 300.0));
-    p.max_torque = Some(p.max_torque.unwrap_or(0.0).max(0.0));
-    p.max_hp_rpm = Some(p.max_hp_rpm.unwrap_or(0.0).max(0.0));
-    p.max_torque_rpm = Some(p.max_torque_rpm.unwrap_or(0.0).max(0.0));
-    p.aero_efficiency = Some(p.aero_efficiency.unwrap_or(0.5).max(0.0).min(1.0));
-    p.aero_downforce_front = Some(p.aero_downforce_front.unwrap_or(0.0).max(0.0));
-    p.aero_downforce_rear = Some(p.aero_downforce_rear.unwrap_or(0.0).max(0.0));
+    p.max_torque = Some(non_neg(p.max_torque));
+    p.max_hp_rpm = Some(non_neg(p.max_hp_rpm));
+    p.max_torque_rpm = Some(non_neg(p.max_torque_rpm));
+    p.aero_efficiency = Some(
+        p.aero_efficiency
+            .filter(|v| v.is_finite())
+            .unwrap_or(0.5)
+            .clamp(0.0, 1.0),
+    );
+    p.aero_downforce_front = Some(non_neg(p.aero_downforce_front));
+    p.aero_downforce_rear = Some(non_neg(p.aero_downforce_rear));
     p.front_tire_width = Some(positive(p.front_tire_width, 245.0));
     p.front_tire_aspect = Some(positive(p.front_tire_aspect, 40.0));
     p.front_tire_rim = Some(positive(p.front_tire_rim, 18.0));
@@ -159,13 +174,18 @@ fn normalize_road_inputs(params: &TuningCarParams) -> TuningCarParams {
 fn rally_calculation_inputs(params: &TuningCarParams) -> TuningCarParams {
     let mut p = params.clone();
     p.weight = Some(positive(p.weight, 1400.0));
-    p.weight_distribution = Some(p.weight_distribution.unwrap_or(50.0).max(1.0).min(99.0));
+    p.weight_distribution = Some(
+        p.weight_distribution
+            .filter(|v| v.is_finite())
+            .unwrap_or(50.0)
+            .clamp(1.0, 99.0),
+    );
     p.max_hp = Some(positive(p.max_hp, 300.0));
-    p.max_torque = Some(p.max_torque.unwrap_or(0.0).max(0.0));
-    p.max_hp_rpm = Some(p.max_hp_rpm.unwrap_or(0.0).max(0.0));
-    p.max_torque_rpm = Some(p.max_torque_rpm.unwrap_or(0.0).max(0.0));
-    p.aero_downforce_front = Some(p.aero_downforce_front.unwrap_or(0.0).max(0.0));
-    p.aero_downforce_rear = Some(p.aero_downforce_rear.unwrap_or(0.0).max(0.0));
+    p.max_torque = Some(non_neg(p.max_torque));
+    p.max_hp_rpm = Some(non_neg(p.max_hp_rpm));
+    p.max_torque_rpm = Some(non_neg(p.max_torque_rpm));
+    p.aero_downforce_front = Some(non_neg(p.aero_downforce_front));
+    p.aero_downforce_rear = Some(non_neg(p.aero_downforce_rear));
 
     let min_kf = positive(p.spring_front_min, 10.0);
     p.spring_front_min = Some(min_kf);

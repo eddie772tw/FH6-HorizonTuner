@@ -615,3 +615,69 @@ fn aero_downforce_singular_protection_and_asymmetric_closure() {
         "AWD rear split with NaN must fallback to physical ratio, got {awd_rear}"
     );
 }
+
+#[test]
+fn chassis_weight_distribution_nan_protection_and_symmetry_closure() {
+    use fh6_backend::tuning::chassis::get_road_awd_rear_percent;
+
+    // Case 1: NaN weight distribution must fall back to 50.0% neutral balance
+    let p_nan = TuningCarParams {
+        weight: Some(1400.0),
+        weight_distribution: Some(f64::NAN),
+        drivetrain: Some("RWD".into()),
+        spring_front_min: Some(20.0),
+        spring_front_max: Some(100.0),
+        spring_rear_min: Some(20.0),
+        spring_rear_max: Some(100.0),
+        ..Default::default()
+    };
+    let p_50 = TuningCarParams {
+        weight_distribution: Some(50.0),
+        ..p_nan.clone()
+    };
+
+    let chassis_nan = calculate_chassis_tuning(RaceGoal::Road, &p_nan);
+    let chassis_50 = calculate_chassis_tuning(RaceGoal::Road, &p_50);
+
+    // Front/rear ARB and damping must be symmetric and match 50.0% baseline
+    assert_eq!(chassis_nan.arb.front, chassis_50.arb.front);
+    assert_eq!(chassis_nan.arb.rear, chassis_50.arb.rear);
+    assert_eq!(chassis_nan.arb.front, chassis_nan.arb.rear);
+    assert_eq!(chassis_nan.springs.front, chassis_50.springs.front);
+    assert_eq!(chassis_nan.springs.rear, chassis_50.springs.rear);
+    assert_eq!(chassis_nan.damping.rebound_f, chassis_nan.damping.rebound_r);
+    assert_eq!(chassis_nan.damping.rebound_f, chassis_50.damping.rebound_f);
+
+    // Case 2: get_road_awd_rear_percent with NaN weight_distribution must be 70.0%
+    let awd_split_nan = get_road_awd_rear_percent(&p_nan);
+    let awd_split_50 = get_road_awd_rear_percent(&p_50);
+    assert_eq!(awd_split_nan, 70.0);
+    assert_eq!(awd_split_nan, awd_split_50);
+
+    // Case 3: Rally mode must also preserve symmetry under NaN weight_distribution
+    let rally_nan = calculate_chassis_tuning(RaceGoal::Rally, &p_nan);
+    let rally_50 = calculate_chassis_tuning(RaceGoal::Rally, &p_50);
+    assert_eq!(rally_nan.springs.front, rally_50.springs.front);
+    assert_eq!(rally_nan.springs.rear, rally_50.springs.rear);
+    assert_eq!(rally_nan.damping.rebound_f, rally_nan.damping.rebound_r);
+
+    // Case 4: Zero or non-finite torque in Road gearing must not panic or diverge to INFINITY
+    let p_zero_torque = TuningCarParams {
+        max_hp: Some(300.0),
+        max_torque: Some(0.0),
+        max_hp_rpm: Some(6000.0),
+        max_torque_rpm: Some(4000.0),
+        ..p_nan
+    };
+    let road_gearing = fh6_backend::tuning::calculate_aego_gearing(
+        RaceGoal::Road,
+        6,
+        &p_zero_torque,
+        7000.0,
+        None,
+    );
+    assert_ne!(road_gearing.unsupported, Some(true));
+    assert!(road_gearing.final_drive >= 2.0 && road_gearing.final_drive <= 6.1);
+    assert_eq!(road_gearing.gears.len(), 6);
+    assert!(road_gearing.gears.windows(2).all(|w| w[0] > w[1]));
+}
