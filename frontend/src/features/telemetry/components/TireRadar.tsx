@@ -238,6 +238,8 @@ const TireRadar: React.FC<TireRadarProps> = React.memo(({ title, isLeft, tireIdx
       if (rCanvas && rCanvas.width > 0) {
         const ctx = rCanvas.getContext('2d');
         if (ctx) {
+          ctx.save();
+          try {
           ctx.clearRect(0, 0, rCanvas.width, rCanvas.height);
           const dpr = window.devicePixelRatio || 1;
           const radius = (rCanvas.width / dpr) / 2;
@@ -269,6 +271,7 @@ const TireRadar: React.FC<TireRadarProps> = React.memo(({ title, isLeft, tireIdx
               ctx.beginPath();
               ctx.strokeStyle = theme.historyLine;
               ctx.lineWidth = 2 * dpr;
+              ctx.lineCap = 'round';
               ctx.lineJoin = 'round';
               for (let i = firstValidIdx; i < histLen; i++) {
                 const idx = histLen < 900 ? i : (offsetRef.current + i) % histLen;
@@ -299,25 +302,32 @@ const TireRadar: React.FC<TireRadarProps> = React.memo(({ title, isLeft, tireIdx
               dx *= clampFactor;
               dy *= clampFactor;
             }
-            const { primary: primaryHex } = theme;
-            const dotColor = isLosingGrip ? theme.danger : primaryHex;
-            const dotGlowColor = isLosingGrip ? 'rgba(255, 0, 60, 0.35)' : (primaryHex.startsWith('#') ? `${primaryHex}59` : 'rgba(0, 240, 255, 0.35)');
+            const dotColor = isLosingGrip ? theme.danger : theme.primary;
             const dotCenterX = center + dx;
             const dotCenterY = center + dy;
+            const hasGlow = !theme.flat && theme.glowStrength > 0;
+            const glowRadius = hasGlow ? theme.glowStrength * 6 * dpr : 0;
 
-            ctx.beginPath();
-            ctx.arc(dotCenterX, dotCenterY, 6 * dpr, 0, Math.PI * 2);
-            ctx.fillStyle = theme.glowStrength === 0 ? 'transparent' : dotGlowColor;
-            ctx.fill();
-
+            ctx.strokeStyle = dotColor;
             ctx.fillStyle = dotColor;
+            ctx.lineWidth = 1.6 * dpr;
+            ctx.shadowColor = hasGlow ? dotColor : 'transparent';
+            ctx.shadowBlur = glowRadius;
+
             if (theme.linear) {
-              ctx.fillRect(dotCenterX - 3 * dpr, dotCenterY - 3 * dpr, 6 * dpr, 6 * dpr);
+              ctx.strokeRect(dotCenterX - 5 * dpr, dotCenterY - 5 * dpr, 10 * dpr, 10 * dpr);
+              ctx.fillRect(dotCenterX - 2.5 * dpr, dotCenterY - 2.5 * dpr, 5 * dpr, 5 * dpr);
             } else {
               ctx.beginPath();
-              ctx.arc(dotCenterX, dotCenterY, 3.5 * dpr, 0, Math.PI * 2);
+              ctx.arc(dotCenterX, dotCenterY, 5.8 * dpr, 0, Math.PI * 2);
+              ctx.stroke();
+              ctx.beginPath();
+              ctx.arc(dotCenterX, dotCenterY, 3.2 * dpr, 0, Math.PI * 2);
               ctx.fill();
             }
+          }
+          } finally {
+            ctx.restore();
           }
         }
       }
@@ -332,6 +342,7 @@ const TireRadar: React.FC<TireRadarProps> = React.memo(({ title, isLeft, tireIdx
           const th = tempSizeRef.current.h;
 
           ctx.save();
+          try {
           ctx.scale(dpr, dpr);
           ctx.clearRect(0, 0, tw, th);
 
@@ -375,9 +386,15 @@ const TireRadar: React.FC<TireRadarProps> = React.memo(({ title, isLeft, tireIdx
           if (cTemp > 0) {
             const currentT = Math.max(tempMinScale, Math.min(tempMaxScale, cTemp));
             const lineX = ((currentT - tempMinScale) / tempRange) * tw;
+            const hasGlow = !theme.flat && theme.glowStrength > 0;
             ctx.beginPath();
             ctx.strokeStyle = theme.pointer;
             ctx.lineWidth = 2;
+            ctx.lineCap = 'round';
+            if (hasGlow) {
+              ctx.shadowColor = theme.pointer;
+              ctx.shadowBlur = theme.glowStrength * 3;
+            }
             ctx.moveTo(lineX, 0);
             ctx.lineTo(lineX, th);
             ctx.stroke();
@@ -391,8 +408,9 @@ const TireRadar: React.FC<TireRadarProps> = React.memo(({ title, isLeft, tireIdx
                 : 'translateX(2px)';
             }
           }
-
-          ctx.restore();
+          } finally {
+            ctx.restore();
+          }
         }
       }
     };

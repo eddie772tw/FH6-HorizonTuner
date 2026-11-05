@@ -76,3 +76,40 @@ it('accurately renders historical trajectory and clamps points exceeding grip li
     vi.unstubAllGlobals();
   }
 });
+it('guards canvas context state and renders coaxial active grip marker', async () => {
+  Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
+  vi.stubGlobal('ResizeObserver', class { observe() {} disconnect() {} });
+  const saveSpy = vi.fn();
+  const restoreSpy = vi.fn();
+  const strokeSpy = vi.fn();
+  const fillSpy = vi.fn();
+  const context = new Proxy({}, {
+    get: (_target, prop) => {
+      if (prop === 'save') return saveSpy;
+      if (prop === 'restore') return restoreSpy;
+      if (prop === 'stroke') return strokeSpy;
+      if (prop === 'fill') return fillSpy;
+      return () => {};
+    }
+  });
+  vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(context as CanvasRenderingContext2D);
+  const host = document.createElement('div');
+  document.body.append(host);
+  const root = createRoot(host);
+  try {
+    await act(async () => root.render(<TireRadar title="Rear Left" isLeft tireIdx={2} renderCharts={true} />));
+    telemetryEmitter.dispatchEvent(new CustomEvent('update', { detail: {
+      IsRaceOn: 1, CarOrdinal: 1, TireTemp: [0, 0, 195, 0], TireSlipRatio: [0, 0, 1.25, 0], TireSlipAngle: [0, 0, 1.15, 0],
+    } }));
+    expect(saveSpy).toHaveBeenCalled();
+    expect(restoreSpy).toHaveBeenCalled();
+    expect(saveSpy.mock.calls.length).toBe(restoreSpy.mock.calls.length);
+    expect(strokeSpy).toHaveBeenCalled();
+    expect(fillSpy).toHaveBeenCalled();
+  } finally {
+    await act(async () => root.unmount());
+    host.remove();
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  }
+});
