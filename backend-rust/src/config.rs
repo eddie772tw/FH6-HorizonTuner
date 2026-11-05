@@ -365,6 +365,13 @@ pub fn normalize_hud(data: &Value) -> Value {
             value["r34Lighting"] = json!("night");
         }
     }
+    if style == "nfsu2" {
+        let face = value["nfsu2Face"]
+            .as_i64()
+            .filter(|&v| (0..=10).contains(&v))
+            .unwrap_or(3);
+        value["nfsu2Face"] = json!(face);
+    }
     normalize_audio_head(&mut value);
     gauges::normalize(&mut value);
     if style == "gamepad_overlay" {

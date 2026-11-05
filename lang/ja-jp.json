@@ -1723,5 +1723,17 @@
     "Monitor selection is available.": "モニターの選択を利用できます。",
     "HUD reload requires the native HUD host.": "HUD の再読み込みにはネイティブ HUD ホストが必要です。",
     "HUD reload is available with a degraded native host.": "ネイティブホストの機能は制限されていますが、HUD の再読み込みは利用できます。",
-    "HUD reload is available.": "HUD の再読み込みを利用できます。"
+    "HUD reload is available.": "HUD の再読み込みを利用できます。",
+    "NFSU2 Custom Faceplate": "NFSU2 カスタムパネル",
+    "Tabby Cat (Ice Blue)": "トラ猫（アイスブルー）",
+    "Stock OEM (Ice Blue)": "純正パネル（アイスブルー）",
+    "Hot Rod Flames (Orange)": "ホットロッドフレイム（オレンジ）",
+    "Street Tribal (Cyan)": "ストリートトライバル（シアン）",
+    "Biohazard Skull (Lime)": "バイオハザードスカル（ライム）",
+    "Redline Classic (Crimson)": "レッドラインクラシック（クリムゾン）",
+    "Gold Chrono (Gold)": "ゴールドクロノ（ゴールド）",
+    "Techno Arc (Aqua)": "テクノアーク（アクア）",
+    "Speed Pulse (Indigo)": "スピードパルス（インディゴ）",
+    "Circuit Board (Emerald)": "サーキットボード（エメラルド）",
+    "Bling Edition (Gold)": "ブリングエディション（ゴールド）"
 }

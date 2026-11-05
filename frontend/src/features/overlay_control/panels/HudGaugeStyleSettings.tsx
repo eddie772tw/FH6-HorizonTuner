@@ -15,7 +15,7 @@ export type HudGaugeStyleConfig = Pick<HudConfig,
   'hudStyle' | 'followAppUnits' | 'units' | 's650Theme' | 's650CenterWidget' |
   'classicJdmTachStyle' | 'classicJdmShowTriple' | 'classicJdmAux1' | 'classicJdmAux2' | 'classicJdmDefiTheme' |
   'r34MfdMode' | 'r34ShowCluster' | 'r34Lighting' | 'lfaManualExpand' | 'lfaAutoExpand' |
-  'vfdVuOffset' | 'vfdAudioOffset' | keyof import('../stack_st8100/config').StackSt8100Settings
+  'vfdVuOffset' | 'vfdAudioOffset' | 'nfsu2Face' | keyof import('../stack_st8100/config').StackSt8100Settings
 > & { elements: Pick<HudElements, 'showCenterInfo'> };
 interface HudGaugeStyleSettingsProps extends HudPanelActions {
   config: HudGaugeStyleConfig;
@@ -28,7 +28,7 @@ export function HudGaugeStyleSettings({ config, appUnits, onConfigPatch, onS650C
   const centerEnabled = config.s650CenterWidget !== 'disable' && config.elements.showCenterInfo !== false;
   return (
     <div className="d-flex flex-column gap-3">
-      {![S650_HMI_STYLE_ID, STACK_ST8100_STYLE_ID, CLASSIC_JDM_STYLE_ID, LFA_CENTER_RING_STYLE_ID, 'r34_mfd', 'vfd'].includes(config.hudStyle) &&
+      {![S650_HMI_STYLE_ID, STACK_ST8100_STYLE_ID, CLASSIC_JDM_STYLE_ID, LFA_CENTER_RING_STYLE_ID, 'r34_mfd', 'vfd', 'nfsu2'].includes(config.hudStyle) &&
         <p className="fs-7 text-body-secondary m-0">{t('This style has no additional settings.')}</p>}
       {config.hudStyle === S650_HMI_STYLE_ID && (
         <div>
@@ -52,6 +52,25 @@ export function HudGaugeStyleSettings({ config, appUnits, onConfigPatch, onS650C
       {config.hudStyle === CLASSIC_JDM_STYLE_ID && <ClassicJdmSettingsCard config={config} onChange={onConfigPatch} t={t} />}
       {config.hudStyle === LFA_CENTER_RING_STYLE_ID && <LfaExpansionSettingsCard config={config} onChange={onConfigPatch} t={t} />}
       {config.hudStyle === 'r34_mfd' && <R34MfdSettingsCard config={config} onChange={onConfigPatch} t={t} />}
+      {config.hudStyle === 'nfsu2' && (
+        <div>
+          <label htmlFor={`${id}-nfsu2-face`} className="form-label fs-7 text-body-secondary mb-1">{t('NFSU2 Custom Faceplate')}:</label>
+          <select id={`${id}-nfsu2-face`} className="form-select form-select-sm fw-bold" value={config.nfsu2Face ?? 3}
+            onChange={event => onConfigPatch({ hudStyle: 'nfsu2', nfsu2Face: Number(event.target.value) })}>
+            <option value={3}>{t('Tabby Cat (Ice Blue)')}</option>
+            <option value={0}>{t('Stock OEM (Ice Blue)')}</option>
+            <option value={1}>{t('Hot Rod Flames (Orange)')}</option>
+            <option value={2}>{t('Street Tribal (Cyan)')}</option>
+            <option value={4}>{t('Biohazard Skull (Lime)')}</option>
+            <option value={5}>{t('Redline Classic (Crimson)')}</option>
+            <option value={6}>{t('Gold Chrono (Gold)')}</option>
+            <option value={7}>{t('Techno Arc (Aqua)')}</option>
+            <option value={8}>{t('Speed Pulse (Indigo)')}</option>
+            <option value={9}>{t('Circuit Board (Emerald)')}</option>
+            <option value={10}>{t('Bling Edition (Gold)')}</option>
+          </select>
+        </div>
+      )}
       {/* TODO(subsystems): restore minimap controls only after module evaluation. */}
       {config.hudStyle === 'vfd' && (
         <div className="d-flex flex-column gap-3">

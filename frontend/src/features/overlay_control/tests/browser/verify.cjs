@@ -50,7 +50,7 @@ async function main() {
       if (name === '/api/audio/device') return json(res, { success: true });
       if (name === '/api/hud/styles') {
         report.metadataReads++;
-        return json(res, { styles: ['vfd', 'simple', 's650_hmi', 'classic_jdm', 'r34_mfd', 'stack_st8100', 'lfa_center_ring', 'audio_head', 'auxiliary_gauges']
+        return json(res, { styles: ['vfd', 'simple', 's650_hmi', 'classic_jdm', 'r34_mfd', 'stack_st8100', 'lfa_center_ring', 'nfsu2', 'audio_head', 'auxiliary_gauges']
           .map(id => ({ id, source: 'builtin', urlPrefix: '/hud' })) });
       }
       if (name.startsWith('/api/')) { report.unexpectedRequests.push(name); return json(res, { error: 'Unexpected fixture endpoint: ' + name }, 404); }
@@ -93,6 +93,13 @@ async function main() {
       const current = await (await fetch('/api/overlay/config', { cache: 'no-store' })).json();
       return Object.entries(values).every(([key, value]) => JSON.stringify(current[key]) === JSON.stringify(value));
     }, expected);
+    if (process.env.NFSU2_ONLY === '1') {
+      await require(path.join(repo, 'hud_overlay/nfsu2/tests/browser/verify.cjs'))({ page, context, origin, out, report, open });
+      assert.deepEqual(report.unexpectedRequests, []); assert.deepEqual(report.errors, []);
+      fs.writeFileSync(path.join(out, 'report.json'), JSON.stringify(report, null, 2));
+      console.log(JSON.stringify({ checks: report.checks, layouts: report.nfsu2Layouts.length, screenshots: report.screenshots.length, saves: report.saves.length, out }));
+      return;
+    }
     const idle = () => page.waitForFunction(() => document.querySelector('.hud-status')?.dataset.state === 'synced');
     if (process.env.HUD_SESSION_ONLY === '1') {
       await require('./verify-native-session.cjs')({ browser, origin, out, report });
@@ -275,7 +282,7 @@ async function main() {
       await open(language);
       const dictionary = JSON.parse(fs.readFileSync(path.join(repo, 'lang', language + '.json'), 'utf8'));
       await page.setViewportSize({ width: 320, height: 720 });
-      for (const hudStyle of ['s650_hmi', 'classic_jdm', 'r34_mfd', 'stack_st8100', 'lfa_center_ring', 'vfd']) {
+      for (const hudStyle of ['s650_hmi', 'classic_jdm', 'r34_mfd', 'stack_st8100', 'lfa_center_ring', 'nfsu2', 'vfd']) {
         await panel('gauge').locator('select').first().selectOption(hudStyle);
         await saved({ hudStyle }); await idle();
         if (language === 'en-us' && hudStyle === 'stack_st8100') {
@@ -321,7 +328,7 @@ async function main() {
     assert.equal(await page.getByRole('slider').first().evaluate(el => getComputedStyle(el).transitionDuration), '0s');
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
     report.checks.push('All seven cores, day/night, three locales, narrow/default/wide and reduced motion');
-    report.checks.push('Six specialized gauge forms at 320px in all three locales');
+    report.checks.push('Seven specialized gauge forms at 320px in all three locales');
     await open('zh-tw');
     await page.setViewportSize({ width: 1280, height: 720 });
     for (const core of ['default', 'swiss', 'rhine-lab']) {
@@ -339,6 +346,7 @@ async function main() {
     await open('en-us');
     await require(path.join(repo, 'hud_overlay/audio_head/tests/browser/verify.cjs'))({ page, context, origin, out, report });
     await require(path.join(repo, 'hud_overlay/auxiliary_gauges/tests/browser/verify.cjs'))({ page, context, origin, out, report });
+    await require(path.join(repo, 'hud_overlay/nfsu2/tests/browser/verify.cjs'))({ page, context, origin, out, report, open });
     await require('./verify-native-session.cjs')({ browser, origin, out, report });
     assert.deepEqual(report.unexpectedRequests, []);
     assert.deepEqual(report.errors, []);
