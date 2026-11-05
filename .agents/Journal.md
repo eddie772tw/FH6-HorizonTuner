@@ -1016,6 +1016,19 @@
 - **Evidence**：本地 `uv run --no-project ruff check .` 與 `uv run --no-project ruff format --check .` 通過；`uv run --no-project pytest scripts/tests/` 97 passed；GitHub Actions CI Pipeline run `38257562846` 之 `Backend Lint & Static Check` (11s) 與 `Frontend Build Test & Audit` (19s) 均通過轉綠。
 - **Skills**：`agent-governance-audit`、`modular-refactoring`。
 
+## 2026-10-19 / 第二輪 HUD 視覺審查 PR #543（Codex as Codex）
+
+- **修正／Learning**：NFSU2 使用既有共用 artwork 載入處理，純黑區 alpha 設為 0.15，亮色盤面／刻度保留；移除 CSS 外緣輪廓光。
+- **驗證界線**：先跑完整 frontend Vitest 與 build，再保存最後提交的實際 Forza 漫遊截圖與設定；靜態圖片不作為動態駕駛或跨更新率效能證據。未新增個別樣式測試。
+- **Skills**：`huge-component-refactoring`、`halfmoon-design-system`、`pr-author-maintainer`、`ponytail`。
+
+## 2026-10-19 / NFSU2 實心材質與半透明底板修正（Codex as Codex）
+
+- **Learning／根因**：第二輪以 RGB 亮度判斷底板，會破壞原 t61 錶面內的實心黑色圖案與半透明環框。原 D3D11 `res_125` 將 t61（11 款圖案／環框）與 t62（共同底板／N2O）分層混合，必須依來源 alpha 區分。
+- **修正**：以原 shader 建立每款靜態圖案 alpha，先去除字型與指針取樣，核對 DDS／decoded atlas 完整輸出 alpha 最大差異 0。離線準備 11 張 PNG，保留圖案覆蓋量，僅剩餘暗底用 alpha=0.15；執行時普通 Image 載入，沒有每幀影像處理。
+- **驗證**：完整 frontend Vitest 修改前／後均 1809 passed、1 skipped；TypeScript／Vite build 通過。離線產生流程驗證 RGB、外部透明區與實心暗圖案不變、alpha 不增加、無圖案純黑底為 38/255；原素材來源雜湊與逐款影響數據在 `hud_overlay/nfsu2/tools/material-audit.json`。未新增個別樣式單元測試；實際漫遊截圖另附最終 SHA 與有效設定。
+- **Skills**：`huge-component-refactoring`、`halfmoon-design-system`、`pr-author-maintainer`、`ponytail`、`computer-use:computer-use`。
+
 ## 2026-10-19 / 第二輪 HUD 視覺審查 PR #535（Codex as Codex）
 
 - **修正／Learning**：JZX100／Soarer 縮小 10%；Supra 底圖原始 tick 半徑約為 X=130、Y=142，將錶面高度校正為 306／334，指針圓形幾何不隨底圖拉伸，樞軸與 LCD 位置按相同高度比例定位，整體再縮小 20%。
@@ -1122,6 +1135,13 @@
 - **Controller**：依使用者修訂，手把卡片錨點預設為螢幕中心，X／Y 位移預設 0%，限制 −50..50%；分別相對視窗寬／高，正值往右／下。外層中心錨點不受內部儀表 zoom 影響。共用 normalizer 與 runtime 測試涵蓋預設值、正負小數、上限與非有限數。
 - **Skills**：`pr-author-maintainer`、`cross-agent-collaboration`、`huge-component-refactoring`、`halfmoon-design-system`、`ponytail`、`computer-use`。
 
+## 2026-10-20 / PR #543 單位與漂移契約重建驗證（Bagley as dot）
+
+- 與 main 35a60078 獨立整合；保留完整 NFSU2 normalization 與 main gamepad／minimap sibling blocks、遙測卡片與 deferred filters。選單與設定欄位採聯集，無重複註冊；Rust config 相對 main 僅增加原 NFSU2 七行驗證。
+- 依提供的來源 patch 重建 renderer 與 inert-fragment parser 測試，兩個檔案 SHA256 與提供值一致；速度採 displayUnits.speed，漂移採既有 body velocity 慣例。共用 Canvas 修正與測試只移植 #534 的相關變更。
+- Linux x64、Node 24.19.0、pnpm 11.19.0、Rust 1.99.1：完整 frontend 1823 passed／1 skipped；Windows 與 LAN build 通過；Cargo 預設 229 passed／2 ignored、無預設 219 passed／2 ignored；fmt 與 diff 檢查通過。main 手把遷移與延後模組保存契約均通過。
+- 未放寬 timeout、assertion 或 skip；不宣稱重現舊整棵 tree 或完成 Windows 原生視覺驗收。來源來自提供的 patch，不是 Library 下載。
+- Skills：pr-author-maintainer、pr-review-evaluation、halfmoon-design-system。
 ## 2026-10-20 / PR #536 遙測與生命週期修正重建驗證（Bagley as dot）
 
 - 以原 PR head 與 main 35a60078 獨立整合，保留兩側 Journal。透過提供的來源 patch 重建 AP1 renderer、model 與測試，三個檔案 SHA256 與提供值一致；不是 Library 下載成功，也不宣稱與遺失的整棵 tree 相同。
@@ -1312,3 +1332,10 @@
 - **驗證**：完整 Vitest 1983 passed／1 skipped；Windows／LAN TypeScript＋Vite build、Tauri Rust 5 tests、cargo fmt、diff check 通過。backend-rust source 與前次245／235項測試的整合版本相同。完整獨立瀏覽器420組版面、92張擷取、145次fixture保存，零page errors／非預期API；刻意失敗的原生啟用回傳不改enabled。
 - **原生證據**：真實 Windows Tauri debug／WebView2＋Rust backend、隔離資料及port。真正啟用overlay後正常關閉main視窗，再啟動新process；校正true→false、保留其他設定及未知欄位，Live未被暫停。backend刻意維持運作以保留舊flag。測試僅清理自身process。3張原生圖與7張bridge fixture圖分開標示於restart圖集，不當作遊戲、跨螢幕、音訊或讀屏驗收。
 - **Skills**：pr-author-maintainer、halfmoon-design-system、huge-component-refactoring、modular-refactoring、portable-release-validation。
+
+## 2026-11-05 / #543 同步新 HUD 分頁（Codex as Codex）
+
+- 將已刪除 HudAdvancedPanel 的 NFSU2 11款選單移入 HudGaugeStyleSettings，保留數值／排序／預設3及隱藏時可設定語意，補齊三語。scanner保留雙方style，Rust同時保留NFSU2與audio／aux正規化；原renderer與素材未變。
+- 同步重啟狀態修正後完整Vitest1987 passed／1 skipped、Windows／LAN build通過；backend預設245／3ignored、無預設235／2ignored的整合測試已通過，後續native修正未更動backend source。獨立瀏覽器共享420組版面與NFSU2專屬84組版面通過，另重跑native bridge 4次保存／7張圖。
+- 20張NFSU2設定／錶面圖與manifest保存備查。擷取必須明確關閉遙測卡片、對齊框、音響及輔助元素，且等1200ms啟動掃表結束；不可依賴前一個suite留下的狀態。renderer頁開啟後返回設定頁操作時先bringToFront，保留原timeout與斷言。所有新圖皆合成資料，不當作既有歷史遊戲實拍或原生驗收。
+- Skills：pr-author-maintainer、halfmoon-design-system、huge-component-refactoring、modular-refactoring。

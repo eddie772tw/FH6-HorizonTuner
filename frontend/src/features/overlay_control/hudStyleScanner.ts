@@ -40,6 +40,7 @@ export const HUD_DISPLAY_NAMES: Record<string, string> = {
   simple: 'Simple Gauge',
   classic_jdm: 'Classic JDM Arcade',
   r34_mfd: 'Skyline R34 MFD',
+  nfsu2: 'NFS Underground 2 Custom',
   supra_trd: 'Toyota Supra MK4 TRD',
   soarer_z20: 'Toyota Soarer Z20 VFD',
   chaser_jzx100: 'Toyota Chaser JZX100',
