@@ -115,16 +115,8 @@ impl RaceRecorder {
         if c.max_samples == 0 {
             c.max_samples = 50_000
         }
-        if let Some(m) = settings.as_object() {
-            if let Some(v) = m.get("race_recording").and_then(Value::as_bool) {
-                c.race_recording = v;
-            }
-            if let Some(v) = m.get("max_samples").and_then(Value::as_u64) {
-                c.max_samples = v as usize;
-            }
-            if let Some(v) = m.get("downsample_interval").and_then(Value::as_f64) {
-                c.downsample_interval_ms = v * 1000.0;
-            }
+        if let Some(enabled) = settings["race_recording"].as_bool() {
+            c.race_recording = enabled;
         }
         Self {
             config: c,

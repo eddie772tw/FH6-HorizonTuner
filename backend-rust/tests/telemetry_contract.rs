@@ -1318,3 +1318,28 @@ fn race_recorder_settings_update_in_place_without_cloning() {
     );
     assert!(r.status().is_recording);
 }
+
+#[test]
+fn recorder_constructor_keeps_explicit_sample_limits_until_settings_are_updated() {
+    let mut recorder = RaceRecorder::new_with_context(
+        RaceRecorderConfig {
+            max_samples: 2,
+            downsample_interval_ms: 0.0,
+            ..Default::default()
+        },
+        json!({"race_recording": true, "max_samples": 10, "downsample_interval": 5.0}),
+        json!({}),
+    );
+    for step in 1..=2 {
+        recorder.record_at(
+            &json!({"IsRaceOn": 1, "CurrentRaceTime": step, "LapNumber": 0, "TimestampMS": step * 100, "CarOrdinal": 1}),
+            f64::from(step),
+        );
+    }
+    assert_eq!(recorder.status().total_count, 2);
+    recorder.record_at(
+        &json!({"IsRaceOn": 1, "CurrentRaceTime": 3, "LapNumber": 0, "TimestampMS": 300, "CarOrdinal": 1}),
+        3.0,
+    );
+    assert!(!recorder.status().is_recording);
+}
