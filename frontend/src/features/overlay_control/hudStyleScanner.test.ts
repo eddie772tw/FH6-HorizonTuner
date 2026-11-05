@@ -87,6 +87,15 @@ describe('hudStyleScanner frontend module tests', () => {
   });
 
   describe('HUD menu registration and WIP handling', () => {
+    it('keeps independent elements out of the mutually exclusive gauge menu', () => {
+      const styles: HudStyleEntry[] = [
+        { id: 'vfd', source: 'builtin', urlPrefix: '/hud' },
+        { id: 'audio_head', source: 'builtin', urlPrefix: '/hud' },
+      ];
+      expect(formatHudDropdownOptions(styles, HUD_DISPLAY_NAMES, { includeWip: true }).map(option => option.value)).toEqual(['vfd']);
+      expect(formatHudDropdownOptions([], { vfd: 'VFD', audio_head: 'Audio' }).map(option => option.value)).toEqual(['vfd']);
+    });
+
     it('HUD_DISPLAY_NAMES should exclude WIP styles and retain production styles', () => {
       // WIP styles must be unregistered from official HUD_DISPLAY_NAMES
       expect(HUD_DISPLAY_NAMES['motec_gt3']).toBeUndefined();

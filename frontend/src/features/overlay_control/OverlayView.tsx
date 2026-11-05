@@ -11,6 +11,7 @@ import { useHudMetadata } from './useHudMetadata';
 import { HudGaugePanel } from './panels/HudGaugePanel';
 import { HudTelemetryPanel } from './panels/HudTelemetryPanel';
 import { HudGeneralPanel } from './panels/HudGeneralPanel';
+import { HudAudioHeadPanel } from './panels/HudAudioHeadPanel';
 import { HudWindowAction } from './HudWindowAction';
 import type { HudSettingsTabDefinition } from './hudPanelTypes';
 import type { HudConfigPatch } from './overlayControlRuntime';
@@ -183,6 +184,7 @@ const OverlayViewContent: React.FC = () => {
       audioDevices={audioDevices} loadingAudioDevices={loadingAudioDevices} onMonitorChange={handleMonitorChange}
       onAudioDeviceChange={deviceId => void handleAudioDeviceChange(deviceId)} onRefreshAudioDevices={() => void fetchAudioDevices()}
       onReloadHud={() => void handleReloadHud()} onResetHudConfig={handleResetHudConfig} /> },
+    { id: 'audio-head', labelKey: 'Audio Head', content: <HudAudioHeadPanel {...actions} config={config} /> },
   ];
 
   return (

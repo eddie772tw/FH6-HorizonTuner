@@ -2,6 +2,76 @@ use fh6_backend::{config, config_service::ConfigService, storage};
 use serde_json::{json, Value};
 
 #[test]
+fn independent_elements_migrate_and_survive_config_save_restart_and_gauge_changes() {
+    let directory = tempfile::tempdir().unwrap();
+    let service = ConfigService::new(directory.path()).unwrap();
+    service.handle("POST", "/api/overlay/config", &json!({
+        "hudStyle":"audio_head", "audioHeadDeck":6, "scale":1.4, "elements":{"showGauge":true}, "pluginField":42
+    })).unwrap().unwrap();
+    let mut hud = service.hud();
+    assert_eq!(hud["hudStyle"], "vfd");
+    assert_eq!(hud["elements"]["showAudioHead"], true);
+    assert_eq!(hud["audioHeadDeck"], 6);
+    assert_eq!(hud["audioHeadScale"], 1.4);
+    for edge in ["left", "right", "top", "bottom"] {
+        hud["hudStyle"] = json!("gt7");
+        hud["scale"] = json!(0.8);
+        hud["elements"]["showGauge"] = json!(false);
+        hud["audioHeadEdge"] = json!(edge);
+        hud["audioHeadOffset"] = json!(24.0);
+        hud["audioHeadCenterOffset"] = json!(-32.0);
+        service
+            .handle("POST", "/api/overlay/config", &hud)
+            .unwrap()
+            .unwrap();
+        let restored = ConfigService::new(directory.path()).unwrap().hud();
+        assert_eq!(restored["hudStyle"], "gt7");
+        assert_eq!(restored["elements"]["showGauge"], false);
+        assert_eq!(restored["elements"]["showAudioHead"], true);
+        assert_eq!(restored["audioHeadEdge"], edge);
+        assert_eq!(restored["audioHeadOffset"], 24.0);
+        assert_eq!(restored["audioHeadCenterOffset"], -32.0);
+        assert_eq!(restored["pluginField"], 42);
+        assert_eq!(restored["audioHeadScale"], 1.4);
+        assert_eq!(restored["scale"], 0.8);
+    }
+    let bounded = config::normalize_hud(
+        &json!({"audioHeadDeck":99,"audioHeadEdge":"invalid","audioHeadOffset":-20,"audioHeadCenterOffset":9000}),
+    );
+    assert_eq!(bounded["audioHeadDeck"], 8);
+    assert_eq!(bounded["audioHeadEdge"], "left");
+    assert_eq!(bounded["audioHeadOffset"], 0.0);
+    assert_eq!(bounded["audioHeadCenterOffset"], 4000.0);
+    let hidden =
+        config::normalize_hud(&json!({"hudStyle":"audio_head","elements":{"showGauge":false}}));
+    assert_eq!(hidden["elements"]["showAudioHead"], false);
+}
+
+#[test]
+fn audio_head_scale_migrates_hidden_elements_and_bounds_explicit_values() {
+    let old = config::normalize_hud(
+        &json!({"scale":1.4,"audioHeadDeck":6,"elements":{"showAudioHead":false}}),
+    );
+    assert_eq!(old["audioHeadScale"], 1.4);
+    assert_eq!(old["elements"]["showAudioHead"], false);
+    let sparse = config::normalize_hud(&json!({"hudStyle":"vfd","scale":1.4}));
+    assert!(sparse.get("audioHeadScale").is_none());
+    for (input, expected) in [
+        (json!(null), 1.0),
+        (json!("1.5"), 1.0),
+        (json!(0), 1.0),
+        (json!(-2), 1.0),
+        (json!(0.1), 0.5),
+        (json!(9), 2.0),
+        (json!(1.75), 1.75),
+    ] {
+        let value = config::normalize_hud(&json!({"scale":0.8,"audioHeadScale":input}));
+        assert_eq!(value["audioHeadScale"], expected);
+        assert_eq!(value["scale"], 0.8);
+    }
+}
+
+#[test]
 fn deferred_subsystems_stay_hidden_and_retain_settings_after_restart() {
     for style in [
         "minimap_overlay",

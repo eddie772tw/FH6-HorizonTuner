@@ -50,7 +50,7 @@ async function main() {
       if (name === '/api/audio/device') return json(res, { success: true });
       if (name === '/api/hud/styles') {
         report.metadataReads++;
-        return json(res, { styles: ['vfd', 'simple', 's650_hmi', 'classic_jdm', 'r34_mfd', 'stack_st8100', 'lfa_center_ring']
+        return json(res, { styles: ['vfd', 'simple', 's650_hmi', 'classic_jdm', 'r34_mfd', 'stack_st8100', 'lfa_center_ring', 'audio_head']
           .map(id => ({ id, source: 'builtin', urlPrefix: '/hud' })) });
       }
       if (name.startsWith('/api/')) { report.unexpectedRequests.push(name); return json(res, { error: 'Unexpected fixture endpoint: ' + name }, 404); }
@@ -101,26 +101,79 @@ async function main() {
     };
 
     await open();
-    assert.equal(await page.getByRole('tab').count(), 3);
+    assert.equal(await page.getByRole('tab').count(), 4);
+    assert.deepEqual(await page.getByRole('tab').allTextContents(), ['Main gauge', 'Telemetry cards', 'General', 'Audio Head']);
     assert.equal(await tab('gauge').getAttribute('aria-selected'), 'true');
     assert.equal(await page.getByRole('button', { name: 'Close HUD Overlay', exact: true }).isDisabled(), true);
     const beforeTabs = report.saves.length, beforeReads = report.metadataReads;
     await tab('gauge').focus(); await page.keyboard.press('ArrowRight');
     assert.equal(await tab('telemetry').getAttribute('aria-selected'), 'true');
-    await page.keyboard.press('End'); assert.equal(await tab('general').getAttribute('aria-selected'), 'true');
+    await page.keyboard.press('End'); assert.equal(await tab('audio-head').getAttribute('aria-selected'), 'true');
     await page.keyboard.press('ArrowRight'); assert.equal(await tab('gauge').getAttribute('aria-selected'), 'true');
-    await page.keyboard.press('ArrowLeft'); assert.equal(await tab('general').getAttribute('aria-selected'), 'true');
+    await page.keyboard.press('ArrowLeft'); assert.equal(await tab('audio-head').getAttribute('aria-selected'), 'true');
     await page.keyboard.press('Home');
     await page.keyboard.press('Tab');
     assert.equal(await panel('gauge').evaluate(el => document.activeElement === el), true);
     assert.equal(await page.getByRole('tabpanel').count(), 1);
-    for (const id of ['gauge', 'telemetry', 'general']) {
+    for (const id of ['gauge', 'telemetry', 'general', 'audio-head']) {
       assert.equal(await tab(id).getAttribute('aria-controls'), await panel(id).getAttribute('id'));
       assert.equal(await panel(id).getAttribute('aria-labelledby'), await tab(id).getAttribute('id'));
     }
     await page.waitForTimeout(150);
     assert.equal(report.saves.length, beforeTabs); assert.equal(report.metadataReads, beforeReads);
     report.checks.push('Keyboard, ARIA relationships, hidden panels and side-effect-free tab changes');
+
+    await tab('audio-head').click();
+    assert.equal(await page.getByRole('checkbox', { name: 'Show Audio Head', exact: true }).isChecked(), false);
+    await page.getByRole('combobox', { name: 'Car Audio Head Unit Model', exact: true }).selectOption('8');
+    await rangeEnd('Audio Head scale'); await saved({ audioHeadScale: 2, audioHeadDeck: 8 });
+    await tab('gauge').click();
+    await page.getByRole('slider', { name: 'Main gauge scale', exact: true }).press('Home');
+    await saved({ scale: 0.5, audioHeadScale: 2 }); await idle();
+    await tab('audio-head').click();
+    const audioScaleInput = page.getByRole('spinbutton', { name: 'Audio Head scale', exact: true });
+    const beforeAudioDraft = report.saves.length;
+    await audioScaleInput.fill('125'); await tab('general').click(); await tab('audio-head').click();
+    assert.equal(await audioScaleInput.inputValue(), '125');
+    assert.equal(report.saves.length, beforeAudioDraft);
+    await audioScaleInput.press('Enter'); await saved({ audioHeadScale: 1.25 }); await idle();
+    await audioScaleInput.fill(''); await tab('gauge').click(); await tab('audio-head').click();
+    assert.equal(await audioScaleInput.inputValue(), '');
+    await audioScaleInput.fill('200'); await audioScaleInput.press('Enter'); await idle();
+    const audioAlignment = page.getByRole('combobox', { name: 'Audio Head Alignment', exact: true });
+    const audioX = page.getByRole('slider', { name: 'Audio Head X-Offset', exact: true });
+    const audioY = page.getByRole('slider', { name: 'Audio Head Y-Offset', exact: true });
+    assert.equal(await audioX.isEnabled(), true); assert.equal(await audioY.isEnabled(), true);
+    // Changing anchors preserves the other screen axis and clamps the forbidden direction.
+    await audioX.press('ArrowRight'); await audioY.press('ArrowLeft'); await idle();
+    await audioAlignment.selectOption('right'); await idle();
+    assert.equal(await audioX.inputValue(), '0'); assert.equal(await audioY.inputValue(), '-1');
+    await saved({ audioHeadEdge: 'right', audioHeadOffset: 0, audioHeadCenterOffset: -1 });
+    await audioY.press('ArrowRight'); await idle();
+    for (const edge of ['left', 'right', 'top', 'bottom']) {
+      await audioAlignment.selectOption(edge); await idle();
+      const locked = edge === 'left' || edge === 'right' ? audioX : audioY;
+      const inwardPositive = edge === 'left' || edge === 'top';
+      assert.equal(await locked.getAttribute(inwardPositive ? 'min' : 'max'), '0');
+      await locked.press(inwardPositive ? 'Home' : 'End');
+      await locked.press(inwardPositive ? 'ArrowLeft' : 'ArrowRight');
+      assert.equal(await locked.inputValue(), '0', edge + ' must reject outward motion past zero');
+      await locked.press(inwardPositive ? 'ArrowRight' : 'ArrowLeft'); await idle();
+      assert.equal(await locked.inputValue(), inwardPositive ? '1' : '-1');
+      await saved({ audioHeadEdge: edge, audioHeadOffset: 1 });
+      await locked.press(inwardPositive ? 'Home' : 'End'); await idle();
+    }
+    // Values survive cross-tab edits and a reload in the original storage format.
+    await audioX.press('ArrowLeft'); await idle();
+    await tab('general').click(); await tab('audio-head').click();
+    assert.equal(await audioX.inputValue(), '-1');
+    await open(); await tab('audio-head').click();
+    assert.equal(await audioAlignment.inputValue(), 'bottom');
+    assert.equal(await audioX.inputValue(), '-1'); assert.equal(await audioY.inputValue(), '0');
+    await audioX.press('ArrowRight'); await audioAlignment.selectOption('left'); await idle();
+    await page.getByRole('checkbox', { name: 'Show Audio Head', exact: true }).check(); await idle();
+    assert.equal(config.audioHeadScale, 2); assert.equal(config.scale, 0.5);
+    report.checks.push('Fourth Audio Head tab: hidden configuration, scale drafts, X/Y sliders, four directional bounds and persisted reload');
 
     await tab('telemetry').click();
     const collapsed = panel('telemetry').locator('details').first();
@@ -148,6 +201,7 @@ async function main() {
     await expand('G-Force & Attitude');
     await page.getByRole('combobox', { name: 'G-Force Radar Alignment', exact: true }).selectOption('left');
     await saved({ telemetryGRadarAlignment: 'left', telemetryGRadarOffsetX: 0, telemetryCornerOffsetX: 500 });
+    await idle();
     assert.equal(config.elements.showTeleMaster, false); assert.equal(config.elements.showTeleTires, true);
     await expand('Power & pedal charts');
     await page.getByRole('checkbox', { name: 'Merge Power & Pedal Charts', exact: true }).uncheck();
@@ -208,6 +262,8 @@ async function main() {
     assert.equal(config.elements.showGauge, defaults.DEFAULT_HUD_CONFIG.elements.showGauge);
     report.checks.push('Reset cancellation and confirmed defaults preserve enabled');
 
+    // The settings gallery demonstrates the right anchor with X capped at zero.
+    await tab('audio-head').click(); await audioAlignment.selectOption('right'); await idle();
     for (const language of ['en-us', 'zh-tw', 'ja-jp']) {
       await open(language);
       const dictionary = JSON.parse(fs.readFileSync(path.join(repo, 'lang', language + '.json'), 'utf8'));
@@ -232,9 +288,9 @@ async function main() {
         await page.waitForFunction(({ mode, core }) => document.documentElement.dataset.bsTheme === mode && document.documentElement.dataset.bsCore === core, { mode, core });
         for (const width of [1280, 320]) {
           await page.setViewportSize({ width, height: 720 });
-          for (const id of ['gauge', 'telemetry', 'general']) {
+          for (const id of ['gauge', 'telemetry', 'general', 'audio-head']) {
             await tab(id).click();
-            assert.equal(await tab(id).textContent(), dictionary[{ gauge: 'Main gauge', telemetry: 'Telemetry cards', general: 'General' }[id]]);
+            assert.equal(await tab(id).textContent(), dictionary[{ gauge: 'Main gauge', telemetry: 'Telemetry cards', general: 'General', 'audio-head': 'Audio Head' }[id]]);
             // Expand every telemetry card to include its controls in the layout contract.
             if (id === 'telemetry') while (await panel(id).locator('details:not([open]) > summary').count()) await panel(id).locator('details:not([open]) > summary').first().click();
             const state = await panel(id).evaluate(el => ({
@@ -273,6 +329,8 @@ async function main() {
       }
     }
     report.checks.push('Production AppShell with Live/Tune/HUD reference captures across all three design systems');
+    await open('en-us');
+    await require(path.join(repo, 'hud_overlay/audio_head/tests/browser/verify.cjs'))({ page, context, origin, out, report });
     assert.deepEqual(report.unexpectedRequests, []);
     assert.deepEqual(report.errors, []);
     fs.writeFileSync(path.join(out, 'report.json'), JSON.stringify(report, null, 2));
