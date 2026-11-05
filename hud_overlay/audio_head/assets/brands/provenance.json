@@ -1,0 +1,50 @@
+[
+  {
+    "retrieved": "2026-10-20",
+    "name": "alpine",
+    "sha256": "b258a44781694fedc9b719a190f876d5ce8218a47848f88e885927c26a637222",
+    "source": "https://www.alpine-europe.com/fileadmin/template/logos/Alpine-Europe.svg",
+    "file": "alpine.svg",
+    "downloadedContentSha256": "7ff0b71b06e1d3b06776e7749bc5731a4b79ed86064006fa79156de3185a24eb"
+  },
+  {
+    "retrieved": "2026-10-20",
+    "name": "pioneer",
+    "sha256": "1992382f1e7ad8193de79af3b5bd16e2dd152de68cd89c1d70fed72302f4132b",
+    "source": "https://assets.jpn.pioneer/ja/assets/img/logo.svg",
+    "file": "pioneer.svg",
+    "downloadedContentSha256": "87ef31d665c8ae4e3136f12605e3ba18f61b6cf8ae8352abddb32b8c84eed291"
+  },
+  {
+    "retrieved": "2026-10-20",
+    "name": "pioneer_1969",
+    "sha256": "e1dac46195c8cf894af1bdb6f6cef2ff89e006d39a94b4825cb753293414774c",
+    "source": "https://upload.wikimedia.org/wikipedia/commons/9/96/Pioneer_Corporation_logo_1969.svg",
+    "file": "pioneer_1969.svg",
+    "downloadedContentSha256": "e1dac46195c8cf894af1bdb6f6cef2ff89e006d39a94b4825cb753293414774c"
+  },
+  {
+    "retrieved": "2026-10-20",
+    "name": "sony",
+    "sha256": "78b37a72f3a7258eba307eb30292dde94a2d5c256e2614650d7d2f244905118e",
+    "source": "https://www.sony.co.jp/",
+    "file": "sony.svg",
+    "downloadedContentSha256": "c4e03f9f25103841aad8adc2b32de391ed670784f9e3ae65d5ab0a87bbdb70fb"
+  },
+  {
+    "retrieved": "2026-10-20",
+    "name": "kenwood",
+    "sha256": "bcfaa92e57538863e70a7e3bcd1ad7a1a84554a8248fe26dffcf67ad54129c94",
+    "source": "https://www.kenwood.com/content/dam/kenwood/webmaterial/kenwood_logo.svg",
+    "file": "kenwood.svg",
+    "downloadedContentSha256": "d25ca2515aa9e489920cbced764b8d194391436566ac2c72c7f27e49c43a6ae3"
+  },
+  {
+    "retrieved": "2026-10-20",
+    "sha256": "e308a29fb2b70c1833c4693da5102ed5ddc85a1dd3dac87ed28cf8f651288547",
+    "source": "https://upload.wikimedia.org/wikipedia/commons/1/14/CDDAlogo.svg",
+    "file": "cdda.svg",
+    "name": "cdda",
+    "downloadedContentSha256": "e308a29fb2b70c1833c4693da5102ed5ddc85a1dd3dac87ed28cf8f651288547"
+  }
+]

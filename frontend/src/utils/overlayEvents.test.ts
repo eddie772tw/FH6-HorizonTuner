@@ -5,6 +5,24 @@ import { createOverlayEventForwarder } from '../../../hud_overlay/shared/overlay
 import { describe, expect, it } from 'vitest';
 
 describe('overlay event delivery', () => {
+  it('replays current media and audio to a newly mounted renderer without resetting existing renderers', () => {
+    const current: unknown[] = [];
+    const mounted: unknown[] = [];
+    const forwarder = createOverlayEventForwarder((type: string, detail: unknown) => current.push({ type, detail }), () => 0);
+    forwarder.onAudio({ sequence: 8, state: 'live' });
+    forwarder.onMedia({ title: 'Current track', artist: 'Artist' });
+    forwarder.replay((type: string, detail: unknown) => mounted.push({ type, detail }));
+    expect(current).toEqual([{ type: 'hud:media', detail: { data: { title: 'Current track', artist: 'Artist' } } }]);
+    expect(mounted).toEqual([
+      { type: 'hud:audio', detail: { data: { sequence: 8, state: 'live' } } },
+      { type: 'hud:media', detail: { data: { title: 'Current track', artist: 'Artist' } } },
+    ]);
+    forwarder.onMedia({ title: '', status: 'stopped' });
+    mounted.length = 0;
+    forwarder.replay((type: string, detail: unknown) => mounted.push({ type, detail }));
+    expect(mounted[1]).toEqual({ type: 'hud:media', detail: { data: { title: '', status: 'stopped' } } });
+  });
+
   it('drops duplicate audio sequences but preserves state transitions', () => {
     const events: Array<{ type: string; data: Record<string, unknown> }> = [];
     const dedupe = createOverlayEventDedupe((type: string, data: Record<string, unknown>) => {

@@ -11,6 +11,8 @@ import { useHudMetadata } from './useHudMetadata';
 import { HudGaugePanel } from './panels/HudGaugePanel';
 import { HudTelemetryPanel } from './panels/HudTelemetryPanel';
 import { HudGeneralPanel } from './panels/HudGeneralPanel';
+import { HudAudioHeadPanel } from './panels/HudAudioHeadPanel';
+import { HudAuxiliaryPanel } from './panels/HudAuxiliaryPanel';
 import { HudWindowAction } from './HudWindowAction';
 import type { HudSettingsTabDefinition } from './hudPanelTypes';
 import type { HudConfigPatch } from './overlayControlRuntime';
@@ -117,12 +119,13 @@ const OverlayViewContent: React.FC = () => {
     }
     setLoading(true);
     setHudActionError(null);
-    // Persistence failures are reported by runtimeError and cleared by its retry.
-    void updateConfig({ enabled });
     try {
-      sendHudCommand({ type: enabled ? 'hud:animate' : 'hud:destroy' });
       const result = await native.toggleHudWindow(enabled);
       if (result.status !== 'success') throw new Error(result.error ?? capabilities.nativeWindow.detail);
+      // Only publish visibility after the native operation has succeeded.
+      // Persistence failures remain visible through the runtime retry path.
+      void updateConfig({ enabled });
+      sendHudCommand({ type: enabled ? 'hud:animate' : 'hud:destroy' });
       if (enabled) {
         const clickThrough = await native.setHudClickThrough(true);
         if (clickThrough.status !== 'success') throw new Error(clickThrough.error ?? capabilities.clickThrough.detail);
@@ -183,6 +186,8 @@ const OverlayViewContent: React.FC = () => {
       audioDevices={audioDevices} loadingAudioDevices={loadingAudioDevices} onMonitorChange={handleMonitorChange}
       onAudioDeviceChange={deviceId => void handleAudioDeviceChange(deviceId)} onRefreshAudioDevices={() => void fetchAudioDevices()}
       onReloadHud={() => void handleReloadHud()} onResetHudConfig={handleResetHudConfig} /> },
+    { id: 'audio-head', labelKey: 'Audio Head', content: <HudAudioHeadPanel {...actions} config={config} /> },
+    { id: 'auxiliary-gauges', labelKey: 'Auxiliary Gauges', content: <HudAuxiliaryPanel {...actions} config={config} /> },
   ];
 
   return (

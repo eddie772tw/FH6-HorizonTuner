@@ -2,6 +2,17 @@ import { describe, expect, it, vi } from 'vitest';
 import { createHudNativeAdapter } from './hudNativeAdapter';
 
 describe('hud native adapter', () => {
+  it('reads actual visibility without treating missing or failed native data as open', async () => {
+    const invoke = vi.fn().mockResolvedValueOnce(false).mockResolvedValueOnce(true).mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce(new Error('window unavailable'));
+    const adapter = createHudNativeAdapter(invoke);
+    await expect(adapter.getHudWindowVisible()).resolves.toEqual({ status: 'success', value: false });
+    await expect(adapter.getHudWindowVisible()).resolves.toEqual({ status: 'success', value: true });
+    await expect(adapter.getHudWindowVisible()).resolves.toMatchObject({ status: 'degraded' });
+    await expect(adapter.getHudWindowVisible()).resolves.toMatchObject({ status: 'error', error: 'window unavailable' });
+    expect(invoke).toHaveBeenCalledWith('get_hud_window_visible', undefined);
+    await expect(createHudNativeAdapter().getHudWindowVisible()).resolves.toMatchObject({ status: 'unsupported' });
+  });
   it('reports web sessions as unsupported instead of claiming native success', async () => {
     const adapter = createHudNativeAdapter();
 

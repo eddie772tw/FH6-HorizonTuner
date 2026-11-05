@@ -174,10 +174,7 @@ fn apply_security_headers(headers: &mut HeaderMap) {
         "x-content-type-options",
         HeaderValue::from_static("nosniff"),
     );
-    headers.insert(
-        "x-frame-options",
-        HeaderValue::from_static("SAMEORIGIN"),
-    );
+    headers.insert("x-frame-options", HeaderValue::from_static("SAMEORIGIN"));
     headers.insert(
         "referrer-policy",
         HeaderValue::from_static("strict-origin-when-cross-origin"),
@@ -264,8 +261,8 @@ async fn origin_security(request: Request<Body>, next: Next) -> Response {
         Method::GET | Method::HEAD | Method::OPTIONS
     ) && !allowed_origin(origin.as_deref())
     {
-        let mut response = ApiError::new(403, "CSRF protection blocked request: Invalid Origin.")
-            .into_response();
+        let mut response =
+            ApiError::new(403, "CSRF protection blocked request: Invalid Origin.").into_response();
         apply_security_headers(response.headers_mut());
         return response;
     }

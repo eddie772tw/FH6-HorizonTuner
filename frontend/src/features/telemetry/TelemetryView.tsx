@@ -15,8 +15,7 @@ import RenderSwitch from './components/RenderSwitch';
 import TelemetryCardShell, { type TelemetryCardId } from './components/TelemetryCardShell';
 import TelemetryCardLayout from './components/TelemetryCardLayout';
 import TelemetryDetailView from './components/TelemetryDetailView';
-import { backendFetch } from '../../services/backend';
-import { getRuntimeCapabilities } from '../../services/runtimeCapabilities';
+import { useHudTelemetryPaused } from '@platform/hud';
 import type { SuspensionTravelMode } from '../../utils/suspensionTravel';
 import { UnitSettingsSidebar } from '../../components/UnitSettingsSidebar';
 import {
@@ -71,7 +70,8 @@ const TelemetryViewContent: React.FC<TelemetryViewContentProps> = ({
   focusedCard,
   pauseForDesktopOverlay = true,
 }) => {
-  const [isHudPaused, setIsHudPaused] = useState<boolean>(false);
+  const hudTelemetryPaused = useHudTelemetryPaused();
+  const isHudPaused = pauseForDesktopOverlay && hudTelemetryPaused;
   const [showUnitSettings, setShowUnitSettings] = useState(false);
   const [suspensionTravelMode, setSuspensionTravelMode] = useState<SuspensionTravelMode>(() =>
     localStorage.getItem('telemetry_suspension_travel_mode') === 'absolute' ? 'absolute' : 'relative'
@@ -110,33 +110,9 @@ const TelemetryViewContent: React.FC<TelemetryViewContentProps> = ({
   };
 
   useEffect(() => {
-    if (!getRuntimeCapabilities().hudOverlay) return;
-    const channel = new BroadcastChannel('horizon_tuner_hud_channel');
-    const checkConfig = (cfg: any) => {
-      if (pauseForDesktopOverlay && cfg && cfg.enabled && cfg.pauseTelemetryViewWhenActive) {
-        setIsHudPaused(true);
-        (window as any).__IS_HUD_PAUSED__ = true;
-      } else {
-        setIsHudPaused(false);
-        (window as any).__IS_HUD_PAUSED__ = false;
-      }
-    };
-
-    backendFetch('/api/overlay/config')
-      .then(res => res.json())
-      .then(data => { if (data) checkConfig(data); })
-      .catch(() => { });
-
-    channel.onmessage = (event) => {
-      if (event.data && event.data.type === 'config') {
-        checkConfig(event.data.data);
-      }
-    };
-
-    return () => {
-      channel.close();
-    };
-  }, [pauseForDesktopOverlay]);
+    (window as any).__IS_HUD_PAUSED__ = isHudPaused;
+    return () => { (window as any).__IS_HUD_PAUSED__ = false; };
+  }, [isHudPaused]);
 
   const [showPopover, setShowPopover] = useState<boolean>(isHudPaused);
 

@@ -197,7 +197,6 @@ async fn lan_pairing_limits_routes_and_revokes_session() {
     assert_eq!(revoked.status(), StatusCode::UNAUTHORIZED);
 }
 
-
 #[tokio::test]
 async fn http_responses_enforce_defense_in_depth_security_headers() {
     let root = tempfile::tempdir().unwrap();
@@ -219,9 +218,18 @@ async fn http_responses_enforce_defense_in_depth_security_headers() {
         .await
         .unwrap();
     assert_eq!(unauth.status(), StatusCode::UNAUTHORIZED);
-    assert_eq!(unauth.headers().get("x-content-type-options").unwrap(), "nosniff");
-    assert_eq!(unauth.headers().get("x-frame-options").unwrap(), "SAMEORIGIN");
-    assert_eq!(unauth.headers().get("referrer-policy").unwrap(), "strict-origin-when-cross-origin");
+    assert_eq!(
+        unauth.headers().get("x-content-type-options").unwrap(),
+        "nosniff"
+    );
+    assert_eq!(
+        unauth.headers().get("x-frame-options").unwrap(),
+        "SAMEORIGIN"
+    );
+    assert_eq!(
+        unauth.headers().get("referrer-policy").unwrap(),
+        "strict-origin-when-cross-origin"
+    );
 
     // 2. General router enforces security headers on standard API GET
     let req = Request::builder()
@@ -232,9 +240,15 @@ async fn http_responses_enforce_defense_in_depth_security_headers() {
         .unwrap();
     let res = general_router.clone().oneshot(req).await.unwrap();
     assert_eq!(res.status(), StatusCode::OK);
-    assert_eq!(res.headers().get("x-content-type-options").unwrap(), "nosniff");
+    assert_eq!(
+        res.headers().get("x-content-type-options").unwrap(),
+        "nosniff"
+    );
     assert_eq!(res.headers().get("x-frame-options").unwrap(), "SAMEORIGIN");
-    assert_eq!(res.headers().get("referrer-policy").unwrap(), "strict-origin-when-cross-origin");
+    assert_eq!(
+        res.headers().get("referrer-policy").unwrap(),
+        "strict-origin-when-cross-origin"
+    );
 
     // 3. General router enforces security headers on CSRF 403 blocked requests
     let csrf_req = Request::builder()
@@ -246,7 +260,16 @@ async fn http_responses_enforce_defense_in_depth_security_headers() {
         .unwrap();
     let csrf_res = general_router.oneshot(csrf_req).await.unwrap();
     assert_eq!(csrf_res.status(), StatusCode::FORBIDDEN);
-    assert_eq!(csrf_res.headers().get("x-content-type-options").unwrap(), "nosniff");
-    assert_eq!(csrf_res.headers().get("x-frame-options").unwrap(), "SAMEORIGIN");
-    assert_eq!(csrf_res.headers().get("referrer-policy").unwrap(), "strict-origin-when-cross-origin");
+    assert_eq!(
+        csrf_res.headers().get("x-content-type-options").unwrap(),
+        "nosniff"
+    );
+    assert_eq!(
+        csrf_res.headers().get("x-frame-options").unwrap(),
+        "SAMEORIGIN"
+    );
+    assert_eq!(
+        csrf_res.headers().get("referrer-policy").unwrap(),
+        "strict-origin-when-cross-origin"
+    );
 }
