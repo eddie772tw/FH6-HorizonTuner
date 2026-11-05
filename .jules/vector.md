@@ -26,3 +26,8 @@
 **渲染洞察 (Rendering Learning):** 在 60Hz 馬力扭力轉速散點畫布（PowerTorqueCanvas）中，過去即時點僅以單一微小實心圓（4*dpr）標示，在高密度散點中極易失去焦點；透過引進同軸雙層「外圈脈衝光環 (Pulse Halo Ring, 6.2*dpr) + 內核定位點 (Core Dot, 3.2*dpr)」設計，並嚴格匹配 linear 工業模式的矩形光環，大幅強化了動態轉速拉升時的即時牽引視認性。同時，在 5252 RPM 等馬力與扭力交錯區間，全不透明散點會導致後繪之 Power 散點徹底掩蓋先繪之 Torque 散點；透過在散點批次繪製前設定 `ctx.globalAlpha = 0.75`，可使雙曲線交會處呈現半透明自然疊合光彩。此外，繪圖主體改採具 Hoisting 特性之函式宣告，並以成對 `ctx.save()` / `try { ... } finally { ctx.restore(); }` 嚴格包裹，杜絕 `shadowBlur`、`shadowColor` 與透明度污染外部 Canvas 狀態。
 **行動 (Action):** 在所有散點與多曲線重疊型遙測畫布中，推行 Alpha 混合交錯透光模式以防覆蓋遮蔽；即時焦點點位統一採用同軸脈衝光環（Halo + Core）增強視覺追蹤，並強制將 `try/finally` context 狀態保護列為 Canvas 渲染標準防護契約。
 **署名:** Vector as Antigravity
+
+## 2026-11-05 - GForceRadar 歷史極值同軸光環、零配置槽位與狀態防護
+**渲染洞察 (Rendering Learning):** 在 G-Force 雷達畫布（GForceRadar）中，歷史極值標記（Apex G-force Markers）在定時 5Hz rAF 循環中過去每幀皆動態分配 8 個座標物件與 1 個陣列，造成週期性微小 GC 壓力；透過宣告常駐預分配的 8 個 markerSlots 槽位進行就地極值更新，達成了零每幀記憶體配置。視覺上，過去單層 3*dpr 純色圓點在暗色十字分割線與外圈交會處對比度薄弱；透過引入同軸雙層「外圈脈衝光環 (Halo Ring, 4.2*dpr) + 實心焦點內核 (Core Dot, 2.0*dpr)」架構，外圈以單次路徑批次 `ctx.stroke()` 激發柔和光暈（`shadowBlur = 4*dpr`），內核以單次路徑批次 `ctx.fill()` 凝練實心焦點，僅需 2 次繪製調用即賦予賽車過彎 Apex 點極具科技感的同軸立體深度。此外，繪圖主體全面轉換為具 Hoisting 特性之函式宣告，並以成對 `ctx.save()` / `try { ... } finally { ctx.restore(); }` 嚴格包裹，在 flat 主題自動抑制陰影，徹底阻絕狀態樣式滲漏。
+**行動 (Action):** 在所有儀表極值與歷史取樣標記中推廣就地槽位（pre-allocated slots）零配置模式；多層同軸幾何優先採用分離批次路徑（batch stroke + batch fill）以最小 draw call 達成層次化光暈，並強制將 `try/finally` context 狀態保護列為 Canvas 標準合約。
+**署名:** Vector as Antigravity

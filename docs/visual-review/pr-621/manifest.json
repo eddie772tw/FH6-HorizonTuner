@@ -1,0 +1,196 @@
+{
+  "date": "2026-11-05",
+  "implementation": "fd0d56d67bfec0565de1a46be1b5664a23788ab7",
+  "productBlobs": {
+    "frontend/src/features/telemetry/components/GForceRadar.tsx": "871a265c0ba17af67f362d5804e212358ab46b89",
+    "frontend/src/utils/gforceRadarMath.ts": "1e7b5d121c61d36eb616834b257f5920a1612469"
+  },
+  "browser": "156.0.4314.58",
+  "capture": "Windows Edge headless, full production AppShell/providers served by Vite, DPR 1, zoom 100%. Isolated loopback backend with fixture settings, real locale dictionaries and synthetic recorder status / WebSocket telemetry. Viewport height 720 (320px width: 800). Odd cases emulate reduced motion.",
+  "reproduce": "In Live bring Vehicle Dynamics Overview into view. Send 24 synthetic 1.22G accelerations at 45-degree intervals on the telemetry WebSocket; wait for the history marker repaint. Crops show the actual radar at CSS scale 1.",
+  "cases": [
+    {
+      "core": "default",
+      "mode": "light",
+      "lang": "en-us",
+      "width": 1280,
+      "save": true,
+      "file": "default-light-en-us-1280.png",
+      "dimensions": {
+        "width": 147,
+        "scrollWidth": 147
+      }
+    },
+    {
+      "core": "default",
+      "mode": "dark",
+      "lang": "ja-jp",
+      "width": 1280,
+      "save": true,
+      "file": "default-dark-ja-jp-1280.png",
+      "dimensions": {
+        "width": 147,
+        "scrollWidth": 147
+      }
+    },
+    {
+      "core": "swiss",
+      "mode": "light",
+      "lang": "ja-jp",
+      "width": 1280,
+      "save": true,
+      "file": "swiss-light-ja-jp-1280.png",
+      "dimensions": {
+        "width": 146,
+        "scrollWidth": 146
+      }
+    },
+    {
+      "core": "swiss",
+      "mode": "dark",
+      "lang": "zh-tw",
+      "width": 1280,
+      "save": true,
+      "file": "swiss-dark-zh-tw-1280.png",
+      "dimensions": {
+        "width": 146,
+        "scrollWidth": 146
+      }
+    },
+    {
+      "core": "rhine-lab",
+      "mode": "light",
+      "lang": "zh-tw",
+      "width": 1280,
+      "save": true,
+      "file": "rhine-lab-light-zh-tw-1280.png",
+      "dimensions": {
+        "width": 146,
+        "scrollWidth": 146
+      }
+    },
+    {
+      "core": "rhine-lab",
+      "mode": "dark",
+      "lang": "en-us",
+      "width": 1280,
+      "save": true,
+      "file": "rhine-lab-dark-en-us-1280.png",
+      "dimensions": {
+        "width": 146,
+        "scrollWidth": 146
+      }
+    },
+    {
+      "core": "modern",
+      "mode": "light",
+      "lang": "en-us",
+      "width": 1280,
+      "save": false,
+      "dimensions": {
+        "width": 147,
+        "scrollWidth": 147
+      }
+    },
+    {
+      "core": "modern",
+      "mode": "dark",
+      "lang": "ja-jp",
+      "width": 1280,
+      "save": false,
+      "dimensions": {
+        "width": 147,
+        "scrollWidth": 147
+      }
+    },
+    {
+      "core": "elegant",
+      "mode": "light",
+      "lang": "ja-jp",
+      "width": 1280,
+      "save": false,
+      "dimensions": {
+        "width": 147,
+        "scrollWidth": 147
+      }
+    },
+    {
+      "core": "elegant",
+      "mode": "dark",
+      "lang": "zh-tw",
+      "width": 1280,
+      "save": false,
+      "dimensions": {
+        "width": 147,
+        "scrollWidth": 147
+      }
+    },
+    {
+      "core": "swiss-editorial",
+      "mode": "light",
+      "lang": "zh-tw",
+      "width": 1280,
+      "save": false,
+      "dimensions": {
+        "width": 146,
+        "scrollWidth": 146
+      }
+    },
+    {
+      "core": "swiss-editorial",
+      "mode": "dark",
+      "lang": "en-us",
+      "width": 1280,
+      "save": false,
+      "dimensions": {
+        "width": 146,
+        "scrollWidth": 146
+      }
+    },
+    {
+      "core": "swiss-contrast",
+      "mode": "light",
+      "lang": "en-us",
+      "width": 1280,
+      "save": false,
+      "dimensions": {
+        "width": 146,
+        "scrollWidth": 146
+      }
+    },
+    {
+      "core": "swiss-contrast",
+      "mode": "dark",
+      "lang": "ja-jp",
+      "width": 1280,
+      "save": false,
+      "dimensions": {
+        "width": 146,
+        "scrollWidth": 146
+      }
+    },
+    {
+      "core": "default",
+      "mode": "light",
+      "lang": "ja-jp",
+      "width": 320,
+      "save": true,
+      "file": "default-light-ja-jp-320.png",
+      "dimensions": {
+        "width": 118,
+        "scrollWidth": 118
+      }
+    },
+    {
+      "core": "swiss",
+      "mode": "dark",
+      "lang": "zh-tw",
+      "width": 1600,
+      "save": false,
+      "dimensions": {
+        "width": 189,
+        "scrollWidth": 189
+      }
+    }
+  ]
+}
