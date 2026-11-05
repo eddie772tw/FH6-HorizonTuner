@@ -102,6 +102,7 @@ pub fn router(backend: Arc<dyn Backend>) -> Router {
         )
         .fallback(move |request| http_request(backend.clone(), request))
         .layer(middleware::from_fn(origin_security))
+        .layer(middleware::from_fn(security_headers))
 }
 
 /// The LAN listener deliberately exposes only the Companion's data path.
@@ -117,6 +118,7 @@ pub fn lan_router(backend: Arc<dyn Backend>, companion: Arc<CompanionService>) -
             }),
         )
         .fallback(move |request| lan_http(backend.clone(), companion.clone(), request))
+        .layer(middleware::from_fn(security_headers))
 }
 
 fn lan_host_and_origin_allowed(headers: &HeaderMap, companion: &CompanionService) -> bool {
@@ -165,6 +167,23 @@ fn lan_allowed_http(method: &Method, path: &str) -> bool {
         (&Method::GET, path) => path.starts_with("/companion/") || path.starts_with("/assets/"),
         _ => false,
     }
+}
+
+async fn security_headers(request: Request<Body>, next: Next) -> Response {
+    let mut response = next.run(request).await;
+    let headers = response.headers_mut();
+    // Defense-in-depth: Enforce MIME-type sniffing protection, prevent clickjacking via iframe,
+    // and restrict referrer leakage on all HTTP responses.
+    headers.insert(
+        "x-content-type-options",
+        HeaderValue::from_static("nosniff"),
+    );
+    headers.insert("x-frame-options", HeaderValue::from_static("SAMEORIGIN"));
+    headers.insert(
+        "referrer-policy",
+        HeaderValue::from_static("strict-origin-when-cross-origin"),
+    );
+    response
 }
 
 async fn lan_http(
