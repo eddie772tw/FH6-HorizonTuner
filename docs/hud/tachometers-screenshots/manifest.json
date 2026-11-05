@@ -1,0 +1,226 @@
+{
+  "source": "f1547eab9a8abd3dcf98edfce65872b687019eb1",
+  "platform": "Windows, sandboxed Edge, DPR 1",
+  "backend": "Default-feature Rust server-sidecar; temporary data and ephemeral ports",
+  "frameData": {
+    "is_race_on": true,
+    "rpm": 4200,
+    "max_rpm": 8000,
+    "redlineRpm": 7600,
+    "speed": 116,
+    "speed_kmh": 116,
+    "gear": 4,
+    "throttle": 0.55,
+    "fuel_ratio": 0.65,
+    "boost_bar": 0.45,
+    "tire_temp_f": [
+      194,
+      196,
+      198,
+      200
+    ]
+  },
+  "settingsViewport": [
+    1280,
+    720
+  ],
+  "hudViewport": [
+    1920,
+    1080
+  ],
+  "userScale": 1,
+  "background": "#161b22",
+  "styles": [
+    {
+      "id": "autometer_sportcom",
+      "bounds": {
+        "x": 1435.21875,
+        "y": 595.21875,
+        "width": 448.875,
+        "height": 448.875
+      },
+      "idleHash": "2f30770cd58da7947d5de33cdb9f9ef1ebe3e2be272f40ae9ebd5978a689c7f8",
+      "drivingHash": "a696f1fface5c9a75f44b032581beed8ec035ca3dba0f5f470dc0a47b5b59444"
+    },
+    {
+      "id": "greddy_trust",
+      "bounds": {
+        "x": 1388.84375,
+        "y": 548.84375,
+        "width": 495.25,
+        "height": 495.25
+      },
+      "idleHash": "5cf6e573a475799f8fd75c7e186d8cc1ea600636e30f64996c4b971816f7b2f0",
+      "drivingHash": "c54a56982c43fcb013d0962feb8d136dc2afae8b4012a71622aa0690da807c90"
+    },
+    {
+      "id": "blitz_racing_meter",
+      "bounds": {
+        "x": 1369.390625,
+        "y": 527.890625,
+        "width": 514.703125,
+        "height": 516.203125
+      },
+      "idleHash": "25787cb6f68749aa9f8f1e6337b4223d37eb43b4049a3f288cca83f4c982eda5",
+      "drivingHash": "352da1216aa6b74dbc51503df25b304679115f909d51982eb65545e537e59394"
+    },
+    {
+      "id": "defi_advance",
+      "bounds": {
+        "x": 1369.390625,
+        "y": 535.375,
+        "width": 514.703125,
+        "height": 508.71875
+      },
+      "idleHash": "5ea96721ad634f5b98078be89a4dfdf9cabbeae3e043357d189dcde2c6b24d3a",
+      "drivingHash": "ae735fc03d5a14e002cf465d27e7d91de7f711d3bb7d423d80982f77f5590c9b"
+    },
+    {
+      "id": "datsun_z_classic",
+      "bounds": {
+        "x": 1183.859375,
+        "y": 595.21875,
+        "width": 700.234375,
+        "height": 448.875
+      },
+      "idleHash": "84f66224ca1d927e219261d44c991d87a0b231666f665e0536dee3345f12d9be",
+      "drivingHash": "798f64df261038e7814221c080164ebd92f0e5d1b44ba578915d28d624cd6884"
+    },
+    {
+      "id": "datsun_z_modern",
+      "bounds": {
+        "x": 1436.71875,
+        "y": 595.21875,
+        "width": 447.375,
+        "height": 448.875
+      },
+      "idleHash": "29525f03d0ec047892e086b6a336abdd632a214986a56c4b6dc274e26909db15",
+      "drivingHash": "1b32995a5945fedd2b64ef0be38cd8f00b24cf2467aa252b0334a132ed0b7909"
+    }
+  ],
+  "images": [
+    {
+      "file": "settings-default-light.png",
+      "sha256": "3d83a07d8fcc551c1ad28e2803a50c675c464e8f9babba3ecf4f55b862b78d4d"
+    },
+    {
+      "file": "settings-default-dark.png",
+      "sha256": "bce30ec58b5c06ad6647fae977377637a20906753b10b2b3fc2e2851903b5d6a"
+    },
+    {
+      "file": "settings-swiss-light.png",
+      "sha256": "2b5e292d3d3994393fbd725e7f0a353f2d0018c90a8ff4f65e7563f81de6df4a"
+    },
+    {
+      "file": "settings-swiss-dark.png",
+      "sha256": "578f0c69233fc491a271a07af1fdd318ad5076ac241388ebdc6183afc6c40f67"
+    },
+    {
+      "file": "settings-rhine-lab-light.png",
+      "sha256": "a5ac12fdf39887d8de1418a910f32b8bcd123fb0168030773ce9a8f95a183d58"
+    },
+    {
+      "file": "settings-rhine-lab-dark.png",
+      "sha256": "5a8008d14c451ec7c4f5ccfb8d3cdd313418cdd2122642778758e0240245d976"
+    },
+    {
+      "file": "settings-narrow.png",
+      "sha256": "08aedd74d548adee70289653c894ff52c27a2fa2c091dcfd9860ea0de93c8e65"
+    },
+    {
+      "file": "autometer_sportcom-1080p.png",
+      "sha256": "2f13bfe661f0a950e21d29ce67ab93728028df47af5c9e8894bed8c8aad35d57"
+    },
+    {
+      "file": "autometer_sportcom.png",
+      "sha256": "69bcddb73611d6986eec175af2efa54911c95de96c0af0cd7b645ada66e55b73"
+    },
+    {
+      "file": "greddy_trust-1080p.png",
+      "sha256": "54a4d598d6bc32a92d1daf73463671068fbeb0326f1d8fe239af75c3e9793335"
+    },
+    {
+      "file": "greddy_trust.png",
+      "sha256": "ac83df84ffc7e4f325df9697ea220543348a545c26f374735457e8f742df5d99"
+    },
+    {
+      "file": "blitz_racing_meter-1080p.png",
+      "sha256": "e73809de44c04bdb9945f18846e27f7c2f11617f7c8afbc6b61dbadcfe606f51"
+    },
+    {
+      "file": "blitz_racing_meter.png",
+      "sha256": "aad5396c13498340e0cc4bba674c57c93f0e24854fafec14559e6f02ad502f86"
+    },
+    {
+      "file": "defi_advance-1080p.png",
+      "sha256": "494e5a882ce5501eac41c4b47cef6793d97cab76309cfbcb36d8d9e88915a16f"
+    },
+    {
+      "file": "defi_advance.png",
+      "sha256": "ff141d791e109fbd2bbc503578bf18ea99862b257e7c3c8be30b71048b50319d"
+    },
+    {
+      "file": "datsun_z_classic-1080p.png",
+      "sha256": "615d2409fff9420c8d93c43c1cc45e253dfde46fdbd5c0bb2a23b404d11f8798"
+    },
+    {
+      "file": "datsun_z_classic.png",
+      "sha256": "cefd375edcda385d1470591590f20792b1179909a079cf4bc58eea083ee86f9e"
+    },
+    {
+      "file": "datsun_z_modern-1080p.png",
+      "sha256": "a6dc88670840e62fba806044e1997ba0f679f03ef9c5131307077dabb62a906e"
+    },
+    {
+      "file": "datsun_z_modern.png",
+      "sha256": "de499f720ce3a2c2b11efd1f58abcd61a91cbf008498fdf86d8f4e33c6a53863"
+    }
+  ],
+  "errors": [],
+  "builtinStyles": [
+    "advanced",
+    "altezza_trd",
+    "ap1_rev_arc",
+    "audio_head",
+    "autometer_sportcom",
+    "auxiliary_gauges",
+    "blitz_racing_meter",
+    "bmw_idrive7",
+    "chaser_jzx100",
+    "classic_jdm",
+    "cyberpunk_hud",
+    "datsun_z_classic",
+    "datsun_z_modern",
+    "defi_advance",
+    "drift",
+    "fh5_arc",
+    "fm4ui",
+    "ford_gt",
+    "gamepad_overlay",
+    "greddy_trust",
+    "gt7",
+    "lfa_center_ring",
+    "mclaren_720s",
+    "minimap_overlay",
+    "motec_gt3",
+    "mw2005",
+    "nfs15",
+    "nfsu2",
+    "r34_mfd",
+    "s650_hmi",
+    "shift_tacho",
+    "simple",
+    "soarer_z20",
+    "speed_effects",
+    "stack_st8100",
+    "supra_trd",
+    "telemetry_cards",
+    "touge_pacenotes",
+    "vfd"
+  ],
+  "comparison": {
+    "inputs": "same HUD scale, viewport, DPR and telemetry",
+    "previousHead": "a09fb9db7c86142757cde6b863bbb5455149603e",
+    "matchingHudPngs": 12
+  }
+}

@@ -4,7 +4,7 @@ import { resolve } from 'node:path';
 import { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import { SettingsProvider } from '../../context/SettingsContext';
+import { SettingsProvider, useSettings } from '../../context/SettingsContext';
 import { ToastProvider } from '../../context/ToastContext';
 import { backendFetch } from '../../services/backend';
 import { ManualRecordingToolbar } from './ManualRecordingToolbar';
@@ -48,22 +48,19 @@ it.each(languages)('renders parameterized badge and accessible button labels in 
     throw new Error('Unexpected request: ' + path);
   });
 
-  const translate = (key: string, params?: Record<string, string | number>): string => {
-    let result = language === 'en-us' ? key : (dictionaries[language][key] ?? key);
-    if (params) {
-      for (const [k, v] of Object.entries(params)) {
-        result = result.replace(`{${k}}`, String(v));
-      }
-    }
-    return result;
-  };
+  type ToolbarProps = Omit<React.ComponentProps<typeof ManualRecordingToolbar>, 't'>;
+  function Toolbar(props: ToolbarProps) {
+    const { t } = useSettings();
+    return <ManualRecordingToolbar {...props} t={t} />;
+  }
+  const label = (key: string) => dictionaries[language][key] ?? key;
 
   // 1. Test isRecording + manualMode (parameterized badge)
   await act(async () => {
     root.render(
       <ToastProvider>
         <SettingsProvider>
-          <ManualRecordingToolbar
+          <Toolbar
             mode="circuit"
             onModeChange={() => {}}
             isRecording={true}
@@ -74,23 +71,24 @@ it.each(languages)('renders parameterized badge and accessible button labels in 
             onStopManual={() => {}}
             onClear={() => {}}
             onSave={() => {}}
-            t={translate}
           />
         </SettingsProvider>
       </ToastProvider>
     );
   });
 
-  const recordingBadge = host.querySelector('span[role="status"]');
+  const recordingBadge = host.querySelector('.badge');
   expect(recordingBadge).not.toBeNull();
-  expect(recordingBadge?.textContent).toBe(translate('Manual Recording ({count} samples)', { count: 42 }));
+  expect(recordingBadge?.textContent).toBe(label('Manual Recording ({count} samples)').replace('{count}', '42'));
+
+  expect(host.querySelector('[role="status"]')?.textContent).toBe(label('Manual Recording'));
 
   // 2. Test auto recording mode
   await act(async () => {
     root.render(
       <ToastProvider>
         <SettingsProvider>
-          <ManualRecordingToolbar
+          <Toolbar
             mode="circuit"
             onModeChange={() => {}}
             isRecording={true}
@@ -101,22 +99,24 @@ it.each(languages)('renders parameterized badge and accessible button labels in 
             onStopManual={() => {}}
             onClear={() => {}}
             onSave={() => {}}
-            t={translate}
           />
         </SettingsProvider>
       </ToastProvider>
     );
   });
 
-  const autoBadge = host.querySelector('span[role="status"]');
-  expect(autoBadge?.textContent).toBe(translate('Auto Recording ({count} samples)', { count: 128 }));
+  const autoBadge = host.querySelector('.badge');
+  expect(autoBadge?.textContent).toBe(label('Auto Recording ({count} samples)').replace('{count}', '128'));
+
+  const saveButton = host.querySelector('button[title="' + label('Save current recording to backend') + '"]');
+  expect(saveButton?.textContent).toBe(label('Save Current'));
 
   // 3. Test idle & buttons accessibility (Save Current and Clear Buffer aria-labels)
   await act(async () => {
     root.render(
       <ToastProvider>
         <SettingsProvider>
-          <ManualRecordingToolbar
+          <Toolbar
             mode="time_trial"
             onModeChange={() => {}}
             isRecording={false}
@@ -127,23 +127,22 @@ it.each(languages)('renders parameterized badge and accessible button labels in 
             onStopManual={() => {}}
             onClear={() => {}}
             onSave={() => {}}
-            t={translate}
           />
         </SettingsProvider>
       </ToastProvider>
     );
   });
 
-  const idleBadge = host.querySelector('span[role="status"]');
-  expect(idleBadge?.textContent).toBe(translate('Idle'));
+  const idleBadge = host.querySelector('.badge');
+  expect(idleBadge?.textContent).toBe(label('Idle'));
 
   // Arm Route button text for time_trial mode
-  const armBtn = Array.from(host.querySelectorAll('button')).find(b => b.textContent?.includes(translate('Arm Route')));
+  const armBtn = Array.from(host.querySelectorAll('button')).find(b => b.textContent?.includes(label('Arm Route')));
   expect(armBtn).toBeDefined();
 
   // Clear Buffer button aria-label and title
-  const clearBtn = host.querySelector('button[aria-label="' + translate('Clear recording buffer') + '"]');
+  const clearBtn = host.querySelector('button[title="' + label('Clear recording buffer') + '"]');
   expect(clearBtn).not.toBeNull();
-  expect(clearBtn?.getAttribute('title')).toBe(translate('Clear recording buffer'));
-  expect(clearBtn?.textContent).toBe(translate('Clear Buffer'));
+  expect(clearBtn?.getAttribute('title')).toBe(label('Clear recording buffer'));
+  expect(clearBtn?.textContent).toBe(label('Clear Buffer'));
 });

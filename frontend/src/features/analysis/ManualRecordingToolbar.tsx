@@ -32,7 +32,7 @@ export const ManualRecordingToolbar: React.FC<ManualRecordingToolbarProps> = ({
   return (
     <div className="card mb-3 p-3 bg-dark-subtle border">
       <div className="d-flex flex-wrap align-items-center justify-content-between gap-2">
-        <div className="d-flex align-items-center gap-2">
+        <div className="d-flex flex-wrap align-items-center gap-2">
           <div className="btn-group" role="group" aria-label={t("Recording Mode")}>
             <button
               type="button"
@@ -60,19 +60,22 @@ export const ManualRecordingToolbar: React.FC<ManualRecordingToolbarProps> = ({
             </button>
           </div>
 
-          <div className="d-flex align-items-center gap-1 ms-2">
+          <div className="d-flex align-items-center gap-1">
+            <span className="visually-hidden" role="status">
+              {isRecording ? (manualMode ? t("Manual Recording") : t("Auto Recording")) : armed ? t("Armed & Awaiting Gate Crossing") : t("Idle")}
+            </span>
             {isRecording ? (
-              <span className="badge bg-danger" role="status" aria-live="polite">
+              <span className="badge bg-danger">
                 {manualMode
                   ? t("Manual Recording ({count} samples)", { count: recordingCount })
                   : t("Auto Recording ({count} samples)", { count: recordingCount })}
               </span>
             ) : armed ? (
-              <span className="badge bg-warning text-dark" role="status">
+              <span className="badge bg-warning text-dark">
                 {t("Armed & Awaiting Gate Crossing")}
               </span>
             ) : (
-              <span className="badge bg-secondary" role="status">
+              <span className="badge bg-secondary">
                 {t("Idle")}
               </span>
             )}
@@ -103,7 +106,6 @@ export const ManualRecordingToolbar: React.FC<ManualRecordingToolbarProps> = ({
               className="btn btn-sm btn-outline-warning"
               onClick={onSave}
               title={t("Save current recording to backend")}
-              aria-label={t("Save current recording to backend")}
             >
               {t("Save Current")}
             </button>
@@ -115,7 +117,6 @@ export const ManualRecordingToolbar: React.FC<ManualRecordingToolbarProps> = ({
             onClick={onClear}
             disabled={isRecording}
             title={t("Clear recording buffer")}
-            aria-label={t("Clear recording buffer")}
           >
             {t("Clear Buffer")}
           </button>
