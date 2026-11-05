@@ -2349,5 +2349,10 @@
     "Techno Arc (Aqua)": "科技弧線（水藍）",
     "Speed Pulse (Indigo)": "速度脈衝（靛藍）",
     "Circuit Board (Emerald)": "電路板（翡翠綠）",
-    "Bling Edition (Gold)": "炫金特仕版（黃金）"
+    "Bling Edition (Gold)": "炫金特仕版（黃金）",
+    "Arm Route": "路線就緒",
+    "Save current recording to backend": "將目前錄製儲存至後端",
+    "Clear recording buffer": "清空錄製緩衝區",
+    "Manual Recording ({count} samples)": "手動錄製（{count} 個樣本）",
+    "Auto Recording ({count} samples)": "自動錄製（{count} 個樣本）"
 }

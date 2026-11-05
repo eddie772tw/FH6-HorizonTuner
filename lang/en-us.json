@@ -1921,5 +1921,10 @@
     "Techno Arc (Aqua)": "Techno Arc (Aqua)",
     "Speed Pulse (Indigo)": "Speed Pulse (Indigo)",
     "Circuit Board (Emerald)": "Circuit Board (Emerald)",
-    "Bling Edition (Gold)": "Bling Edition (Gold)"
+    "Bling Edition (Gold)": "Bling Edition (Gold)",
+    "Arm Route": "Arm Route",
+    "Save current recording to backend": "Save current recording to backend",
+    "Clear recording buffer": "Clear recording buffer",
+    "Manual Recording ({count} samples)": "Manual Recording ({count} samples)",
+    "Auto Recording ({count} samples)": "Auto Recording ({count} samples)"
 }
