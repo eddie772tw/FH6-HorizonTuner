@@ -118,7 +118,8 @@ impl App {
     /// Called exclusively by a bounded processing worker, outside UDP/HTTP I/O.
     pub fn process(&self, mut frame: Value) {
         let started = Instant::now();
-        let settings = self.config.settings();
+        // [PERF] In the 60Hz telemetry worker, share settings via Arc to eliminate JSON deep clones on every frame.
+        let settings = self.config.settings_arc();
         let mut engine = lock(&self.engine);
         engine.race.update_settings(&settings);
         engine

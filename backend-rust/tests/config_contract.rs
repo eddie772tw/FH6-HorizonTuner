@@ -672,3 +672,29 @@ fn r34_settings_normalize_persist_restart_and_relay_without_touching_other_style
         assert_eq!(readback["r34ShowCluster"], false);
     }
 }
+
+#[test]
+fn settings_arc_provides_zero_copy_atomic_sharing() {
+    let directory = tempfile::tempdir().unwrap();
+    let service = ConfigService::new(directory.path()).unwrap();
+    let initial_arc = service.settings_arc();
+    let initial_owned = service.settings();
+    assert_eq!(*initial_arc, initial_owned);
+    assert!(std::sync::Arc::ptr_eq(
+        &initial_arc,
+        &service.settings_arc()
+    ));
+
+    service
+        .handle("POST", "/api/settings", &json!({"language": "ja-jp"}))
+        .unwrap()
+        .unwrap();
+
+    let updated_arc = service.settings_arc();
+    assert_ne!(
+        std::sync::Arc::as_ptr(&initial_arc),
+        std::sync::Arc::as_ptr(&updated_arc)
+    );
+    assert_eq!(updated_arc["language"], "ja-jp");
+    assert_eq!(initial_arc["language"], initial_owned["language"]);
+}
