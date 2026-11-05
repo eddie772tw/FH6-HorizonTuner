@@ -4,8 +4,8 @@ import type { EngineObservation } from '../../../domain/tuning/types';
 import { savedCaptureSaveRequest } from '../captureDownload';
 import { useFileSave } from '../../../hooks/useFileSave';
 
-export function EngineObservationHistory({ entries, compatibleIds, reuse, storageError }: {
-  entries: EngineObservation[]; compatibleIds: string[]; reuse: (id: string) => void | Promise<void>; storageError: boolean;
+export function EngineObservationHistory({ entries, compatibleIds, reuse, storageError, busy = false }: {
+  entries: EngineObservation[]; compatibleIds: string[]; reuse: (id: string) => void | Promise<void>; storageError: boolean; busy?: boolean;
 }) {
   const { t } = useSettings();
   const { save, isSaving } = useFileSave();
@@ -20,7 +20,7 @@ export function EngineObservationHistory({ entries, compatibleIds, reuse, storag
       {entries.map(e => <option key={e.id} value={e.id}>{new Date(e.capturedAt).toLocaleString()} · {Math.round(e.data.engineMaxRpm || 0)} RPM · {t(compatibleIds.includes(e.id) ? 'Inputs compatible' : 'Review only')}</option>)}
     </select>
     <label className="d-flex gap-2 my-3"><input type="checkbox" checked={confirmed} onChange={e => setConfirmed(e.target.checked)} />{t('The engine, drivetrain and installed powertrain parts are unchanged, including same-PI changes.')}</label>
-    <button className="btn btn-outline-primary" disabled={!confirmed || !selected || !compatibleIds.includes(selected.id)} onClick={() => { if (selected) void reuse(selected.id); setConfirmed(false); }}>{t('Reuse the confirmed engine observation')}</button>
+    <button className="btn btn-outline-primary" disabled={busy || !confirmed || !selected || !compatibleIds.includes(selected.id)} onClick={() => { if (selected) void reuse(selected.id); setConfirmed(false); }}>{t('Reuse the confirmed engine observation')}</button>
     <button className="btn btn-outline-secondary ms-2" disabled={isSaving} onClick={() => {
       if (selected) void save(savedCaptureSaveRequest('/engine-observations/' + encodeURIComponent(selected.id) + '/capture', 'engine-capture.json'));
     }}>{t('Export recorded frames')}</button>

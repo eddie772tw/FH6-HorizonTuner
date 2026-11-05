@@ -127,6 +127,10 @@ impl NativeServices {
         self.media.thumbnail_metadata()
     }
 
+    pub fn discord_enabled(&self) -> bool {
+        self.discord.is_enabled()
+    }
+
     pub fn discord_start(&self) {
         self.discord.start()
     }

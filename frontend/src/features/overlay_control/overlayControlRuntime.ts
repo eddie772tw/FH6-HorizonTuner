@@ -5,14 +5,16 @@ import { normalizeClassicJdmConfig } from './classic_jdm/config';
 import { normalizeR34MfdConfig } from './r34_mfd/config';
 import { normalizeStackSt8100Config } from './stack_st8100/config';
 import { normalizeLfaExpansionConfig } from './lfa_center_ring/config';
-import type { HudDisplayUnits } from './HudUnitSettingsSidebar';
 import { normalizeAudioHeadConfig, normalizeAuxiliaryConfig } from '../../../../hud_overlay/shared/overlay-config.js';
+import type { HudDisplayUnits } from './hudDisplayUnits';
+import { GAUGE_VALUE_KEYS, type GaugeValueSources } from '../../../../hud_overlay/shared/gauge-sources.js';
 
 export type HudConfigRecord = HudConfig & Record<string, unknown>;
 
-export type HudConfigPatch = Omit<Partial<HudConfigRecord>, 'elements' | 'units'> & {
+export type HudConfigPatch = Omit<Partial<HudConfigRecord>, 'elements' | 'units' | 'gaugeValueSources'> & {
   elements?: Partial<HudElements>;
   units?: Partial<HudDisplayUnits>;
+  gaugeValueSources?: { [Key in keyof GaugeValueSources]?: Partial<GaugeValueSources[Key]> };
 };
 
 export type OverlayControlStatus = 'loading' | 'ready' | 'saving' | 'error';
@@ -116,11 +118,17 @@ export function applyHudConfigPatch(config: HudConfigRecord, patch: HudConfigPat
   const persistedPatch = withoutDerivedChannelFields(patch);
   const units = isRecord(persistedPatch.units) ? persistedPatch.units : undefined;
   const elements = isRecord(persistedPatch.elements) ? persistedPatch.elements : undefined;
+  const sources = isRecord(persistedPatch.gaugeValueSources) ? persistedPatch.gaugeValueSources : undefined;
+  const gaugeValueSources = { ...config.gaugeValueSources };
+  if (sources) for (const key of GAUGE_VALUE_KEYS) {
+    if (isRecord(sources[key])) gaugeValueSources[key] = { ...gaugeValueSources[key], ...sources[key] } as GaugeValueSources[typeof key];
+  }
   const merged = {
     ...config,
     ...persistedPatch,
     units: units ? { ...config.units, ...units } : config.units,
     elements: elements ? { ...config.elements, ...elements } : config.elements,
+    gaugeValueSources,
   } as HudConfigRecord;
   return normalizeHudRuntimeConfig(merged);
 }

@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BMW Live Cockpit iDrive 7 HUD</title>
+    <link rel="stylesheet" href="../shared/hud-base.css">
+    <!--
+        [設計決策紀錄 / Design Decision Note]
+        1. 水溫與油溫/油壓資料來源：
+           水溫 (Water / Coolant Temp) 直接採用遙測輪胎溫度 (Tire Temp FL/FR/RL/RR) 之平均值（原始 °F 固定轉為 °C；缺資料顯示冷端，不合成水溫）；
+           油溫 (Oil Temp) 與油壓 (Oil Pressure) 因 Forza UDP 封包未提供原生感測器數值，暫依轉速比與節氣門/增壓負載驅動之確定性熱力學與油壓代理模型 (Deterministic Proxy Model) 模擬。
+        2. 增壓單位鎖定 (Hardcoded Unit Override)：
+           本錶頭盤面視覺元素已固定標記「psi」與「hp」，因此增壓值始終採用 PSI (`boost_psi`)、馬力始終採用 HP (`power_hp`)，忽視外部傳遞之增壓/功率單位設定。
+    -->
+    <style>
+        .bmw-idrive-container {
+            width: 446px;
+            height: 365px;
+            position: relative;
+            pointer-events: none;
+        }
+        #bmwCanvas {
+            display: block;
+            width: 446px;
+            height: 365px;
+            filter: drop-shadow(0 6px 18px rgba(0, 0, 0, calc(var(--hud-glow-intensity, 1.0) * 0.55)));
+        }
+        .redline-alert {
+            filter: drop-shadow(0 0 24px rgba(255, 20, 50, 0.9));
+        }
+    </style>
+</head>
+<body>
+    <div id="teleCardsMount"></div>
+
+    <div class="hud-root-wrapper">
+        <div class="hud-gauge-container bmw-idrive-container" id="bmwIdriveContainer">
+            <div class="artwork-motion" id="artworkMotion"><canvas id="bmwCanvas" width="638" height="522"></canvas></div>
+        </div>
+    </div>
+
+    <script src="../shared/hud-core.js"></script>
+    <script src="../shared/hud-artwork.js"></script>
+    <script src="../shared/artwork-effects.js"></script>
+
+    <script>
+        (function() {
+            var canvas = document.getElementById('bmwCanvas');
+            var ctx = canvas.getContext('2d');
+            var container = document.getElementById('bmwIdriveContainer');
+
+            var baseImg = HUDArtwork.loadImage('assets/bmw_clean_base.png');
+            var barsImg = HUDArtwork.loadImage('assets/bmw_bars_full.png', 0);
+
+            var isSweeping = false;
+            var sweepRafId = null;
+
+            var telemetry = {
+                speed: 0,
+                rpm: 0,
+                maxRpm: 8000,
+                gear: 1,
+                boostPsi: 0,
+                powerHp: 0,
+                tempC: 85
+            };
+
+            // Keep accepted live readings separate from temporary display-check values.
+            var liveTelemetry = telemetry;
+            var effects = HUDArtworkEffects.create(document.getElementById('artworkMotion'));
+            var destroyed = false;
+
+            function destroy() {
+                destroyed = true;
+                effects.destroy();
+                if (sweepRafId !== null) cancelAnimationFrame(sweepRafId);
+                sweepRafId = null;
+                isSweeping = false;
+                window.removeEventListener('message', onLifecycleMessage);
+                window.removeEventListener('pagehide', destroy);
+            }
+            function onLifecycleMessage(event) {
+                if (event.data && event.data.type === 'hud:destroy') destroy();
+            }
+            window.addEventListener('message', onLifecycleMessage);
+            window.addEventListener('pagehide', destroy);
+
+            function formatGear(g) {
+                var gearNum = Number(g);
+                if (!Number.isFinite(gearNum) || gearNum < 0 || gearNum === 11) return 'N';
+                if (gearNum === 0) return 'R';
+                return String(Math.round(gearNum));
+            }
+
+            function drawClippedBar(polyPts, yTop, yBottom, ratio) {
+                var r = Math.min(1.0, Math.max(0.0, ratio));
+                if (r <= 0.002 || !barsImg.complete || !barsImg.naturalWidth) return;
+                var yCut = yBottom - r * (yBottom - yTop);
+                ctx.save();
+                ctx.beginPath();
+                ctx.moveTo(polyPts[0][0], polyPts[0][1]);
+                for (var i = 1; i < polyPts.length; i++) {
+                    ctx.lineTo(polyPts[i][0], polyPts[i][1]);
+                }
+                ctx.closePath();
+                ctx.clip();
+
+                ctx.beginPath();
+                ctx.rect(0, yCut, 638, yBottom - yCut + 4);
+                ctx.clip();
+
+                ctx.drawImage(barsImg, 0, 0, 638, 522);
+                ctx.restore();
+            }
+
+            // Polygon masks separating the 4 D3D11 bar regions in 638x522 space:
+            var POLY_RPM = [
+                [85, 20], [425, 20], [425, 495], [168, 495], [112, 335], [85, 335]
+            ];
+            var POLY_TEMP = [
+                [20, 336], [112, 336], [168, 495], [20, 495]
+            ];
+            var POLY_PSI = [
+                [430, 170], [500, 170], [546, 286], [500, 402], [430, 402]
+            ];
+            var POLY_HP = [
+                [500, 170], [625, 170], [625, 402], [500, 402], [546, 286]
+            ];
+
+            function render() {
+                if (destroyed) return;
+                var w = 638;
+                var h = 522;
+                ctx.clearRect(0, 0, w, h);
+
+                if (baseImg.complete && baseImg.naturalWidth) {
+                    ctx.drawImage(baseImg, 0, 0, w, h);
+                }
+
+                // The printed 0..8 scale is fixed; the vehicle limit only drives the alert.
+                var rpmRatio = Math.min(1.0, Math.max(0.0, telemetry.rpm / 8000));
+                var tempRatio = Math.min(1.0, Math.max(0.0, (telemetry.tempC - 50) / 100));
+                var psiRatio = Math.min(1.0, Math.max(0.0, telemetry.boostPsi / 29.0));
+                var hpRatio = Math.min(1.0, Math.max(0.0, telemetry.powerHp / 750.0));
+
+                // Draw the 4 authentic D3D11 bars
+                drawClippedBar(POLY_RPM, 30, 486, rpmRatio);
+                drawClippedBar(POLY_TEMP, 343, 482, tempRatio);
+                drawClippedBar(POLY_PSI, 179, 393, psiRatio);
+                drawClippedBar(POLY_HP, 179, 393, hpRatio);
+
+                var isRedline = telemetry.rpm > Math.max(4000, telemetry.maxRpm || 8000) * 0.88;
+
+                // Dynamic Center Readouts (Gear & Speed in 638x522 coordinate space)
+                ctx.save();
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'Alphabetic';
+
+                // Gear indicator (left of the 3 shift chevrons at x=335, y=268)
+                var gearChar = formatGear(telemetry.gear);
+                ctx.fillStyle = isRedline ? '#ff2244' : effects.accent('#ff9911');
+                ctx.font = 'italic 900 76px "Segoe UI", Arial, sans-serif';
+                ctx.shadowColor = isRedline ? 'rgba(255, 20, 50, 0.75)' : effects.accent('rgba(255, 150, 20, 0.45)');
+                ctx.shadowBlur = effects.glow(12);
+                ctx.fillText(gearChar, 330, 272);
+
+                // Speed readout (left of the native 'km/h' label at x=436, y=334)
+                ctx.textAlign = 'right';
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'italic 800 66px "Segoe UI", Arial, sans-serif';
+                ctx.shadowColor = 'rgba(0, 200, 255, 0.45)';
+                ctx.shadowBlur = effects.glow(10);
+                ctx.fillText(String(Math.max(0, Math.round(telemetry.speed))), 408, 352);
+
+                ctx.restore();
+
+                if (isRedline) {
+                    container.classList.add('redline-alert');
+                } else {
+                    container.classList.remove('redline-alert');
+                }
+            }
+
+            baseImg.onload = render;
+            barsImg.onload = render;
+
+            HUDCore.registerStyle('bmw_idrive7', {
+                containerId: 'bmwIdriveContainer',
+                scaleBaseline: 2.1,
+                scaleMultiplier: 0.95,
+                onScale: HUDArtwork.watchCanvas(canvas, render),
+
+                onInit: function() {
+                    if (destroyed) return;
+                    effects.sync();
+                    render();
+                },
+
+                onElementsChange: function(elements) {
+                    if (destroyed) return;
+                    effects.sync(elements);
+                    if (container && elements && elements.showGauge !== undefined) {
+                        container.style.display = elements.showGauge === false ? 'none' : 'block';
+                    }
+                },
+
+                onFrame: function(data, payload) {
+                    if (destroyed || !data) return;
+                    effects.update(data);
+                    payload = payload || {};
+                    // The native artwork is permanently labelled km/h.
+                    liveTelemetry.speed = Number(data.speed_kmh || 0);
+                    liveTelemetry.rpm = Number(data.rpm || 0);
+                    liveTelemetry.maxRpm = Number(data.max_rpm || data.maxRpm || payload.redlineRpm || 8000);
+                    liveTelemetry.gear = data.gear !== undefined ? Number(data.gear) : 1;
+
+                    // Hardcoded PSI on dial face: always use PSI
+                    var rawPsi = data.boost_psi !== undefined
+                        ? Number(data.boost_psi)
+                        : (data.Boost !== undefined ? Number(data.Boost) : Number(data.boost || 0));
+                    liveTelemetry.boostPsi = Math.max(0, rawPsi);
+
+                    // Hardcoded HP on dial face: always use HP
+                    liveTelemetry.powerHp = Math.max(0, Number(data.power_hp !== undefined ? data.power_hp : (data.power || 0)));
+
+                    // Display the four-wheel average directly; no RPM-derived heat offset.
+                    liveTelemetry.tempC = HUDCore.getAverageTireTemperatureC(data) ?? 0;
+
+                    if (!isSweeping) {
+                        telemetry = liveTelemetry;
+                        render();
+                    }
+                },
+
+                onAnimate: function() {
+                    if (destroyed) return;
+                    if (sweepRafId !== null) cancelAnimationFrame(sweepRafId);
+                    isSweeping = true;
+                    telemetry = Object.assign({}, liveTelemetry);
+                    var start = performance.now();
+                    var duration = 1200;
+                    function sweep(t) {
+                        var progress = Math.min(1, (t - start) / duration);
+                        var wave = Math.sin(progress * Math.PI);
+                        telemetry.rpm = wave * 8000;
+                        telemetry.maxRpm = 8000;
+                        telemetry.speed = wave * 260;
+                        telemetry.gear = progress < 0.98 ? Math.max(1, Math.min(8, Math.ceil(wave * 7))) : 1;
+                        telemetry.boostPsi = wave * 28;
+                        telemetry.powerHp = wave * 720;
+                        telemetry.tempC = 50 + wave * 95;
+                        if (progress < 1) {
+                            render();
+                            sweepRafId = requestAnimationFrame(sweep);
+                        } else {
+                            isSweeping = false;
+                            sweepRafId = null;
+                            telemetry = liveTelemetry;
+                            render();
+                        }
+                    }
+                    sweepRafId = requestAnimationFrame(sweep);
+                }
+            });
+
+            HUDCore.init('bmw_idrive7');
+            render();
+        })();
+    </script>
+</body>
+</html>

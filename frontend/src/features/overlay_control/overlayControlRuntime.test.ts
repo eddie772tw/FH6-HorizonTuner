@@ -75,6 +75,48 @@ async function flushTasks() {
 }
 
 describe('overlay control runtime', () => {
+  it('queues nested gauge-source edits without overwriting other fields or cross-tab visibility changes', async () => {
+    const pending = deferred<ResponseLike>();
+    const writes: unknown[] = [];
+    const runtime = createOverlayControlRuntime(createTransport({
+      saveConfig: async config => { writes.push(structuredClone(config)); return writes.length === 1 ? pending.promise : response({ success: true }); },
+    }));
+    await runtime.refresh();
+    const first = runtime.updateConfig({ gaugeValueSources: { boost: { label: 'Custom boost' } } });
+    await flushTasks();
+    const second = runtime.updateConfig({ elements: { showAudioHead: true, showAuxiliaryGauges: false }, audioHeadScale: 1.5 });
+    const third = runtime.updateConfig({ gaugeValueSources: { boost: { field: 'boost_bar', unit: 'bar' }, oilTemperature: { label: 'Custom temperature' } } });
+    pending.resolve(response({ success: true }));
+    await Promise.all([first, second, third]);
+    expect(writes.at(-1)).toMatchObject({
+      gaugeValueSources: { boost: { label: 'Custom boost', field: 'boost_bar', unit: 'bar' },
+        oilTemperature: { label: 'Custom temperature', field: 'tire_temp_avg', unit: 'F' },
+        waterTemperature: { field: 'tire_temp_avg', unit: 'F' } },
+      audioHeadScale: 1.5, elements: { showAudioHead: true, showAuxiliaryGauges: false }, pluginField: { source: 'server' },
+    });
+    expect(runtime.getSnapshot().status).toBe('ready');
+  });
+
+  it('migrates shared audio scaling once and preserves independent values across edits and reloads', () => {
+    for (const input of [
+      { hudStyle: 'audio_head', scale: 1.4 },
+      { hudStyle: 'vfd', scale: 1.4, audioHeadDeck: 6, elements: { showAudioHead: false } },
+    ]) {
+      const migrated = normalizeHudRuntimeConfig(input);
+      expect(migrated.audioHeadScale).toBe(1.4);
+      const changedGauge = applyHudConfigPatch(migrated, { scale: 0.8, elements: { showGauge: false } });
+      const changedAudio = applyHudConfigPatch(changedGauge, { audioHeadScale: 1.75 });
+      expect(normalizeHudRuntimeConfig(JSON.parse(JSON.stringify(changedAudio))))
+        .toMatchObject({ scale: 0.8, audioHeadScale: 1.75, elements: { showGauge: false } });
+    }
+    expect(normalizeHudRuntimeConfig({ hudStyle: 'vfd', scale: 1.4 }).audioHeadScale).toBe(1);
+  });
+
+  it.each([[null, 1], [NaN, 1], ['1.5', 1], [0, 1], [-2, 1], [0.1, 0.5], [9, 2]])(
+    'normalizes independent audio scale %j without following the main gauge', (audioHeadScale, expected) => {
+      expect(normalizeHudRuntimeConfig({ scale: 1.8, audioHeadScale }).audioHeadScale).toBe(expected);
+    });
+
   it('migrates an auxiliary-only selection and keeps auxiliary visibility independent of gauge changes', () => {
     const migrated = normalizeHudRuntimeConfig({
       hudStyle: 'audio_head', audioHeadDeck: 6, elements: { showGauge: true }, pluginField: 42,

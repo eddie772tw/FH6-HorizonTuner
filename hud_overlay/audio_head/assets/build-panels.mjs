@@ -1,4 +1,6 @@
-// Rebuild the editable SVG faceplates: node hud_overlay/audio_head/assets/build-panels.mjs
+// Historical SVG redraws, rejected in visual review. Runtime uses the original *_clean.png.
+// Retained for provenance/security regression only; see README.md before any local replacement.
+// Rebuild historical SVG faceplates: node hud_overlay/audio_head/assets/build-panels.mjs
 // Coordinates and colours follow the native res_220 atlas / clean plates. No raster embedding.
 import {readFileSync, writeFileSync} from 'node:fs';
 import {fileURLToPath} from 'node:url';

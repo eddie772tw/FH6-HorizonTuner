@@ -16,6 +16,8 @@ PERSONA_ALIASES = {
     "pallete": "palette",
     "narrator": "narrator",
     "sentinel": "sentinel",
+    "mechanic": "mechanic",
+    "vector": "vector",
 }
 
 PERSONA_LOGS = {
@@ -23,6 +25,8 @@ PERSONA_LOGS = {
     "palette": ".jules/palette.md",
     "narrator": ".jules/narrator.md",
     "sentinel": ".jules/sentinel.md",
+    "mechanic": ".jules/mechanic.md",
+    "vector": ".jules/vector.md",
 }
 
 REQUIRED_HANDOFF_FIELDS = (

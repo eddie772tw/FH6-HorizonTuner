@@ -1,0 +1,351 @@
+{
+  "captured": "2026-11-05",
+  "source": "PR #540 d3b137f1 merged with #541 bb36cd68 plus fifth-tab integration, before merge revision commit",
+  "environment": "Windows / sandboxed Edge 156.0.4314.58 / Playwright 1.64.1 / real production AppShell and HUD launcher, isolated HTTP/WebSocket fixtures",
+  "viewport": "Settings 1280x720, narrow 320x720; renderer crops at shared HUD scale 1, DPR1; neutral RGB(22,27,34) backdrop",
+  "settings": "Traditional Chinese / Halfmoon Default, Swiss Technical, Rhine Lab, light and dark; shared-source supplementary screenshot in English",
+  "telemetry": "Synthetic boost_bar=1, power_kw=40 explicitly mapped to oilPressure with native PSI; four tire temperatures 194F converted to 90C. Not real engine sensor or game data.",
+  "rendering": "Original PNG faces unchanged; current actual launcher computes shared gaugeValues. Main and telemetry hidden via real controls; Audio Head hidden only for uncluttered face crops. No image retouching.",
+  "review": "Maintainer inspected captures. User decided to keep original faceplates; no claim of user approval for the newly integrated auxiliary settings page.",
+  "reproduce": "node frontend/src/features/overlay_control/tests/browser/verify.cjs; PLAYWRIGHT_MODULE_PATH task-local, PLAYWRIGHT_CHANNEL=msedge, OUTPUT_DIR",
+  "layouts": 420,
+  "captures": 85,
+  "saves": 141,
+  "checks": [
+    "Keyboard, ARIA relationships, hidden panels and side-effect-free tab changes",
+    "Fourth Audio Head tab: hidden configuration, scale drafts, X/Y sliders, four directional bounds and persisted reload",
+    "Collapsed details skip hidden controls and support keyboard expansion",
+    "Hidden configuration, cross-tab patches, tire dependency, G alignment and merged-chart values",
+    "Retained expansion, draft and independent scroll positions",
+    "Independent units, retry across tabs, persistence and fresh page defaults",
+    "Reset cancellation and confirmed defaults preserve enabled",
+    "All seven cores, day/night, three locales, narrow/default/wide and reduced motion",
+    "Six specialized gauge forms at 320px in all three locales",
+    "Production AppShell with Live/Tune/HUD reference captures across all three design systems",
+    "Real launcher: independent sizes, four edges with inward-only sliders, nine live deck selections and audio-only unmount/remount",
+    "All nine original raster faces: full-surface RGB preservation, native dimensions, single material opacity and no SVG replacements",
+    "Auxiliary fifth tab: hidden settings, retained text/numeric drafts, partial source edits, layout and cross-tab persistence",
+    "Real auxiliary launcher: independent lifecycle, four edges, shared telemetry conversions, five original faces, row/column layout and reload"
+  ],
+  "errors": [],
+  "unexpectedRequests": [],
+  "gaugeValues": {
+    "boost": 14.5038,
+    "oilPressure": 40,
+    "oilTemperature": 90,
+    "waterTemperature": 90
+  },
+  "faces": [
+    {
+      "id": "aem",
+      "name": "AEM 30-4408 Boost (PSI)",
+      "file": "auxiliary-aem.png"
+    },
+    {
+      "id": "greddy",
+      "name": "GReddy Trust Oil Pressure (PSI)",
+      "file": "auxiliary-greddy.png"
+    },
+    {
+      "id": "blitz",
+      "name": "Blitz Racing Meter Oil Temp (C)",
+      "file": "auxiliary-blitz.png"
+    },
+    {
+      "id": "defi",
+      "name": "Defi Advance Water Temp (C)",
+      "file": "auxiliary-defi.png"
+    },
+    {
+      "id": "speedhut",
+      "name": "Speedhut Boost (BAR)",
+      "file": "auxiliary-speedhut.png"
+    }
+  ],
+  "sourceFiles": [
+    {
+      "file": "frontend/src/features/overlay_control/OverlayView.tsx",
+      "sha256": "7cb18d7d30a38e97f7e3facc21b29a261b967bafbf0f333681aacb160bf4184d"
+    },
+    {
+      "file": "frontend/src/features/overlay_control/HudWorkspace.tsx",
+      "sha256": "542891d8144f67e88bfcb7fb201645e60afd42470eac8148886b6c7f91642f39"
+    },
+    {
+      "file": "frontend/src/features/overlay_control/overlayControlRuntime.ts",
+      "sha256": "7a38057aea074b33c6132429af6873ea64752adb3fb4ad25f4cff482bc272996"
+    },
+    {
+      "file": "frontend/src/features/overlay_control/panels/HudAuxiliaryPanel.tsx",
+      "sha256": "7d9eb9c2f88d67117c88640e1d8d0f42cdee9c5d281f7d044e62c89eb223fbb6"
+    },
+    {
+      "file": "frontend/src/features/overlay_control/panels/HudGaugeSourcesPanel.tsx",
+      "sha256": "bbd1d8d46c3dbf354de5a1b076fdfcd125257832675cb7929e59acf7ac3b65db"
+    },
+    {
+      "file": "frontend/src/features/overlay_control/panels/HudTextInput.tsx",
+      "sha256": "b207e984107c6ee4b2c3c87b2d72559795ea2c01d2f40455189428cedf4189ea"
+    },
+    {
+      "file": "frontend/src/features/overlay_control/tests/browser/verify.cjs",
+      "sha256": "d726409b3336eedde8765543d35255db483a23397e6e0d2747faa2674b8318d1"
+    },
+    {
+      "file": "hud_overlay/auxiliary_gauges/tests/browser/verify.cjs",
+      "sha256": "47f250f8873ccf42bbdc9ed83da4445ac194fb8cf48c32f897f57d70b7d7ef2b"
+    },
+    {
+      "file": "hud_overlay/auxiliary_gauges/index.html",
+      "sha256": "270ead81421376637bb8a1355cae10bcb0fa70ba3fc42f2956771e02529eef30"
+    },
+    {
+      "file": "hud_overlay/auxiliary_gauges/greddy-calibration.js",
+      "sha256": "3d29c85c8ad638da5128aa145801766495cd1fd68b40c147ac9d44c731960557"
+    },
+    {
+      "file": "hud_overlay/index.html",
+      "sha256": "fdef273e9f5bd0cae8d7946c1d5e554b203583bcad57cef7d787b0c8fb7caf67"
+    },
+    {
+      "file": "hud_overlay/shared/gauge-sources.js",
+      "sha256": "b97c3fcdef97f4c79d9098a089c5d1cf3afa508e5759bb3a8096c5950993fb7b"
+    },
+    {
+      "file": "hud_overlay/shared/overlay-config.js",
+      "sha256": "2c94b6205800b81bda25669332cff3ea48d9de462180abe09a7bf24d474b97bb"
+    },
+    {
+      "file": "lang/zh-tw.json",
+      "sha256": "e8322f5b5b9db429393ba1eec308d7945ccf0c30f30e3be02775e30e0bb71843"
+    },
+    {
+      "file": "lang/en-us.json",
+      "sha256": "47c83ad7cdff641e9e06c2ed7927248949f2c6711dc3681703770bb5e26a1ce7"
+    },
+    {
+      "file": "lang/ja-jp.json",
+      "sha256": "b507bbb036a7cd9c2796e7dc0aba6bce5600ca50f487c62cd86bdfef44f104a3"
+    }
+  ],
+  "preservedAssets": [
+    {
+      "file": "hud_overlay/audio_head/assets/alpine_7848_clean.png",
+      "reference": "bb36cd683fae42dc3eb26297758a993331abc0d1",
+      "gitBlob": "21f86efc829adc32fcd337ba7bb9f10d1f025b69",
+      "sha256": "43314b94c9d8e0f56e5e06ceec0fb379999ba14d7ef547dd0e83005c4990d22c"
+    },
+    {
+      "file": "hud_overlay/audio_head/assets/alpine_9815_clean.png",
+      "reference": "bb36cd683fae42dc3eb26297758a993331abc0d1",
+      "gitBlob": "4d3687e210215ef77526f94b24f18dd064026927",
+      "sha256": "46ed599ebac2f22152b4a30f6f1aaf4386e114eb91b69384d3f0ebfd82e743e9"
+    },
+    {
+      "file": "hud_overlay/audio_head/assets/face_dexp1r.png",
+      "reference": "bb36cd683fae42dc3eb26297758a993331abc0d1",
+      "gitBlob": "e124db273d7836d4d43f4e1b72cecdda234bbc9f",
+      "sha256": "ed1633d7a3370be438de6de816740080be68313a8c9f8cf1d9e4c166eb936292"
+    },
+    {
+      "file": "hud_overlay/audio_head/assets/face_p6100r.png",
+      "reference": "bb36cd683fae42dc3eb26297758a993331abc0d1",
+      "gitBlob": "46dec84eb016a57e92ed8f1d65448284c696e353",
+      "sha256": "5a8cc6e398696ce5b9489bdf7160d3ba5db83d48251c7037bd4823d2a860e8a7"
+    },
+    {
+      "file": "hud_overlay/audio_head/assets/face_vx5500k.png",
+      "reference": "bb36cd683fae42dc3eb26297758a993331abc0d1",
+      "gitBlob": "f51f9c4424298bf9c01f320817c1197e9b6547e1",
+      "sha256": "265353a6673cbd9ac31ec7e2838c8e68b4b6d0ef5b6997a207b849599ac5e302"
+    },
+    {
+      "file": "hud_overlay/audio_head/assets/jvc_kameleon_clean.png",
+      "reference": "bb36cd683fae42dc3eb26297758a993331abc0d1",
+      "gitBlob": "b25e4ec1226d683a6070444a9cc94de29fe0d76f",
+      "sha256": "1928fbdd23afecbe9182acb91d89b02689b2635f1063e72976e0a299db30df4d"
+    },
+    {
+      "file": "hud_overlay/audio_head/assets/kenwood_krc_clean.png",
+      "reference": "bb36cd683fae42dc3eb26297758a993331abc0d1",
+      "gitBlob": "683dd77d8fbaf0c5abed91e41922c9f79d5fd201",
+      "sha256": "4acce1b847a63b9f22a078294c99096bc9f3a898a2445a4f2437d1f18d2bd3ab"
+    },
+    {
+      "file": "hud_overlay/audio_head/assets/panasonic_clean.png",
+      "reference": "bb36cd683fae42dc3eb26297758a993331abc0d1",
+      "gitBlob": "f0712076c1fd769a40a59727257827f794b6e5b5",
+      "sha256": "48a5664ac15ed58073c15c4667c85fe25ade3a52b08eae36aa79e7276bf3a56b"
+    },
+    {
+      "file": "hud_overlay/audio_head/assets/pioneer_clean.png",
+      "reference": "bb36cd683fae42dc3eb26297758a993331abc0d1",
+      "gitBlob": "b9c34753465807285da94435f6bd555a17a4ed3c",
+      "sha256": "4e448d86fd622638912a943acd4165f47f1fa6fa20ef73f951021f9d8451c69b"
+    },
+    {
+      "file": "hud_overlay/audio_head/assets/pioneer_dexp1r_clean.png",
+      "reference": "bb36cd683fae42dc3eb26297758a993331abc0d1",
+      "gitBlob": "b65e7f4637945571199f8a032c7c029653503640",
+      "sha256": "51d5a5f8ac222a5682b5a4762adfa83e232b269181cf55d845193825921ec051"
+    },
+    {
+      "file": "hud_overlay/audio_head/assets/pioneer_p835r_clean.png",
+      "reference": "bb36cd683fae42dc3eb26297758a993331abc0d1",
+      "gitBlob": "425f1d3f5c2012fa111489e2c1d5e2c16275a347",
+      "sha256": "7a1f680b0e7d321cfe577bf688656ee1be8f232f15ce71f979054c3ca7b00ddb"
+    },
+    {
+      "file": "hud_overlay/audio_head/assets/res_220.png",
+      "reference": "bb36cd683fae42dc3eb26297758a993331abc0d1",
+      "gitBlob": "55d9ac4046307923c87cd1628f53feea9cd9995b",
+      "sha256": "fa42698fcf452e56d3f2c3288448c81814471a516a37cec8656722f0bde675df"
+    },
+    {
+      "file": "hud_overlay/audio_head/assets/res_221.png",
+      "reference": "bb36cd683fae42dc3eb26297758a993331abc0d1",
+      "gitBlob": "80603d9839e763a91e9bcecec1fee0746211c042",
+      "sha256": "fcc88d56cbb8a88f59c201183830e097cac974d7795662d7fc0fcf94d9bd6a4d"
+    },
+    {
+      "file": "hud_overlay/audio_head/assets/res_222.png",
+      "reference": "bb36cd683fae42dc3eb26297758a993331abc0d1",
+      "gitBlob": "4de699d9e0e34495dec8ddffb0823a4a9e6049ee",
+      "sha256": "0fc443a720971f8f7667037048ae026370f33966f89ff209d23910ceb66444a4"
+    },
+    {
+      "file": "hud_overlay/audio_head/assets/sony_cdx_clean.png",
+      "reference": "bb36cd683fae42dc3eb26297758a993331abc0d1",
+      "gitBlob": "aa1e7901eedf1b6f87129bc5c34efdac15c8f678",
+      "sha256": "d6f1e83a68dcd89fdb73b0da498b65a3bad86fef5d8930d38b4c6891bbc1b1ee"
+    },
+    {
+      "file": "hud_overlay/auxiliary_gauges/assets/aux_aem.png",
+      "reference": "d3b137f1c53c28c3caff5d2cdc03a0ca11a9b625",
+      "gitBlob": "8872ebc5e56eb7ddf1ef8ba9f9f100d6b9075151",
+      "sha256": "7bcbfe9e78a5d946d1ed4ae03a413f76a74978c5b3ff7e119a14d236fbb6e13c"
+    },
+    {
+      "file": "hud_overlay/auxiliary_gauges/assets/aux_aem_leds.png",
+      "reference": "d3b137f1c53c28c3caff5d2cdc03a0ca11a9b625",
+      "gitBlob": "e6a4d3e3b80c38318d68bf03963da9688960f478",
+      "sha256": "43d8b63f27b48ccdd62e883dff77b440ff7e9bfe94fb6f459ed95d1fb480ee04"
+    },
+    {
+      "file": "hud_overlay/auxiliary_gauges/assets/aux_blitz.png",
+      "reference": "d3b137f1c53c28c3caff5d2cdc03a0ca11a9b625",
+      "gitBlob": "697f47fe0b297bd993cc62f2b1b198b54b5152e9",
+      "sha256": "90256a576d7aa6373ca49d01b5b11352704092d74b52f55ebf002b4290f0a10f"
+    },
+    {
+      "file": "hud_overlay/auxiliary_gauges/assets/aux_defi.png",
+      "reference": "d3b137f1c53c28c3caff5d2cdc03a0ca11a9b625",
+      "gitBlob": "62ec79a5e5a9ab5dbad3a5e3882f598029df41bf",
+      "sha256": "6fcadc5d27b03c9d97dbaef5866c2879d3f09ba2ac0ddece735f17a2738dfabd"
+    },
+    {
+      "file": "hud_overlay/auxiliary_gauges/assets/aux_greddy.png",
+      "reference": "d3b137f1c53c28c3caff5d2cdc03a0ca11a9b625",
+      "gitBlob": "9c5697b74f0e5725b7ef5eb59f94dd0a908af6e5",
+      "sha256": "39146e35229b5a6d7c8d181757538ea8a507c3748b6d1931fe58a672a2410af4"
+    },
+    {
+      "file": "hud_overlay/auxiliary_gauges/assets/aux_speedhut.png",
+      "reference": "d3b137f1c53c28c3caff5d2cdc03a0ca11a9b625",
+      "gitBlob": "6b6d16410806eb466fe20d89ba4a623b6f9a59d3",
+      "sha256": "74ed00aff8ebbf3c32bd73298a59bc4acf4f4c17f2e4dc4f98227c8195bcf213"
+    }
+  ],
+  "images": [
+    {
+      "file": "default-light-1280-auxiliary-gauges.png",
+      "bytes": 142081,
+      "sha256": "5025605b112cae7e9ae4a8fae02481f037a37ee20a0c4d639af8208716412faa"
+    },
+    {
+      "file": "default-dark-1280-auxiliary-gauges.png",
+      "bytes": 145001,
+      "sha256": "4bcf50d720120accabbeb713c952af9cb9a24969dce7f2c8f02bdbfde65cc61b"
+    },
+    {
+      "file": "swiss-light-1280-auxiliary-gauges.png",
+      "bytes": 97796,
+      "sha256": "721e916a3a7228d89088f54725423a79142b2dbd3b42843f4bb89aa43cdf3f2a"
+    },
+    {
+      "file": "swiss-dark-1280-auxiliary-gauges.png",
+      "bytes": 98268,
+      "sha256": "5771c813d127f5e68a9c47cf9e7399b22e7347272d08fbe650f61698a845343c"
+    },
+    {
+      "file": "rhine-lab-light-1280-auxiliary-gauges.png",
+      "bytes": 107286,
+      "sha256": "a588217276bcf4eebcc32f3fd9ae5e9e3d8f45d7c2a1b816eeaacbf5122170e3"
+    },
+    {
+      "file": "rhine-lab-dark-1280-auxiliary-gauges.png",
+      "bytes": 107982,
+      "sha256": "4f346d172ab1e0c6e99b3aff24f5f61160ba12e0a61da4dc5031c4abbeca1441"
+    },
+    {
+      "file": "default-dark-320-auxiliary-gauges.png",
+      "bytes": 67932,
+      "sha256": "b323d3a495c0c4a1a0ea8a5739915d63409f78e64c6ef6bad5c66631858bd2ce"
+    },
+    {
+      "file": "auxiliary-shared-sources.png",
+      "bytes": 83843,
+      "sha256": "8fbfad2f780f7a3e8d4f5197368f0fd445a32390a8e773fdc4c4e86fd525caca"
+    },
+    {
+      "file": "auxiliary-five-vertical.png",
+      "bytes": 269743,
+      "sha256": "ecc6ac902009850c48a0c715e594f74cdff53675f05b834c6152c0973f6e68e7"
+    },
+    {
+      "file": "default-dark-1280-gauge.png",
+      "bytes": 142753,
+      "sha256": "2e9e028f8552c9a7c4b56fa98e74a58701007dcac6ec8b083930ce044585d6ef"
+    },
+    {
+      "file": "default-dark-1280-telemetry.png",
+      "bytes": 121255,
+      "sha256": "40d3ef7a572538d7ddea26df3fe55ec3353d4efd6a462bd9fda4d20aae561350"
+    },
+    {
+      "file": "default-dark-1280-general.png",
+      "bytes": 149153,
+      "sha256": "d38e2829c0742c1f4429cd71eb58f2c4f338ec88d8be8fa84a465d0f98a2ccde"
+    },
+    {
+      "file": "default-dark-1280-audio-head.png",
+      "bytes": 136425,
+      "sha256": "0fcb6a350b9ee976f438af045105e9f797cf8f52373dea0db4093f17f75d39c9"
+    },
+    {
+      "file": "auxiliary-aem.png",
+      "bytes": 53132,
+      "sha256": "6dd10d51ea85c8f89eae14bbe797858c44ac98c1373e67dadf9ebeaa9d4427f1"
+    },
+    {
+      "file": "auxiliary-greddy.png",
+      "bytes": 56868,
+      "sha256": "c75c2324ba4a8d4daba9be65a6272930fc1b3f55a7e3b17bd9390d05893b6863"
+    },
+    {
+      "file": "auxiliary-blitz.png",
+      "bytes": 58988,
+      "sha256": "b6174c883412991718bc7820bbc6ab791c6f5ce18f73a1e4aa15c08b68cd9c7f"
+    },
+    {
+      "file": "auxiliary-defi.png",
+      "bytes": 58864,
+      "sha256": "9bc8a16d55dccfabfcc7afd48a9c18283f3eead50ab8565ac3ec401b61656780"
+    },
+    {
+      "file": "auxiliary-speedhut.png",
+      "bytes": 40957,
+      "sha256": "095cdb75c23ffe53251468945751a505ec3fab0eafe1569850746d7f2d4998ad"
+    }
+  ]
+}

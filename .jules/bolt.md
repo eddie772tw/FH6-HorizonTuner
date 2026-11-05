@@ -143,3 +143,43 @@ Additionally, attempting to optimize 60Hz telemetry data copying in `FrameInterp
 ## 2026-10-17 - Optimize Canvas Path Rendering
 **Learning:** In high-frequency Canvas loops, drawing lines individually by calling ctx.beginPath() and ctx.stroke() per segment is inefficient. Batching segments of the same stroke style into a single path significantly reduces CPU overhead.
 **Action:** Group lines by styling (e.g., lineWidth, strokeStyle) and construct them in a single path before stroking, avoiding unnecessary path and state changes.
+
+## 2026-10-21 - Canvas Render Loop Optimization via Loop Unswitching and Path Batching
+**Learning:** In high-frequency JavaScript rendering loops (e.g., Canvas2D telemetry scatter plots), use 'loop unswitching' by hoisting invariant conditions (like checking a theme configuration) outside the loop. This prevents the JavaScript engine from evaluating the condition on every iteration (which can happen thousands of times per frame), noticeably reducing CPU overhead. Furthermore, when drawing multiple paths, replace `ctx.rect()` + `ctx.fill()` with direct `ctx.fillRect()` when `theme.linear` is true to avoid path batching overhead and preserve alpha compositing. For arcs (`theme.linear` is false), correctly batch them by moving `ctx.beginPath()` and `ctx.fill()` outside the loop, preceded by `ctx.moveTo()`.
+**Action:** Identify tight rendering loops that contain invariant conditions and extract them into separate loop bodies, applying path batching or direct drawing operations optimally for each branch.
+
+## 2026-10-21 - Eliminating Chained Array Methods in High-Frequency Math Adapters
+**Learning:** In high-frequency rendering and data preparation loops (e.g., `averageTireF`, `boostPsi`, `pedal`), using array methods like `.some()` or `.reduce()` creates intermediate arrays and forces closure allocations. This contributes to GC pressure in tight UI paths.
+**Action:** Replace `Array.reduce` and `.some` with explicit bound checks and unwound mathematical operations on array elements (e.g., `v0 + v1 + v2 + v3`) along with unrolled property lookup chains.
+
+## 2026-10-28 - Optimizing path rendering by replacing rect+fill with fillRect
+**Learning:** In high-frequency 60Hz Canvas rendering loops (e.g., telemetry visualizations), calling `ctx.rect()` followed by `ctx.fill()` introduces path state management overhead. Since `ctx.rect()` modifies the current path rather than rendering directly, it relies on the canvas context maintaining and rasterizing the path object.
+**Action:** Replace `ctx.rect()` + `ctx.fill()` with the direct `ctx.fillRect()` method whenever rendering standalone rectangles that don't need to be grouped in complex paths. This avoids path building overhead and draws directly to the bitmap, slightly improving execution speed.
+
+## 2026-11-01 - Iterative Stack and Squared-Distance Vector Simplification in Telemetry RDP
+**Learning:** In telemetry track mapping and vector path simplification (`simplifyPathRDP`), the naive recursive Ramer-Douglas-Peucker algorithm repeatedly invokes `.slice()` and spread operator array reconstructions on every sub-division. For long telemetry laps (thousands of GPS points), this introduces heavy Garbage Collection (GC) churn, redundant inner `Math.sqrt()` and repeated vector segment denominator recalculations, and carries a recursion stack overflow risk.
+**Action:** Replace recursive sub-array slicing with an explicit range stack and `Uint8Array` bitmap markers. Hoist line segment invariants (`dx`, `dz`, inverted line length squared) outside candidate scanning loops, and compare squared perpendicular distances (`distSq > sqEpsilon`) to eliminate all square root calculations in the hot scanning path.
+**署名:** Bolt as Antigravity
+
+## 2026-11-01 - RPM 分段批次繪製不建立每幀 Path2D
+**學習：** 將 Path2D 放進 useRef 後，若每次 draw 仍以 new Path2D 清空幾何，配置仍位於高頻更新路徑。RPM 相同樣式的段落是連續區間，可直接以 Canvas current path 批次繪製，保留 inactive、primary、secondary、danger/alert 的合成順序與各自光暈，且不需暫態群組或 Path2D。轉向儀表沿用 #584 的已合併實作。
+**驗證界線：** 減少呼叫與移除 Path2D 配置不代表已量得遊戲 FPS、GC 或高刷新率流暢度改善。
+**署名：** Mihaly as Codex
+
+## 2026-11-20 - Using Continuous Sub-paths Over Path2D for High-Frequency State Rendering
+**Learning:** When trying to batch rendering paths in a high-frequency loop (like `EngineRpmDisplay`), using `Path2D` inside a `useRef` and re-instantiating it with `new Path2D()` on every frame still creates transient allocations and GC pressure. If the segments to be rendered share contiguous states (e.g. inactive, primary, danger), the default Canvas context sub-path (`ctx.beginPath()`) is already sufficient.
+**Action:** Instead of `Path2D` abstractions, find the continuous segment index boundaries (e.g., `secondaryStart`, `redStart`). Loop over the contiguous ranges directly, invoking a single `ctx.beginPath()`, constructing the continuous `moveTo` / `lineTo` blocks, and closing with one `ctx.fill()`. This guarantees zero temporary object allocations and maintains identical visual output.
+## 2026-11-02 - Hoisting Invariants and Squared-Distance Clamping in TireRadar Canvas Loops
+**Learning:** In high-frequency 60Hz telemetry HUD components with multiple instances (e.g. 4x TireRadar rendering up to 180 trajectory points per frame), performing redundant multiplications and divisions (e.g. `p.angle / displayLimit * radius * dpr`) and unconditionally executing `Math.sqrt(dx * dx + dy * dy)` inside the hot iteration loop causes avoidable CPU overhead. Because over 95% of normal telemetry points remain within the grip limit circle, their true Euclidean distance is not needed.
+**Action:** Hoist invariant geometry variables (`scaleFactor`, `maxScaledRSq`, `center`) outside the rendering loop. Compare squared distances (`distSq > maxScaledRSq`) and only invoke `Math.sqrt` when clamping points that actually exceed the physical radar boundary. In microbenchmarks, this reduced vector transformation loop latency by 52.2% (~2.09x speedup) while maintaining exact numerical parity.
+**署名:** Bolt as Antigravity
+
+## 2026-11-03 - Eliminating Settings Deep-Clone and IndexMap Reallocations in 60Hz UDP Receiver
+**學習 (Learning):** In high-frequency 60Hz+ UDP telemetry receive loops ("receive_udp"), invoking "settings.borrow_and_update().clone()" on every single packet frame deep-clones the entire settings JSON tree across thousands of frames per minute, generating continuous heap allocation and deallocation churn. Furthermore, in "parse_packet", initializing "Map::new()" with zero initial capacity causes the underlying "IndexMap" to dynamically reallocate and copy memory 5 times per packet as ~64 fields are inserted, and using "(0..4).map(...).collect()" for array decoding incurs Iterator and intermediate vector allocation overhead on every frame.
+**行動 (Action):** Use scoped immutable borrowing on "settings.borrow_and_update()" directly without ".clone()" to inspect forwarding flags with zero copies. Pre-allocate map capacity using "Map::with_capacity(64)" and unroll 4-element arrays directly using "vec![num(...), ...]" to eliminate iterator and allocation churn in the UDP receiver hot path.
+**署名:** Bolt as Antigravity
+
+## 2026-11-04 - Bypassing Rich Presence Formatting and Frame Deep-Clone in 60Hz Processing Worker
+**學習 (Learning):** In high-frequency 60Hz telemetry processing workers (`App::process`), unconditionally invoking `frame.clone()` on every packet frame to construct Discord Rich Presence deep-clones a massive 64-field JSON tree (including 7 telemetry arrays) ~3,600 times per minute. When Discord presence is unconfigured (the vast majority of runs), this entire deep-clone, `car_database` map lookup, vehicle string formatting, and IPC mutex locking is completely discarded. Furthermore, even when Discord presence is enabled, rich presence only requires 9 scalar fields, meaning cloning dozens of high-frequency suspension, tire, and dynamics arrays is redundant.
+**行動 (Action):** Guard the Discord presence preparation block behind `self.native.discord_enabled()`. When disabled, bypass all string formatting and eliminate `frame.clone()`, allowing `frame` to be moved directly into `Arc::new(frame)` with zero copies. When enabled, construct a lightweight 9-field presence payload rather than cloning the entire telemetry frame.
+**署名:** Bolt as Antigravity

@@ -134,14 +134,16 @@ fn independent_elements_migrate_and_survive_config_save_restart_and_gauge_change
     let directory = tempfile::tempdir().unwrap();
     let service = ConfigService::new(directory.path()).unwrap();
     service.handle("POST", "/api/overlay/config", &json!({
-        "hudStyle":"audio_head", "audioHeadDeck":6, "elements":{"showGauge":true}, "pluginField":42
+        "hudStyle":"audio_head", "audioHeadDeck":6, "scale":1.4, "elements":{"showGauge":true}, "pluginField":42
     })).unwrap().unwrap();
     let mut hud = service.hud();
     assert_eq!(hud["hudStyle"], "vfd");
     assert_eq!(hud["elements"]["showAudioHead"], true);
     assert_eq!(hud["audioHeadDeck"], 6);
+    assert_eq!(hud["audioHeadScale"], 1.4);
     for edge in ["left", "right", "top", "bottom"] {
         hud["hudStyle"] = json!("gt7");
+        hud["scale"] = json!(0.8);
         hud["elements"]["showGauge"] = json!(false);
         hud["audioHeadEdge"] = json!(edge);
         hud["audioHeadOffset"] = json!(24.0);
@@ -158,6 +160,8 @@ fn independent_elements_migrate_and_survive_config_save_restart_and_gauge_change
         assert_eq!(restored["audioHeadOffset"], 24.0);
         assert_eq!(restored["audioHeadCenterOffset"], -32.0);
         assert_eq!(restored["pluginField"], 42);
+        assert_eq!(restored["audioHeadScale"], 1.4);
+        assert_eq!(restored["scale"], 0.8);
     }
     let bounded = config::normalize_hud(
         &json!({"audioHeadDeck":99,"audioHeadEdge":"invalid","audioHeadOffset":-20,"audioHeadCenterOffset":9000}),
@@ -169,6 +173,30 @@ fn independent_elements_migrate_and_survive_config_save_restart_and_gauge_change
     let hidden =
         config::normalize_hud(&json!({"hudStyle":"audio_head","elements":{"showGauge":false}}));
     assert_eq!(hidden["elements"]["showAudioHead"], false);
+}
+
+#[test]
+fn audio_head_scale_migrates_hidden_elements_and_bounds_explicit_values() {
+    let old = config::normalize_hud(
+        &json!({"scale":1.4,"audioHeadDeck":6,"elements":{"showAudioHead":false}}),
+    );
+    assert_eq!(old["audioHeadScale"], 1.4);
+    assert_eq!(old["elements"]["showAudioHead"], false);
+    let sparse = config::normalize_hud(&json!({"hudStyle":"vfd","scale":1.4}));
+    assert!(sparse.get("audioHeadScale").is_none());
+    for (input, expected) in [
+        (json!(null), 1.0),
+        (json!("1.5"), 1.0),
+        (json!(0), 1.0),
+        (json!(-2), 1.0),
+        (json!(0.1), 0.5),
+        (json!(9), 2.0),
+        (json!(1.75), 1.75),
+    ] {
+        let value = config::normalize_hud(&json!({"scale":0.8,"audioHeadScale":input}));
+        assert_eq!(value["audioHeadScale"], expected);
+        assert_eq!(value["scale"], 0.8);
+    }
 }
 
 #[test]
@@ -520,6 +548,33 @@ fn externally_supplied_paths_remain_inside_the_data_root() {
         "x\0y",
         ".. /escape",
         "child./file",
+        "con",
+        "CON",
+        "con.json",
+        "NUL",
+        "aux.txt",
+        "prn.log",
+        "com1",
+        "COM9.dat",
+        "lpt1.json",
+        "child/con.json",
+        "child/NUL",
+        "child/com¹",
+        "child/lpt².json",
+        "clock$",
+        "CLOCK$.json",
+        "conin$",
+        "CONIN$.txt",
+        "conout$",
+        "CONOUT$.csv",
+        "com0",
+        "COM0.dat",
+        "lpt0",
+        "lpt0.json",
+        "child/clock$.json",
+        "child/conin$",
+        "child/com0",
+        "child/lpt0.dat",
     ] {
         assert!(
             storage::safe_path(directory.path(), name).is_err(),

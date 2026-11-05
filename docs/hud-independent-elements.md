@@ -4,6 +4,12 @@ Audio Head and Auxiliary Gauges have their own controls and visibility. They sha
 the launcher's connections with the speedometer and remain visible when the main
 gauge or central telemetry cards are hidden. Disabling an element removes its iframe.
 
+The settings workspace places Audio Head fourth and Auxiliary Gauges fifth, after
+Main gauge, Telemetry cards and General. Both panels use the shared tab registry;
+switching tabs preserves drafts and does not save or toggle either element.
+Original raster faceplates remain the delivery baseline; clarity experiments are
+reserved for separate PRs. See the [Auxiliary Gauges guide](hud/auxiliary-gauges.en.md).
+
 Auxiliary Gauges defaults to the right edge center with zero offset. Pick any of the
 five faceplates with checkboxes. The selection order is preserved. The count limit
 is per row in horizontal mode and per column in vertical mode (1–5 gauges). The
@@ -26,8 +32,11 @@ no per-faceplate source overrides. Descriptions and source field/unit stay in th
 settings and accessible canvas description; the HUD shows only the original
 faceplate and its reading, without additional white caption lines underneath.
 
-Descriptions and offsets keep an editing draft; press Enter or leave the field to
-save. Spaces in a multiword description remain intact while typing.
+Descriptions and numeric offsets keep an editing draft; press Enter or move to
+an ordinary control to save. Moving to a settings tab preserves the draft without
+saving. Sliders apply immediately. Spaces remain intact while typing. Source edits
+use nested partial patches so another mapping or tab cannot be overwritten by an
+old complete mapping object.
 
 The source selector lists numeric fields from the shared HUD telemetry contract,
 such as `temp_fl`–`temp_rr`, `tire_temp_avg`, `boost_psi`, `rpm`, `power_kw` and

@@ -1,19 +1,21 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useSettings } from '../../context/SettingsContext';
 import { isWipHudQueryEnabled } from './hudStyleScanner';
-import { DEFAULT_HUD_CONFIG, type HudConfig, type HudElements, type MonitorOption } from './hudConfig';
+import { DEFAULT_HUD_CONFIG, type HudElements, type MonitorOption } from './hudConfig';
 import '../../App.css';
 import { backendFetch } from '../../services/backend';
-import { HudUnitSettingsSidebar } from './HudUnitSettingsSidebar';
 import { OverlayControlRuntimeProvider, useOptionalOverlayControlRuntime } from './OverlayControlRuntimeProvider';
 import { HudWorkspace } from './HudWorkspace';
 import { useHudController } from './useHudController';
 import { useHudMetadata } from './useHudMetadata';
-import { HudSetupPanel } from './panels/HudSetupPanel';
+import { HudGaugePanel } from './panels/HudGaugePanel';
+import { HudTelemetryPanel } from './panels/HudTelemetryPanel';
+import { HudGeneralPanel } from './panels/HudGeneralPanel';
 import { HudAudioHeadPanel } from './panels/HudAudioHeadPanel';
 import { HudAuxiliaryPanel } from './panels/HudAuxiliaryPanel';
-import { HudLayoutPanel } from './panels/HudLayoutPanel';
-import { HudAdvancedPanel } from './panels/HudAdvancedPanel';
+import { HudWindowAction } from './HudWindowAction';
+import type { HudSettingsTabDefinition } from './hudPanelTypes';
+import type { HudConfigPatch } from './overlayControlRuntime';
 import { HudStatusIndicator } from './HudStatusIndicator';
 import { deriveHudDisplayState } from './hudStatus';
 
@@ -29,7 +31,6 @@ const OverlayViewContent: React.FC = () => {
     replaceConfig, retry, sendHudCommand, updateConfig, native, capabilities } = useHudController();
   const metadata = useHudMetadata(config.hudStyle);
   const [loading, setLoading] = useState(false);
-  const [showUnitSettings, setShowUnitSettings] = useState(false);
   const [monitors, setMonitors] = useState<MonitorOption[]>([]);
   const [hudActionError, setHudActionError] = useState<string | null>(null);
   const [monitorError, setMonitorError] = useState<string | null>(null);
@@ -156,10 +157,9 @@ const OverlayViewContent: React.FC = () => {
     sendHudCommand({ type: 'hud:reload' });
     void refresh();
   };
-  const handleElementToggle = (key: keyof HudElements) => {
-    const nextVal = !config.elements[key];
-    const elements: Partial<HudElements> = { [key]: nextVal };
-    if ((key === 'showTeleTiresSlip' || key === 'showTeleTiresTemp') && nextVal) elements.showTeleTires = true;
+  const handleElementChange = (key: keyof HudElements, checked: boolean) => {
+    const elements: Partial<HudElements> = { [key]: checked };
+    if ((key === 'showTeleTiresSlip' || key === 'showTeleTiresTemp') && checked) elements.showTeleTires = true;
     void updateConfig({ elements });
   };
   const handleS650CenterInfoToggle = () => {
@@ -169,13 +169,30 @@ const OverlayViewContent: React.FC = () => {
   };
   const displayState = deriveHudDisplayState({ status, pendingWrites, nativeBusy: loading,
     metadataLoading: metadata.loading, errors: [hudActionError, monitorError, runtimeError, metadata.error, audioError] });
-  const panelProps = {
-    config, styles: metadata.styles, t, disabled: status === 'loading',
-    onConfigPatch: (patch: Partial<HudConfig>) => { void updateConfig(patch); },
+  const actions = {
+    t, disabled: status === 'loading',
+    onConfigPatch: (patch: HudConfigPatch) => { void updateConfig(patch); },
   };
+  const tabs: HudSettingsTabDefinition[] = [
+    { id: 'gauge', labelKey: 'Main gauge', content: <HudGaugePanel {...actions} config={config}
+      styles={metadata.styles} author={metadata.currentAuthor} metadataLoading={metadata.loading}
+      includeWip={isWipActive} wipForced={wipForced} appUnits={settings.units}
+      onShowWipChange={handleToggleShowWipHuds} onS650CenterInfoToggle={handleS650CenterInfoToggle} /> },
+    { id: 'telemetry', labelKey: 'Telemetry cards', content: <HudTelemetryPanel {...actions}
+      config={config} onElementChange={handleElementChange} /> },
+    { id: 'general', labelKey: 'General', content: <HudGeneralPanel {...actions} config={config}
+      monitors={monitors} appUnits={settings.units} busy={loading} capabilities={capabilities}
+      audioDevices={audioDevices} loadingAudioDevices={loadingAudioDevices} onMonitorChange={handleMonitorChange}
+      onAudioDeviceChange={deviceId => void handleAudioDeviceChange(deviceId)} onRefreshAudioDevices={() => void fetchAudioDevices()}
+      onReloadHud={() => void handleReloadHud()} onResetHudConfig={handleResetHudConfig} /> },
+    { id: 'audio-head', labelKey: 'Audio Head', content: <HudAudioHeadPanel {...actions} config={config} /> },
+    { id: 'auxiliary-gauges', labelKey: 'Auxiliary Gauges', content: <HudAuxiliaryPanel {...actions} config={config} /> },
+  ];
 
   return (
-    <HudWorkspace t={t}
+    <HudWorkspace t={t} tabs={tabs}
+      windowAction={<HudWindowAction enabled={config.enabled} busy={loading} disabled={actions.disabled}
+        capability={capabilities.nativeWindow} onToggle={enabled => void toggleHudWindow(enabled)} t={t} />}
       status={<HudStatusIndicator state={displayState} t={t} issues={[
         { source: 'HUD settings', message: runtimeError, retry: () => { void retry(); } },
         { source: 'HUD window', message: hudActionError },
@@ -183,25 +200,7 @@ const OverlayViewContent: React.FC = () => {
         { source: 'HUD metadata', message: metadata.error, retry: metadata.refresh },
         { source: 'Audio Capture Source', message: audioError },
       ]} />}
-      setup={<HudSetupPanel {...panelProps} monitors={monitors} author={metadata.currentAuthor}
-        metadataLoading={metadata.loading} includeWip={isWipActive} busy={loading}
-        capabilities={capabilities} onToggleHud={enabled => void toggleHudWindow(enabled)}
-        onStyleChange={hudStyle => void updateConfig({ hudStyle })} onMonitorChange={handleMonitorChange}
-        onReloadHud={() => void handleReloadHud()} onOpenUnitSettings={() => setShowUnitSettings(true)} />}
-      audioHead={<HudAudioHeadPanel {...panelProps} />}
-      auxiliaryGauges={<HudAuxiliaryPanel {...panelProps} />}
-      layout={<HudLayoutPanel {...panelProps} onElementToggle={handleElementToggle} />}
-      advanced={<HudAdvancedPanel {...panelProps} appUnits={settings.units} audioDevices={audioDevices} loadingAudioDevices={loadingAudioDevices}
-        isWipActive={isWipActive} wipForced={wipForced}
-        onAudioDeviceChange={deviceId => void handleAudioDeviceChange(deviceId)} onRefreshAudioDevices={() => void fetchAudioDevices()}
-        onShowWipChange={handleToggleShowWipHuds} onElementToggle={handleElementToggle}
-        onS650CenterInfoToggle={handleS650CenterInfoToggle} onResetHudConfig={handleResetHudConfig} />}
-    >
-      <HudUnitSettingsSidebar show={showUnitSettings} followGlobal={config.followAppUnits !== false}
-        units={config.units ?? DEFAULT_HUD_CONFIG.units!} globalUnits={settings.units} t={t}
-        onFollowGlobalChange={followAppUnits => void updateConfig({ followAppUnits })}
-        onUnitsChange={units => void updateConfig({ unit: units.speed, units })} onClose={() => setShowUnitSettings(false)} />
-    </HudWorkspace>
+    />
   );
 };
 

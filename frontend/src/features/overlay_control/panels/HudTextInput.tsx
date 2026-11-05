@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { isHudSettingsTab } from '../hudSettingsFocus';
 
 // Persist on commit so config normalization cannot remove spaces while typing.
 export function HudTextInput({ id, value, onCommit }: {
@@ -12,6 +13,6 @@ export function HudTextInput({ id, value, onCommit }: {
     if (next !== value) onCommit(next);
   };
   return <input id={id} className="form-control form-control-sm" maxLength={64} value={draft}
-    onChange={event => setDraft(event.target.value)} onBlur={commit}
+    onChange={event => setDraft(event.target.value)} onBlur={event => { if (!isHudSettingsTab(event.relatedTarget)) commit(); }}
     onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); event.currentTarget.blur(); } }} />;
 }

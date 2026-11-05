@@ -1,29 +1,41 @@
-# Audio Head 向量面板
+# Audio Head 原始面板素材
 
-九款面板以獨立 SVG 圖層呈現，保留既有邏輯尺寸、配置、配色與矩形背景。頻譜、曲名、OEL 海豚與 VU 指針仍由原有 Canvas 繪製。SVG 不含嵌入點陣圖、外部字型或外部圖片，不經低解析度 Canvas 快取。
+九款面板執行時使用本目錄的原始 `*_clean.png`。2026-11-05 視覺審查否決整面 SVG 重繪後，Pioneer DEH-P835R、Alpine CDA-7848、CDA-9815RB 回退至原素材；其餘六款同樣移除未逐項確認的整面重繪。這次沒有啟用任何局部向量替換。
 
-## 來源與重建範圍
+## 執行來源與呈現
 
-- 原始參考：`D:/ForzaHUD/extracted_resources/dds/res_220.dds`、`radio/res_220_full.png`、`shaders_asm/res_123.asm`，以及本目錄保留的九張 `*_clean.png`。DDS header 與 PNG IHDR 的實際尺寸均為 **524×988**；研究 Markdown 所稱的 2264×2496 不符合本機原檔。
-- 原面板寬 380–490 px，在預設 HUD scale=100% 時顯示約 569–733 px；單純放大原 PNG 無法增加細節。
-- 文字、框線、格線、刻度及材質依原圖重建。Alpine、Pioneer、Sony、Kenwood品牌直接沿用既有SVG輪廓、等比例縮放；P835R採對應舊版大寫Pioneer標誌。來源及原檔見[brands/SOURCES.md](brands/SOURCES.md)。其他固定文字使用Windows內建Arial／Arial Narrow／Georgia與固定寬度，不宣稱是原作字型的完整復原。
-- RDS、Alpine 光碟、DEX-P1R 與 P835R 圖樣、Sony DSO、JVC 光碟等保留原始輪廓，整理為 `panel-glyphs.json` 的向量路徑。每筆記錄原圖 SHA-256、區域、顏色與輪廓；這些路徑保留來源的細節上限，並非從低解析度素材還原出原本不存在的細節。
-- 75% 不透明度只套在背景材質群組。完整矩形與 Panasonic 金色材質在同一群組合成後一次設定 opacity，避免背景重疊後變成 93.75%；文字及黯淡裝飾為獨立、不受背景 opacity 影響的圖層。
-- 保留 `*_clean.png` 作為來源對照，執行時不再載入這些低解析度面板。
+| 型號 | 執行素材 | 原生尺寸 |
+| --- | --- | --- |
+| Pioneer DEH-P6100R | `pioneer_clean.png` | 380×98 |
+| Panasonic CQ-VX5500K | `panasonic_clean.png` | 438×110 |
+| Pioneer DEX-P1R | `pioneer_dexp1r_clean.png` | 412×98 |
+| Pioneer DEH-P835R | `pioneer_p835r_clean.png` | 460×125 |
+| Sony CDX-CA860X | `sony_cdx_clean.png` | 440×133 |
+| Alpine CDA-7848 | `alpine_7848_clean.png` | 440×112 |
+| Alpine CDA-9815RB | `alpine_9815_clean.png` | 490×110 |
+| Kenwood KRC-759R | `kenwood_krc_clean.png` | 392×125 |
+| JVC KD-LX50R | `jvc_kameleon_clean.png` | 460×98 |
 
-## 編輯與驗證
+- 以上檔案與整面向量化之前的 `ff6baf5b` 位元組相同，未重新壓縮、放大或修圖。來源為原有 `res_220` 圖集與 D3D11 底圖提取流程；保留既有文字、標誌、格線、輪廓、配色及細節上限，不宣稱恢復低解析度來源不存在的資訊。
+- 靜態 Canvas 沿用 `ff6baf5b` 的矩形合成：先以黑色補足矩形，再繪製原圖；只有原黑色、研究 renderer 清底色與 Panasonic 金色材質使用 alpha 191（約 75%），黯淡字樣和裝飾保留覆蓋度。沒有重疊套用透明度，也沒有亮度門檻去掉暗部細節。
+- 各底圖只在載入時準備一次，靜態圖層只在切換型號時更新；頻譜、曲名、海豚與 VU 指針留在另一個動態 Canvas。現有動畫、原生視窗座標、DPR、獨立縮放與四邊對齊不變。
+- [音響系統指南與逐款截圖](../../../docs/hud/audio-head.md)記錄實際 launcher 的擷取與測試；PNG 放大仍受原始解析度限制。
 
-以 Node 標準函式庫重建，無新增相依套件：
+## 局部向量替換的界線
+
+1. 預設保留原素材。只有能確認存在**相同圖形**的向量檔時，才考慮替換對應的局部商標、標誌或可逐點數學描述的圖樣。
+2. 替換前記錄來源檔、來源網址／授權、SHA-256、對應原圖區域，以及形狀、比例、顏色與位置的核對；替換後提供同尺寸的局部及完整面板實際截圖供視覺審查。
+3. 「同品牌」不等於相同年代／版式的商標。一般字型近似、看圖重畫、點陣自動描摹、猜測刻度或只因為輸出副檔名是 SVG，都不能視為已確認的相同向量來源。無法確認時保留原圖，不擴展成整面重製。
+4. `brands/` 的檔案及[來源紀錄](brands/SOURCES.md)僅保留備查，不代表已核准套用到目前面板；`panel-glyphs.json` 的點陣描摹也不是原生向量來源。
+
+## 歷史重繪與安全回歸
+
+`*.svg`、`build-panels.mjs` 及 `panel-glyphs.json` 保留為歷史審查資料，**目前 renderer 不載入**。生成器仍可用下列命令核對歷史產物，但通過只代表來源與產物一致，不代表視覺審查通過，也不會切換執行素材：
 
 ```powershell
-node hud_overlay/audio_head/assets/build-panels.mjs
 node hud_overlay/audio_head/assets/build-panels.mjs --check
 ```
 
-修改 `build-panels.mjs` 或 `panel-glyphs.json` 後應重新產生九款 SVG。`--check` 只比對產物是否與可編輯來源一致，不改寫檔案。
+`normalize-brand-fragment.mjs` 的固定點、token／range 與輸入上限安全修復，以及 `../tests/unit/brandNormalization.test.ts` 的 44 項回歸契約保留。它只處理已納入版本控制的品牌片段，不是任意 SVG 的通用 sanitizer。
 
-`normalize-brand-fragment.mjs` 只處理已審查、納入版本控制的品牌片段，不是任意 SVG 的通用 sanitizer。移除標籤、註解及既有屬性清理會重複至固定點；以 token／range 掃描及合併區間處理成對標籤，名稱必須相符；註解採 `-->`／`--!>` 中最早的結尾，保留其後內容。錯配或無法完整辨識的片段留待最終拒絕，並非一般 XML well-formedness 檢查。每段限制 65,536 個 UTF-16 code units、最多 32 輪，未收斂或殘留禁止／不完整 markup 就拋錯；六段全部通過後才開始寫入面板。保留 Alpine `cls-1` 幾何選取、`fill="none"`、CDDA 非 fill inline styles 與既有空白格式。
-
-安全回歸與重建測試位於 `../tests/unit/brandNormalization.test.ts`，由完整 frontend Vitest 入口執行；涵蓋 delimiter 重組、拒絕不完整輸入、失敗時不寫入任何面板，以及六段既有片段與九張重建 SVG 的位元組相容性。
-
-瀏覽器驗證應逐款切換並檢查 scale／DPR、亮暗背景下的透明度、文字與既有頻譜視窗的對位。來源正規化／重建測試與離線圖片不代表遊戲或跨更新率視覺驗收。
+獨立瀏覽器入口為 `node frontend/src/features/overlay_control/tests/browser/verify.cjs`，呼叫 `../tests/browser/verify.cjs`。除設定與 launcher 行為外，逐款比對原生尺寸、完整底圖 RGB（容許 Canvas alpha 預乘的 1 級捨入）、材質／裝飾透明度及未載入重繪 SVG。瀏覽器 fixture 與原圖一致性不代表使用者已重新通過視覺審查，亦不是遊戲、真實音訊或跨螢幕驗收。
