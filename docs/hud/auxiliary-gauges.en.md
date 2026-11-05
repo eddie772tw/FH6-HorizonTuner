@@ -20,6 +20,8 @@ Forms send only the changed `gaugeValueSources.<reading>.<field>` patch. The exi
 
 ## Screenshots and evidence
 
+On each native application startup, the shared runtime reconciles the saved HUD flag with the actual window visibility. Closing the app while the HUD is open no longer makes the next launch report an open overlay or pause Live incorrectly. A WebView reload preserves an actually visible window. Native launch failure leaves the flag disabled; correction saves use the existing serialized retry path and preserve other settings. See the [restart evidence](auxiliary-gauges-screenshots/restart/README.md) for actual Windows close/relaunch results, separately labeled browser bridge fixtures and reproduction commands.
+
 The [gallery and capture manifest](auxiliary-gauges-screenshots/README.md) cover day/night views across three design systems, narrow layout, shared sources, all five original faceplates and a grouped arrangement. Captures use the real AppShell/HUD renderer with isolated fixtures; they are not raw artwork or game captures.
 
 Run `node frontend/src/features/overlay_control/tests/browser/verify.cjs` with a task-local Playwright installation. The independent browser suite covers five-tab keyboard/ARIA behavior, drafts, cross-tab saves, all cores/day-night/three locales/320–1920px, and launcher lifecycle, four anchors, source conversion, every face and row/column layout. Native Windows multi-monitor, game and screen-reader acceptance remain separate.

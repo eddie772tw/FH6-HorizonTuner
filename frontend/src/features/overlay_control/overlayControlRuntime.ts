@@ -35,6 +35,8 @@ export interface ResponseLike {
 export interface OverlayControlTransport {
   readConfig(signal: AbortSignal): Promise<ResponseLike>;
   saveConfig(config: HudConfigRecord): Promise<ResponseLike>;
+  /** Native visibility is session state; a saved enabled flag cannot restore a window. */
+  readWindowVisibility?(): Promise<boolean>;
 }
 
 export interface OverlayControlChannel {
@@ -200,6 +202,7 @@ export function createOverlayControlRuntime(
       const response = await transport.readConfig(controller.signal);
       if (!response.ok) throw errorForResponse('Loading HUD settings', response);
       const data = await response.json();
+      const visible = await transport.readWindowVisibility?.();
       if (
         generation !== refreshGeneration ||
         revisionAtStart !== localRevision ||
@@ -211,11 +214,15 @@ export function createOverlayControlRuntime(
       }
 
       const config = normalizeHudRuntimeConfig(data);
+      const reconcileVisibility = visible !== undefined && config.enabled !== visible;
+      if (visible !== undefined) config.enabled = visible;
       hasAuthoritativeConfig = true;
       lastFailedOperation = null;
       setSnapshot({ config, status: 'ready', error: null, pendingWrites: 0 });
       publish(config);
-      return true;
+      // Use the same serialized writer/retry path; never rely on async unload
+      // cleanup, which is skipped when the application or backend is terminated.
+      return reconcileVisibility ? save(config) : true;
     } catch (error) {
       if (
         generation !== refreshGeneration ||
@@ -330,7 +337,7 @@ export function createOverlayControlRuntime(
       // BroadcastChannel has no authority revision. Once local persistence has
       // occurred, a delayed renderer payload cannot be proven newer, so use a
       // fresh GET reconciliation instead of trusting it indefinitely.
-      if (localRevision > 0) {
+      if (localRevision > 0 || transport.readWindowVisibility) {
         queueReconciliation();
         return;
       }

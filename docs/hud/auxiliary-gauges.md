@@ -2,6 +2,8 @@
 
 [English](auxiliary-gauges.en.md)
 
+原生程式啟動時，共用 runtime 會依 HUD 視窗實際可見狀態校正保存值。HUD 開啟時關閉程式，下次啟動不再誤判為開啟，也不會錯誤暫停 Live；若只是 WebView 頁面重載，則保留仍可見的 HUD。原生啟用失敗不保存啟用值，校正寫入沿用串行保存／重試並保留其他設定。實際 Windows 關閉／重啟與獨立標示的 bridge fixture 證據及重現方式見[重啟驗證圖集](auxiliary-gauges-screenshots/restart/README.md)。
+
 HUD 設定的第五個「輔助儀表」分頁管理獨立表頭，可與主儀表及音響系統並存。關閉顯示時仍可預先設定。此功能沿用原素材底圖；音響面板的 Shader／銳化研究沒有納入本次交付，清晰度改善留待獨立 PR。
 
 ## 顯示與排列

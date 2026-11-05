@@ -68,7 +68,7 @@
     },
     {
       "path": "frontend/src/features/overlay_control/tests/browser/verify.cjs",
-      "sha256": "bb633bc97318c624d59814246620c45c24437b9eabe1d6067a65bcbc58018ae5"
+      "sha256": "438cf85fa62853424d0db0f6dc343472314c5f89f710a21757159205f5cbf0db"
     },
     {
       "path": "hud_overlay/nfsu2/index.html",
@@ -76,7 +76,7 @@
     },
     {
       "path": "hud_overlay/nfsu2/tests/browser/verify.cjs",
-      "sha256": "259538d2ad63a0aff6283bf9714b34ef0efc9e8a3c356cacd53ff2ebe5179c81"
+      "sha256": "1e2d984e725d5af67417663acc77d96596d3ec23c838ebe2e51f0a4e945db1ec"
     },
     {
       "path": "lang/en-us.json",
@@ -96,52 +96,52 @@
     "NFSU2 selector in Main gauge: all 11 choices, hidden configuration, tab changes without saves, persistence, 84 theme/language/size layouts and actual launcher captures"
   ],
   "fullSuite": "420 shared layouts, 105 captures, 166 fixture saves, zero page errors; refreshed NFSU2 capture run waits for startup sweep and restores wide-panel scroll",
-  "source": "d58a523e plus isolated capture fixture refinement; native startup-state fix merged subsequently without changing NFSU2 selector or renderer",
+  "source": "e1b2359a merged with d72ce266 plus capture fixture refinement; settings captured before native state fix, NFSU2 selector and renderer unchanged",
   "limitations": "Not native, game, audio or screen-reader acceptance",
   "images": [
     {
       "file": "nfsu2-face-0.png",
-      "sha256": "1a28ac9fd74d9683979a28641d0d8f1549606cd0ac61c2641360a6b1be5603eb"
+      "sha256": "4191a764689a04e8f39a8fb1ec76cc5b0c578528805d355c8c3e3ff836279b94"
     },
     {
       "file": "nfsu2-face-1.png",
-      "sha256": "2ed655bf7442204cbf7d1748873ae5d0f7fd735f809c4e07dad36b588f2404ff"
+      "sha256": "65f1ced74e0f652d8d74954ec6de3481385411392d08709e6c2d65e17e751b91"
     },
     {
       "file": "nfsu2-face-10.png",
-      "sha256": "3e29ecdb95401c2c48537c4a6a0949f8be4d98bebeedcfa755ca556a64ac5a67"
+      "sha256": "1391a9bedd5d54d44ba58ff4e46efdaa37293ad6a0b046a92f5879f1899c67ef"
     },
     {
       "file": "nfsu2-face-2.png",
-      "sha256": "adc969b541c3b2cb827f6e4c6f9309dda4bfd5b509ab278c8d6ed0eed1c75d2f"
+      "sha256": "f75185c5aeecce9f38470cc71210f04d1c1841057c1379ab6110b05be359a979"
     },
     {
       "file": "nfsu2-face-3.png",
-      "sha256": "6dada45b3df3dd47adf197ae57327e6279f6a39dd25e5b3c40b9847b4e9c0bf5"
+      "sha256": "2977074413ea3597fd7ebf9f8601f2e00fb6000d1758a5d77fff6b84f68914d7"
     },
     {
       "file": "nfsu2-face-4.png",
-      "sha256": "3ae1560f6fe1acaf881c5922cb7a33f47915cdba77a58a1d19aae659e8902227"
+      "sha256": "8c976415fe465e929759027eb4601b6fadb4e90cbbd7d7e6899456937c1e10f5"
     },
     {
       "file": "nfsu2-face-5.png",
-      "sha256": "13e6dad3a011705e16808786661387fdae1a5bbb5bcd28a36ec8b6f8bee608d5"
+      "sha256": "3696d6463e776548bda440ecc6deceffbc29d26f8e63016f7de1fd73fb8abaf7"
     },
     {
       "file": "nfsu2-face-6.png",
-      "sha256": "3af42fee0382a69dd4dbbc51a600f9f9a862be65dcc990ae9980fba5d3fec24f"
+      "sha256": "1935ebec83e6dc4b9bd402f78c1769c19c9fa004f52dc3f09815e9e005a622bb"
     },
     {
       "file": "nfsu2-face-7.png",
-      "sha256": "ba7f3dd5283eb5b620216759f6ef799f837cb28a4b448e46f985acce2f106812"
+      "sha256": "f8b0ed9c3b562fc950b9b6dd8a20176ffc692bc530f4919de16984d11c3945aa"
     },
     {
       "file": "nfsu2-face-8.png",
-      "sha256": "c92b916b1118eb0c30cc501b6628bd2316e3d175fb3b1b6923b37f06d5f775b3"
+      "sha256": "c6268b94ed50ffb70e3808dfb5ce9e82bc95703f00f557600c1e7bcc6f42d1a3"
     },
     {
       "file": "nfsu2-face-9.png",
-      "sha256": "bb93e13e843617141637ecf233969a3618716841fc59001ba36fe15c7fc571ef"
+      "sha256": "41638ff93c5137638c0afba1cfffe71f445af1d0bf7aaaac71da434e9b635211"
     },
     {
       "file": "nfsu2-settings-en-us-default-dark-320.png",
@@ -179,5 +179,9 @@
       "file": "nfsu2-settings-zh-tw-swiss-light-1280.png",
       "sha256": "6378215a01e35a48f5824096253c4d26dae3b178ee65a5b97d22af50261a240c"
     }
-  ]
+  ],
+  "faceCaptureChecks": [
+    "NFSU2 selector in Main gauge: all 11 choices, persistence, 0 theme/language/size layouts and actual launcher captures"
+  ],
+  "faceCaptureSaves": 14
 }

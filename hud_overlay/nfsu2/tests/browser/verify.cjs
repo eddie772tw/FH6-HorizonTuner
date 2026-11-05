@@ -7,7 +7,7 @@ module.exports = async function verifyNfsu2({ page, context, origin, out, report
   const idle = () => page.waitForFunction(() => document.querySelector('.hud-status')?.dataset.state === 'synced');
   const settings = () => page.evaluate(async () => (await fetch('/api/overlay/config')).json());
   report.nfsu2Layouts = [];
-  for (const language of ['en-us', 'zh-tw', 'ja-jp']) {
+  for (const language of process.env.NFSU2_FACES_ONLY === '1' ? [] : ['en-us', 'zh-tw', 'ja-jp']) {
     await open(language);
     const dictionary = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../../../../lang', language + '.json'), 'utf8'));
     const panel = page.getByRole('tabpanel').first();
@@ -38,11 +38,14 @@ module.exports = async function verifyNfsu2({ page, context, origin, out, report
     }
   }
   await open(); await page.setViewportSize({ width: 1280, height: 720 });
+  await page.getByRole('tabpanel').first().locator('select').first().selectOption('nfsu2'); await idle();
   await page.getByRole('checkbox', { name: 'Show main gauge', exact: true }).check(); await idle();
   const face = page.getByRole('combobox', { name: 'NFSU2 Custom Faceplate:', exact: true });
   const options = await face.locator('option').evaluateAll(nodes => nodes.map(node => ({ id: node.value, name: node.textContent })));
   await page.getByRole('tab', { name: 'Telemetry cards', exact: true }).click();
   await page.getByRole('tabpanel', { name: 'Telemetry cards', exact: true }).getByRole('checkbox').first().uncheck(); await idle();
+  await page.getByRole('checkbox', { name: 'Center Alignment Anchor Frame', exact: true }).uncheck(); await idle();
+  await page.getByRole('checkbox', { name: 'Alignment Grid Lines', exact: true }).uncheck(); await idle();
   await page.getByRole('tab', { name: 'Audio Head', exact: true }).click();
   await page.getByRole('checkbox', { name: 'Show Audio Head', exact: true }).uncheck(); await idle();
   await page.getByRole('tab', { name: 'Auxiliary Gauges', exact: true }).click();
@@ -70,9 +73,10 @@ module.exports = async function verifyNfsu2({ page, context, origin, out, report
       await frame.locator('#nfsu2Container').screenshot({ path: path.join(out, file), animations: 'disabled' });
       report.screenshots.push(file); report.nfsu2Faces.push({ ...option, file });
     }
+    await page.bringToFront();
     await page.reload(); await page.locator('.app-header .popover .btn-close').click();
     await page.locator('.workspace-tabs--primary').getByRole('button', { name: 'HUD', exact: true }).click(); await idle();
     assert.equal(await face.inputValue(), options.at(-1).id);
-    report.checks.push('NFSU2 selector in Main gauge: all 11 choices, hidden configuration, tab changes without saves, persistence, 84 theme/language/size layouts and actual launcher captures');
+    report.checks.push(`NFSU2 selector in Main gauge: all 11 choices, persistence, ${report.nfsu2Layouts.length} theme/language/size layouts and actual launcher captures`);
   } finally { await hud.close(); }
 };
