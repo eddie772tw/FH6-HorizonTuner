@@ -47,6 +47,7 @@ window.HUD_ANIM_CONFIG = {
          * @param {object} definition Style hooks and metadata:
          *   - containerId: string (e.g., 'simpleContainer')
          *   - scaleBaseline: number (default 1.0)
+         *   - scaleConfigKey: string (default 'scale'; independent elements opt in)
          *   - scaleMultiplier: number (default 1.0)
          *   - globalScaleFactor: number (default 0.75)
          *   - onInit: function(payload)
@@ -137,7 +138,7 @@ window.HUD_ANIM_CONFIG = {
                         // viewport factor separate. Derived values from older
                         // configs (such as actualScale) are intentionally ignored
                         // so HUDCore remains the single scale authority.
-                        var userScale = readPositiveScale(payload.data.scale, 1.0);
+                        var userScale = readPositiveScale(payload.data[activeStyle.scaleConfigKey || 'scale'], 1.0);
                         var baseline = readPositiveScale(activeStyle.scaleBaseline, 1.0);
                         var multiplier = readPositiveScale(activeStyle.scaleMultiplier, 1.0);
                         var globalScale = readPositiveScale(
