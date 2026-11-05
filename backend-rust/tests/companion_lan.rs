@@ -231,6 +231,25 @@ async fn http_responses_enforce_defense_in_depth_security_headers() {
         "strict-origin-when-cross-origin"
     );
 
+    // The registered WebSocket route can reject HTTP before the LAN fallback runs.
+    let rejected = lan_router
+        .oneshot(request(
+            Method::POST,
+            "/ws/telemetry",
+            None,
+            None,
+            Body::empty(),
+        ))
+        .await
+        .unwrap();
+    assert_eq!(rejected.status(), StatusCode::METHOD_NOT_ALLOWED);
+    assert_eq!(rejected.headers()["x-content-type-options"], "nosniff");
+    assert_eq!(rejected.headers()["x-frame-options"], "SAMEORIGIN");
+    assert_eq!(
+        rejected.headers()["referrer-policy"],
+        "strict-origin-when-cross-origin"
+    );
+
     // 2. General router enforces security headers on standard API GET
     let req = Request::builder()
         .method(Method::GET)
