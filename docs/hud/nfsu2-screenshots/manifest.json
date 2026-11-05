@@ -1,0 +1,183 @@
+{
+  "unexpectedRequests": [],
+  "saves": 22,
+  "environment": "Windows sandboxed Edge, real AppShell and launcher, isolated HTTP and synthetic telemetry",
+  "date": "2026-11-05",
+  "faces": [
+    {
+      "id": "3",
+      "name": "Tabby Cat (Ice Blue)",
+      "file": "nfsu2-face-3.png"
+    },
+    {
+      "id": "0",
+      "name": "Stock OEM (Ice Blue)",
+      "file": "nfsu2-face-0.png"
+    },
+    {
+      "id": "1",
+      "name": "Hot Rod Flames (Orange)",
+      "file": "nfsu2-face-1.png"
+    },
+    {
+      "id": "2",
+      "name": "Street Tribal (Cyan)",
+      "file": "nfsu2-face-2.png"
+    },
+    {
+      "id": "4",
+      "name": "Biohazard Skull (Lime)",
+      "file": "nfsu2-face-4.png"
+    },
+    {
+      "id": "5",
+      "name": "Redline Classic (Crimson)",
+      "file": "nfsu2-face-5.png"
+    },
+    {
+      "id": "6",
+      "name": "Gold Chrono (Gold)",
+      "file": "nfsu2-face-6.png"
+    },
+    {
+      "id": "7",
+      "name": "Techno Arc (Aqua)",
+      "file": "nfsu2-face-7.png"
+    },
+    {
+      "id": "8",
+      "name": "Speed Pulse (Indigo)",
+      "file": "nfsu2-face-8.png"
+    },
+    {
+      "id": "9",
+      "name": "Circuit Board (Emerald)",
+      "file": "nfsu2-face-9.png"
+    },
+    {
+      "id": "10",
+      "name": "Bling Edition (Gold)",
+      "file": "nfsu2-face-10.png"
+    }
+  ],
+  "errors": [],
+  "sourceHashes": [
+    {
+      "path": "frontend/src/features/overlay_control/panels/HudGaugeStyleSettings.tsx",
+      "sha256": "f4850b5e95618ce8eccfda6416349ca077caea3ce4a06bfa5efaec3b8ba1fa49"
+    },
+    {
+      "path": "frontend/src/features/overlay_control/tests/browser/verify.cjs",
+      "sha256": "bb633bc97318c624d59814246620c45c24437b9eabe1d6067a65bcbc58018ae5"
+    },
+    {
+      "path": "hud_overlay/nfsu2/index.html",
+      "sha256": "1e9da2916a1de88a18ba7ce9bd138f38878eccdc08acd3710b772d7d61e492ef"
+    },
+    {
+      "path": "hud_overlay/nfsu2/tests/browser/verify.cjs",
+      "sha256": "ed8cdc4d434c82e90d4b49e11aea97e9f9226f7fcb2945714bd2bc7e9c5698f1"
+    },
+    {
+      "path": "lang/en-us.json",
+      "sha256": "68f4416963cb1dbab80e01cf0ed4cde2c6fb7802b8d6b6ba00167505a71db896"
+    },
+    {
+      "path": "lang/zh-tw.json",
+      "sha256": "483fdf3216fbdd1af09d269fda8723d060e6ea845e09b9bfb1ada7bc6df568d2"
+    },
+    {
+      "path": "lang/ja-jp.json",
+      "sha256": "21c35e819baf2187109f06c8b339e883f3b739743b3b4a975917f75bdf14fd7a"
+    }
+  ],
+  "layouts": 84,
+  "checks": [
+    "NFSU2 selector in Main gauge: all 11 choices, hidden configuration, tab changes without saves, persistence, 84 theme/language/size layouts and actual launcher captures"
+  ],
+  "fullSuite": "420 shared layouts, 105 captures, 166 fixture saves, zero page errors; refreshed NFSU2 capture run waits for startup sweep and restores wide-panel scroll",
+  "source": "549b525f merged with 57ee4b8d plus NFSU2 selector integration; captured before native startup-state fix, same selector and renderer",
+  "limitations": "Not native, game, audio or screen-reader acceptance",
+  "images": [
+    {
+      "file": "nfsu2-face-0.png",
+      "sha256": "8f2ade44a3ce473e5ac7ea3d8a80d659e477737fe60e7bd9df1f60dc087403d7"
+    },
+    {
+      "file": "nfsu2-face-1.png",
+      "sha256": "7c3cc278d3d92da73c5577cf0c5df7dfa10757dde8a023a92f579d1f5f57f370"
+    },
+    {
+      "file": "nfsu2-face-10.png",
+      "sha256": "f946ce751d598d83a2aa70cc7ab3d032187c30403033e6a6ecd2a7c836a4a258"
+    },
+    {
+      "file": "nfsu2-face-2.png",
+      "sha256": "14ed19add66f3a155fad2d81fe9710940eefb27e8b4b7044e914ded6189c4032"
+    },
+    {
+      "file": "nfsu2-face-3.png",
+      "sha256": "02620db00e9a5a52fc41fc268db51bad035a0a0e77611a8bd9d6c036c0aea9fc"
+    },
+    {
+      "file": "nfsu2-face-4.png",
+      "sha256": "313ff40951d5805959b860893af0422ecf00b5d18a49f21cbc3ba4b8cb4c9560"
+    },
+    {
+      "file": "nfsu2-face-5.png",
+      "sha256": "747220ddc7b317e7bdf79f35690bb5c658eb4115de80c116381476b2715b4659"
+    },
+    {
+      "file": "nfsu2-face-6.png",
+      "sha256": "d1cfd9da7699e4c3de320ffe5d93f98ed94c212f30b963a3d3d0c89f7daef444"
+    },
+    {
+      "file": "nfsu2-face-7.png",
+      "sha256": "aad25a01127ccd99d408e7a18a1bf4f5596c82ae143e948eb5139b15bceede3f"
+    },
+    {
+      "file": "nfsu2-face-8.png",
+      "sha256": "7b989f4ffca087a64988fd2e507a4638ca90c98ed3db89aa0db21a5d01e6b7c4"
+    },
+    {
+      "file": "nfsu2-face-9.png",
+      "sha256": "b95657cab800102e9c38dc1469fee349b298c7b5cf3f0027f0dc097bcb1e6a33"
+    },
+    {
+      "file": "nfsu2-settings-en-us-default-dark-320.png",
+      "sha256": "3f5851fb89017233b52b6098f74dcf1b24ece9f3ec6efa4ce32dc8fdf7709cf6"
+    },
+    {
+      "file": "nfsu2-settings-ja-jp-default-dark-320.png",
+      "sha256": "0d0acb092d4274d735d61fc74209ee61ba69910dcc8b592d752c3dcaec5f4001"
+    },
+    {
+      "file": "nfsu2-settings-zh-tw-default-dark-1280.png",
+      "sha256": "0570909058146c676dfbb4f1b30930db799f07417783fc9743faa537a75d4340"
+    },
+    {
+      "file": "nfsu2-settings-zh-tw-default-dark-320.png",
+      "sha256": "e6785cf4a31149dd4057da3696dac9ba487f10fa948031a70c6d79da7c1c3a14"
+    },
+    {
+      "file": "nfsu2-settings-zh-tw-default-light-1280.png",
+      "sha256": "ff8ab4af4d7076e25aa53af66fa3108ccb54034b272bf0ae20e4b4ff24c2f57d"
+    },
+    {
+      "file": "nfsu2-settings-zh-tw-rhine-lab-dark-1280.png",
+      "sha256": "8e678f01c7168056e7b5cd2952d7bcccd03e49b41e2bf1d51e9bd484c5ca1480"
+    },
+    {
+      "file": "nfsu2-settings-zh-tw-rhine-lab-light-1280.png",
+      "sha256": "1b158b9d3caca17967c82b7b3b82f61809f0f5c631debcf9cc897ac66548c462"
+    },
+    {
+      "file": "nfsu2-settings-zh-tw-swiss-dark-1280.png",
+      "sha256": "ba969d8804484e77a203d22779041f53f9c7d1f2a3b316ae84b40f6bf35c210e"
+    },
+    {
+      "file": "nfsu2-settings-zh-tw-swiss-light-1280.png",
+      "sha256": "7a4a80552676c1ca4c19de14519a004450dad086a98968c64e88d519838c8983"
+    }
+  ]
+}

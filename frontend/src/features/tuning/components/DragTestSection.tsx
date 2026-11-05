@@ -70,13 +70,18 @@ const DragTestSectionComponent: React.FC<DragTestSectionProps> = ({
         </select>
         <button onClick={handleSaveDragSession} style={{ ...btnStyle, padding: '0.3rem 0.6rem', fontSize: '0.75rem', background: 'rgba(255,255,255,0.1)', color: 'white' }}>{t("Save Run")}</button>
       </div>
-      <button 
-        onClick={applyDragOptimizedGearing} 
-        disabled={!activeDragData || activeDragData.length === 0}
-        style={{ ...btnStyle, background: (activeDragData && activeDragData.length > 0) ? 'var(--accent)' : 'gray', color: 'black', fontSize: '0.8rem', padding: '0.4rem' }}
+      <span
+        title={(!activeDragData || activeDragData.length === 0) ? t("Requires an active drag run with collected points to calculate.") : undefined}
+        style={(!activeDragData || activeDragData.length === 0) ? { cursor: 'not-allowed', display: 'flex' } : { display: 'flex' }}
       >
-        {t("Calculate optimized FD & 1st gear")}
-      </button>
+        <button
+          onClick={applyDragOptimizedGearing}
+          disabled={!activeDragData || activeDragData.length === 0}
+          style={{ ...btnStyle, flex: 1, background: (activeDragData && activeDragData.length > 0) ? 'var(--accent)' : 'gray', color: 'black', fontSize: '0.8rem', padding: '0.4rem', pointerEvents: (!activeDragData || activeDragData.length === 0) ? 'none' : 'auto' }}
+        >
+          {t("Calculate optimized FD & 1st gear")}
+        </button>
+      </span>
     </div>
   );
 };

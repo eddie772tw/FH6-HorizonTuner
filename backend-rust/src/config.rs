@@ -231,6 +231,61 @@ fn normalize_stack_st8100(value: &mut Value) {
     }
 }
 
+mod gauges;
+
+fn normalize_audio_head(value: &mut Value) {
+    let legacy = value["hudStyle"] == "audio_head";
+    let has_settings = value
+        .as_object()
+        .is_some_and(|object| object.keys().any(|key| key.starts_with("audioHead")))
+        || value["elements"].get("showAudioHead").is_some();
+    if !legacy && !has_settings {
+        return;
+    }
+    if legacy {
+        value["hudStyle"] = json!("vfd");
+        if !value["elements"].is_object() {
+            value["elements"] = json!({});
+        }
+        if value["elements"].get("showAudioHead").is_none() {
+            value["elements"]["showAudioHead"] = json!(value["elements"]["showGauge"] != false);
+        }
+    }
+    if value["elements"].get("showAudioHead").is_some() {
+        value["elements"]["showAudioHead"] = json!(value["elements"]["showAudioHead"]
+            .as_bool()
+            .unwrap_or(false));
+    }
+    let scale = value
+        .get("audioHeadScale")
+        .unwrap_or(&value["scale"])
+        .as_f64()
+        .filter(|n| n.is_finite() && *n > 0.0)
+        .unwrap_or(1.0)
+        .clamp(0.5, 2.0);
+    value["audioHeadScale"] = json!(scale);
+    for (key, min, max) in [
+        ("audioHeadDeck", 0.0, 8.0),
+        ("audioHeadOffset", 0.0, 4000.0),
+        ("audioHeadCenterOffset", -4000.0, 4000.0),
+    ] {
+        let number = value[key]
+            .as_f64()
+            .filter(|n| n.is_finite())
+            .unwrap_or(0.0)
+            .clamp(min, max);
+        value[key] = if key == "audioHeadDeck" {
+            json!(number as i64)
+        } else {
+            json!(number)
+        };
+    }
+    if !["left", "right", "top", "bottom"].contains(&value["audioHeadEdge"].as_str().unwrap_or(""))
+    {
+        value["audioHeadEdge"] = json!("left");
+    }
+}
+
 pub fn normalize_hud(data: &Value) -> Value {
     let mut value = if data.is_object() {
         data.clone()
@@ -317,6 +372,8 @@ pub fn normalize_hud(data: &Value) -> Value {
             .unwrap_or(3);
         value["nfsu2Face"] = json!(face);
     }
+    normalize_audio_head(&mut value);
+    gauges::normalize(&mut value);
     if style == "gamepad_overlay" {
         value["hudStyle"] = json!("vfd");
         if !value["elements"].is_object() {

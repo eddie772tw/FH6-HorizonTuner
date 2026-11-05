@@ -49,3 +49,26 @@
 ## 2024-03-24 - Tooltips on Disabled Buttons
 **Learning:** In React, disabled HTML buttons completely swallow pointer events (like hover), preventing standard browser tooltips (the `title` attribute) from appearing. This hides critical context about *why* an action is unavailable from users.
 **Action:** When a button is conditionally disabled for reasons that might not be obvious, wrap it in a `<span>` (e.g., `<span className="d-inline-flex" title={...} style={{ cursor: 'not-allowed' }}>`) and apply `pointerEvents: 'none'` to the disabled `<button>` itself. This allows the wrapper to catch hover events and display the tooltip effectively.
+
+## 2026-11-01 - Skip to Main Content Link in SPA & WebView
+**Learning:** In desktop SPA and WebView environments (like Tauri), relying solely on a native anchor link `<a href="#main-content">` may scroll the viewport without transferring actual DOM keyboard focus to non-interactive container elements like `<main>`. Furthermore, setting `tabIndex={-1}` on `<main>` can introduce unsightly default focus outlines across the entire viewport.
+**Action:** When implementing skip-to-content links, pair the anchor with an explicit click handler that invokes `main.focus()`, set `tabIndex={-1}` with `outline: 'none'` on the target container, and use `.visually-hidden-focusable` so the bypass link remains hidden until keyboard focused.
+**署名:** Palette as Antigravity
+
+
+## 2026-11-02 - Toast Notifications Live Region Calibration & Disambiguation
+**學習 (Learning):** In global toast systems, assigning `role="alert"` and `aria-live="assertive"` indiscriminately across all toast categories causes assistive technologies to abruptly interrupt ongoing speech upon mundane events (like routine settings saves or success notifications). Furthermore, identical generic `aria-label="Close"` buttons create severe ambiguity in screen reader element lists when multiple toasts are visible simultaneously.
+**行動 (Action):** Differentiate notification urgency: use `role="status"` and `aria-live="polite"` for non-critical types (`info`, `success`), reserving `role="alert"` and `aria-live="assertive"` strictly for destructive or unexpected conditions (`danger`, `warning`). Disambiguate dismiss controls by incorporating the specific toast title into its accessible name, bind `aria-labelledby` to the header title ID, and support `Escape` key dismissal when focus is contained within the toast.
+**署名:** Palette as Antigravity
+
+
+## 2026-11-03 - WAI-ARIA Menu Semantics & Roving Keyboard Navigation in Header Dropdowns
+**學習 (Learning):** In Halfmoon/Bootstrap dropdowns, toggling visibility classes alone leaves assistive technologies unaware that a button controls a menu, and renders items indistinguishable from unrelated document buttons. Furthermore, dismissing the dropdown without explicitly restoring focus to the trigger element causes focus loss to the document body, breaking sequential keyboard flow.
+**行動 (Action):** Couple dropdown triggers with `aria-haspopup="menu"`, assign `role="menu"` to the list container, `role="menuitem"` to interactive options, and `role="separator"` to dividers. Support ArrowDown/ArrowUp cycling, Home/End boundaries, auto-focus the first item upon expansion, and reliably restore focus to the trigger button upon Escape dismissal or selection.
+**署名:** Palette as Antigravity
+
+
+## 2026-11-04 - Modal Dialog Focus Trap and Contextual Focus Restoration
+**學習 (Learning):** Onboarding and telemetry setup dialogs often rely on naive local focus effects (e.g. focusing a close button on mount) without trapping Tab navigation or restoring focus on exit. This causes keyboard users to bleed out into background navigation during inspection, and drops focus abruptly to `document.body` upon dismissal, destroying sequential keyboard flow.
+**行動 (Action):** Connect all full-viewport and floating modals to the unified `useModalFocus` hook on the `role="dialog"` container to guarantee bidirectional focus trapping, reliable Escape dismissal, and automatic focus restoration to the trigger element upon exit. Couple introductory text with `aria-describedby` and telemetry badges with `role="status"` to ensure immediate contextual awareness for assistive technologies.
+**署名:** Palette as Antigravity

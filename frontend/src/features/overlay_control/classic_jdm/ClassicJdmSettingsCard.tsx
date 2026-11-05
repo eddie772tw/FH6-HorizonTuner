@@ -1,5 +1,6 @@
 import React from 'react';
 import type { HudConfig } from '../hudConfig';
+import type { HudConfigPatch } from '../overlayControlRuntime';
 import {
   CLASSIC_JDM_AUX_GAUGES,
   CLASSIC_JDM_DEFI_THEMES,
@@ -10,8 +11,8 @@ import {
 } from './config';
 
 interface ClassicJdmSettingsCardProps {
-  config: HudConfig;
-  onChange: (updates: Partial<HudConfig>) => void;
+  config: Pick<HudConfig, 'classicJdmTachStyle' | 'classicJdmShowTriple' | 'classicJdmAux1' | 'classicJdmAux2' | 'classicJdmDefiTheme'>;
+  onChange: (updates: HudConfigPatch) => void;
   t: (key: string) => string;
 }
 
@@ -60,8 +61,8 @@ export const ClassicJdmSettingsCard: React.FC<ClassicJdmSettingsCardProps> = ({
         </button>
       </div>
 
-      {/* 3. Aux Gauge 1 & 2 Selectors (When Triple Gauges Enabled) */}
-      {showTriple && (
+      {/* Allow preparing auxiliary selections while the gauges are hidden. */}
+      {(
         <>
           <div className="mb-2">
             <label htmlFor="classic-jdm-aux1" className="form-label fs-7 text-body-secondary mb-1">

@@ -46,6 +46,8 @@ description: 當開發或重構前端 UI 組件、調整 Halfmoon CSS v2 主題�
 2. **單元測試驗證**：從專案根目錄執行 `cmd /c "pnpm -C frontend run test"`。
 3. **主題切換確認**：Rhine 必須檢查刻度、紙頁對話框、MiSans、reduced motion，以及切回其他系統不殘留。詳見 [Rhine 指南](../../../docs/frontend/rhine-lab.md)。確認 catalog 所有 core 的日夜模式、配色與元件細節。Swiss 使用實色表面、底線分頁、細框徽章及無裝飾陰影；Editorial 採暖紙色與閱讀標題，Contrast 採中性灰階、直角及反差標頭。`workspace-panel-header` 由系統 token 管理，標頭控制項與提示保留自己的可讀表面。切回 Halfmoon 須恢復其圓角、實色分頁／徽章及玻璃材質。驗證配色跨系統保留、首幀與重新載入一致。外觀面板依系統分組，Color Presets 位於系統色彩調配內，CSS 編輯器及 Cheatsheet 預設折疊且既有自訂 CSS 仍生效。保留鍵盤焦點、ModalPortal 與高頻繪圖例外。
 
+4. **PR 截圖交付**：依 [ui-visual-review.md](../../rules/ui-visual-review.md) 擷取並檢視實際介面，在 PR Body 展示改動及保存備查；主題／尺寸代表圖、樣式逐項展示與擷取版本依該 rule，不以測試結果取代圖片。
+
 ---
 
 ## 搭配資料 (References)

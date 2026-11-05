@@ -12,13 +12,14 @@ import { useRoadValidation } from './RoadValidationController';
 interface Props {
   recommendation: WorkflowRecommendation | null;
   carId: string;
+  onBusyChange?: (busy: boolean) => void;
 }
 
 export function RoadWorkflowView(props: Props) {
   return <RoadWorkflowContent {...props} />;
 }
 
-function RoadWorkflowContent({ recommendation, carId }: Props) {
+function RoadWorkflowContent({ recommendation, carId, onBusyChange }: Props) {
   const { t } = useSettings();
   const validation = useRoadValidation();
   const state = useRoadWorkflow({
@@ -33,6 +34,7 @@ function RoadWorkflowContent({ recommendation, carId }: Props) {
   const operationStatus = validation.operation?.status;
   const operationId = validation.operation?.id;
   const busy = state.busy || operationStatus === 'pending';
+  useEffect(() => { onBusyChange?.(busy); return () => onBusyChange?.(false); }, [busy, onBusyChange]);
 
   useEffect(() => {
     if (operationStatus === 'succeeded') void state.refresh().catch(() => {});

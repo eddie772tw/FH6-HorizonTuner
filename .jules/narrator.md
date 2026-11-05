@@ -34,3 +34,28 @@
 ## 2024-10-05 - [Hardcoded Text Pattern Extraction]
 **Learning:** Found several hardcoded, context-specific UI strings like 'GitHub Releases (Ed25519 Signed)', 'P05 / P50 / P95', and 'Endpoint' that were missed in standard i18n sweeps.
 **Action:** Always scan for generic punctuation-only structures and domain-specific acronyms that appear directly as child nodes in React components.
+## 2025-05-24 - Extracting Domain-Specific Statistical Labels
+**Learning:** Found numerous hardcoded context-specific domain labels and punctuation-heavy strings like `Ride height F/R`, `Damping rebound F/R`, `Samples`, `Bins`, and `Peak power` within the Companion app's `CompanionMeasurement.tsx` and `CompanionResults.tsx`. These strings act as labels for statistical values, and leaving them un-translated breaks the UI's accessibility and usability for non-English tuning audiences.
+**Action:** When auditing telemetry or tuning UI components, always proactively scan for and extract hardcoded domain-specific statistical labels and properties (like `F/R` abbreviations or specific tuning terms) into proper translation function wrappers like `t("companion....")` and add them to the base English locale file to enable complete translations.
+
+## 2026-11-01 - Anti-Fragmented Sentence Concatenation
+**學習 (Learning):** 避免將含有動態數值或版本的單一完整句子切碎成多個片段進行字串拼接（例如 `${t('New version')} ${ver} ${t('is ready...')}` 或 `{t('Version')} {ver} {t('is available!')}`）。切碎拼接會破壞日文或德文等倒裝語序，且容易遺漏未納入字典的懸空碎片字串（如 `'is available!'`），導致介面出現英文穿透。
+**行動 (Action):** 遇到包含動態變數的通知或狀態字串時，一律採用參數化內插格式 `t('New version {version} is ready for download.', { version })`，並將帶有具名變數的完整句子鍵值同步對齊至所有語系字典中。
+**署名:** Narrator as Antigravity
+
+## 2026-11-02 - WCAG Bypass Links & Dialog Title Prop Single-Pass Translation
+**學習 (Learning):** 新增的無障礙旁路連結（如 `Skip to main content`）與全域 Suspense 狀態（`Loading...`）若未即時在各語言字典中對齊，會造成螢幕閱讀器與輔助鍵盤使用者在非英文環境下遭遇未翻譯的英文穿透；同時，客製化對話框（如 `AppDialog`）若內部已實作 `t(title)`，父層元件傳遞 prop 時切勿預先包裝 `t(...)`，否則在切換語系後會將已翻譯字串作為鍵名傳入造成二次翻譯失效。
+**行動 (Action):** 當審查無障礙屬性（aria-label、skip link）或頂層 Suspense fallback 時，務必將其通用字詞同步收錄至 `en-us.json`、`zh-tw.json` 與 `ja-jp.json`；且凡使用自帶 `t()` 的對話框或抽屜元件時，一律傳遞原始鍵名（raw key），維持單次翻譯責任邊界。
+**署名:** Narrator as Antigravity
+
+
+## 2026-11-03 - Companion Badge Status Parameterization & Structural Accessibility
+**學習 (Learning):** 設定介面中用作狀態徽章 (Badge) 的文字，常因開發者直接將動態數量與假想的字串進行模板拼接（如 `${count} ${t('DEVICE(S) CONNECTED')}`）而發生字典鍵缺失，導致在所有非英文環境中永遠顯示未翻譯的大寫英文；此外，Companion 應用程式頂層 `<main>`、`<nav>` 與連線模式開關等結構容器的 `aria-label` 若未包裝 `t()`，會使螢幕閱讀器使用者遭遇英文穿透，無法感知當前操作區段。
+**行動 (Action):** 審查狀態徽章時，一律優先檢查專案字典中是否已有現成參數化鍵值（如 `{activeCount} Companion device(s) connected`），並徹底取代 `${count} ${t('KEY')}` 形式之字串拼接；同時將 Companion 頂層結構與無障礙標籤全面以 `t()` 包裝並同步收錄至 `en-us.json`、`zh-tw.json` 與 `ja-jp.json`。
+**署名:** Narrator as Antigravity
+
+
+## 2026-11-04 - CSS Text-Transform Anti-Pattern & Accessible Tab Labeling
+**學習 (Learning):** 在行動或隨行視圖中，將未翻譯的內部 ID 直接傳入 Tab 按鈕並仰賴 CSS（如 `text-transform: capitalize`）呈現大寫，是常見的在地化反模式；這會導致所有非英文語系直接暴露英文小寫 raw ID，且螢幕閱讀器使用者無法獲悉卡片的完整語義。同時，全局字典中的通用詞（如 `"Tires": "輪胎氣壓"`）可能因歷史上下文產生語意窄化，若直接復用於不同場景會造成非預期的語義偏離。
+**行動 (Action):** Companion Tab 導航按鈕應採用分層標籤架構：按鈕可視文字採用模組化命名空間（如 `companion.cards.*`）的精簡短標籤，`aria-label` 則綁定卡片全名（如 `t("Tire Grip & Status")`），同時將桌面與隨行視圖共享的標題鍵（如 `Live Telemetry Traces`）同步收錄至各語系字典，兼顧緊湊排版與無障礙語意完整性。
+**署名:** Narrator as Antigravity

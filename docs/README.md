@@ -16,8 +16,9 @@
 | 使用 Agent CLI | [CLI 操作指南](guides/agent-cli-guide.md) |
 | 連接 MCP | [MCP 設定指南](guides/mcp-setup-guide.md) |
 | 安裝自訂 HUD | [可攜版 HUD 套件](guides/portable-custom-hud.md) |
+| 音響系統分頁、獨立縮放與九款樣式展示 | [Audio Head](hud/audio-head.md)（[English](hud/audio-head.en.md)） |
 | R34 原廠 V·spec 儀表、NISMO MFD Ver.II 適配與驗證 | [R34 MFD 原型契約](hud/r34-mfd.md) |
-| 查看 HUD 技術參考 | [Stack ST8100 外觀、設定與遙測契約](hud/stack-st8100.md)、[S650 媒體欄位契約](hud/s650-media-properties-contract.md)、[FH6 畫面安全區觀測](hud/fh6-ui-safe-zones.md) |
+| 查看 HUD 技術參考 | [設定分頁與擴充契約](frontend/hud-settings-workspace.md)、[Stack ST8100 外觀、設定與遙測契約](hud/stack-st8100.md)、[S650 媒體欄位契約](hud/s650-media-properties-contract.md)、[FH6 畫面安全區觀測](hud/fh6-ui-safe-zones.md) |
 | 開始調校開發 (Rust SSOT) | [調校程式與驗證入口](tuning/README.md)、[Road v3 起步模型](tuning/aego-road-launch-v3.md) |
 | 前端主題、CSS 架構、擴充與送審驗證 | [主題與設計系統開發指南](frontend/design-systems.md) |
 | Companion Kotlin CodeQL inventory／extraction 證據與未啟用範本 | [Kotlin coverage 準備](codeql/kotlin-coverage/README.md) |

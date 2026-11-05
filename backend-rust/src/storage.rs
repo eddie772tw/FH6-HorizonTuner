@@ -38,6 +38,14 @@ pub fn safe_path(base: &Path, relative: &str) -> ApiResult<PathBuf> {
     {
         return Err(ApiError::new(400, "Invalid path"));
     }
+    // Reject MS-DOS reserved device names (e.g. CON, PRN, AUX, NUL, COM1-9, LPT1-9)
+    // before resolving components, preventing Win32 I/O hangs and path alias bypasses.
+    if path
+        .components()
+        .any(|c| is_windows_reserved_name(&c.as_os_str().to_string_lossy()))
+    {
+        return Err(ApiError::new(400, "Invalid path"));
+    }
     let base = base.canonicalize()?;
     let mut directory = base.clone();
     let mut components = path.components();
@@ -84,6 +92,31 @@ fn file_name_matches(actual: &std::ffi::OsStr, requested: &std::ffi::OsStr) -> b
     let requested: Vec<u16> = requested.encode_wide().collect();
     unsafe { CompareStringOrdinal(&actual, &requested, true) == CSTR_EQUAL }
 }
+fn is_windows_reserved_name(component: &str) -> bool {
+    let stem = component
+        .split('.')
+        .next()
+        .unwrap_or(component)
+        .trim_end_matches(['.', ' ']);
+    if stem.is_empty() {
+        return false;
+    }
+    let lower = stem.to_ascii_lowercase();
+    // Defense-in-depth: Reject standard MS-DOS devices, console handles (CONIN$/CONOUT$),
+    // system clock device (CLOCK$), and legacy port 0 devices (COM0/LPT0).
+    match lower.as_str() {
+        "con" | "prn" | "aux" | "nul" | "clock$" | "conin$" | "conout$" => true,
+        "com0" | "com1" | "com2" | "com3" | "com4" | "com5" | "com6" | "com7" | "com8" | "com9" => {
+            true
+        }
+        "lpt0" | "lpt1" | "lpt2" | "lpt3" | "lpt4" | "lpt5" | "lpt6" | "lpt7" | "lpt8" | "lpt9" => {
+            true
+        }
+        "com¹" | "com²" | "com³" | "lpt¹" | "lpt²" | "lpt³" => true,
+        _ => false,
+    }
+}
+
 pub fn read_json(path: &Path) -> ApiResult<Value> {
     Ok(serde_json::from_slice(&fs::read(path)?)?)
 }

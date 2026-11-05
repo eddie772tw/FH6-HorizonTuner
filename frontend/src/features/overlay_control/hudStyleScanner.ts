@@ -1,6 +1,8 @@
 import { backendFetch } from '../../services/backend';
 import { DEFERRED_HUD_STYLES } from '../../../../hud_overlay/shared/deferred-styles.js';
 
+const INDEPENDENT_HUD_IDS = new Set(['audio_head', 'auxiliary_gauges']);
+
 export interface HudStyleEntry {
   id: string;
   source: 'builtin' | 'user';
@@ -39,6 +41,9 @@ export const HUD_DISPLAY_NAMES: Record<string, string> = {
   classic_jdm: 'Classic JDM Arcade',
   r34_mfd: 'Skyline R34 MFD',
   nfsu2: 'NFS Underground 2 Custom',
+  mclaren_720s: 'McLaren 720S Folding Cluster',
+  ford_gt: 'Ford GT 2017 Race Cluster',
+  bmw_idrive7: 'BMW Live Cockpit iDrive 7',
   minimap_overlay: 'GPS Minimap Radar',
   touge_pacenotes: 'Touge Pacenotes & Prompts',
   telemetry_cards: 'Telemetry Data Cards',
@@ -141,14 +146,14 @@ export function formatHudDropdownOptions(
   } = options;
 
   if (!hudStyles || hudStyles.length === 0) {
-    const baseList = Object.entries(displayNames).filter(([id]) => id !== 'gamepad_overlay' && !DEFERRED_HUD_STYLES.has(id)).map(([id, label]) => ({
+    const baseList = Object.entries(displayNames).filter(([id]) => !INDEPENDENT_HUD_IDS.has(id) && id !== 'gamepad_overlay' && !DEFERRED_HUD_STYLES.has(id)).map(([id, label]) => ({
       value: id,
       label,
       isCustom: false,
     }));
 
     if (includeWip) {
-      const wipList = Object.entries(wipDisplayNames).filter(([id]) => id !== 'gamepad_overlay' && !DEFERRED_HUD_STYLES.has(id)).map(([id, label]) => ({
+      const wipList = Object.entries(wipDisplayNames).filter(([id]) => !INDEPENDENT_HUD_IDS.has(id) && id !== 'gamepad_overlay' && !DEFERRED_HUD_STYLES.has(id)).map(([id, label]) => ({
         value: id,
         label,
         isCustom: false,
@@ -156,7 +161,7 @@ export function formatHudDropdownOptions(
       return [...baseList, ...wipList];
     }
 
-    if (currentStyle && currentStyle !== 'gamepad_overlay' && !DEFERRED_HUD_STYLES.has(currentStyle) && wipDisplayNames[currentStyle] && !displayNames[currentStyle]) {
+    if (currentStyle && !INDEPENDENT_HUD_IDS.has(currentStyle) && currentStyle !== 'gamepad_overlay' && !DEFERRED_HUD_STYLES.has(currentStyle) && wipDisplayNames[currentStyle] && !displayNames[currentStyle]) {
       return [
         ...baseList,
         { value: currentStyle, label: wipDisplayNames[currentStyle], isCustom: false },
@@ -168,7 +173,7 @@ export function formatHudDropdownOptions(
 
   return hudStyles
     .filter((s) => {
-      if (s.id === 'gamepad_overlay') return false;
+      if (INDEPENDENT_HUD_IDS.has(s.id) || s.id === 'gamepad_overlay') return false;
       if (s.source === 'user') return true;
       if (DEFERRED_HUD_STYLES.has(s.id)) return false;
       if (WIP_HUD_IDS.has(s.id)) {

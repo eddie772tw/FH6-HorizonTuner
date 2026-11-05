@@ -16,6 +16,7 @@ pub mod gearing;
 pub mod legacy_cli;
 pub mod measurement;
 pub mod profile;
+pub mod ratio_balance;
 pub mod tire_evidence;
 pub mod types;
 

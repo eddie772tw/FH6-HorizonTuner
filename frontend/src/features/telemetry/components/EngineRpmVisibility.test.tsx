@@ -46,3 +46,34 @@ it('starts neutral, renders explicit reverse and restores the latest hidden gear
     vi.restoreAllMocks(); vi.unstubAllGlobals();
   }
 });
+
+it('paints RPM and shift-alert updates without a Path2D runtime', async () => {
+  Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
+  vi.stubGlobal('Path2D', undefined);
+  let resize = () => {};
+  vi.stubGlobal('ResizeObserver', class {
+    constructor(private callback: (entries: any[]) => void) {}
+    observe(target: Element) {
+      resize = () => this.callback([{ target, contentRect: { width: 300, height: 18 } }]);
+    }
+    disconnect() {}
+  });
+  const context = new Proxy({}, { get: () => () => {} });
+  vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(context as CanvasRenderingContext2D);
+  const host = document.createElement('div'); document.body.append(host);
+  const root = createRoot(host);
+  try {
+    await act(async () => root.render(<EngineRpmDisplay />));
+    resize();
+    for (const rpm of [0, 4000, 5800, 6900, 7400, 8000]) {
+      telemetryEmitter.dispatchEvent(new CustomEvent('update', {
+        detail: { CurrentEngineRpm: rpm, EngineMaxRpm: 8000, AccelInput: 127, Gear: 3 },
+      }));
+      expect(host.textContent).toContain(String(rpm));
+    }
+    expect(host.querySelector('.badge')?.getAttribute('style')).toContain('opacity: 1');
+  } finally {
+    await act(async () => root.unmount()); host.remove();
+    vi.restoreAllMocks(); vi.unstubAllGlobals();
+  }
+});

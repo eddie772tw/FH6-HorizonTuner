@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<!-- Faceplates consume shared semantic gaugeValues. Never synthesize engine sensors here. -->
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Auxiliary Gauges</title>
+  <link rel="stylesheet" href="../shared/hud-base.css">
+  <style>
+    html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: transparent !important; }
+    #auxAnchor { position: fixed; right: 0; top: 50%; transform: translateY(-50%); width: max-content; pointer-events: none; }
+    #auxContainer { width: max-content; transition: none; }
+    canvas { display: block; pointer-events: none; }
+  </style>
+</head>
+<body>
+  <div id="auxAnchor"><div id="auxContainer"><canvas id="auxCanvas" role="img" aria-label="Auxiliary Gauges"></canvas></div></div>
+  <script src="../shared/hud-core.js"></script>
+  <script type="module">
+    import { normalizeAuxiliaryConfig } from '../shared/overlay-config.js';
+    import { positionOverlay, layoutOverlayItems } from '../shared/overlay-layout.js';
+    import { GREDDY_DIAL_CENTER, greddyOilPressureAngle } from './greddy-calibration.js';
+    const canvas = document.getElementById('auxCanvas');
+    const ctx = canvas.getContext('2d');
+    const container = document.getElementById('auxContainer');
+    const anchor = document.getElementById('auxAnchor');
+    let config, layout, dpr = 0, canvasScale = 1;
+    const imgAEM = new Image(); imgAEM.src = 'assets/aux_aem.png';
+    const imgAEMLeds = new Image(); imgAEMLeds.src = 'assets/aux_aem_leds.png';
+    const imgGReddy = new Image(); imgGReddy.src = 'assets/aux_greddy.png';
+    const imgBlitz = new Image(); imgBlitz.src = 'assets/aux_blitz.png';
+    const imgDefi = new Image(); imgDefi.src = 'assets/aux_defi.png';
+    const imgSpeedhut = new Image(); imgSpeedhut.src = 'assets/aux_speedhut.png';
+    const telemetry = { boostPsi: null, boostBar: null, oilPress: null, oilTemp: null, waterTemp: null };
+    function clamp(v, lo, hi) { return Math.min(hi, Math.max(lo, v)); }
+            function drawNeedle(cx, cy, len, tailLen, angleDeg, color, width, hubR, hubColor) {
+                var rad = angleDeg * (Math.PI / 180.0);
+                var nx = cx + Math.cos(rad) * len;
+                var ny = cy + Math.sin(rad) * len;
+                var tx = cx - Math.cos(rad) * tailLen;
+                var ty = cy - Math.sin(rad) * tailLen;
+
+                ctx.save();
+                ctx.strokeStyle = color;
+                ctx.lineWidth = width;
+                ctx.lineCap = 'round';
+                ctx.shadowColor = color;
+                ctx.shadowBlur = 7;
+
+                ctx.beginPath();
+                ctx.moveTo(tx, ty);
+                ctx.lineTo(nx, ny);
+                ctx.stroke();
+
+                if (hubR) {
+                    ctx.shadowBlur = 0;
+                    ctx.fillStyle = hubColor || '#151821';
+                    ctx.strokeStyle = color;
+                    ctx.lineWidth = 1.4;
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, hubR, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.stroke();
+                }
+                ctx.restore();
+            }
+
+            function drawSingleAEM(ox, oy) {
+                if (!imgAEM.complete || imgAEM.naturalWidth === 0) return;
+                ctx.drawImage(imgAEM, ox, oy, 260, 260);
+                if (telemetry.boostPsi === null) return;
+
+                var cx = ox + 130;
+                var cy = oy + 130;
+
+                // AEM 30-4408 Boost scale: -15 PSI (-30 inHg) to +35 PSI across 135..405 deg
+                var ratio = clamp((telemetry.boostPsi + 15.0) / 50.0, 0.0, 1.0);
+                if (ratio > 0.005 && imgAEMLeds.complete && imgAEMLeds.naturalWidth > 0) {
+                    var startRad = 128.0 * (Math.PI / 180.0);
+                    var endRad = (135.0 + ratio * 272.0) * (Math.PI / 180.0);
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.moveTo(cx, cy);
+                    ctx.arc(cx, cy, 128, startRad, endRad, false);
+                    ctx.closePath();
+                    ctx.clip();
+                    ctx.drawImage(imgAEMLeds, ox, oy, 260, 260);
+                    ctx.restore();
+                }
+
+                // 7-segment style red digital readout in center window
+                ctx.save();
+                ctx.fillStyle = '#ff2a2a';
+                ctx.font = '900 34px "Consolas", "Courier New", monospace';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.shadowColor = 'rgba(255, 38, 38, 0.85)';
+                ctx.shadowBlur = 10;
+                var txt = telemetry.boostPsi >= 9.95 ? telemetry.boostPsi.toFixed(0) : telemetry.boostPsi.toFixed(1);
+                ctx.fillText(txt, cx, cy + 2);
+                ctx.restore();
+            }
+
+            function drawSingleGReddy(ox, oy) {
+                if (!imgGReddy.complete || imgGReddy.naturalWidth === 0) return;
+                ctx.drawImage(imgGReddy, ox, oy, 264, 267);
+                if (telemetry.oilPress === null) return;
+                var cx = ox + GREDDY_DIAL_CENTER.x;
+                var cy = oy + GREDDY_DIAL_CENTER.y;
+                var ang = greddyOilPressureAngle(telemetry.oilPress);
+                drawNeedle(cx, cy, 88, 18, ang, '#ff5511', 3.2, 13, '#1a1d24');
+            }
+
+            function drawSingleBlitz(ox, oy) {
+                if (!imgBlitz.complete || imgBlitz.naturalWidth === 0) return;
+                ctx.drawImage(imgBlitz, ox, oy, 283, 282);
+                if (telemetry.oilTemp === null) return;
+                var cx = ox + 141.5;
+                var cy = oy + 141;
+                // Blitz Oil Temp: 40..150 °C across 90..360 deg (270 deg sweep)
+                var ratio = clamp((telemetry.oilTemp - 40.0) / 110.0, 0.0, 1.0);
+                var ang = 90.0 + ratio * 270.0;
+                drawNeedle(cx, cy, 94, 18, ang, '#ff2222', 3.2, 14, '#1a1c22');
+            }
+
+            function drawSingleDefi(ox, oy) {
+                if (!imgDefi.complete || imgDefi.naturalWidth === 0) return;
+                ctx.drawImage(imgDefi, ox, oy, 274, 274);
+                if (telemetry.waterTemp === null) return;
+                var cx = ox + 137;
+                var cy = oy + 137;
+                // Defi Advance Water Temp: 40..130 °C across 90..360 deg (270 deg sweep)
+                var ratio = clamp((telemetry.waterTemp - 40.0) / 90.0, 0.0, 1.0);
+                var ang = 90.0 + ratio * 270.0;
+                drawNeedle(cx, cy, 92, 18, ang, '#ff2233', 3.2, 13, '#181a20');
+            }
+
+            function drawSingleSpeedhut(ox, oy) {
+                if (!imgSpeedhut.complete || imgSpeedhut.naturalWidth === 0) return;
+                ctx.drawImage(imgSpeedhut, ox, oy, 258, 260);
+                if (telemetry.boostBar === null) return;
+                var cx = ox + 129;
+                var cy = oy + 130;
+                // Speedhut Boost: -1.0..2.0 BAR across 135..405 deg (270 deg sweep)
+                var ratio = clamp((telemetry.boostBar + 1.0) / 3.0, 0.0, 1.0);
+                var ang = 135.0 + ratio * 270.0;
+                drawNeedle(cx, cy, 86, 16, ang, '#ff3322', 3.0, 13, '#1a1c22');
+            }
+
+
+    const faces = {
+      aem: { draw: drawSingleAEM, width: 260, height: 260, key: 'boost', value: 'boostPsi' },
+      greddy: { draw: drawSingleGReddy, width: 264, height: 267, key: 'oilPressure', value: 'oilPress' },
+      blitz: { draw: drawSingleBlitz, width: 283, height: 282, key: 'oilTemperature', value: 'oilTemp' },
+      defi: { draw: drawSingleDefi, width: 274, height: 274, key: 'waterTemperature', value: 'waterTemp' },
+      speedhut: { draw: drawSingleSpeedhut, width: 258, height: 260, key: 'boost', value: 'boostBar' },
+    };
+    function resize() {
+      dpr = (window.devicePixelRatio || 1) * canvasScale;
+      canvas.style.width = layout.width + 'px';
+      canvas.style.height = layout.height + 'px';
+      canvas.width = Math.max(1, Math.round(layout.width * dpr));
+      canvas.height = Math.max(1, Math.round(layout.height * dpr));
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    function render() {
+      if (!layout) return;
+      if (dpr !== (window.devicePixelRatio || 1) * canvasScale) resize();
+      ctx.clearRect(0, 0, layout.width, layout.height);
+      for (let i = 0; i < layout.items.length; i++) {
+        const item = layout.items[i], face = faces[item.id];
+        face.draw(item.x + (300 - face.width) / 2, item.y + (290 - face.height) / 2);
+        ctx.save();
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '16px Arial, sans-serif';
+        ctx.textAlign = 'center';
+        if (telemetry[face.value] === null) ctx.fillText('—', item.x + 150, item.y + 150);
+        ctx.restore();
+      }
+    }
+    for (const image of [imgAEM, imgAEMLeds, imgGReddy, imgBlitz, imgDefi, imgSpeedhut]) image.onload = render;
+    HUDCore.registerStyle('auxiliary_gauges', {
+      containerId: 'auxContainer', scaleBaseline: 1.25, scaleMultiplier: 0.95,
+      onScale(scale) { canvasScale = scale; if (layout) { resize(); render(); } },
+      onInit(cfg) {
+        if (!cfg?.elements) return;
+        config = normalizeAuxiliaryConfig(cfg);
+        layout = layoutOverlayItems(config.auxGaugeFaces, config.auxGaugeMaxPerRow, config.auxGaugeOrientation, 300, 290, config.auxGaugeEdge);
+        for (const item of layout.items) {
+          const source = config.gaugeValueSources[faces[item.id].key];
+          item.label = source.label;
+          item.source = (source.field || 'unassigned') + ' [' + source.unit + ']';
+        }
+        positionOverlay(anchor, config.auxGaugeEdge, config.auxGaugeOffset, config.auxGaugeCenterOffset);
+        container.style.display = config.elements.showAuxiliaryGauges === true ? 'block' : 'none';
+        canvas.setAttribute('aria-label', layout.items.map(item => item.id + ': ' + item.label + ' (' + item.source + ')').join('; '));
+        resize();
+        render();
+      },
+      onElementsChange(elements) { container.style.display = elements.showAuxiliaryGauges === true ? 'block' : 'none'; },
+      onFrame(data) {
+        const values = data.gaugeValues;
+        telemetry.boostPsi = values?.boost ?? null;
+        telemetry.boostBar = values?.boost == null ? null : values.boost / 14.5038;
+        telemetry.oilPress = values?.oilPressure ?? null;
+        telemetry.oilTemp = values?.oilTemperature ?? null;
+        telemetry.waterTemp = values?.waterTemperature ?? null;
+        render();
+      },
+      onAnimate: render,
+    });
+    HUDCore.init('auxiliary_gauges');
+  </script>
+</body>
+</html>

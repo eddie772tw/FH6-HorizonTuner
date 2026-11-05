@@ -12,7 +12,6 @@ export function OptionalAeroInputs({ value, onChange }: {
   const single = (value?.aero_downforce_front != null) !== (value?.aero_downforce_rear != null);
   return <fieldset className="border rounded p-2 d-flex flex-column gap-2">
     <legend className="fs-7 mb-0">{t('Optional downforce')}</legend>
-    <p className="small text-body-secondary mb-0">{t('Leave both loads blank to skip downforce correction. Enter one load and front aero balance, or enter both loads directly.')}</p>
     {(['front', 'rear'] as const).map(axle => {
       const key = `aero_downforce_${axle}` as const;
       const raw = value?.[key];
