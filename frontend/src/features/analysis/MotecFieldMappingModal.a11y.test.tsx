@@ -47,7 +47,7 @@ it('renders dialog with accessible labels, description, and scrollable table reg
   const tableRegion = dialog.querySelector('[role="region"]')!;
   expect(tableRegion).not.toBeNull();
   expect(tableRegion.getAttribute('tabindex')).toBe('0');
-  expect(tableRegion.getAttribute('aria-label')).toBe('MoTeC Channel Mapping Table');
+  expect(tableRegion.getAttribute('aria-labelledby')).toBe(dialog.getAttribute('aria-labelledby'));
 });
 
 it('restores focus to trigger on Escape key and supports backdrop click', async () => {

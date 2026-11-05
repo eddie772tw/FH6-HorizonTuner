@@ -88,7 +88,7 @@ export const MotecFieldMappingModal: React.FC<MotecFieldMappingModalProps> = ({
           pointerEvents: "none",
         }}
       >
-        <div className="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" role="document" style={{ pointerEvents: "auto" }}>
+        <div className="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" role="document">
           <div className="modal-content glass-panel border border-primary border-opacity-25 shadow-lg">
             <div className="modal-header border-bottom border-secondary border-opacity-25 pb-3">
               <h5 id="motec-mapping-title" className="modal-title fw-bold text-primary mb-0 fs-5">
@@ -104,7 +104,7 @@ export const MotecFieldMappingModal: React.FC<MotecFieldMappingModalProps> = ({
                 className="table-responsive"
                 tabIndex={0}
                 role="region"
-                aria-label={t("MoTeC Channel Mapping Table")}
+                aria-labelledby="motec-mapping-title"
                 style={{ maxHeight: "55vh" }}
               >
                 <table className="table table-sm table-striped table-hover mb-0" style={{ fontSize: "0.8rem" }}>
