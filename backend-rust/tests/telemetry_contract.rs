@@ -1309,7 +1309,9 @@ fn race_recorder_settings_update_in_place_without_cloning() {
     );
     assert!(!r.status().is_recording);
 
-    r.update_settings(&json!({"race_recording": true, "max_samples": 200, "downsample_interval": 0.1}));
+    r.update_settings(
+        &json!({"race_recording": true, "max_samples": 200, "downsample_interval": 0.1}),
+    );
     r.record_at(
         &json!({"IsRaceOn": 1, "CurrentRaceTime": 2.0, "LapNumber": 0, "TimestampMS": 200, "CarOrdinal": 1}),
         2.0,

@@ -7,7 +7,7 @@ description: 以 PR 作者或維護者身分建立 PR、同步 PR 內文、回�
 
 本技能提供以 PR 作者或維護者（Author / Maintainer）身分進行 PR 建立、內文同步、審查回覆與標題維護之核心規範與工具鏈。
 
-## 五大核心契約 (Core Invariants)
+## 核心契約 (Core Invariants)
 
 1. **提案前查閱既有 PR 防重複 (Pre-Proposal PR Deduplication Check)**：
    - 在鎖定修改標的或建立分支前，必須先執行 `gh pr list --state open` 查閱既有開啟中 PR，確認提案標的與改動檔案未與進行中 PR 重疊衝突，嚴禁重複提案。
@@ -25,6 +25,8 @@ description: 以 PR 作者或維護者身分建立 PR、同步 PR 內文、回�
 6. **跨 Agent 身分標記與標題純淨性**：
    - PR Body 結尾標註 `Author / Maintainer: {代號} as {Agent}`；回覆開頭標註 `### {代號} as {Agent} response`。
    - **PR 標題純淨性**：PR 標題嚴格遵守 Conventional Commits，嚴禁出現 `[{代號} as {Agent}]` 或任何身分標籤後綴；身分標記僅限於 PR 內文結尾。
+7. **介面 PR 截圖交付**：
+   - 所有介面調整 PR 必須依 [ui-visual-review.md](../../rules/ui-visual-review.md) 在 Body 嵌入實作截圖並保存視覺審查備查；覆蓋、版本同步及證據邊界以該 rule 為唯一來源。
 
 ---
 
@@ -34,12 +36,15 @@ description: 以 PR 作者或維護者身分建立 PR、同步 PR 內文、回�
 1. 執行 `gh pr list --state open` 檢閱既有開啟中 PR，確認提案標的與改動檔案無重複或衝突。
 2. 完成功能開發並確認 Pre-Commit Gate 全數通過。
 3. 執行 `manage_pr_author.py --generate-template --identity "{代號} as {Agent}"` 產生 PR Body 草稿。
+   - 若有介面調整，依截圖規範完成擷取、看圖與備查，補入範本的 Visual Review 區塊；格式產生器或 validator 通過不代表截圖交付已完成。
 4. 遵循 Conventional Commits 格式設定 PR 標題並建立 PR（嚴禁在 PR 標題添加身分後綴；署名置於 PR Body 結尾）。PR 範本規格詳見 [references/pr_templates_and_replies.md](references/pr_templates_and_replies.md)。
 
 ### 流程 2：PR 內文持續同步
 1. 依據最新變更編輯本地 PR Body。
+   - 介面有變時同步更新受影響截圖；介面未變而沿用時標示原擷取版本，依 [ui-visual-review.md](../../rules/ui-visual-review.md) 核對可追溯性。
 2. 驗證格式：`manage_pr_author.py --validate-body scratch/pr_body.md`（檢查必填章節、身分標記、攔截自我斷言）。
 3. 同步至 GitHub：`manage_pr_author.py --pr <number> --update-body scratch/pr_body.md`。
+4. 讀回 Body，確認圖片正常嵌入且備查連結可存取；格式驗證不會代替實際圖片檢視。
 
 ### 流程 3：回覆 Reviewer 意見與整合測試
 1. 執行雙軌盤點：獲取頂層意見與行內評論清單。

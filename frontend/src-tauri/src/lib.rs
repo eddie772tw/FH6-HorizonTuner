@@ -439,6 +439,14 @@ fn set_hud_click_through(app_handle: tauri::AppHandle, ignore: bool) -> Result<(
 }
 
 #[tauri::command]
+fn get_hud_window_visible(app_handle: tauri::AppHandle) -> Result<bool, String> {
+    match app_handle.get_webview_window("overlay") {
+        Some(window) => window.is_visible().map_err(|error| error.to_string()),
+        None => Ok(false),
+    }
+}
+
+#[tauri::command]
 fn toggle_hud_window(app_handle: tauri::AppHandle, visible: bool) -> Result<(), String> {
     if let Some(window) = app_handle.get_webview_window("overlay") {
         if visible {
@@ -668,6 +676,7 @@ pub fn run() {
             get_backend_port,
             get_backend_status,
             set_hud_click_through,
+            get_hud_window_visible,
             toggle_hud_window,
             reload_hud_window,
             get_available_monitors,

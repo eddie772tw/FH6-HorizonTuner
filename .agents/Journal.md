@@ -9,6 +9,27 @@
   3. `RaceRecorder` 移除完全無用的 `self.settings: Map<String, Value>` 欄位與 `self.settings = m.clone()`，直接於 `update_settings` 就地更新純量組態。
 - **驗證**：新增 `settings_arc_provides_zero_copy_atomic_sharing` 與 `race_recorder_settings_update_in_place_without_cloning` 單元測試，`config_contract` 與 `telemetry_contract` 全數通過，`cargo check` 通過。
 - **Skills**：`telemetry-udp-protocol`、`pr-author-maintainer`。
+## 2026-11-05 / 音響整面向量重繪退回原素材（Codex as Codex）
+
+- **使用者回饋**：#541 的 Pioneer DEH-P835R、Alpine CDA-7848／CDA-9815RB 整面重繪未通過視覺審查，要求回退；其他面板僅允許有相同向量來源佐證的局部元素替換。此回饋取代先前將整面向量化當作改善的判斷。
+- **處理**：九款全部改用原有 *_clean.png，逐一確認與 ff6baf5b 位元組相同。保留該版矩形及材質 alpha 處理，靜態圖層只在切換型號時更新，動態 Canvas 與設定不變。未啟用局部替換；現有 SVG、品牌來源與正規化安全修復僅保留歷史備查／回歸。
+- **學習**：有來源的商標不代表整面重繪忠實；字型重排、點陣描摹及手工重建不能宣稱為相同原生向量。局部替換須確認圖形、比例、年代／版式、配色與位置，缺少證據就保留原圖，細則見音響 assets/README.md。生成器及像素契約通過不能代替使用者視覺審查。
+- **驗證**：完整前端 1,939 passed／1 既有 skip，TypeScript／Vite build 通過；獨立瀏覽器 336 組版面、90 次 fixture 保存、66 張擷取、零 page errors／非預期 API。九款完整底圖 RGB、原生尺寸及材質 alpha 檢查通過，未載入 SVG。更新設定頁與九款共 19 張圖及來源雜湊，供重新視覺審查；未做真實音訊、遊戲、原生跨螢幕或讀屏驗收。
+- **Skills**：halfmoon-design-system、pr-author-maintainer。
+
+## 2026-11-04 / 介面 PR 截圖與視覺備查成為共通規範（Codex as Codex）
+
+- **規範來源**：使用者明確要求未來所有介面調整 PR 都以截圖展示改動並保存視覺審查備查，隨 #541 提交。AGENTS 設必要交付門檻，詳細契約集中於 rules/ui-visual-review.md；UI 架構、Halfmoon、作者／審查技能與 PR 範本以連結引用，不各自維護覆蓋矩陣。
+- **內容**：Body 嵌圖、各頁／分頁／新增樣式覆蓋、跨設計系統日夜及窄幅代表圖、可追溯的版本／環境／資料／重現紀錄；明確區分 fixture、原生、遊戲及讀屏驗收。變更介面須更新圖片，文件後續提交可註明版本後沿用。
+- **本次交付**：只有規範文件變更，#541 介面仍與 4085520b 相同，沿用該版本的 19 張圖與測試紀錄；不重拍或重跑產品測試。檢查 canonical skill ID／索引、修改文件的相對連結與路徑大小寫、PR Body 格式及 git diff --check。
+- **Skills**：agent-governance-audit、pr-author-maintainer。
+
+## 2026-11-04 / 音響 X／Y 位移拉桿與對齊限制（Codex as Codex）
+
+- **變更**：音響位置改用共用 HudRange，X 正值向右、Y 正值向下；左／上對齊的對應軸下限為 0，右／下上限為 0。每次 1 px，保留既有 4000 px 距離範圍、鍵盤方向鍵與 Home／End、即時保存及隱藏時設定。
+- **相容學習**：UI 的螢幕 X／Y 不等於持久化的向內／沿邊位移。以純函式 read／write 投影保留 audioHeadOffset、audioHeadCenterOffset，不修改 Rust 或 renderer。切換對齊前先讀 X／Y，再按新邊緣限制值並寫回；直接沿用正的向內距離會讓右側 X 語意相反，直接交換儲存欄位也會誤換兩軸。
+- **驗證**：新增 10 項純函式契約（四邊舊設定往返、方向限制、跨軸對齊與範圍），完整前端 1,939 passed／1 既有 skip，TypeScript／Vite build 與 diff check 通過。獨立瀏覽器重跑 336 組版面與真實 launcher 的四邊向內移動、0 界限、保存重載，90 次 fixture 保存／66 張擷取／零 page errors 與非預期 API；重新選用 19 張圖，三設計系統日夜設定頁展示靠右 X 上限 0。沿用隔離模擬音訊，不作為原生、遊戲或讀屏驗收。
+- **Skills**：halfmoon-design-system、modular-refactoring、pr-author-maintainer。
 
 ## 2026-11-04 / HUD 與共用工作區樣式對齊（Codex as Codex）
 
@@ -1145,3 +1166,136 @@
 - **處理**：解碼 CSS escape 後檢查資源函式，移除驗證階段 DOM 寫入，並在共用 style 注入點再次驗證。被拒絕的原稿保留供修正，合法純樣式仍生效。
 - **證據**：新增案例在修正前 6 failed／28 passed，修正後 34 passed；完整前端 1854 passed／1 skipped，production build 通過。這是政策與 DOM 邊界回歸，不代表已完成所有瀏覽器攻擊面的安全認證。
 - **Skills**：`halfmoon-design-system`、`pr-author-maintainer`、`pr-review-evaluation`、`ponytail`。
+
+## 2026-10-19 / Audio Head 獨立元素與共用訊息重播（Codex as Codex）
+
+- **來源／狀態**：`local`／`verified`；PR #541 將音響主機從互斥的儀表選單改為獨立選單及 `elements.showAudioHead`。
+- **Learning**：獨立 iframe 必須在載入時重播最新音訊與歌曲快照；原 WebSocket 的去重機制可能不再傳送未變更的歌曲資訊。切換儀表只重載儀表 iframe，關閉音響則移除其 iframe，使動畫與監聽器隨視窗生命週期結束。
+- **位置契約**：外層錨點使用螢幕像素，內層音響保留共用縮放；預設左側中央、邊緣與中心 Offset 皆為 0。Canvas 依主機外框尺寸與 DPR 設定 backing store，避免透明留白影響邊緣對齊。
+- **設定契約**：舊 `hudStyle: audio_head` 遷移為 `hudStyle: vfd` 與獨立音響開關；保留原關閉狀態。前端及 launcher 共用正規化入口，Rust 在儲存／載入時驗證相同欄位；無關樣式的稀疏設定不新增音響欄位。
+- **Evidence**：前端 1,815 passed／1 skipped，Windows 與 LAN 前端 build 通過；Rust 預設功能全量 226 passed／3 ignored，無 HUD 功能全量 218 passed／2 ignored（含文件測試），共用設定契約 13 passed。隔離瀏覽器以合成 HTTP／WebSocket 驗證四邊與 Offset、VFD／GT7 並存、互不影響的顯示開關，以及負值 Offset 的鍵盤輸入。
+- **驗證順序**：前端平台 build 會替換 `dist` 中的 hash 檔名，不可與同一工作樹的 Rust 資源嵌入／文件測試平行執行；固定前端輸出後，依序執行 Cargo 驗證。
+- **Boundary**：未新增個別音響樣式測試；測試補在共用設定、選單與事件傳輸契約。瀏覽器截圖介面逾時，沒有有效畫面截圖；未宣稱 Tauri、實體音訊裝置或遊戲內驗收。
+- **Skills**：`halfmoon-design-system`、`huge-component-refactoring`、`modular-refactoring`、`pr-author-maintainer`、`ponytail`。
+
+## 2026-10-19 / Audio Head 動畫時間尺度（Codex as Codex）
+
+- **Learning**：`render()` 每次加固定相位、固定 peak 衰減，以及 VU 使用固定 0.016 秒，會讓動畫時間尺度跟隨 rAF 次數；設定／圖片載入額外重畫也會推進動畫。60Hz 改到 144Hz 時，原海豚相位速度理論上會變為 2.4 倍。
+- **修正**：繪圖不再修改時間狀態；相位從單調時鐘計算（2.1 rad/s），peak 下降 0.9/s，VU 使用實際 dt 的指數 attack／release。預覽共用同一 rAF 時鐘，以秒計算並由真實音訊取消，不開 interval。rAF 繪製不設固定 60Hz 上限。
+- **Evidence**：共用 `audio-motion.js` 的時間域測試涵蓋 30／60／120／144／240Hz 的等時長相位、peak 與 VU 結果，另涵蓋不規則間距、重複時間戳與背景暫停。這是數值契約證據，不能當成實機跨更新率的 DWM／VRR／流暢度量測。
+- **Skills**：`huge-component-refactoring`、`pr-author-maintainer`、`ponytail`。
+
+## 2026-10-19 / 第二輪 HUD 視覺審查 PR #541（Codex as Codex）
+
+- **修正／Learning**：對照 D:/ForzaHUD 的九款 radio acceptance 截圖、res_123 的研究說明及清理底圖；清理 PNG 的透明區不等於主機背景應透明。繪製前先填完整不透明黑色矩形，再疊原始素材，保留 Panasonic 金色面板，移除額外青色外光暈，沿用時間域動畫。
+- **驗證界線**：先跑完整 frontend Vitest 與 build，再保存最後提交的實際 Forza 漫遊截圖與設定；靜態圖片不作為動態駕駛或跨更新率效能證據。未新增個別樣式測試。
+- **Skills**：`huge-component-refactoring`、`halfmoon-design-system`、`pr-author-maintainer`、`ponytail`。
+
+
+### 2026-10-19 Audio Head 矩形面板 75%
+
+- 九款靜態面板先於載入時合成完整黑色矩形與原材質，再作為單層以 alpha=0.75 繪製；每幀先 clear，避免多次疊色變不透明。動態頻譜、文字、海豚、VU 保持原 alpha、單調時間與大小／位置。
+- 採用技能：`ponytail`、`pr-author-maintainer`、`halfmoon-design-system`、`huge-component-refactoring`。完整前端測試與 build 於提交前驗證，日誌 round4-541；不新增樣式測試。
+
+### 2026-10-19 Audio 面板與黯淡裝飾分層
+
+- 整張底圖globalAlpha=0.75會連暗色文字、線條一起變淡。改於載入時快取RGBA：只對原生純黑、研究renderer清底RGB(9,11,17)及Panasonic上方金色材質填色套alpha191；其他圖案保留RGB與原生覆蓋，單層繪出完整矩形，沒有一般亮度門檻或逐幀像素處理。
+- 九款離線原生尺寸對照均保有黯淡裝飾的原RGB／alpha255與alpha191底色；動態頻譜／VU重疊像素另列，無JS錯誤。
+- 技能：`ponytail`、`pr-author-maintainer`、`halfmoon-design-system`、`huge-component-refactoring`。基線及修改後完整前端1821 passed／1 skipped、build通過；另做真實遊戲截圖，不新增樣式測試。
+
+### 2026-10-20 Audio Head 向量素材與原始解析度核對
+
+- **Scope**：使用者限縮本輪只改 Audio Head。九款面板重繪為獨立 SVG；靜態圖片直接由瀏覽器按 zoom／DPR 呈現，動態 Canvas 繼續使用原有邏輯座標、時間域動畫、音訊及媒體來源。其他儀表只做來源盤點。
+- **Learning**：研究文件的圖集尺寸不能取代 DDS header／PNG IHDR：本機 res_220 實際為524×988，面板寬380–490px。重設 PNG 尺寸不會還原細節；即使日後換成 SVG，若仍在載入時縮成 deck.w×deck.h 的 Canvas，也會重新失去向量的縮放品質。
+- **Materials**：完整矩形、Panasonic 金色和下方材質先在同一 SVG 群組合成，再以 opacity=.75 呈現；裝飾／文字在另一層。避免兩個75%背景重疊成93.75%，也不再以亮度猜測背景。複雜標記保留原圖輪廓路徑，來源區域與SHA列於panel-glyphs.json；不宣稱可恢復原圖不存在的細節或完整原作字型。
+- **Brands**：依追加指示沿用Alpine／Pioneer／Sony／Kenwood官網SVG，P835R採Commons保存、經官方沿革核對的舊版Pioneer；Compact Disc Digital Audio亦沿用Philips來源向量。保留長寬比、圖形與來源SHA，僅套主機原配色；Alpine移除原主機沒有的標語，避免以一般字型重新拼出商標。來源SVG固定LF，正規化換行及行尾空白前後各留SHA，避免Windows checkout使來源校驗漂移。
+- **Validation**：基線與修改後完整frontend Vitest均1821 passed／1 skipped，TypeScript／Vite build通過。九款SVG於100%／200% scale及DPR1／1.25／1.5／2共45組離線載入／版面檢查無JS錯誤；產物可由無額外相依的Node腳本重建並以--check確認一致。無新增個別樣式單元測試；離線圖與遊戲證據分列。
+- **Skills**：`ponytail`、`pr-author-maintainer`、`halfmoon-design-system`、`huge-component-refactoring`；實際Windows畫面擷取採`computer-use:computer-use`。
+
+## 2026-10-20 / PR #541 與 main 整合驗證（Bagley as dot）
+
+- 保留 Audio Head 與 main 手把遙測卡片／延後模組的正規化、選單過濾、啟動更新、測試與翻譯；僅整合衝突，不處置 CodeQL 討論。
+- Linux x64、Node 24.19.0、pnpm 11.19.0、Rust 1.99.1：frontend Vitest 1825 passed／1 skipped；Windows 與 LAN frontend build 通過；SVG generator --check 九款一致；Cargo 預設功能 230 passed／2 ignored、無預設功能 220 passed／2 ignored；cargo fmt 與 git diff --check 通過。
+- 前端 build 與 Cargo 測試依序執行，未變更測試 timeout、assertion 或既有 skip；未執行 Windows 原生視覺驗收。
+- Skills：pr-author-maintainer、pr-review-evaluation、halfmoon-design-system。
+
+## 2026-10-19 / Auxiliary 獨立排列與共用數值來源（Codex as Codex）
+
+- **Scope**：PR #540 接續 #541 的獨立元素基礎；輔助儀表另設複選選單與開關，預設右側中央。Audio Head 的位移輸入改由共用元件維持負號草稿。既有 CI 的 base branch filter 加入 `feat/hud-audio-head`，使 stacked PR 能執行同一組檢查。
+- **Learning**：表頭僅讀取語意值，`gaugeValueSources` 在 launcher 分發前統一對應欄位、描述與來源單位。AEM／Speedhut 共用 boost 對應。Forza 缺少的油溫、油壓不再以轉速模型補值；水溫預設讀取有明確標示的平均胎溫。缺值須優先使用 nullable 原始胎溫，避免 legacy 的零值填補被誤認為實際量測。
+- **排列／生命週期**：以每排上限建立向上成長的格線；橫向逐列、直向逐欄由下往上填入，幾何與文字僅於設定改變時計算。外層錨點使用螢幕像素，Canvas 依 DPR 配置。關閉或空選取移除 iframe，既有主儀表及音響保留。
+- **Evidence**：完整前端 1,824 passed／1 skipped，Windows 與 LAN build；Rust 預設全量 228 passed／3 ignored、無 HUD 全量 220 passed／2 ignored。共用測試涵蓋設定遷移／保存／重啟、來源轉換／缺值、選單、排列與表單草稿。隔離瀏覽器確認五表頭複選、來源同步、四邊 24px／中心 -32px、主儀表切換與獨立開關。
+- **輸入草稿**：描述正規化會 trim 字串，逐字保存會吃掉尚在輸入的字詞間空格。共用 `HudTextInput` 保留草稿，blur／Enter 才保存；mounted 表單測試及瀏覽器逐字輸入、Enter 與 reload 讀回均已確認。
+- **Boundary**：沒有新增個別樣式繪圖測試。瀏覽器截圖仍逾時，DOM／版面證據與合成傳輸不代表 Tauri 或遊戲內驗收。詳細操作契約見 [獨立元素說明](../docs/hud-independent-elements.md)。
+
+## 2026-10-19 / 獨立元素直排的實機檢查（Codex as Codex）
+
+- **Learning**：只改填入順序、仍以每排上限計算相同格線，會使直排外觀仍是橫排；五項、容量三的實機畫面可重現。直排須將容量套用到每欄，使同一組設定由三欄兩列轉為兩欄三列，UI 數量標籤同步切換為「每欄最多表頭數」。
+- **修正／Evidence**：共用排列函式保留設定鍵相容性，依方向改變幾何；共用測試覆蓋容量 1／3／5、四邊短列對齊、邊界與向內延伸。橫排不變；直排靠右時新增欄向左，靠上時由上往下填入。實機截圖另存版本、完整設定與即時遙測，不以數值單元測試代替渲染證據。
+- **Skills**：`halfmoon-design-system`、`huge-component-refactoring`、`pr-author-maintainer`、`ponytail`。
+
+## 2026-10-19 / 共用表頭的負載油壓與平均胎溫（Codex as Codex）
+
+- **Scope／Learning**：依使用者確認，阻尼只套用推算油壓；油溫、水溫均直接讀平均胎溫。共用launcher建立單一reader，將油門×RPM/maxRPM的視覺負載指標映射為運轉時20–80PSI，熄火目標為零，以monotonic elapsed time、1.5秒時間常數推進，不依render次數。這是明示模擬，並非感測油壓或車輛調校公式；原始遙測保持不動，個別表頭不自行計算。
+- **來源與狀態**：共用虛擬來源`estimated_oil_pressure_psi`加入來源選單。自訂來源直接讀值，不套模擬濾波；缺值、離開race、換車或時鐘重啟清除狀態。JS與Rust僅遷移完全吻合的舊unassigned預設，保留使用者改過的來源／描述；設定存讀與重啟均驗證。
+- **Evidence**：基線1843 passed／1 skipped；修改後完整前端1848 passed／1 skipped、build通過；Rust預設全量229 passed／3 ignored、fmt與diff檢查通過。共用契約驗證30／60／120／144／240Hz相同經過時間的壓力一致、升降載響應、override與reset；未新增個別樣式測試。離線控制輸入五表圖及真實遊戲圖分開保存第六輪，靜態圖不等同真實油壓或跨更新率實機驗收。
+- **Skills**：`ponytail`、`pr-author-maintainer`、`halfmoon-design-system`、`huge-component-refactoring`。
+
+## 2026-10-20 / PR #540 整合已驗證的 #541（Bagley as dot）
+
+- 保留輔助儀表、共用數值來源與 af51eb5 的 GReddy 校正；Audio Head 素材、來源、generator 與輸出完整採用 #541，與 main 手把／延後模組設定、選單、launcher、測試及翻譯並存。
+- Linux x64、Node 24.19.0、pnpm 11.19.0、Rust 1.99.1：frontend Vitest 1863 passed／1 skipped；Windows 與 LAN build 通過；SVG generator --check 九款一致；Cargo 預設功能 233 passed／2 ignored、無預設功能 223 passed／2 ignored；fmt 與 diff 檢查通過。
+- 全量驗證依序執行，未放寬 timeout、assertion 或 skip；未執行 Windows 原生視覺驗收，未處置 CodeQL 討論。
+- Skills：pr-author-maintainer、pr-review-evaluation、halfmoon-design-system。
+
+## 2026-10-20 / Audio Head SVG 正規化修復（Bagley as dot）
+
+- 一次性刪除 style／comment 可重新拼成禁用標記；改為整條正規化流程達固定點，限制輸入 64 Ki code units 與 32 次迭代，未收斂或殘留不完整／錯配標記即拒絕。所有品牌先完成檢查才寫面板；僅適用已審核品牌片段，非通用 SVG sanitizer。
+- 28 個回歸案例通過，涵蓋重組、混合大小寫、巢狀／相鄰、錯配／不完整、資源上限與寫入前拒絕。六個原始正規化片段及九款輸出 SVG 的 SHA-256 原始位元組完全一致，未依賴 CRLF 正規化。
+- frontend 1853 passed／1 skipped；Windows／LAN build 通過；Cargo 預設 230 passed／2 ignored，無預設 220 passed／2 ignored；cargo fmt、generator --check 與 git diff --check 通過。未修改依賴、既有 timeout／skip 或 CodeQL suppression；本機無 CodeQL CLI，掃描確認另行處理。
+- Skills：github-security-audit、pr-author-maintainer、pr-review-evaluation。
+
+## 2026-10-20 / #540 同步 SVG 正規化修復（Bagley as dot）
+
+- 合併 #541 的有界固定點修復與 28 個回歸案例；僅 Journal 附加段落衝突並保留雙方內容。輔助儀表、GReddy 校正、共用來源、品牌原檔與九款面板未變更。
+- frontend 1891 passed／1 skipped；Windows／LAN build 通過；Cargo 預設 233 passed／2 ignored、無預設 223 passed／2 ignored；fmt、diff、generator --check 與九款原始位元組 SHA-256 通過。無 CodeQL CLI，未執行掃描或遠端寫入。
+- Skills：github-security-audit、pr-author-maintainer、pr-review-evaluation。
+## 2026-11-04 / Audio Head 接入第四個 HUD 設定分頁
+
+- **範圍**：依使用者指示，以精確 head 合併 #615，再於隔離 worktree 將 main 合入 #541，保留既有提交與 SVG 安全修復。音響頁置於一般之後，繁中定義「音響系統」。分頁容器與共同主題外觀沿用 #615；#540 未更新。
+- **架構**：只有 OverlayView 登錄 audio-head；專屬面板接受窄型別與共用 actions，寫入 elements 局部 patch。隱藏時仍可設定，位移草稿在切頁時不提交；以共用 section／range 保持主題與無動畫滑桿契約。
+- **遷移學習**：獨立 audioHeadScale 必須在合併預設值前從舊 scale 遷移，否則預設的 1 會遮住舊值。僅既有音響設定遷移，明確但無效的獨立值回到 1；之後調主儀表不再改音響。Rust／JS 行為、保存重啟及未知欄位有契約測試。
+- **瀏覽器學習**：等待單一局部 patch 出現在保存記錄，不等於串行保存佇列已排空；跨頁最終合併斷言需等待 synced，保留原斷言。以實際 AppShell 與 HUD launcher 驗證四分頁、獨立縮放、九款選單及四邊對齊，不能只用面板 fixture 或素材原圖代替 renderer 截圖。
+- **驗證**：完整 frontend 1,929 passed／1 個既有 skip，TypeScript／Vite build；Cargo 預設 242 passed／3 ignored，無預設功能 232 passed／2 ignored；九款 SVG --check 一致。瀏覽器 336 組版面、62 次 fixture 保存、66 張擷取，零 page errors／非預期 API。選用 19 張實際擷取圖與 SHA-256 manifest，同步中英文指南、README 與 PR Body。
+- **證據界線**：圖片使用隔離 HTTP／WebSocket 與固定音訊／媒體樣本，音響只加中性背景，不修飾面板；不是本輪遊戲、原生跨螢幕或讀屏實機驗收。#615 歷史 native smoke 另列。
+- **Skills**：halfmoon-design-system、huge-component-refactoring、modular-refactoring、pr-author-maintainer、pr-review-evaluation、cross-agent-collaboration。
+
+## 2026-10-20 / SVG 禁止 delimiter 的 token／range 修復（Bagley as dot）
+
+- 前版 763b1fdf 雖通過本機驗證，CodeQL gate 仍失敗：54（未處理 `--!>`）、55／56（comment／style 不完整清洗）。保留失敗紀錄，不以本機測試宣稱掃描通過；51／52 由 securitybot 自動標記過時／解決，非人工 Resolve。
+- 改為顯式 token／range 掃描與重疊區間合併，移除匹配標籤及註解；使用 `-->`／`--!>` 最早結尾，避免吞掉中間幾何。每輪完整清理再 tokenize，保留 65,536 code units／32 輪限制與穩定結果的禁止 delimiter 拒絕。僅限已審核品牌，非通用 SVG sanitizer 或完整 XML 驗證。無新依賴或 suppression。
+- 42 個回歸案例、frontend 1867 passed／1 skipped；Windows／LAN build 通過；Cargo 預設 230 passed／2 ignored、無預設 220 passed／2 ignored；fmt／diff／generator check 通過。六個片段與九款實際重建原始位元組 SHA-256 完全相同。本機無 CodeQL CLI，新掃描待發佈後確認。
+- Skills：github-security-audit、pr-author-maintainer、pr-review-evaluation。
+
+## 2026-10-20 / #540 同步 token／range 修復（Bagley as dot）
+
+- 同步 #541 41a9a7df 的禁止 delimiter 掃描與 42 個回歸案例；Journal 保留雙方紀錄，輔助儀表校正／來源與品牌／面板位元組不變。
+- frontend 1905 passed／1 skipped；Windows／LAN build 通過；Cargo 預設 233 passed／2 ignored、無預設 223 passed／2 ignored；fmt、diff、generator check 及原始位元組比對通過。保留前版失敗 CodeQL 紀錄，新掃描尚未執行，未寫入遠端。
+- Skills：github-security-audit、pr-author-maintainer、pr-review-evaluation。
+
+## 2026-11-05 / #540 接入第五個 HUD 設定分頁（Codex as Codex）
+
+- **範圍**：將 #541 `bb36cd68` 合入 #540 `d3b137f1`，保留原提交歷史。輔助儀表登錄為第五頁，第四頁仍為音響系統；容器不加入功能判斷。依使用者定案保留九款音響與五款輔助表頭原 PNG，Shader、銳化及 FSR 改進另案，沒有帶入研究候選或啟動 REA。
+- **架構／學習**：輔助元素與共用來源拆成窄型別面板並沿用系統 controls。來源描述需保留本地草稿，切頁造成的 blur 不提交；runtime 將 gaugeValueSources 的每項讀值局部 patch 合入最新設定，避免串行保存期間跨頁更新覆蓋。隱藏仍可預設，邊緣向內位移與沿邊中心位移沿用原欄位及範圍。
+- **驗證**：整合前完整前端 1907 passed／1 skipped；整合後 1978 passed／1 skipped、TypeScript／Vite build 通過。Rust 預設 245 passed／3 ignored、無預設功能 235 passed／2 ignored；cargo fmt 與 git diff --check 通過。未放寬 timeout、既有斷言或 skip。
+- **瀏覽器／視覺**：實際 AppShell 與 launcher 的獨立腳本通過 420 組版面（七核心、日夜、三語、1280／320px、五頁），另有寬幅與 reduced motion；五款表頭、四邊位置、橫直換排、局部來源、草稿、保存／重載及九款音響契約均通過。85 張擷取、141 次 fixture 保存、零 page errors／非預期 API；選用18張原擷取圖片並記錄 source／image SHA-256。21個音響與輔助 PNG 檔逐檔保持原值。
+- **界線／交付**：同步中英文 README、分頁擴充文件與輔助儀表指南；截圖為合成資料，未代替遊戲、真實音訊、原生跨螢幕或讀屏驗收。PR 保持開啟，依 #541 → #540 順序等待人工合併，不啟用 auto-merge。
+- **Skills**：pr-author-maintainer、halfmoon-design-system、huge-component-refactoring、modular-refactoring；PR 狀態另按 exact-head 流程核對。
+
+## 2026-11-05 / #540 原生 HUD 重啟狀態校正（Codex as Codex）
+
+- **問題**：HUD 顯示時關閉程式會留下 `enabled=true`，但新 Tauri process 預建的 overlay 實際隱藏；設定頁與 Live 的獨立 GET／廣播 owner 因而誤判。不能以 unload 非同步保存作為修復保證。
+- **修復**：Tauri 提供視窗可見查詢，唯一 runtime 載入時以真實 session 狀態校正，再用既有串行寫入／重試保存。原生 toggle 成功後才更新啟用值；Live 透過 platform adapter 訂閱同一 runtime。頁面 reload 保留真正仍可見的視窗，LAN 無原生能力時維持原行為。
+- **驗證**：完整 Vitest 1983 passed／1 skipped；Windows／LAN TypeScript＋Vite build、Tauri Rust 5 tests、cargo fmt、diff check 通過。backend-rust source 與前次245／235項測試的整合版本相同。完整獨立瀏覽器420組版面、92張擷取、145次fixture保存，零page errors／非預期API；刻意失敗的原生啟用回傳不改enabled。
+- **原生證據**：真實 Windows Tauri debug／WebView2＋Rust backend、隔離資料及port。真正啟用overlay後正常關閉main視窗，再啟動新process；校正true→false、保留其他設定及未知欄位，Live未被暫停。backend刻意維持運作以保留舊flag。測試僅清理自身process。3張原生圖與7張bridge fixture圖分開標示於restart圖集，不當作遊戲、跨螢幕、音訊或讀屏驗收。
+- **Skills**：pr-author-maintainer、halfmoon-design-system、huge-component-refactoring、modular-refactoring、portable-release-validation。

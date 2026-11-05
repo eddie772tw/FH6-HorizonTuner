@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useMemo, useSyncExternalStore } from 'react';
 import { backendFetch } from '../../services/backend';
 import { useSettings } from '../../context/SettingsContext';
+import { createHudNativeAdapter, getBrowserNativeInvoke } from './hudNativeAdapter';
 import {
   createOverlayControlRuntime,
   type OverlayControlRuntime,
@@ -19,6 +20,7 @@ interface BrowserRuntimeHost {
 
 function createBrowserRuntimeHost(): BrowserRuntimeHost {
   const channel = new BroadcastChannel('horizon_tuner_hud_channel');
+  const native = createHudNativeAdapter(getBrowserNativeInvoke());
   const runtime = createOverlayControlRuntime(
     {
       readConfig: signal => backendFetch('/api/overlay/config', { signal }),
@@ -27,6 +29,13 @@ function createBrowserRuntimeHost(): BrowserRuntimeHost {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(config),
       }, 2_500),
+      ...(native.available ? { readWindowVisibility: async () => {
+        const result = await native.getHudWindowVisible();
+        if (result.status !== 'success' || typeof result.value !== 'boolean') {
+          throw new Error(result.error ?? 'HUD window visibility is unavailable.');
+        }
+        return result.value;
+      } } : {}),
     },
     channel,
   );
@@ -104,6 +113,17 @@ export const OverlayControlRuntimeProvider: React.FC<{ children: React.ReactNode
 
 export function useOptionalOverlayControlRuntime(): OverlayControlRuntime | null {
   return useContext(OverlayControlRuntimeContext);
+}
+
+const noHudSubscription = () => () => {};
+const notPaused = () => false;
+
+export function useHudTelemetryPaused(): boolean {
+  const runtime = useOptionalOverlayControlRuntime();
+  return useSyncExternalStore(runtime?.subscribe ?? noHudSubscription, () => {
+    const config = runtime?.getSnapshot().config;
+    return config?.enabled === true && config.pauseTelemetryViewWhenActive === true;
+  }, notPaused);
 }
 
 export function useOverlayControlRuntime(): OverlayControlRuntime & OverlayControlSnapshot {
