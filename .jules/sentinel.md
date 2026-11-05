@@ -32,3 +32,9 @@
 **學習 (Learning):** 本機桌面/Companion HTTP 服務雖主要綁定 `127.0.0.1` 或 LAN IP，但在瀏覽器環境下，任何本機瀏覽的網頁皆可透過嵌入 `<iframe>` 或探針發起無聲請求。若未在伺服器管道的全路徑（包含 CSRF 403 阻擋、401 未授權及一般 API 回應）統一注入 `SAMEORIGIN` 與 `nosniff`，即使實作了 CORS，仍會暴露於 UI 點擊劫持與 MIME 類型混淆風險。同時，保留 `SAMEORIGIN` 能完整相容 HUD overlay 內嵌同源 telemetry cards 的既有機制，達成零回歸防護。
 **預防 (Prevention):** 於後端 HTTP 網路層抽象 `apply_security_headers` 函式，對所有進出 `router` 與 `lan_router` 的 HTTP 回應強制注入 `X-Content-Type-Options: nosniff`、`X-Frame-Options: SAMEORIGIN` 及 `Referrer-Policy: strict-origin-when-cross-origin`，並透過整合測試驗證正常路徑、LAN 路由與拒絕路徑的安全標頭一致性，落實深度防禦（Defense in Depth）。
 **署名:** Sentinel as Antigravity
+
+## 2026-11-06 - Host Header Validation & DNS Rebinding Attack Mitigation
+**漏洞/脆弱點 (Vulnerability):** 後端主要 Axum HTTP/WebSocket 服務（`backend-rust/src/network.rs`）在 `origin_security` middleware 中，原先僅對非安全請求方法（POST/PUT/DELETE 等）檢查 Origin 來源以防範 CSRF，但所有請求（包含 GET、HEAD 及 WebSocket 握手）完全未校驗 HTTP `Host` 標頭與允許的本機主機白名單，亦未阻斷缺少 Host 標頭的非法請求。當使用者在本機瀏覽外部惡意網站時，攻擊者可透過 DNS Rebinding（將惡意網域名稱的 DNS 解析短暫導向 `127.0.0.1`），誘使受害者瀏覽器發送帶有惡意 Host 標頭（如 `rebind.attacker.com`）的 GET 請求，由於瀏覽器視其為同源，使攻擊者能繞過同源政策直接讀取 `/api/settings`（使用者敏感設定）、`/api/companion/qr`（Companion 配對密鑰）、`/api/analysis/sessions` 等內部機密數據。
+**學習 (Learning):** 本機桌面應用（Tauri Sidecar / Localhost HTTP）在瀏覽器生態系中具備特殊的攻擊面。許多開發者誤以為僅需驗證跨站 POST 的 `Origin` 即可抵禦跨站攻擊，然而在 DNS Rebinding 威脅模型下，瀏覽器在同源視野下發起的 GET 請求不會觸發 CORS 攔截，且通常不帶跨來源 Origin 標頭。因此，服務端若未在 HTTP 管道第一線對 `Host` 標頭執行嚴格的受信任主機（`localhost`, `127.0.0.1`, `::1`, `tauri.localhost`, `testserver`）白名單比對，將使所有同源唯讀端點暴露於無授權資料竊取風險。
+**預防 (Prevention):** 於後端 HTTP 網路層實作 `allowed_host` 檢查，在 `origin_security` middleware 入口處對所有進站請求強制驗證 `Host` 標頭，嚴格限制主機名稱僅允許本機回環地址與受信任的桌面客戶端標識，凡非白名單網域或缺少 Host 標頭者一律以 403 Forbidden 拒絕，並於測試套件補齊合法主機放行、惡意重綁定網域阻斷與安全標頭一致性驗證，落實深度防禦（Defense in Depth）。
+**署名:** Sentinel as Antigravity
