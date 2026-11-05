@@ -119,12 +119,13 @@ const OverlayViewContent: React.FC = () => {
     }
     setLoading(true);
     setHudActionError(null);
-    // Persistence failures are reported by runtimeError and cleared by its retry.
-    void updateConfig({ enabled });
     try {
-      sendHudCommand({ type: enabled ? 'hud:animate' : 'hud:destroy' });
       const result = await native.toggleHudWindow(enabled);
       if (result.status !== 'success') throw new Error(result.error ?? capabilities.nativeWindow.detail);
+      // Only publish visibility after the native operation has succeeded.
+      // Persistence failures remain visible through the runtime retry path.
+      void updateConfig({ enabled });
+      sendHudCommand({ type: enabled ? 'hud:animate' : 'hud:destroy' });
       if (enabled) {
         const clickThrough = await native.setHudClickThrough(true);
         if (clickThrough.status !== 'success') throw new Error(clickThrough.error ?? capabilities.clickThrough.detail);

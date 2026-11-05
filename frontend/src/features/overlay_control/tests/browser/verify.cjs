@@ -94,6 +94,13 @@ async function main() {
       return Object.entries(values).every(([key, value]) => JSON.stringify(current[key]) === JSON.stringify(value));
     }, expected);
     const idle = () => page.waitForFunction(() => document.querySelector('.hud-status')?.dataset.state === 'synced');
+    if (process.env.HUD_SESSION_ONLY === '1') {
+      await require('./verify-native-session.cjs')({ browser, origin, out, report });
+      assert.deepEqual(report.unexpectedRequests, []); assert.deepEqual(report.errors, []);
+      fs.writeFileSync(path.join(out, 'report.json'), JSON.stringify(report, null, 2));
+      console.log(JSON.stringify({ checks: report.checks, saves: report.saves.length, screenshots: report.screenshots.length, out }));
+      return;
+    }
     const rangeEnd = async name => { const input = page.getByRole('slider', { name, exact: true }); await input.focus(); await input.press('End'); };
     const expand = async name => {
       const card = page.getByRole('region', { name, exact: true });
@@ -332,6 +339,7 @@ async function main() {
     await open('en-us');
     await require(path.join(repo, 'hud_overlay/audio_head/tests/browser/verify.cjs'))({ page, context, origin, out, report });
     await require(path.join(repo, 'hud_overlay/auxiliary_gauges/tests/browser/verify.cjs'))({ page, context, origin, out, report });
+    await require('./verify-native-session.cjs')({ browser, origin, out, report });
     assert.deepEqual(report.unexpectedRequests, []);
     assert.deepEqual(report.errors, []);
     fs.writeFileSync(path.join(out, 'report.json'), JSON.stringify(report, null, 2));

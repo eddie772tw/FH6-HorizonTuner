@@ -1282,3 +1282,11 @@
 - **瀏覽器／視覺**：實際 AppShell 與 launcher 的獨立腳本通過 420 組版面（七核心、日夜、三語、1280／320px、五頁），另有寬幅與 reduced motion；五款表頭、四邊位置、橫直換排、局部來源、草稿、保存／重載及九款音響契約均通過。85 張擷取、141 次 fixture 保存、零 page errors／非預期 API；選用18張原擷取圖片並記錄 source／image SHA-256。21個音響與輔助 PNG 檔逐檔保持原值。
 - **界線／交付**：同步中英文 README、分頁擴充文件與輔助儀表指南；截圖為合成資料，未代替遊戲、真實音訊、原生跨螢幕或讀屏驗收。PR 保持開啟，依 #541 → #540 順序等待人工合併，不啟用 auto-merge。
 - **Skills**：pr-author-maintainer、halfmoon-design-system、huge-component-refactoring、modular-refactoring；PR 狀態另按 exact-head 流程核對。
+
+## 2026-11-05 / #540 原生 HUD 重啟狀態校正（Codex as Codex）
+
+- **問題**：HUD 顯示時關閉程式會留下 `enabled=true`，但新 Tauri process 預建的 overlay 實際隱藏；設定頁與 Live 的獨立 GET／廣播 owner 因而誤判。不能以 unload 非同步保存作為修復保證。
+- **修復**：Tauri 提供視窗可見查詢，唯一 runtime 載入時以真實 session 狀態校正，再用既有串行寫入／重試保存。原生 toggle 成功後才更新啟用值；Live 透過 platform adapter 訂閱同一 runtime。頁面 reload 保留真正仍可見的視窗，LAN 無原生能力時維持原行為。
+- **驗證**：完整 Vitest 1983 passed／1 skipped；Windows／LAN TypeScript＋Vite build、Tauri Rust 5 tests、cargo fmt、diff check 通過。backend-rust source 與前次245／235項測試的整合版本相同。完整獨立瀏覽器420組版面、92張擷取、145次fixture保存，零page errors／非預期API；刻意失敗的原生啟用回傳不改enabled。
+- **原生證據**：真實 Windows Tauri debug／WebView2＋Rust backend、隔離資料及port。真正啟用overlay後正常關閉main視窗，再啟動新process；校正true→false、保留其他設定及未知欄位，Live未被暫停。backend刻意維持運作以保留舊flag。測試僅清理自身process。3張原生圖與7張bridge fixture圖分開標示於restart圖集，不當作遊戲、跨螢幕、音訊或讀屏驗收。
+- **Skills**：pr-author-maintainer、halfmoon-design-system、huge-component-refactoring、modular-refactoring、portable-release-validation。
