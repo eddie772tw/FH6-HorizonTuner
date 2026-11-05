@@ -1,5 +1,15 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-11-06 / 60Hz UDP 接收熱迴圈之 SocketAddr 零拷貝與度量收集器零配置（Bolt as Antigravity）
+
+- **重現與效能瓶頸**：在 60Hz+ UDP 遙測接收熱迴圈 (`receive_udp`) 中，每個資料包呼叫 `source.to_string()` 將 stack 上的 `SocketAddr` 格式化並配置堆字串；在 `Metrics::parsed` 內部，使用 `entry(schema.into())` 與無條件 `self.last_schema = Some(schema.into())` 每幀重複配置堆字串，且在 `App::process` 中每幀對 `stages.entry(name.into())` 進行堆配置。在 60Hz 高頻運作下，每小時在持有 `app.metrics` Mutex 臨界區內產生超過 1,080,000 次冗餘堆積配置與釋放，造成高頻接收鎖競爭與記憶體配置器壓力。
+- **處理**：
+  1. 將 Copy 類型的 `SocketAddr` 直接傳入 `Metrics::parsed` 並以 `Option<SocketAddr>` 保存，徹底消除 `source.to_string()`。
+  2. 在 `Metrics::parsed` 與 `Metrics::stage` 改用 `&str` 透過 `get_mut` 查詢，命中時就地累加，僅在初次插入或值改變時進行堆配置，實現 steady-state 零堆配置。
+  3. `WheelOnRumbleStrip` 改以 `vec![Value::from(i32_at(...)), ...]` 直接展開 4-元素陣列，消除 Range iterator 與動態 collect 開銷。
+- **驗證**：新增 `test_metrics_parsed_and_stage_zero_alloc_invariants` 與 `test_parse_packet_preallocation_and_array_parity` 通過，`cargo check` 通過，`git diff --check` 通過。
+- **Skills**：`telemetry-udp-protocol`、`pr-author-maintainer`。
+
 ## 2026-11-05 / 60Hz 遙測處理迴圈之 Settings 零拷貝與 RaceRecorder 冗餘 Map 移除（Bolt as Antigravity）
 
 - **重現與效能瓶頸**：在 60Hz+ 遙測處理工作執行緒 (`App::process`) 中，每幀呼叫 `self.config.settings()` 會持有 Mutex 並深拷貝整個 `serde_json::Value` 樹；緊接著傳入 `engine.race.update_settings` 時，`RaceRecorder` 又會將整個 `settings.as_object()` 二次深拷貝至 `self.settings: Map<String, Value>`。然而 `self.settings` 在整個 `RaceRecorder` 中僅用於讀取單一布林值 `race_recording`，而該值早已儲存於 `self.config.race_recording`。在 60Hz UDP 高頻環境下，每小時產生超過 430,000 次完全冗餘的堆積記憶體配置與回收 (heap churn)。
