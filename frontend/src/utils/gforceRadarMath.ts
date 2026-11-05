@@ -21,9 +21,15 @@ export function calculateGPointOffset(
   lon: number,
   radius: number,
   dotRadius: number = 7,
-  gScale: number = 1.0
+  gScale: number = 1.0,
+  result: GPointOffset = { dx: 0, dy: 0, dist: 0 }
 ): GPointOffset {
-  if (radius <= 0) return { dx: 0, dy: 0, dist: 0 };
+  if (radius <= 0) {
+    result.dx = 0;
+    result.dy = 0;
+    result.dist = 0;
+    return result;
+  }
 
   const scaleFactor = (radius * 0.5) * gScale;
   let dx = lat * scaleFactor;
@@ -38,7 +44,10 @@ export function calculateGPointOffset(
     dist = maxR;
   }
 
-  return { dx, dy, dist };
+  result.dx = dx;
+  result.dy = dy;
+  result.dist = dist;
+  return result;
 }
 
 /**

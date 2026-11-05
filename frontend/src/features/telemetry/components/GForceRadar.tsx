@@ -124,16 +124,7 @@ const GForceRadar: React.FC<GForceRadarProps> = React.memo(({ size: propSize, re
     let lastMarkerTime = 0;
     let rafId: number;
 
-    const markerSlots = [
-      { lat: 0, lon: 0 },
-      { lat: 0, lon: 0 },
-      { lat: 0, lon: 0 },
-      { lat: 0, lon: 0 },
-      { lat: 0, lon: 0 },
-      { lat: 0, lon: 0 },
-      { lat: 0, lon: 0 },
-      { lat: 0, lon: 0 },
-    ];
+    const markerSlots = Array.from({ length: 8 }, () => ({ lat: 0, lon: 0, dx: 0, dy: 0, dist: 0 }));
 
     function drawMarkers() {
       if (!paint.canPaint() || !surface.sync()) return;
@@ -175,6 +166,12 @@ const GForceRadar: React.FC<GForceRadarProps> = React.memo(({ size: propSize, re
 
       if (!foundAny) return;
 
+      // Leave room for the full halo stroke at the outer edge of the clipped radar.
+      const markerInset = theme.linear ? Math.SQRT2 * (3.5 + 0.6) : 4.2 + 0.6;
+      for (const slot of markerSlots) {
+        calculateGPointOffset(slot.lat, slot.lon, radius, markerInset, 1, slot);
+      }
+
       ctx.save();
       try {
         const hasGlow = !theme.flat && theme.glowStrength > 0;
@@ -187,9 +184,8 @@ const GForceRadar: React.FC<GForceRadarProps> = React.memo(({ size: propSize, re
         if (theme.linear) {
           for (let i = 0; i < 8; i++) {
             const p = markerSlots[i];
-            const offset = calculateGPointOffset(p.lat, p.lon, radius, 3);
-            const cx = (radius + offset.dx) * dpr;
-            const cy = (radius + offset.dy) * dpr;
+            const cx = (radius + p.dx) * dpr;
+            const cy = (radius + p.dy) * dpr;
             ctx.strokeRect(cx - 3.5 * dpr, cy - 3.5 * dpr, 7 * dpr, 7 * dpr);
             ctx.fillRect(cx - 1.8 * dpr, cy - 1.8 * dpr, 3.6 * dpr, 3.6 * dpr);
           }
@@ -198,9 +194,8 @@ const GForceRadar: React.FC<GForceRadarProps> = React.memo(({ size: propSize, re
           ctx.beginPath();
           for (let i = 0; i < 8; i++) {
             const p = markerSlots[i];
-            const offset = calculateGPointOffset(p.lat, p.lon, radius, 3);
-            const cx = (radius + offset.dx) * dpr;
-            const cy = (radius + offset.dy) * dpr;
+            const cx = (radius + p.dx) * dpr;
+            const cy = (radius + p.dy) * dpr;
             ctx.moveTo(cx + 4.2 * dpr, cy);
             ctx.arc(cx, cy, 4.2 * dpr, 0, Math.PI * 2);
           }
@@ -209,9 +204,8 @@ const GForceRadar: React.FC<GForceRadarProps> = React.memo(({ size: propSize, re
           ctx.beginPath();
           for (let i = 0; i < 8; i++) {
             const p = markerSlots[i];
-            const offset = calculateGPointOffset(p.lat, p.lon, radius, 3);
-            const cx = (radius + offset.dx) * dpr;
-            const cy = (radius + offset.dy) * dpr;
+            const cx = (radius + p.dx) * dpr;
+            const cy = (radius + p.dy) * dpr;
             ctx.moveTo(cx + 2.0 * dpr, cy);
             ctx.arc(cx, cy, 2.0 * dpr, 0, Math.PI * 2);
           }
@@ -220,7 +214,7 @@ const GForceRadar: React.FC<GForceRadarProps> = React.memo(({ size: propSize, re
       } finally {
         ctx.restore();
       }
-    };
+    }
 
     const tickMarkers = (now: number) => {
       rafId = requestAnimationFrame(tickMarkers);
