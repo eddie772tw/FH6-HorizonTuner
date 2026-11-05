@@ -18,6 +18,7 @@
 
 <p align="center">
   <a href="#readme-download">下載</a> ·
+  <a href="#readme-screenshots">畫面預覽</a> ·
   <a href="#readme-quick-start">快速開始</a> ·
   <a href="#readme-features">功能</a> ·
   <a href="#readme-documentation">文件</a> ·
@@ -33,13 +34,39 @@ FH6-HorizonTuner 透過遊戲的 **Data Out UDP 遙測**接收車輛資料，整
 
 ## 畫面預覽
 
-| AP1 Rev Arc | LFA Center Ring |
-| :---: | :---: |
-| ![AP1 Rev Arc 琥珀色弧形轉速 HUD 離線預覽](docs/releases/assets/v1.7.2/hud-ap1-rev-arc.png) | ![LFA Center Ring 中央轉速環 HUD 離線預覽](docs/releases/assets/v1.7.2/hud-lfa-center-ring.png) |
-| **Stack ST8100** | **R34 MFD** |
-| ![Stack ST8100 指針與點陣 LCD HUD 離線預覽](docs/releases/assets/v1.7.2/hud-stack-st8100.png) | ![R34 MFD 多通道儀表離線預覽](docs/releases/assets/v1.7.2/hud-r34-mfd-multi.png) |
+**即時遙測**把駕駛輸入和車身反應放在同一頁。看油門與煞車曲線時，可以同時對照轉速、G 值、四輪胎溫與懸吊行程。
 
-*以上為 v1.7.2 文件中的 HUD 離線示意，使用合成遙測，並非遊戲實機截圖。查看[圖片來源](docs/releases/assets/v1.7.2/README.md)與[完整圖集](docs/releases/v1.7.2.md)。*
+![即時儀表板，左上是檔位與踏板，中間是輸入曲線，右側與下方顯示車身動態、輪胎及懸吊](docs/assets/readme/zh-tw/live.webp)
+
+以下工作區與上方儀表板皆擷取自 [`main` 的網頁介面](https://github.com/eddie772tw/FH6-HorizonTuner/commit/be2158d630884e786398cef2e94acc583e1e6df7)，遙測與圈速使用示範資料。
+
+| 四步調校 | 賽後分析 |
+| --- | --- |
+| ![道路調校第一步，可選擇調校目標並填寫車重與前軸配重](docs/assets/readme/zh-tw/tune.webp) | ![以車速著色的賽道路線，右側比較第二圈與第一圈的車速及踏板輸入](docs/assets/readme/zh-tw/sessions.webp) |
+| 從車輛與調校目標開始，量測引擎後可檢查升檔後的轉速是否落在有效動力帶。[查看六檔 AEGO 齒比圖](docs/frontend/assets/rhine-lab/gearing-rhine-light.png) | 熱力圖標出單圈中較快和較慢的路段。選另一圈疊上車速曲線，就能對照同一路段的速度差。[賽事分析指南](docs/guides/race-analysis.md) |
+
+| 直線加速測試 | Android Companion（Beta） |
+| --- | --- |
+| ![直線加速的車速與轉速曲線，旁邊列出測試摘要與換檔分析](docs/assets/readme/zh-tw/drag.webp) | ![Companion 橫向網頁介面的駕駛卡片，顯示轉速條、方向盤角度與踏板開度](docs/assets/readme/zh-tw/companion.webp) |
+| 加速曲線上的每次轉速下降都對應一次升檔，可對照右側的換檔前後轉速。 | 切換駕駛、軌跡、動態、輪胎或懸吊卡片，把想看的數據放到第二個螢幕。圖為瀏覽器橫向預覽。[Companion 連線說明](companion/README.md) |
+
+### Windows HUD
+
+主儀表、輔助儀表和車用音響可以搭配使用。下圖並列三種 HUD 元件的離線預覽，由左至右為 NFSU2 主儀表、五款輔助表頭，以及 Pioneer 與 Panasonic 音響面板。
+
+![NFSU2 轉速與車速表、五只類比輔助儀表，以及分別顯示音訊頻譜和雙指針的兩款音響面板](docs/assets/readme/windows-hud.webp)
+
+各款式的設定與原始截圖見 [NFSU2 面板](https://github.com/eddie772tw/FH6-HorizonTuner/pull/543)、[輔助儀表](https://github.com/eddie772tw/FH6-HorizonTuner/pull/540)及[車用音響](https://github.com/eddie772tw/FH6-HorizonTuner/pull/541)。較早的 [AP1、LFA、Stack 與 R34 圖集](docs/releases/v1.7.2.md)也可用來比較風格。
+
+<details>
+<summary>外觀設定與 MCP 連線</summary>
+
+| 切換桌面主題 | 連接 AI 工具 |
+| --- | --- |
+| ![外觀設定中的日夜模式與 Halfmoon、Swiss、Rhine Lab 核心選項](docs/assets/readme/zh-tw/appearance.webp) | ![MCP 設定中的伺服器狀態、即時遙測權限、取樣上限與本機端點](docs/assets/readme/zh-tw/mcp.webp) |
+| 預覽不同設計核心的字體、色彩與控制項。[設計系統](docs/frontend/design-systems.md) | 從桌面取得本機 MCP 位址，設定 AI 工具可讀取的遙測資料。[MCP 設定指南](docs/guides/mcp-setup-guide.md) |
+
+</details>
 
 <a id="readme-download"></a>
 

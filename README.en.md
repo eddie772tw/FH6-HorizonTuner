@@ -18,6 +18,7 @@
 
 <p align="center">
   <a href="#readme-download">Download</a> ·
+  <a href="#readme-screenshots">Preview</a> ·
   <a href="#readme-quick-start">Quick start</a> ·
   <a href="#readme-features">Features</a> ·
   <a href="#readme-documentation">Docs</a> ·
@@ -33,13 +34,39 @@ The desktop interface uses Tauri, React and TypeScript. A Rust backend handles t
 
 ## Preview
 
-| AP1 Rev Arc | LFA Center Ring |
-| :---: | :---: |
-| ![Offline preview of the AP1 Rev Arc amber tachometer HUD](docs/releases/assets/v1.7.2/hud-ap1-rev-arc.png) | ![Offline preview of the LFA Center Ring tachometer HUD](docs/releases/assets/v1.7.2/hud-lfa-center-ring.png) |
-| **Stack ST8100** | **R34 MFD** |
-| ![Offline preview of the Stack ST8100 analogue and dot-matrix HUD](docs/releases/assets/v1.7.2/hud-stack-st8100.png) | ![Offline preview of the R34 MFD multi-channel display](docs/releases/assets/v1.7.2/hud-r34-mfd-multi.png) |
+**Live telemetry** puts driver inputs and the car's response on one dashboard. Follow the throttle and brake traces alongside engine speed, G-force, tire temperatures and suspension travel at all four wheels.
 
-*These HUD previews come from the v1.7.2 documentation and use synthetic telemetry. They are offline renders, not in-game screenshots. See [image provenance](docs/releases/assets/v1.7.2/README.md) and the [full gallery](docs/releases/v1.7.2.md).*
+![Live dashboard with gear and pedals at top left, input traces in the middle, and vehicle dynamics, tires and suspension alongside and below](docs/assets/readme/en-us/live.webp)
+
+The dashboard and workspace screenshots show the [web interface on `main`](https://github.com/eddie772tw/FH6-HorizonTuner/commit/be2158d630884e786398cef2e94acc583e1e6df7) with sample telemetry and lap data.
+
+| Four-step tuning | Post-race analysis |
+| --- | --- |
+| ![First step of a Road tune with the tuning goal, vehicle weight and front weight distribution](docs/assets/readme/en-us/tune.webp) | ![Track map colored by speed beside a comparison of speed and pedal inputs for laps two and one](docs/assets/readme/en-us/sessions.webp) |
+| Start with the car and tuning goal. After measuring the engine, check whether each upshift lands back in the power band. [Six-speed AEGO gearing chart](docs/frontend/assets/rhine-lab/gearing-rhine-light.png) | The heatmap shows the fast and slow sections of a lap. Overlay a second lap's speed trace to compare the same stretch of track. [Race analysis guide](docs/guides/race-analysis.md) |
+
+| Drag test | Android Companion (Beta) |
+| --- | --- |
+| ![Speed and RPM traces from a drag run beside the run summary and shift analysis](docs/assets/readme/en-us/drag.webp) | ![Companion driver card in landscape with an RPM bar, steering angle and pedal positions](docs/assets/readme/en-us/companion.webp) |
+| Each RPM drop on this run marks an upshift. The shift table shows engine speed on either side of the change. | Switch between driver inputs, traces, dynamics, tires and suspension on a second screen. This is the landscape browser view. [Companion connection guide](companion/README.md) |
+
+### Windows HUD
+
+The main cluster, auxiliary gauges and audio head can run together. These offline previews show the NFSU2 cluster on the left, five auxiliary gauges in the middle, and Pioneer and Panasonic audio heads on the right.
+
+![NFSU2 tachometer and speedometer, five analogue auxiliary gauges, and two audio heads with a spectrum display and twin needles](docs/assets/readme/windows-hud.webp)
+
+Browse the settings and original captures for the [NFSU2 faces](https://github.com/eddie772tw/FH6-HorizonTuner/pull/543), [auxiliary gauges](https://github.com/eddie772tw/FH6-HorizonTuner/pull/540) and [audio heads](https://github.com/eddie772tw/FH6-HorizonTuner/pull/541). The [AP1, LFA, Stack and R34 gallery](docs/releases/v1.7.2.md) shows more cluster styles.
+
+<details>
+<summary>Appearance and MCP connection</summary>
+
+| Switch desktop themes | Connect an AI tool |
+| --- | --- |
+| ![Appearance settings with light and dark modes and core options for Halfmoon, Swiss and Rhine Lab](docs/assets/readme/en-us/appearance.webp) | ![MCP settings showing server status, live telemetry access, the sampling limit and the local endpoint](docs/assets/readme/en-us/mcp.webp) |
+| Preview the type, colors and controls of each design system. [Design systems](docs/frontend/design-systems.md) | Get the local MCP address from the desktop app and choose which telemetry the client can read. [MCP setup guide](docs/guides/mcp-setup-guide.md) |
+
+</details>
 
 <a id="readme-download"></a>
 
