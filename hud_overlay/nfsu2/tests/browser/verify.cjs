@@ -41,6 +41,10 @@ module.exports = async function verifyNfsu2({ page, context, origin, out, report
   await page.getByRole('checkbox', { name: 'Show main gauge', exact: true }).check(); await idle();
   const face = page.getByRole('combobox', { name: 'NFSU2 Custom Faceplate:', exact: true });
   const options = await face.locator('option').evaluateAll(nodes => nodes.map(node => ({ id: node.value, name: node.textContent })));
+  await page.getByRole('tab', { name: 'Telemetry cards', exact: true }).click();
+  await page.getByRole('tabpanel', { name: 'Telemetry cards', exact: true }).getByRole('checkbox').first().uncheck(); await idle();
+  await page.getByRole('tab', { name: 'Audio Head', exact: true }).click();
+  await page.getByRole('checkbox', { name: 'Show Audio Head', exact: true }).uncheck(); await idle();
   await page.getByRole('tab', { name: 'Auxiliary Gauges', exact: true }).click();
   await page.getByRole('checkbox', { name: 'Show Auxiliary Gauges', exact: true }).uncheck(); await idle();
   await page.getByRole('tab', { name: 'Main gauge', exact: true }).click();
