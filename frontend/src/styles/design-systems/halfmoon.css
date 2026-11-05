@@ -140,7 +140,7 @@
   background: transparent;
   color: var(--text-secondary);
 }
-:where([data-design-system="halfmoon"]) .workspace-tabs .nav-link:hover:not(:disabled) { background: var(--surface-3); color: var(--text-primary); }
+:where([data-design-system="halfmoon"]) .workspace-tabs .nav-link:hover:not(:disabled):not(.active) { background: var(--surface-3); color: var(--text-primary); }
 :where([data-design-system="halfmoon"]) .workspace-tabs .nav-link.active {
   background: var(--primary);
   color: var(--on-primary) !important;

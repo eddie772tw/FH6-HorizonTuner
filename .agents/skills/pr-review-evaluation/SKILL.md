@@ -22,6 +22,7 @@ description: 以審查者 (Reviewer) 身分評估 Pull Request (PR) 狀態、CI 
   ```
 - **審查 CI 錯誤**：若有 CI/CD 失敗，深入分析 Actions 日誌或於本地重現定位問題。
 - **前置意見參考**：使用 `gh pr view <number> -c` 檢視其他 Agent (如 Codex) 或使用者的 Review 留言。鼓勵 Agent 依照自身的專長與測試結果提出獨立見解，不強求一致性。
+- **介面截圖與視覺備查**：所有介面調整 PR 須依 [ui-visual-review.md](../../rules/ui-visual-review.md) 檢視 Body 嵌圖、覆蓋矩陣、擷取版本及備查連結；缺圖、過期或無法存取需列為待補交付。CI／DOM 通過不能代替看圖，也不能推定原生／遊戲／讀屏驗收。
 
 ---
 

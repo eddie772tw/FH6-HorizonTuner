@@ -60,7 +60,9 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode; receiveOnly?: 
       styleTag.id = 'custom-theme-css';
       document.head.appendChild(styleTag);
     }
-    styleTag.textContent = themeSettings.customCSS;
+    // All sources (saved settings, backend, Companion and editor) share this sink.
+    // Keep rejected drafts available for editing, but never apply them to the page.
+    styleTag.textContent = validateCSS(themeSettings.customCSS).isValid ? themeSettings.customCSS : '';
 
     // Save to LocalStorage
     if (!receiveOnly) localStorage.setItem('themeSettings', JSON.stringify(themeSettings));

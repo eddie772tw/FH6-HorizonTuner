@@ -55,6 +55,23 @@ function calculateEffectiveScale(
 }
 
 describe('HUD scale baseline & multi-resolution defense', () => {
+  it('allows independent elements to select their scale without changing main gauge scaling', () => {
+    const container = { style: {} as { zoom?: number } };
+    const core = loadHudCore(container);
+    core.registerStyle('audio_head', { containerId: 'audio', scaleConfigKey: 'audioHeadScale', scaleBaseline: 2.1, scaleMultiplier: 0.95 });
+    core.init('audio_head');
+    core.handleMessage('config', { data: { scale: 0.5, audioHeadScale: 1.4 } });
+    const first = container.style.zoom!;
+    core.handleMessage('config', { data: { scale: 2, audioHeadScale: 1.4 } });
+    expect(container.style.zoom).toBe(first);
+    core.handleMessage('config', { data: { scale: 2, audioHeadScale: 0.7 } });
+    expect(container.style.zoom).toBeCloseTo(first / 2);
+    core.registerStyle('gauge', { containerId: 'gauge' });
+    core.init('gauge');
+    core.handleMessage('config', { data: { scale: 2, audioHeadScale: 0.7 } });
+    expect(container.style.zoom).toBe(2 * 0.75);
+  });
+
   describe('HUDCore scale mathematical SSOT & fallback defense', () => {
     it('applies the S650 calibration through HUDCore at the 100% setting', () => {
       const container = { style: {} as { zoom?: number } };

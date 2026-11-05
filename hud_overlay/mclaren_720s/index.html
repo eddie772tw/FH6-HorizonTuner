@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>McLaren 720S Folding Slim Cluster</title>
+    <!--
+      [設計決策紀錄 / Design Decision Note]
+      1. 視覺固定單位 (Hardcoded KMH): 720S 折疊式極簡錶頭底圖右側已原生刻印 "KMH" 標記，
+         故時速讀數強制採用 data.speed_kmh（忽視外部英里單位設定），且不在 Canvas 重複疊印 "KMH" 字串。
+      2. 檔位映射 (Gear Contract): 遵循 coordinator.js 契約 (0='R', 11='N', 1..10='1'..'10')。
+      3. 水溫/油溫/油壓: 此極簡賽道折疊模式僅顯示檔位、0..8500 RPM 線性轉速與車速；若未來擴充展開模式，
+         水溫統一取自四輪平均胎溫 (TireTemp)，油溫與油壓則採確定性熱力學與油壓代理模型。
+    -->
+    <link rel="stylesheet" href="../shared/hud-base.css">
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: transparent !important;
+        }
+        .mclaren-container {
+            position: relative;
+            align-self: center;
+            transform-origin: bottom center;
+            width: 918px;
+            height: 120px;
+            pointer-events: none;
+        }
+        .artwork-motion { width: 100%; height: 100%; }
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="hud-root-wrapper">
+        <div class="hud-gauge-container mclaren-container" id="mclarenContainer">
+            <div class="artwork-motion" id="artworkMotion"><canvas id="mclarenCanvas" width="918" height="120"></canvas></div>
+        </div>
+    </div>
+
+    <script src="../shared/hud-core.js"></script>
+    <script src="../shared/hud-artwork.js"></script>
+    <script src="../shared/artwork-effects.js"></script>
+    <script>
+        (function() {
+            var canvas = document.getElementById('mclarenCanvas');
+            var ctx = canvas.getContext('2d');
+            var container = document.getElementById('mclarenContainer');
+
+            var baseImg = HUDArtwork.loadImage('assets/mclaren_clean_base.png', 0.75);
+
+            var isSweeping = false;
+            var sweepRafId = null;
+
+            var telemetry = {
+                speedKmh: 0,
+                rpm: 0,
+                maxRpm: 8500,
+                gear: 'N'
+            };
+
+            // Keep accepted live readings separate from temporary display-check values.
+            var liveTelemetry = telemetry;
+            var effects = HUDArtworkEffects.create(document.getElementById('artworkMotion'));
+            var destroyed = false;
+
+            function destroy() {
+                destroyed = true;
+                effects.destroy();
+                if (sweepRafId !== null) cancelAnimationFrame(sweepRafId);
+                sweepRafId = null;
+                isSweeping = false;
+                window.removeEventListener('message', onLifecycleMessage);
+                window.removeEventListener('pagehide', destroy);
+            }
+            function onLifecycleMessage(event) {
+                if (event.data && event.data.type === 'hud:destroy') destroy();
+            }
+            window.addEventListener('message', onLifecycleMessage);
+            window.addEventListener('pagehide', destroy);
+
+            function formatGear(g) {
+                if (g === 0 || g === 'R') return 'R';
+                if (g === 11 || g === 'N') return 'N';
+                var n = Number(g);
+                if (Number.isInteger(n) && n >= 1 && n <= 10) return String(n);
+                return 'N';
+            }
+
+            function render() {
+                if (destroyed) return;
+                var w = 918;
+                var h = 120;
+                ctx.clearRect(0, 0, w, h);
+
+                // 1. Clean D3D11 base (includes '1..8' RPM scale numbers and 'KMH' label)
+                if (baseImg.complete && baseImg.naturalWidth > 0) {
+                    ctx.drawImage(baseImg, 0, 0, 918, 120);
+                }
+
+                // 2. Linear Tachometer Track & Vertical Cursor Blade
+                // Scale ticks 1..8 are spaced by 70.7px starting at x=211.0 (so 0 RPM is at x=140.3, 8,000 RPM is at x=706.0)
+                var clampedRpm = Math.min(8600, Math.max(0, telemetry.rpm));
+                var needleX = 140.3 + (clampedRpm / 1000.0) * 70.7;
+                var isRedZone = clampedRpm >= 6800;
+
+                ctx.save();
+                if (needleX > 142) {
+                    var trackGrad = ctx.createLinearGradient(140, 44, needleX, 44);
+                    trackGrad.addColorStop(0, 'rgba(255, 255, 255, 0.04)');
+                    if (isRedZone) {
+                        trackGrad.addColorStop(0.7, 'rgba(255, 110, 40, 0.22)');
+                        trackGrad.addColorStop(1, 'rgba(255, 34, 51, 0.68)');
+                    } else {
+                        trackGrad.addColorStop(1, 'rgba(226, 232, 240, 0.32)');
+                    }
+                    ctx.fillStyle = trackGrad;
+                    ctx.fillRect(140, 38, needleX - 140, 14);
+                }
+
+                // Vertical diamond-tipped cursor blade (matching D3D11 shader cursor geometry)
+                var bladeColor = isRedZone ? '#ff2636' : effects.accent('#e2e8f0');
+                ctx.fillStyle = bladeColor;
+                ctx.shadowColor = isRedZone ? 'rgba(255, 38, 54, 0.95)' : effects.accent('rgba(255, 255, 255, 0.75)');
+                ctx.shadowBlur = effects.glow(isRedZone ? 10 : 6);
+                ctx.beginPath();
+                ctx.moveTo(needleX, 23);
+                ctx.lineTo(needleX + 4, 29);
+                ctx.lineTo(needleX + 2.5, 69);
+                ctx.lineTo(needleX, 74);
+                ctx.lineTo(needleX - 2.5, 69);
+                ctx.lineTo(needleX - 4, 29);
+                ctx.closePath();
+                ctx.fill();
+
+                // Bright inner highlight core
+                ctx.shadowBlur = effects.glow(0);
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(needleX - 0.9, 27, 1.8, 43);
+                ctx.restore();
+
+                // 3. Papaya Orange Gear Indicator (Left box: x=56, y=82)
+                ctx.save();
+                ctx.fillStyle = effects.accent('#ff7300');
+                ctx.font = 'bold 68px "Consolas", "Segoe UI", sans-serif';
+                ctx.textAlign = 'center';
+                ctx.shadowColor = effects.accent('rgba(255, 115, 0, 0.55)');
+                ctx.shadowBlur = effects.glow(8);
+                ctx.fillText(telemetry.gear, 58, 82);
+
+                // 4. Digital Speedometer in KMH (Right box above native 'KMH' label)
+                ctx.fillStyle = '#f1f5f9';
+                ctx.font = 'bold 60px "Consolas", "Segoe UI", sans-serif';
+                ctx.textAlign = 'right';
+                ctx.shadowColor = 'rgba(255, 255, 255, 0.4)';
+                ctx.shadowBlur = effects.glow(6);
+                ctx.fillText(String(Math.round(telemetry.speedKmh)), 898, 69);
+                ctx.restore();
+            }
+
+            baseImg.onload = render;
+
+            HUDCore.registerStyle('mclaren_720s', {
+                containerId: 'mclarenContainer',
+                scaleBaseline: 1.575,
+                scaleMultiplier: 0.95,
+                onScale: HUDArtwork.watchCanvas(canvas, render),
+
+                onInit: function() {
+                    if (destroyed) return;
+                    effects.sync();
+                    render();
+                },
+
+                onElementsChange: function(elements) {
+                    if (destroyed) return;
+                    effects.sync(elements);
+                    if (container) {
+                        container.style.display = elements.showGauge === false ? 'none' : 'block';
+                    }
+                },
+
+                onFrame: function(data) {
+                    if (destroyed) return;
+                    effects.update(data);
+                    if (data.speed_kmh !== undefined) {
+                        liveTelemetry.speedKmh = Math.abs(Number(data.speed_kmh)) || 0;
+                    } else if (data.speed !== undefined) {
+                        liveTelemetry.speedKmh = Math.abs(Number(data.speed)) || 0;
+                    }
+                    if (data.rpm !== undefined) liveTelemetry.rpm = Math.max(0, Number(data.rpm) || 0);
+                    if (data.maxRpm !== undefined && data.maxRpm > 0) liveTelemetry.maxRpm = Number(data.maxRpm);
+                    if (data.gear !== undefined) liveTelemetry.gear = formatGear(data.gear);
+                    if (!isSweeping) {
+                        telemetry = liveTelemetry;
+                        render();
+                    }
+                },
+
+                onAnimate: function() {
+                    if (destroyed) return;
+                    if (sweepRafId !== null) cancelAnimationFrame(sweepRafId);
+                    isSweeping = true;
+                    telemetry = Object.assign({}, liveTelemetry);
+                    var start = performance.now();
+                    var duration = 1200;
+                    function sweep(t) {
+                        var progress = Math.min(1, (t - start) / duration);
+                        var wave = Math.sin(progress * Math.PI);
+                        telemetry.rpm = wave * 8400;
+                        telemetry.speedKmh = wave * 310;
+                        telemetry.gear = wave > 0.5 ? '5' : '1';
+                        if (progress < 1) {
+                            render();
+                            sweepRafId = requestAnimationFrame(sweep);
+                        } else {
+                            isSweeping = false;
+                            sweepRafId = null;
+                            telemetry = liveTelemetry;
+                            render();
+                        }
+                    }
+                    sweepRafId = requestAnimationFrame(sweep);
+                }
+            });
+
+            HUDCore.init('mclaren_720s');
+            render();
+        })();
+    </script>
+</body>
+</html>

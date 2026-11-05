@@ -89,8 +89,9 @@ const PedalTraceCanvas: React.FC<PedalTraceCanvasProps> = React.memo(({ height =
       draw();
     };
 
-    const draw = () => {
-      if (!paint.canPaint() || !surface.sync()) return;
+    function draw() {
+      const canvas = canvasRef.current;
+      if (!canvas || !paint.canPaint() || !surface.sync()) return;
       if (!enabled) {
         canvas.getContext('2d')?.clearRect(0, 0, canvas.width, canvas.height);
         return;
@@ -106,46 +107,78 @@ const PedalTraceCanvas: React.FC<PedalTraceCanvasProps> = React.memo(({ height =
           const padBottom = TRACE_PAD_BOTTOM * dpr;
           const plotH = Math.max(10, h - padTop - padBottom);
 
-          drawTraceGrid(ctx, w, h, dpr, theme);
+          ctx.save();
+          try {
+            drawTraceGrid(ctx, w, h, dpr, theme);
 
-          const len = hist.current.length;
-          const stepX = (w - 12 * dpr) / 299;
-          const rightEdgeX = w - 6 * dpr;
+            const len = hist.current.length;
+            if (len > 0) {
+              const stepX = (w - 12 * dpr) / 299;
+              const rightEdgeX = w - 6 * dpr;
+              const hasGlow = !theme.flat && theme.glowStrength > 0;
+              const glowRadius = hasGlow ? theme.glowStrength * 4 * dpr : 0;
+              const latestIdx = (offsetRef.current + len - 1) % len;
+              const latestThrottlePy = h - padBottom - (hist.current[latestIdx].throttle * plotH);
+              const latestBrakePy = h - padBottom - (hist.current[latestIdx].brake * plotH);
 
-          // Throttle Trace (Green #00ff66) - Anchored to right edge, scrolling left smoothly
-          ctx.beginPath();
-          for (let k = 0; k < len; k++) {
-            const idx = (offsetRef.current + k) % len;
-            const px = rightEdgeX - (len - 1 - k) * stepX;
-            const py = h - padBottom - (hist.current[idx].throttle * plotH);
-            if (k === 0) ctx.moveTo(px, py);
-            else ctx.lineTo(px, py);
+              ctx.lineWidth = 2.2 * dpr;
+              ctx.lineCap = 'round';
+              ctx.lineJoin = 'round';
+
+              // Throttle Trace (Green) - Anchored to right edge, scrolling left smoothly
+              ctx.beginPath();
+              for (let k = 0; k < len; k++) {
+                const idx = (offsetRef.current + k) % len;
+                const px = rightEdgeX - (len - 1 - k) * stepX;
+                const py = h - padBottom - (hist.current[idx].throttle * plotH);
+                if (k === 0) ctx.moveTo(px, py);
+                else ctx.lineTo(px, py);
+              }
+              ctx.strokeStyle = theme.throttle;
+              if (hasGlow) {
+                ctx.shadowColor = theme.throttle;
+                ctx.shadowBlur = glowRadius;
+              } else {
+                ctx.shadowBlur = 0;
+              }
+              ctx.stroke();
+
+              // Throttle Leading Pulse Marker
+              ctx.beginPath();
+              ctx.arc(rightEdgeX, latestThrottlePy, 2.5 * dpr, 0, Math.PI * 2);
+              ctx.fillStyle = theme.throttle;
+              ctx.fill();
+
+              // Brake Trace (Red) - Anchored to right edge, scrolling left smoothly
+              ctx.beginPath();
+              for (let k = 0; k < len; k++) {
+                const idx = (offsetRef.current + k) % len;
+                const px = rightEdgeX - (len - 1 - k) * stepX;
+                const py = h - padBottom - (hist.current[idx].brake * plotH);
+                if (k === 0) ctx.moveTo(px, py);
+                else ctx.lineTo(px, py);
+              }
+              ctx.strokeStyle = theme.brake;
+              if (hasGlow) {
+                ctx.shadowColor = theme.brake;
+                ctx.shadowBlur = glowRadius;
+              } else {
+                ctx.shadowBlur = 0;
+              }
+              ctx.stroke();
+
+              // Brake Leading Pulse Marker
+              ctx.beginPath();
+              ctx.arc(rightEdgeX, latestBrakePy, 2.5 * dpr, 0, Math.PI * 2);
+              ctx.fillStyle = theme.brake;
+              ctx.fill();
+            }
+          } finally {
+            ctx.restore();
           }
-          ctx.lineWidth = 2.2 * dpr;
-          ctx.strokeStyle = theme.throttle;
-          ctx.shadowColor = 'rgba(0, 255, 102, 0.5)';
-          ctx.shadowBlur = theme.glowStrength * 4 * dpr;
-          ctx.stroke();
-          ctx.shadowBlur = 0;
-
-          // Brake Trace (Red #ff0055) - Anchored to right edge, scrolling left smoothly
-          ctx.beginPath();
-          for (let k = 0; k < len; k++) {
-            const idx = (offsetRef.current + k) % len;
-            const px = rightEdgeX - (len - 1 - k) * stepX;
-            const py = h - padBottom - (hist.current[idx].brake * plotH);
-            if (k === 0) ctx.moveTo(px, py);
-            else ctx.lineTo(px, py);
-          }
-          ctx.lineWidth = 2.2 * dpr;
-          ctx.strokeStyle = theme.brake;
-          ctx.shadowColor = 'rgba(255, 0, 85, 0.5)';
-          ctx.shadowBlur = theme.glowStrength * 4 * dpr;
-          ctx.stroke();
-          ctx.shadowBlur = 0;
         }
       }
-    };
+    }
 
     const stopPaint = paint.subscribe(draw);
     draw();

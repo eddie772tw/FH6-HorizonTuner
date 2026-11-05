@@ -1,8 +1,9 @@
 import { useId } from 'react';
 import type { HudConfig } from '../hudConfig';
+import type { HudConfigPatch } from '../overlayControlRuntime';
 import { R34_MFD_MODES, type R34MfdMode, type R34Lighting } from './config';
 export function R34MfdSettingsCard({ config, onChange, t }: {
-  config: HudConfig; onChange: (patch: Partial<HudConfig>) => void; t: (key: string) => string;
+  config: Pick<HudConfig, 'r34MfdMode' | 'r34ShowCluster' | 'r34Lighting'>; onChange: (patch: HudConfigPatch) => void; t: (key: string) => string;
 }) {
   const id = useId();
   return <div className="border-top pt-2 d-flex flex-column gap-2" role="group" aria-label={t('R34 MFD settings')}>

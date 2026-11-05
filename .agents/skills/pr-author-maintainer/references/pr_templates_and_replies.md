@@ -2,6 +2,8 @@
 
 ## 1. PR Body 標準結構範本
 
+所有介面調整 PR 必須依 [ui-visual-review.md](../../../rules/ui-visual-review.md) 填寫下方 Visual Review（或同義）區塊並嵌入實際圖片；純非介面 PR 可省略該區塊或註明無介面變更。產生器僅提供通用草稿，作者須補齊適用欄位；validator 只驗證格式，不判斷視覺覆蓋或圖片真實性。
+
 ```markdown
 ### Summary of Changes
 簡述此 PR 解決的問題、背景與核心變更目標。
@@ -15,6 +17,14 @@
 - **Optional Python Tool Checks (only when changed):** uv-managed Ruff and focused `scripts/tests/` (pass)
 - **Frontend Tests:** `vitest` (Y tests passed, 0 failed)
 - **Frontend Build:** `pnpm build` (pass, assets verified)
+
+### Visual Review / 視覺審查
+- **擷取版本與環境**：日期、commit（與現有 head 的關係）、平台／瀏覽器、viewport、語系、主題／模式。
+- **畫面與狀態**：說明改動及本圖所示狀態；依覆蓋矩陣提供跨設計系統日夜、窄幅及各新增樣式圖片。
+- **資料與重現**：真實資料或 fixture、相關設定、腳本／操作步驟；HUD 另列 scale／DPR／背景。
+- **備查與界線**：完整圖集／紀錄連結、檢查結果、未涵蓋的原生／遊戲／裝置／讀屏驗收。
+
+![受影響介面與狀態說明](可持續存取且對應擷取版本的實際圖片連結)
 
 ### Living Changelog & Review Iterations
 - 2026-08-18 (Gemini as Antigravity): Initial PR created.

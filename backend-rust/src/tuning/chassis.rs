@@ -37,17 +37,23 @@ fn clamp_round(val: f64, min: f64, max: f64) -> f64 {
 
 /// Resolves aerodynamic downforce for front and rear axles (in kgf).
 pub fn resolve_aero_downforce(params: &TuningCarParams) -> AeroDownforceResult {
-    let weight_kg = params.weight.unwrap_or(1400.0).max(0.1);
-    let wf = params.weight_distribution.unwrap_or(50.0).max(0.1);
-    let wr = (100.0 - wf).max(0.1);
+    let weight_kg = positive(params.weight, 1400.0);
+    let wf = params
+        .weight_distribution
+        .filter(|v| v.is_finite())
+        .unwrap_or(50.0)
+        .clamp(1.0, 99.0);
+    let wr = 100.0 - wf;
     let dt = params
         .drivetrain
         .as_deref()
         .map(Drivetrain::from_str_loose)
         .unwrap_or(Drivetrain::RWD);
 
-    let f_val = params.aero_downforce_front.unwrap_or(0.0);
-    let r_val = params.aero_downforce_rear.unwrap_or(0.0);
+    let clean_aero =
+        |val: Option<f64>| -> f64 { val.filter(|v| v.is_finite() && *v > 0.0).unwrap_or(0.0) };
+    let f_val = clean_aero(params.aero_downforce_front);
+    let r_val = clean_aero(params.aero_downforce_rear);
 
     let drivetrain_modifier = match dt {
         Drivetrain::RWD => 0.82,
@@ -99,7 +105,7 @@ pub fn get_road_awd_rear_percent(params: &TuningCarParams) -> f64 {
         .unwrap_or(50.0)
         .max(1.0)
         .min(99.0);
-    if let Some(r) = params.road_awd_rear_percent {
+    if let Some(r) = params.road_awd_rear_percent.filter(|v| v.is_finite()) {
         r.max(0.0).min(100.0)
     } else {
         (100.0 - front + 20.0).max(60.0).min(85.0)
@@ -191,8 +197,12 @@ pub fn calculate_chassis_tuning(
         _ => car_params.clone(),
     };
 
-    let weight = p.weight.unwrap_or(1400.0).max(1.0);
-    let wf = p.weight_distribution.unwrap_or(50.0).max(1.0).min(99.0);
+    let weight = positive(p.weight, 1400.0);
+    let wf = p
+        .weight_distribution
+        .filter(|v| v.is_finite())
+        .unwrap_or(50.0)
+        .clamp(1.0, 99.0);
     let wr = 100.0 - wf;
     let dt = p
         .drivetrain
@@ -200,15 +210,15 @@ pub fn calculate_chassis_tuning(
         .map(Drivetrain::from_str_loose)
         .unwrap_or(Drivetrain::RWD);
 
-    let k_min_f = p.spring_front_min.unwrap_or(10.0);
-    let k_max_f = p.spring_front_max.unwrap_or(120.0);
-    let k_min_r = p.spring_rear_min.unwrap_or(10.0);
-    let k_max_r = p.spring_rear_max.unwrap_or(120.0);
+    let k_min_f = positive(p.spring_front_min, 10.0);
+    let k_max_f = positive(p.spring_front_max, 120.0).max(k_min_f);
+    let k_min_r = positive(p.spring_rear_min, 10.0);
+    let k_max_r = positive(p.spring_rear_max, 120.0).max(k_min_r);
 
-    let h_min_f = p.height_front_min.unwrap_or(10.0);
-    let h_max_f = p.height_front_max.unwrap_or(25.0);
-    let h_min_r = p.height_rear_min.unwrap_or(10.0);
-    let h_max_r = p.height_rear_max.unwrap_or(25.0);
+    let h_min_f = positive(p.height_front_min, 10.0);
+    let h_max_f = positive(p.height_front_max, 25.0).max(h_min_f);
+    let h_min_r = positive(p.height_rear_min, 10.0);
+    let h_max_r = positive(p.height_rear_max, 25.0).max(h_min_r);
 
     let aero = resolve_aero_downforce(&p);
 

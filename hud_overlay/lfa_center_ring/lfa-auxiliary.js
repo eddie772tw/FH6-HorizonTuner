@@ -11,14 +11,19 @@
     const fromPsi = (value, to) => to === 'bar' ? value / PSI_PER_BAR : to === 'kpa' ? value * KPA_PER_PSI : value;
 
     function averageTireF(value) {
-        if (!Array.isArray(value) || value.length !== 4 || [0, 1, 2, 3].some(i => finite(value[i]) === null)) return null;
-        return finite(value.reduce((sum, v) => sum + v / 4, 0));
+        if (!Array.isArray(value) || value.length !== 4) return null;
+        const v0 = finite(value[0]);
+        const v1 = finite(value[1]);
+        const v2 = finite(value[2]);
+        const v3 = finite(value[3]);
+        if (v0 === null || v1 === null || v2 === null || v3 === null) return null;
+        return finite(0 + v0 / 4 + v1 / 4 + v2 / 4 + v3 / 4);
     }
     function boostPsi(data) {
         // Shared JSON coordinator preserves raw Boost but clamps aliases and fills missing with zero.
         // An invalid/missing raw signal must not be "repaired" by those lossy aliases.
         if (own(data, 'Boost')) return finite(data.Boost);
-        if (rawMarkers.some(key => own(data, key))) return null;
+        if (own(data, 'TimestampMS') || own(data, 'CurrentEngineRpm') || own(data, 'EngineMaxRpm') || own(data, 'SpeedMetersPerSecond') || own(data, 'IsRaceOn') || own(data, 'CarOrdinal')) return null;
         for (const [key, sourceUnit] of [['boost_psi', 'psi'], ['boost_bar', 'bar'], ['boost_kpa', 'kpa']]) {
             if (own(data, key)) return finite(data[key]) === null ? null : finite(toPsi(data[key], sourceUnit));
         }
@@ -26,7 +31,7 @@
         return sourceUnit && finite(data.boost) !== null ? finite(toPsi(data.boost, sourceUnit)) : null;
     }
     function pedal(data, name, rawName) {
-        if (rawMarkers.some(key => own(data, key)) && (!own(data, rawName) || finite(data[rawName]) === null)) return null;
+        if ((own(data, 'TimestampMS') || own(data, 'CurrentEngineRpm') || own(data, 'EngineMaxRpm') || own(data, 'SpeedMetersPerSecond') || own(data, 'IsRaceOn') || own(data, 'CarOrdinal')) && (!own(data, rawName) || finite(data[rawName]) === null)) return null;
         return finite(data[name]) === null ? null : clamp(data[name]);
     }
     function normalize(data) {
