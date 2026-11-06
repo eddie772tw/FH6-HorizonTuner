@@ -2354,5 +2354,12 @@
     "Save current recording to backend": "將目前錄製儲存至後端",
     "Clear recording buffer": "清空錄製緩衝區",
     "Manual Recording ({count} samples)": "手動錄製（{count} 個樣本）",
-    "Auto Recording ({count} samples)": "自動錄製（{count} 個樣本）"
+    "Auto Recording ({count} samples)": "自動錄製（{count} 個樣本）",
+    "Recording... ({count} samples)": "錄製中... ({count} 筆樣本)",
+    "Idle ({count} samples)": "閒置 ({count} 筆樣本)",
+    "Loaded Session: {filename}": "已載入紀錄: {filename}",
+    "MoTeC .ld Export (Experimental)": "匯出 MoTeC .ld (實驗性)",
+    "CSV Export": "匯出 CSV",
+    "MoTeC CSV Import": "匯入 MoTeC CSV",
+    "Delete selected session": "刪除選取的紀錄"
 }

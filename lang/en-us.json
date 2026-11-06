@@ -1926,5 +1926,13 @@
     "Save current recording to backend": "Save current recording to backend",
     "Clear recording buffer": "Clear recording buffer",
     "Manual Recording ({count} samples)": "Manual Recording ({count} samples)",
-    "Auto Recording ({count} samples)": "Auto Recording ({count} samples)"
+    "Auto Recording ({count} samples)": "Auto Recording ({count} samples)",
+    "Recording... ({count} samples)": "Recording... ({count} samples)",
+    "Idle ({count} samples)": "Idle ({count} samples)",
+    "Loaded Session: {filename}": "Loaded Session: {filename}",
+    "MoTeC .ld Export (Experimental)": "MoTeC .ld Export (Experimental)",
+    "CSV Export": "CSV Export",
+    "MoTeC CSV Import": "MoTeC CSV Import",
+    "Delete selected session": "Delete selected session",
+    "Import": "Import"
 }
