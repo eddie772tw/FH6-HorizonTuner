@@ -41,8 +41,10 @@ const EngineRpmDisplay: React.FC = React.memo(() => {
     });
     resizeObserver.observe(container);
 
-    const drawRpmGauge = () => {
+    function drawRpmGauge() {
       if (!paint.canPaint()) return;
+      const canvas = canvasRef.current;
+      if (!canvas) return;
       const { rpm: currentRpm, maxRpm, alert: isShiftAlert, gear, speed } = latestSample.current;
       const speedData = convertSpeed(speed);
       setTelemetryText(speedUnitRef.current, speedData.label);
@@ -60,54 +62,79 @@ const EngineRpmDisplay: React.FC = React.memo(() => {
       const dpr = window.devicePixelRatio || 1;
       ctx.clearRect(0, 0, w, h);
 
-      const safeMaxRpm = Math.max(2000, maxRpm);
-      const rpmPercent = Math.max(0, Math.min(1, currentRpm / safeMaxRpm));
+      ctx.save();
+      try {
+        const safeMaxRpm = Math.max(2000, maxRpm);
+        const rpmPercent = Math.max(0, Math.min(1, currentRpm / safeMaxRpm));
 
-      const numSegments = 30;
-      const gap = 2.5 * dpr;
-      const segWidth = (w - (numSegments - 1) * gap) / numSegments;
-      const activeSegs = Math.round(rpmPercent * numSegments);
+        const numSegments = 30;
+        const gap = 2.5 * dpr;
+        const slant = (theme.flat ? 0 : 3) * dpr;
+        const availableWidth = Math.max(0, w - slant);
+        const segWidth = Math.max(0, (availableWidth - (numSegments - 1) * gap) / numSegments);
+        const activeSegs = Math.round(rpmPercent * numSegments);
 
-      const { primary, secondary, glowStrength } = theme;
+        const { primary, secondary, glowStrength } = theme;
+        const hasGlow = !theme.flat && glowStrength > 0;
 
-      const now = performance.now();
-      if (now - lastFlashTimeRef.current > 100) {
-        lastFlashRef.current = !lastFlashRef.current;
-        lastFlashTimeRef.current = now;
-      }
-
-      // Each color occupies a contiguous range. Reuse the context's current path;
-      // no Path2D objects or temporary groups are allocated during telemetry paints.
-      const secondaryStart = Math.ceil(0.72 * (numSegments - 1));
-      const redStart = Math.ceil((isShiftAlert ? 0.85 : 0.88) * (numSegments - 1));
-      for (let group = 0; group < 4; group++) {
-        const start = group === 0 ? activeSegs : group === 1 ? 0 : group === 2 ? secondaryStart : redStart;
-        const end = group === 0 ? numSegments : group === 1 ? Math.min(activeSegs, secondaryStart)
-          : group === 2 ? Math.min(activeSegs, redStart) : activeSegs;
-        if (start >= end) continue;
-
-        ctx.beginPath();
-        for (let i = start; i < end; i++) {
-          const x = i * (segWidth + gap);
-          const y = 2 * dpr;
-          const segHeight = h - 4 * dpr;
-          const slant = (theme.flat ? 0 : 3) * dpr;
-          ctx.moveTo(x + slant, y);
-          ctx.lineTo(x + segWidth + slant, y);
-          ctx.lineTo(x + segWidth, y + segHeight);
-          ctx.lineTo(x, y + segHeight);
-          ctx.closePath();
+        const now = performance.now();
+        if (now - lastFlashTimeRef.current > 100) {
+          lastFlashRef.current = !lastFlashRef.current;
+          lastFlashTimeRef.current = now;
         }
 
-        const color = group === 0 ? theme.inactive : group === 1 ? primary : group === 2 ? secondary : theme.danger;
-        const alert = group === 3 && isShiftAlert;
-        ctx.fillStyle = alert && theme.alertFlash && lastFlashRef.current ? theme.pointer : color;
-        ctx.shadowColor = color;
-        ctx.shadowBlur = group === 0 ? 0 : glowStrength * (alert ? 10 : 6) * dpr;
-        ctx.fill();
+        // Each color occupies a contiguous range. Reuse the context's current path;
+        // no Path2D objects or temporary groups are allocated during telemetry paints.
+        const secondaryStart = Math.ceil(0.72 * (numSegments - 1));
+        const redStart = Math.ceil((isShiftAlert ? 0.85 : 0.88) * (numSegments - 1));
+        const y = 2 * dpr;
+        const segHeight = Math.max(1, h - 4 * dpr);
+
+        for (let group = 0; group < 4; group++) {
+          const start = group === 0 ? activeSegs : group === 1 ? 0 : group === 2 ? secondaryStart : redStart;
+          const end = group === 0 ? numSegments : group === 1 ? Math.min(activeSegs, secondaryStart)
+            : group === 2 ? Math.min(activeSegs, redStart) : activeSegs;
+          if (start >= end) continue;
+
+          ctx.beginPath();
+          for (let i = start; i < end; i++) {
+            const x = i * (segWidth + gap);
+            ctx.moveTo(x + slant, y);
+            ctx.lineTo(x + segWidth + slant, y);
+            ctx.lineTo(x + segWidth, y + segHeight);
+            ctx.lineTo(x, y + segHeight);
+            ctx.closePath();
+          }
+
+          const color = group === 0 ? theme.inactive : group === 1 ? primary : group === 2 ? secondary : theme.danger;
+          const alert = group === 3 && isShiftAlert;
+          ctx.fillStyle = alert && theme.alertFlash && lastFlashRef.current ? theme.pointer : color;
+          ctx.shadowColor = hasGlow ? color : 'transparent';
+          ctx.shadowBlur = group === 0 || !hasGlow ? 0 : glowStrength * (alert ? 10 : 6) * dpr;
+          ctx.fill();
+        }
+
+        // Coaxial leading active tip highlight: enhance rapid peripheral vision tracking
+        if (activeSegs > 0 && hasGlow) {
+          const leadIdx = activeSegs - 1;
+          const leadX = leadIdx * (segWidth + gap);
+          ctx.beginPath();
+          ctx.moveTo(leadX + slant, y);
+          ctx.lineTo(leadX + segWidth + slant, y);
+          ctx.lineTo(leadX + segWidth, y + segHeight);
+          ctx.lineTo(leadX, y + segHeight);
+          ctx.closePath();
+
+          ctx.fillStyle = isShiftAlert ? theme.pointer : '#ffffff';
+          ctx.globalAlpha = isShiftAlert ? 0.6 : 0.35;
+          ctx.shadowColor = isShiftAlert ? theme.pointer : primary;
+          ctx.shadowBlur = glowStrength * 8 * dpr;
+          ctx.fill();
+        }
+      } finally {
+        ctx.restore();
       }
-      ctx.shadowBlur = 0;
-    };
+    }
 
     const handleUpdate = (e: any) => {
       const data = e.detail;
