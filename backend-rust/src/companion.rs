@@ -18,6 +18,9 @@ use std::{
 };
 
 const PAIRING_TOKEN_TTL: Duration = Duration::from_secs(300); // 5 minutes
+pub const MAX_PAIRED_DEVICES: usize = 32;
+const MAX_DEVICE_NAME_LEN: usize = 64;
+const MAX_DEVICE_ID_LEN: usize = 64;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct QrPayload {
@@ -70,10 +73,15 @@ impl CompanionService {
     pub fn new(root: &Path, default_port: u16) -> Self {
         let storage_path = root.join("companion_devices.json");
         let paired_devices = if storage_path.exists() {
-            fs::read_to_string(&storage_path)
+            let mut list: Vec<PairedDevice> = fs::read_to_string(&storage_path)
                 .ok()
                 .and_then(|content| serde_json::from_str(&content).ok())
-                .unwrap_or_default()
+                .unwrap_or_default();
+            if list.len() > MAX_PAIRED_DEVICES {
+                let excess = list.len() - MAX_PAIRED_DEVICES;
+                list.drain(0..excess);
+            }
+            list
         } else {
             Vec::new()
         };
@@ -188,16 +196,8 @@ impl CompanionService {
         let now_str = chrono::Utc::now().to_rfc3339();
 
         let device = PairedDevice {
-            id: if device_id.is_empty() {
-                uuid::Uuid::new_v4().to_string()
-            } else {
-                device_id.to_string()
-            },
-            name: if device_name.is_empty() {
-                "Android Device".into()
-            } else {
-                device_name.to_string()
-            },
+            id: sanitize_device_id(device_id),
+            name: sanitize_device_name(device_name),
             platform: "Android".into(),
             paired_at: now_str.clone(),
             last_connected_at: Some(now_str),
@@ -207,6 +207,10 @@ impl CompanionService {
         if let Ok(mut devices) = self.paired_devices.lock() {
             // Remove existing device with same id if any
             devices.retain(|d| d.id != device.id);
+            // Cap stored devices to mitigate unbounded growth / resource exhaustion DoS
+            while devices.len() >= MAX_PAIRED_DEVICES {
+                devices.remove(0);
+            }
             devices.push(device.clone());
             self.persist_devices(&devices);
         }
@@ -313,6 +317,32 @@ impl CompanionService {
     }
 }
 
+fn sanitize_device_name(raw: &str) -> String {
+    let sanitized: String = raw
+        .chars()
+        .filter(|c| !c.is_control())
+        .take(MAX_DEVICE_NAME_LEN)
+        .collect();
+    let trimmed = sanitized.trim();
+    if trimmed.is_empty() {
+        "Android Device".into()
+    } else {
+        trimmed.to_string()
+    }
+}
+
+fn sanitize_device_id(raw: &str) -> String {
+    let trimmed = raw.trim();
+    if !trimmed.is_empty()
+        && trimmed.len() <= MAX_DEVICE_ID_LEN
+        && trimmed.chars().all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
+    {
+        trimmed.to_string()
+    } else {
+        uuid::Uuid::new_v4().to_string()
+    }
+}
+
 fn hash_session(token: &str) -> String {
     let digest = Sha256::digest(token.as_bytes());
     digest.iter().map(|byte| format!("{byte:02x}")).collect()
@@ -414,5 +444,44 @@ mod tests {
         assert_eq!(service.list_devices().len(), 0);
         assert!(!service.remove_device("device-123"));
         assert!(!CompanionService::new(temp_dir.path(), 8001).validate_session(&session_token));
+    }
+
+    #[test]
+    fn test_device_name_and_id_sanitization() {
+        assert_eq!(sanitize_device_name(""), "Android Device");
+        assert_eq!(sanitize_device_name("   "), "Android Device");
+        assert_eq!(sanitize_device_name("Pixel\u{0000}\u{001f}\n7 Pro\t"), "Pixel7 Pro");
+        let long_name = "A".repeat(100);
+        assert_eq!(sanitize_device_name(&long_name).len(), MAX_DEVICE_NAME_LEN);
+
+        assert_eq!(sanitize_device_id("dev-123_abc"), "dev-123_abc");
+        // Invalid characters or path-like IDs fallback to generated UUID
+        let uuid_fallback = sanitize_device_id("../../etc/passwd");
+        assert!(uuid::Uuid::parse_str(&uuid_fallback).is_ok());
+        let empty_fallback = sanitize_device_id("   ");
+        assert!(uuid::Uuid::parse_str(&empty_fallback).is_ok());
+    }
+
+    #[test]
+    fn test_paired_devices_bounded_capacity() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let service = CompanionService::new(temp_dir.path(), 8001);
+
+        for i in 0..(MAX_PAIRED_DEVICES + 5) {
+            let qr = service.generate_qr_payload(Some(8001));
+            let device_id = format!("device-{i:03}");
+            let (device, _) = service
+                .pair(&qr.token, &format!("Device {i}"), &device_id)
+                .expect("Pairing should succeed");
+            assert_eq!(device.id, device_id);
+        }
+
+        let devices = service.list_devices();
+        assert_eq!(devices.len(), MAX_PAIRED_DEVICES);
+        // Oldest 5 devices (device-000 to device-004) were evicted
+        assert!(!devices.iter().any(|d| d.id == "device-000"));
+        assert!(!devices.iter().any(|d| d.id == "device-004"));
+        assert!(devices.iter().any(|d| d.id == "device-005"));
+        assert!(devices.iter().any(|d| d.id == format!("device-{:03}", MAX_PAIRED_DEVICES + 4)));
     }
 }

@@ -32,3 +32,10 @@
 **學習 (Learning):** 本機桌面/Companion HTTP 服務雖主要綁定 `127.0.0.1` 或 LAN IP，但在瀏覽器環境下，任何本機瀏覽的網頁皆可透過嵌入 `<iframe>` 或探針發起無聲請求。若未在伺服器管道的全路徑（包含 CSRF 403 阻擋、401 未授權及一般 API 回應）統一注入 `SAMEORIGIN` 與 `nosniff`，即使實作了 CORS，仍會暴露於 UI 點擊劫持與 MIME 類型混淆風險。同時，保留 `SAMEORIGIN` 能完整相容 HUD overlay 內嵌同源 telemetry cards 的既有機制，達成零回歸防護。
 **預防 (Prevention):** 於後端 HTTP 網路層抽象 `apply_security_headers` 函式，對所有進出 `router` 與 `lan_router` 的 HTTP 回應強制注入 `X-Content-Type-Options: nosniff`、`X-Frame-Options: SAMEORIGIN` 及 `Referrer-Policy: strict-origin-when-cross-origin`，並透過整合測試驗證正常路徑、LAN 路由與拒絕路徑的安全標頭一致性，落實深度防禦（Defense in Depth）。
 **署名:** Sentinel as Antigravity
+
+
+## 2026-11-07 - Companion Device Pairing Input Sanitization and Bounded Capacity Protection
+**漏洞/脆弱點 (Vulnerability):** 在 Companion 服務模組 `backend-rust/src/companion.rs` 中，外部 HTTP 端點（`POST /api/companion/pair`）傳入的 `device_name` 與 `device_id` 原先未進行長度邊界限制與控制字元過濾，且已配對裝置列表 `paired_devices` 缺乏容量上限（Unbounded Collection）。若惡意或異常客戶端傳入包含 ASCII 控制字元（`\u{0000}..\u{001f}`）、超長字串或路徑字元，或發起多次配對請求，將使儲存檔 `companion_devices.json` 與伺服器記憶體無上限膨脹，引發磁碟空間耗盡與 DoS 拒絕服務風險。
+**學習 (Learning):** 本地網路（LAN）或 USB 伴侶應用程式的配對端點雖需一次性 Token 驗證，但一旦進入持久化流程，未過濾的字串會直接污染儲存層與前端 UI。此外，若缺乏容量上限（Bounded Capacity），即使具備 Token 逾期機制，持續配對仍會造成無界增長（Unbounded Growth）。在 Rust 後端處理客戶端自訂識別元與集合存儲時，必須在進入 storage 前實作字元白名單過濾、長度截斷，並以嚴格容量上限（如 32 台裝置）配合 FIFO 淘汰機制，確保記憶體與磁碟持久化永遠受控且具備彈性。
+**預防 (Prevention):** 針對所有伴侶端點與外部設備登記機制，實作統一的輸入消毒（`sanitize_device_name` 過濾不可見控制字元、`sanitize_device_id` 僅允許安全字元集並自動回退至標準 UUID），且持久化集合強制配置有界容量上限（`MAX_PAIRED_DEVICES`）與載入防禦，落實深度防禦（Defense in Depth）。
+**署名:** Sentinel as Antigravity
