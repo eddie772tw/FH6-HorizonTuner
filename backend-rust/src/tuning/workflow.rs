@@ -432,7 +432,7 @@ fn calculate_with_replay_policy(
         tire_evidence: proof.and_then(|p| p.tire_evidence()),
     })
 }
-pub(crate) fn mechanical_fields(
+pub fn mechanical_fields(
     profile: &Value,
     c: &ChassisTuningResult,
     a: &StaticAlignment,
@@ -482,16 +482,26 @@ pub(crate) fn mechanical_fields(
         }
     }
     add("caster.front", a.caster, "deg");
-    if profile["drivetrain"] != "RWD" {
-        add("diff.front.acceleration", c.diff.accel_f, "%");
-        add("diff.front.deceleration", c.diff.decel_f, "%");
-    }
-    if profile["drivetrain"] != "FWD" {
-        add("diff.rear.acceleration", c.diff.accel_r, "%");
-        add("diff.rear.deceleration", c.diff.decel_r, "%");
-    }
-    if profile["drivetrain"] == "AWD" {
-        add("diff.center", c.diff.center_rear, "%");
+    let drive = profile["drivetrain"]
+        .as_str()
+        .map(super::types::Drivetrain::from_str_loose)
+        .unwrap_or(super::types::Drivetrain::RWD);
+    match drive {
+        super::types::Drivetrain::FWD => {
+            add("diff.front.acceleration", c.diff.accel_f, "%");
+            add("diff.front.deceleration", c.diff.decel_f, "%");
+        }
+        super::types::Drivetrain::RWD => {
+            add("diff.rear.acceleration", c.diff.accel_r, "%");
+            add("diff.rear.deceleration", c.diff.decel_r, "%");
+        }
+        super::types::Drivetrain::AWD => {
+            add("diff.front.acceleration", c.diff.accel_f, "%");
+            add("diff.front.deceleration", c.diff.decel_f, "%");
+            add("diff.rear.acceleration", c.diff.accel_r, "%");
+            add("diff.rear.deceleration", c.diff.decel_r, "%");
+            add("diff.center", c.diff.center_rear, "%");
+        }
     }
     fields
 }

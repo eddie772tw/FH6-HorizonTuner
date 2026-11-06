@@ -681,3 +681,78 @@ fn chassis_weight_distribution_nan_protection_and_symmetry_closure() {
     assert_eq!(road_gearing.gears.len(), 6);
     assert!(road_gearing.gears.windows(2).all(|w| w[0] > w[1]));
 }
+
+
+#[test]
+fn chassis_drift_degeneracy_and_workflow_drivetrain_normalization() {
+    use fh6_backend::tuning::workflow::mechanical_fields;
+    use serde_json::json;
+
+    // Case 1: Drift mode with fixed/degenerate spring rate (k_min == k_max) must retain neutral 10.5 damping
+    let p_fixed_spring = TuningCarParams {
+        weight: Some(1200.0),
+        weight_distribution: Some(50.0),
+        drivetrain: Some("RWD".into()),
+        spring_front_min: Some(50.0),
+        spring_front_max: Some(50.0),
+        spring_rear_min: Some(50.0),
+        spring_rear_max: Some(50.0),
+        ..Default::default()
+    };
+    let drift_fixed = calculate_chassis_tuning(RaceGoal::Drift, &p_fixed_spring);
+    assert_eq!(
+        drift_fixed.damping.rebound_f, 10.5,
+        "Degenerate front spring rate in Drift must yield neutral 10.5 damping, not 1.0 collapse"
+    );
+    assert_eq!(
+        drift_fixed.damping.rebound_r, 10.5,
+        "Degenerate rear spring rate in Drift must yield neutral 10.5 damping, not 1.0 collapse"
+    );
+    assert_eq!(drift_fixed.damping.bump_f, 6.3);
+    assert_eq!(drift_fixed.damping.bump_r, 6.3);
+
+    // Case 2: Drift and Drag with non-finite / corrupted inputs must not panic or propagate NaN
+    let p_corrupt = TuningCarParams {
+        weight: Some(f64::NAN),
+        weight_distribution: Some(-20.0),
+        spring_front_min: Some(f64::INFINITY),
+        ..Default::default()
+    };
+    let drift_corrupt = calculate_chassis_tuning(RaceGoal::Drift, &p_corrupt);
+    assert!(drift_corrupt.springs.front.is_finite() && drift_corrupt.springs.front > 0.0);
+    assert!(drift_corrupt.damping.rebound_f.is_finite() && drift_corrupt.damping.rebound_f > 0.0);
+
+    let drag_corrupt = calculate_chassis_tuning(RaceGoal::Drag, &p_corrupt);
+    assert!(drag_corrupt.springs.front.is_finite() && drag_corrupt.springs.front > 0.0);
+
+    // Case 3: Workflow mechanical_fields drivetrain normalization (case-insensitive & trimmed)
+    let c = calculate_chassis_tuning(RaceGoal::Road, &p_fixed_spring);
+    let a = calculate_static_alignment(RaceGoal::Road, Season::Summer, &p_fixed_spring);
+
+    for (input_drive, has_front_diff, has_rear_diff, has_center_diff) in [
+        ("rwd", false, true, false),
+        (" RWD ", false, true, false),
+        ("fwd", true, false, false),
+        (" FWD ", true, false, false),
+        ("awd", true, true, true),
+        (" AWD ", true, true, true),
+    ] {
+        let profile = json!({ "drivetrain": input_drive });
+        let fields = mechanical_fields(&profile, &c, &a);
+        assert_eq!(
+            fields.contains_key("diff.front.acceleration"),
+            has_front_diff,
+            "drivetrain '{input_drive}' front diff mismatch"
+        );
+        assert_eq!(
+            fields.contains_key("diff.rear.acceleration"),
+            has_rear_diff,
+            "drivetrain '{input_drive}' rear diff mismatch"
+        );
+        assert_eq!(
+            fields.contains_key("diff.center"),
+            has_center_diff,
+            "drivetrain '{input_drive}' center diff mismatch"
+        );
+    }
+}
