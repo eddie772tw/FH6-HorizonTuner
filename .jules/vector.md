@@ -31,3 +31,8 @@
 **渲染洞察 (Rendering Learning):** 在 G-Force 雷達畫布（GForceRadar）中，歷史極值標記（Apex G-force Markers）在定時 5Hz rAF 循環中過去每幀皆動態分配 8 個座標物件與 1 個陣列，造成週期性微小 GC 壓力；透過宣告常駐預分配的 8 個 markerSlots 槽位進行就地極值更新，達成了零每幀記憶體配置。視覺上，過去單層 3*dpr 純色圓點在暗色十字分割線與外圈交會處對比度薄弱；透過引入同軸雙層「外圈脈衝光環 (Halo Ring, 4.2*dpr) + 實心焦點內核 (Core Dot, 2.0*dpr)」架構，外圈以單次路徑批次 `ctx.stroke()` 激發柔和光暈（`shadowBlur = 4*dpr`），內核以單次路徑批次 `ctx.fill()` 凝練實心焦點，僅需 2 次繪製調用即賦予賽車過彎 Apex 點極具科技感的同軸立體深度。此外，繪圖主體全面轉換為具 Hoisting 特性之函式宣告，並以成對 `ctx.save()` / `try { ... } finally { ctx.restore(); }` 嚴格包裹，在 flat 主題自動抑制陰影，徹底阻絕狀態樣式滲漏。
 **行動 (Action):** 在所有儀表極值與歷史取樣標記中推廣就地槽位（pre-allocated slots）零配置模式；多層同軸幾何優先採用分離批次路徑（batch stroke + batch fill）以最小 draw call 達成層次化光暈，並強制將 `try/finally` context 狀態保護列為 Canvas 標準合約。
 **署名:** Vector as Antigravity
+
+## 2026-11-07 - 引擎轉速條斜角幾何補正、同軸領航高光與狀態防護
+**渲染洞察 (Rendering Learning):** 在 60Hz 引擎轉速儀表（EngineRpmDisplay）中，斜切角幾何（slant = 3*dpr）若未納入可用寬度計算，在最右端 segment（i = numSegments - 1）其右上頂點會延伸至 w + slant，造成右側邊界生硬裁切（hard clipping）與 Redline Alert 發光邊緣截斷；透過將可用寬度預扣 slant（availableWidth = Math.max(0, w - slant)），可使最右端頂點精確貼合畫布邊緣。在視覺引導上，透過在頂端活躍格（activeSegs - 1）疊加半透明同軸領航高光（Coaxial Tip Highlight），能強化高速拉轉時車手周邊視覺的即時鎖定。此外，繪圖主體提升為標準函式宣告並以 ctx.save() / try { ... } finally { ctx.restore(); } 嚴格包裹，在 flat 主題自動抑制陰影，杜絕發光與樣式滲漏。
+**行動 (Action):** 所有具斜切角（Slanted Segment）與非正交幾何的儀表，必須將幾何傾斜量計入畫布可用寬高防禦邊界裁切；高頻繪圖一律落實成對狀態防護與 flat 主題無陰影合約。
+**署名:** Vector as Antigravity
