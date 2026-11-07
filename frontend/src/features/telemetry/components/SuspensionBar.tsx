@@ -136,46 +136,82 @@ const SuspensionBar: React.FC<SuspensionBarProps> = React.memo(({ title, isLeft,
           const dpr = window.devicePixelRatio || 1;
           
           ctx.save();
-          drawBackground(ctx, w, h, dpr);
+          try {
+            drawBackground(ctx, w, h, dpr);
 
-          if (renderHistoryTrace && history.size > 0) {
-            ctx.beginPath();
-            if (theme.flat) {
-              ctx.strokeStyle = theme.primary;
-            } else {
-              if (!cachedGrad || cachedGrad.h !== h || cachedGrad.primary !== theme.primary || cachedGrad.danger !== theme.danger) {
-                const grad = ctx.createLinearGradient(0, 0, 0, h);
-                grad.addColorStop(0, theme.danger);
-                grad.addColorStop(0.08, theme.primary);
-                grad.addColorStop(0.92, theme.primary);
-                grad.addColorStop(1, theme.danger);
-                cachedGrad = { h, primary: theme.primary, danger: theme.danger, grad };
+            if (renderHistoryTrace && history.size > 0) {
+              ctx.beginPath();
+              if (theme.flat) {
+                ctx.strokeStyle = theme.primary;
+              } else {
+                if (!cachedGrad || cachedGrad.h !== h || cachedGrad.primary !== theme.primary || cachedGrad.danger !== theme.danger) {
+                  const grad = ctx.createLinearGradient(0, 0, 0, h);
+                  grad.addColorStop(0, theme.danger);
+                  grad.addColorStop(0.08, theme.primary);
+                  grad.addColorStop(0.92, theme.primary);
+                  grad.addColorStop(1, theme.danger);
+                  cachedGrad = { h, primary: theme.primary, danger: theme.danger, grad };
+                }
+                ctx.strokeStyle = cachedGrad.grad;
               }
-              ctx.strokeStyle = cachedGrad.grad;
+              ctx.lineWidth = 2 * dpr;
+              ctx.lineCap = 'round';
+              ctx.lineJoin = 'round';
+              if (!theme.flat && theme.glowStrength > 0) {
+                ctx.shadowColor = theme.primary;
+                ctx.shadowBlur = theme.glowStrength * 4 * dpr;
+              }
+
+              const len = history.size;
+              const latestIdx = (history.offset - 1 + len) % len;
+              const maxT = history.samples[latestIdx].time;
+              const rightPadding = 4.2 * dpr;
+              const plotW = Math.max(1, w - rightPadding);
+              let latestX = plotW;
+              let latestY = h * 0.5;
+
+              for (let k = 0; k < len; k++) {
+                const idx = (history.offset + k) % len;
+                const p = history.samples[idx];
+                const x = plotW - ((maxT - p.time) / SUSPENSION_TRACE_WINDOW_MS) * plotW;
+                const y = h - (p.travel * h);
+                if (k === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+                if (k === len - 1) {
+                  latestX = x;
+                  latestY = y;
+                }
+              }
+              ctx.stroke();
+
+              // Coaxial Leading Active Pulse Marker
+              const latestSamplePoint = history.samples[latestIdx];
+              const isWarning = latestSamplePoint.travel <= 0.08 || latestSamplePoint.travel >= 0.92;
+              const pulseColor = isWarning ? theme.danger : theme.primary;
+
+              // Outer pulse halo
+              ctx.beginPath();
+              ctx.strokeStyle = pulseColor;
+              ctx.lineWidth = 1.2 * dpr;
+              if (!theme.flat && theme.glowStrength > 0) {
+                ctx.shadowColor = pulseColor;
+                ctx.shadowBlur = theme.glowStrength * (isWarning ? 7 : 4) * dpr;
+              } else {
+                ctx.shadowBlur = 0;
+              }
+              ctx.arc(latestX, latestY, 3.6 * dpr, 0, Math.PI * 2);
+              ctx.stroke();
+
+              // Core focus dot
+              ctx.beginPath();
+              ctx.fillStyle = pulseColor;
+              ctx.shadowBlur = 0;
+              ctx.arc(latestX, latestY, 1.8 * dpr, 0, Math.PI * 2);
+              ctx.fill();
             }
-            ctx.lineWidth = 2 * dpr;
-            ctx.lineCap = 'round';
-            ctx.lineJoin = 'round';
-            if (!theme.flat && theme.glowStrength > 0) {
-              ctx.shadowColor = theme.primary;
-              ctx.shadowBlur = theme.glowStrength * 4 * dpr;
-            }
-    
-            const len = history.size;
-            const latestIdx = (history.offset - 1 + len) % len;
-            const maxT = history.samples[latestIdx].time;
-            for (let k = 0; k < len; k++) {
-              const idx = (history.offset + k) % len;
-              const p = history.samples[idx];
-              const x = w - ((maxT - p.time) / SUSPENSION_TRACE_WINDOW_MS) * w;
-              const y = h - (p.travel * h);
-              if (k === 0) ctx.moveTo(x, y);
-              else ctx.lineTo(x, y);
-            }
-            ctx.stroke();
-            ctx.shadowBlur = 0;
+          } finally {
+            ctx.restore();
           }
-          ctx.restore();
         }
       }
     };

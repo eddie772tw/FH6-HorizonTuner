@@ -31,3 +31,7 @@
 **渲染洞察 (Rendering Learning):** 在 G-Force 雷達畫布（GForceRadar）中，歷史極值標記（Apex G-force Markers）在定時 5Hz rAF 循環中過去每幀皆動態分配 8 個座標物件與 1 個陣列，造成週期性微小 GC 壓力；透過宣告常駐預分配的 8 個 markerSlots 槽位進行就地極值更新，達成了零每幀記憶體配置。視覺上，過去單層 3*dpr 純色圓點在暗色十字分割線與外圈交會處對比度薄弱；透過引入同軸雙層「外圈脈衝光環 (Halo Ring, 4.2*dpr) + 實心焦點內核 (Core Dot, 2.0*dpr)」架構，外圈以單次路徑批次 `ctx.stroke()` 激發柔和光暈（`shadowBlur = 4*dpr`），內核以單次路徑批次 `ctx.fill()` 凝練實心焦點，僅需 2 次繪製調用即賦予賽車過彎 Apex 點極具科技感的同軸立體深度。此外，繪圖主體全面轉換為具 Hoisting 特性之函式宣告，並以成對 `ctx.save()` / `try { ... } finally { ctx.restore(); }` 嚴格包裹，在 flat 主題自動抑制陰影，徹底阻絕狀態樣式滲漏。
 **行動 (Action):** 在所有儀表極值與歷史取樣標記中推廣就地槽位（pre-allocated slots）零配置模式；多層同軸幾何優先採用分離批次路徑（batch stroke + batch fill）以最小 draw call 達成層次化光暈，並強制將 `try/finally` context 狀態保護列為 Canvas 標準合約。
 **署名:** Vector as Antigravity
+## 2026-11-08 - 懸吊即時同軸脈衝標記、邊界裁切補償與狀態安全隔離
+**渲染洞察 (Rendering Learning):** 在懸吊行程波形（SuspensionBar）渲染中，最新採樣端點過去直接對齊畫布邊界 x = w，導致 2*dpr 線寬與發光光暈有近半徑被畫布硬裁切（edge clipping），且折線終點在激進操駕時缺乏焦點標示；透過導入 rightPadding = 4.2*dpr 邊界邊距預留，並在最新點加入同軸雙層「外圈脈衝光環 (Halo Ring, 3.6*dpr) + 實心定位內核 (Core Dot, 1.8*dpr)」，能在極限壓縮（bottoming-out）或拉伸（bump-stop）時精準觸發 danger 警戒發光，同時兼顧單一取樣點（history.size === 1）時的即時可見性。此外，繪圖主體全面採用成對 ctx.save() / try { ... } finally { ctx.restore(); } 防護合約，徹底阻絕 shadowBlur 與樣式滲漏至外部 Canvas 狀態。
+**行動 (Action):** 所有時間序列與動態軌跡畫布在最新端點均應配置邊界保護 padding 與同軸 Leading Pulse Marker；狀態管理強制採用 try/finally 確保 Context 乾淨復原，嚴格落實零每幀物件配置。
+**署名:** Vector as Antigravity
