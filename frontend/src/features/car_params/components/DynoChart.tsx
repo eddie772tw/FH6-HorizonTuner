@@ -6,7 +6,7 @@ import { btnStyle } from './CommonStyles';
 import { presentDynoQuality } from '../dynoQuality';
 
 interface DynoChartProps {
-  t: (key: string) => string;
+  t: (key: string, params?: Record<string, string | number>) => string;
   settings: any;
   updateSettings: (s: any) => void;
   carParams: CarParams;
@@ -92,6 +92,7 @@ export const DynoChart: React.FC<DynoChartProps> = ({
                 <select
                   value={settings.dyno_test_gear ?? 4}
                   onChange={(e) => updateSettings({ dyno_test_gear: parseInt(e.target.value) })}
+                  aria-label={t("Target Test Gear")}
                   style={{
                     background: 'rgba(0,0,0,0.5)',
                     color: 'white',
@@ -103,7 +104,7 @@ export const DynoChart: React.FC<DynoChartProps> = ({
                 >
                   <option value={0}>{t("Any Gear (Free Run)")}</option>
                   {[1,2,3,4,5,6,7,8,9,10].map(g => (
-                    <option key={g} value={g}>{g} {t("st")}</option>
+                    <option key={g} value={g}>{t("Gear {index}", { index: g })}</option>
                   ))}
                 </select>
               </div>
@@ -221,7 +222,7 @@ export const DynoChart: React.FC<DynoChartProps> = ({
                   }}>
                     {targetGear === 0 
                       ? t("Ready! Perform a Full Throttle (WOT) run in any gear.") 
-                      : t("Please shift to gear {gear} and slow down below 2,000 RPM.").replace('{gear}', targetGear.toString())}
+                      : t("Please shift to gear {gear} and slow down below 2,000 RPM.", { gear: targetGear })}
                   </div>
                 );
               case 'waiting':
@@ -277,15 +278,15 @@ export const DynoChart: React.FC<DynoChartProps> = ({
                       <div style={{ fontSize: '0.82rem', padding: '0.5rem 0.75rem', borderRadius: '6px', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.05)' }}>
                         {runDuration < 3.0 ? (
                           <span style={{ color: '#ffaa00' }}>
-                            {t("Run duration too short ({sec}s). Gearing might be too short (high ratio). Low-gear inertial losses can underestimate horsepower. Consider tuning this gear longer (lower ratio) or using a higher gear.").replace('{sec}', runDuration.toFixed(1))}
+                            {t("Run duration too short ({sec}s). Gearing might be too short (high ratio). Low-gear inertial losses can underestimate horsepower. Consider tuning this gear longer (lower ratio) or using a higher gear.", { sec: runDuration.toFixed(1) })}
                           </span>
                         ) : runDuration > 12.0 ? (
                           <span style={{ color: '#ffaa00' }}>
-                            {t("Run duration too long ({sec}s). Aerodynamic drag at high speeds will underestimate high-RPM horsepower. Consider tuning this gear shorter (higher ratio) or using a lower gear.").replace('{sec}', runDuration.toFixed(1))}
+                            {t("Run duration too long ({sec}s). Aerodynamic drag at high speeds will underestimate high-RPM horsepower. Consider tuning this gear shorter (higher ratio) or using a lower gear.", { sec: runDuration.toFixed(1) })}
                           </span>
                         ) : (
                           <span style={{ color: '#00e676' }}>
-                            🏆 {t("Run duration optimal ({sec}s). Excellent Dyno measurement quality!").replace('{sec}', runDuration.toFixed(1))}
+                            🏆 {t("Run duration optimal ({sec}s). Excellent Dyno measurement quality!", { sec: runDuration.toFixed(1) })}
                           </span>
                         )}
                       </div>
@@ -310,9 +311,10 @@ export const DynoChart: React.FC<DynoChartProps> = ({
             }}>
               <span style={{ flexShrink: 0 }}>💡</span>
               <span>
-                {t("Recommended Test Gear: {gear} (Ratio: {ratio}, closest to 1.00)")
-                  .replace('{gear}', recommendedGear.gear.toString())
-                  .replace('{ratio}', recommendedGear.ratio.toFixed(2))}
+                {t("Recommended Test Gear: {gear} (Ratio: {ratio}, closest to 1.00)", {
+                  gear: recommendedGear.gear,
+                  ratio: recommendedGear.ratio.toFixed(2)
+                })}
               </span>
             </div>
           ) : (
@@ -416,20 +418,20 @@ export const DynoChart: React.FC<DynoChartProps> = ({
               <XAxis 
                 dataKey="rpm" 
                 stroke="var(--text-secondary)" 
-                label={{ value: 'Engine RPM', position: 'bottom', fill: 'var(--text-secondary)', offset: -5 }} 
+                label={{ value: t('Engine RPM'), position: 'bottom', fill: 'var(--text-secondary)', offset: -5 }}
               />
               <YAxis 
                 yAxisId="hp" 
                 stroke="var(--primary)"
                 tick={false}
-                label={{ value: `Power (${getPowerLabel()})`, angle: -90, position: 'insideLeft', fill: 'var(--primary)' }}
+                label={{ value: `${t('Power')} (${getPowerLabel()})`, angle: -90, position: 'insideLeft', fill: 'var(--primary)' }}
               />
               <YAxis 
                 yAxisId="torque" 
                 orientation="right" 
                 stroke="var(--secondary)"
                 tick={false}
-                label={{ value: `Torque (${getTorqueLabel()})`, angle: -90, position: 'insideRight', fill: 'var(--secondary)' }}
+                label={{ value: `${t('Torque')} (${getTorqueLabel()})`, angle: -90, position: 'insideRight', fill: 'var(--secondary)' }}
               />
               <Tooltip 
                 contentStyle={{ backgroundColor: 'var(--glass-bg)', color: 'var(--text-primary)', border: '1px solid var(--glass-border)', borderRadius: 'var(--chart-radius)' }}
@@ -437,8 +439,8 @@ export const DynoChart: React.FC<DynoChartProps> = ({
               <Legend verticalAlign="top" height={24}/>
 
               {/* Disabled animation for performance on large dataset */}
-              <Line isAnimationActive={false} yAxisId="hp" type="monotone" dataKey="hp" name={`Power (${getPowerLabel()})`} stroke="var(--primary)" strokeWidth={2} dot={{ r: 1.5 }} activeDot={{ r: 4 }} />
-              <Line isAnimationActive={false} yAxisId="torque" type="monotone" dataKey="torque" name={`Torque (${getTorqueLabel()})`} stroke="var(--secondary)" strokeWidth={2} dot={{ r: 1.5 }} activeDot={{ r: 4 }} />
+              <Line isAnimationActive={false} yAxisId="hp" type="monotone" dataKey="hp" name={`${t('Power')} (${getPowerLabel()})`} stroke="var(--primary)" strokeWidth={2} dot={{ r: 1.5 }} activeDot={{ r: 4 }} />
+              <Line isAnimationActive={false} yAxisId="torque" type="monotone" dataKey="torque" name={`${t('Torque')} (${getTorqueLabel()})`} stroke="var(--secondary)" strokeWidth={2} dot={{ r: 1.5 }} activeDot={{ r: 4 }} />
             </LineChart>
           </ResponsiveContainer>
         ) : (

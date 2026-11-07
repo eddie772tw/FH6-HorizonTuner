@@ -63,3 +63,9 @@
 **學習 (Learning):** 分析視圖工具列（ManualRecordingToolbar）將動態採樣數與狀態標籤碎片化拼接（如 `{status} ({count} {t("samples")})`），會導致非英文語系（如日文）因詞彙缺失或倒裝語序造成介面顯示破碎，且螢幕閱讀器難以解析完整語義；同時，子組件 Props 中的 `t` 簽名若被收窄為 `(text: string) => string`，會迫使開發者在該組件內退回字串拼接。此外，工具列按鈕若僅提供 `title` 而未同步鏡像至 `aria-label`，會使純鍵盤焦點與無障礙讀屏工具遺漏操作說明。
 **行動 (Action):** 在工具列等含有動態計數的狀態徽章中，一律改用具備具名參數的完整句子鍵值（如 `t("Manual Recording ({count} samples)", { count })`），將組件 `t` prop 擴展為支援可選 params 物件；並確保 `title` 與 `aria-label` 同步對齊收錄至 `en-us.json`、`zh-tw.json` 與 `ja-jp.json` 中。
 **署名:** Narrator as Antigravity
+
+
+## 2026-11-08 - Ordinal Suffix Fragmentation & Prop Narrowing Anti-Pattern
+**學習 (Learning):** 在齒比選單中將檔位數值與英文序數縮寫碎片拼接（如 `{g} {t("st")}`），不僅破壞英文文法（2nd/3rd 被誤組為 2 st/3 st），更因縮寫歧義在日文歷史字典中被機械化翻譯為「ファイル」(File)，導致所有前進檔在日文介面全部誤顯示為「1 ファイル」、「2 ファイル」等嚴重失真；同時，子組件若將 `t` prop 簽名收窄為 `(key: string) => string`，會迫使組件退回手動 `.replace()` 取代標準物件參數，且 `<select>` 與圖表座標軸（X/Y 軸及 Series 名稱）常遺漏 `aria-label` 與多語言標籤。
+**行動 (Action):** 將檔位與序數選項全面改為具名參數化鍵值 `t("Gear {index}", { index: g })`，同步對齊 `en-us.json`、`zh-tw.json`（`{index} 檔`）與 `ja-jp.json`（`{index}速`），根除同形異義機翻殘留；子組件一律維持支援參數物件的 `t` 簽名，並補齊選單 `aria-label` 與圖表軸多語言包裝，確保視覺與讀屏體驗雙重對齊。
+**署名:** Narrator as Antigravity

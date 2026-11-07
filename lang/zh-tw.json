@@ -784,7 +784,7 @@
   "RPM": "RPM",
   "RPM Drop": "轉速下降",
   "RR Slip": "右後輪滑移",
-  "Run duration optimal ({sec}s). Excellent Dyno measurement quality!": "Run duration optimal ({sec}s). Excellent Dyno measurement quality!",
+  "Run duration optimal ({sec}s). Excellent Dyno measurement quality!": "拉轉時間極佳 ({sec} 秒)。馬力機量測品質非常優秀！",
   "Run duration too long ({sec}s). Aerodynamic drag at high speeds will underestimate high-RPM horsepower. Consider tuning this gear shorter (higher ratio) or using a lower gear.": "拉轉時間過長 ({sec} 秒)。高速下的空氣阻力會低估高轉速馬力。建議將此檔齒比調大（密齒），或改用更低一檔進行測試。",
   "Run duration too short ({sec}s). Gearing might be too short (high ratio). Low-gear inertial losses can underestimate horsepower. Consider tuning this gear longer (lower ratio) or using a higher gear.": "拉轉時間過短 ({sec} 秒)。齒比可能過密（齒比偏大），低檔位轉動慣量損失會低估馬力。建議將此檔齒比調小（疏齒），或改用更高一檔進行測試。",
   "Run Summary": "測試摘要",
@@ -2354,5 +2354,6 @@
     "Save current recording to backend": "將目前錄製儲存至後端",
     "Clear recording buffer": "清空錄製緩衝區",
     "Manual Recording ({count} samples)": "手動錄製（{count} 個樣本）",
-    "Auto Recording ({count} samples)": "自動錄製（{count} 個樣本）"
+    "Auto Recording ({count} samples)": "自動錄製（{count} 個樣本）",
+    "Gear {index}": "{index} 檔"
 }

@@ -747,7 +747,7 @@
   "RPM": "RPM",
   "RPM Drop": "速度の低下",
   "RR Slip": "右後輪スリップ",
-  "Run duration optimal ({sec}s). Excellent Dyno measurement quality!": "Run duration optimal ({sec}s). Excellent Dyno measurement quality!",
+  "Run duration optimal ({sec}s). Excellent Dyno measurement quality!": "プル時間が最適です ({sec} 秒)。優れたダイノ測定品質です！",
   "Run duration too long ({sec}s). Aerodynamic drag at high speeds will underestimate high-RPM horsepower. Consider tuning this gear shorter (higher ratio) or using a lower gear.": "プル時間が長すぎます ({sec} 秒)。高速時の空気抵抗により、高回転時の馬力が過小評価されます。テストのために、このギア比 (ギア密度) を上げるか、より低いギアに切り替えることをお勧めします。",
   "Run duration too short ({sec}s). Gearing might be too short (high ratio). Low-gear inertial losses can underestimate horsepower. Consider tuning this gear longer (lower ratio) or using a higher gear.": "プル時間が短すぎます ({sec} 秒)。ギア比が近すぎる（ギア比が大きすぎる）可能性があり、低速ギアでの慣性モーメントの損失により馬力が過小評価されます。このギア比を小さいギア比 (スパース ギア) に調整するか、テストのために高いギアに切り替えることをお勧めします。",
   "Run Summary": "テストの概要",
@@ -1750,5 +1750,6 @@
     "Save current recording to backend": "現在の記録をバックエンドに保存",
     "Clear recording buffer": "記録バッファをクリア",
     "Manual Recording ({count} samples)": "手動記録（{count} サンプル）",
-    "Auto Recording ({count} samples)": "自動記録（{count} サンプル）"
+    "Auto Recording ({count} samples)": "自動記録（{count} サンプル）",
+    "Gear {index}": "{index}速"
 }
