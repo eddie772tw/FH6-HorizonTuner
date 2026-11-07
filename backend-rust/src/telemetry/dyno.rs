@@ -245,7 +245,13 @@ pub struct DynoQualityGateRegistry {
 }
 impl DynoQualityGateRegistry {
     pub fn observe(&mut self, id: &str, frame: &Value) -> DynoQualityAssessment {
-        self.gates.entry(id.into()).or_default().observe(frame)
+        // [PERF] In the 60Hz telemetry processing path, avoid unconditional String allocation
+        // when the car gate entry already exists in the registry.
+        if let Some(gate) = self.gates.get_mut(id) {
+            gate.observe(frame)
+        } else {
+            self.gates.entry(id.to_string()).or_default().observe(frame)
+        }
     }
     pub fn milliseconds_since_gear_change(&self, id: &str, timestamp: Option<f64>) -> Option<f64> {
         self.gates
@@ -420,30 +426,35 @@ pub fn collect_dyno_sample(
         .entry("dyno_curve")
         .or_insert_with(|| Value::Object(Map::new()));
     let c = curve.as_object_mut().unwrap();
-    let existing = c.clone();
-    let neighbors = |field: &str| {
-        DYNO_NEIGHBOR_OFFSETS
-            .iter()
-            .filter_map(|o| {
-                existing
-                    .get(&(bucket + o).to_string())
-                    .and_then(|x| x.get(field))
-                    .and_then(Value::as_f64)
-            })
-            .collect::<Vec<_>>()
-    };
+    // [PERF] In high-frequency dyno sampling, avoid deep-cloning the entire dyno_curve map
+    // just to query neighbor offsets. Pre-collect hp and torque neighbor samples in a single pass.
+    let mut hp_neighbors = Vec::with_capacity(DYNO_NEIGHBOR_OFFSETS.len());
+    let mut torque_neighbors = Vec::with_capacity(DYNO_NEIGHBOR_OFFSETS.len());
+    for offset in DYNO_NEIGHBOR_OFFSETS {
+        let neighbor_key = (bucket + offset).to_string();
+        if let Some(n) = c.get(&neighbor_key) {
+            if let Some(v) = n.get("hp").and_then(Value::as_f64) {
+                hp_neighbors.push(v);
+            }
+            if let Some(v) = n.get("torque").and_then(Value::as_f64) {
+                torque_neighbors.push(v);
+            }
+        }
+    }
     let entry = c
-        .entry(key.clone())
+        .entry(key)
         .or_insert_with(|| serde_json::json!({"hp":0,"torque":0,"hp_hist":[],"torque_hist":[]}));
     let em = entry.as_object_mut().unwrap();
     let hp = i(d, "PowerWatts", 0.0) / 745.7;
     let torque = i(d, "TorqueNewtons", 0.0) * 0.73756;
     let mut changed = false;
-    for (field, value) in [("hp", hp), ("torque", torque)] {
-        let neigh = neighbors(field);
-        if dyno_is_reasonable(value, &neigh, DYNO_ANOMALY_THRESHOLD) {
+    for (field, value, neigh, hist_key) in [
+        ("hp", hp, &hp_neighbors, "hp_hist"),
+        ("torque", torque, &torque_neighbors, "torque_hist"),
+    ] {
+        if dyno_is_reasonable(value, neigh, DYNO_ANOMALY_THRESHOLD) {
             let h = em
-                .entry(format!("{}_hist", field))
+                .entry(hist_key)
                 .or_insert_with(|| Value::Array(vec![]));
             let a = h.as_array_mut().unwrap();
             a.push(Value::from(value));
@@ -452,7 +463,7 @@ pub fn collect_dyno_sample(
             }
             let vals = a.iter().filter_map(Value::as_f64).collect::<Vec<_>>();
             em.insert(field.into(), Value::from(compute_dyno_value(&vals)));
-            changed = true
+            changed = true;
         }
     }
     changed
