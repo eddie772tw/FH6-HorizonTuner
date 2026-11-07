@@ -29,3 +29,8 @@
 **物理洞察 (Physics Learning):** 底盤正規化函式（`normalize_road_inputs` 與 `rally_calculation_inputs`）及 AWD 後軸動力偏置解算在處理前後配重比時，原先採用 `p.weight_distribution.unwrap_or(50.0).max(1.0).min(99.0)`。依據 IEEE 754 規範，當配重傳入 `Some(f64::NAN)` 時，`NaN.max(1.0)` 會錯誤評估為 `1.0`（即 1% 前軸 / 99% 後軸），導致原本應安全回退至 50.0% 中性配重的車輛突變為極端重尾病態模型；更嚴重的是，空力解算 `resolve_aero_downforce` 內部具備有限數過濾會正確回退至 50.0%，造成同一車輛調校流程中空力載荷依據 50% 配重解算，而底盤彈簧、防傾桿與 AWD 扭力偏置（退化至 85.0% 極限）卻依據 1% 配重解算，引發嚴重的懸吊剛性對稱性破裂（Suspension Stiffness Symmetry Breaking）與動力學不一致。同時，Road 起步齒比解算在面對零扭力或非有限扭力時，原先直接除算引發除以零產生 `INFINITY` 總齒比並癱瘓整車變速箱解算。
 **行動 (Action):** 底盤解算器與 AWD 後軸偏置全面落實 `p.weight_distribution.filter(|v| v.is_finite()).unwrap_or(50.0).clamp(1.0, 99.0)`，消除非有限數污染並保證 50.0% 中性配重下的防傾桿與阻尼完全對稱性；起步齒比解算補齊扭力有限正數防護，在無有效扭力輸出時安全由速度上限先驗平滑接管，確保動力學封閉性。
 **署名:** Mechanic as Antigravity
+
+## 2026-11-08 - Chassis Load Quantize Closure, Critical Damping Scaling & FWD Normalization
+**物理洞察 (Physics Learning):** 底盤工程負載基準模型（`rust/chassis-load-baseline/v1`）之滑桿取位純函式 `quantize` 原先直接以 `value.clamp(min, max)` 邊界限制，在面對倒置滑桿區間（`min > max`，常見於遊戲未初始化或極端配件改裝）或非有限數（`NaN`、`Infinity`）時，會直接觸發 Rust `f64::clamp` 的斷言 panic 崩潰。此外，前驅車（FWD）在前軸 10% 彈簧軟化以換取前輪機械抓地力與後軸 10% 剛性支撐轉向響應的動力學補償中，原先採用裸字串 `s.eq_ignore_ascii_case("FWD")` 判定，若驅動形式帶有前後空白字符（如 `" fwd "`、`"FWD "`）會判定失敗，導致前驅動力學偏置被靜默丟棄並退化為中性軸荷。同時，臨界阻尼平方根比例縮放缺少除以零與負數防護，且診斷旗標邊界欠缺微小浮點數精度保護。
+**行動 (Action):** 底盤負載模型全面落實 `quantize` 數值有限性與區間正向排序重整（`(min.min(max), min.max(max))`）確保數學封閉性（Mathematical Closure）與零 panic；統一改用 `Drivetrain::from_str_loose` 嚴格消除大小寫與空白敏感性；臨界阻尼開根號全面落實 `(spring / reference.max(1e-6)).max(0.0).sqrt()` 與 `1e-7` 精度保護，杜絕浮點邊界抖動。
+**署名:** Mechanic as Antigravity
