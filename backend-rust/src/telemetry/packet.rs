@@ -105,7 +105,13 @@ pub fn parse_packet(data: &[u8]) -> Result<Value, String> {
     put(
         &mut m,
         "WheelOnRumbleStrip",
-        Value::Array((29..33).map(|i| Value::from(i32_at(data, i))).collect()),
+        // [PERF] Direct 4-element initialization to eliminate Iterator and Vec reallocations.
+        Value::Array(vec![
+            Value::from(i32_at(data, 29)),
+            Value::from(i32_at(data, 30)),
+            Value::from(i32_at(data, 31)),
+            Value::from(i32_at(data, 32)),
+        ]),
     );
     put(&mut m, "CarOrdinal", Value::from(i32_at(data, 53)));
     put(&mut m, "CarClass", Value::from(i32_at(data, 54)));

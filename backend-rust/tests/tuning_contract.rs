@@ -681,3 +681,138 @@ fn chassis_weight_distribution_nan_protection_and_symmetry_closure() {
     assert_eq!(road_gearing.gears.len(), 6);
     assert!(road_gearing.gears.windows(2).all(|w| w[0] > w[1]));
 }
+
+#[test]
+fn alignment_drivetrain_normalization_and_gearing_kinematics_closure() {
+    use fh6_backend::tuning::{calc_gear_rpm, calc_gear_speed};
+
+    // Case 1: Drivetrain case & whitespace normalization in static alignment
+    let p_fwd_upper = TuningCarParams {
+        weight: Some(1200.0),
+        weight_distribution: Some(60.0),
+        drivetrain: Some("FWD".into()),
+        ..Default::default()
+    };
+    let p_fwd_lower = TuningCarParams {
+        drivetrain: Some("  fwd  ".into()),
+        ..p_fwd_upper.clone()
+    };
+    let align_upper = calculate_static_alignment(RaceGoal::Road, Season::Summer, &p_fwd_upper);
+    let align_lower = calculate_static_alignment(RaceGoal::Road, Season::Summer, &p_fwd_lower);
+    assert_eq!(align_upper, align_lower);
+
+    // In Drag mode, FWD must have front traction tire pressure (lower) and rear stiff (higher)
+    let drag_fwd_upper = calculate_static_alignment(RaceGoal::Drag, Season::Summer, &p_fwd_upper);
+    let drag_fwd_lower = calculate_static_alignment(RaceGoal::Drag, Season::Summer, &p_fwd_lower);
+    assert_eq!(drag_fwd_upper, drag_fwd_lower);
+    assert!(drag_fwd_lower.pc_f < drag_fwd_lower.pc_r);
+
+    // Case 2: calc_gear_speed & calc_gear_rpm singular value & non-finite protection
+    for bad_val in [f64::NAN, f64::INFINITY, f64::NEG_INFINITY, 0.0, -10.0] {
+        assert_eq!(calc_gear_speed(bad_val, 2.5, 4.0, 0.32), 0.0);
+        assert_eq!(calc_gear_speed(6000.0, bad_val, 4.0, 0.32), 0.0);
+        assert_eq!(calc_gear_speed(6000.0, 2.5, bad_val, 0.32), 0.0);
+        assert_eq!(calc_gear_speed(6000.0, 2.5, 4.0, bad_val), 0.0);
+
+        assert_eq!(calc_gear_rpm(bad_val, 2.5, 4.0, 0.32), 0.0);
+        assert_eq!(calc_gear_rpm(30.0, bad_val, 4.0, 0.32), 0.0);
+        assert_eq!(calc_gear_rpm(30.0, 2.5, bad_val, 0.32), 0.0);
+        assert_eq!(calc_gear_rpm(30.0, 2.5, 4.0, bad_val), 0.0);
+    }
+
+    // Kinematic consistency under valid finite inputs
+    let speed = calc_gear_speed(6000.0, 2.5, 4.0, 0.32);
+    let rpm_back = calc_gear_rpm(speed, 2.5, 4.0, 0.32);
+    assert!((rpm_back - 6000.0).abs() < 1e-6);
+
+    // Case 3: Secondary correction non-finite protection
+    let sc_non_finite = GearingSecondaryCorrection {
+        simulated_top_speed: Some(f64::INFINITY),
+        soft_max_speed: Some(f64::NAN),
+        drag_finish_speed_kmh: Some(f64::INFINITY),
+        drag_finish_speed_provenance: Some("telemetry".into()),
+    };
+    let rally_gearing = fh6_backend::tuning::calculate_aego_gearing(
+        RaceGoal::Rally,
+        6,
+        &p_fwd_upper,
+        7500.0,
+        Some(&sc_non_finite),
+    );
+    assert_ne!(rally_gearing.unsupported, Some(true));
+    assert!(rally_gearing.final_drive >= 2.0 && rally_gearing.final_drive <= 6.1);
+}
+
+#[test]
+fn chassis_drift_degeneracy_and_workflow_drivetrain_normalization() {
+    use fh6_backend::tuning::workflow::mechanical_fields;
+    use serde_json::json;
+
+    // Case 1: Drift mode with fixed/degenerate spring rate (k_min == k_max) must retain neutral 10.5 damping
+    let p_fixed_spring = TuningCarParams {
+        weight: Some(1200.0),
+        weight_distribution: Some(50.0),
+        drivetrain: Some("RWD".into()),
+        spring_front_min: Some(50.0),
+        spring_front_max: Some(50.0),
+        spring_rear_min: Some(50.0),
+        spring_rear_max: Some(50.0),
+        ..Default::default()
+    };
+    let drift_fixed = calculate_chassis_tuning(RaceGoal::Drift, &p_fixed_spring);
+    assert_eq!(
+        drift_fixed.damping.rebound_f, 10.5,
+        "Degenerate front spring rate in Drift must yield neutral 10.5 damping, not 1.0 collapse"
+    );
+    assert_eq!(
+        drift_fixed.damping.rebound_r, 10.5,
+        "Degenerate rear spring rate in Drift must yield neutral 10.5 damping, not 1.0 collapse"
+    );
+    assert_eq!(drift_fixed.damping.bump_f, 6.3);
+    assert_eq!(drift_fixed.damping.bump_r, 6.3);
+
+    // Case 2: Drift and Drag with non-finite / corrupted inputs must not panic or propagate NaN
+    let p_corrupt = TuningCarParams {
+        weight: Some(f64::NAN),
+        weight_distribution: Some(-20.0),
+        spring_front_min: Some(f64::INFINITY),
+        ..Default::default()
+    };
+    let drift_corrupt = calculate_chassis_tuning(RaceGoal::Drift, &p_corrupt);
+    assert!(drift_corrupt.springs.front.is_finite() && drift_corrupt.springs.front > 0.0);
+    assert!(drift_corrupt.damping.rebound_f.is_finite() && drift_corrupt.damping.rebound_f > 0.0);
+
+    let drag_corrupt = calculate_chassis_tuning(RaceGoal::Drag, &p_corrupt);
+    assert!(drag_corrupt.springs.front.is_finite() && drag_corrupt.springs.front > 0.0);
+
+    // Case 3: Workflow mechanical_fields drivetrain normalization (case-insensitive & trimmed)
+    let c = calculate_chassis_tuning(RaceGoal::Road, &p_fixed_spring);
+    let a = calculate_static_alignment(RaceGoal::Road, Season::Summer, &p_fixed_spring);
+
+    for (input_drive, has_front_diff, has_rear_diff, has_center_diff) in [
+        ("rwd", false, true, false),
+        (" RWD ", false, true, false),
+        ("fwd", true, false, false),
+        (" FWD ", true, false, false),
+        ("awd", true, true, true),
+        (" AWD ", true, true, true),
+    ] {
+        let profile = json!({ "drivetrain": input_drive });
+        let fields = mechanical_fields(&profile, &c, &a);
+        assert_eq!(
+            fields.contains_key("diff.front.acceleration"),
+            has_front_diff,
+            "drivetrain '{input_drive}' front diff mismatch"
+        );
+        assert_eq!(
+            fields.contains_key("diff.rear.acceleration"),
+            has_rear_diff,
+            "drivetrain '{input_drive}' rear diff mismatch"
+        );
+        assert_eq!(
+            fields.contains_key("diff.center"),
+            has_center_diff,
+            "drivetrain '{input_drive}' center diff mismatch"
+        );
+    }
+}
