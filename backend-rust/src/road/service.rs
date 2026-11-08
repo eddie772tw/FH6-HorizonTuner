@@ -84,13 +84,12 @@ impl RoadService {
         if let Some(raw) = raw_id {
             if progressed {
                 let same_identity = self.latest_raw_identity == Some(raw);
-                self.stable_frames = if same_identity
-                    && self.latest_timestamp.is_none_or(|x| ts.unwrap() > x)
-                {
-                    self.stable_frames + 1
-                } else {
-                    1
-                };
+                self.stable_frames =
+                    if same_identity && self.latest_timestamp.is_none_or(|x| ts.unwrap() > x) {
+                        self.stable_frames + 1
+                    } else {
+                        1
+                    };
                 // [PERF] Only construct and allocate the JSON Value when vehicle identity actually changes.
                 // In steady-state 60Hz telemetry, this eliminates redundant Map deep-clones per frame.
                 if !same_identity {
@@ -113,14 +112,19 @@ impl RoadService {
         if self.sequence <= armed {
             return;
         }
-        if raw_id.is_some() {
+        if let Some(raw) = raw_id {
             // [PERF] Borrow expected identity directly; avoid cloning the JSON object on every frame.
             let expected = self
                 .active
                 .as_ref()
                 .and_then(Value::as_object)
                 .and_then(|a| a.get("identity"));
-            if self.latest_identity.as_ref() != expected {
+            let matches_expected = if self.latest_raw_identity == Some(raw) {
+                self.latest_identity.as_ref() == expected
+            } else {
+                Some(&Self::identity_value(raw)) == expected
+            };
+            if !matches_expected {
                 self.flush_pending();
                 let run = self.active.take();
                 if let Some(run) = run {
