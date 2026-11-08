@@ -17,7 +17,7 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({ updateInfo, isOpen, on
   const [downloadStats, setDownloadStats] = useState<{ downloaded: number; total: number }>({ downloaded: 0, total: 0 });
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const panelRef = useModalFocus<HTMLDivElement>(isOpen && Boolean(updateInfo), () => {
-    if (status !== 'downloading') onClose();
+    if (status !== 'downloading' && status !== 'downloaded') onClose();
   });
 
   if (!isOpen || !updateInfo) return null;
@@ -101,7 +101,7 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({ updateInfo, isOpen, on
           pointerEvents: 'none',
         }}
       >
-        <div className="modal-dialog modal-dialog-centered modal-dialog-scrollable" style={{ width: 'calc(100% - 1rem)', maxWidth: '40rem', pointerEvents: 'auto' }}>
+        <div className="modal-dialog modal-dialog-centered modal-dialog-scrollable" style={{ width: 'calc(100% - 1rem)', maxWidth: '40rem' }}>
           <div className="modal-content glass-panel border border-primary border-opacity-25 shadow-lg">
 
             {/* Header */}
