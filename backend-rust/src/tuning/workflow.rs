@@ -482,26 +482,17 @@ pub fn mechanical_fields(
         }
     }
     add("caster.front", a.caster, "deg");
-    let drive = profile["drivetrain"]
-        .as_str()
-        .map(super::types::Drivetrain::from_str_loose)
-        .unwrap_or(super::types::Drivetrain::RWD);
-    match drive {
-        super::types::Drivetrain::FWD => {
-            add("diff.front.acceleration", c.diff.accel_f, "%");
-            add("diff.front.deceleration", c.diff.decel_f, "%");
-        }
-        super::types::Drivetrain::RWD => {
-            add("diff.rear.acceleration", c.diff.accel_r, "%");
-            add("diff.rear.deceleration", c.diff.decel_r, "%");
-        }
-        super::types::Drivetrain::AWD => {
-            add("diff.front.acceleration", c.diff.accel_f, "%");
-            add("diff.front.deceleration", c.diff.decel_f, "%");
-            add("diff.rear.acceleration", c.diff.accel_r, "%");
-            add("diff.rear.deceleration", c.diff.decel_r, "%");
-            add("diff.center", c.diff.center_rear, "%");
-        }
+    let drive = profile["drivetrain"].as_str().map(str::trim);
+    if !drive.is_some_and(|s| s.eq_ignore_ascii_case("RWD")) {
+        add("diff.front.acceleration", c.diff.accel_f, "%");
+        add("diff.front.deceleration", c.diff.decel_f, "%");
+    }
+    if !drive.is_some_and(|s| s.eq_ignore_ascii_case("FWD")) {
+        add("diff.rear.acceleration", c.diff.accel_r, "%");
+        add("diff.rear.deceleration", c.diff.decel_r, "%");
+    }
+    if drive.is_some_and(|s| s.eq_ignore_ascii_case("AWD")) {
+        add("diff.center", c.diff.center_rear, "%");
     }
     fields
 }
