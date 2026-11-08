@@ -816,3 +816,85 @@ fn chassis_drift_degeneracy_and_workflow_drivetrain_normalization() {
         );
     }
 }
+
+#[test]
+fn gearing_secondary_redistribution_closure_and_monotonicity_bounds() {
+    use fh6_backend::tuning::{
+        calculate_aego_gearing, GearingSecondaryCorrection, RaceGoal, TuningCarParams,
+    };
+
+    // Case 1: Low redline ratio (r_redline_hp = 4500 / 9000 = 0.50) with secondary correction
+    // must enforce r_max >= r_min, maintaining progressive gear spacing without NaN or ratio inversion
+    let p_low_redline = TuningCarParams {
+        weight: Some(1300.0),
+        weight_distribution: Some(50.0),
+        drivetrain: Some("AWD".into()),
+        max_hp: Some(300.0),
+        max_torque: Some(400.0),
+        max_hp_rpm: Some(4500.0),
+        max_torque_rpm: Some(3000.0),
+        ..Default::default()
+    };
+    let sc_top_speed = GearingSecondaryCorrection {
+        simulated_top_speed: Some(250.0),
+        soft_max_speed: None,
+        drag_finish_speed_kmh: None,
+        drag_finish_speed_provenance: None,
+    };
+    let result_sc = calculate_aego_gearing(
+        RaceGoal::Rally,
+        6,
+        &p_low_redline,
+        9000.0,
+        Some(&sc_top_speed),
+    );
+    assert_ne!(result_sc.unsupported, Some(true));
+    assert_eq!(result_sc.gears.len(), 6);
+    assert!(result_sc.gears.iter().all(|&g| g.is_finite() && g > 0.0));
+    assert!(result_sc.gears.windows(2).all(|g| g[0] > g[1]));
+
+    // Case 2: Redline-peaked engine (rpm_hp == max_rpm) must clamp step ratio to <= 0.95
+    let p_peak_redline = TuningCarParams {
+        weight: Some(1200.0),
+        weight_distribution: Some(50.0),
+        drivetrain: Some("RWD".into()),
+        max_hp: Some(250.0),
+        max_torque: Some(220.0),
+        max_hp_rpm: Some(8500.0),
+        max_torque_rpm: Some(6500.0),
+        ..Default::default()
+    };
+    let result_peak = calculate_aego_gearing(
+        RaceGoal::Rally,
+        6,
+        &p_peak_redline,
+        8500.0,
+        None,
+    );
+    assert_ne!(result_peak.unsupported, Some(true));
+    assert!(result_peak.gears.windows(2).all(|g| g[0] > g[1]));
+    for w in result_peak.gears.windows(2) {
+        assert!(w[1] <= w[0] * 0.95 + 1e-6, "Step ratio must not exceed 0.95 upper bound");
+    }
+
+    // Case 3: Ultra-low power RPM must not collapse high gears to 0.10 bottom limit
+    let p_low_rpm = TuningCarParams {
+        weight: Some(1500.0),
+        weight_distribution: Some(50.0),
+        drivetrain: Some("AWD".into()),
+        max_hp: Some(200.0),
+        max_torque: Some(500.0),
+        max_hp_rpm: Some(1800.0),
+        max_torque_rpm: Some(1500.0),
+        ..Default::default()
+    };
+    let result_low_rpm = calculate_aego_gearing(
+        RaceGoal::Rally,
+        6,
+        &p_low_rpm,
+        6000.0,
+        None,
+    );
+    assert_ne!(result_low_rpm.unsupported, Some(true));
+    assert!(result_low_rpm.gears.last().copied().unwrap() > 0.20, "High gear must not collapse to 0.10");
+}

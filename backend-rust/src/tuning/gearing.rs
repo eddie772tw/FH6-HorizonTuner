@@ -663,7 +663,7 @@ fn calculate_gearing(
                         } else {
                             (0.62_f64).max(r_redline_hp * (0.75_f64).max(r_band))
                         };
-                        let r_max = (0.92_f64).min(r_redline_hp);
+                        let r_max = (0.92_f64).min(r_redline_hp).max(r_min);
 
                         let mut r_raw = Vec::with_capacity(num_steps);
                         let mut prod_raw = 1.0;
@@ -678,7 +678,17 @@ fn calculate_gearing(
                             prod_raw *= r_val;
                         }
 
-                        let s = (new_gtop / (gears[0] * prod_raw)).powf(1.0 / num_steps as f64);
+                        let denom = gears[0] * prod_raw;
+                        let ratio = if denom.is_finite() && denom > 0.0 {
+                            new_gtop / denom
+                        } else {
+                            0.0
+                        };
+                        let s = if ratio.is_finite() && ratio > 0.0 {
+                            ratio.powf(1.0 / num_steps as f64)
+                        } else {
+                            1.0
+                        };
                         for i in 1..top_gear_idx {
                             let r_adj = r_raw[i - 1] * s;
                             gears[i] = gears[i - 1] * r_adj;
@@ -711,7 +721,7 @@ fn calculate_gearing(
     let monotonic_limit = active_gear_count;
     let max_step_ratio_rounded =
         if max_rpm > 0.0 && race_goal != RaceGoal::Drift && race_goal != RaceGoal::Drag {
-            (rpm_hp + 50.0) / max_rpm
+            ((rpm_hp + 50.0) / max_rpm).clamp(0.65, 0.95)
         } else {
             0.92
         };
