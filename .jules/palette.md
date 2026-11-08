@@ -80,6 +80,11 @@
 **署名:** Palette as Antigravity
 
 
+## 2026-11-06 - Modal Backdrop Guarding During Async Payloads and Progress Bar Semantic ValueText
+**學習 (Learning):** In critical system modals like OTA software updates, backdrop overlays and dialog wrappers must decouple pointer events (`pointerEvents: 'none'` on viewport wrapper, `pointerEvents: 'auto'` on dialog content) to allow backdrop click dismissals during idle review, while strictly suppressing backdrop dismissal during active operations (such as downloading payloads or staging application relaunch) to prevent user-initiated race conditions or accidental cancellation. Furthermore, dynamic progress bars during binary payloads require both `aria-label` and `aria-valuetext` (coupling percentage with transferred byte counts) so assistive technologies convey actionable transfer status rather than isolated numbers.
+**行動 (Action):** Guard modal backdrop click handlers against active async states (`downloading`, `downloaded`), bind `aria-labelledby` and `aria-describedby` to the header and version transition elements, and always accompany animated progress bars with descriptive `aria-label` and composite byte-progress `aria-valuetext`.
+**署名:** Palette as Antigravity
+
 ## 2026-11-08 - Escape Cancellation and Out-of-Range ARIA Invariants in Generic Numeric Inputs
 **學習 (Learning):** In live data-entry numeric fields (such as `DecimalInput`), firing `onChange` during typing while performing clamp normalization on `blur` creates an interaction trap: pressing `Escape` to discard an accidental edit cannot simply invoke `blur()`, because the native blur event commits the dirty local text and retains clamped errors. Furthermore, postponing range feedback until blur leaves screen readers and keyboard users unaware of invalid inputs while actively typing.
 **行動 (Action):** Snapshot entry values in `initialValueRef` on focus and guard blur handlers with an `isCancellingRef` flag. When `Escape` is pressed, revert external state via `onChange(initialValueRef.current)`, restore formatted local text, and safely exit without triggering blur commits. Continuously evaluate numeric text against `min`/`max` bounds to broadcast `aria-invalid` and provide accessible range semantics (`aria-valuemin`, `aria-valuemax`, `aria-valuenow`).

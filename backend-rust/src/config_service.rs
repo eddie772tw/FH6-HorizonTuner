@@ -165,7 +165,7 @@ impl ConfigService {
             }
             ("GET",["api","languages"]) => Ok(self.languages.list()),
             ("GET",["api","languages",code]) => {
-                if !code.chars().all(|c| c.is_ascii_alphanumeric() || c=='-') {return Err(ApiError::invalid("Invalid language code"));}
+                if code.len() > 32 || !code.chars().all(|c| c.is_ascii_alphanumeric() || c=='-') {return Err(ApiError::invalid("Invalid language code"));}
                 let code=code.to_lowercase(); if code=="en-us" {return Ok(json!({}));}
                 Ok(self.languages.get(&code))
             }

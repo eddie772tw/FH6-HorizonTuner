@@ -53,6 +53,14 @@ it('reverts edits on Escape, applies ARIA range attributes, and updates invalid 
   expect(input.getAttribute('aria-invalid')).toBeNull();
   expect(onChange).toHaveBeenLastCalledWith(2.5);
 
+  // Focusing and pressing Escape without editing should not fire onChange again
+  onChange.mockClear();
+  await act(async () => {
+    input.focus();
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+  });
+  expect(onChange).not.toHaveBeenCalled();
+
   // Test disabled state
   await act(async () => {
     root.render(<DecimalInput value={10} disabled={true} onChange={() => {}} />);

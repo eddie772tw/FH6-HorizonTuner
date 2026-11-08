@@ -124,9 +124,12 @@ export const DecimalInput: React.FC<DecimalInputProps> = ({
       (e.target as HTMLInputElement).blur();
     } else if (e.key === 'Escape') {
       isCancellingRef.current = true;
+      const wasEdited = edited.current;
       edited.current = false;
       const original = initialValueRef.current;
-      onChange(original == null || Number.isNaN(original) ? undefined : original);
+      if (wasEdited) {
+        onChange(original == null || Number.isNaN(original) ? undefined : original);
+      }
       if (original == null || Number.isNaN(original)) {
         setLocalText('');
       } else {
@@ -167,14 +170,13 @@ export const DecimalInput: React.FC<DecimalInputProps> = ({
         background: 'var(--surface-2)',
         color: 'var(--text-primary)',
         borderColor: isOutOfRange
-          ? 'var(--bs-warning, #f59e0b)'
+          ? 'var(--bs-warning)'
           : isFocused
-            ? 'var(--bs-primary, #00b4ff)'
+            ? 'var(--bs-primary)'
             : 'var(--glass-border)',
-        outline: isFocused ? '2px solid rgba(0, 180, 255, 0.25)' : 'none',
         opacity: disabled ? 0.6 : 1,
         cursor: disabled ? 'not-allowed' : undefined,
-        transition: 'border-color 0.15s ease, outline 0.15s ease, opacity 0.15s ease',
+        transition: 'border-color 0.15s ease, opacity 0.15s ease',
         ...style,
       }}
       value={localText}
