@@ -11,8 +11,8 @@
 - **Evidence**：
   - 合入後端效能與安全 PR：`#622`、`#624`、`#626`、`#628`、`#630`、`#632`、`#634`、`#636`、`#638`。
   - 修復、補齊 `docs/visual-review/pr-{623,625,627,631,633,635,639}/` 視覺審查證據並合入前端 PR：`#623`、`#625`、`#627`、`#631`、`#633`、`#635`、`#639`。
-  - 附完整說明關閉孤島死碼 PR：`#629`、`#637`。
-  - `main` 分支 Rust 後端測試、前端 Vitest 測試、`cargo fmt --check`、`check_repo_path_case.py` 與 `git diff --check` 全數通過，開啟中 PR 數量歸零。
+  - 附完整說明關閉孤島死碼 PR：`#629`、`#637`，並透過全入口（`main.tsx`、`lite-main.tsx`、`companion-main.tsx`、`platform/hud.*.tsx`）靜態可達性分析，於 `main` 分支一併移除 21 個舊版孤島組件與孤立測試檔（`CarParamsView.tsx`、`DynoChart.tsx`、`AdjustabilityLimits.tsx`、`AdvancedGeometry.tsx`、`BasicCarInfo.tsx`、`CommonStyles.ts`、`ToggleSwitch.tsx`、`TuningSlider.tsx`、`TuningSliderGrid.tsx`、`ARBTuner.tsx`、`AppliedSetupTable.tsx`／`.test.ts`、`DifferentialTuner.tsx`、`DragTestSection.tsx`、`DriftModeGuidance.tsx`、`RecommendationComparisonPanel.tsx`／`.test.tsx`、`Step2GearboxSetup.tsx`、`SuspensionTuner.tsx`、`SteerBar.tsx`、`utils/qrCode.ts`），保留仍由 `Step1GoalSetup.tsx` 與 `CarParamsContext.tsx` 消費之 `EvModeSwitch.tsx` 及 `dynoQuality.ts`。
+  - `main` 分支 Rust 後端測試、前端 Vitest 測試、`pnpm -C frontend run build`、`cargo fmt --check`、`check_repo_path_case.py` 與 `git diff --check` 全數通過，開啟中 PR 數量歸零。
 
 ## 2026-11-06 / 60Hz UDP 接收熱迴圈之 SocketAddr 零拷貝與度量收集器零配置（Bolt as Antigravity）
 
