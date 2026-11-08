@@ -125,7 +125,7 @@ const EngineRpmDisplay: React.FC = React.memo(() => {
           ctx.lineTo(leadX, y + segHeight);
           ctx.closePath();
 
-          ctx.fillStyle = isShiftAlert ? theme.pointer : '#ffffff';
+          ctx.fillStyle = theme.pointer;
           ctx.globalAlpha = isShiftAlert ? 0.6 : 0.35;
           ctx.shadowColor = isShiftAlert ? theme.pointer : primary;
           ctx.shadowBlur = glowStrength * 8 * dpr;
