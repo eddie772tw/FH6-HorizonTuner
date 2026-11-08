@@ -453,9 +453,7 @@ pub fn collect_dyno_sample(
         ("torque", torque, &torque_neighbors, "torque_hist"),
     ] {
         if dyno_is_reasonable(value, neigh, DYNO_ANOMALY_THRESHOLD) {
-            let h = em
-                .entry(hist_key)
-                .or_insert_with(|| Value::Array(vec![]));
+            let h = em.entry(hist_key).or_insert_with(|| Value::Array(vec![]));
             let a = h.as_array_mut().unwrap();
             a.push(Value::from(value));
             if a.len() > DYNO_MAX_HISTORY {

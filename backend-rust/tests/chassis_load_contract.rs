@@ -344,3 +344,52 @@ fn increasing_load_is_monotone_and_does_not_change_independent_fields() {
         }
     }
 }
+
+#[test]
+fn chassis_load_quantize_closure_and_fwd_drivetrain_normalization() {
+    // 1. Quantize Mathematical Closure: inverted ranges and non-finite values must not panic
+    assert_eq!(chassis_load::quantize(8.0, 15.0, 5.0), 8.0);
+    assert_eq!(chassis_load::quantize(20.0, 15.0, 5.0), 15.0);
+    assert_eq!(chassis_load::quantize(2.0, 15.0, 5.0), 5.0);
+    assert!(chassis_load::quantize(f64::NAN, 5.0, 15.0).is_nan());
+    assert_eq!(chassis_load::quantize(8.0, f64::NAN, 15.0), 8.0);
+    assert_eq!(chassis_load::quantize(8.0, 5.0, f64::INFINITY), 8.0);
+
+    // 2. FWD Drivetrain Normalization: whitespace and case variations must match canonical FWD
+    let p_canonical = params(json!({
+        "weight": 1525.43,
+        "weight_distribution": 56.0,
+        "drivetrain": "FWD",
+        "spring_front_min": 3.11,
+        "spring_front_max": 15.56,
+        "spring_rear_min": 5.13,
+        "spring_rear_max": 15.56,
+    }));
+    let expected_fwd = pair(&calculate(RaceGoal::Road, &p_canonical));
+
+    for variant in [" fwd ", "fwd", "FWD ", "Fwd", "  fwd  ", "fwd\n"] {
+        let mut p = p_canonical.clone();
+        p.drivetrain = Some(variant.into());
+        let result = calculate(RaceGoal::Road, &p);
+        assert_eq!(
+            pair(&result),
+            expected_fwd,
+            "Variant '{variant}' must produce identical FWD spring bias"
+        );
+        assert!(result.values.damping.rebound_f.is_finite());
+        assert!(result.values.damping.rebound_r.is_finite());
+    }
+
+    // 3. Precision epsilon prevents floating point jitter at boundary limits
+    let p_boundary = params(json!({
+        "weight": 1400.0,
+        "weight_distribution": 50.0,
+        "spring_front_min": 10.0,
+        "spring_front_max": 20.0,
+        "spring_rear_min": 10.0,
+        "spring_rear_max": 20.0,
+    }));
+    let res_boundary = calculate(RaceGoal::Road, &p_boundary);
+    assert_eq!(res_boundary.diagnostics["axles"][0]["baseLimited"], false);
+    assert_eq!(res_boundary.diagnostics["axles"][1]["baseLimited"], false);
+}
