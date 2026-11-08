@@ -358,6 +358,53 @@ fn dyno_quality_and_collection_match_generated_python_fixture() {
 }
 
 #[test]
+fn dyno_collector_zero_clone_neighbor_aggregation_and_registry_steady_state() {
+    let mut registry = DynoQualityGateRegistry::default();
+    let car_id = "100";
+    let mut quality = registry.observe(car_id, &serde_json::json!({"TimestampMS":1000,"PositionX":0,"PositionY":0,"PositionZ":0,"SpeedMetersPerSecond":10,"Gear":4,"CarOrdinal":100,"CarClass":3,"CarPerformanceIndex":800}));
+    for n in 1..8 {
+        quality = registry.observe(car_id, &serde_json::json!({"TimestampMS":1000+n*16,"PositionX":0,"PositionY":0,"PositionZ":(n as f64)*0.16,"SpeedMetersPerSecond":10,"Gear":4,"CarOrdinal":100,"CarClass":3,"CarPerformanceIndex":800}));
+    }
+    assert!(quality.can_collect);
+    assert_eq!(quality.status, "confident");
+
+    // Seed existing neighbor buckets to verify neighbor aggregation without map cloning
+    let mut profile = serde_json::json!({
+        "drivetrain": "RWD",
+        "dyno_curve": {
+            "3950": {"hp": 300.0, "torque": 280.0, "hp_hist": [300.0], "torque_hist": [280.0]},
+            "4050": {"hp": 310.0, "torque": 290.0, "hp_hist": [310.0], "torque_hist": [290.0]}
+        }
+    });
+    let settings = serde_json::json!({"dyno_recording": true, "dyno_test_gear": 4, "dyno_filter_slip": true, "dyno_filter_transients": false});
+    let frame = serde_json::json!({
+        "CurrentEngineRpm": 4000,
+        "PowerWatts": 305.0 * 745.7,
+        "TorqueNewtons": 285.0 / 0.73756,
+        "AccelInput": 255,
+        "Gear": 4,
+        "ClutchInput": 0,
+        "BrakeInput": 0,
+        "HandBrakeInput": 0,
+        "TireSlipRatio": [0, 0, 0, 0],
+        "TimestampMS": 1200
+    });
+    assert!(collect_dyno_sample(
+        &mut profile,
+        &frame,
+        &quality,
+        &settings,
+        &registry,
+        car_id
+    ));
+    let entry = &profile["dyno_curve"]["4000"];
+    assert!((entry["hp"].as_f64().unwrap() - 305.0).abs() < 1e-3);
+    assert!((entry["torque"].as_f64().unwrap() - 285.0).abs() < 1e-3);
+    assert_eq!(entry["hp_hist"].as_array().unwrap().len(), 1);
+    assert_eq!(entry["torque_hist"].as_array().unwrap().len(), 1);
+}
+
+#[test]
 fn race_recorder_clock_injection_and_command_worker_boundary() {
     let mut r = RaceRecorder::new_with_context(
         RaceRecorderConfig::default(),
