@@ -335,7 +335,9 @@ fn sanitize_device_id(raw: &str) -> String {
     let trimmed = raw.trim();
     if !trimmed.is_empty()
         && trimmed.len() <= MAX_DEVICE_ID_LEN
-        && trimmed.chars().all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
+        && trimmed
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
     {
         trimmed.to_string()
     } else {
@@ -450,7 +452,10 @@ mod tests {
     fn test_device_name_and_id_sanitization() {
         assert_eq!(sanitize_device_name(""), "Android Device");
         assert_eq!(sanitize_device_name("   "), "Android Device");
-        assert_eq!(sanitize_device_name("Pixel\u{0000}\u{001f}\n7 Pro\t"), "Pixel7 Pro");
+        assert_eq!(
+            sanitize_device_name("Pixel\u{0000}\u{001f}\n7 Pro\t"),
+            "Pixel7 Pro"
+        );
         let long_name = "A".repeat(100);
         assert_eq!(sanitize_device_name(&long_name).len(), MAX_DEVICE_NAME_LEN);
 
@@ -482,6 +487,8 @@ mod tests {
         assert!(!devices.iter().any(|d| d.id == "device-000"));
         assert!(!devices.iter().any(|d| d.id == "device-004"));
         assert!(devices.iter().any(|d| d.id == "device-005"));
-        assert!(devices.iter().any(|d| d.id == format!("device-{:03}", MAX_PAIRED_DEVICES + 4)));
+        assert!(devices
+            .iter()
+            .any(|d| d.id == format!("device-{:03}", MAX_PAIRED_DEVICES + 4)));
     }
 }
