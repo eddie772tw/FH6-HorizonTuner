@@ -38,3 +38,9 @@
 **學習 (Learning):** 本機桌面應用（Tauri Sidecar / Localhost HTTP）在瀏覽器生態系中具備特殊的攻擊面。許多開發者誤以為僅需驗證跨站 POST 的 `Origin` 即可抵禦跨站攻擊，然而在 DNS Rebinding 威脅模型下，瀏覽器在同源視野下發起的 GET 請求不會觸發 CORS 攔截，且通常不帶跨來源 Origin 標頭。因此，服務端若未在 HTTP 管道第一線對 `Host` 標頭執行嚴格的受信任主機（`localhost`, `127.0.0.1`, `::1`, `tauri.localhost`, `testserver`）白名單比對，將使所有同源唯讀端點暴露於無授權資料竊取風險。
 **預防 (Prevention):** 於後端 HTTP 網路層實作 `allowed_host` 檢查，在 `origin_security` middleware 入口處對所有進站請求強制驗證 `Host` 標頭，嚴格限制主機名稱僅允許本機回環地址與受信任的桌面客戶端標識，凡非白名單網域或缺少 Host 標頭者一律以 403 Forbidden 拒絕，並於測試套件補齊合法主機放行、惡意重綁定網域阻斷與安全標頭一致性驗證，落實深度防禦（Defense in Depth）。
 **署名:** Sentinel as Antigravity
+
+## 2026-11-08 - Language File Lookup SafePath Containment and Code Boundary Defense
+**漏洞/脆弱點 (Vulnerability):** 後端語言模組 `backend-rust/src/languages.rs::Languages::get` 原先直接透過 `self.root.join("lang").join(format!("{code}.json"))` 拼接外部傳入之語言代碼，未遵循專案 Core Invariant #4 採用 `storage::safe_path` 進行目錄邊界與 Windows MS-DOS 保留設備名稱驗證；同時 `config_service.rs` 中的 `GET /api/languages/{code}` 端點亦缺少輸入長度上限，使得外部請求若傳入 DOS 保留名稱（如 `con`, `aux`, `nul`, `prn`, `com1-9`, `lpt1-9`, `clock$`, `conin$`, `conout$`），底層 Win32 `fs::metadata` 將把檔案路徑直接解析為字元設備或通訊埠，造成 I/O 阻塞（Hang）、拒絕存取或潛在的 DoS 服務拒絕。
+**學習 (Learning):** 專案的核心路徑防護函式 `storage::safe_path` 雖已具備完整的目錄包含性檢驗與 MS-DOS 保留設備攔截，但若特定子系統（如語言覆蓋讀取）直接使用 `Path::join` 拼接外部參數並直接調用檔案系統 API，將形成安全防護死角。外部參數在進入檔案系統操作前，必須統一經由 `safe_path` 進行沙盒邊界校驗，並於 API 入口層針對參數長度施加嚴格邊界（如 ≤ 32 字元），防止異常過長字串消耗不必要的字串分配。
+**預防 (Prevention):** 嚴格遵循專案 Core Invariant #4，所有涉及使用者輸入與動態檔名組裝的檔案系統操作，一律強制經由 `storage::safe_path` 驗證合法性，若驗證失敗則優雅略過本地檔案讀取並回退至內嵌資源；於 API 路由層嚴格限制 URL 路徑參數長度與字元白名單，落實縱深防禦（Defense in Depth）。
+**署名:** Sentinel as Antigravity

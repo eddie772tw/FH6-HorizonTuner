@@ -221,18 +221,22 @@ async fn lan_ws(
 /// Validate the incoming HTTP Host header to defend against DNS rebinding attacks.
 /// Requests targeting the loopback router must originate from trusted local hosts.
 pub fn allowed_host(host: Option<&str>) -> bool {
-    let Some(host) = host.filter(|s| !s.is_empty()) else {
+    let Some(host) = host.filter(|s| !s.is_empty() && !s.contains(['/', '\\', '?', '#', '@']))
+    else {
         return false;
     };
-    let hostname = if let Some(stripped) = host.strip_prefix('[') {
-        stripped.split(']').next().unwrap_or(stripped)
-    } else {
-        host.split(':').next().unwrap_or(host)
+    let Ok(url) = url::Url::parse(&format!("http://{host}")) else {
+        return false;
     };
-    matches!(
-        hostname,
-        "localhost" | "127.0.0.1" | "::1" | "tauri.localhost" | "testserver"
-    )
+    url.username().is_empty()
+        && url.password().is_none()
+        && url.path() == "/"
+        && url.query().is_none()
+        && url.fragment().is_none()
+        && matches!(
+            url.host_str(),
+            Some("localhost" | "127.0.0.1" | "[::1]" | "tauri.localhost" | "testserver")
+        )
 }
 
 pub fn allowed_origin(origin: Option<&str>) -> bool {

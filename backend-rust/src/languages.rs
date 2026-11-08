@@ -1,4 +1,4 @@
-use crate::assets;
+use crate::{assets, storage};
 use serde_json::{json, Map, Value};
 use std::{
     collections::{BTreeMap, HashMap, HashSet},
@@ -108,19 +108,25 @@ impl Languages {
 
     pub(crate) fn get(&self, code: &str) -> Value {
         let code = code.to_ascii_lowercase();
-        let path = self.root.join("lang").join(format!("{code}.json"));
+        let lang_dir = self.root.join("lang");
+        let target_path = if lang_dir.is_dir() {
+            storage::safe_path(&lang_dir, &format!("{code}.json")).ok()
+        } else {
+            None
+        };
         let mut cache = self
             .overrides
             .lock()
             .unwrap_or_else(|poisoned| poisoned.into_inner());
 
-        match fs::metadata(&path) {
-            Ok(metadata) if metadata.is_file() => {
+        match target_path.as_deref().map(fs::metadata) {
+            Some(Ok(metadata)) if metadata.is_file() => {
                 let version = FileVersion {
                     modified: metadata.modified().ok(),
                     len: metadata.len(),
                 };
-                let value = self.cached_override(&mut cache, &code, &path, version);
+                let value =
+                    self.cached_override(&mut cache, &code, target_path.as_ref().unwrap(), version);
                 value
                     .or_else(|| embedded_languages().get(&code).cloned())
                     .unwrap_or_else(|| json!({"error": "Language not found"}))
@@ -253,5 +259,30 @@ mod tests {
         let path = temp.path().join("lang/zz-test.json");
         write_language(&path, json!({"value":"appeared later"}));
         assert_eq!(languages.get("zz-test")["value"], "appeared later");
+    }
+
+    #[test]
+    fn lookup_rejects_windows_reserved_names_and_path_traversal() {
+        let temp = tempdir().unwrap();
+        let lang_dir = temp.path().join("lang");
+        fs::create_dir_all(&lang_dir).unwrap();
+        let languages = Languages::new(temp.path().to_owned());
+
+        for reserved in [
+            "con", "aux", "prn", "nul", "com1", "lpt1", "clock$", "conin$", "conout$",
+        ] {
+            assert_eq!(
+                languages.get(reserved),
+                json!({"error":"Language not found"}),
+                "reserved name {reserved} must not access device"
+            );
+        }
+        for traversal in ["../escape", "sub/dir", "not/allowed"] {
+            assert_eq!(
+                languages.get(traversal),
+                json!({"error":"Language not found"}),
+                "traversal {traversal} must be rejected"
+            );
+        }
     }
 }

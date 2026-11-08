@@ -300,7 +300,13 @@ async fn general_router_enforces_host_validation_against_dns_rebinding() {
     let router = network::router(app.clone());
 
     // 1. Valid local hosts are permitted on the loopback router
-    for valid_host in ["127.0.0.1:8001", "localhost:8001", "[::1]:8001", "tauri.localhost"] {
+    for valid_host in [
+        "127.0.0.1:8001",
+        "localhost:8001",
+        "LOCALHOST:8001",
+        "[::1]:8001",
+        "tauri.localhost",
+    ] {
         let req = Request::builder()
             .method(Method::GET)
             .uri("/api/health")
@@ -308,11 +314,20 @@ async fn general_router_enforces_host_validation_against_dns_rebinding() {
             .body(Body::empty())
             .unwrap();
         let res = router.clone().oneshot(req).await.unwrap();
-        assert_eq!(res.status(), StatusCode::OK, "Host {valid_host} must be accepted");
+        assert_eq!(
+            res.status(),
+            StatusCode::OK,
+            "Host {valid_host} must be accepted"
+        );
     }
 
     // 2. Untrusted / DNS rebinding domains are rejected with 403 Forbidden
-    for rebinding_host in ["attacker.example:8001", "evil-rebind.net", "localhost.attacker.com"] {
+    for rebinding_host in [
+        "attacker.example:8001",
+        "evil-rebind.net",
+        "localhost.attacker.com",
+        "localhost:8001@attacker.com",
+    ] {
         let req = Request::builder()
             .method(Method::GET)
             .uri("/api/health")
@@ -320,8 +335,15 @@ async fn general_router_enforces_host_validation_against_dns_rebinding() {
             .body(Body::empty())
             .unwrap();
         let res = router.clone().oneshot(req).await.unwrap();
-        assert_eq!(res.status(), StatusCode::FORBIDDEN, "Rebinding host {rebinding_host} must be rejected");
-        assert_eq!(res.headers().get("x-content-type-options").unwrap(), "nosniff");
+        assert_eq!(
+            res.status(),
+            StatusCode::FORBIDDEN,
+            "Rebinding host {rebinding_host} must be rejected"
+        );
+        assert_eq!(
+            res.headers().get("x-content-type-options").unwrap(),
+            "nosniff"
+        );
         assert_eq!(res.headers().get("x-frame-options").unwrap(), "SAMEORIGIN");
     }
 
