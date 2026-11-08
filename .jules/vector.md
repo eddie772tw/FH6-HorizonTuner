@@ -40,3 +40,8 @@
 **渲染洞察 (Rendering Learning):** 在 60Hz 引擎轉速儀表（EngineRpmDisplay）中，斜切角幾何（slant = 3*dpr）若未納入可用寬度計算，在最右端 segment（i = numSegments - 1）其右上頂點會延伸至 w + slant，造成右側邊界生硬裁切（hard clipping）與 Redline Alert 發光邊緣截斷；透過將可用寬度預扣 slant（availableWidth = Math.max(0, w - slant)），可使最右端頂點精確貼合畫布邊緣。在視覺引導上，透過在頂端活躍格（activeSegs - 1）疊加半透明同軸領航高光（Coaxial Tip Highlight），能強化高速拉轉時車手周邊視覺的即時鎖定。此外，繪圖主體提升為標準函式宣告並以 ctx.save() / try { ... } finally { ctx.restore(); } 嚴格包裹，在 flat 主題自動抑制陰影，杜絕發光與樣式滲漏。
 **行動 (Action):** 所有具斜切角（Slanted Segment）與非正交幾何的儀表，必須將幾何傾斜量計入畫布可用寬高防禦邊界裁切；高頻繪圖一律落實成對狀態防護與 flat 主題無陰影合約。
 **署名:** Vector as Antigravity
+
+## 2026-11-08 - 懸吊即時同軸脈衝標記、邊界裁切補償與狀態安全隔離
+**渲染洞察 (Rendering Learning):** 在懸吊行程波形（SuspensionBar）渲染中，最新採樣端點過去直接對齊畫布邊界 x = w，導致 2*dpr 線寬與發光光暈有近半徑被畫布硬裁切（edge clipping），且折線終點在激進操駕時缺乏焦點標示；透過導入 rightPadding = 4.2*dpr 邊界邊距預留，並在最新點加入同軸雙層「外圈脈衝光環 (Halo Ring, 3.6*dpr) + 實心定位內核 (Core Dot, 1.8*dpr)」，能在極限壓縮（bottoming-out）或拉伸（bump-stop）時精準觸發 danger 警戒發光，同時兼顧單一取樣點（history.size === 1）時的即時可見性。此外，繪圖主體全面採用成對 ctx.save() / try { ... } finally { ctx.restore(); } 防護合約，徹底阻絕 shadowBlur 與樣式滲漏至外部 Canvas 狀態。
+**行動 (Action):** 所有時間序列與動態軌跡畫布在最新端點均應配置邊界保護 padding 與同軸 Leading Pulse Marker；狀態管理強制採用 try/finally 確保 Context 乾淨復原，嚴格落實零每幀物件配置。
+**署名:** Vector as Antigravity
