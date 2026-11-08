@@ -35,3 +35,8 @@
 **渲染洞察 (Rendering Learning):** 在輪胎抓地力雷達畫布（TireRadar）中，過去即時焦點（Active Grip Point）僅使用固定透明度的半透明大圓盤填充，缺乏科技層次且在有 glowStrength 主題下未激發真實 shadowBlur 霓虹光暈；透過引入同軸「外圈脈衝光環 (Halo Ring, 5.8*dpr, stroke) + 內核定位點 (Core Dot, 3.2*dpr, fill)」架構，並在突破極限（|slipRatio| > 1.0 或 |slipAngle| > 1.0）時即時將光暈切換為危險警戒色（theme.danger），大幅提升賽車激烈操駕時的極限滑移可讀性；在 linear 工業模式下自適應切換為同軸矩形光環（strokeRect + fillRect）。同時，歷史軌跡補齊 lineCap = 'round' 消除端點生硬截斷。此外，Radar Canvas 與 Temp Canvas 全面導入成對 ctx.save() / try { ... } finally { ctx.restore(); } 防護契約，杜絕陰影與樣式滲漏至相鄰畫布。
 **行動 (Action):** 在所有極限邊界與抓地力雷達畫布中推行同軸脈衝光環與極限警戒發光模式；高頻時間序列折線一律補齊 lineCap = 'round'，並將成對 ctx.save() / try / finally { ctx.restore(); } 列為所有 HUD / Telemetry Canvas 必須遵守的最高防護合約。
 **署名:** Vector as Antigravity
+
+## 2026-11-07 - 引擎轉速條斜角幾何補正、同軸領航高光與狀態防護
+**渲染洞察 (Rendering Learning):** 在 60Hz 引擎轉速儀表（EngineRpmDisplay）中，斜切角幾何（slant = 3*dpr）若未納入可用寬度計算，在最右端 segment（i = numSegments - 1）其右上頂點會延伸至 w + slant，造成右側邊界生硬裁切（hard clipping）與 Redline Alert 發光邊緣截斷；透過將可用寬度預扣 slant（availableWidth = Math.max(0, w - slant)），可使最右端頂點精確貼合畫布邊緣。在視覺引導上，透過在頂端活躍格（activeSegs - 1）疊加半透明同軸領航高光（Coaxial Tip Highlight），能強化高速拉轉時車手周邊視覺的即時鎖定。此外，繪圖主體提升為標準函式宣告並以 ctx.save() / try { ... } finally { ctx.restore(); } 嚴格包裹，在 flat 主題自動抑制陰影，杜絕發光與樣式滲漏。
+**行動 (Action):** 所有具斜切角（Slanted Segment）與非正交幾何的儀表，必須將幾何傾斜量計入畫布可用寬高防禦邊界裁切；高頻繪圖一律落實成對狀態防護與 flat 主題無陰影合約。
+**署名:** Vector as Antigravity
