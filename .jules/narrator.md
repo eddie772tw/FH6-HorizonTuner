@@ -63,6 +63,11 @@
 **學習 (Learning):** 分析視圖工具列（ManualRecordingToolbar）將動態採樣數與狀態標籤碎片化拼接（如 `{status} ({count} {t("samples")})`），會導致非英文語系（如日文）因詞彙缺失或倒裝語序造成介面顯示破碎，且螢幕閱讀器難以解析完整語義；同時，子組件 Props 中的 `t` 簽名若被收窄為 `(text: string) => string`，會迫使開發者在該組件內退回字串拼接。此外，工具列按鈕若僅提供 `title` 而未同步鏡像至 `aria-label`，會使純鍵盤焦點與無障礙讀屏工具遺漏操作說明。
 **行動 (Action):** 在工具列等含有動態計數的狀態徽章中，一律改用具備具名參數的完整句子鍵值（如 `t("Manual Recording ({count} samples)", { count })`），將組件 `t` prop 擴展為支援可選 params 物件；並確保 `title` 與 `aria-label` 同步對齊收錄至 `en-us.json`、`zh-tw.json` 與 `ja-jp.json` 中。
 **署名:** Narrator as Antigravity
+## 2026-11-06 - Deep Workspace t() Signature Expansion & Trilingual Dictionary Asymmetry
+**學習 (Learning):** 開發者調校與深層診斷視圖（如 `TuningTelemetryCaptureView`）常因組件 Props 將 `t` 窄化為 `(text: string) => string`，阻礙了參數化內插的使用，導致開發者退回模板字串拼接（如 `{status} · {count} {t('samples')}`），在日文環境下產生半英半日穿透與語序倒裝破壞；此外，歷史上該視圖之靜態說明文字僅單邊收錄於 `zh-tw.json`，而 `en-us.json` 與 `ja-jp.json` 存在嚴重缺鍵，使非英文語系直接暴露英文；且按鈕僅靠外部容器條件標籤，使內層原生按鈕遺漏可及名稱。
+**行動 (Action):** 當審查深層工作區或子視圖時，一律將組件 Props 之 `t` 簽名擴展為 `t: (text: string, params?: Record<string, string | number>) => string;`，將狀態徽章抽取為具名參數之完整鍵值（如 `Capturing · {count} samples`），添加 `role="status"` 與 `aria-live="polite"`；並全面審查三語系字典（`en-US`、`zh-TW`、`ja-JP`）的不對稱缺失，對齊「返回」、「開始/停止」、「清空緩衝區」及「下載」等操作按鈕的 `aria-label`。
+**署名:** Narrator as Antigravity
+
 ## 2026-11-07 - Composite Action Anti-Pattern & Contextual Status Homonyms
 **學習 (Learning):** 工具列按鈕將檔案格式與動詞片段拼接（如 `MoTeC .ld {t("Export")} ({t("Experimental")})` 或 `CSV {t("Export")}`），在非英文語系（如日語動賓倒裝語序）中會產生語法破碎與欠缺助詞的生硬介面；同時，歷史字典可能存在同形異義（Homonym）錯譯，例如介面中的「Status」在日語字典中被機械化翻譯為行政區劃的「州」（State）而非「ステータス」，直接妨害了非英文使用者的理解。此外，頂層工具列的 `<select>` 下拉選單若缺少 `aria-label`，讀屏工具僅能讀出原生控制項而遺漏選單功能語義。
 **行動 (Action):** 將複合動作按鈕全面抽取為單一完整鍵值（如 `MoTeC .ld Export (Experimental)`、`CSV Export` 與 `MoTeC CSV Import`）；審查多語言字典時主動校正歷史術語歧義；並為工具列選單補齊與標籤對齊之 `aria-label`，確保國際化與無障礙體驗一體化交付。

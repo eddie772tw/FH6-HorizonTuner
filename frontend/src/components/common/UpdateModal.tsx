@@ -17,7 +17,7 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({ updateInfo, isOpen, on
   const [downloadStats, setDownloadStats] = useState<{ downloaded: number; total: number }>({ downloaded: 0, total: 0 });
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const panelRef = useModalFocus<HTMLDivElement>(isOpen && Boolean(updateInfo), () => {
-    if (status !== 'downloading') onClose();
+    if (status !== 'downloading' && status !== 'downloaded') onClose();
   });
 
   if (!isOpen || !updateInfo) return null;
@@ -64,12 +64,7 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({ updateInfo, isOpen, on
   return (
     <ModalPortal>
       <div
-        className="modal show d-block"
-        ref={panelRef}
-        role="dialog"
-        aria-modal="true"
-        aria-label={t('Software Update Available')}
-        tabIndex={-1}
+        className="modal-backdrop fade show"
         style={{
           position: 'fixed',
           top: 0,
@@ -79,7 +74,31 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({ updateInfo, isOpen, on
           backgroundColor: 'rgba(0, 0, 0, 0.75)',
           backdropFilter: 'var(--surface-filter)',
           WebkitBackdropFilter: 'var(--surface-filter)',
-          zIndex: 1060
+          zIndex: 1050,
+        }}
+        onClick={() => {
+          if (status !== 'downloading' && status !== 'downloaded') onClose();
+        }}
+        aria-hidden="true"
+      />
+      <div
+        className="modal show d-block"
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="update-modal-title"
+        aria-describedby="update-modal-desc"
+        tabIndex={-1}
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          zIndex: 1055,
+          overflowX: 'hidden',
+          overflowY: 'auto',
+          pointerEvents: 'none',
         }}
       >
         <div className="modal-dialog modal-dialog-centered modal-dialog-scrollable" style={{ width: 'calc(100% - 1rem)', maxWidth: '40rem' }}>
@@ -88,8 +107,8 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({ updateInfo, isOpen, on
             {/* Header */}
             <div className="modal-header border-bottom border-secondary border-opacity-25 pb-3">
               <div className="d-flex align-items-center gap-2">
-                <span className="badge bg-primary text-white px-2 py-1 fs-7 fw-bold">{t("OTA")}</span>
-                <h5 className="modal-title fw-bold text-primary mb-0 fs-5">
+                <span className="badge bg-primary text-white px-2 py-1 fs-7 fw-bold" aria-hidden="true">{t("OTA")}</span>
+                <h5 id="update-modal-title" className="modal-title fw-bold text-primary mb-0 fs-5">
                   {t('Software Update Available')}
                 </h5>
               </div>
@@ -107,12 +126,12 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({ updateInfo, isOpen, on
             <div className="modal-body py-3 d-flex flex-column gap-3">
 
               {/* Version Transition Box */}
-              <div className="d-flex justify-content-between align-items-center bg-body-tertiary p-3 rounded border border-secondary border-opacity-25">
+              <div id="update-modal-desc" className="d-flex justify-content-between align-items-center bg-body-tertiary p-3 rounded border border-secondary border-opacity-25">
                 <div>
                   <div className="text-body-secondary fs-7">{t('Current Version')}</div>
                   <div className="fw-bold fs-6 text-body">{updateInfo.currentVersion || 'v1.4.x'}</div>
                 </div>
-                <div className="text-primary fw-bold fs-4">→</div>
+                <div className="text-primary fw-bold fs-4" aria-hidden="true">→</div>
                 <div className="text-end">
                   <div className="text-body-secondary fs-7">{t('New Version')}</div>
                   <div className="fw-bold fs-6 text-success">{updateInfo.version}</div>
@@ -129,10 +148,13 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({ updateInfo, isOpen, on
               {/* Release Notes */}
               {updateInfo.body && (
                 <div>
-                  <label className="form-label fs-7 fw-bold text-primary mb-1">{t('Release Notes')}</label>
+                  <label id="release-notes-label" className="form-label fs-7 fw-bold text-primary mb-1">{t('Release Notes')}</label>
                   <div
+                    tabIndex={0}
+                    role="region"
+                    aria-labelledby="release-notes-label"
                     className="bg-body-tertiary p-3 rounded border border-secondary border-opacity-25 fs-7 text-body"
-                    style={{ whiteSpace: 'pre-wrap', lineHeight: '1.4', overflowWrap: 'anywhere' }}
+                    style={{ whiteSpace: 'pre-wrap', lineHeight: '1.4', overflowWrap: 'anywhere', maxHeight: '12rem', overflowY: 'auto' }}
                   >
                     {updateInfo.body}
                   </div>
@@ -156,6 +178,8 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({ updateInfo, isOpen, on
                       aria-valuenow={progress}
                       aria-valuemin={0}
                       aria-valuemax={100}
+                      aria-label={status === 'downloading' ? t('Downloading update payload...') : t('Installing and preparing relaunch...')}
+                      aria-valuetext={`${progress}% (${formatBytes(downloadStats.downloaded)} / ${formatBytes(downloadStats.total)})`}
                     />
                   </div>
                 </div>

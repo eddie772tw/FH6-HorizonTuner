@@ -31,3 +31,7 @@
 **渲染洞察 (Rendering Learning):** 在 G-Force 雷達畫布（GForceRadar）中，歷史極值標記（Apex G-force Markers）在定時 5Hz rAF 循環中過去每幀皆動態分配 8 個座標物件與 1 個陣列，造成週期性微小 GC 壓力；透過宣告常駐預分配的 8 個 markerSlots 槽位進行就地極值更新，達成了零每幀記憶體配置。視覺上，過去單層 3*dpr 純色圓點在暗色十字分割線與外圈交會處對比度薄弱；透過引入同軸雙層「外圈脈衝光環 (Halo Ring, 4.2*dpr) + 實心焦點內核 (Core Dot, 2.0*dpr)」架構，外圈以單次路徑批次 `ctx.stroke()` 激發柔和光暈（`shadowBlur = 4*dpr`），內核以單次路徑批次 `ctx.fill()` 凝練實心焦點，僅需 2 次繪製調用即賦予賽車過彎 Apex 點極具科技感的同軸立體深度。此外，繪圖主體全面轉換為具 Hoisting 特性之函式宣告，並以成對 `ctx.save()` / `try { ... } finally { ctx.restore(); }` 嚴格包裹，在 flat 主題自動抑制陰影，徹底阻絕狀態樣式滲漏。
 **行動 (Action):** 在所有儀表極值與歷史取樣標記中推廣就地槽位（pre-allocated slots）零配置模式；多層同軸幾何優先採用分離批次路徑（batch stroke + batch fill）以最小 draw call 達成層次化光暈，並強制將 `try/finally` context 狀態保護列為 Canvas 標準合約。
 **署名:** Vector as Antigravity
+## 2026-11-06 - TireRadar 同軸脈衝光環、抓地力警戒發光與狀態防護契約
+**渲染洞察 (Rendering Learning):** 在輪胎抓地力雷達畫布（TireRadar）中，過去即時焦點（Active Grip Point）僅使用固定透明度的半透明大圓盤填充，缺乏科技層次且在有 glowStrength 主題下未激發真實 shadowBlur 霓虹光暈；透過引入同軸「外圈脈衝光環 (Halo Ring, 5.8*dpr, stroke) + 內核定位點 (Core Dot, 3.2*dpr, fill)」架構，並在突破極限（|slipRatio| > 1.0 或 |slipAngle| > 1.0）時即時將光暈切換為危險警戒色（theme.danger），大幅提升賽車激烈操駕時的極限滑移可讀性；在 linear 工業模式下自適應切換為同軸矩形光環（strokeRect + fillRect）。同時，歷史軌跡補齊 lineCap = 'round' 消除端點生硬截斷。此外，Radar Canvas 與 Temp Canvas 全面導入成對 ctx.save() / try { ... } finally { ctx.restore(); } 防護契約，杜絕陰影與樣式滲漏至相鄰畫布。
+**行動 (Action):** 在所有極限邊界與抓地力雷達畫布中推行同軸脈衝光環與極限警戒發光模式；高頻時間序列折線一律補齊 lineCap = 'round'，並將成對 ctx.save() / try / finally { ctx.restore(); } 列為所有 HUD / Telemetry Canvas 必須遵守的最高防護合約。
+**署名:** Vector as Antigravity

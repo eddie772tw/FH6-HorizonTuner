@@ -4,7 +4,7 @@ import { useFileSave } from '../../../hooks/useFileSave';
 import { useTuneSession } from '../TuneSessionProvider';
 
 interface TuningTelemetryCaptureViewProps {
-  t: (text: string) => string;
+  t: (text: string, params?: Record<string, string | number>) => string;
   onBack: () => void;
 }
 
@@ -48,7 +48,7 @@ const TuningTelemetryCaptureView: React.FC<TuningTelemetryCaptureViewProps> = ({
           <h2 className="text-primary fs-4 fw-bold mb-1">{t('Tuning Telemetry Capture')}</h2>
           <p className="text-body-secondary fs-7 mb-0">{t('Collect raw 60 Hz telemetry with test conditions for human review and solver calibration.')}</p>
         </div>
-        <button className="btn btn-outline-secondary btn-sm" onClick={onBack}>{t('Back to Developer Tuning')}</button>
+        <button className="btn btn-outline-secondary btn-sm" onClick={onBack} aria-label={t('Back to Developer Tuning')}>{t('Back to Developer Tuning')}</button>
       </div>
 
       <div className="alert alert-warning py-2 mb-0" role="alert">
@@ -63,9 +63,20 @@ const TuningTelemetryCaptureView: React.FC<TuningTelemetryCaptureViewProps> = ({
               <label className="form-label fs-7" htmlFor="capture-label">{t('File Label')}</label>
               <input id="capture-label" className="form-control form-control-sm" value={metadata.label} onChange={(event) => capture.setMetadata(updateMetadata(metadata, 'label', event.target.value))} />
               <div className="row g-2">
-                {(['purpose', 'gameBuild', 'installedParts', 'tireType', 'surface', 'weather', 'eventType', 'track', 'shareCode', 'driverAssists'] as const).map((key) => (
+                {([
+                  ['purpose', 'Purpose'],
+                  ['gameBuild', 'Game Build'],
+                  ['installedParts', 'Installed Parts'],
+                  ['tireType', 'Tire Type'],
+                  ['surface', 'Surface'],
+                  ['weather', 'Weather'],
+                  ['eventType', 'Event Type'],
+                  ['track', 'Track'],
+                  ['shareCode', 'Share Code'],
+                  ['driverAssists', 'Driver Assists'],
+                ] as const).map(([key, fieldLabel]) => (
                   <div className="col-12 col-md-6" key={key}>
-                    <label className="form-label fs-7" htmlFor={`capture-${key}`}>{t(key)}</label>
+                    <label className="form-label fs-7" htmlFor={`capture-${key}`}>{t(fieldLabel)}</label>
                     <input id={`capture-${key}`} className="form-control form-control-sm" value={metadata[key]} onChange={(event) => capture.setMetadata(updateMetadata(metadata, key, event.target.value))} />
                   </div>
                 ))}
@@ -73,7 +84,15 @@ const TuningTelemetryCaptureView: React.FC<TuningTelemetryCaptureViewProps> = ({
               <label className="form-label fs-7" htmlFor="capture-notes">{t('Notes')}</label>
               <textarea id="capture-notes" className="form-control form-control-sm" rows={3} value={metadata.notes} onChange={(event) => capture.setMetadata(updateMetadata(metadata, 'notes', event.target.value))} />
               <div className="d-flex gap-2 flex-wrap mt-2">
-                {!isCapturing ? <button className="btn btn-primary btn-sm" onClick={capture.start}>{t('Start Capture')}</button> : <button className="btn btn-danger btn-sm" onClick={() => capture.stop()}>{t('Stop Capture')}</button>}
+                {!isCapturing ? (
+                  <button className="btn btn-primary btn-sm" onClick={capture.start} aria-label={t('Start Capture')}>
+                    {t('Start Capture')}
+                  </button>
+                ) : (
+                  <button className="btn btn-danger btn-sm" onClick={() => capture.stop()} aria-label={t('Stop Capture')}>
+                    {t('Stop Capture')}
+                  </button>
+                )}
                 <span
                   className="d-inline-flex"
                   title={isCapturing ? t('Cannot clear while capturing') : undefined}
@@ -82,9 +101,15 @@ const TuningTelemetryCaptureView: React.FC<TuningTelemetryCaptureViewProps> = ({
                   aria-label={isCapturing ? t('Cannot clear while capturing') : undefined}
                   style={isCapturing ? { cursor: 'not-allowed' } : {}}
                 >
-                  <button className="btn btn-outline-secondary btn-sm" onClick={capture.clear} disabled={isCapturing} style={{ pointerEvents: isCapturing ? 'none' : 'auto' }}>{t('Clear')}</button>
+                  <button className="btn btn-outline-secondary btn-sm" onClick={capture.clear} disabled={isCapturing} style={{ pointerEvents: isCapturing ? 'none' : 'auto' }} aria-label={t('Clear capture buffer')}>{t('Clear')}</button>
                 </span>
-                <span className="badge bg-secondary-subtle text-secondary-emphasis align-self-center">{isCapturing ? t('Capturing') : capture.status === 'invalidated' ? t('Invalidated') : t('Idle')} · {capture.sampleCount} {t('samples')}</span>
+                <span className="badge bg-secondary-subtle text-secondary-emphasis align-self-center" role="status" aria-live="polite">
+                  {isCapturing
+                    ? t('Capturing · {count} samples', { count: capture.sampleCount })
+                    : capture.status === 'invalidated'
+                      ? t('Invalidated · {count} samples', { count: capture.sampleCount })
+                      : t('Idle · {count} samples', { count: capture.sampleCount })}
+                </span>
               </div>
               {capture.status === 'invalidated' && <div className="form-text fs-7" role="status">{t('Capture was invalidated because the vehicle identity changed. Start a new capture before using it.')}</div>}
               <div className="form-text fs-7">{t('Maximum capture size is 30,000 frames. Collection continues while this workspace is closed and stops only when you stop it or identity changes.')}</div>
@@ -115,7 +140,7 @@ const TuningTelemetryCaptureView: React.FC<TuningTelemetryCaptureViewProps> = ({
                   aria-label={(!activeCapture || activeCapture.samples.length === 0) ? t('No capture data available to download') : undefined}
                   style={(!activeCapture || activeCapture.samples.length === 0) ? { cursor: 'not-allowed' } : {}}
                 >
-                  <button className="btn btn-outline-primary btn-sm" disabled={!activeCapture || activeCapture.samples.length === 0 || isSaving} style={{ pointerEvents: (!activeCapture || activeCapture.samples.length === 0) ? 'none' : 'auto' }} onClick={handleDownloadJson}>{t('Download JSON')}</button>
+                  <button className="btn btn-outline-primary btn-sm" disabled={!activeCapture || activeCapture.samples.length === 0 || isSaving} style={{ pointerEvents: (!activeCapture || activeCapture.samples.length === 0) ? 'none' : 'auto' }} onClick={handleDownloadJson} aria-label={t('Download JSON')}>{t('Download JSON')}</button>
                 </span>
                 <span
                   className="d-inline-flex"
@@ -125,7 +150,7 @@ const TuningTelemetryCaptureView: React.FC<TuningTelemetryCaptureViewProps> = ({
                   aria-label={(!activeCapture || activeCapture.samples.length === 0) ? t('No capture data available to download') : undefined}
                   style={(!activeCapture || activeCapture.samples.length === 0) ? { cursor: 'not-allowed' } : {}}
                 >
-                  <button className="btn btn-outline-primary btn-sm" disabled={!activeCapture || activeCapture.samples.length === 0 || isSaving} style={{ pointerEvents: (!activeCapture || activeCapture.samples.length === 0) ? 'none' : 'auto' }} onClick={handleDownloadCsv}>{t('Download CSV')}</button>
+                  <button className="btn btn-outline-primary btn-sm" disabled={!activeCapture || activeCapture.samples.length === 0 || isSaving} style={{ pointerEvents: (!activeCapture || activeCapture.samples.length === 0) ? 'none' : 'auto' }} onClick={handleDownloadCsv} aria-label={t('Download CSV')}>{t('Download CSV')}</button>
                 </span>
               </div>
               <div className="form-text fs-7 mt-2">{t('Use JSON as the canonical evidence file; CSV is for spreadsheet or MoTeC-style inspection.')}</div>
