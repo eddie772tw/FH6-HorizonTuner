@@ -1344,7 +1344,6 @@ fn recorder_constructor_keeps_explicit_sample_limits_until_settings_are_updated(
     assert!(!recorder.status().is_recording);
 }
 
-
 #[test]
 fn test_metrics_parsed_and_stage_zero_alloc_invariants() {
     use fh6_backend::diagnostics::Metrics;
@@ -1367,8 +1366,14 @@ fn test_metrics_parsed_and_stage_zero_alloc_invariants() {
     );
     let report = metrics.telemetry();
     assert_eq!(report["input"]["packetsParsed"], 2);
-    assert_eq!(report["input"]["schemasAccepted"]["forza-data-out/fh6-324-v2"], 2);
-    assert_eq!(report["input"]["lastPacketSchema"], "forza-data-out/fh6-324-v2");
+    assert_eq!(
+        report["input"]["schemasAccepted"]["forza-data-out/fh6-324-v2"],
+        2
+    );
+    assert_eq!(
+        report["input"]["lastPacketSchema"],
+        "forza-data-out/fh6-324-v2"
+    );
 
     // Switching SocketAddr triggers rebase (resets incremented)
     metrics.parsed(

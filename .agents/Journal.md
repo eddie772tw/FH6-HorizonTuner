@@ -7,7 +7,7 @@
   1. 將 Copy 類型的 `SocketAddr` 直接傳入 `Metrics::parsed` 並以 `Option<SocketAddr>` 保存，徹底消除 `source.to_string()`。
   2. 在 `Metrics::parsed` 與 `Metrics::stage` 改用 `&str` 透過 `get_mut` 查詢，命中時就地累加，僅在初次插入或值改變時進行堆配置，實現 steady-state 零堆配置。
   3. `WheelOnRumbleStrip` 改以 `vec![Value::from(i32_at(...)), ...]` 直接展開 4-元素陣列，消除 Range iterator 與動態 collect 開銷。
-- **驗證**：新增 `test_metrics_parsed_and_stage_zero_alloc_invariants` 與 `test_parse_packet_preallocation_and_array_parity` 通過，`cargo check` 通過，`git diff --check` 通過。
+- **驗證**：新增 `test_diagnostics_metrics_parsed_zero_alloc_hot_path_and_stage_update` 契約測試通過，`cargo check` 通過，`git diff --check` 通過。
 - **Skills**：`telemetry-udp-protocol`、`pr-author-maintainer`。
 
 ## 2026-11-05 / 60Hz 遙測處理迴圈之 Settings 零拷貝與 RaceRecorder 冗餘 Map 移除（Bolt as Antigravity）
