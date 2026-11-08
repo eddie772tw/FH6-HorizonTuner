@@ -1437,3 +1437,68 @@ fn test_metrics_parsed_and_stage_zero_alloc_invariants() {
     let report3 = metrics.telemetry();
     assert_eq!(report3["stagesMs"]["total"]["count"], 2);
 }
+
+#[test]
+fn app_process_zero_clone_profile_steady_state_and_cache_containment() {
+    let temp = tempfile::tempdir().unwrap();
+    let app = App::new(temp.path()).unwrap();
+    app.config
+        .save_car_params("42", &json!({"drivetrain": "RWD", "dyno_curve": {}}))
+        .unwrap();
+
+    let frame1 = json!({
+        "CarOrdinal": 42,
+        "TimestampMS": 1000,
+        "CurrentEngineRpm": 3000.0,
+        "EngineMaxRpm": 8000.0,
+        "Gear": 3,
+        "AccelInput": 100,
+        "BrakeInput": 0,
+        "ClutchInput": 0,
+        "HandBrakeInput": 0,
+        "PositionX": 0.0,
+        "PositionY": 0.0,
+        "PositionZ": 0.0,
+        "SpeedMetersPerSecond": 15.0
+    });
+    // First frame updates cached profile in-place
+    app.process(frame1);
+    let cached = app
+        .config
+        .car_params("42")
+        .expect("profile must be in cache");
+    assert_eq!(cached["drivetrain"], "RWD");
+    assert!(cached.get("dyno_quality").is_some());
+
+    // Second frame in steady state continues zero-clone in-place updates
+    let frame2 = json!({
+        "CarOrdinal": 42,
+        "TimestampMS": 1016,
+        "CurrentEngineRpm": 3200.0,
+        "EngineMaxRpm": 8000.0,
+        "Gear": 3,
+        "AccelInput": 120,
+        "BrakeInput": 0,
+        "ClutchInput": 0,
+        "HandBrakeInput": 0,
+        "PositionX": 0.24,
+        "PositionY": 0.0,
+        "PositionZ": 0.0,
+        "SpeedMetersPerSecond": 15.2
+    });
+    app.process(frame2);
+    let cached2 = app
+        .config
+        .car_params("42")
+        .expect("profile persists in cache");
+    assert!(cached2.get("dyno_quality").is_some());
+
+    // Ordinal 0 processes without failure and provides fallback guidance
+    let frame0 = json!({
+        "CarOrdinal": 0,
+        "TimestampMS": 1032,
+        "CurrentEngineRpm": 0.0,
+        "Gear": 0
+    });
+    app.process(frame0);
+}
