@@ -29,3 +29,8 @@
 **物理洞察 (Physics Learning):** 底盤正規化函式（`normalize_road_inputs` 與 `rally_calculation_inputs`）及 AWD 後軸動力偏置解算在處理前後配重比時，原先採用 `p.weight_distribution.unwrap_or(50.0).max(1.0).min(99.0)`。依據 IEEE 754 規範，當配重傳入 `Some(f64::NAN)` 時，`NaN.max(1.0)` 會錯誤評估為 `1.0`（即 1% 前軸 / 99% 後軸），導致原本應安全回退至 50.0% 中性配重的車輛突變為極端重尾病態模型；更嚴重的是，空力解算 `resolve_aero_downforce` 內部具備有限數過濾會正確回退至 50.0%，造成同一車輛調校流程中空力載荷依據 50% 配重解算，而底盤彈簧、防傾桿與 AWD 扭力偏置（退化至 85.0% 極限）卻依據 1% 配重解算，引發嚴重的懸吊剛性對稱性破裂（Suspension Stiffness Symmetry Breaking）與動力學不一致。同時，Road 起步齒比解算在面對零扭力或非有限扭力時，原先直接除算引發除以零產生 `INFINITY` 總齒比並癱瘓整車變速箱解算。
 **行動 (Action):** 底盤解算器與 AWD 後軸偏置全面落實 `p.weight_distribution.filter(|v| v.is_finite()).unwrap_or(50.0).clamp(1.0, 99.0)`，消除非有限數污染並保證 50.0% 中性配重下的防傾桿與阻尼完全對稱性；起步齒比解算補齊扭力有限正數防護，在無有效扭力輸出時安全由速度上限先驗平滑接管，確保動力學封閉性。
 **署名:** Mechanic as Antigravity
+
+## 2026-11-06 - Alignment Drivetrain Normalization & Gearing Kinematics Closure Protection
+**物理洞察 (Physics Learning):** 四輪定位解算器原先以裸字串比對驅動形式 `drive == "FWD"` 與 `match drive { "FWD" => ..., "RWD" => ..., _ => ... }`，缺乏 trim 與大小寫正規化。當外部傳入小寫 `"fwd"` 或帶空白字符時，Road 模式會將 FWD 前輪轉向形變所需之 +1.5 psi 支撐補償誤判退化為 AWD 的 +0.2 psi（導致前胎胎壁支撐不足 1.3 psi）；更致命的是在 Drag 模式中，小寫 `"fwd"` 因比對失敗跌入後驅分支，將前驅直線加速車的驅動輪胎壓錯誤倒置為前高 (38 psi) 後低 (15 psi)，徹底破壞彈射接地印跡幾何。同時，齒輪比速度與轉速幾何雙向解算器（`calc_gear_speed` 與 `calc_gear_rpm`）在面對非正數、零或 IEEE 754 非有限值（`NaN`、`INFINITY`）時缺乏防護，會傳播非物理負值或觸發除以零；且次級修正（Secondary Correction）在讀取使用者或遙測速限時未過濾非有限數，導致頂檔目標總比退化或溢位。
+**行動 (Action):** 定位解算器統一調用 `Drivetrain::from_str_loose` 進行大小寫與空白安全正規化，確保驅動形式全架構 SSOT 型別一致性並消除胎壓倒置陷阱；運動學速度/轉速純函式與次級修正全面強制嚴格正定性（Positive & Finite Protection），無效數值安全收斂至 0.0，確保幾何動力學閉包。
+**署名:** Mechanic as Antigravity
