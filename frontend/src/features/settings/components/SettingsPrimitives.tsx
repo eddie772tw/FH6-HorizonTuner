@@ -29,15 +29,21 @@ export const SettingsSection: React.FC<SettingsSectionProps> = ({
   headerAside,
   children,
   className = '',
-}) => (
-  <section className={`settings-section d-flex flex-column gap-3 ${className}`.trim()}>
-    <header className="settings-section-header workspace-panel-header d-flex justify-content-between align-items-center flex-wrap gap-2 border-bottom pb-2">
-      <h3 className="settings-section-title text-primary fs-6 fw-bold m-0">{title}</h3>
-      {headerAside}
-    </header>
-    {children}
-  </section>
-);
+}) => {
+  const headingId = React.useId();
+  return (
+    <section
+      aria-labelledby={headingId}
+      className={`settings-section d-flex flex-column gap-3 ${className}`.trim()}
+    >
+      <header className="settings-section-header workspace-panel-header d-flex justify-content-between align-items-center flex-wrap gap-2 border-bottom pb-2">
+        <h3 id={headingId} className="settings-section-title text-primary fs-6 fw-bold m-0">{title}</h3>
+        {headerAside}
+      </header>
+      {children}
+    </section>
+  );
+};
 
 export const SettingsItem: React.FC<SettingsItemProps> = ({
   label,
@@ -45,21 +51,24 @@ export const SettingsItem: React.FC<SettingsItemProps> = ({
   htmlFor,
   children,
   className = '',
-}) => (
-  <div className={`settings-row d-flex justify-content-between align-items-center border-bottom pb-3 ${className}`.trim()}>
-    <div className="min-width-0">
-      {htmlFor ? (
-        <label htmlFor={htmlFor} className="settings-item-label form-label fw-semibold mb-0">
-          {label}
-        </label>
-      ) : (
-        <div className="settings-item-label form-label fw-semibold mb-0">{label}</div>
-      )}
-      {description && <div className="settings-item-description form-text">{description}</div>}
+}) => {
+  const descId = htmlFor && description ? `${htmlFor}-description` : undefined;
+  return (
+    <div className={`settings-row d-flex justify-content-between align-items-center border-bottom pb-3 ${className}`.trim()}>
+      <div className="min-width-0">
+        {htmlFor ? (
+          <label htmlFor={htmlFor} className="settings-item-label form-label fw-semibold mb-0">
+            {label}
+          </label>
+        ) : (
+          <div className="settings-item-label form-label fw-semibold mb-0">{label}</div>
+        )}
+        {description && <div id={descId} className="settings-item-description form-text">{description}</div>}
+      </div>
+      <div className="settings-control">{children}</div>
     </div>
-    <div className="settings-control">{children}</div>
-  </div>
-);
+  );
+};
 
 export const SettingsSwitch: React.FC<SettingsSwitchProps> = ({
   id,
@@ -68,22 +77,29 @@ export const SettingsSwitch: React.FC<SettingsSwitchProps> = ({
   checked,
   onChange,
   disabled,
-}) => (
-  <label
-    htmlFor={id}
-    className="settings-row settings-switch form-check form-switch d-flex justify-content-between align-items-center ps-0 border-bottom pb-3 mb-0"
-  >
-    <span className="min-width-0">
-      <span className="settings-item-label form-check-label d-block fw-semibold">{label}</span>
-      {description && <span className="settings-item-description form-text d-block">{description}</span>}
-    </span>
-    <input
-      type="checkbox"
-      className="form-check-input ms-auto fs-5 flex-shrink-0"
-      id={id}
-      checked={checked}
-      onChange={onChange}
-      disabled={disabled}
-    />
-  </label>
-);
+}) => {
+  const descId = description ? `${id}-description` : undefined;
+  return (
+    <label
+      htmlFor={id}
+      className={`settings-row settings-switch form-check form-switch d-flex justify-content-between align-items-center ps-0 border-bottom pb-3 mb-0${disabled ? ' opacity-75' : ''}`}
+      style={{ cursor: disabled ? 'not-allowed' : 'pointer' }}
+    >
+      <span className="min-width-0">
+        <span className="settings-item-label form-check-label d-block fw-semibold">{label}</span>
+        {description && <span id={descId} className="settings-item-description form-text d-block">{description}</span>}
+      </span>
+      <input
+        type="checkbox"
+        role="switch"
+        aria-checked={checked}
+        aria-describedby={descId}
+        className="form-check-input ms-auto fs-5 flex-shrink-0"
+        id={id}
+        checked={checked}
+        onChange={onChange}
+        disabled={disabled}
+      />
+    </label>
+  );
+};
