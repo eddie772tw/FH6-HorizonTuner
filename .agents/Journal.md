@@ -1,5 +1,19 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-11-08 / 18 筆開啟 PR 全量審查、問題修復、無效死碼淘汰與視覺審查收斂（Gemini as Antigravity）
+
+- **Scope**：審查並處理開啟中之全部 18 筆 PR（`#622`–`#639`），合入 16 筆有效 PR（含 7 筆直接審查合併、9 筆衝突消解／問題修復／視覺審查補齊後合併），並關閉 2 筆無實際產線價值之死碼 PR（`#629`、`#637`）。採用 `pr-review-evaluation`、`pr-author-maintainer`、`halfmoon-design-system`、`physics-tuning-math`、`telemetry-udp-protocol`、`github-security-audit`。
+- **Learning**：
+  1. **死碼組件識別與無效 PR 淘汰 (Dead-Code PR Triage)**：自主代理針對 `TuningSlider.tsx`（`#629`）與 `DynoChart.tsx`（`#637`）提交無障礙與在地化修正，但經全倉靜態引用追蹤，該二組件僅分別被早已未掛載於現有桌面與隨行路由的舊版 `TuningSliderGrid.tsx` 與 `CarParamsView.tsx` 引用（現行正式流程已由 `TuningView.tsx` 四步驟工作流與 `EngineCurveChart.tsx` 取代）。審查時必須先驗證目標組件是否存在於有效執行圖（Reachable Component Graph），對孤島死碼之修飾應直接附理由關閉，避免無謂增加維護負擔。
+  2. **Modal 背景點擊穿透與安裝鎖定護欄 (`#623`)**：在 `ModalPortal` 雙層架構中，`.modal-dialog` 預設應保持 `pointer-events: none` 並僅在 `.modal-content` 設為 `pointer-events: auto`，若在 `.modal-dialog` 覆寫 `pointerEvents: 'auto'` 會攔截對話框兩側空白區域的 backdrop 點擊關閉事件；此外，`UpdateModal` 在 `status === 'downloaded'` 自動重啟倒數階段必須同時封鎖 `Escape` 鍵與背景點擊關閉，防止更新安裝流程遭意外中斷。
+  3. **Canvas 同軸光環邊界內縮與主題指標色一致化 (`#627`、`#633`、`#639`)**：在 `TireRadar`、`EngineRpmDisplay` 與 `SuspensionBar` 等高頻 Canvas 組件導入同軸脈衝光環（Outer Halo Ring + Core Dot）與發光陰影（`shadowBlur`）時，必須將外圈光環半徑與描邊寬度納入可用繪圖半徑／座標夾限（如 `TireRadar` 之 `maxTR = Math.max(10, (radius - 6.6) * dpr)` 與 `SuspensionBar` 之 `markerY` 上下邊界夾限），避免極限 G 值或滿行程時光環遭畫布邊緣硬裁切；同時 `EngineRpmDisplay` 領航高光應統一使用 `theme.pointer` 而非寫死 `#ffffff`，確保亮色主題下具備足夠對比度。
+  4. **Playwright 單一 Context 視覺審查穩定性與主題同步**：在受限沙盒環境擷取 16 組主題／語系／視窗尺寸視覺審查矩陣時，重用單一 `BrowserContext` 與 `Page` 並開啟 `--disable-dev-shm-usage` 可徹底避免多次啟動 Chromium 造成的 `/dev/shm` 記憶體耗盡；且切換主題時須同時同步 `localStorage.themeSettings` 與 `/api/settings` 回傳之 `theme: { mode, halfmoonCore, customCSS }`，待 `document.documentElement.dataset.bsTheme` 與 `dataset.bsCore` 對齊後再行截圖。
+- **Evidence**：
+  - 合入後端效能與安全 PR：`#622`、`#624`、`#626`、`#628`、`#630`、`#632`、`#634`、`#636`、`#638`。
+  - 修復、補齊 `docs/visual-review/pr-{623,625,627,631,633,635,639}/` 視覺審查證據並合入前端 PR：`#623`、`#625`、`#627`、`#631`、`#633`、`#635`、`#639`。
+  - 附完整說明關閉孤島死碼 PR：`#629`、`#637`。
+  - `main` 分支 Rust 後端測試、前端 Vitest 測試、`cargo fmt --check`、`check_repo_path_case.py` 與 `git diff --check` 全數通過，開啟中 PR 數量歸零。
+
 ## 2026-11-06 / 60Hz UDP 接收熱迴圈之 SocketAddr 零拷貝與度量收集器零配置（Bolt as Antigravity）
 
 - **重現與效能瓶頸**：在 60Hz+ UDP 遙測接收熱迴圈 (`receive_udp`) 中，每個資料包呼叫 `source.to_string()` 將 stack 上的 `SocketAddr` 格式化並配置堆字串；在 `Metrics::parsed` 內部，使用 `entry(schema.into())` 與無條件 `self.last_schema = Some(schema.into())` 每幀重複配置堆字串，且在 `App::process` 中每幀對 `stages.entry(name.into())` 進行堆配置。在 60Hz 高頻運作下，每小時在持有 `app.metrics` Mutex 臨界區內產生超過 1,080,000 次冗餘堆積配置與釋放，造成高頻接收鎖競爭與記憶體配置器壓力。
