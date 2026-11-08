@@ -1971,5 +1971,10 @@
     "CSV Export": "CSV Export",
     "MoTeC CSV Import": "MoTeC CSV Import",
     "Delete selected session": "Delete selected session",
-    "Import": "Import"
+    "Import": "Import",
+    "Circuit": "Circuit",
+    "Sprint": "Sprint",
+    "In-Game Timing": "In-Game Timing",
+    "Calculated Timing": "Calculated Timing",
+    "{valid} of {total} samples valid": "{valid} of {total} samples valid"
 }

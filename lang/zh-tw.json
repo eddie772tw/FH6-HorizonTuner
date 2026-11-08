@@ -2374,5 +2374,8 @@
     "MoTeC .ld Export (Experimental)": "匯出 MoTeC .ld (實驗性)",
     "CSV Export": "匯出 CSV",
     "MoTeC CSV Import": "匯入 MoTeC CSV",
-    "Delete selected session": "刪除選取的紀錄"
+    "Delete selected session": "刪除選取的紀錄",
+    "In-Game Timing": "遊戲內建計時",
+    "Calculated Timing": "演算法估算計時",
+    "{valid} of {total} samples valid": "{total} 個採樣中有效 {valid} 個"
 }
