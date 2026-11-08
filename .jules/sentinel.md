@@ -39,6 +39,12 @@
 **預防 (Prevention):** 於後端 HTTP 網路層實作 `allowed_host` 檢查，在 `origin_security` middleware 入口處對所有進站請求強制驗證 `Host` 標頭，嚴格限制主機名稱僅允許本機回環地址與受信任的桌面客戶端標識，凡非白名單網域或缺少 Host 標頭者一律以 403 Forbidden 拒絕，並於測試套件補齊合法主機放行、惡意重綁定網域阻斷與安全標頭一致性驗證，落實深度防禦（Defense in Depth）。
 **署名:** Sentinel as Antigravity
 
+## 2026-11-07 - Companion Device Pairing Input Sanitization and Bounded Capacity Protection
+**漏洞/脆弱點 (Vulnerability):** 在 Companion 服務模組 `backend-rust/src/companion.rs` 中，外部 HTTP 端點（`POST /api/companion/pair`）傳入的 `device_name` 與 `device_id` 原先未進行長度邊界限制與控制字元過濾，且已配對裝置列表 `paired_devices` 缺乏容量上限（Unbounded Collection）。若惡意或異常客戶端傳入包含 ASCII 控制字元（`\u{0000}..\u{001f}`）、超長字串或路徑字元，或發起多次配對請求，將使儲存檔 `companion_devices.json` 與伺服器記憶體無上限膨脹，引發磁碟空間耗盡與 DoS 拒絕服務風險。
+**學習 (Learning):** 本地網路（LAN）或 USB 伴侶應用程式的配對端點雖需一次性 Token 驗證，但一旦進入持久化流程，未過濾的字串會直接污染儲存層與前端 UI。此外，若缺乏容量上限（Bounded Capacity），即使具備 Token 逾期機制，持續配對仍會造成無界增長（Unbounded Growth）。在 Rust 後端處理客戶端自訂識別元與集合存儲時，必須在進入 storage 前實作字元白名單過濾、長度截斷，並以嚴格容量上限（如 32 台裝置）配合 FIFO 淘汰機制，確保記憶體與磁碟持久化永遠受控且具備彈性。
+**預防 (Prevention):** 針對所有伴侶端點與外部設備登記機制，實作統一的輸入消毒（`sanitize_device_name` 過濾不可見控制字元、`sanitize_device_id` 僅允許安全字元集並自動回退至標準 UUID），且持久化集合強制配置有界容量上限（`MAX_PAIRED_DEVICES`）與載入防禦，落實深度防禦（Defense in Depth）。
+**署名:** Sentinel as Antigravity
+
 ## 2026-11-08 - Language File Lookup SafePath Containment and Code Boundary Defense
 **漏洞/脆弱點 (Vulnerability):** 後端語言模組 `backend-rust/src/languages.rs::Languages::get` 原先直接透過 `self.root.join("lang").join(format!("{code}.json"))` 拼接外部傳入之語言代碼，未遵循專案 Core Invariant #4 採用 `storage::safe_path` 進行目錄邊界與 Windows MS-DOS 保留設備名稱驗證；同時 `config_service.rs` 中的 `GET /api/languages/{code}` 端點亦缺少輸入長度上限，使得外部請求若傳入 DOS 保留名稱（如 `con`, `aux`, `nul`, `prn`, `com1-9`, `lpt1-9`, `clock$`, `conin$`, `conout$`），底層 Win32 `fs::metadata` 將把檔案路徑直接解析為字元設備或通訊埠，造成 I/O 阻塞（Hang）、拒絕存取或潛在的 DoS 服務拒絕。
 **學習 (Learning):** 專案的核心路徑防護函式 `storage::safe_path` 雖已具備完整的目錄包含性檢驗與 MS-DOS 保留設備攔截，但若特定子系統（如語言覆蓋讀取）直接使用 `Path::join` 拼接外部參數並直接調用檔案系統 API，將形成安全防護死角。外部參數在進入檔案系統操作前，必須統一經由 `safe_path` 進行沙盒邊界校驗，並於 API 入口層針對參數長度施加嚴格邊界（如 ≤ 32 字元），防止異常過長字串消耗不必要的字串分配。
