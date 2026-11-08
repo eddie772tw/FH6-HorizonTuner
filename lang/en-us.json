@@ -1963,5 +1963,13 @@
     "Event Type": "Event Type",
     "Track": "Track",
     "Share Code": "Share Code",
-    "Driver Assists": "Driver Assists"
+    "Driver Assists": "Driver Assists",
+    "Recording... ({count} samples)": "Recording... ({count} samples)",
+    "Idle ({count} samples)": "Idle ({count} samples)",
+    "Loaded Session: {filename}": "Loaded Session: {filename}",
+    "MoTeC .ld Export (Experimental)": "MoTeC .ld Export (Experimental)",
+    "CSV Export": "CSV Export",
+    "MoTeC CSV Import": "MoTeC CSV Import",
+    "Delete selected session": "Delete selected session",
+    "Import": "Import"
 }

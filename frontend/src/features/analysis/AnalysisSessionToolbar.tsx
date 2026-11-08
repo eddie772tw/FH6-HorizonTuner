@@ -3,7 +3,7 @@ import { getRuntimeCapabilities } from '../../services/runtimeCapabilities';
 import type { SavedSessionHeader, LapSummary } from "../../context/TelemetryRecorderContext";
 
 export interface AnalysisSessionToolbarProps {
-  readonly t: (text: string) => string;
+  readonly t: (text: string, params?: Record<string, string | number>) => string;
   readonly isRecording: boolean;
   readonly recordingCount: number;
   readonly activeSessionLength: number;
@@ -59,17 +59,17 @@ const AnalysisSessionToolbar: React.FC<AnalysisSessionToolbarProps> = ({
 }) => (
   <>
     <div className="workspace-toolbar analysis-toolbar">
-      <div className="analysis-toolbar__status" role="status">
+      <div className="analysis-toolbar__status" role="status" aria-live="polite">
         <div style={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>
           {t("Status")}: {isRecording ? (
             <span className="text-danger fw-bold">
-              {t("Recording...")} ({recordingCount} {t("samples")})
+              {t("Recording... ({count} samples)", { count: recordingCount })}
             </span>
           ) : (
-            `${t("Idle")} (${activeSessionLength} ${t("samples")})`
+            t("Idle ({count} samples)", { count: activeSessionLength })
           )}
           {selectedFilename !== "current" && selectedFilename !== "local" &&
-            ` | ${t("Loaded Session")}: ${selectedFilename}`}
+            ` | ${t("Loaded Session: {filename}", { filename: selectedFilename })}`}
         </div>
       </div>
 
@@ -78,8 +78,8 @@ const AnalysisSessionToolbar: React.FC<AnalysisSessionToolbarProps> = ({
           <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>
             {t("Select Session")}:
           </span>
-          <select className="form-select" value={selectedFilename} onChange={event => onSelectSession(event.target.value)}>
-            {selectedFilename === "local" && <option value="local">MoTeC CSV {t("Import")}</option>}
+          <select className="form-select" value={selectedFilename} onChange={event => onSelectSession(event.target.value)} aria-label={t("Select Session")}>
+            {selectedFilename === "local" && <option value="local">{t("MoTeC CSV Import")}</option>}
             <option value="current">{t("Current / Latest Session")}</option>
             {savedSessions.map(session => (
               <option key={session.filename} value={session.filename}>
@@ -93,7 +93,7 @@ const AnalysisSessionToolbar: React.FC<AnalysisSessionToolbarProps> = ({
         {lapsList.length > 0 && (
           <label>
             <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>{t("Primary Lap")}:</span>
-            <select className="form-select" value={primaryLap} onChange={event => onSelectPrimaryLap(parseInt(event.target.value, 10))}>
+            <select className="form-select" value={primaryLap} onChange={event => onSelectPrimaryLap(parseInt(event.target.value, 10))} aria-label={t("Primary Lap")}>
               <option value={0}>{t("All Laps")}</option>
               {lapsList.map(lap => (
                 <option key={lap.lap_number} value={lap.lap_number}>
@@ -107,7 +107,7 @@ const AnalysisSessionToolbar: React.FC<AnalysisSessionToolbarProps> = ({
         {lapsList.length > 0 && (
           <label>
             <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>{t("Compare Lap")}:</span>
-            <select className="form-select" value={compareLap} onChange={event => onSelectCompareLap(parseInt(event.target.value, 10))}>
+            <select className="form-select" value={compareLap} onChange={event => onSelectCompareLap(parseInt(event.target.value, 10))} aria-label={t("Compare Lap")}>
               <option value={-1}>{t("None")}</option>
               {lapsList.map(lap => (
                 <option key={lap.lap_number} value={lap.lap_number}>
@@ -145,7 +145,7 @@ const AnalysisSessionToolbar: React.FC<AnalysisSessionToolbarProps> = ({
           style={isExporting ? { cursor: 'not-allowed' } : undefined}
         >
           <button onClick={() => onExportMoTec("ld")} disabled={isExporting || selectedFilename === "local"} className="btn btn-outline-secondary" style={isExporting ? { pointerEvents: 'none' } : undefined}>
-            MoTeC .ld {t("Export")} ({t("Experimental")})
+            {t("MoTeC .ld Export (Experimental)")}
           </button>
         </span>
         <span
@@ -154,12 +154,12 @@ const AnalysisSessionToolbar: React.FC<AnalysisSessionToolbarProps> = ({
           style={isExporting ? { cursor: 'not-allowed' } : undefined}
         >
           <button onClick={() => onExportMoTec("csv")} disabled={isExporting || selectedFilename === "local"} className="btn btn-outline-secondary" style={isExporting ? { pointerEvents: 'none' } : undefined}>
-            CSV {t("Export")}
+            {t("CSV Export")}
           </button>
         </span>
         <input ref={fileInputRef} type="file" accept=".csv" style={{ display: "none" }} onChange={onImportFile} />
-        <button onClick={onOpenImport} className="btn btn-outline-secondary" title={t("Import MoTeC CSV for analysis")}>
-          MoTeC CSV {t("Import")}
+        <button onClick={onOpenImport} className="btn btn-outline-secondary" title={t("Import MoTeC CSV for analysis")} aria-label={t("MoTeC CSV Import")}>
+          {t("MoTeC CSV Import")}
         </button>
         <span
           className="d-inline-flex"
@@ -171,11 +171,11 @@ const AnalysisSessionToolbar: React.FC<AnalysisSessionToolbarProps> = ({
           </button>
         </span>
         {onOpenChannelMapping && (
-          <button onClick={onOpenChannelMapping} className="btn btn-outline-secondary" title={t("View 41-channel mapping reference")}>
+          <button onClick={onOpenChannelMapping} className="btn btn-outline-secondary" title={t("View 41-channel mapping reference")} aria-label={t("Channel Mapping")}>
             {t("Channel Mapping")}
           </button>
         )}
-        {isSavedSelection && <button onClick={onDeleteSession} className="btn btn-outline-danger">{t("Delete")}</button>}
+        {isSavedSelection && <button onClick={onDeleteSession} className="btn btn-outline-danger" aria-label={t("Delete selected session")}>{t("Delete")}</button>}
       </div>
     </div>
     {selectedFilename === "local" && <p className="text-muted small">{t("Imported CSV is previewed locally; use the original file in MoTeC.")}</p>}

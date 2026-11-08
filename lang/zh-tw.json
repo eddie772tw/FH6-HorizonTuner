@@ -2367,5 +2367,12 @@
     "Event Type": "賽事類型",
     "Track": "賽道",
     "Share Code": "分享代碼",
-    "Driver Assists": "駕駛輔助"
+    "Driver Assists": "駕駛輔助",
+    "Recording... ({count} samples)": "錄製中... ({count} 筆樣本)",
+    "Idle ({count} samples)": "閒置 ({count} 筆樣本)",
+    "Loaded Session: {filename}": "已載入紀錄: {filename}",
+    "MoTeC .ld Export (Experimental)": "匯出 MoTeC .ld (實驗性)",
+    "CSV Export": "匯出 CSV",
+    "MoTeC CSV Import": "匯入 MoTeC CSV",
+    "Delete selected session": "刪除選取的紀錄"
 }

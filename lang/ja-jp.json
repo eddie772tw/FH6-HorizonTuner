@@ -830,8 +830,8 @@
   "Start Recording Test": "⏺️ 手動記録を開始",
   "Start Test": "テストを開始する",
   "Static Info": "静的パラメータの設定",
-  "Status": "州",
-  "Status:": "州：",
+  "Status": "ステータス",
+  "Status:": "ステータス：",
   "Steer L": "左折してください",
   "Steer R": "右折",
   "Step 1: Gearing Baseline": "ステップ 1: 現在のギア比設定を確認する",
@@ -1788,5 +1788,14 @@
     "Event Type": "イベント種別",
     "Track": "コース",
     "Share Code": "共有コード",
-    "Driver Assists": "ドライビングアシスト"
+    "Driver Assists": "ドライビングアシスト",
+    "Recording... ({count} samples)": "記録中... ({count} サンプル)",
+    "Idle ({count} samples)": "待機中 ({count} サンプル)",
+    "Loaded Session: {filename}": "読み込み済みセッション: {filename}",
+    "MoTeC .ld Export (Experimental)": "MoTeC .ld をエクスポート (試験的)",
+    "CSV Export": "CSV をエクスポート",
+    "MoTeC CSV Import": "MoTeC CSV をインポート",
+    "Delete selected session": "選択したセッションを削除",
+    "Import": "インポート",
+    "Channel Mapping": "チャンネルマッピング"
 }
