@@ -1,0 +1,198 @@
+{
+  "date": "2026-11-08",
+  "implementation": "b7b7d9c858c909da5585690fb49458efdd063284",
+  "productBlobs": {
+    "frontend/src/features/analysis/AnalysisSessionToolbar.tsx": "f56071042098e7281eab61ffd8b4a6f3991252fe",
+    "lang/en-us.json": "e49857054961e9ea57fe9fd5a2cc042692cff3dd",
+    "lang/zh-tw.json": "98882e392d73eebec77d3ea1d9ed55cb3bb6b6dd",
+    "lang/ja-jp.json": "b37ea282574fdec130ad2984dc2d265b01507d5f"
+  },
+  "browser": "156.0.8078.79",
+  "capture": "Chromium headless, full production AppShell/providers served by Vite, DPR 1, zoom 100%. Isolated loopback backend with fixture settings, real locale dictionaries and synthetic recorder status / WebSocket telemetry. Viewport height 720 (320px width: 800). Odd cases emulate reduced motion.",
+  "reproduce": "Open Sessions with fixture session list and select #session_20261107_suzuka (1842 pts); inspect the localized Status indicator, Loaded session badge, session selector aria-label, and action buttons.",
+  "cases": [
+    {
+      "core": "default",
+      "mode": "light",
+      "lang": "en-us",
+      "width": 1280,
+      "save": true,
+      "file": "default-light-en-us-1280.png",
+      "dimensions": {
+        "width": 1280,
+        "scrollWidth": 1280
+      }
+    },
+    {
+      "core": "default",
+      "mode": "dark",
+      "lang": "ja-jp",
+      "width": 1280,
+      "save": true,
+      "file": "default-dark-ja-jp-1280.png",
+      "dimensions": {
+        "width": 1280,
+        "scrollWidth": 1280
+      }
+    },
+    {
+      "core": "swiss",
+      "mode": "light",
+      "lang": "ja-jp",
+      "width": 1280,
+      "save": true,
+      "file": "swiss-light-ja-jp-1280.png",
+      "dimensions": {
+        "width": 1280,
+        "scrollWidth": 1280
+      }
+    },
+    {
+      "core": "swiss",
+      "mode": "dark",
+      "lang": "zh-tw",
+      "width": 1280,
+      "save": true,
+      "file": "swiss-dark-zh-tw-1280.png",
+      "dimensions": {
+        "width": 1280,
+        "scrollWidth": 1280
+      }
+    },
+    {
+      "core": "rhine-lab",
+      "mode": "light",
+      "lang": "zh-tw",
+      "width": 1280,
+      "save": true,
+      "file": "rhine-lab-light-zh-tw-1280.png",
+      "dimensions": {
+        "width": 1280,
+        "scrollWidth": 1280
+      }
+    },
+    {
+      "core": "rhine-lab",
+      "mode": "dark",
+      "lang": "en-us",
+      "width": 1280,
+      "save": true,
+      "file": "rhine-lab-dark-en-us-1280.png",
+      "dimensions": {
+        "width": 1280,
+        "scrollWidth": 1280
+      }
+    },
+    {
+      "core": "modern",
+      "mode": "light",
+      "lang": "en-us",
+      "width": 1280,
+      "save": false,
+      "dimensions": {
+        "width": 1280,
+        "scrollWidth": 1280
+      }
+    },
+    {
+      "core": "modern",
+      "mode": "dark",
+      "lang": "ja-jp",
+      "width": 1280,
+      "save": false,
+      "dimensions": {
+        "width": 1280,
+        "scrollWidth": 1280
+      }
+    },
+    {
+      "core": "elegant",
+      "mode": "light",
+      "lang": "ja-jp",
+      "width": 1280,
+      "save": false,
+      "dimensions": {
+        "width": 1280,
+        "scrollWidth": 1280
+      }
+    },
+    {
+      "core": "elegant",
+      "mode": "dark",
+      "lang": "zh-tw",
+      "width": 1280,
+      "save": false,
+      "dimensions": {
+        "width": 1280,
+        "scrollWidth": 1280
+      }
+    },
+    {
+      "core": "swiss-editorial",
+      "mode": "light",
+      "lang": "zh-tw",
+      "width": 1280,
+      "save": false,
+      "dimensions": {
+        "width": 1280,
+        "scrollWidth": 1280
+      }
+    },
+    {
+      "core": "swiss-editorial",
+      "mode": "dark",
+      "lang": "en-us",
+      "width": 1280,
+      "save": false,
+      "dimensions": {
+        "width": 1280,
+        "scrollWidth": 1280
+      }
+    },
+    {
+      "core": "swiss-contrast",
+      "mode": "light",
+      "lang": "en-us",
+      "width": 1280,
+      "save": false,
+      "dimensions": {
+        "width": 1280,
+        "scrollWidth": 1280
+      }
+    },
+    {
+      "core": "swiss-contrast",
+      "mode": "dark",
+      "lang": "ja-jp",
+      "width": 1280,
+      "save": false,
+      "dimensions": {
+        "width": 1280,
+        "scrollWidth": 1280
+      }
+    },
+    {
+      "core": "default",
+      "mode": "light",
+      "lang": "ja-jp",
+      "width": 320,
+      "save": true,
+      "file": "default-light-ja-jp-320.png",
+      "dimensions": {
+        "width": 320,
+        "scrollWidth": 320
+      }
+    },
+    {
+      "core": "swiss",
+      "mode": "dark",
+      "lang": "zh-tw",
+      "width": 1600,
+      "save": false,
+      "dimensions": {
+        "width": 1600,
+        "scrollWidth": 1600
+      }
+    }
+  ]
+}
