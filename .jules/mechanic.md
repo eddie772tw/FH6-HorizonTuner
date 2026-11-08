@@ -34,3 +34,8 @@
 **物理洞察 (Physics Learning):** 四輪定位解算器原先以裸字串比對驅動形式 `drive == "FWD"` 與 `match drive { "FWD" => ..., "RWD" => ..., _ => ... }`，缺乏 trim 與大小寫正規化。當外部傳入小寫 `"fwd"` 或帶空白字符時，Road 模式會將 FWD 前輪轉向形變所需之 +1.5 psi 支撐補償誤判退化為 AWD 的 +0.2 psi（導致前胎胎壁支撐不足 1.3 psi）；更致命的是在 Drag 模式中，小寫 `"fwd"` 因比對失敗跌入後驅分支，將前驅直線加速車的驅動輪胎壓錯誤倒置為前高 (38 psi) 後低 (15 psi)，徹底破壞彈射接地印跡幾何。同時，齒輪比速度與轉速幾何雙向解算器（`calc_gear_speed` 與 `calc_gear_rpm`）在面對非正數、零或 IEEE 754 非有限值（`NaN`、`INFINITY`）時缺乏防護，會傳播非物理負值或觸發除以零；且次級修正（Secondary Correction）在讀取使用者或遙測速限時未過濾非有限數，導致頂檔目標總比退化或溢位。
 **行動 (Action):** 定位解算器統一調用 `Drivetrain::from_str_loose` 進行大小寫與空白安全正規化，確保驅動形式全架構 SSOT 型別一致性並消除胎壓倒置陷阱；運動學速度/轉速純函式與次級修正全面強制嚴格正定性（Positive & Finite Protection），無效數值安全收斂至 0.0，確保幾何動力學閉包。
 **署名:** Mechanic as Antigravity
+
+## 2026-11-07 - Drift Degenerate Spring Damping Collapse & Differential Field Drivetrain Normalization
+**物理洞察 (Physics Learning):** 在甩尾（Drift）模式底盤解算中，回彈阻尼依據彈簧剛度在可調區間之相對百分比位置 `spring_fraction = (bounded - k_min) / (k_max - k_min).max(1e-6)` 解算。當遇到不可調固定剛度彈簧（`k_min == k_max`，即調校區間退化為單點）時，分子 `bounded - k_min == 0.0`，導致 `spring_fraction` 突變退化為 `0.0`，使回彈阻尼與壓縮阻尼跌破為最底限 `1.0`（極限軟阻尼）。這在幾何動力學上造成嚴重的欠阻尼（Under-damped），車身劇烈振盪失控。同時，底盤工作流機械欄位解算器（`mechanical_fields`）在判定差速器欄位時，原先採用裸字串 `!= "RWD"`、`!= "FWD"` 與 `== "AWD"`，當傳入小寫 `"awd"` 或前後帶空白之驅動形式時，`== "AWD"` 評估為 `false`，導致 AWD 車輛的中央差速器 `diff.center` 欄位被意外吞噬；而在後驅/前驅小寫時亦會錯誤加入相反軸向差速器，破壞幾何結構與 UI 推薦契約。
+**行動 (Action):** Drift 阻尼解算器落實退化區間防護（當 `k_max - k_min <= 1e-4` 時賦予 0.5 中性阻尼基準，保證 10.5 阻尼支撐），並對 `spring_fraction` 實施 `0.0..=1.0` 嚴格有限區間約束；全工作流差速器欄位生成統一調用 `Drivetrain::from_str_loose` 實施大小寫與空白正規化，維護跨組態動力學封閉性與欄位結構完整性。
+**署名:** Mechanic as Antigravity
