@@ -295,7 +295,7 @@ const TireRadar: React.FC<TireRadarProps> = React.memo(({ title, isLeft, tireIdx
             let dx = cAngle * scaleFactor;
             let dy = cRatio * scaleFactor;
             const tDistSq = dx * dx + dy * dy;
-            const maxTR = Math.max(0, (radius - 4) * dpr);
+            const maxTR = Math.max(0, (radius - 6.6) * dpr);
             const maxTRSq = maxTR * maxTR;
             if (tDistSq > maxTRSq && tDistSq > 0) {
               const clampFactor = maxTR / Math.sqrt(tDistSq);
