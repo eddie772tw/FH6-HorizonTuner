@@ -1,7 +1,8 @@
 //! Engineering baseline v1. Legacy chassis remains frozen in chassis.rs.
 //! Slider interpolation is a starting point, not a solved suspension geometry.
 use super::{
-    chassis::calculate_chassis_tuning, ChassisTuningResult, RaceGoal, RallyProfile, TuningCarParams,
+    chassis::calculate_chassis_tuning, ChassisTuningResult, Drivetrain, RaceGoal, RallyProfile,
+    TuningCarParams,
 };
 use serde::Serialize;
 use serde_json::{json, Value};
@@ -78,6 +79,10 @@ pub fn resolve_aero(p: &TuningCarParams) -> AeroLoad {
 
 /// A decimal grid may not intersect a narrow/locked game interval.
 pub fn quantize(value: f64, min: f64, max: f64) -> f64 {
+    if !value.is_finite() || !min.is_finite() || !max.is_finite() {
+        return value;
+    }
+    let (min, max) = if min <= max { (min, max) } else { (max, min) };
     let low = (min * 10.0).ceil() / 10.0;
     let high = (max * 10.0).floor() / 10.0;
     let bounded = value.clamp(min, max);
@@ -150,10 +155,8 @@ pub fn calculate(goal: RaceGoal, p: &TuningCarParams) -> Calculation {
         let mut rebounds = [0.0; 2];
         let mut bumps = [0.0; 2];
         for (i, share) in [w, 1.0 - w].into_iter().enumerate() {
-            let fraction = if p
-                .drivetrain
-                .as_deref()
-                .is_some_and(|s| s.eq_ignore_ascii_case("FWD"))
+            let fraction = if p.drivetrain.as_deref().map(Drivetrain::from_str_loose)
+                == Some(Drivetrain::FWD)
             {
                 if i == 0 {
                     (share - 0.10).max(0.10)
@@ -190,7 +193,7 @@ pub fn calculate(goal: RaceGoal, p: &TuningCarParams) -> Calculation {
             } else {
                 (1.0 + 14.0 * share) * if cross { 1.10 } else { 1.0 }
             };
-            let rebound_raw = ref_rebound * (spring / reference).sqrt();
+            let rebound_raw = ref_rebound * (spring / reference.max(1e-6)).max(0.0).sqrt();
             let rebound = quantize(rebound_raw, 1.0, 20.0);
             let bump_raw = rebound
                 * if road {
@@ -211,7 +214,7 @@ pub fn calculate(goal: RaceGoal, p: &TuningCarParams) -> Calculation {
             springs[i] = spring;
             rebounds[i] = rebound;
             bumps[i] = bump;
-            axles.push(json!({"axle":if i==0{"front"}else{"rear"},"baseTarget":base_raw,"baseline":base,"reference":reference,"target":if aero.reason.is_none(){Some(target)}else{None},"baseLimited":base_raw<lo[i]||base_raw>hi[i],"aeroLimited":target>hi[i],"reboundTarget":rebound_raw,"reboundLimited":!(1.0..=20.0).contains(&rebound_raw),"bumpLimited":!(1.0..=20.0).contains(&bump_raw)}));
+            axles.push(json!({"axle":if i==0{"front"}else{"rear"},"baseTarget":base_raw,"baseline":base,"reference":reference,"target":if aero.reason.is_none(){Some(target)}else{None},"baseLimited":base_raw<lo[i]-1e-7||base_raw>hi[i]+1e-7,"aeroLimited":target>hi[i]+1e-7,"reboundTarget":rebound_raw,"reboundLimited":!(1.0..=20.0).contains(&rebound_raw),"bumpLimited":!(1.0..=20.0).contains(&bump_raw)}));
         }
         if reasons.is_empty() {
             values.springs.front = springs[0];

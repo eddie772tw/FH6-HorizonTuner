@@ -19,6 +19,7 @@ pub struct RoadService {
     pub store: RoadStore,
     active: Option<Value>,
     latest_identity: Option<Value>,
+    latest_raw_identity: Option<(i64, i64, i64)>,
     latest_timestamp: Option<f64>,
     latest_class: i64,
     progress_at: Option<Instant>,
@@ -38,6 +39,7 @@ impl RoadService {
             store,
             active: None,
             latest_identity: None,
+            latest_raw_identity: None,
             latest_timestamp: None,
             latest_class: 0,
             progress_at: None,
@@ -49,7 +51,9 @@ impl RoadService {
             writer,
         }
     }
-    fn identity(frame: &Value) -> Option<Value> {
+    // [PERF] Parse identity into a Copy (i64, i64, i64) tuple to avoid heap-allocating
+    // a serde_json::Map and 3 String keys on every frame in the 60Hz telemetry loop.
+    fn raw_identity(frame: &Value) -> Option<(i64, i64, i64)> {
         let o = frame.as_object()?;
         let ord = o.get("CarOrdinal")?.as_f64()?;
         let pi = o.get("CarPerformanceIndex")?.as_f64()?;
@@ -64,25 +68,39 @@ impl RoadService {
         {
             return None;
         }
-        Some(json!({"ordinal":ord as i64,"performanceIndex":pi as i64,"drivetrain":dt as i64}))
+        Some((ord as i64, pi as i64, dt as i64))
+    }
+    fn identity_value(raw: (i64, i64, i64)) -> Value {
+        json!({"ordinal": raw.0, "performanceIndex": raw.1, "drivetrain": raw.2})
+    }
+    #[allow(dead_code)]
+    pub(crate) fn identity(frame: &Value) -> Option<Value> {
+        Self::raw_identity(frame).map(Self::identity_value)
     }
     pub fn observe(&mut self, frame: &Value) {
-        let id = Self::identity(frame);
+        let raw_id = Self::raw_identity(frame);
         let ts = frame.get("TimestampMS").and_then(Value::as_f64);
         let progressed = ts.is_some_and(|x| x.is_finite() && Some(x) != self.latest_timestamp);
-        if id.is_some() && progressed {
-            self.stable_frames = if id == self.latest_identity
-                && self.latest_timestamp.is_none_or(|x| ts.unwrap() > x)
-            {
-                self.stable_frames + 1
-            } else {
-                1
-            };
-            self.latest_identity = id.clone();
-            self.latest_timestamp = ts;
-            self.latest_class = frame.get("CarClass").and_then(Value::as_i64).unwrap_or(0);
-            self.progress_at = Some(Instant::now());
-            self.sequence += 1;
+        if let Some(raw) = raw_id {
+            if progressed {
+                let same_identity = self.latest_raw_identity == Some(raw);
+                self.stable_frames =
+                    if same_identity && self.latest_timestamp.is_none_or(|x| ts.unwrap() > x) {
+                        self.stable_frames + 1
+                    } else {
+                        1
+                    };
+                // [PERF] Only construct and allocate the JSON Value when vehicle identity actually changes.
+                // In steady-state 60Hz telemetry, this eliminates redundant Map deep-clones per frame.
+                if !same_identity {
+                    self.latest_raw_identity = Some(raw);
+                    self.latest_identity = Some(Self::identity_value(raw));
+                }
+                self.latest_timestamp = ts;
+                self.latest_class = frame.get("CarClass").and_then(Value::as_i64).unwrap_or(0);
+                self.progress_at = Some(Instant::now());
+                self.sequence += 1;
+            }
         }
         let armed = self
             .active
@@ -90,27 +108,34 @@ impl RoadService {
             .and_then(Value::as_object)
             .and_then(|a| a.get("armedSequence"))
             .and_then(Value::as_u64);
-        let expected = self
-            .active
-            .as_ref()
-            .and_then(Value::as_object)
-            .and_then(|a| a.get("identity"))
-            .cloned();
         let Some(armed) = armed else { return };
         if self.sequence <= armed {
             return;
         }
-        if id.is_some() && id != expected {
-            self.flush_pending();
-            let run = self.active.take();
-            if let Some(run) = run {
-                if let Err(error) = self.finish_run(run, "identity-changed") {
-                    self.last_error = Some(error.to_string());
+        if let Some(raw) = raw_id {
+            // [PERF] Borrow expected identity directly; avoid cloning the JSON object on every frame.
+            let expected = self
+                .active
+                .as_ref()
+                .and_then(Value::as_object)
+                .and_then(|a| a.get("identity"));
+            let matches_expected = if self.latest_raw_identity == Some(raw) {
+                self.latest_identity.as_ref() == expected
+            } else {
+                Some(&Self::identity_value(raw)) == expected
+            };
+            if !matches_expected {
+                self.flush_pending();
+                let run = self.active.take();
+                if let Some(run) = run {
+                    if let Err(error) = self.finish_run(run, "identity-changed") {
+                        self.last_error = Some(error.to_string());
+                    }
                 }
+                return;
             }
-            return;
         }
-        if id.is_none() || !progressed {
+        if raw_id.is_none() || !progressed {
             return;
         }
         if frame

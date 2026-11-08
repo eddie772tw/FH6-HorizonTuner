@@ -698,3 +698,24 @@ fn settings_arc_provides_zero_copy_atomic_sharing() {
     assert_eq!(updated_arc["language"], "ja-jp");
     assert_eq!(initial_arc["language"], initial_owned["language"]);
 }
+
+#[test]
+fn language_api_bounds_code_length_and_rejects_reserved_device_names() {
+    let directory = tempfile::tempdir().unwrap();
+    let service = ConfigService::new(directory.path()).unwrap();
+
+    let long_code = "a".repeat(33);
+    let err = service
+        .handle("GET", &format!("/api/languages/{long_code}"), &Value::Null)
+        .unwrap()
+        .unwrap_err();
+    assert_eq!(err.status, 422);
+
+    for reserved in ["con", "aux", "nul", "prn", "com1", "lpt1"] {
+        let res = service
+            .handle("GET", &format!("/api/languages/{reserved}"), &Value::Null)
+            .unwrap()
+            .unwrap();
+        assert_eq!(res, json!({"error": "Language not found"}));
+    }
+}
