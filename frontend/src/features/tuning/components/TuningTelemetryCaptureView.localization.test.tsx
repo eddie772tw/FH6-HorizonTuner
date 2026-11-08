@@ -176,4 +176,21 @@ it.each(languages)('renders parameterized badge and accessible button labels in 
   const downloadCsvBtn = host.querySelector('button[aria-label="' + label('Download CSV') + '"]');
   expect(downloadCsvBtn).not.toBeNull();
   expect(downloadCsvBtn?.textContent).toBe(label('Download CSV'));
+
+  for (const [key, enLabel] of [
+    ['purpose', 'Purpose'],
+    ['gameBuild', 'Game Build'],
+    ['installedParts', 'Installed Parts'],
+    ['tireType', 'Tire Type'],
+    ['surface', 'Surface'],
+    ['weather', 'Weather'],
+    ['eventType', 'Event Type'],
+    ['track', 'Track'],
+    ['shareCode', 'Share Code'],
+    ['driverAssists', 'Driver Assists'],
+  ] as const) {
+    const fieldLabel = host.querySelector(`label[for="capture-${key}"]`);
+    expect(fieldLabel?.textContent).toBe(label(enLabel));
+    expect(fieldLabel?.textContent).not.toBe(key);
+  }
 });

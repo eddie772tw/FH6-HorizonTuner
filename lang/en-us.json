@@ -1954,5 +1954,14 @@
     "Maximum Tire Temp FL/FR/RL/RR": "Maximum Tire Temp FL/FR/RL/RR",
     "Maximum Combined Slip FL/FR/RL/RR": "Maximum Combined Slip FL/FR/RL/RR",
     "Non-monotonic timestamps": "Non-monotonic timestamps",
-    "Use JSON as the canonical evidence file; CSV is for spreadsheet or MoTeC-style inspection.": "Use JSON as the canonical evidence file; CSV is for spreadsheet or MoTeC-style inspection."
+    "Use JSON as the canonical evidence file; CSV is for spreadsheet or MoTeC-style inspection.": "Use JSON as the canonical evidence file; CSV is for spreadsheet or MoTeC-style inspection.",
+    "Purpose": "Purpose",
+    "Game Build": "Game Build",
+    "Installed Parts": "Installed Parts",
+    "Tire Type": "Tire Type",
+    "Weather": "Weather",
+    "Event Type": "Event Type",
+    "Track": "Track",
+    "Share Code": "Share Code",
+    "Driver Assists": "Driver Assists"
 }

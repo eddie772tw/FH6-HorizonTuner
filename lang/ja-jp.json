@@ -1779,5 +1779,14 @@
     "Maximum Tire Temp FL/FR/RL/RR": "最高タイヤ温度 FL/FR/RL/RR",
     "Maximum Combined Slip FL/FR/RL/RR": "最大複合スリップ FL/FR/RL/RR",
     "Non-monotonic timestamps": "単調増加しないタイムスタンプ",
-    "Use JSON as the canonical evidence file; CSV is for spreadsheet or MoTeC-style inspection.": "正式なエビデンスファイルには JSON を使用してください。CSV は表計算ソフトや MoTeC スタイルの確認用です。"
+    "Use JSON as the canonical evidence file; CSV is for spreadsheet or MoTeC-style inspection.": "正式なエビデンスファイルには JSON を使用してください。CSV は表計算ソフトや MoTeC スタイルの確認用です。",
+    "Purpose": "目的",
+    "Game Build": "ゲームビルド",
+    "Installed Parts": "装着パーツ",
+    "Tire Type": "タイヤ種別",
+    "Weather": "天候",
+    "Event Type": "イベント種別",
+    "Track": "コース",
+    "Share Code": "共有コード",
+    "Driver Assists": "ドライビングアシスト"
 }

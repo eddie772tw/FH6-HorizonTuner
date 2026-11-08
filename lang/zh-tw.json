@@ -2358,5 +2358,14 @@
     "Capturing · {count} samples": "錄製中 · {count} 筆樣本",
     "Invalidated · {count} samples": "已失效 · {count} 筆樣本",
     "Idle · {count} samples": "閒置 · {count} 筆樣本",
-    "Clear capture buffer": "清除錄製緩衝區"
+    "Clear capture buffer": "清除錄製緩衝區",
+    "Purpose": "測試目的",
+    "Game Build": "遊戲版本",
+    "Installed Parts": "已安裝零件",
+    "Tire Type": "輪胎類型",
+    "Weather": "天氣",
+    "Event Type": "賽事類型",
+    "Track": "賽道",
+    "Share Code": "分享代碼",
+    "Driver Assists": "駕駛輔助"
 }

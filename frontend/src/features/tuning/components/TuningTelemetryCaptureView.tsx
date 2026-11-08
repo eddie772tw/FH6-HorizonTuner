@@ -63,9 +63,20 @@ const TuningTelemetryCaptureView: React.FC<TuningTelemetryCaptureViewProps> = ({
               <label className="form-label fs-7" htmlFor="capture-label">{t('File Label')}</label>
               <input id="capture-label" className="form-control form-control-sm" value={metadata.label} onChange={(event) => capture.setMetadata(updateMetadata(metadata, 'label', event.target.value))} />
               <div className="row g-2">
-                {(['purpose', 'gameBuild', 'installedParts', 'tireType', 'surface', 'weather', 'eventType', 'track', 'shareCode', 'driverAssists'] as const).map((key) => (
+                {([
+                  ['purpose', 'Purpose'],
+                  ['gameBuild', 'Game Build'],
+                  ['installedParts', 'Installed Parts'],
+                  ['tireType', 'Tire Type'],
+                  ['surface', 'Surface'],
+                  ['weather', 'Weather'],
+                  ['eventType', 'Event Type'],
+                  ['track', 'Track'],
+                  ['shareCode', 'Share Code'],
+                  ['driverAssists', 'Driver Assists'],
+                ] as const).map(([key, fieldLabel]) => (
                   <div className="col-12 col-md-6" key={key}>
-                    <label className="form-label fs-7" htmlFor={`capture-${key}`}>{t(key)}</label>
+                    <label className="form-label fs-7" htmlFor={`capture-${key}`}>{t(fieldLabel)}</label>
                     <input id={`capture-${key}`} className="form-control form-control-sm" value={metadata[key]} onChange={(event) => capture.setMetadata(updateMetadata(metadata, key, event.target.value))} />
                   </div>
                 ))}
