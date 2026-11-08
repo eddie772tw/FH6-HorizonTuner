@@ -155,10 +155,7 @@ pub fn calculate(goal: RaceGoal, p: &TuningCarParams) -> Calculation {
         let mut rebounds = [0.0; 2];
         let mut bumps = [0.0; 2];
         for (i, share) in [w, 1.0 - w].into_iter().enumerate() {
-            let fraction = if p
-                .drivetrain
-                .as_deref()
-                .map(Drivetrain::from_str_loose)
+            let fraction = if p.drivetrain.as_deref().map(Drivetrain::from_str_loose)
                 == Some(Drivetrain::FWD)
             {
                 if i == 0 {

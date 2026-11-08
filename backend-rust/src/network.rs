@@ -218,6 +218,27 @@ async fn lan_ws(
     }
     upgrade.on_upgrade(move |socket| socket_loop(socket, backend, "json"))
 }
+/// Validate the incoming HTTP Host header to defend against DNS rebinding attacks.
+/// Requests targeting the loopback router must originate from trusted local hosts.
+pub fn allowed_host(host: Option<&str>) -> bool {
+    let Some(host) = host.filter(|s| !s.is_empty() && !s.contains(['/', '\\', '?', '#', '@']))
+    else {
+        return false;
+    };
+    let Ok(url) = url::Url::parse(&format!("http://{host}")) else {
+        return false;
+    };
+    url.username().is_empty()
+        && url.password().is_none()
+        && url.path() == "/"
+        && url.query().is_none()
+        && url.fragment().is_none()
+        && matches!(
+            url.host_str(),
+            Some("localhost" | "127.0.0.1" | "[::1]" | "tauri.localhost" | "testserver")
+        )
+}
+
 pub fn allowed_origin(origin: Option<&str>) -> bool {
     let Some(origin) = origin.filter(|s| !s.is_empty()) else {
         return true;
@@ -253,6 +274,11 @@ fn cors_origin(origin: &str) -> bool {
             && url.fragment().is_none())
 }
 async fn origin_security(request: Request<Body>, next: Next) -> Response {
+    let host = request.headers().get("host").and_then(|v| v.to_str().ok());
+    if !allowed_host(host) {
+        return ApiError::new(403, "Access denied: Invalid or untrusted Host header.")
+            .into_response();
+    }
     let origin = request
         .headers()
         .get("origin")
