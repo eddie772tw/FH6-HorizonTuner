@@ -1,0 +1,198 @@
+{
+  "date": "2026-11-08",
+  "implementation": "5fa4dd6593ce8d2b1db366b4538c53be1a83a2c0",
+  "productBlobs": {
+    "frontend/src/features/tuning/components/TuningTelemetryCaptureView.tsx": "d6c067e40cbf7d4c70e645fabd0947039b79585b",
+    "lang/en-us.json": "a5e98d8e479e64050ec1941647e2f317e899b1a4",
+    "lang/zh-tw.json": "c05cd4357346204745bf07512f2b7eb84c4f4f9c",
+    "lang/ja-jp.json": "09ade2876fd40d8aa2e9071e476539f97ac164e9"
+  },
+  "browser": "156.0.8078.79",
+  "capture": "Chromium headless, full production AppShell/providers served by Vite, DPR 1, zoom 100%. Isolated loopback backend with fixture settings, real locale dictionaries and synthetic recorder status / WebSocket telemetry. Viewport height 720 (320px width: 800). Odd cases emulate reduced motion.",
+  "reproduce": "Enable developer_tuning_enabled in settings, open Tune workspace, and click Open Telemetry Capture; inspect the localized status badge (Capturing / Idle with sample count), localized metadata field labels, and accessible capture controls.",
+  "cases": [
+    {
+      "core": "default",
+      "mode": "light",
+      "lang": "en-us",
+      "width": 1280,
+      "save": true,
+      "file": "default-light-en-us-1280.png",
+      "dimensions": {
+        "width": 1280,
+        "scrollWidth": 1280
+      }
+    },
+    {
+      "core": "default",
+      "mode": "dark",
+      "lang": "ja-jp",
+      "width": 1280,
+      "save": true,
+      "file": "default-dark-ja-jp-1280.png",
+      "dimensions": {
+        "width": 1280,
+        "scrollWidth": 1280
+      }
+    },
+    {
+      "core": "swiss",
+      "mode": "light",
+      "lang": "ja-jp",
+      "width": 1280,
+      "save": true,
+      "file": "swiss-light-ja-jp-1280.png",
+      "dimensions": {
+        "width": 1280,
+        "scrollWidth": 1280
+      }
+    },
+    {
+      "core": "swiss",
+      "mode": "dark",
+      "lang": "zh-tw",
+      "width": 1280,
+      "save": true,
+      "file": "swiss-dark-zh-tw-1280.png",
+      "dimensions": {
+        "width": 1280,
+        "scrollWidth": 1280
+      }
+    },
+    {
+      "core": "rhine-lab",
+      "mode": "light",
+      "lang": "zh-tw",
+      "width": 1280,
+      "save": true,
+      "file": "rhine-lab-light-zh-tw-1280.png",
+      "dimensions": {
+        "width": 1280,
+        "scrollWidth": 1280
+      }
+    },
+    {
+      "core": "rhine-lab",
+      "mode": "dark",
+      "lang": "en-us",
+      "width": 1280,
+      "save": true,
+      "file": "rhine-lab-dark-en-us-1280.png",
+      "dimensions": {
+        "width": 1280,
+        "scrollWidth": 1280
+      }
+    },
+    {
+      "core": "modern",
+      "mode": "light",
+      "lang": "en-us",
+      "width": 1280,
+      "save": false,
+      "dimensions": {
+        "width": 1280,
+        "scrollWidth": 1280
+      }
+    },
+    {
+      "core": "modern",
+      "mode": "dark",
+      "lang": "ja-jp",
+      "width": 1280,
+      "save": false,
+      "dimensions": {
+        "width": 1280,
+        "scrollWidth": 1280
+      }
+    },
+    {
+      "core": "elegant",
+      "mode": "light",
+      "lang": "ja-jp",
+      "width": 1280,
+      "save": false,
+      "dimensions": {
+        "width": 1280,
+        "scrollWidth": 1280
+      }
+    },
+    {
+      "core": "elegant",
+      "mode": "dark",
+      "lang": "zh-tw",
+      "width": 1280,
+      "save": false,
+      "dimensions": {
+        "width": 1280,
+        "scrollWidth": 1280
+      }
+    },
+    {
+      "core": "swiss-editorial",
+      "mode": "light",
+      "lang": "zh-tw",
+      "width": 1280,
+      "save": false,
+      "dimensions": {
+        "width": 1280,
+        "scrollWidth": 1280
+      }
+    },
+    {
+      "core": "swiss-editorial",
+      "mode": "dark",
+      "lang": "en-us",
+      "width": 1280,
+      "save": false,
+      "dimensions": {
+        "width": 1280,
+        "scrollWidth": 1280
+      }
+    },
+    {
+      "core": "swiss-contrast",
+      "mode": "light",
+      "lang": "en-us",
+      "width": 1280,
+      "save": false,
+      "dimensions": {
+        "width": 1280,
+        "scrollWidth": 1280
+      }
+    },
+    {
+      "core": "swiss-contrast",
+      "mode": "dark",
+      "lang": "ja-jp",
+      "width": 1280,
+      "save": false,
+      "dimensions": {
+        "width": 1280,
+        "scrollWidth": 1280
+      }
+    },
+    {
+      "core": "default",
+      "mode": "light",
+      "lang": "ja-jp",
+      "width": 320,
+      "save": true,
+      "file": "default-light-ja-jp-320.png",
+      "dimensions": {
+        "width": 320,
+        "scrollWidth": 320
+      }
+    },
+    {
+      "core": "swiss",
+      "mode": "dark",
+      "lang": "zh-tw",
+      "width": 1600,
+      "save": false,
+      "dimensions": {
+        "width": 1600,
+        "scrollWidth": 1600
+      }
+    }
+  ]
+}
