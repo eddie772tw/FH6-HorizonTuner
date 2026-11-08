@@ -43,12 +43,14 @@ export const Metric: React.FC<{ label: string; value: string; tone?: string }> =
   </div>
 );
 
-interface ChartTheme {
+export interface ChartTheme {
   divider: string;
   text: string;
   font: string;
   dash: number[];
   flat: boolean;
+  linear?: boolean;
+  glowStrength?: number;
 }
 
 interface ChartLayout {
@@ -76,6 +78,8 @@ const EMPTY_CHART_THEME: ChartTheme = {
   font: 'system-ui, sans-serif',
   dash: [3, 4],
   flat: false,
+  linear: false,
+  glowStrength: 1,
 };
 
 const getCssVariable = (style: CSSStyleDeclaration, name: string, fallback: string): string => (
@@ -106,7 +110,7 @@ const hasChartValues = (data: readonly TelemetryChartPoint[], lines: readonly Ch
   return false;
 };
 
-const createChartLayout = (
+export const createChartLayout = (
   data: readonly TelemetryChartPoint[],
   lines: readonly ChartLine[],
   width: number,
@@ -157,7 +161,7 @@ const createChartLayout = (
   };
 };
 
-const drawChart = (
+export const drawChart = (
   context: CanvasRenderingContext2D,
   data: readonly TelemetryChartPoint[],
   lines: readonly ChartLine[],
@@ -166,63 +170,95 @@ const drawChart = (
   style: CSSStyleDeclaration,
   colorCache: Map<string, string>,
 ): void => {
-  const { width, height, left, top, plotWidth, plotHeight, min, max } = layout;
-  context.clearRect(0, 0, width, height);
-  context.font = `10px ${theme.font}`;
-  context.textBaseline = 'middle';
-  context.fillStyle = theme.text;
-  context.strokeStyle = theme.divider;
-  context.lineWidth = 1;
-  context.setLineDash(theme.dash);
-  context.textAlign = 'right';
+  context.save();
+  try {
+    const { width, height, left, top, plotWidth, plotHeight, min, max } = layout;
+    context.clearRect(0, 0, width, height);
+    context.font = `10px ${theme.font}`;
+    context.textBaseline = 'middle';
+    context.fillStyle = theme.text;
+    context.strokeStyle = theme.divider;
+    context.lineWidth = 1;
+    context.setLineDash(theme.dash);
+    context.textAlign = 'right';
 
-  context.beginPath();
-  for (let gridIndex = 0; gridIndex <= 4; gridIndex += 1) {
-    const ratio = gridIndex / 4;
-    const y = top + plotHeight * ratio;
-    context.moveTo(left, y);
-    context.lineTo(width - layout.right, y);
-    context.fillText(formatValue(max - (max - min) * ratio, 2), left - 6, y);
-  }
-  for (let gridIndex = 0; gridIndex <= 4; gridIndex += 1) {
-    const x = left + plotWidth * (gridIndex / 4);
-    context.moveTo(x, top);
-    context.lineTo(x, top + plotHeight);
-  }
-  context.stroke();
-  context.setLineDash([]);
-
-  context.textAlign = 'center';
-  const lastTime = data.length > 0 ? data[data.length - 1].time : 0;
-  for (let labelIndex = 0; labelIndex <= 2; labelIndex += 1) {
-    const ratio = labelIndex / 2;
-    const x = left + plotWidth * ratio;
-    context.fillText(formatValue(lastTime * ratio, 1), x, height - 10);
-  }
-
-  const range = max - min || 1;
-  context.lineCap = theme.flat ? 'butt' : 'round';
-  context.lineJoin = theme.flat ? 'miter' : 'round';
-  context.lineWidth = 2;
-
-  for (let lineIndex = 0; lineIndex < lines.length; lineIndex += 1) {
-    const line = lines[lineIndex];
-    context.strokeStyle = resolveColor(line.color, style, colorCache);
     context.beginPath();
-    let started = false;
-    for (let dataIndex = 0; dataIndex < data.length; dataIndex += 1) {
-      const value = data[dataIndex][line.dataKey];
-      if (typeof value !== 'number' || !Number.isFinite(value)) continue;
-      const x = left + (data.length <= 1 ? 0 : dataIndex / (data.length - 1)) * plotWidth;
-      const y = top + (1 - (value - min) / range) * plotHeight;
-      if (!started) {
-        context.moveTo(x, y);
-        started = true;
-      } else {
-        context.lineTo(x, y);
+    for (let gridIndex = 0; gridIndex <= 4; gridIndex += 1) {
+      const ratio = gridIndex / 4;
+      const y = top + plotHeight * ratio;
+      context.moveTo(left, y);
+      context.lineTo(width - layout.right, y);
+      context.fillText(formatValue(max - (max - min) * ratio, 2), left - 6, y);
+    }
+    for (let gridIndex = 0; gridIndex <= 4; gridIndex += 1) {
+      const x = left + plotWidth * (gridIndex / 4);
+      context.moveTo(x, top);
+      context.lineTo(x, top + plotHeight);
+    }
+    context.stroke();
+    context.setLineDash([]);
+
+    context.textAlign = 'center';
+    const lastTime = data.length > 0 ? data[data.length - 1].time : 0;
+    for (let labelIndex = 0; labelIndex <= 2; labelIndex += 1) {
+      const ratio = labelIndex / 2;
+      const x = left + plotWidth * ratio;
+      context.fillText(formatValue(lastTime * ratio, 1), x, height - 10);
+    }
+
+    const range = max - min || 1;
+    context.lineCap = theme.flat ? 'butt' : 'round';
+    context.lineJoin = theme.flat ? 'miter' : 'round';
+    context.lineWidth = 2;
+
+    for (let lineIndex = 0; lineIndex < lines.length; lineIndex += 1) {
+      const line = lines[lineIndex];
+      const color = resolveColor(line.color, style, colorCache);
+      context.strokeStyle = color;
+      context.beginPath();
+      let started = false;
+      let lastX = 0;
+      let lastY = 0;
+      for (let dataIndex = 0; dataIndex < data.length; dataIndex += 1) {
+        const value = data[dataIndex][line.dataKey];
+        if (typeof value !== 'number' || !Number.isFinite(value)) continue;
+        const x = left + (data.length <= 1 ? 0 : dataIndex / (data.length - 1)) * plotWidth;
+        const y = top + (1 - (value - min) / range) * plotHeight;
+        if (!started) {
+          context.moveTo(x, y);
+          started = true;
+        } else {
+          context.lineTo(x, y);
+        }
+        lastX = x;
+        lastY = y;
+      }
+      if (started) {
+        context.stroke();
+        const glow = !theme.flat && (theme.glowStrength ?? 1) > 0;
+        context.shadowBlur = glow ? 4 * (theme.glowStrength ?? 1) : 0;
+        context.shadowColor = glow ? color : 'transparent';
+        context.lineWidth = 1.2;
+        context.beginPath();
+        if (theme.linear) {
+          context.strokeRect(lastX - 2.8, lastY - 2.8, 5.6, 5.6);
+        } else {
+          context.arc(lastX, lastY, 3.2, 0, Math.PI * 2);
+          context.stroke();
+        }
+        context.shadowBlur = 0;
+        context.fillStyle = color;
+        context.beginPath();
+        if (theme.linear) {
+          context.fillRect(lastX - 1.4, lastY - 1.4, 2.8, 2.8);
+        } else {
+          context.arc(lastX, lastY, 1.6, 0, Math.PI * 2);
+          context.fill();
+        }
       }
     }
-    if (started) context.stroke();
+  } finally {
+    context.restore();
   }
 };
 
@@ -271,6 +307,8 @@ export const TrendChart: React.FC<{
         font: theme.font,
         dash: theme.chartDash,
         flat: theme.flat,
+        linear: theme.linear,
+        glowStrength: theme.glowStrength,
       };
       colorCacheRef.current.clear();
       drawRef.current();
