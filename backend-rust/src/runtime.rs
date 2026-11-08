@@ -184,7 +184,8 @@ async fn receive_udp(
                     }
                 }
                 match telemetry::parse_packet(&bytes[..length]){Ok(frame)=>{
-                    let mut metrics=lock(&app.metrics);metrics.parsed(&frame,source.to_string());
+                    // [PERF] Pass stack-allocated SocketAddr directly into metrics to avoid heap allocation in 60Hz loop.
+                    let mut metrics=lock(&app.metrics);metrics.parsed(&frame,source);
                     if sender.try_send(frame).is_err(){metrics.dropped(1,"input_queue_full");}else{metrics.queue_depth+=1;metrics.queue_peak=metrics.queue_peak.max(metrics.queue_depth);}
                 },Err(reason)=>lock(&app.metrics).reject(&reason)}
             }

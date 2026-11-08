@@ -188,6 +188,7 @@ const SuspensionBar: React.FC<SuspensionBarProps> = React.memo(({ title, isLeft,
               const latestSamplePoint = history.samples[latestIdx];
               const isWarning = latestSamplePoint.travel <= 0.08 || latestSamplePoint.travel >= 0.92;
               const pulseColor = isWarning ? theme.danger : theme.primary;
+              const markerY = Math.max(rightPadding, Math.min(Math.max(rightPadding, h - rightPadding), latestY));
 
               // Outer pulse halo
               ctx.beginPath();
@@ -199,14 +200,14 @@ const SuspensionBar: React.FC<SuspensionBarProps> = React.memo(({ title, isLeft,
               } else {
                 ctx.shadowBlur = 0;
               }
-              ctx.arc(latestX, latestY, 3.6 * dpr, 0, Math.PI * 2);
+              ctx.arc(latestX, markerY, 3.6 * dpr, 0, Math.PI * 2);
               ctx.stroke();
 
               // Core focus dot
               ctx.beginPath();
               ctx.fillStyle = pulseColor;
               ctx.shadowBlur = 0;
-              ctx.arc(latestX, latestY, 1.8 * dpr, 0, Math.PI * 2);
+              ctx.arc(latestX, markerY, 1.8 * dpr, 0, Math.PI * 2);
               ctx.fill();
             }
           } finally {

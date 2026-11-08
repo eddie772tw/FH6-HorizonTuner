@@ -432,7 +432,7 @@ fn calculate_with_replay_policy(
         tire_evidence: proof.and_then(|p| p.tire_evidence()),
     })
 }
-pub(crate) fn mechanical_fields(
+pub fn mechanical_fields(
     profile: &Value,
     c: &ChassisTuningResult,
     a: &StaticAlignment,
@@ -482,15 +482,16 @@ pub(crate) fn mechanical_fields(
         }
     }
     add("caster.front", a.caster, "deg");
-    if profile["drivetrain"] != "RWD" {
+    let drive = profile["drivetrain"].as_str().map(str::trim);
+    if !drive.is_some_and(|s| s.eq_ignore_ascii_case("RWD")) {
         add("diff.front.acceleration", c.diff.accel_f, "%");
         add("diff.front.deceleration", c.diff.decel_f, "%");
     }
-    if profile["drivetrain"] != "FWD" {
+    if !drive.is_some_and(|s| s.eq_ignore_ascii_case("FWD")) {
         add("diff.rear.acceleration", c.diff.accel_r, "%");
         add("diff.rear.deceleration", c.diff.decel_r, "%");
     }
-    if profile["drivetrain"] == "AWD" {
+    if drive.is_some_and(|s| s.eq_ignore_ascii_case("AWD")) {
         add("diff.center", c.diff.center_rear, "%");
     }
     fields

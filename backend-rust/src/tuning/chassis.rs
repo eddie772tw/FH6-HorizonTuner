@@ -171,6 +171,34 @@ fn normalize_road_inputs(params: &TuningCarParams) -> TuningCarParams {
     p
 }
 
+fn normalize_unspecified_inputs(params: &TuningCarParams) -> TuningCarParams {
+    let mut p = params.clone();
+    p.weight = Some(positive(p.weight, 1400.0));
+    p.weight_distribution = Some(
+        p.weight_distribution
+            .filter(|v| v.is_finite())
+            .unwrap_or(50.0)
+            .clamp(1.0, 99.0),
+    );
+    let min_kf = positive(p.spring_front_min, 10.0);
+    p.spring_front_min = Some(min_kf);
+    p.spring_front_max = Some(positive(p.spring_front_max, 120.0).max(min_kf));
+
+    let min_kr = positive(p.spring_rear_min, 10.0);
+    p.spring_rear_min = Some(min_kr);
+    p.spring_rear_max = Some(positive(p.spring_rear_max, 120.0).max(min_kr));
+
+    let min_hf = positive(p.height_front_min, 10.0);
+    p.height_front_min = Some(min_hf);
+    p.height_front_max = Some(positive(p.height_front_max, 25.0).max(min_hf));
+
+    let min_hr = positive(p.height_rear_min, 10.0);
+    p.height_rear_min = Some(min_hr);
+    p.height_rear_max = Some(positive(p.height_rear_max, 25.0).max(min_hr));
+
+    p
+}
+
 fn rally_calculation_inputs(params: &TuningCarParams) -> TuningCarParams {
     let mut p = params.clone();
     p.weight = Some(positive(p.weight, 1400.0));
@@ -214,7 +242,7 @@ pub fn calculate_chassis_tuning(
     let p = match race_goal {
         RaceGoal::Road => normalize_road_inputs(car_params),
         RaceGoal::Rally | RaceGoal::DangerSign => rally_calculation_inputs(car_params),
-        _ => car_params.clone(),
+        _ => normalize_unspecified_inputs(car_params),
     };
 
     let weight = positive(p.weight, 1400.0);
@@ -275,8 +303,16 @@ pub fn calculate_chassis_tuning(
 
             let bounded_f = clamp(spring_f, k_min_f, k_max_f);
             let bounded_r = clamp(spring_r, k_min_r, k_max_r);
-            let spring_fraction_f = (bounded_f - k_min_f) / (k_max_f - k_min_f).max(1e-6);
-            let spring_fraction_r = (bounded_r - k_min_r) / (k_max_r - k_min_r).max(1e-6);
+            let spring_fraction_f = if k_max_f - k_min_f > 1e-4 {
+                ((bounded_f - k_min_f) / (k_max_f - k_min_f)).clamp(0.0, 1.0)
+            } else {
+                0.5
+            };
+            let spring_fraction_r = if k_max_r - k_min_r > 1e-4 {
+                ((bounded_r - k_min_r) / (k_max_r - k_min_r)).clamp(0.0, 1.0)
+            } else {
+                0.5
+            };
 
             reb_f = 1.0 + 19.0 * spring_fraction_f;
             reb_r = 1.0 + 19.0 * spring_fraction_r;

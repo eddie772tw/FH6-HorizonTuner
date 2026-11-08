@@ -330,3 +330,57 @@ fn engine_observation_endpoint_keeps_immutable_capture_and_history_shapes() {
         .handle("POST", "/api/road/engine-observations", Some(&changed))
         .is_err());
 }
+
+#[test]
+fn road_service_observe_steady_state_identity_preservation_and_transition() {
+    let temp = tempfile::tempdir().unwrap();
+    let telemetry = Arc::new(TelemetryStore::new(&temp.path().join("telemetry.sqlite")).unwrap());
+    let store = RoadStore::new(temp.path().join("road.sqlite").to_string_lossy()).unwrap();
+    let mut service = RoadService::new(telemetry, store);
+
+    let frame = |ms: i64, ord: i64, pi: i64, dt: i64| {
+        json!({
+            "TimestampMS": ms,
+            "IsRaceOn": 1,
+            "CurrentRaceTime": 0.1,
+            "CarOrdinal": ord,
+            "CarPerformanceIndex": pi,
+            "DrivetrainType": dt,
+            "CarClass": 3,
+            "SpeedMetersPerSecond": 25.0
+        })
+    };
+
+    // Frame 1: Initial car identity observation
+    service.observe(&frame(100, 42, 700, 1));
+    let initial_live = service.live();
+    assert_eq!(
+        initial_live["identity"],
+        json!({"ordinal": 42, "performanceIndex": 700, "drivetrain": 1})
+    );
+
+    // Frames 2..10: Steady-state frames with identical identity
+    for i in 2..=10 {
+        service.observe(&frame(i * 100, 42, 700, 1));
+    }
+    let steady_live = service.live();
+    assert_eq!(steady_live["identity"], initial_live["identity"]);
+
+    // Car identity transition
+    service.observe(&frame(1100, 99, 850, 2));
+    let updated_live = service.live();
+    assert_eq!(
+        updated_live["identity"],
+        json!({"ordinal": 99, "performanceIndex": 850, "drivetrain": 2})
+    );
+
+    // Invalid frame with negative ordinal does not overwrite identity
+    let corrupted = json!({
+        "TimestampMS": 1200,
+        "CarOrdinal": -1,
+        "CarPerformanceIndex": 700,
+        "DrivetrainType": 1
+    });
+    service.observe(&corrupted);
+    assert_eq!(service.live()["identity"], updated_live["identity"]);
+}
