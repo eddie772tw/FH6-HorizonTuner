@@ -72,3 +72,8 @@
 **學習 (Learning):** 工具列按鈕將檔案格式與動詞片段拼接（如 `MoTeC .ld {t("Export")} ({t("Experimental")})` 或 `CSV {t("Export")}`），在非英文語系（如日語動賓倒裝語序）中會產生語法破碎與欠缺助詞的生硬介面；同時，歷史字典可能存在同形異義（Homonym）錯譯，例如介面中的「Status」在日語字典中被機械化翻譯為行政區劃的「州」（State）而非「ステータス」，直接妨害了非英文使用者的理解。此外，頂層工具列的 `<select>` 下拉選單若缺少 `aria-label`，讀屏工具僅能讀出原生控制項而遺漏選單功能語義。
 **行動 (Action):** 將複合動作按鈕全面抽取為單一完整鍵值（如 `MoTeC .ld Export (Experimental)`、`CSV Export` 與 `MoTeC CSV Import`）；審查多語言字典時主動校正歷史術語歧義；並為工具列選單補齊與標籤對齊之 `aria-label`，確保國際化與無障礙體驗一體化交付。
 **署名:** Narrator as Antigravity
+
+## 2026-11-09 - Telemetry Mode Raw ID Anti-Pattern & Analysis Trimming Trilingual Alignment
+**學習 (Learning):** 遙測分析視圖（SessionTrimSummaryCard）直接渲染協議原始字串（如 recording_mode 的 `circuit`、`time_trial`，以及 lap_time_source 的 `game`、`calculated`）並仰賴 CSS（`text-uppercase` / `text-capitalize`）呈現，會導致非英文語系（日文與中文）無法顯示合適賽事術語而暴露大寫英文 raw ID；同時，該卡片之 `Session Analysis & Trimming`、`Lead-in Trim` 等整組鍵值在日文字典（`ja-jp.json`）中完全缺失，使日文使用者面臨整卡英文穿透。此外，統計採樣比例（`trimmed / raw`）若僅以純文字斜線呈現，輔助科技無法獲取完整語意，且組件 Props 將 `t` 窄化為 `(text: string) => string` 會阻礙參數化無障礙標籤的傳入。
+**行動 (Action):** 將模式與計時來源對應為規範化字典鍵（如 `Circuit`, `Time Trial`, `In-Game Timing`, `Calculated Timing`）並移除裝飾性 CSS 大寫；擴展組件 Props `t` 簽名支援可選 params 物件，為有效採樣比例加上具備參數化句子之 `aria-label`（`t("{valid} of {total} samples valid", { valid, total })`）；為 switch 控制項補齊 `role="switch"` 與 `aria-checked`；並完整對齊 `en-us.json`、`zh-tw.json` 與 `ja-jp.json`，消除遙測分析卡片的跨語言不對稱。
+**署名:** Narrator as Antigravity

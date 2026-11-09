@@ -1797,5 +1797,18 @@
     "MoTeC CSV Import": "MoTeC CSV をインポート",
     "Delete selected session": "選択したセッションを削除",
     "Import": "インポート",
-    "Channel Mapping": "チャンネルマッピング"
+    "Channel Mapping": "チャンネルマッピング",
+    "Session Analysis & Trimming": "セッション分析とトリミング",
+    "Lead-in Trim": "開始前トリム",
+    "Post-Stop Trim": "停止後トリム",
+    "Valid Samples": "有効サンプル数",
+    "Lap Timing Source": "ラップタイム計測ソース",
+    "Raw View (Untrimmed)": "未トリム（生データ）",
+    "Trimmed View": "トリム済み表示",
+    "Export Raw Data Without Trimming": "トリムせず生データをエクスポート",
+    "Circuit": "サーキット",
+    "Sprint": "スプリント",
+    "In-Game Timing": "ゲーム内計測",
+    "Calculated Timing": "計算値ラップ計測",
+    "{valid} of {total} samples valid": "{total} サンプル中 {valid} サンプル有効"
 }
