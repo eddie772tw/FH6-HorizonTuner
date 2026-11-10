@@ -17,8 +17,14 @@ fn u32_at(data: &[u8], index: usize) -> u64 {
     let start = index * 4;
     u32::from_le_bytes(data[start..start + 4].try_into().unwrap()) as u64
 }
+// [PERF] Construct fixed-size 4-element arrays directly to eliminate Iterator and Vec realloc in 60Hz hot path.
 fn arr(data: &[u8], start: usize) -> Value {
-    Value::Array((0..4).map(|i| num(f32_at(data, start + i))).collect())
+    Value::Array(vec![
+        num(f32_at(data, start)),
+        num(f32_at(data, start + 1)),
+        num(f32_at(data, start + 2)),
+        num(f32_at(data, start + 3)),
+    ])
 }
 fn num(v: f64) -> Value {
     serde_json::Number::from_f64(v)
@@ -45,7 +51,8 @@ pub fn parse_packet(data: &[u8]) -> Result<Value, String> {
         return Err("unsupported_length".into());
     }
 
-    let mut m = Map::new();
+    // [PERF] Pre-allocate map capacity for ~64 telemetry fields to avoid IndexMap reallocations on every packet.
+    let mut m = Map::with_capacity(64);
     put(&mut m, "IsRaceOn", Value::from(i32_at(data, 0)));
     put(
         &mut m,
@@ -98,7 +105,13 @@ pub fn parse_packet(data: &[u8]) -> Result<Value, String> {
     put(
         &mut m,
         "WheelOnRumbleStrip",
-        Value::Array((29..33).map(|i| Value::from(i32_at(data, i))).collect()),
+        // [PERF] Direct 4-element initialization to eliminate Iterator and Vec reallocations.
+        Value::Array(vec![
+            Value::from(i32_at(data, 29)),
+            Value::from(i32_at(data, 30)),
+            Value::from(i32_at(data, 31)),
+            Value::from(i32_at(data, 32)),
+        ]),
     );
     put(&mut m, "CarOrdinal", Value::from(i32_at(data, 53)));
     put(&mut m, "CarClass", Value::from(i32_at(data, 54)));

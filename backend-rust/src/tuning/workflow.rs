@@ -47,6 +47,8 @@ pub struct Readiness {
 #[serde(rename_all = "camelCase")]
 pub struct WorkflowResult {
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub ratio_balance: Option<super::ratio_balance::Diagnostic>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub cvt: Option<super::cvt::FoundationResult>,
     pub schema_version: &'static str,
     pub chassis: Option<ChassisTuningResult>,
@@ -248,6 +250,15 @@ fn calculate_with_replay_policy(
             cvt.capture_status = super::cvt::Status::Unsupported;
         }
         return Ok(WorkflowResult {
+            ratio_balance: input
+                .input_snapshot
+                .get("ratioBalance")
+                .filter(|v| !v.is_null())
+                .map(|_| {
+                    super::ratio_balance::Diagnostic::unavailable(
+                        "Requires a fully adjustable discrete ICE gearbox",
+                    )
+                }),
             cvt: Some(cvt),
             schema_version,
             chassis: public_chassis,
@@ -269,7 +280,7 @@ fn calculate_with_replay_policy(
             },
         });
     }
-    let gearing = if electric {
+    let mut gearing = if electric {
         qualified_ev
             .as_ref()
             .and_then(calculate_ev_gearing)
@@ -278,6 +289,28 @@ fn calculate_with_replay_policy(
         measured_gearing_version(input.goal, count, &profile, qualified_engine, legacy_road)
             .map(WorkflowGearing::Ice)
     };
+    // Rebuild the immutable base from qualified evidence on every request/replay.
+    // Only the request is persisted; client-provided outputs are never accepted.
+    let ratio_balance = input
+        .input_snapshot
+        .get("ratioBalance")
+        .filter(|v| !v.is_null())
+        .map(|request| {
+            if !current_chassis || legacy_road {
+                gearing = None;
+                return super::ratio_balance::Diagnostic::unavailable(
+                    "Ratio balance requires the current workflow",
+                );
+            }
+            let base = match &gearing {
+                Some(WorkflowGearing::Ice(base)) => Some(base),
+                _ => None,
+            };
+            let (adjusted, diagnostic) =
+                super::ratio_balance::calculate(&input.profile, base, request);
+            gearing = adjusted.map(WorkflowGearing::Ice);
+            diagnostic
+        });
     let mechanical = profile.weight.is_some_and(positive)
         && profile
             .weight_distribution
@@ -380,6 +413,7 @@ fn calculate_with_replay_policy(
         None
     };
     Ok(WorkflowResult {
+        ratio_balance,
         cvt: None,
         schema_version,
         chassis: public_chassis,
@@ -398,7 +432,7 @@ fn calculate_with_replay_policy(
         tire_evidence: proof.and_then(|p| p.tire_evidence()),
     })
 }
-pub(crate) fn mechanical_fields(
+pub fn mechanical_fields(
     profile: &Value,
     c: &ChassisTuningResult,
     a: &StaticAlignment,
@@ -448,15 +482,16 @@ pub(crate) fn mechanical_fields(
         }
     }
     add("caster.front", a.caster, "deg");
-    if profile["drivetrain"] != "RWD" {
+    let drive = profile["drivetrain"].as_str().map(str::trim);
+    if !drive.is_some_and(|s| s.eq_ignore_ascii_case("RWD")) {
         add("diff.front.acceleration", c.diff.accel_f, "%");
         add("diff.front.deceleration", c.diff.decel_f, "%");
     }
-    if profile["drivetrain"] != "FWD" {
+    if !drive.is_some_and(|s| s.eq_ignore_ascii_case("FWD")) {
         add("diff.rear.acceleration", c.diff.accel_r, "%");
         add("diff.rear.deceleration", c.diff.decel_r, "%");
     }
-    if profile["drivetrain"] == "AWD" {
+    if drive.is_some_and(|s| s.eq_ignore_ascii_case("AWD")) {
         add("diff.center", c.diff.center_rear, "%");
     }
     fields

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 export interface DecimalInputProps {
   value: number | undefined | null;
@@ -14,6 +14,7 @@ export interface DecimalInputProps {
   id?: string;
   name?: string;
   'aria-label'?: string;
+  'aria-describedby'?: string;
 }
 
 export const DecimalInput: React.FC<DecimalInputProps> = ({
@@ -30,7 +31,11 @@ export const DecimalInput: React.FC<DecimalInputProps> = ({
   id,
   name,
   'aria-label': ariaLabel,
+  'aria-describedby': ariaDescribedBy,
 }) => {
+  const edited = useRef(false);
+  const isCancellingRef = useRef(false);
+  const initialValueRef = useRef<number | undefined | null>(value);
   const [isFocused, setIsFocused] = useState(false);
   const [localText, setLocalText] = useState<string>(() => {
     if (value === undefined || value === null || Number.isNaN(value)) return '';
@@ -49,6 +54,7 @@ export const DecimalInput: React.FC<DecimalInputProps> = ({
   }, [value, precision, isFocused]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    edited.current = true;
     const nextText = e.target.value;
     setLocalText(nextText);
 
@@ -71,6 +77,13 @@ export const DecimalInput: React.FC<DecimalInputProps> = ({
 
   const handleBlur = () => {
     setIsFocused(false);
+    if (isCancellingRef.current) {
+      isCancellingRef.current = false;
+      return;
+    }
+    // Display rounding is not an edit: keep imported and converted precision.
+    if (!edited.current) return;
+    edited.current = false;
     if (localText.trim() === '') {
       onChange(undefined);
       setLocalText('');
@@ -97,7 +110,11 @@ export const DecimalInput: React.FC<DecimalInputProps> = ({
   };
 
   const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    edited.current = false;
+    isCancellingRef.current = false;
+    initialValueRef.current = value;
     setIsFocused(true);
+    if (value != null && Number.isFinite(value)) setLocalText(String(value));
     // Select all text on focus for quick overwrite
     e.target.select();
   };
@@ -105,8 +122,29 @@ export const DecimalInput: React.FC<DecimalInputProps> = ({
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       (e.target as HTMLInputElement).blur();
+    } else if (e.key === 'Escape') {
+      isCancellingRef.current = true;
+      const wasEdited = edited.current;
+      edited.current = false;
+      const original = initialValueRef.current;
+      if (wasEdited) {
+        onChange(original == null || Number.isNaN(original) ? undefined : original);
+      }
+      if (original == null || Number.isNaN(original)) {
+        setLocalText('');
+      } else {
+        setLocalText(precision !== undefined ? original.toFixed(precision) : String(original));
+      }
+      setIsFocused(false);
+      (e.target as HTMLInputElement).blur();
     }
   };
+
+  const currentNumeric = parseFloat(localText);
+  const isOutOfRange = !Number.isNaN(currentNumeric) && (
+    (min !== undefined && currentNumeric < min) ||
+    (max !== undefined && currentNumeric > max)
+  );
 
   return (
     <input
@@ -115,6 +153,14 @@ export const DecimalInput: React.FC<DecimalInputProps> = ({
       id={id}
       name={name}
       aria-label={ariaLabel}
+      aria-describedby={ariaDescribedBy}
+      aria-invalid={isOutOfRange ? 'true' : undefined}
+      aria-valuemin={min}
+      aria-valuemax={max}
+      aria-valuenow={typeof value === 'number' && !Number.isNaN(value) ? value : undefined}
+      aria-disabled={disabled ? 'true' : undefined}
+      min={min}
+      max={max}
       disabled={disabled}
       step={step}
       placeholder={placeholder}
@@ -123,7 +169,14 @@ export const DecimalInput: React.FC<DecimalInputProps> = ({
         textAlign: 'right',
         background: 'var(--surface-2)',
         color: 'var(--text-primary)',
-        borderColor: 'var(--glass-border)',
+        borderColor: isOutOfRange
+          ? 'var(--bs-warning)'
+          : isFocused
+            ? 'var(--bs-primary)'
+            : 'var(--glass-border)',
+        opacity: disabled ? 0.6 : 1,
+        cursor: disabled ? 'not-allowed' : undefined,
+        transition: 'border-color 0.15s ease, opacity 0.15s ease',
         ...style,
       }}
       value={localText}

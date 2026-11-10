@@ -1,5 +1,5 @@
 import { barToPsi, psiToBar } from '../../../utils/units';
-import type { HudDisplayUnits } from '../HudUnitSettingsSidebar';
+import type { HudDisplayUnits } from '../hudDisplayUnits';
 import { STACK_ST8100_ALARM_METRICS, normalizeStackSt8100Number, type StackSt8100AlarmMetric, type StackSt8100TemperatureUnit } from './config';
 
 export type StackSt8100ThresholdMetric = StackSt8100AlarmMetric | 'shift_percent';

@@ -38,6 +38,7 @@ export function AppCompanionIndicator({ onOpen }: { onOpen: () => void }) {
   return (
     <button
       type="button"
+      role="menuitem"
       className="dropdown-item d-flex align-items-center justify-content-between gap-3"
       onClick={onOpen}
       title={

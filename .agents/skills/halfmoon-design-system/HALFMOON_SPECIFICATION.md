@@ -139,7 +139,7 @@ applyThemeEarly();
 ### 2.3 Forms & Input Controls (表單與輸入控制)
 
 * **官方組件**：`.form-label`, `.form-control`, `.form-select`, `.form-check`, `.form-check-input`, `.form-check-label`, `.form-switch`, `.form-range`, `.input-group`, `.input-group-text`
-* **專案擴充類別與組件**：`.cyber-input`, `.cyber-select`, `RenderSwitch`, `ToggleSwitch`
+* **專案擴充類別與組件**：`.cyber-input`, `.cyber-select`, `RenderSwitch`, `EvModeSwitch`
 * **特定規格參數與選用原則**：
 
 | 元件 / 類別 | CSS 規格與參數 | 適用時機與業務場景 | 特殊規則與限制 |

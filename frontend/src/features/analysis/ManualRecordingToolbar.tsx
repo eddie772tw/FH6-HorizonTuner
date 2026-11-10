@@ -12,7 +12,7 @@ export interface ManualRecordingToolbarProps {
   readonly onStopManual: () => void;
   readonly onClear: () => void;
   readonly onSave: () => void;
-  readonly t: (text: string) => string;
+  readonly t: (text: string, params?: Record<string, string | number>) => string;
 }
 
 export const ManualRecordingToolbar: React.FC<ManualRecordingToolbarProps> = ({
@@ -32,7 +32,7 @@ export const ManualRecordingToolbar: React.FC<ManualRecordingToolbarProps> = ({
   return (
     <div className="card mb-3 p-3 bg-dark-subtle border">
       <div className="d-flex flex-wrap align-items-center justify-content-between gap-2">
-        <div className="d-flex align-items-center gap-2">
+        <div className="d-flex flex-wrap align-items-center gap-2">
           <div className="btn-group" role="group" aria-label={t("Recording Mode")}>
             <button
               type="button"
@@ -60,10 +60,15 @@ export const ManualRecordingToolbar: React.FC<ManualRecordingToolbarProps> = ({
             </button>
           </div>
 
-          <div className="d-flex align-items-center gap-1 ms-2">
+          <div className="d-flex align-items-center gap-1">
+            <span className="visually-hidden" role="status">
+              {isRecording ? (manualMode ? t("Manual Recording") : t("Auto Recording")) : armed ? t("Armed & Awaiting Gate Crossing") : t("Idle")}
+            </span>
             {isRecording ? (
               <span className="badge bg-danger">
-                {manualMode ? t("Manual Recording") : t("Auto Recording")} ({recordingCount} {t("samples")})
+                {manualMode
+                  ? t("Manual Recording ({count} samples)", { count: recordingCount })
+                  : t("Auto Recording ({count} samples)", { count: recordingCount })}
               </span>
             ) : armed ? (
               <span className="badge bg-warning text-dark">
@@ -85,7 +90,7 @@ export const ManualRecordingToolbar: React.FC<ManualRecordingToolbarProps> = ({
               onClick={onStartManual}
               disabled={armed || !canStart}
             >
-              {t(mode === "circuit" ? "Start Recording" : "Arm Route")}
+              {mode === "circuit" ? t("Start Recording") : t("Arm Route")}
             </button>
           ) : manualMode ? (
             <button

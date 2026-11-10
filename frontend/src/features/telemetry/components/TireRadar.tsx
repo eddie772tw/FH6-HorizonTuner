@@ -238,6 +238,8 @@ const TireRadar: React.FC<TireRadarProps> = React.memo(({ title, isLeft, tireIdx
       if (rCanvas && rCanvas.width > 0) {
         const ctx = rCanvas.getContext('2d');
         if (ctx) {
+          ctx.save();
+          try {
           ctx.clearRect(0, 0, rCanvas.width, rCanvas.height);
           const dpr = window.devicePixelRatio || 1;
           const radius = (rCanvas.width / dpr) / 2;
@@ -259,57 +261,73 @@ const TireRadar: React.FC<TireRadarProps> = React.memo(({ title, isLeft, tireIdx
             }
             const firstValidIdx = startIdx + 1;
 
+            // [PERF] Hoist invariant radar geometry factors outside the loop and avoid Math.sqrt() in normal bounds.
+            const center = radius * dpr;
+            const scaleFactor = center / displayLimit;
+            const maxScaledR = center;
+            const maxScaledRSq = maxScaledR * maxScaledR;
+
             if (firstValidIdx < histLen) {
               ctx.beginPath();
               ctx.strokeStyle = theme.historyLine;
               ctx.lineWidth = 2 * dpr;
+              ctx.lineCap = 'round';
               ctx.lineJoin = 'round';
               for (let i = firstValidIdx; i < histLen; i++) {
                 const idx = histLen < 900 ? i : (offsetRef.current + i) % histLen;
                 const p = hist.current[idx];
-                let dx = (p.angle / displayLimit) * radius * dpr;
-                let dy = (p.ratio / displayLimit) * radius * dpr;
-                const dist = Math.sqrt(dx * dx + dy * dy);
-                const maxScaledR = radius * dpr;
-                if (dist > maxScaledR && dist > 0) {
-                  dx = (dx / dist) * maxScaledR;
-                  dy = (dy / dist) * maxScaledR;
+                let dx = p.angle * scaleFactor;
+                let dy = p.ratio * scaleFactor;
+                const distSq = dx * dx + dy * dy;
+                if (distSq > maxScaledRSq && distSq > 0) {
+                  const clampFactor = maxScaledR / Math.sqrt(distSq);
+                  dx *= clampFactor;
+                  dy *= clampFactor;
                 }
-                const cx = radius * dpr + dx;
-                const cy = radius * dpr + dy;
+                const cx = center + dx;
+                const cy = center + dy;
                 if (i === firstValidIdx) ctx.moveTo(cx, cy);
                 else ctx.lineTo(cx, cy);
               }
               ctx.stroke();
             }
 
-            let dx = (cAngle / displayLimit) * radius * dpr;
-            let dy = (cRatio / displayLimit) * radius * dpr;
-            const tDist = Math.sqrt(dx * dx + dy * dy);
-            const maxTR = (radius - 4) * dpr;
-            if (tDist > maxTR && tDist > 0) {
-              dx = (dx / tDist) * maxTR;
-              dy = (dy / tDist) * maxTR;
+            let dx = cAngle * scaleFactor;
+            let dy = cRatio * scaleFactor;
+            const tDistSq = dx * dx + dy * dy;
+            const maxTR = Math.max(0, (radius - 6.6) * dpr);
+            const maxTRSq = maxTR * maxTR;
+            if (tDistSq > maxTRSq && tDistSq > 0) {
+              const clampFactor = maxTR / Math.sqrt(tDistSq);
+              dx *= clampFactor;
+              dy *= clampFactor;
             }
-            const { primary: primaryHex } = theme;
-            const dotColor = isLosingGrip ? theme.danger : primaryHex;
-            const dotGlowColor = isLosingGrip ? 'rgba(255, 0, 60, 0.35)' : (primaryHex.startsWith('#') ? `${primaryHex}59` : 'rgba(0, 240, 255, 0.35)');
-            const dotCenterX = radius * dpr + dx;
-            const dotCenterY = radius * dpr + dy;
+            const dotColor = isLosingGrip ? theme.danger : theme.primary;
+            const dotCenterX = center + dx;
+            const dotCenterY = center + dy;
+            const hasGlow = !theme.flat && theme.glowStrength > 0;
+            const glowRadius = hasGlow ? theme.glowStrength * 6 * dpr : 0;
 
-            ctx.beginPath();
-            ctx.arc(dotCenterX, dotCenterY, 6 * dpr, 0, Math.PI * 2);
-            ctx.fillStyle = theme.glowStrength === 0 ? 'transparent' : dotGlowColor;
-            ctx.fill();
-
+            ctx.strokeStyle = dotColor;
             ctx.fillStyle = dotColor;
+            ctx.lineWidth = 1.6 * dpr;
+            ctx.shadowColor = hasGlow ? dotColor : 'transparent';
+            ctx.shadowBlur = glowRadius;
+
             if (theme.linear) {
-              ctx.fillRect(dotCenterX - 3 * dpr, dotCenterY - 3 * dpr, 6 * dpr, 6 * dpr);
+              ctx.strokeRect(dotCenterX - 5 * dpr, dotCenterY - 5 * dpr, 10 * dpr, 10 * dpr);
+              ctx.fillRect(dotCenterX - 2.5 * dpr, dotCenterY - 2.5 * dpr, 5 * dpr, 5 * dpr);
             } else {
               ctx.beginPath();
-              ctx.arc(dotCenterX, dotCenterY, 3.5 * dpr, 0, Math.PI * 2);
+              ctx.arc(dotCenterX, dotCenterY, 5.8 * dpr, 0, Math.PI * 2);
+              ctx.stroke();
+              ctx.beginPath();
+              ctx.arc(dotCenterX, dotCenterY, 3.2 * dpr, 0, Math.PI * 2);
               ctx.fill();
             }
+          }
+          } finally {
+            ctx.restore();
           }
         }
       }
@@ -324,6 +342,7 @@ const TireRadar: React.FC<TireRadarProps> = React.memo(({ title, isLeft, tireIdx
           const th = tempSizeRef.current.h;
 
           ctx.save();
+          try {
           ctx.scale(dpr, dpr);
           ctx.clearRect(0, 0, tw, th);
 
@@ -352,13 +371,14 @@ const TireRadar: React.FC<TireRadarProps> = React.memo(({ title, isLeft, tireIdx
             const maxBinCount = peakTireTemperatureCount(histogram);
 
             const barW = tw / numBins;
+            const drawW = barW > 1.2 ? barW - 0.3 : barW;
+            const hScale = (th - 6) / maxBinCount;
             for (let i = 0; i < numBins; i++) {
-              let h = (bins[i] / maxBinCount) * (th - 6);
+              let h = bins[i] * hScale;
               if (h < 2) h = 2;
 
               const binTempMid = tempMinScale + (i + 0.5) * tempPerBin;
               ctx.fillStyle = getTempColor(binTempMid, theme);
-              const drawW = barW > 1.2 ? barW - 0.3 : barW;
               ctx.fillRect(i * barW, th - 2 - h, drawW, h);
             }
           }
@@ -366,9 +386,15 @@ const TireRadar: React.FC<TireRadarProps> = React.memo(({ title, isLeft, tireIdx
           if (cTemp > 0) {
             const currentT = Math.max(tempMinScale, Math.min(tempMaxScale, cTemp));
             const lineX = ((currentT - tempMinScale) / tempRange) * tw;
+            const hasGlow = !theme.flat && theme.glowStrength > 0;
             ctx.beginPath();
             ctx.strokeStyle = theme.pointer;
             ctx.lineWidth = 2;
+            ctx.lineCap = 'round';
+            if (hasGlow) {
+              ctx.shadowColor = theme.pointer;
+              ctx.shadowBlur = theme.glowStrength * 3;
+            }
             ctx.moveTo(lineX, 0);
             ctx.lineTo(lineX, th);
             ctx.stroke();
@@ -382,8 +408,9 @@ const TireRadar: React.FC<TireRadarProps> = React.memo(({ title, isLeft, tireIdx
                 : 'translateX(2px)';
             }
           }
-
-          ctx.restore();
+          } finally {
+            ctx.restore();
+          }
         }
       }
     };

@@ -198,6 +198,166 @@ async fn lan_pairing_limits_routes_and_revokes_session() {
 }
 
 #[tokio::test]
+async fn http_responses_enforce_defense_in_depth_security_headers() {
+    let root = tempfile::tempdir().unwrap();
+    let app = App::new(root.path()).unwrap();
+    app.companion.set_lan_port(Some(8002));
+    let lan_router = network::lan_router(app.clone(), app.companion.clone());
+    let general_router = network::router(app.clone());
+
+    // 1. LAN router enforces security headers on 401 Unauthorized
+    let unauth = lan_router
+        .clone()
+        .oneshot(request(
+            Method::GET,
+            "/api/companion/workflow",
+            None,
+            None,
+            Body::empty(),
+        ))
+        .await
+        .unwrap();
+    assert_eq!(unauth.status(), StatusCode::UNAUTHORIZED);
+    assert_eq!(
+        unauth.headers().get("x-content-type-options").unwrap(),
+        "nosniff"
+    );
+    assert_eq!(
+        unauth.headers().get("x-frame-options").unwrap(),
+        "SAMEORIGIN"
+    );
+    assert_eq!(
+        unauth.headers().get("referrer-policy").unwrap(),
+        "strict-origin-when-cross-origin"
+    );
+
+    // The registered WebSocket route can reject HTTP before the LAN fallback runs.
+    let rejected = lan_router
+        .oneshot(request(
+            Method::POST,
+            "/ws/telemetry",
+            None,
+            None,
+            Body::empty(),
+        ))
+        .await
+        .unwrap();
+    assert_eq!(rejected.status(), StatusCode::METHOD_NOT_ALLOWED);
+    assert_eq!(rejected.headers()["x-content-type-options"], "nosniff");
+    assert_eq!(rejected.headers()["x-frame-options"], "SAMEORIGIN");
+    assert_eq!(
+        rejected.headers()["referrer-policy"],
+        "strict-origin-when-cross-origin"
+    );
+
+    // 2. General router enforces security headers on standard API GET
+    let req = Request::builder()
+        .method(Method::GET)
+        .uri("/api/health")
+        .header("host", "127.0.0.1:8001")
+        .body(Body::empty())
+        .unwrap();
+    let res = general_router.clone().oneshot(req).await.unwrap();
+    assert_eq!(res.status(), StatusCode::OK);
+    assert_eq!(
+        res.headers().get("x-content-type-options").unwrap(),
+        "nosniff"
+    );
+    assert_eq!(res.headers().get("x-frame-options").unwrap(), "SAMEORIGIN");
+    assert_eq!(
+        res.headers().get("referrer-policy").unwrap(),
+        "strict-origin-when-cross-origin"
+    );
+
+    // 3. General router enforces security headers on CSRF 403 blocked requests
+    let csrf_req = Request::builder()
+        .method(Method::POST)
+        .uri("/api/settings")
+        .header("host", "127.0.0.1:8001")
+        .header("origin", "http://evil-attacker.com")
+        .body(Body::from("{}"))
+        .unwrap();
+    let csrf_res = general_router.oneshot(csrf_req).await.unwrap();
+    assert_eq!(csrf_res.status(), StatusCode::FORBIDDEN);
+    assert_eq!(
+        csrf_res.headers().get("x-content-type-options").unwrap(),
+        "nosniff"
+    );
+    assert_eq!(
+        csrf_res.headers().get("x-frame-options").unwrap(),
+        "SAMEORIGIN"
+    );
+    assert_eq!(
+        csrf_res.headers().get("referrer-policy").unwrap(),
+        "strict-origin-when-cross-origin"
+    );
+}
+
+#[tokio::test]
+async fn general_router_enforces_host_validation_against_dns_rebinding() {
+    let root = tempfile::tempdir().unwrap();
+    let app = App::new(root.path()).unwrap();
+    let router = network::router(app.clone());
+
+    // 1. Valid local hosts are permitted on the loopback router
+    for valid_host in [
+        "127.0.0.1:8001",
+        "localhost:8001",
+        "LOCALHOST:8001",
+        "[::1]:8001",
+        "tauri.localhost",
+    ] {
+        let req = Request::builder()
+            .method(Method::GET)
+            .uri("/api/health")
+            .header("host", valid_host)
+            .body(Body::empty())
+            .unwrap();
+        let res = router.clone().oneshot(req).await.unwrap();
+        assert_eq!(
+            res.status(),
+            StatusCode::OK,
+            "Host {valid_host} must be accepted"
+        );
+    }
+
+    // 2. Untrusted / DNS rebinding domains are rejected with 403 Forbidden
+    for rebinding_host in [
+        "attacker.example:8001",
+        "evil-rebind.net",
+        "localhost.attacker.com",
+        "localhost:8001@attacker.com",
+    ] {
+        let req = Request::builder()
+            .method(Method::GET)
+            .uri("/api/health")
+            .header("host", rebinding_host)
+            .body(Body::empty())
+            .unwrap();
+        let res = router.clone().oneshot(req).await.unwrap();
+        assert_eq!(
+            res.status(),
+            StatusCode::FORBIDDEN,
+            "Rebinding host {rebinding_host} must be rejected"
+        );
+        assert_eq!(
+            res.headers().get("x-content-type-options").unwrap(),
+            "nosniff"
+        );
+        assert_eq!(res.headers().get("x-frame-options").unwrap(), "SAMEORIGIN");
+    }
+
+    // 3. Missing host header is rejected
+    let no_host = Request::builder()
+        .method(Method::GET)
+        .uri("/api/health")
+        .body(Body::empty())
+        .unwrap();
+    let res = router.oneshot(no_host).await.unwrap();
+    assert_eq!(res.status(), StatusCode::FORBIDDEN);
+}
+
+#[tokio::test]
 async fn instrument_catalog_and_assets_require_the_existing_paired_session() {
     let root = tempfile::tempdir().unwrap();
     let app = App::new(root.path()).unwrap();

@@ -11,6 +11,99 @@ function response(data: unknown, ok = true, status = 200): ResponseLike {
   return { ok, status, json: async () => data };
 }
 
+describe('native HUD session reconciliation', () => {
+  it('clears a saved open flag after application restart, but preserves a visible window on page reload', async () => {
+    let disk: Record<string, unknown> = { enabled: true, hudStyle: 'vfd', scale: 1.4, audioHeadScale: 0.8,
+      pauseTelemetryViewWhenActive: true, pluginField: { keep: 7 }, elements: { showAudioHead: true } };
+    let visible = false;
+    const published: Array<{ data: { enabled: boolean } }> = [];
+    const transport: OverlayControlTransport = {
+      readConfig: async () => response(disk),
+      readWindowVisibility: async () => visible,
+      saveConfig: async value => { disk = value; return response({ success: true }); },
+    };
+    const restarted = createOverlayControlRuntime(transport, { postMessage: value => published.push(value as typeof published[number]) });
+    await expect(restarted.refresh()).resolves.toBe(true);
+    expect(disk).toMatchObject({ enabled: false, scale: 1.4, audioHeadScale: 0.8, pluginField: { keep: 7 }, elements: { showAudioHead: true } });
+    expect(published.every(value => value.data.enabled === false)).toBe(true);
+    visible = true;
+    await restarted.updateConfig({ enabled: true });
+    const pageReload = createOverlayControlRuntime(transport);
+    await pageReload.refresh();
+    expect(pageReload.getSnapshot().config.enabled).toBe(true);
+    visible = false;
+    const nextLaunch = createOverlayControlRuntime(transport);
+    await nextLaunch.refresh();
+    expect(nextLaunch.getSnapshot().config.enabled).toBe(false);
+    expect(disk).toMatchObject({ enabled: false, audioHeadScale: 0.8, pluginField: { keep: 7 } });
+  });
+
+  it('keeps corrected visibility when saving fails and retries through the existing writer', async () => {
+    let reject = true;
+    let disk: Record<string, unknown> = { enabled: true, audioHeadDeck: 5 };
+    const runtime = createOverlayControlRuntime({
+      readConfig: async () => response(disk), readWindowVisibility: async () => false,
+      saveConfig: async value => {
+        if (reject) return response({ success: false, error: 'disk unavailable' });
+        disk = value; return response({ success: true });
+      },
+    });
+    await expect(runtime.refresh()).resolves.toBe(false);
+    expect(runtime.getSnapshot()).toMatchObject({ config: { enabled: false }, status: 'error', error: 'disk unavailable' });
+    reject = false; await expect(runtime.retry()).resolves.toBe(true);
+    expect(disk).toMatchObject({ enabled: false, audioHeadDeck: 5 });
+  });
+
+  it('does not overwrite saved settings if native visibility cannot be established', async () => {
+    let writes = 0;
+    const runtime = createOverlayControlRuntime({
+      readConfig: async () => response({ enabled: true }),
+      readWindowVisibility: async () => { throw new Error('native unavailable'); },
+      saveConfig: async () => { writes++; return response({ success: true }); },
+    });
+    await expect(runtime.refresh()).resolves.toBe(false);
+    expect(writes).toBe(0);
+    expect(runtime.getSnapshot()).toMatchObject({ status: 'error', error: 'native unavailable' });
+  });
+
+  it('rechecks native state instead of accepting an old enabled broadcast', async () => {
+    const runtime = createOverlayControlRuntime({
+      readConfig: async () => response({ enabled: false }), readWindowVisibility: async () => false,
+      saveConfig: async () => response({ success: true }),
+    });
+    await runtime.refresh();
+    runtime.acceptBroadcast({ enabled: true, scale: 4 });
+    expect(runtime.getSnapshot().config.enabled).toBe(false);
+    await runtime.refresh();
+    expect(runtime.getSnapshot().config.enabled).toBe(false);
+  });
+});
+
+it('migrates legacy independent gauges and preserves shared mappings across main gauge changes', () => {
+  const config = normalizeHudRuntimeConfig({ hudStyle: 'auxiliary_gauges', auxGaugeMode: 'blitz', elements: { showGauge: false } });
+  expect(config).toMatchObject({ hudStyle: 'vfd', auxGaugeFaces: ['blitz'], auxGaugeEdge: 'right', elements: { showAuxiliaryGauges: false } });
+  expect(config).not.toHaveProperty('auxGaugeMode');
+  const changed = applyHudConfigPatch(config, {
+    hudStyle: 'gt7', auxGaugeFaces: ['aem', 'speedhut'],
+    gaugeValueSources: { ...config.gaugeValueSources!, boost: { field: 'power_kw', unit: 'native', label: 'Power' } },
+    elements: { showAuxiliaryGauges: true, showGauge: false },
+  });
+  const broadcast = normalizeHudRuntimeConfig(changed);
+  expect(broadcast).toMatchObject({ hudStyle: 'gt7', auxGaugeFaces: ['aem', 'speedhut'], gaugeValueSources: { boost: { field: 'power_kw', label: 'Power' } }, elements: { showGauge: false, showAuxiliaryGauges: true } });
+});
+
+it('normalizes independent selection, arrangement and offsets without coupling visibility to the main gauge', () => {
+  const config = normalizeHudRuntimeConfig({
+    auxGaugeFaces: ['aem', 'bad', 'aem', 'defi'], auxGaugeMaxPerRow: 99,
+    auxGaugeOrientation: 'bad', auxGaugeEdge: 'bad', auxGaugeOffset: -1, auxGaugeCenterOffset: -9999,
+    elements: { showAuxiliaryGauges: 'true' },
+  });
+  expect(config).toMatchObject({ auxGaugeFaces: ['aem', 'defi'], auxGaugeMaxPerRow: 5,
+    auxGaugeOrientation: 'horizontal', auxGaugeEdge: 'right', auxGaugeOffset: 0, auxGaugeCenterOffset: -4000,
+    elements: { showAuxiliaryGauges: false } });
+  expect(normalizeHudRuntimeConfig({ auxGaugeFaces: [], auxGaugeMaxPerRow: '2' })).toMatchObject({ auxGaugeFaces: [], auxGaugeMaxPerRow: 3 });
+});
+
 it('hides deferred subsystem selections without dropping retained module settings', () => {
   for (const hudStyle of ['minimap_overlay', 'touge_pacenotes', 'telemetry_cards', 'speed_effects']) {
     expect(normalizeHudRuntimeConfig({ hudStyle, minimapMode: 'north_up', pluginKey: 'keep' })).toMatchObject({
@@ -50,6 +143,82 @@ async function flushTasks() {
 }
 
 describe('overlay control runtime', () => {
+  it('queues nested gauge-source edits without overwriting other fields or cross-tab visibility changes', async () => {
+    const pending = deferred<ResponseLike>();
+    const writes: unknown[] = [];
+    const runtime = createOverlayControlRuntime(createTransport({
+      saveConfig: async config => { writes.push(structuredClone(config)); return writes.length === 1 ? pending.promise : response({ success: true }); },
+    }));
+    await runtime.refresh();
+    const first = runtime.updateConfig({ gaugeValueSources: { boost: { label: 'Custom boost' } } });
+    await flushTasks();
+    const second = runtime.updateConfig({ elements: { showAudioHead: true, showAuxiliaryGauges: false }, audioHeadScale: 1.5 });
+    const third = runtime.updateConfig({ gaugeValueSources: { boost: { field: 'boost_bar', unit: 'bar' }, oilTemperature: { label: 'Custom temperature' } } });
+    pending.resolve(response({ success: true }));
+    await Promise.all([first, second, third]);
+    expect(writes.at(-1)).toMatchObject({
+      gaugeValueSources: { boost: { label: 'Custom boost', field: 'boost_bar', unit: 'bar' },
+        oilTemperature: { label: 'Custom temperature', field: 'tire_temp_avg', unit: 'F' },
+        waterTemperature: { field: 'tire_temp_avg', unit: 'F' } },
+      audioHeadScale: 1.5, elements: { showAudioHead: true, showAuxiliaryGauges: false }, pluginField: { source: 'server' },
+    });
+    expect(runtime.getSnapshot().status).toBe('ready');
+  });
+
+  it('migrates shared audio scaling once and preserves independent values across edits and reloads', () => {
+    for (const input of [
+      { hudStyle: 'audio_head', scale: 1.4 },
+      { hudStyle: 'vfd', scale: 1.4, audioHeadDeck: 6, elements: { showAudioHead: false } },
+    ]) {
+      const migrated = normalizeHudRuntimeConfig(input);
+      expect(migrated.audioHeadScale).toBe(1.4);
+      const changedGauge = applyHudConfigPatch(migrated, { scale: 0.8, elements: { showGauge: false } });
+      const changedAudio = applyHudConfigPatch(changedGauge, { audioHeadScale: 1.75 });
+      expect(normalizeHudRuntimeConfig(JSON.parse(JSON.stringify(changedAudio))))
+        .toMatchObject({ scale: 0.8, audioHeadScale: 1.75, elements: { showGauge: false } });
+    }
+    expect(normalizeHudRuntimeConfig({ hudStyle: 'vfd', scale: 1.4 }).audioHeadScale).toBe(1);
+  });
+
+  it.each([[null, 1], [NaN, 1], ['1.5', 1], [0, 1], [-2, 1], [0.1, 0.5], [9, 2]])(
+    'normalizes independent audio scale %j without following the main gauge', (audioHeadScale, expected) => {
+      expect(normalizeHudRuntimeConfig({ scale: 1.8, audioHeadScale }).audioHeadScale).toBe(expected);
+    });
+
+  it('migrates an auxiliary-only selection and keeps auxiliary visibility independent of gauge changes', () => {
+    const migrated = normalizeHudRuntimeConfig({
+      hudStyle: 'audio_head', audioHeadDeck: 6, elements: { showGauge: true }, pluginField: 42,
+    });
+    expect(migrated.hudStyle).toBe('vfd');
+    expect(migrated.elements.showAudioHead).toBe(true);
+    expect(migrated.audioHeadDeck).toBe(6);
+    const changed = applyHudConfigPatch(migrated, { hudStyle: 'gt7', elements: { showGauge: false } });
+    expect(changed.hudStyle).toBe('gt7');
+    expect(changed.elements.showGauge).toBe(false);
+    expect(changed.elements.showAudioHead).toBe(true);
+    expect(changed.pluginField).toBe(42);
+    const hidden = applyHudConfigPatch(changed, { elements: { showAudioHead: false } });
+    expect(hidden.hudStyle).toBe('gt7');
+    expect(hidden.elements.showAudioHead).toBe(false);
+    expect(normalizeHudRuntimeConfig({ hudStyle: 'audio_head', elements: { showGauge: false } }).elements.showAudioHead).toBe(false);
+  });
+
+  it.each(['left', 'right', 'top', 'bottom'] as const)('preserves %s auxiliary alignment across nested edits', edge => {
+    const config = normalizeHudRuntimeConfig({
+      hudStyle: 'vfd', audioHeadEdge: edge, audioHeadOffset: 24, audioHeadCenterOffset: -32,
+    });
+    const changed = applyHudConfigPatch(config, { elements: { showAudioHead: true } });
+    expect(changed).toMatchObject({ hudStyle: 'vfd', audioHeadEdge: edge, audioHeadOffset: 24, audioHeadCenterOffset: -32 });
+  });
+
+  it('bounds auxiliary position fields and rejects invalid persisted values', () => {
+    expect(normalizeHudRuntimeConfig({ audioHeadDeck: 99, audioHeadEdge: 'invalid', audioHeadOffset: -20, audioHeadCenterOffset: 9000 }))
+      .toMatchObject({ audioHeadDeck: 8, audioHeadEdge: 'left', audioHeadOffset: 0, audioHeadCenterOffset: 4000 });
+    expect(normalizeHudRuntimeConfig({ audioHeadDeck: '3', audioHeadOffset: Infinity, audioHeadCenterOffset: null }))
+      .toMatchObject({ audioHeadDeck: 0, audioHeadOffset: 0, audioHeadCenterOffset: 0 });
+    expect(normalizeHudRuntimeConfig({ hudStyle: 'audio_head', elements: { showAudioHead: false } }).elements.showAudioHead).toBe(false);
+  });
+
   it.each([
     [undefined, 'C'], [null, 'C'], ['', 'C'], ['c', 'C'], ['f', 'C'],
     ['°F', 'C'], ['K', 'C'], [true, 'C'], [32, 'C'], [{}, 'C'], [[], 'C'],

@@ -39,6 +39,14 @@ describe('gforceRadarMath - G-Force Radar Geometry & Offset Logic', () => {
       expect(result.dist).toBe(0);
     });
 
+    it('reuses and clears a caller-owned offset when the radar collapses', () => {
+      const slot = { dx: 0, dy: 0, dist: 0 };
+      expect(calculateGPointOffset(1, -1, 100, 4, 1, slot)).toBe(slot);
+      expect(slot.dist).toBeGreaterThan(0);
+      expect(calculateGPointOffset(-1, 1, 0, 4, 1, slot)).toBe(slot);
+      expect(slot).toEqual({ dx: 0, dy: 0, dist: 0 });
+    });
+
     it('respects custom gScale factor', () => {
       const radius = 100;
       // gScale = 1.5 -> 1.0G produces dx = 50 * 1.5 = 75

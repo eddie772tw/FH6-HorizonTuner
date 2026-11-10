@@ -12,14 +12,30 @@ fn r2(n: f64) -> f64 {
 }
 
 pub fn calc_gear_speed(rpm: f64, gear_ratio: f64, final_drive: f64, tire_radius_m: f64) -> f64 {
-    if gear_ratio <= 0.0 || final_drive <= 0.0 {
+    if !rpm.is_finite()
+        || rpm <= 0.0
+        || !gear_ratio.is_finite()
+        || gear_ratio <= 0.0
+        || !final_drive.is_finite()
+        || final_drive <= 0.0
+        || !tire_radius_m.is_finite()
+        || tire_radius_m <= 0.0
+    {
         return 0.0;
     }
     (rpm * 2.0 * PI * tire_radius_m) / (gear_ratio * final_drive * 60.0)
 }
 
 pub fn calc_gear_rpm(speed_ms: f64, gear_ratio: f64, final_drive: f64, tire_radius_m: f64) -> f64 {
-    if tire_radius_m <= 0.0 {
+    if !speed_ms.is_finite()
+        || speed_ms <= 0.0
+        || !gear_ratio.is_finite()
+        || gear_ratio <= 0.0
+        || !final_drive.is_finite()
+        || final_drive <= 0.0
+        || !tire_radius_m.is_finite()
+        || tire_radius_m <= 0.0
+    {
         return 0.0;
     }
     (speed_ms * gear_ratio * final_drive * 60.0) / (2.0 * PI * tire_radius_m)
@@ -41,9 +57,9 @@ pub fn get_target_top_gear_ratio(num_gears: usize) -> f64 {
 fn road_launch_total_ratio(params: &TuningCarParams, torque_nm: f64, radius_m: f64) -> f64 {
     let front = params
         .weight_distribution
+        .filter(|v| v.is_finite())
         .unwrap_or(50.0)
-        .max(1.0)
-        .min(99.0)
+        .clamp(1.0, 99.0)
         / 100.0;
     let dt = params
         .drivetrain
@@ -69,8 +85,19 @@ fn road_launch_total_ratio(params: &TuningCarParams, torque_nm: f64, radius_m: f
         f64::INFINITY
     };
     let acceleration_g = (1.0_f64).min(front_limit_g).min(rear_limit_g);
-    let mass = params.weight.unwrap_or(1400.0).max(1.0);
-    mass * 9.81 * acceleration_g * radius_m / (torque_nm * 0.90)
+    let mass = params
+        .weight
+        .filter(|v| v.is_finite() && *v > 0.0)
+        .unwrap_or(1400.0);
+    let r = if radius_m.is_finite() && radius_m > 0.0 {
+        radius_m
+    } else {
+        0.32
+    };
+    if !torque_nm.is_finite() || torque_nm <= 0.0 {
+        return 0.0;
+    }
+    mass * 9.81 * acceleration_g * r / (torque_nm * 0.90)
 }
 
 /// Inherited v1.6 speed at peak-power RPM (not redline or a measured speed).
@@ -320,21 +347,12 @@ fn calculate_gearing(
     } else {
         car_params
     };
-    if race_goal == RaceGoal::Road {
-        if !max_rpm.is_finite() || max_rpm <= 0.0 {
-            max_rpm = 7500.0;
-        }
-        if !(1..=10).contains(&num_gears) {
-            num_gears = 6;
-        }
+    // Drag must validate the caller's gear count and redline before any fallback.
+    if race_goal != RaceGoal::Drag && (!max_rpm.is_finite() || max_rpm <= 0.0) {
+        max_rpm = 7500.0;
     }
-    if race_goal == RaceGoal::Rally {
-        if !(1..=10).contains(&num_gears) {
-            num_gears = 6;
-        }
-        if max_rpm <= 0.0 {
-            max_rpm = 7500.0;
-        }
+    if race_goal != RaceGoal::Drag && !(1..=10).contains(&num_gears) {
+        num_gears = 6;
     }
 
     let weight = car_params.weight.unwrap_or(1400.0).max(1.0);
@@ -347,6 +365,7 @@ fn calculate_gearing(
 
     if race_goal == RaceGoal::Drag {
         let is_valid = (4..=10).contains(&num_gears)
+            && max_rpm.is_finite()
             && max_rpm > 0.0
             && car_params.weight.map_or(false, |v| v > 0.0)
             && car_params.max_hp.map_or(false, |v| v > 0.0)
@@ -410,11 +429,17 @@ fn calculate_gearing(
         .and_then(|sc| sc.drag_finish_speed_provenance.as_deref())
         .or(car_params.drag_finish_speed_provenance.as_deref());
     let drag_finish_speed_kmh = finish_speed_candidate.filter(|&cand| {
-        cand > 0.0
+        cand.is_finite()
+            && cand > 0.0
             && finish_speed_provenance.map_or(false, |prov| prov == "telemetry" || prov == "manual")
     });
 
-    let c = ((((w_tire * ar) / 100.0) * 2.0 + s_rim * 25.4) * PI) / 1000.0;
+    let raw_c = ((((w_tire * ar) / 100.0) * 2.0 + s_rim * 25.4) * PI) / 1000.0;
+    let c = if raw_c.is_finite() && raw_c > 0.1 {
+        raw_c
+    } else {
+        2.0
+    };
     let f_drive = match dt {
         Drivetrain::AWD => 1.0,
         Drivetrain::RWD => 0.6,
@@ -573,7 +598,7 @@ fn calculate_gearing(
 
             if race_goal != RaceGoal::Drag {
                 if let Some(soft_max) = sc.soft_max_speed {
-                    if soft_max > 0.0 && max_rpm > 0.0 {
+                    if soft_max.is_finite() && soft_max > 0.0 && max_rpm > 0.0 {
                         let max_speed_at_peak_hp_from_soft_cap = soft_max * (rpm_hp / max_rpm);
                         target_top_speed_at_peak_hp_kmh =
                             target_top_speed_at_peak_hp_kmh.min(max_speed_at_peak_hp_from_soft_cap);
@@ -582,7 +607,7 @@ fn calculate_gearing(
             }
 
             if let Some(simulated) = sc.simulated_top_speed {
-                if simulated > 0.0 {
+                if simulated.is_finite() && simulated > 0.0 {
                     let max_speed_at_peak_hp = if max_rpm > 0.0 {
                         simulated * (rpm_hp / max_rpm)
                     } else {
@@ -595,13 +620,14 @@ fn calculate_gearing(
 
             if race_goal == RaceGoal::Drag {
                 if let Some(df) = drag_finish_speed_kmh {
-                    if df > 0.0 {
+                    if df.is_finite() && df > 0.0 {
                         target_top_speed_at_peak_hp_kmh = df;
                     }
                 }
             }
 
-            if target_top_speed_at_peak_hp_kmh > 0.0
+            if target_top_speed_at_peak_hp_kmh.is_finite()
+                && target_top_speed_at_peak_hp_kmh > 0.0
                 && (target_top_speed_at_peak_hp_kmh - baseline_top_speed_kmh).abs() > 0.1
             {
                 let target_top_total_ratio =
@@ -637,7 +663,7 @@ fn calculate_gearing(
                         } else {
                             (0.62_f64).max(r_redline_hp * (0.75_f64).max(r_band))
                         };
-                        let r_max = (0.92_f64).min(r_redline_hp);
+                        let r_max = (0.92_f64).min(r_redline_hp).max(r_min);
 
                         let mut r_raw = Vec::with_capacity(num_steps);
                         let mut prod_raw = 1.0;
@@ -652,7 +678,17 @@ fn calculate_gearing(
                             prod_raw *= r_val;
                         }
 
-                        let s = (new_gtop / (gears[0] * prod_raw)).powf(1.0 / num_steps as f64);
+                        let denom = gears[0] * prod_raw;
+                        let ratio = if denom.is_finite() && denom > 0.0 {
+                            new_gtop / denom
+                        } else {
+                            0.0
+                        };
+                        let s = if ratio.is_finite() && ratio > 0.0 {
+                            ratio.powf(1.0 / num_steps as f64)
+                        } else {
+                            1.0
+                        };
                         for i in 1..top_gear_idx {
                             let r_adj = r_raw[i - 1] * s;
                             gears[i] = gears[i - 1] * r_adj;
@@ -685,7 +721,7 @@ fn calculate_gearing(
     let monotonic_limit = active_gear_count;
     let max_step_ratio_rounded =
         if max_rpm > 0.0 && race_goal != RaceGoal::Drift && race_goal != RaceGoal::Drag {
-            (rpm_hp + 50.0) / max_rpm
+            ((rpm_hp + 50.0) / max_rpm).clamp(0.65, 0.95)
         } else {
             0.92
         };
@@ -694,7 +730,7 @@ fn calculate_gearing(
         let max_allowed_ratio = (r2(rounded_gears[i - 1] - 0.01))
             .min((rounded_gears[i - 1] * max_step_ratio_rounded * 100.0).floor() / 100.0);
         if rounded_gears[i] > max_allowed_ratio {
-            rounded_gears[i] = (0.40_f64).max(max_allowed_ratio);
+            rounded_gears[i] = max_allowed_ratio.max(0.10);
         }
     }
 

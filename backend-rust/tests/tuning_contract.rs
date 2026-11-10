@@ -1,5 +1,7 @@
 use fh6_backend::tuning::{
-    calculate_chassis_tuning, gearing::calculate_aego_gearing_v2 as calculate_aego_gearing,
+    alignment::{calculate_static_alignment, Season},
+    calculate_chassis_tuning,
+    gearing::calculate_aego_gearing_v2 as calculate_aego_gearing,
     resolve_aero_downforce, GearingSecondaryCorrection, RaceGoal, TuningCarParams,
 };
 use serde_json::Value;
@@ -335,4 +337,564 @@ fn fractional_spring_bounds_never_overflow_max() {
             res.springs.rear
         );
     }
+}
+
+#[test]
+fn gearing_boundary_singular_protection_and_monotonicity() {
+    let params = TuningCarParams {
+        weight: Some(1200.0),
+        weight_distribution: Some(52.0),
+        drivetrain: Some("AWD".into()),
+        max_hp: Some(450.0),
+        max_torque: Some(500.0),
+        max_hp_rpm: Some(6500.0),
+        max_torque_rpm: Some(4000.0),
+        front_tire_width: Some(0.0),
+        rear_tire_width: Some(0.0),
+        front_tire_aspect: Some(0.0),
+        rear_tire_aspect: Some(0.0),
+        front_tire_rim: Some(0.0),
+        rear_tire_rim: Some(0.0),
+        ..Default::default()
+    };
+
+    for goal in [
+        RaceGoal::DangerSign,
+        RaceGoal::Rally,
+        RaceGoal::Drift,
+        RaceGoal::Road,
+    ] {
+        // Zero gears input must not panic and must safely normalize to 6 gears
+        let res_zero = calculate_aego_gearing(goal, 0, &params, 7000.0, None);
+        assert_ne!(res_zero.unsupported, Some(true));
+        assert_eq!(res_zero.gears.len(), 6);
+        assert!(res_zero.final_drive >= 2.0 && res_zero.final_drive <= 6.5);
+        assert!(res_zero.gears.windows(2).all(|w| w[0] > w[1]));
+
+        // NaN max_rpm must not panic or propagate NaN
+        let res_nan_rpm = calculate_aego_gearing(goal, 6, &params, f64::NAN, None);
+        assert_ne!(res_nan_rpm.unsupported, Some(true));
+        assert!(res_nan_rpm.final_drive.is_finite());
+        assert!(res_nan_rpm.final_drive >= 2.0 && res_nan_rpm.final_drive <= 6.5);
+        assert!(res_nan_rpm.gears.iter().all(|g| g.is_finite() && *g > 0.0));
+    }
+}
+
+#[test]
+fn drag_rejects_original_invalid_inputs_before_gearing_fallbacks() {
+    let params = TuningCarParams {
+        weight: Some(1200.0),
+        max_hp: Some(450.0),
+        max_torque: Some(500.0),
+        max_hp_rpm: Some(6500.0),
+        max_torque_rpm: Some(4000.0),
+        ..Default::default()
+    };
+    for solver in [
+        calculate_aego_gearing,
+        fh6_backend::tuning::calculate_aego_gearing,
+    ] {
+        for count in [0, 1, 3, 11, usize::MAX] {
+            let result = solver(RaceGoal::Drag, count, &params, 7000.0, None);
+            assert_eq!(result.unsupported, Some(true), "count={count}");
+            assert!(result.gears.is_empty());
+        }
+        for rpm in [0.0, -1.0, f64::NAN, f64::INFINITY, f64::NEG_INFINITY] {
+            let result = solver(RaceGoal::Drag, 6, &params, rpm, None);
+            assert_eq!(result.unsupported, Some(true), "rpm={rpm}");
+            assert!(result.gears.is_empty());
+        }
+        let valid = solver(RaceGoal::Drag, 6, &params, 7000.0, None);
+        assert_ne!(valid.unsupported, Some(true));
+        assert_eq!(valid.gears.len(), 6);
+        assert!(valid.gears.windows(2).all(|pair| pair[0] > pair[1]));
+    }
+}
+
+#[test]
+fn chassis_boundary_singular_protection_and_spring_inversion() {
+    let inverted_params = TuningCarParams {
+        weight: Some(-500.0),
+        weight_distribution: Some(150.0),
+        drivetrain: Some("AWD".into()),
+        spring_front_min: Some(60.0),
+        spring_front_max: Some(20.0),
+        spring_rear_min: Some(70.0),
+        spring_rear_max: Some(30.0),
+        height_front_min: Some(20.0),
+        height_front_max: Some(10.0),
+        height_rear_min: Some(22.0),
+        height_rear_max: Some(12.0),
+        ..Default::default()
+    };
+
+    for goal in [
+        RaceGoal::Road,
+        RaceGoal::Rally,
+        RaceGoal::Drift,
+        RaceGoal::Drag,
+        RaceGoal::DangerSign,
+    ] {
+        let aero = resolve_aero_downforce(&inverted_params);
+        assert!(aero.front.is_finite() && aero.front > 0.0);
+        assert!(aero.rear.is_finite() && aero.rear > 0.0);
+
+        let res = calculate_chassis_tuning(goal, &inverted_params);
+        assert!(res.springs.front.is_finite() && res.springs.front >= 60.0);
+        assert!(res.springs.rear.is_finite() && res.springs.rear >= 70.0);
+        assert!(res.springs.height_f.is_finite() && res.springs.height_f >= 20.0);
+        assert!(res.springs.height_r.is_finite() && res.springs.height_r >= 22.0);
+        assert!(res.damping.rebound_f >= 1.0 && res.damping.rebound_f <= 20.0);
+        assert!(res.damping.rebound_r >= 1.0 && res.damping.rebound_r <= 20.0);
+        assert!(res.damping.bump_f >= 1.0 && res.damping.bump_f <= 20.0);
+        assert!(res.damping.bump_r >= 1.0 && res.damping.bump_r <= 20.0);
+    }
+
+    for wd in [0.0, 100.0, -10.0, f64::NAN] {
+        let p = TuningCarParams {
+            weight: Some(f64::NAN),
+            weight_distribution: Some(wd),
+            ..Default::default()
+        };
+        let aero = resolve_aero_downforce(&p);
+        assert!(aero.front.is_finite() && aero.front > 0.0);
+        assert!(aero.rear.is_finite() && aero.rear > 0.0);
+        let chassis = calculate_chassis_tuning(RaceGoal::Road, &p);
+        assert!(chassis.arb.front.is_finite() && chassis.arb.front >= 1.0);
+        assert!(chassis.arb.rear.is_finite() && chassis.arb.rear >= 1.0);
+    }
+}
+
+#[test]
+fn alignment_boundary_singular_protection_and_camber_sign_invariance() {
+    let extreme_params = TuningCarParams {
+        weight: Some(-500.0),
+        weight_distribution: Some(150.0),
+        drivetrain: Some("RWD".into()),
+        front_tire_width: Some(-245.0),
+        rear_tire_width: Some(-275.0),
+        front_tire_aspect: Some(-40.0),
+        rear_tire_aspect: Some(-35.0),
+        ..Default::default()
+    };
+
+    for goal in [
+        RaceGoal::Road,
+        RaceGoal::Rally,
+        RaceGoal::Drift,
+        RaceGoal::Drag,
+        RaceGoal::DangerSign,
+    ] {
+        for season in [
+            Season::Summer,
+            Season::Autumn,
+            Season::Winter,
+            Season::Spring,
+        ] {
+            let res = calculate_static_alignment(goal, season, &extreme_params);
+            assert!(
+                res.pc_f.is_finite() && res.pc_f >= 15.0 && res.pc_f <= 55.0,
+                "pc_f={}",
+                res.pc_f
+            );
+            assert!(
+                res.pc_r.is_finite() && res.pc_r >= 15.0 && res.pc_r <= 55.0,
+                "pc_r={}",
+                res.pc_r
+            );
+            assert!(res.hw_f.is_finite() && res.hw_f > 0.0, "hw_f={}", res.hw_f);
+            assert!(res.hw_r.is_finite() && res.hw_r > 0.0, "hw_r={}", res.hw_r);
+            assert!(
+                res.camber.front.is_finite() && res.camber.front <= 0.0,
+                "cf={}",
+                res.camber.front
+            );
+            assert!(
+                res.camber.rear.is_finite() && res.camber.rear <= 0.0,
+                "cr={}",
+                res.camber.rear
+            );
+            assert!(
+                res.caster.is_finite() && res.caster >= 5.0 && res.caster <= 7.0,
+                "caster={}",
+                res.caster
+            );
+        }
+    }
+
+    for wd in [-50.0, 0.0, 100.0, 200.0, f64::NAN] {
+        let p = TuningCarParams {
+            weight: Some(1400.0),
+            weight_distribution: Some(wd),
+            ..Default::default()
+        };
+        let res = calculate_static_alignment(RaceGoal::Road, Season::Summer, &p);
+        assert!(
+            res.camber.rear <= 0.0,
+            "cr must remain negative for wd={wd}, got {}",
+            res.camber.rear
+        );
+        assert!(
+            res.camber.front <= 0.0,
+            "cf must remain negative for wd={wd}, got {}",
+            res.camber.front
+        );
+        assert!(res.pc_f >= 15.0 && res.pc_f <= 55.0);
+        assert!(res.pc_r >= 15.0 && res.pc_r <= 55.0);
+    }
+}
+
+#[test]
+fn aero_downforce_singular_protection_and_asymmetric_closure() {
+    use fh6_backend::tuning::chassis::get_road_awd_rear_percent;
+
+    // Case 1: Rear wing equipped (150 kgf), front aero missing/corrupted as NaN, negative, or Infinity
+    for singular_front in [f64::NAN, -20.0, f64::INFINITY, f64::NEG_INFINITY] {
+        let params = TuningCarParams {
+            weight: Some(1400.0),
+            weight_distribution: Some(54.0),
+            drivetrain: Some("RWD".into()),
+            aero_downforce_front: Some(singular_front),
+            aero_downforce_rear: Some(150.0),
+            ..Default::default()
+        };
+        let aero = resolve_aero_downforce(&params);
+        assert_eq!(
+            aero.rear, 150.0,
+            "Rear aero must preserve user input of 150.0 kgf"
+        );
+        assert!(
+            aero.front.is_finite() && aero.front > 0.0,
+            "Front aero must be positively derived"
+        );
+
+        let chassis = calculate_chassis_tuning(RaceGoal::Road, &params);
+        assert!(chassis.springs.front.is_finite() && chassis.springs.rear.is_finite());
+        assert!(chassis.damping.rebound_f.is_finite() && chassis.damping.rebound_r.is_finite());
+    }
+
+    // Case 2: Front splitter equipped (120 kgf), rear aero missing/corrupted as NaN
+    let params_front = TuningCarParams {
+        weight: Some(1400.0),
+        weight_distribution: Some(52.0),
+        drivetrain: Some("AWD".into()),
+        aero_downforce_front: Some(120.0),
+        aero_downforce_rear: Some(f64::NAN),
+        ..Default::default()
+    };
+    let aero_front = resolve_aero_downforce(&params_front);
+    assert_eq!(
+        aero_front.front, 120.0,
+        "Front aero must preserve user input of 120.0 kgf"
+    );
+    assert!(
+        aero_front.rear.is_finite() && aero_front.rear > 0.0,
+        "Rear aero must be positively derived"
+    );
+
+    // Case 3: Both aero inputs are NaN / Infinity / negative
+    let params_corrupt = TuningCarParams {
+        weight: Some(1400.0),
+        aero_downforce_front: Some(f64::NAN),
+        aero_downforce_rear: Some(f64::INFINITY),
+        ..Default::default()
+    };
+    let aero_corrupt = resolve_aero_downforce(&params_corrupt);
+    assert!(aero_corrupt.front.is_finite() && aero_corrupt.front > 0.0);
+    assert!(aero_corrupt.rear.is_finite() && aero_corrupt.rear > 0.0);
+
+    // Case 4: AWD rear torque split with NaN fallback
+    let params_awd_nan = TuningCarParams {
+        weight_distribution: Some(55.0),
+        road_awd_rear_percent: Some(f64::NAN),
+        ..Default::default()
+    };
+    let awd_rear = get_road_awd_rear_percent(&params_awd_nan);
+    assert!(
+        awd_rear >= 60.0 && awd_rear <= 85.0,
+        "AWD rear split with NaN must fallback to physical ratio, got {awd_rear}"
+    );
+}
+
+#[test]
+fn chassis_weight_distribution_nan_protection_and_symmetry_closure() {
+    use fh6_backend::tuning::chassis::get_road_awd_rear_percent;
+
+    // Case 1: NaN weight distribution must fall back to 50.0% neutral balance
+    let p_nan = TuningCarParams {
+        weight: Some(1400.0),
+        weight_distribution: Some(f64::NAN),
+        drivetrain: Some("RWD".into()),
+        spring_front_min: Some(20.0),
+        spring_front_max: Some(100.0),
+        spring_rear_min: Some(20.0),
+        spring_rear_max: Some(100.0),
+        ..Default::default()
+    };
+    let p_50 = TuningCarParams {
+        weight_distribution: Some(50.0),
+        ..p_nan.clone()
+    };
+
+    let chassis_nan = calculate_chassis_tuning(RaceGoal::Road, &p_nan);
+    let chassis_50 = calculate_chassis_tuning(RaceGoal::Road, &p_50);
+
+    // Front/rear ARB and damping must be symmetric and match 50.0% baseline
+    assert_eq!(chassis_nan.arb.front, chassis_50.arb.front);
+    assert_eq!(chassis_nan.arb.rear, chassis_50.arb.rear);
+    assert_eq!(chassis_nan.arb.front, chassis_nan.arb.rear);
+    assert_eq!(chassis_nan.springs.front, chassis_50.springs.front);
+    assert_eq!(chassis_nan.springs.rear, chassis_50.springs.rear);
+    assert_eq!(chassis_nan.damping.rebound_f, chassis_nan.damping.rebound_r);
+    assert_eq!(chassis_nan.damping.rebound_f, chassis_50.damping.rebound_f);
+
+    // Case 2: get_road_awd_rear_percent with NaN weight_distribution must be 70.0%
+    let awd_split_nan = get_road_awd_rear_percent(&p_nan);
+    let awd_split_50 = get_road_awd_rear_percent(&p_50);
+    assert_eq!(awd_split_nan, 70.0);
+    assert_eq!(awd_split_nan, awd_split_50);
+
+    // Case 3: Rally mode must also preserve symmetry under NaN weight_distribution
+    let rally_nan = calculate_chassis_tuning(RaceGoal::Rally, &p_nan);
+    let rally_50 = calculate_chassis_tuning(RaceGoal::Rally, &p_50);
+    assert_eq!(rally_nan.springs.front, rally_50.springs.front);
+    assert_eq!(rally_nan.springs.rear, rally_50.springs.rear);
+    assert_eq!(rally_nan.damping.rebound_f, rally_nan.damping.rebound_r);
+
+    // Case 4: Zero or non-finite torque in Road gearing must not panic or diverge to INFINITY
+    let p_zero_torque = TuningCarParams {
+        max_hp: Some(300.0),
+        max_torque: Some(0.0),
+        max_hp_rpm: Some(6000.0),
+        max_torque_rpm: Some(4000.0),
+        ..p_nan
+    };
+    let road_gearing = fh6_backend::tuning::calculate_aego_gearing(
+        RaceGoal::Road,
+        6,
+        &p_zero_torque,
+        7000.0,
+        None,
+    );
+    assert_ne!(road_gearing.unsupported, Some(true));
+    assert!(road_gearing.final_drive >= 2.0 && road_gearing.final_drive <= 6.1);
+    assert_eq!(road_gearing.gears.len(), 6);
+    assert!(road_gearing.gears.windows(2).all(|w| w[0] > w[1]));
+}
+
+#[test]
+fn alignment_drivetrain_normalization_and_gearing_kinematics_closure() {
+    use fh6_backend::tuning::{calc_gear_rpm, calc_gear_speed};
+
+    // Case 1: Drivetrain case & whitespace normalization in static alignment
+    let p_fwd_upper = TuningCarParams {
+        weight: Some(1200.0),
+        weight_distribution: Some(60.0),
+        drivetrain: Some("FWD".into()),
+        ..Default::default()
+    };
+    let p_fwd_lower = TuningCarParams {
+        drivetrain: Some("  fwd  ".into()),
+        ..p_fwd_upper.clone()
+    };
+    let align_upper = calculate_static_alignment(RaceGoal::Road, Season::Summer, &p_fwd_upper);
+    let align_lower = calculate_static_alignment(RaceGoal::Road, Season::Summer, &p_fwd_lower);
+    assert_eq!(align_upper, align_lower);
+
+    // In Drag mode, FWD must have front traction tire pressure (lower) and rear stiff (higher)
+    let drag_fwd_upper = calculate_static_alignment(RaceGoal::Drag, Season::Summer, &p_fwd_upper);
+    let drag_fwd_lower = calculate_static_alignment(RaceGoal::Drag, Season::Summer, &p_fwd_lower);
+    assert_eq!(drag_fwd_upper, drag_fwd_lower);
+    assert!(drag_fwd_lower.pc_f < drag_fwd_lower.pc_r);
+
+    // Case 2: calc_gear_speed & calc_gear_rpm singular value & non-finite protection
+    for bad_val in [f64::NAN, f64::INFINITY, f64::NEG_INFINITY, 0.0, -10.0] {
+        assert_eq!(calc_gear_speed(bad_val, 2.5, 4.0, 0.32), 0.0);
+        assert_eq!(calc_gear_speed(6000.0, bad_val, 4.0, 0.32), 0.0);
+        assert_eq!(calc_gear_speed(6000.0, 2.5, bad_val, 0.32), 0.0);
+        assert_eq!(calc_gear_speed(6000.0, 2.5, 4.0, bad_val), 0.0);
+
+        assert_eq!(calc_gear_rpm(bad_val, 2.5, 4.0, 0.32), 0.0);
+        assert_eq!(calc_gear_rpm(30.0, bad_val, 4.0, 0.32), 0.0);
+        assert_eq!(calc_gear_rpm(30.0, 2.5, bad_val, 0.32), 0.0);
+        assert_eq!(calc_gear_rpm(30.0, 2.5, 4.0, bad_val), 0.0);
+    }
+
+    // Kinematic consistency under valid finite inputs
+    let speed = calc_gear_speed(6000.0, 2.5, 4.0, 0.32);
+    let rpm_back = calc_gear_rpm(speed, 2.5, 4.0, 0.32);
+    assert!((rpm_back - 6000.0).abs() < 1e-6);
+
+    // Case 3: Secondary correction non-finite protection
+    let sc_non_finite = GearingSecondaryCorrection {
+        simulated_top_speed: Some(f64::INFINITY),
+        soft_max_speed: Some(f64::NAN),
+        drag_finish_speed_kmh: Some(f64::INFINITY),
+        drag_finish_speed_provenance: Some("telemetry".into()),
+    };
+    let rally_gearing = fh6_backend::tuning::calculate_aego_gearing(
+        RaceGoal::Rally,
+        6,
+        &p_fwd_upper,
+        7500.0,
+        Some(&sc_non_finite),
+    );
+    assert_ne!(rally_gearing.unsupported, Some(true));
+    assert!(rally_gearing.final_drive >= 2.0 && rally_gearing.final_drive <= 6.1);
+}
+
+#[test]
+fn chassis_drift_degeneracy_and_workflow_drivetrain_normalization() {
+    use fh6_backend::tuning::workflow::mechanical_fields;
+    use serde_json::json;
+
+    // Case 1: Drift mode with fixed/degenerate spring rate (k_min == k_max) must retain neutral 10.5 damping
+    let p_fixed_spring = TuningCarParams {
+        weight: Some(1200.0),
+        weight_distribution: Some(50.0),
+        drivetrain: Some("RWD".into()),
+        spring_front_min: Some(50.0),
+        spring_front_max: Some(50.0),
+        spring_rear_min: Some(50.0),
+        spring_rear_max: Some(50.0),
+        ..Default::default()
+    };
+    let drift_fixed = calculate_chassis_tuning(RaceGoal::Drift, &p_fixed_spring);
+    assert_eq!(
+        drift_fixed.damping.rebound_f, 10.5,
+        "Degenerate front spring rate in Drift must yield neutral 10.5 damping, not 1.0 collapse"
+    );
+    assert_eq!(
+        drift_fixed.damping.rebound_r, 10.5,
+        "Degenerate rear spring rate in Drift must yield neutral 10.5 damping, not 1.0 collapse"
+    );
+    assert_eq!(drift_fixed.damping.bump_f, 6.3);
+    assert_eq!(drift_fixed.damping.bump_r, 6.3);
+
+    // Case 2: Drift and Drag with non-finite / corrupted inputs must not panic or propagate NaN
+    let p_corrupt = TuningCarParams {
+        weight: Some(f64::NAN),
+        weight_distribution: Some(-20.0),
+        spring_front_min: Some(f64::INFINITY),
+        ..Default::default()
+    };
+    let drift_corrupt = calculate_chassis_tuning(RaceGoal::Drift, &p_corrupt);
+    assert!(drift_corrupt.springs.front.is_finite() && drift_corrupt.springs.front > 0.0);
+    assert!(drift_corrupt.damping.rebound_f.is_finite() && drift_corrupt.damping.rebound_f > 0.0);
+
+    let drag_corrupt = calculate_chassis_tuning(RaceGoal::Drag, &p_corrupt);
+    assert!(drag_corrupt.springs.front.is_finite() && drag_corrupt.springs.front > 0.0);
+
+    // Case 3: Workflow mechanical_fields drivetrain normalization (case-insensitive & trimmed)
+    let c = calculate_chassis_tuning(RaceGoal::Road, &p_fixed_spring);
+    let a = calculate_static_alignment(RaceGoal::Road, Season::Summer, &p_fixed_spring);
+
+    for (input_drive, has_front_diff, has_rear_diff, has_center_diff) in [
+        ("rwd", false, true, false),
+        (" RWD ", false, true, false),
+        ("fwd", true, false, false),
+        (" FWD ", true, false, false),
+        ("awd", true, true, true),
+        (" AWD ", true, true, true),
+    ] {
+        let profile = json!({ "drivetrain": input_drive });
+        let fields = mechanical_fields(&profile, &c, &a);
+        assert_eq!(
+            fields.contains_key("diff.front.acceleration"),
+            has_front_diff,
+            "drivetrain '{input_drive}' front diff mismatch"
+        );
+        assert_eq!(
+            fields.contains_key("diff.rear.acceleration"),
+            has_rear_diff,
+            "drivetrain '{input_drive}' rear diff mismatch"
+        );
+        assert_eq!(
+            fields.contains_key("diff.center"),
+            has_center_diff,
+            "drivetrain '{input_drive}' center diff mismatch"
+        );
+    }
+}
+
+#[test]
+fn gearing_secondary_redistribution_closure_and_monotonicity_bounds() {
+    use fh6_backend::tuning::{
+        calculate_aego_gearing, GearingSecondaryCorrection, RaceGoal, TuningCarParams,
+    };
+
+    // Case 1: Low redline ratio (r_redline_hp = 4500 / 9000 = 0.50) with secondary correction
+    // must enforce r_max >= r_min, maintaining progressive gear spacing without NaN or ratio inversion
+    let p_low_redline = TuningCarParams {
+        weight: Some(1300.0),
+        weight_distribution: Some(50.0),
+        drivetrain: Some("AWD".into()),
+        max_hp: Some(300.0),
+        max_torque: Some(400.0),
+        max_hp_rpm: Some(4500.0),
+        max_torque_rpm: Some(3000.0),
+        ..Default::default()
+    };
+    let sc_top_speed = GearingSecondaryCorrection {
+        // Force final-drive saturation so intermediate ratios are redistributed.
+        simulated_top_speed: Some(80.0),
+        soft_max_speed: None,
+        drag_finish_speed_kmh: None,
+        drag_finish_speed_provenance: None,
+    };
+    let result_sc = calculate_aego_gearing(
+        RaceGoal::Rally,
+        6,
+        &p_low_redline,
+        9000.0,
+        Some(&sc_top_speed),
+    );
+    assert_ne!(result_sc.unsupported, Some(true));
+    assert_eq!(result_sc.gears.len(), 6);
+    assert!(result_sc.gears.iter().all(|&g| g.is_finite() && g > 0.0));
+    assert!(result_sc.gears.windows(2).all(|g| g[0] > g[1]));
+    assert_eq!(result_sc.final_drive, 6.1);
+    for g in result_sc.gears.windows(3) {
+        // Allow for the public output's 0.01 ratio quantization.
+        assert!(g[1] / g[0] <= g[2] / g[1] + 0.02);
+    }
+
+    // Case 2: Redline-peaked engine (rpm_hp == max_rpm) must clamp step ratio to <= 0.95
+    let p_peak_redline = TuningCarParams {
+        weight: Some(1200.0),
+        weight_distribution: Some(50.0),
+        drivetrain: Some("RWD".into()),
+        max_hp: Some(250.0),
+        max_torque: Some(220.0),
+        max_hp_rpm: Some(8500.0),
+        max_torque_rpm: Some(6500.0),
+        ..Default::default()
+    };
+    let result_peak = calculate_aego_gearing(RaceGoal::Rally, 6, &p_peak_redline, 8500.0, None);
+    assert_ne!(result_peak.unsupported, Some(true));
+    assert!(result_peak.gears.windows(2).all(|g| g[0] > g[1]));
+    for w in result_peak.gears.windows(2) {
+        assert!(
+            w[1] <= w[0] * 0.95 + 1e-6,
+            "Step ratio must not exceed 0.95 upper bound"
+        );
+    }
+
+    // Case 3: Ultra-low power RPM must not collapse high gears to 0.10 bottom limit
+    let p_low_rpm = TuningCarParams {
+        weight: Some(1500.0),
+        weight_distribution: Some(50.0),
+        drivetrain: Some("AWD".into()),
+        max_hp: Some(200.0),
+        max_torque: Some(500.0),
+        max_hp_rpm: Some(1800.0),
+        max_torque_rpm: Some(1500.0),
+        ..Default::default()
+    };
+    let result_low_rpm = calculate_aego_gearing(RaceGoal::Rally, 6, &p_low_rpm, 6000.0, None);
+    assert_ne!(result_low_rpm.unsupported, Some(true));
+    assert!(
+        result_low_rpm.gears.last().copied().unwrap() > 0.20,
+        "High gear must not collapse to 0.10"
+    );
 }

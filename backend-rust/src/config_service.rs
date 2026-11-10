@@ -21,7 +21,7 @@ pub fn lock<T>(mutex: &Mutex<T>) -> MutexGuard<'_, T> {
 
 pub struct ConfigService {
     pub root: PathBuf,
-    pub settings: Mutex<Value>,
+    pub settings: Mutex<Arc<Value>>,
     pub car_database: Value,
     pub profiles: Arc<Mutex<BTreeMap<String, Value>>>,
     profile_io: ProfileIo,
@@ -53,7 +53,7 @@ impl ConfigService {
             .map_err(|e| ApiError::internal("Operation failed", e))?;
         Ok(Self {
             root: root.to_owned(),
-            settings: Mutex::new(settings),
+            settings: Mutex::new(Arc::new(settings)),
             car_database: assets::json("car_database.json").unwrap_or(json!({})),
             profiles,
             profile_io,
@@ -62,8 +62,12 @@ impl ConfigService {
             settings_changed,
         })
     }
-    pub fn settings(&self) -> Value {
+    // [PERF] Provide zero-copy atomic reference sharing for 60Hz telemetry workers.
+    pub fn settings_arc(&self) -> Arc<Value> {
         lock(&self.settings).clone()
+    }
+    pub fn settings(&self) -> Value {
+        (**lock(&self.settings)).clone()
     }
     pub fn companion_visual_theme(&self) -> Option<crate::companion_theme::CompanionVisualTheme> {
         crate::companion_theme::CompanionVisualTheme::project(&lock(&self.settings)["theme"])
@@ -139,7 +143,7 @@ impl ConfigService {
             ("GET",["api","settings"]) => Ok(self.settings()),
             ("POST",["api","settings"]) => {
                 let value = { let mut settings=lock(&self.settings); let next=config::merge_settings(&settings,data)?;
-                    storage::save_settings(&self.root,&next).map_err(|_| ApiError::internal("Operation failed", "Settings could not be saved"))?; *settings=next.clone(); next };
+                    storage::save_settings(&self.root,&next).map_err(|_| ApiError::internal("Operation failed", "Settings could not be saved"))?; *settings=Arc::new(next.clone()); next };
                 self.settings_changed.send_replace(value.clone());
                 if data["theme"].is_object() || data["units"].is_object() { self.publish_hud(); }
                 Ok(value)
@@ -161,7 +165,7 @@ impl ConfigService {
             }
             ("GET",["api","languages"]) => Ok(self.languages.list()),
             ("GET",["api","languages",code]) => {
-                if !code.chars().all(|c| c.is_ascii_alphanumeric() || c=='-') {return Err(ApiError::invalid("Invalid language code"));}
+                if code.len() > 32 || !code.chars().all(|c| c.is_ascii_alphanumeric() || c=='-') {return Err(ApiError::invalid("Invalid language code"));}
                 let code=code.to_lowercase(); if code=="en-us" {return Ok(json!({}));}
                 Ok(self.languages.get(&code))
             }

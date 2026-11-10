@@ -15,7 +15,36 @@ export interface SessionTrimSummaryCardProps {
   readonly onToggleRawData: (showRaw: boolean) => void;
   readonly exportRawData: boolean;
   readonly onToggleExportRawData: (exportRaw: boolean) => void;
-  readonly t: (text: string) => string;
+  readonly t: (text: string, params?: Record<string, string | number>) => string;
+}
+
+function getRecordingModeLabel(mode: string): string {
+  switch (mode.toLowerCase()) {
+    case "circuit":
+      return "Circuit";
+    case "sprint":
+      return "Sprint";
+    case "time_trial":
+      return "Time Trial";
+    case "roaming":
+    case "free_roam":
+      return "Free Roam";
+    case "drag":
+      return "Drag";
+    default:
+      return mode;
+  }
+}
+
+function getLapTimeSourceLabel(source: string): string {
+  switch (source.toLowerCase()) {
+    case "game":
+      return "In-Game Timing";
+    case "calculated":
+      return "Calculated Timing";
+    default:
+      return source;
+  }
 }
 
 export const SessionTrimSummaryCard: React.FC<SessionTrimSummaryCardProps> = ({
@@ -47,8 +76,8 @@ export const SessionTrimSummaryCard: React.FC<SessionTrimSummaryCardProps> = ({
           <span className="fw-semibold" style={{ fontSize: "0.9rem" }}>
             {t("Session Analysis & Trimming")}
           </span>
-          <span className="badge bg-secondary text-uppercase" style={{ fontSize: "0.7rem" }}>
-            {recordingMode}
+          <span className="badge bg-secondary" style={{ fontSize: "0.7rem" }}>
+            {t(getRecordingModeLabel(recordingMode))}
           </span>
           {routeName && (
             <span className="badge bg-info text-dark" style={{ fontSize: "0.7rem" }}>
@@ -63,6 +92,8 @@ export const SessionTrimSummaryCard: React.FC<SessionTrimSummaryCardProps> = ({
               type="checkbox"
               className="form-check-input"
               id="rawViewToggle"
+              role="switch"
+              aria-checked={showRawData}
               checked={showRawData}
               onChange={(e) => onToggleRawData(e.target.checked)}
             />
@@ -98,13 +129,16 @@ export const SessionTrimSummaryCard: React.FC<SessionTrimSummaryCardProps> = ({
           </div>
           <div className="col-6 col-md-3">
             <div className="text-secondary">{t("Valid Samples")}</div>
-            <div className="fw-bold">
+            <div
+              className="fw-bold"
+              aria-label={t("{valid} of {total} samples valid", { valid: trimmedCount, total: rawCount })}
+            >
               {`${trimmedCount} / ${rawCount}`}
             </div>
           </div>
           <div className="col-6 col-md-3">
             <div className="text-secondary">{t("Lap Timing Source")}</div>
-            <div className="fw-bold text-capitalize">{lapTimeSource}</div>
+            <div className="fw-bold">{t(getLapTimeSourceLabel(lapTimeSource))}</div>
           </div>
         </div>
       </div>

@@ -66,7 +66,7 @@ async function main() {
     await page.addInitScript(() => { window.fixtureBroadcasts = []; const channel = new BroadcastChannel('horizon_tuner_hud_channel'); channel.onmessage = e => window.fixtureBroadcasts.push(e.data); });
     const open = async query => {
       await page.goto(origin + '/src/features/overlay_control/r34_mfd/tests/browser/index.html' + (query || ''));
-      await page.locator('details.hud-advanced-settings > summary').click();
+      await page.locator('[role=tab][id$="-tab-gauge"]').click();
       await page.waitForFunction(() => !document.querySelector('select[id$="-style"]')?.disabled && Boolean(window.r34FixtureTheme));
     };
     const savedAs = async expected => page.waitForFunction(async values => {
@@ -101,8 +101,8 @@ async function main() {
     assert.equal(await card().getByRole('checkbox', { name: 'R34 show instrument cluster', exact: true }).isChecked(), false);
     report.checks.push('All five modes, day/night, cluster control, disk persistence, effective-unit separation, BroadcastChannel and reload');
     await open('?temperature=F'); await card().waitFor({ state: 'visible' });
-    const unitPanel = () => page.getByRole('dialog', { name: 'HUD Unit Settings', exact: true });
-    const openUnits = async () => { await page.getByRole('button', { name: 'HUD Unit Settings', exact: true }).click(); await unitPanel().waitFor({ state: 'visible' }); };
+    const unitPanel = () => page.getByRole('region', { name: 'HUD Unit Settings', exact: true });
+    const openUnits = async () => { await page.locator('[role=tab][id$="-tab-general"]').click(); await unitPanel().waitFor({ state: 'visible' }); };
     // Overlay configuration can finish loading before app settings hydrate.
     await page.waitForFunction(() => window.fixtureBroadcasts.some(message => message.type === 'config' && message.data?.followAppUnits === true && message.data.effectiveUnits?.temperature === 'F' && message.data.effectiveUnits.speed === 'mph'));
     await openUnits();
@@ -114,12 +114,12 @@ async function main() {
     await unitPanel().getByRole('combobox', { name: 'Temperature', exact: true }).selectOption('F');
     await page.waitForFunction(async () => (await (await fetch('/api/overlay/config')).json()).units.temperature === 'F');
     await unitPanel().screenshot({ path: path.join(out, 'temperature-independent-f.png') }); report.screenshots.push({ name: 'temperature-independent-f' });
-    await unitPanel().getByRole('button', { name: 'Close Unit Settings', exact: true }).click();
+    await page.locator('[role=tab][id$="-tab-gauge"]').click();
     await open(); await card().waitFor({ state: 'visible' }); await openUnits();
     assert.equal(await unitPanel().getByRole('combobox', { name: 'Temperature', exact: true }).inputValue(), 'F');
     assert.equal(await unitPanel().getByRole('combobox', { name: 'Temperature', exact: true }).isEnabled(), true);
     assert.equal(read().effectiveUnits, undefined);
-    await unitPanel().getByRole('button', { name: 'Close Unit Settings', exact: true }).click();
+    await page.locator('[role=tab][id$="-tab-gauge"]').click();
     report.checks.push('Temperature app inheritance, independent C/F control, disk persistence, reload and derived-unit separation');
     const cores = await page.evaluate(() => window.r34FixtureTheme.entries);
     report.themeCatalog = cores;
@@ -143,17 +143,19 @@ async function main() {
     await page.setViewportSize({ width: 390, height: 844 }); await capture('settings-narrow'); await page.setViewportSize({ width: 1440, height: 1100 });
     await style().selectOption('simple'); await card().waitFor({ state: 'detached' }); await style().selectOption('r34_mfd'); await card().waitFor({ state: 'visible' });
     await savedAs({ r34MfdMode: 'lap', r34ShowCluster: false });
-    const before = report.saves.length; page.once('dialog', dialog => dialog.dismiss()); await page.getByRole('button', { name: 'Reset HUD Settings', exact: true }).click(); assert.equal(report.saves.length, before);
+    const before = report.saves.length; await page.locator('[role=tab][id$="-tab-general"]').click(); page.once('dialog', dialog => dialog.dismiss()); await page.getByRole('button', { name: 'Reset HUD Settings', exact: true }).click(); assert.equal(report.saves.length, before);
     page.once('dialog', dialog => dialog.accept()); await page.getByRole('button', { name: 'Reset HUD Settings', exact: true }).click();
     await card().waitFor({ state: 'detached' }); await savedAs({ hudStyle: 'vfd', r34MfdMode: 'single', r34Lighting: 'night', r34ShowCluster: true });
     assert.equal(read().units.temperature, 'C');
+    await page.locator('[role=tab][id$="-tab-gauge"]').click();
     await style().selectOption('r34_mfd'); await card().waitFor({ state: 'visible' }); report.checks.push('Style round-trip, reset cancel and confirmed defaults');
     for (const language of ['zh-tw', 'ja-jp']) {
       const translations = JSON.parse(fs.readFileSync(path.join(repo, 'lang', language + '.json'), 'utf8'));
       await page.setViewportSize({ width: 390, height: 844 }); await open('?language=' + language);
       const translated = page.getByRole('group', { name: translations['R34 MFD settings'], exact: true }); await translated.waitFor({ state: 'visible' });
       const glyphs = await translated.evaluate(async (element, language) => {
-        const family = language === 'zh-tw' ? 'Noto Sans CJK TC' : 'Noto Sans CJK JP'; await new FontFace('R34CjkProbe', `local("${family}")`).load(); await document.fonts.ready;
+        const windows = navigator.userAgent.includes('Windows');
+        const family = language === 'zh-tw' ? (windows ? 'Microsoft JhengHei' : 'Noto Sans CJK TC') : (windows ? 'YuGothic-Regular' : 'Noto Sans CJK JP'); await new FontFace('R34CjkProbe', `local("${family}")`).load(); await document.fonts.ready;
         const canvas = document.createElement('canvas'); canvas.width = canvas.height = 64; const ctx = canvas.getContext('2d', { willReadFrequently: true });
         ctx.font = `400 32px ${getComputedStyle(element).fontFamily}`; const probes = language === 'zh-tw' ? ['儀', '錶', '模'] : ['モ', 'ー', 'ド'];
         const ink = probes.map(glyph => { ctx.clearRect(0, 0, 64, 64); ctx.fillText(glyph, 8, 44); return Array.from(ctx.getImageData(0, 0, 64, 64).data).filter((_, i) => i % 4 === 3); });

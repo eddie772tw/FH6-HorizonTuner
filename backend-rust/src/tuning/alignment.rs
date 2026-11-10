@@ -1,5 +1,5 @@
 //! Static alignment model migrated from the desktop v1.6.2 contract.
-use super::{RaceGoal, RallyProfile, TuningCarParams};
+use super::{Drivetrain, RaceGoal, RallyProfile, TuningCarParams};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Copy, Deserialize, Serialize, Default)]
@@ -31,9 +31,6 @@ pub struct StaticAlignment {
 fn positive(v: Option<f64>, default: f64) -> f64 {
     v.filter(|v| v.is_finite() && *v > 0.0).unwrap_or(default)
 }
-fn nonzero(v: Option<f64>, default: f64) -> f64 {
-    v.filter(|v| v.is_finite() && *v != 0.0).unwrap_or(default)
-}
 fn r1(v: f64) -> f64 {
     (v * 10.0 + 0.5).floor() / 10.0
 }
@@ -62,17 +59,23 @@ pub fn calculate_static_alignment(
     p: &TuningCarParams,
 ) -> StaticAlignment {
     let mass = positive(p.weight, 1350.0);
-    let wf = positive(p.weight_distribution, 54.0) / 100.0;
+    let wf = p
+        .weight_distribution
+        .filter(|v| v.is_finite())
+        .unwrap_or(54.0)
+        .clamp(1.0, 99.0)
+        / 100.0;
     let wr = 1.0 - wf;
-    let drive = p
+    let dt = p
         .drivetrain
         .as_deref()
-        .filter(|s| !s.is_empty())
-        .unwrap_or("AWD");
-    let fw = nonzero(p.front_tire_width, 245.0);
-    let rw = nonzero(p.rear_tire_width, 275.0);
-    let hw_f = r1(fw * (nonzero(p.front_tire_aspect, 40.0) / 100.0));
-    let hw_r = r1(rw * (nonzero(p.rear_tire_aspect, 35.0) / 100.0));
+        .filter(|s| !s.trim().is_empty())
+        .map(Drivetrain::from_str_loose)
+        .unwrap_or(Drivetrain::AWD);
+    let fw = positive(p.front_tire_width, 245.0);
+    let rw = positive(p.rear_tire_width, 275.0);
+    let hw_f = r1(fw * (positive(p.front_tire_aspect, 40.0) / 100.0));
+    let hw_r = r1(rw * (positive(p.rear_tire_aspect, 35.0) / 100.0));
     let bias = if matches!(season, Season::Spring | Season::Winter) {
         0.5
     } else {
@@ -104,7 +107,7 @@ pub fn calculate_static_alignment(
             )
         }
         RaceGoal::Drag => {
-            let (front, rear) = if drive == "FWD" {
+            let (front, rear) = if dt == Drivetrain::FWD {
                 (15.0 + 1.5 * mass * wf / 1000.0 + bias, 38.0 + bias)
             } else {
                 (38.0 + bias, 15.0 + 1.5 * mass * wr / 1000.0 + bias)
@@ -112,10 +115,10 @@ pub fn calculate_static_alignment(
             (front, rear, 23.5, 0.0, -0.1, "0.0°", "0.0°", 7.0)
         }
         RaceGoal::Road => {
-            let (df, dr) = match drive {
-                "FWD" => (1.5, -0.5),
-                "RWD" => (0.5, 0.0),
-                _ => (0.2, 0.0),
+            let (df, dr) = match dt {
+                Drivetrain::FWD => (1.5, -0.5),
+                Drivetrain::RWD => (0.5, 0.0),
+                Drivetrain::AWD => (0.2, 0.0),
             };
             (
                 28.5 + 2.5 * (mass * wf / 1000.0 - 0.7) - 0.005 * (fw - 245.0) + df + bias,
@@ -130,8 +133,8 @@ pub fn calculate_static_alignment(
         }
     };
     StaticAlignment {
-        pc_f: r1(pc_f),
-        pc_r: r1(pc_r),
+        pc_f: r1(pc_f.clamp(15.0, 55.0)),
+        pc_r: r1(pc_r.clamp(15.0, 55.0)),
         target_phot: hot,
         season_bias: bias,
         camber: Axle {

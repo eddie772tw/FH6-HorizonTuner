@@ -1,0 +1,187 @@
+{
+  "unexpectedRequests": [],
+  "saves": 23,
+  "environment": "Windows sandboxed Edge, real AppShell and launcher, isolated HTTP and synthetic telemetry",
+  "date": "2026-11-05",
+  "faces": [
+    {
+      "id": "3",
+      "name": "Tabby Cat (Ice Blue)",
+      "file": "nfsu2-face-3.png"
+    },
+    {
+      "id": "0",
+      "name": "Stock OEM (Ice Blue)",
+      "file": "nfsu2-face-0.png"
+    },
+    {
+      "id": "1",
+      "name": "Hot Rod Flames (Orange)",
+      "file": "nfsu2-face-1.png"
+    },
+    {
+      "id": "2",
+      "name": "Street Tribal (Cyan)",
+      "file": "nfsu2-face-2.png"
+    },
+    {
+      "id": "4",
+      "name": "Biohazard Skull (Lime)",
+      "file": "nfsu2-face-4.png"
+    },
+    {
+      "id": "5",
+      "name": "Redline Classic (Crimson)",
+      "file": "nfsu2-face-5.png"
+    },
+    {
+      "id": "6",
+      "name": "Gold Chrono (Gold)",
+      "file": "nfsu2-face-6.png"
+    },
+    {
+      "id": "7",
+      "name": "Techno Arc (Aqua)",
+      "file": "nfsu2-face-7.png"
+    },
+    {
+      "id": "8",
+      "name": "Speed Pulse (Indigo)",
+      "file": "nfsu2-face-8.png"
+    },
+    {
+      "id": "9",
+      "name": "Circuit Board (Emerald)",
+      "file": "nfsu2-face-9.png"
+    },
+    {
+      "id": "10",
+      "name": "Bling Edition (Gold)",
+      "file": "nfsu2-face-10.png"
+    }
+  ],
+  "errors": [],
+  "sourceHashes": [
+    {
+      "path": "frontend/src/features/overlay_control/panels/HudGaugeStyleSettings.tsx",
+      "sha256": "f4850b5e95618ce8eccfda6416349ca077caea3ce4a06bfa5efaec3b8ba1fa49"
+    },
+    {
+      "path": "frontend/src/features/overlay_control/tests/browser/verify.cjs",
+      "sha256": "438cf85fa62853424d0db0f6dc343472314c5f89f710a21757159205f5cbf0db"
+    },
+    {
+      "path": "hud_overlay/nfsu2/index.html",
+      "sha256": "1e9da2916a1de88a18ba7ce9bd138f38878eccdc08acd3710b772d7d61e492ef"
+    },
+    {
+      "path": "hud_overlay/nfsu2/tests/browser/verify.cjs",
+      "sha256": "1e2d984e725d5af67417663acc77d96596d3ec23c838ebe2e51f0a4e945db1ec"
+    },
+    {
+      "path": "lang/en-us.json",
+      "sha256": "68f4416963cb1dbab80e01cf0ed4cde2c6fb7802b8d6b6ba00167505a71db896"
+    },
+    {
+      "path": "lang/zh-tw.json",
+      "sha256": "483fdf3216fbdd1af09d269fda8723d060e6ea845e09b9bfb1ada7bc6df568d2"
+    },
+    {
+      "path": "lang/ja-jp.json",
+      "sha256": "21c35e819baf2187109f06c8b339e883f3b739743b3b4a975917f75bdf14fd7a"
+    }
+  ],
+  "layouts": 84,
+  "checks": [
+    "NFSU2 selector in Main gauge: all 11 choices, hidden configuration, tab changes without saves, persistence, 84 theme/language/size layouts and actual launcher captures"
+  ],
+  "fullSuite": "420 shared layouts, 105 captures, 166 fixture saves, zero page errors; refreshed NFSU2 capture run waits for startup sweep and restores wide-panel scroll",
+  "source": "e1b2359a merged with d72ce266 plus capture fixture refinement; settings captured before native state fix, NFSU2 selector and renderer unchanged",
+  "limitations": "Not native, game, audio or screen-reader acceptance",
+  "images": [
+    {
+      "file": "nfsu2-face-0.png",
+      "sha256": "4191a764689a04e8f39a8fb1ec76cc5b0c578528805d355c8c3e3ff836279b94"
+    },
+    {
+      "file": "nfsu2-face-1.png",
+      "sha256": "65f1ced74e0f652d8d74954ec6de3481385411392d08709e6c2d65e17e751b91"
+    },
+    {
+      "file": "nfsu2-face-10.png",
+      "sha256": "1391a9bedd5d54d44ba58ff4e46efdaa37293ad6a0b046a92f5879f1899c67ef"
+    },
+    {
+      "file": "nfsu2-face-2.png",
+      "sha256": "f75185c5aeecce9f38470cc71210f04d1c1841057c1379ab6110b05be359a979"
+    },
+    {
+      "file": "nfsu2-face-3.png",
+      "sha256": "2977074413ea3597fd7ebf9f8601f2e00fb6000d1758a5d77fff6b84f68914d7"
+    },
+    {
+      "file": "nfsu2-face-4.png",
+      "sha256": "8c976415fe465e929759027eb4601b6fadb4e90cbbd7d7e6899456937c1e10f5"
+    },
+    {
+      "file": "nfsu2-face-5.png",
+      "sha256": "3696d6463e776548bda440ecc6deceffbc29d26f8e63016f7de1fd73fb8abaf7"
+    },
+    {
+      "file": "nfsu2-face-6.png",
+      "sha256": "1935ebec83e6dc4b9bd402f78c1769c19c9fa004f52dc3f09815e9e005a622bb"
+    },
+    {
+      "file": "nfsu2-face-7.png",
+      "sha256": "f8b0ed9c3b562fc950b9b6dd8a20176ffc692bc530f4919de16984d11c3945aa"
+    },
+    {
+      "file": "nfsu2-face-8.png",
+      "sha256": "c6268b94ed50ffb70e3808dfb5ce9e82bc95703f00f557600c1e7bcc6f42d1a3"
+    },
+    {
+      "file": "nfsu2-face-9.png",
+      "sha256": "41638ff93c5137638c0afba1cfffe71f445af1d0bf7aaaac71da434e9b635211"
+    },
+    {
+      "file": "nfsu2-settings-en-us-default-dark-320.png",
+      "sha256": "aa38c69c4e8c724a9a0b0c8c562706312cff9151547ace671766046339e87ccc"
+    },
+    {
+      "file": "nfsu2-settings-ja-jp-default-dark-320.png",
+      "sha256": "53c80adca91b8ff2b531a620e69d30d96ff91a52f2dab81dd1fe0dc52356f5ce"
+    },
+    {
+      "file": "nfsu2-settings-zh-tw-default-dark-1280.png",
+      "sha256": "260be2a64e3392274c0e48851ac7a9effd4d747d3ecd636f800dd84cf59f5dda"
+    },
+    {
+      "file": "nfsu2-settings-zh-tw-default-dark-320.png",
+      "sha256": "2586b9dcfc532a79801287907ff06be27ae1161bc5534a079a6f4e1492f11b55"
+    },
+    {
+      "file": "nfsu2-settings-zh-tw-default-light-1280.png",
+      "sha256": "1b4c9d7c24cbf7e2e70c71f99c0dce7bafb67655aa19732ba6c5ba048727f36a"
+    },
+    {
+      "file": "nfsu2-settings-zh-tw-rhine-lab-dark-1280.png",
+      "sha256": "aeec6fa8626e26ec5909b8cfaf87973698372b612fa6ffe3880d238235293c31"
+    },
+    {
+      "file": "nfsu2-settings-zh-tw-rhine-lab-light-1280.png",
+      "sha256": "410e99f4505d84bfd8b7fb7b73bf731afce6b604ef26275ebefa98496241007b"
+    },
+    {
+      "file": "nfsu2-settings-zh-tw-swiss-dark-1280.png",
+      "sha256": "a324c2d1a29a8101d8ef5ff7d28a64c000a1df84d66510edf2cf030eef6da278"
+    },
+    {
+      "file": "nfsu2-settings-zh-tw-swiss-light-1280.png",
+      "sha256": "6378215a01e35a48f5824096253c4d26dae3b178ee65a5b97d22af50261a240c"
+    }
+  ],
+  "faceCaptureChecks": [
+    "NFSU2 selector in Main gauge: all 11 choices, persistence, 0 theme/language/size layouts and actual launcher captures"
+  ],
+  "faceCaptureSaves": 14
+}

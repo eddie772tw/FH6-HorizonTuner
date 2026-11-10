@@ -358,6 +358,53 @@ fn dyno_quality_and_collection_match_generated_python_fixture() {
 }
 
 #[test]
+fn dyno_collector_zero_clone_neighbor_aggregation_and_registry_steady_state() {
+    let mut registry = DynoQualityGateRegistry::default();
+    let car_id = "100";
+    let mut quality = registry.observe(car_id, &serde_json::json!({"TimestampMS":1000,"PositionX":0,"PositionY":0,"PositionZ":0,"SpeedMetersPerSecond":10,"Gear":4,"CarOrdinal":100,"CarClass":3,"CarPerformanceIndex":800}));
+    for n in 1..8 {
+        quality = registry.observe(car_id, &serde_json::json!({"TimestampMS":1000+n*16,"PositionX":0,"PositionY":0,"PositionZ":(n as f64)*0.16,"SpeedMetersPerSecond":10,"Gear":4,"CarOrdinal":100,"CarClass":3,"CarPerformanceIndex":800}));
+    }
+    assert!(quality.can_collect);
+    assert_eq!(quality.status, "confident");
+
+    // Seed existing neighbor buckets to verify neighbor aggregation without map cloning
+    let mut profile = serde_json::json!({
+        "drivetrain": "RWD",
+        "dyno_curve": {
+            "3950": {"hp": 300.0, "torque": 280.0, "hp_hist": [300.0], "torque_hist": [280.0]},
+            "4050": {"hp": 310.0, "torque": 290.0, "hp_hist": [310.0], "torque_hist": [290.0]}
+        }
+    });
+    let settings = serde_json::json!({"dyno_recording": true, "dyno_test_gear": 4, "dyno_filter_slip": true, "dyno_filter_transients": false});
+    let frame = serde_json::json!({
+        "CurrentEngineRpm": 4000,
+        "PowerWatts": 305.0 * 745.7,
+        "TorqueNewtons": 285.0 / 0.73756,
+        "AccelInput": 255,
+        "Gear": 4,
+        "ClutchInput": 0,
+        "BrakeInput": 0,
+        "HandBrakeInput": 0,
+        "TireSlipRatio": [0, 0, 0, 0],
+        "TimestampMS": 1200
+    });
+    assert!(collect_dyno_sample(
+        &mut profile,
+        &frame,
+        &quality,
+        &settings,
+        &registry,
+        car_id
+    ));
+    let entry = &profile["dyno_curve"]["4000"];
+    assert!((entry["hp"].as_f64().unwrap() - 305.0).abs() < 1e-3);
+    assert!((entry["torque"].as_f64().unwrap() - 285.0).abs() < 1e-3);
+    assert_eq!(entry["hp_hist"].as_array().unwrap().len(), 1);
+    assert_eq!(entry["torque_hist"].as_array().unwrap().len(), 1);
+}
+
+#[test]
 fn race_recorder_clock_injection_and_command_worker_boundary() {
     let mut r = RaceRecorder::new_with_context(
         RaceRecorderConfig::default(),
@@ -1261,4 +1308,197 @@ fn test_motec_ld_edge_cases_and_beacon_robustness() {
     assert_eq!(ld_empty.len(), 18468);
     let xml_empty = String::from_utf8(ldx_empty).unwrap();
     assert!(xml_empty.contains("<String Id=\"Total Laps\" Value=\"0\"/>"));
+}
+
+#[test]
+fn test_parse_packet_preallocation_and_array_parity() {
+    let mut packet = vec![0u8; 324];
+    set_i32(&mut packet, 0, 1);
+    set_u32(&mut packet, 1, 12345);
+    set_f32(&mut packet, 4, 6500.0);
+    set_f32(&mut packet, 17, 0.45);
+    set_f32(&mut packet, 18, 0.46);
+    set_f32(&mut packet, 19, 0.47);
+    set_f32(&mut packet, 20, 0.48);
+
+    for _ in 0..100 {
+        let parsed = parse_packet(&packet).expect("packet should parse successfully");
+        let obj = parsed.as_object().expect("parsed should be an object");
+        assert_eq!(obj.get("IsRaceOn").and_then(Value::as_i64), Some(1));
+        assert_eq!(obj.get("TimestampMS").and_then(Value::as_u64), Some(12345));
+        assert_eq!(
+            obj.get("CurrentEngineRpm").and_then(Value::as_f64),
+            Some(6500.0)
+        );
+
+        let susp = obj
+            .get("NormalizedSuspensionTravel")
+            .and_then(Value::as_array)
+            .unwrap();
+        assert_eq!(susp.len(), 4);
+        assert!((susp[0].as_f64().unwrap() - 0.45).abs() < 1e-5);
+        assert!((susp[1].as_f64().unwrap() - 0.46).abs() < 1e-5);
+        assert!((susp[2].as_f64().unwrap() - 0.47).abs() < 1e-5);
+        assert!((susp[3].as_f64().unwrap() - 0.48).abs() < 1e-5);
+    }
+}
+
+#[test]
+fn race_recorder_settings_update_in_place_without_cloning() {
+    let mut r = RaceRecorder::new_with_context(
+        RaceRecorderConfig::default(),
+        json!({"race_recording": false, "max_samples": 100, "downsample_interval": 0.05}),
+        json!({}),
+    );
+    r.record_at(
+        &json!({"IsRaceOn": 1, "CurrentRaceTime": 1.0, "LapNumber": 0, "TimestampMS": 100, "CarOrdinal": 1}),
+        1.0,
+    );
+    assert!(!r.status().is_recording);
+
+    r.update_settings(
+        &json!({"race_recording": true, "max_samples": 200, "downsample_interval": 0.1}),
+    );
+    r.record_at(
+        &json!({"IsRaceOn": 1, "CurrentRaceTime": 2.0, "LapNumber": 0, "TimestampMS": 200, "CarOrdinal": 1}),
+        2.0,
+    );
+    assert!(r.status().is_recording);
+}
+
+#[test]
+fn recorder_constructor_keeps_explicit_sample_limits_until_settings_are_updated() {
+    let mut recorder = RaceRecorder::new_with_context(
+        RaceRecorderConfig {
+            max_samples: 2,
+            downsample_interval_ms: 0.0,
+            ..Default::default()
+        },
+        json!({"race_recording": true, "max_samples": 10, "downsample_interval": 5.0}),
+        json!({}),
+    );
+    for step in 1..=2 {
+        recorder.record_at(
+            &json!({"IsRaceOn": 1, "CurrentRaceTime": step, "LapNumber": 0, "TimestampMS": step * 100, "CarOrdinal": 1}),
+            f64::from(step),
+        );
+    }
+    assert_eq!(recorder.status().total_count, 2);
+    recorder.record_at(
+        &json!({"IsRaceOn": 1, "CurrentRaceTime": 3, "LapNumber": 0, "TimestampMS": 300, "CarOrdinal": 1}),
+        3.0,
+    );
+    assert!(!recorder.status().is_recording);
+}
+
+#[test]
+fn test_metrics_parsed_and_stage_zero_alloc_invariants() {
+    use fh6_backend::diagnostics::Metrics;
+    use std::net::{IpAddr, Ipv4Addr, SocketAddr};
+
+    let mut metrics = Metrics::default();
+    let addr1 = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 5300);
+    let addr2 = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 5301);
+
+    let frame = json!({
+        "TelemetrySchema": "forza-data-out/fh6-324-v2",
+        "TimestampMS": 1000
+    });
+
+    // Steady-state parsed calls with the same SocketAddr
+    metrics.parsed(&frame, addr1);
+    metrics.parsed(
+        &json!({"TelemetrySchema": "forza-data-out/fh6-324-v2", "TimestampMS": 1016}),
+        addr1,
+    );
+    let report = metrics.telemetry();
+    assert_eq!(report["input"]["packetsParsed"], 2);
+    assert_eq!(
+        report["input"]["schemasAccepted"]["forza-data-out/fh6-324-v2"],
+        2
+    );
+    assert_eq!(
+        report["input"]["lastPacketSchema"],
+        "forza-data-out/fh6-324-v2"
+    );
+
+    // Switching SocketAddr triggers rebase (resets incremented)
+    metrics.parsed(
+        &json!({"TelemetrySchema": "forza-data-out/fh6-324-v2", "TimestampMS": 1032}),
+        addr2,
+    );
+    let report2 = metrics.telemetry();
+    assert_eq!(report2["input"]["packetsParsed"], 3);
+    assert_eq!(report2["input"]["timestampDiagnostics"]["resets"], 1);
+
+    // Stage metrics steady-state recording
+    metrics.stage("total", 1.25);
+    metrics.stage("total", 2.50);
+    let report3 = metrics.telemetry();
+    assert_eq!(report3["stagesMs"]["total"]["count"], 2);
+}
+
+#[test]
+fn app_process_zero_clone_profile_steady_state_and_cache_containment() {
+    let temp = tempfile::tempdir().unwrap();
+    let app = App::new(temp.path()).unwrap();
+    app.config
+        .save_car_params("42", &json!({"drivetrain": "RWD", "dyno_curve": {}}))
+        .unwrap();
+
+    let frame1 = json!({
+        "CarOrdinal": 42,
+        "TimestampMS": 1000,
+        "CurrentEngineRpm": 3000.0,
+        "EngineMaxRpm": 8000.0,
+        "Gear": 3,
+        "AccelInput": 100,
+        "BrakeInput": 0,
+        "ClutchInput": 0,
+        "HandBrakeInput": 0,
+        "PositionX": 0.0,
+        "PositionY": 0.0,
+        "PositionZ": 0.0,
+        "SpeedMetersPerSecond": 15.0
+    });
+    // First frame updates cached profile in-place
+    app.process(frame1);
+    let cached = app
+        .config
+        .car_params("42")
+        .expect("profile must be in cache");
+    assert_eq!(cached["drivetrain"], "RWD");
+    assert!(cached.get("dyno_quality").is_some());
+
+    // Second frame in steady state continues zero-clone in-place updates
+    let frame2 = json!({
+        "CarOrdinal": 42,
+        "TimestampMS": 1016,
+        "CurrentEngineRpm": 3200.0,
+        "EngineMaxRpm": 8000.0,
+        "Gear": 3,
+        "AccelInput": 120,
+        "BrakeInput": 0,
+        "ClutchInput": 0,
+        "HandBrakeInput": 0,
+        "PositionX": 0.24,
+        "PositionY": 0.0,
+        "PositionZ": 0.0,
+        "SpeedMetersPerSecond": 15.2
+    });
+    app.process(frame2);
+    let cached2 = app
+        .config
+        .car_params("42")
+        .expect("profile persists in cache");
+    assert!(cached2.get("dyno_quality").is_some());
+
+    // Ordinal 0 processes without failure and provides fallback guidance
+    let frame0 = json!({
+        "CarOrdinal": 0,
+        "TimestampMS": 1032,
+        "CurrentEngineRpm": 0.0,
+        "Gear": 0
+    });
+    app.process(frame0);
 }

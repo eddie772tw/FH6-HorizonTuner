@@ -49,3 +49,49 @@
 ## 2024-03-24 - Tooltips on Disabled Buttons
 **Learning:** In React, disabled HTML buttons completely swallow pointer events (like hover), preventing standard browser tooltips (the `title` attribute) from appearing. This hides critical context about *why* an action is unavailable from users.
 **Action:** When a button is conditionally disabled for reasons that might not be obvious, wrap it in a `<span>` (e.g., `<span className="d-inline-flex" title={...} style={{ cursor: 'not-allowed' }}>`) and apply `pointerEvents: 'none'` to the disabled `<button>` itself. This allows the wrapper to catch hover events and display the tooltip effectively.
+
+## 2026-11-01 - Skip to Main Content Link in SPA & WebView
+**Learning:** In desktop SPA and WebView environments (like Tauri), relying solely on a native anchor link `<a href="#main-content">` may scroll the viewport without transferring actual DOM keyboard focus to non-interactive container elements like `<main>`. Furthermore, setting `tabIndex={-1}` on `<main>` can introduce unsightly default focus outlines across the entire viewport.
+**Action:** When implementing skip-to-content links, pair the anchor with an explicit click handler that invokes `main.focus()`, set `tabIndex={-1}` with `outline: 'none'` on the target container, and use `.visually-hidden-focusable` so the bypass link remains hidden until keyboard focused.
+**署名:** Palette as Antigravity
+
+
+## 2026-11-02 - Toast Notifications Live Region Calibration & Disambiguation
+**學習 (Learning):** In global toast systems, assigning `role="alert"` and `aria-live="assertive"` indiscriminately across all toast categories causes assistive technologies to abruptly interrupt ongoing speech upon mundane events (like routine settings saves or success notifications). Furthermore, identical generic `aria-label="Close"` buttons create severe ambiguity in screen reader element lists when multiple toasts are visible simultaneously.
+**行動 (Action):** Differentiate notification urgency: use `role="status"` and `aria-live="polite"` for non-critical types (`info`, `success`), reserving `role="alert"` and `aria-live="assertive"` strictly for destructive or unexpected conditions (`danger`, `warning`). Disambiguate dismiss controls by incorporating the specific toast title into its accessible name, bind `aria-labelledby` to the header title ID, and support `Escape` key dismissal when focus is contained within the toast.
+**署名:** Palette as Antigravity
+
+
+## 2026-11-03 - WAI-ARIA Menu Semantics & Roving Keyboard Navigation in Header Dropdowns
+**學習 (Learning):** In Halfmoon/Bootstrap dropdowns, toggling visibility classes alone leaves assistive technologies unaware that a button controls a menu, and renders items indistinguishable from unrelated document buttons. Furthermore, dismissing the dropdown without explicitly restoring focus to the trigger element causes focus loss to the document body, breaking sequential keyboard flow.
+**行動 (Action):** Couple dropdown triggers with `aria-haspopup="menu"`, assign `role="menu"` to the list container, `role="menuitem"` to interactive options, and `role="separator"` to dividers. Support ArrowDown/ArrowUp cycling, Home/End boundaries, auto-focus the first item upon expansion, and reliably restore focus to the trigger button upon Escape dismissal or selection.
+**署名:** Palette as Antigravity
+
+
+## 2026-11-04 - Modal Dialog Focus Trap and Contextual Focus Restoration
+**學習 (Learning):** Onboarding and telemetry setup dialogs often rely on naive local focus effects (e.g. focusing a close button on mount) without trapping Tab navigation or restoring focus on exit. This causes keyboard users to bleed out into background navigation during inspection, and drops focus abruptly to `document.body` upon dismissal, destroying sequential keyboard flow.
+**行動 (Action):** Connect all full-viewport and floating modals to the unified `useModalFocus` hook on the `role="dialog"` container to guarantee bidirectional focus trapping, reliable Escape dismissal, and automatic focus restoration to the trigger element upon exit. Couple introductory text with `aria-describedby` and telemetry badges with `role="status"` to ensure immediate contextual awareness for assistive technologies.
+**署名:** Palette as Antigravity
+
+
+## 2026-11-05 - Modal Dialog Focus Trapping, Backdrop Dismissal, and Scrollable Table Region Accessibility
+**學習 (Learning):** In data-dense modal dialogs (such as telemetry channel mappings), simply rendering a table inside a portal without focus management causes keyboard users to bleed out into the background page, disables Escape key dismissal, and loses focus upon exit. Moreover, when a modal contains an overflow scrollable table (`.table-responsive`), omitting `tabIndex={0}`, `role="region"`, and an explicit accessible label prevents keyboard-only users from focusing and scrolling the dataset using arrow keys. Separating the backdrop overlay from the dialog container while configuring `pointerEvents: 'none'` on the full-screen wrapper and `pointerEvents: 'auto'` on the dialog ensures seamless backdrop dismissal without blocking interactive modal elements.
+**行動 (Action):** Integrate `useModalFocus` on the modal dialog container, separate clickable backdrops with `pointerEvents: 'none'` on the viewport overlay, bind `aria-labelledby` and `aria-describedby` to the header and description elements, and always expose overflow scroll containers as keyboard-focusable regions (`tabIndex={0}`, `role="region"`, and `aria-label`).
+**署名:** Palette as Antigravity
+
+
+## 2026-11-06 - Modal Backdrop Guarding During Async Payloads and Progress Bar Semantic ValueText
+**學習 (Learning):** In critical system modals like OTA software updates, backdrop overlays and dialog wrappers must decouple pointer events (`pointerEvents: 'none'` on viewport wrapper, `pointerEvents: 'auto'` on dialog content) to allow backdrop click dismissals during idle review, while strictly suppressing backdrop dismissal during active operations (such as downloading payloads or staging application relaunch) to prevent user-initiated race conditions or accidental cancellation. Furthermore, dynamic progress bars during binary payloads require both `aria-label` and `aria-valuetext` (coupling percentage with transferred byte counts) so assistive technologies convey actionable transfer status rather than isolated numbers.
+**行動 (Action):** Guard modal backdrop click handlers against active async states (`downloading`, `downloaded`), bind `aria-labelledby` and `aria-describedby` to the header and version transition elements, and always accompany animated progress bars with descriptive `aria-label` and composite byte-progress `aria-valuetext`.
+**署名:** Palette as Antigravity
+
+## 2026-11-08 - Escape Cancellation and Out-of-Range ARIA Invariants in Generic Numeric Inputs
+**學習 (Learning):** In live data-entry numeric fields (such as `DecimalInput`), firing `onChange` during typing while performing clamp normalization on `blur` creates an interaction trap: pressing `Escape` to discard an accidental edit cannot simply invoke `blur()`, because the native blur event commits the dirty local text and retains clamped errors. Furthermore, postponing range feedback until blur leaves screen readers and keyboard users unaware of invalid inputs while actively typing.
+**行動 (Action):** Snapshot entry values in `initialValueRef` on focus and guard blur handlers with an `isCancellingRef` flag. When `Escape` is pressed, revert external state via `onChange(initialValueRef.current)`, restore formatted local text, and safely exit without triggering blur commits. Continuously evaluate numeric text against `min`/`max` bounds to broadcast `aria-invalid` and provide accessible range semantics (`aria-valuemin`, `aria-valuemax`, `aria-valuenow`).
+**署名:** Palette as Antigravity
+
+
+## 2026-11-09 - Accessible Switch Semantics, Description Binding, and Region Landmark Identification in Settings Primitives
+**學習 (Learning):** In configuration panels, styling a row with `form-switch` without assigning `role="switch"` and `aria-checked` causes assistive technologies to announce options as plain checkboxes rather than stateful switches. More critically, when explanatory copy (`description`) is rendered without a dedicated DOM ID and `aria-describedby` association, keyboard and screen reader users navigating settings fields only hear the raw label and miss critical operational guidance (e.g. UDP port forward behavior or developer tuning warnings). Furthermore, unlabelled `<section>` tags are treated as generic containers in the accessibility tree, failing to expose actionable navigation landmarks.
+**行動 (Action):** Explicitly equip `SettingsSwitch` with `role="switch"`, `aria-checked={checked}`, and link its description via `id={`${id}-description`}` and `aria-describedby`; associate `SettingsSection` with its header via `React.useId()` and `aria-labelledby` to expose standard region landmarks; and attach interactive `cursor: pointer` or disabled `cursor: not-allowed` along with subtle opacity states to switch rows.
+**署名:** Palette as Antigravity

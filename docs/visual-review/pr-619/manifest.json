@@ -1,0 +1,214 @@
+{
+  "date": "2026-11-05",
+  "implementation": "7de532d434f3ce91ab82d9c0127e2ca51e90c55c",
+  "productBlobs": {
+    "frontend/src/features/analysis/ManualRecordingToolbar.tsx": "26414545d77048e84d977adb65a201ef85162096",
+    "lang/en-us.json": "ed492a4743d2af49025726adc0547d72e82c2a40",
+    "lang/zh-tw.json": "8e08233aa875cec101c9adab67858f46de18f7bb",
+    "lang/ja-jp.json": "a8e7a85a56b682766de10f594411858b633e1ce6"
+  },
+  "browser": "156.0.4314.58",
+  "capture": "Windows Edge headless, full production AppShell/providers served by Vite, DPR 1, zoom 100%. Isolated loopback backend with fixture settings, real locale dictionaries and synthetic recorder status / WebSocket telemetry. Viewport height 720 (320px width: 800). Odd cases emulate reduced motion.",
+  "reproduce": "Open Sessions with GET /api/analysis/status reporting the listed state and 42 samples; wait for the 2s status poll. Inspect the badge, mode selector, controls and accessible recording state.",
+  "cases": [
+    {
+      "core": "default",
+      "mode": "light",
+      "lang": "en-us",
+      "width": 1280,
+      "save": true,
+      "state": "manual",
+      "file": "default-light-en-us-1280.png",
+      "dimensions": {
+        "width": 1238,
+        "scrollWidth": 1238
+      }
+    },
+    {
+      "core": "default",
+      "mode": "dark",
+      "lang": "ja-jp",
+      "width": 1280,
+      "save": true,
+      "state": "auto",
+      "file": "default-dark-ja-jp-1280.png",
+      "dimensions": {
+        "width": 1238,
+        "scrollWidth": 1238
+      }
+    },
+    {
+      "core": "swiss",
+      "mode": "light",
+      "lang": "ja-jp",
+      "width": 1280,
+      "save": true,
+      "state": "armed",
+      "file": "swiss-light-ja-jp-1280.png",
+      "dimensions": {
+        "width": 1238,
+        "scrollWidth": 1238
+      }
+    },
+    {
+      "core": "swiss",
+      "mode": "dark",
+      "lang": "zh-tw",
+      "width": 1280,
+      "save": true,
+      "state": "idle",
+      "file": "swiss-dark-zh-tw-1280.png",
+      "dimensions": {
+        "width": 1238,
+        "scrollWidth": 1238
+      }
+    },
+    {
+      "core": "rhine-lab",
+      "mode": "light",
+      "lang": "zh-tw",
+      "width": 1280,
+      "save": true,
+      "state": "manual",
+      "file": "rhine-lab-light-zh-tw-1280.png",
+      "dimensions": {
+        "width": 1238,
+        "scrollWidth": 1238
+      }
+    },
+    {
+      "core": "rhine-lab",
+      "mode": "dark",
+      "lang": "en-us",
+      "width": 1280,
+      "save": true,
+      "state": "auto",
+      "file": "rhine-lab-dark-en-us-1280.png",
+      "dimensions": {
+        "width": 1238,
+        "scrollWidth": 1238
+      }
+    },
+    {
+      "core": "modern",
+      "mode": "light",
+      "lang": "en-us",
+      "width": 1280,
+      "save": false,
+      "state": "armed",
+      "dimensions": {
+        "width": 1238,
+        "scrollWidth": 1238
+      }
+    },
+    {
+      "core": "modern",
+      "mode": "dark",
+      "lang": "ja-jp",
+      "width": 1280,
+      "save": false,
+      "state": "idle",
+      "dimensions": {
+        "width": 1238,
+        "scrollWidth": 1238
+      }
+    },
+    {
+      "core": "elegant",
+      "mode": "light",
+      "lang": "ja-jp",
+      "width": 1280,
+      "save": false,
+      "state": "manual",
+      "dimensions": {
+        "width": 1238,
+        "scrollWidth": 1238
+      }
+    },
+    {
+      "core": "elegant",
+      "mode": "dark",
+      "lang": "zh-tw",
+      "width": 1280,
+      "save": false,
+      "state": "auto",
+      "dimensions": {
+        "width": 1238,
+        "scrollWidth": 1238
+      }
+    },
+    {
+      "core": "swiss-editorial",
+      "mode": "light",
+      "lang": "zh-tw",
+      "width": 1280,
+      "save": false,
+      "state": "armed",
+      "dimensions": {
+        "width": 1238,
+        "scrollWidth": 1238
+      }
+    },
+    {
+      "core": "swiss-editorial",
+      "mode": "dark",
+      "lang": "en-us",
+      "width": 1280,
+      "save": false,
+      "state": "idle",
+      "dimensions": {
+        "width": 1238,
+        "scrollWidth": 1238
+      }
+    },
+    {
+      "core": "swiss-contrast",
+      "mode": "light",
+      "lang": "en-us",
+      "width": 1280,
+      "save": false,
+      "state": "manual",
+      "dimensions": {
+        "width": 1238,
+        "scrollWidth": 1238
+      }
+    },
+    {
+      "core": "swiss-contrast",
+      "mode": "dark",
+      "lang": "ja-jp",
+      "width": 1280,
+      "save": false,
+      "state": "auto",
+      "dimensions": {
+        "width": 1238,
+        "scrollWidth": 1238
+      }
+    },
+    {
+      "core": "default",
+      "mode": "light",
+      "lang": "ja-jp",
+      "width": 320,
+      "save": true,
+      "state": "manual",
+      "file": "default-light-ja-jp-320.png",
+      "dimensions": {
+        "width": 278,
+        "scrollWidth": 278
+      }
+    },
+    {
+      "core": "swiss",
+      "mode": "dark",
+      "lang": "zh-tw",
+      "width": 1600,
+      "save": false,
+      "state": "idle",
+      "dimensions": {
+        "width": 1558,
+        "scrollWidth": 1558
+      }
+    }
+  ]
+}

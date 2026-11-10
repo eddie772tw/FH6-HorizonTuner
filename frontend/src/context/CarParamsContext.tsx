@@ -4,6 +4,7 @@ import { useSettings } from './SettingsContext';
 import { backendFetch } from '../services/backend';
 import type { DynoQuality } from '../features/car_params/dynoQuality';
 import type { EvGearboxSetup } from '../domain/tuning/ev/types';
+import { serializeWorkflowProfile } from '../features/tuning/tuningWorkflow';
 
 export interface CarParams {
   tuningTarget?: { goal: string; season: 'Summer' | 'Autumn' | 'Winter' | 'Spring' };
@@ -84,6 +85,9 @@ interface CarParamsContextType {
   carParams: CarParams | null;
   setCarParams: (params: CarParams) => void;
   saveCarParams: (snapshot?: CarParams) => Promise<void>;
+  hasUnsavedParams: boolean;
+  isSavingCarParams: boolean;
+  paramsSaveStatus: 'idle' | 'saving' | 'saved' | 'error';
   clearDynoCurve: () => Promise<void>;
   importDynoValues: () => void;
   settings: any;
@@ -128,6 +132,12 @@ export const CarParamsProvider: React.FC<{ children: ReactNode }> = ({ children 
   const [storedParams, setStoredParams] = useState<CarParams | null>(null);
   const [loadedGeneration, setLoadedGeneration] = useState<number | null>(null);
   const carParams = loadedGeneration === selectionGeneration ? storedParams : null;
+  const [savedParams, setSavedParams] = useState({ generation: -1, json: 'null' });
+  const [saveState, setSaveState] = useState<{ generation: number; status: CarParamsContextType['paramsSaveStatus'] }>({ generation: -1, status: 'idle' });
+  const pendingSave = useRef<{ generation: number; json: string; promise: Promise<void> } | null>(null);
+  const paramsSaveStatus = saveState.generation === selectionGeneration ? saveState.status : 'idle';
+  const isSavingCarParams = paramsSaveStatus === 'saving';
+  const hasUnsavedParams = carParams !== null && (savedParams.generation !== selectionGeneration || savedParams.json !== serializeWorkflowProfile(carParams));
   const setCarParams = (params: CarParams) => {
     if (loadedGeneration === selectionGeneration && selectionRef.current.generation === selectionGeneration) setStoredParams(params);
   };
@@ -196,6 +206,7 @@ export const CarParamsProvider: React.FC<{ children: ReactNode }> = ({ children 
         const profile = await normalized.json() as CarParams;
         if (active && selectionRef.current.generation === selectionGeneration) {
           setStoredParams(profile); setLoadedGeneration(selectionGeneration);
+          setSavedParams({ generation: selectionGeneration, json: result.error ? 'null' : serializeWorkflowProfile(profile) });
         }
       } catch (e) {
         if (active) { setProfileError(true); console.error("Failed to load car params", e); retry = setTimeout(fetchParams, 2000); }
@@ -228,20 +239,36 @@ export const CarParamsProvider: React.FC<{ children: ReactNode }> = ({ children 
     }
   }, [telemetryCarId, carId, loadedCarId, selectionSource, selectionGeneration]);
 
-  const saveCarParams = async (snapshot = carParams) => {
-    if (!snapshot || loadedCarId !== carId || selectionRef.current.generation !== selectionGeneration) throw new Error('Vehicle changed before saving.');
-    try {
-      const response = await backendFetch(`/api/car_params/${carId}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(snapshot)
-      });
-      if (!response.ok) throw new Error('Car parameters could not be saved.');
-      await fetchCarsWithParams();
-    } catch (e) {
-      console.error("Failed to save car params", e);
-      throw e;
+  const saveCarParams = (snapshot = carParams): Promise<void> => {
+    if (!snapshot || loadedCarId !== carId || selectionRef.current.generation !== selectionGeneration) {
+      return Promise.reject(new Error('Vehicle parameters are not loaded.'));
     }
+    const json = serializeWorkflowProfile(snapshot);
+    if (pendingSave.current?.generation === selectionGeneration) {
+      return pendingSave.current.json === json ? pendingSave.current.promise
+        : Promise.reject(new Error('A different vehicle parameter snapshot is still being saved.'));
+    }
+    setSaveState({ generation: selectionGeneration, status: 'saving' });
+    const promise = (async () => {
+      try {
+        const response = await backendFetch(`/api/car_params/${carId}`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(snapshot),
+        });
+        if (!response.ok) throw new Error('Car parameters could not be saved.');
+        if (selectionRef.current.generation === selectionGeneration) {
+          setSavedParams({ generation: selectionGeneration, json });
+        }
+        await fetchCarsWithParams();
+        if (selectionRef.current.generation === selectionGeneration) setSaveState({ generation: selectionGeneration, status: 'saved' });
+      } catch (error) {
+        if (selectionRef.current.generation === selectionGeneration) setSaveState({ generation: selectionGeneration, status: 'error' });
+        throw error;
+      } finally {
+        if (pendingSave.current?.generation === selectionGeneration) pendingSave.current = null;
+      }
+    })();
+    pendingSave.current = { generation: selectionGeneration, json, promise };
+    return promise;
   };
 
   const clearDynoCurve = async () => {
@@ -278,6 +305,7 @@ export const CarParamsProvider: React.FC<{ children: ReactNode }> = ({ children 
     <CarParamsContext.Provider value={{
       carId, setCarId, carName, carParams, setCarParams,
       saveCarParams, clearDynoCurve, importDynoValues,
+      hasUnsavedParams, isSavingCarParams, paramsSaveStatus,
       settings, updateSettings, isLoading, loadedCarId,
       carsWithParams, telemetryCarId, selectionSource, selectionGeneration, followLiveCar, profileError, savedCarsStatus
     }}>

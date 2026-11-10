@@ -4,6 +4,8 @@
 
 實作檔案與主題擴充／驗收入口見[主題與設計系統開發指南](../../docs/frontend/design-systems.md)；本文件維護架構護欄。
 
+所有介面調整 PR 的實作截圖、跨主題／尺寸覆蓋、版本追溯與視覺審查備查，統一遵循 [ui-visual-review.md](ui-visual-review.md)。
+
 ---
 
 ## 一、 雙層視覺架構 (Dual-Layer Architecture)
@@ -42,7 +44,7 @@ Rhine 的六個主選單面板（設定、外觀、診斷、Companion、MCP、�
 ## 三、 元件職責與模組化 (Component Architecture)
 
 ### 1. 多步驟精靈獨立 TSX 組件規範 (Wizard Step Modularity)
-- 對於精靈嚮導或多步驟介面（如 Tuning Workflow），**每一個 Step 必須各自獨立為一個 TSX 組件檔**（例如 `Step1GoalSetup.tsx`、`Step2GearboxSetup.tsx`、`Step3ChassisTuner.tsx`）。
+- 對於精靈嚮導或多步驟介面（如 Tuning Workflow），**每一個 Step 必須各自獨立為一個 TSX 組件檔**（例如 `Step1GoalSetup.tsx`、`Step2ChassisTuner.tsx`、`EngineDataStep.tsx`、`SetupVerificationStep.tsx`）。
 - 主 View（例如 `TuningView.tsx`）僅作為 View Container，專注於導覽進度條 (Stepper Header) 與 Step 間的狀態分發，嚴禁將各步驟的 UI 表單細節混在主 View 中。
 
 ### 2. 60Hz 高頻繪圖效能隔絕

@@ -11,7 +11,7 @@
 
 完整技能清單、canonical ID 與觸發條件統一維護於 [`.agents/skills/README.md`](skills/README.md)，本文件不另列副本。
 
-Agent 文件、技能說明、工作日誌與規範內容以繁體中文為主。只有技能 ID、檔名、API、CI、React、TypeScript 等技術專有名詞，以及可能造成歧義的術語保留英文。所有 PR 審查與作者留言均須以 `{代號} as {Agent}` 身分標記以區分共用 GitHub 帳號時之發言主體。
+Agent 文件、技能說明、工作日誌與規範內容以繁體中文為主。只有技能 ID、檔名、API、CI、React、TypeScript 等技術專有名詞，以及可能造成歧義的術語保留英文。所有 PR 審查、PR 內文結尾與作者留言均須以 `{代號} as {Agent}` 身分標記以區分共用 GitHub 帳號時之發言主體；但 PR 標題本身必須保持純淨之 Conventional Commits 格式，嚴禁在 PR 標題添加任何 `[{代號} as {Agent}]` 身分後綴。
 
 ---
 
@@ -47,6 +47,7 @@ Agent 文件、技能說明、工作日誌與規範內容以繁體中文為主�
 - **[網路連接埠傳輸契約 (network-ports.md)](rules/network-ports.md)**：UDP 8000 遙測與 HTTP 8001 API 端點隔離、Release 動態 Port 機制。
 - **[測試策略與反過度測試規範 (testing-strategy.md)](rules/testing-strategy.md)**：測試金字塔三層分流、反微觀 Canvas 座標斷言、反 YAML 測試與 Vitest 單元測試合約。
 - **[前端 UI 與設計系統架構 (ui-architecture.md)](rules/ui-architecture.md)**：Halfmoon CSS 雙層架構、Anti-FOUC、全域 `ModalPortal` 護欄、向下 Popover 與 Wizard 獨立組件規範。
+- **[介面 PR 截圖與視覺審查 (ui-visual-review.md)](rules/ui-visual-review.md)**：所有介面調整 PR 的截圖展示、跨主題／尺寸覆蓋、版本追溯與證據保存合約。
 - **[第三方套件引入與防幻覺查驗協議 (dependencies.md)](rules/dependencies.md)**：Registry 官方 CLI 驗證指令、寬鬆開源授權核准與依賴鎖定。
 
 ---
@@ -54,8 +55,10 @@ Agent 文件、技能說明、工作日誌與規範內容以繁體中文為主�
 ## 開發邊界限制與有條件授權 (Boundary Guardrails & Bounded Authorizations)
 
 * **必須做的事 (Mandatory Practices)**：
+  - **提案前查閱既有 PR 防重複 (Pre-Proposal PR Deduplication)**：自主代理或開發者在鎖定優化/修復標的與建立新分支前，必須先執行 `gh pr list --state open`（以及可檢閱近期 PR）查閱所有開啟中之 Pull Request，確認提案標的與改動檔案未與進行中 PR 重疊衝突，避免重複提案與 Merge Conflict。
   - 遵循變更範圍分流驗證：修改前端/物理執行前端測試，修改後端執行後端測試。
   - 前端 UI 開發或變更時，必須遵循 [ui-architecture.md](rules/ui-architecture.md) 與 [halfmoon-design-system](skills/halfmoon-design-system/SKILL.md)。
+  - **所有介面調整 PR 必須附實作截圖**：在 PR Body 直接展示改動，並保存可追溯的視覺審查備查資料；適用範圍、覆蓋矩陣與版本同步依 [ui-visual-review.md](rules/ui-visual-review.md)。不得僅以測試或 build 通過代替圖片。
   - 任務結束後若發現具體且可重現的架構學習點，登錄至 [Journal.md](Journal.md)。
   - 重大架構或核心模組變更時，主動同步更新 `README.md` 與 `README.en.md`。
   - 維護 `.gitignore`，確保快取、使用者數據與暫存檔被嚴格排除。
@@ -70,6 +73,7 @@ Agent 文件、技能說明、工作日誌與規範內容以繁體中文為主�
     3. 套件授權為經核准之寬鬆開源授權（MIT, Apache-2.0, BSD, ISC）；
     4. 屬輕量輔助函式庫，非重型框架且不顯著增加打包負擔。若涉及非寬鬆授權 (如 GPL)、引入重量級框架或系統級原生二進位依賴，則須於計畫中提請使用者確認。
 * **絕對不做的事 (Strict Invariants)**：
+  - 嚴禁在 PR 標題（PR Title）添加任何身分標籤或方括號後綴（如 `[{代號} as {Agent}]`）。標題必須為純淨的 Conventional Commits（例如 `feat(tuning): ...` 或 `fix(ui): ...`），身分標記一律僅置於 PR 內文 (PR Body) 結尾。
   - 在接收 UDP 封包的非同步主迴圈中加入同步檔案寫入或網路請求。
   - 為了方便而在 UI 組件內直接寫死物理調校計算公式。
   - 嚴禁在 UI 字串或 UI 組件內直接加入裝飾性 Emoji 圖示。
@@ -91,3 +95,4 @@ Agent 文件、技能說明、工作日誌與規範內容以繁體中文為主�
    - **跨端或發行變更**：同時執行前後端測試與構建檢查。
 3. **架構學習點回顧**：評估本次任務是否有值得傳承的架構學習點，依規範追加紀錄至 [Journal.md](Journal.md)。
 4. **狀態維護**：維護 `.gitignore` 與 `README.md` 說明文件狀態。
+5. **介面 PR 截圖交付**：依 [ui-visual-review.md](rules/ui-visual-review.md) 核對 Body 嵌圖、受影響畫面／樣式覆蓋、擷取版本與備查連結；缺項需明列，不宣稱視覺審查完成。

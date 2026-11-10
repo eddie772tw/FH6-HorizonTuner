@@ -37,17 +37,23 @@ fn clamp_round(val: f64, min: f64, max: f64) -> f64 {
 
 /// Resolves aerodynamic downforce for front and rear axles (in kgf).
 pub fn resolve_aero_downforce(params: &TuningCarParams) -> AeroDownforceResult {
-    let weight_kg = params.weight.unwrap_or(1400.0).max(0.1);
-    let wf = params.weight_distribution.unwrap_or(50.0).max(0.1);
-    let wr = (100.0 - wf).max(0.1);
+    let weight_kg = positive(params.weight, 1400.0);
+    let wf = params
+        .weight_distribution
+        .filter(|v| v.is_finite())
+        .unwrap_or(50.0)
+        .clamp(1.0, 99.0);
+    let wr = 100.0 - wf;
     let dt = params
         .drivetrain
         .as_deref()
         .map(Drivetrain::from_str_loose)
         .unwrap_or(Drivetrain::RWD);
 
-    let f_val = params.aero_downforce_front.unwrap_or(0.0);
-    let r_val = params.aero_downforce_rear.unwrap_or(0.0);
+    let clean_aero =
+        |val: Option<f64>| -> f64 { val.filter(|v| v.is_finite() && *v > 0.0).unwrap_or(0.0) };
+    let f_val = clean_aero(params.aero_downforce_front);
+    let r_val = clean_aero(params.aero_downforce_rear);
 
     let drivetrain_modifier = match dt {
         Drivetrain::RWD => 0.82,
@@ -96,13 +102,13 @@ pub fn resolve_aero_downforce(params: &TuningCarParams) -> AeroDownforceResult {
 pub fn get_road_awd_rear_percent(params: &TuningCarParams) -> f64 {
     let front = params
         .weight_distribution
+        .filter(|v| v.is_finite())
         .unwrap_or(50.0)
-        .max(1.0)
-        .min(99.0);
-    if let Some(r) = params.road_awd_rear_percent {
-        r.max(0.0).min(100.0)
+        .clamp(1.0, 99.0);
+    if let Some(r) = params.road_awd_rear_percent.filter(|v| v.is_finite()) {
+        r.clamp(0.0, 100.0)
     } else {
-        (100.0 - front + 20.0).max(60.0).min(85.0)
+        (100.0 - front + 20.0).clamp(60.0, 85.0)
     }
 }
 
@@ -113,17 +119,32 @@ fn positive(value: Option<f64>, fallback: f64) -> f64 {
         .unwrap_or(fallback)
 }
 
+#[inline]
+fn non_neg(v: Option<f64>) -> f64 {
+    v.filter(|v| v.is_finite() && *v >= 0.0).unwrap_or(0.0)
+}
+
 fn normalize_road_inputs(params: &TuningCarParams) -> TuningCarParams {
     let mut p = params.clone();
     p.weight = Some(positive(p.weight, 1400.0));
-    p.weight_distribution = Some(p.weight_distribution.unwrap_or(50.0).max(1.0).min(99.0));
+    p.weight_distribution = Some(
+        p.weight_distribution
+            .filter(|v| v.is_finite())
+            .unwrap_or(50.0)
+            .clamp(1.0, 99.0),
+    );
     p.max_hp = Some(positive(p.max_hp, 300.0));
-    p.max_torque = Some(p.max_torque.unwrap_or(0.0).max(0.0));
-    p.max_hp_rpm = Some(p.max_hp_rpm.unwrap_or(0.0).max(0.0));
-    p.max_torque_rpm = Some(p.max_torque_rpm.unwrap_or(0.0).max(0.0));
-    p.aero_efficiency = Some(p.aero_efficiency.unwrap_or(0.5).max(0.0).min(1.0));
-    p.aero_downforce_front = Some(p.aero_downforce_front.unwrap_or(0.0).max(0.0));
-    p.aero_downforce_rear = Some(p.aero_downforce_rear.unwrap_or(0.0).max(0.0));
+    p.max_torque = Some(non_neg(p.max_torque));
+    p.max_hp_rpm = Some(non_neg(p.max_hp_rpm));
+    p.max_torque_rpm = Some(non_neg(p.max_torque_rpm));
+    p.aero_efficiency = Some(
+        p.aero_efficiency
+            .filter(|v| v.is_finite())
+            .unwrap_or(0.5)
+            .clamp(0.0, 1.0),
+    );
+    p.aero_downforce_front = Some(non_neg(p.aero_downforce_front));
+    p.aero_downforce_rear = Some(non_neg(p.aero_downforce_rear));
     p.front_tire_width = Some(positive(p.front_tire_width, 245.0));
     p.front_tire_aspect = Some(positive(p.front_tire_aspect, 40.0));
     p.front_tire_rim = Some(positive(p.front_tire_rim, 18.0));
@@ -150,16 +171,49 @@ fn normalize_road_inputs(params: &TuningCarParams) -> TuningCarParams {
     p
 }
 
+fn normalize_unspecified_inputs(params: &TuningCarParams) -> TuningCarParams {
+    let mut p = params.clone();
+    p.weight = Some(positive(p.weight, 1400.0));
+    p.weight_distribution = Some(
+        p.weight_distribution
+            .filter(|v| v.is_finite())
+            .unwrap_or(50.0)
+            .clamp(1.0, 99.0),
+    );
+    let min_kf = positive(p.spring_front_min, 10.0);
+    p.spring_front_min = Some(min_kf);
+    p.spring_front_max = Some(positive(p.spring_front_max, 120.0).max(min_kf));
+
+    let min_kr = positive(p.spring_rear_min, 10.0);
+    p.spring_rear_min = Some(min_kr);
+    p.spring_rear_max = Some(positive(p.spring_rear_max, 120.0).max(min_kr));
+
+    let min_hf = positive(p.height_front_min, 10.0);
+    p.height_front_min = Some(min_hf);
+    p.height_front_max = Some(positive(p.height_front_max, 25.0).max(min_hf));
+
+    let min_hr = positive(p.height_rear_min, 10.0);
+    p.height_rear_min = Some(min_hr);
+    p.height_rear_max = Some(positive(p.height_rear_max, 25.0).max(min_hr));
+
+    p
+}
+
 fn rally_calculation_inputs(params: &TuningCarParams) -> TuningCarParams {
     let mut p = params.clone();
     p.weight = Some(positive(p.weight, 1400.0));
-    p.weight_distribution = Some(p.weight_distribution.unwrap_or(50.0).max(1.0).min(99.0));
+    p.weight_distribution = Some(
+        p.weight_distribution
+            .filter(|v| v.is_finite())
+            .unwrap_or(50.0)
+            .clamp(1.0, 99.0),
+    );
     p.max_hp = Some(positive(p.max_hp, 300.0));
-    p.max_torque = Some(p.max_torque.unwrap_or(0.0).max(0.0));
-    p.max_hp_rpm = Some(p.max_hp_rpm.unwrap_or(0.0).max(0.0));
-    p.max_torque_rpm = Some(p.max_torque_rpm.unwrap_or(0.0).max(0.0));
-    p.aero_downforce_front = Some(p.aero_downforce_front.unwrap_or(0.0).max(0.0));
-    p.aero_downforce_rear = Some(p.aero_downforce_rear.unwrap_or(0.0).max(0.0));
+    p.max_torque = Some(non_neg(p.max_torque));
+    p.max_hp_rpm = Some(non_neg(p.max_hp_rpm));
+    p.max_torque_rpm = Some(non_neg(p.max_torque_rpm));
+    p.aero_downforce_front = Some(non_neg(p.aero_downforce_front));
+    p.aero_downforce_rear = Some(non_neg(p.aero_downforce_rear));
 
     let min_kf = positive(p.spring_front_min, 10.0);
     p.spring_front_min = Some(min_kf);
@@ -188,11 +242,15 @@ pub fn calculate_chassis_tuning(
     let p = match race_goal {
         RaceGoal::Road => normalize_road_inputs(car_params),
         RaceGoal::Rally | RaceGoal::DangerSign => rally_calculation_inputs(car_params),
-        _ => car_params.clone(),
+        _ => normalize_unspecified_inputs(car_params),
     };
 
-    let weight = p.weight.unwrap_or(1400.0).max(1.0);
-    let wf = p.weight_distribution.unwrap_or(50.0).max(1.0).min(99.0);
+    let weight = positive(p.weight, 1400.0);
+    let wf = p
+        .weight_distribution
+        .filter(|v| v.is_finite())
+        .unwrap_or(50.0)
+        .clamp(1.0, 99.0);
     let wr = 100.0 - wf;
     let dt = p
         .drivetrain
@@ -200,15 +258,15 @@ pub fn calculate_chassis_tuning(
         .map(Drivetrain::from_str_loose)
         .unwrap_or(Drivetrain::RWD);
 
-    let k_min_f = p.spring_front_min.unwrap_or(10.0);
-    let k_max_f = p.spring_front_max.unwrap_or(120.0);
-    let k_min_r = p.spring_rear_min.unwrap_or(10.0);
-    let k_max_r = p.spring_rear_max.unwrap_or(120.0);
+    let k_min_f = positive(p.spring_front_min, 10.0);
+    let k_max_f = positive(p.spring_front_max, 120.0).max(k_min_f);
+    let k_min_r = positive(p.spring_rear_min, 10.0);
+    let k_max_r = positive(p.spring_rear_max, 120.0).max(k_min_r);
 
-    let h_min_f = p.height_front_min.unwrap_or(10.0);
-    let h_max_f = p.height_front_max.unwrap_or(25.0);
-    let h_min_r = p.height_rear_min.unwrap_or(10.0);
-    let h_max_r = p.height_rear_max.unwrap_or(25.0);
+    let h_min_f = positive(p.height_front_min, 10.0);
+    let h_max_f = positive(p.height_front_max, 25.0).max(h_min_f);
+    let h_min_r = positive(p.height_rear_min, 10.0);
+    let h_max_r = positive(p.height_rear_max, 25.0).max(h_min_r);
 
     let aero = resolve_aero_downforce(&p);
 
@@ -245,8 +303,16 @@ pub fn calculate_chassis_tuning(
 
             let bounded_f = clamp(spring_f, k_min_f, k_max_f);
             let bounded_r = clamp(spring_r, k_min_r, k_max_r);
-            let spring_fraction_f = (bounded_f - k_min_f) / (k_max_f - k_min_f).max(1e-6);
-            let spring_fraction_r = (bounded_r - k_min_r) / (k_max_r - k_min_r).max(1e-6);
+            let spring_fraction_f = if k_max_f - k_min_f > 1e-4 {
+                ((bounded_f - k_min_f) / (k_max_f - k_min_f)).clamp(0.0, 1.0)
+            } else {
+                0.5
+            };
+            let spring_fraction_r = if k_max_r - k_min_r > 1e-4 {
+                ((bounded_r - k_min_r) / (k_max_r - k_min_r)).clamp(0.0, 1.0)
+            } else {
+                0.5
+            };
 
             reb_f = 1.0 + 19.0 * spring_fraction_f;
             reb_r = 1.0 + 19.0 * spring_fraction_r;

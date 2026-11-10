@@ -27,6 +27,26 @@ use tokio::sync::{broadcast, watch};
 fn database_error(error: String) -> ApiError {
     ApiError::internal("Database operation failed", error)
 }
+
+// [PERF] Format i64 into a stack buffer without heap-allocating a String in the 60Hz worker.
+fn format_i64(n: i64, buf: &mut [u8; 24]) -> &str {
+    if n == 0 {
+        return "0";
+    }
+    let neg = n < 0;
+    let mut i = buf.len();
+    let mut u = if neg { n.unsigned_abs() } else { n as u64 };
+    while u > 0 {
+        i -= 1;
+        buf[i] = b'0' + (u % 10) as u8;
+        u /= 10;
+    }
+    if neg {
+        i -= 1;
+        buf[i] = b'-';
+    }
+    std::str::from_utf8(&buf[i..]).unwrap_or("0")
+}
 struct Engine {
     race: RaceRecorder,
     drag: DragRecorder,
@@ -118,96 +138,121 @@ impl App {
     /// Called exclusively by a bounded processing worker, outside UDP/HTTP I/O.
     pub fn process(&self, mut frame: Value) {
         let started = Instant::now();
-        let settings = self.config.settings();
+        // [PERF] In the 60Hz telemetry worker, share settings via Arc to eliminate JSON deep clones on every frame.
+        let settings = self.config.settings_arc();
         let mut engine = lock(&self.engine);
         engine.race.update_settings(&settings);
         engine
             .race
             .record_at(&frame, self.epoch.elapsed().as_secs_f64());
         engine.road.observe(&frame);
-        let id = frame["CarOrdinal"].as_i64().unwrap_or(0).to_string();
-        let lookup = self.config.live_car_params(&id);
-        let (params, profile_loaded) = match lookup {
-            crate::profile_io::Lookup::Ready(value) => (value, true),
-            crate::profile_io::Lookup::Missing => (Value::Null, true),
-            crate::profile_io::Lookup::Pending | crate::profile_io::Lookup::Failed => {
-                (Value::Null, false)
+        let ordinal = frame["CarOrdinal"].as_i64().unwrap_or(0);
+        let mut id_buf = [0u8; 24];
+        let id = format_i64(ordinal, &mut id_buf);
+        let mut cache = lock(&self.config.profiles);
+        let mut created = false;
+        if ordinal > 0 && !cache.contains_key(id) {
+            drop(cache);
+            match self.config.live_car_params(id) {
+                crate::profile_io::Lookup::Ready(val) => {
+                    let mut c = lock(&self.config.profiles);
+                    c.insert(id.to_string(), val);
+                    if c.len() > 20 {
+                        if let Some(old) = c.keys().find(|k| k.as_str() != id).cloned() {
+                            c.remove(&old);
+                            engine.dyno.discard(&old);
+                        }
+                    }
+                }
+                crate::profile_io::Lookup::Missing => {
+                    if settings["race_recording"].as_bool().unwrap_or(true) {
+                        lock(&self.config.profiles)
+                            .insert(id.to_string(), telemetry::create_default_car_params());
+                        created = true;
+                    }
+                }
+                _ => {}
             }
-        };
-        frame["DynoGuidance"] = crate::tuning::dyno_guidance::guidance(&frame, &settings, &params);
+            cache = lock(&self.config.profiles);
+        }
+        // [PERF] In 60Hz steady state, update cached profile in-place to eliminate
+        // deep-cloning the entire JSON tree and redundant mutex locks on every frame.
+        let profile = (ordinal > 0).then(|| cache.get_mut(id)).flatten();
+        let guidance_profile = profile.as_deref().unwrap_or(&Value::Null);
+        frame["DynoGuidance"] =
+            crate::tuning::dyno_guidance::guidance(&frame, &settings, guidance_profile);
         engine.drag.record(&frame);
         let _ = self.persist_commands(&mut engine.race);
-        if id != "0" && profile_loaded {
-            let quality = engine.dyno.observe(&id, &frame);
-            let existing = (!params.is_null()).then_some(params);
-            let created = existing.is_none();
-            let profile = existing.or_else(|| {
-                settings["race_recording"]
-                    .as_bool()
-                    .unwrap_or(true)
-                    .then(telemetry::create_default_car_params)
-            });
-            if let Some(mut profile) = profile {
-                let reset = telemetry::reconcile_dyno_profile_segment(&mut profile, &quality);
-                let changed = telemetry::collect_dyno_sample(
-                    &mut profile,
-                    &frame,
-                    &quality,
-                    &settings,
-                    &engine.dyno,
-                    &id,
-                );
-                let mut cache = lock(&self.config.profiles);
-                cache.insert(id.clone(), profile.clone());
-                if cache.len() > 20 {
-                    if let Some(old) = cache.keys().find(|key| **key != id).cloned() {
-                        cache.remove(&old);
-                        engine.dyno.discard(&old);
-                    }
+        if let Some(profile) = profile {
+            let quality = engine.dyno.observe(id, &frame);
+            let reset = telemetry::reconcile_dyno_profile_segment(profile, &quality);
+            let changed = telemetry::collect_dyno_sample(
+                profile,
+                &frame,
+                &quality,
+                &settings,
+                &engine.dyno,
+                id,
+            );
+            let to_save = (created
+                || reset
+                || (changed && engine.last_profile_save.elapsed().as_secs() >= 5))
+                .then(|| profile.clone());
+            drop(cache);
+            if let Some(profile_save) = to_save {
+                if self.config.schedule_car_params(id, profile_save).is_err() {
+                    lock(&self.metrics).profile_failures += 1;
                 }
-                drop(cache);
-                if created
-                    || reset
-                    || (changed && engine.last_profile_save.elapsed().as_secs() >= 5)
-                {
-                    if self.config.schedule_car_params(&id, profile).is_err() {
-                        lock(&self.metrics).profile_failures += 1;
-                    }
-                    engine.last_profile_save = Instant::now();
-                }
+                engine.last_profile_save = Instant::now();
             }
+        } else {
+            drop(cache);
         }
         drop(engine);
-        let mut presence = frame.clone();
-        let info = &self.config.car_database[&id];
-        let name = info["display_name"]
-            .as_str()
-            .filter(|s| !s.trim().is_empty())
-            .map(str::to_owned)
-            .unwrap_or_else(|| {
-                let name = ["year", "make", "model"]
-                    .iter()
-                    .filter_map(|k| info.get(*k))
-                    .map(|v| {
-                        v.as_str()
-                            .map(str::to_owned)
-                            .unwrap_or_else(|| v.to_string())
-                    })
-                    .filter(|s| !s.trim().is_empty())
-                    .collect::<Vec<_>>()
-                    .join(" ");
-                if name.is_empty() {
-                    if id != "0" {
-                        format!("Car #{id}")
+        // [PERF] In the 60Hz telemetry processing loop, bypass Discord presence formatting
+        // and avoid deep-cloning the entire 64-field frame when Discord IPC is disabled.
+        // Even when enabled, construct a minimal 9-field payload rather than cloning all telemetry arrays.
+        if self.native.discord_enabled() {
+            let info = &self.config.car_database[id];
+            let name = info["display_name"]
+                .as_str()
+                .filter(|s| !s.trim().is_empty())
+                .map(str::to_owned)
+                .unwrap_or_else(|| {
+                    let name = ["year", "make", "model"]
+                        .iter()
+                        .filter_map(|k| info.get(*k))
+                        .map(|v| {
+                            v.as_str()
+                                .map(str::to_owned)
+                                .unwrap_or_else(|| v.to_string())
+                        })
+                        .filter(|s| !s.trim().is_empty())
+                        .collect::<Vec<_>>()
+                        .join(" ");
+                    if name.is_empty() {
+                        if id != "0" {
+                            format!("Car #{id}")
+                        } else {
+                            "Unknown Car".into()
+                        }
                     } else {
-                        "Unknown Car".into()
+                        name
                     }
-                } else {
-                    name
-                }
+                });
+            let presence = json!({
+                "CarOrdinal": frame.get("CarOrdinal"),
+                "CurrentRaceTime": frame.get("CurrentRaceTime"),
+                "CurrentLap": frame.get("CurrentLap"),
+                "IsRaceOn": frame.get("IsRaceOn"),
+                "CarName": name.chars().take(80).collect::<String>(),
+                "LastLap": frame.get("LastLap"),
+                "BestLap": frame.get("BestLap"),
+                "LapNumber": frame.get("LapNumber"),
+                "RacePosition": frame.get("RacePosition"),
             });
-        presence["CarName"] = json!(name.chars().take(80).collect::<String>());
-        self.native.discord_submit(presence);
+            self.native.discord_submit(presence);
+        }
         self.telemetry.send_replace(Some(Arc::new(frame)));
         let mut metrics = lock(&self.metrics);
         metrics.frames_processed += 1;

@@ -1,6 +1,7 @@
 import { useId } from 'react';
 import type { HudConfig } from '../hudConfig';
-import type { HudDisplayUnits } from '../HudUnitSettingsSidebar';
+import type { HudConfigPatch } from '../overlayControlRuntime';
+import type { HudDisplayUnits } from '../hudDisplayUnits';
 import { readStackSt8100Settings, STACK_ST8100_DIALS, STACK_ST8100_FIELDS,
   type StackSt8100Dial, type StackSt8100Field, type StackSt8100Page,
   type StackSt8100Face, type StackSt8100TemperatureUnit } from './config';
@@ -9,9 +10,9 @@ import { StackSt8100ThresholdInput } from './StackSt8100ThresholdInput';
 import { StackSt8100AlarmSettings } from './StackSt8100AlarmSettings';
 
 interface StackSt8100SettingsCardProps {
-  config: HudConfig;
+  config: Pick<HudConfig, 'units' | 'followAppUnits' | keyof import('./config').StackSt8100Settings>;
   appUnits: HudDisplayUnits;
-  onChange: (patch: Partial<HudConfig>) => void;
+  onChange: (patch: HudConfigPatch) => void;
   t: (key: string) => string;
 }
 const FIELD_SLOTS = [
