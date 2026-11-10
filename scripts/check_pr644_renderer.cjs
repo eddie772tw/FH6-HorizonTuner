@@ -1,6 +1,9 @@
 const { chromium }=require('../scratch/browser-tools/node_modules/playwright-core');
 const assert=require('node:assert/strict');
 const fs=require('node:fs');
+const path=require('node:path');
+const out=path.resolve(__dirname,'../scratch/pr-644-visual-review');
+fs.mkdirSync(out,{recursive:true});
 (async()=>{
 const browser=await chromium.launch({executablePath:'C:/Users/eddie/AppData/Local/ms-playwright/chromium-1223/chrome-win64/chrome.exe',headless:true});
 const page=await browser.newPage();
@@ -17,6 +20,6 @@ const result=await page.evaluate(async()=>{
  return {sameSeriesPixels:multi.pixels.every((v,i)=>v===single.pixels[i]),stateRestored:multi.state.lineWidth===7&&multi.state.shadowBlur===9&&multi.state.shadowColor==='#123456',hasInk:multi.pixels.some((v,i)=>i%4===3&&v>0)};
 });
 assert(result.sameSeriesPixels,'A series changed appearance when rendered after another series');assert(result.stateRestored);assert(result.hasInk);
-fs.writeFileSync('docs/visual-review/pr-644/renderer-checks.json',JSON.stringify(result,null,2)+'\n');
+fs.writeFileSync(path.join(out,'renderer-checks.json'),JSON.stringify(result,null,2)+'\n');
 console.log(result);await browser.close();
 })().catch(e=>{console.error(e);process.exit(1)});

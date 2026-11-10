@@ -3,7 +3,8 @@ const fs = require('node:fs');
 const path = require('node:path');
 const assert = require('node:assert/strict');
 const root = path.resolve(__dirname, '..');
-const out = path.join(root, 'docs/visual-review/pr-644');
+const out = path.join(root, 'scratch/pr-644-visual-review');
+fs.mkdirSync(out, { recursive: true });
 (async () => {
   const browser = await chromium.launch({ executablePath: 'C:/Users/eddie/AppData/Local/ms-playwright/chromium-1223/chrome-win64/chrome.exe', headless: true });
   const results = [];
