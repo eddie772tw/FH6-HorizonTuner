@@ -719,3 +719,23 @@ fn language_api_bounds_code_length_and_rejects_reserved_device_names() {
         assert_eq!(res, json!({"error": "Language not found"}));
     }
 }
+
+#[test]
+fn companion_settings_defaults_and_merge_behave_as_expected() {
+    let directory = tempfile::tempdir().unwrap();
+    let service = ConfigService::new(directory.path()).unwrap();
+    let defaults = service.settings();
+    assert_eq!(defaults["companion_enabled"], true);
+    assert_eq!(defaults["companion_usb_enabled"], false);
+
+    let patched = config::merge_settings(
+        &defaults,
+        &json!({
+            "companion_enabled": false,
+            "companion_usb_enabled": true,
+        }),
+    )
+    .unwrap();
+    assert_eq!(patched["companion_enabled"], false);
+    assert_eq!(patched["companion_usb_enabled"], true);
+}

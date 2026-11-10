@@ -1,5 +1,18 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-11-10 / 連動 APP (Companion) ADB 常駐行程解耦、生命週期管控與雙層開關防護（Sentinel as Antigravity）
+
+- **Scope**：徹底解決連動 APP 缺乏有效開關導致 ADB 於啟動時自動常駐與搜尋裝置之問題。採用 `modular-refactoring`、`halfmoon-design-system`、`pr-author-maintainer`、`ui-visual-review`。
+- **Learning**：
+  1. **ADB 隱式背景伺服器喚醒與生命週期解耦 (ADB Daemon Lifecycle Decoupling)**：`CompanionUsbControls` 原先在 React `useEffect` mount 時無條件執行 `scan()` 呼叫後端 `GET /api/companion/usb/devices`。在 Windows/PC 環境下，`adb devices` 指令會自動於本機 `127.0.0.1:5037` 啟動背景常駐的 `adb.exe` 伺服器且不會自行退出。此生命週期必須與前端渲染嚴格解耦：取消 mount 自動 probe，改為使用者手動觸發；並建立 `companion_enabled`（預設 true，保持 Wi-Fi LAN 配對可用）與 `companion_usb_enabled`（預設 false，嚴格 opt-in）雙層設定防護。後端於端點層進行 403 權限防禦，並提供 `POST /api/companion/usb/kill` 端點主動呼叫 `adb kill-server`，在使用者關閉 USB 開關或點擊停用時徹底回收系統行程與連接埠。
+  2. **SettingsProvider 靜態合併遺漏防護 (Settings Hydration Deserialization Guard)**：`SettingsContext.tsx` 的 `fetchSettings` 原先以顯式屬性列舉方式合併後端設定，造成後端回傳之非列舉屬性（如 `companion_usb_enabled`、`telemetry_port`）在前端完成 `/api/settings` 同步後被靜默丟棄並重設為預設值。透過將 `defaultSettings` 與過濾後的 `data` 動態展開合併，消除了設定在網路來回傳遞時被截斷的隱蔽 bug。
+  3. **Offcanvas 抽屜在窄視窗與自適應 CSS Grid 佈局修復**：`.companion-settings-content` 原先寫死 2 欄 Grid，在 320px 窄視窗下會將控制項壓縮至 140px 直列排版。透過 `grid-column: 1 / -1` 讓主開關與提示橫跨全寬，並在 `@media (max-width: 767.98px)` 下轉為單欄，同時確保 `.offcanvas.app-menu-drawer` 在小螢幕下獲得完整 `100vw` 寬度。
+- **Evidence**：
+  - 後端單元測試與契約測試：`companion_lan`（含 403 路由防護測試 `companion_setting_gates_block_disabled_subsystems`）、`config_contract`（含 `companion_settings_defaults_and_merge_behave_as_expected`）及全部 100+ 個 Cargo 測試全數通過。
+  - 前端單元測試：`CompanionUsbControls.test.tsx`（4 測資）、`CompanionSettingsCard.localization.test.tsx`（6 測資）及全量前端 251 測試檔（2,025 測資）全數通過；`pnpm -C frontend run build` 與 TypeScript 編譯 0 錯誤。
+  - 視覺審查備查：建立 `scripts/capture_companion_review.cjs`，在 headless Chromium 擷取 10 組核心／語系／尺寸矩陣，覆蓋日夜模式、多語在地化（zh-tw, en-us, ja-jp）與 320px 響應式佈局，完整產出 6 張實作截圖與 `manifest.json` 於 `docs/visual-review/companion-adb-lifecycle/`。
+- **Skills**：`modular-refactoring`、`halfmoon-design-system`、`pr-author-maintainer`。
+
 ## 2026-11-08 / 18 筆開啟 PR 全量審查、問題修復、無效死碼淘汰與視覺審查收斂（Gemini as Antigravity）
 
 - **Scope**：審查並處理開啟中之全部 18 筆 PR（`#622`–`#639`），合入 16 筆有效 PR（含 7 筆直接審查合併、9 筆衝突消解／問題修復／視覺審查補齊後合併），並關閉 2 筆無實際產線價值之死碼 PR（`#629`、`#637`）。採用 `pr-review-evaluation`、`pr-author-maintainer`、`halfmoon-design-system`、`physics-tuning-math`、`telemetry-udp-protocol`、`github-security-audit`。

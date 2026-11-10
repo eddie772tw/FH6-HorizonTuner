@@ -356,3 +356,66 @@ async fn general_router_enforces_host_validation_against_dns_rebinding() {
     let res = router.oneshot(no_host).await.unwrap();
     assert_eq!(res.status(), StatusCode::FORBIDDEN);
 }
+
+#[tokio::test]
+async fn companion_setting_gates_block_disabled_subsystems() {
+    let root = tempfile::tempdir().unwrap();
+    let app = App::new(root.path()).unwrap();
+    let router = network::router(app.clone());
+
+    // 1. By default, companion_usb_enabled is false -> /api/companion/usb/devices must return 403
+    let usb_req = Request::builder()
+        .method(Method::GET)
+        .uri("/api/companion/usb/devices")
+        .header("host", "127.0.0.1:8001")
+        .body(Body::empty())
+        .unwrap();
+    let res = router.clone().oneshot(usb_req).await.unwrap();
+    assert_eq!(res.status(), StatusCode::FORBIDDEN);
+
+    // 2. /api/companion/status reports enabled: true by default
+    let status_req = Request::builder()
+        .method(Method::GET)
+        .uri("/api/companion/status")
+        .header("host", "127.0.0.1:8001")
+        .body(Body::empty())
+        .unwrap();
+    let res = router.clone().oneshot(status_req).await.unwrap();
+    assert_eq!(res.status(), StatusCode::OK);
+    let body = to_bytes(res.into_body(), 8192).await.unwrap();
+    let status: Value = serde_json::from_slice(&body).unwrap();
+    assert_eq!(status["enabled"], true);
+
+    // 3. Disable companion_enabled in settings
+    let update_req = Request::builder()
+        .method(Method::POST)
+        .uri("/api/settings")
+        .header("host", "127.0.0.1:8001")
+        .body(Body::from(json!({"companion_enabled": false}).to_string()))
+        .unwrap();
+    let res = router.clone().oneshot(update_req).await.unwrap();
+    assert_eq!(res.status(), StatusCode::OK);
+
+    // 4. Now /api/companion/lan/pairing returns 403
+    let pair_req = Request::builder()
+        .method(Method::POST)
+        .uri("/api/companion/lan/pairing")
+        .header("host", "127.0.0.1:8001")
+        .body(Body::empty())
+        .unwrap();
+    let res = router.clone().oneshot(pair_req).await.unwrap();
+    assert_eq!(res.status(), StatusCode::FORBIDDEN);
+
+    // 5. /api/companion/status reports enabled: false
+    let status_req2 = Request::builder()
+        .method(Method::GET)
+        .uri("/api/companion/status")
+        .header("host", "127.0.0.1:8001")
+        .body(Body::empty())
+        .unwrap();
+    let res = router.oneshot(status_req2).await.unwrap();
+    assert_eq!(res.status(), StatusCode::OK);
+    let body2 = to_bytes(res.into_body(), 8192).await.unwrap();
+    let status2: Value = serde_json::from_slice(&body2).unwrap();
+    assert_eq!(status2["enabled"], false);
+}

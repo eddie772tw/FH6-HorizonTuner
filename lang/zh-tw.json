@@ -2377,5 +2377,16 @@
     "Delete selected session": "刪除選取的紀錄",
     "In-Game Timing": "遊戲內建計時",
     "Calculated Timing": "演算法估算計時",
-    "{valid} of {total} samples valid": "{total} 個採樣中有效 {valid} 個"
+    "{valid} of {total} samples valid": "{total} 個採樣中有效 {valid} 個",
+    "Enable Companion APP": "啟用連動 APP",
+    "Allow mobile devices to connect over LAN or USB to display telemetry and control tuning workflow.": "允許行動裝置透過區域網路或 USB 連線以顯示遙測數據並操作調校流程。",
+    "Companion APP is currently disabled. Enable the switch above to connect mobile devices.": "連動 APP 功能目前已停用。請開啟上方開關以連接行動裝置。",
+    "Enable USB connection (ADB)": "啟用 USB 連線 (ADB)",
+    "Allows connecting Android devices over USB using ADB. Requires USB debugging on the device.": "允許使用 ADB 透過 USB 連接 Android 裝置。需在裝置上開啟 USB 除錯。",
+    "USB connection is disabled. Enable it above to scan for Android devices.": "USB 連線功能已停用。請開啟上方開關以搜尋 Android 裝置。",
+    "Manage USB devices and background daemon": "管理 USB 裝置與背景守護程序",
+    "Stop ADB daemon": "停止 ADB 服務",
+    "Stopping…": "停止中…",
+    "Terminate background ADB process to release ports and resources": "終止背景 ADB 行程以釋放連接埠與系統資源",
+    "Failed to stop ADB daemon.": "無法停止 ADB 服務。"
 }
