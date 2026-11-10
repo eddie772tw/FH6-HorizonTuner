@@ -1372,3 +1372,9 @@
 - 同步重啟狀態修正後完整Vitest1987 passed／1 skipped、Windows／LAN build通過；backend預設245／3ignored、無預設235／2ignored的整合測試已通過，後續native修正未更動backend source。獨立瀏覽器共享420組版面與NFSU2專屬84組版面通過，另重跑native bridge 4次保存／7張圖。
 - 20張NFSU2設定／錶面圖與manifest保存備查。擷取必須明確關閉遙測卡片、對齊框、音響及輔助元素，且等1200ms啟動掃表結束；不可依賴前一個suite留下的狀態。renderer頁開啟後返回設定頁操作時先bringToFront，保留原timeout與斷言。所有新圖皆合成資料，不當作既有歷史遊戲實拍或原生驗收。
 - Skills：pr-author-maintainer、halfmoon-design-system、huge-component-refactoring、modular-refactoring。
+
+## 2026-11-10 — TrendChart 多曲線狀態隔離
+
+`TrendChart` 的端點標記會暫時使用較細線寬；只在整個 chart 開頭設定折線線寬，會讓第二條以後曲線沿用標記線寬。每條有效曲線 stroke 前必須恢復折線線寬，並在繪圖開始清除繼承的陰影，最後以 try/finally 還原 caller 狀態。驗證以 caller 狀態與例外路徑契約、實際瀏覽器像素輸出為準，不斷言 Canvas API 呼叫次數。採用技能：pr-review-evaluation、pr-author-maintainer、huge-component-refactoring、halfmoon-design-system、ponytail。
+
+署名：Jonas as Codex
