@@ -179,6 +179,8 @@ export const drawChart = (
     context.fillStyle = theme.text;
     context.strokeStyle = theme.divider;
     context.lineWidth = 1;
+    context.shadowBlur = 0;
+    context.shadowColor = 'transparent';
     context.setLineDash(theme.dash);
     context.textAlign = 'right';
 
@@ -234,6 +236,7 @@ export const drawChart = (
         lastY = y;
       }
       if (started) {
+        context.lineWidth = 2;
         context.stroke();
         const glow = !theme.flat && (theme.glowStrength ?? 1) > 0;
         context.shadowBlur = glow ? 4 * (theme.glowStrength ?? 1) : 0;
