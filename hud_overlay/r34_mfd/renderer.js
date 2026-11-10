@@ -122,6 +122,8 @@
         var physicalSpeed = view.speedKmh; // Analog face remains fixed kmh; LCD uses selected units.
         n.r34SpeedNeedle.setAttribute('transform', 'translate(108 108) rotate(' + I.speedAngle(physicalSpeed) + ')');
         n.r34SpeedNeedle.style.visibility = view.speed === null ? 'hidden' : 'visible';
+        var isForwardGear = typeof view.gear === 'string' && /^[1-9][0-9]?$/.test(view.gear);
+        if (n.r34GearPrefix) n.r34GearPrefix.textContent = isForwardGear ? 'G' : '';
         this.text('r34Gear', view.gear); this.text('r34DigitalSpeed', LCD.number(view.speed));
         this.text('r34DigitalSpeedUnit', view.speedUnit);
         this.drawLcd(view, e);
