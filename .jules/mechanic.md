@@ -44,3 +44,7 @@
 **物理洞察 (Physics Learning):** 底盤工程負載基準模型（`rust/chassis-load-baseline/v1`）之滑桿取位純函式 `quantize` 原先直接以 `value.clamp(min, max)` 邊界限制，在面對倒置滑桿區間（`min > max`，常見於遊戲未初始化或極端配件改裝）或非有限數（`NaN`、`Infinity`）時，會直接觸發 Rust `f64::clamp` 的斷言 panic 崩潰。此外，前驅車（FWD）在前軸 10% 彈簧軟化以換取前輪機械抓地力與後軸 10% 剛性支撐轉向響應的動力學補償中，原先採用裸字串 `s.eq_ignore_ascii_case("FWD")` 判定，若驅動形式帶有前後空白字符（如 `" fwd "`、`"FWD "`）會判定失敗，導致前驅動力學偏置被靜默丟棄並退化為中性軸荷。同時，臨界阻尼平方根比例縮放缺少除以零與負數防護，且診斷旗標邊界欠缺微小浮點數精度保護。
 **行動 (Action):** 底盤負載模型全面落實 `quantize` 數值有限性與區間正向排序重整（`(min.min(max), min.max(max))`）確保數學封閉性（Mathematical Closure）與零 panic；統一改用 `Drivetrain::from_str_loose` 嚴格消除大小寫與空白敏感性；臨界阻尼開根號全面落實 `(spring / reference.max(1e-6)).max(0.0).sqrt()` 與 `1e-7` 精度保護，杜絕浮點邊界抖動。
 **署名:** Mechanic as Antigravity
+## 2026-11-09 - Gearing Secondary Redistribution Closure & Step Ratio Monotonicity Bounds
+**物理洞察 (Physics Learning):** 在變速箱次級修正（Secondary Correction）幾何閉環重分佈中，當引擎峰值馬力轉速相對於紅線轉速較低（如大排量或渦輪引擎 `rpm_hp / max_rpm < 0.68`）時，原演算法 `r_max = (0.92).min(r_redline_hp)` 會低於 `r_min`，引發 `r_min > r_max` 的步長比率倒置畸變，導致高檔位齒比間距比低檔位更疏的動力學倒置；且比例因子 `s = (new_gtop / (gears[0] * prod_raw)).powf(...)` 在底數非正或非有限時會觸發 `powf` 產生 IEEE 754 `NaN`，使中間檔位全數坍縮為 1.0。此外，多檔位變速箱單調性迴圈中 `max_step_ratio_rounded` 在非 Drift/Drag 模式下以 `(rpm_hp + 50.0) / max_rpm` 計算，在峰值馬力接近紅線時比率超過 1.0 導致步長約束失效，而在極低峰值轉速下又會過度縮小導致高檔位過早觸底至 0.10。
+**行動 (Action):** 次級重分佈強制實施 `r_max = (0.92).min(r_redline_hp).max(r_min)` 杜絕步長比率倒置，並落實底數正定性保護（非正或非有限時安全回退至 1.0）確保幾何動力學閉包；多檔位單調性步長比例全面施加 `0.65..=0.95` 邊界防護，消除檔位重疊與非正常觸底陷阱。
+**署名:** Mechanic as Antigravity
