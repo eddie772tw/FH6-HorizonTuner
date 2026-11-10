@@ -6,6 +6,7 @@ import type { DynoQuality } from '../features/car_params/dynoQuality';
 import type { EvGearboxSetup } from '../domain/tuning/ev/types';
 
 export interface CarParams {
+  tuningTarget?: { goal: string; season: 'Summer' | 'Autumn' | 'Winter' | 'Spring' };
   transmission?: import('../domain/tuning/transmission').TransmissionSelection;
   isElectric?: boolean;
   evGearbox?: EvGearboxSetup;
@@ -228,7 +229,7 @@ export const CarParamsProvider: React.FC<{ children: ReactNode }> = ({ children 
   }, [telemetryCarId, carId, loadedCarId, selectionSource, selectionGeneration]);
 
   const saveCarParams = async (snapshot = carParams) => {
-    if (!snapshot || loadedCarId !== carId || selectionRef.current.generation !== selectionGeneration) return;
+    if (!snapshot || loadedCarId !== carId || selectionRef.current.generation !== selectionGeneration) throw new Error('Vehicle changed before saving.');
     try {
       const response = await backendFetch(`/api/car_params/${carId}`, {
         method: 'POST',

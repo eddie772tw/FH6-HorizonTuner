@@ -196,3 +196,104 @@ async fn lan_pairing_limits_routes_and_revokes_session() {
         .unwrap();
     assert_eq!(revoked.status(), StatusCode::UNAUTHORIZED);
 }
+
+#[tokio::test]
+async fn instrument_catalog_and_assets_require_the_existing_paired_session() {
+    let root = tempfile::tempdir().unwrap();
+    let app = App::new(root.path()).unwrap();
+    app.companion.set_lan_port(Some(8002));
+    let router = network::lan_router(app.clone(), app.companion.clone());
+    let denied = router
+        .clone()
+        .oneshot(request(
+            Method::GET,
+            "/companion/hud/catalog.json",
+            None,
+            None,
+            Body::empty(),
+        ))
+        .await
+        .unwrap();
+    assert_eq!(denied.status(), StatusCode::UNAUTHORIZED);
+    let token = app.companion.generate_qr_payload(Some(8002)).token;
+    let pair = router
+        .clone()
+        .oneshot(request(
+            Method::POST,
+            "/api/companion/pair",
+            None,
+            None,
+            Body::from(
+                json!({"token":token,"device_name":"Cache test","device_id":"cache-tablet"})
+                    .to_string(),
+            ),
+        ))
+        .await
+        .unwrap();
+    let paired: Value =
+        serde_json::from_slice(&to_bytes(pair.into_body(), 8192).await.unwrap()).unwrap();
+    let session = paired["session_token"].as_str().unwrap();
+    let response = router
+        .clone()
+        .oneshot(request(
+            Method::GET,
+            "/companion/hud/catalog.json",
+            Some(session),
+            None,
+            Body::empty(),
+        ))
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    let catalog: Value =
+        serde_json::from_slice(&to_bytes(response.into_body(), 128 * 1024).await.unwrap()).unwrap();
+    assert_eq!(catalog["schemaVersion"], "companion-hud/v1");
+    if let Some(style) = catalog["styles"].as_array().unwrap().first() {
+        let path = format!(
+            "/companion/hud/manifests/{}.json",
+            style["id"].as_str().unwrap()
+        );
+        let response = router
+            .clone()
+            .oneshot(request(
+                Method::GET,
+                &path,
+                Some(session),
+                None,
+                Body::empty(),
+            ))
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        let manifest: Value =
+            serde_json::from_slice(&to_bytes(response.into_body(), 1024 * 1024).await.unwrap())
+                .unwrap();
+        let file = &manifest["assets"][0];
+        let path = format!(
+            "/companion/hud/assets/{}/{}",
+            file["sha256"].as_str().unwrap(),
+            file["path"].as_str().unwrap()
+        );
+        let response = router
+            .clone()
+            .oneshot(request(
+                Method::GET,
+                &path,
+                Some(session),
+                None,
+                Body::empty(),
+            ))
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        let bytes = to_bytes(response.into_body(), 32 * 1024 * 1024)
+            .await
+            .unwrap();
+        assert_eq!(bytes.len() as u64, file["sizeBytes"].as_u64().unwrap());
+        let denied = router
+            .oneshot(request(Method::GET, &path, None, None, Body::empty()))
+            .await
+            .unwrap();
+        assert_eq!(denied.status(), StatusCode::UNAUTHORIZED);
+    }
+}

@@ -170,6 +170,17 @@ export function TuneSessionProvider({ children }: { children: ReactNode }) {
   const [goal, setGoal] = useState('Road');
   const [season, setSeason] = useState<'Summer' | 'Autumn' | 'Winter' | 'Spring'>('Summer');
 
+  const restoredTarget = useRef<string | null>(null);
+  useEffect(() => {
+    if (loadedCarId !== carId || !carParams) return;
+    const key = JSON.stringify([carId, selectionGeneration]);
+    if (restoredTarget.current === key) return;
+    restoredTarget.current = key;
+    const target = carParams.tuningTarget;
+    setGoal(target && ['Road', 'Rally', 'Drift', 'Drag'].includes(target.goal) ? target.goal : 'Road');
+    setSeason(target && ['Summer', 'Autumn', 'Winter', 'Spring'].includes(target.season) ? target.season : 'Summer');
+  }, [carId, loadedCarId, selectionGeneration, carParams]);
+
   const [reviewHistory, setReviewHistory] = useState(false);
   const [identityGeneration, setIdentityGeneration] = useState(0);
   const [baselineGeneration, setBaselineGeneration] = useState(0);

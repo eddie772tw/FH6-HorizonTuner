@@ -1,3 +1,4 @@
+import mainInstruments from '../../../../hud_overlay/shared/companion-instruments.json';
 import { backendFetch } from '../../services/backend';
 import { DEFERRED_HUD_STYLES } from '../../../../hud_overlay/shared/deferred-styles.js';
 
@@ -24,23 +25,7 @@ export interface HudStyleFetchOptions {
 }
 
 export const HUD_DISPLAY_NAMES: Record<string, string> = {
-  vfd: 'Retro VFD',
-  ap1_rev_arc: 'AP1 Rev Arc · S2000',
-  drift: 'Drift HUD',
-  s650_hmi: 'Ford Mustang HMI',
-  lfa_center_ring: 'LFA Center Ring',
-  advanced: 'Advanced Racing Arc',
-  fm4ui: 'Forza Motorsport 4',
-  gt7: 'Gran Turismo 7',
-  mw2005: "NFS Most Wanted 2005",
-  nfs15: "Need for Speed 2015",
-  shift_tacho: 'Need for Speed Shift',
-  simple: 'Simple Gauge',
-  classic_jdm: 'Classic JDM Arcade',
-  r34_mfd: 'Skyline R34 MFD',
-  mclaren_720s: 'McLaren 720S Folding Cluster',
-  ford_gt: 'Ford GT 2017 Race Cluster',
-  bmw_idrive7: 'BMW Live Cockpit iDrive 7',
+  ...mainInstruments,
   minimap_overlay: 'GPS Minimap Radar',
   touge_pacenotes: 'Touge Pacenotes & Prompts',
   telemetry_cards: 'Telemetry Data Cards',

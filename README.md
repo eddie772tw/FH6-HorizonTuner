@@ -97,7 +97,7 @@ FH6-HorizonTuner 透過遊戲的 **Data Out UDP 遙測**接收車輛資料，整
 | EV | 支援單速／多速量測、證據保存重播與終傳比預覽；最佳換檔點、實際極速預測及部分實車驗收仍待完成。[EV 模型](docs/calibration/ev-foundation.md) · [證據生命週期](docs/tuning/issue-435-ev-completeness.md)。 |
 | CVT | 已有能力選擇、採集與重播契約；尚未提供可套用推薦、終傳求解與 ratio preview。[CVT 說明](docs/tuning/cvt-foundation.md)。 |
 | MoTeC 匯出 | 提供 CSV、i2 XML 範本及實驗性 `.ld`／`.ldx` ZIP；原生格式的 MoTeC i2 實機相容性仍待驗收。[賽事分析指南](docs/guides/race-analysis.md)。 |
-| Android Companion | 共用遙測卡片與調校流程；Android HUD 延後，原生外觀及裝置體驗仍有待驗收項目。[實作邊界](docs/architecture/companion-implementation-boundary.md)。 |
+| Android Companion | 原生連線、調校與遙測頁面；橫向單卡滑動、可旋轉詳細頁與由 PC 提供清單、首次下載並快取的多款主儀表。PC 不需停留 Tuning 即可儲存車輛參數及目標；實機體驗仍待驗收。[實作邊界](docs/architecture/companion-implementation-boundary.md)。 |
 
 <a id="readme-documentation"></a>
 
@@ -166,7 +166,7 @@ backend-rust/src/    遙測、儲存、API、MCP 與正式調校公式
 frontend/src/        React 工作區、流程與顯示
 frontend/src-tauri/  桌面視窗、後端生命週期與打包
 hud_overlay/        Windows HUD renderer 與素材
-companion/          Android 連線外殼與 WebView
+companion/          Android 原生頁面與本機主儀表渲染器
 lang/               語系字典
 docs/               操作指南、契約與校準紀錄
 scripts/            建置、發行與維護工具

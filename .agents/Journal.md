@@ -1045,3 +1045,13 @@
 - **處理**：採用官方穩定版 `tauri-plugin-updater 2.14.1`（MIT／Apache-2.0，MSRV 1.90），提高 manifest 最低版本並定向更新鎖檔；`cargo tree --locked --target all -i zip` 確認桌面僅解析 `zip 9.1.3`，高於 GHSA-m665-v7pm-7grj 的受影響範圍 `<=9.0.4`。不使用 fork、patch 或 dismissed 取代修復。
 - **驗證界線**：frozen install、前端 1850 passed／1 個既有 skipped、Windows-target production build 與 Rust 格式檢查通過；Cargo、Windows／Linux CI 打包與精確 PR head 檢查另見 PR 驗證紀錄。安全警報須待修復進入預設分支後由 GitHub 更新，PR 通過不代表正式 OTA 或實機升級驗收。
 - **Skills**：`github-security-audit`、`pr-author-maintainer`、`pr-review-evaluation`、`ponytail`。
+
+## 2026-11-10 / Android 原生頁面與主程式供應儀表快取（Codex as Codex）
+
+- **需求與邊界**：Connection、Tuning、Telemetry 導覽／卡片／詳細頁改為 Compose，不載入共用 React 主介面。Telemetry 概覽要求橫向、單卡滑動，詳細頁可旋轉；儀表保留多款主儀表，停用手把與其他附加元件。使用者明確要求清單與資產由 PC 提供，因此 APK 不內建 HUD 清單或 artwork。
+- **清單與資產 ownership**：`hud_overlay/shared/companion-instruments.json` 同時供桌面選單及 Rust 供應器使用。PC 在既有 authenticated `/companion/` 前綴提供 catalog、各款 manifest、hash-addressed 資產；沒有擴大 LAN API allowlist。版本摘要由依序排列的 path、SHA-256、byte count 組成。Android 僅實作 `companion-hud/v1`，新增／更新樣式不需要改 APK。無 HUD 的 PC build 回傳空目錄。
+- **快取合約**：按 PC origin 隔離；下載在 IO dispatcher 執行，校驗完整 manifest 與所有檔案後才切換快取版本。共用內容 hash 去重；失敗或取消不破壞目前完整版本；損壞檔案不交給 renderer。每款保留目前與上一版，回收未引用的物件。WebView 只服務 manifest 中的本機檔案，沒有 network、file/content access 或 JavaScript interface。
+- **遠端調校存檔**：常駐 `CompanionHostBridge` 新增 `save` 指令，一份車輛檔案寫入參數與 `tuningTarget` 後才 acknowledgement；失敗回 rejected。異步寫入後不覆蓋已變更的桌面草稿／車輛。車輛載入會還原 goal／season，PC 不需切到 Tuning；調校公式仍由 Rust 擁有。
+- **驗證**：前端 1,856 passed／1 skipped，TypeScript／Vite build 通過；Rust default 功能測試 234 passed／2 ignored、無預設功能 224 passed／2 ignored。default doctest 曾因並行 Vite build 移除舊 hash 資產而失敗，待前端建置完成後重跑 `cargo test --doc` 通過；之後應先固定 frontend/dist，再執行 Rust gate。Android 35 項單元測試、Lint（0 errors）與 Debug APK 通過。實際 PC sidecar 下載 595 個去重資產共 9,808,371 bytes，18 款 cached renderer 的 Chromium 檢查通過；暖快取重跑下載 0 bytes。APK ZIP 檢查沒有 `assets/hud/`。
+- **驗收限制**：瀏覽器與 JVM／Rust 契約測試不代表 Android 實機、LAN／USB／QR、旋轉與遊戲連動驗收；這些仍為 NOT_RUN。Debug build 不是正式簽署發行。
+- **Skills**：`halfmoon-design-system`、`modular-refactoring`、`telemetry-udp-protocol`；雲端工具鏈使用 `cloud-environment-runtime`。

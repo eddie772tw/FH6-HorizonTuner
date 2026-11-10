@@ -61,3 +61,12 @@ fn dyno_guidance_peaks_and_gear_recommendations_have_backend_owners() {
     );
     assert!(recommended_gear(&json!({"gearing":{"gears":[]}})).is_null());
 }
+
+#[test]
+fn saved_companion_target_survives_profile_normalization() {
+    let target = json!({"goal":"Rally","season":"Winter"});
+    let normalized = normalize(&json!({"weight":1420,"tuningTarget":target}));
+    assert_eq!(normalized["weight"], 1420);
+    assert_eq!(normalized["tuningTarget"], target);
+    assert_eq!(normalize(&normalized)["tuningTarget"], target);
+}
