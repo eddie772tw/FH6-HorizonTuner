@@ -836,7 +836,8 @@ fn gearing_secondary_redistribution_closure_and_monotonicity_bounds() {
         ..Default::default()
     };
     let sc_top_speed = GearingSecondaryCorrection {
-        simulated_top_speed: Some(250.0),
+        // Force final-drive saturation so intermediate ratios are redistributed.
+        simulated_top_speed: Some(80.0),
         soft_max_speed: None,
         drag_finish_speed_kmh: None,
         drag_finish_speed_provenance: None,
@@ -852,6 +853,11 @@ fn gearing_secondary_redistribution_closure_and_monotonicity_bounds() {
     assert_eq!(result_sc.gears.len(), 6);
     assert!(result_sc.gears.iter().all(|&g| g.is_finite() && g > 0.0));
     assert!(result_sc.gears.windows(2).all(|g| g[0] > g[1]));
+    assert_eq!(result_sc.final_drive, 6.1);
+    for g in result_sc.gears.windows(3) {
+        // Allow for the public output's 0.01 ratio quantization.
+        assert!(g[1] / g[0] <= g[2] / g[1] + 0.02);
+    }
 
     // Case 2: Redline-peaked engine (rpm_hp == max_rpm) must clamp step ratio to <= 0.95
     let p_peak_redline = TuningCarParams {
@@ -864,17 +870,14 @@ fn gearing_secondary_redistribution_closure_and_monotonicity_bounds() {
         max_torque_rpm: Some(6500.0),
         ..Default::default()
     };
-    let result_peak = calculate_aego_gearing(
-        RaceGoal::Rally,
-        6,
-        &p_peak_redline,
-        8500.0,
-        None,
-    );
+    let result_peak = calculate_aego_gearing(RaceGoal::Rally, 6, &p_peak_redline, 8500.0, None);
     assert_ne!(result_peak.unsupported, Some(true));
     assert!(result_peak.gears.windows(2).all(|g| g[0] > g[1]));
     for w in result_peak.gears.windows(2) {
-        assert!(w[1] <= w[0] * 0.95 + 1e-6, "Step ratio must not exceed 0.95 upper bound");
+        assert!(
+            w[1] <= w[0] * 0.95 + 1e-6,
+            "Step ratio must not exceed 0.95 upper bound"
+        );
     }
 
     // Case 3: Ultra-low power RPM must not collapse high gears to 0.10 bottom limit
@@ -888,13 +891,10 @@ fn gearing_secondary_redistribution_closure_and_monotonicity_bounds() {
         max_torque_rpm: Some(1500.0),
         ..Default::default()
     };
-    let result_low_rpm = calculate_aego_gearing(
-        RaceGoal::Rally,
-        6,
-        &p_low_rpm,
-        6000.0,
-        None,
-    );
+    let result_low_rpm = calculate_aego_gearing(RaceGoal::Rally, 6, &p_low_rpm, 6000.0, None);
     assert_ne!(result_low_rpm.unsupported, Some(true));
-    assert!(result_low_rpm.gears.last().copied().unwrap() > 0.20, "High gear must not collapse to 0.10");
+    assert!(
+        result_low_rpm.gears.last().copied().unwrap() > 0.20,
+        "High gear must not collapse to 0.10"
+    );
 }
