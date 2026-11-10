@@ -1,0 +1,300 @@
+{
+  "date": "2026-11-10",
+  "implementation": "0aeaa6e2c956d433c895d83353d93f107055a94a",
+  "browser": "148.0.7778.96",
+  "environment": "Windows Chromium headless; real AppShell/providers/renderer; route-isolated HTTP backend; synthetic history fixture; DPR 1; zoom 100%; full-page screenshots except labelled chart crops. No game/device acceptance.",
+  "cases": [
+    {
+      "core": "default",
+      "mode": "light",
+      "width": 1280,
+      "lang": "en-us",
+      "file": "default-light-en-us-1280.png",
+      "chartFile": "chart-default-light-en-us-1280.png",
+      "overflow": false,
+      "canvases": [
+        {
+          "width": 579,
+          "height": 220,
+          "hasInk": true
+        }
+      ],
+      "errors": []
+    },
+    {
+      "core": "default",
+      "mode": "dark",
+      "width": 1280,
+      "lang": "zh-tw",
+      "file": "default-dark-zh-tw-1280.png",
+      "chartFile": "chart-default-dark-zh-tw-1280.png",
+      "overflow": false,
+      "canvases": [
+        {
+          "width": 579,
+          "height": 220,
+          "hasInk": true
+        }
+      ],
+      "errors": []
+    },
+    {
+      "core": "modern",
+      "mode": "light",
+      "width": 1280,
+      "lang": "ja-jp",
+      "file": null,
+      "chartFile": null,
+      "overflow": false,
+      "canvases": [
+        {
+          "width": 579,
+          "height": 220,
+          "hasInk": true
+        }
+      ],
+      "errors": []
+    },
+    {
+      "core": "modern",
+      "mode": "dark",
+      "width": 1280,
+      "lang": "en-us",
+      "file": null,
+      "chartFile": null,
+      "overflow": false,
+      "canvases": [
+        {
+          "width": 579,
+          "height": 220,
+          "hasInk": true
+        }
+      ],
+      "errors": []
+    },
+    {
+      "core": "elegant",
+      "mode": "light",
+      "width": 1280,
+      "lang": "zh-tw",
+      "file": null,
+      "chartFile": null,
+      "overflow": false,
+      "canvases": [
+        {
+          "width": 579,
+          "height": 220,
+          "hasInk": true
+        }
+      ],
+      "errors": []
+    },
+    {
+      "core": "elegant",
+      "mode": "dark",
+      "width": 1280,
+      "lang": "ja-jp",
+      "file": null,
+      "chartFile": null,
+      "overflow": false,
+      "canvases": [
+        {
+          "width": 579,
+          "height": 220,
+          "hasInk": true
+        }
+      ],
+      "errors": []
+    },
+    {
+      "core": "swiss",
+      "mode": "light",
+      "width": 1280,
+      "lang": "en-us",
+      "file": "swiss-light-en-us-1280.png",
+      "chartFile": "chart-swiss-light-en-us-1280.png",
+      "overflow": false,
+      "canvases": [
+        {
+          "width": 579,
+          "height": 220,
+          "hasInk": true
+        }
+      ],
+      "errors": []
+    },
+    {
+      "core": "swiss",
+      "mode": "dark",
+      "width": 1280,
+      "lang": "zh-tw",
+      "file": "swiss-dark-zh-tw-1280.png",
+      "chartFile": "chart-swiss-dark-zh-tw-1280.png",
+      "overflow": false,
+      "canvases": [
+        {
+          "width": 579,
+          "height": 220,
+          "hasInk": true
+        }
+      ],
+      "errors": []
+    },
+    {
+      "core": "swiss-editorial",
+      "mode": "light",
+      "width": 1280,
+      "lang": "ja-jp",
+      "file": null,
+      "chartFile": null,
+      "overflow": false,
+      "canvases": [
+        {
+          "width": 579,
+          "height": 220,
+          "hasInk": true
+        }
+      ],
+      "errors": []
+    },
+    {
+      "core": "swiss-editorial",
+      "mode": "dark",
+      "width": 1280,
+      "lang": "en-us",
+      "file": null,
+      "chartFile": null,
+      "overflow": false,
+      "canvases": [
+        {
+          "width": 579,
+          "height": 220,
+          "hasInk": true
+        }
+      ],
+      "errors": []
+    },
+    {
+      "core": "swiss-contrast",
+      "mode": "light",
+      "width": 1280,
+      "lang": "zh-tw",
+      "file": null,
+      "chartFile": null,
+      "overflow": false,
+      "canvases": [
+        {
+          "width": 579,
+          "height": 220,
+          "hasInk": true
+        }
+      ],
+      "errors": []
+    },
+    {
+      "core": "swiss-contrast",
+      "mode": "dark",
+      "width": 1280,
+      "lang": "ja-jp",
+      "file": null,
+      "chartFile": null,
+      "overflow": false,
+      "canvases": [
+        {
+          "width": 579,
+          "height": 220,
+          "hasInk": true
+        }
+      ],
+      "errors": []
+    },
+    {
+      "core": "rhine-lab",
+      "mode": "light",
+      "width": 1280,
+      "lang": "en-us",
+      "file": "rhine-lab-light-en-us-1280.png",
+      "chartFile": "chart-rhine-lab-light-en-us-1280.png",
+      "overflow": false,
+      "canvases": [
+        {
+          "width": 579,
+          "height": 220,
+          "hasInk": true
+        }
+      ],
+      "errors": []
+    },
+    {
+      "core": "rhine-lab",
+      "mode": "dark",
+      "width": 1280,
+      "lang": "zh-tw",
+      "file": "rhine-lab-dark-zh-tw-1280.png",
+      "chartFile": "chart-rhine-lab-dark-zh-tw-1280.png",
+      "overflow": false,
+      "canvases": [
+        {
+          "width": 579,
+          "height": 220,
+          "hasInk": true
+        }
+      ],
+      "errors": []
+    },
+    {
+      "core": "default",
+      "mode": "dark",
+      "width": 320,
+      "lang": "ja-jp",
+      "file": "default-dark-ja-jp-320.png",
+      "chartFile": "chart-default-dark-ja-jp-320.png",
+      "overflow": false,
+      "canvases": [
+        {
+          "width": 232,
+          "height": 220,
+          "hasInk": true
+        }
+      ],
+      "errors": []
+    },
+    {
+      "core": "swiss",
+      "mode": "dark",
+      "width": 320,
+      "lang": "en-us",
+      "file": "swiss-dark-en-us-320.png",
+      "chartFile": "chart-swiss-dark-en-us-320.png",
+      "overflow": false,
+      "canvases": [
+        {
+          "width": 232,
+          "height": 220,
+          "hasInk": true
+        }
+      ],
+      "errors": []
+    },
+    {
+      "core": "rhine-lab",
+      "mode": "dark",
+      "width": 320,
+      "lang": "zh-tw",
+      "file": "rhine-lab-dark-zh-tw-320.png",
+      "chartFile": "chart-rhine-lab-dark-zh-tw-320.png",
+      "overflow": false,
+      "canvases": [
+        {
+          "width": 232,
+          "height": 220,
+          "hasInk": true
+        }
+      ],
+      "errors": []
+    }
+  ],
+  "productBlob": "67300ce3b6bcffcb88e92a272858834d10ebdf41",
+  "playwright": "1.65.0",
+  "detailPanels": "tires and dynamics chart crops plus full pages captured with the identical renderer before the final cross-theme pass; current-value metrics are unavailable because only the synthetic history store is seeded."
+}
