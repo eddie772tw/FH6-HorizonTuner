@@ -6,26 +6,27 @@
     function box(cx, cy, radius) { return { x: cx - radius, y: cy - radius, width: radius * 2, height: radius * 2 }; }
     function layout(width, height, userScale, showCluster) {
         var w = positive(width, 1920), h = positive(height, 1080);
-        var margin = Math.min(w / 10, h / 10, Math.max(24, h / 36));
-        var screenMarginX = Math.max(10, Math.min(18, margin * 0.45));
+        var margin = Math.min(w / 10, h / 10, Math.max(20, h / 36));
+        var screenMarginX = Math.max(8, Math.min(14, margin * 0.35));
         var clusterGap = Math.min(16, Math.max(8, w / 40));
         var heightFactor = clamp(h / 1080, .8, 1.5);
         var screenPerFactor = clamp(320 * h / 1080, 230, 380) / heightFactor;
         // Keep auxiliaries close, with a scaled gap beyond both module radii.
-        // Reserve that full reach before fitting the corner LCD and center safe gap.
+        // Reserve that reach before fitting the corner LCD and center cluster.
         var auxOffset = 114 + 54 + 2;
         var auxReach = auxOffset + 54;
-        var minOffsetBase = 260;
+        var minOffsetBase = 136;
+        var preferredOffsetBase = 146;
         var maximum = Math.max(.001, Math.min((w / 2 - screenMarginX - clusterGap) / (screenPerFactor + auxReach + minOffsetBase), (h - 2 * margin) / 228));
         if (showCluster === false) maximum = Math.min((w - 2 * screenMarginX) / screenPerFactor, (h - 2 * margin) / (screenPerFactor * 152 / 270));
         var scale = Math.min(heightFactor * positive(userScale, 1), maximum);
         var radius = 114 * scale, smallRadius = 54 * scale, screenWidth = screenPerFactor * scale;
         var screenHeight = screenWidth * 152 / 270;
         var cx = w / 2, cy = h - margin - radius;
-        var maxOffset = 320 * scale;
         var minOffset = minOffsetBase * scale;
+        var preferredOffset = preferredOffsetBase * scale;
         var availableOffset = w / 2 - screenMarginX - screenWidth - auxReach * scale - clusterGap;
-        var offset = showCluster === false ? maxOffset : Math.min(maxOffset, Math.max(minOffset, availableOffset));
+        var offset = showCluster === false ? preferredOffset : Math.max(minOffset, Math.min(preferredOffset, availableOffset));
         return {
             width: w, height: h, scale: scale, margin: margin, screenMarginX: screenMarginX,
             tach: box(cx - offset, cy, radius), speed: box(cx + offset, cy, radius),

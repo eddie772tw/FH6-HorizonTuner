@@ -10,6 +10,7 @@
         return {
             r34MfdMode: MODES.indexOf(config.r34MfdMode) >= 0 ? config.r34MfdMode : 'single',
             r34ShowCluster: typeof config.r34ShowCluster === 'boolean' ? config.r34ShowCluster : true,
+            r34ShowMfd: typeof config.r34ShowMfd === 'boolean' ? config.r34ShowMfd : true,
             r34Lighting: config.r34Lighting === 'day' ? 'day' : 'night'
         };
     }

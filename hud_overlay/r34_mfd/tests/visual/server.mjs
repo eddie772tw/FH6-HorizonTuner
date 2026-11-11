@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 export const root = path.resolve(fileURLToPath(new URL('../../../', import.meta.url)));
-export const baseConfig = { hudStyle: 'r34_mfd', scale: 1, r34MfdMode: 'single', r34ShowCluster: true, r34Lighting: 'night',
+export const baseConfig = { hudStyle: 'r34_mfd', scale: 1, r34MfdMode: 'single', r34ShowCluster: true, r34ShowMfd: true, r34Lighting: 'night',
   unit: 'kmh', effectiveUnits: { speed: 'kmh', boostPressure: 'bar', power: 'hp', torque: 'nm', temperature: 'C' }, enableSmoothing: true,
   useDefaultColors: true, glowIntensity: 1, elements: { showGauge: true, showRPM: true, showSpeed: true, showGear: true,
     showBoost: true, showCenterInfo: true, showPowerTorque: true, showTeleMaster: false, showMotionEffect: false,

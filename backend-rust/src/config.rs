@@ -363,6 +363,9 @@ pub fn normalize_hud(data: &Value) -> Value {
         if !value["r34ShowCluster"].is_boolean() {
             value["r34ShowCluster"] = json!(true);
         }
+        if !value["r34ShowMfd"].is_boolean() {
+            value["r34ShowMfd"] = json!(true);
+        }
         if !["day", "night"].contains(&value["r34Lighting"].as_str().unwrap_or("")) {
             value["r34Lighting"] = json!("night");
         }

@@ -5,6 +5,7 @@
 - **Scope**：PR #650；採用 `pr-review-evaluation`、`pr-author-maintainer`、`modular-refactoring`、`halfmoon-design-system`、`portable-release-validation`。
 - **Learning**：設定開關必須由後端封鎖既有 session 的 LAN HTTP／WebSocket，不能只關閉新配對與隱藏 UI。LAN stream 需在停用後終止；USB 探測、連線與停用清理共用 operation lock，避免先檢查開關後等待鎖而在停用完成後重啟 ADB。設定停用後由後端最佳努力清理 ADB，前端不再重複送出非序列化 kill。
 - **Evidence**：`backend-rust/tests/companion_lan.rs` 新增已配對裝置停用後 HTTP 拒絕、既有 WebSocket 中止與新握手拒絕測試。Windows bundled ADB 的實機清理仍須 Windows 驗收，Linux 測試不能證明硬體結果。
+- **Build ordering**：前端 build 會替換 `frontend/dist/assets` 的雜湊檔名；Rust build.rs 產生的 `include_bytes!` 清單與後續 rustdoc 必須使用同一份固定產物，不可與前端重建並行。曾重現產品測試全過但 rustdoc 找不到舊雜湊檔案；固定 dist 後重新執行 Cargo doc-test 與相關契約驗證。
 - **Release**：v1.8.3 已發行且使用 runtime `11.45.25`；main 沿用相同 runtime，下一版必須提高版本並同步五處版本契約。Release Packaging Test 的合成資產與測試簽章不能取代正式 Windows portable／sidecar smoke test。
 
 ## 2026-11-10 / 連動 APP (Companion) ADB 常駐行程解耦、生命週期管控與雙層開關防護（Sentinel as Antigravity）
@@ -19,6 +20,18 @@
   - 前端單元測試：`CompanionUsbControls.test.tsx`（4 測資）、`CompanionSettingsCard.localization.test.tsx`（6 測資）及全量前端 251 測試檔（2,025 測資）全數通過；`pnpm -C frontend run build` 與 TypeScript 編譯 0 錯誤。
   - 視覺審查備查：建立 `scripts/capture_companion_review.cjs`，在 headless Chromium 擷取 10 組核心／語系／尺寸矩陣，覆蓋日夜模式、多語在地化（zh-tw, en-us, ja-jp）與 320px 響應式佈局，完整產出 6 張實作截圖與 `manifest.json` 於 `docs/visual-review/companion-adb-lifecycle/`。
 - **Skills**：`modular-refactoring`、`halfmoon-design-system`、`pr-author-maintainer`。
+## 2026-11-10 / R34 MFD 儀表版面黑洞消除、邊緣避讓、MFD 顯隱控制與 LCD 檔位格式化修復（Vector as Antigravity）
+
+- **Scope**：修復 Nissan Skyline GT-R R34 儀表風格（R34 MFD HUD Overlay）之 Tach/Speed 中央 ~350px 誇張黑洞、MFD 靠邊避讓間隙不足、專屬設定卡片缺乏 MFD 螢幕顯隱開關，以及時速表 LCD 顯示 `GN`、`GR`、`G—` 異常前綴等問題。採用 `halfmoon-design-system`、`pr-author-maintainer`、`ui-visual-review`。
+- **Learning**：
+  1. **HUD 複合儀表組幾何中心偏移收斂與動態避讓**：在包含主指針表、副儀表與附加多功能螢幕（MFD）的複合 HUD 中，儀表位置計算若將視窗寬度剩餘空間全數灌入中央偏移（`availableOffset`），在 1080p 等標準視窗下會使 Tachometer 與 Speedometer 之間拉開超過 350px 的不自然空洞。解法是建立自然的基礎表距偏移（`minOffsetBase = 136`, `preferredOffsetBase = 146`），並收斂右側外邊距（`screenMarginX = 8~14px`），使 MFD 在不超出螢幕空間的前提下自然靠邊，同時以夾限運算保證右側 Boost 增壓表與 MFD 螢幕之間擁有 >100px 的安全淨空。
+  2. **專屬 HUD 子模組開關與全域 elements 解耦**：原先 R34 MFD 螢幕借用全域 `elements.showCenterInfo` 作為顯隱判斷，導致若在其他通用介面關閉中央資訊，R34 MFD 螢幕會連帶遭到隱藏。經使用者指示，將 MFD 螢幕狀態與 `showCenterInfo` 完全解耦，引進專屬的 `r34ShowMfd` 配置鍵，並於 Rust 後端、前端 `HudConfig`、`normalizeR34MfdConfig` 及 overlay `renderer.configure` 中將 MFD 顯隱改由 `r34ShowMfd` 獨立控制，徹底杜絕 `showCenterInfo` 對 MFD 渲染的任何副作用。
+  3. **數位液晶檔位前綴之語義分離**：JDM 液晶時速表中的「G」字元代表 Gear，但空檔（`N`）、倒檔（`R`）以及未讀取狀態（`—`）具有全字語意，若直接固定拼裝會產生 `GN`、`GR`、`G—` 等混淆讀數。在 SVG 模板中將 prefix 拆為專屬 `<tspan id="r34GearPrefix">`，並在渲染邏輯中僅對正則匹配 `^[1-9][0-9]?$` 之數值前進檔給予 `G` 前綴，其餘狀態清空，達成兼顧 SVG 文字置中對齊與動態語義正確。
+- **Evidence**：
+  - PR `#649`：`fix(hud): resolve R34 MFD layout void and gauge rendering issues`。
+  - 前端測試全數通過：`pnpm -C frontend run test r34_mfd`（6 檔案 171 測試）、全倉 Vitest（251 檔案 2025 測試）。
+  - 生產環境構建通過：`pnpm -C frontend run build`。
+  - 視覺審查證據保存於 `docs/assets/r34-mfd/` 並於 PR Body 提供 commit-pinned 圖片展示與 320px 窄幅／多語系／模式覆蓋。
 
 ## 2026-11-08 / 18 筆開啟 PR 全量審查、問題修復、無效死碼淘汰與視覺審查收斂（Gemini as Antigravity）
 
