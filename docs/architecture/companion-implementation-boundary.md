@@ -4,11 +4,11 @@ This document records the current implementation boundary. It separates what is 
 
 ## Implemented shape
 
-The Android application is a native Jetpack Compose connection shell with an embedded Android `WebView`. The WebView loads the shared React entrypoint `/companion/index.html`, which is emitted by the frontend build. The page uses the existing frontend telemetry cards and tuning workflow. Android HUD display is deferred for a later iteration; the desktop HUD remains independent.
+Android uses native Jetpack Compose connection, tuning, telemetry navigation and detail pages. It no longer loads the shared React Companion page or inherits desktop layouts. A restricted local WebView draws only the selected main HUD instrument from verified PC-downloaded assets. The native selector receives its catalog from the PC, including VFD, BMW, Ford and S650; Android contains no instrument list or artwork. Auxiliary telemetry overlays and gamepad cards are disabled. The browser Companion entrypoint remains available independently.
 
-The Rust sidecar embeds `frontend/dist/companion` and shared `frontend/dist/assets` at build time. `PC TuneSessionProvider` is the sole owner of tuning calculations and engine measurement. The Companion boundary carries:
+The Rust sidecar embeds `frontend/dist/companion` and shared `frontend/dist/assets` at build time. `PC TuneSessionProvider` orchestrates tuning and engine measurement; Rust remains the sole calculation owner. The Companion boundary carries:
 
-- profile, workflow, and measurement commands;
+- profile, workflow, measurement and explicit persisted save commands;
 - queued command acknowledgements and current workflow state;
 - `profileKey` checks that reject stale profile results;
 - a host lease and client heartbeat for ownership and liveness;
@@ -29,9 +29,11 @@ The PC's main HTTP API remains bound to loopback. A separate Companion LAN liste
 
 USB remains a debugging mode. The PC Companion settings list connected Android devices; the user selects one when multiple are present and presses **Connect USB device**. The PC sidecar uses its bundled ADB runtime to map Android `tcp:8001` to the actual PC loopback HTTP port and launches the Android app. The Android screen connects to `127.0.0.1:8001` automatically. The Connection page can switch between LAN and USB. Keep the PC Full app open while using Companion.
 
-The Android screen remains free to rotate. Telemetry shows one focused card at a time; width-based responsive rules stack the Driver and Dynamics internals on narrow screens and make the four Tire/Suspension subcards scroll vertically. Tuning fields collapse to one column on narrow screens. Width is used because Android WebView may retain a stale CSS orientation media result after `configChanges` rotation.
+Telemetry overview requests sensor landscape and displays one native pager card at a time. Swipes and previous/next buttons change cards. The selected card’s detail view permits portrait or landscape; Back restores the landscape overview. Connection and Tuning permit either orientation. The local main-instrument renderer uses the existing HUD coordinator and asset definitions; it has no JavaScript bridge, file/content access, external navigation or network requests. Its catalog excludes auxiliary modules and WIP styles.
 
-mDNS discovery, Bluetooth Classic RFCOMM, and a native offline HUD cache are planned work. QR scanning is camera-only in the product; no image-file import is exposed. Existing protocol abstractions or documentation for other transports are reservations, not acceptance evidence.
+The native editor retains its original `profileKey` while editing, so host changes require an explicit reload. `save` writes a single vehicle document with `tuningTarget` before returning an applied acknowledgement. Failed writes are rejected. The host does not replace a newer desktop draft after the save finishes. The persistent target is restored when loading a vehicle; these operations run independently of the selected PC workspace.
+
+mDNS discovery and Bluetooth Classic RFCOMM remain planned work. The instrument asset cache is implemented, while physical-device cache and reconnect acceptance remains pending. QR scanning is camera-only in the product; no image-file import is exposed. Existing protocol abstractions or documentation for other transports are reservations, not acceptance evidence.
 
 ## Build and test boundary
 
@@ -67,3 +69,9 @@ The core protocol, transport abstractions, and connection lifecycle implementati
 - **Asset caching**: Dynamic SHA-256 asset manifest contract supporting client-side cache-first verification.
 
 Upstream PadLink has incorporated these refinements from HorizonTuner, ensuring that protocol contracts and test suites remain compatible and standardized across both projects.
+
+## PC-owned instrument delivery
+
+The PC owns the public main-instrument catalog in `hud_overlay/shared/companion-instruments.json`, also consumed by the desktop selector. Its build embeds the catalog, rendering wrapper and assets. Android obtains `/companion/hud/catalog.json`, then `/companion/hud/manifests/{style}.json` on first use or refresh. The versioned `companion-hud/v1` manifest describes each file's path, byte count and SHA-256. Downloads use `/companion/hud/assets/{sha256}/{path}` through the existing authenticated Companion prefix; the LAN API whitelist is unchanged. Non-HUD hosts return an empty catalog.
+
+Android verifies the manifest revision and every asset before committing a complete cache directory. Content-addressed objects avoid downloading unchanged shared files across styles and updates. Cache directories are scoped by PC origin; failed, corrupt or interrupted downloads retain the last complete revision. Old per-style revisions are pruned while retaining the current and previous complete versions. The renderer serves only files listed in the verified manifest and cannot make network requests. The native **Update / Retry** control refreshes the PC catalog and retries acquisition. The APK does not contain HUD artwork or a duplicated catalog.

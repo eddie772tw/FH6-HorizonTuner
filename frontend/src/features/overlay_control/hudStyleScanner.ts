@@ -1,3 +1,4 @@
+import mainInstruments from '../../../../hud_overlay/shared/companion-instruments.json';
 import { backendFetch } from '../../services/backend';
 import { DEFERRED_HUD_STYLES } from '../../../../hud_overlay/shared/deferred-styles.js';
 
@@ -26,34 +27,7 @@ export interface HudStyleFetchOptions {
 }
 
 export const HUD_DISPLAY_NAMES: Record<string, string> = {
-  vfd: 'Retro VFD',
-  ap1_rev_arc: 'AP1 Rev Arc · S2000',
-  drift: 'Drift HUD',
-  s650_hmi: 'Ford Mustang HMI',
-  lfa_center_ring: 'LFA Center Ring',
-  advanced: 'Advanced Racing Arc',
-  fm4ui: 'Forza Motorsport 4',
-  gt7: 'Gran Turismo 7',
-  mw2005: "NFS Most Wanted 2005",
-  nfs15: "Need for Speed 2015",
-  shift_tacho: 'Need for Speed Shift',
-  simple: 'Simple Gauge',
-  classic_jdm: 'Classic JDM Arcade',
-  r34_mfd: 'Skyline R34 MFD',
-  autometer_sportcom: 'AutoMeter Sport-Comp Monster',
-  greddy_trust: 'GReddy TRUST Sirius Tacho',
-  blitz_racing_meter: 'Blitz Racing Meter SD',
-  defi_advance: 'Defi Advance BF Tacho',
-  datsun_z_classic: 'Speedhut Datsun 240Z Classic',
-  datsun_z_modern: 'Speedhut Datsun 240Z Modern',
-  nfsu2: 'NFS Underground 2 Custom',
-  supra_trd: 'Toyota Supra MK4 TRD',
-  soarer_z20: 'Toyota Soarer Z20 VFD',
-  chaser_jzx100: 'Toyota Chaser JZX100',
-  altezza_trd: 'Toyota Altezza TRD',
-  mclaren_720s: 'McLaren 720S Folding Cluster',
-  ford_gt: 'Ford GT 2017 Race Cluster',
-  bmw_idrive7: 'BMW Live Cockpit iDrive 7',
+  ...mainInstruments,
   minimap_overlay: 'GPS Minimap Radar',
   touge_pacenotes: 'Touge Pacenotes & Prompts',
   telemetry_cards: 'Telemetry Data Cards',

@@ -1,3 +1,4 @@
+import { saveCompanionDraft } from './saveCompanionDraft';
 import { unavailableReadiness } from '../tuning/useWorkflowCalculation';
 import { useEffect, useRef, useState } from 'react';
 import { useCarParams } from '../../context/CarParamsContext';
@@ -46,7 +47,15 @@ export function CompanionHostBridge() {
       try {
         validateCompanionCommand(command, snapshot());
         const { car: current, session: tune } = latest.current;
-        if (command.kind === 'profile') {
+        if (command.kind === 'save') {
+          await saveCompanionDraft(command, current.carParams!, current.saveCarParams,
+            () => snapshot().profileKey,
+            (next, goal, season) => {
+              current.setCarParams(next);
+              tune.workflow.setGoal(goal);
+              tune.workflow.setSeason(season);
+            });
+        } else if (command.kind === 'profile') {
           const next = { ...current.carParams!, ...command.patch };
           // Remote edits share the desktop form's draft and explicit save lifecycle.
           // Applying synchronously avoids overwriting a concurrent desktop edit after I/O.

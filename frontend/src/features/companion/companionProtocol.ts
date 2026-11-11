@@ -28,7 +28,7 @@ export interface CompanionState {
 }
 export interface CompanionCommand {
   id: string;
-  kind: 'profile' | 'workflow' | 'measurement';
+  kind: 'profile' | 'workflow' | 'measurement' | 'save';
   carId: string;
   profileKey: string;
   patch?: Partial<CarParams>;
@@ -53,6 +53,12 @@ const numericLimits: Record<string, readonly [number, number]> = {
 export function validateCompanionCommand(command: CompanionCommand, snapshot: CompanionSnapshot): void {
   if (!snapshot.profile || command.carId !== snapshot.carId || command.profileKey !== snapshot.profileKey) {
     throw new Error('Vehicle parameters changed. Refresh before applying edits.');
+  }
+  if (command.kind === 'save') {
+    validateCompanionCommand({ ...command, kind: 'profile' }, snapshot);
+    validateCompanionCommand({ ...command, kind: 'workflow', step: undefined }, snapshot);
+    if (!command.goal || !command.season) throw new Error('A saved target requires goal and season.');
+    return;
   }
   if (command.kind === 'profile') {
     const entries = Object.entries(command.patch ?? {});

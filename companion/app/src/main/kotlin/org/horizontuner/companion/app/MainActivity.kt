@@ -1,6 +1,5 @@
 package org.horizontuner.companion.app
 
-import android.annotation.SuppressLint
 import android.Manifest
 import android.content.pm.PackageManager
 import android.content.Intent
@@ -8,15 +7,6 @@ import android.content.Context
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.view.ViewGroup
-import android.webkit.SslErrorHandler
-import android.webkit.JavascriptInterface
-import android.webkit.WebResourceError
-import android.webkit.WebResourceRequest
-import android.webkit.WebSettings
-import android.webkit.WebView
-import android.webkit.WebViewClient
-import android.webkit.CookieManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -35,10 +25,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
-import android.os.Handler
-import android.os.Looper
 import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
@@ -50,7 +37,6 @@ import java.util.concurrent.atomic.AtomicReference
 import org.horizontuner.companion.app.service.TelemetryForegroundService
 import org.horizontuner.companion.theme.HalfmoonTheme
 import org.horizontuner.companion.theme.VisualTheme
-import org.horizontuner.companion.theme.VisualThemeCodec
 import java.security.MessageDigest
 
 private const val COMPANION_PATH = "/companion/index.html"
@@ -140,46 +126,34 @@ private fun CompanionAppContent(
     var state by remember { mutableStateOf(WebConnectionState.DISCONNECTED) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var requestedUrl by remember { mutableStateOf<String?>(null) }
-    var webView by remember { mutableStateOf<WebView?>(null) }
+
     var showQrScanner by remember { mutableStateOf(false) }
     var manualLanExpanded by remember { mutableStateOf(false) }
     var offlinePage by remember { mutableStateOf(OfflinePage.CONNECTION) }
+    var telemetryDetail by remember { mutableStateOf(false) }
+    val activity = appContext as? android.app.Activity
+    DisposableEffect(offlinePage, telemetryDetail) {
+        val prior = activity?.requestedOrientation
+        activity?.requestedOrientation = if (offlinePage == OfflinePage.TELEMETRY && !telemetryDetail)
+            android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE else android.content.pm.ActivityInfo.SCREEN_ORIENTATION_FULL_SENSOR
+        onDispose { if (prior != null) activity?.requestedOrientation = prior }
+    }
     var desktopOnline by remember { mutableStateOf(false) }
     var backendOnline by remember { mutableStateOf(false) }
-    val nativeStatusJson = remember { AtomicReference(connectionStatusJson(state, mode, host, port, errorMessage, sessionToken.isNotBlank())) }
     val scope = rememberCoroutineScope()
     val connectionAttempt = remember { AtomicReference(UUID.randomUUID().toString()) }
-    val themeBootstrap = remember { AtomicReference("") }
+    var connectionGeneration by remember { mutableStateOf(0) }
     fun invalidateThemeCallbacks() {
         connectionAttempt.set(UUID.randomUUID().toString())
         themeSession.invalidate()
-        themeBootstrap.set("")
+        connectionGeneration++
+        requestedUrl = null
     }
-    fun bindTheme(view: WebView, endpoint: String) {
-        val origin = companionThemeOrigin(endpoint)
-        val lease = themeSession.attach(origin)
-        onThemeChange(themeSession.current)
-        themeBootstrap.set(themeSession.bootstrap(lease))
-        view.addJavascriptInterface(CompanionThemeJavascriptBridge(themeBootstrap) { raw, generation ->
-            if (sameDocument(Uri.parse(view.url ?: ""), requestedUrl) && themeSession.receive(raw, generation, lease)) {
-                onThemeChange(themeSession.current)
-                themeBootstrap.set(themeSession.bootstrap(lease))
-            }
-        }, "HorizonTunerCompanionTheme")
-    }
-    fun loadEndpoint(endpoint: String) {
-        requestedUrl = endpoint
-        webView?.let { view -> bindTheme(view, endpoint); view.tag = endpoint; view.loadUrl(endpoint) }
-    }
-    fun publishStatus(error: String? = errorMessage) {
-        nativeStatusJson.set(connectionStatusJson(state, mode, host, port, error, sessionToken.isNotBlank()))
-        webView?.let { publishConnectionStatus(it, state, mode, host, port, error, sessionToken.isNotBlank()) }
-    }
+    fun loadEndpoint(endpoint: String) { requestedUrl = endpoint }
 
     val cameraPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         if (granted) showQrScanner = true else {
             errorMessage = "需要相機權限才能掃描配對 QR 碼"
-            publishStatus(errorMessage)
         }
     }
 
@@ -199,18 +173,14 @@ private fun CompanionAppContent(
             state = WebConnectionState.ERROR
             offlinePage = OfflinePage.CONNECTION
             errorMessage = "請輸入有效的 HTTP(S) 主機與 1-65535 連接埠（僅限區域網路或本機位址）"
-            publishStatus(errorMessage)
         } else {
             loadEndpoint(endpoint)
             errorMessage = null
             state = WebConnectionState.LOADING
-            publishStatus(null)
         }
     }
     val disconnect: () -> Unit = {
         invalidateThemeCallbacks()
-        webView?.stopLoading()
-        webView?.loadUrl("about:blank")
         onServiceStop()
         requestedUrl = null
         errorMessage = null
@@ -218,7 +188,6 @@ private fun CompanionAppContent(
         desktopOnline = false
         backendOnline = false
         offlinePage = OfflinePage.TELEMETRY
-        publishStatus(null)
         Unit
     }
 
@@ -227,7 +196,6 @@ private fun CompanionAppContent(
         if (candidates.isEmpty() || token.isBlank()) {
             errorMessage = "請輸入有效的 LAN 主機、連接埠與配對碼"
             state = WebConnectionState.ERROR
-            publishStatus(errorMessage)
             return
         }
         invalidateThemeCallbacks()
@@ -237,7 +205,6 @@ private fun CompanionAppContent(
         port = targetPort.trim()
         state = WebConnectionState.LOADING
         errorMessage = "正在透過 LAN 配對…"
-        publishStatus(errorMessage)
         scope.launch {
             val result = withContext(Dispatchers.IO) {
                 var lastFailure: Throwable? = null
@@ -260,30 +227,19 @@ private fun CompanionAppContent(
                     deviceId = paired.deviceId
                     pairedHost = successfulHost
                     pairedPort = targetPort.trim()
-                    publishStatus(null)
                     preferences.edit()
                         .putString("session_token", sessionToken)
                         .putString("device_id", deviceId)
                         .putString("host", pairedHost)
                         .putString("port", pairedPort)
                         .apply()
-                    setSessionCookie(origin, sessionToken) { cookieSet ->
-                        if (connectionAttempt.get() != attempt) return@setSessionCookie
-                        if (!cookieSet) {
-                            state = WebConnectionState.ERROR
-                            errorMessage = "LAN 配對成功，但無法設定 WebView 工作階段"
-                            publishStatus(errorMessage)
-                        } else {
-                            loadEndpoint("$origin$COMPANION_PATH")
-                            errorMessage = null
-                            publishStatus(null)
-                        }
-                    }
+                    loadEndpoint("$origin$COMPANION_PATH")
+                    errorMessage = null
+
                 },
                 onFailure = { failure ->
                     state = WebConnectionState.ERROR
                     errorMessage = "LAN 配對失敗：${failure.message ?: "連線錯誤"}"
-                    publishStatus(errorMessage)
                 },
             )
         }
@@ -309,7 +265,6 @@ private fun CompanionAppContent(
         if (sessionToken.isBlank() || pairedHost.isBlank() || pairedPort.isBlank()) {
             errorMessage = "尚未完成 LAN 配對，請輸入配對碼並配對"
             state = WebConnectionState.ERROR
-            publishStatus(errorMessage)
             return
         }
         mode = ConnectionMode.LAN
@@ -319,25 +274,12 @@ private fun CompanionAppContent(
         if (origin == null) {
             errorMessage = "已儲存的 LAN 位址無效，請重新配對"
             state = WebConnectionState.ERROR
-            publishStatus(errorMessage)
             return
         }
         state = WebConnectionState.LOADING
         invalidateThemeCallbacks()
-        val attempt = connectionAttempt.get()
         errorMessage = null
-        publishStatus(null)
-        setSessionCookie(origin, sessionToken) { cookieSet ->
-            if (connectionAttempt.get() != attempt) return@setSessionCookie
-            if (!cookieSet) {
-                state = WebConnectionState.ERROR
-                errorMessage = "無法恢復 LAN 工作階段，請重新配對"
-                publishStatus(errorMessage)
-            } else {
-                val endpoint = "$origin$COMPANION_PATH"
-                loadEndpoint(endpoint)
-            }
-        }
+        loadEndpoint("$origin$COMPANION_PATH")
     }
 
     fun selectMode(value: String) {
@@ -358,7 +300,6 @@ private fun CompanionAppContent(
             host = pairedHost
             port = pairedPort
         }
-        publishStatus()
     }
 
     BackHandler(enabled = requestedUrl == null && offlinePage == OfflinePage.CONNECTION) {
@@ -378,19 +319,31 @@ private fun CompanionAppContent(
         }
     }
 
-    LaunchedEffect(offlinePage, state, webView) {
-        if (state == WebConnectionState.CONNECTED && offlinePage != OfflinePage.CONNECTION) {
-            webView?.let { publishNativeTab(it, offlinePage) }
-        }
+    val endpoint = requestedUrl
+    val nativeSession = remember(endpoint, sessionToken, mode, connectionGeneration) {
+        endpoint?.let { NativeSession(companionThemeOrigin(it), if (mode == ConnectionMode.LAN) sessionToken else "") }
     }
-
-    LaunchedEffect(requestedUrl, webView) {
-        val endpoint = requestedUrl
-        val view = webView
-        if (endpoint != null && view != null && view.tag != endpoint) {
-            bindTheme(view, endpoint)
-            view.tag = endpoint
-            view.loadUrl(endpoint)
+    DisposableEffect(nativeSession) {
+        onDispose { nativeSession?.scope?.coroutineContext?.get(kotlinx.coroutines.Job)?.cancel() }
+    }
+    LaunchedEffect(nativeSession) {
+        val session = nativeSession ?: return@LaunchedEffect
+        val lease = themeSession.attach(session.origin)
+        onThemeChange(themeSession.current)
+        while (true) {
+            session.poll()
+            backendOnline = session.online
+            desktopOnline = session.hostOnline
+            if (session.online) {
+                val firstConnection = state == WebConnectionState.LOADING
+                state = WebConnectionState.CONNECTED
+                errorMessage = null
+                if (firstConnection) { offlinePage = OfflinePage.TELEMETRY; onServiceStart() }
+                session.state?.optJSONObject("visualTheme")?.let {
+                    if (themeSession.receive(it.toString(), lease.generation, lease)) onThemeChange(themeSession.current)
+                }
+            } else { errorMessage = session.connectionError; if (state != WebConnectionState.LOADING) state = WebConnectionState.ERROR }
+            kotlinx.coroutines.delay(1000)
         }
     }
 
@@ -408,11 +361,11 @@ private fun CompanionAppContent(
             backendOnline = backendOnline,
             error = errorMessage,
             manualLanExpanded = manualLanExpanded,
-            webConnected = requestedUrl != null && state == WebConnectionState.CONNECTED,
+            connected = requestedUrl != null && state == WebConnectionState.CONNECTED,
             isDevMode = BuildConfig.DEBUG,
         ),
         actions = CompanionShellActions(
-            selectPage = { offlinePage = it },
+            selectPage = { offlinePage = it; telemetryDetail = false },
             selectMode = { selectMode(it.name) },
             setHost = { host = it },
             setPort = { port = it.filter(Char::isDigit).take(5) },
@@ -425,33 +378,7 @@ private fun CompanionAppContent(
             toggleManualLan = { manualLanExpanded = !manualLanExpanded },
         ),
     ) {
-        if (requestedUrl != null || webView != null) AndroidView(
-            modifier = Modifier.fillMaxSize(),
-            factory = { context ->
-                WebView(context).also { view ->
-                    view.addJavascriptInterface(CompanionJavascriptBridge(nativeStatusJson, connect, disconnect, ::selectMode, ::loadLanSession, ::reconnectLan, ::requestQrScanner, { desktopOnline = it }, { backendOnline = it }), "HorizonTunerCompanion")
-                    configureWebView(view, {
-                        state = WebConnectionState.CONNECTED
-                        errorMessage = null
-                        if (offlinePage == OfflinePage.CONNECTION) offlinePage = OfflinePage.TELEMETRY
-                        publishStatus(null)
-                        onServiceStart()
-                    }, { message ->
-                        invalidateThemeCallbacks()
-                        state = WebConnectionState.ERROR
-                        desktopOnline = false
-                        backendOnline = false
-                        offlinePage = OfflinePage.CONNECTION
-                        errorMessage = message
-                        requestedUrl = null
-                        publishStatus(message)
-                        onServiceStop()
-                    }, { requestedUrl }, { })
-                    webView = view
-                }
-            },
-            update = { webView = it },
-        )
+        nativeSession?.let { NativePages(offlinePage, it, if (mode == ConnectionMode.LAN) sessionToken else "", telemetryDetail) { detail -> telemetryDetail = detail } }
     }
 
     if (showQrScanner) {
@@ -468,13 +395,7 @@ private fun CompanionAppContent(
     DisposableEffect(Unit) {
         onDispose {
             invalidateThemeCallbacks()
-            webView?.let { view ->
-                onServiceStop()
-                view.stopLoading()
-                view.webViewClient = WebViewClient()
-                (view.parent as? ViewGroup)?.removeView(view)
-                view.destroy()
-            }
+            onServiceStop()
         }
     }
 }
@@ -483,59 +404,10 @@ internal enum class WebConnectionState { DISCONNECTED, LOADING, CONNECTED, ERROR
 internal enum class ConnectionMode { LAN, USB }
 internal enum class OfflinePage(val label: String) { TELEMETRY("Telemetry"), TUNING("Tuning"), CONNECTION("Connection") }
 
-private class CompanionJavascriptBridge(
-    private val status: AtomicReference<String>,
-    private val onConnect: (String, String) -> Unit,
-    private val onDisconnect: () -> Unit,
-    private val onSetMode: (String) -> Unit,
-    private val onPairLan: (String, String, String) -> Unit,
-    private val onConnectLan: () -> Unit,
-    private val onScanLanQr: () -> Unit,
-    private val onDesktopStatus: (Boolean) -> Unit,
-    private val onBackendStatus: (Boolean) -> Unit,
-) {
-    @JavascriptInterface fun connectionStatus(): String = status.get()
-    @JavascriptInterface fun connect(host: String, port: String) { Handler(Looper.getMainLooper()).post { onConnect(host, port) } }
-    @JavascriptInterface fun disconnect() { Handler(Looper.getMainLooper()).post { onDisconnect() } }
-    @JavascriptInterface fun setMode(mode: String) { Handler(Looper.getMainLooper()).post { onSetMode(mode) } }
-    @JavascriptInterface fun pairLan(host: String, port: String, token: String) { Handler(Looper.getMainLooper()).post { onPairLan(host, port, token) } }
-    @JavascriptInterface fun connectLan() { Handler(Looper.getMainLooper()).post { onConnectLan() } }
-    @JavascriptInterface fun scanLanQr() { Handler(Looper.getMainLooper()).post { onScanLanQr() } }
-    @JavascriptInterface fun updateDesktopStatus(online: Boolean) { Handler(Looper.getMainLooper()).post { onDesktopStatus(online) } }
-    @JavascriptInterface fun updateBackendStatus(online: Boolean) { Handler(Looper.getMainLooper()).post { onBackendStatus(online) } }
-}
-
-/** Receive-only, size-bounded theme bridge; Compose and cache mutation run on the main thread. */
-private class CompanionThemeJavascriptBridge(
-    private val bootstrap: AtomicReference<String>,
-    private val receive: (String, String) -> Unit,
-) {
-    @JavascriptInterface fun themeBootstrap(): String = bootstrap.get()
-    @JavascriptInterface fun updateVisualTheme(raw: String, generation: String) {
-        if (raw.length > VisualThemeCodec.MAX_BYTES || generation.length != 36) return
-        val visual = VisualThemeCodec.decode(raw) ?: return
-        val validated = VisualThemeCodec.encode(visual)
-        Handler(Looper.getMainLooper()).post { receive(validated, generation) }
-    }
-}
-
 private fun companionThemeOrigin(endpoint: String): String {
     val uri = Uri.parse(endpoint)
     val port = if ((uri.scheme == "http" && uri.port == 80) || (uri.scheme == "https" && uri.port == 443)) "" else ":${uri.port}"
     return "${uri.scheme}://${uri.host?.lowercase()}$port"
-}
-
-private fun publishNativeTab(view: WebView, page: OfflinePage) {
-    val tab = if (page == OfflinePage.TUNING) "tuning" else "telemetry"
-    view.post { view.evaluateJavascript("window.dispatchEvent(new CustomEvent('companion-native-tab', {detail:'$tab'}))", null) }
-}
-
-private fun connectionStatusJson(state: WebConnectionState, mode: ConnectionMode, host: String, port: String, error: String?, paired: Boolean): String =
-    JSONObject().put("state", state.name).put("mode", mode.name).put("paired", paired).put("host", host).put("port", port).put("error", error).toString()
-
-private fun publishConnectionStatus(view: WebView, state: WebConnectionState, mode: ConnectionMode, host: String, port: String, error: String?, paired: Boolean) {
-    val json = connectionStatusJson(state, mode, host, port, error, paired)
-    view.post { view.evaluateJavascript("window.dispatchEvent(new CustomEvent('companion-native-connection', {detail:$json}))", null) }
 }
 
 private fun isPrivateOrLoopbackHost(host: String): Boolean {
@@ -651,76 +523,4 @@ private fun performLanPair(origin: String, pairingToken: String, priorDeviceId: 
     } finally {
         connection.disconnect()
     }
-}
-
-private fun setSessionCookie(origin: String, sessionToken: String, complete: (Boolean) -> Unit) {
-    val manager = CookieManager.getInstance()
-    manager.setAcceptCookie(true)
-    val cookie = "companion_session=$sessionToken; Path=/; HttpOnly; SameSite=Strict"
-    manager.setCookie(origin, cookie) { accepted ->
-        manager.flush()
-        Handler(Looper.getMainLooper()).post { complete(accepted) }
-    }
-}
-
-@SuppressLint("SetJavaScriptEnabled")
-private fun configureWebView(view: WebView, onPageLoaded: () -> Unit, onLoadError: (String) -> Unit, requestedUrl: () -> String?, onLoadStarted: () -> Unit) {
-    view.keepScreenOn = true
-    if ((view.context.applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0) {
-        WebView.setWebContentsDebuggingEnabled(true)
-    }
-    view.settings.apply {
-        javaScriptEnabled = true
-        domStorageEnabled = true
-        allowFileAccess = false
-        allowContentAccess = false
-        setSupportMultipleWindows(false)
-        javaScriptCanOpenWindowsAutomatically = false
-        mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
-    }
-    var mainFrameLoadFailed = false
-    view.webViewClient = object : WebViewClient() {
-        override fun onPageStarted(view: WebView, url: String, favicon: android.graphics.Bitmap?) {
-            if (sameDocument(Uri.parse(url), requestedUrl())) {
-                mainFrameLoadFailed = false
-                onLoadStarted()
-            }
-        }
-
-        override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean = !sameOrigin(request.url, requestedUrl())
-
-        override fun onPageFinished(view: WebView, url: String) {
-            if (!mainFrameLoadFailed && sameDocument(Uri.parse(url), requestedUrl())) onPageLoaded()
-        }
-
-        override fun onReceivedError(view: WebView, request: WebResourceRequest, error: WebResourceError) {
-            if (request.isForMainFrame && sameDocument(request.url, requestedUrl())) {
-                mainFrameLoadFailed = true
-                onLoadError("無法載入 PC Companion：${error.description}")
-            }
-        }
-
-        override fun onReceivedHttpError(view: WebView, request: WebResourceRequest, response: android.webkit.WebResourceResponse) {
-            if (request.isForMainFrame && sameDocument(request.url, requestedUrl())) {
-                mainFrameLoadFailed = true
-                onLoadError("PC Companion 回傳 HTTP ${response.statusCode}")
-            }
-        }
-
-        override fun onReceivedSslError(view: WebView, handler: SslErrorHandler, error: android.net.http.SslError) {
-            handler.cancel()
-            if (sameDocument(Uri.parse(error.url), requestedUrl())) onLoadError("TLS 憑證驗證失敗")
-        }
-    }
-}
-
-private fun sameOrigin(candidate: Uri, expectedUrl: String?): Boolean {
-    val expected = expectedUrl?.let(Uri::parse) ?: return false
-    return candidate.scheme == expected.scheme && candidate.host == expected.host && candidate.port == expected.port
-}
-
-private fun sameDocument(candidate: Uri, expectedUrl: String?): Boolean {
-    val expected = expectedUrl?.let(Uri::parse) ?: return false
-    return sameOrigin(candidate, expectedUrl) && candidate.path == expected.path &&
-        candidate.query == expected.query && candidate.fragment == expected.fragment
 }

@@ -19,6 +19,8 @@
         android:supportsRtl="true"
         android:theme="@android:style/Theme.Material.NoActionBar">
 
+        <property android:name="android.window.PROPERTY_COMPAT_ALLOW_RESTRICTED_RESIZABILITY" android:value="true" />
+
         <activity
             android:name="org.horizontuner.companion.app.MainActivity"
             android:exported="true"

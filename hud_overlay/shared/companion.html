@@ -1,0 +1,8 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<style>html,body,iframe{margin:0;width:100%;height:100%;border:0;overflow:hidden;background:transparent}</style></head>
+<body><iframe id="instrument" title="主儀表"></iframe><script type="module">
+import { mountCompanionInstrument } from './companion-renderer.js';
+const catalog = await (await fetch('./companion-instruments.json')).json();
+mountCompanionInstrument(document.getElementById('instrument'), catalog, new URLSearchParams(location.search).get('style'));
+</script></body></html>

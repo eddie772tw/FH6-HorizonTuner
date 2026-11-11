@@ -125,7 +125,7 @@ Start with the live dashboard, then use Full's tuning workspace to configure the
 | EV | Single/multi-speed measurement, saved evidence replay and final-drive previews. Optimal shift points, attainable top-speed prediction and some vehicle acceptance work remain pending. [EV model](docs/calibration/ev-foundation.md) · [Evidence lifecycle](docs/tuning/issue-435-ev-completeness.md). |
 | CVT | Capability selection, capture and replay contracts exist. Applicable recommendations, final-drive solving and ratio previews are not available. [CVT notes](docs/tuning/cvt-foundation.md). |
 | MoTeC export | CSV, i2 XML templates and experimental `.ld`/`.ldx` ZIP export. Native-format compatibility still awaits acceptance in MoTeC i2. [Race analysis guide](docs/guides/race-analysis.md). |
-| Android Companion | Shares telemetry cards and the tuning workflow. Android HUDs are deferred; native appearance and device experience still have pending acceptance items. [Implementation boundary](docs/architecture/companion-implementation-boundary.md). |
+| Android Companion | Native connection, tuning and telemetry pages, landscape single-card paging, rotatable details and selectable main instruments downloaded and cached from the PC-owned catalog. Vehicle parameters and targets can be saved from any PC workspace; physical-device acceptance remains pending. [Implementation boundary](docs/architecture/companion-implementation-boundary.md). |
 
 <a id="readme-documentation"></a>
 
@@ -194,7 +194,7 @@ backend-rust/src/    Telemetry, storage, APIs, MCP and production tuning formula
 frontend/src/        React workspaces, workflow and presentation
 frontend/src-tauri/  Desktop windows, backend lifecycle and packaging
 hud_overlay/        Windows HUD renderers and assets
-companion/          Android connection shell and WebView
+companion/          Android native pages and local main-instrument renderer
 lang/               Translation dictionaries
 docs/               Guides, contracts and calibration records
 scripts/            Build, release and maintenance tools
