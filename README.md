@@ -27,6 +27,10 @@
   <a href="#readme-contributing">參與貢獻</a>
 </p>
 
+<p align="center">
+  <a href="https://forum.gamer.com.tw/Co.php?bsn=07697&amp;sn=27644">論壇連結</a>
+</p>
+
 FH6-HorizonTuner 透過遊戲的 **Data Out UDP 遙測**接收車輛資料，整合即時儀表、四步調校流程、賽事紀錄與分析。Windows 版另提供可自訂的透明 HUD 覆蓋層，使用獨立視窗呈現，不注入遊戲程序。
 
 桌面介面使用 Tauri、React 與 TypeScript；遙測接收、資料儲存與調校計算由 Rust 後端負責。
