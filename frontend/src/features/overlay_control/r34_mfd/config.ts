@@ -8,12 +8,13 @@ export const R34_MFD_MODES = [
 ] as const;
 export type R34MfdMode = (typeof R34_MFD_MODES)[number]['value'];
 export type R34Lighting = 'day' | 'night';
-export function normalizeR34MfdConfig<T extends { hudStyle?: string; r34MfdMode?: unknown; r34ShowCluster?: unknown; r34Lighting?: unknown }>(config: T): T {
+export function normalizeR34MfdConfig<T extends { hudStyle?: string; r34MfdMode?: unknown; r34ShowCluster?: unknown; r34ShowMfd?: unknown; r34Lighting?: unknown }>(config: T): T {
   if (config.hudStyle !== R34_MFD_STYLE_ID) return config;
   return {
     ...config,
     r34MfdMode: R34_MFD_MODES.some(mode => mode.value === config.r34MfdMode) ? config.r34MfdMode : 'single',
     r34ShowCluster: typeof config.r34ShowCluster === 'boolean' ? config.r34ShowCluster : true,
+    r34ShowMfd: typeof config.r34ShowMfd === 'boolean' ? config.r34ShowMfd : true,
     r34Lighting: config.r34Lighting === 'day' ? 'day' : 'night',
   };
 }

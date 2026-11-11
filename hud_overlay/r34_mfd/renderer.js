@@ -83,7 +83,9 @@
         var settings = M.normalizeConfig(config), nodes = this.nodes;
         nodes.r34Container.dataset.lighting = settings.r34Lighting;
         nodes.r34Container.dataset.cluster = settings.r34ShowCluster ? 'shown' : 'hidden';
+        nodes.r34Container.dataset.mfd = settings.r34ShowMfd ? 'shown' : 'hidden';
         nodes.r34Cluster.hidden = !settings.r34ShowCluster;
+        nodes.r34Mfd.hidden = !settings.r34ShowMfd;
         if (this.mode !== settings.r34MfdMode) {
             this.mode = settings.r34MfdMode;
             for (var i = 0; i < this.pages.length; i++) this.pages[i].hidden = this.pages[i].dataset.mode !== this.mode;
@@ -94,7 +96,6 @@
         nodes.r34Container.hidden = e.showGauge === false;
         // The full viewport is stationary; each instrument owns its independent anchor.
         nodes.r34Container.style.display = e.showGauge === false ? 'none' : 'block';
-        nodes.r34Mfd.hidden = e.showCenterInfo === false;
         nodes.r34TachFace.hidden = e.showRPM === false;
         nodes.r34TachNeedle.style.display = e.showRPM === false ? 'none' : '';
         nodes.r34SpeedFace.style.display = e.showSpeed === false ? 'none' : '';
@@ -122,6 +123,8 @@
         var physicalSpeed = view.speedKmh; // Analog face remains fixed kmh; LCD uses selected units.
         n.r34SpeedNeedle.setAttribute('transform', 'translate(108 108) rotate(' + I.speedAngle(physicalSpeed) + ')');
         n.r34SpeedNeedle.style.visibility = view.speed === null ? 'hidden' : 'visible';
+        var isForwardGear = typeof view.gear === 'string' && /^[1-9][0-9]?$/.test(view.gear);
+        if (n.r34GearPrefix) n.r34GearPrefix.textContent = isForwardGear ? 'G' : '';
         this.text('r34Gear', view.gear); this.text('r34DigitalSpeed', LCD.number(view.speed));
         this.text('r34DigitalSpeedUnit', view.speedUnit);
         this.drawLcd(view, e);
@@ -231,4 +234,4 @@
         }
     };
     root.R34Renderer = Renderer;
-})(window);
+})(typeof window !== 'undefined' ? window : globalThis);

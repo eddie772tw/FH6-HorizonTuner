@@ -137,6 +137,7 @@
     "s650HmiOffsetY": 60,
     "r34MfdMode": "single",
     "r34ShowCluster": true,
+    "r34ShowMfd": true,
     "r34Lighting": "night",
     "gamepadLayout": "xbox",
         "gamepadOffsetX": 0,
