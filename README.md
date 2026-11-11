@@ -10,6 +10,7 @@
   <a href="https://github.com/eddie772tw/FH6-HorizonTuner/actions/workflows/ci.yml"><img src="https://github.com/eddie772tw/FH6-HorizonTuner/actions/workflows/ci.yml/badge.svg?branch=main" alt="main 分支 CI 狀態"></a>
   <a href="https://github.com/eddie772tw/FH6-HorizonTuner/releases"><img src="https://img.shields.io/github/downloads/eddie772tw/FH6-HorizonTuner/total" alt="GitHub Release 下載次數"></a>
   <a href="LICENSE"><img src="https://img.shields.io/github/license/eddie772tw/FH6-HorizonTuner" alt="MIT 授權"></a>
+  <a href="https://hub.xerj.org/contributors/eddie772tw"><img src="https://hub.xerj.org/contributors/eddie772tw/badge.svg" alt="XERJ Corpus Hub contributor"></a>
 </p>
 
 <p align="center">

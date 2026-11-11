@@ -1,5 +1,12 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-11-11 / Companion 停用邊界審查修正（Codex as Codex）
+
+- **Scope**：PR #650；採用 `pr-review-evaluation`、`pr-author-maintainer`、`modular-refactoring`、`halfmoon-design-system`、`portable-release-validation`。
+- **Learning**：設定開關必須由後端封鎖既有 session 的 LAN HTTP／WebSocket，不能只關閉新配對與隱藏 UI。LAN stream 需在停用後終止；USB 探測、連線與停用清理共用 operation lock，避免先檢查開關後等待鎖而在停用完成後重啟 ADB。設定停用後由後端最佳努力清理 ADB，前端不再重複送出非序列化 kill。
+- **Evidence**：`backend-rust/tests/companion_lan.rs` 新增已配對裝置停用後 HTTP 拒絕、既有 WebSocket 中止與新握手拒絕測試。Windows bundled ADB 的實機清理仍須 Windows 驗收，Linux 測試不能證明硬體結果。
+- **Release**：v1.8.3 已發行且使用 runtime `11.45.25`；main 沿用相同 runtime，下一版必須提高版本並同步五處版本契約。Release Packaging Test 的合成資產與測試簽章不能取代正式 Windows portable／sidecar smoke test。
+
 ## 2026-11-10 / 連動 APP (Companion) ADB 常駐行程解耦、生命週期管控與雙層開關防護（Sentinel as Antigravity）
 
 - **Scope**：徹底解決連動 APP 缺乏有效開關導致 ADB 於啟動時自動常駐與搜尋裝置之問題。採用 `modular-refactoring`、`halfmoon-design-system`、`pr-author-maintainer`、`ui-visual-review`。

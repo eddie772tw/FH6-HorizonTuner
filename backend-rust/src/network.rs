@@ -80,6 +80,9 @@ pub trait Backend: Send + Sync + 'static {
         vec![self.initial_overlay()]
     }
     fn client_delta(&self, channel: &str, delta: i64);
+    fn companion_enabled(&self) -> bool {
+        true
+    }
 }
 pub fn router(backend: Arc<dyn Backend>) -> Router {
     // Capture the server-owned backend separately from request extractors. This
@@ -191,7 +194,7 @@ async fn lan_http(
     companion: Arc<CompanionService>,
     request: Request<Body>,
 ) -> Response {
-    if !lan_host_and_origin_allowed(request.headers(), &companion) {
+    if !backend.companion_enabled() || !lan_host_and_origin_allowed(request.headers(), &companion) {
         return StatusCode::FORBIDDEN.into_response();
     }
     let path = request.uri().path();
@@ -210,13 +213,24 @@ async fn lan_ws(
     headers: HeaderMap,
     upgrade: WebSocketUpgrade,
 ) -> Response {
-    if !lan_host_and_origin_allowed(&headers, &companion) {
+    if !backend.companion_enabled() || !lan_host_and_origin_allowed(&headers, &companion) {
         return StatusCode::FORBIDDEN.into_response();
     }
     if !lan_session(&headers, &companion) {
         return StatusCode::UNAUTHORIZED.into_response();
     }
-    upgrade.on_upgrade(move |socket| socket_loop(socket, backend, "json"))
+    upgrade.on_upgrade(move |socket| async move {
+        let stream = socket_loop(socket, backend.clone(), "json");
+        tokio::pin!(stream);
+        loop {
+            tokio::select! {
+                _ = &mut stream => break,
+                _ = tokio::time::sleep(Duration::from_millis(100)) => {
+                    if !backend.companion_enabled() { break; }
+                }
+            }
+        }
+    })
 }
 /// Validate the incoming HTTP Host header to defend against DNS rebinding attacks.
 /// Requests targeting the loopback router must originate from trusted local hosts.

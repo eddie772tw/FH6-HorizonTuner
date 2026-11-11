@@ -75,11 +75,6 @@ export default function CompanionUsbControls() {
           setDevices([]);
           setSelected('');
           setForwarded(null);
-          try {
-            await backendFetch('/api/companion/usb/kill', { method: 'POST' });
-          } catch {
-            // best-effort kill
-          }
         }
       }}
     />
