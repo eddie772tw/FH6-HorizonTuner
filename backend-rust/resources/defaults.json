@@ -7,6 +7,8 @@
     "mcp_enabled": true,
     "mcp_allow_live": true,
     "mcp_max_downsample": 500,
+    "companion_enabled": true,
+    "companion_usb_enabled": false,
     "language": "zh-tw",
     "dyno_test_gear": 4,
     "dyno_filter_slip": true,

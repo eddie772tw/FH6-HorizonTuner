@@ -1977,5 +1977,16 @@
     "Sprint": "Sprint",
     "In-Game Timing": "In-Game Timing",
     "Calculated Timing": "Calculated Timing",
-    "{valid} of {total} samples valid": "{valid} of {total} samples valid"
+    "{valid} of {total} samples valid": "{valid} of {total} samples valid",
+    "Enable Companion APP": "Enable Companion APP",
+    "Allow mobile devices to connect over LAN or USB to display telemetry and control tuning workflow.": "Allow mobile devices to connect over LAN or USB to display telemetry and control tuning workflow.",
+    "Companion APP is currently disabled. Enable the switch above to connect mobile devices.": "Companion APP is currently disabled. Enable the switch above to connect mobile devices.",
+    "Enable USB connection (ADB)": "Enable USB connection (ADB)",
+    "Allows connecting Android devices over USB using ADB. Requires USB debugging on the device.": "Allows connecting Android devices over USB using ADB. Requires USB debugging on the device.",
+    "USB connection is disabled. Enable it above to scan for Android devices.": "USB connection is disabled. Enable it above to scan for Android devices.",
+    "Manage USB devices and background daemon": "Manage USB devices and background daemon",
+    "Stop ADB daemon": "Stop ADB daemon",
+    "Stopping…": "Stopping…",
+    "Terminate background ADB process to release ports and resources": "Terminate background ADB process to release ports and resources",
+    "Failed to stop ADB daemon.": "Failed to stop ADB daemon."
 }

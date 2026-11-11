@@ -33,6 +33,8 @@ export interface AppSettings {
   forward_telemetry_enabled?: boolean;
   forward_telemetry_host?: string;
   forward_telemetry_port?: number;
+  companion_enabled?: boolean;
+  companion_usb_enabled?: boolean;
   auto_check_updates?: boolean;
 }
 
@@ -103,7 +105,9 @@ const defaultSettings: AppSettings = {
   telemetry_port: 8000,
   forward_telemetry_enabled: false,
   forward_telemetry_host: '127.0.0.1',
-  forward_telemetry_port: 5300
+  forward_telemetry_port: 5300,
+  companion_enabled: true,
+  companion_usb_enabled: false
 };
 
 export function mergeSettingsUpdate(current: AppSettings, updates: Partial<AppSettings> | { units: Partial<UnitSettings> }): AppSettings {
@@ -268,13 +272,10 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         if (data && !data.error) {
           // Merge defaults to handle cases where units might be missing or partially set
           const merged: AppSettings = {
-            dyno_recording: data.dyno_recording ?? defaultSettings.dyno_recording,
-            race_recording: data.race_recording ?? defaultSettings.race_recording,
-            developer_tuning_enabled: data.developer_tuning_enabled ?? defaultSettings.developer_tuning_enabled,
-            language: data.language ?? defaultSettings.language,
-            dyno_test_gear: data.dyno_test_gear ?? defaultSettings.dyno_test_gear,
-            dyno_filter_slip: data.dyno_filter_slip ?? defaultSettings.dyno_filter_slip,
-            dyno_filter_transients: data.dyno_filter_transients ?? defaultSettings.dyno_filter_transients,
+            ...defaultSettings,
+            ...Object.fromEntries(
+              Object.entries(data).filter(([_, v]) => v !== undefined && v !== null)
+            ),
             units: normalizeGeneralUnitSettings({
               ...defaultUnits,
               ...(data.units || {})

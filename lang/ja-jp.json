@@ -1811,5 +1811,16 @@
     "Sprint": "スプリント",
     "In-Game Timing": "ゲーム内計測",
     "Calculated Timing": "計算値ラップ計測",
-    "{valid} of {total} samples valid": "{total} サンプル中 {valid} サンプル有効"
+    "{valid} of {total} samples valid": "{total} サンプル中 {valid} サンプル有効",
+    "Enable Companion APP": "Companion APP を有効にする",
+    "Allow mobile devices to connect over LAN or USB to display telemetry and control tuning workflow.": "モバイルデバイスが LAN または USB 経由で接続し、テレメトリの表示やチューニングワークフローの操作を許可します。",
+    "Companion APP is currently disabled. Enable the switch above to connect mobile devices.": "Companion APP は現在無効です。モバイルデバイスを接続するには上のスイッチを有効にしてください。",
+    "Enable USB connection (ADB)": "USB 接続 (ADB) を有効にする",
+    "Allows connecting Android devices over USB using ADB. Requires USB debugging on the device.": "ADB を使用して USB 経由で Android デバイスを接続できるようにします。端末側で USB デバッグを有効にする必要があります。",
+    "USB connection is disabled. Enable it above to scan for Android devices.": "USB 接続は無効です。Android デバイスをスキャンするには上のスイッチを有効にしてください。",
+    "Manage USB devices and background daemon": "USB デバイスとバックグラウンドデーモンの管理",
+    "Stop ADB daemon": "ADB デーモンを停止",
+    "Stopping…": "停止中…",
+    "Terminate background ADB process to release ports and resources": "ポートとリソースを解放するためにバックグラウンド ADB プロセスを終了します",
+    "Failed to stop ADB daemon.": "ADB デーモンの停止に失敗しました。"
 }

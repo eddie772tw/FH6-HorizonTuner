@@ -49,6 +49,8 @@ pub fn merge_settings(settings: &Value, patch: &Value) -> ApiResult<Value> {
         "mcp_enabled",
         "mcp_allow_live",
         "forward_telemetry_enabled",
+        "companion_enabled",
+        "companion_usb_enabled",
     ] {
         if let Some(v) = patch.get(key) {
             next[key] = json!(truthy(v));

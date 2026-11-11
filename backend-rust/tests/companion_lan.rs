@@ -356,3 +356,192 @@ async fn general_router_enforces_host_validation_against_dns_rebinding() {
     let res = router.oneshot(no_host).await.unwrap();
     assert_eq!(res.status(), StatusCode::FORBIDDEN);
 }
+
+#[tokio::test]
+async fn companion_setting_gates_block_disabled_subsystems() {
+    let root = tempfile::tempdir().unwrap();
+    let app = App::new(root.path()).unwrap();
+    let router = network::router(app.clone());
+
+    // 1. By default, companion_usb_enabled is false -> /api/companion/usb/devices must return 403
+    let usb_req = Request::builder()
+        .method(Method::GET)
+        .uri("/api/companion/usb/devices")
+        .header("host", "127.0.0.1:8001")
+        .body(Body::empty())
+        .unwrap();
+    let res = router.clone().oneshot(usb_req).await.unwrap();
+    assert_eq!(res.status(), StatusCode::FORBIDDEN);
+
+    // 2. /api/companion/status reports enabled: true by default
+    let status_req = Request::builder()
+        .method(Method::GET)
+        .uri("/api/companion/status")
+        .header("host", "127.0.0.1:8001")
+        .body(Body::empty())
+        .unwrap();
+    let res = router.clone().oneshot(status_req).await.unwrap();
+    assert_eq!(res.status(), StatusCode::OK);
+    let body = to_bytes(res.into_body(), 8192).await.unwrap();
+    let status: Value = serde_json::from_slice(&body).unwrap();
+    assert_eq!(status["enabled"], true);
+
+    // 3. Disable companion_enabled in settings
+    let update_req = Request::builder()
+        .method(Method::POST)
+        .uri("/api/settings")
+        .header("host", "127.0.0.1:8001")
+        .body(Body::from(json!({"companion_enabled": false}).to_string()))
+        .unwrap();
+    let res = router.clone().oneshot(update_req).await.unwrap();
+    assert_eq!(res.status(), StatusCode::OK);
+
+    // 4. Now /api/companion/lan/pairing returns 403
+    let pair_req = Request::builder()
+        .method(Method::POST)
+        .uri("/api/companion/lan/pairing")
+        .header("host", "127.0.0.1:8001")
+        .body(Body::empty())
+        .unwrap();
+    let res = router.clone().oneshot(pair_req).await.unwrap();
+    assert_eq!(res.status(), StatusCode::FORBIDDEN);
+
+    // 5. /api/companion/status reports enabled: false
+    let status_req2 = Request::builder()
+        .method(Method::GET)
+        .uri("/api/companion/status")
+        .header("host", "127.0.0.1:8001")
+        .body(Body::empty())
+        .unwrap();
+    let res = router.oneshot(status_req2).await.unwrap();
+    assert_eq!(res.status(), StatusCode::OK);
+    let body2 = to_bytes(res.into_body(), 8192).await.unwrap();
+    let status2: Value = serde_json::from_slice(&body2).unwrap();
+    assert_eq!(status2["enabled"], false);
+}
+
+#[tokio::test]
+async fn disabling_companion_blocks_previously_paired_lan_and_loopback_controls() {
+    let root = tempfile::tempdir().unwrap();
+    let app = App::new(root.path()).unwrap();
+    app.companion.set_lan_port(Some(8002));
+    let token = app.companion.generate_qr_payload(Some(8002)).token;
+    let (_, session) = app
+        .companion
+        .pair(&token, "tablet", "tablet-disabled")
+        .unwrap();
+    let local = network::router(app.clone());
+    let disable = Request::builder()
+        .method(Method::POST)
+        .uri("/api/settings")
+        .header("host", "127.0.0.1:8001")
+        .body(Body::from(json!({"companion_enabled":false}).to_string()))
+        .unwrap();
+    assert_eq!(
+        local.clone().oneshot(disable).await.unwrap().status(),
+        StatusCode::OK
+    );
+    let lan = network::lan_router(app.clone(), app.companion.clone());
+    for (method, path) in [
+        (Method::GET, "/api/companion/workflow"),
+        (Method::POST, "/api/companion/commands"),
+        (Method::GET, "/companion/index.html"),
+    ] {
+        assert_eq!(
+            lan.clone()
+                .oneshot(request(
+                    method.clone(),
+                    path,
+                    Some(&session),
+                    None,
+                    Body::empty()
+                ))
+                .await
+                .unwrap()
+                .status(),
+            StatusCode::FORBIDDEN
+        );
+        let req = Request::builder()
+            .method(method)
+            .uri(path)
+            .header("host", "127.0.0.1:8001")
+            .body(Body::empty())
+            .unwrap();
+        assert_eq!(
+            local.clone().oneshot(req).await.unwrap().status(),
+            StatusCode::FORBIDDEN
+        );
+    }
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn disabling_companion_closes_existing_lan_telemetry_and_rejects_new_streams() {
+    use tungstenite::{client::IntoClientRequest, Message};
+    let root = tempfile::tempdir().unwrap();
+    let app = App::new(root.path()).unwrap();
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let port = listener.local_addr().unwrap().port();
+    app.companion.set_lan_port(Some(port));
+    let token = app.companion.generate_qr_payload(Some(port)).token;
+    let (_, session) = app.companion.pair(&token, "tablet", "ws-disabled").unwrap();
+    let router = network::lan_router(app.clone(), app.companion.clone());
+    let server = tokio::spawn(async move { axum::serve(listener, router).await.unwrap() });
+    let (ready_tx, ready_rx) = tokio::sync::oneshot::channel();
+    let session_copy = session.clone();
+    let reader = tokio::task::spawn_blocking(move || {
+        let mut req = format!("ws://127.0.0.1:{port}/ws/telemetry")
+            .into_client_request()
+            .unwrap();
+        req.headers_mut().insert(
+            "cookie",
+            format!("companion_session={session_copy}").parse().unwrap(),
+        );
+        let (mut socket, _) = tungstenite::connect(req).unwrap();
+        if let tungstenite::stream::MaybeTlsStream::Plain(stream) = socket.get_mut() {
+            stream
+                .set_read_timeout(Some(std::time::Duration::from_secs(3)))
+                .unwrap();
+        }
+        ready_tx.send(()).unwrap();
+        match socket.read() {
+            Ok(Message::Close(_)) => {}
+            Err(tungstenite::Error::Protocol(
+                tungstenite::error::ProtocolError::ResetWithoutClosingHandshake,
+            ))
+            | Err(tungstenite::Error::ConnectionClosed) => {}
+            other => panic!("Disabled stream remained available: {other:?}"),
+        }
+    });
+    ready_rx.await.unwrap();
+    let disable = Request::builder()
+        .method(Method::POST)
+        .uri("/api/settings")
+        .header("host", "127.0.0.1:8001")
+        .body(Body::from(json!({"companion_enabled":false}).to_string()))
+        .unwrap();
+    assert_eq!(
+        network::router(app)
+            .oneshot(disable)
+            .await
+            .unwrap()
+            .status(),
+        StatusCode::OK
+    );
+    reader.await.unwrap();
+    tokio::task::spawn_blocking(move || {
+        let mut req = format!("ws://127.0.0.1:{port}/ws/telemetry")
+            .into_client_request()
+            .unwrap();
+        req.headers_mut().insert(
+            "cookie",
+            format!("companion_session={session}").parse().unwrap(),
+        );
+        match tungstenite::connect(req) {
+            Err(tungstenite::Error::Http(response)) => assert_eq!(response.status().as_u16(), 403),
+            other => panic!("Expected disabled handshake rejection: {other:?}"),
+        }
+    })
+    .await
+    .unwrap();
+    server.abort();
+}

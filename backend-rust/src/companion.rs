@@ -51,6 +51,12 @@ pub struct CompanionStatus {
     pub lan_ips: Vec<String>,
     pub port: u16,
     pub lan_port: Option<u16>,
+    #[serde(default = "default_true")]
+    pub enabled: bool,
+}
+
+fn default_true() -> bool {
+    true
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -278,6 +284,7 @@ impl CompanionService {
             lan_ips,
             port,
             lan_port: self.get_lan_port(),
+            enabled: true,
         }
     }
 
@@ -407,7 +414,7 @@ mod tests {
         let qr = service.generate_qr_payload(Some(8001));
         assert!(!qr.token.is_empty());
         assert_eq!(qr.port, 8001);
-        assert!(!qr.lan_ips.is_empty());
+        assert_eq!(qr.lan_ips, CompanionService::detect_lan_ips());
         assert!(qr.expires_at_unix > chrono::Utc::now().timestamp());
 
         // Pair with the valid token
