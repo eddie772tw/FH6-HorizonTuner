@@ -1,5 +1,12 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-11-11 / runtime 11.45.26 發行準備（Codex as Codex）
+
+- **Scope**：依使用者要求提升下一版 runtime，保留 `v1.8.4` 未建立 tag／Release 的狀態。採用 `portable-release-validation`、`pr-author-maintainer`。
+- **Changes**：Tauri 設定、前後端 Cargo manifest 與兩份 Cargo lockfile 同步為 `11.45.26`；`SECURITY.md` 中英文公開版本對照修正為 `v1.8.3`／`11.45.25`，明示 `v1.8.4`／`11.45.26` 僅為準備中的候選；跨平台發行指南同步記錄剩餘正式產物驗收與 #648 排除範圍。
+- **Evidence**：版本一致性檢查回報五處均為 `11.45.26`；18 項平台資產與發布工具測試通過；前端 2,028 項測試與 production build 通過。Rust 完整測試 267 passed／2 ignored，含 doc-tests 通過。Linux 本地 sidecar 的 build-info、health API 均回報 `11.45.26`，動態 HTTP readiness 與 stdin EOF 後程序退出／listener 釋放通過。`logs/web_port.txt` 是保留的診斷檔，不以刪除該檔案判定程序是否停止。
+- **Boundary**：本次不建立 tag、不建立 Release、不更新公開 OTA channel；Linux 本地 smoke 與 CI 測試不能代替正式 Windows 簽章產物及真實遊戲驗收。
+
 ## 2026-11-11 / Companion 停用邊界審查修正（Codex as Codex）
 
 - **Scope**：PR #650；採用 `pr-review-evaluation`、`pr-author-maintainer`、`modular-refactoring`、`halfmoon-design-system`、`portable-release-validation`。
