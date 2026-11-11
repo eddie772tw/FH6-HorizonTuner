@@ -1,9 +1,9 @@
 import { useId } from 'react';
-import type { HudConfig, HudElements } from '../hudConfig';
+import type { HudConfig } from '../hudConfig';
 import type { HudConfigPatch } from '../overlayControlRuntime';
 import { R34_MFD_MODES, type R34MfdMode, type R34Lighting } from './config';
 export function R34MfdSettingsCard({ config, onChange, t }: {
-  config: Pick<HudConfig, 'r34MfdMode' | 'r34ShowCluster' | 'r34Lighting'> & { elements: Pick<HudElements, 'showCenterInfo'> };
+  config: Pick<HudConfig, 'r34MfdMode' | 'r34ShowCluster' | 'r34ShowMfd' | 'r34Lighting'>;
   onChange: (patch: HudConfigPatch) => void;
   t: (key: string) => string;
 }) {
@@ -20,8 +20,8 @@ export function R34MfdSettingsCard({ config, onChange, t }: {
       <span className="form-check-label fs-7">{t('R34 show instrument cluster')}</span>
     </label>
     <label className="form-check form-switch m-0">
-      <input type="checkbox" className="form-check-input" checked={config.elements.showCenterInfo !== false}
-        onChange={event => onChange({ elements: { showCenterInfo: event.target.checked } })} />
+      <input type="checkbox" className="form-check-input" checked={config.r34ShowMfd !== false}
+        onChange={event => onChange({ r34ShowMfd: event.target.checked })} />
       <span className="form-check-label fs-7">{t('R34 show MFD screen')}</span>
     </label>
     <label htmlFor={`${id}-lighting`} className="form-label fs-7 text-body-secondary mb-0">{t('R34 instrument lighting')}</label>

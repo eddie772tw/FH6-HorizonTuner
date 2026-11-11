@@ -5,7 +5,7 @@
 - **Scope**：修復 Nissan Skyline GT-R R34 儀表風格（R34 MFD HUD Overlay）之 Tach/Speed 中央 ~350px 誇張黑洞、MFD 靠邊避讓間隙不足、專屬設定卡片缺乏 MFD 螢幕顯隱開關，以及時速表 LCD 顯示 `GN`、`GR`、`G—` 異常前綴等問題。採用 `halfmoon-design-system`、`pr-author-maintainer`、`ui-visual-review`。
 - **Learning**：
   1. **HUD 複合儀表組幾何中心偏移收斂與動態避讓**：在包含主指針表、副儀表與附加多功能螢幕（MFD）的複合 HUD 中，儀表位置計算若將視窗寬度剩餘空間全數灌入中央偏移（`availableOffset`），在 1080p 等標準視窗下會使 Tachometer 與 Speedometer 之間拉開超過 350px 的不自然空洞。解法是建立自然的基礎表距偏移（`minOffsetBase = 136`, `preferredOffsetBase = 146`），並收斂右側外邊距（`screenMarginX = 8~14px`），使 MFD 在不超出螢幕空間的前提下自然靠邊，同時以夾限運算保證右側 Boost 增壓表與 MFD 螢幕之間擁有 >100px 的安全淨空。
-  2. **專屬 HUD 子模組開關與全域 elements 相容性**：R34 MFD 的螢幕本體在模型層由 `elements.showCenterInfo` 控制，但在 `R34MfdSettingsCard.tsx` 中原先僅提供指針表（`r34ShowCluster`）開關。當使用者在其他介面誤觸全域 central info 關閉後，R34 MFD 螢幕會消失且無從單獨復原。在專屬卡片中加入 `R34 show MFD screen` 切換項並直接 patch `elements: { showCenterInfo }`，既提供了專屬的開關體驗，又避免了修改後端 Rust 結構體或破壞既有持久化契約。
+  2. **專屬 HUD 子模組開關與全域 elements 解耦**：原先 R34 MFD 螢幕借用全域 `elements.showCenterInfo` 作為顯隱判斷，導致若在其他通用介面關閉中央資訊，R34 MFD 螢幕會連帶遭到隱藏。經使用者指示，將 MFD 螢幕狀態與 `showCenterInfo` 完全解耦，引進專屬的 `r34ShowMfd` 配置鍵，並於 Rust 後端、前端 `HudConfig`、`normalizeR34MfdConfig` 及 overlay `renderer.configure` 中將 MFD 顯隱改由 `r34ShowMfd` 獨立控制，徹底杜絕 `showCenterInfo` 對 MFD 渲染的任何副作用。
   3. **數位液晶檔位前綴之語義分離**：JDM 液晶時速表中的「G」字元代表 Gear，但空檔（`N`）、倒檔（`R`）以及未讀取狀態（`—`）具有全字語意，若直接固定拼裝會產生 `GN`、`GR`、`G—` 等混淆讀數。在 SVG 模板中將 prefix 拆為專屬 `<tspan id="r34GearPrefix">`，並在渲染邏輯中僅對正則匹配 `^[1-9][0-9]?$` 之數值前進檔給予 `G` 前綴，其餘狀態清空，達成兼顧 SVG 文字置中對齊與動態語義正確。
 - **Evidence**：
   - PR `#649`：`fix(hud): resolve R34 MFD layout void and gauge rendering issues`。
