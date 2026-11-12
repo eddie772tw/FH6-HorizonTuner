@@ -1426,3 +1426,31 @@
 `TrendChart` 的端點標記會暫時使用較細線寬；只在整個 chart 開頭設定折線線寬，會讓第二條以後曲線沿用標記線寬。每條有效曲線 stroke 前必須恢復折線線寬，並在繪圖開始清除繼承的陰影，最後以 try/finally 還原 caller 狀態。驗證以 caller 狀態與例外路徑契約、實際瀏覽器像素輸出為準，不斷言 Canvas API 呼叫次數。採用技能：pr-review-evaluation、pr-author-maintainer、huge-component-refactoring、halfmoon-design-system、ponytail。
 
 署名：Jonas as Codex
+
+## 2026-11-12 / #652 AEGO 歷史版本與 Rust characterization（Codex as Codex）
+
+- 四模型 ID 與 workflow／量測／底盤版本分開。缺 ID 的歷史推薦依 formula/schema/goal 明列凍結映射，不呼叫未來會變更的 production selector；保存先拒絕未知或錯配 ID，再用原 owner 與後端證據重建比對。新保留診斷不能由 inputSnapshot 冒充：新計算丟棄、歷史保存拒絕。
+- `1ddb092d` Rust 實跑 Rally Mixed 的末檔已是 0.36（5000 RPM 運動學 485.816 km/h），與 #266/#335 確切 TS 重播的 0.40 不同。Drag manual 40 的 profile／secondary 路徑與 TS 同齒比卻缺少最終 unsupported；正式 measured solver 對 secondary 仍傳 None。完整輸入、來源與差異保存在獨立 fixtures 與 `docs/tuning/aego-characterization-20261112.md`，不把合成運動學當實車能力。
+- Cargo 預設完整 270 passed／3 既有 ignored；Vitest 251 files／2028 tests passed（maxWorkers=2、未放寬 timeout），fmt／diff check 通過。原 21 tuning／10 EV golden 與所有齒比／底盤公式未改，模型候選及切換另由下游驗收。
+- Skills：physics-tuning-math、modular-refactoring、pr-author-maintainer、cross-agent-collaboration、ponytail。
+
+## 2026-11-12 / #653 AEGO 模型責任隔離（Codex as Codex）
+
+- 正式 `gearing/mod.rs` 只路由，Road v3 自己擁有 launch envelope、頂檔目標及取位；非 Road v1 與 DangerSign 暫固定委派凍結 legacy owner。歷史 Road v2 保有獨立配置，不能隨現行 Road 或候選公式一起更新。現有 Road v3 診斷 JSON 亦保持原樣，避免破壞既存推薦重建。
+- 共用配置只接受明確總減速比、範圍、網格精度、終傳偏好及誤差容差；取位後全組檢查，沒有賽事常數、遊戲滑桿預設或逐檔補救。模型必須自己提供目標／實際／誤差／來源語意與硬目標驗證；`RatioRange` 的存在不代表硬體已驗證。
+- 合入 #652 ba40a007 後完整 Cargo 273 passed／3 既有 ignored（-j 2），涵蓋新 characterization／版本／保存重播與全產品契約；完整前端 251 files／2028 tests 通過（maxWorkers=2），其來源 tree 與合入後相同。fmt／diff check 通過；原 21 tuning／10 EV golden 未改，無 UI 或實車性能驗收。
+- Skills：modular-refactoring、physics-tuning-math、pr-author-maintainer、cross-agent-collaboration、ponytail。
+
+## 2026-11-12 / #655 Drift 主工作點與取位後有效限轉（Codex as Codex）
+
+- 使用者主檔／RPM／等價輪速是明確目標，不是合格曲線或側滑地速。缺目標回 unavailable；四點形狀先驗只作未校準偏好，峰值不建立工作帶，裸曲線不當來源。FWD 採前輪尺寸，但只有運動學相容，不能升級為動力漂移驗收。
+- 齒比取位後，僅檢查輪速誤差不足以保護有效限轉。合成範例 FD3.35／G3=1.84 在5000 RPM 對應99.8745 km/h，在100 km/h 需5006.2822 RPM；若合格有效上限為5000，這一組取位值不能套用。模型須同時重驗主工作點與目標輪速下的實際 RPM，ratio balance 後亦由同一 owner 檢查並重算 actual／誤差診斷。
+- 合入 #654 `010579b5` 後，完整 Cargo 289 passed／3 既有 ignored（-j 2），含8組 Drift 候選契約及原歷史／四模型／保存重播；完整前端251 files／2028 tests passed（maxWorkers=2），與合入後相同 frontend tree。fmt／diff check通過；原21 tuning／10 EV golden、正式路由、底盤及量測資格未改。無 UI 或實車性能驗收。
+- Skills：physics-tuning-math、modular-refactoring、pr-author-maintainer、cross-agent-collaboration、ponytail。
+
+## 2026-11-12 / #656 Drag 聯合端點與有效限轉（Codex as Codex）
+
+- 正式 measured solver 的 secondary correction 為 None，不代表沒有 Drag 末速輸入；候選入口仍須從 profile 取完整末速／來源 pair。secondary 有任一末速欄位時必須在同一入口成對，不能借用 profile 的來源標籤。manual／telemetry 字串仍是 caller-declared，不是後端已驗證的末速能力。
+- 起步與末檔均在功率峰值 RPM 定義純滾動輪速工程目標，取位後固定 max(1km/h,2%) 容差；指定速度所需的 RPM 還須不超過合格有效限轉。速度誤差合格但 requiredRPM 超限的候選必須拒絕；先在端點刻度區間納入限轉，再由同一 owner 在 ratio balance 後重驗並重算 actual／error，不能沿用調整前的診斷。
+- 合入 #655 `7348c513` 後，最終完整 Cargo 298 passed／3 既有 ignored（-j 2），含8組 Drag 候選與新增 workflow profile 契約；完整前端251 files／2028 tests passed（maxWorkers=2），前後 frontend tree 同為 `dcdd7de5`。fmt／diff check 通過；原21 tuning／10 EV golden、正式路由、底盤與資格 reducer 未改。未執行 UI、native 或實車性能驗收。
+- Skills：physics-tuning-math、modular-refactoring、pr-author-maintainer、cross-agent-collaboration、ponytail。

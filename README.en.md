@@ -206,6 +206,10 @@ scripts/            Build, release and maintenance tools
 
 Production tuning decisions belong to `backend-rust/src/tuning/`. The frontend owns workflow, drafts and display conversions; historical TypeScript models remain test references. See the [responsibility contract](docs/contracts/tuning_responsibilities.md).
 
+AEGO Road, Rally, Drift and Drag own separate entry points and policies. Historical replay remains frozen, and production dispatch does not apply shared ratio corrections afterward. This split preserves current numbers; see the [model isolation boundaries](docs/tuning/aego-model-isolation.md).
+
+The independent [Drag joint-endpoint candidate](docs/tuning/aego-drag-joint-v1.md) checks launch and final-gear targets, observed bounds and rounding error together. It has an explicit candidate entry point; production recommendation selection has not switched. Engineering priors and synthetic contracts do not establish in-game launch or finish-speed performance.
+
 </details>
 
 <details>

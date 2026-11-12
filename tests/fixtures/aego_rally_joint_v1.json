@@ -1,0 +1,47 @@
+{
+  "sourceSha": "1ddb092d90f3aca4c02c86d633e6cfe3e7fc587b",
+  "inputs": {
+    "secondaryCorrection": null,
+    "carParams": {
+      "frontTireAspect": 40,
+      "rearTireRim": 18,
+      "drivetrain": "AWD",
+      "rearTireAspect": 40,
+      "weightDistribution": 55,
+      "maxHp": 300,
+      "frontTireRim": 18,
+      "maxTorqueRpm": 3500,
+      "maxHpRpm": 5000,
+      "weight": 1400,
+      "frontTireWidth": 245,
+      "maxTorque": 400,
+      "aeroEfficiency": 0.5,
+      "rearTireWidth": 245
+    },
+    "numGears": 6,
+    "maxRpm": 7500
+  },
+  "source": "Rally target and full synthetic input from stack baseline; historical TS comparison explicitly separate; no real-game evidence",
+  "historicalComparison": {
+    "expectedDifference": "Candidate preserves the declared Rally endpoint instead of imposing the Road RPM step ceiling after allocation.",
+    "historicalTsTopSpeedKmh": 437.23,
+    "rustGearing": {
+      "finalDrive": 3.52,
+      "gears": [
+        2.7,
+        1.81,
+        1.21,
+        0.81,
+        0.54,
+        0.36
+      ]
+    },
+    "rustTopSpeedKmh": 485.81636395,
+    "rustSource": "PR652 direct Rust characterization from 1ddb092d; later 150906d3 step ceiling differs from historical TS final .40"
+  },
+  "schemaVersion": "aego-rally-joint-fixture/v1",
+  "expected": {
+    "endpointToleranceKmh": 2,
+    "targetSpeedKmh": 187.44122602300743
+  }
+}

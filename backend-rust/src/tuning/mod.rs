@@ -1,3 +1,4 @@
+pub mod aego_model;
 pub mod alignment;
 pub mod api;
 pub mod baseline;
