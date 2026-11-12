@@ -20,7 +20,7 @@ const hash = file => crypto.createHash('sha256').update(fs.readFileSync(file)).d
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 function sourceHashes() {
   const files = execFileSync('git', ['ls-files', '--cached', '--others', '--exclude-standard', '--', 'frontend/src', 'backend-rust/src', 'backend-rust/resources/defaults.json', 'lang'], { cwd: root }).toString().trim().split(/\r?\n/);
-  return Object.fromEntries([...new Set(files)].sort().filter(file => fs.existsSync(path.join(root, file))).map(file => [file, hash(path.join(root, file))]));
+  return Object.fromEntries([...new Set(files)].sort().filter(file => fs.existsSync(path.join(root, file))).map(file => [file, crypto.createHash('sha256').update(fs.readFileSync(path.join(root, file), 'utf8').replace(/\r\n/g, '\n')).digest('hex')]));
 }
 async function api(url, body) {
   const response = await fetch(endpoint + url, body === undefined ? {} : { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
@@ -53,8 +53,12 @@ for (const core of ['default', 'swiss', 'rhine-lab']) for (const mode of ['light
 const fixtures = [
   { id: 'archive-rally', workflowId: 'compatibility', kind: 'compatibility', schema: 'road-workflow/v1', createdAt: 1730000000, discipline: 'Rally', recommendation: { formulaVersion: 'rust/ice-measured-workflow-v3', inputSnapshot: { carId: '1435', goal: 'Rally', gearingModelVersion: 'aego-rally/v1' }, fields: { 'gearing.finalDrive': { value: 3.52, unit: 'ratio' } } }, source: 'Static visual fixture; historical values, not game validation' },
   { id: 'archive-road', workflowId: 'archive-road', kind: 'workflow', schema: 'road-workflow/v1', createdAt: 1730000001, recommendation: { formulaVersion: 'rust/ice-measured-workflow-v2', inputSnapshot: { carId: '1435', goal: 'Road', gearingModelVersion: 'aego-road-joint/v2' }, fields: { 'gearing.finalDrive': { value: 3.88, unit: 'ratio' } } }, source: 'Static visual fixture; historical values, not game validation' },
-  { id: 'archive-setup', workflowId: 'archive-road', kind: 'setup', schema: 'road-workflow/v1', createdAt: 1730000002, fields: { 'gearing.finalDrive': 3.88 }, capture: { frames: [{ rpm: 3000, speed: 20 }], source: 'Synthetic fixture, not game data' } },
+  { id: 'archive-setup', workflowId: 'archive-road', kind: 'setup', schema: 'road-workflow/v1', createdAt: 1730000002, fields: { 'gearing.finalDrive': 3.88 } },
+  { id: 'archive-run', workflowId: 'archive-road', kind: 'run', schema: 'road-workflow/v1', createdAt: 1730000003, sessionId: 'archive-session', setupId: 'archive-setup' },
 ];
+fixtures[1].identity = { ordinal: 1435, performanceIndex: 400, carClass: 0 };
+const recording = { source: 'synthetic-sqlite-fixture', endReason: 'manual-stop' };
+const points = [3000, 3200].map((rpm, index) => ({ TimestampMS: 1000 + index * 100, IsRaceOn: 1, CarOrdinal: 1435, CurrentEngineRpm: rpm, SpeedMetersPerSecond: 20 + index, Gear: 3 }));
 async function captureCase(browser, c) {
   const translations = JSON.parse(fs.readFileSync(path.join(root, 'lang', c.language + '.json'), 'utf8'));
   const t = key => translations[key] || key;
@@ -116,6 +120,22 @@ async function captureCase(browser, c) {
       assert.deepEqual(JSON.parse(fs.readFileSync(file, 'utf8')), expected);
       exports.push({ filename: download.suggestedFilename(), sha256: hash(file), originalJsonEqual: true });
     }
+    const downloadPromise = page.waitForEvent('download');
+    await archive.getByRole('button', { name: `${t('Export recorded frames')}: archive-run`, exact: true }).click();
+    const download = await downloadPromise, file = path.join(scratch, download.suggestedFilename());
+    await download.saveAs(file);
+    const capture = JSON.parse(fs.readFileSync(file, 'utf8'));
+    assert.equal(capture.schemaVersion, 'tuning-capture/v1');
+    assert.equal(capture.metadata.carId, '1435');
+    assert.equal(capture.references.workflowId, 'archive-road');
+    assert.equal(capture.references.runId, 'archive-run');
+    assert.equal(capture.references.setupId, 'archive-setup');
+    assert.deepEqual(capture.recording, recording);
+    assert.deepEqual(capture.samples.map(({ timestampMS, rpm, speedMps, gear }) => ({ timestampMS, rpm, speedMps, gear })), [
+      { timestampMS: 1000, rpm: 3000, speedMps: 20, gear: 3 },
+      { timestampMS: 1100, rpm: 3200, speedMps: 21, gear: 3 },
+    ]);
+    exports.push({ filename: download.suggestedFilename(), sha256: hash(file), sampleCount: capture.samples.length, savedSessionCaptureVerified: true });
   }
   if (c.state === 'error') {
     simulateArchiveError = false;
@@ -159,7 +179,11 @@ async function captureCase(browser, c) {
     for (const state of ['empty', 'error']) results.push(await captureCase(browser, { core: 'default', mode: 'light', language: 'en-us', width: 1280, state }));
     const db = new DatabaseSync(path.join(dataDir, 'telemetry_sessions.db'));
     const insert = db.prepare('INSERT INTO road_documents VALUES (?, ?, ?, ?, ?)');
-    for (const doc of fixtures) insert.run(doc.id, doc.workflowId, doc.kind, doc.createdAt, JSON.stringify(doc)); db.close();
+    for (const doc of fixtures) insert.run(doc.id, doc.workflowId, doc.kind, doc.createdAt, JSON.stringify(doc));
+    db.prepare('INSERT INTO sessions(session_id,car_ordinal,car_name,start_time,metadata_json) VALUES (?,?,?,?,?)').run('archive-session', 1435, 'Synthetic Beetle', 1730000001, JSON.stringify(recording));
+    const insertPoint = db.prepare('INSERT INTO telemetry_channels(session_id,lap_number,relative_time,raw_json) VALUES (?,?,?,?)');
+    points.forEach((point, index) => insertPoint.run('archive-session', 0, index / 10, JSON.stringify(point)));
+    db.close();
     const liveRetirement = [];
     for (const [url, body, status] of [
       ['/api/road/compatibility', { recommendation: fixtures[0].recommendation }, 410],
@@ -173,6 +197,6 @@ async function captureCase(browser, c) {
     for (const c of cases) results.push(await captureCase(browser, c));
     assert.deepEqual(sourceHashes(), sources, 'Product sources changed during capture');
     const files = results.flatMap(result => result.files).map(file => ({ file, sha256: hash(path.join(output, file)) }));
-    fs.writeFileSync(path.join(output, 'manifest.json'), JSON.stringify({ date: new Date().toISOString(), baseCommit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root }).toString().trim(), workingTree: 'Base plus uncommitted Issue 658 implementation; source hashes below identify capture sources', browser: browser.version(), backendSha256: hash(capturedBinary), sourceHashes: sources, fixtureRecords: fixtures, liveRetirement, environment: 'Windows Chromium headless, real AppShell/providers, isolated Rust HTTP/storage. Static historical JSON fixtures inserted only into disposable SQLite. Downloads compared against original records and complete workflow history. Saved obsolete developer flag is true; normal workflow remains accessible. Silent WebSocket; native-only Companion host exchange uses empty commands. Only archive-error case deliberately injects HTTP503, then retries actual Rust successfully. Browser save picker disabled as a capability fixture to exercise real browser downloads. DPR1, reduced motion, 1280x720 and 320x720, Archive panel crops use the explicitly recorded taller viewport while retaining actual AppShell styles; normal viewport images also supplied. No style overrides or image edits. Not game, real device, native file dialog, Narrator/NVDA or performance acceptance.', cases: results, images: files }, null, 2) + '\n');
+    fs.writeFileSync(path.join(output, 'manifest.json'), JSON.stringify({ date: new Date().toISOString(), baseCommit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root }).toString().trim(), workingTree: 'Review base plus verified review fixes; source hashes below identify capture sources', browser: browser.version(), backendSha256: hash(capturedBinary), sourceHashes: sources, sourceHashNormalization: 'UTF-8 source text with CRLF normalized to LF; image and backend binary hashes are raw bytes', fixtureRecords: fixtures, liveRetirement, environment: 'Windows Chromium headless, real AppShell/providers, isolated Rust HTTP/storage. Static historical JSON fixtures inserted only into disposable SQLite. Downloads compared against original documents and complete workflow document history; separate run capture downloaded from actual sessions/telemetry_channels fixture and verified sample-by-sample. Saved obsolete developer flag is true; normal workflow remains accessible. Silent WebSocket; native-only Companion host exchange uses empty commands. Only archive-error case deliberately injects HTTP503, then retries actual Rust successfully. Browser save picker disabled as a capability fixture to exercise real browser downloads. DPR1, reduced motion, 1280x720 and 320x720, Archive panel crops use the explicitly recorded taller viewport while retaining actual AppShell styles; normal viewport images also supplied. No style overrides or image edits. Not game, real device, native file dialog, Narrator/NVDA or performance acceptance.', cases: results, images: files }, null, 2) + '\n');
   } finally { finishing = true; await browser.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; }).finally(() => { for (const child of children.reverse()) { child.stdin?.end(); if (child.exitCode === null) child.kill(); } });

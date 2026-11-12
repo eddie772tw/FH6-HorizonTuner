@@ -1,6 +1,6 @@
 # ICE AEGO 獨立模型正式整合 v4
 
-正式 `solve workflow`、HTTP／桌面／Companion 與 MCP `calculate_tuning_workflow` 共用 Rust 的證據資格、模型選擇及結果。這次只切換 ICE 齒比；底盤公式與版本、量測 reducer、EV、CVT、DangerSign 及 legacy CLI／MCP 不變。
+正式 `solve workflow`、HTTP／桌面／Companion 與 MCP `calculate_tuning_workflow` 共用 Rust 的證據資格、模型選擇及結果。#657 切換 ICE 齒比，保留底盤公式與版本、量測 reducer、EV、CVT、DangerSign。接續的 #659 已移除 legacy CLI／MCP 公式與舊模型執行入口，舊版本只供歷史封存分類，詳見[退役範圍](model-retirement.md)。
 
 ## 模型與輸入
 

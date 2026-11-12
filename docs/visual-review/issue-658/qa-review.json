@@ -1,263 +1,266 @@
 {
-  "reviewer": "Codex as Codex",
-  "date": "2026-11-12T10:24:39.256Z",
-  "method": "All 50 published PNGs individually opened and visually inspected through view_image after the final capture. Manifest and source hashes rechecked.",
+  "reviewer": "Codex as Codex (independent review context)",
+  "date": "2026-11-12T12:19:21.894172+00:00",
+  "captureDate": "2026-11-12T12:16:02.567Z",
+  "method": "All 50 current PNGs individually opened using view_image by independent_drift_ui_review; parent author also inspected the updated English, Traditional Chinese and narrow Japanese archive panels. No old image review reused.",
   "findings": [],
   "notes": [
-    "Normal viewport images retain real AppShell and providers. Archive-panel crops use taller viewports recorded per case.",
-    "The JSON preview deliberately uses bounded vertical and horizontal scrolling; narrow views preserve original JSON rather than wrapping/mutating values.",
-    "Empty/error state, retired badges, both original export actions, settings dialog and capture return button are readable. Native pickers, hardware, game telemetry and screen readers are outside this review."
+    "New per-run frame export is readable in English, Traditional Chinese and Japanese; Japanese 320px wraps within the panel.",
+    "All 50 PNG raw hashes, 558 LF-normalized product source hashes, copied capture-backend raw hash and three downloaded file raw hashes match the manifest.",
+    "Session/raw_json fixture matches the exported sample timestamps/RPM/speed/gears, recording and references. Workflow documents are a separate original-data download.",
+    "JSON preview deliberately scrolls within its bounds; panel crops use explicitly recorded taller viewports. No page overflow or CSS overrides.",
+    "This is headless browser/synthetic SQLite evidence, not game, hardware, native picker or screen-reader acceptance."
   ],
   "images": [
     {
       "file": "default-light-en-us-1280-empty-archive.png",
-      "sha256": "07c0e2052a25a5c4c87b29f7875564c05161c76d57b4b6afaa7a99f7e89ab06a",
-      "result": "reviewed"
+      "sha256": "0276f0d185ab94374c0efce8925696c4569a9b1f632bcaad31ff30faf83007b0",
+      "result": "independently viewed"
     },
     {
       "file": "default-light-en-us-1280-error-archive.png",
-      "sha256": "b384f3080e52272182831cca8efc041eda8c9a277beb85ad11c69d06d034fcd8",
-      "result": "reviewed"
+      "sha256": "ded49dbb381b59a78644bbb0cf553d10267ebd5561c84cc4cc84058fae7c931b",
+      "result": "independently viewed"
     },
     {
       "file": "default-light-en-us-1280-records-archive.png",
-      "sha256": "43eb11faca93a1c224551fc222fb60f5c3630415dd137d955aa339051188c0a6",
-      "result": "reviewed"
+      "sha256": "f3d9db7452b176f06014f28df5672e6ad9bbc4f2f45e1b2d3ff28b117e7b8732",
+      "result": "independently viewed"
     },
     {
       "file": "default-light-en-us-1280-records-archive-panel.png",
-      "sha256": "d5e7f3a8b3358abfc071d699be1897789dd8b409e574ee4253fb13139ef990d4",
-      "result": "reviewed"
+      "sha256": "8b2c221d1b1b3e7faf796487089a93eaa9e243cc0e5c9017dd041b992ed535e3",
+      "result": "independently viewed"
     },
     {
       "file": "default-light-en-us-1280-records-settings.png",
-      "sha256": "cb49aa9bd778317c28c87335fd8b429e7535bb72c25013eeca8adeb6daa62876",
-      "result": "reviewed"
+      "sha256": "5a2b858714aa4e8fbd55fe7b0be4b9be44babd6a3842b07deff9ec7e990df3eb",
+      "result": "independently viewed"
     },
     {
       "file": "default-light-en-us-1280-records-capture.png",
-      "sha256": "2b0158901401519cdf01933557db7466a5c3f615e6d1ba58213b7fde7edda8e4",
-      "result": "reviewed"
+      "sha256": "8e73d40e115007aca3bce87afec48c32682e12cd7910df8273ce930c01221a27",
+      "result": "independently viewed"
     },
     {
       "file": "default-dark-zh-tw-1280-records-archive.png",
-      "sha256": "b3718daa5d539a1ca2495e37ca48ba884d9f8b97ee05ae497505910cfa311e9f",
-      "result": "reviewed"
+      "sha256": "eac4ddb8765df4f98e43cae5a2bf78305a2c5b0bfe1002f4adf561d276374299",
+      "result": "independently viewed"
     },
     {
       "file": "default-dark-zh-tw-1280-records-archive-panel.png",
-      "sha256": "19f781883e14cf2dda322fddb67acd2c446ffba6a89deccc04a71ca276b81b88",
-      "result": "reviewed"
+      "sha256": "97322268448ca6127b0b0cea54dbd585e9ab26ef4f1ace9dc9601573d563ba4a",
+      "result": "independently viewed"
     },
     {
       "file": "default-dark-zh-tw-1280-records-settings.png",
-      "sha256": "f83fdb904a2a982edaf269f38290fed9377f20b9d0da16f47e3a80fcd7a7c587",
-      "result": "reviewed"
+      "sha256": "4211bac80211c38a9d43773f376fe3222829abc55c25221d634f4ce8c37672d4",
+      "result": "independently viewed"
     },
     {
       "file": "default-dark-zh-tw-1280-records-capture.png",
-      "sha256": "d0b7b154ca98facba9f936b954211080a1a691cc21113b11d739a38ca9dcaa6c",
-      "result": "reviewed"
+      "sha256": "2287231b0416427363bfa4bc71b0e73479ba1d742c7392602660ff9138e1803c",
+      "result": "independently viewed"
     },
     {
       "file": "swiss-light-en-us-1280-records-archive.png",
-      "sha256": "afa04320b4104c7dcd9647f472902d2299044e2cf853eff400eb91cc2abcec8f",
-      "result": "reviewed"
+      "sha256": "973ca6cc6491390e533efebb4bb0be0d3af65997d40df4d9169d3737b41c3968",
+      "result": "independently viewed"
     },
     {
       "file": "swiss-light-en-us-1280-records-archive-panel.png",
-      "sha256": "e60bceab4c647bb167d45c8ade8c6936b46ca0934a6c25aa611866ed72421597",
-      "result": "reviewed"
+      "sha256": "e89852f74a7f3c022c906928aa5ee7036e49417049653edd4a52020734fbe5dd",
+      "result": "independently viewed"
     },
     {
       "file": "swiss-light-en-us-1280-records-settings.png",
-      "sha256": "cb9e3a4e4167e1efc6504c6a95b6e7518f5325dd22fabe8edf6d069e02fce13d",
-      "result": "reviewed"
+      "sha256": "398cc1912107cc2c34175e97d26869b67ff37460ebf136708f7ddcd768e597be",
+      "result": "independently viewed"
     },
     {
       "file": "swiss-light-en-us-1280-records-capture.png",
-      "sha256": "203ae45d645296ebc11c1682039e0782f75638a971dc7b2f18aa8a5e28b06365",
-      "result": "reviewed"
+      "sha256": "29aaaa575b7abb4a5a384f185b39aefae9b58cf71107f8bc418b2c8cd2455853",
+      "result": "independently viewed"
     },
     {
       "file": "swiss-dark-zh-tw-1280-records-archive.png",
-      "sha256": "48b49147e786362dbdf0706b8c851de86439d42fbd20578d036e143f172cba99",
-      "result": "reviewed"
+      "sha256": "975f0c07ba59fd197e2f4b42df4e04d0afa543ddf89e35cb27acf7cded6c2772",
+      "result": "independently viewed"
     },
     {
       "file": "swiss-dark-zh-tw-1280-records-archive-panel.png",
-      "sha256": "e3a4810e522c8d7ec233bdcb74e135e4cec5e0f61ad07f9366aea9800117d5ca",
-      "result": "reviewed"
+      "sha256": "7b127ae81ac2e88701fe82212e19d2a557241d49c6cb99c741e7c2eaec6f951c",
+      "result": "independently viewed"
     },
     {
       "file": "swiss-dark-zh-tw-1280-records-settings.png",
-      "sha256": "da32b676ca68275be3fee5b37b8845a63982d38e176bbdf3ff30903c39dc9e1d",
-      "result": "reviewed"
+      "sha256": "74e0a9de6e399b7edff7d24535843e4e70accca58e953af0b931341c9dda40be",
+      "result": "independently viewed"
     },
     {
       "file": "swiss-dark-zh-tw-1280-records-capture.png",
-      "sha256": "aee3beffa9f5f24fbc879bc291152dc3aec791188f70e7244155df58bef3994d",
-      "result": "reviewed"
+      "sha256": "ed71bb43112999085dd70a318d6a55b5fd23fb6f4ecf7bc3bb0aa518cc25ec32",
+      "result": "independently viewed"
     },
     {
       "file": "rhine-lab-light-en-us-1280-records-archive.png",
-      "sha256": "ff271d9ee8267b827d0b8bc7179e7c5cdb8155d4e4c75cad4ed90eb6065d37fb",
-      "result": "reviewed"
+      "sha256": "e5424ef2861fe9fa9d884da54d07218402c0f7068a2668133b1c4a600b469212",
+      "result": "independently viewed"
     },
     {
       "file": "rhine-lab-light-en-us-1280-records-archive-panel.png",
-      "sha256": "f63986922f27a08dfa1aa87f5d6b2cf7ae1d4aaff1e0cae29c966e35410c48e2",
-      "result": "reviewed"
+      "sha256": "2ade050124e0de8ea19baa3db76535bd7a712e785f6ad18edd2e79052a0ba6b7",
+      "result": "independently viewed"
     },
     {
       "file": "rhine-lab-light-en-us-1280-records-settings.png",
-      "sha256": "3abc590c240f52ad04fa3f7f82758b4ca7b0fec220bb60480b2f833c597b9308",
-      "result": "reviewed"
+      "sha256": "a06ecf04ee7daf7d7ff0473d7f059f385f59fb20c26f958d7c959a38b94c770d",
+      "result": "independently viewed"
     },
     {
       "file": "rhine-lab-light-en-us-1280-records-capture.png",
-      "sha256": "21a6b16d777e9c9e33cfbb823965a8d6d261d951523fea4af751e5b7ffe954d4",
-      "result": "reviewed"
+      "sha256": "52c156dae411a24efb0b2c7dedc76f6bcb9a56f6d43dc9f136bfc5a267809219",
+      "result": "independently viewed"
     },
     {
       "file": "rhine-lab-dark-zh-tw-1280-records-archive.png",
-      "sha256": "821c5246a845f5b18ddabfa2882dbd3f90b743f9f7f8138c2b08cf798479f990",
-      "result": "reviewed"
+      "sha256": "62b98c344204730d8eb9f03ebbe64b5398d0cb597962e794f683f3c6b9fe9b90",
+      "result": "independently viewed"
     },
     {
       "file": "rhine-lab-dark-zh-tw-1280-records-archive-panel.png",
-      "sha256": "2e1e1c39c612c1eda3a60067d929ebcd1f9f5d2d690030a64d9cb35f4e47016b",
-      "result": "reviewed"
+      "sha256": "d205914cd7534b90b7d89315578c2e5ded140c255acc2e5b65600aef70847ab8",
+      "result": "independently viewed"
     },
     {
       "file": "rhine-lab-dark-zh-tw-1280-records-settings.png",
-      "sha256": "94eb46fe090d85880e6566cb890929b430968f090684abb251fdda232cfc7fe1",
-      "result": "reviewed"
+      "sha256": "a571bf1bc3c01580f1b5553bf55dca56d016278eafa490d8dc6efbbe0709c813",
+      "result": "independently viewed"
     },
     {
       "file": "rhine-lab-dark-zh-tw-1280-records-capture.png",
-      "sha256": "c0e14a4f98ddddc8e5887fc6f26314db15f289e0100c0f9a43d39a5f1228e21a",
-      "result": "reviewed"
+      "sha256": "3815613612d0b0248c462c15210c028ffadc3a59303252503608d5e5bee747fe",
+      "result": "independently viewed"
     },
     {
       "file": "default-light-ja-jp-320-records-archive.png",
-      "sha256": "bc47b6ffc82994b7d95ad6ebf254bfa3d4418471cfb03de727c9ca0d06e4bda6",
-      "result": "reviewed"
+      "sha256": "326841a9dee31416d0656cae6783de7fc8d26cf9b0adbea4e2e70f4386c1d3c5",
+      "result": "independently viewed"
     },
     {
       "file": "default-light-ja-jp-320-records-archive-panel.png",
-      "sha256": "d9a69180e83823bff63493758235ece3fa5636863972914b14efe7a1f83ad089",
-      "result": "reviewed"
+      "sha256": "50b0f93583cfc61092b4c1f4535b7280057b23ce4bce0ca084db44048f025b38",
+      "result": "independently viewed"
     },
     {
       "file": "default-light-ja-jp-320-records-settings.png",
-      "sha256": "f429264c95c78008f8082d867e116e111adbaf7e8b60d9271bd763ddb4514714",
-      "result": "reviewed"
+      "sha256": "29fa78fed1c5fc8b5c9f135aa5a95a5fe9c23a74d0d1e6dfd3b5c987c07b18ff",
+      "result": "independently viewed"
     },
     {
       "file": "default-light-ja-jp-320-records-capture.png",
-      "sha256": "022c1716247266ac1ef71f5c7b18f5803dce4c8ff4a2710bd9f6d9de080deaef",
-      "result": "reviewed"
+      "sha256": "b4198f0be858730380f13caed5ab8ea16da9ad2fe12536625e824e2f20dcff6b",
+      "result": "independently viewed"
     },
     {
       "file": "default-dark-zh-tw-320-records-archive.png",
-      "sha256": "2a9963ac55b8db73f45bfa621840d2551ca9b5fa07488178cfefacc510bdef98",
-      "result": "reviewed"
+      "sha256": "27bfc793bd1b1a301dccfbb560578da979855695a4eeea150d2518a4dfb4a7c0",
+      "result": "independently viewed"
     },
     {
       "file": "default-dark-zh-tw-320-records-archive-panel.png",
-      "sha256": "98f4ec4478b54a5a92c2b9ce47ed2c1512caa170c0ee64e10b86622c03ad1f39",
-      "result": "reviewed"
+      "sha256": "29f013d6d1c9a8541540e22b6ea30186c3b239ddec73cba6e8817b6c2c71b9ea",
+      "result": "independently viewed"
     },
     {
       "file": "default-dark-zh-tw-320-records-settings.png",
-      "sha256": "4bf1efdc1cf86e0bfb1549a06a104567de9c3c866788e7870a7a65a95ec344d6",
-      "result": "reviewed"
+      "sha256": "f03715a7f0def657121e596d31af1f4ec6c77d8b9f4f84cef69cd77eff8c47d6",
+      "result": "independently viewed"
     },
     {
       "file": "default-dark-zh-tw-320-records-capture.png",
-      "sha256": "125c23308ef49d51109c1fc047d514f7523bcd42181aa1aefa8fc68a263c2115",
-      "result": "reviewed"
+      "sha256": "96997b6f6b58ad6225ce1a561e3027319a9137bde02e176c65429c123fc7c9b4",
+      "result": "independently viewed"
     },
     {
       "file": "swiss-light-ja-jp-320-records-archive.png",
-      "sha256": "77adffbeb62021ef99fe8522e8335002abc05c99aba72d6f4aaf9a18d8070e3a",
-      "result": "reviewed"
+      "sha256": "17ffb24393fec8ed0c59e1ed46ede94eca69938c5596655aa2d7920c88c9b548",
+      "result": "independently viewed"
     },
     {
       "file": "swiss-light-ja-jp-320-records-archive-panel.png",
-      "sha256": "90333107ae764731249c14656e6658c98c604bf321c66acefcbf91c231a94908",
-      "result": "reviewed"
+      "sha256": "f9fca6c6ab87f9329187a0d6a6e8627a4022e77e550f1b09b9092d86e4515b8f",
+      "result": "independently viewed"
     },
     {
       "file": "swiss-light-ja-jp-320-records-settings.png",
-      "sha256": "e84e9902e6bf347a67787e2a60b3d286d2e4efef80652d065b8e36d75bef17dc",
-      "result": "reviewed"
+      "sha256": "15bba2fd9f5be12474cc17e5222a853cd5f736e9ac7eb9c6d5d6f60fd7755f58",
+      "result": "independently viewed"
     },
     {
       "file": "swiss-light-ja-jp-320-records-capture.png",
-      "sha256": "1cc23bc921d8c8cc766fe1998293d4cf0c60f991e417635cca2dde2ef132cbec",
-      "result": "reviewed"
+      "sha256": "01c913263f98fd25ea7261031b40ad2396cfc4ca0e462a7fa13b62f08ef90453",
+      "result": "independently viewed"
     },
     {
       "file": "swiss-dark-zh-tw-320-records-archive.png",
-      "sha256": "ab5b69ee169f30901d740bcff7902fdccf181b90e74cb7b3a9fb9b8a739bf9ec",
-      "result": "reviewed"
+      "sha256": "8e0a57b05dd0e19ec3085b70139ded5700f14cebb8db65663b4a554da81a6c24",
+      "result": "independently viewed"
     },
     {
       "file": "swiss-dark-zh-tw-320-records-archive-panel.png",
-      "sha256": "fa30ba8c8d44465bd4c8ee3f3e21fe16401d9c9f24dec255dadd58b2b794c464",
-      "result": "reviewed"
+      "sha256": "7a207e48ace67fc700f5542d208bc0d637f8716971d91397f03c951844c05672",
+      "result": "independently viewed"
     },
     {
       "file": "swiss-dark-zh-tw-320-records-settings.png",
-      "sha256": "5f78191444483a477fa1c8d06237fe1d05ccff25484e710d4c6cc51f1db05410",
-      "result": "reviewed"
+      "sha256": "4ff31d877ccda74e35645ae8fc9e72fa98c7ffb5b8b9ddb8c21e4d23042aa7c8",
+      "result": "independently viewed"
     },
     {
       "file": "swiss-dark-zh-tw-320-records-capture.png",
-      "sha256": "889e986102347abbee2de3c0af4cff5e2331eed999c59680333c1a27fcc29ea9",
-      "result": "reviewed"
+      "sha256": "2a97e2a0a82666751ba636aae90c01c699911c1667171aa5b53e85cde5bd7187",
+      "result": "independently viewed"
     },
     {
       "file": "rhine-lab-light-ja-jp-320-records-archive.png",
-      "sha256": "077302a1b03544c8b7197e057fa1deb35a7f1963bddebd77dbb91a3b548c59c2",
-      "result": "reviewed"
+      "sha256": "5aa5b7cd77f65256e4e89ccadfe67a0f0952c21e742d90a5e72e71579854e643",
+      "result": "independently viewed"
     },
     {
       "file": "rhine-lab-light-ja-jp-320-records-archive-panel.png",
-      "sha256": "a3fcd213bfb465696335795cc7fa5cf52ae971e6858f089c86ab85bd56aaa17a",
-      "result": "reviewed"
+      "sha256": "ae7d014bdcada5e0cc527b06418fdd15b5e12f3065fd01fed8706882a8ede6a5",
+      "result": "independently viewed"
     },
     {
       "file": "rhine-lab-light-ja-jp-320-records-settings.png",
       "sha256": "41980a9a1fd3f3d0adb5e6791dccf4b81bec393256b36723b503cac75a254436",
-      "result": "reviewed"
+      "result": "independently viewed"
     },
     {
       "file": "rhine-lab-light-ja-jp-320-records-capture.png",
-      "sha256": "2aac03639bc1a9e016b1dc73098c663ff5439ffce1c98f0c7fbf5f975aa400ac",
-      "result": "reviewed"
+      "sha256": "c2c4b8cf8e7410d929186fa883097c776daf6f9717f032594c4a1d73a9c48168",
+      "result": "independently viewed"
     },
     {
       "file": "rhine-lab-dark-zh-tw-320-records-archive.png",
-      "sha256": "498b6ece49a4d1452cbb6e1433011bfebd5136c26d509e612082f92e89294a15",
-      "result": "reviewed"
+      "sha256": "f1c8251a3b4eaa8ef691a68c0f5847cc06cffe80d5827073d07b847e70a7c8f9",
+      "result": "independently viewed"
     },
     {
       "file": "rhine-lab-dark-zh-tw-320-records-archive-panel.png",
-      "sha256": "00c51d77b207a515ce6860559a80b446a24fc1ac2e86f6736c7b3946c4995171",
-      "result": "reviewed"
+      "sha256": "a765f50bfc0d2fa4aba2249e5714b3a2b5b7d20abbcd70f7151e62ee2eebb40a",
+      "result": "independently viewed"
     },
     {
       "file": "rhine-lab-dark-zh-tw-320-records-settings.png",
       "sha256": "59623eb3bfd7d7549e217cd260bc1649bd5ddd3f58daebedf87849546bfbfa8b",
-      "result": "reviewed"
+      "result": "independently viewed"
     },
     {
       "file": "rhine-lab-dark-zh-tw-320-records-capture.png",
-      "sha256": "7e62f5f6bdd63562c5c9291d1b0c3d5a0a68d485c811127c58f5c7f0e8d395f9",
-      "result": "reviewed"
+      "sha256": "5d0c2dfb90732409a726357c03837e4adf455f18bd4637046750b92ffb40795e",
+      "result": "independently viewed"
     }
   ]
 }

@@ -1,15 +1,15 @@
 # Issue #658 視覺審查備查
 
-2026-11-12，Windows／Chromium 148.0.7778.96，實際 AppShell、導覽與 providers，DPR1、100% zoom、reduced motion。擷取版本為 #657 `2c72bed878b84d40ba47ec5c41edaa16fa9157ce` 加本次未提交實作；[manifest](manifest.json) 固定558個產品來源檔雜湊與後端執行檔 SHA256。後續只有文件整理時可沿用，產品來源必須與 manifest 相同。
+2026-11-12，Windows／Chromium 148.0.7778.96，實際 AppShell、導覽與 providers，DPR1、100% zoom、reduced motion。擷取版本為 #659 `8455856ba7ca590687847f8808f527214cf711ec` 加本輪獨立審查修正；[manifest](manifest.json) 固定558個產品來源檔 SHA256（UTF-8 文字換行正規化為 LF）與後端執行檔原始 bytes SHA256。後續只有文件整理時可沿用，產品來源必須與 manifest 相同。
 
 ## 範圍與結果
 
 - 22案例：七core各日夜／1280×720，另以 Halfmoon Default、Swiss Technical、Rhine Lab 各做日夜／320×720，以及預設英文封存空狀態、載入失敗與重試。
 - 50張PNG：三個代表core的寬窄日夜畫面，包含封存、完整封存面板裁切、設定及 Step3 遙測採集工具；其他core完成相同實際DOM／操作檢查，結果見manifest。語系涵蓋繁中、英文、日文。
 - 實際操作確認：舊Developer設定為true仍進入正式流程；設定只有現行五區，沒有Developer開關；採集工具可開啟及返回引擎資料。
-- 瀏覽器實際下載原始推薦與完整工作流程歷史，JSON與種入的原資料逐項相等，包含原始capture。未把封存狀態包裝匯出為合格推薦。
+- 瀏覽器實際下載原始推薦與完整工作流程文件，JSON 與種入原資料逐項相等；另由 run 匯出錄製幀，從真正 sessions／telemetry_channels 資料關聯讀取，逐筆核對 RPM、速度、檔位、時間與 recording／references。歷史文件 JSON 本身不內嵌試跑幀。未把封存狀態包裝匯出為合格推薦。
 - 實際Rust HTTP：保存舊推薦及在舊工作流程開始試跑均回410；已移除的Developer端點回404。載入失敗案例只對封存GET注入503，收合／重開後成功讀取真實Rust。
-- 所有案例無page error／非預期API失敗，收尾頁面無document overflow。作者逐張開啟50圖，檢查文字、字形、標籤、返回按鈕及窄幅換行，無剩餘視覺阻擋；[逐檔QA](qa-review.json)與50個image hash均已核對。
+- 所有案例無page error／非預期API失敗，收尾頁面無document overflow。獨立審查代理逐張開啟本輪新50圖，作者另檢視更新後的英文／繁中／窄幅日文封存面板，檢查文字、字形、標籤、返回按鈕及窄幅換行，無剩餘視覺阻擋；[逐檔QA](qa-review.json)與50個image hash均已核對。
 
 ## 擷取與資料界線
 

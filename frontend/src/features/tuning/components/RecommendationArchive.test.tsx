@@ -37,6 +37,21 @@ it('exports the original stored record without a qualification wrapper or mutati
   expect(JSON.stringify(record)).toBe(before);
   expect(mocks.fetch.mock.calls.every(([path, options]) => path === '/api/road/archives' && !options?.method)).toBe(true);
 });
+it('exports recorded run frames through their saved session capture', async () => {
+  const documents = [{ id: 'old-run', kind: 'run', sessionId: 'session-1' }];
+  const capture = { schemaVersion: 'tuning-capture/v1', samples: [{ rpm: 3000 }], references: { runId: 'old-run' } };
+  mocks.fetch.mockImplementation(async (path: string) => path === '/api/road/archives'
+    ? { ok: true, json: async () => [{ status: 'retired', validated: false, record, documents }] }
+    : { ok: true, headers: { get: () => 'application/json' }, blob: async () => new Blob([JSON.stringify(capture)]) });
+  await open();
+  const button = [...host.querySelectorAll('button')].find(item => item.textContent?.includes('Export recorded frames'));
+  expect(button).toBeDefined();
+  await act(async () => button!.click());
+  const blob = await mocks.save.mock.calls[0][0].load();
+  const exported = await new Promise<string>(resolve => { const reader = new FileReader(); reader.onload = () => resolve(String(reader.result)); reader.readAsText(blob); });
+  expect(JSON.parse(exported)).toEqual(capture);
+  expect(mocks.fetch).toHaveBeenCalledWith('/api/road/workflows/old-1435/runs/old-run/capture', undefined);
+});
 it.each([{ status: 'retired', validated: true, record }, { status: 'available', validated: false, record }])(
   'does not present an archive response as an applicable current result', async item => {
     mocks.fetch.mockResolvedValue({ ok: true, json: async () => [item] });

@@ -305,8 +305,20 @@ pub fn solve_candidate(
     let mut best: Option<(f64, GearingResult, f64)> = None;
     for fd_tick in fd_min..=fd_max {
         let fd = fd_tick as f64 / 100.0;
-        let top_tick =
-            ((total / fd * 100.0).round() as i64).clamp(ranges[count - 1].0, upper[count - 1]);
+        // Speed is inverse to the gear ratio: the nearest ratio tick can fail
+        // while its neighbour satisfies the unchanged speed tolerance.
+        let ideal_tick = total / fd * 100.0;
+        let Some(top_tick) = [ideal_tick.round(), ideal_tick.floor(), ideal_tick.ceil()]
+            .into_iter()
+            .map(|tick| (tick as i64).clamp(ranges[count - 1].0, upper[count - 1]))
+            .find(|&tick| {
+                let speed =
+                    calc_gear_speed(rpm, tick as f64 / 100.0, fd, circumference / (2.0 * PI)) * 3.6;
+                speed.is_finite() && speed > 0.0 && (speed - target).abs() <= tolerance + 1e-9
+            })
+        else {
+            continue;
+        };
         let mut gear_ticks = vec![0; count];
         gear_ticks[count - 1] = top_tick;
         for i in (0..count - 1).rev() {

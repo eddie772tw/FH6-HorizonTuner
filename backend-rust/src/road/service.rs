@@ -498,6 +498,7 @@ impl RoadService {
             ));
         }
         let workflow = self.store.get(workflow_id, Some("workflow"), None)?;
+        crate::tuning::archive::ensure_active(&workflow["recommendation"])?;
         let setup_id = request["setupId"]
             .as_str()
             .ok_or_else(|| ApiError::invalid("setupId is required"))?;
@@ -608,7 +609,17 @@ impl RoadService {
             .map_err(|e| ApiError::internal("Operation failed", e))
     }
     pub fn recover(&mut self) -> ApiResult<()> {
+        let retired = self
+            .store
+            .list(None, Some("workflow"), true)?
+            .into_iter()
+            .filter(|workflow| crate::tuning::archive::is_retired(&workflow["recommendation"]))
+            .filter_map(|workflow| workflow["id"].as_str().map(str::to_owned))
+            .collect::<std::collections::HashSet<_>>();
         for d in self.store.list(None, Some("run"), true)? {
+            if retired.contains(d["workflowId"].as_str().unwrap_or("")) {
+                continue;
+            }
             if self
                 .store
                 .list(

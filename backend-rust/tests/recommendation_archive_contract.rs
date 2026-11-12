@@ -86,7 +86,30 @@ fn archived_workflows_cannot_start_runs() {
             Some("old-setup"),
         )
         .unwrap();
+    app.database
+        .create_session("old-session", 1435, "Beetle", 0, 400, 1.0)
+        .unwrap();
+    app.database.insert_points_batch("old-session", &[json!({"TimestampMS":1000,"CurrentEngineRpm":3000,"SpeedMetersPerSecond":20,"Gear":3})]).unwrap();
+    app.tuning_evidence
+        .store
+        .append(
+            "run",
+            "old-road",
+            &json!({"sessionId":"old-session","setupId":"old-setup"}),
+            Some("old-run"),
+        )
+        .unwrap();
     let before = std::fs::read(&app.tuning_evidence.store.db_path).unwrap();
+    let capture = call(
+        &app,
+        "GET",
+        "/api/road/workflows/old-road/runs/old-run/capture",
+        Value::Null,
+    )
+    .unwrap();
+    assert_eq!(capture["schemaVersion"], "tuning-capture/v1");
+    assert_eq!(capture["references"]["runId"], "old-run");
+    assert_eq!(capture["samples"][0]["rpm"], 3000.0);
     let archive = call(&app, "GET", "/api/road/archives", Value::Null).unwrap();
     assert!(archive[0]["documents"]
         .as_array()
@@ -114,5 +137,59 @@ fn archived_workflows_cannot_start_runs() {
             .as_array()
             .unwrap()
             .is_empty()
+    );
+}
+
+#[test]
+fn restart_preserves_archived_pending_runs_and_session_metadata() {
+    let temp = tempfile::tempdir().unwrap();
+    let app = App::new(temp.path()).unwrap();
+    app.database
+        .create_session("old-session", 1435, "Beetle", 0, 400, 1.0)
+        .unwrap();
+    app.tuning_evidence
+        .store
+        .append(
+            "workflow",
+            "old-road",
+            &json!({
+                "recommendation":{"formulaVersion":"rust/ice-measured-workflow-v2"}
+            }),
+            Some("old-road"),
+        )
+        .unwrap();
+    app.tuning_evidence
+        .store
+        .append(
+            "run",
+            "old-road",
+            &json!({
+                "sessionId":"old-session", "setupId":"old-setup"
+            }),
+            Some("old-run"),
+        )
+        .unwrap();
+    let documents = app
+        .tuning_evidence
+        .store
+        .list(Some("old-road"), None, false)
+        .unwrap();
+    let metadata = app.database.get_session_metadata("old-session").unwrap();
+    drop(app);
+    let restarted = App::new(temp.path()).unwrap();
+    assert_eq!(
+        restarted
+            .tuning_evidence
+            .store
+            .list(Some("old-road"), None, false)
+            .unwrap(),
+        documents
+    );
+    assert_eq!(
+        restarted
+            .database
+            .get_session_metadata("old-session")
+            .unwrap(),
+        metadata
     );
 }

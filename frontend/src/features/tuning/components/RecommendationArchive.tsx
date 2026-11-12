@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useSettings } from '../../../context/SettingsContext';
 import { backendFetch } from '../../../services/backend';
 import { useFileSave } from '../../../hooks/useFileSave';
-import { captureSaveRequest } from '../captureDownload';
+import { captureSaveRequest, savedCaptureSaveRequest } from '../captureDownload';
 
 interface ArchiveItem {
   status: 'retired';
@@ -57,6 +57,12 @@ export function RecommendationArchive() {
       <p className="small mt-2 text-break">{record.recommendation.inputSnapshot?.gearingModelVersion}</p>
       <button className="btn btn-sm btn-outline-secondary" disabled={isSaving}
         onClick={() => void save(captureSaveRequest(documents ?? record, documents ? 'archived-workflow-history.json' : 'archived-recommendation.json'))}>{t(documents ? 'Export original history' : 'Export original record')}</button>
+      {documents?.filter((document): document is { kind: 'run'; id: string } =>
+        !!document && typeof document === 'object' && 'kind' in document && document.kind === 'run'
+        && 'id' in document && typeof document.id === 'string').map(run => <div key={run.id} className="mt-2">
+          <button className="btn btn-sm btn-outline-secondary mw-100 text-break" disabled={isSaving}
+            onClick={() => void save(savedCaptureSaveRequest(`/workflows/${encodeURIComponent(record.id)}/runs/${encodeURIComponent(run.id)}/capture`, 'archived-run-capture.json'))}>{t('Export recorded frames')}: {run.id}</button>
+        </div>)}
       <pre className="small overflow-auto mt-2" style={{ maxHeight: 260 }}>{JSON.stringify(documents ?? record, null, 2)}</pre>
     </details>)}
   </details>;

@@ -7,7 +7,7 @@
 | 用途 | 正式 owner／版本 | 處理 |
 | --- | --- | --- |
 | Road | `gearing/road.rs`，`aego-road-launch-envelope/v3` | 數值不變 |
-| Rally | `gearing/rally.rs`，`aego-rally-joint/v1` | 數值不變 |
+| Rally | `gearing/rally.rs`，`aego-rally-joint/v1` | 沿用 #657 模型與原容差；包含 #654 獨立審查的相鄰刻度修正 |
 | Drift | `gearing/drift.rs`，`aego-drift-working/v1` | 仍要求主檔、RPM、輪速目標 |
 | Drag | `gearing/drag.rs`，`aego-drag-joint/v1` | 起步／末速約束不變 |
 | DangerSign 既有路徑 | `gearing` 的內部實作 | 保留原運算，不新增第五個 AEGO 模型、ID、設定入口或獨立項目 |
@@ -36,6 +36,7 @@ MCP discovery 移除三個舊工具，現為24項；快取名稱只回退役錯�
 
 - TypeScript ICE／EV 推薦與 Rust ICE workflow v1／v2／v3 改為封存；Rust EV v1／v2／v3 的獨立契約繼續保留。
 - `GET /api/road/archives` 只讀取既有資料，回傳 `status: retired`、`validated: false` 與原始 `record`。舊 Road 工作流程另附原始 `documents`，保留設定、試跑與報告；匯出的是原始記錄／記錄陣列，不把狀態包裝寫回資料庫。
+- 試跑幀存於獨立的 session／telemetry 資料，不內嵌於歷史文件陣列。封存面板依每筆 run 提供「匯出錄製幀」，使用既有 capture GET 讀取錄製資料與原始 recording／references；不重新分析或求解。啟動復原略過已退役 workflow 的中斷 run，避免 finalize session 或新增 summary；現行 workflow 的復原流程維持。
 - 此讀取由 App 在 telemetry engine lock 外派送；沒有執行模型、重建推薦、補新診斷、更新資格 cache 或遷移儲存。
 - 現行 compatibility／workflow 清單不混入退役記錄。既有記錄的 GET 仍可讀；所有退役工作流程的寫入／試跑入口拒絕。封存不提供套用、等價重配或重新保存為合格推薦的操作。
 - 重新計算是使用者明確完成正式流程後建立的新推薦，要求現行必要輸入與合格證據，產生新記錄，不改原始封存。直接修改 formula/model ID、匯入封存值或夾帶 `validated` 欄位不能取得資格。
