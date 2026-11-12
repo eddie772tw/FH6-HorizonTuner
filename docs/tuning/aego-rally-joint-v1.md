@@ -82,5 +82,3 @@ Rust owner 核對；不能以 TS 輸出冒充 Rust 驗收。
 
 採用技能：`physics-tuning-math`、`modular-refactoring`、
 `cross-agent-collaboration`、`pr-author-maintainer`、`ponytail`。
-
-
