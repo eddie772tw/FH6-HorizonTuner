@@ -74,6 +74,54 @@ pub fn measured_gearing(
 ) -> Option<GearingResult> {
     measured_gearing_version(goal, count, profile, engine, AegoModel::production(goal))
 }
+/// Explicit opt-in candidate boundary for stack PR 5. This does not switch the
+/// production workflow or create an applicable recommendation. In particular,
+/// finish targets come from profile even though the measured solver passes None
+/// as secondary correction. Raw request peaks cannot qualify this boundary.
+pub fn measured_drag_candidate(
+    input: &WorkflowRequest,
+    proof: &super::evidence::QualifiedEvidence,
+) -> Result<super::gearing::contracts::CandidateGearingResult, String> {
+    if input.goal != RaceGoal::Drag
+        || !["tuning-workflow-result/v1", "tuning-workflow-result/v2"]
+            .contains(&input.schema_version.as_str())
+    {
+        return Err("Drag candidate requires an ICE workflow schema and Drag goal".into());
+    }
+    proof.validate(input)?;
+    let engine = proof
+        .engine()
+        .ok_or("Drag candidate requires backend-qualified engine capture")?;
+    let mut profile: TuningCarParams =
+        serde_json::from_value(input.profile.clone()).map_err(|e| e.to_string())?;
+    profile.max_hp_rpm = Some(engine.peak_power_rpm);
+    profile.max_torque_rpm = Some(engine.peak_torque_rpm);
+    profile.max_torque = engine.peak_torque_nm;
+    let count = input.profile["adjustability"]["gears"]
+        .as_u64()
+        .filter(|n| (4..=10).contains(n))
+        .ok_or("Drag candidate requires an explicit integer 4-10 gear count")?
+        as usize;
+    let mut qualified = json!({});
+    proof.snapshot(&mut qualified);
+    let usable_limit = qualified["engineCalculation"]["effectiveRedline"]
+        .as_f64()
+        .filter(|rpm| rpm.is_finite() && *rpm > 0.0 && *rpm <= engine.engine_max_rpm)
+        .unwrap_or(engine.engine_max_rpm);
+    let observed: Option<super::gearing::drag::DragObservedBounds> = input
+        .profile
+        .get("dragObservedBounds")
+        .map(|raw| serde_json::from_value(raw.clone()))
+        .transpose()
+        .map_err(|e| format!("Invalid Drag observed bounds: {e}"))?;
+    Ok(super::gearing::drag::solve_candidate(
+        count,
+        &profile,
+        usable_limit,
+        None,
+        observed.as_ref(),
+    ))
+}
 fn measured_gearing_version(
     goal: RaceGoal,
     count: usize,

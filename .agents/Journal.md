@@ -1447,3 +1447,10 @@
 - 齒比取位後，僅檢查輪速誤差不足以保護有效限轉。合成範例 FD3.35／G3=1.84 在5000 RPM 對應99.8745 km/h，在100 km/h 需5006.2822 RPM；若合格有效上限為5000，這一組取位值不能套用。模型須同時重驗主工作點與目標輪速下的實際 RPM，ratio balance 後亦由同一 owner 檢查並重算 actual／誤差診斷。
 - 合入 #654 `010579b5` 後，完整 Cargo 289 passed／3 既有 ignored（-j 2），含8組 Drift 候選契約及原歷史／四模型／保存重播；完整前端251 files／2028 tests passed（maxWorkers=2），與合入後相同 frontend tree。fmt／diff check通過；原21 tuning／10 EV golden、正式路由、底盤及量測資格未改。無 UI 或實車性能驗收。
 - Skills：physics-tuning-math、modular-refactoring、pr-author-maintainer、cross-agent-collaboration、ponytail。
+
+## 2026-11-12 / #656 Drag 聯合端點與有效限轉（Codex as Codex）
+
+- 正式 measured solver 的 secondary correction 為 None，不代表沒有 Drag 末速輸入；候選入口仍須從 profile 取完整末速／來源 pair。secondary 有任一末速欄位時必須在同一入口成對，不能借用 profile 的來源標籤。manual／telemetry 字串仍是 caller-declared，不是後端已驗證的末速能力。
+- 起步與末檔均在功率峰值 RPM 定義純滾動輪速工程目標，取位後固定 max(1km/h,2%) 容差；指定速度所需的 RPM 還須不超過合格有效限轉。速度誤差合格但 requiredRPM 超限的候選必須拒絕；先在端點刻度區間納入限轉，再由同一 owner 在 ratio balance 後重驗並重算 actual／error，不能沿用調整前的診斷。
+- 合入 #655 `7348c513` 後，最終完整 Cargo 298 passed／3 既有 ignored（-j 2），含8組 Drag 候選與新增 workflow profile 契約；完整前端251 files／2028 tests passed（maxWorkers=2），前後 frontend tree 同為 `dcdd7de5`。fmt／diff check 通過；原21 tuning／10 EV golden、正式路由、底盤與資格 reducer 未改。未執行 UI、native 或實車性能驗收。
+- Skills：physics-tuning-math、modular-refactoring、pr-author-maintainer、cross-agent-collaboration、ponytail。
