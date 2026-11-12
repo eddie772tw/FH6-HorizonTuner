@@ -1,5 +1,13 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-11-12 / v1.8.4 Tag、Release Note 與 Wiki 同步（Codex as Codex）
+
+- **範圍**：依使用者要求，以最新 main 發布 `v1.8.4` Tag，runtime 維持已備妥的 `11.45.26`。Release Note 對照 v1.8.3、v1.8.2、v1.8.1 的實際公開內容，沿用 What's New／What's Fixed／What's Changed 與 PR、Full Changelog 格式；同步中英文 README、安全版本映射及獨立 Wiki。未合併的 #648 不列入變更。
+- **驗證**：pnpm `11.27.0`／Node `24.19.0`；完整前端 2,028 passed，TypeScript／Vite production build 通過。Rust `1.99.1` 完整預設組態 267 passed／2 ignored，無預設功能 257 passed／2 ignored，含 doc-tests 通過；平台資產與發布工具 18 passed。五處版本契約均為 `11.45.26`，文件連結與 diff 檢查通過。
+- **本地 smoke**：無 HUD Linux debug sidecar 回報版本 `11.45.26`、零嵌入 HUD；占用首選 HTTP port 後成功使用動態 port，處理 10 個合成 UDP frames，stdin EOF 後正常退出且 UDP listener 可重新綁定。證據保留於任務 `work/v1.8.4-sidecar-smoke`，不是 AppImage／Windows 正式簽章產物或遊戲實機驗收。
+- **發布邊界**：Tag push 不觸發 `release.yml`，須另外發布 GitHub Release。使用者已要求一併發布 Release；GitHub API 的 `api.github.com` 目前遭此環境網路規則拒絕，需恢復存取後完成 Release 建立與打包狀態讀回。Git repository 與 Wiki 可透過 HTTPS Git 獨立推送。
+- **採用技能**：`portable-release-validation`、`agent-governance-audit`。技能目錄、frontmatter 與索引名稱一致。
+
 ## 2026-11-11 / runtime 11.45.26 發行準備（Codex as Codex）
 
 - **Scope**：依使用者要求提升下一版 runtime，保留 `v1.8.4` 未建立 tag／Release 的狀態。採用 `portable-release-validation`、`pr-author-maintainer`。

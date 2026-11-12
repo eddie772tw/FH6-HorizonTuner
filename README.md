@@ -77,6 +77,10 @@ FH6-HorizonTuner 透過遊戲的 **Data Out UDP 遙測**接收車輛資料，整
 
 ## 下載與版本選擇
 
+**v1.8.4 · runtime `11.45.26`**：[版本變更](docs/releases/v1.8.4.md) · [原始碼 Tag](https://github.com/eddie772tw/FH6-HorizonTuner/tree/v1.8.4) · [Wiki](https://github.com/eddie772tw/FH6-HorizonTuner/wiki)
+
+本版新增 NFS Underground 2、四款 Toyota 儀表與六款獨立轉速表，HUD 改為五分頁設定，音響與輔助儀表可獨立顯示；並修正 R34 MFD、調校邊界及 Companion USB／ADB 生命週期。USB 預設關閉，需手動啟用與掃描。Tag 與下載資產分開發布，安裝檔及 OTA 狀態以 Release 頁面為準。
+
 **[前往最新正式版 →](https://github.com/eddie772tw/FH6-HorizonTuner/releases/latest)**
 
 | 版本 | 適合用途 | 下載 |

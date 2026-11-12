@@ -73,6 +73,10 @@ Browse the settings and original captures for the [NFSU2 faces](https://github.c
 
 ## Download
 
+**v1.8.4 · runtime `11.45.26`**: [Release notes](docs/releases/v1.8.4.md) · [Source tag](https://github.com/eddie772tw/FH6-HorizonTuner/tree/v1.8.4) · [Wiki](https://github.com/eddie772tw/FH6-HorizonTuner/wiki)
+
+This version adds NFS Underground 2, four Toyota clusters and six standalone tachometers, five HUD settings tabs, and independent audio heads and auxiliary gauges. It also fixes R34 MFD rendering, tuning boundaries and Companion USB/ADB lifecycle handling. USB is off by default and requires manual activation and scanning. Tags and downloadable assets are published separately; check the Release page for installers and OTA availability.
+
 **[Get the latest stable release →](https://github.com/eddie772tw/FH6-HorizonTuner/releases/latest)**
 
 | Edition | Use it for | Download |

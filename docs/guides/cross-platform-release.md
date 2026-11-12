@@ -2,12 +2,12 @@
 
 本次擴充從 `main` 的 Rust backend 架構出發。Linux 是完整調校及分析工作台，遊戲在 LAN 其他裝置執行；不依賴 Windows HUD，也不另推出 Lite。
 
-## 目前發行準備狀態
+## 目前版本與發行狀態
 
-- 已公開版本：`v1.8.3`，OTA runtime `11.45.25`。
-- 下一版候選：`v1.8.4`，準備中的 runtime `11.45.26`；尚未建立 tag 或 Release，也未更新公開 OTA manifest。
+- 前一個已發布 Release：`v1.8.3`，OTA runtime `11.45.25`。
+- 原始碼 Tag：`v1.8.4`，runtime `11.45.26`；[Release Note](../releases/v1.8.4.md) 記錄相較 v1.8.3 的變更。Tag 發布與 GitHub Release／產物發布分開，推送 Tag 不會更新公開 OTA manifest。
 - runtime 以 `frontend/src-tauri/tauri.conf.json` 為 SSOT；前後端 `Cargo.toml` 與各自的 `Cargo.lock` 同步為 `11.45.26`，使用 `scripts/validate_version_consistency.py` 檢查。
-- 本階段僅準備程式碼與契約。正式發布前仍須完成候選 commit 的 Windows Full／Lite、Linux 建置、正式簽章核對及產物啟動／sidecar 清理驗收；真實遊戲 LAN 驗收另行記錄。
+- 正式產物發布仍須完成 Tag commit 的 Windows Full／Lite、Linux 建置、正式簽章核對及產物啟動／sidecar 清理驗收；真實遊戲 LAN 驗收另行記錄。
 - Android 原生 Companion PR #648 尚未合併，不列入本候選的變更或裝置驗收聲明。
 
 ## 平台與產物
