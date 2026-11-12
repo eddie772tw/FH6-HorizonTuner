@@ -100,6 +100,16 @@ pub fn calculate(
     base: Option<&GearingResult>,
     raw: &Value,
 ) -> (Option<GearingResult>, Diagnostic) {
+    calculate_checked(profile, base, raw, |_| true)
+}
+
+/// The caller supplies freshly reconstructed model constraints, never a client policy.
+pub fn calculate_checked<F: Fn(&GearingResult) -> bool>(
+    profile: &Value,
+    base: Option<&GearingResult>,
+    raw: &Value,
+    accept: F,
+) -> (Option<GearingResult>, Diagnostic) {
     let fail = |reason| (None, Diagnostic::unavailable(reason));
     if profile["isElectric"] == true
         || super::cvt::selected(profile)
@@ -131,7 +141,16 @@ pub fn calculate(
     let legal_final_drives: Vec<f64> = (tick(bounds.final_drive.min).unwrap()
         ..=tick(bounds.final_drive.max).unwrap())
         .map(|n| n as f64 / 100.0)
-        .filter(|fd| allocate(base, *fd, bounds).is_some())
+        .filter(|fd| {
+            allocate(base, *fd, bounds).is_some_and(|gears| {
+                accept(&GearingResult {
+                    final_drive: *fd,
+                    gears,
+                    unsupported: None,
+                    unsupported_reason: None,
+                })
+            })
+        })
         .collect();
     let mut diagnostic = Diagnostic {
         status: "unavailable",
@@ -159,6 +178,10 @@ pub fn calculate(
             unsupported_reason: None,
         }
     };
+    if !accept(&selected) {
+        diagnostic.reason = Some("Selected final drive violates the model targets or the observed profile bounds. Correct the profile observations before widening their range.");
+        return (None, diagnostic);
+    }
     diagnostic.status = "available";
     diagnostic.selected_final_drive = Some(selected.final_drive);
     diagnostic.total_ratio_errors = selected

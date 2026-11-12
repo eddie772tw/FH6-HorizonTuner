@@ -12,7 +12,8 @@ export interface CompanionSnapshot {
   profile: CarParams | null;
   profileKey: string;
   workflow: { step: number; goal: string; season: string };
-  results: { chassis: ChassisTuningResult | null; chassisDiagnostics?: ChassisDiagnostics; alignment: StaticTireAlignResult | null; gearing: WorkflowGearingResult | null; cvt?: CvtFoundationResult };
+  results: { chassis: ChassisTuningResult | null; chassisDiagnostics?: ChassisDiagnostics; alignment: StaticTireAlignResult | null; gearing: WorkflowGearingResult | null; cvt?: CvtFoundationResult;
+    gearingDiagnostics?: import('../tuning/aegoTypes').AegoGearingDiagnostics; gearingView?: import('../tuning/aegoTypes').GearingView };
   engine: { phase: string; sampleCount: number; state: TuningMeasurementState | null };
   readiness: WorkflowReadiness;
   calculationStatus?: 'pending' | 'error' | 'ready';

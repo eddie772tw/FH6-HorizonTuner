@@ -6,6 +6,7 @@ import { useSettings } from '../../../context/SettingsContext';
 import { RallyProfileSetup } from './RallyProfileSetup';
 import { CarParams } from '../../../context/CarParamsContext';
 import { DragGearingSetup } from './DragGearingSetup';
+import { DriftGearingSetup } from './DriftGearingSetup';
 import type { Season } from '../../../domain/tuning/types';
 import { DecimalInput } from '../../../components/common/DecimalInput';
 import { OptionalAeroInputs } from './OptionalAeroInputs';
@@ -141,6 +142,7 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
               <option value="Drag">{t('Drag')}</option>
             </select>
             {selectedRaceGoal === 'Drag' && <DragGearingSetup carParams={carParams} updateParam={updateParam} />}
+            {selectedRaceGoal === 'Drift' && <DriftGearingSetup profile={carParams} onChange={updateParam} />}
           </div>
 
           <div className="d-flex flex-column gap-2">

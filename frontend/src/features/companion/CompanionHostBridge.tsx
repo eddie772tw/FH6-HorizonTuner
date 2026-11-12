@@ -33,6 +33,8 @@ export function CompanionHostBridge() {
           chassisDiagnostics: tune.result?.chassisDiagnostics,
           alignment: tune.result?.alignment ?? null,
           gearing: tune.result?.gearing ?? null,
+          gearingDiagnostics: tune.result?.gearingDiagnostics,
+          gearingView: tune.result?.gearingView,
         },
         engine: profile?.isElectric
           ? { phase: tune.evMeasurement.phase, sampleCount: tune.evMeasurement.sampleCount, state: null }

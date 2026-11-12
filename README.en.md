@@ -44,7 +44,7 @@ The dashboard and workspace screenshots show the [web interface on `main`](https
 | Four-step tuning | Post-race analysis |
 | --- | --- |
 | ![First step of a Road tune with the tuning goal, vehicle weight and front weight distribution](docs/assets/readme/en-us/tune.webp) | ![Track map colored by speed beside a comparison of speed and pedal inputs for laps two and one](docs/assets/readme/en-us/sessions.webp) |
-| Start with the car and tuning goal. After measuring the engine, check whether each upshift lands back in the power band. [Six-speed AEGO gearing chart](docs/frontend/assets/rhine-lab/gearing-rhine-light.png) | The heatmap shows the fast and slow sections of a lap. Overlay a second lap's speed trace to compare the same stretch of track. [Race analysis guide](docs/guides/race-analysis.md) |
+| Start with the car and tuning goal. After measuring the engine, inspect the backend-resolved wheel speeds and RPM markers. Peaks do not establish a full usable power band. [Six-speed AEGO gearing chart (historical capture)](docs/frontend/assets/rhine-lab/gearing-rhine-light.png) | The heatmap shows the fast and slow sections of a lap. Overlay a second lap's speed trace to compare the same stretch of track. [Race analysis guide](docs/guides/race-analysis.md) |
 
 | Drag test | Android Companion (Beta) |
 | --- | --- |
@@ -206,9 +206,9 @@ scripts/            Build, release and maintenance tools
 
 Production tuning decisions belong to `backend-rust/src/tuning/`. The frontend owns workflow, drafts and display conversions; historical TypeScript models remain test references. See the [responsibility contract](docs/contracts/tuning_responsibilities.md).
 
-AEGO Road, Rally, Drift and Drag own separate entry points and policies. Historical replay remains frozen, and production dispatch does not apply shared ratio corrections afterward. This split preserves current numbers; see the [model isolation boundaries](docs/tuning/aego-model-isolation.md).
+Production AEGO recommendations select independent models by goal: Road launch envelope v3, Rally joint v1, Drift working v1 and Drag joint v1. Rust supplies qualification, driven-wheel geometry, model sources, target errors and limitations. Drift requires an explicit main gear, target RPM and wheel speed. Ratio balance rechecks the original targets and observed hardware bounds and refuses infeasible changes.
 
-The independent [Drag joint-endpoint candidate](docs/tuning/aego-drag-joint-v1.md) checks launch and final-gear targets, observed bounds and rounding error together. It has an explicit candidate entry point; production recommendation selection has not switched. Engineering priors and synthetic contracts do not establish in-game launch or finish-speed performance.
+New ICE recommendations use `rust/ice-measured-workflow-v4` and reconstruct their explicit model from original evidence after restart. Frozen owners continue read-only replay of v1/v2/v3 saves. See the [integration and rollback contract](docs/tuning/aego-model-integration-v4.md) and [model isolation boundaries](docs/tuning/aego-model-isolation.md). These are engineering baselines: priors, synthetic contracts and browser captures do not establish in-game A/B results, a qualified Drift working band or launch/finish-speed performance.
 
 </details>
 

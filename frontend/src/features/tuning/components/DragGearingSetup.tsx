@@ -21,7 +21,7 @@ const DragGearingSetupContent: React.FC<DragGearingSetupProps> = ({ carParams, u
     <DecimalInput
       id="step1-drag-finish-speed"
       value={carParams?.dragFinishSpeedKmh}
-      onChange={(value) => updateParam('dragFinishSpeedKmh', value && value > 0 ? value : undefined)}
+      onChange={(value) => updateParam('dragFinishSpeedKmh', value && value > 0 ? value : null)}
       precision={1}
       min={1}
       max={1000}
@@ -30,7 +30,7 @@ const DragGearingSetupContent: React.FC<DragGearingSetupProps> = ({ carParams, u
     <select
       className="form-select form-select-sm"
       value={carParams?.dragFinishSpeedProvenance ?? ''}
-      onChange={(event) => updateParam('dragFinishSpeedProvenance', event.target.value || undefined)}
+      onChange={(event) => updateParam('dragFinishSpeedProvenance', event.target.value || null)}
       aria-label={t('Drag finish speed source')}
     >
       <option value="">{t('Source (unconfirmed)')}</option>

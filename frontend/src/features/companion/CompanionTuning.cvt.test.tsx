@@ -10,6 +10,34 @@ vi.mock('../../context/SettingsContext', () => ({
   useSettings: () => ({ t: (key: string) => key.startsWith('companion.sections.') ? key.replace('companion.sections.', '') : key }),
 }));
 const unavailable = 'CVT recommendations are unavailable pending real capture and solver validation.';
+it('shows model unavailability and desktop Drift target guidance instead of unsupported zero ratios', async () => {
+  Object.assign(globalThis,{IS_REACT_ACT_ENVIRONMENT:true});
+  const host=document.createElement('div');document.body.append(host);const root=createRoot(host);
+  try {
+    const snapshot=state(false);
+    snapshot.snapshot!.workflow.goal='Drift';
+    snapshot.snapshot!.readiness.measuredEngine=true;
+    snapshot.snapshot!.results.gearing={finalDrive:0,gears:[],unsupported:true,unsupportedReason:'Working target required'};
+    snapshot.snapshot!.results.gearingDiagnostics={modelId:'aego-drift-working',modelVersion:'aego-drift-working/v1',status:'unavailable',
+      reason:'Working target required',targetSource:'user-target',boundsSource:'model-prior-not-game-observation'};
+    await act(async()=>root.render(<CompanionTuning state={snapshot} disabled={false} onCommand={async()=>true} />));
+    const gearing=host.querySelector('#companion-gearing')!;
+    expect(gearing.textContent).toContain('Working target required');
+    expect(gearing.textContent).toContain('desktop Step 1');
+    expect(gearing.textContent).toContain('User-requested operating target');
+    expect(gearing.textContent).not.toContain('Final drive');
+    snapshot.snapshot!.results.gearing={finalDrive:3.5,gears:[3,2,1.5,1]};
+    snapshot.snapshot!.readiness.gearingAvailable=true;
+    snapshot.snapshot!.results.gearingDiagnostics={...snapshot.snapshot!.results.gearingDiagnostics,status:'limited',reason:undefined};
+    await act(async()=>root.render(<CompanionTuning state={snapshot} disabled={false} onCommand={async()=>true} />));
+    expect(gearing.textContent).toContain('Final drive');
+    expect(host.querySelector('#aego-model-panel')!.getAttribute('data-aego-status')).toBe('limited');
+    snapshot.snapshot!.calculationStatus='pending';
+    await act(async()=>root.render(<CompanionTuning state={snapshot} disabled={false} onCommand={async()=>true} />));
+    expect(gearing.textContent).not.toContain('Final drive');
+    expect(host.querySelector('#aego-model-panel')).toBeNull();
+  } finally {await act(async()=>root.unmount());host.remove();}
+});
 function state(cvt: boolean): CompanionState {
   return {
     hostOnline: true, revision: 1, commands: [], snapshot: {

@@ -1,0 +1,1689 @@
+{
+  "date": "2026-11-12T08:08:29.136Z",
+  "baseCommit": "cab5e23bdc6f54f7b74b60711b48d8ffc3890ed6",
+  "browser": "148.0.7778.96",
+  "backendSha256": "56ca8f141513fd37773be527b97d8fedf141989c6fdc69f7b848661aaa933c75",
+  "sourceHashes": {
+    "backend-rust/src/agent_cli.rs": "51f889349bf978ee293fb07c8853f2fe9dc327070ccd76bc586f1d9c6a2c189a",
+    "backend-rust/src/agent_cli/context.rs": "8d63d6a0d78166bbebcbfff94ebfbcae22f7746ca0f12d80b6163a82b8df1038",
+    "backend-rust/src/agent_cli/options.rs": "c9aa409fe0ba1c367cb5e7508130c94252d57cafc452786b75a4d6fd17839513",
+    "backend-rust/src/app.rs": "8dd27b8e3f1405336f25afe81ce7c8ca7fca131640ad2dad5271594470d2f300",
+    "backend-rust/src/assets.rs": "0d222c168aee7d57785e41b22d196e175aa90c86994ac7019b9c310821b1d60c",
+    "backend-rust/src/bin/fh6-agent.rs": "6128821cc712259a9f95db4fdac168b5fd2b46d8464d8c826f9a51941d9b4751",
+    "backend-rust/src/companion.rs": "17532003fc639c928b9061e6a82525c4029fee7d2b43fde80e5aa0b8a9539244",
+    "backend-rust/src/companion_theme.rs": "3fafbf1169a12374222d7ae6209fda9e5103796ede87297ed73871242185d7b1",
+    "backend-rust/src/companion_usb.rs": "e39714914c89de9c9bb5fd30d638083086d3d64fb853983269e10df986f8dc44",
+    "backend-rust/src/companion_usb_runtime.rs": "0c15b95583221595020d871f613302b2a0d948ecf5e50ed3b7378844aebc6ac8",
+    "backend-rust/src/companion_workflow.rs": "2801f9b5be3699566b8aef071b77adc21d1ac373038635cf6cc61d73757d93a1",
+    "backend-rust/src/config.rs": "8631d106588d6b1e6f9534263e0afc26d3f4c3e417d34ecd27e0b99797e0f2f1",
+    "backend-rust/src/config/gauges.rs": "70d6bdef0996c73c01a7a56c68ae1fb49fbd355078419117296cbad831c7208d",
+    "backend-rust/src/config_service.rs": "bca0c60ea5a4246f0068ac0a4dd92f8b79393b58822672ab5b99e1aa3ed6afe8",
+    "backend-rust/src/diagnostics.rs": "85f32bda496f320ec3fc1ad5fc5a234d6201b8d1265b12b996da67d21152a325",
+    "backend-rust/src/error.rs": "2ae02c3fbf9557e5cb109c1c378da472014c277550a9c6126cd098d6615493bf",
+    "backend-rust/src/languages.rs": "5d900594d3e23ae196e8896d9cad07686ea465689a7aec57022172d0a944f4da",
+    "backend-rust/src/lib.rs": "3de3f19d5bbd644845b881b5ae0bbf54d4111509438d958b358b563730c4a540",
+    "backend-rust/src/main.rs": "854753d3f98d221a7f4e53c2174b01a5bd5deaf915c279d268a213f954cbd678",
+    "backend-rust/src/mcp/mod.rs": "03d969cae0861f1ec52e956cd618b4318de8d0203a740a8f565d0e811c3009d4",
+    "backend-rust/src/mcp/protocol.rs": "fc9a70dc3d896c3e799eb691b589303930ecf259a28b831e9691f56e9a5891d1",
+    "backend-rust/src/mcp/resources.rs": "0c3b0cf46db7ed5e101b8579b1b0345ed531724c25725d0c0917cbfbb6001b3f",
+    "backend-rust/src/mcp/service.rs": "3514d7632d795f7ac7833dccc57c29595d2a4aa287e317bd9b068e7974ebb354",
+    "backend-rust/src/mcp/tool_registry.json": "b13c89ab06d589e1d21441efa239f5939b69337c61a09bab539cad56205f8243",
+    "backend-rust/src/mcp/tools.rs": "94eb0dd382cec883394d7091f62348fb2e6edac6f75036507f9778ea8a6fc203",
+    "backend-rust/src/motec.rs": "95c176e005848b4a4e01ba10fba7e68bc615091609705ea213df6dab449dfa3b",
+    "backend-rust/src/native/audio.rs": "d4b1dadfbcb0cd1c2c5e0860855aaf3aa857548d0b1b3c7f92ebe42232b2a5af",
+    "backend-rust/src/native/discord.rs": "34655ac8d6ab425874a10697198fec7f76138160fc90aac3f882d19bdf767756",
+    "backend-rust/src/native/media.rs": "38f7b2b345f2dc0e7af5410c986041d7ec67f3fda5063935e1868171227ede8b",
+    "backend-rust/src/native/mod.rs": "18bdd93b58ecec54c4ba97901f48d8c751e9902c31bcc004477df858ffa34fb2",
+    "backend-rust/src/native/unsupported.rs": "ca7e911bd12bfa535904bf9448ab34b845dce4c1a08f4644c0f0833a00caac2f",
+    "backend-rust/src/network.rs": "016a95aa1fbb1ab77492ddcc62de10da612abd7d61a1bfbfbf13b55a7532612e",
+    "backend-rust/src/persistence.rs": "a1c96092f29ac11712d067ac856a0bdc823713caae84a705a7c56ea6d6aa1c16",
+    "backend-rust/src/platform.rs": "2f26c0c9860c48f0574c4bd15aa90f93fa156b5e114b57d84878264fa3535936",
+    "backend-rust/src/profile_io.rs": "c4007c2c587df5293fbc42e34b1aae8246f266bca428f2ae0d9c719056defe2f",
+    "backend-rust/src/road/analysis.rs": "3f77273b4047ddbe23cf3bf898fc307786065b9cc8ddad8bb8920d05fb12e695",
+    "backend-rust/src/road/comparison.rs": "d27801754817e3ce40ce6278f17b6c67a093555fe9ad0435b16e7d0a33842c7c",
+    "backend-rust/src/road/matching.rs": "6b049e2baa30feb1812424ce43924340b8801ababdca2ea46cb7d7951be8d8bc",
+    "backend-rust/src/road/mod.rs": "5a248e2adec22ccb689e987611890c04389da0a798ce9fd4bddcec41b01a7dfc",
+    "backend-rust/src/road/models.rs": "d983afe2335da4f2d957016d0617fdbf76cba15d4b7a352071e60edf236c4bdb",
+    "backend-rust/src/road/service.rs": "6bc6a5b3be8afc2fcc76d2dbce7c118454ecce0e6c1e569fae09ee1cfaa3e9af",
+    "backend-rust/src/road/store.rs": "9828f3e29d9671d4b4a6ef15af24978cc2f1af4317a41ab906ef8df223918aa1",
+    "backend-rust/src/road/tuning_capture.rs": "4c216128dee1fa46bde56bdffca2d17c3b4884a61341b2645d8e85866489b1dd",
+    "backend-rust/src/runtime.rs": "52d3cd9f83c67104258a9a00068bfad745792030c97c8be6cfc0ad75cffc63a6",
+    "backend-rust/src/storage.rs": "5cdcf799421c4b33200daec90c3c6c7e419105fe03a657c495b7a4391ca9ec1e",
+    "backend-rust/src/telemetry/contract.rs": "d7448019a6a7b065bcbdb9b3b8adf8972f4551c1bbb76d45ad4fe130f5998fe7",
+    "backend-rust/src/telemetry/drag.rs": "757bd4284600de60aa93eb27c7cdc91933ca90763920d05a5670d42253bfa481",
+    "backend-rust/src/telemetry/dyno.rs": "a4bef8359d4936a1f7c0c8c90ab0b420929730a8cf50583fbfad3c701750503e",
+    "backend-rust/src/telemetry/mod.rs": "b0ec56d59c76909e025cd568c5683ac94cb0d95680dc4df9a06d2a8bca7a9140",
+    "backend-rust/src/telemetry/packet.rs": "9fc0bd97c63afab17b3a7c90501867a88b9637e0e97dac57a71ab9fa102b3b4d",
+    "backend-rust/src/telemetry/race.rs": "00d7018683fd21f044f4ae4d26ac59721fcdab011f56744dff4b1e90c53a1a85",
+    "backend-rust/src/telemetry/sqlite.rs": "11d16e67866d8cddc97f0ed7fdffb26553c8c4e3b20d0431cff4cde778c24ccb",
+    "backend-rust/src/tuning/aego_model.rs": "ec0c858c33cc4a6b0a45fd15de42696f09ec078e342dd4f00965d3c348c482dd",
+    "backend-rust/src/tuning/alignment.rs": "fb2bd19ba9701247084c1986916164fb1fb908f46203cde6d3cbddc0c4d7730a",
+    "backend-rust/src/tuning/api.rs": "d912ef3b21b7c487f868c81d221da0aa837835d547de24c96cd2d5108f20e6f8",
+    "backend-rust/src/tuning/baseline.rs": "cca594ffc833a6e119608110466af39be5dfb7be508e472f908560c28a97c957",
+    "backend-rust/src/tuning/calculation.rs": "a2111e1c765e2180ad41eaa3f93b095c40b6d107188476b8aaf6132c258e090e",
+    "backend-rust/src/tuning/capabilities.rs": "2c1756c63ed1566b506c36e5ba88aec49b893c9d9edc681be6a40bfc709eeb6c",
+    "backend-rust/src/tuning/chassis.rs": "281b4d88419a0cc4597449d09e087ea5c5c6ec5946a492c504f31421bf06c627",
+    "backend-rust/src/tuning/chassis_load.rs": "0e0b34ded05affe37339731621fdb1cb2de59c65d16046d9193e29771d3d223c",
+    "backend-rust/src/tuning/cvt.rs": "180ecdd1c968c765672f6b43c38edf70e5f156c22f58502135912c594a830789",
+    "backend-rust/src/tuning/developer.rs": "495e056eeb9cf463e3fd4789e75b29fedb2d18de4893436ecf4b29df2d32d5cf",
+    "backend-rust/src/tuning/dyno_guidance.rs": "bf1c5a1d97c7ae570d48108d59f8056b90228fc42b81e6d4661712705b4a34d7",
+    "backend-rust/src/tuning/ev.rs": "b156cc67ecde7d85592c62e8a3ef84687053f8fd3c4c0d0670bfa3ab4b5be326",
+    "backend-rust/src/tuning/ev_archive.rs": "1be210d61d5c17401e11bebffe8454ad3369448154012ee79dfd03998fb9d57d",
+    "backend-rust/src/tuning/ev_measurement.rs": "21248e7d0a564a838132e55c3e1b85135455b8a1b85d1d5e8bf86982cc4cba7b",
+    "backend-rust/src/tuning/evidence.rs": "c835aa6c0943fe77e10b032df39f3c72044d1f60debb9bff334522e0b766b2bb",
+    "backend-rust/src/tuning/gearing/allocation.rs": "25bd1eaec6a134535c2c6b4f646ae10d31e7a3525c036f071d21f23aa879be37",
+    "backend-rust/src/tuning/gearing/contracts.rs": "183bb21cb418d5f23d0a8e3e42add90a0ea161c9a427a9dcf7d806959ad24193",
+    "backend-rust/src/tuning/gearing/drag.rs": "aa0dbb661c148d9566b551fb3a86f041628c7024c43c4afc75e54b0afcbfc993",
+    "backend-rust/src/tuning/gearing/drift.rs": "14c97e3fbeca89a59e684c3c410c2fbd341a6517e4ff08e0d5190ffdb1c7b2ee",
+    "backend-rust/src/tuning/gearing/kinematics.rs": "d9ae8b356917996be83a054e9a824a8e5cdfa4860a47a948d60fce92cce35d7c",
+    "backend-rust/src/tuning/gearing/legacy/mod.rs": "fd813de0854c3941d9ee111975d804538d13eef9b00ffaef57aa7940d13b5486",
+    "backend-rust/src/tuning/gearing/mod.rs": "3ce2c639dab13733c52cffe7182e79e48a8ef97e2a7ad5e7957a35c9f6e3bf44",
+    "backend-rust/src/tuning/gearing/models.rs": "6c20979a9b244039252838ae52f8e19c908242f78605402377c4ca16a5571c33",
+    "backend-rust/src/tuning/gearing/rally.rs": "7997b01619e7b8867d85d0a246bcda41c6cdb21c62cbda6bbd13ce4fa12b0d62",
+    "backend-rust/src/tuning/gearing/road.rs": "d4010a92a983e80733afa3148478782486d4cd0d2ee6982886c4e966cdcdc615",
+    "backend-rust/src/tuning/legacy_cli.rs": "1fc3529041fa356130846005d47ab0d4008b079c248ee96a53f3cc1bab979fb6",
+    "backend-rust/src/tuning/legacy_mcp.rs": "0dd21ed29613c1164a9dd5053b268fb56157b4ed1fb5ff65ff6b6a2444a058aa",
+    "backend-rust/src/tuning/measurement.rs": "d29e435aa686c99c9165295613061c8fc4ffe2d4734e0c61e39ed206846c664e",
+    "backend-rust/src/tuning/mod.rs": "82a70ea7ffef8d3c360df66969780e82c0c6ac4ecefb64f6434e61d1a70bffeb",
+    "backend-rust/src/tuning/profile.rs": "1ae425412ba10ce98ca48126fdfe0dad81c6de345f8df752c3500deab55af9af",
+    "backend-rust/src/tuning/profile_defaults.json": "7ee696b69f8799c00b5a64642148936c1b76ffe5e1a600b84400695d2589a0fb",
+    "backend-rust/src/tuning/ratio_balance.rs": "5673bda39f6270ca8f7b5507b35f645ca465880d0fab509463b30734b3b56ce6",
+    "backend-rust/src/tuning/tire_evidence.rs": "f16b59d97446fd18f49d84f744a588145955ec6080ec9deda6f6748882499977",
+    "backend-rust/src/tuning/types.rs": "9c820e67c18f3dc4bd1158d830ab1d868bb6666a37f9204d63e0e50abdfd6b65",
+    "backend-rust/src/tuning/workflow.rs": "bfe04f917764d56c1df0ecbbda451e58a15c71b1d7eeb454eea4f4fbb838169d",
+    "frontend/src/App.css": "9dc91b5e406d48f583c8671c3cb3fc45678eec8ebf592ad2d80765a29073a6c2",
+    "frontend/src/App.tsx": "e402376984778e68038e7fbe33b6b0fe643a75bd45b3a572e7f362fcba159661",
+    "frontend/src/AppProviders.tsx": "27f7e0c056150f6488798b32d009a18570eab16a5bc0903894c91825ab81dd4d",
+    "frontend/src/LiteApp.tsx": "8e3fcc1b33d452b4fa45783232804a0bf6a2e4657c1d96eba3e89ff481df03c2",
+    "frontend/src/Step1InputAccessibility.test.tsx": "0eb10a80fbe6f2b59c1b8a177674816bcea7177d244564e8b69c9fce1120860f",
+    "frontend/src/app/AppAbout.tsx": "ac3b898e64a33e7fc1752db4905cec76cf9497da4b0513f6d7c399f98b7c44b3",
+    "frontend/src/app/AppBuildInfo.tsx": "f435383cc79a5a48eb01301b9d17a626e294de0c529c12d6ddf27feb69839f5b",
+    "frontend/src/app/AppCompanionIndicator.tsx": "94c3224213fbd675b7d266ea0d37a58a175dafcdc374e43b4fab28413a204256",
+    "frontend/src/app/AppDialog.test.tsx": "3e7d837fa19786c4662956ba05d384114ee00937eed73e5fcfa41914e53786ad",
+    "frontend/src/app/AppDialog.tsx": "446707f44a13e2f075a7107d692e037540470546c02f2ca315c81a8b2b715f66",
+    "frontend/src/app/AppHeader.tsx": "65a980ae7011f960ea961d014371401cbf787d5e64b00477b62a66171918496d",
+    "frontend/src/app/AppMenu.test.tsx": "5c4676ea8a31f50345ad20df04a6e4202f2669438e4f630b35e6aa98aaa33ba9",
+    "frontend/src/app/AppMenu.tsx": "dd2e4b3aac9fbe65b722a0a1abf6a3bda10000550af8c0ac9fb950ac55003ccd",
+    "frontend/src/app/AppShell.test.tsx": "6e6309d164130a8ab9c827e92b64c7ac222393fea05b08f1cb84111d1f2be57c",
+    "frontend/src/app/AppShell.tsx": "0b9104f9e0ae0e00fe52f2d5e857c59071971b2ab8624c4147e12ca5242c56e0",
+    "frontend/src/app/AppStatus.tsx": "a6e24adc11d6a8ef1163aad9e878535d65b3aaaba627039e5c933d11e02209cf",
+    "frontend/src/app/SessionsWorkspaceBridge.tsx": "8dd8eb93dd22fb02ad6d845d36aba6d0b7280ec7abe936cf6c9782fd40058726",
+    "frontend/src/app/applyThemeEarly.ts": "6522b1a5bdabee7d4cd7cca1a8f4f80833fe1080fec53268448398be3798918e",
+    "frontend/src/app/commonWorkspaces.ts": "4fb79d1a4b2e2015d8c4dfaaa6ba95f4418be0ef5a0639535ad93e8e4b976dbe",
+    "frontend/src/app/workspaceManifest.test.ts": "96c8df968cd2b7d6e661c432875a1f227613782c947c08e0149d2b4f93b62d68",
+    "frontend/src/app/workspaceManifest.ts": "d41e64f93889a2ce9dd2da254d1f3d75657aeff2811c70beea1ced7b29fa1631",
+    "frontend/src/assets/react.svg": "35ef61ed53b323ae94a16a8ec659b3d0af3880698791133f23b084085ab1c2e5",
+    "frontend/src/companion-main.tsx": "efa26296fb9fd55a7804e35960cd030bbcd2b7b125283c6dc536f53b72cd9fd4",
+    "frontend/src/components/DiagnosticConsole.tsx": "0a0c76a85ac28c96d179c85727651bb6267e5e4e547b29e01a998fefdb9076d0",
+    "frontend/src/components/UnitSettingsSidebar.tsx": "aed795b8d8f1ecbdabc49a9903810a1794f4c82ae0df7b776ed9fe2dd549eb9a",
+    "frontend/src/components/common/DecimalInput.a11y.test.tsx": "151e1b094ea2850fb11ad713ea02b4ac62478d2d4c406b761dbfc279133374f3",
+    "frontend/src/components/common/DecimalInput.test.ts": "4ca2184be639cb95a01dac88d8a2489d45d2ea9c76b8c9ae6b7dccd600f8a3f4",
+    "frontend/src/components/common/DecimalInput.tsx": "4922aa5e185505a6b0549631aa974a1d7636c5373a5e57fad351678b8e5d5a7c",
+    "frontend/src/components/common/ModalPortal.test.ts": "1655f6c3640335f2c6b1fa9938ea7ef3704a9b81ef954d4136057daa3708a24d",
+    "frontend/src/components/common/ModalPortal.tsx": "440e82f6889c01e318904efcbb0baa9ea9329008d635346b99808beef04a0661",
+    "frontend/src/components/common/ToastContainer.test.tsx": "2e9db47a2e97ea68a2d64bc76fbcd2eadcde701db84e2d2920f7e4d23106c299",
+    "frontend/src/components/common/ToastContainer.tsx": "fd23d7a30f126a25e86b1674c0d6d8580febf93cd1bc954f52670a44095278f4",
+    "frontend/src/components/common/UpdateModal.a11y.test.tsx": "ec12fcb52857740963cbd470a72b01bfad5ea769b256fad96e522aac7d300b15",
+    "frontend/src/components/common/UpdateModal.tsx": "668546d5530f99ed23cee838494f15caca653da9f51bb7d9c0082295f42c46c2",
+    "frontend/src/components/diagnosticSupportBundle.test.ts": "6b186773d203c4813130708680be97001481391462511a2caf3cded7a0b44a2a",
+    "frontend/src/components/diagnosticSupportBundle.ts": "fa907c8d9209d4f32b5064f5490891b06e161609302f0e36dbb493c7551c954b",
+    "frontend/src/context/CarParamsContext.save.test.tsx": "881080f8492c298902e94dadcf7bd291f5f9d042aa7aa72d66f6c70a33d109b2",
+    "frontend/src/context/CarParamsContext.test.ts": "e5f75cbbd65f7d07a6e98576daa9a7ba350cf26b8e345c51aa59183ced64fccc",
+    "frontend/src/context/CarParamsContext.tsx": "1b9fd9b6b9795bd45efbfe281fce481d67f5e69420c6b9288e53156e00b28e3a",
+    "frontend/src/context/SettingsContext.test.ts": "abede8395558cf6d019cdaf8b5d2774c9b3e3d02459de8b5638860930755a7f6",
+    "frontend/src/context/SettingsContext.tsx": "b57a313292b7b61b9fbe1090173b39179fc92a0c4a3f1614d7df117ebf972a4e",
+    "frontend/src/context/TelemetryRecorderContext.tsx": "ddcce96c64b785e167e815522007e54815e9716f8eeeea368e1217e8803f2aee",
+    "frontend/src/context/ThemeContext.test.ts": "ca5abe903baae0ccbc8c966a6a6bbd858313abe1aa210b496a0a4d1a116afb6b",
+    "frontend/src/context/ThemeContext.tsx": "f5dee54b127e4dd1c5ce29dc099e03f1c1fe6322f933d9fe74bd36a75eb918eb",
+    "frontend/src/context/ToastContext.test.ts": "0e8a90d4fb29ffff6f541e115227ab474b75733fcca0dea8c50f48e70c29cec0",
+    "frontend/src/context/ToastContext.tsx": "5ac8d02a5c29c931fed2d328146ce56040af8f9f9e6ddd38dc5fbd0643772c4c",
+    "frontend/src/context/themeCatalog.ts": "ff2cf3b6d71c420da847c62447c1a39884e6a7630d40e62a63029c5fc510a896",
+    "frontend/src/context/themeDocument.test.tsx": "1c22bf96db1d27a10c27f44879ed45be4443cb96cf18239deb1a3af8f7a4710e",
+    "frontend/src/context/themeDocument.ts": "7b1fbdffecebba26f2802e66faaf041b9ebfcfdaaa2997b8a5d395fe2058afcb",
+    "frontend/src/context/themeSettings.ts": "84ba2a562a61c4f831df544cf86bebbe651fefeb201cad383651112ef77311d1",
+    "frontend/src/domain/tuning/calibration.test.ts": "3438edaa36b279fa362eaecbb23223c60462fee3580c44c9fd9227632ebfb709",
+    "frontend/src/domain/tuning/calibration.ts": "3104bbc5abebe3c3375233f96ff5590df3fece51c99b501b971c1bdb097c2799",
+    "frontend/src/domain/tuning/capabilities/TuningCapabilityContract.ts": "8af11ce7fbabd2f9d1cd5b847488739f3871485971e83c12586b928bfc343452",
+    "frontend/src/domain/tuning/capabilities/capabilityFilter.test.ts": "d6b024dd04ac06f31e89734d7f17cfd683eb30f76dd899de341d06ba13694661",
+    "frontend/src/domain/tuning/capabilities/capabilityFilter.ts": "2b0260d6e15efc1bd473d9f80aa0e4cabe46004728eaf88f300337e446360910",
+    "frontend/src/domain/tuning/ev/sessionIdentity.ts": "9db6526d6ebeebd39d81dbcd913166520a9160670e3eb7f43d672089b658f5f9",
+    "frontend/src/domain/tuning/ev/types.ts": "eeefb9871aecebb79cee509ccc9b940434f507de68bd65685469f8f293f4deb2",
+    "frontend/src/domain/tuning/persistence/presetSerializer.test.ts": "0a9fdf725a23f17db859a94a1188ef003357fdc8a2beafbd8a04fdc13dd6dd07",
+    "frontend/src/domain/tuning/persistence/presetSerializer.ts": "9de7851a3605b1b06ccabb34ebbc20d65d29be876c4f98e3f55e463446edc72f",
+    "frontend/src/domain/tuning/telemetryCapture.test.ts": "307b0840fccc1b76522fe490ee79b83f2acc40deb314285d86d3738772949403",
+    "frontend/src/domain/tuning/telemetryCapture.ts": "412e699955bb313f888a756986e7c039b0cafd903323046b11ceaa4c122527fa",
+    "frontend/src/domain/tuning/transmission.ts": "e1b01b8caf01276b89a42c90da74449c2510506e988e83513f6485eabf21127c",
+    "frontend/src/domain/tuning/types.ts": "11127161cfd3ce458b67ee46f5962694c2c755ccc9fee337f9e1cc67dab49f04",
+    "frontend/src/features/analysis/AnalysisRouteSection.tsx": "33550f9dbe9449f63ba7f667bd0a1cca346940d1a5e53fef92d9540e1c6ba683",
+    "frontend/src/features/analysis/AnalysisSessionToolbar.localization.test.tsx": "414bd255691d2c7db7ef7a6a30534cf088e14213da71feeeee6719ec868ee7ec",
+    "frontend/src/features/analysis/AnalysisSessionToolbar.tsx": "6c04b8418e8eef0218a1807adf15f410d37047f0fbc01a9ee102fef932a56bce",
+    "frontend/src/features/analysis/AnalysisSessionVisuals.tsx": "3d6ea8974283baeac025a31ebb35408148faba68315f8b732e811d0e7bc99757",
+    "frontend/src/features/analysis/AnalysisView.tsx": "f70e87a2c3a0c10b8656e5821c84973b1f21cfe2e27c0d4d0983645f415c43e7",
+    "frontend/src/features/analysis/LapDeltaCanvas.tsx": "f56145c097cf842cb45285042de413a4f90027a5fcbb40638467b41f854cc7e2",
+    "frontend/src/features/analysis/ManualRecordingToolbar.localization.test.tsx": "ba64bddb07518d02bc746a45129c6cf180ec2bf581d36c4459d158fa3670413d",
+    "frontend/src/features/analysis/ManualRecordingToolbar.tsx": "635bcd10334d52d339ec3ccb5c03908893d818947dec4a55d71c9696724f5cd9",
+    "frontend/src/features/analysis/MotecFieldMappingModal.a11y.test.tsx": "263aa25cecf4f5547a5e03b247352038e4d411aa57c4f6ea600cf7d06d3c8fd0",
+    "frontend/src/features/analysis/MotecFieldMappingModal.tsx": "c886807e502ac512d0c19311f174ee001d3e5527b0ff341ff4b837dbc70ac44a",
+    "frontend/src/features/analysis/RoamingRoutePanel.tsx": "751006e25478fec6cf0731746df6a279d73d1329ec46fde43cb34d613e419166",
+    "frontend/src/features/analysis/SessionHealthDebrief.tsx": "334d402fbdc71114afeccd7b8b0b65babebc52bc1ab68cac11e4dd3495f4b9f2",
+    "frontend/src/features/analysis/SessionTrimSummaryCard.localization.test.tsx": "cfbbc93d3ce3691f9acab2bb2bcc4786e3021a0eaf0f4f07b86c580545d96977",
+    "frontend/src/features/analysis/SessionTrimSummaryCard.tsx": "70d3b3d1c80ba0c2f49a34fd323af50fbce57f6311fc1e618aeba952de641e81",
+    "frontend/src/features/analysis/TimeTrialRoutePanel.tsx": "12844de071059da13d3d2daa43033c42059b83531659655710882f12d8f572d9",
+    "frontend/src/features/analysis/TrackMapCanvas.tsx": "ade2398e52ca9ec0d9324e75d48bc47a29be1111942925c5e3d38d5e347671fa",
+    "frontend/src/features/analysis/routeTriggerMath.test.ts": "5641354221bba9a868cd7959652e632d544a043d0aa8fc3273e0acc909ce43a9",
+    "frontend/src/features/analysis/routeTriggerMath.ts": "480b944d4a5dabf54c0667134d1b6430770377f9701759c54669d1821527dbd0",
+    "frontend/src/features/analysis/sessionDebriefMath.test.ts": "e5ce05222a7032a267e3ba8ecd6f38b218a73ae77b44ef624dfcea629575bd08",
+    "frontend/src/features/analysis/sessionDebriefMath.ts": "4985fdf0c07fe9800493754e3ce9bcd84f5a552da0cabf28b554bd764075c6d6",
+    "frontend/src/features/analysis/useAnalysisSessionData.ts": "810c9c7879e768ec6a187759272fa81a658b00e94d08db9e8a5824ba7f3c2f1e",
+    "frontend/src/features/analysis/useCustomRoutes.ts": "11349112597dddc326821ff58213b023ecaac7d296cef7133af585724a9ae506",
+    "frontend/src/features/car_params/components/EvModeSwitch.tsx": "b346ed7f53a644fa4dc45ef2ed026225ab320089db19c7d867d7c9f1e9667d6a",
+    "frontend/src/features/car_params/dynoQuality.test.ts": "29f63a4c09c88df694002c9a87c2e6591f978428218400d552570d2ec0e47d39",
+    "frontend/src/features/car_params/dynoQuality.ts": "18d48c80e6528afad0a33947c007f652a5d814f1628f73938b46888b590c7537",
+    "frontend/src/features/companion/CompanionApp.tsx": "f0ea40777e0fb595f81aec487336b75a058a31e8abdbbd5fb8c8791b6ef6de7f",
+    "frontend/src/features/companion/CompanionHostBridge.tsx": "b3797a2cb28f4c9643eb1a1f9f0b1029fc2f15fcaea2bac3a463e9c3fadfad6d",
+    "frontend/src/features/companion/CompanionMeasurement.tsx": "850479a6dbb3723dd6f2586f7721fe7a3bb0aca8c508174f4dba982cc5d1a813",
+    "frontend/src/features/companion/CompanionResults.tsx": "5542426cc7c579a05901ae634e05a4f51bf32152fdca9cd34196c70530c29f83",
+    "frontend/src/features/companion/CompanionTelemetry.localization.test.tsx": "0fa8c1915b0f1dbafbcb0f1a02e3e786169ecbc0a7961f5368e24aeea91e20b5",
+    "frontend/src/features/companion/CompanionTelemetry.tsx": "588ba31cd9dae7cdd67052e7937f6fa9450fa1570a4867db8fcb94beb93d2d24",
+    "frontend/src/features/companion/CompanionTuning.cvt.test.tsx": "bc36b110d3263d5951102fa7663c21e130b8b5b105310cced6534f70da80c397",
+    "frontend/src/features/companion/CompanionTuning.localization.test.tsx": "1772dae59492789b86cdd873caed9e764576127d743422683f8104a2e4ec3d30",
+    "frontend/src/features/companion/CompanionTuning.tsx": "b34d69154a5a174a883039a17c21e256554ac6fc09a5d73f31d11d0f07a0c409",
+    "frontend/src/features/companion/companion.css": "47af22722cc1cd43aaf85407b6e1897404316cf91381bf6e8110b39f618bfd5e",
+    "frontend/src/features/companion/companionClient.test.ts": "232118d148fa80d6b96ff8c764e07410d2fb960c2177685b43ab3278d2399523",
+    "frontend/src/features/companion/companionClient.ts": "e3ba4e520007954236b8e5f8a8730013e67951ebcf21e79c2d3430e72fa32cac",
+    "frontend/src/features/companion/companionProtocol.test.ts": "838b34ff148661854f1a0a8266d0de4ef66e6d99fee076e29f456ced235b6036",
+    "frontend/src/features/companion/companionProtocol.ts": "79c15dc1cb897f5c64f679994b8aff7ebc2b9d3c004c5e20398cf60cbbf9698c",
+    "frontend/src/features/companion/companionTheme.test.ts": "ba67517729ba161ca0a33e91708b7bd09808afedf5d8ce4ee3d9ca67c3437f24",
+    "frontend/src/features/companion/companionTheme.ts": "f6de818c1e7ee836d3767c4cb6549906a0024f5aed9c240a7d07f5a910da156a",
+    "frontend/src/features/companion/companionThemeSync.test.tsx": "3c80d1ea0f5cba26d2cc430ac4debc9a341e4c6c083acd69acdfaeb87491fa09",
+    "frontend/src/features/companion/companionUuid.test.ts": "f3a65e44f19b0bc86b86e0aa897743ac8900c61645fb0004566b2a541ac80e8d",
+    "frontend/src/features/companion/companionUuid.ts": "4c19ad4725a54ba4d28ec6343384bf1d76e10635e27ed841f8c5c0e4519a5e67",
+    "frontend/src/features/companion/connectionDiagnostics.test.ts": "087de6abdb7cc110f8bfd067220e21111b739b9d67e8f279a5e2cf86ab0faf4b",
+    "frontend/src/features/companion/connectionDiagnostics.ts": "a75156905d3fbf101fccbe49969f4a69df9322ed08a11b075a74cf0697f9760e",
+    "frontend/src/features/companion/connectionStatus.test.ts": "8978fdde1f02fad05da953300cade87078562b523b678579ea7f2bee94f48bda",
+    "frontend/src/features/companion/connectionStatus.ts": "ab43a701b12d163801450a850a55903b2d3a9e95c50612dddbd0b8fecf8bc20e",
+    "frontend/src/features/companion/useCompanionSession.ts": "57334333a0216264b9115a956bf1aec57143684a06277b34db4ab51e5f2d4857",
+    "frontend/src/features/drag_test/DragTestView.css": "e7572fa4ab9ecd7cc858d002c6c6bec7fb6b69cd879a928c65ff008f2fd9ef8d",
+    "frontend/src/features/drag_test/DragTestView.tsx": "7507ee4ba04227a2070526939effb13bbaa76799bcc5dcfb266e5a115c27ed44",
+    "frontend/src/features/live/LiveWorkspace.tsx": "55d0983b9af86a6ad511882306511dd20ac465b4a3d3c7849489517a9bb7a95b",
+    "frontend/src/features/onboarding/DataOutDestination.tsx": "73b471a093846fc608697d447b923e8fbc04a21032a390e37a3ab5573b5fd05e",
+    "frontend/src/features/onboarding/DataOutGuide.a11y.test.tsx": "7c3a2d45a16f018ad31b364992e2b65a0a949a4c414640c453c4865ecba7184b",
+    "frontend/src/features/onboarding/DataOutGuide.test.ts": "45c6d6838963a0ddb69978be30f99e0f5157452dfd2817c1907915e801eea205",
+    "frontend/src/features/onboarding/DataOutGuide.tsx": "20c322efa8bb54c541f244042cb2dd08010c65799f86e3ed4e4dce6904e1b3d7",
+    "frontend/src/features/onboarding/dataOutAddresses.ts": "c0f6b32f8f49febefedeaf7132c760789a2ced75000e5f74379902382bb669e0",
+    "frontend/src/features/onboarding/dataOutDestination.test.ts": "1461bf0d42786a2e23e04a173b64bdbfc5e215c2ba8b68094cba904ac18ef76f",
+    "frontend/src/features/onboarding/telemetryHealth.test.ts": "d4457d43d1777e5843bfb01422d4b0513fd21b5a7df2bb1fb7b29b1fe24f9e6d",
+    "frontend/src/features/onboarding/telemetryHealth.ts": "1416ed64649fab8e598e8a8c0d9b3dc039c236cd66a837cac65428e37ac088de",
+    "frontend/src/features/onboarding/useTelemetryHealth.ts": "ea2ab0065b24e00651d2f52a5cbc2c9c5e74063149aef68a3d79fb1f9c0ac46a",
+    "frontend/src/features/overlay_control/HudStatusIndicator.tsx": "5bc15b2a82f759323e397f25dd5bd19623afc286477f9e5870d012edc6cf88c7",
+    "frontend/src/features/overlay_control/HudWindowAction.tsx": "9d904d25871df0d512074dda38e0c100e4d86c8168a6d52bfb8361554432c9c5",
+    "frontend/src/features/overlay_control/HudWorkspace.css": "5f5f4b0bcf3a62a759da6b71d79f002a350e7523dcf89e20a8220495a07a4787",
+    "frontend/src/features/overlay_control/HudWorkspace.tsx": "542891d8144f67e88bfcb7fb201645e60afd42470eac8148886b6c7f91642f39",
+    "frontend/src/features/overlay_control/OverlayControlRuntimeProvider.tsx": "1c1910f016824cf849f87aaf8f4a2e03db1098380e51565977eb0683e9307c32",
+    "frontend/src/features/overlay_control/OverlayView.tsx": "eb78712f55b67889af1a17c3b93fdfceb3c614a46df1b5b1bf9b1c6fc3e486a1",
+    "frontend/src/features/overlay_control/audioHeadPosition.test.ts": "b39d5f47e7712d2322c5dc31c7b3fd7c88f02d16de2d4d666744847f731acf4c",
+    "frontend/src/features/overlay_control/audioHeadPosition.ts": "d1fc28fa9cb195cfa9f0a7933658f711af6cb8bafcfb22c1dd8a51f6560e30ac",
+    "frontend/src/features/overlay_control/classic_jdm/ClassicJdmSettingsCard.tsx": "f457c759af383ea9f7fdb77d7c002e769418d05c618b19dbc9e64e209b8d3da7",
+    "frontend/src/features/overlay_control/classic_jdm/config.test.ts": "c193e80e42b1ef8c707b82d5b10062d2d18dd747c6119368d8883d47f011aa0a",
+    "frontend/src/features/overlay_control/classic_jdm/config.ts": "f719de24015684fa2efd1f8a4983a2757b2cbb175547403a2cfdcc1e82057bc2",
+    "frontend/src/features/overlay_control/hudCapabilities.test.ts": "3240532e0ba5de4d0454ab19dbf0fe3eb2a0cb1817a641eb1a3e1327e9e675db",
+    "frontend/src/features/overlay_control/hudCapabilities.ts": "8bb2ae958aaf12f6626035c7e646362094793791158d78c7605e0c885e19ea09",
+    "frontend/src/features/overlay_control/hudConfig.test.ts": "4a5d4bae64b5051885b43f056056cb1a343a6b2ae2e80984766aee6cddf346aa",
+    "frontend/src/features/overlay_control/hudConfig.ts": "43164437aa7099a188df1c44d28a555ca00ba6eef4afa1260f5aab0d572179de",
+    "frontend/src/features/overlay_control/hudDisplayUnits.ts": "17606cdee631d31b104be9ccfc3991c4936c4c6004f242c2e45823341b541c51",
+    "frontend/src/features/overlay_control/hudInputs.test.ts": "9ba20018e44c19c3e4fd076143875a32d69c3cac2406087103fc2cb12421439b",
+    "frontend/src/features/overlay_control/hudMetadata.test.ts": "9ef54056de5340e3508f47135ae10837dc67c1ff1770cdca8020f7c641a1b41d",
+    "frontend/src/features/overlay_control/hudMetadata.ts": "7f11ffc04d1777a156ee9d0355016dde9a2366989d38becb6a69361c8e4030b0",
+    "frontend/src/features/overlay_control/hudNativeAdapter.test.ts": "7b091253b15c162d9e9fa8b4d54b020a077249a00d7ffc2051dccb2008a6d83d",
+    "frontend/src/features/overlay_control/hudNativeAdapter.ts": "3d6797b8498be2b1efea498a3dde10f27e5de2a833133be64e79302e1d560692",
+    "frontend/src/features/overlay_control/hudPanelTypes.ts": "0f3af9b19bd57583ca93d52bf205439ea8a1641ed2d0eb7fe1039b440846821e",
+    "frontend/src/features/overlay_control/hudScale.test.ts": "300d005f4241899ee08103cbfe84ca55b4535f3c7ffa101c8c668307a6ff4661",
+    "frontend/src/features/overlay_control/hudSettingsFocus.ts": "b331d9f0da4a65a718543a327935ed24516b52066909cae96a485550b7e80f53",
+    "frontend/src/features/overlay_control/hudStatus.test.ts": "4542e1223f1663825f07d8000b05d2fef337de260d46872413e61118b762b22d",
+    "frontend/src/features/overlay_control/hudStatus.ts": "557d1bb65d0f0307ada6948eda4d59cc39549ffeaffe48e12493141d84c20551",
+    "frontend/src/features/overlay_control/hudStyleScanner.test.ts": "1b185ab886f8ca10b03959c97c20f5651c38bc7026e2122523bf766c25fd2960",
+    "frontend/src/features/overlay_control/hudStyleScanner.ts": "e56378c717f237d52e4dafa82273be9a12d1b381be07eb7fd6fa85396b539a07",
+    "frontend/src/features/overlay_control/lfa_center_ring/LfaExpansionSettingsCard.tsx": "ba2c224d7c99d85e36c9600b4a718a7f7e89fd2367c00f7ccb047b5afeb86329",
+    "frontend/src/features/overlay_control/lfa_center_ring/config.test.ts": "5c1521cfbc6b824d6d78af942437674d474ec99faa0ca1a729c5ddded56a339f",
+    "frontend/src/features/overlay_control/lfa_center_ring/config.ts": "c67d2d8eeee81ff5601c560d92d538249009212c61d416354000b3465d8e2475",
+    "frontend/src/features/overlay_control/lfa_center_ring/runtime.test.ts": "143659178771d38a40b2481fc30f1e59c97ded178a0a0e53ac29ee6ae5c801b9",
+    "frontend/src/features/overlay_control/lfa_center_ring/tests/browser/entry.tsx": "d398de4d9c7a189a7975be8874790017a96ca6c246ed5533fa9b8a383d074335",
+    "frontend/src/features/overlay_control/lfa_center_ring/tests/browser/index.html": "e28dbea6cbf0dd2059f652a2f503c8eb845c502a866e269b6c6f3ddb0ca82bea",
+    "frontend/src/features/overlay_control/lfa_center_ring/tests/browser/verify.cjs": "f263b9a60b50cbaf4503388c9a2ea4dc6075212443e32590e82aaf09173099bc",
+    "frontend/src/features/overlay_control/overlayControlRuntime.test.ts": "505aec6a50688b62c2a1e0324624459c811af82ff614fcd3b22b0996a1cc7bad",
+    "frontend/src/features/overlay_control/overlayControlRuntime.ts": "66b86a8b86177360d29a0a8391b51c35b588250228e72e2704509254f0b01aaa",
+    "frontend/src/features/overlay_control/overlayElements.test.ts": "e454df568eae172972fa81f232b3cbae61779eda0451368765a99913168a9547",
+    "frontend/src/features/overlay_control/panels/HudAudioHeadPanel.tsx": "b1833941d60279369305704e40a229875a662ce5837aeee2ce3344abfab78771",
+    "frontend/src/features/overlay_control/panels/HudAuxiliaryPanel.tsx": "7475e347d957c48f8ba48366fc9967bc3ac497f0d48857449f3e4f9cc72ae846",
+    "frontend/src/features/overlay_control/panels/HudGaugePanel.tsx": "b177eb74fbeebb9899d086b194c6cf1874fcd13b4c844bd01c696ec1930c64f7",
+    "frontend/src/features/overlay_control/panels/HudGaugeSourcesPanel.tsx": "e9e7b84ea5b1efb3a8fe7325674f53c3114db0a8facabf34d79a987afaba9c5c",
+    "frontend/src/features/overlay_control/panels/HudGaugeStyleSettings.tsx": "893be7bf0078da77e60a9ea7c91b6a14df84e25ccf9c8b746a82cad7e61afc66",
+    "frontend/src/features/overlay_control/panels/HudGeneralPanel.tsx": "115cf29ebc6903f0f97177d0d0ba6bbf0573c9c4a2d3fb04c8cc1c67ea5876d6",
+    "frontend/src/features/overlay_control/panels/HudSettingsControls.tsx": "5f3ff5853148ab54466490c10009ecc90b6ca64f7e6d198994df594bf80b0666",
+    "frontend/src/features/overlay_control/panels/HudTelemetryCard.tsx": "87869beca9a3cec02359ad1c12566eb7f10f7ce5c8f346462b8fef439bc56e28",
+    "frontend/src/features/overlay_control/panels/HudTelemetryCharts.tsx": "1e6b1fe873fbc8c74cb7c6673d85d09127932799312eef6187b8f45ba715f46f",
+    "frontend/src/features/overlay_control/panels/HudTelemetryPanel.tsx": "86e8bcbe9b805e4c6c5816a3fd9aee412829b78cc35743dccde073f8d4e3ec81",
+    "frontend/src/features/overlay_control/panels/HudTextInput.tsx": "b207e984107c6ee4b2c3c87b2d72559795ea2c01d2f40455189428cedf4189ea",
+    "frontend/src/features/overlay_control/panels/HudUnitSettings.tsx": "20b1aed8228cc31056c6e2e7421df2fbdf6696c6a7691471a2c83dab89825368",
+    "frontend/src/features/overlay_control/r34_mfd/R34MfdSettingsCard.tsx": "28bb07ea32568eeee252e148c65068d712d34649c0ab27d89484d74f85b6ae99",
+    "frontend/src/features/overlay_control/r34_mfd/config.test.ts": "e3c1bbe266a925f2bfa134d0b8eeaa35d0c7bdeaf0ab12a49bbc9845b6e43289",
+    "frontend/src/features/overlay_control/r34_mfd/config.ts": "f5051dbc66135523e2cf248bd427b04e49c2d9f8bb8a9698ec431570e31be12c",
+    "frontend/src/features/overlay_control/r34_mfd/tests/browser/entry.tsx": "42e2a3bdeff0a1ab1d1185bc320a5228b9a1b9167ca178fc35c1c808e2ee5f76",
+    "frontend/src/features/overlay_control/r34_mfd/tests/browser/index.html": "1c83c453e1f934804aa0786d9addbd2005ca9688f8e356a2736fcf07c1da441e",
+    "frontend/src/features/overlay_control/r34_mfd/tests/browser/verify.cjs": "d16e93b007d8c050e3f49318fbfc5f1f99cc2414423276042bb558a8e25d4676",
+    "frontend/src/features/overlay_control/s650/config.test.ts": "9bb1aaae7877b7194606a57d6e4b71a74765d9cbe659f52244d6bb80ea45b6ef",
+    "frontend/src/features/overlay_control/s650/config.ts": "f7d758197dfa2d6036fb6222277e38e76c678ceb997d6376c31cc360b0caf4a8",
+    "frontend/src/features/overlay_control/stack_st8100/StackSt8100AlarmSettings.tsx": "2f7d34cf2b15371c981451a2a841f0c6ea368ec988b081d92a83a9e64df8eb24",
+    "frontend/src/features/overlay_control/stack_st8100/StackSt8100SettingsCard.tsx": "8790b687bbe88731606431aecade53da5f7a0110a8cc870455a34ff4aedf766a",
+    "frontend/src/features/overlay_control/stack_st8100/StackSt8100ThresholdInput.tsx": "af99c2d3692330dd3e32a58bb1d5e3ffe697d767ab38bbc9d4643d4c32789540",
+    "frontend/src/features/overlay_control/stack_st8100/config.test.ts": "10c6a3a3ce0b78a943bb3ce0a7a34714bf73e35165d1bc6aeb8e3ad19c7ccce4",
+    "frontend/src/features/overlay_control/stack_st8100/config.ts": "30b95c0039979144a9b55961186a5205c16fcea30ab2922a5aa4113d7666014f",
+    "frontend/src/features/overlay_control/stack_st8100/contractParity.test.ts": "07d24c3b9513ec2db5b33132bf2ce29c89549cc3a431515f73418e7724680a16",
+    "frontend/src/features/overlay_control/stack_st8100/runtime.test.ts": "920a838059246a3f1fc5c34e0443ac1a2d44b8e22c7593d9f5b151d44d9aebaa",
+    "frontend/src/features/overlay_control/stack_st8100/tests/browser/capture-settings.cjs": "b07f726f8139edd81334ecbd6d0a3153a5ab1c1921432f8391b24366d51faa35",
+    "frontend/src/features/overlay_control/stack_st8100/tests/browser/entry.tsx": "d398de4d9c7a189a7975be8874790017a96ca6c246ed5533fa9b8a383d074335",
+    "frontend/src/features/overlay_control/stack_st8100/tests/browser/index.html": "9aab022e440d0037da14624bf2ca3c6bb0ffffabec3996143bf3146f644d2920",
+    "frontend/src/features/overlay_control/stack_st8100/tests/browser/verify.cjs": "16d5bfde7578d3a4fad8407583aeecc1245e168d8255b00775ff7c60be5b44c0",
+    "frontend/src/features/overlay_control/stack_st8100/units.ts": "229cd6a4f11261d6a26c2efd9ce5bd49eade288f2d72675085d5a9a8739b0512",
+    "frontend/src/features/overlay_control/tests/browser/entry.tsx": "6c53c474903f5646bf48b8cec1dfb889e9e6d4d04ddcf04d0d84820e30cfebdc",
+    "frontend/src/features/overlay_control/tests/browser/index.html": "c32a08ac3600a891c39df879b465ffe5f7809427471e5f6828b0a234183a1da8",
+    "frontend/src/features/overlay_control/tests/browser/verify-native-restart.cjs": "9c084b16c999f6fa4d7df3128518ee717c689af125e3f11c418da2506ce7f122",
+    "frontend/src/features/overlay_control/tests/browser/verify-native-session.cjs": "073a14c2421261196d2552fa1be0c46c5cb3b38e8c64464c70343da73ce694a4",
+    "frontend/src/features/overlay_control/tests/browser/verify.cjs": "438cf85fa62853424d0db0f6dc343472314c5f89f710a21757159205f5cbf0db",
+    "frontend/src/features/overlay_control/useHudController.ts": "d9df8d9dcd015a1d9c15079968dacc4f503daa007f4a0bb17239d55b976d7577",
+    "frontend/src/features/overlay_control/useHudMetadata.ts": "b4959b0c3f9c0135b98507f368c6d39307ea38f4abdbe02a4618fd97e9f83f4d",
+    "frontend/src/features/road/RoadCandidate.tsx": "8432cfc0e5be1d87b272baa3d676763f74f2be10efc968d7d479311ddd63746e",
+    "frontend/src/features/road/RoadCompare.tsx": "2dd8e2b8700212bac9f3d0e1751c7f060987cdb31b7b8dc1cfab3fc7e4065396",
+    "frontend/src/features/road/RoadLocalDetails.tsx": "4df1e710ab94d9a87392e469636a9a955d6bda93f44874806b01f0848f5bbf94",
+    "frontend/src/features/road/RoadObservation.tsx": "37c2161e8e8f7492193ed277a65be18b8281be119e88a3181c5a696dbb7029bc",
+    "frontend/src/features/road/RoadPrepare.tsx": "6b5a35b65a13457b9bca80f98d04c62eb11f18d8187f4509f798da839f63379c",
+    "frontend/src/features/road/RoadReportCard.tsx": "b9dbdb5e9b88c79b2cdfeed0c25b0e6f46a31a4a17d78f58ae0228a0c70a8d51",
+    "frontend/src/features/road/RoadResults.tsx": "82fd19aa720f5ff9954b236935f26be72ec17580c8d49beb93e72e39172c5283",
+    "frontend/src/features/road/RoadReviewLibrary.tsx": "3cd870401f85ef09ec52d52e6ba2a525980a1ccda108c727fdbc51a07d645cbe",
+    "frontend/src/features/road/RoadReviewView.tsx": "98feca380adf298c871ae72b3f8523c9b7e7421b4ba834c64533c5c9bff9756a",
+    "frontend/src/features/road/RoadRunPanel.tsx": "86af03a2a220046fb1945e15fe3a4bcd0aab27140e53420808592f0a23f982c8",
+    "frontend/src/features/road/RoadValidationController.tsx": "b7b021c55254b6ff32efe2d7879cb94dbd135fa7dfff0fe1af99d75a1c0ff4fd",
+    "frontend/src/features/road/RoadWorkflowView.tsx": "562b8a7362743ae13ecdeaed8d09819de030bf18f3773f21b1edf6da29b39fe9",
+    "frontend/src/features/road/roadLiveReader.test.ts": "e5ef7c37a0250e0821d51f72542f279aa65db0134d9be74f88524ecac42510ca",
+    "frontend/src/features/road/roadLiveReader.ts": "139ecabf73aaf08b0dabef3d1f9ce789af2d6b748c0671c4bca1b68907878b95",
+    "frontend/src/features/road/roadPresentation.test.ts": "752401974f8bf10915118bded7cc6c9fe1eaaeb10ee906507ddc7da4a4e75c3a",
+    "frontend/src/features/road/roadPresentation.ts": "357e60439faaaa1d885c65fbb654eb27fb55b7c766f0ec4f0107bf43c51a52c1",
+    "frontend/src/features/road/roadReviewIo.test.ts": "603212419313343af2459d45962bf308123c4776953ba49d2e52df309ac9996e",
+    "frontend/src/features/road/roadReviewIo.ts": "c40cfc011c717a001bd5c1c677daad532eb17e2f66d53b2f46c482724c932054",
+    "frontend/src/features/road/roadReviewTypes.ts": "e632470c302e90e6252f6daddbe8ba486fc265faee27756fac751f41f68b5c89",
+    "frontend/src/features/road/roadTypes.ts": "445fa35280e95aeaa3ca87dbda6f426012d003f29e9de2ddd02befc1e094a499",
+    "frontend/src/features/road/roadValidationState.test.ts": "158e86daa78c35bb9fa6eb706d841b443fa9ac557f463ed918a7996626abc11d",
+    "frontend/src/features/road/roadValidationState.ts": "cd07e7d5300d5d47e9b8e399398b8ec2cf4739a7e43c2ffbb5c470db4168453e",
+    "frontend/src/features/road/useRoadReview.ts": "b20b64dcd7e084f96c8b072287737c3b984da28d55030fad86e0ca5e45871cf4",
+    "frontend/src/features/road/useRoadWorkflow.ts": "07c116e72d477f20a7dde109422f88bfe01d208bc6d2bdff4b75c0cd0818c6eb",
+    "frontend/src/features/sessions/SessionsRuntime.tsx": "fb019016afc2244766343a321ddd058be339937d94063c5c89e3b2602dc8ac13",
+    "frontend/src/features/sessions/SessionsStateProvider.tsx": "c5a9807fa05a0f18e42ac67d41d38be66bbf68784d8414ce77d8155a7e51e440",
+    "frontend/src/features/sessions/SessionsWorkspace.tsx": "900eb6bdceb602bf1c80f59997137019096619bf14bbafd243dd07ec79ab9f75",
+    "frontend/src/features/sessions/raceCompletion.test.ts": "2497d168670a75b2f01efa0412486c3df2dfc0fe7af278db6043880323878069",
+    "frontend/src/features/sessions/raceCompletion.ts": "7c971a79a0eee0e1787a0f818449a21e029609fe26c0d0e2ab6ccd06c7133a19",
+    "frontend/src/features/sessions/raceLifecycle.test.ts": "543081b8f3e6fa802a7704eb04e1676d4343cf8033a24a565d08beca55d4186d",
+    "frontend/src/features/sessions/raceLifecycle.ts": "699ec286596a5b0066e84ada27ab25ff1bb0d751bddfba234f51cc84335f03c2",
+    "frontend/src/features/sessions/raceNavigationHandoff.test.ts": "4a53cdb784e2b4af0f4d27ccc80ec7fdfc332a9320c7c80dd478b84d40a674d1",
+    "frontend/src/features/sessions/raceStatusPoller.test.ts": "4ecfb43ed0d5bff5e7251b3fe4ecc50ee9fb7e7fa5873cbd926bab6354c21f91",
+    "frontend/src/features/sessions/raceStatusPoller.ts": "6a72ebb87a396e7ea9e9458698f459c792ee3daae7e0cc2286174d9bcb7466a1",
+    "frontend/src/features/sessions/sessionIntentPreparation.test.ts": "ac89d8e1d43cc4279b0929984fc75999643a7713ddc1a9ad0e216e307bab55eb",
+    "frontend/src/features/sessions/sessionIntentPreparation.ts": "ad9ff129be8985c4f7f7ef31163c7b6ee41eecade25eafd9fe2b67b95712abf4",
+    "frontend/src/features/sessions/sessionSelection.test.ts": "8111f714f092e87209413739faf701fe11060a988fcf2c3a77c7841e268a5473",
+    "frontend/src/features/sessions/sessionSelection.ts": "fb59d51d61f6bc25e886c2dc8537fafcc8d7eeee50a60875c093c59abee7b275",
+    "frontend/src/features/sessions/sessionsIo.test.ts": "4b4cb688bd13747558d314777971269dd7a358e4d964e055438a8576d4ed76c4",
+    "frontend/src/features/sessions/sessionsIo.ts": "24607b00d29ddcd85afbfbed25ff0d88a32f1deb6262d30aff431a87579804d1",
+    "frontend/src/features/sessions/validationReviewSlot.ts": "63aef7f197475495adedb4aa4ceda0746af93b8f0789193abc9a5ee15616d41e",
+    "frontend/src/features/settings/SettingsLayout.css": "249151b47d4c9e9911897a803291203849fafeabfca15ffdb36f2f6d815f7d34",
+    "frontend/src/features/settings/SettingsLayout.test.ts": "4f6addd324b975cb31c59d3f30f2d8acf7e82047233b4c0fc30b1a29112ead73",
+    "frontend/src/features/settings/SettingsSurface.tsx": "fea6b9b62104a9404667b5e50b9ea0f9700a3efdc5912ebfc45d68028083791a",
+    "frontend/src/features/settings/SettingsView.tsx": "4c5beb80b5f10cc737186189edf0af19a106840038c577a038caa10b66e9d655",
+    "frontend/src/features/settings/components/CompanionLanControls.css": "2d60bc5256b00d2be743cecfb21bc3c781c2ac7ee479d577b2fd27e173a7ab51",
+    "frontend/src/features/settings/components/CompanionLanControls.tsx": "309b33d44d810c64ab4a066f2a5f468405975df3bd83781225cc550b5954fcbe",
+    "frontend/src/features/settings/components/CompanionSettingsCard.localization.test.tsx": "bb9634ea9147d8bc0d68512bea8765b007cdee6f47edc2809f60e3ba9cb6c0a6",
+    "frontend/src/features/settings/components/CompanionSettingsCard.tsx": "3fa53490f79878d1b16b5b0892843d71ea5b94b09186809947b3a449502aafb7",
+    "frontend/src/features/settings/components/CompanionUsbControls.test.tsx": "6a7eef442e56d16b064c6a593753e926c7dcaf93a9773cb70dc82063ab90afe1",
+    "frontend/src/features/settings/components/CompanionUsbControls.tsx": "c956fb8e27c53e74a4189b54c3b9f67c13f7a7c2e1959bfe340cd4d0592b18fd",
+    "frontend/src/features/settings/components/DataStorageOverview.tsx": "82bb880e7d4604bdb3f3f6bf55a753309f49e43690ae0a0c481c5469981ebad8",
+    "frontend/src/features/settings/components/DiscordPresenceStatusCard.tsx": "c85513f738cda1c5d263cc3c3b14e0a29985b4513e74df30bf846f332288d91d",
+    "frontend/src/features/settings/components/McpSettingsCard.test.ts": "d00e75401d7c47ad48f1553d9d4500bac94563076b375cb868a488d7362803d3",
+    "frontend/src/features/settings/components/McpSettingsCard.tsx": "5fa78bde274c2a2e160baa59c24fa31d1ad93dfdd03d3ae6a2127a4376866bdb",
+    "frontend/src/features/settings/components/SettingsPrimitives.test.ts": "560f6317f0e621e9d06d73b0135dee996be0b4ee09184711ec5a1de4ab9952d0",
+    "frontend/src/features/settings/components/SettingsPrimitives.tsx": "10354107b676b376260ebf88ee3e1f2513c9bdd7b931cc432b4e18e9e283a112",
+    "frontend/src/features/settings/components/UpdateSettingsCard.test.ts": "d32615043e96fdfb8b0df3e2197a849a21bea374982c9e4a48461e779b9dafe4",
+    "frontend/src/features/settings/components/UpdateSettingsCard.tsx": "aea189db5ed727083e1617d693b550171c51c7b68916ad5a948ab19f0d089a39",
+    "frontend/src/features/settings/components/__tests__/DataStorageTranslations.test.ts": "57b60d3fa3150da0a1987b60f779b7e5ad92f97581fb4bd34bccdfa392f16237",
+    "frontend/src/features/settings/components/companionPairingQr.test.ts": "ebb94dc53be92ac6b8b6775bffa00cb05638e1bb6fa2fbb9fe1e5632ebff8168",
+    "frontend/src/features/settings/components/companionPairingQr.ts": "5b803af17c706b9481b18af593d3a5d7cff06333320bc7a6ee94e1d6bb66a089",
+    "frontend/src/features/settings/settingsSections.test.ts": "1743c3665fb3f1f58a3cf892fdf1e243f47063bbab5b4c444a867212c549a759",
+    "frontend/src/features/settings/settingsSections.ts": "0fda64bda2ba4738980746cbf06c2414ae2642f22f1253985f2ebdee25f6618c",
+    "frontend/src/features/telemetry/TelemetryView.tsx": "157e345f7ed300289f500653f0f8697f5b9fefb50feab6bb95bd7df10024ae70",
+    "frontend/src/features/telemetry/components/ArcSteerGauge.test.tsx": "0ea636dd81346906643cf2111a9fa03abd2205b561603ebfe3155aa87c324c98",
+    "frontend/src/features/telemetry/components/ArcSteerGauge.tsx": "206a7925e54cbc062aa94b77d8d4b00e14a89b6f064d161a212b122f579c3a5a",
+    "frontend/src/features/telemetry/components/EngineRpmDisplay.test.tsx": "45a81dd1a3256ce4a638081c3387a05ccea20f7d24fb6986d8f0523447c583a4",
+    "frontend/src/features/telemetry/components/EngineRpmDisplay.tsx": "b175a4a4fc10300c797b08a96bb606209fb6fdde5cf64cd052f9ff657986d828",
+    "frontend/src/features/telemetry/components/EngineRpmVisibility.test.tsx": "f51f02cf69dff08fc59bc2cda40489515c7d841f0d16fd206b7d6729dbf1bab4",
+    "frontend/src/features/telemetry/components/GForceRadar.test.tsx": "24432507ea6abaebe424c132c0272d8e0e9cc292aa8aa39bc212dc4a4f7b8092",
+    "frontend/src/features/telemetry/components/GForceRadar.tsx": "58485198e886cf9abe59157127c909482392777059073f066b53166009152f9a",
+    "frontend/src/features/telemetry/components/PedalTraceCanvas.test.tsx": "2e37072442020ce29cf8d6f2766bb33a92e2cdf9c56bd7729f20684dc9f50ccd",
+    "frontend/src/features/telemetry/components/PedalTraceCanvas.tsx": "5b570c1fdb495b5763acdbede0dad43ad844806f0724f7d7b9a6da97c45c80cb",
+    "frontend/src/features/telemetry/components/PowerTorqueCanvas.test.tsx": "97996a6b00fe1109642729f87c983b51a105388203bef0918799c977bbccd838",
+    "frontend/src/features/telemetry/components/PowerTorqueCanvas.tsx": "a2b6651eb2cb94937d26594a68ee621ee3f69ee4f4280e437ab5dd7d849256bc",
+    "frontend/src/features/telemetry/components/RenderSwitch.tsx": "ea1365df0f4d5c76354eed0b7284dd47955b77a551402f0ddc7195c60e4dec65",
+    "frontend/src/features/telemetry/components/SuspensionBar.test.tsx": "6d31f52384bed96141cb661f3395adc51f85cb304984ef2037734f5fb0aa1d15",
+    "frontend/src/features/telemetry/components/SuspensionBar.tsx": "6c77dcd5e381a103b0fc4fb6257e0016c643e1adfab809d5e6a18227afce614d",
+    "frontend/src/features/telemetry/components/SuspensionVisibility.test.tsx": "f117f3f65b56fe88b54848075c31c83984e267a1317dc2710e1887514bf9665e",
+    "frontend/src/features/telemetry/components/TelemetryCardLayout.tsx": "b0769c2b83fed406f052df722e4cdc11e5837cc259b36bab4ee44038fbe03ad4",
+    "frontend/src/features/telemetry/components/TelemetryCardShell.tsx": "acc9b8b49dcca16317449eeae845a9a5201898e6fab691966ca60ad7b1535043",
+    "frontend/src/features/telemetry/components/TelemetryCardVisibility.test.tsx": "4ed4a5f8c57f72a0666ad2a32287b96a4d3cf2c425aec74e27356501350c9ae0",
+    "frontend/src/features/telemetry/components/TelemetryCardVisibility.tsx": "2c69b63acc4d816bb1bacaa2f1425ce5d46b52919440cda006fee2e6d1f6708a",
+    "frontend/src/features/telemetry/components/TelemetryDetailPanels.tsx": "5e7a7707239075fae89dccc1913bccdbb55537e0729cebf18b9bd8ba10cf73ff",
+    "frontend/src/features/telemetry/components/TelemetryDetailPrimitives.test.tsx": "3fec4f062c1cb100955cad2e6d5b7a5a3f97e867eb58ebfae37b1dd540832415",
+    "frontend/src/features/telemetry/components/TelemetryDetailPrimitives.tsx": "b29d90cc128cbd52ba7c039cf187e2ba8bf118b669309a96ece761c5422bcba1",
+    "frontend/src/features/telemetry/components/TelemetryDetailView.tsx": "16f8b3f0b12e489106b3214870fa8ffc43e706bbc16b0c77bd977b14e7f60354",
+    "frontend/src/features/telemetry/components/TireRadar.test.tsx": "abc61a033bea5dc9698f2cd80333d822cc041a5d19d15c6156c15c98ee1f0c52",
+    "frontend/src/features/telemetry/components/TireRadar.tsx": "3c8d4b3326d10de6c60d08f4edcd3612d30e2cc8e0512f5fe57bf5480b2a6538",
+    "frontend/src/features/telemetry/components/TireRadarVisibility.test.tsx": "8e3649bce35094ea21c30da670c01ce6d9630b1dc1896ab02e9fbf65a17e3294",
+    "frontend/src/features/telemetry/components/VehicleDynamicsDisplay.tsx": "d776974af15db2e3b3873df1e67403af46eea8e613566b8ad1a1d1f8be2d8c67",
+    "frontend/src/features/telemetry/components/VehicleDynamicsVisibility.test.tsx": "4d89e245483469541619313d1df4007107b7b40e6d4343d68a44a68baa8b86fa",
+    "frontend/src/features/telemetry/components/VerticalInputBar.tsx": "9e8322be658178acd7c37c63baea7ba569398c634c2127749fbf4152a147ff0c",
+    "frontend/src/features/telemetry/suspensionTrace.test.ts": "919403b29cbb1a72df328f125c1472e5135b9cdd120d7596de2a2fa02be3adba",
+    "frontend/src/features/telemetry/suspensionTrace.ts": "9f82af2320c64da16c98b3baa5e47a4cc46a9dcf059cc262479e02f0fffd1874",
+    "frontend/src/features/telemetry/telemetryDetailMath.benchmark.cjs": "da467a3e5f3a44ca81125f8fe71e32b83ba5f9d6cef832660d10ed3c5c96dc5b",
+    "frontend/src/features/telemetry/telemetryDetailMath.test.ts": "9cfc4c6e3fdd39fb564f71bf9e5e5680387b91457528f77964b486a1e78125ca",
+    "frontend/src/features/telemetry/telemetryDetailMath.ts": "8549297a56864b8e899d2f830fcc883bc71d2be62e5789799aaade993b8061e8",
+    "frontend/src/features/telemetry/telemetryHistory.test.ts": "9d8f917509e18a2a30471bd37949e42cc170614094b46868efb6f61db66e9b7f",
+    "frontend/src/features/telemetry/telemetryHistory.ts": "a0636b8bcb345235f5057fc5d9d14722a05fb2d28b57247b79f3dc01713d9131",
+    "frontend/src/features/theme/ThemeView.tsx": "d772b37a633ffeb89aeb608028270db13a26c79a8b5f2bd86db3d75a6a0510d8",
+    "frontend/src/features/theme/components/AppearanceModePanel.tsx": "bccfe439d9c1806d15d1fcd800537afda33798eaa962d66ad4c3bec3703d74fc",
+    "frontend/src/features/theme/components/ColorPickerPanel.tsx": "35c6c553a23248151a86e4091ae72931c7498e19cf5f611b98c137c14a6c4a02",
+    "frontend/src/features/theme/components/CustomCSSEditorPanel.tsx": "18f509352d282ae0f953128ac30849f3ff763aec35eb1e49da3468ef61bdcefb",
+    "frontend/src/features/theme/components/PresetPanel.tsx": "555755be51c68afc796d14b4f49faf311852f8bfc3e4b246b861c0af4f5ac8fc",
+    "frontend/src/features/theme/theme.css": "62fbb9b2d755714ee33dc320a5470f351c17f40e1d527a4c068a9948edc01849",
+    "frontend/src/features/tuning/TuneSessionProvider.baseline.test.tsx": "ccecaed0cc828ad4308f388fee877f841225a2598a0619ba8a1752a0ada71c33",
+    "frontend/src/features/tuning/TuneSessionProvider.context.test.tsx": "65c4bb53d3196c7e80b27ceab380f452be7a7954436b654cafdcab3e19528842",
+    "frontend/src/features/tuning/TuneSessionProvider.cvt.test.tsx": "e6952408b9e4241e15b5110d3b63e0d26ad1926a356fd4e80d5b7edd60e006a3",
+    "frontend/src/features/tuning/TuneSessionProvider.ratioBalance.test.tsx": "4a2f4184dee6f245604ab2581ec5ab4db27aca38f9ae9f28e4a892b18c4667d1",
+    "frontend/src/features/tuning/TuneSessionProvider.tsx": "addeb6f40e0d41317768b0f636793d9047e2e7e002e3f9b7c3cf0be425e7017a",
+    "frontend/src/features/tuning/TuningView.actions.test.tsx": "9f103f80e5d0f6efdad1e5fe91c5bbb675b912f1aa04353255fcb731b8716d28",
+    "frontend/src/features/tuning/TuningView.offline.test.tsx": "ad54cf5601d5c4208e3b3bb4668b3e7a51696ce76eba61f0ca64cd4af6d9d028",
+    "frontend/src/features/tuning/TuningView.status.test.tsx": "663adb3db56d98dfecab8ae5dc719fa784ce2b839df8b1c0b13e48e32cddb664",
+    "frontend/src/features/tuning/TuningView.tsx": "334ddcaa244a8f96169684c90b84971cb2ff6b3c6f2fa938604f34946a35c488",
+    "frontend/src/features/tuning/TuningView_dev.tsx": "2f0cc7855bd880d12cef0b6734aa57072cd9c6c5f1c41a5374748db70687cfa4",
+    "frontend/src/features/tuning/TuningWorkspace.tsx": "bac4a8e3eaa1db8b2d5b13f334a9c78f3fd8143689c9ec3b86ef9978303797c9",
+    "frontend/src/features/tuning/aegoTypes.ts": "5087b82a0e60fbdefca7d9c26d91b3aafd2ab8d81bf95e56fb62dc8b98ec4d4c",
+    "frontend/src/features/tuning/captureDownload.ts": "34d10d3a77064afa7f9020c29d6b45a848ffac44f01b6f84e652280a5fd612de",
+    "frontend/src/features/tuning/components/AegoModelPanel.tsx": "b04259aad67b50521765f7dce4a78e9b23371fe0918f981ce96a2b3ea1e22c12",
+    "frontend/src/features/tuning/components/BaselinePreviewPanel.test.tsx": "a7d75fae1ff91d7d9b1bb21bad320f46b9ff68190cec0b6f7c804bd5322e47bb",
+    "frontend/src/features/tuning/components/BaselinePreviewPanel.tsx": "06d53dcd7260678e779507964150264dd87efef0e531161d65e79262bafbab32",
+    "frontend/src/features/tuning/components/CapabilityContractPanel.tsx": "4cda17fe3ee8e9ced039e9e071b26eeae6f426dd2982833e14a16c79084c4279",
+    "frontend/src/features/tuning/components/ChassisCalculationStatus.tsx": "85d7667dbfcaf737a0dcd5b9f06d537ab6c2cf5e91837ae52ddfa7125c275c23",
+    "frontend/src/features/tuning/components/CvtEvidencePanel.tsx": "57a60e817ed64e87d8cee927e7f057445359d886e33371faa6dd1ddfa25d149a",
+    "frontend/src/features/tuning/components/CvtFoundationPanel.tsx": "bd4f01132bc9b9bac7aedfdd75a68339d729201e5648ff5fc5c99134d2f2d515",
+    "frontend/src/features/tuning/components/DevInputPanel.tsx": "2bca27b8ad760033098046fee29410ebc93354539d71ec9d5c85d13e4018f370",
+    "frontend/src/features/tuning/components/DevOutputPanel.tsx": "d81cb1fc06dca75e4c221276818445ec16ca61c627717ea779df2d106606d120",
+    "frontend/src/features/tuning/components/DragGearingSetup.tsx": "88902dfebf1ad1e7260ac7c30a18d4acc666feb61ae9d3add35ae94bdede7843",
+    "frontend/src/features/tuning/components/DriftGearingSetup.tsx": "0861a8be1b2490bc9f04a3835e487e92479e73e10a35f1daa405772faf5db7c2",
+    "frontend/src/features/tuning/components/EngineCalculationStatus.test.ts": "dc333a940d45968f2dbdc8ced8277bf72fa1e631f33b7c176536010a6ffa0185",
+    "frontend/src/features/tuning/components/EngineCalculationStatus.tsx": "f4ac111889fff0724bbc1e6b4ce85c63265bce9dcff28ed6ba5284c81ad84400",
+    "frontend/src/features/tuning/components/EngineDataStep.tsx": "596742a883564020a48acc7d8b52f4236b495a210ded669137fde7eacac54b49",
+    "frontend/src/features/tuning/components/EngineObservationHistory.tsx": "d495046161ffbdc32d72e3bdeee9cb19511c192ac216ca2ebdfdfdb1ab9d6276",
+    "frontend/src/features/tuning/components/EvEvidencePanel.test.tsx": "0fead6c26087fe18bdcd1065cc57d05c85e3a1bf30fd199ae43c539eabf4b27a",
+    "frontend/src/features/tuning/components/EvEvidencePanel.tsx": "84fd09580b1251e4c579756fb76063fd2f02ccd0d1a2666962592f84a3044c1d",
+    "frontend/src/features/tuning/components/EvGearboxSetup.tsx": "b0a0412756b2befa4c808f587a3340c7835abc3311ed35d743cf862e95c3aa3b",
+    "frontend/src/features/tuning/components/EvPowertrainStep.recovery.test.tsx": "9548101f214f850e4a1eefa648ba6b531b548e58e3284a09a37f962f1341b5ca",
+    "frontend/src/features/tuning/components/EvPowertrainStep.tsx": "ae728cf01eace0ecebb8f79ebe936f45073b2131c1ca9d5d475fa416c9545418",
+    "frontend/src/features/tuning/components/GearingTuner.test.ts": "532038819c2baeb3920b958abcf3cdb6140a1bf8a88fd73f225c5db031762cea",
+    "frontend/src/features/tuning/components/GearingTuner.tsx": "ddb572e471b131b1e733e4fa4010d523ce4bd1c5f241c3ce6e1478fd61c28823",
+    "frontend/src/features/tuning/components/LegacyTuningHistory.tsx": "144bfeff79d24d84c80aa454b37ea95ad112b41d617b25f60a9c5b816095200e",
+    "frontend/src/features/tuning/components/LiveDynoCurveCanvas.tsx": "e20b825cad3cab9c75294928f61af298db3969446ec59b150f9062fef4fcbbf1",
+    "frontend/src/features/tuning/components/OptionalAeroInputs.test.tsx": "75eed1acabf70bdb318c35120410d20ea8f928f52f68c2240c26827faa5ba9d2",
+    "frontend/src/features/tuning/components/OptionalAeroInputs.tsx": "17da4dfda6868b7a379e149e4482cec2e99e317d70b26179e0c0241eccc1f224",
+    "frontend/src/features/tuning/components/RallyProfileSetup.tsx": "b6bd53744c0080ca2accc205b4b915fad76c014315ba598474214cff74daf889",
+    "frontend/src/features/tuning/components/RatioBalancePanel.test.tsx": "4ab6af32414ba9f8123f1cc647e9d6bebe13ef8ba6c1828c93c0487e386bc2f7",
+    "frontend/src/features/tuning/components/RatioBalancePanel.tsx": "88947be77c7aa581a19d9b5a0da186f331204ac52db6d79879828611fd6c1797",
+    "frontend/src/features/tuning/components/RoadDrivetrainSetup.tsx": "64f5155bdb24b0c939f5b02e58ba92c688128991cc5e5289effaee6abf5a42d7",
+    "frontend/src/features/tuning/components/SetupVerificationStep.save.test.tsx": "611905dba85cc7767ec274ed49a50cb569b7add6dce42156c2161575434ff647",
+    "frontend/src/features/tuning/components/SetupVerificationStep.tsx": "de74b426168bcb0270bca516e5d5df8b99e4ce7508735f0c76467e9f320067a8",
+    "frontend/src/features/tuning/components/Step1GoalSetup.localization.test.tsx": "a531a0a823c747aa9f210be74092925c75fdfd0863e86321c679c946f9cfac2a",
+    "frontend/src/features/tuning/components/Step1GoalSetup.tsx": "c3c6b6bf6bb87a73c77da237a1f387eb41b3f8d5eb2613d96d47773e1f99bd73",
+    "frontend/src/features/tuning/components/Step2ChassisTuner.tsx": "af59b79f8cf462914a9a2f53eb6f4976bd0060c30d6e131280f771a9845c564c",
+    "frontend/src/features/tuning/components/TireEvidencePanel.tsx": "0058305348abb50028a053a00c13f35a26c129ef3b263c8c632c86e7116f3b59",
+    "frontend/src/features/tuning/components/TransmissionSetup.tsx": "6b78107c1441591f97f53736663c43478b7a90916ff513e9e60af8454c704caf",
+    "frontend/src/features/tuning/components/TuneVehicleSelector.tsx": "18001e59625e9292a952b367ec7eb2942512596b5f8ff0192c8bca2100585e57",
+    "frontend/src/features/tuning/components/TuningMeasurementStep.tsx": "bb977c92bee42e465c131af2ec976fa107b4eb84f9cacb68b154d257a1f02062",
+    "frontend/src/features/tuning/components/TuningTelemetryCaptureView.localization.test.tsx": "2363f6bdad19c0b6996c4d6ee5ab3b19bf467007a1a85a25d1b1a37becb3f33a",
+    "frontend/src/features/tuning/components/TuningTelemetryCaptureView.tsx": "ef19b2a3c13237df3b7c20a4fc5876f377d27d2ccf982ea070028c1b2d25dc45",
+    "frontend/src/features/tuning/components/WorkflowGuide.tsx": "60985d21814be00329fd5a5f0d46885d8d47c3175e8d5d27b8847d84120cb2e6",
+    "frontend/src/features/tuning/components/gearDisplayGeometry.ts": "da9865f07f34297af6d3f85095276deea132239f3d442d1e307b1be06c470f7f",
+    "frontend/src/features/tuning/components/gearingChartData.ts": "58a143f888b46dcd4fe84f29ae037f56173281115214f5bca716c43da1ff1cf4",
+    "frontend/src/features/tuning/components/gearingView.test.ts": "c7e59bdccbf18b285392e4b5f29d09e9a0e02fcff9b17345b3b01ab69aa8664b",
+    "frontend/src/features/tuning/components/gearingView.ts": "48f50813c34c287ef824c8fd77bdfb9f27f2339b0c7199673b8c3ae374bbe740",
+    "frontend/src/features/tuning/cvtRouting.test.ts": "90cd30c1beb16ac5b97b823b4fd986a601e3a08f5a66d7b3eb6e6092fa1cfd55",
+    "frontend/src/features/tuning/engineBatch.ts": "dc98464b4921d2f3fe1f233e451028ae0a357ceae1c15ee2af3c85cfcc4d9f45",
+    "frontend/src/features/tuning/engineCaptureReadback.test.ts": "d6e2a565ae5658e1085a4ddbb1b80df602abe6ab1cb6c3949361053c67cfdf1d",
+    "frontend/src/features/tuning/engineCaptureReadback.ts": "3582fddc5e3fe2ece0b831d8e0b63304ae5f2fcd985a289c2b39ffa00ba7cb8f",
+    "frontend/src/features/tuning/engineObservationIdentity.ts": "a7616437e105366b6432c1bd2ae65f6dd1c7547221633b4ae5851e781cccf24a",
+    "frontend/src/features/tuning/evRouting.test.ts": "ea0cd2f87cfd5bec44068411392a56bab86369c0e5f738c5c02eb04ff36e048e",
+    "frontend/src/features/tuning/evSession.ts": "424217fb16af52dc7895f54ac1e228abc3fdb2e3f43d878bce9bda8a1e6d3e2d",
+    "frontend/src/features/tuning/evidenceContext.test.tsx": "e437784338b448e9ffccc3256dca916f2bdf7797fd7165694a54bb15a65da9e0",
+    "frontend/src/features/tuning/evidenceContext.ts": "4fc83a4b14f6ce80c73110d57391c9193e7f7e8d9e4f9f8a429927345082178f",
+    "frontend/src/features/tuning/measurementGuidance.ts": "c6d7525161427bd51e8df88a21d11328b2a5f7d3fe3e6bfd4c87af73ec424dcb",
+    "frontend/src/features/tuning/measurementInitialState.ts": "944e34b7a0c4c021ecb95a5b924668542cd3b97244439cae694a272c331b278e",
+    "frontend/src/features/tuning/mechanicalCalculation.test.ts": "c44fb078e496089fe9b1510a696bd86a7ee8d20c5af6b51542b816f131998a5f",
+    "frontend/src/features/tuning/mechanicalCalculation.ts": "e776a72287e3591d84c2b7c6bcc85c0e42e57598137ff24fb19e2fc9492762a9",
+    "frontend/src/features/tuning/ratioBalanceTypes.ts": "9d6827c309248cfd55a64d1484dc8baefca83987308cb5bd9254dea394edec8d",
+    "frontend/src/features/tuning/roadDrivetrainSnapshot.test.ts": "73abafc22e3b7de9086ebe85173ac03f9ecd6444ce4b92d754612bf7457e85b6",
+    "frontend/src/features/tuning/tuneSessionController.test.ts": "2678fa9d72a102a67093ed572f718326bf144d0c9def7cd989fff3f2755b486c",
+    "frontend/src/features/tuning/tuneSessionController.ts": "d186591afa42aefde8053509b2e5b0a4d20a45eeae9611f9408f4bc554e8fa40",
+    "frontend/src/features/tuning/tuningWorkflow.test.ts": "baf120ac80e4705f308abd061514aa52c3d70fe432da4fd4540975d7a2a314c9",
+    "frontend/src/features/tuning/tuningWorkflow.ts": "df8233b61ec308c96ecd83599e42010e912a077f3fa724991941b36bfa89c707",
+    "frontend/src/features/tuning/useBaselineDraft.ts": "bb51be830e8566b4568f2fbdfe6a7a1aae28a7d79ba0ea35f52ab8c686ea843f",
+    "frontend/src/features/tuning/useCvtEvidenceSession.ts": "0ee030ed07d877e59034cf298840a1d3e871bd5fcff2741a6998a7e2bce22c8b",
+    "frontend/src/features/tuning/useEngineMeasurementArchive.context.test.tsx": "cfbb5fe8051635d7831f6768204b1f60043d9753f84dcf4e8b4b96f70bd83894",
+    "frontend/src/features/tuning/useEngineMeasurementArchive.ts": "ad615b786bf76de86bb30353a744819b3983af842324f53e9f730d6674988911",
+    "frontend/src/features/tuning/useEvMeasurementSession.transport.test.tsx": "7c2a03a5762a0066ca8d16768c1a63f5ddae8794167f0628cc66aef1d608a071",
+    "frontend/src/features/tuning/useEvMeasurementSession.ts": "8208b0d2c9b436106551d9048fa00fdfefcf0a45524615da7b563356b94a5a4d",
+    "frontend/src/features/tuning/useLocalCalculation.ts": "b595730aa6599236051705b80f6edb133574d7780cfa8bc76fb15a9e969040f9",
+    "frontend/src/features/tuning/useRatioBalanceDraft.test.tsx": "efd189fd106fcaea3be0c39f3c76ba9c0d982f4c0a714e0529e384b6c73de249",
+    "frontend/src/features/tuning/useRatioBalanceDraft.ts": "17c96987228c9457e996e628de2b19df39d1aa57662b9b06645ed1cea897fa6a",
+    "frontend/src/features/tuning/useWorkflowCalculation.test.tsx": "7de1e9bf6d7b6fac62e5e94be6cb70d525005d6ae9a047eb44c7a4d3c550d712",
+    "frontend/src/features/tuning/useWorkflowCalculation.ts": "cc4363ff52c2e7de93f45eba1ada5e254e960a62e35119829f7a5ce599dcae46",
+    "frontend/src/hooks/__tests__/useTelemetry.stress.test.ts": "6368ce7d9f56160d6711f8c63ec540bc469b855b3d932e396da1577084defd7f",
+    "frontend/src/hooks/__tests__/useTelemetry.test.ts": "8fc9ea000c35ca8f2c2d5b06d72220d9356416d9157367ffdc2232a1ce5fa41d",
+    "frontend/src/hooks/useDialogTransition.ts": "8a672d180be49815d87e2dac37b49f7ac77d4a6cd8c9cde1813dda18d101a329",
+    "frontend/src/hooks/useFileSave.ts": "c05cf3c3908a3d7c84cc1449b8c1e028a84ea21cd58877ed3f0ed1ec470acd16",
+    "frontend/src/hooks/useModalFocus.ts": "6eefc70ec9cc716b23cda9b7755293cb8c7aa545209f961efcad30cca1f7c130",
+    "frontend/src/hooks/useOverlayWebSocket.test.ts": "83ddcb4f9a1fe776d2af32d4ebb66b16605c88862a1e39fae8e71f75c3407dfc",
+    "frontend/src/hooks/useOverlayWebSocket.ts": "16050272d213498e7a618db06d419abbc966cd54df2227af60871abde92118f0",
+    "frontend/src/hooks/useTelemetry.ts": "0c7f212ae1fb8122b8983f7095cb67d9e194e7e1b4b89d10cf6d659201f98c69",
+    "frontend/src/lite-main.tsx": "b71ca37bd037f4afb8de7c9a6df25d0407f181b06d111cb31798ccefda66fc5a",
+    "frontend/src/main.tsx": "490d2700792f14cad6e355e76aaaf73843b05793ad63d199745040ec70e3df96",
+    "frontend/src/platform/hud.lan.tsx": "d1f44ee5b3138977ce738a97556ed18c565644977276ae434a9d24b8751a7cb9",
+    "frontend/src/platform/hud.windows.tsx": "3d3fade8cf771a2c263635d638c5989121464918ab74fcbc7ae16dbfdc5fb6f1",
+    "frontend/src/services/backend.test.ts": "ba7b42f1a64241c26208c9a54f4a110afd40ff5b5d2688d521acee0e1d4a8acd",
+    "frontend/src/services/backend.ts": "aecf5f385fbbafe0f9e498719b9068804648b53ba7703b78ca4cd97b5bb92dd5",
+    "frontend/src/services/buildInfoService.test.ts": "f863dec20f498269421e76179c87eaba385bf4a1cfa1f4e7718a25b1406091de",
+    "frontend/src/services/buildInfoService.ts": "af276e7c35c8e09bf50be3248493427962dce6ec3a289c1d2e5ebb6510f8f0b9",
+    "frontend/src/services/fileSave.test.ts": "74646189a1fd1f53b516b2fed859d5a707b88126f7588470d0a0cbcf8db05c53",
+    "frontend/src/services/fileSave.ts": "dda1da2d4934e071f64a1e5e72d3c3ca89b4893aeac827746490ac09921c91dc",
+    "frontend/src/services/runtimeCapabilities.test.ts": "1e38ebf1933781a44e9deba7131c68bf4b11cefe9d31de7878896a9ba641a25a",
+    "frontend/src/services/runtimeCapabilities.ts": "1a15cfd7250083ce627580391065cb79feaf7270366434bd4c8122bf9d731167",
+    "frontend/src/services/updaterService.test.ts": "cfb2938d9c75284073439ad7744e657450150e3d025ce0bda195542d4411cde7",
+    "frontend/src/services/updaterService.ts": "5a15a6e5f87c0c6db64373beff5aaa016d48b2c60362252ab76325c6257a547a",
+    "frontend/src/styles/base.css": "5255cf53b8f8ad0b65a87ce761fb9819533479d40e9516bc8522d3094e3db6d7",
+    "frontend/src/styles/components.css": "1cbbfb6bebef3c03449857865cfdc98b67035579640a18737bdca01c19326a4c",
+    "frontend/src/styles/design-systems/halfmoon.css": "40f2fbf11365ea115ba3e6ddcc1f4b8b21f0ead6296c1a306af5614f900749f4",
+    "frontend/src/styles/design-systems/index.css": "c9f93e65e0917d9dd7601b3c60142a3683ac238803a4c820e0b12fffd5ab3af5",
+    "frontend/src/styles/design-systems/rhine.css": "72390ca4d1e209ceb2d409dc05f11a37def7240b4dba36ac908d7f5733bdad26",
+    "frontend/src/styles/design-systems/swiss.css": "3056ebe8b731560e598260ee1b9a8a5e03f16f8e0ba6ae8a525af8a4247f2326",
+    "frontend/src/styles/fonts/rhine-misans.css": "6c70c42e2edd1dbd62d37a48533ad63a382e1d828f9357fef2fd5ba7a4b7c3f3",
+    "frontend/src/styles/navigation.css": "fd4f28f6abaf00b44ca55cc991004f9e78359baf7eb4e0d241bac5eef96d2af9",
+    "frontend/src/styles/themes.css": "73c7931f17514552255b0c8206685ddcbbc1a5ef62012507a5d05af6ed922178",
+    "frontend/src/utils/audioMotion.test.ts": "ff5508e6980e001208f06f3ef6d77944cb6bf0eea3ef36b8aefb9d1097971d9c",
+    "frontend/src/utils/canvasTheme.test.ts": "ff532d2da0cece8473c66d076d67c491cd6ef42b244b2461936199b9fb2d021a",
+    "frontend/src/utils/canvasTheme.ts": "d018eafa98a159cb5c0d919656e01419c5d4306c27960522b9a93f7d62b61d7a",
+    "frontend/src/utils/carClass.test.ts": "c7e4bd9b5a9c9b2280065755ff4c892bb5517b9e0d3f2caf24ba2a9e7d548be8",
+    "frontend/src/utils/carClass.ts": "ae315d69d8e1419ef13316cfa5fbbc866dcccdfcd2ea55225ebd78c28a01c545",
+    "frontend/src/utils/cssValidator.test.ts": "3bc0c865a74a309422dd07df2ddbedc2f647fbf75856209f5f7210ec3f9cb69e",
+    "frontend/src/utils/cssValidator.ts": "df8c876b47121ca6d48a469c571e59c0312a91d5e42129e65bbd2a13371fe378",
+    "frontend/src/utils/customMathEngine.test.ts": "4f43ffffef1e97daa6aeeaa544853cff844efdaba8228b2643e5d82afeb98c25",
+    "frontend/src/utils/customMathEngine.ts": "afe51ee556e293d31ad82390d6c837f16ff8d94718bcfd9ac5c13af820ded015",
+    "frontend/src/utils/driftDisplayMath.test.ts": "caaba7cc0d12f5289324fe198e7fc5cf70d14384c57e0a9d209a19612815278a",
+    "frontend/src/utils/driftLayout.test.ts": "6501810b20c5f56587ab9b20ee84b33d0cb4d534357a8f8bb15c4345843c12f1",
+    "frontend/src/utils/driftMath.test.ts": "1b3700831ce2b79f08253f2d1f5c14c8834de1b3f04b8a8732526db9bb219eb1",
+    "frontend/src/utils/driftMath.ts": "14876c28dd2bfed0ad767a8d815e392410fea45808c556e068ca1cf9c08f2478",
+    "frontend/src/utils/driftStyleEngine.test.ts": "c28b26a4f751fee6a96fbac8a019e247930fcca8490d54851062a5a0f48d2544",
+    "frontend/src/utils/frameInterpolator.test.ts": "d6c464da46ab112e46a298c34fe8b534a66915ed097aa2d6691784515c9a4302",
+    "frontend/src/utils/frameInterpolator.ts": "b86d7567b2ca40d82b33b92f3a81f032295b04ad0b129d6adde3234dcab228ac",
+    "frontend/src/utils/gameUnitSettings.test.ts": "372cd66e44de5d7716eaadeec8476f92d23d43bd6cdff6715ac8f2caf997c974",
+    "frontend/src/utils/gameUnitSettings.ts": "0277a5b6315597108eb075cc48154701c218035ce60f8bd1a935dcd5a57d21e5",
+    "frontend/src/utils/gaugeSources.test.ts": "ad9c27dc00131afc001172381146060e9413e3f0809a2da9dd092333589d0037",
+    "frontend/src/utils/gforceRadarMath.test.ts": "79f6a93fecdf56ff1d0b3a35ce58fcdcdb7122143fa232692c085cfd37f6f5d5",
+    "frontend/src/utils/gforceRadarMath.ts": "7bdb628c16e5cbe59b3559cf45b438684e346ca833181407ec5eea029b466960",
+    "frontend/src/utils/hudArtwork.test.ts": "05881fa35f37b96352164a959b078c41c5aef5d08ebed675cc86b49f3947750a",
+    "frontend/src/utils/overlayEvents.test.ts": "07ea003c74eff8959db2e091a90857913a3e75816daf20c2a28c6cc88149b34a",
+    "frontend/src/utils/overlayLayout.test.ts": "dd814e82ba577ae43af75a81b56577b67aa33934a5f8ffa2ac2a4b600a14fe8a",
+    "frontend/src/utils/qualifiedOutputPeaks.test.ts": "48bf5d0265533d227ce6c8a5ca7c5b2a35cf4335c1ec4fe7d051fd4821790cf6",
+    "frontend/src/utils/qualifiedOutputPeaks.ts": "5c345a402a8eec197eb83ebdab5efb7e5acadcf9c7dff532b754267951c0bf79",
+    "frontend/src/utils/rdpSimplifier.test.ts": "0acb4b02e65b835f8a382e6d7dafd80952898dfeca0af706e131f8ef1a4224b1",
+    "frontend/src/utils/rdpSimplifier.ts": "4ff2bd301bd4fce2a73d7d2f7d947ddcf3d14a8e9dc5f932e4f5b1d06eb2273e",
+    "frontend/src/utils/suspensionTravel.test.ts": "5a9e7a1dc66d22d5efff3f074e1ac253b50fc7640a9e2c752261804cf87d17ba",
+    "frontend/src/utils/suspensionTravel.ts": "39145764d99cc2015f845f7e30a0cd1e377435c4e460fb578a5faeed93014550",
+    "frontend/src/utils/telemetryCardLifecycle.test.ts": "90db471530201af6c5417e602d75a6c1f646ad19ab92a0e37274fd7d1818c54c",
+    "frontend/src/utils/telemetryCards.test.ts": "4f316248e9538044d48309b50f514e6025daef4ce678250004df198f9eceba09",
+    "frontend/src/utils/telemetryDisplay.test.ts": "1b9f9821e6defd1e5e70a5d9ce51307d9e69ae69fa40fd1a2dc64b1417da2362",
+    "frontend/src/utils/telemetryDisplay.ts": "e040f62dd6cd856c36a7c1f1f51545a30cb1ee92f10912080eddd91f981303f9",
+    "frontend/src/utils/tireCoefficients.test.ts": "69cb741a906f28891988510b8d4d1b96c5d523ad3da7e518872663bbbdb8e561",
+    "frontend/src/utils/tireCoefficients.ts": "f0f1c8c84768f84e16c3ccd55dfa45e8174acc0cb74a69398792028e95776729",
+    "frontend/src/utils/tireTemperatureHistogram.benchmark.mjs": "22a30fefff7e677301dc836a048e8e37007b220dc59ac66b00e99b21edb1a5f9",
+    "frontend/src/utils/tireTemperatureHistogram.test.ts": "806ce6673e683c1faad77a7a63d8176369922fd2b70421b327a8fae35e9d1872",
+    "frontend/src/utils/tireTemperatureHistogram.ts": "0775f2c0bfd6111a3f8bebe6a6ba2a161ed8f72f46e5ae534fb2967e97014db2",
+    "frontend/src/utils/unitFormatter.test.ts": "4b3d9ff216e6f88628957d4695ecf024da50ff498a7c6f29738d4b84bb1ba7fe",
+    "frontend/src/utils/unitFormatter.ts": "d7568af664c48e726b68084d141ed9f524705296bd68c337607dd7453e29184c",
+    "frontend/src/utils/units.ts": "292b1bfefa0a6ca33d91289645c62467ad55e7763ac1fe9b1a71d43bbb9216bd",
+    "frontend/src/utils/vfdAudioMath.test.ts": "44beede047039b659babb582bd7d4a358868a51bd921e6404193c4771c4bd94d",
+    "frontend/src/utils/vfdAudioMath.ts": "7496ecebac206c7099b115573b24ba0d6c20e4cc024504d7f5c7d53595503827",
+    "frontend/src/utils/vfdGaugeMath.test.ts": "b1c4184a1bf9b4524c4cfdf98c8045c0841b353e953229fcb28b10b2fdc0bd25",
+    "frontend/src/utils/vfdGaugeMath.ts": "d587b83a24931061bfe3110c535059da2796c43b6887b4b728daba7c68059064",
+    "frontend/src/vite-env.d.ts": "0166a7bad6e214156f95a22a0ebace2a2c83f0775912406713d87cd0bb6ed18e",
+    "lang/en-us.json": "a63c8c65203f0206d234a15c4d994de878852090f1c6f394a5be8fe284bd5f29",
+    "lang/iso639.json": "76b175d9ce1ab6ed63752ba14ed00ce5331ac61e649ebb07bd792ed33780309d",
+    "lang/ja-jp.json": "2ac8a1ccce91c72b912aea42f60d663bb1201aba271099da9c8491fc4a371be4",
+    "lang/zh-tw.json": "f50c16df45765470102ace5bd614a9398fe06f5c2946fdfdccd5a35fa868ebf5"
+  },
+  "fixtureSha256": "33ca6086be04c4b8a08aff9a4c14f2ed3c61c7cf4a549c98db5e8f08eaf2b8a5",
+  "environment": "Windows Chromium headless, real AppShell/providers, isolated Rust HTTP and data directory; checked-in historical capture replay with synthetic static profiles. Live WebSocket is silent and the native-only Companion host exchange is a neutral empty-commands fixture; all tuning calculations and storage use Rust. Companion App/providers use a fixture relay projection of those actual Rust workflow responses, without native pairing. DPR1, 100% zoom. Viewport screenshots scrolled to affected setup/result/chart, with separately labelled model-panel crops. Not game A/B, native device, Companion host, drift ground-speed or performance acceptance.",
+  "cases": [
+    {
+      "core": "default",
+      "mode": "light",
+      "width": 1280,
+      "goal": "Drift",
+      "language": "en-us",
+      "state": "feasible",
+      "status": "available",
+      "overflow": false,
+      "errors": [],
+      "failedApi": [],
+      "files": [
+        "default-light-en-us-1280-drift-feasible-setup.png",
+        "default-light-en-us-1280-drift-feasible-result.png",
+        "default-light-en-us-1280-drift-feasible-panel.png",
+        "default-light-en-us-1280-drift-feasible-companion.png",
+        "default-light-en-us-1280-drift-feasible-companion-panel.png"
+      ],
+      "panelViewport": {
+        "width": 1280,
+        "height": 827
+      },
+      "companion": {
+        "files": [
+          "default-light-en-us-1280-drift-feasible-companion.png",
+          "default-light-en-us-1280-drift-feasible-companion-panel.png"
+        ],
+        "width": 390,
+        "height": 844,
+        "panelViewport": {
+          "width": 390,
+          "height": 844
+        },
+        "overflow": false,
+        "errors": [],
+        "transport": "Fixture relay projection of the actual Rust workflow response; no native host or device claim"
+      },
+      "modelVersion": "aego-drift-working/v1",
+      "drivenTireAxle": "rear"
+    },
+    {
+      "core": "default",
+      "mode": "dark",
+      "width": 1280,
+      "goal": "Drift",
+      "language": "zh-tw",
+      "state": "feasible",
+      "status": "available",
+      "overflow": false,
+      "errors": [],
+      "failedApi": [],
+      "files": [
+        "default-dark-zh-tw-1280-drift-feasible-setup.png",
+        "default-dark-zh-tw-1280-drift-feasible-result.png",
+        "default-dark-zh-tw-1280-drift-feasible-panel.png",
+        "default-dark-zh-tw-1280-drift-feasible-companion.png",
+        "default-dark-zh-tw-1280-drift-feasible-companion-panel.png"
+      ],
+      "panelViewport": {
+        "width": 1280,
+        "height": 827
+      },
+      "companion": {
+        "files": [
+          "default-dark-zh-tw-1280-drift-feasible-companion.png",
+          "default-dark-zh-tw-1280-drift-feasible-companion-panel.png"
+        ],
+        "width": 390,
+        "height": 844,
+        "panelViewport": {
+          "width": 390,
+          "height": 844
+        },
+        "overflow": false,
+        "errors": [],
+        "transport": "Fixture relay projection of the actual Rust workflow response; no native host or device claim"
+      },
+      "modelVersion": "aego-drift-working/v1",
+      "drivenTireAxle": "rear"
+    },
+    {
+      "core": "modern",
+      "mode": "light",
+      "width": 1280,
+      "goal": "Drift",
+      "language": "zh-tw",
+      "state": "feasible",
+      "status": "available",
+      "overflow": false,
+      "errors": [],
+      "failedApi": [],
+      "files": [],
+      "modelVersion": "aego-drift-working/v1",
+      "drivenTireAxle": "rear"
+    },
+    {
+      "core": "modern",
+      "mode": "dark",
+      "width": 1280,
+      "goal": "Drift",
+      "language": "ja-jp",
+      "state": "feasible",
+      "status": "available",
+      "overflow": false,
+      "errors": [],
+      "failedApi": [],
+      "files": [],
+      "modelVersion": "aego-drift-working/v1",
+      "drivenTireAxle": "rear"
+    },
+    {
+      "core": "elegant",
+      "mode": "light",
+      "width": 1280,
+      "goal": "Drift",
+      "language": "ja-jp",
+      "state": "feasible",
+      "status": "available",
+      "overflow": false,
+      "errors": [],
+      "failedApi": [],
+      "files": [],
+      "modelVersion": "aego-drift-working/v1",
+      "drivenTireAxle": "rear"
+    },
+    {
+      "core": "elegant",
+      "mode": "dark",
+      "width": 1280,
+      "goal": "Drift",
+      "language": "en-us",
+      "state": "feasible",
+      "status": "available",
+      "overflow": false,
+      "errors": [],
+      "failedApi": [],
+      "files": [],
+      "modelVersion": "aego-drift-working/v1",
+      "drivenTireAxle": "rear"
+    },
+    {
+      "core": "swiss",
+      "mode": "light",
+      "width": 1280,
+      "goal": "Drift",
+      "language": "en-us",
+      "state": "feasible",
+      "status": "available",
+      "overflow": false,
+      "errors": [],
+      "failedApi": [],
+      "files": [
+        "swiss-light-en-us-1280-drift-feasible-setup.png",
+        "swiss-light-en-us-1280-drift-feasible-result.png",
+        "swiss-light-en-us-1280-drift-feasible-panel.png",
+        "swiss-light-en-us-1280-drift-feasible-companion.png",
+        "swiss-light-en-us-1280-drift-feasible-companion-panel.png"
+      ],
+      "panelViewport": {
+        "width": 1280,
+        "height": 833
+      },
+      "companion": {
+        "files": [
+          "swiss-light-en-us-1280-drift-feasible-companion.png",
+          "swiss-light-en-us-1280-drift-feasible-companion-panel.png"
+        ],
+        "width": 390,
+        "height": 844,
+        "panelViewport": {
+          "width": 390,
+          "height": 853
+        },
+        "overflow": false,
+        "errors": [],
+        "transport": "Fixture relay projection of the actual Rust workflow response; no native host or device claim"
+      },
+      "modelVersion": "aego-drift-working/v1",
+      "drivenTireAxle": "rear"
+    },
+    {
+      "core": "swiss",
+      "mode": "dark",
+      "width": 1280,
+      "goal": "Drift",
+      "language": "zh-tw",
+      "state": "feasible",
+      "status": "available",
+      "overflow": false,
+      "errors": [],
+      "failedApi": [],
+      "files": [
+        "swiss-dark-zh-tw-1280-drift-feasible-setup.png",
+        "swiss-dark-zh-tw-1280-drift-feasible-result.png",
+        "swiss-dark-zh-tw-1280-drift-feasible-panel.png",
+        "swiss-dark-zh-tw-1280-drift-feasible-companion.png",
+        "swiss-dark-zh-tw-1280-drift-feasible-companion-panel.png"
+      ],
+      "panelViewport": {
+        "width": 1280,
+        "height": 833
+      },
+      "companion": {
+        "files": [
+          "swiss-dark-zh-tw-1280-drift-feasible-companion.png",
+          "swiss-dark-zh-tw-1280-drift-feasible-companion-panel.png"
+        ],
+        "width": 390,
+        "height": 844,
+        "panelViewport": {
+          "width": 390,
+          "height": 844
+        },
+        "overflow": false,
+        "errors": [],
+        "transport": "Fixture relay projection of the actual Rust workflow response; no native host or device claim"
+      },
+      "modelVersion": "aego-drift-working/v1",
+      "drivenTireAxle": "rear"
+    },
+    {
+      "core": "swiss-editorial",
+      "mode": "light",
+      "width": 1280,
+      "goal": "Drift",
+      "language": "zh-tw",
+      "state": "feasible",
+      "status": "available",
+      "overflow": false,
+      "errors": [],
+      "failedApi": [],
+      "files": [],
+      "modelVersion": "aego-drift-working/v1",
+      "drivenTireAxle": "rear"
+    },
+    {
+      "core": "swiss-editorial",
+      "mode": "dark",
+      "width": 1280,
+      "goal": "Drift",
+      "language": "ja-jp",
+      "state": "feasible",
+      "status": "available",
+      "overflow": false,
+      "errors": [],
+      "failedApi": [],
+      "files": [],
+      "modelVersion": "aego-drift-working/v1",
+      "drivenTireAxle": "rear"
+    },
+    {
+      "core": "swiss-contrast",
+      "mode": "light",
+      "width": 1280,
+      "goal": "Drift",
+      "language": "ja-jp",
+      "state": "feasible",
+      "status": "available",
+      "overflow": false,
+      "errors": [],
+      "failedApi": [],
+      "files": [],
+      "modelVersion": "aego-drift-working/v1",
+      "drivenTireAxle": "rear"
+    },
+    {
+      "core": "swiss-contrast",
+      "mode": "dark",
+      "width": 1280,
+      "goal": "Drift",
+      "language": "en-us",
+      "state": "feasible",
+      "status": "available",
+      "overflow": false,
+      "errors": [],
+      "failedApi": [],
+      "files": [],
+      "modelVersion": "aego-drift-working/v1",
+      "drivenTireAxle": "rear"
+    },
+    {
+      "core": "rhine-lab",
+      "mode": "light",
+      "width": 1280,
+      "goal": "Drift",
+      "language": "en-us",
+      "state": "feasible",
+      "status": "available",
+      "overflow": false,
+      "errors": [],
+      "failedApi": [],
+      "files": [
+        "rhine-lab-light-en-us-1280-drift-feasible-setup.png",
+        "rhine-lab-light-en-us-1280-drift-feasible-result.png",
+        "rhine-lab-light-en-us-1280-drift-feasible-panel.png",
+        "rhine-lab-light-en-us-1280-drift-feasible-companion.png",
+        "rhine-lab-light-en-us-1280-drift-feasible-companion-panel.png"
+      ],
+      "panelViewport": {
+        "width": 1280,
+        "height": 827
+      },
+      "companion": {
+        "files": [
+          "rhine-lab-light-en-us-1280-drift-feasible-companion.png",
+          "rhine-lab-light-en-us-1280-drift-feasible-companion-panel.png"
+        ],
+        "width": 390,
+        "height": 844,
+        "panelViewport": {
+          "width": 390,
+          "height": 847
+        },
+        "overflow": false,
+        "errors": [],
+        "transport": "Fixture relay projection of the actual Rust workflow response; no native host or device claim"
+      },
+      "modelVersion": "aego-drift-working/v1",
+      "drivenTireAxle": "rear"
+    },
+    {
+      "core": "rhine-lab",
+      "mode": "dark",
+      "width": 1280,
+      "goal": "Drift",
+      "language": "zh-tw",
+      "state": "feasible",
+      "status": "available",
+      "overflow": false,
+      "errors": [],
+      "failedApi": [],
+      "files": [
+        "rhine-lab-dark-zh-tw-1280-drift-feasible-setup.png",
+        "rhine-lab-dark-zh-tw-1280-drift-feasible-result.png",
+        "rhine-lab-dark-zh-tw-1280-drift-feasible-panel.png",
+        "rhine-lab-dark-zh-tw-1280-drift-feasible-companion.png",
+        "rhine-lab-dark-zh-tw-1280-drift-feasible-companion-panel.png"
+      ],
+      "panelViewport": {
+        "width": 1280,
+        "height": 827
+      },
+      "companion": {
+        "files": [
+          "rhine-lab-dark-zh-tw-1280-drift-feasible-companion.png",
+          "rhine-lab-dark-zh-tw-1280-drift-feasible-companion-panel.png"
+        ],
+        "width": 390,
+        "height": 844,
+        "panelViewport": {
+          "width": 390,
+          "height": 844
+        },
+        "overflow": false,
+        "errors": [],
+        "transport": "Fixture relay projection of the actual Rust workflow response; no native host or device claim"
+      },
+      "modelVersion": "aego-drift-working/v1",
+      "drivenTireAxle": "rear"
+    },
+    {
+      "core": "default",
+      "mode": "light",
+      "width": 320,
+      "goal": "Drift",
+      "language": "ja-jp",
+      "state": "feasible",
+      "status": "available",
+      "overflow": false,
+      "errors": [],
+      "failedApi": [],
+      "files": [
+        "default-light-ja-jp-320-drift-feasible-setup.png",
+        "default-light-ja-jp-320-drift-feasible-result.png",
+        "default-light-ja-jp-320-drift-feasible-panel.png",
+        "default-light-ja-jp-320-drift-feasible-companion.png",
+        "default-light-ja-jp-320-drift-feasible-companion-panel.png"
+      ],
+      "panelViewport": {
+        "width": 320,
+        "height": 941
+      },
+      "companion": {
+        "files": [
+          "default-light-ja-jp-320-drift-feasible-companion.png",
+          "default-light-ja-jp-320-drift-feasible-companion-panel.png"
+        ],
+        "width": 320,
+        "height": 844,
+        "panelViewport": {
+          "width": 320,
+          "height": 868
+        },
+        "overflow": false,
+        "errors": [],
+        "transport": "Fixture relay projection of the actual Rust workflow response; no native host or device claim"
+      },
+      "modelVersion": "aego-drift-working/v1",
+      "drivenTireAxle": "rear"
+    },
+    {
+      "core": "default",
+      "mode": "dark",
+      "width": 320,
+      "goal": "Drift",
+      "language": "zh-tw",
+      "state": "feasible",
+      "status": "available",
+      "overflow": false,
+      "errors": [],
+      "failedApi": [],
+      "files": [
+        "default-dark-zh-tw-320-drift-feasible-setup.png",
+        "default-dark-zh-tw-320-drift-feasible-result.png",
+        "default-dark-zh-tw-320-drift-feasible-panel.png"
+      ],
+      "panelViewport": {
+        "width": 320,
+        "height": 863
+      },
+      "modelVersion": "aego-drift-working/v1",
+      "drivenTireAxle": "rear"
+    },
+    {
+      "core": "swiss",
+      "mode": "light",
+      "width": 320,
+      "goal": "Drift",
+      "language": "ja-jp",
+      "state": "feasible",
+      "status": "available",
+      "overflow": false,
+      "errors": [],
+      "failedApi": [],
+      "files": [
+        "swiss-light-ja-jp-320-drift-feasible-setup.png",
+        "swiss-light-ja-jp-320-drift-feasible-result.png",
+        "swiss-light-ja-jp-320-drift-feasible-panel.png"
+      ],
+      "panelViewport": {
+        "width": 320,
+        "height": 947
+      },
+      "modelVersion": "aego-drift-working/v1",
+      "drivenTireAxle": "rear"
+    },
+    {
+      "core": "swiss",
+      "mode": "dark",
+      "width": 320,
+      "goal": "Drift",
+      "language": "zh-tw",
+      "state": "feasible",
+      "status": "available",
+      "overflow": false,
+      "errors": [],
+      "failedApi": [],
+      "files": [
+        "swiss-dark-zh-tw-320-drift-feasible-setup.png",
+        "swiss-dark-zh-tw-320-drift-feasible-result.png",
+        "swiss-dark-zh-tw-320-drift-feasible-panel.png"
+      ],
+      "panelViewport": {
+        "width": 320,
+        "height": 869
+      },
+      "modelVersion": "aego-drift-working/v1",
+      "drivenTireAxle": "rear"
+    },
+    {
+      "core": "rhine-lab",
+      "mode": "light",
+      "width": 320,
+      "goal": "Drift",
+      "language": "ja-jp",
+      "state": "feasible",
+      "status": "available",
+      "overflow": false,
+      "errors": [],
+      "failedApi": [],
+      "files": [
+        "rhine-lab-light-ja-jp-320-drift-feasible-setup.png",
+        "rhine-lab-light-ja-jp-320-drift-feasible-result.png",
+        "rhine-lab-light-ja-jp-320-drift-feasible-panel.png"
+      ],
+      "panelViewport": {
+        "width": 320,
+        "height": 941
+      },
+      "modelVersion": "aego-drift-working/v1",
+      "drivenTireAxle": "rear"
+    },
+    {
+      "core": "rhine-lab",
+      "mode": "dark",
+      "width": 320,
+      "goal": "Drift",
+      "language": "zh-tw",
+      "state": "feasible",
+      "status": "available",
+      "overflow": false,
+      "errors": [],
+      "failedApi": [],
+      "files": [
+        "rhine-lab-dark-zh-tw-320-drift-feasible-setup.png",
+        "rhine-lab-dark-zh-tw-320-drift-feasible-result.png",
+        "rhine-lab-dark-zh-tw-320-drift-feasible-panel.png"
+      ],
+      "panelViewport": {
+        "width": 320,
+        "height": 863
+      },
+      "modelVersion": "aego-drift-working/v1",
+      "drivenTireAxle": "rear"
+    },
+    {
+      "core": "default",
+      "mode": "light",
+      "width": 1280,
+      "goal": "Road",
+      "language": "en-us",
+      "state": "fwd",
+      "status": "available",
+      "overflow": false,
+      "errors": [],
+      "failedApi": [],
+      "files": [
+        "default-light-en-us-1280-road-fwd-setup.png",
+        "default-light-en-us-1280-road-fwd-result.png",
+        "default-light-en-us-1280-road-fwd-panel.png",
+        "default-light-en-us-1280-road-fwd-chart.png"
+      ],
+      "panelViewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "modelVersion": "aego-road-launch-envelope/v3",
+      "drivenTireAxle": "front"
+    },
+    {
+      "core": "default",
+      "mode": "light",
+      "width": 1280,
+      "goal": "Road",
+      "language": "en-us",
+      "state": "feasible",
+      "status": "available",
+      "overflow": false,
+      "errors": [],
+      "failedApi": [],
+      "files": [
+        "default-light-en-us-1280-road-feasible-setup.png",
+        "default-light-en-us-1280-road-feasible-result.png",
+        "default-light-en-us-1280-road-feasible-panel.png"
+      ],
+      "panelViewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "modelVersion": "aego-road-launch-envelope/v3",
+      "drivenTireAxle": "rear"
+    },
+    {
+      "core": "default",
+      "mode": "light",
+      "width": 1280,
+      "goal": "Rally",
+      "language": "en-us",
+      "state": "cross-country",
+      "status": "limited",
+      "overflow": false,
+      "errors": [],
+      "failedApi": [],
+      "files": [
+        "default-light-en-us-1280-rally-cross-country-setup.png",
+        "default-light-en-us-1280-rally-cross-country-result.png",
+        "default-light-en-us-1280-rally-cross-country-panel.png"
+      ],
+      "panelViewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "modelVersion": "aego-rally-joint/v1",
+      "drivenTireAxle": "rear"
+    },
+    {
+      "core": "default",
+      "mode": "light",
+      "width": 1280,
+      "goal": "Rally",
+      "language": "en-us",
+      "state": "feasible",
+      "status": "limited",
+      "overflow": false,
+      "errors": [],
+      "failedApi": [],
+      "files": [
+        "default-light-en-us-1280-rally-feasible-setup.png",
+        "default-light-en-us-1280-rally-feasible-result.png",
+        "default-light-en-us-1280-rally-feasible-panel.png"
+      ],
+      "panelViewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "modelVersion": "aego-rally-joint/v1",
+      "drivenTireAxle": "rear"
+    },
+    {
+      "core": "default",
+      "mode": "light",
+      "width": 1280,
+      "goal": "Drift",
+      "language": "en-us",
+      "state": "missing-target",
+      "status": "unavailable",
+      "overflow": false,
+      "errors": [],
+      "failedApi": [],
+      "files": [
+        "default-light-en-us-1280-drift-missing-target-setup.png",
+        "default-light-en-us-1280-drift-missing-target-result.png",
+        "default-light-en-us-1280-drift-missing-target-panel.png",
+        "default-light-en-us-1280-drift-missing-target-companion.png",
+        "default-light-en-us-1280-drift-missing-target-companion-panel.png"
+      ],
+      "panelViewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "companion": {
+        "files": [
+          "default-light-en-us-1280-drift-missing-target-companion.png",
+          "default-light-en-us-1280-drift-missing-target-companion-panel.png"
+        ],
+        "width": 390,
+        "height": 844,
+        "panelViewport": {
+          "width": 390,
+          "height": 844
+        },
+        "overflow": false,
+        "errors": [],
+        "transport": "Fixture relay projection of the actual Rust workflow response; no native host or device claim"
+      },
+      "modelVersion": "aego-drift-working/v1"
+    },
+    {
+      "core": "default",
+      "mode": "light",
+      "width": 1280,
+      "goal": "Drift",
+      "language": "en-us",
+      "state": "saturated",
+      "status": "limited",
+      "overflow": false,
+      "errors": [],
+      "failedApi": [],
+      "files": [
+        "default-light-en-us-1280-drift-saturated-setup.png",
+        "default-light-en-us-1280-drift-saturated-result.png",
+        "default-light-en-us-1280-drift-saturated-panel.png",
+        "default-light-en-us-1280-drift-saturated-companion.png",
+        "default-light-en-us-1280-drift-saturated-companion-panel.png"
+      ],
+      "panelViewport": {
+        "width": 1280,
+        "height": 895
+      },
+      "companion": {
+        "files": [
+          "default-light-en-us-1280-drift-saturated-companion.png",
+          "default-light-en-us-1280-drift-saturated-companion-panel.png"
+        ],
+        "width": 390,
+        "height": 844,
+        "panelViewport": {
+          "width": 390,
+          "height": 933
+        },
+        "overflow": false,
+        "errors": [],
+        "transport": "Fixture relay projection of the actual Rust workflow response; no native host or device claim"
+      },
+      "modelVersion": "aego-drift-working/v1",
+      "drivenTireAxle": "rear"
+    },
+    {
+      "core": "default",
+      "mode": "light",
+      "width": 1280,
+      "goal": "Drag",
+      "language": "en-us",
+      "state": "infeasible-finish",
+      "status": "unavailable",
+      "overflow": false,
+      "errors": [],
+      "failedApi": [],
+      "files": [
+        "default-light-en-us-1280-drag-infeasible-finish-setup.png",
+        "default-light-en-us-1280-drag-infeasible-finish-result.png",
+        "default-light-en-us-1280-drag-infeasible-finish-panel.png",
+        "default-light-en-us-1280-drag-infeasible-finish-companion.png",
+        "default-light-en-us-1280-drag-infeasible-finish-companion-panel.png"
+      ],
+      "panelViewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "companion": {
+        "files": [
+          "default-light-en-us-1280-drag-infeasible-finish-companion.png",
+          "default-light-en-us-1280-drag-infeasible-finish-companion-panel.png"
+        ],
+        "width": 390,
+        "height": 844,
+        "panelViewport": {
+          "width": 390,
+          "height": 844
+        },
+        "overflow": false,
+        "errors": [],
+        "transport": "Fixture relay projection of the actual Rust workflow response; no native host or device claim"
+      },
+      "modelVersion": "aego-drag-joint/v1",
+      "drivenTireAxle": "rear"
+    },
+    {
+      "core": "default",
+      "mode": "light",
+      "width": 1280,
+      "goal": "Drag",
+      "language": "en-us",
+      "state": "feasible",
+      "status": "available",
+      "overflow": false,
+      "errors": [],
+      "failedApi": [],
+      "files": [
+        "default-light-en-us-1280-drag-feasible-setup.png",
+        "default-light-en-us-1280-drag-feasible-result.png",
+        "default-light-en-us-1280-drag-feasible-panel.png"
+      ],
+      "panelViewport": {
+        "width": 1280,
+        "height": 803
+      },
+      "modelVersion": "aego-drag-joint/v1",
+      "drivenTireAxle": "rear"
+    },
+    {
+      "core": "default",
+      "mode": "light",
+      "width": 1280,
+      "goal": "Drag",
+      "language": "en-us",
+      "state": "engineering-prior",
+      "status": "available",
+      "overflow": false,
+      "errors": [],
+      "failedApi": [],
+      "files": [
+        "default-light-en-us-1280-drag-engineering-prior-setup.png",
+        "default-light-en-us-1280-drag-engineering-prior-result.png",
+        "default-light-en-us-1280-drag-engineering-prior-panel.png"
+      ],
+      "panelViewport": {
+        "width": 1280,
+        "height": 759
+      },
+      "modelVersion": "aego-drag-joint/v1",
+      "drivenTireAxle": "rear"
+    }
+  ],
+  "images": [
+    {
+      "file": "default-light-en-us-1280-drift-feasible-setup.png",
+      "sha256": "f70e151ae75b117d40e011d3143524dc1d433969cc37810256b02bba3d1d0498"
+    },
+    {
+      "file": "default-light-en-us-1280-drift-feasible-result.png",
+      "sha256": "7ad2b3927a63bf0ff65bb50701040af30776bac1de4b4fc612629dc6ba8453cd"
+    },
+    {
+      "file": "default-light-en-us-1280-drift-feasible-panel.png",
+      "sha256": "08e14e92a48eb377ff4dd221db7932a2137a7ca627096643298f7dadfccc6fd3"
+    },
+    {
+      "file": "default-light-en-us-1280-drift-feasible-companion.png",
+      "sha256": "510bcffe5fa82e1cd668dfe8287c9def844fbadea0c5f8aba25797fab317f43e"
+    },
+    {
+      "file": "default-light-en-us-1280-drift-feasible-companion-panel.png",
+      "sha256": "a920cafb148db3997b39bd7c4d18f8577467fb615032cb05e535de699bee1d5c"
+    },
+    {
+      "file": "default-dark-zh-tw-1280-drift-feasible-setup.png",
+      "sha256": "c9cc26ef2456534770d1f23e6bdffda8c6c20920daa8fd5f8604a32c79e33415"
+    },
+    {
+      "file": "default-dark-zh-tw-1280-drift-feasible-result.png",
+      "sha256": "710d33559016cea775cedd457940cd4573e97fe80f21b2d2f4461cf7aaddb6e8"
+    },
+    {
+      "file": "default-dark-zh-tw-1280-drift-feasible-panel.png",
+      "sha256": "c250411d31e18e4cf4ce33a5be1a46af10153d63e9848cf0968cdcb150506d29"
+    },
+    {
+      "file": "default-dark-zh-tw-1280-drift-feasible-companion.png",
+      "sha256": "e3db3a4c4a24de3431491eae57930f2d6e6efea1b964046e8be67e340c2aefe8"
+    },
+    {
+      "file": "default-dark-zh-tw-1280-drift-feasible-companion-panel.png",
+      "sha256": "a31bd468687a5bca722b78ff72f057503004f5bbd23cbff3ed74426649034725"
+    },
+    {
+      "file": "swiss-light-en-us-1280-drift-feasible-setup.png",
+      "sha256": "bc78a9c79b5e4cd99c1c0fdaa863e038ed5b625d1604a278bf109c92adf55b68"
+    },
+    {
+      "file": "swiss-light-en-us-1280-drift-feasible-result.png",
+      "sha256": "48aa29dac84e7f73ac92f7a5e9fb87196b4a265ddc4e5466b1bee1f0758a7a38"
+    },
+    {
+      "file": "swiss-light-en-us-1280-drift-feasible-panel.png",
+      "sha256": "6f925b4504ca22bcf778d44fe429186fc9d4765a65f2c0ab77e41be9e845a61e"
+    },
+    {
+      "file": "swiss-light-en-us-1280-drift-feasible-companion.png",
+      "sha256": "3127fd72bd306348a215f5834287132968789a1df347d71dab958d2d6f0ee18e"
+    },
+    {
+      "file": "swiss-light-en-us-1280-drift-feasible-companion-panel.png",
+      "sha256": "92ff8b51efde1023269c488bb13c2e6dfada29de212e42efb38bfe03c1df8650"
+    },
+    {
+      "file": "swiss-dark-zh-tw-1280-drift-feasible-setup.png",
+      "sha256": "7f028964a1f001c050c92269857947313acf02ca274f5d6448186954a2c19b29"
+    },
+    {
+      "file": "swiss-dark-zh-tw-1280-drift-feasible-result.png",
+      "sha256": "b5f178f787df0000340b53bbf8f351efcce3201a21a4c17646e0062ccb2934de"
+    },
+    {
+      "file": "swiss-dark-zh-tw-1280-drift-feasible-panel.png",
+      "sha256": "f257c258a420e6e6975ccdb8e07f03d16064f695d711b43c42fb018539823e62"
+    },
+    {
+      "file": "swiss-dark-zh-tw-1280-drift-feasible-companion.png",
+      "sha256": "2e30417756e7ef1db829698f7815e3ec74c8b0e38df6d5927227a6b1305243f0"
+    },
+    {
+      "file": "swiss-dark-zh-tw-1280-drift-feasible-companion-panel.png",
+      "sha256": "e849f19953c573eda506ca89ee550e0471a28e85d0c284e23a00d75db8cdea36"
+    },
+    {
+      "file": "rhine-lab-light-en-us-1280-drift-feasible-setup.png",
+      "sha256": "4dd60d9d1adfb1e45853ffc2a1b71494fe05a2d2a61a138d768841b72d0ca82b"
+    },
+    {
+      "file": "rhine-lab-light-en-us-1280-drift-feasible-result.png",
+      "sha256": "e2302c3c496670b2bdcaebe7ae36af7b1cebd2fe34f9e1197f14adc69283b33d"
+    },
+    {
+      "file": "rhine-lab-light-en-us-1280-drift-feasible-panel.png",
+      "sha256": "9ee971244c864ccb6306b180b11e39fcc7be6f0554a1cb99d38abe0b457d6788"
+    },
+    {
+      "file": "rhine-lab-light-en-us-1280-drift-feasible-companion.png",
+      "sha256": "10a633c9734dabd12aaf142b54d782464f724c08a244d6e7bb17eac86eb01cf7"
+    },
+    {
+      "file": "rhine-lab-light-en-us-1280-drift-feasible-companion-panel.png",
+      "sha256": "c38819107bcf86afb3f2329d6fcfab5afb422b8ff6a08084d6f10865946e009a"
+    },
+    {
+      "file": "rhine-lab-dark-zh-tw-1280-drift-feasible-setup.png",
+      "sha256": "85bec4c9db0221005186bac6243624e9ab6af251686d0b55d0bf14b4ed9b48c7"
+    },
+    {
+      "file": "rhine-lab-dark-zh-tw-1280-drift-feasible-result.png",
+      "sha256": "b35d2cbc0d238c550792353e2fee3addec983cc2553fd3a247a90c818478bf63"
+    },
+    {
+      "file": "rhine-lab-dark-zh-tw-1280-drift-feasible-panel.png",
+      "sha256": "1e300fa077a9be6539bf6449d621910564e54c2dc17ed7c834b8c3b173ec3f93"
+    },
+    {
+      "file": "rhine-lab-dark-zh-tw-1280-drift-feasible-companion.png",
+      "sha256": "deef5b7dbaa2f8cd7b556370f1632d720e1597813807a472f7c4668ed79af1d3"
+    },
+    {
+      "file": "rhine-lab-dark-zh-tw-1280-drift-feasible-companion-panel.png",
+      "sha256": "473d2eb5c1bae1b3ca33e4aad827e60f7809a05eaa155e87dc17e99499a6e235"
+    },
+    {
+      "file": "default-light-ja-jp-320-drift-feasible-setup.png",
+      "sha256": "122d7fa603d2af0e1da9ee19125c521449645b3179c0c638af16b57270df58d0"
+    },
+    {
+      "file": "default-light-ja-jp-320-drift-feasible-result.png",
+      "sha256": "4a5f6be59fd63e426d51733ced3d41ce34ef961128f4b407dc19815c9185396a"
+    },
+    {
+      "file": "default-light-ja-jp-320-drift-feasible-panel.png",
+      "sha256": "447f9a25703245f8cbe7fd2c708950e341bcce281db344e1b894ce69f57b7623"
+    },
+    {
+      "file": "default-light-ja-jp-320-drift-feasible-companion.png",
+      "sha256": "ef875be38d30bb58593a3e2ce1c4fda0b74bb947c77cbbcc80b48a2b561e49e1"
+    },
+    {
+      "file": "default-light-ja-jp-320-drift-feasible-companion-panel.png",
+      "sha256": "c5517e46484e40ab0c3a9c0220c40f963db8f4f5b6c8dd759f0d8c963ebb6649"
+    },
+    {
+      "file": "default-dark-zh-tw-320-drift-feasible-setup.png",
+      "sha256": "c0447c1ec223639701e4252778c3d51b17cf4b5ba6aa39ac06e48d8577d985e2"
+    },
+    {
+      "file": "default-dark-zh-tw-320-drift-feasible-result.png",
+      "sha256": "504e4dc2f6e4f9a5700ccaf51d095ac66fd3430b487d418424ec17f92b7fcaca"
+    },
+    {
+      "file": "default-dark-zh-tw-320-drift-feasible-panel.png",
+      "sha256": "20d6acf4035736692eb31194706bed44bccb1966b3f62d567f544eec0f6f098d"
+    },
+    {
+      "file": "swiss-light-ja-jp-320-drift-feasible-setup.png",
+      "sha256": "7c9df770b6e9e376773d5ee25f2ca23af4bf729d6945766d48d1703b132b410a"
+    },
+    {
+      "file": "swiss-light-ja-jp-320-drift-feasible-result.png",
+      "sha256": "5c658d17858e86a02daeda30fbdf0115fb595c1fa5eb725d504c187cf2ab0c60"
+    },
+    {
+      "file": "swiss-light-ja-jp-320-drift-feasible-panel.png",
+      "sha256": "c08f2b388cc2507b8bf47656e45d28e41511ebbf7d5ecdf03f3d8c73e5136059"
+    },
+    {
+      "file": "swiss-dark-zh-tw-320-drift-feasible-setup.png",
+      "sha256": "1d0bfe3460337f827cb3f90e228d11223a0b1c140878d8b19231578559a469bd"
+    },
+    {
+      "file": "swiss-dark-zh-tw-320-drift-feasible-result.png",
+      "sha256": "2077c2e797bde53004169eecb42e2d72b557f63bcc2807f125d1f3fefb419d70"
+    },
+    {
+      "file": "swiss-dark-zh-tw-320-drift-feasible-panel.png",
+      "sha256": "6829eecbfd7ca7e5776e3b61d685ea7883e709d40f6da880539fc5ec2a2651d5"
+    },
+    {
+      "file": "rhine-lab-light-ja-jp-320-drift-feasible-setup.png",
+      "sha256": "018c2466b802f5b4e8ea1bf47ca38014b791313cf76fd44f03f52715dcf64390"
+    },
+    {
+      "file": "rhine-lab-light-ja-jp-320-drift-feasible-result.png",
+      "sha256": "f5bb44602940de321a2195cf4199656fd1db300eb1792677e40ce70758c5bfee"
+    },
+    {
+      "file": "rhine-lab-light-ja-jp-320-drift-feasible-panel.png",
+      "sha256": "dda023ccf828b05bebbf6fe8014782b90d554c6f5c48f0e95cd42bd07dd888f1"
+    },
+    {
+      "file": "rhine-lab-dark-zh-tw-320-drift-feasible-setup.png",
+      "sha256": "8118a79f1267af7153f121c4be271027bbe696d24d22d920232c10c8ae73d3c0"
+    },
+    {
+      "file": "rhine-lab-dark-zh-tw-320-drift-feasible-result.png",
+      "sha256": "30b372c0d68319535bcfb9db214b5ebc0b05a7cba2224b56c005531621d53996"
+    },
+    {
+      "file": "rhine-lab-dark-zh-tw-320-drift-feasible-panel.png",
+      "sha256": "d5dabcbaa1810272867bee06f6dbce44732a4851a66670a237a791430d9d77d8"
+    },
+    {
+      "file": "default-light-en-us-1280-road-fwd-setup.png",
+      "sha256": "2334cdc6206da4fb92af2c195a2dd86c9a2175ebc38736b0d9bbe64611949d85"
+    },
+    {
+      "file": "default-light-en-us-1280-road-fwd-result.png",
+      "sha256": "f2443397475b066511b1fe2be5e054ebe3dc5c53ac10402500300c453b68825f"
+    },
+    {
+      "file": "default-light-en-us-1280-road-fwd-panel.png",
+      "sha256": "82667b29ec69028fe422289160caa9daaecd2d6a5186749e5265828a9f63a452"
+    },
+    {
+      "file": "default-light-en-us-1280-road-fwd-chart.png",
+      "sha256": "0fd907b23c43bda30e8740291110f712c9849fa9399f39fc3803e00b50d07d65"
+    },
+    {
+      "file": "default-light-en-us-1280-road-feasible-setup.png",
+      "sha256": "925337f25ebacd8c6d7cfabd8e01f097a2503d66e8f4237857d93cc343efdc5a"
+    },
+    {
+      "file": "default-light-en-us-1280-road-feasible-result.png",
+      "sha256": "4ca603b83b4f797a5335e9668cc0c30ac8b0c8d58a75f4bf180a831f1466227f"
+    },
+    {
+      "file": "default-light-en-us-1280-road-feasible-panel.png",
+      "sha256": "36acc10e71b40ad8edca8c6bcb1e699575aa9a0f2fb642758dcab1f699130bcf"
+    },
+    {
+      "file": "default-light-en-us-1280-rally-cross-country-setup.png",
+      "sha256": "44c638722f0fdee03364091544d60957d5119c331b90f32e0c86caa9a0fb52ff"
+    },
+    {
+      "file": "default-light-en-us-1280-rally-cross-country-result.png",
+      "sha256": "b9df1c284ba8de5a242b6d09662f48f83c3ce62937d6611c39dbe604ee945e33"
+    },
+    {
+      "file": "default-light-en-us-1280-rally-cross-country-panel.png",
+      "sha256": "1a648201e18d00a14fb3c78309f5e03d3bfd6f0766b629621acf9bc67da6a687"
+    },
+    {
+      "file": "default-light-en-us-1280-rally-feasible-setup.png",
+      "sha256": "61de208c0498b59fe461cc0729ecc0fb4a9c782e3b44ebcc56feeb4409884cc7"
+    },
+    {
+      "file": "default-light-en-us-1280-rally-feasible-result.png",
+      "sha256": "d0de16c7258ca3bd9e55692ed56c972361871fde5f05d6114356757cfe458580"
+    },
+    {
+      "file": "default-light-en-us-1280-rally-feasible-panel.png",
+      "sha256": "8746837d10140b9097931d9763eb377074c4f23db837832f72e3fe162b8bf642"
+    },
+    {
+      "file": "default-light-en-us-1280-drift-missing-target-setup.png",
+      "sha256": "ffb20ea980834f2617bd12b2eacc145bdac81f69916311cfc287059f0e72dae7"
+    },
+    {
+      "file": "default-light-en-us-1280-drift-missing-target-result.png",
+      "sha256": "5e50bb118aed886f6facc2322494c55b94d25f0338ce10fa300b9301cf1bc199"
+    },
+    {
+      "file": "default-light-en-us-1280-drift-missing-target-panel.png",
+      "sha256": "8a01facd25bf964c18b68658ede917c76739ddea633338cd92b43a2d93fe0ec5"
+    },
+    {
+      "file": "default-light-en-us-1280-drift-missing-target-companion.png",
+      "sha256": "f38db465f9c021ce809ce1bc660701fc3039cc2fa57973a5f7d28964f3f37c2d"
+    },
+    {
+      "file": "default-light-en-us-1280-drift-missing-target-companion-panel.png",
+      "sha256": "0667f85ad763b722a046e7cac73304877d51719f886711793c28a3ae43de1f81"
+    },
+    {
+      "file": "default-light-en-us-1280-drift-saturated-setup.png",
+      "sha256": "5b156c8f074451c6df99d92b7a76bb0d96801a4b13ee35e296e7b88a15b0cc71"
+    },
+    {
+      "file": "default-light-en-us-1280-drift-saturated-result.png",
+      "sha256": "5f98b3a917cac07c21b63d607ee1cfacc55708193a0cc9c970b724d7512f0bcc"
+    },
+    {
+      "file": "default-light-en-us-1280-drift-saturated-panel.png",
+      "sha256": "578e491c1806f21d29135196aaec4dc291e9a827e4b0713537017337f98e506e"
+    },
+    {
+      "file": "default-light-en-us-1280-drift-saturated-companion.png",
+      "sha256": "a85eb2af5fec6efeb4d4e219793f930b5ac6249e8a9d0e52b956f8bacbdeba4e"
+    },
+    {
+      "file": "default-light-en-us-1280-drift-saturated-companion-panel.png",
+      "sha256": "d5c17bee3348a571f687087832fd7a8b0dc1f9e025e8f3185206b57c40c0c3b2"
+    },
+    {
+      "file": "default-light-en-us-1280-drag-infeasible-finish-setup.png",
+      "sha256": "c3569224e31418c3c61cc3a9be9f72f1273c7af259c410ed37c33146b8ad569e"
+    },
+    {
+      "file": "default-light-en-us-1280-drag-infeasible-finish-result.png",
+      "sha256": "355de9a3da08e0c686e7f76824697f2df55f2c8962f9c09a326a7053f14e2091"
+    },
+    {
+      "file": "default-light-en-us-1280-drag-infeasible-finish-panel.png",
+      "sha256": "ca7f05547407c7736b5ddaac36821ada29d78f5b85cebed3fd93efe2645f0106"
+    },
+    {
+      "file": "default-light-en-us-1280-drag-infeasible-finish-companion.png",
+      "sha256": "02a68f1d2494527472de7b7caae1ba5f3867f4f24ec4711b94fa73fd49d5a9e4"
+    },
+    {
+      "file": "default-light-en-us-1280-drag-infeasible-finish-companion-panel.png",
+      "sha256": "f2eb7fd705ef28b5989f11f72c0d26b442867b197ecef0fbc29524ccf480d10a"
+    },
+    {
+      "file": "default-light-en-us-1280-drag-feasible-setup.png",
+      "sha256": "6153dab8a3919ac5d7b0dd73b1f1eff20a1aabc7e576cd456187acce99d102a8"
+    },
+    {
+      "file": "default-light-en-us-1280-drag-feasible-result.png",
+      "sha256": "21449183ca92f547a9e30e06871d2b4ef4a5c52ab57e2f9acf8fa949487496f3"
+    },
+    {
+      "file": "default-light-en-us-1280-drag-feasible-panel.png",
+      "sha256": "a75b433eaf078be31cc7f5d200265a1e23eff14570b2b6575f0e0d335fb24046"
+    },
+    {
+      "file": "default-light-en-us-1280-drag-engineering-prior-setup.png",
+      "sha256": "a0e87bed50ec3b21a51c4c471947b2c053881a3c322eee45a314897d1598f13b"
+    },
+    {
+      "file": "default-light-en-us-1280-drag-engineering-prior-result.png",
+      "sha256": "61894affaf71458298899d57d17225fdb008da4fe573434762fbedc89971b3a4"
+    },
+    {
+      "file": "default-light-en-us-1280-drag-engineering-prior-panel.png",
+      "sha256": "d788e682b755485affb0c1829c5d8b4534866dc6ac1eb78058b56b23413eaeb0"
+    }
+  ]
+}

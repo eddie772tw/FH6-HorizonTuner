@@ -20,8 +20,12 @@ export interface CarParams {
   maxHpRpm: number;
   maxTorqueRpm: number;
   /** Optional Drag finish speed; used only with explicit provenance. */
-  dragFinishSpeedKmh?: number;
-  dragFinishSpeedProvenance?: 'telemetry' | 'manual';
+  dragFinishSpeedKmh?: number | null;
+  dragFinishSpeedProvenance?: 'telemetry' | 'manual' | null;
+  driftWorkingTarget?: import('../features/tuning/aegoTypes').DriftWorkingTarget;
+  rallyObservedBounds?: import('../features/tuning/ratioBalanceTypes').RatioBalanceRequest['bounds'];
+  driftObservedBounds?: import('../features/tuning/ratioBalanceTypes').RatioBalanceRequest['bounds'];
+  dragObservedBounds?: import('../features/tuning/ratioBalanceTypes').RatioBalanceRequest['bounds'];
   aeroInputVersion?: 'optional/v1';
   aeroBalance?: number | null;
   aeroEfficiency: number;

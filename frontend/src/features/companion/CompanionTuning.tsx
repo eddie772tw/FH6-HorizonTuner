@@ -109,6 +109,7 @@ export default function CompanionTuning({ state, disabled, onCommand }: Props) {
     : usesCvt(profile) ? t('CVT recommendations are unavailable pending real capture and solver validation.') : !snapshot.readiness.mechanical ? companionText("Enter vehicle weight and distribution to unlock chassis tuning.", "companion.weight_missing")
     : !snapshot.readiness.engineInputs ? companionText("Enter engine power to unlock measurement.", "companion.engine_inputs_missing")
       : !snapshot.readiness.measuredEngine ? companionText("Complete engine measurement before gearing and step 4.", "companion.measurement_missing")
+        : !snapshot.readiness.gearingAvailable ? t('Engine analysis is ready, but the gearing model has no feasible result. Review Step 3.')
         : companionText("Engine measurement is ready. Verify the setup on the PC before saving.", "companion.ready_message");
   return <div className="companion-stack">
     <nav className="companion-section-nav workspace-tabs nav" aria-label={companionText("Tuning sections", "companion.tuning_sections")}>{sections.map(({ id, label }) => <button key={id} type="button" className={`nav-link ${activeSection === id ? 'active' : ''}`} aria-current={activeSection === id ? 'location' : undefined} onClick={() => { navigationTarget.current = { id, until: performance.now() + 800 }; setActiveSection(id); document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}>{label}</button>)}</nav>
@@ -128,6 +129,10 @@ export default function CompanionTuning({ state, disabled, onCommand }: Props) {
     <ChassisCalculationStatus diagnostics={snapshot.results.chassisDiagnostics} />
     <div className="companion-tuning-results"><ChassisResults result={snapshot.results.chassis} /><AlignmentResults result={snapshot.results.alignment} /></div>
     <section id="companion-engine">{usesCvt(profile) ? <CvtFoundationPanel result={snapshot.results.cvt} t={t} /> : <CompanionMeasurement measurement={measurement} disabled={disabled} onCommand={onCommand} />}</section>
-    <GearingResults result={snapshot.results.gearing} measurementPhase={measurement.phase} unavailableMessage={usesCvt(profile) ? t('CVT recommendations are unavailable pending real capture and solver validation.') : undefined} />
+    <GearingResults result={snapshot.results.gearing} measurementPhase={measurement.phase}
+      available={snapshot.readiness.gearingAvailable && snapshot.calculationStatus!=='pending' && snapshot.calculationStatus!=='error'}
+      diagnostic={snapshot.calculationStatus==='pending'||snapshot.calculationStatus==='error' ? undefined : snapshot.results.gearingDiagnostics}
+      view={snapshot.results.gearingView} goal={workflow.goal}
+      unavailableMessage={usesCvt(profile) ? t('CVT recommendations are unavailable pending real capture and solver validation.') : undefined} />
   </div>;
 }

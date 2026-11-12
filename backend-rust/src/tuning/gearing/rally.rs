@@ -18,6 +18,40 @@ use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::f64::consts::PI;
 
+/// Refresh only selected-output diagnostics; targets come from the canonical solve.
+pub fn adjusted_diagnostics(result: &GearingResult, original: &Value) -> Value {
+    let mut d = original.clone();
+    if !respects_hard_targets(result, original) {
+        d["status"] = json!("unavailable");
+        d["reason"] = json!("Adjusted Rally ratios violate the original rounded endpoint");
+        for key in ["actualSpeedKmh", "endpointErrorKmh", "actualTotalRatio"] {
+            d[key] = Value::Null;
+        }
+        return d;
+    }
+    let actual = calc_gear_speed(
+        d["referenceRpm"].as_f64().unwrap(),
+        *result.gears.last().unwrap(),
+        result.final_drive,
+        d["tireRadiusM"].as_f64().unwrap(),
+    ) * 3.6;
+    d["actualSpeedKmh"] = json!(actual);
+    d["endpointErrorKmh"] = json!(actual - d["targetSpeedKmh"].as_f64().unwrap());
+    d["actualTotalRatio"] = json!(result.final_drive * result.gears.last().unwrap());
+    let step = d["preferredStepRatio"].as_f64().unwrap();
+    let limited = (result.gears[0] - 2.7).abs() > 0.005
+        || result
+            .gears
+            .windows(2)
+            .any(|g| (g[1] / g[0] - step).abs() > 0.01);
+    d["shapePreferenceLimited"] = json!(limited);
+    d["status"] = json!(if limited { "limited" } else { "available" });
+    d["outsideModelFinalDrivePrior"] = json!(result.final_drive < 2.0 || result.final_drive > 6.5);
+    d["finalDrive"] = json!(result.final_drive);
+    d["gears"] = json!(result.gears);
+    d
+}
+
 /// Actual slider observations, not a claim about game-wide hardware limits.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -79,7 +113,9 @@ pub fn respects_hard_targets(gearing: &GearingResult, diagnostics: &Value) -> bo
     let on_grid =
         |v: f64| v.is_finite() && v > 0.0 && (v * 100.0 - (v * 100.0).round()).abs() < 1e-7;
     if diagnostics["modelVersion"] != "aego-rally-joint/v1"
-        || diagnostics["status"] != "available"
+        || !["available", "limited"]
+            .iter()
+            .any(|s| diagnostics["status"] == *s)
         || !(4..=10).contains(&count)
         || rpm > max_rpm
         || (tolerance - 1.0_f64.max(target * 0.01)).abs() > 1e-9

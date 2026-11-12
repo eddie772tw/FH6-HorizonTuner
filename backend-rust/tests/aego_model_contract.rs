@@ -11,6 +11,9 @@ fn independent_ids_are_strict_and_goal_checked() {
         AegoModel::RallyV1,
         AegoModel::DriftV1,
         AegoModel::DragV1,
+        AegoModel::RallyJointV1,
+        AegoModel::DriftWorkingV1,
+        AegoModel::DragJointV1,
     ];
     let goals = [
         RaceGoal::Road,
@@ -42,6 +45,14 @@ fn independent_ids_are_strict_and_goal_checked() {
         }
     }
     assert!(AegoModel::production(RaceGoal::DangerSign).is_none());
+    for (goal, model) in [
+        (RaceGoal::Road, AegoModel::RoadLaunchV3),
+        (RaceGoal::Rally, AegoModel::RallyJointV1),
+        (RaceGoal::Drift, AegoModel::DriftWorkingV1),
+        (RaceGoal::Drag, AegoModel::DragJointV1),
+    ] {
+        assert_eq!(AegoModel::production(goal), Some(model));
+    }
 }
 
 #[test]

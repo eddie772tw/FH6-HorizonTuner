@@ -1,5 +1,5 @@
 use fh6_backend::tuning::{
-    calculate_aego_gearing,
+    gearing::calculate_aego_gearing_historical as calculate_aego_gearing,
     gearing::{
         allocation::allocate_total_ratios,
         calculate_aego_gearing_v2,
@@ -20,7 +20,7 @@ fn synthetic(drive: &str) -> TuningCarParams {
 }
 
 #[test]
-fn production_nonroad_replays_frozen_owner_including_corrections_and_rejections() {
+fn historical_nonroad_replays_frozen_owner_including_corrections_and_rejections() {
     let correction = GearingSecondaryCorrection {
         simulated_top_speed: Some(120.0),
         soft_max_speed: Some(140.0),

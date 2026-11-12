@@ -216,6 +216,7 @@ impl RoadService {
                 "rust/ice-measured-workflow-v1"
                     | "rust/ice-measured-workflow-v2"
                     | "rust/ice-measured-workflow-v3"
+                    | "rust/ice-measured-workflow-v4"
                     | "rust/ev-measured-workflow-v1"
                     | "rust/ev-measured-workflow-v2"
                     | "rust/ev-measured-workflow-v3"

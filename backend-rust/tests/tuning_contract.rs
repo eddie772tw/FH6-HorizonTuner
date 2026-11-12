@@ -208,7 +208,7 @@ fn frozen_v2_tuning_core_matches_immutable_golden_fixtures() {
         if race_goal != RaceGoal::Road {
             assert_eq!(
                 actual_gearing,
-                fh6_backend::tuning::calculate_aego_gearing(
+                fh6_backend::tuning::gearing::calculate_aego_gearing_historical(
                     race_goal,
                     num_gears,
                     &car_params,
@@ -381,7 +381,7 @@ fn gearing_boundary_singular_protection_and_monotonicity() {
 }
 
 #[test]
-fn drag_rejects_original_invalid_inputs_before_gearing_fallbacks() {
+fn historical_drag_rejects_original_invalid_inputs_before_gearing_fallbacks() {
     let params = TuningCarParams {
         weight: Some(1200.0),
         max_hp: Some(450.0),
@@ -392,7 +392,7 @@ fn drag_rejects_original_invalid_inputs_before_gearing_fallbacks() {
     };
     for solver in [
         calculate_aego_gearing,
-        fh6_backend::tuning::calculate_aego_gearing,
+        fh6_backend::tuning::gearing::calculate_aego_gearing_historical,
     ] {
         for count in [0, 1, 3, 11, usize::MAX] {
             let result = solver(RaceGoal::Drag, count, &params, 7000.0, None);
@@ -732,7 +732,7 @@ fn alignment_drivetrain_normalization_and_gearing_kinematics_closure() {
         drag_finish_speed_kmh: Some(f64::INFINITY),
         drag_finish_speed_provenance: Some("telemetry".into()),
     };
-    let rally_gearing = fh6_backend::tuning::calculate_aego_gearing(
+    let rally_gearing = fh6_backend::tuning::gearing::calculate_aego_gearing_historical(
         RaceGoal::Rally,
         6,
         &p_fwd_upper,
@@ -818,9 +818,10 @@ fn chassis_drift_degeneracy_and_workflow_drivetrain_normalization() {
 }
 
 #[test]
-fn gearing_secondary_redistribution_closure_and_monotonicity_bounds() {
+fn historical_gearing_secondary_redistribution_closure_and_monotonicity_bounds() {
     use fh6_backend::tuning::{
-        calculate_aego_gearing, GearingSecondaryCorrection, RaceGoal, TuningCarParams,
+        gearing::calculate_aego_gearing_historical as calculate_aego_gearing,
+        GearingSecondaryCorrection, RaceGoal, TuningCarParams,
     };
 
     // Case 1: Low redline ratio (r_redline_hp = 4500 / 9000 = 0.50) with secondary correction

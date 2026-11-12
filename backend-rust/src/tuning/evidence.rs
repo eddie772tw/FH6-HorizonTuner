@@ -638,6 +638,7 @@ impl EvidenceService {
         let current = match rec["formulaVersion"].as_str() {
             Some(
                 "rust/ice-measured-workflow-v3"
+                | "rust/ice-measured-workflow-v4"
                 | "rust/ev-measured-workflow-v2"
                 | "rust/ev-measured-workflow-v3",
             ) => true,
@@ -653,6 +654,21 @@ impl EvidenceService {
             }
         };
         let snapshot = &rec["inputSnapshot"];
+        let aego_v4 = rec["formulaVersion"] == "rust/ice-measured-workflow-v4";
+        let schema = if aego_v4 {
+            snapshot["workflowSchemaVersion"]
+                .as_str()
+                .filter(|s| ["tuning-workflow-result/v1", "tuning-workflow-result/v2"].contains(s))
+                .ok_or_else(|| {
+                    ApiError::invalid("AEGO v4 requires a supported recorded workflow schema")
+                })?
+        } else if rec["formulaVersion"] == "rust/ev-measured-workflow-v3" {
+            "tuning-workflow-result/v3"
+        } else if current {
+            "tuning-workflow-result/v2"
+        } else {
+            "tuning-workflow-result/v1"
+        };
         let confirmed_ev = rec["formulaVersion"] == "rust/ev-measured-workflow-v3";
         if confirmed_ev && !snapshot["evEvidenceConfirmation"].is_object() {
             return Err(ApiError::invalid(
@@ -675,7 +691,7 @@ impl EvidenceService {
                 }
             }
         }
-        let request:WorkflowRequest=serde_json::from_value(json!({"schemaVersion":if confirmed_ev{"tuning-workflow-result/v3"}else if current{"tuning-workflow-result/v2"}else{"tuning-workflow-result/v1"},"goal":snapshot["goal"],"season":snapshot["season"],"profile":snapshot["profile"],"engine":null,"ev":if proof.kind=="ev"{json!({"setup":proof.setup,"measurements":[],"candidateFinalDrive":snapshot["evResult"]["finalDrive"]})}else{Value::Null},"inputSnapshot":snapshot})).map_err(|e|ApiError::invalid(&e.to_string()))?;
+        let request:WorkflowRequest=serde_json::from_value(json!({"schemaVersion":schema,"goal":snapshot["goal"],"season":snapshot["season"],"profile":snapshot["profile"],"engine":null,"ev":if proof.kind=="ev"{json!({"setup":proof.setup,"measurements":[],"candidateFinalDrive":snapshot["evResult"]["finalDrive"]})}else{Value::Null},"inputSnapshot":snapshot})).map_err(|e|ApiError::invalid(&e.to_string()))?;
         // A reserved model field must be a known string and agree with the
         // backend's formula/schema/goal mapping, not a client-selected solver.
         let claimed_model = snapshot
@@ -692,8 +708,13 @@ impl EvidenceService {
             claimed_model,
         )
         .map_err(|e| ApiError::invalid(&e))?;
-        let expected = super::workflow::calculate_historical(request, &proof, model)
-            .map_err(|e| ApiError::invalid(&e))?;
+        let expected = super::workflow::calculate_saved(
+            request,
+            &proof,
+            model,
+            rec["formulaVersion"].as_str().unwrap(),
+        )
+        .map_err(|e| ApiError::invalid(&e))?;
         if !expected
             .recommendation
             .as_ref()
