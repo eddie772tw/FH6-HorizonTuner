@@ -1,5 +1,18 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-11-12 / AEGO 整合獨立審查：保存證據回放（Codex as Codex）
+
+- **範圍**：PR #657；採用 `pr-review-evaluation`、`pr-author-maintainer`、`physics-tuning-math`、`modular-refactoring`、`cross-agent-collaboration`、`ponytail`。
+- **學習**：derived cache 不等於原始證據。ICE 的快取載入與 cold replay 共用原始 capture qualification，先核對 schema／外層與 nested ID／workflow namespace，再由原始幀重建 engine、summary、tire evidence；保存驗證不依 cached 數字取得資格。
+- **證據**：只有 cache 沒有 raw 的原 head 失敗案例，以及 cache 竄改、raw envelope 無效、raw 移除、read-only DB 不變等行為測試通過。完整 locked Cargo 306 passed／3 既有 ignored（本機僅省略除錯符號）、前端2033項通過；650個產品檔案同步後與測試來源一致。原21 tuning／10 EV fixture與容差不變。
+- **畫面沿用**：本輪未改 frontend／lang；圖集保留原擷取版本2c72，補記後端變更與舊manifest的證據界線。新head CI另於PR記錄；不合併PR。
+
+## 2026-11-12 / AEGO 堆疊獨立審查：Rally 刻度可行性（Codex as Codex）
+
+- **範圍**：PR #654；採用 `pr-review-evaluation`、`pr-author-maintainer`、`physics-tuning-math`、`modular-refactoring`、`ponytail`。修正沿 #655～#659 同步，不合併 PR。
+- **學習**：輪速是齒比的倒數；最近齒比刻度不一定是符合輪速容差的刻度。檢查 round／floor／ceil 經合法範圍限制後的候選，直接套用原運動學公式與原公差，可避免反推速度區間引入額外浮點餘裕。
+- **證據**：新增固定 FD 6.28、99.02 km/h 的相鄰刻度反例及 FD 3.50 的浮點邊界案例；原最近 tick 解法可重現失敗，修正後針對性測試通過。原 21 tuning／10 EV fixture 值與公差未改；完整測試與新 head CI 另記於 PR Body。
+
 ## 2026-11-12 / v1.8.4 Tag、Release Note 與 Wiki 同步（Codex as Codex）
 
 - **範圍**：依使用者要求，以最新 main 發布 `v1.8.4` Tag，runtime 維持已備妥的 `11.45.26`。Release Note 對照 v1.8.3、v1.8.2、v1.8.1 的實際公開內容，沿用 What's New／What's Fixed／What's Changed 與 PR、Full Changelog 格式；同步中英文 README、安全版本映射及獨立 Wiki。未合併的 #648 不列入變更。

@@ -76,6 +76,84 @@ fn saved_request() -> Value {
     r
 }
 
+#[test]
+fn saved_ice_cache_requires_its_original_raw_capture() {
+    let temp = tempfile::tempdir().unwrap();
+    let app = App::new(temp.path()).unwrap();
+    app.tuning_evidence
+        .store
+        .append(
+            "tuning-evidence/v1",
+            "tuning-evidence",
+            &serde_json::to_value(proof("AWD")).unwrap(),
+            Some("qualified-engine-v4:real-beetle"),
+        )
+        .unwrap();
+    assert!(call(&app, "/api/tuning/workflow", saved_request()).is_err());
+}
+
+#[test]
+fn saved_ice_replays_raw_frames_instead_of_derived_cache_and_rejects_missing_or_invalid_raw() {
+    let temp = tempfile::tempdir().unwrap();
+    let app = App::new(temp.path()).unwrap();
+    save_engine(&app);
+    let original = call(&app, "/api/tuning/workflow", saved_request()).unwrap();
+    let store = &app.tuning_evidence.store;
+    let mut cached = store
+        .get("qualified-engine-v4:real-beetle", None, None)
+        .unwrap();
+    cached["engine"]["peakPowerRpm"] = json!(123.0);
+    cached["summary"]["peakPower"]["rpm"] = json!(123.0);
+    cached["tire_summary"] = json!({"status":"forged"});
+    let connection = rusqlite::Connection::open(&store.db_path).unwrap();
+    connection
+        .execute(
+            "UPDATE road_documents SET document=?1 WHERE id=?2",
+            rusqlite::params![cached.to_string(), "qualified-engine-v4:real-beetle"],
+        )
+        .unwrap();
+    let before = std::fs::read(&store.db_path).unwrap();
+    let replay = app
+        .tuning_evidence
+        .calculate_read_only(serde_json::from_value(saved_request()).unwrap())
+        .unwrap();
+    assert_eq!(serde_json::to_value(replay).unwrap(), original);
+    app.tuning_evidence
+        .verify_recommendation(&original["recommendation"], None)
+        .unwrap();
+    assert_eq!(std::fs::read(&store.db_path).unwrap(), before);
+
+    let raw = store.get("real-beetle", None, None).unwrap();
+    for field in ["schema", "id"] {
+        let mut changed = raw.clone();
+        changed[field] = json!("invalid");
+        connection
+            .execute(
+                "UPDATE road_documents SET document=?1 WHERE id='real-beetle'",
+                [changed.to_string()],
+            )
+            .unwrap();
+        let before = std::fs::read(&store.db_path).unwrap();
+        assert!(app
+            .tuning_evidence
+            .calculate_read_only(serde_json::from_value(saved_request()).unwrap())
+            .is_err());
+        assert!(app
+            .tuning_evidence
+            .verify_recommendation(&original["recommendation"], None)
+            .is_err());
+        assert_eq!(std::fs::read(&store.db_path).unwrap(), before);
+    }
+    connection
+        .execute("DELETE FROM road_documents WHERE id='real-beetle'", [])
+        .unwrap();
+    assert!(call(&app, "/api/tuning/workflow", saved_request()).is_err());
+    assert!(app
+        .tuning_evidence
+        .verify_recommendation(&original["recommendation"], None)
+        .is_err());
+}
+
 fn aego_request(goal: &str) -> Value {
     let mut request = saved_request();
     request["schemaVersion"] = json!("tuning-workflow-result/v2");

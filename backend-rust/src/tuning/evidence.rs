@@ -420,21 +420,45 @@ impl EvidenceService {
             proof.evidence_id = Some(id.into());
             return Ok(proof);
         }
-        Ok(QualifiedEvidence {
-            analysis_version: version,
-            kind: text("powertrain")?,
-            car_id: text("car_id")?,
-            identity: v["identity"].clone(),
-            dependency_key: v["dependency_key"].as_str().map(str::to_owned),
-            engine: serde_json::from_value(v["engine"].clone())?,
-            gears: serde_json::from_value(v["gears"].clone())?,
-            setup: v["setup"].clone(),
-            observation: v["observation"].clone(),
-            summary: v["summary"].clone(),
-            evidence_id: Some(id.into()),
-            tire_summary: v.get("tire_summary").filter(|v| !v.is_null()).cloned(),
-            ev_powertrain: None,
+        let observation_id = v["observation"]["id"]
+            .as_str()
+            .ok_or_else(|| ApiError::invalid("Saved ICE raw observation is unavailable"))?;
+        let mut proof = self.replay_engine(observation_id)?;
+        if id != format!("qualified-engine-v4:{observation_id}")
+            || v["schema"] != crate::road::ROAD_SCHEMA
+            || v["id"].as_str() != Some(id)
+            || v["car_id"].as_str() != Some(&proof.car_id)
+            || !equivalent(&v["identity"], &proof.identity)
+            || !equivalent(&v["dependency_key"], &json!(proof.dependency_key))
+            || !equivalent(&v["observation"], &proof.observation)
+        {
+            return Err(ApiError::conflict(
+                "Saved ICE metadata differs from its raw capture",
+            ));
+        }
+        // Derived cache fields are never evidence; rebuild them without writes.
+        proof.evidence_id = Some(id.into());
+        Ok(proof)
+    }
+    fn replay_engine(&self, observation_id: &str) -> ApiResult<QualifiedEvidence> {
+        let raw = self.store.get_read_only(
+            observation_id,
+            Some("engine-observation"),
+            Some("engine-observations"),
+        )?;
+        if raw["schema"] != crate::road::ROAD_SCHEMA
+            || raw["id"].as_str() != Some(observation_id)
+            || raw["observation"]["id"].as_str() != Some(observation_id)
+        {
+            return Err(ApiError::conflict(
+                "Saved ICE raw observation metadata mismatch",
+            ));
+        }
+        qualify(&EvidenceRequest::EngineCapture {
+            observation: raw["observation"].clone(),
+            capture: raw["capture"].clone(),
         })
+        .map_err(|e| ApiError::invalid(&e))
     }
     pub fn ev_gearing(&self, input: &Value) -> ApiResult<Value> {
         let id = input["evidenceId"]
@@ -483,14 +507,7 @@ impl EvidenceService {
                     Ok(proof) => proof.evidence_id,
                     Err(_) => None,
                 };
-                let saved = self
-                    .store
-                    .get(observation_id, Some("engine-observation"), None)?;
-                let mut proof = qualify(&EvidenceRequest::EngineCapture {
-                    observation: saved["observation"].clone(),
-                    capture: saved["capture"].clone(),
-                })
-                .map_err(|e| ApiError::invalid(&e))?;
+                let mut proof = self.replay_engine(observation_id)?;
                 // Enrich legacy caches without discarding their saved provenance.
                 // A cold readonly replay still has no qualified saved ID.
                 proof.evidence_id = saved_id;

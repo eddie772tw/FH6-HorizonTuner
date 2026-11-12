@@ -1,5 +1,7 @@
 # AEGO v4 整合視覺備查
 
+2026-11-12 獨立審查補記：本圖集沿用 `2c72bed878b84d40ba47ec5c41edaa16fa9157ce` 保存的實作畫面。本輪 Rally 相鄰刻度與 ICE 原始證據重播修正只改後端；`frontend` 與 `lang` 的 Git tree 與該版本完全相同。下列 manifest 的全部來源雜湊描述原擷取版本，不作為本輪新後端的證明；新後端由本輪完整 locked Cargo、篡改／原始證據缺失回歸及新 head CI 另行驗證。圖片保留原擷取版本，未標成重新擷取。
+
 本圖集使用實際 AppShell、Companion App、providers 與 renderer，驗證獨立模型的輸入、診斷、不可行狀態及前輪圖表語意。日期為 2026-11-12；擷取版本、Chromium 版本、後端執行檔、來源及圖片 SHA-256 以 [manifest.json](manifest.json) 為準。
 
 ## 資料與證據界線
