@@ -1426,3 +1426,10 @@
 `TrendChart` 的端點標記會暫時使用較細線寬；只在整個 chart 開頭設定折線線寬，會讓第二條以後曲線沿用標記線寬。每條有效曲線 stroke 前必須恢復折線線寬，並在繪圖開始清除繼承的陰影，最後以 try/finally 還原 caller 狀態。驗證以 caller 狀態與例外路徑契約、實際瀏覽器像素輸出為準，不斷言 Canvas API 呼叫次數。採用技能：pr-review-evaluation、pr-author-maintainer、huge-component-refactoring、halfmoon-design-system、ponytail。
 
 署名：Jonas as Codex
+
+## 2026-11-12 / #652 AEGO 歷史版本與 Rust characterization（Codex as Codex）
+
+- 四模型 ID 與 workflow／量測／底盤版本分開。缺 ID 的歷史推薦依 formula/schema/goal 明列凍結映射，不呼叫未來會變更的 production selector；保存先拒絕未知或錯配 ID，再用原 owner 與後端證據重建比對。新保留診斷不能由 inputSnapshot 冒充：新計算丟棄、歷史保存拒絕。
+- `1ddb092d` Rust 實跑 Rally Mixed 的末檔已是 0.36（5000 RPM 運動學 485.816 km/h），與 #266/#335 確切 TS 重播的 0.40 不同。Drag manual 40 的 profile／secondary 路徑與 TS 同齒比卻缺少最終 unsupported；正式 measured solver 對 secondary 仍傳 None。完整輸入、來源與差異保存在獨立 fixtures 與 `docs/tuning/aego-characterization-20261112.md`，不把合成運動學當實車能力。
+- Cargo 預設完整 270 passed／3 既有 ignored；Vitest 251 files／2028 tests passed（maxWorkers=2、未放寬 timeout），fmt／diff check 通過。原 21 tuning／10 EV golden 與所有齒比／底盤公式未改，模型候選及切換另由下游驗收。
+- Skills：physics-tuning-math、modular-refactoring、pr-author-maintainer、cross-agent-collaboration、ponytail。
