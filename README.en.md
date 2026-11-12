@@ -206,6 +206,8 @@ scripts/            Build, release and maintenance tools
 
 Production tuning decisions belong to `backend-rust/src/tuning/`. The frontend owns workflow, drafts and display conversions; historical TypeScript models remain test references. See the [responsibility contract](docs/contracts/tuning_responsibilities.md).
 
+AEGO Road, Rally, Drift and Drag own separate entry points and policies. Historical replay remains frozen, and production dispatch does not apply shared ratio corrections afterward. This split preserves current numbers; see the [model isolation boundaries](docs/tuning/aego-model-isolation.md).
+
 </details>
 
 <details>

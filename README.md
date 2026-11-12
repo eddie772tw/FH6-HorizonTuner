@@ -210,6 +210,8 @@ scripts/            建置、發行與維護工具
 
 正式調校決策由 `backend-rust/src/tuning/` 擁有，前端只處理流程、草稿與顯示轉換；舊 TypeScript 模型保留為測試參考。詳見[責任契約](docs/contracts/tuning_responsibilities.md)。
 
+AEGO 的 Road、Rally、Drift、Drag 各自擁有入口與策略；歷史重播獨立凍結，正式路由後不再共用修改齒比。此拆分保留現行數值，詳見[模型隔離邊界](docs/tuning/aego-model-isolation.md)。
+
 </details>
 
 <details>

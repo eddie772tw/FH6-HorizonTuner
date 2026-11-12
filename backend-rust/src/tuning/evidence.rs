@@ -676,12 +676,24 @@ impl EvidenceService {
             }
         }
         let request:WorkflowRequest=serde_json::from_value(json!({"schemaVersion":if confirmed_ev{"tuning-workflow-result/v3"}else if current{"tuning-workflow-result/v2"}else{"tuning-workflow-result/v1"},"goal":snapshot["goal"],"season":snapshot["season"],"profile":snapshot["profile"],"engine":null,"ev":if proof.kind=="ev"{json!({"setup":proof.setup,"measurements":[],"candidateFinalDrive":snapshot["evResult"]["finalDrive"]})}else{Value::Null},"inputSnapshot":snapshot})).map_err(|e|ApiError::invalid(&e.to_string()))?;
-        let expected = super::workflow::calculate_historical(
-            request,
-            &proof,
-            rec["formulaVersion"] == "rust/ice-measured-workflow-v1",
+        // A reserved model field must be a known string and agree with the
+        // backend's formula/schema/goal mapping, not a client-selected solver.
+        let claimed_model = snapshot
+            .get("gearingModelVersion")
+            .map(|v| {
+                v.as_str()
+                    .ok_or_else(|| ApiError::invalid("AEGO model version must be a string"))
+            })
+            .transpose()?;
+        let model = super::aego_model::historical_model(
+            rec["formulaVersion"].as_str().unwrap(),
+            &request.schema_version,
+            request.goal,
+            claimed_model,
         )
         .map_err(|e| ApiError::invalid(&e))?;
+        let expected = super::workflow::calculate_historical(request, &proof, model)
+            .map_err(|e| ApiError::invalid(&e))?;
         if !expected
             .recommendation
             .as_ref()
