@@ -54,6 +54,26 @@ fn bounds(fd: f64, gears: Vec<RatioRange>) -> RallyObservedBounds {
 }
 
 #[test]
+fn rounded_endpoint_search_keeps_a_feasible_adjacent_tick() {
+    for (target, rpm, fd) in [(99.02_f64, 2500.0, 6.28), (99.0, 1392.8900153434108, 3.5)] {
+        let mut params = profile();
+        params.max_hp = Some((target / 28.0).powi(3));
+        params.max_hp_rpm = Some(rpm);
+        params.max_torque = Some(150.0);
+        params.max_torque_rpm = Some(1500.0);
+        let observed = bounds(fd, vec![range(0.1, 6.0); 6]);
+        let candidate = solve_candidate(6, &params, 7500.0, None, Some(&observed));
+        available(&candidate, 6);
+        assert_eq!(candidate.gearing.final_drive, fd);
+        assert_eq!(candidate.gearing.gears[5], 0.5);
+        assert!(respects_hard_targets(
+            &candidate.gearing,
+            &candidate.diagnostics
+        ));
+    }
+}
+
+#[test]
 fn historical_endpoint_counterexample_hits_the_predeclared_target() {
     let fixture = fixture();
     let candidate = solve_candidate(6, &profile(), 7500.0, None, None);
