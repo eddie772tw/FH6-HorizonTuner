@@ -1440,3 +1440,10 @@
 - 共用配置只接受明確總減速比、範圍、網格精度、終傳偏好及誤差容差；取位後全組檢查，沒有賽事常數、遊戲滑桿預設或逐檔補救。模型必須自己提供目標／實際／誤差／來源語意與硬目標驗證；`RatioRange` 的存在不代表硬體已驗證。
 - 合入 #652 ba40a007 後完整 Cargo 273 passed／3 既有 ignored（-j 2），涵蓋新 characterization／版本／保存重播與全產品契約；完整前端 251 files／2028 tests 通過（maxWorkers=2），其來源 tree 與合入後相同。fmt／diff check 通過；原 21 tuning／10 EV golden 未改，無 UI 或實車性能驗收。
 - Skills：modular-refactoring、physics-tuning-math、pr-author-maintainer、cross-agent-collaboration、ponytail。
+
+## 2026-11-12 / #655 Drift 主工作點與取位後有效限轉（Codex as Codex）
+
+- 使用者主檔／RPM／等價輪速是明確目標，不是合格曲線或側滑地速。缺目標回 unavailable；四點形狀先驗只作未校準偏好，峰值不建立工作帶，裸曲線不當來源。FWD 採前輪尺寸，但只有運動學相容，不能升級為動力漂移驗收。
+- 齒比取位後，僅檢查輪速誤差不足以保護有效限轉。合成範例 FD3.35／G3=1.84 在5000 RPM 對應99.8745 km/h，在100 km/h 需5006.2822 RPM；若合格有效上限為5000，這一組取位值不能套用。模型須同時重驗主工作點與目標輪速下的實際 RPM，ratio balance 後亦由同一 owner 檢查並重算 actual／誤差診斷。
+- 合入 #654 `010579b5` 後，完整 Cargo 289 passed／3 既有 ignored（-j 2），含8組 Drift 候選契約及原歷史／四模型／保存重播；完整前端251 files／2028 tests passed（maxWorkers=2），與合入後相同 frontend tree。fmt／diff check通過；原21 tuning／10 EV golden、正式路由、底盤及量測資格未改。無 UI 或實車性能驗收。
+- Skills：physics-tuning-math、modular-refactoring、pr-author-maintainer、cross-agent-collaboration、ponytail。
