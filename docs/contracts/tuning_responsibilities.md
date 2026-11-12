@@ -25,6 +25,8 @@
 - v2 Road／Rally 必須提供有限正值車重、0–100% 之間配重與合法正值 spring 範圍；缺值／反向範圍回報 unavailable，不補預設。合法窄／鎖定區間無一位小數刻度時保留界內精度；height 與其他模式保持原策略。v1 原 spring fallback 保留。靜態定位保留 JS 原運算順序與 toFixed 精確 binary rounding，不能以縮放 round 取代。
 
 模型版本與相容入口：
+
+ICE AEGO 四賽事的版本 ID、缺少模型標籤的歷史映射及保留診斷欄位，見 [AEGO 獨立版本契約](../tuning/aego-version-contract.md)。此契約分開 workflow、量測、齒比及底盤版本；新增模型不得以未知版本 fallback 或單一 Road 布林值擴充。#652 僅建立基線，不改正式選擇與數值。
 | 模型 | 入口／用途 |
 | --- | --- |
 | `rust/ice-measured-workflow-v3`、`rust/ev-measured-workflow-v2` | v2 workflow；桌面、Companion、API、CLI、MCP 共用新 chassis 版本 |

@@ -1,5 +1,6 @@
 //! Versioned recommendation composition shared by local HTTP and offline callers.
 use super::{
+    aego_model::AegoModel,
     alignment::{calculate_static_alignment, Season, StaticAlignment},
     calculate_aego_gearing, calculate_chassis_tuning,
     ev::{calculate_ev_gearing, EvGearingInput, EvGearingResult},
@@ -71,14 +72,14 @@ pub fn measured_gearing(
     profile: &TuningCarParams,
     engine: Option<&MeasuredEngine>,
 ) -> Option<GearingResult> {
-    measured_gearing_version(goal, count, profile, engine, false)
+    measured_gearing_version(goal, count, profile, engine, AegoModel::production(goal))
 }
 fn measured_gearing_version(
     goal: RaceGoal,
     count: usize,
     profile: &TuningCarParams,
     engine: Option<&MeasuredEngine>,
-    legacy_road: bool,
+    model: Option<AegoModel>,
 ) -> Option<GearingResult> {
     let engine = engine?;
     if super::cvt::is_cvt(profile)
@@ -104,10 +105,11 @@ fn measured_gearing_version(
     if let Some(torque) = engine.peak_torque_nm {
         profile.max_torque = Some(torque);
     }
-    let solver = if legacy_road {
-        super::gearing::calculate_aego_gearing_v2
-    } else {
-        calculate_aego_gearing
+    let solver = match model {
+        Some(
+            AegoModel::RoadJointV2 | AegoModel::RallyV1 | AegoModel::DriftV1 | AegoModel::DragV1,
+        ) => super::gearing::calculate_aego_gearing_v2,
+        Some(AegoModel::RoadLaunchV3) | None => calculate_aego_gearing,
     };
     let result = solver(goal, count, &profile, engine.engine_max_rpm, None);
     if goal != RaceGoal::Road && result.unsupported == Some(true) {
@@ -131,26 +133,20 @@ pub(crate) fn calculate_qualified(
     input: WorkflowRequest,
     proof: Option<&super::evidence::QualifiedEvidence>,
 ) -> Result<WorkflowResult, String> {
-    calculate_qualified_version(input, proof, false)
-}
-pub(crate) fn calculate_qualified_version(
-    input: WorkflowRequest,
-    proof: Option<&super::evidence::QualifiedEvidence>,
-    legacy_road: bool,
-) -> Result<WorkflowResult, String> {
-    calculate_with_replay_policy(input, proof, legacy_road, false)
+    let model = AegoModel::production(input.goal);
+    calculate_with_replay_policy(input, proof, model, false)
 }
 pub(crate) fn calculate_historical(
     input: WorkflowRequest,
     proof: &super::evidence::QualifiedEvidence,
-    legacy_road: bool,
+    model: Option<AegoModel>,
 ) -> Result<WorkflowResult, String> {
-    calculate_with_replay_policy(input, Some(proof), legacy_road, true)
+    calculate_with_replay_policy(input, Some(proof), model, true)
 }
 fn calculate_with_replay_policy(
     input: WorkflowRequest,
     proof: Option<&super::evidence::QualifiedEvidence>,
-    legacy_road: bool,
+    model: Option<AegoModel>,
     historical_replay: bool,
 ) -> Result<WorkflowResult, String> {
     if !historical_replay
@@ -169,6 +165,16 @@ fn calculate_with_replay_policy(
     }
     let qualified_ev = proof.map(|p| p.ev_input(&input)).transpose()?.flatten();
     let qualified_engine = proof.and_then(|p| p.engine());
+    // Reserved AEGO output fields are backend-owned. No historical owner emits
+    // these new fields; a fresh calculation discards claims instead of copying
+    // them into an authoritative recommendation.
+    if historical_replay
+        && ["gearingModelId", "gearingDiagnostics"]
+            .iter()
+            .any(|key| input.input_snapshot.get(*key).is_some())
+    {
+        return Err("Historical recommendation cannot claim new AEGO diagnostics".into());
+    }
     if ![
         "tuning-workflow-result/v1",
         "tuning-workflow-result/v2",
@@ -286,7 +292,7 @@ fn calculate_with_replay_policy(
             .and_then(calculate_ev_gearing)
             .map(WorkflowGearing::Ev)
     } else {
-        measured_gearing_version(input.goal, count, &profile, qualified_engine, legacy_road)
+        measured_gearing_version(input.goal, count, &profile, qualified_engine, model)
             .map(WorkflowGearing::Ice)
     };
     // Rebuild the immutable base from qualified evidence on every request/replay.
@@ -296,7 +302,7 @@ fn calculate_with_replay_policy(
         .get("ratioBalance")
         .filter(|v| !v.is_null())
         .map(|request| {
-            if !current_chassis || legacy_road {
+            if !current_chassis || model == Some(AegoModel::RoadJointV2) {
                 gearing = None;
                 return super::ratio_balance::Diagnostic::unavailable(
                     "Ratio balance requires the current workflow",
@@ -324,6 +330,10 @@ fn calculate_with_replay_policy(
             None => false,
         };
     let mut snapshot = input.input_snapshot;
+    if let Some(object) = snapshot.as_object_mut() {
+        object.remove("gearingModelId");
+        object.remove("gearingDiagnostics");
+    }
     if let Some(proof) = proof {
         proof.snapshot(&mut snapshot);
     }
@@ -341,8 +351,8 @@ fn calculate_with_replay_policy(
     if electric {
         snapshot["evResult"] = serde_json::to_value(&gearing).map_err(|e| e.to_string())?;
     }
-    let new_road = input.goal == RaceGoal::Road && !electric && !legacy_road;
-    if input.goal == RaceGoal::Road && !electric && legacy_road {
+    let new_road = model == Some(AegoModel::RoadLaunchV3) && !electric;
+    if model == Some(AegoModel::RoadJointV2) && !electric {
         // Historical v1 may predate the optional v2 label, but it cannot claim
         // new-model diagnostics. Validate reserved metadata instead of copying
         // caller claims into the supposedly authoritative expected snapshot.

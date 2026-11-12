@@ -1,0 +1,454 @@
+{
+  "schemaVersion": "aego-ts-history/v1",
+  "sources": [
+    {
+      "label": "266",
+      "sourceSha": "6a74ba806db8307134515f48f8b78d5a93a8d519",
+      "path": "frontend/src/utils/tuningMath.ts",
+      "cases": [
+        {
+          "id": "rally-mixed-endpoint",
+          "gearing": {
+            "finalDrive": 3.52,
+            "gears": [
+              2.7,
+              1.81,
+              1.21,
+              0.81,
+              0.54,
+              0.4
+            ]
+          }
+        },
+        {
+          "id": "rally-cross-endpoint",
+          "gearing": {
+            "finalDrive": 3.52,
+            "gears": [
+              2.7,
+              1.81,
+              1.21,
+              0.81,
+              0.54,
+              0.4
+            ]
+          }
+        },
+        {
+          "id": "drift-200Nm",
+          "gearing": {
+            "finalDrive": 6.1,
+            "gears": [
+              1.81,
+              1.49,
+              1.22,
+              1,
+              1,
+              1
+            ]
+          }
+        },
+        {
+          "id": "drift-400Nm",
+          "gearing": {
+            "finalDrive": 6.1,
+            "gears": [
+              1.81,
+              1.49,
+              1.22,
+              1,
+              1,
+              1
+            ]
+          }
+        },
+        {
+          "id": "drift-600Nm",
+          "gearing": {
+            "finalDrive": 6.1,
+            "gears": [
+              1.81,
+              1.49,
+              1.22,
+              1,
+              1,
+              1
+            ]
+          }
+        },
+        {
+          "id": "drift-1000Nm",
+          "gearing": {
+            "finalDrive": 6.1,
+            "gears": [
+              1.81,
+              1.49,
+              1.22,
+              1,
+              1,
+              1
+            ]
+          }
+        },
+        {
+          "id": "drag-prior",
+          "gearing": {
+            "finalDrive": 2.25,
+            "gears": [
+              2.49,
+              1.84,
+              1.36,
+              1,
+              1,
+              1
+            ]
+          }
+        },
+        {
+          "id": "drag-profile-manual-40",
+          "gearing": {
+            "finalDrive": 2.25,
+            "gears": [
+              2.49,
+              1.84,
+              1.36,
+              1,
+              1,
+              1
+            ]
+          }
+        },
+        {
+          "id": "drag-secondary-manual-40",
+          "gearing": {
+            "finalDrive": 2.25,
+            "gears": [
+              2.49,
+              1.84,
+              1.36,
+              1,
+              1,
+              1
+            ]
+          }
+        },
+        {
+          "id": "danger-sign-unchanged",
+          "gearing": {
+            "finalDrive": 3.52,
+            "gears": [
+              2.7,
+              1.81,
+              1.21,
+              0.81,
+              0.54,
+              0.4
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "label": "335",
+      "sourceSha": "99850aca72d6947bb3ba24ced49c57bc9c62cb0a",
+      "path": "frontend/src/utils/tuningMath.ts",
+      "cases": [
+        {
+          "id": "rally-mixed-endpoint",
+          "gearing": {
+            "finalDrive": 3.52,
+            "gears": [
+              2.7,
+              1.81,
+              1.21,
+              0.81,
+              0.54,
+              0.4
+            ]
+          }
+        },
+        {
+          "id": "rally-cross-endpoint",
+          "gearing": {
+            "finalDrive": 3.92,
+            "gears": [
+              2.7,
+              1.81,
+              1.21,
+              0.81,
+              0.54,
+              0.4
+            ]
+          }
+        },
+        {
+          "id": "drift-200Nm",
+          "gearing": {
+            "finalDrive": 6.1,
+            "gears": [
+              3.47,
+              2.67,
+              2.04,
+              1.55,
+              1.23,
+              1
+            ]
+          }
+        },
+        {
+          "id": "drift-400Nm",
+          "gearing": {
+            "finalDrive": 6.1,
+            "gears": [
+              3.47,
+              2.67,
+              2.04,
+              1.55,
+              1.23,
+              1
+            ]
+          }
+        },
+        {
+          "id": "drift-600Nm",
+          "gearing": {
+            "finalDrive": 6.1,
+            "gears": [
+              3.47,
+              2.67,
+              2.04,
+              1.55,
+              1.23,
+              1
+            ]
+          }
+        },
+        {
+          "id": "drift-1000Nm",
+          "gearing": {
+            "finalDrive": 5.8,
+            "gears": [
+              3.47,
+              2.67,
+              2.04,
+              1.55,
+              1.23,
+              1
+            ]
+          }
+        },
+        {
+          "id": "drag-prior",
+          "gearing": {
+            "finalDrive": 2.5,
+            "gears": [
+              2.24,
+              1.87,
+              1.56,
+              1.3,
+              1.08,
+              0.9
+            ]
+          }
+        },
+        {
+          "id": "drag-profile-manual-40",
+          "gearing": {
+            "finalDrive": 6.1,
+            "gears": [
+              2.2,
+              2.02,
+              1.85,
+              1.7,
+              1.56,
+              1.43
+            ],
+            "unsupported": true,
+            "unsupportedReason": "Requested Drag finish speed cannot be reached within gearbox limits."
+          }
+        },
+        {
+          "id": "drag-secondary-manual-40",
+          "gearing": {
+            "finalDrive": 6.1,
+            "gears": [
+              2.2,
+              1.94,
+              1.75,
+              1.6,
+              1.47,
+              1.35
+            ],
+            "unsupported": true,
+            "unsupportedReason": "Requested Drag finish speed cannot be reached within gearbox limits."
+          }
+        },
+        {
+          "id": "danger-sign-unchanged",
+          "gearing": {
+            "finalDrive": 3.52,
+            "gears": [
+              2.7,
+              1.81,
+              1.21,
+              0.81,
+              0.54,
+              0.4
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "label": "current-frozen-reference",
+      "sourceSha": "1ddb092d90f3aca4c02c86d633e6cfe3e7fc587b",
+      "path": "frontend/test-reference/tuning/utils/tuningMath.ts",
+      "cases": [
+        {
+          "id": "rally-mixed-endpoint",
+          "gearing": {
+            "finalDrive": 3.52,
+            "gears": [
+              2.7,
+              1.81,
+              1.21,
+              0.81,
+              0.54,
+              0.4
+            ]
+          }
+        },
+        {
+          "id": "rally-cross-endpoint",
+          "gearing": {
+            "finalDrive": 3.92,
+            "gears": [
+              2.7,
+              1.81,
+              1.21,
+              0.81,
+              0.54,
+              0.4
+            ]
+          }
+        },
+        {
+          "id": "drift-200Nm",
+          "gearing": {
+            "finalDrive": 6.1,
+            "gears": [
+              3.47,
+              2.67,
+              2.04,
+              1.55,
+              1.23,
+              1
+            ]
+          }
+        },
+        {
+          "id": "drift-400Nm",
+          "gearing": {
+            "finalDrive": 6.1,
+            "gears": [
+              3.47,
+              2.67,
+              2.04,
+              1.55,
+              1.23,
+              1
+            ]
+          }
+        },
+        {
+          "id": "drift-600Nm",
+          "gearing": {
+            "finalDrive": 6.1,
+            "gears": [
+              3.47,
+              2.67,
+              2.04,
+              1.55,
+              1.23,
+              1
+            ]
+          }
+        },
+        {
+          "id": "drift-1000Nm",
+          "gearing": {
+            "finalDrive": 5.8,
+            "gears": [
+              3.47,
+              2.67,
+              2.04,
+              1.55,
+              1.23,
+              1
+            ]
+          }
+        },
+        {
+          "id": "drag-prior",
+          "gearing": {
+            "finalDrive": 2.5,
+            "gears": [
+              2.24,
+              1.87,
+              1.56,
+              1.3,
+              1.08,
+              0.9
+            ]
+          }
+        },
+        {
+          "id": "drag-profile-manual-40",
+          "gearing": {
+            "finalDrive": 6.1,
+            "gears": [
+              2.2,
+              2.02,
+              1.85,
+              1.7,
+              1.56,
+              1.43
+            ],
+            "unsupported": true,
+            "unsupportedReason": "Requested Drag finish speed cannot be reached within gearbox limits."
+          }
+        },
+        {
+          "id": "drag-secondary-manual-40",
+          "gearing": {
+            "finalDrive": 6.1,
+            "gears": [
+              2.2,
+              1.94,
+              1.75,
+              1.6,
+              1.47,
+              1.35
+            ],
+            "unsupported": true,
+            "unsupportedReason": "Requested Drag finish speed cannot be reached within gearbox limits."
+          }
+        },
+        {
+          "id": "danger-sign-unchanged",
+          "gearing": {
+            "finalDrive": 3.52,
+            "gears": [
+              2.7,
+              1.81,
+              1.21,
+              0.81,
+              0.54,
+              0.4
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
