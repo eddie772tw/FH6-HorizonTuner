@@ -1,5 +1,11 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-11-12 / AEGO 堆疊獨立審查：Rally 刻度可行性（Codex as Codex）
+
+- **範圍**：PR #654；採用 `pr-review-evaluation`、`pr-author-maintainer`、`physics-tuning-math`、`modular-refactoring`、`ponytail`。修正沿 #655～#659 同步，不合併 PR。
+- **學習**：輪速是齒比的倒數；最近齒比刻度不一定是符合輪速容差的刻度。檢查 round／floor／ceil 經合法範圍限制後的候選，直接套用原運動學公式與原公差，可避免反推速度區間引入額外浮點餘裕。
+- **證據**：新增固定 FD 6.28、99.02 km/h 的相鄰刻度反例及 FD 3.50 的浮點邊界案例；原最近 tick 解法可重現失敗，修正後針對性測試通過。原 21 tuning／10 EV fixture 值與公差未改；完整測試與新 head CI 另記於 PR Body。
+
 ## 2026-11-12 / v1.8.4 Tag、Release Note 與 Wiki 同步（Codex as Codex）
 
 - **範圍**：依使用者要求，以最新 main 發布 `v1.8.4` Tag，runtime 維持已備妥的 `11.45.26`。Release Note 對照 v1.8.3、v1.8.2、v1.8.1 的實際公開內容，沿用 What's New／What's Fixed／What's Changed 與 PR、Full Changelog 格式；同步中英文 README、安全版本映射及獨立 Wiki。未合併的 #648 不列入變更。
