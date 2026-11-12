@@ -1,7 +1,7 @@
 //! Offline Agent CLI and bounded HTTP client. Never starts the backend or native providers.
 mod context;
 mod options;
-use crate::{storage, tuning::legacy_cli as solver};
+use crate::storage;
 use context::Context;
 use options::Options;
 use serde_json::{json, Value};
@@ -18,6 +18,27 @@ pub fn main(arguments: Vec<String>) -> i32 {
     {
         println!("{}", options::HELP);
         return 0;
+    }
+    if arguments.first().map(String::as_str) == Some("solve")
+        && matches!(
+            arguments.get(1).map(String::as_str),
+            Some("chassis" | "gearing" | "full")
+        )
+    {
+        println!(
+            "{}",
+            json!({"error":crate::tuning::archive::RETIRED_MESSAGE,"code":"model-retired"})
+        );
+        return 1;
+    }
+    if arguments.first().map(String::as_str) == Some("telemetry")
+        && arguments.get(1).map(String::as_str) == Some("diagnose")
+    {
+        println!(
+            "{}",
+            json!({"error":"Legacy handling advice retired. Use telemetry snapshot for observations; no replacement advice is inferred.","code":"model-retired"})
+        );
+        return 1;
     }
     let args = match Options::parse(arguments) {
         Ok(a) => a,
@@ -162,66 +183,7 @@ fn execute(args: &Options, ctx: &Context) -> Result<Value, String> {
             .get(*id)
             .cloned()
             .ok_or_else(|| format!("Vehicle ordinal {id} not found in database.")),
-        ["solve", "chassis" | "full"] => {
-            let full = command[1] == "full";
-            let car = if !full {
-                ctx.cars()?
-                    .get(args.text("car-id", ""))
-                    .cloned()
-                    .unwrap_or_default()
-            } else {
-                Value::Null
-            };
-            let weight = args.number(
-                "weight",
-                car["weight"]
-                    .as_f64()
-                    .unwrap_or(if full { 1400. } else { 1450. }),
-            )?;
-            let bias = args.number("bias", car["weight_distribution"].as_f64().unwrap_or(52.))?;
-            let drive = args.text("drive", car["drivetrain"].as_str().unwrap_or("RWD"));
-            let chassis = solver::chassis(
-                weight,
-                bias,
-                drive,
-                args.text("goal", "road"),
-                args.number("aero-f", 0.)?,
-                args.number("aero-r", 0.)?,
-            );
-            if !full {
-                return Ok(if args.has("export-applied-setup") {
-                    solver::applied(&chassis, None)
-                } else {
-                    chassis
-                });
-            }
-            let gearing = solve_gearing(args)?;
-            let mut preset = solver::preset(args.text("vehicle-class", "S1"), &chassis, &gearing);
-            if let Some(name) = args.get("save") {
-                let car = args.text("car-id", "custom");
-                let path = ctx.preset_path(car, name)?;
-                storage::atomic_json(&path, &preset).map_err(|e| e.to_string())?;
-                let synced = ctx
-                    .post(
-                        &format!(
-                            "api/tunings/{}/{}",
-                            context::segment(car),
-                            context::segment(name)
-                        ),
-                        &preset,
-                    )
-                    .is_ok();
-                preset["saved_to_disk"] = json!(true);
-                preset["synced_to_backend"] = json!(synced);
-                preset["saved_path"] = json!(path);
-            }
-            Ok(if args.has("export-applied-setup") {
-                solver::applied(&chassis, Some(&gearing))
-            } else {
-                preset
-            })
-        }
-        ["solve", "gearing"] => solve_gearing(args),
+        ["solve", "chassis" | "full" | "gearing"] => Err(crate::tuning::archive::RETIRED_MESSAGE.into()),
         ["preset", "list"] => {
             let dir = ctx.tunings()?;
             let mut names = Vec::new();
@@ -247,40 +209,7 @@ fn execute(args: &Options, ctx: &Context) -> Result<Value, String> {
             },
             json!({}),
         ),
-        ["telemetry", "diagnose"] => {
-            let temps = if let Some(values) = args.values.get("tire-temps") {
-                values
-                    .iter()
-                    .map(|v| options::finite(v))
-                    .collect::<Result<Vec<_>, _>>()?
-            } else {
-                let snap = ctx.tool("get_live_telemetry_snapshot", json!({}))?;
-                if snap["source"] != "udp_memory_stream" || snap["status"] != "live" {
-                    return Err(
-                        "No live tire temperatures; supply --tire-temps FL FR RL RR in Celsius"
-                            .into(),
-                    );
-                }
-                snap["latest_sample"]["TireTemp"]
-                    .as_array()
-                    .filter(|v| v.len() == 4)
-                    .ok_or("Live sample has no complete tire temperatures")?
-                    .iter()
-                    .map(|v| {
-                        v.as_f64()
-                            .map(|f| (f - 32.) * 5. / 9.)
-                            .ok_or("Invalid tire temperature".into())
-                    })
-                    .collect::<Result<Vec<_>, String>>()?
-            };
-            let symptom = args.get("symptom");
-            Ok(ctx
-                .tool(
-                    "diagnose_telemetry_handling",
-                    json!({"tire_temps":temps,"symptom":symptom}),
-                )
-                .unwrap_or_else(|_| solver::diagnosis(&temps, symptom)))
-        }
+        ["telemetry", "diagnose"] => Err("Legacy handling advice retired. Use telemetry snapshot to inspect observations; no replacement advice is inferred.".into()),
         ["mcp-call", tool] => {
             let params: Value = serde_json::from_str(args.text("args", "{}"))
                 .map_err(|e| format!("Invalid JSON in --args: {e}"))?;
@@ -291,19 +220,5 @@ fn execute(args: &Options, ctx: &Context) -> Result<Value, String> {
                 .map(|v| json!({"status":"ok","result":v}))
         }
         _ => Err("Unknown command; use fh6-agent --help".into()),
-    }
-}
-fn solve_gearing(args: &Options) -> Result<Value, String> {
-    let result = solver::gearing(
-        args.number("max-rpm", 8000.)?,
-        args.number("peak-hp-rpm", 7200.)?,
-        args.number("top-speed", 300.)?,
-        args.integer("gears", 6)?,
-        args.number("tire-diameter", 65.)?,
-    );
-    if let Some(error) = result["error"].as_str() {
-        Err(error.into())
-    } else {
-        Ok(result)
     }
 }

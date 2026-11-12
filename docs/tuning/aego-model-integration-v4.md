@@ -29,7 +29,7 @@ Rally／Drift／Drag 可分別透過保存 profile 的 `rallyObservedBounds`、`
 
 新推薦 snapshot 保存後端重建的 `workflowSchemaVersion`、`gearingModelId`、`gearingModelVersion`、`gearingDiagnostics`。保存／重啟驗證會重新載入原始引擎證據、依明確模型版本計算、重做等價重配，再比對完整推薦。未知版本、goal/model 錯配、缺標籤、診斷或欄位篡改均拒絕；不把「latest」當版本。
 
-原 ICE formula v1／v2／v3 依[歷史版本契約](aego-version-contract.md)的凍結表重播；缺模型標籤不會選到新公式。原 Road `roadLaunch` JSON 與所有歷史數值保留，新的通用診斷與圖表資料不回填舊 snapshot。歷史推薦唯讀重播不寫回或遷移原始記錄。
+依 #658，原 ICE formula v1／v2／v3 改由[歷史資料封存](model-retirement.md)檢視，不再執行舊 solver；缺模型標籤不會選到新公式。原始版本、診斷與數值保留，不回填新版欄位、不遷移或覆寫。
 
 `gearingView` 只出現在工作流程回應，由後端提供採用輪軸、輪胎半徑、參考／最高／有效 RPM 與峰值標記。前端只作圖表幾何及單位顯示；不再選擇後輪、補 0.32m 或用峰值猜 redline。缺少有效 view 時顯示不可繪圖，不製造可套用結果。峰值標記不再畫成已驗證的動力帶。客戶端夾帶的 view／版本／診斷不是資格來源。
 
@@ -37,7 +37,7 @@ Rally／Drift／Drag 可分別透過保存 profile 的 `rallyObservedBounds`、`
 
 每次重配都從合格原始模型重建 base，依 user-observed 範圍與 0.01 精度配置，再透過該模型 owner 重驗硬目標。profile 已保存的觀察範圍與 ratio balance 新範圍必須同時滿足；廣範圍請求不能解除既有硬體鎖定，矛盾時回 unavailable。若要更正舊觀察，先明確編輯 profile。合法終傳列表也經同一驗證；失敗不回可套用結果。Road 對原始未取位的首／末檔總比檢查半刻度誤差，避免原 base 及新重配的兩次取位累積。其他三個模型保留其預先定義的速度容差；Drift 另檢查有效 RPM 上限。選定結果的實際值與誤差隨重配重新計算，目標及來源不變。
 
-回退只調整 `aego_model::AegoModel::production` 的 goal 選擇，並執行四模型、保存及入口契約。不要刪除已發布的 enum variant、solver 或重播映射。V4 驗證使用記錄的明確 model ID，與 production selector 分離；因此回退新的推薦選擇不會使已保存的新版推薦無法重播。回退到歷史模型會恢復其已記錄的限制與缺陷，須如實揭露。
+現行模型仍依明確 ID 重建與驗證，不能把 production selector 當歷史版本 fallback。#658 已移除退役 enum variant、solver 與 ICE v1／v2／v3 重播映射；不允許透過修改 selector 恢復舊公式。必要的舊版研究以固定 Git 提交或隔離的舊版程式進行，不能接回產品推薦流程。
 
 ## 驗收界線
 

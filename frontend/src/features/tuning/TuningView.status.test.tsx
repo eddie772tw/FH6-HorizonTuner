@@ -1,3 +1,5 @@
+// Navigation tests isolate unrelated archive loading/export; the archive has its own contract tests.
+vi.mock('./components/RecommendationArchive', () => ({ RecommendationArchive: () => null }));
 // @vitest-environment jsdom
 import { act } from 'react';
 import { createRoot } from 'react-dom/client';

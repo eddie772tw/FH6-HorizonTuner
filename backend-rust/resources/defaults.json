@@ -3,7 +3,6 @@
     "settings_schema_version": 2,
     "dyno_recording": false,
     "race_recording": false,
-    "developer_tuning_enabled": false,
     "mcp_enabled": true,
     "mcp_allow_live": true,
     "mcp_max_downsample": 500,

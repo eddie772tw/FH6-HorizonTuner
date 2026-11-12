@@ -112,3 +112,9 @@ it('consumes the Rust CVT diagnostics while keeping application unavailable', as
   expect(host.textContent).toContain('ready:');
   expect(host.textContent).toContain('raw-capture-required');
 });
+
+it('does not publish a recommendation with an unknown composition version', async () => {
+  fetchMock.mockResolvedValue({ ok: true, json: async () => ({ schemaVersion: "tuning-workflow-result/v2", recommendation: { formulaVersion: "future-composition/v99", fields: {} } }) } as Response);
+  await act(async () => root.render(<Probe carId="1" />));
+  expect(host.textContent).toBe('error:null');
+});

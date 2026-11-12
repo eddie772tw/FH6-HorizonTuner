@@ -8,6 +8,11 @@ pub fn request(
     request: &ApiRequest,
     evidence: &super::evidence::EvidenceService,
 ) -> ApiResult<Option<ApiResponse>> {
+    if request.method == "GET" && request.path == "/api/road/archives" {
+        return Ok(Some(ApiResponse::json(super::archive::list(
+            &evidence.store,
+        )?)));
+    }
     if request.method == "GET" && request.path == "/api/tuning/cvt-evidence" {
         return Ok(Some(ApiResponse::json(evidence.list_cvt()?)));
     }
@@ -63,14 +68,6 @@ pub fn request(
     if request.method == "POST" && request.path == "/api/tuning/exploration" {
         return Ok(Some(ApiResponse::json(
             json!({"value":crate::tuning::profile::exploration(&request.json()?)}),
-        )));
-    }
-    if request.method == "POST" && request.path == "/api/tuning/developer" {
-        let input = request.json()?;
-        let output =
-            crate::tuning::developer::calculate(&input).map_err(|e| ApiError::invalid(&e))?;
-        return Ok(Some(ApiResponse::json(
-            json!({"modelVersion":crate::tuning::developer::MODEL_VERSION,"output":output,"capabilityContract":crate::tuning::capabilities::contract(&input["car"])}),
         )));
     }
     if request.method == "POST" && request.path == "/api/tuning/ev-batch" {

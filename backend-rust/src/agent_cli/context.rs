@@ -131,6 +131,3 @@ impl Context {
             .map_err(|e| e.to_string())
     }
 }
-pub fn segment(text: &str) -> String {
-    percent_encoding::utf8_percent_encode(text, percent_encoding::NON_ALPHANUMERIC).to_string()
-}

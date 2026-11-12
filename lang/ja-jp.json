@@ -1157,7 +1157,6 @@
   "Go to Car Parameters": "車両パラメータへ",
   "Scientific physics-based suspension, spring, ARB, damper & AEGO gearing tuning wizard": "物理学に基づいたサスペンション、スプリング、ARB、ダンパー、AEGOギア比チューニングウィザード",
   "PARAMS INCOMPLETE": "パラメータ未完了",
-  "Developer Tuning View": "開発者チューニングビュー",
   "Explicit typed input/output for the experimental tuningMath_dev.ts calculation layer.": "実験的な tuningMath_dev.ts 計算レイヤーのための明示的な型付き入出力。",
   "Open Telemetry Capture": "テレメトリキャプチャを開く",
   "This view is for algorithm validation. Tire coefficients and game-slider mappings are calibration priors, not official FH6 values.": "このビューはアルゴリズムの検証用です。タイヤ係数やゲーム内スライダーのマッピングは事前キャリブレーション値であり、公式のFH6の値ではありません。",
@@ -1756,7 +1755,6 @@
     "Invalidated · {count} samples": "無効化済み · {count} サンプル",
     "Idle · {count} samples": "待機中 · {count} サンプル",
     "Clear capture buffer": "記録バッファをクリア",
-    "Back to Developer Tuning": "開発者向け調教に戻る",
     "Start Capture": "キャプチャを開始",
     "Stop Capture": "キャプチャを停止",
     "Download JSON": "JSON をダウンロード",
@@ -1894,5 +1892,16 @@
   "Drag finish speed requires a positive finite value and paired manual/telemetry provenance": "ドラッグ終端速度には有効な正の値と、対になる手動またはテレメトリー出典の申告が必要です。",
   "An explicit integer 4-10 gear count is required": "ギア数を4から10の整数で明示してください。",
   "Rounded gearing does not satisfy the model hard targets": "丸め後のギア比がモデルの必須目標を満たしません。",
-  "Launch target source": "発進目標の出典"
+  "Launch target source": "発進目標の出典",
+  "Historical recommendation archive": "過去の推奨設定アーカイブ",
+  "Retired models are no longer calculated. These original records are read-only and have not been validated for current use.": "廃止したモデルの計算は行いません。元の記録は読み取り専用で、現行モデルでの検証は行っていません。",
+  "To create a current recommendation, complete vehicle setup and engine evidence in the tuning workflow. The new recommendation does not overwrite an archive.": "新しい推奨設定は、調整フローで車両設定とエンジンの根拠データを揃えて作成してください。アーカイブは上書きされません。",
+  "Loading archived recommendations…": "アーカイブを読み込み中…",
+  "Archived recommendations could not be loaded. Close and reopen this panel to retry.": "アーカイブを読み込めません。このパネルを閉じてから再度開いてください。",
+  "No retired recommendations are stored.": "廃止したモデルの推奨設定は保存されていません。",
+  "Retired · read-only · not validated": "廃止済み・読み取り専用・未検証",
+  "Export original record": "元の記録をエクスポート",
+  "Open telemetry capture": "テレメトリー収集を開く",
+  "Back to engine data": "エンジンデータに戻る",
+  "Export original history": "元の履歴をエクスポート"
 }

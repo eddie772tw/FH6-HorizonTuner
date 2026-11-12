@@ -1,11 +1,10 @@
 use fh6_backend::tuning::{
-    gearing::calculate_aego_gearing_historical as calculate_aego_gearing,
+    gearing::calculate_aego_gearing,
     gearing::{
         allocation::allocate_total_ratios,
-        calculate_aego_gearing_v2,
         contracts::{RatioBounds, RatioRange},
     },
-    GearingSecondaryCorrection, RaceGoal, RallyProfile, TuningCarParams,
+    RaceGoal, RallyProfile, TuningCarParams,
 };
 
 fn synthetic(drive: &str) -> TuningCarParams {
@@ -14,38 +13,9 @@ fn synthetic(drive: &str) -> TuningCarParams {
         "maxHp":300.0,"maxTorque":400.0,"maxHpRpm":5000.0,"maxTorqueRpm":3500.0,
         "frontTireWidth":225.0,"frontTireAspect":45.0,"frontTireRim":17.0,
         "rearTireWidth":245.0,"rearTireAspect":40.0,"rearTireRim":18.0,
-        "aeroEfficiency":0.5
+        "aeroEfficiency":0.5,"driftWorkingTarget":{"mainGear":3,"targetRpm":4000,"wheelSpeedKmh":90,"source":"user-target"}
     }))
     .unwrap()
-}
-
-#[test]
-fn historical_nonroad_replays_frozen_owner_including_corrections_and_rejections() {
-    let correction = GearingSecondaryCorrection {
-        simulated_top_speed: Some(120.0),
-        soft_max_speed: Some(140.0),
-        drag_finish_speed_kmh: Some(40.0),
-        drag_finish_speed_provenance: Some("manual".into()),
-    };
-    for drive in ["AWD", "RWD", "FWD"] {
-        let p = synthetic(drive);
-        for goal in [
-            RaceGoal::Rally,
-            RaceGoal::Drift,
-            RaceGoal::Drag,
-            RaceGoal::DangerSign,
-        ] {
-            for count in [0, 4, 6, 10, 11] {
-                for sc in [None, Some(&correction)] {
-                    assert_eq!(
-                        calculate_aego_gearing(goal, count, &p, 7500.0, sc),
-                        calculate_aego_gearing_v2(goal, count, &p, 7500.0, sc),
-                        "{goal:?}/{drive}/{count}"
-                    );
-                }
-            }
-        }
-    }
 }
 
 #[test]

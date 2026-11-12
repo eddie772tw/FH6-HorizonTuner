@@ -1,14 +1,12 @@
 use fh6_backend::tuning::{
     alignment::{calculate_static_alignment, Season},
-    calculate_chassis_tuning,
-    gearing::calculate_aego_gearing_v2 as calculate_aego_gearing,
-    resolve_aero_downforce, GearingSecondaryCorrection, RaceGoal, TuningCarParams,
+    calculate_chassis_tuning, resolve_aero_downforce, RaceGoal, TuningCarParams,
 };
 use serde_json::Value;
 use std::path::Path;
 
 #[test]
-fn frozen_v2_tuning_core_matches_immutable_golden_fixtures() {
+fn current_chassis_preserves_all_21_immutable_golden_cases() {
     let manifest_dir = Path::new(env!("CARGO_MANIFEST_DIR"));
     let fixture_path = manifest_dir
         .parent()
@@ -39,17 +37,6 @@ fn frozen_v2_tuning_core_matches_immutable_golden_fixtures() {
         let inputs = &c["inputs"];
         let car_params: TuningCarParams =
             serde_json::from_value(inputs["carParams"].clone()).expect("parse carParams");
-        let max_rpm = inputs["maxRpm"].as_f64().unwrap();
-        let num_gears = inputs["numGears"].as_u64().unwrap() as usize;
-        let secondary_correction: Option<GearingSecondaryCorrection> =
-            inputs.get("secondaryCorrection").and_then(|sc| {
-                if sc.is_null() {
-                    None
-                } else {
-                    serde_json::from_value(sc.clone()).ok()
-                }
-            });
-
         let expected = &c["expected"];
 
         // 1. Aero Downforce
@@ -197,92 +184,8 @@ fn frozen_v2_tuning_core_matches_immutable_golden_fixtures() {
             exp_cr
         );
 
-        // 3. Gearing
-        let actual_gearing = calculate_aego_gearing(
-            race_goal,
-            num_gears,
-            &car_params,
-            max_rpm,
-            secondary_correction.as_ref(),
-        );
-        if race_goal != RaceGoal::Road {
-            assert_eq!(
-                actual_gearing,
-                fh6_backend::tuning::gearing::calculate_aego_gearing_historical(
-                    race_goal,
-                    num_gears,
-                    &car_params,
-                    max_rpm,
-                    secondary_correction.as_ref()
-                )
-            );
-        }
-        let exp_fd = expected["gearing"]["finalDrive"].as_f64().unwrap();
-        assert_eq!(
-            actual_gearing.unsupported,
-            expected["gearing"]["unsupported"].as_bool(),
-            "{id}: unsupported"
-        );
-        assert_eq!(
-            actual_gearing.unsupported_reason.as_deref(),
-            expected["gearing"]["unsupportedReason"].as_str(),
-            "{id}: reason"
-        );
-        if race_goal == RaceGoal::Road {
-            assert_eq!(
-                actual_gearing.final_drive, exp_fd,
-                "{id}: exact FD grid parity"
-            );
-            let expected_gears: Vec<f64> =
-                serde_json::from_value(expected["gearing"]["gears"].clone()).unwrap();
-            assert_eq!(
-                actual_gearing.gears, expected_gears,
-                "{id}: exact ratio grid parity"
-            );
-        }
-        assert!(
-            (actual_gearing.final_drive - exp_fd).abs() <= 0.02,
-            "[{}] final_drive actual {} vs exp {}",
-            id,
-            actual_gearing.final_drive,
-            exp_fd
-        );
-
-        let exp_gears = expected["gearing"]["gears"].as_array().unwrap();
-        assert_eq!(
-            actual_gearing.gears.len(),
-            exp_gears.len(),
-            "[{}] gear count actual {} vs exp {}",
-            id,
-            actual_gearing.gears.len(),
-            exp_gears.len()
-        );
-
-        for (idx, exp_g) in exp_gears.iter().enumerate() {
-            let eg = exp_g.as_f64().unwrap();
-            let ag = actual_gearing.gears[idx];
-            assert!(
-                (ag - eg).abs() <= 0.02,
-                "[{}] gear {} actual {} vs exp {}",
-                id,
-                idx + 1,
-                ag,
-                eg
-            );
-        }
-
-        // Monotonic check
-        for i in 1..actual_gearing.gears.len() {
-            assert!(
-                actual_gearing.gears[i] <= actual_gearing.gears[i - 1],
-                "[{}] Gearing must be monotonically non-increasing: gear {} ({}) > gear {} ({})",
-                id,
-                i + 1,
-                actual_gearing.gears[i],
-                i,
-                actual_gearing.gears[i - 1]
-            );
-        }
+        // Retired ICE gear values remain immutable historical data. Active models
+        // have their own reviewed baselines; no old solver is retained for parity.
     }
 }
 
@@ -336,78 +239,6 @@ fn fractional_spring_bounds_never_overflow_max() {
             goal,
             res.springs.rear
         );
-    }
-}
-
-#[test]
-fn gearing_boundary_singular_protection_and_monotonicity() {
-    let params = TuningCarParams {
-        weight: Some(1200.0),
-        weight_distribution: Some(52.0),
-        drivetrain: Some("AWD".into()),
-        max_hp: Some(450.0),
-        max_torque: Some(500.0),
-        max_hp_rpm: Some(6500.0),
-        max_torque_rpm: Some(4000.0),
-        front_tire_width: Some(0.0),
-        rear_tire_width: Some(0.0),
-        front_tire_aspect: Some(0.0),
-        rear_tire_aspect: Some(0.0),
-        front_tire_rim: Some(0.0),
-        rear_tire_rim: Some(0.0),
-        ..Default::default()
-    };
-
-    for goal in [
-        RaceGoal::DangerSign,
-        RaceGoal::Rally,
-        RaceGoal::Drift,
-        RaceGoal::Road,
-    ] {
-        // Zero gears input must not panic and must safely normalize to 6 gears
-        let res_zero = calculate_aego_gearing(goal, 0, &params, 7000.0, None);
-        assert_ne!(res_zero.unsupported, Some(true));
-        assert_eq!(res_zero.gears.len(), 6);
-        assert!(res_zero.final_drive >= 2.0 && res_zero.final_drive <= 6.5);
-        assert!(res_zero.gears.windows(2).all(|w| w[0] > w[1]));
-
-        // NaN max_rpm must not panic or propagate NaN
-        let res_nan_rpm = calculate_aego_gearing(goal, 6, &params, f64::NAN, None);
-        assert_ne!(res_nan_rpm.unsupported, Some(true));
-        assert!(res_nan_rpm.final_drive.is_finite());
-        assert!(res_nan_rpm.final_drive >= 2.0 && res_nan_rpm.final_drive <= 6.5);
-        assert!(res_nan_rpm.gears.iter().all(|g| g.is_finite() && *g > 0.0));
-    }
-}
-
-#[test]
-fn historical_drag_rejects_original_invalid_inputs_before_gearing_fallbacks() {
-    let params = TuningCarParams {
-        weight: Some(1200.0),
-        max_hp: Some(450.0),
-        max_torque: Some(500.0),
-        max_hp_rpm: Some(6500.0),
-        max_torque_rpm: Some(4000.0),
-        ..Default::default()
-    };
-    for solver in [
-        calculate_aego_gearing,
-        fh6_backend::tuning::gearing::calculate_aego_gearing_historical,
-    ] {
-        for count in [0, 1, 3, 11, usize::MAX] {
-            let result = solver(RaceGoal::Drag, count, &params, 7000.0, None);
-            assert_eq!(result.unsupported, Some(true), "count={count}");
-            assert!(result.gears.is_empty());
-        }
-        for rpm in [0.0, -1.0, f64::NAN, f64::INFINITY, f64::NEG_INFINITY] {
-            let result = solver(RaceGoal::Drag, 6, &params, rpm, None);
-            assert_eq!(result.unsupported, Some(true), "rpm={rpm}");
-            assert!(result.gears.is_empty());
-        }
-        let valid = solver(RaceGoal::Drag, 6, &params, 7000.0, None);
-        assert_ne!(valid.unsupported, Some(true));
-        assert_eq!(valid.gears.len(), 6);
-        assert!(valid.gears.windows(2).all(|pair| pair[0] > pair[1]));
     }
 }
 
@@ -724,23 +555,6 @@ fn alignment_drivetrain_normalization_and_gearing_kinematics_closure() {
     let speed = calc_gear_speed(6000.0, 2.5, 4.0, 0.32);
     let rpm_back = calc_gear_rpm(speed, 2.5, 4.0, 0.32);
     assert!((rpm_back - 6000.0).abs() < 1e-6);
-
-    // Case 3: Secondary correction non-finite protection
-    let sc_non_finite = GearingSecondaryCorrection {
-        simulated_top_speed: Some(f64::INFINITY),
-        soft_max_speed: Some(f64::NAN),
-        drag_finish_speed_kmh: Some(f64::INFINITY),
-        drag_finish_speed_provenance: Some("telemetry".into()),
-    };
-    let rally_gearing = fh6_backend::tuning::gearing::calculate_aego_gearing_historical(
-        RaceGoal::Rally,
-        6,
-        &p_fwd_upper,
-        7500.0,
-        Some(&sc_non_finite),
-    );
-    assert_ne!(rally_gearing.unsupported, Some(true));
-    assert!(rally_gearing.final_drive >= 2.0 && rally_gearing.final_drive <= 6.1);
 }
 
 #[test]
@@ -818,84 +632,24 @@ fn chassis_drift_degeneracy_and_workflow_drivetrain_normalization() {
 }
 
 #[test]
-fn historical_gearing_secondary_redistribution_closure_and_monotonicity_bounds() {
-    use fh6_backend::tuning::{
-        gearing::calculate_aego_gearing_historical as calculate_aego_gearing,
-        GearingSecondaryCorrection, RaceGoal, TuningCarParams,
-    };
-
-    // Case 1: Low redline ratio (r_redline_hp = 4500 / 9000 = 0.50) with secondary correction
-    // must enforce r_max >= r_min, maintaining progressive gear spacing without NaN or ratio inversion
-    let p_low_redline = TuningCarParams {
-        weight: Some(1300.0),
-        weight_distribution: Some(50.0),
-        drivetrain: Some("AWD".into()),
-        max_hp: Some(300.0),
-        max_torque: Some(400.0),
-        max_hp_rpm: Some(4500.0),
-        max_torque_rpm: Some(3000.0),
-        ..Default::default()
-    };
-    let sc_top_speed = GearingSecondaryCorrection {
-        // Force final-drive saturation so intermediate ratios are redistributed.
-        simulated_top_speed: Some(80.0),
-        soft_max_speed: None,
-        drag_finish_speed_kmh: None,
-        drag_finish_speed_provenance: None,
-    };
-    let result_sc = calculate_aego_gearing(
-        RaceGoal::Rally,
-        6,
-        &p_low_redline,
-        9000.0,
-        Some(&sc_top_speed),
-    );
-    assert_ne!(result_sc.unsupported, Some(true));
-    assert_eq!(result_sc.gears.len(), 6);
-    assert!(result_sc.gears.iter().all(|&g| g.is_finite() && g > 0.0));
-    assert!(result_sc.gears.windows(2).all(|g| g[0] > g[1]));
-    assert_eq!(result_sc.final_drive, 6.1);
-    for g in result_sc.gears.windows(3) {
-        // Allow for the public output's 0.01 ratio quantization.
-        assert!(g[1] / g[0] <= g[2] / g[1] + 0.02);
-    }
-
-    // Case 2: Redline-peaked engine (rpm_hp == max_rpm) must clamp step ratio to <= 0.95
-    let p_peak_redline = TuningCarParams {
-        weight: Some(1200.0),
-        weight_distribution: Some(50.0),
-        drivetrain: Some("RWD".into()),
-        max_hp: Some(250.0),
-        max_torque: Some(220.0),
-        max_hp_rpm: Some(8500.0),
-        max_torque_rpm: Some(6500.0),
-        ..Default::default()
-    };
-    let result_peak = calculate_aego_gearing(RaceGoal::Rally, 6, &p_peak_redline, 8500.0, None);
-    assert_ne!(result_peak.unsupported, Some(true));
-    assert!(result_peak.gears.windows(2).all(|g| g[0] > g[1]));
-    for w in result_peak.gears.windows(2) {
-        assert!(
-            w[1] <= w[0] * 0.95 + 1e-6,
-            "Step ratio must not exceed 0.95 upper bound"
+fn existing_danger_sign_values_match_pre_cleanup_baselines() {
+    let fixture: Value = serde_json::from_str(include_str!(
+        "../../tests/fixtures/danger_sign_existing_behavior.json"
+    ))
+    .unwrap();
+    for case in fixture["cases"].as_array().unwrap() {
+        let profile = serde_json::from_value(case["profile"].clone()).unwrap();
+        let correction: Option<fh6_backend::tuning::GearingSecondaryCorrection> =
+            serde_json::from_value(case["correction"].clone()).unwrap();
+        let actual = fh6_backend::tuning::calculate_aego_gearing(
+            RaceGoal::DangerSign,
+            case["count"].as_u64().unwrap() as usize,
+            &profile,
+            case["rpm"].as_f64().unwrap(),
+            correction.as_ref(),
         );
+        let expected: fh6_backend::tuning::GearingResult =
+            serde_json::from_value(case["expected"].clone()).unwrap();
+        assert_eq!(actual, expected, "{case}");
     }
-
-    // Case 3: Ultra-low power RPM must not collapse high gears to 0.10 bottom limit
-    let p_low_rpm = TuningCarParams {
-        weight: Some(1500.0),
-        weight_distribution: Some(50.0),
-        drivetrain: Some("AWD".into()),
-        max_hp: Some(200.0),
-        max_torque: Some(500.0),
-        max_hp_rpm: Some(1800.0),
-        max_torque_rpm: Some(1500.0),
-        ..Default::default()
-    };
-    let result_low_rpm = calculate_aego_gearing(RaceGoal::Rally, 6, &p_low_rpm, 6000.0, None);
-    assert_ne!(result_low_rpm.unsupported, Some(true));
-    assert!(
-        result_low_rpm.gears.last().copied().unwrap() > 0.20,
-        "High gear must not collapse to 0.10"
-    );
 }

@@ -45,7 +45,7 @@ const OverlayViewContent: React.FC = () => {
   const [showWipHuds, setShowWipHuds] = useState(() => {
     try { return localStorage.getItem('fh6_show_wip_huds') === 'true'; } catch { return false; }
   });
-  const wipForced = Boolean(settings.developer_tuning_enabled || isWipHudQueryEnabled());
+  const wipForced = isWipHudQueryEnabled();
   const isWipActive = showWipHuds || wipForced;
   const handleToggleShowWipHuds = (checked: boolean) => {
     setShowWipHuds(checked);

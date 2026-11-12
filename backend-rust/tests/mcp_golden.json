@@ -44,35 +44,10 @@
     "get_car_tuning_capabilities": {
       "car_id": "247"
     },
-    "get_tuning_constants_and_priors": {},
     "list_tuning_presets": {},
     "get_tuning_preset": {
       "car_id": "247",
       "save_name": "fixture-preset"
-    },
-    "run_dev_tuning_solver": {
-      "car_params": {
-        "ordinal": 247,
-        "weight_kg": 1500,
-        "front_weight_bias": 0.54,
-        "drivetrain": "RWD"
-      },
-      "purpose": "road"
-    },
-    "run_gearing_solver": {
-      "max_rpm": 7500,
-      "peak_hp_rpm": 6800,
-      "top_speed_kmh": 300,
-      "gears_count": 6
-    },
-    "diagnose_telemetry_handling": {
-      "tire_temps": [
-        105.0,
-        106.0,
-        85.0,
-        86.0
-      ],
-      "symptom": "understeer_entry"
     },
     "get_system_settings": {},
     "get_hud_configurations": {},
@@ -85,10 +60,10 @@
       "status": "live",
       "source": "udp_memory_stream",
       "latest_sample": {
-        "CurrentEngineRpm": 6500.0,
-        "EngineMaxRpm": 7500.0,
-        "EngineIdleRpm": 800.0,
-        "SpeedMetersPerSecond": 45.0,
+        "CurrentEngineRpm": 6500,
+        "EngineMaxRpm": 7500,
+        "EngineIdleRpm": 800,
+        "SpeedMetersPerSecond": 45,
         "Gear": 4,
         "AccelInput": 255,
         "BrakeInput": 0,
@@ -96,20 +71,20 @@
         "AccelerationX": 11.772,
         "AccelerationY": 9.81,
         "AccelerationZ": -7.848000000000001,
-        "PowerWatts": 350000.0,
-        "TorqueNewtons": 500.0,
+        "PowerWatts": 350000,
+        "TorqueNewtons": 500,
         "Boost": 151987.5,
         "Yaw": 0.05,
         "Pitch": -0.02,
         "Roll": 0.03,
-        "PositionX": 100.0,
-        "PositionY": 20.0,
-        "PositionZ": 300.0,
+        "PositionX": 100,
+        "PositionY": 20,
+        "PositionZ": 300,
         "TireTemp": [
-          200.0,
-          205.0,
-          190.0,
-          192.0
+          200,
+          205,
+          190,
+          192
         ],
         "TireSlipAngle": [
           0.05,
@@ -133,9 +108,9 @@
     },
     "get_driver_cockpit_telemetry": {
       "engine": {
-        "rpm": 6500.0,
-        "idle_rpm": 800.0,
-        "max_rpm": 7500.0,
+        "rpm": 6500,
+        "idle_rpm": 800,
+        "max_rpm": 7500,
         "rpm_ratio": 0.867,
         "is_shift_alert": false,
         "is_ev": false
@@ -145,15 +120,15 @@
         "gear_display": "4"
       },
       "speed": {
-        "meters_per_second": 45.0,
-        "kmh": 162.0,
+        "meters_per_second": 45,
+        "kmh": 162,
         "mph": 100.7
       },
       "driver_inputs": {
-        "throttle_pct": 100.0,
-        "brake_pct": 0.0,
-        "clutch_pct": 0.0,
-        "handbrake_pct": 0.0,
+        "throttle_pct": 100,
+        "brake_pct": 0,
+        "clutch_pct": 0,
+        "handbrake_pct": 0,
         "steer_pct": 50.4,
         "steer_angle_deg": 22.7
       }
@@ -162,7 +137,7 @@
       "g_forces": {
         "lateral_g": 1.2,
         "longitudinal_g": -0.8,
-        "vertical_g": 1.0
+        "vertical_g": 1
       },
       "orientation": {
         "yaw_rad": 0.05,
@@ -173,9 +148,9 @@
         "roll_deg": 1.72
       },
       "power_train": {
-        "power_kw": 350.0,
+        "power_kw": 350,
         "power_hp": 469.4,
-        "torque_nm": 500.0,
+        "torque_nm": 500,
         "torque_ftlb": 368.8,
         "boost_psi": 22.04,
         "boost_bar": 1.52,
@@ -183,9 +158,9 @@
         "is_regen_active": false
       },
       "position": {
-        "x": 100.0,
-        "y": 20.0,
-        "z": 300.0
+        "x": 100,
+        "y": 20,
+        "z": 300
       }
     },
     "get_tires_status_telemetry": {
@@ -197,36 +172,36 @@
       "corners": {
         "front_left": {
           "temp_c": 93.3,
-          "temp_f": 200.0,
+          "temp_f": 200,
           "slip_angle_deg": 2.86,
-          "slip_ratio_pct": 8.0,
+          "slip_ratio_pct": 8,
           "combined_slip": 8.5,
           "is_slipping": false,
           "is_overheating": false
         },
         "front_right": {
           "temp_c": 96.1,
-          "temp_f": 205.0,
+          "temp_f": 205,
           "slip_angle_deg": 3.44,
-          "slip_ratio_pct": 8.0,
+          "slip_ratio_pct": 8,
           "combined_slip": 8.71,
           "is_slipping": false,
           "is_overheating": false
         },
         "rear_left": {
           "temp_c": 87.8,
-          "temp_f": 190.0,
+          "temp_f": 190,
           "slip_angle_deg": 1.15,
-          "slip_ratio_pct": 1.0,
+          "slip_ratio_pct": 1,
           "combined_slip": 1.52,
           "is_slipping": false,
           "is_overheating": false
         },
         "rear_right": {
           "temp_c": 88.9,
-          "temp_f": 192.0,
+          "temp_f": 192,
           "slip_angle_deg": 1.15,
-          "slip_ratio_pct": 1.0,
+          "slip_ratio_pct": 1,
           "combined_slip": 1.52,
           "is_slipping": false,
           "is_overheating": false
@@ -237,22 +212,22 @@
       "corners": {
         "front_left": {
           "travel_ratio": 0.45,
-          "travel_pct": 45.0,
+          "travel_pct": 45,
           "is_bottoming": false
         },
         "front_right": {
           "travel_ratio": 0.48,
-          "travel_pct": 48.0,
+          "travel_pct": 48,
           "is_bottoming": false
         },
         "rear_left": {
           "travel_ratio": 0.96,
-          "travel_pct": 96.0,
+          "travel_pct": 96,
           "is_bottoming": true
         },
         "rear_right": {
           "travel_ratio": 0.5,
-          "travel_pct": 50.0,
+          "travel_pct": 50,
           "is_bottoming": false
         }
       },
@@ -268,10 +243,10 @@
         "car_name": "Fixture Car",
         "car_class": 700,
         "car_pi": 800,
-        "start_time": 1.0,
+        "start_time": 1,
         "total_laps": 0,
-        "best_lap_time": 0.0,
-        "total_distance": 0.0
+        "best_lap_time": 0,
+        "total_distance": 0
       }
     ],
     "get_session_summary": {
@@ -281,10 +256,10 @@
         "car_name": "Fixture Car",
         "car_class": 700,
         "car_pi": 800,
-        "start_time": 1.0,
+        "start_time": 1,
         "total_laps": 0,
-        "best_lap_time": 0.0,
-        "total_distance": 0.0
+        "best_lap_time": 0,
+        "total_distance": 0
       },
       "laps": [
         {
@@ -292,19 +267,19 @@
           "lap_time": null,
           "start_distance": null,
           "end_distance": null,
-          "max_speed_kmh": 108.0,
+          "max_speed_kmh": 108,
           "avg_speed_kmh": null,
           "lap_time_source": "unavailable",
           "complete": 0,
-          "observed_span": 0.0
+          "observed_span": 0
         }
       ],
       "total_laps_count": 1
     },
     "query_session_telemetry": [
       {
-        "SpeedMetersPerSecond": 30.0,
-        "time": 1.0
+        "SpeedMetersPerSecond": 30,
+        "time": 1
       }
     ],
     "list_tuning_captures": [
@@ -332,8 +307,8 @@
       "summary": {
         "sample_count": 2,
         "duration_sec": 0.5,
-        "max_speed_kmh": 100.0,
-        "avg_speed_kmh": 75.0
+        "max_speed_kmh": 100,
+        "avg_speed_kmh": 75
       },
       "hygiene": {
         "is_monotonic_timestamps": true,
@@ -344,11 +319,11 @@
     "query_capture_window": [
       {
         "timestampMs": 0,
-        "speedKmh": 50.0
+        "speedKmh": 50
       },
       {
         "timestampMs": 500,
-        "speedKmh": 100.0
+        "speedKmh": 100
       }
     ],
     "compare_captures": {
@@ -363,8 +338,8 @@
         "summary": {
           "sample_count": 2,
           "duration_sec": 0.5,
-          "max_speed_kmh": 100.0,
-          "avg_speed_kmh": 75.0
+          "max_speed_kmh": 100,
+          "avg_speed_kmh": 75
         }
       },
       "candidate": {
@@ -378,14 +353,14 @@
         "summary": {
           "sample_count": 2,
           "duration_sec": 0.5,
-          "max_speed_kmh": 100.0,
-          "avg_speed_kmh": 75.0
+          "max_speed_kmh": 100,
+          "avg_speed_kmh": 75
         }
       },
       "delta": {
-        "max_speed_diff_kmh": 0.0,
-        "avg_speed_diff_kmh": 0.0,
-        "duration_diff_sec": 0.0
+        "max_speed_diff_kmh": 0,
+        "avg_speed_diff_kmh": 0,
+        "duration_diff_sec": 0
       }
     },
     "list_drag_sessions": [
@@ -500,25 +475,6 @@
         "differential_lock": false
       }
     },
-    "get_tuning_constants_and_priors": {
-      "target_hot_pressure_psi": 32.0,
-      "natural_frequency_hz": {
-        "road_front": 2.2,
-        "road_rear": 2.4,
-        "rally_front": 1.6,
-        "rally_rear": 1.7,
-        "drift_front": 2.5,
-        "drift_rear": 2.3
-      },
-      "critical_damping_ratio": {
-        "rebound": 0.65,
-        "bump": 0.35
-      },
-      "aego_gearing": {
-        "max_step_ratio": 0.85,
-        "first_gear_traction_factor": 1.15
-      }
-    },
     "list_tuning_presets": [
       {
         "preset_name": "fixture-preset",
@@ -532,118 +488,6 @@
       "created_at": "2026-09-22",
       "schema_version": "fixture",
       "spring": 123
-    },
-    "run_dev_tuning_solver": {
-      "schemaVersion": "tuning-dev/v1",
-      "purpose": "road",
-      "calculated_setup": {
-        "tires": {
-          "front_cold_psi": 28.5,
-          "rear_cold_psi": 28.5,
-          "target_hot_psi": 32.0
-        },
-        "alignment": {
-          "camber_front_deg": -1.8,
-          "camber_rear_deg": -1.2,
-          "toe_front_deg": 0.0,
-          "toe_rear_deg": 0.0,
-          "caster_deg": 6.5
-        },
-        "anti_roll_bars": {
-          "front": 35.6,
-          "rear": 30.4
-        },
-        "springs": {
-          "front_lbs_in": 1250.0,
-          "rear_lbs_in": 1064.8
-        },
-        "dampers": {
-          "rebound_front": 9.5,
-          "rebound_rear": 8.5,
-          "bump_front": 5.7,
-          "bump_rear": 5.1
-        },
-        "differential": {
-          "front_accel": 0,
-          "front_decel": 0,
-          "rear_accel": 60,
-          "rear_decel": 20,
-          "center_balance": 0
-        }
-      },
-      "capabilities": {
-        "car_id": "247",
-        "installed_parts": {},
-        "capabilities": {
-          "tire_pressure": true,
-          "camber": false,
-          "toe": false,
-          "caster": false,
-          "arb_front": false,
-          "arb_rear": false,
-          "springs": false,
-          "ride_height": false,
-          "damping_rebound": false,
-          "damping_bump": false,
-          "aero_downforce": false,
-          "gearing_final_drive": false,
-          "gearing_individual": false,
-          "differential_lock": false
-        }
-      }
-    },
-    "run_gearing_solver": {
-      "final_drive": 3.27,
-      "gears_count": 6,
-      "gears": [
-        {
-          "gear": 1,
-          "ratio": 3.2,
-          "speed_at_redline_kmh": 87.8,
-          "upshift_drop_rpm": 6375.0
-        },
-        {
-          "gear": 2,
-          "ratio": 2.72,
-          "speed_at_redline_kmh": 103.3,
-          "upshift_drop_rpm": 6375.0
-        },
-        {
-          "gear": 3,
-          "ratio": 2.31,
-          "speed_at_redline_kmh": 121.5,
-          "upshift_drop_rpm": 6375.0
-        },
-        {
-          "gear": 4,
-          "ratio": 1.97,
-          "speed_at_redline_kmh": 143.0,
-          "upshift_drop_rpm": 6375.0
-        },
-        {
-          "gear": 5,
-          "ratio": 1.67,
-          "speed_at_redline_kmh": 168.2,
-          "upshift_drop_rpm": 6375.0
-        },
-        {
-          "gear": 6,
-          "ratio": 1.42,
-          "speed_at_redline_kmh": 197.9,
-          "upshift_drop_rpm": null
-        }
-      ],
-      "powerband_retention_ratio": 0.85
-    },
-    "diagnose_telemetry_handling": {
-      "front_avg_temp_c": 105.5,
-      "rear_avg_temp_c": 85.5,
-      "axle_delta_t_c": 20.0,
-      "convergence_status": "adjustment_required",
-      "actionable_directives": [
-        "Front axle overheat: Soften Front ARB (-2.0) or increase front cold tire pressure (+0.5 PSI).",
-        "Entry Understeer: Increase front negative camber (-0.2°) and reduce front bump damping."
-      ]
     },
     "get_system_settings": {
       "language": "en-us",

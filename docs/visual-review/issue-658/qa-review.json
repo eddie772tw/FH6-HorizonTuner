@@ -1,0 +1,263 @@
+{
+  "reviewer": "Codex as Codex",
+  "date": "2026-11-12T10:24:39.256Z",
+  "method": "All 50 published PNGs individually opened and visually inspected through view_image after the final capture. Manifest and source hashes rechecked.",
+  "findings": [],
+  "notes": [
+    "Normal viewport images retain real AppShell and providers. Archive-panel crops use taller viewports recorded per case.",
+    "The JSON preview deliberately uses bounded vertical and horizontal scrolling; narrow views preserve original JSON rather than wrapping/mutating values.",
+    "Empty/error state, retired badges, both original export actions, settings dialog and capture return button are readable. Native pickers, hardware, game telemetry and screen readers are outside this review."
+  ],
+  "images": [
+    {
+      "file": "default-light-en-us-1280-empty-archive.png",
+      "sha256": "07c0e2052a25a5c4c87b29f7875564c05161c76d57b4b6afaa7a99f7e89ab06a",
+      "result": "reviewed"
+    },
+    {
+      "file": "default-light-en-us-1280-error-archive.png",
+      "sha256": "b384f3080e52272182831cca8efc041eda8c9a277beb85ad11c69d06d034fcd8",
+      "result": "reviewed"
+    },
+    {
+      "file": "default-light-en-us-1280-records-archive.png",
+      "sha256": "43eb11faca93a1c224551fc222fb60f5c3630415dd137d955aa339051188c0a6",
+      "result": "reviewed"
+    },
+    {
+      "file": "default-light-en-us-1280-records-archive-panel.png",
+      "sha256": "d5e7f3a8b3358abfc071d699be1897789dd8b409e574ee4253fb13139ef990d4",
+      "result": "reviewed"
+    },
+    {
+      "file": "default-light-en-us-1280-records-settings.png",
+      "sha256": "cb49aa9bd778317c28c87335fd8b429e7535bb72c25013eeca8adeb6daa62876",
+      "result": "reviewed"
+    },
+    {
+      "file": "default-light-en-us-1280-records-capture.png",
+      "sha256": "2b0158901401519cdf01933557db7466a5c3f615e6d1ba58213b7fde7edda8e4",
+      "result": "reviewed"
+    },
+    {
+      "file": "default-dark-zh-tw-1280-records-archive.png",
+      "sha256": "b3718daa5d539a1ca2495e37ca48ba884d9f8b97ee05ae497505910cfa311e9f",
+      "result": "reviewed"
+    },
+    {
+      "file": "default-dark-zh-tw-1280-records-archive-panel.png",
+      "sha256": "19f781883e14cf2dda322fddb67acd2c446ffba6a89deccc04a71ca276b81b88",
+      "result": "reviewed"
+    },
+    {
+      "file": "default-dark-zh-tw-1280-records-settings.png",
+      "sha256": "f83fdb904a2a982edaf269f38290fed9377f20b9d0da16f47e3a80fcd7a7c587",
+      "result": "reviewed"
+    },
+    {
+      "file": "default-dark-zh-tw-1280-records-capture.png",
+      "sha256": "d0b7b154ca98facba9f936b954211080a1a691cc21113b11d739a38ca9dcaa6c",
+      "result": "reviewed"
+    },
+    {
+      "file": "swiss-light-en-us-1280-records-archive.png",
+      "sha256": "afa04320b4104c7dcd9647f472902d2299044e2cf853eff400eb91cc2abcec8f",
+      "result": "reviewed"
+    },
+    {
+      "file": "swiss-light-en-us-1280-records-archive-panel.png",
+      "sha256": "e60bceab4c647bb167d45c8ade8c6936b46ca0934a6c25aa611866ed72421597",
+      "result": "reviewed"
+    },
+    {
+      "file": "swiss-light-en-us-1280-records-settings.png",
+      "sha256": "cb9e3a4e4167e1efc6504c6a95b6e7518f5325dd22fabe8edf6d069e02fce13d",
+      "result": "reviewed"
+    },
+    {
+      "file": "swiss-light-en-us-1280-records-capture.png",
+      "sha256": "203ae45d645296ebc11c1682039e0782f75638a971dc7b2f18aa8a5e28b06365",
+      "result": "reviewed"
+    },
+    {
+      "file": "swiss-dark-zh-tw-1280-records-archive.png",
+      "sha256": "48b49147e786362dbdf0706b8c851de86439d42fbd20578d036e143f172cba99",
+      "result": "reviewed"
+    },
+    {
+      "file": "swiss-dark-zh-tw-1280-records-archive-panel.png",
+      "sha256": "e3a4810e522c8d7ec233bdcb74e135e4cec5e0f61ad07f9366aea9800117d5ca",
+      "result": "reviewed"
+    },
+    {
+      "file": "swiss-dark-zh-tw-1280-records-settings.png",
+      "sha256": "da32b676ca68275be3fee5b37b8845a63982d38e176bbdf3ff30903c39dc9e1d",
+      "result": "reviewed"
+    },
+    {
+      "file": "swiss-dark-zh-tw-1280-records-capture.png",
+      "sha256": "aee3beffa9f5f24fbc879bc291152dc3aec791188f70e7244155df58bef3994d",
+      "result": "reviewed"
+    },
+    {
+      "file": "rhine-lab-light-en-us-1280-records-archive.png",
+      "sha256": "ff271d9ee8267b827d0b8bc7179e7c5cdb8155d4e4c75cad4ed90eb6065d37fb",
+      "result": "reviewed"
+    },
+    {
+      "file": "rhine-lab-light-en-us-1280-records-archive-panel.png",
+      "sha256": "f63986922f27a08dfa1aa87f5d6b2cf7ae1d4aaff1e0cae29c966e35410c48e2",
+      "result": "reviewed"
+    },
+    {
+      "file": "rhine-lab-light-en-us-1280-records-settings.png",
+      "sha256": "3abc590c240f52ad04fa3f7f82758b4ca7b0fec220bb60480b2f833c597b9308",
+      "result": "reviewed"
+    },
+    {
+      "file": "rhine-lab-light-en-us-1280-records-capture.png",
+      "sha256": "21a6b16d777e9c9e33cfbb823965a8d6d261d951523fea4af751e5b7ffe954d4",
+      "result": "reviewed"
+    },
+    {
+      "file": "rhine-lab-dark-zh-tw-1280-records-archive.png",
+      "sha256": "821c5246a845f5b18ddabfa2882dbd3f90b743f9f7f8138c2b08cf798479f990",
+      "result": "reviewed"
+    },
+    {
+      "file": "rhine-lab-dark-zh-tw-1280-records-archive-panel.png",
+      "sha256": "2e1e1c39c612c1eda3a60067d929ebcd1f9f5d2d690030a64d9cb35f4e47016b",
+      "result": "reviewed"
+    },
+    {
+      "file": "rhine-lab-dark-zh-tw-1280-records-settings.png",
+      "sha256": "94eb46fe090d85880e6566cb890929b430968f090684abb251fdda232cfc7fe1",
+      "result": "reviewed"
+    },
+    {
+      "file": "rhine-lab-dark-zh-tw-1280-records-capture.png",
+      "sha256": "c0e14a4f98ddddc8e5887fc6f26314db15f289e0100c0f9a43d39a5f1228e21a",
+      "result": "reviewed"
+    },
+    {
+      "file": "default-light-ja-jp-320-records-archive.png",
+      "sha256": "bc47b6ffc82994b7d95ad6ebf254bfa3d4418471cfb03de727c9ca0d06e4bda6",
+      "result": "reviewed"
+    },
+    {
+      "file": "default-light-ja-jp-320-records-archive-panel.png",
+      "sha256": "d9a69180e83823bff63493758235ece3fa5636863972914b14efe7a1f83ad089",
+      "result": "reviewed"
+    },
+    {
+      "file": "default-light-ja-jp-320-records-settings.png",
+      "sha256": "f429264c95c78008f8082d867e116e111adbaf7e8b60d9271bd763ddb4514714",
+      "result": "reviewed"
+    },
+    {
+      "file": "default-light-ja-jp-320-records-capture.png",
+      "sha256": "022c1716247266ac1ef71f5c7b18f5803dce4c8ff4a2710bd9f6d9de080deaef",
+      "result": "reviewed"
+    },
+    {
+      "file": "default-dark-zh-tw-320-records-archive.png",
+      "sha256": "2a9963ac55b8db73f45bfa621840d2551ca9b5fa07488178cfefacc510bdef98",
+      "result": "reviewed"
+    },
+    {
+      "file": "default-dark-zh-tw-320-records-archive-panel.png",
+      "sha256": "98f4ec4478b54a5a92c2b9ce47ed2c1512caa170c0ee64e10b86622c03ad1f39",
+      "result": "reviewed"
+    },
+    {
+      "file": "default-dark-zh-tw-320-records-settings.png",
+      "sha256": "4bf1efdc1cf86e0bfb1549a06a104567de9c3c866788e7870a7a65a95ec344d6",
+      "result": "reviewed"
+    },
+    {
+      "file": "default-dark-zh-tw-320-records-capture.png",
+      "sha256": "125c23308ef49d51109c1fc047d514f7523bcd42181aa1aefa8fc68a263c2115",
+      "result": "reviewed"
+    },
+    {
+      "file": "swiss-light-ja-jp-320-records-archive.png",
+      "sha256": "77adffbeb62021ef99fe8522e8335002abc05c99aba72d6f4aaf9a18d8070e3a",
+      "result": "reviewed"
+    },
+    {
+      "file": "swiss-light-ja-jp-320-records-archive-panel.png",
+      "sha256": "90333107ae764731249c14656e6658c98c604bf321c66acefcbf91c231a94908",
+      "result": "reviewed"
+    },
+    {
+      "file": "swiss-light-ja-jp-320-records-settings.png",
+      "sha256": "e84e9902e6bf347a67787e2a60b3d286d2e4efef80652d065b8e36d75bef17dc",
+      "result": "reviewed"
+    },
+    {
+      "file": "swiss-light-ja-jp-320-records-capture.png",
+      "sha256": "1cc23bc921d8c8cc766fe1998293d4cf0c60f991e417635cca2dde2ef132cbec",
+      "result": "reviewed"
+    },
+    {
+      "file": "swiss-dark-zh-tw-320-records-archive.png",
+      "sha256": "ab5b69ee169f30901d740bcff7902fdccf181b90e74cb7b3a9fb9b8a739bf9ec",
+      "result": "reviewed"
+    },
+    {
+      "file": "swiss-dark-zh-tw-320-records-archive-panel.png",
+      "sha256": "fa30ba8c8d44465bd4c8ee3f3e21fe16401d9c9f24dec255dadd58b2b794c464",
+      "result": "reviewed"
+    },
+    {
+      "file": "swiss-dark-zh-tw-320-records-settings.png",
+      "sha256": "5f78191444483a477fa1c8d06237fe1d05ccff25484e710d4c6cc51f1db05410",
+      "result": "reviewed"
+    },
+    {
+      "file": "swiss-dark-zh-tw-320-records-capture.png",
+      "sha256": "889e986102347abbee2de3c0af4cff5e2331eed999c59680333c1a27fcc29ea9",
+      "result": "reviewed"
+    },
+    {
+      "file": "rhine-lab-light-ja-jp-320-records-archive.png",
+      "sha256": "077302a1b03544c8b7197e057fa1deb35a7f1963bddebd77dbb91a3b548c59c2",
+      "result": "reviewed"
+    },
+    {
+      "file": "rhine-lab-light-ja-jp-320-records-archive-panel.png",
+      "sha256": "a3fcd213bfb465696335795cc7fa5cf52ae971e6858f089c86ab85bd56aaa17a",
+      "result": "reviewed"
+    },
+    {
+      "file": "rhine-lab-light-ja-jp-320-records-settings.png",
+      "sha256": "41980a9a1fd3f3d0adb5e6791dccf4b81bec393256b36723b503cac75a254436",
+      "result": "reviewed"
+    },
+    {
+      "file": "rhine-lab-light-ja-jp-320-records-capture.png",
+      "sha256": "2aac03639bc1a9e016b1dc73098c663ff5439ffce1c98f0c7fbf5f975aa400ac",
+      "result": "reviewed"
+    },
+    {
+      "file": "rhine-lab-dark-zh-tw-320-records-archive.png",
+      "sha256": "498b6ece49a4d1452cbb6e1433011bfebd5136c26d509e612082f92e89294a15",
+      "result": "reviewed"
+    },
+    {
+      "file": "rhine-lab-dark-zh-tw-320-records-archive-panel.png",
+      "sha256": "00c51d77b207a515ce6860559a80b446a24fc1ac2e86f6736c7b3946c4995171",
+      "result": "reviewed"
+    },
+    {
+      "file": "rhine-lab-dark-zh-tw-320-records-settings.png",
+      "sha256": "59623eb3bfd7d7549e217cd260bc1649bd5ddd3f58daebedf87849546bfbfa8b",
+      "result": "reviewed"
+    },
+    {
+      "file": "rhine-lab-dark-zh-tw-320-records-capture.png",
+      "sha256": "7e62f5f6bdd63562c5c9291d1b0c3d5a0a68d485c811127c58f5c7f0e8d395f9",
+      "result": "reviewed"
+    }
+  ]
+}

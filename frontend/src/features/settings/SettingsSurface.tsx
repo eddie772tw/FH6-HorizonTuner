@@ -7,15 +7,9 @@ import { SettingsItem, SettingsSection, SettingsSwitch } from './components/Sett
 import { UpdateSettingsCard } from './components/UpdateSettingsCard';
 import { projectSettingsSections } from './settingsSections';
 
-export interface SettingsSurfaceProps {
-  allowDeveloperTuning?: boolean;
-}
-
-export const SettingsSurface: React.FC<SettingsSurfaceProps> = ({
-  allowDeveloperTuning = true,
-}) => {
+export const SettingsSurface: React.FC = () => {
   const { settings, updateSettings, isLoading, t, availableLanguages } = useSettings();
-  const sections = projectSettingsSections(allowDeveloperTuning);
+  const sections = projectSettingsSections();
 
   const handleGeneralUnitChange = (system: GeneralUnitSystem) => {
     void updateSettings({ units: applyGeneralUnitSystem(settings.units, system) });
@@ -81,10 +75,7 @@ export const SettingsSurface: React.FC<SettingsSurfaceProps> = ({
 
         {has('storage', 'storage') && <DataStorageOverview />}
 
-        {has('developer', 'developerTuning') && <SettingsSection title={t('Developer')}>
-            <SettingsSwitch id="chk-developer-tuning" label={t('Use Developer Tuning View')} description={t('Switches the tuning wizard to the experimental TuningMath input/output view. The legacy view remains the default.')} checked={settings.developer_tuning_enabled} onChange={event => void updateSettings({ developer_tuning_enabled: event.target.checked })} />
-            {settings.developer_tuning_enabled && <div className="alert alert-warning mb-0 py-2" role="status">{t('Experimental mode active: verify all outputs in-game before saving a tune.')}</div>}
-        </SettingsSection>}
+
     </div>
   );
 };

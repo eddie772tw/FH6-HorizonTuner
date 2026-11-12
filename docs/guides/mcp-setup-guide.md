@@ -4,7 +4,7 @@
 
 Use `calculate_tuning_workflow` for desktop-equivalent recommendations. Its request uses `tuning-workflow-result/v1`, the complete profile, goal, season, car identity and qualified evidence (`saved-engine` with `observationId`, or `saved-ev` with `evidenceId`). Original captures can also be replayed by the same Rust library. Bare peak values do not establish measured readiness. This read-only tool preserves saved state; persistence requires backend-issued evidence through the application API.
 
-Older quick solver tools retain `legacy-mcp/v1` / `tuning-dev/v1` compatibility and are not interchangeable with the formal workflow or `legacy-cli/v1`. See the [responsibility contract](../contracts/tuning_responsibilities.md).
+Older quick solver formulas and Developer Tuning are removed. Cached old tool names return retirement errors; discovery advertises current tools. Use the qualified workflow, and review [archives and compatibility changes](../tuning/model-retirement.md).
 
 
 FH6-HorizonTuner exposes a localhost, read-only MCP server from the running
