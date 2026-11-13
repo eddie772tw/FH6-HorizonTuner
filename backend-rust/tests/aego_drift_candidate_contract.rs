@@ -337,3 +337,35 @@ fn unrelated_models_production_and_chassis_stay_owned_by_their_original_owners()
         c.gearing
     );
 }
+
+#[test]
+fn adjacent_ceil_main_gear_tick_rescues_convex_wheel_speed_overshoot() {
+    let p = profile();
+    let base_target = target();
+    let base = solve_candidate(6, &p, 7500.0, Some(&base_target), None);
+    let target_total_base = base.diagnostics["targetTotalRatio"].as_f64().unwrap();
+    let circumference = target_total_base * base_target.wheel_speed_kmh * 1000.0
+        / (base_target.target_rpm * 60.0);
+    let fd = 6.0;
+    let wheel_speed_kmh = 79.0;
+    // ideal_tick = 39.495: round() = 39 overshoots by +1.0027 km/h (> 1.0 km/h),
+    // whereas ceil() = 40 undershoots by -0.9974 km/h (within tolerance & RPM limit).
+    let target_rpm = 0.39495 * fd * wheel_speed_kmh * 1000.0 / (circumference * 60.0);
+    let t = DriftWorkingTarget {
+        main_gear: 6,
+        target_rpm,
+        wheel_speed_kmh,
+        source: "user-target".into(),
+    };
+    let bounds = DriftObservedBounds {
+        source: "user-observed".into(),
+        final_drive: range(fd, fd),
+        gears: vec![range(0.1, 6.0); 6],
+    };
+    let c = solve_candidate(6, &p, 7500.0, Some(&t), Some(&bounds));
+    available(&c, 6, 7500.0);
+    assert_eq!(c.gearing.final_drive, fd);
+    assert_eq!(c.gearing.gears[5], 0.40);
+    let err = c.diagnostics["wheelSpeedErrorKmh"].as_f64().unwrap();
+    assert!(err < 0.0 && err.abs() <= 1.0);
+}
