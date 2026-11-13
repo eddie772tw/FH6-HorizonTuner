@@ -2470,5 +2470,13 @@
   "Export original record": "匯出原始記錄",
   "Open telemetry capture": "開啟遙測採集工具",
   "Back to engine data": "返回引擎資料",
-  "Export original history": "匯出原始歷史記錄"
+  "Export original history": "匯出原始歷史記錄",
+  "Chart legend": "圖表圖例",
+  "Pitch": "俯仰角",
+  "Roll": "側傾角",
+  "Yaw": "偏航角",
+  "Tire Temperature Trend": "輪胎溫度趨勢",
+  "Slip Ratio Trend": "滑移率趨勢",
+  "Slip Angle Trend": "滑移角趨勢",
+  "Surface Rumble Trend": "路面震動趨勢"
 }

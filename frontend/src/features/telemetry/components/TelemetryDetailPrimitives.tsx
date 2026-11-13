@@ -270,7 +270,8 @@ export const TrendChart: React.FC<{
   data: TelemetryChartPoint[];
   lines: ChartLine[];
   emptyLabel: string;
-}> = React.memo(({ title, data, lines, emptyLabel }) => {
+  legendLabel?: string;
+}> = React.memo(({ title, data, lines, emptyLabel, legendLabel = 'Chart legend' }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<HTMLDivElement>(null);
   const localPaint = useViewportPaintGate(chartRef);
@@ -415,7 +416,7 @@ export const TrendChart: React.FC<{
         </div>
       )}
       {hasData && (
-        <div className="telemetry-detail-view__chart-legend d-flex flex-wrap gap-2 mt-1" aria-label="Chart legend">
+        <div className="telemetry-detail-view__chart-legend d-flex flex-wrap gap-2 mt-1" aria-label={legendLabel}>
           {lines.map((line) => (
             <span key={line.dataKey} className="d-inline-flex align-items-center gap-1 fs-8 text-body-secondary">
               <span className="telemetry-detail-view__chart-legend-swatch" style={{ background: line.color }} />
