@@ -50,3 +50,8 @@
 **渲染洞察 (Rendering Learning):** 在多曲線時間序列趨勢圖（TrendChart，涵蓋懸吊、輪胎、動態等）中，過去僅單純繪製折線至最新採樣點，折線末端在數值高頻劇烈跳動時缺乏即時視覺焦點，且原有繪圖流程缺少 `ctx.save()` 與 `try/finally` 狀態保護，使 `font`、`fillStyle`、`strokeStyle` 與 `shadowBlur` 容易滲漏至外部或後續 Canvas 操作；透過在每條線條折線閉合後，就地（in-place）使用區域純量變數記錄最後有效座標 `lastX`, `lastY`（零每幀物件與陣列配置），繪製同軸雙層「外圈脈衝光環 (Halo Ring, 3.2px, stroke) + 內核定位點 (Core Dot, 1.6px, fill)」，並於非 flat 主題激發柔和光暈（`shadowBlur = 4 * glowStrength`），在 linear 工業主題自動切換為方形標記（strokeRect + fillRect），大幅提升多輪動態趨勢辨識度。此外，以成對 `ctx.save()` / `try { ... } finally { ctx.restore(); }` 嚴密隔離 Context 狀態，杜絕樣式滲漏。
 **行動 (Action):** 所有多通道曲線圖表與折線趨勢畫布均應配置同軸 Leading Active Pulse Marker 提供即時焦點；繪圖邏輯強制使用 `try/finally` 成對還原 context 狀態，並維持零每幀記憶體配置。
 **署名:** Vector as Antigravity
+
+## 2026-11-14 - Telemetry Cards 踏板波形圓角平滑、同軸前緣光環與邊界保護
+**渲染洞察 (Rendering Learning):** 在 `hud_overlay/shared/telemetry-cards/pedal-wave.js` 的 60Hz 踏板波形畫布中，過去缺少 `save()` / `try-finally restore()` 狀態防護、未設定 `lineCap = 'round'` / `lineJoin = 'round'` 導致急踩急放產生銳角突刺，且水平步距直接鋪滿 `pw` 造成滿載（300 點）與 0%/100% 端點及發光被畫布邊界裁切，單一採樣（`len === 1`）時亦完全不可見。透過將雙通道繪製抽離為零配置輔助函式 `drawTraceChannel`，預留與 `shadowBlur` 及光環半徑相稱的 `padX` / `padY` 邊界（`5.5 * dpr`），補齊 25%/75% 批次參考線，並於最新採樣端點繪製同軸雙層脈衝標記（Halo Ring `4.2 * dpr` + Core Dot `2.0 * dpr`），即可在不增加任何每幀物件配置的前提下顯著提升動態鎖定感與高 DPI 邊緣完整性。
+**行動 (Action):** 在所有 `hud_overlay/shared/telemetry-cards/` 高頻時間序列畫布中維持 `try/finally` Context 狀態隔離、`padX/padY` 邊界保護與單點可讀之同軸前緣脈衝標記，並優先抽離共用通道繪圖函式消除重複邏輯。
+**署名:** Vector as Antigravity
