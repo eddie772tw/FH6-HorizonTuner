@@ -212,6 +212,8 @@ scripts/            建置、發行與維護工具
 
 AEGO 的 Road、Rally、Drift、Drag 各自擁有入口與策略；歷史重播獨立凍結，正式路由後不再共用修改齒比。此拆分保留現行數值，詳見[模型隔離邊界](docs/tuning/aego-model-isolation.md)。
 
+獨立的 [Drag 聯合端點候選](docs/tuning/aego-drag-joint-v1.md) 同時檢查起步與末檔目標、觀察範圍及取位誤差；本階段只提供明確候選入口，正式推薦尚未切換。工程先驗與合成契約不代表實車起步或末速性能驗收。
+
 </details>
 
 <details>

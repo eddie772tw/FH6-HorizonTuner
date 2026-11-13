@@ -77,6 +77,51 @@ fn saved_request() -> Value {
 }
 
 #[test]
+fn drag_candidate_uses_qualified_workflow_profile_finish_even_without_secondary_correction() {
+    use fh6_backend::tuning::workflow::measured_drag_candidate;
+    let mut raw = input("AWD");
+    raw["goal"] = json!("Drag");
+    for (key, value) in [
+        ("rearTireWidth", 245.0),
+        ("rearTireAspect", 40.0),
+        ("rearTireRim", 18.0),
+    ] {
+        raw["profile"][key] = json!(value);
+    }
+    raw["profile"]["dragFinishSpeedKmh"] = json!(40.0);
+    raw["profile"]["dragFinishSpeedProvenance"] = json!("manual");
+    let request: WorkflowRequest = serde_json::from_value(raw.clone()).unwrap();
+    let historical = proof("AWD").calculate(request).unwrap();
+    // PR 5 records the current missing rejection without switching production.
+    assert!(historical.readiness.gearing_available);
+    let request: WorkflowRequest = serde_json::from_value(raw.clone()).unwrap();
+    let candidate = measured_drag_candidate(&request, proof("AWD")).unwrap();
+    assert_eq!(candidate.gearing.unsupported, Some(true));
+    assert_eq!(candidate.diagnostics["targetSpeedKmh"], 40.0);
+    assert_eq!(candidate.diagnostics["finishInputEntry"], "profile");
+    raw["profile"]["dragFinishSpeedKmh"] = json!(250.0);
+    let request: WorkflowRequest = serde_json::from_value(raw.clone()).unwrap();
+    let candidate = measured_drag_candidate(&request, proof("AWD")).unwrap();
+    assert_ne!(
+        candidate.gearing.unsupported,
+        Some(true),
+        "{}",
+        candidate.diagnostics
+    );
+    raw["engine"] = json!({"engineMaxRpm":1,"peakPowerRpm":1,"peakTorqueRpm":1,"peakTorqueNm":1});
+    let forged: WorkflowRequest = serde_json::from_value(raw.clone()).unwrap();
+    assert_eq!(
+        measured_drag_candidate(&forged, proof("AWD"))
+            .unwrap()
+            .gearing,
+        candidate.gearing
+    );
+    raw["profile"]["maxHp"] = json!(9999);
+    let other_engine: WorkflowRequest = serde_json::from_value(raw).unwrap();
+    assert!(measured_drag_candidate(&other_engine, proof("AWD")).is_err());
+}
+
+#[test]
 fn current_chassis_recommendations_replay_and_reject_version_or_diagnostic_forgery() {
     let temp = tempfile::tempdir().unwrap();
     let app = App::new(temp.path()).unwrap();
