@@ -77,3 +77,8 @@
 **學習 (Learning):** 遙測分析視圖（SessionTrimSummaryCard）直接渲染協議原始字串（如 recording_mode 的 `circuit`、`time_trial`，以及 lap_time_source 的 `game`、`calculated`）並仰賴 CSS（`text-uppercase` / `text-capitalize`）呈現，會導致非英文語系（日文與中文）無法顯示合適賽事術語而暴露大寫英文 raw ID；同時，該卡片之 `Session Analysis & Trimming`、`Lead-in Trim` 等整組鍵值在日文字典（`ja-jp.json`）中完全缺失，使日文使用者面臨整卡英文穿透。此外，統計採樣比例（`trimmed / raw`）若僅以純文字斜線呈現，輔助科技無法獲取完整語意，且組件 Props 將 `t` 窄化為 `(text: string) => string` 會阻礙參數化無障礙標籤的傳入。
 **行動 (Action):** 將模式與計時來源對應為規範化字典鍵（如 `Circuit`, `Time Trial`, `In-Game Timing`, `Calculated Timing`）並移除裝飾性 CSS 大寫；擴展組件 Props `t` 簽名支援可選 params 物件，為有效採樣比例加上具備參數化句子之 `aria-label`（`t("{valid} of {total} samples valid", { valid, total })`）；為 switch 控制項補齊 `role="switch"` 與 `aria-checked`；並完整對齊 `en-us.json`、`zh-tw.json` 與 `ja-jp.json`，消除遙測分析卡片的跨語言不對稱。
 **署名:** Narrator as Antigravity
+
+## 2026-11-14 - Pure Chart Primitives Legend Localization & Memoized Corner Series
+**學習 (Learning):** 遙測詳細圖表元件（`TrendChart` in `TelemetryDetailPrimitives.tsx`）刻意維持與 `SettingsContext` 解耦，導致圖例容器硬編碼 `aria-label="Chart legend"`；同時 `TelemetryDetailPanels.tsx` 雖由父層傳入已在地化之 `corners` 陣列，圖表曲線卻仍使用模組層常數 `FL`/`FR`/`RL`/`RR` 標籤，且 `TrendChart` 的 `[data, lines]` effect 會在 `lines` 參考變更時重置懸停狀態與重繪。此外，`Pitch`、`Roll`、`Yaw` 及四項輪胎趨勢標題亦完全未收錄於三語系字典中。
+**行動 (Action):** 對維持純粹性而不直接訂閱 `SettingsContext` 的圖表基元，應以選擇性 prop（如 `legendLabel?: string`）傳入 `t('Chart legend')`；將傳入 `TrendChart` 的在地化四輪曲線標籤包裹於 `useMemo(..., [corners])`（如 `CornerTrendChart`）以維持高頻重繪時的參考穩定性；並以既有詞彙表（如日文 `スリップアングル` 對應 `Slip Angle`）對齊三語系字典。
+**署名:** Narrator as Antigravity

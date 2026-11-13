@@ -1,0 +1,120 @@
+{
+  "date": "2026-11-14",
+  "browser": "148.0.7778.96",
+  "capture": "Chromium headless (Playwright Python), production Vite preview build with real AppShell/providers, DPR 1, mocked loopback API and synthetic WebSocket telemetry frames.",
+  "reproduce": "Open Telemetry workspace, expand Tires / Suspension / Dynamics card, verify localized chart titles, Pitch/Roll/Yaw metrics, localized corner legend labels, and localized Chart legend aria-label across en-us / zh-tw / ja-jp.",
+  "cases": [
+    {
+      "core": "default",
+      "mode": "light",
+      "lang": "en-us",
+      "width": 1280,
+      "height": 720,
+      "card": "tires",
+      "save": true,
+      "file": "default-light-en-us-1280-tires.png",
+      "dimensions": {
+        "width": 1280,
+        "scrollWidth": 1280
+      },
+      "legendCount": 5,
+      "legendAriaLabel": "Chart legend"
+    },
+    {
+      "core": "default",
+      "mode": "dark",
+      "lang": "zh-tw",
+      "width": 1280,
+      "height": 720,
+      "card": "tires",
+      "save": true,
+      "file": "default-dark-zh-tw-1280-tires.png",
+      "dimensions": {
+        "width": 1280,
+        "scrollWidth": 1280
+      },
+      "legendCount": 5,
+      "legendAriaLabel": "圖表圖例"
+    },
+    {
+      "core": "swiss",
+      "mode": "light",
+      "lang": "ja-jp",
+      "width": 1280,
+      "height": 720,
+      "card": "tires",
+      "save": true,
+      "file": "swiss-light-ja-jp-1280-tires.png",
+      "dimensions": {
+        "width": 1280,
+        "scrollWidth": 1280
+      },
+      "legendCount": 5,
+      "legendAriaLabel": "グラフ凡例"
+    },
+    {
+      "core": "swiss",
+      "mode": "dark",
+      "lang": "zh-tw",
+      "width": 1280,
+      "height": 720,
+      "card": "dynamics",
+      "save": true,
+      "file": "swiss-dark-zh-tw-1280-dynamics.png",
+      "dimensions": {
+        "width": 1280,
+        "scrollWidth": 1280
+      },
+      "legendCount": 6,
+      "legendAriaLabel": "圖表圖例"
+    },
+    {
+      "core": "rhine-lab",
+      "mode": "light",
+      "lang": "zh-tw",
+      "width": 1280,
+      "height": 720,
+      "card": "suspension",
+      "save": true,
+      "file": "rhine-lab-light-zh-tw-1280-suspension.png",
+      "dimensions": {
+        "width": 1280,
+        "scrollWidth": 1280
+      },
+      "legendCount": 1,
+      "legendAriaLabel": "圖表圖例"
+    },
+    {
+      "core": "rhine-lab",
+      "mode": "dark",
+      "lang": "en-us",
+      "width": 1280,
+      "height": 720,
+      "card": "dynamics",
+      "save": true,
+      "file": "rhine-lab-dark-en-us-1280-dynamics.png",
+      "dimensions": {
+        "width": 1280,
+        "scrollWidth": 1280
+      },
+      "legendCount": 6,
+      "legendAriaLabel": "Chart legend"
+    },
+    {
+      "core": "default",
+      "mode": "light",
+      "lang": "ja-jp",
+      "width": 320,
+      "height": 800,
+      "card": "tires",
+      "save": true,
+      "file": "default-light-ja-jp-320-tires.png",
+      "dimensions": {
+        "width": 320,
+        "scrollWidth": 320
+      },
+      "legendCount": 5,
+      "legendAriaLabel": "グラフ凡例"
+    }
+  ]
+}

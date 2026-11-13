@@ -2069,5 +2069,13 @@
   "Export original record": "Export original record",
   "Open telemetry capture": "Open telemetry capture",
   "Back to engine data": "Back to engine data",
-  "Export original history": "Export original history"
+  "Export original history": "Export original history",
+  "Chart legend": "Chart legend",
+  "Pitch": "Pitch",
+  "Roll": "Roll",
+  "Yaw": "Yaw",
+  "Tire Temperature Trend": "Tire Temperature Trend",
+  "Slip Ratio Trend": "Slip Ratio Trend",
+  "Slip Angle Trend": "Slip Angle Trend",
+  "Surface Rumble Trend": "Surface Rumble Trend"
 }
