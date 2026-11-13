@@ -385,10 +385,32 @@ pub fn solve_candidate(
         if anchor_upper < lower[main] as f64 {
             continue;
         }
+        let ideal_tick = target_total / fd * 100.0;
+        let Some((main_tick, actual)) = [ideal_tick.round(), ideal_tick.floor(), ideal_tick.ceil()]
+            .into_iter()
+            .find_map(|candidate| {
+                let tick = candidate.clamp(lower[main] as f64, anchor_upper) as i64;
+                let actual = calc_gear_speed(
+                    target.target_rpm,
+                    tick as f64 / 100.0,
+                    fd,
+                    circumference / (2.0 * PI),
+                ) * 3.6;
+                if !actual.is_finite()
+                    || actual <= 0.0
+                    || (actual - target.wheel_speed_kmh).abs() > tolerance + 1e-9
+                {
+                    return None;
+                }
+                let actual_rpm = target.target_rpm * (target.wheel_speed_kmh / actual);
+                (actual_rpm.is_finite() && actual_rpm <= usable_limit_rpm + 1e-7)
+                    .then_some((tick, actual))
+            })
+        else {
+            continue;
+        };
         let mut gear_ticks = vec![0_i64; count];
-        gear_ticks[main] = (target_total / fd * 100.0)
-            .round()
-            .clamp(lower[main] as f64, anchor_upper) as i64;
+        gear_ticks[main] = main_tick;
         for i in (0..main).rev() {
             let low = lower[i].max(gear_ticks[i + 1] + 1);
             let desired = gear_ticks[main] as f64 * shape[i] / shape[main];
@@ -400,22 +422,6 @@ pub fn solve_candidate(
             gear_ticks[i] = desired.round().clamp(lower[i] as f64, high as f64) as i64;
         }
         let gears: Vec<f64> = gear_ticks.iter().map(|g| *g as f64 / 100.0).collect();
-        let actual = calc_gear_speed(
-            target.target_rpm,
-            gears[main],
-            fd,
-            circumference / (2.0 * PI),
-        ) * 3.6;
-        if !actual.is_finite()
-            || actual <= 0.0
-            || (actual - target.wheel_speed_kmh).abs() > tolerance + 1e-9
-        {
-            continue;
-        }
-        let actual_rpm = target.target_rpm * (target.wheel_speed_kmh / actual);
-        if !actual_rpm.is_finite() || actual_rpm > usable_limit_rpm + 1e-7 {
-            continue;
-        }
         let score = gears
             .iter()
             .zip(&shape)

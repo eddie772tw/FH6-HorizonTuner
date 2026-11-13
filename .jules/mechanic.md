@@ -48,3 +48,9 @@
 **物理洞察 (Physics Learning):** 在變速箱次級修正（Secondary Correction）幾何閉環重分佈中，當引擎峰值馬力轉速相對於紅線轉速較低（如大排量或渦輪引擎 `rpm_hp / max_rpm < 0.68`）時，原演算法 `r_max = (0.92).min(r_redline_hp)` 會低於 `r_min`，引發 `r_min > r_max` 的步長比率倒置畸變，導致高檔位齒比間距比低檔位更疏的動力學倒置；且比例因子 `s = (new_gtop / (gears[0] * prod_raw)).powf(...)` 在底數非正或非有限時會觸發 `powf` 產生 IEEE 754 `NaN`，使中間檔位全數坍縮為 1.0。此外，多檔位變速箱單調性迴圈中 `max_step_ratio_rounded` 在非 Drift/Drag 模式下以 `(rpm_hp + 50.0) / max_rpm` 計算，在峰值馬力接近紅線時比率超過 1.0 導致步長約束失效，而在極低峰值轉速下又會過度縮小導致高檔位過早觸底至 0.10。
 **行動 (Action):** 次級重分佈強制實施 `r_max = (0.92).min(r_redline_hp).max(r_min)` 杜絕步長比率倒置，並落實底數正定性保護（非正或非有限時安全回退至 1.0）確保幾何動力學閉包；多檔位單調性步長比例全面施加 `0.65..=0.95` 邊界防護，消除檔位重疊與非正常觸底陷阱。
 **署名:** Mechanic as Antigravity
+
+
+## 2026-11-14 - Drift 齒比反比凸性對 0.01 格點捨入的影響
+**物理洞察 (Physics Learning):** 在固定轉速與終傳比下，輪速 $v(g) = \frac{\text{rpm} \cdot C \cdot 60}{1000 \cdot g \cdot \text{fd}}$ 對齒比 $g$ 為嚴格遞減且嚴格凸函式（$1/g$ 幾何）。當理想格點 $g_{\text{ideal}} = n + \delta$（$\delta < 0.5$）在低齒比或受限終傳比下（如 `drift.rs` 的 $n < \delta / (1 - 2\delta)$ 區間）僅以 `.round()` 取整為 $n$ 時，向左偏移會放大超速誤差並跨越 $\max(1\,\text{km/h}, 1\%)$ 容差，而向右相鄰格點 `.ceil()` ($n+1$) 因凸性斜率較緩反而能同時滿足輪速容差與有效轉速上限。
+**行動 (Action):** 所有在 0.01 離散齒比格點上反求終端輪速的 AEGO 求解器（包含 Drift）皆須以 `[ideal.round(), ideal.floor(), ideal.ceil()]` 順序檢索鉗位後的相鄰可行格點，並在確定 `main_tick` 可行後才配置其餘檔位，確保不破壞既有通過案例的同時消除凸性誤差假失敗。
+**署名:** Mechanic as Antigravity
