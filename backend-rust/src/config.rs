@@ -43,7 +43,6 @@ pub fn merge_settings(settings: &Value, patch: &Value) -> ApiResult<Value> {
     for key in [
         "dyno_recording",
         "race_recording",
-        "developer_tuning_enabled",
         "dyno_filter_slip",
         "dyno_filter_transients",
         "mcp_enabled",

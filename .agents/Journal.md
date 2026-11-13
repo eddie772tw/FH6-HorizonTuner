@@ -1,5 +1,27 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-11-12 / AEGO 堆疊獨立審查：封存原資料保全（Codex as Codex）
+
+- **範圍**：PR #659，依序同步 #654～#657 的已驗證修正；採用 `pr-review-evaluation`、`pr-author-maintainer`、`physics-tuning-math`、`modular-refactoring`、`halfmoon-design-system`、`cross-agent-collaboration`、`ponytail`。不合併 PR。
+- **學習**：唯讀歷史的邊界包含啟動復原。退役 workflow 的中斷 run 必須在 finalize session／新增 summary 前略過，仍保留 active recovery。Road documents 只有 session 關聯；不可用 setup 內假 capture 宣稱已匯出實際試跑幀。
+- **修正**：封存 run 重啟不改原始 documents／session metadata；每筆 run 以既有 saved capture GET 匯出錄製幀，文件 JSON 與幀分開。ICE raw replay 修正歸位 #657、Rally 刻度修正歸位 #654，以一般 merge commit 同步。
+- **驗證**：完整 locked Cargo301 passed／3既有ignored、no-default-features291 passed／2既有ignored，含doc-tests；本機僅省略除錯符號，斷言／優化／容差不變。前端219 files／1649項、Windows與LAN構建、Cargo fmt及diff check通過；638個產品檔案同步後與測試來源一致。原21 tuning／10 EV fixture不變。
+- **畫面與資料**：22瀏覽器案例、三份實際JSON下載、50張新PNG逐張獨立看圖通過；558個LF正規化來源hash、50個raw image hash及固定擷取binary／下載檔hash核對。合成SQLite session與兩筆telemetry對應下載內容；沒有實車、原生對話框、手機或讀屏驗收。
+- **政策**：保留必要DangerSign內部行為，不新增第五模型；不恢復已刪除的舊solver或退役期間測試集。新回歸屬現行封存／原始證據行為。各新head CI與討論串收尾在PR Body／Review記錄。
+
+## 2026-11-12 / AEGO 整合獨立審查：保存證據回放（Codex as Codex）
+
+- **範圍**：PR #657；採用 `pr-review-evaluation`、`pr-author-maintainer`、`physics-tuning-math`、`modular-refactoring`、`cross-agent-collaboration`、`ponytail`。
+- **學習**：derived cache 不等於原始證據。ICE 的快取載入與 cold replay 共用原始 capture qualification，先核對 schema／外層與 nested ID／workflow namespace，再由原始幀重建 engine、summary、tire evidence；保存驗證不依 cached 數字取得資格。
+- **證據**：只有 cache 沒有 raw 的原 head 失敗案例，以及 cache 竄改、raw envelope 無效、raw 移除、read-only DB 不變等行為測試通過。完整 locked Cargo 306 passed／3 既有 ignored（本機僅省略除錯符號）、前端2033項通過；650個產品檔案同步後與測試來源一致。原21 tuning／10 EV fixture與容差不變。
+- **畫面沿用**：本輪未改 frontend／lang；圖集保留原擷取版本2c72，補記後端變更與舊manifest的證據界線。新head CI另於PR記錄；不合併PR。
+
+## 2026-11-12 / AEGO 堆疊獨立審查：Rally 刻度可行性（Codex as Codex）
+
+- **範圍**：PR #654；採用 `pr-review-evaluation`、`pr-author-maintainer`、`physics-tuning-math`、`modular-refactoring`、`ponytail`。修正沿 #655～#659 同步，不合併 PR。
+- **學習**：輪速是齒比的倒數；最近齒比刻度不一定是符合輪速容差的刻度。檢查 round／floor／ceil 經合法範圍限制後的候選，直接套用原運動學公式與原公差，可避免反推速度區間引入額外浮點餘裕。
+- **證據**：新增固定 FD 6.28、99.02 km/h 的相鄰刻度反例及 FD 3.50 的浮點邊界案例；原最近 tick 解法可重現失敗，修正後針對性測試通過。原 21 tuning／10 EV fixture 值與公差未改；完整測試與新 head CI 另記於 PR Body。
+
 ## 2026-11-12 / v1.8.4 Tag、Release Note 與 Wiki 同步（Codex as Codex）
 
 - **範圍**：依使用者要求，以最新 main 發布 `v1.8.4` Tag，runtime 維持已備妥的 `11.45.26`。Release Note 對照 v1.8.3、v1.8.2、v1.8.1 的實際公開內容，沿用 What's New／What's Fixed／What's Changed 與 PR、Full Changelog 格式；同步中英文 README、安全版本映射及獨立 Wiki。未合併的 #648 不列入變更。
@@ -1426,3 +1448,54 @@
 `TrendChart` 的端點標記會暫時使用較細線寬；只在整個 chart 開頭設定折線線寬，會讓第二條以後曲線沿用標記線寬。每條有效曲線 stroke 前必須恢復折線線寬，並在繪圖開始清除繼承的陰影，最後以 try/finally 還原 caller 狀態。驗證以 caller 狀態與例外路徑契約、實際瀏覽器像素輸出為準，不斷言 Canvas API 呼叫次數。採用技能：pr-review-evaluation、pr-author-maintainer、huge-component-refactoring、halfmoon-design-system、ponytail。
 
 署名：Jonas as Codex
+
+## 2026-11-12 / #652 AEGO 歷史版本與 Rust characterization（Codex as Codex）
+
+- 四模型 ID 與 workflow／量測／底盤版本分開。缺 ID 的歷史推薦依 formula/schema/goal 明列凍結映射，不呼叫未來會變更的 production selector；保存先拒絕未知或錯配 ID，再用原 owner 與後端證據重建比對。新保留診斷不能由 inputSnapshot 冒充：新計算丟棄、歷史保存拒絕。
+- `1ddb092d` Rust 實跑 Rally Mixed 的末檔已是 0.36（5000 RPM 運動學 485.816 km/h），與 #266/#335 確切 TS 重播的 0.40 不同。Drag manual 40 的 profile／secondary 路徑與 TS 同齒比卻缺少最終 unsupported；正式 measured solver 對 secondary 仍傳 None。完整輸入、來源與差異保存在獨立 fixtures 與 `docs/tuning/aego-characterization-20261112.md`，不把合成運動學當實車能力。
+- Cargo 預設完整 270 passed／3 既有 ignored；Vitest 251 files／2028 tests passed（maxWorkers=2、未放寬 timeout），fmt／diff check 通過。原 21 tuning／10 EV golden 與所有齒比／底盤公式未改，模型候選及切換另由下游驗收。
+- Skills：physics-tuning-math、modular-refactoring、pr-author-maintainer、cross-agent-collaboration、ponytail。
+
+## 2026-11-12 / #653 AEGO 模型責任隔離（Codex as Codex）
+
+- 正式 `gearing/mod.rs` 只路由，Road v3 自己擁有 launch envelope、頂檔目標及取位；非 Road v1 與 DangerSign 暫固定委派凍結 legacy owner。歷史 Road v2 保有獨立配置，不能隨現行 Road 或候選公式一起更新。現有 Road v3 診斷 JSON 亦保持原樣，避免破壞既存推薦重建。
+- 共用配置只接受明確總減速比、範圍、網格精度、終傳偏好及誤差容差；取位後全組檢查，沒有賽事常數、遊戲滑桿預設或逐檔補救。模型必須自己提供目標／實際／誤差／來源語意與硬目標驗證；`RatioRange` 的存在不代表硬體已驗證。
+- 合入 #652 ba40a007 後完整 Cargo 273 passed／3 既有 ignored（-j 2），涵蓋新 characterization／版本／保存重播與全產品契約；完整前端 251 files／2028 tests 通過（maxWorkers=2），其來源 tree 與合入後相同。fmt／diff check 通過；原 21 tuning／10 EV golden 未改，無 UI 或實車性能驗收。
+- Skills：modular-refactoring、physics-tuning-math、pr-author-maintainer、cross-agent-collaboration、ponytail。
+
+## 2026-11-12 / #655 Drift 主工作點與取位後有效限轉（Codex as Codex）
+
+- 使用者主檔／RPM／等價輪速是明確目標，不是合格曲線或側滑地速。缺目標回 unavailable；四點形狀先驗只作未校準偏好，峰值不建立工作帶，裸曲線不當來源。FWD 採前輪尺寸，但只有運動學相容，不能升級為動力漂移驗收。
+- 齒比取位後，僅檢查輪速誤差不足以保護有效限轉。合成範例 FD3.35／G3=1.84 在5000 RPM 對應99.8745 km/h，在100 km/h 需5006.2822 RPM；若合格有效上限為5000，這一組取位值不能套用。模型須同時重驗主工作點與目標輪速下的實際 RPM，ratio balance 後亦由同一 owner 檢查並重算 actual／誤差診斷。
+- 合入 #654 `010579b5` 後，完整 Cargo 289 passed／3 既有 ignored（-j 2），含8組 Drift 候選契約及原歷史／四模型／保存重播；完整前端251 files／2028 tests passed（maxWorkers=2），與合入後相同 frontend tree。fmt／diff check通過；原21 tuning／10 EV golden、正式路由、底盤及量測資格未改。無 UI 或實車性能驗收。
+- Skills：physics-tuning-math、modular-refactoring、pr-author-maintainer、cross-agent-collaboration、ponytail。
+
+## 2026-11-12 / #656 Drag 聯合端點與有效限轉（Codex as Codex）
+
+- 正式 measured solver 的 secondary correction 為 None，不代表沒有 Drag 末速輸入；候選入口仍須從 profile 取完整末速／來源 pair。secondary 有任一末速欄位時必須在同一入口成對，不能借用 profile 的來源標籤。manual／telemetry 字串仍是 caller-declared，不是後端已驗證的末速能力。
+- 起步與末檔均在功率峰值 RPM 定義純滾動輪速工程目標，取位後固定 max(1km/h,2%) 容差；指定速度所需的 RPM 還須不超過合格有效限轉。速度誤差合格但 requiredRPM 超限的候選必須拒絕；先在端點刻度區間納入限轉，再由同一 owner 在 ratio balance 後重驗並重算 actual／error，不能沿用調整前的診斷。
+- 合入 #655 `7348c513` 後，最終完整 Cargo 298 passed／3 既有 ignored（-j 2），含8組 Drag 候選與新增 workflow profile 契約；完整前端251 files／2028 tests passed（maxWorkers=2），前後 frontend tree 同為 `dcdd7de5`。fmt／diff check 通過；原21 tuning／10 EV golden、正式路由、底盤與資格 reducer 未改。未執行 UI、native 或實車性能驗收。
+- Skills：physics-tuning-math、modular-refactoring、pr-author-maintainer、cross-agent-collaboration、ponytail。
+
+## 2026-11-12 / #657 AEGO 正式整合與保存版本（Codex as Codex）
+
+- 模型版本必須與組合版本分開。Road 保留 v3 數值 owner，但新增通用診斷與 schema 記錄須使用新 ICE composition v4；不能回填舊 formula v1／v2／v3 snapshot。歷史 driver 明確選 frozen owner，fixture、期望及容差不隨 production promotion 改寫。回退 selector 不刪除已保存模型的 parser／solver。
+- ratio balance 的數學等價不代表模型可行，也不能解除 profile 已接受的觀察硬體鎖。Rally 固定 FD3.52／六檔 [2.70,2.18,1.76,1.43,1.15,.93] 的反例可在 FD3.53 保持端點容差卻違反觀察；整合守衛需同時符合舊 profile 與新 request 範圍。Road 另對原始未取位首／末目標檢查，避免兩次取位誤差累積；各 owner 重算 selected actual/error。
+- unavailable 應輸出 gearing:null，並保留原模型原因；只有實際提出 ratio balance 且失敗才改用 balance 原因。Companion 同樣消費 readiness／diagnostics／view，不能把 truthy unsupported placeholder 顯示成 FD0。必要 Drift 目標由桌面編輯，不因顯示一致性擴張手機 command 或 LAN 信任邊界。
+- GearingTuner 只使用後端 resolved axle/radius/reference/effective RPM；FWD 語意與 solver 相同。引擎峰值只作標記，不是合格工作帶；輪速亦不等於側滑地速。SettingsContext 的英文 t() 直接回原文，因此 protocol source slug 需先映為人類可讀英文，再交三語翻譯。
+- Skills：physics-tuning-math、modular-refactoring、pr-author-maintainer、cross-agent-collaboration、halfmoon-design-system、huge-component-refactoring、ponytail。
+- 最終整合完整 Cargo `--locked -j 2` 303 passed／3 既有 ignored，含20組 workflow、全部四模型、歷史及原21 tuning／10 EV golden；完整前端252 files／2033 tests passed（maxWorkers=2），Windows TypeScript＋Vite與LAN Vite build、fmt／diff check通過。原golden、底盤、EV/CVT/DangerSign、legacy數值不改；瀏覽器視覺證據與遊戲／原生／手機實機驗收分開。
+
+- 選填 Drag 末速／來源清空須送 explicit null；undefined 被 JSON 省略後，既有 shallow-merge profile API 會保留舊 manual 值。真實 UI 清空→導航保存→API readback 與正式資格化 prior 結果，以及後端保存重啟回歸均通過。Drift partial target 是整個物件替換，不須改全域合併或放寬引擎資格。新增測試應先驗 capture raw engine tuple 與 profile 一致，再跑完整套件；normalize 的 NA 預設與 raw null 是不同 engine context。
+- 最終29桌面／10Companion案例、84PNG及566 source hashes核對通過；七core日夜、三語、1280／320與reduced motion均有紀錄，寬幅46／窄幅手機38檔完成逐圖QA。fixture relay及歷史引擎capture＋合成profile明列，非遊戲／原生／手機實機／讀屏驗收。
+
+## 2026-11-12 / #658 舊調校公式移除與封存（Codex as Codex）
+
+- 使用者授權本次直接移除TS凍結公式、Rust歷史ICE solver與Developer Tuning，並允許在充分斷路驗證後移除退役期專用契約。此決策取代#652／#657當時的永久歷史solver回放／回退規則；Git固定提交及靜態資料保留考古來源，現行四模型ID不變，DangerSign保留必要內部路徑，不另立第五模型。
+- `RoadStore::list`第三參數是`exclude_capture`。封存必須傳false；只比對推薦欄位會漏掉工作流程子記錄的原始capture。實際browser download與原始JSON逐項比對先抓到此錯誤，修正後原推薦與完整歷史（含capture）均相等，另由封存契約檢查資料庫不變／重啟與不可試跑。
+- 原滿高採集容器嵌入正式Step3後，`h-100`與flex shrink會使工具被壓縮，DOM存在不代表返回按鈕可點。改為一般頁面捲動、自然高度／不縮小，且採集與引擎面板一次顯示一個；實際AppShell操作能開啟與返回，流程不另存推薦。
+- 刪除過渡測試前的10項斷路通過結果與當時source hash另存`docs/tuning/model-retirement-proof.json`，不當成最終head證據。保留現行封存、資格、四模型／EV／CVT與原數值回歸；原21 tuning／10 EV fixtures不改值或容差。封存資料、舊設定中的未知欄位與可執行舊公式是不同責任，舊旗標不再有預設／更新分支或UI消費者。
+- 最終前端219 files／1648 tests通過，Windows TypeScript＋Vite及LAN build通過；22個真AppShell／隔離Rust案例、50張PNG逐圖檢視，558 source hashes與50 image hashes核對。僅靜態歷史JSON與瀏覽器下載，WebSocket靜默／原生host空commands；不宣稱遊戲、手機／原生檔案對話框、真60Hz採集或讀屏驗收。
+- Skills：modular-refactoring、physics-tuning-math、huge-component-refactoring、halfmoon-design-system、agent-governance-audit、pr-author-maintainer、ponytail。
+
+- 最終完整locked Cargo：預設297 passed／3既有ignored，no-default-features 287 passed／2既有ignored，兩者含doc-tests均exit0。前端dist必須固定後再串行跑Cargo：測試中並行Vite build會刪換已索引的hash資源名稱，使最後rustdoc的include_bytes找不到舊檔；停止並行、固定產物後完整重跑通過。fmt／diff、技能validator、24份Markdown相對連結及13個skill ID檢查通過，原主工作區保持乾淨。

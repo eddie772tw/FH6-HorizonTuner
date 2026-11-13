@@ -126,9 +126,9 @@ it.each(languages)('renders parameterized badge and accessible button labels in 
   expect(clearBtn?.textContent).toBe(label('Clear'));
 
   // Back button aria-label
-  const backBtn = host.querySelector('button[aria-label="' + label('Back to Developer Tuning') + '"]');
+  const backBtn = host.querySelector('button[aria-label="' + label('Back to engine data') + '"]');
   expect(backBtn).not.toBeNull();
-  expect(backBtn?.textContent).toBe(label('Back to Developer Tuning'));
+  expect(backBtn?.textContent).toBe(label('Back to engine data'));
 
   // 2. Test invalidated status
   mockCaptureState.status = 'invalidated';

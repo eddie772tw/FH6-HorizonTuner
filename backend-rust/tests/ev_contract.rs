@@ -55,17 +55,3 @@ fn electric_profile_never_enters_legacy_gearing() {
         assert!(result.gears.is_empty());
     }
 }
-
-#[test]
-fn ev_recommendation_can_enter_the_shared_verification_step() {
-    let body = serde_json::json!({
-        "identity": {"ordinal":3445,"performanceIndex":795,"drivetrain":2},
-        "carName":"Taycan", "event":{"name":"EV validation","format":"circuit"},
-        "recommendation":{"formulaVersion":"ev/measured-workflow-v1",
-            "fields":{"gearing.finalDrive":{"value":4.03,"unit":"ratio"}}}
-    });
-    assert!(fh6_backend::road::validate_request("workflow", &body).is_ok());
-    let mut unsupported = body;
-    unsupported["recommendation"]["formulaVersion"] = "unrecognized".into();
-    assert!(fh6_backend::road::validate_request("workflow", &unsupported).is_err());
-}

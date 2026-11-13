@@ -20,7 +20,6 @@ export interface UnitSettings {
 export interface AppSettings {
   dyno_recording: boolean;
   race_recording: boolean;
-  developer_tuning_enabled: boolean;
   mcp_enabled?: boolean;
   mcp_allow_live?: boolean;
   mcp_max_downsample?: number;
@@ -93,7 +92,6 @@ const defaultUnits: UnitSettings = {
 const defaultSettings: AppSettings = {
   dyno_recording: false,
   race_recording: false,
-  developer_tuning_enabled: false,
   mcp_enabled: true,
   mcp_allow_live: true,
   mcp_max_downsample: 500,

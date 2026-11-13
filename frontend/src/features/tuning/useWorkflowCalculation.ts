@@ -10,7 +10,11 @@ import { CalculationSequence } from './mechanicalCalculation';
 import { backendFetch } from '../../services/backend';
 import { usesCvt, type CvtFoundationResult } from '../../domain/tuning/transmission';
 
+const ACTIVE_WORKFLOW_FORMULAS = ['rust/ice-measured-workflow-v4', 'rust/ev-measured-workflow-v1', 'rust/ev-measured-workflow-v2', 'rust/ev-measured-workflow-v3'] as const;
+
 export interface AuthoritativeWorkflow {
+  gearingDiagnostics?: import('./aegoTypes').AegoGearingDiagnostics;
+  gearingView?: import('./aegoTypes').GearingView;
   ratioBalance?: import('./ratioBalanceTypes').RatioBalanceDiagnostic;
   cvt?: CvtFoundationResult;
   schemaVersion: 'tuning-workflow-result/v2' | 'tuning-workflow-result/v3';
@@ -48,6 +52,7 @@ export function useWorkflowCalculation(carId: string, goal: string, season: Seas
         const response = await backendFetch('/api/tuning/workflow', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(input), signal: controller.signal });
         if (!response.ok) throw new Error(`Calculation failed (${response.status})`);
         const result = await response.json() as AuthoritativeWorkflow;
+        if (result.recommendation && !(ACTIVE_WORKFLOW_FORMULAS as readonly string[]).includes(result.recommendation.formulaVersion)) throw new Error('Retired or unknown recommendation version');
         if (result.schemaVersion !== input.schemaVersion) throw new Error('Unsupported calculation result');
         if (usesCvt(input.profile) && (result.cvt?.schemaVersion !== 'cvt-qualification/v1'
           || result.cvt.status !== 'unsupported' || result.cvt.ratioPreview !== null || result.gearing !== null || result.recommendation !== null

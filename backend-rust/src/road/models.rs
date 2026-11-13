@@ -100,11 +100,7 @@ pub fn validate_request(kind: &str, body: &Value) -> ApiResult<()> {
             if let Some(r) = o.get("recommendation").filter(|v| !v.is_null()) {
                 let rec = as_obj(r)?;
                 if ![
-                    "tuningMath/measured-workflow-v1",
-                    "ev/measured-workflow-v1",
-                    "rust/ice-measured-workflow-v1",
-                    "rust/ice-measured-workflow-v2",
-                    "rust/ice-measured-workflow-v3",
+                    "rust/ice-measured-workflow-v4",
                     "rust/ev-measured-workflow-v1",
                     "rust/ev-measured-workflow-v2",
                     "rust/ev-measured-workflow-v3",

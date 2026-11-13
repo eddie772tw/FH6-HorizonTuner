@@ -42,13 +42,13 @@ const TuningTelemetryCaptureView: React.FC<TuningTelemetryCaptureViewProps> = ({
   };
 
   return (
-    <div className="container-fluid h-100 w-100 d-flex flex-column gap-3 p-0 overflow-x-hidden overflow-y-auto">
+    <div className="container-fluid w-100 d-flex flex-column flex-shrink-0 gap-3 p-0">
       <div className="d-flex justify-content-between align-items-center border-bottom pb-3 flex-wrap gap-2">
         <div>
           <h2 className="text-primary fs-4 fw-bold mb-1">{t('Tuning Telemetry Capture')}</h2>
           <p className="text-body-secondary fs-7 mb-0">{t('Collect raw 60 Hz telemetry with test conditions for human review and solver calibration.')}</p>
         </div>
-        <button className="btn btn-outline-secondary btn-sm" onClick={onBack} aria-label={t('Back to Developer Tuning')}>{t('Back to Developer Tuning')}</button>
+        <button className="btn btn-outline-secondary btn-sm" onClick={onBack} aria-label={t('Back to engine data')}>{t('Back to engine data')}</button>
       </div>
 
       <div className="alert alert-warning py-2 mb-0" role="alert">

@@ -422,9 +422,24 @@ impl<'a> McpService<'a> {
         json!({"car_id":id,"installed_parts":p,"capabilities":{"tire_pressure":true,"camber":race("suspension"),"toe":race("suspension"),"caster":race("suspension"),"arb_front":race("arb"),"arb_rear":race("arb"),"springs":race("suspension"),"ride_height":race("suspension"),"damping_rebound":race("suspension"),"damping_bump":race("suspension"),"aero_downforce":race("aero"),"gearing_final_drive":race("transmission"),"gearing_individual":race("transmission"),"differential_lock":race("differential")}})
     }
     pub fn priors(&self, name: Option<&str>) -> Value {
-        let p = json!({"target_hot_pressure_psi":32.0,"natural_frequency_hz":{"road_front":2.2,"road_rear":2.4,"rally_front":1.6,"rally_rear":1.7,"drift_front":2.5,"drift_rear":2.3},"critical_damping_ratio":{"rebound":0.65,"bump":0.35},"aego_gearing":{"max_step_ratio":0.85,"first_gear_traction_factor":1.15}});
-        name.and_then(|x| p.get(x).map(|v| json!({x:v})))
-            .unwrap_or(p)
+        let _ = name;
+        let model_versions: serde_json::Map<String, Value> = [
+            crate::tuning::RaceGoal::Road,
+            crate::tuning::RaceGoal::Rally,
+            crate::tuning::RaceGoal::Drift,
+            crate::tuning::RaceGoal::Drag,
+        ]
+        .into_iter()
+        .map(|goal| {
+            (
+                format!("{goal:?}"),
+                json!(crate::tuning::aego_model::AegoModel::production(goal)
+                    .unwrap()
+                    .id()),
+            )
+        })
+        .collect();
+        json!({"modelVersions":model_versions,"source":"Rust model-owned priors; no universal tuning constants or qualified vehicle limits","performanceValidated":false})
     }
     pub fn presets(&self, id: Option<&str>) -> Vec<Value> {
         let mut paths = Vec::new();
@@ -460,31 +475,6 @@ impl<'a> McpService<'a> {
             .into_iter()
             .find(|p| p["preset_name"] == name)
             .and_then(|p| storage::read_json(Path::new(p["file_path"].as_str()?)).ok())
-    }
-    /// Legacy quick baseline tuning solver (tuning-dev/v1).
-    /// Formal SSOT is defined by docs/contracts/tuning_responsibilities.md and tests/fixtures/tuning_golden_fixtures.json.
-    pub fn dev_solver(
-        &self,
-        c: &Map<String, Value>,
-        parts: Option<&Map<String, Value>>,
-        purpose: &str,
-    ) -> Value {
-        let ordinal = c["ordinal"]
-            .as_str()
-            .map(str::to_owned)
-            .or_else(|| c["ordinal"].as_i64().map(|x| x.to_string()))
-            .unwrap_or_else(|| "0".into());
-        let mut result = crate::tuning::legacy_mcp::chassis(c, purpose);
-        result["capabilities"] = self.capabilities(&ordinal, parts);
-        result
-    }
-
-    /// Legacy quick gearing solver (tuning-dev/v1).
-    pub fn gearing(&self, max: f64, peak: f64, top: f64, count: i64, tire: f64) -> Value {
-        crate::tuning::legacy_cli::gearing(max, peak, top, count, tire)
-    }
-    pub fn diagnosis(&self, t: &[f64], symptom: Option<&str>) -> Value {
-        crate::tuning::legacy_mcp::diagnosis(t, symptom)
     }
     pub fn settings(&self) -> Value {
         storage::read_json(&self.app.config.root.join("settings.json"))

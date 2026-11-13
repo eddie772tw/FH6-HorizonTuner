@@ -1,3 +1,5 @@
+// Navigation tests isolate unrelated archive loading/export; the archive has its own contract tests.
+vi.mock('./components/RecommendationArchive', () => ({ RecommendationArchive: () => null }));
 // @vitest-environment jsdom
 import { act, useState } from 'react';
 import { createRoot } from 'react-dom/client';
@@ -24,7 +26,8 @@ vi.mock('./components/BaselinePreviewPanel', () => ({ BaselinePreviewPanel: () =
 vi.mock('../road/RoadWorkflowView', () => ({ RoadWorkflowView: () => <p>Saved history</p> }));
 vi.mock('./components/Step1GoalSetup', () => ({ Step1GoalSetup: (props: any) => <button disabled={props.saving} onClick={props.onProceed}>Save vehicle parameters</button> }));
 vi.mock('./components/Step2ChassisTuner', () => ({ Step2ChassisTuner: (props: any) => <button disabled={props.saving} onClick={props.saveCarParams}>Save vehicle parameters</button> }));
-vi.mock('./components/EngineDataStep', () => ({ EngineDataStep: () => null }));
+vi.mock('./components/EngineDataStep', () => ({ EngineDataStep: () => <p>Engine data panel</p> }));
+vi.mock('./components/TuningTelemetryCaptureView', () => ({ default: ({ onBack }: { onBack: () => void }) => <section><h2>Tuning Telemetry Capture</h2><button onClick={onBack}>Back to engine data</button></section> }));
 vi.mock('./components/SetupVerificationStep', () => ({ SetupVerificationStep: (props: any) => <button onClick={() => props.onBusyChange(true)}>Begin snapshot save</button> }));
 let host: HTMLDivElement; let root: ReturnType<typeof createRoot>; let redraw: () => void;
 function Harness() {
@@ -115,4 +118,18 @@ it('allows a new selection to navigate while an old selection save is still pend
   await act(async () => button('Go to chassis & tires').click());
   expect(session.workflow.step).toBe(2);
   await act(async () => oldFinish()); expect(session.workflow.step).toBe(2);
+});
+
+it('opens the capture tool in Step 3 and returns to engine data without navigating or saving', async () => {
+  session.workflow.step = 3; model.hasUnsavedParams = false;
+  model.saveCarParams = vi.fn(async () => {});
+  await act(async () => root.render(<Harness />));
+  expect(host.textContent).toContain('Engine data panel');
+  await act(async () => button('Open telemetry capture').click());
+  expect(host.textContent).toContain('Tuning Telemetry Capture');
+  expect(host.textContent).not.toContain('Engine data panel');
+  await act(async () => button('Back to engine data').click());
+  expect(host.textContent).toContain('Engine data panel');
+  expect(host.textContent).not.toContain('Tuning Telemetry Capture');
+  expect(session.workflow.step).toBe(3); expect(model.saveCarParams).not.toHaveBeenCalled();
 });
