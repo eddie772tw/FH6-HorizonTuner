@@ -740,6 +740,33 @@ fn road_model_versions_validate_with_their_own_owner_and_do_not_rewrite_history(
     app.tuning_evidence
         .verify_recommendation(&other, None)
         .unwrap();
+    for model in [
+        json!("unknown/v99"),
+        json!("aego-drag/v1"),
+        json!(null),
+        json!(42),
+    ] {
+        let mut forged = other.clone();
+        forged["inputSnapshot"]["gearingModelVersion"] = model;
+        assert!(app
+            .tuning_evidence
+            .verify_recommendation(&forged, None)
+            .is_err());
+    }
+    for key in ["gearingModelId", "gearingDiagnostics"] {
+        let mut forged = other.clone();
+        forged["inputSnapshot"][key] = json!({"source":"backend", "status":"available"});
+        assert!(app
+            .tuning_evidence
+            .verify_recommendation(&forged, None)
+            .is_err());
+        let mut draft = request.clone();
+        draft["inputSnapshot"][key] = forged["inputSnapshot"][key].clone();
+        let recalculated = call(&app, "/api/tuning/workflow", draft).unwrap();
+        assert!(recalculated["recommendation"]["inputSnapshot"]
+            .get(key)
+            .is_none());
+    }
     let mut forged_other = other.clone();
     forged_other["inputSnapshot"]["roadLaunch"] = json!({"selectedTotalRatio":999});
     assert!(app
