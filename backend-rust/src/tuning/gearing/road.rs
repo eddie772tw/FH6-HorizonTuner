@@ -260,6 +260,125 @@ fn normalize_road_gearing_inputs(params: &TuningCarParams) -> TuningCarParams {
     p
 }
 
+/// V4 view metadata is separate from the frozen `roadLaunch` saved JSON.
+pub fn versioned_diagnostics(
+    params: &TuningCarParams,
+    limit_rpm: f64,
+    correction: Option<&GearingSecondaryCorrection>,
+    result: &GearingResult,
+) -> serde_json::Value {
+    let p = normalize_road_gearing_inputs(params);
+    let drive = p
+        .drivetrain
+        .as_deref()
+        .map(Drivetrain::from_str_loose)
+        .unwrap_or_default();
+    let front = drive == Drivetrain::FWD;
+    let (w, a, r) = if front {
+        (
+            p.front_tire_width.unwrap(),
+            p.front_tire_aspect.unwrap(),
+            p.front_tire_rim.unwrap(),
+        )
+    } else {
+        (
+            p.rear_tire_width.unwrap(),
+            p.rear_tire_aspect.unwrap(),
+            p.rear_tire_rim.unwrap(),
+        )
+    };
+    let raw_c = ((((w * a) / 100.0) * 2.0 + r * 25.4) * PI) / 1000.0;
+    let circumference = if raw_c.is_finite() && raw_c > 0.1 {
+        raw_c
+    } else {
+        2.0
+    };
+    let power_rpm = p
+        .max_hp_rpm
+        .filter(|v| *v > 0.0)
+        .unwrap_or(limit_rpm * 0.85);
+    let torque_rpm = p
+        .max_torque_rpm
+        .filter(|v| *v > 0.0)
+        .unwrap_or(limit_rpm * 0.60);
+    let hp = p.max_hp.unwrap().max(1.0);
+    let torque = p
+        .max_torque
+        .filter(|v| *v > 0.0)
+        .unwrap_or_else(|| hp * 7021.5 / torque_rpm.max(1.0));
+    let first = road_launch_total_ratio(&p, torque, circumference / (2.0 * PI))
+        .max(road_speed_total(drive, power_rpm, circumference));
+    let mut target_speed =
+        hp.powf(1.0 / 3.0) * 37.0 * (1.0 + 0.12 * p.aero_efficiency.unwrap()) * 0.95;
+    if let Some(sc) = correction {
+        for speed in [sc.simulated_top_speed, sc.soft_max_speed]
+            .into_iter()
+            .flatten()
+        {
+            if speed.is_finite() && speed > 0.0 {
+                target_speed = target_speed.min(speed * power_rpm / limit_rpm);
+            }
+        }
+    }
+    let top = power_rpm * circumference * 60.0 / (target_speed * 1000.0);
+    let original = serde_json::json!({"modelId":"aego-road-launch-envelope","modelVersion":"aego-road-launch-envelope/v3",
+        "gearCount":result.gears.len(),"status":if result.unsupported==Some(true){"unavailable"}else{"available"},
+        "reason":result.unsupported_reason,"targetSource":"road-engineering-priors","boundsSource":"model-prior-not-game-observation",
+        "speedSemantics":"pure-rolling-wheel-speed-at-peak-power-rpm","tireRadiusM":circumference/(2.0*PI),
+        "wheelCircumferenceM":circumference,"drivenTireAxle":if front{"front"}else{"rear"},"referenceRpm":power_rpm,"maxRpm":limit_rpm,
+        "targetFirstTotalRatio":first,"targetTopTotalRatio":top,"targetSpeedKmh":target_speed,"performanceValidated":false});
+    adjusted_diagnostics(result, &original)
+}
+
+pub fn respects_hard_targets(result: &GearingResult, d: &serde_json::Value) -> bool {
+    let count = d["gearCount"].as_u64().unwrap_or(0) as usize;
+    let number = |k: &str| d[k].as_f64().filter(|v| v.is_finite() && *v > 0.0);
+    let (Some(first), Some(top)) = (
+        number("targetFirstTotalRatio"),
+        number("targetTopTotalRatio"),
+    ) else {
+        return false;
+    };
+    result.unsupported != Some(true)
+        && (4..=10).contains(&count)
+        && result.gears.len() == count
+        && result.final_drive.is_finite()
+        && result.final_drive > 0.0
+        && result.gears.iter().all(|g| g.is_finite() && *g > 0.0)
+        && result.gears.windows(2).all(|g| g[0] > g[1])
+        && std::iter::once(&result.final_drive)
+            .chain(&result.gears)
+            .all(|v| (v * 100.0 - (v * 100.0).round()).abs() < 1e-7)
+        && (result.final_drive * result.gears[0] - first).abs() <= result.final_drive * 0.005 + 1e-9
+        && (result.final_drive * result.gears[count - 1] - top).abs()
+            <= result.final_drive * 0.005 + 1e-9
+}
+
+pub fn adjusted_diagnostics(
+    result: &GearingResult,
+    original: &serde_json::Value,
+) -> serde_json::Value {
+    let mut d = original.clone();
+    if !respects_hard_targets(result, &d) {
+        d["status"] = serde_json::json!("unavailable");
+        d["reason"] = serde_json::json!(
+            "Road rounded ratios cannot preserve the original launch and top anchors"
+        );
+        return d;
+    }
+    let actual = calc_gear_speed(
+        d["referenceRpm"].as_f64().unwrap(),
+        *result.gears.last().unwrap(),
+        result.final_drive,
+        d["tireRadiusM"].as_f64().unwrap(),
+    ) * 3.6;
+    d["actualSpeedKmh"] = serde_json::json!(actual);
+    d["endpointErrorKmh"] = serde_json::json!(actual - d["targetSpeedKmh"].as_f64().unwrap());
+    d["actualFirstTotalRatio"] = serde_json::json!(result.final_drive * result.gears[0]);
+    d["actualTopTotalRatio"] = serde_json::json!(result.final_drive * result.gears.last().unwrap());
+    d
+}
+
 /// Road owns its launch priors, power-peak top-speed target, and joint grid.
 pub(super) fn calculate(
     count: usize,

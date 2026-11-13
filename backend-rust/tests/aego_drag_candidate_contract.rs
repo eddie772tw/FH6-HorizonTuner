@@ -1,5 +1,5 @@
 use fh6_backend::tuning::{
-    calculate_aego_gearing,
+    gearing::calculate_aego_gearing_historical as calculate_aego_gearing,
     gearing::{
         contracts::{CandidateGearingResult, RatioRange},
         drag::{adjusted_diagnostics, respects_hard_targets, solve_candidate, DragObservedBounds},

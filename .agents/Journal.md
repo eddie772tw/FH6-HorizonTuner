@@ -1,5 +1,12 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-11-12 / AEGO 整合獨立審查：保存證據回放（Codex as Codex）
+
+- **範圍**：PR #657；採用 `pr-review-evaluation`、`pr-author-maintainer`、`physics-tuning-math`、`modular-refactoring`、`cross-agent-collaboration`、`ponytail`。
+- **學習**：derived cache 不等於原始證據。ICE 的快取載入與 cold replay 共用原始 capture qualification，先核對 schema／外層與 nested ID／workflow namespace，再由原始幀重建 engine、summary、tire evidence；保存驗證不依 cached 數字取得資格。
+- **證據**：只有 cache 沒有 raw 的原 head 失敗案例，以及 cache 竄改、raw envelope 無效、raw 移除、read-only DB 不變等行為測試通過。完整 locked Cargo 306 passed／3 既有 ignored（本機僅省略除錯符號）、前端2033項通過；650個產品檔案同步後與測試來源一致。原21 tuning／10 EV fixture與容差不變。
+- **畫面沿用**：本輪未改 frontend／lang；圖集保留原擷取版本2c72，補記後端變更與舊manifest的證據界線。新head CI另於PR記錄；不合併PR。
+
 ## 2026-11-12 / AEGO 堆疊獨立審查：Rally 刻度可行性（Codex as Codex）
 
 - **範圍**：PR #654；採用 `pr-review-evaluation`、`pr-author-maintainer`、`physics-tuning-math`、`modular-refactoring`、`ponytail`。修正沿 #655～#659 同步，不合併 PR。
@@ -1460,3 +1467,15 @@
 - 起步與末檔均在功率峰值 RPM 定義純滾動輪速工程目標，取位後固定 max(1km/h,2%) 容差；指定速度所需的 RPM 還須不超過合格有效限轉。速度誤差合格但 requiredRPM 超限的候選必須拒絕；先在端點刻度區間納入限轉，再由同一 owner 在 ratio balance 後重驗並重算 actual／error，不能沿用調整前的診斷。
 - 合入 #655 `7348c513` 後，最終完整 Cargo 298 passed／3 既有 ignored（-j 2），含8組 Drag 候選與新增 workflow profile 契約；完整前端251 files／2028 tests passed（maxWorkers=2），前後 frontend tree 同為 `dcdd7de5`。fmt／diff check 通過；原21 tuning／10 EV golden、正式路由、底盤與資格 reducer 未改。未執行 UI、native 或實車性能驗收。
 - Skills：physics-tuning-math、modular-refactoring、pr-author-maintainer、cross-agent-collaboration、ponytail。
+
+## 2026-11-12 / #657 AEGO 正式整合與保存版本（Codex as Codex）
+
+- 模型版本必須與組合版本分開。Road 保留 v3 數值 owner，但新增通用診斷與 schema 記錄須使用新 ICE composition v4；不能回填舊 formula v1／v2／v3 snapshot。歷史 driver 明確選 frozen owner，fixture、期望及容差不隨 production promotion 改寫。回退 selector 不刪除已保存模型的 parser／solver。
+- ratio balance 的數學等價不代表模型可行，也不能解除 profile 已接受的觀察硬體鎖。Rally 固定 FD3.52／六檔 [2.70,2.18,1.76,1.43,1.15,.93] 的反例可在 FD3.53 保持端點容差卻違反觀察；整合守衛需同時符合舊 profile 與新 request 範圍。Road 另對原始未取位首／末目標檢查，避免兩次取位誤差累積；各 owner 重算 selected actual/error。
+- unavailable 應輸出 gearing:null，並保留原模型原因；只有實際提出 ratio balance 且失敗才改用 balance 原因。Companion 同樣消費 readiness／diagnostics／view，不能把 truthy unsupported placeholder 顯示成 FD0。必要 Drift 目標由桌面編輯，不因顯示一致性擴張手機 command 或 LAN 信任邊界。
+- GearingTuner 只使用後端 resolved axle/radius/reference/effective RPM；FWD 語意與 solver 相同。引擎峰值只作標記，不是合格工作帶；輪速亦不等於側滑地速。SettingsContext 的英文 t() 直接回原文，因此 protocol source slug 需先映為人類可讀英文，再交三語翻譯。
+- Skills：physics-tuning-math、modular-refactoring、pr-author-maintainer、cross-agent-collaboration、halfmoon-design-system、huge-component-refactoring、ponytail。
+- 最終整合完整 Cargo `--locked -j 2` 303 passed／3 既有 ignored，含20組 workflow、全部四模型、歷史及原21 tuning／10 EV golden；完整前端252 files／2033 tests passed（maxWorkers=2），Windows TypeScript＋Vite與LAN Vite build、fmt／diff check通過。原golden、底盤、EV/CVT/DangerSign、legacy數值不改；瀏覽器視覺證據與遊戲／原生／手機實機驗收分開。
+
+- 選填 Drag 末速／來源清空須送 explicit null；undefined 被 JSON 省略後，既有 shallow-merge profile API 會保留舊 manual 值。真實 UI 清空→導航保存→API readback 與正式資格化 prior 結果，以及後端保存重啟回歸均通過。Drift partial target 是整個物件替換，不須改全域合併或放寬引擎資格。新增測試應先驗 capture raw engine tuple 與 profile 一致，再跑完整套件；normalize 的 NA 預設與 raw null 是不同 engine context。
+- 最終29桌面／10Companion案例、84PNG及566 source hashes核對通過；七core日夜、三語、1280／320與reduced motion均有紀錄，寬幅46／窄幅手機38檔完成逐圖QA。fixture relay及歷史引擎capture＋合成profile明列，非遊戲／原生／手機實機／讀屏驗收。

@@ -2,7 +2,7 @@
 use super::{
     aego_model::AegoModel,
     alignment::{calculate_static_alignment, Season, StaticAlignment},
-    calculate_aego_gearing, calculate_chassis_tuning,
+    calculate_chassis_tuning,
     ev::{calculate_ev_gearing, EvGearingInput, EvGearingResult},
     ChassisTuningResult, GearingResult, RaceGoal, TuningCarParams,
 };
@@ -48,6 +48,10 @@ pub struct Readiness {
 #[serde(rename_all = "camelCase")]
 pub struct WorkflowResult {
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub gearing_diagnostics: Option<Value>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub gearing_view: Option<Value>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub ratio_balance: Option<super::ratio_balance::Diagnostic>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub cvt: Option<super::cvt::FoundationResult>,
@@ -73,6 +77,22 @@ pub fn measured_gearing(
     engine: Option<&MeasuredEngine>,
 ) -> Option<GearingResult> {
     measured_gearing_version(goal, count, profile, engine, AegoModel::production(goal))
+}
+/// Explicit pre-stack owner for immutable characterization. Not the current workflow.
+pub fn measured_gearing_historical(
+    goal: RaceGoal,
+    count: usize,
+    profile: &TuningCarParams,
+    engine: Option<&MeasuredEngine>,
+) -> Option<GearingResult> {
+    let model = match goal {
+        RaceGoal::Road => Some(AegoModel::RoadLaunchV3),
+        RaceGoal::Rally => Some(AegoModel::RallyV1),
+        RaceGoal::Drift => Some(AegoModel::DriftV1),
+        RaceGoal::Drag => Some(AegoModel::DragV1),
+        RaceGoal::DangerSign => None,
+    };
+    measured_gearing_version(goal, count, profile, engine, model)
 }
 /// Explicit opt-in candidate boundary for stack PR 5. This does not switch the
 /// production workflow or create an applicable recommendation. In particular,
@@ -153,13 +173,28 @@ fn measured_gearing_version(
     if let Some(torque) = engine.peak_torque_nm {
         profile.max_torque = Some(torque);
     }
-    let solver = match model {
+    let result = match model {
         Some(
             AegoModel::RoadJointV2 | AegoModel::RallyV1 | AegoModel::DriftV1 | AegoModel::DragV1,
-        ) => super::gearing::calculate_aego_gearing_v2,
-        Some(AegoModel::RoadLaunchV3) | None => calculate_aego_gearing,
+        ) => super::gearing::calculate_aego_gearing_v2(
+            goal,
+            count,
+            &profile,
+            engine.engine_max_rpm,
+            None,
+        ),
+        Some(AegoModel::RoadLaunchV3) | None => super::gearing::calculate_aego_gearing_historical(
+            goal,
+            count,
+            &profile,
+            engine.engine_max_rpm,
+            None,
+        ),
+        Some(model) => {
+            super::gearing::models::solve(model, count, &profile, engine.engine_max_rpm, None)
+                .gearing
+        }
     };
-    let result = solver(goal, count, &profile, engine.engine_max_rpm, None);
     if goal != RaceGoal::Road && result.unsupported == Some(true) {
         None
     } else {
@@ -182,21 +217,39 @@ pub(crate) fn calculate_qualified(
     proof: Option<&super::evidence::QualifiedEvidence>,
 ) -> Result<WorkflowResult, String> {
     let model = AegoModel::production(input.goal);
-    calculate_with_replay_policy(input, proof, model, false)
+    calculate_with_replay_policy(input, proof, model, false, true)
 }
-pub(crate) fn calculate_historical(
+pub fn calculate_historical(
     input: WorkflowRequest,
     proof: &super::evidence::QualifiedEvidence,
     model: Option<AegoModel>,
 ) -> Result<WorkflowResult, String> {
-    calculate_with_replay_policy(input, Some(proof), model, true)
+    calculate_with_replay_policy(input, Some(proof), model, true, false)
+}
+pub(crate) fn calculate_saved(
+    input: WorkflowRequest,
+    proof: &super::evidence::QualifiedEvidence,
+    model: Option<AegoModel>,
+    formula: &str,
+) -> Result<WorkflowResult, String> {
+    calculate_with_replay_policy(
+        input,
+        Some(proof),
+        model,
+        true,
+        formula == "rust/ice-measured-workflow-v4",
+    )
 }
 fn calculate_with_replay_policy(
     input: WorkflowRequest,
     proof: Option<&super::evidence::QualifiedEvidence>,
     model: Option<AegoModel>,
     historical_replay: bool,
+    composition_v4: bool,
 ) -> Result<WorkflowResult, String> {
+    if model.is_some_and(|m| m.goal() != input.goal) {
+        return Err("AEGO model does not match workflow goal".into());
+    }
     if !historical_replay
         && input.schema_version == "tuning-workflow-result/v3"
         && input.profile["isElectric"] == true
@@ -217,9 +270,15 @@ fn calculate_with_replay_policy(
     // these new fields; a fresh calculation discards claims instead of copying
     // them into an authoritative recommendation.
     if historical_replay
-        && ["gearingModelId", "gearingDiagnostics"]
-            .iter()
-            .any(|key| input.input_snapshot.get(*key).is_some())
+        && !composition_v4
+        && [
+            "gearingModelId",
+            "gearingDiagnostics",
+            "workflowSchemaVersion",
+            "gearingView",
+        ]
+        .iter()
+        .any(|key| input.input_snapshot.get(*key).is_some())
     {
         return Err("Historical recommendation cannot claim new AEGO diagnostics".into());
     }
@@ -304,6 +363,8 @@ fn calculate_with_replay_policy(
             cvt.capture_status = super::cvt::Status::Unsupported;
         }
         return Ok(WorkflowResult {
+            gearing_diagnostics: None,
+            gearing_view: None,
             ratio_balance: input
                 .input_snapshot
                 .get("ratioBalance")
@@ -334,7 +395,65 @@ fn calculate_with_replay_policy(
             },
         });
     }
-    let mut gearing = if electric {
+    let new_aego = composition_v4 && !electric && model.is_some();
+    let mut gearing_diagnostics = None;
+    let mut gearing_view = None;
+    let mut qualified_profile = profile.clone();
+    let mut usable_limit = qualified_engine.map(|e| e.engine_max_rpm).unwrap_or(0.0);
+    if let Some(engine) = qualified_engine {
+        qualified_profile.max_hp_rpm = Some(engine.peak_power_rpm);
+        qualified_profile.max_torque_rpm = Some(engine.peak_torque_rpm);
+        qualified_profile.max_torque = engine.peak_torque_nm.or(profile.max_torque);
+        let mut summary = json!({});
+        if let Some(proof) = proof {
+            proof.snapshot(&mut summary);
+        }
+        usable_limit = summary["engineCalculation"]["effectiveRedline"]
+            .as_f64()
+            .filter(|rpm| positive(*rpm) && *rpm <= engine.engine_max_rpm)
+            .unwrap_or(engine.engine_max_rpm);
+    }
+    let mut gearing = if new_aego {
+        let model = model.unwrap();
+        let mut candidate = if !input.profile["adjustability"]["gears"]
+            .as_u64()
+            .is_some_and(|n| (4..=10).contains(&n))
+        {
+            super::gearing::models::unavailable(
+                model,
+                "An explicit integer 4-10 gear count is required",
+            )
+        } else if !profile.weight.is_some_and(positive)
+            || !profile
+                .weight_distribution
+                .is_some_and(|v| positive(v) && v < 100.0)
+            || !profile.max_hp.is_some_and(positive)
+        {
+            super::gearing::models::unavailable(model,"Complete the vehicle mass, distribution and engine power before calculating gearing")
+        } else if qualified_engine.is_some() {
+            super::gearing::models::solve(model, count, &qualified_profile, usable_limit, None)
+        } else {
+            super::gearing::models::unavailable(
+                model,
+                "Backend-qualified engine capture is required",
+            )
+        };
+        if candidate.gearing.unsupported != Some(true)
+            && !super::gearing::models::respects_hard_targets(
+                model,
+                &candidate.gearing,
+                &candidate.diagnostics,
+            )
+        {
+            candidate = super::gearing::models::unavailable(
+                model,
+                "Rounded gearing does not satisfy the model hard targets",
+            );
+        }
+        gearing_diagnostics = Some(candidate.diagnostics);
+        (qualified_engine.is_some() && candidate.gearing.unsupported != Some(true))
+            .then_some(WorkflowGearing::Ice(candidate.gearing))
+    } else if electric {
         qualified_ev
             .as_ref()
             .and_then(calculate_ev_gearing)
@@ -360,11 +479,52 @@ fn calculate_with_replay_policy(
                 Some(WorkflowGearing::Ice(base)) => Some(base),
                 _ => None,
             };
-            let (adjusted, diagnostic) =
-                super::ratio_balance::calculate(&input.profile, base, request);
+            let (adjusted, diagnostic) = if new_aego {
+                super::ratio_balance::calculate_checked(&input.profile, base, request, |g| {
+                    super::gearing::models::respects_hard_targets(
+                        model.unwrap(),
+                        g,
+                        gearing_diagnostics.as_ref().unwrap(),
+                    )
+                })
+            } else {
+                super::ratio_balance::calculate(&input.profile, base, request)
+            };
             gearing = adjusted.map(WorkflowGearing::Ice);
             diagnostic
         });
+    if new_aego {
+        if let (Some(WorkflowGearing::Ice(result)), Some(diagnostic)) =
+            (&gearing, &gearing_diagnostics)
+        {
+            if result.unsupported != Some(true) {
+                gearing_diagnostics = Some(super::gearing::models::adjusted_diagnostics(
+                    model.unwrap(),
+                    result,
+                    diagnostic,
+                ));
+            }
+        } else if ratio_balance.is_some() {
+            if let Some(diagnostic) = &mut gearing_diagnostics {
+                diagnostic["status"] = json!("unavailable");
+                diagnostic["reason"] =
+                    json!(ratio_balance.as_ref().and_then(|d| d.reason).unwrap_or(
+                        "The requested ratio balance cannot preserve the model hard targets"
+                    ));
+            }
+        }
+        if let (Some(engine), Some(d)) = (qualified_engine, &gearing_diagnostics) {
+            let radius = d["tireRadiusM"].as_f64().filter(|v| positive(*v));
+            let reference = d["referenceRpm"].as_f64().filter(|v| positive(*v));
+            if let (Some(radius), Some(reference)) = (radius, reference) {
+                gearing_view = Some(
+                    json!({"tireRadiusM":radius,"drivenTireAxle":d["drivenTireAxle"],"referenceRpm":reference,
+                    "maxRpm":engine.engine_max_rpm,"effectiveRedline":usable_limit,"powerPeakRpm":engine.peak_power_rpm,
+                    "torquePeakRpm":engine.peak_torque_rpm,"speedSemantics":d["speedSemantics"]}),
+                );
+            }
+        }
+    }
     let mechanical = profile.weight.is_some_and(positive)
         && profile
             .weight_distribution
@@ -381,6 +541,8 @@ fn calculate_with_replay_policy(
     if let Some(object) = snapshot.as_object_mut() {
         object.remove("gearingModelId");
         object.remove("gearingDiagnostics");
+        object.remove("gearingView");
+        object.remove("workflowSchemaVersion");
     }
     if let Some(proof) = proof {
         proof.snapshot(&mut snapshot);
@@ -438,6 +600,12 @@ fn calculate_with_replay_policy(
             );
         }
     }
+    if new_aego {
+        snapshot["workflowSchemaVersion"] = json!(schema_version);
+        snapshot["gearingModelVersion"] = json!(model.unwrap().id());
+        snapshot["gearingModelId"] = gearing_diagnostics.as_ref().unwrap()["modelId"].clone();
+        snapshot["gearingDiagnostics"] = gearing_diagnostics.as_ref().unwrap().clone();
+    }
     let recommendation = if gearing_available {
         let mut rec = recommendation(
             &input.profile,
@@ -466,11 +634,16 @@ fn calculate_with_replay_policy(
                         .any(|f| f["key"] == *key && f["status"] == "available")
             });
         }
+        if new_aego {
+            rec["formulaVersion"] = json!("rust/ice-measured-workflow-v4");
+        }
         Some(rec)
     } else {
         None
     };
     Ok(WorkflowResult {
+        gearing_diagnostics,
+        gearing_view,
         ratio_balance,
         cvt: None,
         schema_version,

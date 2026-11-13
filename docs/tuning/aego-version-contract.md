@@ -1,6 +1,8 @@
 # ICE AEGO 獨立版本與歷史重播契約
 
-本文件定義 #652 的版本基線；正式選擇與數值仍為 `1ddb092d90f3aca4c02c86d633e6cfe3e7fc587b` 的 Rust owner。新 Rally／Drift／Drag 候選須使用不同 ID，且在完成獨立驗收前不得改正式路由。版本辨識不代表實車性能驗收。
+正式切換後的新推薦使用 `rust/ice-measured-workflow-v4`，並明確記錄個別模型 ID。Rally 為 `aego-rally-joint/v1`、Drift 為 `aego-drift-working/v1`、Drag 為 `aego-drag-joint/v1`，Road 保留 `aego-road-launch-envelope/v3`。下列歷史映射、wire 格式及數值繼續凍結；新保存格式、必要輸入、圖表與回退見 [v4 整合契約](aego-model-integration-v4.md)。
+
+本文件保留 #652 建立時的歷史版本基線，其數值來自 `1ddb092d90f3aca4c02c86d633e6cfe3e7fc587b` 的 Rust owner。正式路由已依上方 v4 整合契約切換；新 Rally／Drift／Drag 使用獨立 ID，歷史映射繼續凍結。版本辨識不代表實車性能驗收。
 
 ## 分開的版本責任
 

@@ -420,21 +420,45 @@ impl EvidenceService {
             proof.evidence_id = Some(id.into());
             return Ok(proof);
         }
-        Ok(QualifiedEvidence {
-            analysis_version: version,
-            kind: text("powertrain")?,
-            car_id: text("car_id")?,
-            identity: v["identity"].clone(),
-            dependency_key: v["dependency_key"].as_str().map(str::to_owned),
-            engine: serde_json::from_value(v["engine"].clone())?,
-            gears: serde_json::from_value(v["gears"].clone())?,
-            setup: v["setup"].clone(),
-            observation: v["observation"].clone(),
-            summary: v["summary"].clone(),
-            evidence_id: Some(id.into()),
-            tire_summary: v.get("tire_summary").filter(|v| !v.is_null()).cloned(),
-            ev_powertrain: None,
+        let observation_id = v["observation"]["id"]
+            .as_str()
+            .ok_or_else(|| ApiError::invalid("Saved ICE raw observation is unavailable"))?;
+        let mut proof = self.replay_engine(observation_id)?;
+        if id != format!("qualified-engine-v4:{observation_id}")
+            || v["schema"] != crate::road::ROAD_SCHEMA
+            || v["id"].as_str() != Some(id)
+            || v["car_id"].as_str() != Some(&proof.car_id)
+            || !equivalent(&v["identity"], &proof.identity)
+            || !equivalent(&v["dependency_key"], &json!(proof.dependency_key))
+            || !equivalent(&v["observation"], &proof.observation)
+        {
+            return Err(ApiError::conflict(
+                "Saved ICE metadata differs from its raw capture",
+            ));
+        }
+        // Derived cache fields are never evidence; rebuild them without writes.
+        proof.evidence_id = Some(id.into());
+        Ok(proof)
+    }
+    fn replay_engine(&self, observation_id: &str) -> ApiResult<QualifiedEvidence> {
+        let raw = self.store.get_read_only(
+            observation_id,
+            Some("engine-observation"),
+            Some("engine-observations"),
+        )?;
+        if raw["schema"] != crate::road::ROAD_SCHEMA
+            || raw["id"].as_str() != Some(observation_id)
+            || raw["observation"]["id"].as_str() != Some(observation_id)
+        {
+            return Err(ApiError::conflict(
+                "Saved ICE raw observation metadata mismatch",
+            ));
+        }
+        qualify(&EvidenceRequest::EngineCapture {
+            observation: raw["observation"].clone(),
+            capture: raw["capture"].clone(),
         })
+        .map_err(|e| ApiError::invalid(&e))
     }
     pub fn ev_gearing(&self, input: &Value) -> ApiResult<Value> {
         let id = input["evidenceId"]
@@ -483,14 +507,7 @@ impl EvidenceService {
                     Ok(proof) => proof.evidence_id,
                     Err(_) => None,
                 };
-                let saved = self
-                    .store
-                    .get(observation_id, Some("engine-observation"), None)?;
-                let mut proof = qualify(&EvidenceRequest::EngineCapture {
-                    observation: saved["observation"].clone(),
-                    capture: saved["capture"].clone(),
-                })
-                .map_err(|e| ApiError::invalid(&e))?;
+                let mut proof = self.replay_engine(observation_id)?;
                 // Enrich legacy caches without discarding their saved provenance.
                 // A cold readonly replay still has no qualified saved ID.
                 proof.evidence_id = saved_id;
@@ -638,6 +655,7 @@ impl EvidenceService {
         let current = match rec["formulaVersion"].as_str() {
             Some(
                 "rust/ice-measured-workflow-v3"
+                | "rust/ice-measured-workflow-v4"
                 | "rust/ev-measured-workflow-v2"
                 | "rust/ev-measured-workflow-v3",
             ) => true,
@@ -653,6 +671,21 @@ impl EvidenceService {
             }
         };
         let snapshot = &rec["inputSnapshot"];
+        let aego_v4 = rec["formulaVersion"] == "rust/ice-measured-workflow-v4";
+        let schema = if aego_v4 {
+            snapshot["workflowSchemaVersion"]
+                .as_str()
+                .filter(|s| ["tuning-workflow-result/v1", "tuning-workflow-result/v2"].contains(s))
+                .ok_or_else(|| {
+                    ApiError::invalid("AEGO v4 requires a supported recorded workflow schema")
+                })?
+        } else if rec["formulaVersion"] == "rust/ev-measured-workflow-v3" {
+            "tuning-workflow-result/v3"
+        } else if current {
+            "tuning-workflow-result/v2"
+        } else {
+            "tuning-workflow-result/v1"
+        };
         let confirmed_ev = rec["formulaVersion"] == "rust/ev-measured-workflow-v3";
         if confirmed_ev && !snapshot["evEvidenceConfirmation"].is_object() {
             return Err(ApiError::invalid(
@@ -675,7 +708,7 @@ impl EvidenceService {
                 }
             }
         }
-        let request:WorkflowRequest=serde_json::from_value(json!({"schemaVersion":if confirmed_ev{"tuning-workflow-result/v3"}else if current{"tuning-workflow-result/v2"}else{"tuning-workflow-result/v1"},"goal":snapshot["goal"],"season":snapshot["season"],"profile":snapshot["profile"],"engine":null,"ev":if proof.kind=="ev"{json!({"setup":proof.setup,"measurements":[],"candidateFinalDrive":snapshot["evResult"]["finalDrive"]})}else{Value::Null},"inputSnapshot":snapshot})).map_err(|e|ApiError::invalid(&e.to_string()))?;
+        let request:WorkflowRequest=serde_json::from_value(json!({"schemaVersion":schema,"goal":snapshot["goal"],"season":snapshot["season"],"profile":snapshot["profile"],"engine":null,"ev":if proof.kind=="ev"{json!({"setup":proof.setup,"measurements":[],"candidateFinalDrive":snapshot["evResult"]["finalDrive"]})}else{Value::Null},"inputSnapshot":snapshot})).map_err(|e|ApiError::invalid(&e.to_string()))?;
         // A reserved model field must be a known string and agree with the
         // backend's formula/schema/goal mapping, not a client-selected solver.
         let claimed_model = snapshot
@@ -692,8 +725,13 @@ impl EvidenceService {
             claimed_model,
         )
         .map_err(|e| ApiError::invalid(&e))?;
-        let expected = super::workflow::calculate_historical(request, &proof, model)
-            .map_err(|e| ApiError::invalid(&e))?;
+        let expected = super::workflow::calculate_saved(
+            request,
+            &proof,
+            model,
+            rec["formulaVersion"].as_str().unwrap(),
+        )
+        .map_err(|e| ApiError::invalid(&e))?;
         if !expected
             .recommendation
             .as_ref()

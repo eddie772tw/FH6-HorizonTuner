@@ -12,6 +12,7 @@ import { LegacyTuningHistory } from './LegacyTuningHistory';
 import { TireEvidencePanel } from './TireEvidencePanel';
 import { useTuneSession } from '../TuneSessionProvider';
 import { EngineCalculationStatus } from './EngineCalculationStatus';
+import { AegoModelPanel } from './AegoModelPanel';
 
 export function EngineDataStep({ carId, profile, engine, gearing, enabled }: {
   carId: string; profile: CarParams | null; engine: ReturnType<typeof useEngineMeasurementArchive>;
@@ -29,9 +30,8 @@ export function EngineDataStep({ carId, profile, engine, gearing, enabled }: {
     {measured && calculation?.status === 'ready' && calculationStatus === 'ready' && !result?.readiness.measuredEngine && <p className="small text-body-secondary" role="status">
       {t('This saved observation is review-only in the current vehicle/setup context. Follow Data Out to collect new evidence; selecting it again does not restore an invalidated recommendation.')}
     </p>}
-    {gearing && !gearing.unsupported && calculation?.status === 'ready' && <div className="glass-panel p-3"><GearingTuner showCorrections={false} numGears={gearing.gears.length}
-      tuning={{ gearing: { ...gearing, maxRpm: calculation.engineMaxRpm, effectiveRedline: calculation.effectiveRedline } }}
-      carParams={{ ...profile, maxHpRpm: calculation.peakPower!.rpm, maxTorqueRpm: calculation.peakTorque!.rpm, effectiveRedline: calculation.effectiveRedline }} /></div>}
+    <AegoModelPanel diagnostic={result?.gearingDiagnostics} />
+    {gearing && !gearing.unsupported && calculation?.status === 'ready' && <div className="glass-panel p-3"><GearingTuner gearing={gearing} view={result?.gearingView} /></div>}
     {calculation?.status === 'ready' && ratioBalance.active && !profile?.isElectric && !usesCvt(profile) && profile?.adjustability?.gearbox === 'Full' && <RatioBalancePanel
       request={ratioBalance.request} diagnostic={result?.ratioBalance} pending={calculationStatus === 'pending'}
       storageError={ratioBalance.storageError} gearCount={profile.adjustability.gears ?? gearing?.gears.length ?? 0} onChange={ratioBalance.setRequest} />}

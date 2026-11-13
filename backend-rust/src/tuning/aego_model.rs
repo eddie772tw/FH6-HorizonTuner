@@ -15,6 +15,12 @@ pub enum AegoModel {
     DriftV1,
     #[serde(rename = "aego-drag/v1")]
     DragV1,
+    #[serde(rename = "aego-rally-joint/v1")]
+    RallyJointV1,
+    #[serde(rename = "aego-drift-working/v1")]
+    DriftWorkingV1,
+    #[serde(rename = "aego-drag-joint/v1")]
+    DragJointV1,
 }
 
 impl AegoModel {
@@ -23,9 +29,9 @@ impl AegoModel {
     pub fn production(goal: RaceGoal) -> Option<Self> {
         match goal {
             RaceGoal::Road => Some(Self::RoadLaunchV3),
-            RaceGoal::Rally => Some(Self::RallyV1),
-            RaceGoal::Drift => Some(Self::DriftV1),
-            RaceGoal::Drag => Some(Self::DragV1),
+            RaceGoal::Rally => Some(Self::RallyJointV1),
+            RaceGoal::Drift => Some(Self::DriftWorkingV1),
+            RaceGoal::Drag => Some(Self::DragJointV1),
             RaceGoal::DangerSign => None,
         }
     }
@@ -33,9 +39,9 @@ impl AegoModel {
     pub fn goal(self) -> RaceGoal {
         match self {
             Self::RoadJointV2 | Self::RoadLaunchV3 => RaceGoal::Road,
-            Self::RallyV1 => RaceGoal::Rally,
-            Self::DriftV1 => RaceGoal::Drift,
-            Self::DragV1 => RaceGoal::Drag,
+            Self::RallyV1 | Self::RallyJointV1 => RaceGoal::Rally,
+            Self::DriftV1 | Self::DriftWorkingV1 => RaceGoal::Drift,
+            Self::DragV1 | Self::DragJointV1 => RaceGoal::Drag,
         }
     }
 
@@ -46,6 +52,9 @@ impl AegoModel {
             Self::RallyV1 => "aego-rally/v1",
             Self::DriftV1 => "aego-drift/v1",
             Self::DragV1 => "aego-drag/v1",
+            Self::RallyJointV1 => "aego-rally-joint/v1",
+            Self::DriftWorkingV1 => "aego-drift-working/v1",
+            Self::DragJointV1 => "aego-drag-joint/v1",
         }
     }
 
@@ -67,6 +76,15 @@ pub fn historical_model(
     goal: RaceGoal,
     claimed_model: Option<&str>,
 ) -> Result<Option<AegoModel>, String> {
+    if formula == "rust/ice-measured-workflow-v4"
+        && ["tuning-workflow-result/v1", "tuning-workflow-result/v2"].contains(&workflow_schema)
+    {
+        return AegoModel::parse_for_goal(
+            claimed_model.ok_or("AEGO v4 requires an explicit model version")?,
+            goal,
+        )
+        .map(Some);
+    }
     let expected = match (formula, workflow_schema) {
         ("rust/ice-measured-workflow-v1", "tuning-workflow-result/v1") => match goal {
             RaceGoal::Road => Some(AegoModel::RoadJointV2),

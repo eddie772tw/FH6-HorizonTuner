@@ -1,7 +1,8 @@
 //! Freeze defects as history, not as correctness requirements for new models.
 use fh6_backend::tuning::{
-    calculate_aego_gearing, calculate_chassis_tuning,
-    workflow::{measured_gearing, MeasuredEngine},
+    calculate_chassis_tuning,
+    gearing::calculate_aego_gearing_historical as calculate_aego_gearing,
+    workflow::{measured_gearing_historical as measured_gearing, MeasuredEngine},
     GearingSecondaryCorrection, RaceGoal, TuningCarParams,
 };
 use serde_json::{json, Value};

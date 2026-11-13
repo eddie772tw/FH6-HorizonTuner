@@ -164,7 +164,7 @@ export interface GearingResult {
 }
 
 export interface WorkflowRecommendation {
-  formulaVersion: 'tuningMath/measured-workflow-v1' | 'ev/measured-workflow-v1' | 'rust/ice-measured-workflow-v1' | 'rust/ice-measured-workflow-v2' | 'rust/ice-measured-workflow-v3' | 'rust/ev-measured-workflow-v1' | 'rust/ev-measured-workflow-v2' | 'rust/ev-measured-workflow-v3';
+  formulaVersion: 'tuningMath/measured-workflow-v1' | 'ev/measured-workflow-v1' | 'rust/ice-measured-workflow-v1' | 'rust/ice-measured-workflow-v2' | 'rust/ice-measured-workflow-v3' | 'rust/ice-measured-workflow-v4' | 'rust/ev-measured-workflow-v1' | 'rust/ev-measured-workflow-v2' | 'rust/ev-measured-workflow-v3';
   inputSnapshot: Record<string, unknown>;
   fields: Record<string, { value: number; unit: string }>;
 }
@@ -474,8 +474,12 @@ export interface TuningCarParams {
   maxHpRpm: number;
   maxTorqueRpm: number;
   /** Optional measured Drag finish speed, never inferred from softMaxSpeed. */
-  dragFinishSpeedKmh?: number;
-  dragFinishSpeedProvenance?: 'telemetry' | 'manual';
+  dragFinishSpeedKmh?: number | null;
+  dragFinishSpeedProvenance?: 'telemetry' | 'manual' | null;
+  driftWorkingTarget?: import('../../features/tuning/aegoTypes').DriftWorkingTarget;
+  rallyObservedBounds?: import('../../features/tuning/ratioBalanceTypes').RatioBalanceRequest['bounds'];
+  driftObservedBounds?: import('../../features/tuning/ratioBalanceTypes').RatioBalanceRequest['bounds'];
+  dragObservedBounds?: import('../../features/tuning/ratioBalanceTypes').RatioBalanceRequest['bounds'];
   aeroInputVersion?: 'optional/v1';
   aeroBalance?: number | null;
   aeroEfficiency?: number;

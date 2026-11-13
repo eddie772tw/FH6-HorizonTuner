@@ -48,7 +48,7 @@ FH6-HorizonTuner 透過遊戲的 **Data Out UDP 遙測**接收車輛資料，整
 | 四步調校 | 賽後分析 |
 | --- | --- |
 | ![道路調校第一步，可選擇調校目標並填寫車重與前軸配重](docs/assets/readme/zh-tw/tune.webp) | ![以車速著色的賽道路線，右側比較第二圈與第一圈的車速及踏板輸入](docs/assets/readme/zh-tw/sessions.webp) |
-| 從車輛與調校目標開始，量測引擎後可檢查升檔後的轉速是否落在有效動力帶。[查看六檔 AEGO 齒比圖](docs/frontend/assets/rhine-lab/gearing-rhine-light.png) | 熱力圖標出單圈中較快和較慢的路段。選另一圈疊上車速曲線，就能對照同一路段的速度差。[賽事分析指南](docs/guides/race-analysis.md) |
+| 從車輛與調校目標開始，量測引擎後可檢查後端解析的輪速與轉速標記。峰值不代表完整有效動力帶。[查看六檔 AEGO 齒比圖（歷史畫面）](docs/frontend/assets/rhine-lab/gearing-rhine-light.png) | 熱力圖標出單圈中較快和較慢的路段。選另一圈疊上車速曲線，就能對照同一路段的速度差。[賽事分析指南](docs/guides/race-analysis.md) |
 
 | 直線加速測試 | Android Companion（Beta） |
 | --- | --- |
@@ -210,9 +210,9 @@ scripts/            建置、發行與維護工具
 
 正式調校決策由 `backend-rust/src/tuning/` 擁有，前端只處理流程、草稿與顯示轉換；舊 TypeScript 模型保留為測試參考。詳見[責任契約](docs/contracts/tuning_responsibilities.md)。
 
-AEGO 的 Road、Rally、Drift、Drag 各自擁有入口與策略；歷史重播獨立凍結，正式路由後不再共用修改齒比。此拆分保留現行數值，詳見[模型隔離邊界](docs/tuning/aego-model-isolation.md)。
+AEGO 正式推薦依賽事使用獨立模型：Road launch envelope v3、Rally joint v1、Drift working v1、Drag joint v1。量測資格、驅動輪徑、模型來源、目標偏差與限制由 Rust 統一提供；Drift 需明確設定主檔位、目標轉速與輪速。比例平衡會重新檢查原始目標與已觀察的硬體範圍，無解時不套用。
 
-獨立的 [Drag 聯合端點候選](docs/tuning/aego-drag-joint-v1.md) 同時檢查起步與末檔目標、觀察範圍及取位誤差；本階段只提供明確候選入口，正式推薦尚未切換。工程先驗與合成契約不代表實車起步或末速性能驗收。
+新 ICE 推薦保存為 `rust/ice-measured-workflow-v4`，重啟後依明確模型與原始證據重建；舊 v1／v2／v3 仍由凍結 owner 唯讀重播。詳見[整合與回退契約](docs/tuning/aego-model-integration-v4.md)及[模型隔離邊界](docs/tuning/aego-model-isolation.md)。目前為工程基線，工程先驗、合成契約與瀏覽器畫面不代表實車 A/B、漂移工作帶或起步／末速性能驗收。
 
 </details>
 
