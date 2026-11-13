@@ -18,6 +18,9 @@ use std::{
 };
 
 const PAIRING_TOKEN_TTL: Duration = Duration::from_secs(300); // 5 minutes
+const MAX_PENDING_PAIRING_TOKENS: usize = 16;
+const MAX_CONSECUTIVE_PAIR_FAILURES: u32 = 5;
+const PAIR_LOCKOUT_DURATION: Duration = Duration::from_secs(60);
 pub const MAX_PAIRED_DEVICES: usize = 32;
 const MAX_DEVICE_NAME_LEN: usize = 64;
 const MAX_DEVICE_ID_LEN: usize = 64;
@@ -71,6 +74,7 @@ pub struct CompanionService {
     default_port: Mutex<u16>,
     lan_port: Mutex<Option<u16>>,
     pending_tokens: Mutex<HashMap<String, Instant>>,
+    pair_failures: Mutex<(u32, Option<Instant>)>,
     paired_devices: Mutex<Vec<PairedDevice>>,
     active_connections: AtomicUsize,
 }
@@ -97,6 +101,7 @@ impl CompanionService {
             default_port: Mutex::new(default_port),
             lan_port: Mutex::new(None),
             pending_tokens: Mutex::new(HashMap::new()),
+            pair_failures: Mutex::new((0, None)),
             paired_devices: Mutex::new(paired_devices),
             active_connections: AtomicUsize::new(0),
         }
@@ -151,6 +156,10 @@ impl CompanionService {
         // Keep the code one-time and replace any accidental collision.
         let token = if let Ok(mut tokens) = self.pending_tokens.lock() {
             tokens.retain(|_, created_at| now.duration_since(*created_at) < PAIRING_TOKEN_TTL);
+            while tokens.len() >= MAX_PENDING_PAIRING_TOKENS {
+                let Some(oldest) = tokens.iter().min_by_key(|(_, ts)| *ts).map(|(k, _)| k.clone()) else { break };
+                tokens.remove(&oldest);
+            }
             loop {
                 let candidate = uuid::Uuid::new_v4().simple().to_string()[..10].to_uppercase();
                 if !tokens.contains_key(&candidate) {
@@ -182,9 +191,22 @@ impl CompanionService {
         device_name: &str,
         device_id: &str,
     ) -> ApiResult<(PairedDevice, String)> {
+        let now = Instant::now();
+        // Enforce consecutive-failure lockout to thwart unauthenticated LAN pairing brute-force.
+        if let Ok(mut guard) = self.pair_failures.lock() {
+            if let Some(until) = guard.1 {
+                if now < until {
+                    return Err(ApiError::new(
+                        429,
+                        "Too many failed pairing attempts. Please try again later.",
+                    ));
+                }
+                *guard = (0, None);
+            }
+        }
+
         // Validate token
         let is_valid = if let Ok(mut tokens) = self.pending_tokens.lock() {
-            let now = Instant::now();
             tokens.retain(|_, created_at| now.duration_since(*created_at) < PAIRING_TOKEN_TTL);
             tokens.remove(token).is_some()
         } else {
@@ -192,10 +214,19 @@ impl CompanionService {
         };
 
         if !is_valid {
+            if let Ok(mut guard) = self.pair_failures.lock() {
+                guard.0 = guard.0.saturating_add(1);
+                if guard.0 >= MAX_CONSECUTIVE_PAIR_FAILURES {
+                    guard.1 = Some(now + PAIR_LOCKOUT_DURATION);
+                }
+            }
             return Err(ApiError::new(
                 400,
                 "Invalid or expired pairing token. Please scan the QR code again.",
             ));
+        }
+        if let Ok(mut guard) = self.pair_failures.lock() {
+            *guard = (0, None);
         }
 
         let session_token = uuid::Uuid::new_v4().to_string();
@@ -497,5 +528,32 @@ mod tests {
         assert!(devices
             .iter()
             .any(|d| d.id == format!("device-{:03}", MAX_PAIRED_DEVICES + 4)));
+    }
+
+    #[test]
+    fn test_pairing_brute_force_lockout_and_pending_token_cap() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let service = CompanionService::new(temp_dir.path(), 8001);
+
+        let mut tokens = Vec::new();
+        for _ in 0..(MAX_PENDING_PAIRING_TOKENS + 4) {
+            tokens.push(service.generate_qr_payload(Some(8001)).token);
+        }
+        assert_eq!(service.pending_tokens.lock().unwrap().len(), MAX_PENDING_PAIRING_TOKENS);
+        // Oldest token was evicted; below-threshold failed attempts followed by valid token still succeed and reset counter.
+        for _ in 0..(MAX_CONSECUTIVE_PAIR_FAILURES - 1) {
+            assert_eq!(service.pair("BADTOKEN00", "Attacker", "bad-id").unwrap_err().status, 400);
+        }
+        assert!(service.pair(&tokens[0], "Old", "old-id").is_err());
+        assert_eq!(service.pair("BADTOKEN01", "Attacker", "bad-id").unwrap_err().status, 429);
+        assert_eq!(service.pair(tokens.last().unwrap(), "Legit", "legit-id").unwrap_err().status, 429);
+
+        let fresh = CompanionService::new(temp_dir.path(), 8001);
+        let qr = fresh.generate_qr_payload(Some(8001));
+        for _ in 0..(MAX_CONSECUTIVE_PAIR_FAILURES - 1) {
+            assert_eq!(fresh.pair("BADTOKEN00", "Probe", "probe-id").unwrap_err().status, 400);
+        }
+        assert!(fresh.pair(&qr.token, "Legit", "legit-id").is_ok());
+        assert_eq!(fresh.pair_failures.lock().unwrap().0, 0);
     }
 }

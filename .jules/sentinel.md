@@ -50,3 +50,9 @@
 **學習 (Learning):** 專案的核心路徑防護函式 `storage::safe_path` 雖已具備完整的目錄包含性檢驗與 MS-DOS 保留設備攔截，但若特定子系統（如語言覆蓋讀取）直接使用 `Path::join` 拼接外部參數並直接調用檔案系統 API，將形成安全防護死角。外部參數在進入檔案系統操作前，必須統一經由 `safe_path` 進行沙盒邊界校驗，並於 API 入口層針對參數長度施加嚴格邊界（如 ≤ 32 字元），防止異常過長字串消耗不必要的字串分配。
 **預防 (Prevention):** 嚴格遵循專案 Core Invariant #4，所有涉及使用者輸入與動態檔名組裝的檔案系統操作，一律強制經由 `storage::safe_path` 驗證合法性，若驗證失敗則優雅略過本地檔案讀取並回退至內嵌資源；於 API 路由層嚴格限制 URL 路徑參數長度與字元白名單，落實縱深防禦（Defense in Depth）。
 **署名:** Sentinel as Antigravity
+
+## 2026-11-14 - Unauthenticated LAN Pairing Body Limit & Brute-Force Lockout
+**漏洞/脆弱點 (Vulnerability):** LAN HTTP 路由器（`backend-rust/src/network.rs::lan_http`）對唯一免 Bearer 驗證之端點 `POST /api/companion/pair` 直接轉交 `http_request` 處理，導致未驗證之區域網路主機可在認證前觸發高達 64 MiB 的請求本文緩衝（Pre-Auth OOM / DoS）；同時 `backend-rust/src/companion.rs::CompanionService` 之 `pending_tokens` 集合缺乏容量上限且 `pair` 方法未對連續失敗驗證施加節流或鎖定機制，存在暴力猜測配對 Token 與記憶體累積風險。
+**學習 (Learning):** 區域網路（LAN）介面雖需白名單 `Host` 檢查與特定白名單路由保護，但一旦存在免 Session Token 的初始配對入口，必須比對「免認證」邊界實作獨立的最低限度請求大小限制與失敗次數冷卻（Lockout），不可直接複用已認證本機端點的大型 Payload 緩衝配額（64 MiB）或無節流驗證路徑。
+**預防 (Prevention):** 在進入通用 `http_request` 前於 `lan_http` 針對 `/api/companion/pair` 強制執行 8 KiB 的 `Content-Length` 與串流讀取雙重上限（`enforce_lan_pair_body_limit`）；於 `CompanionService` 強制限制 `pending_tokens` 最大容量（16 筆，滿載淘汰最舊憑證）並對連續 5 次無效配對嘗試啟用 60 秒鎖定（回傳 HTTP 429），成功配對或冷卻期滿即自動重置。
+**署名:** Sentinel as Antigravity
