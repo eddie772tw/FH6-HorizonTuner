@@ -189,6 +189,20 @@ async fn security_headers(request: Request<Body>, next: Next) -> Response {
     response
 }
 
+const MAX_LAN_PAIR_BODY_BYTES: usize = 8 * 1024;
+
+// Cap unauthenticated LAN pairing body before http_request buffers up to 64 MiB.
+async fn enforce_lan_pair_body_limit(request: Request<Body>) -> Result<Request<Body>, Response> {
+    let too_large = request.headers().get(axum::http::header::CONTENT_LENGTH)
+        .and_then(|v| v.to_str().ok()).and_then(|s| s.parse::<usize>().ok())
+        .is_some_and(|len| len > MAX_LAN_PAIR_BODY_BYTES);
+    if too_large { return Err(ApiError::new(413, "Request body too large").into_response()); }
+    let (parts, body) = request.into_parts();
+    let bytes = to_bytes(body, MAX_LAN_PAIR_BODY_BYTES).await
+        .map_err(|_| ApiError::new(413, "Request body too large").into_response())?;
+    Ok(Request::from_parts(parts, Body::from(bytes)))
+}
+
 async fn lan_http(
     backend: Arc<dyn Backend>,
     companion: Arc<CompanionService>,
@@ -204,6 +218,14 @@ async fn lan_http(
     if path != "/api/companion/pair" && !lan_session(request.headers(), &companion) {
         return StatusCode::UNAUTHORIZED.into_response();
     }
+    let request = if path == "/api/companion/pair" {
+        match enforce_lan_pair_body_limit(request).await {
+            Ok(bounded) => bounded,
+            Err(response) => return response,
+        }
+    } else {
+        request
+    };
     http_request(backend, request).await
 }
 
@@ -498,5 +520,35 @@ async fn socket_loop(mut socket: WebSocket, backend: Arc<dyn Backend>, channel: 
                 changed=receiver.changed()=>{if changed.is_err(){break;}let value=receiver.borrow_and_update().clone();if let Some(value)=value {let message=if channel=="binary"{Message::Binary(crate::telemetry::pack_binary(&value).into())}else{Message::Text(value.to_string().into())};if !send(&mut socket,message).await{break;}}}
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn lan_pair_body_limit_rejects_oversized_and_allows_small_payloads() {
+        let small = Request::builder()
+            .method("POST")
+            .uri("/api/companion/pair")
+            .body(Body::from(vec![b'a'; 128]))
+            .unwrap();
+        assert!(enforce_lan_pair_body_limit(small).await.is_ok());
+
+        let header_oversized = Request::builder()
+            .method("POST")
+            .uri("/api/companion/pair")
+            .header(axum::http::header::CONTENT_LENGTH, (MAX_LAN_PAIR_BODY_BYTES + 1).to_string())
+            .body(Body::empty())
+            .unwrap();
+        assert_eq!(enforce_lan_pair_body_limit(header_oversized).await.unwrap_err().status(), StatusCode::PAYLOAD_TOO_LARGE);
+
+        let stream_oversized = Request::builder()
+            .method("POST")
+            .uri("/api/companion/pair")
+            .body(Body::from(vec![b'a'; MAX_LAN_PAIR_BODY_BYTES + 1]))
+            .unwrap();
+        assert_eq!(enforce_lan_pair_body_limit(stream_oversized).await.unwrap_err().status(), StatusCode::PAYLOAD_TOO_LARGE);
     }
 }
