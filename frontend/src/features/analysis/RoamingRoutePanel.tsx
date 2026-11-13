@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useId } from "react";
 import type { CustomRoute } from "./routeTriggerMath";
 import { validateRoute } from "./routeTriggerMath";
 import type { TelemetryData } from "../../hooks/useTelemetry";
@@ -48,6 +48,7 @@ export const RoamingRoutePanel: React.FC<RoamingRoutePanelProps> = ({
   const [endY, setEndY] = useState<number>(0);
   const [endZ, setEndZ] = useState<number>(0);
   const [endRadius, setEndRadius] = useState<number>(15);
+  const id = useId();
   const importFileRef = React.useRef<HTMLInputElement>(null);
 
   const activeRoute = routes.find((r) => r.route_id === selectedRouteId) ?? null;
@@ -150,8 +151,8 @@ export const RoamingRoutePanel: React.FC<RoamingRoutePanelProps> = ({
 
       <div className="row g-2 mb-2">
         <div className="col-md-6">
-          <label className="form-label" style={{ fontSize: "0.75rem" }}>{t("Select Route")}</label>
-          <select className="form-select form-select-sm" value={selectedRouteId ?? ""} onChange={(e) => onSelectRoute(e.target.value || null)}>
+          <label htmlFor={`${id}-select`} className="form-label" style={{ fontSize: "0.75rem" }}>{t("Select Route")}</label>
+          <select id={`${id}-select`} className="form-select form-select-sm" value={selectedRouteId ?? ""} onChange={(e) => onSelectRoute(e.target.value || null)}>
             <option value="">{t("+ Create New Route")}</option>
             {routes.map((r) => (
               <option key={r.route_id} value={r.route_id}>{r.name}</option>
@@ -159,41 +160,41 @@ export const RoamingRoutePanel: React.FC<RoamingRoutePanelProps> = ({
           </select>
         </div>
         <div className="col-md-6">
-          <label className="form-label" style={{ fontSize: "0.75rem" }}>{t("Route Name")}</label>
-          <input type="text" className="form-control form-control-sm" value={name} onChange={(e) => setName(e.target.value)} placeholder={t("e.g. Mountain Pass Run")} />
+          <label htmlFor={`${id}-name`} className="form-label" style={{ fontSize: "0.75rem" }}>{t("Route Name")}</label>
+          <input id={`${id}-name`} type="text" className="form-control form-control-sm" value={name} onChange={(e) => setName(e.target.value)} placeholder={t("e.g. Mountain Pass Run")} />
         </div>
       </div>
 
       <div className="row g-2 mb-2">
         <div className="col-md-6">
-          <div className="card p-2 bg-dark-subtle border h-100" style={{ fontSize: "0.8rem" }}>
+          <div className="card p-2 bg-dark-subtle border h-100" style={{ fontSize: "0.8rem" }} role="group" aria-labelledby={`${id}-start-heading`}>
             <div className="d-flex justify-content-between align-items-center mb-1">
-              <span className="fw-semibold">{t("Start Gate (Departure)")}</span>
-              <button type="button" className="btn btn-sm btn-outline-info py-0 px-2" onClick={() => capturePos("start")}>{t("Capture Live")}</button>
+              <span id={`${id}-start-heading`} className="fw-semibold">{t("Start Gate (Departure)")}</span>
+              <button type="button" className="btn btn-sm btn-outline-info py-0 px-2" aria-label={`${t("Capture Live")} - ${t("Start Gate (Departure)")}`} onClick={() => capturePos("start")}>{t("Capture Live")}</button>
             </div>
             <div className="row g-1 mb-1">
-              <div className="col-4"><label className="form-label mb-0" style={{ fontSize: "0.65rem" }}>X</label><input type="number" step="0.1" className="form-control form-control-sm" value={startX} onChange={(e) => setStartX(parseFloat(e.target.value) || 0)} /></div>
-              <div className="col-4"><label className="form-label mb-0" style={{ fontSize: "0.65rem" }}>Y</label><input type="number" step="0.1" className="form-control form-control-sm" value={startY} onChange={(e) => setStartY(parseFloat(e.target.value) || 0)} /></div>
-              <div className="col-4"><label className="form-label mb-0" style={{ fontSize: "0.65rem" }}>Z</label><input type="number" step="0.1" className="form-control form-control-sm" value={startZ} onChange={(e) => setStartZ(parseFloat(e.target.value) || 0)} /></div>
+              <div className="col-4"><label htmlFor={`${id}-start-x`} className="form-label mb-0" style={{ fontSize: "0.65rem" }}>X</label><input id={`${id}-start-x`} type="number" step="0.1" className="form-control form-control-sm" value={startX} onChange={(e) => setStartX(parseFloat(e.target.value) || 0)} /></div>
+              <div className="col-4"><label htmlFor={`${id}-start-y`} className="form-label mb-0" style={{ fontSize: "0.65rem" }}>Y</label><input id={`${id}-start-y`} type="number" step="0.1" className="form-control form-control-sm" value={startY} onChange={(e) => setStartY(parseFloat(e.target.value) || 0)} /></div>
+              <div className="col-4"><label htmlFor={`${id}-start-z`} className="form-label mb-0" style={{ fontSize: "0.65rem" }}>Z</label><input id={`${id}-start-z`} type="number" step="0.1" className="form-control form-control-sm" value={startZ} onChange={(e) => setStartZ(parseFloat(e.target.value) || 0)} /></div>
             </div>
-            <div className="d-flex justify-content-between mt-1"><label className="form-label mb-0" style={{ fontSize: "0.65rem" }}>{t("Radius")}</label><span>{startRadius.toFixed(1)}m</span></div>
-            <input type="range" min="5" max="50" step="0.5" className="form-range" value={startRadius} onChange={(e) => setStartRadius(parseFloat(e.target.value))} />
+            <div className="d-flex justify-content-between mt-1"><label htmlFor={`${id}-start-radius`} className="form-label mb-0" style={{ fontSize: "0.65rem" }}>{t("Radius")}</label><span>{startRadius.toFixed(1)}m</span></div>
+            <input id={`${id}-start-radius`} type="range" min="5" max="50" step="0.5" className="form-range" value={startRadius} aria-valuetext={`${startRadius.toFixed(1)} m`} onChange={(e) => setStartRadius(parseFloat(e.target.value))} />
           </div>
         </div>
 
         <div className="col-md-6">
-          <div className="card p-2 bg-dark-subtle border h-100" style={{ fontSize: "0.8rem" }}>
+          <div className="card p-2 bg-dark-subtle border h-100" style={{ fontSize: "0.8rem" }} role="group" aria-labelledby={`${id}-end-heading`}>
             <div className="d-flex justify-content-between align-items-center mb-1">
-              <span className="fw-semibold">{t("Finish Gate (Arrival)")}</span>
-              <button type="button" className="btn btn-sm btn-outline-info py-0 px-2" onClick={() => capturePos("end")}>{t("Capture Live")}</button>
+              <span id={`${id}-end-heading`} className="fw-semibold">{t("Finish Gate (Arrival)")}</span>
+              <button type="button" className="btn btn-sm btn-outline-info py-0 px-2" aria-label={`${t("Capture Live")} - ${t("Finish Gate (Arrival)")}`} onClick={() => capturePos("end")}>{t("Capture Live")}</button>
             </div>
             <div className="row g-1 mb-1">
-              <div className="col-4"><label className="form-label mb-0" style={{ fontSize: "0.65rem" }}>X</label><input type="number" step="0.1" className="form-control form-control-sm" value={endX} onChange={(e) => setEndX(parseFloat(e.target.value) || 0)} /></div>
-              <div className="col-4"><label className="form-label mb-0" style={{ fontSize: "0.65rem" }}>Y</label><input type="number" step="0.1" className="form-control form-control-sm" value={endY} onChange={(e) => setEndY(parseFloat(e.target.value) || 0)} /></div>
-              <div className="col-4"><label className="form-label mb-0" style={{ fontSize: "0.65rem" }}>Z</label><input type="number" step="0.1" className="form-control form-control-sm" value={endZ} onChange={(e) => setEndZ(parseFloat(e.target.value) || 0)} /></div>
+              <div className="col-4"><label htmlFor={`${id}-end-x`} className="form-label mb-0" style={{ fontSize: "0.65rem" }}>X</label><input id={`${id}-end-x`} type="number" step="0.1" className="form-control form-control-sm" value={endX} onChange={(e) => setEndX(parseFloat(e.target.value) || 0)} /></div>
+              <div className="col-4"><label htmlFor={`${id}-end-y`} className="form-label mb-0" style={{ fontSize: "0.65rem" }}>Y</label><input id={`${id}-end-y`} type="number" step="0.1" className="form-control form-control-sm" value={endY} onChange={(e) => setEndY(parseFloat(e.target.value) || 0)} /></div>
+              <div className="col-4"><label htmlFor={`${id}-end-z`} className="form-label mb-0" style={{ fontSize: "0.65rem" }}>Z</label><input id={`${id}-end-z`} type="number" step="0.1" className="form-control form-control-sm" value={endZ} onChange={(e) => setEndZ(parseFloat(e.target.value) || 0)} /></div>
             </div>
-            <div className="d-flex justify-content-between mt-1"><label className="form-label mb-0" style={{ fontSize: "0.65rem" }}>{t("Radius")}</label><span>{endRadius.toFixed(1)}m</span></div>
-            <input type="range" min="5" max="50" step="0.5" className="form-range" value={endRadius} onChange={(e) => setEndRadius(parseFloat(e.target.value))} />
+            <div className="d-flex justify-content-between mt-1"><label htmlFor={`${id}-end-radius`} className="form-label mb-0" style={{ fontSize: "0.65rem" }}>{t("Radius")}</label><span>{endRadius.toFixed(1)}m</span></div>
+            <input id={`${id}-end-radius`} type="range" min="5" max="50" step="0.5" className="form-range" value={endRadius} aria-valuetext={`${endRadius.toFixed(1)} m`} onChange={(e) => setEndRadius(parseFloat(e.target.value))} />
           </div>
         </div>
       </div>
