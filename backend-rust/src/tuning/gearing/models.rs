@@ -95,28 +95,6 @@ pub fn solve(
                     diagnostics,
                 }
             }
-            _ => {
-                let gearing = match model {
-                    AegoModel::RallyV1 => rally::calculate(count, params, max_rpm, correction),
-                    AegoModel::DriftV1 => drift::calculate(count, params, max_rpm, correction),
-                    AegoModel::DragV1 => drag::calculate(count, params, max_rpm, correction),
-                    _ => legacy::calculate_aego_gearing_v2(
-                        model.goal(),
-                        count,
-                        params,
-                        max_rpm,
-                        correction,
-                    ),
-                };
-                let diagnostics = json!({"modelId":model.id().split('/').next(),"modelVersion":model.id(),
-                    "status":if gearing.unsupported==Some(true){"unavailable"}else{"available"},
-                    "reason":gearing.unsupported_reason,"targetSource":"frozen-legacy-owner","speedSemantics":"legacy-owner-wheel-speed",
-                    "performanceValidated":false});
-                CandidateGearingResult {
-                    gearing,
-                    diagnostics,
-                }
-            }
         })
     };
     let mut result = attempt().unwrap_or_else(|detail| {
@@ -157,7 +135,6 @@ pub fn respects_hard_targets(
         AegoModel::RallyJointV1 => rally::respects_hard_targets(gearing, diagnostics),
         AegoModel::DriftWorkingV1 => drift::respects_hard_targets(gearing, diagnostics),
         AegoModel::DragJointV1 => drag::respects_hard_targets(gearing, diagnostics),
-        _ => gearing.unsupported != Some(true),
     }
 }
 
@@ -167,6 +144,5 @@ pub fn adjusted_diagnostics(model: AegoModel, gearing: &GearingResult, original:
         AegoModel::RallyJointV1 => rally::adjusted_diagnostics(gearing, original),
         AegoModel::DriftWorkingV1 => drift::adjusted_diagnostics(gearing, original),
         AegoModel::DragJointV1 => drag::adjusted_diagnostics(gearing, original),
-        _ => original.clone(),
     }
 }

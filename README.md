@@ -212,7 +212,7 @@ scripts/            建置、發行與維護工具
 
 AEGO 正式推薦依賽事使用獨立模型：Road launch envelope v3、Rally joint v1、Drift working v1、Drag joint v1。量測資格、驅動輪徑、模型來源、目標偏差與限制由 Rust 統一提供；Drift 需明確設定主檔位、目標轉速與輪速。比例平衡會重新檢查原始目標與已觀察的硬體範圍，無解時不套用。
 
-新 ICE 推薦保存為 `rust/ice-measured-workflow-v4`，重啟後依明確模型與原始證據重建；舊 v1／v2／v3 仍由凍結 owner 唯讀重播。詳見[整合與回退契約](docs/tuning/aego-model-integration-v4.md)及[模型隔離邊界](docs/tuning/aego-model-isolation.md)。目前為工程基線，工程先驗、合成契約與瀏覽器畫面不代表實車 A/B、漂移工作帶或起步／末速性能驗收。
+新 ICE 推薦保存為 `rust/ice-measured-workflow-v4`，重啟後依明確模型與原始證據重建；舊 v1／v2／v3 改為唯讀封存，不再執行舊公式、套用或重新保存為合格推薦。Developer Tuning 已移除，原始遙測採集工具可從正式 Step 3 開啟。詳見[封存與公式移除說明](docs/tuning/model-retirement.md)、[整合契約](docs/tuning/aego-model-integration-v4.md)及[模型隔離邊界](docs/tuning/aego-model-isolation.md)。目前為工程基線，工程先驗、合成契約與瀏覽器畫面不代表實車 A/B、漂移工作帶或起步／末速性能驗收。
 
 </details>
 

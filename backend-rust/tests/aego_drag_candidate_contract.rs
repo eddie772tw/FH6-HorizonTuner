@@ -1,10 +1,9 @@
 use fh6_backend::tuning::{
-    gearing::calculate_aego_gearing_historical as calculate_aego_gearing,
     gearing::{
         contracts::{CandidateGearingResult, RatioRange},
         drag::{adjusted_diagnostics, respects_hard_targets, solve_candidate, DragObservedBounds},
     },
-    GearingSecondaryCorrection, RaceGoal, TuningCarParams,
+    GearingSecondaryCorrection, TuningCarParams,
 };
 use serde_json::{json, Value};
 
@@ -80,21 +79,9 @@ fn rust_reproduces_missing_historical_finish_rejection_and_candidate_refuses_bot
         drag_finish_speed_kmh: Some(40.0),
         drag_finish_speed_provenance: Some("manual".into()),
     };
-    for (entry, profile, secondary) in
+    for (_entry, profile, secondary) in
         [("profile40", p, None), ("secondary40", params(), Some(&sc))]
     {
-        let historical = calculate_aego_gearing(RaceGoal::Drag, 6, &profile, 7500.0, secondary);
-        assert_eq!(historical.unsupported, None);
-        assert_eq!(
-            historical.final_drive,
-            fixture()["historicalComparison"][entry]["finalDrive"]
-                .as_f64()
-                .unwrap()
-        );
-        assert_eq!(
-            serde_json::to_value(&historical.gears).unwrap(),
-            fixture()["historicalComparison"][entry]["gears"]
-        );
         let candidate = solve_candidate(6, &profile, 7500.0, secondary, None);
         assert_eq!(candidate.diagnostics["targetSpeedKmh"], 40.0);
         assert!(candidate

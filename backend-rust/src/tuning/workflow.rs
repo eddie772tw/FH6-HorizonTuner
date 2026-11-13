@@ -78,22 +78,6 @@ pub fn measured_gearing(
 ) -> Option<GearingResult> {
     measured_gearing_version(goal, count, profile, engine, AegoModel::production(goal))
 }
-/// Explicit pre-stack owner for immutable characterization. Not the current workflow.
-pub fn measured_gearing_historical(
-    goal: RaceGoal,
-    count: usize,
-    profile: &TuningCarParams,
-    engine: Option<&MeasuredEngine>,
-) -> Option<GearingResult> {
-    let model = match goal {
-        RaceGoal::Road => Some(AegoModel::RoadLaunchV3),
-        RaceGoal::Rally => Some(AegoModel::RallyV1),
-        RaceGoal::Drift => Some(AegoModel::DriftV1),
-        RaceGoal::Drag => Some(AegoModel::DragV1),
-        RaceGoal::DangerSign => None,
-    };
-    measured_gearing_version(goal, count, profile, engine, model)
-}
 /// Explicit opt-in candidate boundary for stack PR 5. This does not switch the
 /// production workflow or create an applicable recommendation. In particular,
 /// finish targets come from profile even though the measured solver passes None
@@ -174,16 +158,7 @@ fn measured_gearing_version(
         profile.max_torque = Some(torque);
     }
     let result = match model {
-        Some(
-            AegoModel::RoadJointV2 | AegoModel::RallyV1 | AegoModel::DriftV1 | AegoModel::DragV1,
-        ) => super::gearing::calculate_aego_gearing_v2(
-            goal,
-            count,
-            &profile,
-            engine.engine_max_rpm,
-            None,
-        ),
-        Some(AegoModel::RoadLaunchV3) | None => super::gearing::calculate_aego_gearing_historical(
+        None => super::gearing::calculate_aego_gearing(
             goal,
             count,
             &profile,
@@ -218,13 +193,6 @@ pub(crate) fn calculate_qualified(
 ) -> Result<WorkflowResult, String> {
     let model = AegoModel::production(input.goal);
     calculate_with_replay_policy(input, proof, model, false, true)
-}
-pub fn calculate_historical(
-    input: WorkflowRequest,
-    proof: &super::evidence::QualifiedEvidence,
-    model: Option<AegoModel>,
-) -> Result<WorkflowResult, String> {
-    calculate_with_replay_policy(input, Some(proof), model, true, false)
 }
 pub(crate) fn calculate_saved(
     input: WorkflowRequest,
@@ -469,7 +437,7 @@ fn calculate_with_replay_policy(
         .get("ratioBalance")
         .filter(|v| !v.is_null())
         .map(|request| {
-            if !current_chassis || model == Some(AegoModel::RoadJointV2) {
+            if !current_chassis {
                 gearing = None;
                 return super::ratio_balance::Diagnostic::unavailable(
                     "Ratio balance requires the current workflow",
@@ -562,20 +530,7 @@ fn calculate_with_replay_policy(
         snapshot["evResult"] = serde_json::to_value(&gearing).map_err(|e| e.to_string())?;
     }
     let new_road = model == Some(AegoModel::RoadLaunchV3) && !electric;
-    if model == Some(AegoModel::RoadJointV2) && !electric {
-        // Historical v1 may predate the optional v2 label, but it cannot claim
-        // new-model diagnostics. Validate reserved metadata instead of copying
-        // caller claims into the supposedly authoritative expected snapshot.
-        if snapshot.get("roadLaunch").is_some()
-            || snapshot
-                .get("gearingModelVersion")
-                .is_some_and(|v| v != "aego-road-joint/v2")
-        {
-            return Err(
-                "Historical Road v1 requires absent/v2 model metadata and no v3 diagnostics".into(),
-            );
-        }
-    } else if !new_road {
+    if !new_road {
         // Road-owned diagnostics have no meaning on other disciplines or EV.
         let object = snapshot.as_object_mut().unwrap();
         object.remove("gearingModelVersion");
@@ -600,8 +555,10 @@ fn calculate_with_replay_policy(
             );
         }
     }
-    if new_aego {
+    if composition_v4 && !electric {
         snapshot["workflowSchemaVersion"] = json!(schema_version);
+    }
+    if new_aego {
         snapshot["gearingModelVersion"] = json!(model.unwrap().id());
         snapshot["gearingModelId"] = gearing_diagnostics.as_ref().unwrap()["modelId"].clone();
         snapshot["gearingDiagnostics"] = gearing_diagnostics.as_ref().unwrap().clone();
@@ -613,7 +570,6 @@ fn calculate_with_replay_policy(
             &alignment,
             gearing.as_ref().unwrap(),
             snapshot,
-            new_road,
         );
         if current_chassis {
             rec["formulaVersion"] = json!(if confirmed_ev {
@@ -621,7 +577,7 @@ fn calculate_with_replay_policy(
             } else if electric {
                 "rust/ev-measured-workflow-v2"
             } else {
-                "rust/ice-measured-workflow-v3"
+                "rust/ice-measured-workflow-v4"
             });
             // Only independently qualified mechanical fields can be offered for application.
             let fields = rec["fields"].as_object_mut().unwrap();
@@ -634,7 +590,7 @@ fn calculate_with_replay_policy(
                         .any(|f| f["key"] == *key && f["status"] == "available")
             });
         }
-        if new_aego {
+        if composition_v4 && !electric {
             rec["formulaVersion"] = json!("rust/ice-measured-workflow-v4");
         }
         Some(rec)
@@ -733,7 +689,6 @@ fn recommendation(
     a: &StaticAlignment,
     gearing: &WorkflowGearing,
     mut snapshot: Value,
-    new_road: bool,
 ) -> Value {
     let mut fields = mechanical_fields(profile, c, a);
     let mut add = |key: &str, value: f64, unit: &str| {
@@ -782,5 +737,5 @@ fn recommendation(
     {
         observation.remove("capture");
     }
-    json!({"formulaVersion":if electric {"rust/ev-measured-workflow-v1"} else if new_road {"rust/ice-measured-workflow-v2"} else {"rust/ice-measured-workflow-v1"},"inputSnapshot":snapshot,"fields":fields})
+    json!({"formulaVersion":if electric {"rust/ev-measured-workflow-v1"} else {"rust/ice-measured-workflow-v4"},"inputSnapshot":snapshot,"fields":fields})
 }

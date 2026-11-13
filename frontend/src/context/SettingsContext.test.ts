@@ -10,7 +10,6 @@ import {
 const settings: AppSettings = {
   dyno_recording: false,
   race_recording: false,
-  developer_tuning_enabled: false,
   language: 'en-us',
   dyno_test_gear: 4,
   dyno_filter_slip: true,

@@ -78,17 +78,8 @@ fn historical_endpoint_counterexample_hits_the_predeclared_target() {
     let fixture = fixture();
     let candidate = solve_candidate(6, &profile(), 7500.0, None, None);
     available(&candidate, 6);
-    let historical = fh6_backend::tuning::gearing::calculate_aego_gearing_v2(
-        fh6_backend::tuning::RaceGoal::Rally,
-        6,
-        &profile(),
-        7500.0,
-        None,
-    );
-    assert_eq!(
-        serde_json::to_value(&historical).unwrap(),
-        fixture["historicalComparison"]["rustGearing"]
-    );
+    let historical: fh6_backend::tuning::GearingResult =
+        serde_json::from_value(fixture["historicalComparison"]["rustGearing"].clone()).unwrap();
     let historical_speed = fh6_backend::tuning::gearing::calc_gear_speed(
         5000.0,
         historical.gears[5],

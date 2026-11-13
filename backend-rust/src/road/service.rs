@@ -165,6 +165,7 @@ impl RoadService {
         request: Value,
         verified: Option<&crate::tuning::evidence::VerifiedRecommendation>,
     ) -> ApiResult<Value> {
+        crate::tuning::archive::ensure_active(&request["recommendation"])?;
         validate_request("workflow", &request)?;
         let id = Uuid::new_v4().simple().to_string();
         let mut payload = request.as_object().cloned().unwrap_or_default();
@@ -204,67 +205,13 @@ impl RoadService {
         recommendation: &Value,
         identity: Option<&Value>,
     ) -> ApiResult<()> {
-        let snapshot = recommendation
-            .get("inputSnapshot")
-            .and_then(Value::as_object)
-            .ok_or_else(|| {
-                ApiError::invalid("The recommendation requires a saved engine observation")
-            })?;
-        if matches!(
-            recommendation["formulaVersion"].as_str(),
-            Some(
-                "rust/ice-measured-workflow-v1"
-                    | "rust/ice-measured-workflow-v2"
-                    | "rust/ice-measured-workflow-v3"
-                    | "rust/ice-measured-workflow-v4"
-                    | "rust/ev-measured-workflow-v1"
-                    | "rust/ev-measured-workflow-v2"
-                    | "rust/ev-measured-workflow-v3"
-            )
-        ) {
-            // Direct service callers have no receiver lock. App dispatch pre-verifies
-            // exact Rust recommendations outside that lock and passes a private token.
-            return crate::tuning::evidence::EvidenceService {
-                store: self.store.clone(),
-            }
-            .verify_recommendation(recommendation, identity);
+        crate::tuning::archive::ensure_active(recommendation)?;
+        crate::tuning::evidence::EvidenceService {
+            store: self.store.clone(),
         }
-        let observation = snapshot
-            .get("engineObservation")
-            .and_then(Value::as_object)
-            .ok_or_else(|| {
-                ApiError::invalid("The recommendation requires a saved engine observation")
-            })?;
-        let oid = observation
-            .get("id")
-            .and_then(Value::as_str)
-            .ok_or_else(|| {
-                ApiError::invalid("The recommendation requires a saved engine observation")
-            })?;
-        let saved = self.store.get(oid, Some("engine-observation"), None)?;
-        if saved.get("observation") != Some(&Value::Object(observation.clone()))
-            || snapshot.get("carId") != observation.get("carId")
-        {
-            return Err(ApiError::conflict(
-                "The recommendation does not match its saved engine evidence",
-            ));
-        }
-        if let Some(id) = identity {
-            if id.get("ordinal").map(Value::to_string)
-                != observation.get("carId").map(Value::to_string)
-                || id.get("performanceIndex")
-                    != observation
-                        .get("data")
-                        .and_then(|x| x.get("identity"))
-                        .and_then(|x| x.get("performanceIndex"))
-            {
-                return Err(ApiError::conflict(
-                    "Engine evidence belongs to a different car or configuration",
-                ));
-            }
-        }
-        Ok(())
+        .verify_recommendation(recommendation, identity)
     }
+
     pub fn handle(&mut self, method: &str, path: &str, body: Option<&Value>) -> ApiResult<Value> {
         self.handle_verified(method, path, body, None)
     }
@@ -301,14 +248,20 @@ impl RoadService {
         if method == "GET" && p.len() == 3 && p[0] == "engine-observations" && p[2] == "capture" {
             return Ok(self.store.get(p[1], Some("engine-observation"), None)?["capture"].clone());
         }
+        if method == "GET" && p == ["archives"] {
+            return crate::tuning::archive::list(&self.store);
+        }
         if method == "GET" && p == ["compatibility"] {
-            return Ok(Value::Array(self.store.list(
-                None,
-                Some("compatibility"),
-                false,
-            )?));
+            return Ok(Value::Array(
+                self.store
+                    .list(None, Some("compatibility"), false)?
+                    .into_iter()
+                    .filter(|record| !crate::tuning::archive::is_retired(&record["recommendation"]))
+                    .collect(),
+            ));
         }
         if method == "POST" && p == ["compatibility"] {
+            crate::tuning::archive::ensure_active(&b["recommendation"])?;
             validate_request("compatibility", &b)?;
             if !verified.is_some_and(|v| v.matches(&b["recommendation"], None)) {
                 self.validate_recommendation(&b["recommendation"], None)?;
@@ -324,17 +277,23 @@ impl RoadService {
             return Ok(json!({"saved":true}));
         }
         if method == "GET" && p == ["workflows"] {
-            return Ok(Value::Array(self.store.list(
-                None,
-                Some("workflow"),
-                false,
-            )?));
+            return Ok(Value::Array(
+                self.store
+                    .list(None, Some("workflow"), false)?
+                    .into_iter()
+                    .filter(|record| !crate::tuning::archive::is_retired(&record["recommendation"]))
+                    .collect(),
+            ));
         }
         if method == "POST" && p == ["workflows"] {
             return self.create_verified(b, verified);
         }
         if p.len() >= 2 && p[0] == "workflows" {
             let wf = p[1];
+            if method != "GET" {
+                let record = self.store.get(wf, Some("workflow"), None)?;
+                crate::tuning::archive::ensure_active(&record["recommendation"])?;
+            }
             if method == "GET" && p.len() == 2 {
                 let _ = self.store.get(wf, Some("workflow"), None)?;
                 return Ok(Value::Array(self.store.list(Some(wf), None, false)?));
@@ -539,6 +498,7 @@ impl RoadService {
             ));
         }
         let workflow = self.store.get(workflow_id, Some("workflow"), None)?;
+        crate::tuning::archive::ensure_active(&workflow["recommendation"])?;
         let setup_id = request["setupId"]
             .as_str()
             .ok_or_else(|| ApiError::invalid("setupId is required"))?;
@@ -649,7 +609,17 @@ impl RoadService {
             .map_err(|e| ApiError::internal("Operation failed", e))
     }
     pub fn recover(&mut self) -> ApiResult<()> {
+        let retired = self
+            .store
+            .list(None, Some("workflow"), true)?
+            .into_iter()
+            .filter(|workflow| crate::tuning::archive::is_retired(&workflow["recommendation"]))
+            .filter_map(|workflow| workflow["id"].as_str().map(str::to_owned))
+            .collect::<std::collections::HashSet<_>>();
         for d in self.store.list(None, Some("run"), true)? {
+            if retired.contains(d["workflowId"].as_str().unwrap_or("")) {
+                continue;
+            }
             if self
                 .store
                 .list(

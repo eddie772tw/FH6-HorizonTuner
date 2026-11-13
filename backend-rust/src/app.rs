@@ -859,6 +859,7 @@ impl Backend for App {
         {
             let body = request.json()?;
             let rec = &body["recommendation"];
+            crate::tuning::archive::ensure_active(rec)?;
             if rec["formulaVersion"]
                 .as_str()
                 .is_some_and(|v| v.starts_with("rust/"))

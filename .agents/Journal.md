@@ -1,5 +1,14 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-11-12 / AEGO 堆疊獨立審查：封存原資料保全（Codex as Codex）
+
+- **範圍**：PR #659，依序同步 #654～#657 的已驗證修正；採用 `pr-review-evaluation`、`pr-author-maintainer`、`physics-tuning-math`、`modular-refactoring`、`halfmoon-design-system`、`cross-agent-collaboration`、`ponytail`。不合併 PR。
+- **學習**：唯讀歷史的邊界包含啟動復原。退役 workflow 的中斷 run 必須在 finalize session／新增 summary 前略過，仍保留 active recovery。Road documents 只有 session 關聯；不可用 setup 內假 capture 宣稱已匯出實際試跑幀。
+- **修正**：封存 run 重啟不改原始 documents／session metadata；每筆 run 以既有 saved capture GET 匯出錄製幀，文件 JSON 與幀分開。ICE raw replay 修正歸位 #657、Rally 刻度修正歸位 #654，以一般 merge commit 同步。
+- **驗證**：完整 locked Cargo301 passed／3既有ignored、no-default-features291 passed／2既有ignored，含doc-tests；本機僅省略除錯符號，斷言／優化／容差不變。前端219 files／1649項、Windows與LAN構建、Cargo fmt及diff check通過；638個產品檔案同步後與測試來源一致。原21 tuning／10 EV fixture不變。
+- **畫面與資料**：22瀏覽器案例、三份實際JSON下載、50張新PNG逐張獨立看圖通過；558個LF正規化來源hash、50個raw image hash及固定擷取binary／下載檔hash核對。合成SQLite session與兩筆telemetry對應下載內容；沒有實車、原生對話框、手機或讀屏驗收。
+- **政策**：保留必要DangerSign內部行為，不新增第五模型；不恢復已刪除的舊solver或退役期間測試集。新回歸屬現行封存／原始證據行為。各新head CI與討論串收尾在PR Body／Review記錄。
+
 ## 2026-11-12 / AEGO 整合獨立審查：保存證據回放（Codex as Codex）
 
 - **範圍**：PR #657；採用 `pr-review-evaluation`、`pr-author-maintainer`、`physics-tuning-math`、`modular-refactoring`、`cross-agent-collaboration`、`ponytail`。
@@ -1479,3 +1488,14 @@
 
 - 選填 Drag 末速／來源清空須送 explicit null；undefined 被 JSON 省略後，既有 shallow-merge profile API 會保留舊 manual 值。真實 UI 清空→導航保存→API readback 與正式資格化 prior 結果，以及後端保存重啟回歸均通過。Drift partial target 是整個物件替換，不須改全域合併或放寬引擎資格。新增測試應先驗 capture raw engine tuple 與 profile 一致，再跑完整套件；normalize 的 NA 預設與 raw null 是不同 engine context。
 - 最終29桌面／10Companion案例、84PNG及566 source hashes核對通過；七core日夜、三語、1280／320與reduced motion均有紀錄，寬幅46／窄幅手機38檔完成逐圖QA。fixture relay及歷史引擎capture＋合成profile明列，非遊戲／原生／手機實機／讀屏驗收。
+
+## 2026-11-12 / #658 舊調校公式移除與封存（Codex as Codex）
+
+- 使用者授權本次直接移除TS凍結公式、Rust歷史ICE solver與Developer Tuning，並允許在充分斷路驗證後移除退役期專用契約。此決策取代#652／#657當時的永久歷史solver回放／回退規則；Git固定提交及靜態資料保留考古來源，現行四模型ID不變，DangerSign保留必要內部路徑，不另立第五模型。
+- `RoadStore::list`第三參數是`exclude_capture`。封存必須傳false；只比對推薦欄位會漏掉工作流程子記錄的原始capture。實際browser download與原始JSON逐項比對先抓到此錯誤，修正後原推薦與完整歷史（含capture）均相等，另由封存契約檢查資料庫不變／重啟與不可試跑。
+- 原滿高採集容器嵌入正式Step3後，`h-100`與flex shrink會使工具被壓縮，DOM存在不代表返回按鈕可點。改為一般頁面捲動、自然高度／不縮小，且採集與引擎面板一次顯示一個；實際AppShell操作能開啟與返回，流程不另存推薦。
+- 刪除過渡測試前的10項斷路通過結果與當時source hash另存`docs/tuning/model-retirement-proof.json`，不當成最終head證據。保留現行封存、資格、四模型／EV／CVT與原數值回歸；原21 tuning／10 EV fixtures不改值或容差。封存資料、舊設定中的未知欄位與可執行舊公式是不同責任，舊旗標不再有預設／更新分支或UI消費者。
+- 最終前端219 files／1648 tests通過，Windows TypeScript＋Vite及LAN build通過；22個真AppShell／隔離Rust案例、50張PNG逐圖檢視，558 source hashes與50 image hashes核對。僅靜態歷史JSON與瀏覽器下載，WebSocket靜默／原生host空commands；不宣稱遊戲、手機／原生檔案對話框、真60Hz採集或讀屏驗收。
+- Skills：modular-refactoring、physics-tuning-math、huge-component-refactoring、halfmoon-design-system、agent-governance-audit、pr-author-maintainer、ponytail。
+
+- 最終完整locked Cargo：預設297 passed／3既有ignored，no-default-features 287 passed／2既有ignored，兩者含doc-tests均exit0。前端dist必須固定後再串行跑Cargo：測試中並行Vite build會刪換已索引的hash資源名稱，使最後rustdoc的include_bytes找不到舊檔；停止並行、固定產物後完整重跑通過。fmt／diff、技能validator、24份Markdown相對連結及13個skill ID檢查通過，原主工作區保持乾淨。

@@ -652,18 +652,14 @@ impl EvidenceService {
         )
     }
     pub fn verify_recommendation(&self, rec: &Value, identity: Option<&Value>) -> ApiResult<()> {
+        super::archive::ensure_active(rec)?;
         let current = match rec["formulaVersion"].as_str() {
             Some(
-                "rust/ice-measured-workflow-v3"
-                | "rust/ice-measured-workflow-v4"
+                "rust/ice-measured-workflow-v4"
                 | "rust/ev-measured-workflow-v2"
                 | "rust/ev-measured-workflow-v3",
             ) => true,
-            Some(
-                "rust/ice-measured-workflow-v1"
-                | "rust/ice-measured-workflow-v2"
-                | "rust/ev-measured-workflow-v1",
-            ) => false,
+            Some("rust/ev-measured-workflow-v1") => false,
             _ => {
                 return Err(ApiError::invalid(
                     "Unsupported recommendation formula version",
@@ -718,7 +714,7 @@ impl EvidenceService {
                     .ok_or_else(|| ApiError::invalid("AEGO model version must be a string"))
             })
             .transpose()?;
-        let model = super::aego_model::historical_model(
+        let model = super::aego_model::model_for_saved_recommendation(
             rec["formulaVersion"].as_str().unwrap(),
             &request.schema_version,
             request.goal,

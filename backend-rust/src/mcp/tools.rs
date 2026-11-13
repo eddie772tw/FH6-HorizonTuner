@@ -30,9 +30,6 @@ fn s<'a>(a: &'a Map<String, Value>, k: &str) -> Option<&'a str> {
 fn i(a: &Map<String, Value>, k: &str, d: i64) -> i64 {
     a.get(k).and_then(Value::as_i64).unwrap_or(d)
 }
-fn f(a: &Map<String, Value>, k: &str, d: f64) -> f64 {
-    a.get(k).and_then(Value::as_f64).unwrap_or(d)
-}
 fn arr<'a>(a: &'a Map<String, Value>, k: &str) -> Option<&'a Vec<Value>> {
     a.get(k).and_then(Value::as_array)
 }
@@ -164,44 +161,11 @@ pub fn call(
                 ))
             })?
         }
-        "run_dev_tuning_solver" => {
-            let p = args
-                .get("car_params")
-                .and_then(Value::as_object)
-                .ok_or_else(|| ToolError {
-                    code: -32602,
-                    message: "Missing or invalid 'car_params' dictionary".into(),
-                })?;
-            service.dev_solver(
-                p,
-                args.get("installed_parts").and_then(Value::as_object),
-                s(args, "purpose").unwrap_or("road"),
-            )
-        }
-        "run_gearing_solver" => service.gearing(
-            f(args, "max_rpm", 0.),
-            f(args, "peak_hp_rpm", 0.),
-            f(args, "top_speed_kmh", 0.),
-            i(args, "gears_count", 6),
-            f(args, "tire_diameter_cm", 65.),
-        ),
-        "diagnose_telemetry_handling" => {
-            let values = arr(args, "tire_temps").ok_or_else(|| ToolError {
-                code: -32602,
-                message: "Requires 'tire_temps' array with 4 values [FL, FR, RL, RR]".into(),
-            })?;
-            if values.len() != 4 || values.iter().any(|v| v.as_f64().is_none()) {
-                return Err(ToolError {
-                    code: -32602,
-                    message: "Requires 'tire_temps' array with 4 values [FL, FR, RL, RR]".into(),
-                });
-            };
-            let t = values
-                .iter()
-                .take(4)
-                .map(|v| v.as_f64().unwrap_or(0.))
-                .collect::<Vec<_>>();
-            service.diagnosis(&t, s(args, "symptom"))
+        "run_dev_tuning_solver" | "run_gearing_solver" | "diagnose_telemetry_handling" => {
+            return Err(ToolError {
+                code: -32010,
+                message: crate::tuning::archive::RETIRED_MESSAGE.into(),
+            });
         }
         "get_system_settings" => service.settings(),
         "get_hud_configurations" => service.hud(),

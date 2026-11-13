@@ -1182,7 +1182,6 @@
   "Go to Car Parameters": "Go to Car Parameters",
   "Scientific physics-based suspension, spring, ARB, damper & AEGO gearing tuning wizard": "Scientific physics-based suspension, spring, ARB, damper & AEGO gearing tuning wizard",
   "PARAMS INCOMPLETE": "PARAMS INCOMPLETE",
-  "Developer Tuning View": "Developer Tuning View",
   "Explicit typed input/output for the experimental tuningMath_dev.ts calculation layer.": "Explicit typed input/output for the experimental tuningMath_dev.ts calculation layer.",
   "Open Telemetry Capture": "Open Telemetry Capture",
   "This view is for algorithm validation. Tire coefficients and game-slider mappings are calibration priors, not official FH6 values.": "This view is for algorithm validation. Tire coefficients and game-slider mappings are calibration priors, not official FH6 values.",
@@ -1932,7 +1931,6 @@
     "Invalidated · {count} samples": "Invalidated · {count} samples",
     "Idle · {count} samples": "Idle · {count} samples",
     "Clear capture buffer": "Clear capture buffer",
-    "Back to Developer Tuning": "Back to Developer Tuning",
     "Start Capture": "Start Capture",
     "Stop Capture": "Stop Capture",
     "Download JSON": "Download JSON",
@@ -2060,5 +2058,16 @@
   "Drag finish speed requires a positive finite value and paired manual/telemetry provenance": "Drag finish speed requires a positive finite value and paired manual/telemetry provenance",
   "An explicit integer 4-10 gear count is required": "An explicit integer 4-10 gear count is required",
   "Rounded gearing does not satisfy the model hard targets": "Rounded gearing does not satisfy the model hard targets",
-  "Launch target source": "Launch target source"
+  "Launch target source": "Launch target source",
+  "Historical recommendation archive": "Historical recommendation archive",
+  "Retired models are no longer calculated. These original records are read-only and have not been validated for current use.": "Retired models are no longer calculated. These original records are read-only and have not been validated for current use.",
+  "To create a current recommendation, complete vehicle setup and engine evidence in the tuning workflow. The new recommendation does not overwrite an archive.": "To create a current recommendation, complete vehicle setup and engine evidence in the tuning workflow. The new recommendation does not overwrite an archive.",
+  "Loading archived recommendations…": "Loading archived recommendations…",
+  "Archived recommendations could not be loaded. Close and reopen this panel to retry.": "Archived recommendations could not be loaded. Close and reopen this panel to retry.",
+  "No retired recommendations are stored.": "No retired recommendations are stored.",
+  "Retired · read-only · not validated": "Retired · read-only · not validated",
+  "Export original record": "Export original record",
+  "Open telemetry capture": "Open telemetry capture",
+  "Back to engine data": "Back to engine data",
+  "Export original history": "Export original history"
 }

@@ -1272,7 +1272,6 @@
   "Go to Car Parameters": "前往車輛參數",
   "Scientific physics-based suspension, spring, ARB, damper & AEGO gearing tuning wizard": "基於物理學的懸吊、彈簧、防傾桿、避震器與 AEGO 齒輪比調校精靈",
   "PARAMS INCOMPLETE": "參數未完成",
-  "Developer Tuning View": "開發者調校檢視",
   "Explicit typed input/output for the experimental tuningMath_dev.ts calculation layer.": "實驗性 tuningMath_dev.ts 計算層的顯式型別輸入/輸出。",
   "Open Telemetry Capture": "開啟遙測擷取",
   "This view is for algorithm validation. Tire coefficients and game-slider mappings are calibration priors, not official FH6 values.": "此檢視用於演算法驗證。輪胎係數與遊戲滑桿對應為預先校準值，並非官方 FH6 數值。",
@@ -1709,7 +1708,6 @@
   "Saved snapshots could not be loaded.": "無法讀取已存快照。",
   "Saved setup could not be loaded.": "無法讀取已存設定。",
   "Capture unavailable. Older summaries may not include recorded frames.": "無法取得錄製樣本；較舊的摘要可能未附原始樣本。",
-  "Back to Developer Tuning": "返回開發者調校",
   "Capture Analysis": "錄製分析",
   "Capture Metadata": "錄製背景資料",
   "Capturing": "錄製中",
@@ -2461,5 +2459,16 @@
   "Drag finish speed requires a positive finite value and paired manual/telemetry provenance": "直線加速末速必須為有效正值，並成對提供手動或遙測來源聲明。",
   "An explicit integer 4-10 gear count is required": "請明確設定 4 至 10 檔的整數檔數。",
   "Rounded gearing does not satisfy the model hard targets": "取位後齒比不符合模型的硬目標。",
-  "Launch target source": "起步目標來源"
+  "Launch target source": "起步目標來源",
+  "Historical recommendation archive": "歷史推薦封存",
+  "Retired models are no longer calculated. These original records are read-only and have not been validated for current use.": "已退役的模型不再執行計算。這些原始記錄僅供檢視，未依現行模型驗證。",
+  "To create a current recommendation, complete vehicle setup and engine evidence in the tuning workflow. The new recommendation does not overwrite an archive.": "請在調校流程中完成車輛設定與引擎證據，建立新的推薦；新推薦不會覆寫封存。",
+  "Loading archived recommendations…": "正在載入封存推薦…",
+  "Archived recommendations could not be loaded. Close and reopen this panel to retry.": "無法載入封存推薦，請關閉並重新展開此面板以重試。",
+  "No retired recommendations are stored.": "目前沒有已退役模型的封存推薦。",
+  "Retired · read-only · not validated": "已退役 · 唯讀 · 未驗證",
+  "Export original record": "匯出原始記錄",
+  "Open telemetry capture": "開啟遙測採集工具",
+  "Back to engine data": "返回引擎資料",
+  "Export original history": "匯出原始歷史記錄"
 }

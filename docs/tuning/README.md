@@ -1,6 +1,6 @@
 # 調校開發入口
 
-v1.7.1：正式調校公式、資格審查與數值診斷之唯一 owner 已全面收攏至 Rust (`backend-rust/src/tuning/`)，最新入口與架構劃分見[責任契約](../contracts/tuning_responsibilities.md)；前端 TypeScript 舊模型凍結並僅作為測試參考，不得用作 production runtime fallback。
+v1.7.1：正式調校公式、資格審查與數值診斷之唯一 owner 已全面收攏至 Rust (`backend-rust/src/tuning/`)，最新入口與架構劃分見[責任契約](../contracts/tuning_responsibilities.md)；前端 TypeScript 凍結公式與舊 Rust ICE solver 已移除，歷史推薦僅能唯讀封存；不得新增 production runtime fallback。
 
 本頁是程式導航與驗證順序，不是功能完成清單。修改前需確認實際呼叫路徑與對應測試。
 
@@ -21,12 +21,12 @@ v1.7.1：正式調校公式、資格審查與數值診斷之唯一 owner 已全�
 | --- | --- | --- |
 | 正式調校核心 (Rust SSOT) | [backend-rust/src/tuning/](../../backend-rust/src/tuning/) | 物理懸吊、彈簧、ARB、阻尼、AEGO 齒比求解器與資格判定 |
 | 前端調校介面 | [TuningView.tsx](../../frontend/src/features/tuning/TuningView.tsx) | 既有使用者流程、草稿管理與 Rust API 渲染對接 |
-| 開發者調校介面 | [TuningView_dev.tsx](../../frontend/src/features/tuning/TuningView_dev.tsx)、[domain/tuning](../../frontend/src/domain/tuning/) | 開發者輔助流程；計算結果以 Rust 調校端點為唯一準據 |
-| CLI 工具 | [agent_cli.rs](../../backend-rust/src/agent_cli.rs)、[legacy_cli.rs](../../backend-rust/src/tuning/legacy_cli.rs) | `solve workflow --args-file` 使用正式 Rust workflow；`solve chassis/gearing/full` 保留 legacy-cli/v1 數值 |
-| MCP 求解器 | [tools.rs](../../backend-rust/src/mcp/tools.rs)、[service.rs](../../backend-rust/src/mcp/service.rs) | `calculate_tuning_workflow` 使用正式 owner；quick solver 維持獨立 legacy-mcp/v1 |
+| 歷史推薦封存 | [RecommendationArchive.tsx](../../frontend/src/features/tuning/components/RecommendationArchive.tsx) | 原始記錄與完整工作流程歷史的唯讀檢視／匯出，不取得現行資格 |
+| CLI 工具 | [agent_cli.rs](../../backend-rust/src/agent_cli.rs) | `solve workflow --args-file` 使用正式 Rust workflow；舊 quick solver 只回退役錯誤 |
+| MCP 求解器 | [tools.rs](../../backend-rust/src/mcp/tools.rs)、[service.rs](../../backend-rust/src/mcp/service.rs) | `calculate_tuning_workflow` 使用正式 owner；quick solver 公式已移除 |
 | 遙測採樣 | [TuningTelemetryCaptureView.tsx](../../frontend/src/features/tuning/components/TuningTelemetryCaptureView.tsx)、[telemetryCapture.ts](../../frontend/src/domain/tuning/telemetryCapture.ts) | 錄製介面、資料契約與匯出內容 |
 
-桌面、Companion、workflow CLI／MCP 共用正式 owner；實驗模式與 legacy 指令維持自己的版本契約。產品純型別位於 `frontend/src/domain/tuning/types.ts`，凍結模型與測試位於 `frontend/test-reference/tuning/`。本次收尾的驗收範圍見 [v1.7.1 候選驗收](../releases/v1.7.1-acceptance.md)。
+桌面、Companion、workflow CLI／MCP 共用正式 owner；Developer Tuning 與 legacy quick 公式已移除。產品純型別位於 `frontend/src/domain/tuning/types.ts`，舊公式移除與歷史資料處理見[封存說明](model-retirement.md)。本次收尾的驗收範圍見 [v1.7.1 候選驗收](../releases/v1.7.1-acceptance.md)。
 
 ## 驗證與接續順序
 

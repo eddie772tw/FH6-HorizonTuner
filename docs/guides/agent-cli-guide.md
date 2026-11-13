@@ -41,7 +41,7 @@
 cargo run --locked --manifest-path backend-rust/Cargo.toml --bin fh6-agent -- <subcommand> [options]
 ```
 
-所有結果均為可閱讀的 JSON，`--json` 保留為相容旗標。`solve workflow` 是正式 Rust 工作流入口，與桌面／Companion／MCP 共用 owner；`solve chassis/gearing/full` 才是舊版 `tuning-dev/v1` 相容契約，輸出仍標記未校準。`telemetry diagnose` 需要實際 live sample 或明確的 `--tire-temps`，缺值會回報錯誤，不再使用虛構的 85°C。齒數限制為 1–10，輸入必須為有限值，Preset 路徑不可跳出資料目錄。
+所有結果均為可閱讀的 JSON，`--json` 保留為相容旗標。正式調校使用 `solve workflow` 與合格原始證據；舊 `solve chassis/gearing/full`、`telemetry diagnose` 已退役，只回明確錯誤。`telemetry snapshot` 保留原始觀測，Preset 路徑不可跳出資料目錄。
 
 ---
 
@@ -121,43 +121,7 @@ cargo run --locked --manifest-path backend-rust/Cargo.toml --bin fh6-agent -- <s
 
 新 JSON request 使用 `schemaVersion: "tuning-workflow-result/v2"`（v1 保留歷史 chassis 語意），包含 `goal`、`season`、完整 `profile`、`inputSnapshot.carId` 與 `evidence`。本地已存 ICE 證據使用 `{"kind":"saved-engine","observationId":"..."}`；EV 使用 `{"kind":"saved-ev","evidenceId":"..."}`。亦可傳完整 `engine-capture`／`ev-capture` 原始資料，由相同 Rust library 重播資格；不能只填 RPM／功率峰值宣稱 measured。
 
-CLI 與 MCP 是唯讀分析入口；正式保存由桌面／後端 API 確認 backend-issued evidenceId。下面三個子命令保留 `legacy-cli/v1` 數值與舊匯出 schema；不等同正式 workflow，也不與 legacy MCP quick solver 混用。
-
-#### (1) 底盤物理算牌 (`solve chassis`)
-計算前後防傾桿 (ARB)、前後彈簧磅數（lbs/in 與 kgf/mm）、車高建議、前後回彈/壓縮阻尼、定位角度與差速器配置。
-
-```powershell
-# 手動指定物理參數
-.\fh6-agent.bat solve chassis --weight 1450 --bias 52 --drive AWD --goal road --json
-
-# 自動從車輛資料庫帶入車重與配重
-.\fh6-agent.bat solve chassis --car-id 302 --goal drift --json
-
-# 匯出歷史 AppliedSetupTable 相容格式
-.\fh6-agent.bat solve chassis --weight 1350 --bias 54 --drive RWD --export-applied-setup --json
-```
-
-**支援賽事目標 (`--goal`)**：
-- `road`：公路 / 環道賽事（平衡抓地力與側傾控制）
-- `drift`：甩尾漂移賽事（低回彈、前大負外傾、100% 差速鎖定）
-- `rally`：拉力 / 越野賽事（高行程、軟化 ARB、柔和阻尼）
-- `drag`：直線加速賽事（前低後高 Forward Rake、後硬 ARB 抑制起步歪斜）
-
-#### (2) AEGO 幾何齒比算牌 (`solve gearing`)
-依據引擎紅線轉速、最大馬力轉速與目標極速，求解幾何等比遞增之最佳動力帶齒比與終傳比 (Final Drive)。
-
-```powershell
-.\fh6-agent.bat solve gearing --max-rpm 8500 --peak-hp-rpm 7800 --top-speed 320 --gears 6 --json
-```
-
-#### (3) 整車一鍵算牌與 Preset 儲存 (`solve full`)
-一鍵完成全套底盤與齒比算牌，並支援直接儲存為 Preset。儲存之檔案與前端 UI 完全互通！
-
-```powershell
-# 算牌並儲存為 'base_road' 預設
-.\fh6-agent.bat solve full --car-id 302 --vehicle-class S1 --weight 1380 --bias 58 --drive FWD --goal road --save base_road --json
-```
-儲存後，啟動前端 UI 進入 `TuningView`，下拉選單即會出現該項 Preset，點擊即可一鍵載入！
+CLI 與 MCP 是唯讀分析入口；正式保存由桌面／後端 API 確認 backend-issued evidenceId。舊 `solve chassis/gearing/full` 及其算牌／preset 寫入已退役，不再保留公式。請改用上方正式 workflow，不可把裸峰值當成合格證據。[移除範圍與封存處理](../tuning/model-retirement.md)。
 
 ---
 
@@ -180,16 +144,7 @@ CLI 與 MCP 是唯讀分析入口；正式保存由桌面／後端 API 確認 ba
 .\fh6-agent.bat telemetry snapshot --category suspension --json
 ```
 
-#### (2) 閉環操控診斷 (`diagnose`)
-根據實時 4 輪胎溫與軸溫差（$\Delta T_{\text{axle}}$），或駕駛回報的過彎動態症狀，給出精確可執行的具體調校微調步驟。
-
-```powershell
-# 自動依據當前實時胎溫進行熱平衡評估
-.\fh6-agent.bat telemetry diagnose --json
-
-# 結合駕駛反饋（如入彎推頭 understeer_entry）給予調校建議
-.\fh6-agent.bat telemetry diagnose --symptom understeer_entry --json
-```
+舊 `telemetry diagnose` 的快速處理建議亦已移除，不再從少量胎溫推定精確算牌指令；觀測資料可透過上述 snapshot 工具檢視。
 
 ---
 
@@ -209,10 +164,10 @@ CLI 與 MCP 是唯讀分析入口；正式保存由桌面／後端 API 確認 ba
 
 ### 7. MCP 工具直接調用 (`mcp-call`)
 
-若 Agent 在沒有 MCP 連線通道的終端環境下，可透過本命令直接調用後端內建的 26 項 MCP 工具：
+若 Agent 在沒有 MCP 連線通道的終端環境下，可透過本命令直接調用後端內建的現行 MCP 工具：
 
 ```powershell
-.\fh6-agent.bat mcp-call run_dev_tuning_solver --args '{"car_params":{"weight_kg":1450,"front_weight_bias":0.52,"drivetrain":"AWD"},"purpose":"road"}' --json
+.\fh6-agent.bat mcp-call get_tuning_model_priors --args '{}' --json
 ```
 
 ---

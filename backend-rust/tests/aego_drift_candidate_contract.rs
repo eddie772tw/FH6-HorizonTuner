@@ -1,5 +1,4 @@
 use fh6_backend::tuning::{
-    gearing::calculate_aego_gearing_historical as calculate_aego_gearing,
     gearing::{
         contracts::{CandidateGearingResult, RatioRange},
         drift::{
@@ -8,7 +7,7 @@ use fh6_backend::tuning::{
         },
         kinematics::calc_gear_speed,
     },
-    RaceGoal, RallyProfile, TuningCarParams,
+    RallyProfile, TuningCarParams,
 };
 use serde_json::{json, Value};
 
@@ -337,12 +336,4 @@ fn unrelated_models_production_and_chassis_stay_owned_by_their_original_owners()
         solve_candidate(6, &changed, 7500.0, Some(&target()), None).gearing,
         c.gearing
     );
-    let expected = fixture()["historicalComparison"]["gears"].clone();
-    for (torque, fd) in [(200.0, 6.1), (400.0, 6.1), (600.0, 6.1), (1000.0, 5.8)] {
-        let mut p = profile();
-        p.max_torque = Some(torque);
-        let historical = calculate_aego_gearing(RaceGoal::Drift, 6, &p, 7500.0, None);
-        assert_eq!(historical.final_drive, fd);
-        assert_eq!(serde_json::to_value(historical.gears).unwrap(), expected);
-    }
 }

@@ -180,136 +180,84 @@ fn aego_request(goal: &str) -> Value {
 
 #[test]
 fn independent_aego_composition_replays_all_goals_and_rejects_metadata_forgery() {
-    use fh6_backend::tuning::{
-        aego_model::{historical_model, AegoModel},
-        workflow::calculate_historical,
-        RaceGoal,
-    };
     let temp = tempfile::tempdir().unwrap();
     let app = App::new(temp.path()).unwrap();
     save_engine(&app);
-    let saved_proof = app
-        .tuning_evidence
-        .resolve(&EvidenceRequest::SavedEngine {
-            observation_id: "real-beetle".into(),
-        })
-        .unwrap();
     let mut records = vec![];
-    for (goal, version) in [
-        ("Road", "aego-road-launch-envelope/v3"),
-        ("Rally", "aego-rally-joint/v1"),
-        ("Drift", "aego-drift-working/v1"),
-        ("Drag", "aego-drag-joint/v1"),
-    ] {
-        let request = aego_request(goal);
-        let result = call(&app, "/api/tuning/workflow", request.clone()).unwrap();
-        assert_eq!(
-            result["readiness"]["gearingAvailable"], true,
-            "{goal}: {result}"
-        );
-        let rec = result["recommendation"].clone();
-        assert_eq!(rec["formulaVersion"], "rust/ice-measured-workflow-v4");
-        assert_eq!(rec["inputSnapshot"]["gearingModelVersion"], version);
-        assert_eq!(
-            rec["inputSnapshot"]["gearingDiagnostics"],
-            result["gearingDiagnostics"]
-        );
-        app.tuning_evidence
-            .verify_recommendation(&rec, None)
-            .unwrap();
-        let parsed_goal: RaceGoal = serde_json::from_value(json!(goal)).unwrap();
-        let old_model = historical_model(
-            "rust/ice-measured-workflow-v3",
-            "tuning-workflow-result/v2",
-            parsed_goal,
-            None,
-        )
-        .unwrap();
-        let mut legacy_request = request.clone();
-        legacy_request["profile"]
-            .as_object_mut()
-            .unwrap()
-            .remove("driftWorkingTarget");
-        let legacy = serde_json::to_value(
-            calculate_historical(
-                serde_json::from_value(legacy_request).unwrap(),
-                &saved_proof,
-                old_model,
-            )
-            .unwrap(),
-        )
-        .unwrap();
-        assert_eq!(result["chassis"], legacy["chassis"], "{goal}");
-        assert_eq!(
-            result["chassisDiagnostics"], legacy["chassisDiagnostics"],
-            "{goal}"
-        );
-        assert_eq!(result["alignment"], legacy["alignment"], "{goal}");
-        let old = legacy["recommendation"].clone();
-        assert!(old.is_object(), "{goal}: {legacy}");
-        app.tuning_evidence
-            .verify_recommendation(&old, None)
-            .unwrap();
-        for valid in [&rec, &old] {
+    for schema in ["tuning-workflow-result/v1", "tuning-workflow-result/v2"] {
+        for (goal, version) in [
+            ("Road", "aego-road-launch-envelope/v3"),
+            ("Rally", "aego-rally-joint/v1"),
+            ("Drift", "aego-drift-working/v1"),
+            ("Drag", "aego-drag-joint/v1"),
+        ] {
+            let mut request = aego_request(goal);
+            request["schemaVersion"] = json!(schema);
+            let result = call(&app, "/api/tuning/workflow", request).unwrap();
+            assert_eq!(
+                result["readiness"]["gearingAvailable"], true,
+                "{goal}/{schema}: {result}"
+            );
+            let rec = result["recommendation"].clone();
+            assert_eq!(rec["formulaVersion"], "rust/ice-measured-workflow-v4");
+            assert_eq!(rec["inputSnapshot"]["gearingModelVersion"], version);
+            assert_eq!(
+                rec["inputSnapshot"]["gearingDiagnostics"],
+                result["gearingDiagnostics"]
+            );
+            app.tuning_evidence
+                .verify_recommendation(&rec, None)
+                .unwrap();
             call(
                 &app,
                 "/api/road/compatibility",
-                json!({"discipline":"Drag","recommendation":valid}),
+                json!({"discipline":"Drag","recommendation":rec}),
             )
             .unwrap();
-            records.push(valid.clone());
-        }
-        for (key, value) in [
-            ("gearingModelVersion", json!("unknown/v99")),
-            (
-                "gearingModelVersion",
-                json!(if goal == "Road" {
-                    "aego-drag-joint/v1"
-                } else {
-                    "aego-road-launch-envelope/v3"
-                }),
-            ),
-            ("gearingModelId", json!("forged-owner")),
-            ("gearingDiagnostics", json!({"status":"available"})),
-            ("gearingView", json!({"tireRadiusM":99})),
-            ("workflowSchemaVersion", json!("tuning-workflow-result/v99")),
-        ] {
-            let mut forged = rec.clone();
-            forged["inputSnapshot"][key] = value;
-            assert!(
+            records.push(rec.clone());
+            for (key, value) in [
+                ("gearingModelVersion", json!("unknown/v99")),
+                (
+                    "gearingModelVersion",
+                    json!(if goal == "Road" {
+                        "aego-drag-joint/v1"
+                    } else {
+                        "aego-road-launch-envelope/v3"
+                    }),
+                ),
+                ("gearingModelId", json!("forged-owner")),
+                ("gearingDiagnostics", json!({"status":"available"})),
+                ("gearingView", json!({"tireRadiusM":99})),
+                ("workflowSchemaVersion", json!("tuning-workflow-result/v99")),
+            ] {
+                let mut forged = rec.clone();
+                forged["inputSnapshot"][key] = value;
+                assert!(
+                    app.tuning_evidence
+                        .verify_recommendation(&forged, None)
+                        .is_err(),
+                    "{goal}/{schema}/{key}"
+                );
+            }
+            let mut missing = rec.clone();
+            missing["inputSnapshot"]
+                .as_object_mut()
+                .unwrap()
+                .remove("gearingModelVersion");
+            assert!(app
+                .tuning_evidence
+                .verify_recommendation(&missing, None)
+                .is_err());
+            let mut retired = rec.clone();
+            retired["inputSnapshot"]["gearingModelVersion"] = json!("aego-rally/v1");
+            assert_eq!(
                 app.tuning_evidence
-                    .verify_recommendation(&forged, None)
-                    .is_err(),
-                "{goal}/{key}"
+                    .verify_recommendation(&retired, None)
+                    .unwrap_err()
+                    .status,
+                410
             );
         }
-        // A new snapshot cannot omit its model label and fall through to a future selector.
-        let mut missing = rec.clone();
-        missing["inputSnapshot"]
-            .as_object_mut()
-            .unwrap()
-            .remove("gearingModelVersion");
-        assert!(app
-            .tuning_evidence
-            .verify_recommendation(&missing, None)
-            .is_err());
-        // V4 replay explicitly resolves recorded old selectors too, preserving rollback history.
-        assert_eq!(
-            historical_model(
-                "rust/ice-measured-workflow-v4",
-                "tuning-workflow-result/v2",
-                parsed_goal,
-                Some(old_model.unwrap().id())
-            )
-            .unwrap(),
-            old_model
-        );
-        assert_eq!(
-            AegoModel::parse_for_goal(version, parsed_goal)
-                .unwrap()
-                .goal(),
-            parsed_goal
-        );
     }
     drop(app);
     let restarted = App::new(temp.path()).unwrap();
@@ -1063,181 +1011,6 @@ fn ev_desktop_projection_requires_observed_steering_for_qualification() {
 }
 
 #[test]
-fn road_model_versions_validate_with_their_own_owner_and_do_not_rewrite_history() {
-    use fh6_backend::tuning::{gearing::calculate_aego_gearing_v2, RaceGoal, TuningCarParams};
-    let temp = tempfile::tempdir().unwrap();
-    let app = App::new(temp.path()).unwrap();
-    save_engine(&app);
-    // Synthetic draft geometry isolates model versioning; the engine capture stays unchanged.
-    let mut request = saved_request();
-    request["profile"]["weight"] = json!(200);
-    request["inputSnapshot"]["gearingModelVersion"] = json!("caller-cannot-select-model");
-    let current =
-        call(&app, "/api/tuning/workflow", request.clone()).unwrap()["recommendation"].clone();
-    assert_eq!(current["formulaVersion"], "rust/ice-measured-workflow-v4");
-    assert_eq!(
-        current["inputSnapshot"]["gearingModelVersion"],
-        "aego-road-launch-envelope/v3"
-    );
-    assert!(current["inputSnapshot"]["roadLaunch"]["shiftLandingRpmsAtLimit"].is_array());
-    let mut p: TuningCarParams = serde_json::from_value(request["profile"].clone()).unwrap();
-    let engine = proof("AWD").engine().unwrap();
-    p.max_hp_rpm = Some(engine.peak_power_rpm);
-    p.max_torque_rpm = Some(engine.peak_torque_rpm);
-    p.max_torque = engine.peak_torque_nm;
-    let old_gearing = calculate_aego_gearing_v2(RaceGoal::Road, 6, &p, engine.engine_max_rpm, None);
-    assert_ne!(old_gearing.unsupported, Some(true));
-    let mut historical = current.clone();
-    for key in [
-        "gearingModelId",
-        "gearingDiagnostics",
-        "workflowSchemaVersion",
-    ] {
-        historical["inputSnapshot"]
-            .as_object_mut()
-            .unwrap()
-            .remove(key);
-    }
-    historical["formulaVersion"] = json!("rust/ice-measured-workflow-v1");
-    historical["inputSnapshot"]["gearingModelVersion"] = json!("aego-road-joint/v2");
-    historical["inputSnapshot"]
-        .as_object_mut()
-        .unwrap()
-        .remove("roadLaunch");
-    historical["fields"]["gearing.finalDrive"]["value"] = json!(old_gearing.final_drive);
-    for (i, g) in old_gearing.gears.iter().enumerate() {
-        historical["fields"][format!("gearing.gear{}", i + 1)]["value"] = json!(g);
-    }
-    assert_ne!(historical["fields"], current["fields"]);
-    let mut forged_history = historical.clone();
-    forged_history["inputSnapshot"]["gearingModelVersion"] = json!("aego-road-launch-envelope/v3");
-    forged_history["inputSnapshot"]["roadLaunch"] = json!({"selectedTotalRatio":999});
-    assert!(
-        app.tuning_evidence
-            .verify_recommendation(&forged_history, None)
-            .is_err(),
-        "historical v1 must reject caller-supplied v3 model metadata"
-    );
-    forged_history["inputSnapshot"]["gearingModelVersion"] = json!("aego-road-joint/v2");
-    assert!(app
-        .tuning_evidence
-        .verify_recommendation(&forged_history, None)
-        .is_err());
-    forged_history["inputSnapshot"]
-        .as_object_mut()
-        .unwrap()
-        .remove("roadLaunch");
-    forged_history["inputSnapshot"]["gearingModelVersion"] = json!("unknown-model");
-    assert!(app
-        .tuning_evidence
-        .verify_recommendation(&forged_history, None)
-        .is_err());
-    let mut unlabeled_history = historical.clone();
-    unlabeled_history["inputSnapshot"]
-        .as_object_mut()
-        .unwrap()
-        .remove("gearingModelVersion");
-    app.tuning_evidence
-        .verify_recommendation(&unlabeled_history, None)
-        .unwrap();
-    let saved = call(
-        &app,
-        "/api/road/compatibility",
-        json!({"discipline":"Drag","recommendation":historical}),
-    )
-    .unwrap();
-    assert_eq!(saved["recommendation"], historical);
-    assert!(call(
-        &app,
-        "/api/road/compatibility",
-        json!({"discipline":"Drag","recommendation":current})
-    )
-    .is_ok());
-    let mut relabeled = historical.clone();
-    relabeled["formulaVersion"] = json!("rust/ice-measured-workflow-v2");
-    assert!(app
-        .tuning_evidence
-        .verify_recommendation(&relabeled, None)
-        .is_err());
-    let mut altered = current.clone();
-    altered["inputSnapshot"]["roadLaunch"]["selectedTotalRatio"] = json!(999);
-    assert!(app
-        .tuning_evidence
-        .verify_recommendation(&altered, None)
-        .is_err());
-    let mut other_request = request.clone();
-    other_request["goal"] = json!("Rally");
-    other_request["inputSnapshot"]["roadLaunch"] = json!({"selectedTotalRatio":999});
-    // Pre-stack non-Road records retain their unlabeled wire format and frozen owner.
-    let saved_proof = app
-        .tuning_evidence
-        .resolve(&EvidenceRequest::SavedEngine {
-            observation_id: "real-beetle".into(),
-        })
-        .unwrap();
-    let other = serde_json::to_value(
-        fh6_backend::tuning::workflow::calculate_historical(
-            serde_json::from_value(other_request).unwrap(),
-            &saved_proof,
-            Some(fh6_backend::tuning::aego_model::AegoModel::RallyV1),
-        )
-        .unwrap(),
-    )
-    .unwrap()["recommendation"]
-        .clone();
-    assert!(other.is_object());
-    assert!(other["inputSnapshot"].get("gearingModelVersion").is_none());
-    assert!(other["inputSnapshot"].get("roadLaunch").is_none());
-    app.tuning_evidence
-        .verify_recommendation(&other, None)
-        .unwrap();
-    for model in [
-        json!("unknown/v99"),
-        json!("aego-drag/v1"),
-        json!(null),
-        json!(42),
-    ] {
-        let mut forged = other.clone();
-        forged["inputSnapshot"]["gearingModelVersion"] = model;
-        assert!(app
-            .tuning_evidence
-            .verify_recommendation(&forged, None)
-            .is_err());
-    }
-    for key in ["gearingModelId", "gearingDiagnostics"] {
-        let mut forged = other.clone();
-        forged["inputSnapshot"][key] = json!({"source":"backend", "status":"available"});
-        assert!(app
-            .tuning_evidence
-            .verify_recommendation(&forged, None)
-            .is_err());
-        let mut draft = request.clone();
-        draft["inputSnapshot"][key] = forged["inputSnapshot"][key].clone();
-        let recalculated = call(&app, "/api/tuning/workflow", draft).unwrap();
-        assert_ne!(
-            recalculated["recommendation"]["inputSnapshot"][key],
-            forged["inputSnapshot"][key]
-        );
-    }
-    let mut forged_other = other.clone();
-    forged_other["inputSnapshot"]["roadLaunch"] = json!({"selectedTotalRatio":999});
-    assert!(app
-        .tuning_evidence
-        .verify_recommendation(&forged_other, None)
-        .is_err());
-    drop(app);
-    let restarted = App::new(temp.path()).unwrap();
-    restarted
-        .tuning_evidence
-        .verify_recommendation(&historical, None)
-        .unwrap();
-    restarted
-        .tuning_evidence
-        .verify_recommendation(&current, None)
-        .unwrap();
-}
-
-#[test]
 fn ratio_balance_replays_authoritative_base_and_rejects_tampering() {
     let temp = tempfile::tempdir().unwrap();
     let app = App::new(temp.path()).unwrap();
@@ -1376,15 +1149,6 @@ fn drag_candidate_uses_qualified_workflow_profile_finish_even_without_secondary_
     }
     raw["profile"]["dragFinishSpeedKmh"] = json!(40.0);
     raw["profile"]["dragFinishSpeedProvenance"] = json!("manual");
-    let request: WorkflowRequest = serde_json::from_value(raw.clone()).unwrap();
-    let historical = fh6_backend::tuning::workflow::calculate_historical(
-        request,
-        proof("AWD"),
-        Some(fh6_backend::tuning::aego_model::AegoModel::DragV1),
-    )
-    .unwrap();
-    // The frozen pre-stack owner retains the missing rejection; production no longer does.
-    assert!(historical.readiness.gearing_available);
     let request: WorkflowRequest = serde_json::from_value(raw.clone()).unwrap();
     let candidate = measured_drag_candidate(&request, proof("AWD")).unwrap();
     assert_eq!(candidate.gearing.unsupported, Some(true));
