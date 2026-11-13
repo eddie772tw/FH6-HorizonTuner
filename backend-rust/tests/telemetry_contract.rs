@@ -1502,3 +1502,83 @@ fn app_process_zero_clone_profile_steady_state_and_cache_containment() {
     });
     app.process(frame0);
 }
+
+#[test]
+fn test_finalize_session_time_trial_and_roaming_windows_parity() {
+    let dir = tempfile::tempdir().unwrap();
+    let store = fh6_backend::telemetry::TelemetryStore::new(&dir.path().join("t.db")).unwrap();
+
+    // 1. Multi-lap time_trial: touching windows [10, 13], [13, 16] and unfinished lap 3 tail
+    store
+        .create_session("tt1", 1, "Car", 800, 800, 0.0)
+        .unwrap();
+    let tt_pts: Vec<Value> = (0..8)
+        .map(|i| {
+            let lap = (i / 3) + 1;
+            let spd = if lap == 1 {
+                20.0 + (i as f64) * 10.0
+            } else if lap == 2 {
+                50.0
+            } else {
+                10.0
+            };
+            json!({"time": 10.0 + i as f64, "LapNumber": lap, "SpeedMetersPerSecond": spd, "lap_distance": i as f64 * 25.0})
+        })
+        .collect();
+    store.insert_points_batch("tt1", &tt_pts).unwrap();
+    let out = store
+        .finalize_session("tt1", json!({"recording_mode": "time_trial"}))
+        .unwrap();
+    assert_eq!(out["total_laps"], 2);
+    assert_eq!(out["best_lap_time"], 3.0);
+    assert_eq!(out["total_distance"], 175.0);
+    let trim = &store.get_session_metadata("tt1").unwrap()["trim_analysis"];
+    assert_eq!(trim["trimmed_sample_count"], 7);
+    assert_eq!(trim["valid_start_time"], 10.0);
+    assert_eq!(trim["valid_end_time"], 16.0);
+    assert_eq!(trim["valid_lap_windows"].as_array().unwrap().len(), 2);
+    let laps = store.get_session_laps("tt1").unwrap();
+    assert_eq!(laps.len(), 3);
+    assert_eq!(laps[0]["complete"], 1);
+    assert_eq!(laps[0]["observed_span"], 2.0);
+    assert!((laps[0]["max_speed_kmh"].as_f64().unwrap() - 144.0).abs() < 1e-9);
+    assert!((laps[0]["avg_speed_kmh"].as_f64().unwrap() - 108.0).abs() < 1e-9);
+    assert_eq!(laps[2]["complete"], 0);
+
+    // 2. Missing "time" on first sample keeps empty valid_lap_windows parity
+    store
+        .create_session("tt_nt", 1, "Car", 800, 800, 0.0)
+        .unwrap();
+    let nt_pts = [
+        json!({"TimestampMS": 1000.0, "LapNumber": 1, "SpeedMetersPerSecond": 20.0}),
+        json!({"time": 2.0, "TimestampMS": 2000.0, "LapNumber": 1, "SpeedMetersPerSecond": 25.0}),
+        json!({"time": 4.0, "TimestampMS": 4000.0, "LapNumber": 2, "SpeedMetersPerSecond": 30.0}),
+    ];
+    store.insert_points_batch("tt_nt", &nt_pts).unwrap();
+    let out_nt = store
+        .finalize_session("tt_nt", json!({"recording_mode": "time_trial"}))
+        .unwrap();
+    assert_eq!(out_nt["total_laps"], 1);
+    let trim_nt = &store.get_session_metadata("tt_nt").unwrap()["trim_analysis"];
+    assert_eq!(trim_nt["valid_lap_windows"].as_array().unwrap().len(), 0);
+    assert_eq!(trim_nt["trimmed_sample_count"], 0);
+
+    // 3. Roaming destination-reached mode parity
+    store
+        .create_session("roam1", 1, "Car", 800, 800, 0.0)
+        .unwrap();
+    let r_pts: Vec<Value> = (0..3)
+        .map(|i| json!({"time": 1.0 + i as f64, "LapNumber": 1, "SpeedMetersPerSecond": 10.0 * (i + 1) as f64}))
+        .collect();
+    store.insert_points_batch("roam1", &r_pts).unwrap();
+    let out_r = store
+        .finalize_session(
+            "roam1",
+            json!({"recording_mode": "roaming", "endReason": "destination-reached"}),
+        )
+        .unwrap();
+    assert_eq!(out_r["total_laps"], 1);
+    let trim_r = &store.get_session_metadata("roam1").unwrap()["trim_analysis"];
+    assert_eq!(trim_r["trimmed_sample_count"], 3);
+    assert_eq!(trim_r["valid_lap_windows"][0]["end_time"], 3.0);
+}

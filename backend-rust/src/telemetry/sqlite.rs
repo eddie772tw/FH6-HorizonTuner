@@ -248,13 +248,19 @@ impl TelemetryStore {
     }
     pub fn finalize_session(&self, id: &str, metadata: Value) -> Result<Value, String> {
         let points = self.get_telemetry_points(id, None)?;
-        let mut distances = Vec::new();
+        let (mut dist_min, mut dist_max) = (f64::INFINITY, f64::NEG_INFINITY);
         let mut complete = 0;
         let mut best = f64::INFINITY;
         #[derive(Default)]
         struct LapAgg {
-            times: Vec<f64>,
-            speeds: Vec<f64>,
+            first_point_time: Option<Option<f64>>,
+            time_first: Option<f64>,
+            time_prev: Option<f64>,
+            time_bounds: Option<(f64, f64)>,
+            has_exposure: bool,
+            speed_sum: f64,
+            speed_max: Option<f64>,
+            speed_count: usize,
             start_observed: bool,
             lap_time: Option<f64>,
         }
@@ -296,42 +302,51 @@ impl TelemetryStore {
             }
             previous_lap = Some(lap);
             let entry = laps.entry(lap).or_default();
+            entry
+                .first_point_time
+                .get_or_insert_with(|| p.get("time").and_then(Value::as_f64));
             if let Some(current) = p.get("CurrentLap").and_then(Value::as_f64) {
                 if (0.0..=5.0).contains(&current) {
                     entry.start_observed = true;
                 }
             }
-            if let Some(t) = p.get("TimestampMS").and_then(Value::as_f64) {
-                entry.times.push(t / 1000.0);
-            } else if let Some(t) = p.get("time").and_then(Value::as_f64) {
-                entry.times.push(t);
+            // Stream lap stats and bounds in one pass to avoid full-session Vec<f64> allocations.
+            let t_sec = p
+                .get("TimestampMS")
+                .and_then(Value::as_f64)
+                .map(|t| t / 1000.0)
+                .or_else(|| p.get("time").and_then(Value::as_f64));
+            if let Some(t) = t_sec {
+                entry.time_first.get_or_insert(t);
+                entry.has_exposure |= entry.time_prev.is_some_and(|prev| t > prev);
+                entry.time_prev = Some(t);
+                entry.time_bounds = Some(match entry.time_bounds {
+                    Some((min, max)) => (min.min(t), max.max(t)),
+                    None => (t, t),
+                });
             }
             if let Some(speed) = p.get("SpeedMetersPerSecond").and_then(Value::as_f64) {
-                entry.speeds.push(speed * 3.6);
+                let kmh = speed * 3.6;
+                entry.speed_sum += kmh;
+                entry.speed_count += 1;
+                entry.speed_max = Some(entry.speed_max.map_or(kmh, |m| m.max(kmh)));
             }
             if let Some(d) = p.get("lap_distance").and_then(Value::as_f64) {
-                distances.push(d)
+                dist_min = dist_min.min(d);
+                dist_max = dist_max.max(d);
             }
         }
         let max_lap_number = laps.keys().copied().max().unwrap_or(1);
 
         let mut lap_rows = Vec::new();
         for (lap_number, entry) in &laps {
-            let observed_span = entry
-                .times
-                .iter()
-                .copied()
-                .reduce(f64::max)
-                .zip(entry.times.iter().copied().reduce(f64::min))
-                .map(|(max, min)| max - min);
+            let observed_span = entry.time_bounds.map(|(min, max)| max - min);
             let continuity_valid = !invalid_laps
                 .is_some_and(|invalid| invalid.iter().any(|v| v.as_i64() == Some(*lap_number)));
             let (is_complete, lap_time, source) = if is_time_trial {
                 if continuity_valid && *lap_number < max_lap_number {
-                    let lap_start = entry.times.first().copied();
-                    let next_start = laps
-                        .get(&(lap_number + 1))
-                        .and_then(|n| n.times.first().copied());
+                    let lap_start = entry.time_first;
+                    let next_start = laps.get(&(lap_number + 1)).and_then(|n| n.time_first);
                     let duration = match (next_start, lap_start) {
                         (Some(n), Some(s)) if n > s => Some(((n - s) * 1000.0).round() / 1000.0),
                         _ => None,
@@ -365,12 +380,11 @@ impl TelemetryStore {
                     best = best.min(t);
                 }
             }
-            let max_speed = entry.speeds.iter().copied().reduce(f64::max);
-            let has_exposure = entry.times.windows(2).any(|window| window[1] > window[0]);
-            let avg_speed = if entry.speeds.len() < 2 || !has_exposure {
+            let max_speed = entry.speed_max;
+            let avg_speed = if entry.speed_count < 2 || !entry.has_exposure {
                 None
             } else {
-                Some(entry.speeds.iter().sum::<f64>() / entry.speeds.len() as f64)
+                Some(entry.speed_sum / entry.speed_count as f64)
             };
             lap_rows.push((
                 *lap_number,
@@ -382,33 +396,32 @@ impl TelemetryStore {
                 source,
             ));
         }
-        let total = if distances.is_empty() {
-            0.0
+        let total = if dist_min.is_finite() {
+            dist_max - dist_min
         } else {
-            distances.iter().copied().fold(f64::NEG_INFINITY, f64::max)
-                - distances.iter().copied().fold(f64::INFINITY, f64::min)
+            0.0
         };
 
         // Post-stop trimming analysis (non-destructive)
+        let mut raw_windows = Vec::new();
         let valid_lap_windows: Vec<Value> = if is_time_trial || is_roaming {
+            let roaming_end = points
+                .last()
+                .and_then(|p| p.get("time").and_then(Value::as_f64));
             lap_rows
                 .iter()
                 .filter(|(_, _, _, _, _, is_complete, _)| *is_complete)
                 .filter_map(|(lap, _, _, _, _, _, _)| {
-                    let start = points
-                        .iter()
-                        .find(|p| i64v(p, "LapNumber", 0) == *lap)?
-                        .get("time")?
-                        .as_f64()?;
+                    // Reuse O(log L) lap entry lookups instead of rescanning all telemetry points per lap.
+                    let start = laps.get(lap).and_then(|e| e.first_point_time).flatten()?;
                     let end = if is_time_trial {
-                        points
-                            .iter()
-                            .find(|p| i64v(p, "LapNumber", 0) == *lap + 1)?
-                            .get("time")?
-                            .as_f64()?
+                        laps.get(&(lap + 1))
+                            .and_then(|e| e.first_point_time)
+                            .flatten()?
                     } else {
-                        points.last()?.get("time")?.as_f64()?
+                        roaming_end?
                     };
+                    raw_windows.push((start, end));
                     Some(serde_json::json!({"lap_number":lap,"start_time":start,"end_time":end}))
                 })
                 .collect()
@@ -469,14 +482,8 @@ impl TelemetryStore {
                 // The first sample is the starting gate boundary, even at low speed.
                 first_active_idx = 0;
                 if complete > 0 {
-                    let start = valid_lap_windows
-                        .first()
-                        .and_then(|w| w["start_time"].as_f64())
-                        .unwrap_or(first_time);
-                    let end = valid_lap_windows
-                        .last()
-                        .and_then(|w| w["end_time"].as_f64())
-                        .unwrap_or(last_time);
+                    let start = raw_windows.first().map_or(first_time, |w| w.0);
+                    let end = raw_windows.last().map_or(last_time, |w| w.1);
                     first_active_idx = points
                         .iter()
                         .position(|p| p["time"].as_f64().is_some_and(|t| t >= start))
@@ -507,14 +514,19 @@ impl TelemetryStore {
             };
             let tail_trim_seconds = (last_time - valid_end_time).max(0.0);
             let trimmed_sample_count = if is_time_trial || is_roaming {
+                // Binary-search disjoint monotonic windows in O(log L) instead of O(L) JSON scans per sample.
+                let sorted_disjoint = raw_windows.iter().all(|&(s, e)| s <= e)
+                    && raw_windows.windows(2).all(|w| w[0].1 <= w[1].0);
                 points
                     .iter()
                     .filter(|p| {
-                        p["time"].as_f64().is_some_and(|t| {
-                            valid_lap_windows.iter().any(|w| {
-                                t >= w["start_time"].as_f64().unwrap()
-                                    && t <= w["end_time"].as_f64().unwrap()
-                            })
+                        p.get("time").and_then(Value::as_f64).is_some_and(|t| {
+                            if sorted_disjoint {
+                                let idx = raw_windows.partition_point(|w| w.0 <= t);
+                                idx > 0 && t <= raw_windows[idx - 1].1
+                            } else {
+                                raw_windows.iter().any(|&(s, e)| t >= s && t <= e)
+                            }
                         })
                     })
                     .count()
