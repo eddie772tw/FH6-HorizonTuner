@@ -49,30 +49,54 @@ fn ticks(range: &RatioRange) -> Option<(i64, i64)> {
         .then_some((lo.round() as i64, hi.round() as i64))
 }
 
-/// Intersect a ratio grid with the predeclared *speed* tolerance, before allocation.
+/// Intersect a ratio grid with the predeclared *speed* tolerance and usable RPM limit.
 fn endpoint_ticks(
     range: (i64, i64),
     k: f64,
     fd: f64,
+    rpm: f64,
+    usable_limit: f64,
+    radius: f64,
     speed: f64,
     tolerance: f64,
-    usable_rpm_ratio: f64,
 ) -> Option<(i64, i64)> {
-    let lo = range
+    let usable_rpm_ratio = usable_limit / rpm;
+    let mut lo = range
         .0
-        .max((k / (fd * (speed + tolerance)) * 100.0 - 1e-8).ceil() as i64);
+        .max((k / (fd * (speed + tolerance)) * 100.0 - 1e-6).ceil() as i64);
     let speed_hi = if speed > tolerance {
         range
             .1
-            .min((k / (fd * (speed - tolerance)) * 100.0 + 1e-8).floor() as i64)
+            .min((k / (fd * (speed - tolerance)) * 100.0 + 1e-6).floor() as i64)
     } else {
         range.1
     };
     // At the requested endpoint speed, rounding must not require RPM beyond the
     // qualified usable limit even when speed error alone remains within tolerance.
-    let rpm_hi = (k * usable_rpm_ratio / (fd * speed) * 100.0 + 1e-8).floor() as i64;
-    let hi = speed_hi.min(rpm_hi);
-    (lo <= hi).then_some((lo, hi))
+    let rpm_hi = (k * usable_rpm_ratio / (fd * speed) * 100.0 + 1e-6).floor() as i64;
+    let mut hi = speed_hi.min(rpm_hi);
+    let actual_speed = |tick: i64| calc_gear_speed(rpm, tick as f64 / 100.0, fd, radius) * 3.6;
+    let actual_rpm = |tick: i64| calc_gear_rpm(speed / 3.6, tick as f64 / 100.0, fd, radius);
+    // Speed decreases monotonically with tick while RPM at target speed increases monotonically,
+    // so trimming the outer bracket against respects_hard_targets predicates yields the exact interval.
+    while lo <= hi && actual_speed(lo) > speed + tolerance + 1e-9 {
+        lo += 1;
+    }
+    while lo <= hi
+        && (actual_speed(hi) < speed - tolerance - 1e-9 || actual_rpm(hi) > usable_limit + 1e-8)
+    {
+        hi -= 1;
+    }
+    let valid = |tick: i64| {
+        let s = actual_speed(tick);
+        let r = actual_rpm(tick);
+        s.is_finite()
+            && s > 0.0
+            && (s - speed).abs() <= tolerance + 1e-9
+            && r.is_finite()
+            && r <= usable_limit + 1e-8
+    };
+    (lo <= hi && valid(lo) && valid(hi)).then_some((lo, hi))
 }
 
 /// Recheck an adjusted result against backend-produced diagnostics. Callers must
@@ -422,6 +446,8 @@ pub fn solve_candidate(
     let totals: Vec<f64> = (0..count)
         .map(|i| first_total * (top_total / first_total).powf(i as f64 / (count - 1) as f64))
         .collect();
+    let radius = circumference / (2.0 * PI);
+    let launch_tolerance = 1.0_f64.max(launch * 0.02);
     let mut best: Option<(f64, GearingResult)> = None;
     for fd_tick in fd_lo..=fd_hi {
         let fd = fd_tick as f64 / 100.0;
@@ -430,13 +456,16 @@ pub fn solve_candidate(
             legal[0],
             k,
             fd,
+            rpm,
+            max_rpm,
+            radius,
             launch,
-            1.0_f64.max(launch * 0.02),
-            max_rpm / rpm,
+            launch_tolerance,
         ) else {
             continue;
         };
-        let Some(last) = endpoint_ticks(legal[count - 1], k, fd, target, tolerance, max_rpm / rpm)
+        let Some(last) =
+            endpoint_ticks(legal[count - 1], k, fd, rpm, max_rpm, radius, target, tolerance)
         else {
             continue;
         };
