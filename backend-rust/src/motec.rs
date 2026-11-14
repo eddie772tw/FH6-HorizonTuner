@@ -86,6 +86,17 @@ pub fn debrief(points: &[Value]) -> Value {
         .count();
     json!({"total_samples":points.len(),"valid_laps":valid_laps,"tire_thermals":{"fl_avg":averages[0],"fr_avg":averages[1],"rl_avg":averages[2],"rr_avg":averages[3],"status":thermal},"suspension":{"peak_travel_pct":travel.iter().copied().reduce(f64::max).map(|n|round(n*100.0,1)),"bottom_out_count":(!travel.is_empty()).then_some(bottom),"status":suspension},"handling_balance":{"understeer_pct":up.map(|v|round(v,1)),"oversteer_pct":op.map(|v|round(v,1)),"tendency":tendency}})
 }
+/// Neutralizes spreadsheet formula triggers (OWASP CWE-1236) on freeform CSV metadata cells
+/// so caller-supplied or imported session/vehicle strings cannot evaluate as formulas in spreadsheets.
+fn sanitize_csv_cell(value: &str) -> String {
+    if value.starts_with(['\t', '\r', '\n'])
+        || value.trim_start().starts_with(['=', '+', '-', '@'])
+    {
+        format!("'{value}")
+    } else {
+        value.to_string()
+    }
+}
 fn fmt(value: Option<&Value>, scale: f64, offset: f64, digits: usize) -> String {
     value
         .and_then(number)
@@ -97,8 +108,9 @@ pub fn export(metadata: &Value, points: &[Value]) -> ApiResult<Vec<u8>> {
         .flexible(true)
         .terminator(csv::Terminator::CRLF)
         .from_writer(Vec::new());
-    let id = metadata["session_id"].as_str().unwrap_or("session");
-    let car = metadata["car_name"].as_str().unwrap_or("Unknown Vehicle");
+    let raw_id = metadata["session_id"].as_str().unwrap_or("session");
+    let id = sanitize_csv_cell(raw_id);
+    let car = sanitize_csv_cell(metadata["car_name"].as_str().unwrap_or("Unknown Vehicle"));
     let mut record = |row: Vec<String>| {
         writer
             .write_record(row)
@@ -112,8 +124,8 @@ pub fn export(metadata: &Value, points: &[Value]) -> ApiResult<Vec<u8>> {
             "Serial",
             "FH6-HORIZON-TUNER",
         ],
-        vec!["Date", id, "Time", "00:00:00"],
-        vec!["Driver", "Driver", "Vehicle", car],
+        vec!["Date", id.as_str(), "Time", "00:00:00"],
+        vec!["Driver", "Driver", "Vehicle", car.as_str()],
     ] {
         record(row.into_iter().map(str::to_owned).collect())?;
     }
@@ -121,7 +133,7 @@ pub fn export(metadata: &Value, points: &[Value]) -> ApiResult<Vec<u8>> {
         "Venue".into(),
         "Forza Circuit".into(),
         "Comment".into(),
-        format!("Exported Telemetry Session {id} - Full 41 Channels"),
+        sanitize_csv_cell(&format!("Exported Telemetry Session {raw_id} - Full 41 Channels")),
     ])?;
     let mut intervals: Vec<f64> = points
         .windows(2)

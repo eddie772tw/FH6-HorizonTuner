@@ -50,3 +50,9 @@
 **學習 (Learning):** 專案的核心路徑防護函式 `storage::safe_path` 雖已具備完整的目錄包含性檢驗與 MS-DOS 保留設備攔截，但若特定子系統（如語言覆蓋讀取）直接使用 `Path::join` 拼接外部參數並直接調用檔案系統 API，將形成安全防護死角。外部參數在進入檔案系統操作前，必須統一經由 `safe_path` 進行沙盒邊界校驗，並於 API 入口層針對參數長度施加嚴格邊界（如 ≤ 32 字元），防止異常過長字串消耗不必要的字串分配。
 **預防 (Prevention):** 嚴格遵循專案 Core Invariant #4，所有涉及使用者輸入與動態檔名組裝的檔案系統操作，一律強制經由 `storage::safe_path` 驗證合法性，若驗證失敗則優雅略過本地檔案讀取並回退至內嵌資源；於 API 路由層嚴格限制 URL 路徑參數長度與字元白名單，落實縱深防禦（Defense in Depth）。
 **署名:** Sentinel as Antigravity
+
+## 2026-11-15 - MoTeC CSV Export Formula Injection Neutralization (CWE-1236)
+**漏洞/脆弱點 (Vulnerability):** 後端 MoTeC CSV 匯出模組 `backend-rust/src/motec.rs::export` 直接將 `metadata["session_id"]`（寫入 `Date` 欄位）與 `metadata["car_name"]`（寫入 `Vehicle` 欄位）輸出至 CSV 儲存格，未防範以 `=`、`+`、`-`、`@` 或前導空白／控制字元（`\t`、`\r`、`\n`）開頭的試算表公式注入（CSV Formula Injection / CWE-1236）。由於 `car_name` 可經由錄製啟動端點（`/api/analysis/recorder/start`）設定，且外部匯入的 MoTeC CSV（`/api/analysis/import/motec`）亦會保留 `Date` 與 `Vehicle` 字串，當使用者再將該工作階段匯出為 CSV 並於 Excel 或 LibreOffice Calc 開啟時，惡意公式或 DDE 指令可能於本機觸發執行。
+**學習 (Learning):** 使用 RFC 4180 相容的 CSV 序列器（如 Rust `csv::Writer`）僅能確保逗號、引號與換行的結構完整性，無法防範試算表軟體解析儲存格內容前綴作為公式執行。同時，遙測數值欄位包含合法負數（例如橫向 G 值或胎面滑移角），因此不能對全表套用盲目字串前綴，必須精準針對自由格式之文字型 Metadata 欄位進行前綴中和並保持冪等性（已含單引號 `'` 前綴者不重複加註）。
+**預防 (Prevention):** 於 CSV 匯出層抽象 `sanitize_csv_cell` 輔助函式，對所有自由格式文字欄位檢查是否以 `\t`、`\r`、`\n` 或忽略前導空白後之 `=`、`+`、`-`、`@` 開頭，若是則加上單引號 `'` 前綴強制試算表視為純文字顯示，並保留數值型遙測通道與正常連字號車名不受影響；同步於 `motec_contract.rs` 補齊跨前綴與冪等性安全回歸測試。
+**署名:** Sentinel as Antigravity
