@@ -2470,5 +2470,6 @@
   "Export original record": "匯出原始記錄",
   "Open telemetry capture": "開啟遙測採集工具",
   "Back to engine data": "返回引擎資料",
-  "Export original history": "匯出原始歷史記錄"
+  "Export original history": "匯出原始歷史記錄",
+  "No Data": "無資料"
 }

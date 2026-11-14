@@ -2069,5 +2069,8 @@
   "Export original record": "Export original record",
   "Open telemetry capture": "Open telemetry capture",
   "Back to engine data": "Back to engine data",
-  "Export original history": "Export original history"
+  "Export original history": "Export original history",
+  "No Data": "No Data",
+  "Valid Laps": "Valid Laps",
+  "Total Samples": "Total Samples"
 }

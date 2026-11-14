@@ -1903,5 +1903,8 @@
   "Export original record": "元の記録をエクスポート",
   "Open telemetry capture": "テレメトリー収集を開く",
   "Back to engine data": "エンジンデータに戻る",
-  "Export original history": "元の履歴をエクスポート"
+  "Export original history": "元の履歴をエクスポート",
+  "No Data": "データなし",
+  "Valid Laps": "有効ラップ数",
+  "Total Samples": "総サンプル数"
 }
