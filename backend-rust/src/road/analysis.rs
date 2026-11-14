@@ -72,7 +72,8 @@ fn weights<'a>(points: impl Iterator<Item = &'a Value>) -> (Vec<f64>, Value) {
 fn dist(vals: impl IntoIterator<Item = Option<f64>>, w: &[f64]) -> Value {
     let mut exposure = 0.0;
     let mut weighted_sum = 0.0;
-    let mut x = Vec::new();
+    // [PERF] Pre-size output vector to avoid geometric reallocations (~11 reallocs per 10k-point call).
+    let mut x = Vec::with_capacity(w.len());
     for (value, weight) in vals.into_iter().zip(w) {
         if let Some(value) = value.filter(|_| *weight > 0.0) {
             exposure += *weight;
@@ -80,10 +81,10 @@ fn dist(vals: impl IntoIterator<Item = Option<f64>>, w: &[f64]) -> Value {
             x.push((value, *weight));
         }
     }
-    x.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap_or(Ordering::Equal));
     if exposure == 0.0 {
         return json!({"observedSeconds":0.0,"mean":null,"p05":null,"p50":null,"p95":null});
     }
+    x.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap_or(Ordering::Equal));
     let thresholds = [0.05 * exposure, 0.5 * exposure, 0.95 * exposure];
     let mut percentiles = [None; 3];
     let mut accumulated = 0.0;
@@ -147,35 +148,7 @@ pub fn summarize_road_observations(points: &[Value]) -> Value {
             end_weight
         })
         .collect();
-    let mut tc: [Vec<Option<f64>>; 4] = std::array::from_fn(|_| Vec::with_capacity(points.len()));
-    let mut travel: [Vec<Option<f64>>; 4] =
-        std::array::from_fn(|_| Vec::with_capacity(points.len()));
-    let mut slip: [Vec<Option<f64>>; 4] = std::array::from_fn(|_| Vec::with_capacity(points.len()));
-    let mut angle: [Vec<Option<f64>>; 4] =
-        std::array::from_fn(|_| Vec::with_capacity(points.len()));
-    for point in points {
-        let temperatures = wheel_values(point, "TireTemp");
-        let travels = wheel_values(point, "NormalizedSuspensionTravel");
-        let slips = wheel_values(point, "TireSlipRatio");
-        let angles = wheel_values(point, "TireSlipAngle");
-        for i in 0..4 {
-            tc[i].push(wheel_value(temperatures, i).map(|x| (x - 32.0) * 5.0 / 9.0));
-            travel[i].push(wheel_value(travels, i));
-            slip[i].push(wheel_value(slips, i));
-            angle[i].push(wheel_value(angles, i));
-        }
-    }
-
-    let mut ws = serde_json::Map::new();
-    for (i, name) in ["FL", "FR", "RL", "RR"].iter().enumerate() {
-        let start = initial.and_then(|j| tc[i][j]);
-        let end = dist(tc[i].iter().copied(), &end_weights)
-            .get("mean")
-            .and_then(Value::as_f64);
-        let change = start.zip(end).map(|(a, b)| b - a);
-        ws.insert(name.to_string(),json!({"temperatureC":dist(tc[i].iter().copied(),&w),"startTemperatureC":start,"endTemperatureC":end,"temperatureChangeC":change,"normalizedTravel":dist(travel[i].iter().copied(),&w),"nearCompression":events(travel[i].iter().copied(),&w,Some(0.95),None,false,false),"nearExtension":events(travel[i].iter().copied(),&w,None,Some(0.05),false,false),"normalizedRatio":dist(slip[i].iter().copied(),&w),"normalizedAngle":dist(angle[i].iter().copied(),&w),"ratioAboveOne":events(slip[i].iter().copied(),&w,Some(1.0),None,true,true),"angleAboveOne":events(angle[i].iter().copied(),&w,Some(1.0),None,true,true)}));
-    }
-    let fields = [
+    const CHANNEL_FIELDS: [&str; 13] = [
         "SpeedMetersPerSecond",
         "CurrentEngineRpm",
         "PowerWatts",
@@ -190,9 +163,75 @@ pub fn summarize_road_observations(points: &[Value]) -> Value {
         "ClutchInput",
         "HandBrakeInput",
     ];
+    let active_cap = w.iter().filter(|&&weight| weight > 0.0).count();
+    let mut active_w = Vec::with_capacity(active_cap);
+    let mut channel_vals: [Vec<Option<f64>>; 13] =
+        std::array::from_fn(|_| Vec::with_capacity(active_cap));
+    let mut tc: [Vec<Option<f64>>; 4] = std::array::from_fn(|_| Vec::with_capacity(points.len()));
+    let mut travel: [Vec<Option<f64>>; 4] =
+        std::array::from_fn(|_| Vec::with_capacity(points.len()));
+    let mut slip: [Vec<Option<f64>>; 4] = std::array::from_fn(|_| Vec::with_capacity(points.len()));
+    let mut angle: [Vec<Option<f64>>; 4] =
+        std::array::from_fn(|_| Vec::with_capacity(points.len()));
+    // [PERF] Extract all 13 scalar channels in a single pass over active telemetry objects,
+    // replacing 13 repeated Vec scans and ~130k IndexMap hash lookups per 10k-point summary.
+    for (idx, point) in points.iter().enumerate() {
+        let temperatures = wheel_values(point, "TireTemp");
+        let travels = wheel_values(point, "NormalizedSuspensionTravel");
+        let slips = wheel_values(point, "TireSlipRatio");
+        let angles = wheel_values(point, "TireSlipAngle");
+        for i in 0..4 {
+            tc[i].push(wheel_value(temperatures, i).map(|x| (x - 32.0) * 5.0 / 9.0));
+            travel[i].push(wheel_value(travels, i));
+            slip[i].push(wheel_value(slips, i));
+            angle[i].push(wheel_value(angles, i));
+        }
+        let weight = w.get(idx).copied().unwrap_or(0.0);
+        if weight > 0.0 {
+            active_w.push(weight);
+            let mut row = [None; 13];
+            if let Some(map) = point.as_object() {
+                for (key, value) in map {
+                    let slot = match key.as_str() {
+                        "SpeedMetersPerSecond" => 0,
+                        "CurrentEngineRpm" => 1,
+                        "PowerWatts" => 2,
+                        "TorqueNewtons" => 3,
+                        "AccelerationX" => 4,
+                        "AccelerationY" => 5,
+                        "AccelerationZ" => 6,
+                        "AngularVelocityY" => 7,
+                        "AccelInput" => 8,
+                        "BrakeInput" => 9,
+                        "SteerInput" => 10,
+                        "ClutchInput" => 11,
+                        "HandBrakeInput" => 12,
+                        _ => continue,
+                    };
+                    row[slot] = num(Some(value));
+                }
+            }
+            for (ci, val) in row.into_iter().enumerate() {
+                channel_vals[ci].push(val);
+            }
+        }
+    }
+
+    let mut ws = serde_json::Map::new();
+    for (i, name) in ["FL", "FR", "RL", "RR"].iter().enumerate() {
+        let start = initial.and_then(|j| tc[i][j]);
+        let end = dist(tc[i].iter().copied(), &end_weights)
+            .get("mean")
+            .and_then(Value::as_f64);
+        let change = start.zip(end).map(|(a, b)| b - a);
+        ws.insert(name.to_string(),json!({"temperatureC":dist(tc[i].iter().copied(),&w),"startTemperatureC":start,"endTemperatureC":end,"temperatureChangeC":change,"normalizedTravel":dist(travel[i].iter().copied(),&w),"nearCompression":events(travel[i].iter().copied(),&w,Some(0.95),None,false,false),"nearExtension":events(travel[i].iter().copied(),&w,None,Some(0.05),false,false),"normalizedRatio":dist(slip[i].iter().copied(),&w),"normalizedAngle":dist(angle[i].iter().copied(),&w),"ratioAboveOne":events(slip[i].iter().copied(),&w,Some(1.0),None,true,true),"angleAboveOne":events(angle[i].iter().copied(),&w,Some(1.0),None,true,true)}));
+    }
     let mut channels = serde_json::Map::new();
-    for f in fields {
-        channels.insert(f.into(), dist(points.iter().map(|p| num(p.get(f))), &w));
+    for (ci, f) in CHANNEL_FIELDS.iter().enumerate() {
+        channels.insert(
+            (*f).into(),
+            dist(channel_vals[ci].iter().copied(), &active_w),
+        );
     }
     json!({"methodVersion":ROAD_ANALYSIS_VERSION,"sampleCount":points.len(),"quality":q,"wheels":ws,"laps":summarize_laps(points),"channels":channels})
 }
