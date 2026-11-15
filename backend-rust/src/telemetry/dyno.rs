@@ -14,9 +14,21 @@ fn fingerprint(frame: &Map<String, Value>) -> Option<(i64, i64, i64)> {
         f(frame.get("CarPerformanceIndex"))? as i64,
     ))
 }
+// [PERF] Stack-sort small sample windows (<= N) to eliminate per-frame Vec allocation.
+fn sort_f64<'a, const N: usize>(v: &[f64], b: &'a mut [f64; N], h: &'a mut Vec<f64>) -> &'a [f64] {
+    let s = if v.len() <= N {
+        &mut b[..v.len()]
+    } else {
+        h.resize(v.len(), 0.0);
+        h
+    };
+    s.copy_from_slice(v);
+    s.sort_by(f64::total_cmp);
+    s
+}
 fn median(v: &[f64]) -> f64 {
-    let mut x = v.to_vec();
-    x.sort_by(f64::total_cmp);
+    let (mut b, mut h) = ([0.0_f64; 8], Vec::new());
+    let x = sort_f64(v, &mut b, &mut h);
     if x.len() % 2 == 0 {
         (x[x.len() / 2 - 1] + x[x.len() / 2]) / 2.0
     } else {
@@ -47,6 +59,16 @@ impl DynoQualityAssessment {
         m.insert("segmentId".into(), Value::from(self.segment_id));
         m.insert("segmentReset".into(), Value::from(self.segment_reset));
         Value::Object(m)
+    }
+    fn matches_value(&self, v: &Value) -> bool {
+        self.reasons.is_empty()
+            && v.as_object().is_some_and(|m| m.len() == 6)
+            && v["status"].as_str() == Some(&self.status)
+            && v["confidence"].as_f64() == Some(self.confidence)
+            && v["canCollect"].as_bool() == Some(self.can_collect)
+            && v["segmentId"].as_u64() == Some(self.segment_id)
+            && v["segmentReset"].as_bool() == Some(self.segment_reset)
+            && v["reasons"].as_array().is_some_and(Vec::is_empty)
     }
 }
 
@@ -204,18 +226,13 @@ impl DynoQualityGate {
         speed: Option<f64>,
         elapsed: f64,
     ) -> bool {
-        let mut speeds = Vec::new();
-        if let Some(x) = self.prev_speed {
-            speeds.push(x)
-        }
-        if let Some(x) = speed {
-            speeds.push(x)
-        }
-        if speeds.is_empty() {
-            return false;
-        }
-        let expected = speeds.into_iter().fold(0.0, f64::max) * elapsed;
-        let permitted = POSITION_FLOOR.max(expected * POSITION_TOLERANCE);
+        // [PERF] Compute max of Option<f64> speeds on stack to eliminate per-frame Vec allocation.
+        let max_speed = match (self.prev_speed, speed) {
+            (Some(a), Some(b)) => a.max(b),
+            (Some(a), None) | (None, Some(a)) => a,
+            (None, None) => return false,
+        };
+        let permitted = POSITION_FLOOR.max(max_speed * elapsed * POSITION_TOLERANCE);
         ((new[0] - old[0]).powi(2) + (new[1] - old[1]).powi(2) + (new[2] - old[2]).powi(2)).sqrt()
             > permitted
     }
@@ -270,7 +287,12 @@ pub fn reconcile_dyno_profile_segment(
     let Some(m) = profile.as_object_mut() else {
         return false;
     };
-    m.insert("dyno_quality".into(), quality.as_value());
+    // [PERF] Skip allocating and re-inserting dyno_quality when steady-state assessment is unchanged.
+    if m.get("dyno_quality")
+        .is_none_or(|e| !quality.matches_value(e))
+    {
+        m.insert("dyno_quality".into(), quality.as_value());
+    }
     if !quality.segment_reset {
         return false;
     };
@@ -323,8 +345,8 @@ pub fn compute_dyno_value(history: &[f64]) -> f64 {
     if history.len() < 4 {
         return history.iter().copied().fold(f64::NEG_INFINITY, f64::max);
     }
-    let mut s = history.to_vec();
-    s.sort_by(f64::total_cmp);
+    let (mut b, mut h) = ([0.0_f64; DYNO_MAX_HISTORY], Vec::new());
+    let s = sort_f64(history, &mut b, &mut h);
     let q1 = s[history.len() / 4];
     let q3 = s[(3 * history.len()) / 4];
     let lo = q1 - 1.5 * (q3 - q1);
@@ -421,50 +443,68 @@ pub fn collect_dyno_sample(
     }
     let rpm = i(d, "CurrentEngineRpm", 0.0) as i64;
     let bucket = (rpm as f64 / DYNO_BUCKET_SIZE as f64).floor() as i64 * DYNO_BUCKET_SIZE;
-    let key = bucket.to_string();
     let curve = p
         .entry("dyno_curve")
         .or_insert_with(|| Value::Object(Map::new()));
     let c = curve.as_object_mut().unwrap();
-    // [PERF] In high-frequency dyno sampling, avoid deep-cloning the entire dyno_curve map
-    // just to query neighbor offsets. Pre-collect hp and torque neighbor samples in a single pass.
-    let mut hp_neighbors = Vec::with_capacity(DYNO_NEIGHBOR_OFFSETS.len());
-    let mut torque_neighbors = Vec::with_capacity(DYNO_NEIGHBOR_OFFSETS.len());
+    // [PERF] Format bucket/neighbor keys on stack and accumulate bounded samples without heap allocations.
+    let (mut key_buf, mut hp_n, mut hp_len, mut tq_n, mut tq_len) =
+        ([0u8; 24], [0.0_f64; 8], 0, [0.0_f64; 8], 0);
     for offset in DYNO_NEIGHBOR_OFFSETS {
-        let neighbor_key = (bucket + offset).to_string();
-        if let Some(n) = c.get(&neighbor_key) {
-            if let Some(v) = n.get("hp").and_then(Value::as_f64) {
-                hp_neighbors.push(v);
-            }
-            if let Some(v) = n.get("torque").and_then(Value::as_f64) {
-                torque_neighbors.push(v);
-            }
+        if let Some(n) = c.get(i64_key(bucket + offset, &mut key_buf)) {
+            push_f64(n, "hp", &mut hp_n, &mut hp_len);
+            push_f64(n, "torque", &mut tq_n, &mut tq_len);
         }
     }
-    let entry = c
-        .entry(key)
-        .or_insert_with(|| serde_json::json!({"hp":0,"torque":0,"hp_hist":[],"torque_hist":[]}));
-    let em = entry.as_object_mut().unwrap();
+    let key_str = i64_key(bucket, &mut key_buf);
+    let em = ensure(c, key_str, bucket_val).as_object_mut().unwrap();
     let hp = i(d, "PowerWatts", 0.0) / 745.7;
     let torque = i(d, "TorqueNewtons", 0.0) * 0.73756;
     let mut changed = false;
+    let mut vals = [0.0_f64; DYNO_MAX_HISTORY];
     for (field, value, neigh, hist_key) in [
-        ("hp", hp, &hp_neighbors, "hp_hist"),
-        ("torque", torque, &torque_neighbors, "torque_hist"),
+        ("hp", hp, &hp_n[..hp_len], "hp_hist"),
+        ("torque", torque, &tq_n[..tq_len], "torque_hist"),
     ] {
         if dyno_is_reasonable(value, neigh, DYNO_ANOMALY_THRESHOLD) {
-            let h = em.entry(hist_key).or_insert_with(|| Value::Array(vec![]));
-            let a = h.as_array_mut().unwrap();
+            let a = ensure(em, hist_key, || Value::Array(vec![]))
+                .as_array_mut()
+                .unwrap();
             a.push(Value::from(value));
             if a.len() > DYNO_MAX_HISTORY {
                 a.drain(0..a.len() - DYNO_MAX_HISTORY);
             }
-            let vals = a.iter().filter_map(Value::as_f64).collect::<Vec<_>>();
-            em.insert(field.into(), Value::from(compute_dyno_value(&vals)));
+            let mut count = 0;
+            for v in a.iter().filter_map(Value::as_f64) {
+                vals[count] = v;
+                count += 1;
+            }
+            *ensure(em, field, Value::default) = Value::from(compute_dyno_value(&vals[..count]));
             changed = true;
         }
     }
     changed
+}
+fn push_f64(n: &Value, k: &str, a: &mut [f64; 8], l: &mut usize) {
+    if let Some(v) = n.get(k).and_then(Value::as_f64) {
+        a[*l] = v;
+        *l += 1;
+    }
+}
+fn ensure<'a>(m: &'a mut Map<String, Value>, k: &str, f: fn() -> Value) -> &'a mut Value {
+    if !m.contains_key(k) {
+        m.insert(k.to_owned(), f());
+    }
+    m.get_mut(k).unwrap()
+}
+fn bucket_val() -> Value {
+    serde_json::json!({"hp":0,"torque":0,"hp_hist":[],"torque_hist":[]})
+}
+fn i64_key(n: i64, buf: &mut [u8; 24]) -> &str {
+    let mut w = &mut buf[..];
+    let _ = std::io::Write::write_fmt(&mut w, format_args!("{n}"));
+    let len = 24 - w.len();
+    std::str::from_utf8(&buf[..len]).unwrap_or("0")
 }
 fn i(m: &Map<String, Value>, k: &str, d: f64) -> f64 {
     m.get(k).and_then(Value::as_f64).unwrap_or(d)
