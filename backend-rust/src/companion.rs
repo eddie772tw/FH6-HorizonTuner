@@ -157,7 +157,13 @@ impl CompanionService {
         let token = if let Ok(mut tokens) = self.pending_tokens.lock() {
             tokens.retain(|_, created_at| now.duration_since(*created_at) < PAIRING_TOKEN_TTL);
             while tokens.len() >= MAX_PENDING_PAIRING_TOKENS {
-                let Some(oldest) = tokens.iter().min_by_key(|(_, ts)| *ts).map(|(k, _)| k.clone()) else { break };
+                let Some(oldest) = tokens
+                    .iter()
+                    .min_by_key(|(_, ts)| *ts)
+                    .map(|(k, _)| k.clone())
+                else {
+                    break;
+                };
                 tokens.remove(&oldest);
             }
             loop {
@@ -539,19 +545,46 @@ mod tests {
         for _ in 0..(MAX_PENDING_PAIRING_TOKENS + 4) {
             tokens.push(service.generate_qr_payload(Some(8001)).token);
         }
-        assert_eq!(service.pending_tokens.lock().unwrap().len(), MAX_PENDING_PAIRING_TOKENS);
+        assert_eq!(
+            service.pending_tokens.lock().unwrap().len(),
+            MAX_PENDING_PAIRING_TOKENS
+        );
         // Oldest token was evicted; below-threshold failed attempts followed by valid token still succeed and reset counter.
         for _ in 0..(MAX_CONSECUTIVE_PAIR_FAILURES - 1) {
-            assert_eq!(service.pair("BADTOKEN00", "Attacker", "bad-id").unwrap_err().status, 400);
+            assert_eq!(
+                service
+                    .pair("BADTOKEN00", "Attacker", "bad-id")
+                    .unwrap_err()
+                    .status,
+                400
+            );
         }
         assert!(service.pair(&tokens[0], "Old", "old-id").is_err());
-        assert_eq!(service.pair("BADTOKEN01", "Attacker", "bad-id").unwrap_err().status, 429);
-        assert_eq!(service.pair(tokens.last().unwrap(), "Legit", "legit-id").unwrap_err().status, 429);
+        assert_eq!(
+            service
+                .pair("BADTOKEN01", "Attacker", "bad-id")
+                .unwrap_err()
+                .status,
+            429
+        );
+        assert_eq!(
+            service
+                .pair(tokens.last().unwrap(), "Legit", "legit-id")
+                .unwrap_err()
+                .status,
+            429
+        );
 
         let fresh = CompanionService::new(temp_dir.path(), 8001);
         let qr = fresh.generate_qr_payload(Some(8001));
         for _ in 0..(MAX_CONSECUTIVE_PAIR_FAILURES - 1) {
-            assert_eq!(fresh.pair("BADTOKEN00", "Probe", "probe-id").unwrap_err().status, 400);
+            assert_eq!(
+                fresh
+                    .pair("BADTOKEN00", "Probe", "probe-id")
+                    .unwrap_err()
+                    .status,
+                400
+            );
         }
         assert!(fresh.pair(&qr.token, "Legit", "legit-id").is_ok());
         assert_eq!(fresh.pair_failures.lock().unwrap().0, 0);
