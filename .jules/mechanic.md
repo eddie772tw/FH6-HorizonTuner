@@ -53,4 +53,7 @@
 ## 2026-11-14 - Drift 齒比反比凸性對 0.01 格點捨入的影響
 **物理洞察 (Physics Learning):** 在固定轉速與終傳比下，輪速 $v(g) = \frac{\text{rpm} \cdot C \cdot 60}{1000 \cdot g \cdot \text{fd}}$ 對齒比 $g$ 為嚴格遞減且嚴格凸函式（$1/g$ 幾何）。當理想格點 $g_{\text{ideal}} = n + \delta$（$\delta < 0.5$）在低齒比或受限終傳比下（如 `drift.rs` 的 $n < \delta / (1 - 2\delta)$ 區間）僅以 `.round()` 取整為 $n$ 時，向左偏移會放大超速誤差並跨越 $\max(1\,\text{km/h}, 1\%)$ 容差，而向右相鄰格點 `.ceil()` ($n+1$) 因凸性斜率較緩反而能同時滿足輪速容差與有效轉速上限。
 **行動 (Action):** 所有在 0.01 離散齒比格點上反求終端輪速的 AEGO 求解器（包含 Drift）皆須以 `[ideal.round(), ideal.floor(), ideal.ceil()]` 順序檢索鉗位後的相鄰可行格點，並在確定 `main_tick` 可行後才配置其餘檔位，確保不破壞既有通過案例的同時消除凸性誤差假失敗。
+## 2026-11-15 - Drag Endpoint Tick-Space Slack Scale Mismatch & Exact Monotone Refinement
+**物理洞察 (Physics Learning):** 在 Drag 雙端點聯合求解器（`aego-drag-joint/v1`）中，`endpoint_ticks` 原先僅在 0.01 齒比格點空間（tick-space）加減 `1e-8` 估計可行區間 `[lo, hi]`，再以單點 `.round().clamp(lower, hi)` 選出端點後交由 `respects_hard_targets` 以實體單位（速度 `±1e-9 km/h`、轉速 `+1e-8 RPM`）驗證。由於速度與齒比呈反比而轉速與齒比呈正比，tick 空間 `1e-8` 誤差在高速（250+ km/h）或高轉速（5000+ RPM）與低齒比（如 `0.85`）下會被放大 $10^1\text{–}10^2$ 倍，遠超 `respects_hard_targets` 容差；當峰值馬力接近可用紅線（`usable_limit == reference_rpm`）且理想格點落在整數下方 `1e-8` 區間（如 `85.999999995`）時，會誤納入無效邊界格點並因單點命中而被整組拒絕，在存在合法內側格點（`0.85`）的情況下誤報 `unavailable`。
+**行動 (Action):** 以 `±1e-6` 作為外包圍初估後，利用速度隨 tick 嚴格遞減與轉速隨 tick 嚴格遞增的單調性，在 `endpoint_ticks` 內直接調用 `calc_gear_speed` / `calc_gear_rpm` 與 `respects_hard_targets` 一致之實體謂詞向內單調收緊 `[lo, hi]`，確保離散求解域滿足 Soundness 與 Completeness。
 **署名:** Mechanic as Antigravity
