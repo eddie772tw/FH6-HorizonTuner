@@ -81,6 +81,8 @@
 ## 2026-11-14 - Pure Chart Primitives Legend Localization & Memoized Corner Series
 **學習 (Learning):** 遙測詳細圖表元件（`TrendChart` in `TelemetryDetailPrimitives.tsx`）刻意維持與 `SettingsContext` 解耦，導致圖例容器硬編碼 `aria-label="Chart legend"`；同時 `TelemetryDetailPanels.tsx` 雖由父層傳入已在地化之 `corners` 陣列，圖表曲線卻仍使用模組層常數 `FL`/`FR`/`RL`/`RR` 標籤，且 `TrendChart` 的 `[data, lines]` effect 會在 `lines` 參考變更時重置懸停狀態與重繪。此外，`Pitch`、`Roll`、`Yaw` 及四項輪胎趨勢標題亦完全未收錄於三語系字典中。
 **行動 (Action):** 對維持純粹性而不直接訂閱 `SettingsContext` 的圖表基元，應以選擇性 prop（如 `legendLabel?: string`）傳入 `t('Chart legend')`；將傳入 `TrendChart` 的在地化四輪曲線標籤包裹於 `useMemo(..., [corners])`（如 `CornerTrendChart`）以維持高頻重繪時的參考穩定性；並以既有詞彙表（如日文 `スリップアングル` 對應 `Slip Angle`）對齊三語系字典。
+**署名:** Narrator as Antigravity
+
 ## 2026-11-15 - Mixed Sentinel Enum Leakage in Debrief Status Badges
 **學習 (Learning):** 領域計算函式（如 `sessionDebriefMath.ts`）常在同一個 `status` / `tendency` 聯集型別中混用可讀標題字串（`Optimal`、`Occasional Bottoming`、`Understeer Biased`）與內部 snake_case 哨兵值（`no_data`）。當 UI 元件（`SessionHealthDebrief`）直接將該欄位傳入 `t(status)` 時，因字典中不存在 `no_data` 鍵值，會在包含英文在內的所有語系介面上直接洩漏原始字面 `no_data`。此外，`Valid Laps` 與 `Total Samples` 僅單邊存在於 `zh-tw.json` 而遺漏於 `en-us.json` / `ja-jp.json`，且四輪溫度網格仍硬編碼英文縮寫 `FL` / `FR` / `RL` / `RR`。
 **行動 (Action):** 審查直接將領域狀態欄位傳給 `t(...)` 的元件時，務必檢查聯集型別中的哨兵值（如 `no_data`）並於 UI 層映射至規範字典鍵（`No Data`）；四輪標籤一律復用既有三語系字典鍵 `Front Left` / `Front Right` / `Rear Left` / `Rear Right` 並以陣列映射消除重複區塊；同時檢查 `zh-tw.json` 已存在但 `en-us.json` 與 `ja-jp.json` 缺漏的單邊鍵值並完整對齊。
