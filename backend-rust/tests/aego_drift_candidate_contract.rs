@@ -344,8 +344,8 @@ fn adjacent_ceil_main_gear_tick_rescues_convex_wheel_speed_overshoot() {
     let base_target = target();
     let base = solve_candidate(6, &p, 7500.0, Some(&base_target), None);
     let target_total_base = base.diagnostics["targetTotalRatio"].as_f64().unwrap();
-    let circumference = target_total_base * base_target.wheel_speed_kmh * 1000.0
-        / (base_target.target_rpm * 60.0);
+    let circumference =
+        target_total_base * base_target.wheel_speed_kmh * 1000.0 / (base_target.target_rpm * 60.0);
     let fd = 6.0;
     let wheel_speed_kmh = 79.0;
     // ideal_tick = 39.495: round() = 39 overshoots by +1.0027 km/h (> 1.0 km/h),
