@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useId } from 'react';
 import { useSettings } from '../context/SettingsContext';
 import { backendFetch } from '../services/backend';
 import { fetchExportBlob } from '../services/fileSave';
@@ -25,14 +25,20 @@ interface DiagnosticConsoleProps {
 const DiagnosticConsole: React.FC<DiagnosticConsoleProps> = ({ show, onClose }) => {
   const { shown, close, panelRef, onTransitionEnd } = useDialogTransition(show, onClose);
   const { t } = useSettings();
+  const titleId = useId();
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [level, setLevel] = useState<string>('ALL');
   const [autoScroll, setAutoScroll] = useState<boolean>(true);
   const [isPaused, setIsPaused] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [confirmClear, setConfirmClear] = useState<boolean>(false);
+  const [isClearing, setIsClearing] = useState<boolean>(false);
+  const [statusMsg, setStatusMsg] = useState<string | null>(null);
   const { save, isSaving } = useFileSave();
   
   const consoleRef = useRef<HTMLPreElement>(null);
+  const clearBtnRef = useRef<HTMLButtonElement>(null);
+  const cancelClearBtnRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (!show || isPaused) return;
@@ -43,7 +49,7 @@ const DiagnosticConsole: React.FC<DiagnosticConsoleProps> = ({ show, onClose }) 
         const res = await backendFetch(`/api/logs?level=${level}&limit=300`, { signal: controller.signal });
         const data = await res.json();
         if (controller.signal.aborted) return;
-        if (data.logs) { setLogs(data.logs); setErrorMsg(null); }
+        if (data.logs) { setLogs(data.logs); setErrorMsg(prev => prev === t("Failed to clear logs on server.") ? prev : null); }
         else if (data.error) setErrorMsg(data.error);
       } catch {
         if (!controller.signal.aborted) setErrorMsg(t('Failed to connect to backend log API.'));
@@ -62,15 +68,38 @@ const DiagnosticConsole: React.FC<DiagnosticConsoleProps> = ({ show, onClose }) 
     }
   }, [logs, autoScroll]);
 
-  // Clear logs
+  const cancelConfirmation = () => {
+    setConfirmClear(false);
+    requestAnimationFrame(() => clearBtnRef.current?.focus());
+  };
+
+  useEffect(() => { if (!show) { setConfirmClear(false); setStatusMsg(null); } }, [show]);
+
+  useEffect(() => {
+    if (!show || !confirmClear) return;
+    cancelClearBtnRef.current?.focus();
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      event.preventDefault(); event.stopPropagation();
+      cancelConfirmation();
+    };
+    window.addEventListener('keydown', onKeyDown, true);
+    return () => window.removeEventListener('keydown', onKeyDown, true);
+  }, [show, confirmClear]);
+
   const handleClearLogs = async () => {
-    if (!window.confirm(t("Are you sure you want to clear all logs?"))) return;
+    setIsClearing(true);
+    setStatusMsg(null);
     try {
-      await backendFetch('/api/logs', { method: 'DELETE' });
-      setLogs([]);
-    } catch (err) {
-      alert(t("Failed to clear logs on server."));
-    }
+      const res = await backendFetch('/api/logs', { method: 'DELETE' });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      setLogs([]); setErrorMsg(null); setConfirmClear(false);
+      setStatusMsg(t('No log messages matching filter.'));
+      requestAnimationFrame(() => consoleRef.current?.focus());
+    } catch {
+      cancelConfirmation();
+      setErrorMsg(t("Failed to clear logs on server."));
+    } finally { setIsClearing(false); }
   };
 
   const handleExportSupportBundle = () => {
@@ -91,28 +120,28 @@ const DiagnosticConsole: React.FC<DiagnosticConsoleProps> = ({ show, onClose }) 
     switch (lvl.toUpperCase()) {
       case 'ERROR':
       case 'CRITICAL':
-        return '#ff1744'; // Bright Red
+        return 'var(--bs-danger-text-emphasis)';
       case 'WARNING':
       case 'WARN':
-        return '#ffeb3b'; // Bright Yellow
+        return 'var(--bs-warning-text-emphasis)';
       case 'DEBUG':
-        return '#00e5ff'; // Cyan
+        return 'var(--bs-info-text-emphasis)';
       default:
-        return '#e0e0e0'; // Light Gray
+        return 'var(--text-primary)';
     }
   };
 
   const getLogEntryStyle = (entry: LogEntry): React.CSSProperties => {
     const isTraceback = entry.message.includes("Traceback") || entry.message.includes("File \"");
     return {
-      color: isTraceback ? '#ff1744' : getLogLevelColor(entry.level),
+      color: isTraceback ? 'var(--bs-danger-text-emphasis)' : getLogLevelColor(entry.level),
       fontStyle: isTraceback ? 'italic' : 'normal',
       whiteSpace: 'pre-wrap',
       wordBreak: 'break-all',
       marginBottom: '4px',
       display: 'block',
       paddingLeft: '10px',
-      borderLeft: `2px solid ${isTraceback ? '#ff1744' : 'transparent'}`
+      borderLeft: `2px solid ${isTraceback ? 'var(--bs-danger-text-emphasis)' : 'transparent'}`
     };
   };
 
@@ -121,6 +150,7 @@ const DiagnosticConsole: React.FC<DiagnosticConsoleProps> = ({ show, onClose }) 
       {/* Backdrop */}
       <div
         className={`offcanvas-backdrop fade${shown ? ' show' : ''}`}
+        aria-hidden="true"
         style={{
           display: show ? 'block' : 'none',
           zIndex: 1040,
@@ -136,7 +166,7 @@ const DiagnosticConsole: React.FC<DiagnosticConsoleProps> = ({ show, onClose }) 
         tabIndex={-1}
         aria-modal="true"
         aria-hidden={!show}
-        aria-label={t('Diagnostic Log Console')}
+        aria-labelledby={titleId}
         role="dialog"
         style={{
           zIndex: 1050,
@@ -144,7 +174,7 @@ const DiagnosticConsole: React.FC<DiagnosticConsoleProps> = ({ show, onClose }) 
       >
         {/* Header */}
         <div className="offcanvas-header border-bottom px-4 py-3 d-flex justify-content-between align-items-center">
-          <h5 className="offcanvas-title text-primary fw-bold fs-6 m-0 d-flex align-items-center gap-2">
+          <h5 id={titleId} className="offcanvas-title text-primary fw-bold fs-6 m-0 d-flex align-items-center gap-2">
             {t("Diagnostic Log Console")}
           </h5>
           <button
@@ -225,12 +255,23 @@ const DiagnosticConsole: React.FC<DiagnosticConsoleProps> = ({ show, onClose }) 
                 )}
               </button>
             </span>
-            <button
-              onClick={handleClearLogs}
-              className="btn btn-outline-danger btn-sm fw-bold"
-            >
-              {t("Clear Logs")}
-            </button>
+            {confirmClear ? (
+              <div className="d-inline-flex align-items-center gap-1" role="group" aria-label={t("Are you sure you want to clear all logs?")}>
+                <button ref={cancelClearBtnRef} type="button" onClick={cancelConfirmation} disabled={isClearing} className="btn btn-outline-secondary btn-sm">
+                  {t("Cancel")}
+                </button>
+                <button type="button" onClick={() => void handleClearLogs()} disabled={isClearing} aria-busy={isClearing} className="btn btn-danger btn-sm fw-bold">
+                  {isClearing && <span className="spinner-border spinner-border-sm me-1" aria-hidden="true" />}
+                  {t("Confirm Clear")}
+                </button>
+              </div>
+            ) : (
+              <span className="d-inline-flex" title={logs.length === 0 ? t("No log messages matching filter.") : undefined} style={logs.length === 0 ? { cursor: 'not-allowed' } : undefined}>
+                <button ref={clearBtnRef} type="button" onClick={() => setConfirmClear(true)} disabled={logs.length === 0} style={logs.length === 0 ? { pointerEvents: 'none' } : undefined} className="btn btn-outline-danger btn-sm fw-bold">
+                  {t("Clear Logs")}
+                </button>
+              </span>
+            )}
           </div>
         </div>
 
@@ -240,13 +281,17 @@ const DiagnosticConsole: React.FC<DiagnosticConsoleProps> = ({ show, onClose }) 
 
         {/* Offcanvas Body */}
         <div className="offcanvas-body p-0 d-flex flex-column flex-grow-1 overflow-hidden" style={{ background: 'var(--surface-1)' }}>
+          <div className="visually-hidden" role="status" aria-live="polite">{statusMsg ?? ''}</div>
           {errorMsg && (
-            <div className="alert alert-danger mb-0 rounded-0 py-2 px-3 fs-7">
+            <div className="alert alert-danger mb-0 rounded-0 py-2 px-3 fs-7" role="alert">
               {errorMsg}
             </div>
           )}
           <pre
             ref={consoleRef}
+            tabIndex={0}
+            role="region"
+            aria-label={t("Show Logs")}
             className="p-3 m-0 flex-grow-1 overflow-auto text-body"
             style={{
               fontFamily: "'JetBrains Mono', 'Fira Code', Consolas, Monaco, monospace",
@@ -263,7 +308,7 @@ const DiagnosticConsole: React.FC<DiagnosticConsoleProps> = ({ show, onClose }) 
                 <span key={idx} style={getLogEntryStyle(entry)}>
                   {entry.timestamp && <span className="text-secondary me-2">{entry.timestamp}</span>}
                   {entry.level && (
-                    <span className="me-2 fw-bold badge bg-secondary bg-opacity-25 fs-8">
+                    <span className="me-2 fw-bold badge text-body bg-secondary bg-opacity-25 fs-8">
                       [{entry.level}]
                     </span>
                   )}

@@ -39,3 +39,39 @@ fn csv_and_debrief_match_python_reference() {
     );
     assert_eq!(motec::debrief(&[]), fixture["emptyDebrief"]);
 }
+
+#[test]
+fn export_neutralizes_csv_formula_injection_in_metadata() {
+    let cases = [
+        ("=cmd|'/C calc'!A0", "+SUM(1,1)"),
+        ("-2+3", "@SUM(1,1)"),
+        ("  =HYPERLINK(\"http://evil.example\")", "\t=1+1"),
+        ("\r=1+1", "\n=1+1"),
+    ];
+    let sample = [json!({"time": 0.1, "AccelerationX": -9.81})];
+    for (session_id, car_name) in cases {
+        let bytes = motec::export(
+            &json!({"session_id": session_id, "car_name": car_name}),
+            &sample,
+        )
+        .unwrap();
+        let csv = String::from_utf8_lossy(&bytes);
+        let (imported_meta, _) = motec::import(&bytes).unwrap();
+        assert_eq!(imported_meta["session_id"], format!("'{session_id}"));
+        assert_eq!(imported_meta["car_name"], format!("'{car_name}"));
+        // Negative numeric telemetry values must remain numeric for MoTeC/spreadsheet parsing.
+        assert!(
+            csv.contains(",-1.000,"),
+            "negative telemetry altered: {csv}"
+        );
+    }
+    // Idempotence and benign hyphenated car names remain uncorrupted.
+    let benign = motec::export(
+        &json!({"session_id": "'=already_escaped", "car_name": "Porsche 911 - GT3"}),
+        &sample,
+    )
+    .unwrap();
+    let (benign_meta, _) = motec::import(&benign).unwrap();
+    assert_eq!(benign_meta["session_id"], "'=already_escaped");
+    assert_eq!(benign_meta["car_name"], "Porsche 911 - GT3");
+}

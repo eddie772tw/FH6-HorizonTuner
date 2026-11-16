@@ -384,3 +384,79 @@ fn road_service_observe_steady_state_identity_preservation_and_transition() {
     service.observe(&corrupted);
     assert_eq!(service.live()["identity"], updated_live["identity"]);
 }
+
+#[test]
+fn road_summary_single_pass_channels_preserve_order_missing_keys_and_zero_weight_gating() {
+    let points = vec![
+        // Zero-weight leading frame (dt == 0.0) must not affect active channel stats.
+        json!({
+            "TimestampMS": 250,
+            "IsRaceOn": 1,
+            "CurrentRaceTime": 0.25,
+            "SpeedMetersPerSecond": 999.0,
+            "CurrentEngineRpm": 9000.0,
+            "TireTemp": [122.0, 122.0, 122.0, 122.0]
+        }),
+        json!({
+            "TimestampMS": 250,
+            "IsRaceOn": 1,
+            "CurrentRaceTime": 0.25,
+            "LapNumber": 0,
+            "SpeedMetersPerSecond": 10.0,
+            "CurrentEngineRpm": 3000.0,
+            "PowerWatts": 100000.0,
+            "AccelInput": 50.0,
+            "TireTemp": [185.0, 185.0, 185.0, 185.0]
+        }),
+        // Missing PowerWatts & ClutchInput should remain absent without shifting other channels.
+        json!({
+            "TimestampMS": 500,
+            "IsRaceOn": 1,
+            "CurrentRaceTime": 0.5,
+            "LapNumber": 0,
+            "SpeedMetersPerSecond": 20.0,
+            "CurrentEngineRpm": 4000.0,
+            "AccelInput": 100.0,
+            "BrakeInput": null,
+            "TireTemp": [203.0, 203.0, 203.0, 203.0]
+        }),
+        // Trailing frame without a subsequent dt window must be ignored by channel distributions.
+        json!({
+            "TimestampMS": 750,
+            "IsRaceOn": 1,
+            "CurrentRaceTime": 0.75,
+            "SpeedMetersPerSecond": 500.0,
+            "BrakeInput": 100.0,
+            "TireTemp": [212.0, 212.0, 212.0, 212.0]
+        }),
+    ];
+
+    let summary = summarize_road_observations(&points);
+    let expected_keys = [
+        "SpeedMetersPerSecond",
+        "CurrentEngineRpm",
+        "PowerWatts",
+        "TorqueNewtons",
+        "AccelerationX",
+        "AccelerationY",
+        "AccelerationZ",
+        "AngularVelocityY",
+        "AccelInput",
+        "BrakeInput",
+        "SteerInput",
+        "ClutchInput",
+        "HandBrakeInput",
+    ];
+    let channels = summary["channels"].as_object().unwrap();
+    let actual_keys: Vec<_> = channels.keys().map(String::as_str).collect();
+    assert_eq!(actual_keys, expected_keys);
+
+    assert_eq!(channels["SpeedMetersPerSecond"]["mean"], json!(15.0));
+    assert_eq!(channels["CurrentEngineRpm"]["mean"], json!(3500.0));
+    assert_eq!(channels["PowerWatts"]["mean"], json!(100000.0));
+    assert_eq!(channels["AccelInput"]["mean"], json!(75.0));
+    assert_eq!(channels["BrakeInput"]["observedSeconds"], json!(0.0));
+    assert!(channels["BrakeInput"]["mean"].is_null());
+    assert!(channels["ClutchInput"]["mean"].is_null());
+    assert_eq!(summary["wheels"]["FL"]["startTemperatureC"], json!(85.0));
+}
