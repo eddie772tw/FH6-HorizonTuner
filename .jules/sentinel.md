@@ -62,3 +62,9 @@
 **學習 (Learning):** 使用 RFC 4180 相容的 CSV 序列器（如 Rust `csv::Writer`）僅能確保逗號、引號與換行的結構完整性，無法防範試算表軟體解析儲存格內容前綴作為公式執行。同時，遙測數值欄位包含合法負數（例如橫向 G 值或胎面滑移角），因此不能對全表套用盲目字串前綴，必須精準針對自由格式之文字型 Metadata 欄位進行前綴中和並保持冪等性（已含單引號 `'` 前綴者不重複加註）。
 **預防 (Prevention):** 於 CSV 匯出層抽象 `sanitize_csv_cell` 輔助函式，對所有自由格式文字欄位檢查是否以 `\t`、`\r`、`\n` 或忽略前導空白後之 `=`、`+`、`-`、`@` 開頭，若是則加上單引號 `'` 前綴強制試算表視為純文字顯示，並保留數值型遙測通道與正常連字號車名不受影響；同步於 `motec_contract.rs` 補齊跨前綴與冪等性安全回歸測試。
 **署名:** Sentinel as Antigravity
+
+## 2026-11-17 - Tauri Sidecar Full-Byte Integrity Verification & Symlink-Safe Extraction
+**漏洞/脆弱點 (Vulnerability):** 桌面端包裝殼 `frontend/src-tauri/src/lib.rs::extract_embedded_sidecar` 在將內嵌 `server-sidecar.exe` 解壓至共享暫存目錄 `%TEMP%\FH6-HorizonTuner` 時，僅以 `fs::metadata(&sidecar_path).len() != EMBEDDED_SIDECAR.len()` 判斷是否重寫，既未校驗檔案實際位元組內容，亦未對目標路徑與父目錄檢查符號連結/目錄連接點（Symlink / NTFS Junction）或採用原子寫入。若共享暫存目錄中存在同長度遭竄改/損毀的執行檔或預置符號連結，主程式將在啟動時直接執行未經完整性驗證的二進位檔或寫入非預期目標。
+**學習 (Learning):** 與 `backend-rust/src/companion_usb_runtime.rs` 執行前比對完整位元組的作法不同，桌面啟動器對 `%TEMP%` 快取執行檔僅檢查檔案長度存在明確的 TOCTOU / 完整性繞過風險（CWE-353 / CWE-377 / CWE-59）。因為 `%TEMP%` 屬於多程序共享可寫入目錄，僅依賴長度與版本號不足以保證執行檔與內嵌映像一致。
+**預防 (Prevention):** 任何自暫存目錄解壓並執行的內嵌可執行檔，於執行前必須先透過 `fs::symlink_metadata` 與 `canonicalize` 邊界驗證排除符號連結與非預期目錄目標，再比對完整位元組內容（`bytes == embedded`），且寫入時一律以 `create_new(true)` 暫存檔搭配 `sync_all()` 與原子 `rename` 取代，確保執行檔完整性與防符號連結滲透。
+**署名:** Sentinel as Antigravity
