@@ -77,3 +77,48 @@ fn dyno_steady_state_performance_probe() {
     }
     println!("dyno_10000_frames_best_ms={best_ms:.3}");
 }
+
+// Count only allocations on this test thread, after the bounded histories are warm.
+struct CountingAllocator;
+thread_local! {
+    static ALLOCATIONS: std::cell::Cell<Option<usize>> = const { std::cell::Cell::new(None) };
+}
+#[global_allocator]
+static ALLOCATOR: CountingAllocator = CountingAllocator;
+unsafe impl std::alloc::GlobalAlloc for CountingAllocator {
+    unsafe fn alloc(&self, layout: std::alloc::Layout) -> *mut u8 {
+        ALLOCATIONS.with(|count| count.set(count.get().map(|n| n + 1)));
+        unsafe { std::alloc::System.alloc(layout) }
+    }
+    unsafe fn dealloc(&self, ptr: *mut u8, layout: std::alloc::Layout) {
+        unsafe { std::alloc::System.dealloc(ptr, layout) }
+    }
+    unsafe fn realloc(&self, ptr: *mut u8, layout: std::alloc::Layout, size: usize) -> *mut u8 {
+        ALLOCATIONS.with(|count| count.set(count.get().map(|n| n + 1)));
+        unsafe { std::alloc::System.realloc(ptr, layout, size) }
+    }
+}
+
+#[test]
+fn warmed_collection_and_unchanged_quality_do_not_allocate() {
+    let mut gate = DynoQualityGateRegistry::default();
+    let settings =
+        json!({"dyno_recording": true, "dyno_test_gear": 4, "dyno_filter_transients": false});
+    let mut profile = json!({"drivetrain": "RWD", "dyno_curve": {}});
+    for index in 0..100 {
+        let data = frame(index, 4000.0, 220000.0, 380.0, 42);
+        let quality = gate.observe("42", &data);
+        reconcile_dyno_profile_segment(&mut profile, &quality);
+        collect_dyno_sample(&mut profile, &data, &quality, &settings, &gate, "42");
+    }
+    let data = frame(100, 4000.0, 220000.0, 380.0, 42);
+    let quality = gate.observe("42", &data);
+    assert!(quality.can_collect);
+    ALLOCATIONS.with(|count| count.set(Some(0)));
+    let reset = reconcile_dyno_profile_segment(&mut profile, &quality);
+    let changed = collect_dyno_sample(&mut profile, &data, &quality, &settings, &gate, "42");
+    let allocations = ALLOCATIONS.with(|count| count.replace(None).unwrap());
+    assert!(!reset);
+    assert!(changed);
+    assert_eq!(allocations, 0);
+}

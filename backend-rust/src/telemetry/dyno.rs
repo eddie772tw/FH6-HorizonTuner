@@ -443,9 +443,7 @@ pub fn collect_dyno_sample(
     }
     let rpm = i(d, "CurrentEngineRpm", 0.0) as i64;
     let bucket = (rpm as f64 / DYNO_BUCKET_SIZE as f64).floor() as i64 * DYNO_BUCKET_SIZE;
-    let curve = p
-        .entry("dyno_curve")
-        .or_insert_with(|| Value::Object(Map::new()));
+    let curve = ensure(p, "dyno_curve", || Value::Object(Map::new()));
     let c = curve.as_object_mut().unwrap();
     // [PERF] Format bucket/neighbor keys on stack and accumulate bounded samples without heap allocations.
     let (mut key_buf, mut hp_n, mut hp_len, mut tq_n, mut tq_len) =
