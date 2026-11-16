@@ -1,0 +1,26 @@
+{
+  "date": "2026-11-14",
+  "productBlobs": {
+    "hud_overlay/shared/telemetry-cards/pedal-wave.js": "7bf0807f0a975ea53c265b01b367a71364385ff2"
+  },
+  "browser": "Chrome/157.0.8103.51",
+  "capture": "Chromium headless via TelemetryCardsManager fixture (1280x720, DPR 1 & DPR 2, dark synthetic backdrop, cropped to #tcPedalWaveContainer + 16px margin)",
+  "reproduce": "Mount createTelemetryCardsManager() with showTeleMaster=true and showTelePedals=true at 1280x720 (DPR 1 and DPR 2); stream 1 synthetic frame (single-sample focal dot) and 300 frames spanning trail braking and full throttle.",
+  "cases": [
+    {
+      "file": "pedal-wave-dpr1-active.png",
+      "mode": "full-300-samples",
+      "dpr": 1
+    },
+    {
+      "file": "pedal-wave-dpr2-active.png",
+      "mode": "full-300-samples",
+      "dpr": 2
+    },
+    {
+      "file": "pedal-wave-dpr1-single.png",
+      "mode": "single-sample",
+      "dpr": 1
+    }
+  ]
+}
