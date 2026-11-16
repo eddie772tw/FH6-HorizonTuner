@@ -59,3 +59,8 @@
 **物理洞察 (Physics Learning):** 在 Drag 雙端點聯合求解器（`aego-drag-joint/v1`）中，`endpoint_ticks` 原先僅在 0.01 齒比格點空間（tick-space）加減 `1e-8` 估計可行區間 `[lo, hi]`，再以單點 `.round().clamp(lower, hi)` 選出端點後交由 `respects_hard_targets` 以實體單位（速度 `±1e-9 km/h`、轉速 `+1e-8 RPM`）驗證。由於速度與齒比呈反比而轉速與齒比呈正比，tick 空間 `1e-8` 誤差在高速（250+ km/h）或高轉速（5000+ RPM）與低齒比（如 `0.85`）下會被放大 $10^1\text{–}10^2$ 倍，遠超 `respects_hard_targets` 容差；當峰值馬力接近可用紅線（`usable_limit == reference_rpm`）且理想格點落在整數下方 `1e-8` 區間（如 `85.999999995`）時，會誤納入無效邊界格點並因單點命中而被整組拒絕，在存在合法內側格點（`0.85`）的情況下誤報 `unavailable`。
 **行動 (Action):** 以 `±1e-6` 作為外包圍初估後，利用速度隨 tick 嚴格遞減與轉速隨 tick 嚴格遞增的單調性，在 `endpoint_ticks` 內直接調用 `calc_gear_speed` / `calc_gear_rpm` 與 `respects_hard_targets` 一致之實體謂詞向內單調收緊 `[lo, hi]`，確保離散求解域滿足 Soundness 與 Completeness。
 **署名:** Mechanic as Antigravity
+
+## 2026-11-17 - Legacy Chassis `clamp_round` Sub-Tenth Bounds Violation & Overflow Closure
+**物理洞察 (Physics Learning):** `chassis.rs::clamp_round` 在將彈簧剛性與車高取整至 0.1 小數位時，當區間 `[min, max]` 未與 0.1 格點相交（例如鎖定或狹窄區間 `[3.11, 3.11]`、`[3.11, 3.14]`、`[3.16, 3.19]`，或單位換算後之次單位區間 `[0.01, 0.04]`），其 `floored >= min` 與 `ceiled <= max` 皆為偽，原演算法卻在 `else` 分支回退至 `r1(max)` 或 `r1(min)`，導致輸出跌出 `[min, max]` 邊界（如 `3.1` 或 `3.2`）甚至使正數彈簧退化為 `0.0`，直接觸發 `baseline::preview` 以 `"value-outside-range"` 拒絕 Drift / Drag / DangerSign / v1 底盤推薦。此外，當邊界接近 `f64::MAX / 10` 時，`(max * 10.0).floor() / 10.0` 會溢位成 `INFINITY` 並通過 `>= min` 檢查造成無限大數值外洩。
+**行動 (Action):** 令 `chassis.rs::clamp_round` 在無 0.1 格點落入 `[min, max]` 或縮放溢位時直接回傳已鉗位值 `clamped`，並補齊邊界排序與 `NaN`/有限性防護，與 `chassis_load::quantize` 達成嚴格包含性閉包（`min <= result <= max`）而不改變任何既有 21 個金標案例數值。
+**署名:** Mechanic as Antigravity

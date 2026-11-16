@@ -653,3 +653,90 @@ fn existing_danger_sign_values_match_pre_cleanup_baselines() {
         assert_eq!(actual, expected, "{case}");
     }
 }
+
+#[test]
+fn chassis_clamp_round_preserves_sub_tenth_and_large_finite_bounds() {
+    use fh6_backend::tuning::workflow::{calculate_workflow, WorkflowRequest};
+    use serde_json::json;
+
+    // 1. Narrow, locked, and sub-unit intervals with no 0.1-grid multiple must stay inside [min, max]
+    for (min, max) in [
+        (0.01, 0.04),   // Sub-unit positive range must never collapse to 0.0
+        (3.11, 3.11),   // Locked game spring/height boundary
+        (3.11, 3.14),   // Lower-half non-tenth interval
+        (3.16, 3.19),   // Upper-half non-tenth interval
+        (1e308, 1e308), // Huge finite bounds must not overflow * 10.0 into INFINITY
+    ] {
+        let p = TuningCarParams {
+            weight: Some(1400.0),
+            weight_distribution: Some(54.0),
+            drivetrain: Some("RWD".into()),
+            spring_front_min: Some(min),
+            spring_front_max: Some(max),
+            spring_rear_min: Some(min),
+            spring_rear_max: Some(max),
+            height_front_min: Some(min),
+            height_front_max: Some(max),
+            height_rear_min: Some(min),
+            height_rear_max: Some(max),
+            ..Default::default()
+        };
+        for goal in [
+            RaceGoal::Road,
+            RaceGoal::Rally,
+            RaceGoal::Drift,
+            RaceGoal::Drag,
+            RaceGoal::DangerSign,
+        ] {
+            let res = calculate_chassis_tuning(goal, &p);
+            for value in [
+                res.springs.front,
+                res.springs.rear,
+                res.springs.height_f,
+                res.springs.height_r,
+            ] {
+                assert!(
+                    value.is_finite() && value >= min && value <= max && value > 0.0,
+                    "[{goal:?}] interval [{min}, {max}] violated by {value}"
+                );
+            }
+        }
+    }
+
+    // 2. Drift/Drag baseline preview must accept locked sub-tenth springs without value-outside-range
+    for goal in ["Drift", "Drag"] {
+        let req: WorkflowRequest = serde_json::from_value(json!({
+            "schemaVersion": "tuning-workflow-result/v2",
+            "goal": goal,
+            "season": "Summer",
+            "profile": {
+                "weight": 1400.0,
+                "weight_distribution": 50.0,
+                "drivetrain": "RWD",
+                "spring_front_min": 3.11,
+                "spring_front_max": 3.11,
+                "spring_rear_min": 3.16,
+                "spring_rear_max": 3.19,
+                "height_front_min": 0.01,
+                "height_front_max": 0.04,
+                "height_rear_min": 10.0,
+                "height_rear_max": 20.0,
+                "adjustability": {"suspension": "Race", "arb": "Adjustable", "diff": "Adjustable"}
+            },
+            "engine": null,
+            "ev": null,
+            "inputSnapshot": {"carId": "1060"}
+        }))
+        .unwrap();
+        let out = serde_json::to_value(calculate_workflow(req).unwrap()).unwrap();
+        for key in ["spring.front", "spring.rear", "height.front"] {
+            let field = out["baselinePreview"]["fields"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .find(|f| f["key"] == key)
+                .unwrap();
+            assert_eq!(field["status"], "available", "{goal} {key}: {field}");
+        }
+    }
+}
