@@ -54,4 +54,7 @@
 ## 2026-11-14 - Telemetry Cards 踏板波形圓角平滑、同軸前緣光環與邊界保護
 **渲染洞察 (Rendering Learning):** 在 `hud_overlay/shared/telemetry-cards/pedal-wave.js` 的 60Hz 踏板波形畫布中，過去缺少 `save()` / `try-finally restore()` 狀態防護、未設定 `lineCap = 'round'` / `lineJoin = 'round'` 導致急踩急放產生銳角突刺，且水平步距直接鋪滿 `pw` 造成滿載（300 點）與 0%/100% 端點及發光被畫布邊界裁切，單一採樣（`len === 1`）時亦完全不可見。透過將雙通道繪製抽離為零配置輔助函式 `drawTraceChannel`，預留與 `shadowBlur` 及光環半徑相稱的 `padX` / `padY` 邊界（`5.5 * dpr`），補齊 25%/75% 批次參考線，並於最新採樣端點繪製同軸雙層脈衝標記（Halo Ring `4.2 * dpr` + Core Dot `2.0 * dpr`），即可在不增加任何每幀物件配置的前提下顯著提升動態鎖定感與高 DPI 邊緣完整性。
 **行動 (Action):** 在所有 `hud_overlay/shared/telemetry-cards/` 高頻時間序列畫布中維持 `try/finally` Context 狀態隔離、`padX/padY` 邊界保護與單點可讀之同軸前緣脈衝標記，並優先抽離共用通道繪圖函式消除重複邏輯。
+## 2026-11-15 - Telemetry Cards 馬力扭力散點交會透光、邊界裁切補正與同軸脈衝標記
+**渲染洞察 (Rendering Learning):** 在 `hud_overlay/shared/telemetry-cards/power-torque.js`（`renderPowerTorque`）中，`manager.js` 寫入的 `--card-contrast` 為 6 碼不透明 Hex 字串（`computeContrastColor`），會覆蓋預設 `rgba(255, 0, 136, 0.75)` 導致 Power 散點在 5252 RPM 等雙曲線交會區間完全遮蔽先繪之 Torque 散點；透過在雙通道散點迴圈期間統一設定 `globalAlpha = 0.75` 再於繪製同軸前緣脈衝標記前還原 `globalAlpha = 1`，即可不依賴色碼格式保持交會層次。此外，以 `padX`/`padY`（`Math.min(dim * 0.12, 6 * dpr)`）預留光暈與環形半徑邊距並將點位中心對齊 `px - halfDot`，可徹底避免高轉速極值處右側與上下邊界裁切，且以成對 `save()` / `try { ... } finally { restore(); }` 隔離發光與透明度狀態、維持零每幀記憶體配置。
+**行動 (Action):** 消費動態 CSS 色票（Hex / RGB）的雙通道重疊畫布應透過 `globalAlpha` 控制散點疊加透明度，避免僅依賴 fallback `rgba()` 字串；所有含即時脈衝光環與 `shadowBlur` 的 Edge Chart 畫布一律配置 DPR 比例邊距與 `try/finally` 狀態防護。
 **署名:** Vector as Antigravity
