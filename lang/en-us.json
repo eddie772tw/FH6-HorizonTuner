@@ -2080,5 +2080,8 @@
   "Surface Rumble Trend": "Surface Rumble Trend",
   "No Data": "No Data",
   "Valid Laps": "Valid Laps",
-  "Total Samples": "Total Samples"
+  "Total Samples": "Total Samples",
+  "{car} ({laps} Laps | Best: {best})": "{car} ({laps} Laps | Best: {best})",
+  "Lap {lap} ({time} | Max: {maxSpeed})": "Lap {lap} ({time} | Max: {maxSpeed})",
+  "vs Lap {lap} ({time})": "vs Lap {lap} ({time})"
 }

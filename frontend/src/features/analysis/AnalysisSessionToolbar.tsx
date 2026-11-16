@@ -30,6 +30,20 @@ export interface AnalysisSessionToolbarProps {
   readonly onLatestAnalysis: () => void;
 }
 
+function formatBestLapTime(t: AnalysisSessionToolbarProps["t"], bestLapTime?: number): string {
+  return bestLapTime && Number.isFinite(bestLapTime) && bestLapTime > 0
+    ? `${bestLapTime.toFixed(2)}s`
+    : t("Unknown");
+}
+
+function formatLapTime(t: AnalysisSessionToolbarProps["t"], lap: LapSummary): string {
+  if (lap.lap_time == null || !Number.isFinite(lap.lap_time)) {
+    return t("Unknown");
+  }
+  const formatted = `${lap.lap_time.toFixed(2)}s`;
+  return lap.is_estimated ? `${t("Estimated")} ${formatted}` : formatted;
+}
+
 const AnalysisSessionToolbar: React.FC<AnalysisSessionToolbarProps> = ({
   t,
   isRecording,
@@ -83,8 +97,11 @@ const AnalysisSessionToolbar: React.FC<AnalysisSessionToolbarProps> = ({
             <option value="current">{t("Current / Latest Session")}</option>
             {savedSessions.map(session => (
               <option key={session.filename} value={session.filename}>
-                {session.car_name || session.filename} ({session.total_laps ?? 0} Laps | Best: {" "}
-                {session.best_lap_time && session.best_lap_time > 0 ? session.best_lap_time.toFixed(2) : t("Unknown")}s)
+                {t("{car} ({laps} Laps | Best: {best})", {
+                  car: session.car_name || session.filename,
+                  laps: session.total_laps ?? 0,
+                  best: formatBestLapTime(t, session.best_lap_time),
+                })}
               </option>
             ))}
           </select>
@@ -97,7 +114,13 @@ const AnalysisSessionToolbar: React.FC<AnalysisSessionToolbarProps> = ({
               <option value={0}>{t("All Laps")}</option>
               {lapsList.map(lap => (
                 <option key={lap.lap_number} value={lap.lap_number}>
-                  Lap {lap.lap_number} ({lap.is_estimated && `${t("Estimated")} `}{lap.lap_time?.toFixed(2) ?? t("Unknown")}s | Max: {lap.max_speed_kmh?.toFixed(0) ?? t("Unknown")}km/h)
+                  {t("Lap {lap} ({time} | Max: {maxSpeed})", {
+                    lap: lap.lap_number,
+                    time: formatLapTime(t, lap),
+                    maxSpeed: lap.max_speed_kmh != null && Number.isFinite(lap.max_speed_kmh)
+                      ? `${lap.max_speed_kmh.toFixed(0)} km/h`
+                      : t("Unknown"),
+                  })}
                 </option>
               ))}
             </select>
@@ -111,7 +134,10 @@ const AnalysisSessionToolbar: React.FC<AnalysisSessionToolbarProps> = ({
               <option value={-1}>{t("None")}</option>
               {lapsList.map(lap => (
                 <option key={lap.lap_number} value={lap.lap_number}>
-                  vs Lap {lap.lap_number} ({lap.is_estimated && `${t("Estimated")} `}{lap.lap_time?.toFixed(2) ?? t("Unknown")}s)
+                  {t("vs Lap {lap} ({time})", {
+                    lap: lap.lap_number,
+                    time: formatLapTime(t, lap),
+                  })}
                 </option>
               ))}
             </select>

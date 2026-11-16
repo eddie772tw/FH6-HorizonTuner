@@ -1914,5 +1914,8 @@
   "Surface Rumble Trend": "路面振動推移",
   "No Data": "データなし",
   "Valid Laps": "有効ラップ数",
-  "Total Samples": "総サンプル数"
+  "Total Samples": "総サンプル数",
+  "{car} ({laps} Laps | Best: {best})": "{car} ({laps} ラップ | ベスト: {best})",
+  "Lap {lap} ({time} | Max: {maxSpeed})": "ラップ {lap} ({time} | 最高: {maxSpeed})",
+  "vs Lap {lap} ({time})": "vs ラップ {lap} ({time})"
 }

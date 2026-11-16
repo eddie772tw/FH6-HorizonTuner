@@ -87,3 +87,8 @@
 **學習 (Learning):** 領域計算函式（如 `sessionDebriefMath.ts`）常在同一個 `status` / `tendency` 聯集型別中混用可讀標題字串（`Optimal`、`Occasional Bottoming`、`Understeer Biased`）與內部 snake_case 哨兵值（`no_data`）。當 UI 元件（`SessionHealthDebrief`）直接將該欄位傳入 `t(status)` 時，因字典中不存在 `no_data` 鍵值，會在包含英文在內的所有語系介面上直接洩漏原始字面 `no_data`。此外，`Valid Laps` 與 `Total Samples` 僅單邊存在於 `zh-tw.json` 而遺漏於 `en-us.json` / `ja-jp.json`，且四輪溫度網格仍硬編碼英文縮寫 `FL` / `FR` / `RL` / `RR`。
 **行動 (Action):** 審查直接將領域狀態欄位傳給 `t(...)` 的元件時，務必檢查聯集型別中的哨兵值（如 `no_data`）並於 UI 層映射至規範字典鍵（`No Data`）；四輪標籤一律復用既有三語系字典鍵 `Front Left` / `Front Right` / `Rear Left` / `Rear Right` 並以陣列映射消除重複區塊；同時檢查 `zh-tw.json` 已存在但 `en-us.json` 與 `ja-jp.json` 缺漏的單邊鍵值並完整對齊。
 **署名:** Narrator as Antigravity
+
+## 2026-11-17 - Parameterized Select Option Formatting & Unit Suffix Leakage
+**學習 (Learning):** `AnalysisSessionToolbar.tsx` 的賽段與單圈下拉選單（`<option>`）除了直接硬編碼英文標籤（`Laps | Best:`、`Lap ... | Max:`、`vs Lap`）之外，還將時間與車速單位直接拼接在空值回退表達式之後（例如 `${lap.lap_time?.toFixed(2) ?? t("Unknown")}s` 與 `${lap.max_speed_kmh?.toFixed(0) ?? t("Unknown")}km/h`），導致當 `best_lap_time`、`lap_time` 或 `max_speed_kmh` 缺失或為 0 時，各語系介面皆出現「未知s」、「未知km/h」或「Unknowns」等破損字串。
+**行動 (Action):** 抽取下拉選單文字時，應使用完整參數化鍵值（如 `"{car} ({laps} Laps | Best: {best})"`、`"Lap {lap} ({time} | Max: {maxSpeed})"`、`vs Lap {lap} ({time})`），並由純函式先判斷數值有效且有限後才附加單位（`s`、`km/h`），無效時直接回傳純淨的 `t("Unknown")`，防止單位後綴與未翻譯／缺值詞彙錯誤黏連。
+**署名:** Narrator as Antigravity
