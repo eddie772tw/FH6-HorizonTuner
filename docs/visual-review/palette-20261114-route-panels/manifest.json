@@ -1,0 +1,99 @@
+{
+  "date": "2026-11-14",
+  "browser": "148.0.7778.96",
+  "capture": "Chromium headless, full production AppShell/providers served by Vite preview, DPR 1, mocked loopback API responses with real locale dictionaries and theme settings. Note: TimeTrialRoutePanel and RoamingRoutePanel strings are not yet present in frontend/lang/*.json so all panels render in English fallback.",
+  "reproduce": "Open Sessions workspace, select Time Trial or Free Roam mode in ManualRecordingToolbar, inspect TimeTrialRoutePanel / RoamingRoutePanel labels, gate groups, and radius sliders.",
+  "cases": [
+    {
+      "core": "default",
+      "mode": "light",
+      "lang": "en-us",
+      "width": 1280,
+      "panel": "time_trial",
+      "file": "default-light-en-us-1280-time-trial.png",
+      "dimensions": {
+        "width": 1280,
+        "scrollWidth": 1280
+      },
+      "labelClickFocusedId": "_r_2_-select"
+    },
+    {
+      "core": "default",
+      "mode": "dark",
+      "lang": "zh-tw",
+      "width": 1280,
+      "panel": "roaming",
+      "file": "default-dark-zh-tw-1280-free-roam.png",
+      "dimensions": {
+        "width": 1280,
+        "scrollWidth": 1280
+      },
+      "labelClickFocusedId": "_r_2_-select"
+    },
+    {
+      "core": "swiss",
+      "mode": "light",
+      "lang": "ja-jp",
+      "width": 1280,
+      "panel": "roaming",
+      "file": "swiss-light-ja-jp-1280-free-roam.png",
+      "dimensions": {
+        "width": 1280,
+        "scrollWidth": 1280
+      },
+      "labelClickFocusedId": "_r_3_-select"
+    },
+    {
+      "core": "swiss",
+      "mode": "dark",
+      "lang": "en-us",
+      "width": 1280,
+      "panel": "time_trial",
+      "file": "swiss-dark-en-us-1280-time-trial.png",
+      "dimensions": {
+        "width": 1280,
+        "scrollWidth": 1280
+      },
+      "labelClickFocusedId": "_r_2_-select"
+    },
+    {
+      "core": "rhine-lab",
+      "mode": "light",
+      "lang": "zh-tw",
+      "width": 1280,
+      "panel": "time_trial",
+      "file": "rhine-lab-light-zh-tw-1280-time-trial.png",
+      "dimensions": {
+        "width": 1280,
+        "scrollWidth": 1280
+      },
+      "labelClickFocusedId": "_r_1_-select"
+    },
+    {
+      "core": "rhine-lab",
+      "mode": "dark",
+      "lang": "ja-jp",
+      "width": 1280,
+      "panel": "roaming",
+      "file": "rhine-lab-dark-ja-jp-1280-free-roam.png",
+      "dimensions": {
+        "width": 1280,
+        "scrollWidth": 1280
+      },
+      "labelClickFocusedId": "_r_1_-select"
+    },
+    {
+      "core": "default",
+      "mode": "dark",
+      "lang": "zh-tw",
+      "width": 320,
+      "panel": "roaming",
+      "file": "default-dark-zh-tw-320-free-roam.png",
+      "dimensions": {
+        "width": 320,
+        "scrollWidth": 320
+      },
+      "labelClickFocusedId": "_r_1_-select"
+    }
+  ]
+}
