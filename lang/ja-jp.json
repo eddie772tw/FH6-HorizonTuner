@@ -1903,5 +1903,13 @@
   "Export original record": "元の記録をエクスポート",
   "Open telemetry capture": "テレメトリー収集を開く",
   "Back to engine data": "エンジンデータに戻る",
-  "Export original history": "元の履歴をエクスポート"
+  "Export original history": "元の履歴をエクスポート",
+  "Chart legend": "グラフ凡例",
+  "Pitch": "ピッチ",
+  "Roll": "ロール",
+  "Yaw": "ヨー",
+  "Tire Temperature Trend": "タイヤ温度推移",
+  "Slip Ratio Trend": "スリップ率推移",
+  "Slip Angle Trend": "スリップアングル推移",
+  "Surface Rumble Trend": "路面振動推移"
 }
