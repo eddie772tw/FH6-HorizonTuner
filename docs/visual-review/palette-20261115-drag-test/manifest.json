@@ -1,0 +1,122 @@
+{
+  "date": "2026-11-14T17:10:59Z",
+  "baseCommit": "b23add02bd6f347d2110d34cc8fdac9f641baafa",
+  "workingTree": "ui/palette-20261115-drag-test-a11y",
+  "browser": "148.0.7778.96",
+  "dpr": 1,
+  "dataSource": "Vite preview with mocked loopback API responses",
+  "cases": [
+    {
+      "file": "default-light-en-us-1280-idle-dialog.png",
+      "core": "default",
+      "mode": "light",
+      "lang": "en-us",
+      "width": 1280,
+      "height": 720,
+      "state": "idle",
+      "checks": {
+        "dialogOpenedByEnter": true,
+        "ariaExpanded": "true",
+        "noHorizontalOverflow": true,
+        "pageErrors": [],
+        "escapeClosedDialog": true,
+        "focusRestoredToTrigger": true
+      }
+    },
+    {
+      "file": "default-dark-zh-tw-1280-finished-tabs.png",
+      "core": "default",
+      "mode": "dark",
+      "lang": "zh-tw",
+      "width": 1280,
+      "height": 720,
+      "state": "finished",
+      "checks": {
+        "deleteAriaLabel": "刪除選取的紀錄",
+        "noHorizontalOverflow": true,
+        "pageErrors": []
+      }
+    },
+    {
+      "file": "swiss-light-ja-jp-1280-finished-tabs.png",
+      "core": "swiss",
+      "mode": "light",
+      "lang": "ja-jp",
+      "width": 1280,
+      "height": 720,
+      "state": "finished",
+      "checks": {
+        "deleteAriaLabel": "選択したセッションを削除",
+        "tireSlipSelectedAfterArrowRight": "true",
+        "noHorizontalOverflow": true,
+        "pageErrors": []
+      }
+    },
+    {
+      "file": "swiss-dark-en-us-1280-idle-dialog.png",
+      "core": "swiss",
+      "mode": "dark",
+      "lang": "en-us",
+      "width": 1280,
+      "height": 720,
+      "state": "idle",
+      "checks": {
+        "dialogOpenedByEnter": true,
+        "ariaExpanded": "true",
+        "noHorizontalOverflow": true,
+        "pageErrors": [],
+        "escapeClosedDialog": true,
+        "focusRestoredToTrigger": true
+      }
+    },
+    {
+      "file": "rhine-lab-light-zh-tw-1280-idle-dialog.png",
+      "core": "rhine-lab",
+      "mode": "light",
+      "lang": "zh-tw",
+      "width": 1280,
+      "height": 720,
+      "state": "idle",
+      "checks": {
+        "dialogOpenedByEnter": true,
+        "ariaExpanded": "true",
+        "noHorizontalOverflow": true,
+        "pageErrors": [],
+        "escapeClosedDialog": true,
+        "focusRestoredToTrigger": true
+      }
+    },
+    {
+      "file": "rhine-lab-dark-ja-jp-1280-finished-tabs.png",
+      "core": "rhine-lab",
+      "mode": "dark",
+      "lang": "ja-jp",
+      "width": 1280,
+      "height": 720,
+      "state": "finished",
+      "checks": {
+        "deleteAriaLabel": "選択したセッションを削除",
+        "tireSlipSelectedAfterArrowRight": "true",
+        "noHorizontalOverflow": true,
+        "pageErrors": []
+      }
+    },
+    {
+      "file": "default-dark-zh-tw-320-idle-dialog.png",
+      "core": "default",
+      "mode": "dark",
+      "lang": "zh-tw",
+      "width": 320,
+      "height": 800,
+      "state": "idle",
+      "checks": {
+        "dialogOpenedByEnter": true,
+        "ariaExpanded": "true",
+        "noHorizontalOverflow": true,
+        "pageErrors": [],
+        "escapeClosedDialog": true,
+        "focusRestoredToTrigger": true
+      }
+    }
+  ]
+}

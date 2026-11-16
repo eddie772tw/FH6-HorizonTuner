@@ -1,10 +1,10 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import type { TelemetryData } from '../../../hooks/useTelemetry';
 import type { SeriesSummary, SuspensionDetailMetrics, TireDetailMetrics, TelemetryChartPoint } from '../telemetryDetailMath';
 import { formatDegrees, formatRaceTime, formatValue, Metric, numberOrNull, TrendChart } from './TelemetryDetailPrimitives';
 import { formatRacePosition } from '../../../utils/telemetryDisplay';
 
-type Translate = (key: string) => string;
+type Translate = (key: string, params?: Record<string, string | number>) => string;
 type Converter = (value: number) => { value: number; label: string };
 
 interface SharedProps {
@@ -21,6 +21,20 @@ const cornerLines = [
   { dataKey: 'RL', label: 'RL', color: 'var(--accent)' },
   { dataKey: 'RR', label: 'RR', color: 'var(--bs-warning)' },
 ];
+
+const CornerTrendChart: React.FC<{
+  title: string;
+  data: TelemetryChartPoint[];
+  corners: string[];
+  emptyLabel: string;
+  legendLabel: string;
+}> = ({ title, data, corners, emptyLabel, legendLabel }) => {
+  const lines = useMemo(
+    () => cornerLines.map((line, index) => ({ ...line, label: corners[index] ?? line.label })),
+    [corners],
+  );
+  return <TrendChart title={title} data={data} emptyLabel={emptyLabel} legendLabel={legendLabel} lines={lines} />;
+};
 
 const SuspensionCornerSummary: React.FC<{
   label: string;
@@ -58,7 +72,7 @@ export const SuspensionDetailPanel: React.FC<SharedProps & { current: TelemetryD
       <Metric label={t('Roll')} value={formatDegrees(current?.Roll)} />
     </div>
     <div className="telemetry-detail-view__chart-grid">
-      <TrendChart title={t('Suspension Travel Trend')} data={data} emptyLabel={emptyLabel} lines={cornerLines} />
+      <CornerTrendChart title={t('Suspension Travel Trend')} data={data} corners={corners} emptyLabel={emptyLabel} legendLabel={t('Chart legend')} />
     </div>
   </div>
 );
@@ -88,11 +102,11 @@ export const TireDetailPanel: React.FC<SharedProps & {
       })}
     </div>
     <div className="telemetry-detail-view__chart-grid">
-      <TrendChart title={t('Tire Temperature Trend')} data={temperatureData} emptyLabel={emptyLabel} lines={cornerLines} />
-      <TrendChart title={t('Slip Ratio Trend')} data={slipRatioData} emptyLabel={emptyLabel} lines={cornerLines} />
-      <TrendChart title={t('Slip Angle Trend')} data={slipAngleData} emptyLabel={emptyLabel} lines={cornerLines} />
-      <TrendChart title={t('Combined Slip Trend')} data={combinedSlipData} emptyLabel={emptyLabel} lines={cornerLines} />
-      <TrendChart title={t('Surface Rumble Trend')} data={surfaceRumbleData} emptyLabel={emptyLabel} lines={cornerLines} />
+      <CornerTrendChart title={t('Tire Temperature Trend')} data={temperatureData} corners={corners} emptyLabel={emptyLabel} legendLabel={t('Chart legend')} />
+      <CornerTrendChart title={t('Slip Ratio Trend')} data={slipRatioData} corners={corners} emptyLabel={emptyLabel} legendLabel={t('Chart legend')} />
+      <CornerTrendChart title={t('Slip Angle Trend')} data={slipAngleData} corners={corners} emptyLabel={emptyLabel} legendLabel={t('Chart legend')} />
+      <CornerTrendChart title={t('Combined Slip Trend')} data={combinedSlipData} corners={corners} emptyLabel={emptyLabel} legendLabel={t('Chart legend')} />
+      <CornerTrendChart title={t('Surface Rumble Trend')} data={surfaceRumbleData} corners={corners} emptyLabel={emptyLabel} legendLabel={t('Chart legend')} />
     </div>
   </div>
 );
@@ -142,20 +156,20 @@ export const DynamicsDetailPanel: React.FC<SharedProps & {
         <Metric label={t('Race Position')} value={formatRacePosition(current?.RacePosition)} />
       </div>
       <div className="telemetry-detail-view__chart-grid">
-        <TrendChart title={t('Acceleration Trend')} data={accelerationData} emptyLabel={emptyLabel} lines={[
+        <TrendChart title={t('Acceleration Trend')} data={accelerationData} emptyLabel={emptyLabel} legendLabel={t('Chart legend')} lines={[
           { dataKey: 'X', label: t('Acceleration X'), color: 'var(--primary)' },
           { dataKey: 'Y', label: t('Acceleration Y'), color: 'var(--secondary)' },
           { dataKey: 'Z', label: t('Acceleration Z'), color: 'var(--accent)' },
         ]} />
-        <TrendChart title={t('Orientation Trend')} data={orientationData} emptyLabel={emptyLabel} lines={[
+        <TrendChart title={t('Orientation Trend')} data={orientationData} emptyLabel={emptyLabel} legendLabel={t('Chart legend')} lines={[
           { dataKey: 'Pitch', label: t('Pitch'), color: 'var(--primary)' },
           { dataKey: 'Roll', label: t('Roll'), color: 'var(--secondary)' },
           { dataKey: 'Yaw', label: t('Yaw'), color: 'var(--accent)' },
         ]} />
-        <TrendChart title={t('Speed Trend')} data={speedData} emptyLabel={emptyLabel} lines={[{ dataKey: 'Speed', label: t('Speed'), color: 'var(--primary)' }]} />
-        <TrendChart title={t('RPM Trend')} data={rpmData} emptyLabel={emptyLabel} lines={[{ dataKey: 'RPM', label: t('RPM'), color: 'var(--secondary)' }]} />
-        <TrendChart title={t('Power and Torque Trend')} data={powerData} emptyLabel={emptyLabel} lines={[{ dataKey: 'Power', label: t('Power'), color: 'var(--primary)' }, { dataKey: 'Torque', label: t('Torque'), color: 'var(--secondary)' }]} />
-        <TrendChart title={t('Boost / Regeneration')} data={boostData} emptyLabel={emptyLabel} lines={[{ dataKey: 'Boost', label: t('Boost'), color: 'var(--accent)' }]} />
+        <TrendChart title={t('Speed Trend')} data={speedData} emptyLabel={emptyLabel} legendLabel={t('Chart legend')} lines={[{ dataKey: 'Speed', label: t('Speed'), color: 'var(--primary)' }]} />
+        <TrendChart title={t('RPM Trend')} data={rpmData} emptyLabel={emptyLabel} legendLabel={t('Chart legend')} lines={[{ dataKey: 'RPM', label: t('RPM'), color: 'var(--secondary)' }]} />
+        <TrendChart title={t('Power and Torque Trend')} data={powerData} emptyLabel={emptyLabel} legendLabel={t('Chart legend')} lines={[{ dataKey: 'Power', label: t('Power'), color: 'var(--primary)' }, { dataKey: 'Torque', label: t('Torque'), color: 'var(--secondary)' }]} />
+        <TrendChart title={t('Boost / Regeneration')} data={boostData} emptyLabel={emptyLabel} legendLabel={t('Chart legend')} lines={[{ dataKey: 'Boost', label: t('Boost'), color: 'var(--accent)' }]} />
       </div>
     </div>
   );
@@ -170,10 +184,10 @@ export const TraceDetailPanel: React.FC<SharedProps & { driverData: TelemetryCha
       <Metric label={t('Torque')} value="--" />
     </div>
     <div className="telemetry-detail-view__chart-grid">
-      <TrendChart title={t('Pedal Trace')} data={driverData} emptyLabel={emptyLabel} lines={[{ dataKey: 'Throttle', label: t('Throttle'), color: 'var(--primary)' }, { dataKey: 'Brake', label: t('Brake'), color: 'var(--secondary)' }]} />
-      <TrendChart title={t('Power and Torque Trend')} data={powerData} emptyLabel={emptyLabel} lines={[{ dataKey: 'Power', label: t('Power'), color: 'var(--primary)' }, { dataKey: 'Torque', label: t('Torque'), color: 'var(--secondary)' }]} />
-      <TrendChart title={t('RPM / Torque Trend')} data={rpmData} emptyLabel={emptyLabel} lines={[{ dataKey: 'RPM', label: t('RPM'), color: 'var(--primary)' }, { dataKey: 'Torque', label: t('Torque'), color: 'var(--secondary)' }]} />
-      <TrendChart title={t('RPM / Power Trend')} data={rpmData} emptyLabel={emptyLabel} lines={[{ dataKey: 'RPM', label: t('RPM'), color: 'var(--primary)' }, { dataKey: 'Power', label: t('Power'), color: 'var(--accent)' }]} />
+      <TrendChart title={t('Pedal Trace')} data={driverData} emptyLabel={emptyLabel} legendLabel={t('Chart legend')} lines={[{ dataKey: 'Throttle', label: t('Throttle'), color: 'var(--primary)' }, { dataKey: 'Brake', label: t('Brake'), color: 'var(--secondary)' }]} />
+      <TrendChart title={t('Power and Torque Trend')} data={powerData} emptyLabel={emptyLabel} legendLabel={t('Chart legend')} lines={[{ dataKey: 'Power', label: t('Power'), color: 'var(--primary)' }, { dataKey: 'Torque', label: t('Torque'), color: 'var(--secondary)' }]} />
+      <TrendChart title={t('RPM / Torque Trend')} data={rpmData} emptyLabel={emptyLabel} legendLabel={t('Chart legend')} lines={[{ dataKey: 'RPM', label: t('RPM'), color: 'var(--primary)' }, { dataKey: 'Torque', label: t('Torque'), color: 'var(--secondary)' }]} />
+      <TrendChart title={t('RPM / Power Trend')} data={rpmData} emptyLabel={emptyLabel} legendLabel={t('Chart legend')} lines={[{ dataKey: 'RPM', label: t('RPM'), color: 'var(--primary)' }, { dataKey: 'Power', label: t('Power'), color: 'var(--accent)' }]} />
     </div>
   </div>
 );
