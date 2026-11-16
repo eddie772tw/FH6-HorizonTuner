@@ -60,7 +60,10 @@ fn export_neutralizes_csv_formula_injection_in_metadata() {
         assert_eq!(imported_meta["session_id"], format!("'{session_id}"));
         assert_eq!(imported_meta["car_name"], format!("'{car_name}"));
         // Negative numeric telemetry values must remain numeric for MoTeC/spreadsheet parsing.
-        assert!(csv.contains(",-1.000,"), "negative telemetry altered: {csv}");
+        assert!(
+            csv.contains(",-1.000,"),
+            "negative telemetry altered: {csv}"
+        );
     }
     // Idempotence and benign hyphenated car names remain uncorrupted.
     let benign = motec::export(

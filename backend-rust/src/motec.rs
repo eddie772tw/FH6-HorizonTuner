@@ -89,8 +89,7 @@ pub fn debrief(points: &[Value]) -> Value {
 /// Neutralizes spreadsheet formula triggers (OWASP CWE-1236) on freeform CSV metadata cells
 /// so caller-supplied or imported session/vehicle strings cannot evaluate as formulas in spreadsheets.
 fn sanitize_csv_cell(value: &str) -> String {
-    if value.starts_with(['\t', '\r', '\n'])
-        || value.trim_start().starts_with(['=', '+', '-', '@'])
+    if value.starts_with(['\t', '\r', '\n']) || value.trim_start().starts_with(['=', '+', '-', '@'])
     {
         format!("'{value}")
     } else {
@@ -133,7 +132,9 @@ pub fn export(metadata: &Value, points: &[Value]) -> ApiResult<Vec<u8>> {
         "Venue".into(),
         "Forza Circuit".into(),
         "Comment".into(),
-        sanitize_csv_cell(&format!("Exported Telemetry Session {raw_id} - Full 41 Channels")),
+        sanitize_csv_cell(&format!(
+            "Exported Telemetry Session {raw_id} - Full 41 Channels"
+        )),
     ])?;
     let mut intervals: Vec<f64> = points
         .windows(2)
