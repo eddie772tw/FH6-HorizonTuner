@@ -324,3 +324,53 @@ fn rounded_target_speeds_must_not_require_rpm_above_the_qualified_usable_limit()
     assert!(diagnostic["actualFinishRpmAtTargetSpeed"].as_f64().unwrap() > 5000.0);
     assert_eq!(diagnostic["targetSpeedKmh"], 250.0);
 }
+
+#[test]
+fn endpoint_tick_bounds_refine_scale_mismatched_rounding_slack() {
+    let fixed_fd = DragObservedBounds {
+        source: "user-observed".into(),
+        final_drive: range(3.0, 3.0),
+        gears: vec![range(0.1, 6.0); 6],
+    };
+
+    // Case 1: Finish endpoint ideal tick 85.999999995 at usable limit 5000 RPM.
+    // Tick-space +1e-8 slack admits 86 (0.86), which exceeds usable_limit + 1e-8 RPM.
+    let finish_edge = target(params(), 238.61492109815816, "manual");
+    let finish_res = solve_candidate(6, &finish_edge, 5000.0, None, Some(&fixed_fd));
+    available(&finish_res, 6);
+    assert_eq!(finish_res.gearing.final_drive, 3.0);
+    assert_eq!(finish_res.gearing.gears[5], 0.85);
+    assert!(
+        finish_res.diagnostics["actualFinishRpmAtTargetSpeed"]
+            .as_f64()
+            .unwrap()
+            <= 5000.0 + 1e-8
+    );
+
+    // Case 2: Launch endpoint ideal tick 186.999999995 at usable limit 5011.967512726198 RPM.
+    // Tick-space +1e-8 slack admits 187 (1.87), which exceeds usable_limit + 1e-8 RPM.
+    let mut launch_edge = target(params(), 250.0, "manual");
+    let launch_limit_rpm = 5011.967512726198;
+    launch_edge.max_hp_rpm = Some(launch_limit_rpm);
+    let launch_res = solve_candidate(6, &launch_edge, launch_limit_rpm, None, Some(&fixed_fd));
+    available(&launch_res, 6);
+    assert_eq!(launch_res.gearing.final_drive, 3.0);
+    assert_eq!(launch_res.gearing.gears[0], 1.86);
+    assert!(
+        launch_res.diagnostics["actualLaunchRpmAtTargetSpeed"]
+            .as_f64()
+            .unwrap()
+            <= launch_limit_rpm + 1e-8
+    );
+
+    // Soundness check: locking the rejected 0.86 tick must still return unavailable.
+    let mut locked_invalid = fixed_fd;
+    locked_invalid.gears[5] = range(0.86, 0.86);
+    unavailable(solve_candidate(
+        6,
+        &finish_edge,
+        5000.0,
+        None,
+        Some(&locked_invalid),
+    ));
+}
