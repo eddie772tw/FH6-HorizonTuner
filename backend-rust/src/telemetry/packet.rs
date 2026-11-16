@@ -47,17 +47,16 @@ pub fn parse_packet(data: &[u8]) -> Result<Value, String> {
     if data.len() > FULL_TELEMETRY_PACKET_LENGTH {
         return Err("unsupported_length".into());
     }
-    if data.len() != LEGACY_TELEMETRY_PACKET_LENGTH && data.len() != FULL_TELEMETRY_PACKET_LENGTH {
-        return Err("unsupported_length".into());
-    }
+    let is_full = data.len() == FULL_TELEMETRY_PACKET_LENGTH;
+    validate_packet_floats(data, is_full)?;
 
-    // [PERF] Pre-allocate map capacity for ~64 telemetry fields to avoid IndexMap reallocations on every packet.
-    let mut m = Map::with_capacity(64);
+    // [PERF] Exact IndexMap capacity after pre-validation (53 keys for V2 full, 31 for legacy).
+    let mut m = Map::with_capacity(if is_full { 53 } else { 31 });
     put(&mut m, "IsRaceOn", Value::from(i32_at(data, 0)));
     put(
         &mut m,
         "TelemetrySchema",
-        Value::from(if data.len() == FULL_TELEMETRY_PACKET_LENGTH {
+        Value::from(if is_full {
             FULL_TELEMETRY_SCHEMA
         } else {
             LEGACY_TELEMETRY_SCHEMA
@@ -94,14 +93,6 @@ pub fn parse_packet(data: &[u8]) -> Result<Value, String> {
     ] {
         put(&mut m, key, arr(data, start));
     }
-    for (idx, key) in [
-        (29, "WheelOnRumbleStrip"),
-        (30, "_wheel_on_rumble_strip_2"),
-        (31, "_wheel_on_rumble_strip_3"),
-        (32, "_wheel_on_rumble_strip_4"),
-    ] {
-        let _ = (idx, key);
-    }
     put(
         &mut m,
         "WheelOnRumbleStrip",
@@ -118,7 +109,7 @@ pub fn parse_packet(data: &[u8]) -> Result<Value, String> {
     put(&mut m, "CarPerformanceIndex", Value::from(i32_at(data, 55)));
     put(&mut m, "DrivetrainType", Value::from(i32_at(data, 56)));
     put(&mut m, "Cylinders", Value::from(i32_at(data, 57)));
-    if data.len() == FULL_TELEMETRY_PACKET_LENGTH {
+    if is_full {
         for (idx, key) in [
             (61, "PositionX"),
             (62, "PositionY"),
@@ -159,87 +150,30 @@ pub fn parse_packet(data: &[u8]) -> Result<Value, String> {
             put(&mut m, key, Value::from(data[offset]));
         }
         put(&mut m, "SteerInput", Value::from(data[320] as i8));
-        let v2_numeric = [
-            "PositionX",
-            "PositionY",
-            "PositionZ",
-            "SpeedMetersPerSecond",
-            "PowerWatts",
-            "TorqueNewtons",
-            "Boost",
-            "Fuel",
-            "BestLap",
-            "LastLap",
-            "CurrentLap",
-            "DistanceTraveled",
-            "CurrentRaceTime",
-        ];
-        if v2_numeric.iter().any(|key| !finite(m.get(*key))) || plausibility_failed(&m) {
-            return Err(if fuel_out_of_range(&m) || speed_negative(&m) {
-                "out_of_range"
-            } else {
-                "non_finite"
-            }
-            .into());
-        }
-    } else if plausibility_failed(&m) {
-        return Err("non_finite".into());
     }
     Ok(Value::Object(m))
 }
 
-fn finite(v: Option<&Value>) -> bool {
-    v.and_then(Value::as_f64)
-        .map(f64::is_finite)
-        .unwrap_or(false)
-}
-fn arr_finite(v: Option<&Value>) -> bool {
-    v.and_then(Value::as_array)
-        .map(|a| a.iter().all(|x| finite(Some(x))))
-        .unwrap_or(false)
-}
-fn plausibility_failed(m: &Map<String, Value>) -> bool {
-    let scalar = [
-        "EngineMaxRpm",
-        "EngineIdleRpm",
-        "CurrentEngineRpm",
-        "AccelerationX",
-        "AccelerationY",
-        "AccelerationZ",
-        "VelocityX",
-        "VelocityY",
-        "VelocityZ",
-        "Yaw",
-        "Pitch",
-        "Roll",
-        "AngularVelocityX",
-        "AngularVelocityY",
-        "AngularVelocityZ",
-    ];
-    scalar.iter().any(|k| !finite(m.get(*k)))
-        || [
-            "WheelRotationSpeed",
-            "SurfaceRumble",
-            "TireCombinedSlip",
-            "NormalizedSuspensionTravel",
-            "SuspensionTravelMeters",
-            "TireSlipRatio",
-            "TireSlipAngle",
-        ]
-        .iter()
-        .any(|k| !arr_finite(m.get(*k)))
-}
-fn fuel_out_of_range(m: &Map<String, Value>) -> bool {
-    m.get("Fuel")
-        .and_then(Value::as_f64)
-        .map(|x| !(0.0..=1.0).contains(&x))
-        .unwrap_or(false)
-}
-fn speed_negative(m: &Map<String, Value>) -> bool {
-    m.get("SpeedMetersPerSecond")
-        .and_then(Value::as_f64)
-        .map(|x| x < 0.0)
-        .unwrap_or(false)
+// [PERF] Pre-validate raw f32 fields on the slice before constructing IndexMap/Strings/Vecs.
+// Eliminates 35 string-hash lookups per valid packet and avoids all heap allocations on invalid packets.
+fn validate_packet_floats(data: &[u8], is_full: bool) -> Result<(), &'static str> {
+    let base_ok = (2..29).all(|i| f32_at(data, i).is_finite())
+        && (37..53).all(|i| f32_at(data, i).is_finite());
+    let v2_ok = !is_full
+        || ((61..67).all(|i| f32_at(data, i).is_finite())
+            && (71..78).all(|i| f32_at(data, i).is_finite()));
+    if base_ok && v2_ok {
+        return Ok(());
+    }
+    if is_full {
+        let fuel = f32_at(data, 72);
+        let speed = f32_at(data, 64);
+        if (fuel.is_finite() && !(0.0..=1.0).contains(&fuel)) || (speed.is_finite() && speed < 0.0)
+        {
+            return Err("out_of_range");
+        }
+    }
+    Err("non_finite")
 }
 
 fn value_f64(m: &Map<String, Value>, key: &str, default: f64) -> f64 {
@@ -303,5 +237,77 @@ pub fn pack_binary(value: &Value) -> Vec<u8> {
         out
     } else {
         vec![0; 128]
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::{hint::black_box, time::Instant};
+
+    fn sample_v2_packet() -> [u8; FULL_TELEMETRY_PACKET_LENGTH] {
+        let mut b = [0u8; FULL_TELEMETRY_PACKET_LENGTH];
+        b[0..4].copy_from_slice(&1i32.to_le_bytes());
+        b[4..8].copy_from_slice(&12345u32.to_le_bytes());
+        for idx in (2..=28).chain(37..=52).chain(61..=77) {
+            let start = idx * 4;
+            let val = if idx == 72 { 0.75f32 } else { idx as f32 * 1.5 };
+            b[start..start + 4].copy_from_slice(&val.to_le_bytes());
+        }
+        b[315] = 255;
+        b[319] = 4;
+        b
+    }
+
+    #[test]
+    #[ignore = "release-only microbenchmark; no timing pass threshold"]
+    fn bench_parse_packet_release() {
+        let valid_v2 = sample_v2_packet();
+        let mut invalid_v2 = valid_v2;
+        invalid_v2[72 * 4..72 * 4 + 4].copy_from_slice(&2.0f32.to_le_bytes());
+        invalid_v2[65 * 4..65 * 4 + 4].copy_from_slice(&f32::NAN.to_le_bytes());
+
+        for _ in 0..1000 {
+            let _ = black_box(parse_packet(black_box(&valid_v2)));
+        }
+        let iters = 50_000;
+        let start = Instant::now();
+        for _ in 0..iters {
+            let _ = black_box(parse_packet(black_box(&valid_v2)));
+        }
+        let valid_ms = start.elapsed().as_secs_f64() * 1000.0;
+
+        let start = Instant::now();
+        for _ in 0..iters {
+            let _ = black_box(parse_packet(black_box(&invalid_v2)));
+        }
+        let invalid_ms = start.elapsed().as_secs_f64() * 1000.0;
+        println!(
+            "parse_packet_50k_valid_ms={valid_ms:.3} parse_packet_50k_invalid_ms={invalid_ms:.3}"
+        );
+    }
+
+    #[test]
+    fn prevalidation_preserves_tire_temp_null_and_rejection_parity() {
+        let mut p = sample_v2_packet();
+        p[68 * 4..68 * 4 + 4].copy_from_slice(&f32::NAN.to_le_bytes());
+        p[72 * 4..72 * 4 + 4].copy_from_slice(&1.5f32.to_le_bytes());
+        let ok = parse_packet(&p).expect("TireTemp NaN and finite Fuel > 1 stay accepted");
+        assert!(ok["TireTemp"][1].is_null());
+
+        p[65 * 4..65 * 4 + 4].copy_from_slice(&f32::NAN.to_le_bytes());
+        assert_eq!(parse_packet(&p).unwrap_err(), "out_of_range");
+
+        p[72 * 4..72 * 4 + 4].copy_from_slice(&f32::NAN.to_le_bytes());
+        assert_eq!(parse_packet(&p).unwrap_err(), "non_finite");
+
+        let mut speed_neg = sample_v2_packet();
+        speed_neg[64 * 4..64 * 4 + 4].copy_from_slice(&(-1.0f32).to_le_bytes());
+        speed_neg[66 * 4..66 * 4 + 4].copy_from_slice(&f32::INFINITY.to_le_bytes());
+        assert_eq!(parse_packet(&speed_neg).unwrap_err(), "out_of_range");
+
+        let mut legacy = [0u8; LEGACY_TELEMETRY_PACKET_LENGTH];
+        legacy[50 * 4..50 * 4 + 4].copy_from_slice(&f32::NAN.to_le_bytes());
+        assert_eq!(parse_packet(&legacy).unwrap_err(), "non_finite");
     }
 }

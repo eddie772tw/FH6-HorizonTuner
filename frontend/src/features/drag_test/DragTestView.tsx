@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useId, useMemo, useRef } from 'react';
 import { useSettings } from '../../context/SettingsContext';
 import { backendFetch } from '../../services/backend';
 import './DragTestView.css';
@@ -65,6 +65,29 @@ const DragTestView: React.FC = () => {
   const [compareData, setCompareData] = useState<DragPoint[]>([]);
   const [compareAnalysis, setCompareAnalysis] = useState<DragAnalysis | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [popoverAlignRight, setPopoverAlignRight] = useState(false);
+  const dragId = useId();
+  const dragTriggerRef = useRef<HTMLButtonElement>(null);
+  const dragPopoverWrapRef = useRef<HTMLDivElement>(null);
+  const chartTabsRef = useRef<Array<HTMLButtonElement | null>>([]);
+  const chartTabs = ['speed_rpm', 'slip'] as const;
+
+  useEffect(() => {
+    if (!showDragPopover) return;
+    const onPointerDown = (e: PointerEvent) => { if (!dragPopoverWrapRef.current?.contains(e.target as Node)) setShowDragPopover(false); };
+    const onKeyDown = (e: KeyboardEvent) => { if (e.key === 'Escape') { e.preventDefault(); setShowDragPopover(false); dragTriggerRef.current?.focus(); } };
+    document.addEventListener('pointerdown', onPointerDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => { document.removeEventListener('pointerdown', onPointerDown); document.removeEventListener('keydown', onKeyDown); };
+  }, [showDragPopover]);
+
+  const onChartTabKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>, index: number) => {
+    const next = e.key === 'Home' ? 0 : e.key === 'End' ? 1 : e.key === 'ArrowRight' || e.key === 'ArrowLeft' ? 1 - index : null;
+    if (next === null) return;
+    e.preventDefault();
+    setActiveChart(chartTabs[next]);
+    chartTabsRef.current[next]?.focus();
+  };
 
   // Poll status from backend
   useEffect(() => {
@@ -320,7 +343,9 @@ const DragTestView: React.FC = () => {
                 })}
               </select>
               {selectedCompareFilename && (
-                <button 
+                <button
+                  type="button"
+                  aria-label={t("Delete selected session")}
                   onClick={(e) => handleDeleteSession(selectedCompareFilename, e)}
                   style={{
                     background: 'rgba(255,0,60,0.15)',
@@ -341,39 +366,54 @@ const DragTestView: React.FC = () => {
 
           {status === 'idle' && (
             <div className="d-flex align-items-center gap-2">
-              <div 
+              <div
+                ref={dragPopoverWrapRef}
                 className="position-relative d-inline-flex"
-                onClick={() => setShowDragPopover(prev => !prev)}
                 onMouseEnter={() => setShowDragPopover(true)}
                 onMouseLeave={() => setShowDragPopover(false)}
-                style={{ cursor: 'pointer' }}
               >
-                <span className="badge text-bg-info px-2 py-1 fw-bold fs-7">
+                <button
+                  ref={dragTriggerRef}
+                  type="button"
+                  className="badge text-bg-info border-0 px-2 py-1 fw-bold fs-7"
+                  style={{ cursor: 'pointer' }}
+                  aria-expanded={showDragPopover}
+                  aria-controls={showDragPopover ? `${dragId}-conditions-popover` : undefined}
+                  aria-haspopup="dialog"
+                  onClick={() => {
+                    const r = dragTriggerRef.current?.getBoundingClientRect();
+                    if (r) setPopoverAlignRight(window.innerWidth - r.left < 320 && r.right >= 300);
+                    setShowDragPopover(prev => !prev);
+                  }}
+                >
                   {t("RUN CONDITIONS READY")}
-                </span>
+                </button>
 
                 {showDragPopover && (
-                  <div 
+                  <div
+                    id={`${dragId}-conditions-popover`}
                     className="popover bs-popover-bottom show glass-panel shadow-lg border"
                     style={{
                       position: 'absolute',
                       top: 'calc(100% + 8px)',
-                      left: 0,
+                      ...(popoverAlignRight ? { right: 0, left: 'auto' } : { left: 0 }),
                       zIndex: 1050,
-                      minWidth: '320px',
+                      width: 'min(300px, calc(100vw - 2rem))',
+                      maxWidth: 'calc(100vw - 2rem)',
                       backdropFilter: 'blur(16px)',
                       background: 'var(--glass-bg)',
                       borderColor: 'var(--bs-info)',
                       cursor: 'default'
                     }}
-                    role="tooltip"
+                    role="dialog"
+                    aria-labelledby={`${dragId}-conditions-title`}
                     onClick={(e) => e.stopPropagation()}
                   >
                     <div 
                       style={{
                         position: 'absolute',
                         top: '-6px',
-                        left: '20px',
+                        ...(popoverAlignRight ? { right: '24px' } : { left: '20px' }),
                         width: 0,
                         height: 0,
                         borderLeft: '6px solid transparent',
@@ -383,7 +423,7 @@ const DragTestView: React.FC = () => {
                     />
                     <div className="popover-header bg-transparent border-bottom border-secondary border-opacity-25 px-3 py-2 text-info fw-bold fs-7 d-flex align-items-center justify-content-between">
                       <div className="d-flex align-items-center gap-2">
-                        <span>{t("Drag Launch Conditions")}</span>
+                        <span id={`${dragId}-conditions-title`}>{t("Drag Launch Conditions")}</span>
                         <span className="badge text-bg-info">{t("READY")}</span>
                       </div>
                       <button
@@ -393,6 +433,7 @@ const DragTestView: React.FC = () => {
                         onClick={(e) => {
                           e.stopPropagation();
                           setShowDragPopover(false);
+                          dragTriggerRef.current?.focus();
                         }}
                       ></button>
                     </div>
@@ -408,7 +449,7 @@ const DragTestView: React.FC = () => {
                 )}
               </div>
 
-              <button className="btn btn-primary" onClick={handlePrepare}>
+              <button type="button" className="btn btn-primary" onClick={handlePrepare}>
                 {t("Start Test")}
               </button>
             </div>
@@ -416,10 +457,10 @@ const DragTestView: React.FC = () => {
           
           {status === 'waiting' && (
             <div className="drag-test-actions">
-              <span className="pulse-text" style={{ color: '#ffcc00', fontWeight: 700, fontSize: '0.9rem' }}>
+              <span className="pulse-text" role="status" style={{ color: '#ffcc00', fontWeight: 700, fontSize: '0.9rem' }}>
                 {t("Waiting for Launch...")}
               </span>
-              <button className="btn btn-outline-secondary" onClick={handleClear}>
+              <button type="button" className="btn btn-outline-secondary" onClick={handleClear}>
                 {t("Cancel")}
               </button>
             </div>
@@ -427,8 +468,8 @@ const DragTestView: React.FC = () => {
           
           {status === 'recording' && (
             <div className="drag-test-actions">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#ff003c', boxShadow: '0 0 8px #ff003c' }} className="pulse-dot" />
+              <div role="status" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <span aria-hidden="true" style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#ff003c', boxShadow: '0 0 8px #ff003c' }} className="pulse-dot" />
                 <span style={{ color: '#ff003c', fontWeight: 700, fontSize: '0.9rem' }}>
                   {t("RECORDING")} ({pointsCount} pts)
                 </span>
@@ -450,9 +491,11 @@ const DragTestView: React.FC = () => {
                 style={isSaving ? { cursor: 'not-allowed' } : {}}
               >
                 <button
+                  type="button"
                   className="btn btn-primary"
                   onClick={handleSaveSession}
                   disabled={isSaving}
+                  aria-busy={isSaving}
                   style={{
                     pointerEvents: isSaving ? 'none' : 'auto'
                   }}
@@ -460,10 +503,10 @@ const DragTestView: React.FC = () => {
                   {isSaving ? t("Saving...") : t("Save Test")}
                 </button>
               </span>
-              <button className="btn btn-outline-secondary" onClick={handlePrepare}>
+              <button type="button" className="btn btn-outline-secondary" onClick={handlePrepare}>
                 {t("New Test")}
               </button>
-              <button className="btn btn-outline-secondary" onClick={handleClear}>
+              <button type="button" className="btn btn-outline-secondary" onClick={handleClear}>
                 {t("Clear Data")}
               </button>
             </div>
@@ -535,40 +578,29 @@ const DragTestView: React.FC = () => {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h4 className="workspace-section-heading workspace-panel-header">{t("Telemetry Visualization")}</h4>
               
-              <div style={{ display: 'flex', gap: '0.5rem', background: 'rgba(255,255,255,0.05)', padding: '0.2rem', borderRadius: '6px' }}>
-                <button 
-                  onClick={() => setActiveChart('speed_rpm')}
-                  style={{
-                    padding: '0.3rem 0.8rem', border: 'none', borderRadius: '4px', fontSize: '0.8rem', cursor: 'pointer',
-                    background: activeChart === 'speed_rpm' ? 'var(--primary)' : 'transparent',
-                    color: activeChart === 'speed_rpm' ? 'white' : 'var(--text-secondary)',
-                    fontWeight: 600
-                  }}
-                  aria-current={activeChart === 'speed_rpm' ? 'true' : undefined}
-                >
-                  {t("Speed & RPM")}
-                </button>
-                <button 
-                  onClick={() => setActiveChart('slip')}
-                  style={{
-                    padding: '0.3rem 0.8rem', border: 'none', borderRadius: '4px', fontSize: '0.8rem', cursor: 'pointer',
-                    background: activeChart === 'slip' ? 'var(--primary)' : 'transparent',
-                    color: activeChart === 'slip' ? 'white' : 'var(--text-secondary)',
-                    fontWeight: 600
-                  }}
-                  aria-current={activeChart === 'slip' ? 'true' : undefined}
-                >
-                  {t("Tire Slip")}
-                </button>
+              <div role="tablist" aria-label={t("Telemetry Visualization")} style={{ display: 'flex', gap: '0.5rem', background: 'rgba(255,255,255,0.05)', padding: '0.2rem', borderRadius: '6px' }}>
+                {chartTabs.map((tabKey, index) => (
+                  <button key={tabKey} ref={el => { chartTabsRef.current[index] = el; }} type="button" role="tab"
+                    id={`${dragId}-chart-tab-${tabKey}`} aria-controls={`${dragId}-chart-panel`}
+                    aria-selected={activeChart === tabKey} tabIndex={activeChart === tabKey ? 0 : -1}
+                    onKeyDown={event => onChartTabKeyDown(event, index)} onClick={() => setActiveChart(tabKey)}
+                    style={{
+                      padding: '0.3rem 0.8rem', border: 'none', borderRadius: '4px', fontSize: '0.8rem', cursor: 'pointer',
+                      background: activeChart === tabKey ? 'var(--primary)' : 'transparent',
+                      color: activeChart === tabKey ? 'white' : 'var(--text-secondary)', fontWeight: 600
+                    }}>
+                    {t(tabKey === 'speed_rpm' ? "Speed & RPM" : "Tire Slip")}
+                  </button>
+                ))}
               </div>
             </div>
 
             {isLoading ? (
-              <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '350px', color: 'var(--text-secondary)' }}>
+              <div role="status" style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '350px', color: 'var(--text-secondary)' }}>
                 {t("Loading analysis...")}
               </div>
             ) : (
-              <div className="core-theme-chart" style={{ flex: 1, minHeight: '350px', position: 'relative' }}>
+              <div id={`${dragId}-chart-panel`} role="tabpanel" aria-labelledby={`${dragId}-chart-tab-${activeChart}`} tabIndex={0} className="core-theme-chart" style={{ flex: 1, minHeight: '350px', position: 'relative' }}>
                 {activeChart === 'speed_rpm' ? (
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={chartData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>

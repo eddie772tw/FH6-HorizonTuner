@@ -1,0 +1,52 @@
+{
+  "target": "hud_overlay/shared/telemetry-cards/power-torque.js",
+  "renderer": "createTelemetryCardsManager() -> renderPowerTorque()",
+  "capturedAt": "2026-11-14T21:04:46.519862+00:00",
+  "browser": "Chromium headless (Chrome/157.0.8103.51)",
+  "background": "#0b111b (composite dark backdrop for transparent HUD panel)",
+  "scopeNote": "Isolated #tcPowerTorqueContainer element clip with 16px margin; live game & native Windows overlay not tested here.",
+  "captures": [
+    {
+      "file": "power-torque-dpr1-active.png",
+      "description": "DPR 1 · 300 筆滿載馬力／扭力散點曲線與 5252 RPM 交會及即時同軸光環",
+      "viewport": "1280x720",
+      "dpr": 1,
+      "samples": 300,
+      "canvas": {
+        "width": 512,
+        "height": 64,
+        "clientWidth": 512,
+        "clientHeight": 64
+      },
+      "clipPaddingPx": 16
+    },
+    {
+      "file": "power-torque-dpr2-active.png",
+      "description": "DPR 2 · HiDPI 300 筆滿載馬力／扭力散點與同軸光環",
+      "viewport": "1280x720",
+      "dpr": 2,
+      "samples": 300,
+      "canvas": {
+        "width": 1024,
+        "height": 128,
+        "clientWidth": 512,
+        "clientHeight": 64
+      },
+      "clipPaddingPx": 16
+    },
+    {
+      "file": "power-torque-dpr1-single.png",
+      "description": "DPR 1 · 單一採樣（len === 1）即時焦點顯示",
+      "viewport": "1280x720",
+      "dpr": 1,
+      "samples": 1,
+      "canvas": {
+        "width": 512,
+        "height": 64,
+        "clientWidth": 512,
+        "clientHeight": 64
+      },
+      "clipPaddingPx": 16
+    }
+  ]
+}
