@@ -464,9 +464,16 @@ pub fn solve_candidate(
         ) else {
             continue;
         };
-        let Some(last) =
-            endpoint_ticks(legal[count - 1], k, fd, rpm, max_rpm, radius, target, tolerance)
-        else {
+        let Some(last) = endpoint_ticks(
+            legal[count - 1],
+            k,
+            fd,
+            rpm,
+            max_rpm,
+            radius,
+            target,
+            tolerance,
+        ) else {
             continue;
         };
         legal[0] = first;
