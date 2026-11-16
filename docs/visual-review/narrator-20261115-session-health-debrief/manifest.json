@@ -1,0 +1,104 @@
+{
+  "captureDate": "2026-11-15",
+  "baseUrl": "http://localhost:1451",
+  "component": "frontend/src/features/analysis/SessionHealthDebrief.tsx",
+  "mockedBackend": true,
+  "cases": [
+    {
+      "name": "default-light-en-us-1280-debrief.png",
+      "core": "default",
+      "mode": "light",
+      "lang": "en-us",
+      "width": 1280,
+      "height": 720,
+      "state": "active",
+      "file": "default-light-en-us-1280-debrief.png",
+      "horizontalOverflow": false,
+      "containsNoDataRaw": false
+    },
+    {
+      "name": "default-dark-zh-tw-1280-debrief.png",
+      "core": "default",
+      "mode": "dark",
+      "lang": "zh-tw",
+      "width": 1280,
+      "height": 720,
+      "state": "active",
+      "file": "default-dark-zh-tw-1280-debrief.png",
+      "horizontalOverflow": false,
+      "containsNoDataRaw": false
+    },
+    {
+      "name": "swiss-light-ja-jp-1280-debrief.png",
+      "core": "swiss",
+      "mode": "light",
+      "lang": "ja-jp",
+      "width": 1280,
+      "height": 720,
+      "state": "active",
+      "file": "swiss-light-ja-jp-1280-debrief.png",
+      "horizontalOverflow": false,
+      "containsNoDataRaw": false
+    },
+    {
+      "name": "swiss-dark-zh-tw-1280-debrief-nodata.png",
+      "core": "swiss",
+      "mode": "dark",
+      "lang": "zh-tw",
+      "width": 1280,
+      "height": 720,
+      "state": "no_data",
+      "file": "swiss-dark-zh-tw-1280-debrief-nodata.png",
+      "horizontalOverflow": false,
+      "containsNoDataRaw": false
+    },
+    {
+      "name": "rhine-lab-light-zh-tw-1280-debrief.png",
+      "core": "rhine-lab",
+      "mode": "light",
+      "lang": "zh-tw",
+      "width": 1280,
+      "height": 720,
+      "state": "active",
+      "file": "rhine-lab-light-zh-tw-1280-debrief.png",
+      "horizontalOverflow": false,
+      "containsNoDataRaw": false
+    },
+    {
+      "name": "rhine-lab-dark-en-us-1280-debrief-nodata.png",
+      "core": "rhine-lab",
+      "mode": "dark",
+      "lang": "en-us",
+      "width": 1280,
+      "height": 720,
+      "state": "no_data",
+      "file": "rhine-lab-dark-en-us-1280-debrief-nodata.png",
+      "horizontalOverflow": false,
+      "containsNoDataRaw": false
+    },
+    {
+      "name": "default-light-ja-jp-320-debrief.png",
+      "core": "default",
+      "mode": "light",
+      "lang": "ja-jp",
+      "width": 320,
+      "height": 800,
+      "state": "active",
+      "file": "default-light-ja-jp-320-debrief.png",
+      "horizontalOverflow": false,
+      "containsNoDataRaw": false
+    },
+    {
+      "name": "default-dark-zh-tw-320-debrief.png",
+      "core": "default",
+      "mode": "dark",
+      "lang": "zh-tw",
+      "width": 320,
+      "height": 800,
+      "state": "active",
+      "file": "default-dark-zh-tw-320-debrief.png",
+      "horizontalOverflow": false,
+      "containsNoDataRaw": false
+    }
+  ]
+}
