@@ -1,0 +1,97 @@
+{
+  "date": "2026-11-18",
+  "baseCommit": "aeabfcedebf2dd9394294e0453153c435837c615",
+  "productBlobs": {
+    "frontend/src/features/analysis/AnalysisView.tsx": "a5e3c0d3a73c6271d092e9300fa70c2931b2e878",
+    "frontend/src/features/analysis/AnalysisSessionToolbar.tsx": "140802fd1089f4196380723674017028e5e46182"
+  },
+  "browser": "148.0.7778.96",
+  "capture": "Chromium headless, full production AppShell/providers served from frontend/dist with mocked 127.0.0.1:8001 API responses and real lang/*.json dictionaries, DPR 1, zoom 100%.",
+  "reproduce": "Open Sessions tab in AppShell across Default/Swiss/Rhine-Lab light & dark themes, select a saved session, verify inline Delete confirmation, Escape cancellation, error alert, focus management, and zero overflow.",
+  "cases": [
+    {
+      "core": "default",
+      "mode": "light",
+      "lang": "en-us",
+      "width": 1280,
+      "height": 720,
+      "state": "idle",
+      "file": "default-light-en-us-1280-idle.png",
+      "dimensions": {
+        "width": 1280,
+        "scrollWidth": 1280
+      },
+      "errors": []
+    },
+    {
+      "core": "default",
+      "mode": "dark",
+      "lang": "zh-tw",
+      "width": 320,
+      "height": 800,
+      "state": "confirm",
+      "file": "default-dark-zh-tw-320-confirm.png",
+      "dimensions": {
+        "width": 320,
+        "scrollWidth": 320
+      },
+      "errors": []
+    },
+    {
+      "core": "swiss",
+      "mode": "light",
+      "lang": "zh-tw",
+      "width": 1280,
+      "height": 720,
+      "state": "confirm",
+      "file": "swiss-light-zh-tw-1280-confirm.png",
+      "dimensions": {
+        "width": 1280,
+        "scrollWidth": 1280
+      },
+      "errors": []
+    },
+    {
+      "core": "swiss",
+      "mode": "dark",
+      "lang": "ja-jp",
+      "width": 1280,
+      "height": 720,
+      "state": "idle",
+      "file": "swiss-dark-ja-jp-1280-idle.png",
+      "dimensions": {
+        "width": 1280,
+        "scrollWidth": 1280
+      },
+      "errors": []
+    },
+    {
+      "core": "rhine-lab",
+      "mode": "light",
+      "lang": "ja-jp",
+      "width": 1280,
+      "height": 720,
+      "state": "error",
+      "file": "rhine-lab-light-ja-jp-1280-error.png",
+      "dimensions": {
+        "width": 1280,
+        "scrollWidth": 1280
+      },
+      "errors": []
+    },
+    {
+      "core": "rhine-lab",
+      "mode": "dark",
+      "lang": "en-us",
+      "width": 1280,
+      "height": 720,
+      "state": "confirm",
+      "file": "rhine-lab-dark-en-us-1280-confirm.png",
+      "dimensions": {
+        "width": 1280,
+        "scrollWidth": 1280
+      },
+      "errors": []
+    }
+  ]
+}
