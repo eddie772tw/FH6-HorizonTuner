@@ -64,3 +64,8 @@
 **物理洞察 (Physics Learning):** `chassis.rs::clamp_round` 在將彈簧剛性與車高取整至 0.1 小數位時，當區間 `[min, max]` 未與 0.1 格點相交（例如鎖定或狹窄區間 `[3.11, 3.11]`、`[3.11, 3.14]`、`[3.16, 3.19]`，或單位換算後之次單位區間 `[0.01, 0.04]`），其 `floored >= min` 與 `ceiled <= max` 皆為偽，原演算法卻在 `else` 分支回退至 `r1(max)` 或 `r1(min)`，導致輸出跌出 `[min, max]` 邊界（如 `3.1` 或 `3.2`）甚至使正數彈簧退化為 `0.0`，直接觸發 `baseline::preview` 以 `"value-outside-range"` 拒絕 Drift / Drag / DangerSign / v1 底盤推薦。此外，當邊界接近 `f64::MAX / 10` 時，`(max * 10.0).floor() / 10.0` 會溢位成 `INFINITY` 並通過 `>= min` 檢查造成無限大數值外洩。
 **行動 (Action):** 令 `chassis.rs::clamp_round` 在無 0.1 格點落入 `[min, max]` 或縮放溢位時直接回傳已鉗位值 `clamped`，並補齊邊界排序與 `NaN`/有限性防護，與 `chassis_load::quantize` 達成嚴格包含性閉包（`min <= result <= max`）而不改變任何既有 21 個金標案例數值。
 **署名:** Mechanic as Antigravity
+
+## 2026-11-18 - `chassis_load::quantize` IEEE-754 乘法捨入溢位與部分上界溢位保護
+**物理洞察 (Physics Learning):** 現行 Road／Rally v2 工程基準 `chassis_load::quantize` 原先透過 `low = (min * 10.0).ceil() / 10.0` 與 `high = (max * 10.0).floor() / 10.0` 預先建構 0.1 格點區間再進行鉗位。然而在 IEEE-754 雙精度浮點數下，當邊界處於高精度捨入區間（如 `7_974_024_817_625_809.0`）時，`x * 10.0` 會發生捨入進位並使 `(min * 10.0).ceil() / 10.0` 與 `(max * 10.0).floor() / 10.0` 同時向上越過 `max`（得出 `7_974_024_817_625_810.0 > max`），因 `low <= high` 仍成立而違反 `min <= result <= max` 邊界閉包，進而導致 `baseline::preview` 以 `"value-outside-range"` 拒絕推薦。此外，當單側上界接近 `1e307` 使 `max * 10.0` 溢位為 `INFINITY` 時，原先會放棄對區間內有限常規數值（如 `10.14`）執行 0.1 取整。
+**行動 (Action):** 改由 `bounded = value.clamp(min, max)` 直接取整 `rounded = (bounded * 10.0).round() / 10.0`，先檢查 `rounded` 有限性，僅在 `rounded > max` 或 `rounded < min` 且向內取整格點（`high`/`low`）嚴格滿足 `min <= grid <= max` 時才採用格點，否則回退至 `bounded`，使現行 v2 `chassis_load::quantize` 與 `chassis::clamp_round` 在全有限浮點域達成等價的嚴格邊界閉包。
+**署名:** Mechanic as Antigravity
