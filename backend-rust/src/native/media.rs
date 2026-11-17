@@ -564,17 +564,48 @@ fn extract_thumbnail(
         .map(|byte| format!("{byte:02x}"))
         .collect::<String>()[..16]
         .to_owned();
-    let content_type = stream
-        .ContentType()
-        .ok()
-        .map(|value| value.to_string())
-        .filter(|value| !value.is_empty())
-        .unwrap_or_else(|| "image/jpeg".into());
+    let raw_content_type = stream.ContentType().ok().map(|value| value.to_string());
+    let Some(content_type) = validate_thumbnail(raw_content_type.as_deref(), &bytes) else {
+        return Ok(None);
+    };
     Ok(Some(ThumbnailData {
-        content_type,
+        content_type: content_type.to_owned(),
         hash,
         bytes,
     }))
+}
+
+fn validate_thumbnail(raw_content_type: Option<&str>, bytes: &[u8]) -> Option<&'static str> {
+    // Reject SVG/HTML/XML payloads even if untrusted GSMTC metadata claims a raster MIME type.
+    let head = String::from_utf8_lossy(&bytes[..bytes.len().min(64)]);
+    if head.trim_start_matches(['\u{feff}', ' ', '\t', '\r', '\n']).starts_with('<') {
+        return None;
+    }
+    if let Some(raw) = raw_content_type.map(str::trim).filter(|s| !s.is_empty()) {
+        if raw.chars().any(char::is_control) {
+            return None;
+        }
+        return match raw.split(';').next()?.trim().to_ascii_lowercase().as_str() {
+            "image/jpeg" | "image/jpg" => Some("image/jpeg"),
+            "image/png" => Some("image/png"),
+            "image/gif" => Some("image/gif"),
+            "image/webp" => Some("image/webp"),
+            "image/bmp" | "image/x-bmp" | "image/x-ms-bmp" => Some("image/bmp"),
+            "image/x-icon" | "image/vnd.microsoft.icon" => Some("image/x-icon"),
+            "image/avif" => Some("image/avif"),
+            _ => None,
+        };
+    }
+    match bytes {
+        [0xFF, 0xD8, 0xFF, ..] => Some("image/jpeg"),
+        [0x89, b'P', b'N', b'G', 0x0D, 0x0A, 0x1A, 0x0A, ..] => Some("image/png"),
+        b if b.starts_with(b"GIF87a") || b.starts_with(b"GIF89a") => Some("image/gif"),
+        b if b.len() >= 12 && &b[..4] == b"RIFF" && &b[8..12] == b"WEBP" => Some("image/webp"),
+        [b'B', b'M', ..] => Some("image/bmp"),
+        [0x00, 0x00, 0x01, 0x00, ..] => Some("image/x-icon"),
+        b if b.len() >= 12 && &b[4..12] == b"ftypavif" => Some("image/avif"),
+        _ => None,
+    }
 }
 
 #[cfg(test)]
@@ -637,5 +668,18 @@ mod tests {
         assert_eq!(state.snapshot["has_media"], false);
         assert_eq!(state.snapshot["state"], "unavailable");
         assert!(state.thumbnail.is_none());
+    }
+
+    #[test]
+    fn thumbnail_validation_blocks_active_markup_and_normalizes_raster_types() {
+        assert_eq!(validate_thumbnail(Some("image/jpg; charset=binary"), b"\xFF\xD8\xFF\xE0"), Some("image/jpeg"));
+        assert_eq!(validate_thumbnail(Some("IMAGE/PNG"), b"\x89PNG\r\n\x1a\n"), Some("image/png"));
+        assert_eq!(validate_thumbnail(None, b"RIFF\x00\x00\x00\x00WEBP"), Some("image/webp"));
+        assert_eq!(validate_thumbnail(Some(""), b"\x89PNG\r\n\x1a\n"), Some("image/png"));
+        assert_eq!(validate_thumbnail(Some("image/svg+xml"), b"<svg/>"), None);
+        assert_eq!(validate_thumbnail(Some("text/html"), b"<html>"), None);
+        assert_eq!(validate_thumbnail(Some("image/png"), b" \n\t<svg onload=alert(1)>"), None);
+        assert_eq!(validate_thumbnail(Some("image/png\r\nX-Inject: 1"), b"\x89PNG\r\n\x1a\n"), None);
+        assert_eq!(validate_thumbnail(None, b"not-an-image"), None);
     }
 }

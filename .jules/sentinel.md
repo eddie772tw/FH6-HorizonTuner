@@ -68,3 +68,9 @@
 **學習 (Learning):** 與 `backend-rust/src/companion_usb_runtime.rs` 執行前比對完整位元組的作法不同，桌面啟動器對 `%TEMP%` 快取執行檔僅檢查檔案長度存在明確的 TOCTOU / 完整性繞過風險（CWE-353 / CWE-377 / CWE-59）。因為 `%TEMP%` 屬於多程序共享可寫入目錄，僅依賴長度與版本號不足以保證執行檔與內嵌映像一致。
 **預防 (Prevention):** 任何自暫存目錄解壓並執行的內嵌可執行檔，於執行前必須先透過 `fs::symlink_metadata` 與 `canonicalize` 邊界驗證排除符號連結與非預期目錄目標，再比對完整位元組內容（`bytes == embedded`），且寫入時一律以 `create_new(true)` 暫存檔搭配 `sync_all()` 與原子 `rename` 取代，確保執行檔完整性與防符號連結滲透。
 **署名:** Sentinel as Antigravity
+
+## 2026-11-18 - GSMTC Media Thumbnail MIME Allowlist and Sandbox CSP Defense (CWE-79 / CWE-434)
+**漏洞/脆弱點 (Vulnerability):** 原生媒體擷取模組 `backend-rust/src/native/media.rs::extract_thumbnail` 直接信任 Windows GSMTC 串流回報的 `stream.ContentType()`（且缺省時直接回退為 `image/jpeg`），並由 `backend-rust/src/app.rs` 之 `GET /api/overlay/media/thumbnail` 端點原樣輸出該 `Content-Type` 且未附加沙盒 CSP 標頭。由於任何本地瀏覽器分頁或媒體播放器皆可透過 Web Media Session API 註冊任意媒體封面串流，若來源提供 `image/svg+xml`、`text/html` 或偽裝 MIME 的 SVG/HTML 標記資料，結合本機服務之 `X-Content-Type-Options: nosniff` 與允許跨站頂層導航的 GET 端點，將在瀏覽器開啟該縮圖網址時於 `127.0.0.1` 同源上下文觸發跨站腳本（XSS）執行。
+**學習 (Learning):** 來自作業系統媒體工作階段（GSMTC）的 `ContentType` 與二進位影像串流屬於未受信任的外部來源（Untrusted Input）。即使前端 HUD 以 `<img>` 嵌入時不會執行 SVG 腳本，只要該 GET 端點在同源 HTTP 伺服器上直接回傳活性文件 MIME（如 SVG/HTML）且缺少 `Content-Security-Policy` 隔離，攻擊者仍可透過頂層導航或開新視窗利用 `nosniff` 強制渲染惡意腳本。
+**預防 (Prevention):** 於資料擷取與 HTTP 回應雙層強制執行點陣圖影像 MIME 白名單（僅允許 `image/jpeg`, `image/png`, `image/gif`, `image/webp`, `image/bmp`, `image/x-icon`, `image/avif`），在 `media.rs` 拒收開頭為 `<` 的 SVG/HTML/XML 多態資料並在缺少 `ContentType` 時透過魔術位元組（Magic Bytes）嗅探驗證；同步於 `app.rs` 的 `/api/overlay/media/thumbnail` 回應附加 `Content-Security-Policy: default-src 'none'; sandbox` 標頭，確保縱深防禦（Defense in Depth）。
+**署名:** Sentinel as Antigravity
