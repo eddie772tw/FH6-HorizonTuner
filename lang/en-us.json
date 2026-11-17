@@ -2083,5 +2083,9 @@
   "Total Samples": "Total Samples",
   "{car} ({laps} Laps | Best: {best})": "{car} ({laps} Laps | Best: {best})",
   "Lap {lap} ({time} | Max: {maxSpeed})": "Lap {lap} ({time} | Max: {maxSpeed})",
-  "vs Lap {lap} ({time})": "vs Lap {lap} ({time})"
+  "vs Lap {lap} ({time})": "vs Lap {lap} ({time})",
+  "MCP Endpoint Notice": "MCP Endpoint Notice",
+  "Release Build could not use backend port 8001 and selected a dynamic port.": "Release Build could not use backend port 8001 and selected a dynamic port.",
+  "Current backend port": "Current backend port",
+  "Open MCP Settings": "Open MCP Settings"
 }

@@ -92,3 +92,8 @@
 **學習 (Learning):** `AnalysisSessionToolbar.tsx` 的賽段與單圈下拉選單（`<option>`）除了直接硬編碼英文標籤（`Laps | Best:`、`Lap ... | Max:`、`vs Lap`）之外，還將時間與車速單位直接拼接在空值回退表達式之後（例如 `${lap.lap_time?.toFixed(2) ?? t("Unknown")}s` 與 `${lap.max_speed_kmh?.toFixed(0) ?? t("Unknown")}km/h`），導致當 `best_lap_time`、`lap_time` 或 `max_speed_kmh` 缺失或為 0 時，各語系介面皆出現「未知s」、「未知km/h」或「Unknowns」等破損字串。
 **行動 (Action):** 抽取下拉選單文字時，應使用完整參數化鍵值（如 `"{car} ({laps} Laps | Best: {best})"`、`"Lap {lap} ({time} | Max: {maxSpeed})"`、`vs Lap {lap} ({time})`），並由純函式先判斷數值有效且有限後才附加單位（`s`、`km/h`），無效時直接回傳純淨的 `t("Unknown")`，防止單位後綴與未翻譯／缺值詞彙錯誤黏連。
 **署名:** Narrator as Antigravity
+
+## 2026-11-18 - Pure Telemetry Health Model Label Leakage in Header Status
+**學習 (Learning):** `telemetryHealth.ts` 的 `deriveTelemetryHealth()` 回傳的 `TelemetryHealth.label` 為純領域英文預設字串（例如 `'Waiting for Data Out'`、`'Data Out receiving'`）。雖然 `DataOutGuide.tsx` 已匯出 `localizeTelemetryHealth(health, t)` 統一依 `health.state` 映射三語系鍵值，但頂層導覽列元件 `AppStatus.tsx` 仍直接將 `health.label` 插入 `aria-label` 與 `title`，導致在 `zh-TW` 與 `ja-JP` 介面上所有頁面的 Data Out 狀態按鈕持續洩漏未翻譯英文；同時其動態連接埠 `MCP Endpoint Notice` 氣泡的四個鍵值僅單邊收錄於 `zh-tw.json` 而遺漏於 `en-us.json` 與 `ja-jp.json`。
+**行動 (Action):** 凡消費 `TelemetryHealth` 顯示狀態標籤或無障礙屬性的元件，應統一呼叫 `localizeTelemetryHealth(health, t).label` 作為單一本地化來源，禁止直接插值原始 `health.label`；並同步檢查單邊存在於 `zh-tw.json` 的動態提示鍵值，完整對齊至 `en-us.json` 與 `ja-jp.json`。
+**署名:** Narrator as Antigravity
