@@ -1,4 +1,4 @@
-import { useId } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { DEFAULT_HUD_CONFIG, type HudConfig, type MonitorOption } from '../hudConfig';
 import type { HudDisplayUnits } from '../hudDisplayUnits';
 import type { HudPanelActions } from '../hudPanelTypes';
@@ -27,6 +27,39 @@ export function HudGeneralPanel({ config, monitors, appUnits, busy, capabilities
   onMonitorChange, onAudioDeviceChange, onRefreshAudioDevices, onReloadHud, onResetHudConfig,
   disabled, onConfigPatch, t }: HudGeneralPanelProps) {
   const id = useId();
+  const [confirmReset, setConfirmReset] = useState(false);
+  const [resetStatus, setResetStatus] = useState('');
+  const resetBtnRef = useRef<HTMLButtonElement>(null);
+  const cancelResetBtnRef = useRef<HTMLButtonElement>(null);
+  const nativeUnavailable = capabilities.nativeWindow.status !== 'available';
+  const monitorUnavailable = capabilities.monitorSelection.status !== 'available';
+  const monitorDescribedBy = [
+    nativeUnavailable ? `${id}-native-detail` : '',
+    monitorUnavailable ? `${id}-monitor-detail` : '',
+  ].filter(Boolean).join(' ') || undefined;
+  const cancelReset = () => {
+    setConfirmReset(false);
+    requestAnimationFrame(() => resetBtnRef.current?.focus());
+  };
+  useEffect(() => { if (disabled) setConfirmReset(false); }, [disabled]);
+  useEffect(() => {
+    if (!confirmReset) return;
+    cancelResetBtnRef.current?.focus();
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      event.preventDefault();
+      event.stopPropagation();
+      cancelReset();
+    };
+    window.addEventListener('keydown', onKeyDown, true);
+    return () => window.removeEventListener('keydown', onKeyDown, true);
+  }, [confirmReset]);
+  const confirmResetAction = () => {
+    onResetHudConfig();
+    setConfirmReset(false);
+    setResetStatus(t('Reset all HUD elements, scaling, colors, and positions to default values.'));
+    requestAnimationFrame(() => resetBtnRef.current?.focus());
+  };
   return <fieldset disabled={disabled} className="hud-settings-form">
     <legend className="visually-hidden">{t('General')}</legend>
     <div className="hud-settings-grid">
@@ -48,13 +81,14 @@ export function HudGeneralPanel({ config, monitors, appUnits, busy, capabilities
         <label htmlFor={`${id}-monitor`} className="form-label fs-7 m-0">{t('Select Monitor for HUD Overlay')}</label>
         <select id={`${id}-monitor`} className="form-select form-select-sm" value={config.selectedMonitorIndex}
           disabled={busy || capabilities.monitorSelection.status === 'unsupported'}
+          aria-describedby={monitorDescribedBy}
           title={t(capabilities.monitorSelection.detail)} onChange={event => onMonitorChange(Number(event.target.value))}>
           {monitors.length > 0 ? monitors.map((monitor, index) => <option key={index} value={index}>
             {monitor.name} ({monitor.width}x{monitor.height}) {monitor.is_primary ? `[${t('Primary')}]` : ''}
           </option>) : <option value={0}>{t('Default Primary Display')}</option>}
         </select>
-        {capabilities.nativeWindow.status !== 'available' && <p className="fs-7 text-body-secondary m-0">{t(capabilities.nativeWindow.detail)}</p>}
-        {capabilities.monitorSelection.status !== 'available' && <p className="fs-7 text-body-secondary m-0">{t(capabilities.monitorSelection.detail)}</p>}
+        {nativeUnavailable && <p id={`${id}-native-detail`} className="fs-7 text-body-secondary m-0">{t(capabilities.nativeWindow.detail)}</p>}
+        {monitorUnavailable && <p id={`${id}-monitor-detail`} className="fs-7 text-body-secondary m-0">{t(capabilities.monitorSelection.detail)}</p>}
       </HudSettingsSection>
       <HudSettingsSection title={t('Performance & System Options')}>
         <div className="d-flex justify-content-between align-items-center flex-wrap gap-2">
@@ -78,8 +112,25 @@ export function HudGeneralPanel({ config, monitors, appUnits, busy, capabilities
         <button type="button" className="btn btn-outline-primary btn-sm" disabled={busy}
           title={t(capabilities.reload.detail)} onClick={onReloadHud}>{t('Refresh HUD List & Reload HTML')}</button>
         <div className="border-top pt-3">
-          <button type="button" className="btn btn-outline-danger btn-sm" onClick={onResetHudConfig}>{t('Reset HUD Settings')}</button>
-          <p className="text-body-secondary fs-8 mt-2 mb-0">{t('Reset all HUD elements, scaling, colors, and positions to default values.')}</p>
+          <div className="visually-hidden" role="status" aria-live="polite">{resetStatus}</div>
+          {confirmReset ? (
+            <div className="d-flex flex-column gap-2" role="group" aria-labelledby={`${id}-reset-confirm-label`}>
+              <p id={`${id}-reset-confirm-label`} className="fs-7 fw-semibold mb-0" style={{ color: 'var(--bs-danger-text-emphasis)' }}>
+                {t('Are you sure you want to reset all HUD settings?')}
+              </p>
+              <div className="d-flex flex-wrap gap-2">
+                <button ref={cancelResetBtnRef} type="button" className="btn btn-outline-secondary btn-sm" onClick={cancelReset}>{t('Cancel')}</button>
+                <button type="button" className="btn btn-danger btn-sm fw-bold" onClick={confirmResetAction}>{t('Reset HUD Settings')}</button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <button ref={resetBtnRef} type="button" className="btn btn-outline-danger btn-sm"
+                aria-describedby={`${id}-reset-help`}
+                onClick={() => { setResetStatus(''); setConfirmReset(true); }}>{t('Reset HUD Settings')}</button>
+              <p id={`${id}-reset-help`} className="text-body-secondary fs-8 mt-2 mb-0">{t('Reset all HUD elements, scaling, colors, and positions to default values.')}</p>
+            </>
+          )}
         </div>
       </HudSettingsSection>
     </div>
