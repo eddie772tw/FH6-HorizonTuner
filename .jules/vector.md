@@ -60,3 +60,8 @@
 **渲染洞察 (Rendering Learning):** 在 `hud_overlay/shared/telemetry-cards/power-torque.js`（`renderPowerTorque`）中，`manager.js` 寫入的 `--card-contrast` 為 6 碼不透明 Hex 字串（`computeContrastColor`），會覆蓋預設 `rgba(255, 0, 136, 0.75)` 導致 Power 散點在 5252 RPM 等雙曲線交會區間完全遮蔽先繪之 Torque 散點；透過在雙通道散點迴圈期間統一設定 `globalAlpha = 0.75` 再於繪製同軸前緣脈衝標記前還原 `globalAlpha = 1`，即可不依賴色碼格式保持交會層次。此外，以 `padX`/`padY`（`Math.min(dim * 0.12, 6 * dpr)`）預留光暈與環形半徑邊距並將點位中心對齊 `px - halfDot`，可徹底避免高轉速極值處右側與上下邊界裁切，且以成對 `save()` / `try { ... } finally { restore(); }` 隔離發光與透明度狀態、維持零每幀記憶體配置。
 **行動 (Action):** 消費動態 CSS 色票（Hex / RGB）的雙通道重疊畫布應透過 `globalAlpha` 控制散點疊加透明度，避免僅依賴 fallback `rgba()` 字串；所有含即時脈衝光環與 `shadowBlur` 的 Edge Chart 畫布一律配置 DPR 比例邊距與 `try/finally` 狀態防護。
 **署名:** Vector as Antigravity
+
+## 2026-11-17 - Telemetry Cards 四輪懸吊波形邊界裁切補正、單點脈衝焦點與狀態隔離
+**渲染洞察 (Rendering Learning):** 在 `hud_overlay/shared/telemetry-cards/corner-card.js`（`drawSuspWaveform`）中，過去四輪懸吊波形直接以 `wy = wh - travel * wh` 與 `wx = (j / 150) * ww` 繪製且缺乏 `save()` / `try-finally restore()`、圓角端點與單點處理，導致極限行程（`0` / `1`）於畫布上下緣遭半徑裁切、單一採樣（`sHist.length === 1`）完全不可見，且 60Hz 樣式容易滲漏。透過導入 `padX` / `padY`（`4.5 * dpr`）預留光暈邊距、將上下 5% 危險帶對齊 `drawH` 實際 0.05/0.95 行程閾值並補入 50% 中立車高基準線，再於最新採樣端點繪製同軸脈衝標記（於 `cTravel <= 0.05 || cTravel >= 0.95` 時自動切換為 `#ff0055` 警戒光暈），即可在零每幀記憶體配置下兼顧單點可讀性與觸底警示辨識度。
+**行動 (Action):** 所有包含極限區間色帶的時序波形畫布應將警戒帶高度與含 `padY` 之繪圖比例空間對齊，並統一採用 `try/finally` 狀態隔離、`round` 端點與依閾值變色的同軸前緣脈衝標記。
+**署名:** Vector as Antigravity

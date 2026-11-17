@@ -25,6 +25,79 @@ var _slipAngles = [0, 0, 0, 0];
 var _temps = [0, 0, 0, 0];
 var _travels = [0, 0, 0, 0];
 
+function resolvePrimaryColor(domCache) {
+    var wrapperEl = domCache ? domCache.wrapper : (typeof document !== 'undefined' ? document.getElementById('tcClusterWrapper') : null);
+    if (wrapperEl && wrapperEl._cachedPrimaryColor === undefined) {
+        var cssVal = wrapperEl.style && typeof wrapperEl.style.getPropertyValue === 'function' ? wrapperEl.style.getPropertyValue('--card-primary') : '';
+        wrapperEl._cachedPrimaryColor = (cssVal && cssVal.trim()) ? cssVal.trim() : null;
+    }
+    return (wrapperEl && wrapperEl._cachedPrimaryColor) || '#00f0ff';
+}
+
+function drawSuspWaveform(wCtx, ww, wh, dpr, sHist, cTravel, primaryColor) {
+    var padX = Math.min(ww * 0.1, 4.5 * dpr);
+    var padY = Math.min(wh * 0.12, 4.5 * dpr);
+    var plotW = Math.max(1, ww - 2 * padX);
+    var drawH = Math.max(1, wh - 2 * padY);
+    var bottomY = wh - padY;
+    var stepX = plotW / (150 - 1);
+    var bandH = padY + drawH * 0.05;
+    var len = sHist.length;
+    var lastX = padX;
+    var lastY = bottomY - cTravel * drawH;
+
+    wCtx.save();
+    try {
+        // 5% top-out / bottoming-out danger bands & 50% ride-height centerline
+        wCtx.fillStyle = 'rgba(255, 0, 60, 0.18)';
+        wCtx.fillRect(0, 0, ww, bandH);
+        wCtx.fillRect(0, wh - bandH, ww, bandH);
+
+        wCtx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+        wCtx.lineWidth = 1 * dpr;
+        wCtx.beginPath();
+        wCtx.moveTo(0, bottomY - drawH * 0.5);
+        wCtx.lineTo(ww, bottomY - drawH * 0.5);
+        wCtx.stroke();
+
+        wCtx.lineCap = 'round';
+        wCtx.lineJoin = 'round';
+        wCtx.beginPath();
+        for (var j = 0; j < len; j++) {
+            var logicalIdx = (sHist._offset + j) % len;
+            var wx = padX + j * stepX;
+            var wy = bottomY - (sHist[logicalIdx].travel * drawH);
+            if (j === 0) wCtx.moveTo(wx, wy);
+            else         wCtx.lineTo(wx, wy);
+            lastX = wx;
+            lastY = wy;
+        }
+        wCtx.strokeStyle = primaryColor;
+        wCtx.lineWidth = 1.6 * dpr;
+        wCtx.shadowColor = primaryColor;
+        wCtx.shadowBlur = 4 * dpr;
+        if (len > 1) wCtx.stroke();
+
+        // Coaxial Leading Active Pulse Marker (Outer Halo Ring + Core Dot)
+        var pulseColor = (cTravel <= 0.05 || cTravel >= 0.95) ? '#ff0055' : primaryColor;
+        wCtx.strokeStyle = pulseColor;
+        wCtx.fillStyle = pulseColor;
+        wCtx.shadowColor = pulseColor;
+        wCtx.shadowBlur = 5 * dpr;
+        wCtx.lineWidth = 1.4 * dpr;
+        wCtx.beginPath();
+        wCtx.arc(lastX, lastY, 3.6 * dpr, 0, Math.PI * 2);
+        wCtx.stroke();
+
+        wCtx.shadowBlur = 0;
+        wCtx.beginPath();
+        wCtx.arc(lastX, lastY, 1.8 * dpr, 0, Math.PI * 2);
+        wCtx.fill();
+    } finally {
+        wCtx.restore();
+    }
+}
+
 export function renderCorners(data, showSusp, showSlip, showTemp, tireHist, suspHist, suspMinMax, now, domCache) {
     var rawSlipRatios = data.TireSlipRatio || [];
     var rawSlipAngles = data.TireSlipAngle || [];
@@ -57,13 +130,15 @@ export function renderCorners(data, showSusp, showSlip, showTemp, tireHist, susp
 
     // Unit conversion preference (°C vs °F display)
     var isMetric = (data.isMetric !== undefined ? data.isMetric : (data.is_metric !== false));
+    var primaryColor = showSusp ? resolvePrimaryColor(domCache) : '#00f0ff';
 
     for (var i = 0; i < 4; i++) {
         var tag = corners[i];
         var cRatio = slipRatios[i] || 0;
         var cAngle = slipAngles[i] || 0;
         var cTemp  = temps[i] || 0;
-        var cTravel = clamp(travels[i] || 0, 0, 1);
+        var rawTravel = Number(travels[i]);
+        var cTravel = clamp(Number.isFinite(rawTravel) ? rawTravel : 0, 0, 1);
 
         // Maintain 3-second Tire Temp History (180 points @ 60 Hz)
         var tHist = tireHist[i];
@@ -252,46 +327,12 @@ export function renderCorners(data, showSusp, showSlip, showTemp, tireHist, susp
                 sHist._offset = (sHist._offset + 1) % 150;
             }
 
-            var wCanvas = domCache ? domCache.corners[tag].wCanvas : document.getElementById('tcSuspWave' + tag);
+            var wCanvas = domCache ? (domCache.corners[tag] && domCache.corners[tag].wCanvas) : document.getElementById('tcSuspWave' + tag);
             if (wCanvas && sHist.length > 0) {
                 var wData = getCanvasContext(wCanvas);
                 if (wData && wData.ctx) {
-                    var wCtx = wData.ctx;
-                    var ww = wData.w, wh = wData.h, dpr = wData.dpr;
-                    wCtx.clearRect(0, 0, ww, wh);
-
-                    var warnH = wh * 0.05;
-                    wCtx.fillStyle = 'rgba(255, 0, 60, 0.18)';
-                    wCtx.fillRect(0, 0, ww, warnH);
-                    wCtx.fillRect(0, wh - warnH, ww, warnH);
-
-                    wCtx.beginPath();
-                    for (var j = 0; j < sHist.length; j++) {
-                        var logicalIdx = (sHist._offset + j) % sHist.length;
-                        var wx = (j / 150) * ww;
-                        var wy = wh - (sHist[logicalIdx].travel * wh);
-                        if (j === 0) wCtx.moveTo(wx, wy);
-                        else         wCtx.lineTo(wx, wy);
-                    }
-
-                    var wrapperEl = domCache ? domCache.wrapper : document.getElementById('tcClusterWrapper');
-                    var primaryColor = '#00f0ff';
-                    if (wrapperEl) {
-                        if (wrapperEl._cachedPrimaryColor === undefined) {
-                            if (typeof wrapperEl.style !== 'undefined' && typeof wrapperEl.style.getPropertyValue === 'function') {
-                                var cssVal = wrapperEl.style.getPropertyValue('--card-primary');
-                                wrapperEl._cachedPrimaryColor = (cssVal && cssVal.trim()) ? cssVal.trim() : null;
-                            } else {
-                                wrapperEl._cachedPrimaryColor = null;
-                            }
-                        }
-                        if (wrapperEl._cachedPrimaryColor) {
-                            primaryColor = wrapperEl._cachedPrimaryColor;
-                        }
-                    }
-                    wCtx.strokeStyle = primaryColor;
-                    wCtx.lineWidth = 1.5 * dpr;
-                    wCtx.stroke();
+                    wData.ctx.clearRect(0, 0, wData.w, wData.h);
+                    drawSuspWaveform(wData.ctx, wData.w, wData.h, wData.dpr, sHist, cTravel, primaryColor);
                 }
             }
         }
