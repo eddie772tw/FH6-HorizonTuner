@@ -2479,5 +2479,8 @@
   "Slip Ratio Trend": "滑移率趨勢",
   "Slip Angle Trend": "滑移角趨勢",
   "Surface Rumble Trend": "路面震動趨勢",
-  "No Data": "無資料"
+  "No Data": "無資料",
+  "{car} ({laps} Laps | Best: {best})": "{car} ({laps} 圈 | 最佳: {best})",
+  "Lap {lap} ({time} | Max: {maxSpeed})": "第 {lap} 圈 ({time} | 最高: {maxSpeed})",
+  "vs Lap {lap} ({time})": "對比第 {lap} 圈 ({time})"
 }

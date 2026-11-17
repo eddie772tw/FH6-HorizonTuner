@@ -109,15 +109,24 @@ describe('AnalysisSessionToolbar localization & accessibility', () => {
     const expectedLoaded = t('Loaded Session: {filename}', { filename: 'session_20261107.csv' });
     expect(statusContainer?.textContent).toContain(expectedLoaded);
 
-    // Verify select elements accessibility
+    // Verify select elements accessibility and localized option labels
     const sessionSelect = container.querySelector('select[aria-label="' + t('Select Session') + '"]');
     expect(sessionSelect).not.toBeNull();
+    expect(sessionSelect?.textContent).toContain(
+      t('{car} ({laps} Laps | Best: {best})', { car: 'Porsche 911 GT3', laps: 5, best: '84.32s' })
+    );
 
     const primaryLapSelect = container.querySelector('select[aria-label="' + t('Primary Lap') + '"]');
     expect(primaryLapSelect).not.toBeNull();
+    expect(primaryLapSelect?.textContent).toContain(
+      t('Lap {lap} ({time} | Max: {maxSpeed})', { lap: 1, time: '84.32s', maxSpeed: '245 km/h' })
+    );
 
     const compareLapSelect = container.querySelector('select[aria-label="' + t('Compare Lap') + '"]');
     expect(compareLapSelect).not.toBeNull();
+    expect(compareLapSelect?.textContent).toContain(
+      t('vs Lap {lap} ({time})', { lap: 1, time: '84.32s' })
+    );
 
     // Verify action buttons translation
     const motecLdBtn = Array.from(container.querySelectorAll('button')).find(
@@ -146,5 +155,69 @@ describe('AnalysisSessionToolbar localization & accessibility', () => {
 
     const expectedRecording = t('Recording... ({count} samples)', { count: 42 });
     expect(statusContainer?.textContent).toContain(expectedRecording);
+
+    // Verify estimated and missing values avoid raw unit concatenation (e.g. Unknowns / Unknownkm/h)
+    await act(async () => {
+      root.render(
+        <AnalysisSessionToolbar
+          {...defaultProps}
+          savedSessions={[
+            {
+              filename: 'session_empty.csv',
+              session_id: 'session-empty',
+              car_name: 'Mazda MX-5',
+              total_laps: 0,
+              best_lap_time: 0,
+              size: 512,
+              mtime: 1700000100,
+            },
+          ]}
+          lapsList={[
+            {
+              lap_number: 2,
+              lap_time: 91.5,
+              start_distance: 0,
+              end_distance: 3500,
+              max_speed_kmh: null,
+              avg_speed_kmh: null,
+              is_estimated: true,
+            },
+            {
+              lap_number: 3,
+              lap_time: null,
+              start_distance: 3500,
+              end_distance: 4000,
+              max_speed_kmh: null,
+              avg_speed_kmh: null,
+              is_estimated: true,
+            },
+          ]}
+        />
+      );
+    });
+
+    expect(sessionSelect?.textContent).toContain(
+      t('{car} ({laps} Laps | Best: {best})', { car: 'Mazda MX-5', laps: 0, best: t('Unknown') })
+    );
+    expect(primaryLapSelect?.textContent).toContain(
+      t('Lap {lap} ({time} | Max: {maxSpeed})', {
+        lap: 2,
+        time: `${t('Estimated')} 91.50s`,
+        maxSpeed: t('Unknown'),
+      })
+    );
+    expect(primaryLapSelect?.textContent).toContain(
+      t('Lap {lap} ({time} | Max: {maxSpeed})', {
+        lap: 3,
+        time: t('Unknown'),
+        maxSpeed: t('Unknown'),
+      })
+    );
+    expect(compareLapSelect?.textContent).toContain(
+      t('vs Lap {lap} ({time})', { lap: 2, time: `${t('Estimated')} 91.50s` })
+    );
+    expect(sessionSelect?.textContent).not.toContain(`${t('Unknown')}s`);
+    expect(primaryLapSelect?.textContent).not.toContain(`${t('Unknown')}s`);
+    expect(primaryLapSelect?.textContent).not.toContain(`${t('Unknown')}km/h`);
   });
 });
