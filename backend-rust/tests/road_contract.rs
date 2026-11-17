@@ -470,8 +470,12 @@ fn local_comparison_single_pass_preserves_time_fallback_uniqueness_and_gating() 
             "AccelInput": accel, "BrakeInput": 0, "SteerInput": 0,
             "TireSlipAngle": [0.1, 0.1, 0.1, 0.1], "TireTemp": [temp, temp, temp, temp]
         });
-        if let Some(ms) = ms { p["TimestampMS"] = json!(ms); }
-        if let Some(t) = t { p["time"] = json!(t); }
+        if let Some(ms) = ms {
+            p["TimestampMS"] = json!(ms);
+        }
+        if let Some(t) = t {
+            p["time"] = json!(t);
+        }
         p
     };
     let mut a = vec![
@@ -481,15 +485,24 @@ fn local_comparison_single_pass_preserves_time_fallback_uniqueness_and_gating() 
     let mut b = Vec::new();
     for i in 0..26 {
         let x = i as f64 * 10.0;
-        if i > 0 { a.push(make_pt(Some(i * 200 + 100), None, x, 0.0, 100, 185.0)); }
-        let by = if i == 5 { 4.5 } else { 0.0 };  // vertical delta > 3m
-        let ba = if i == 6 { 140 } else { 100 };  // pedal delta > 25
+        if i > 0 {
+            a.push(make_pt(Some(i * 200 + 100), None, x, 0.0, 100, 185.0));
+        }
+        let by = if i == 5 { 4.5 } else { 0.0 }; // vertical delta > 3m
+        let ba = if i == 6 { 140 } else { 100 }; // pedal delta > 25
         b.push(make_pt(Some(i * 200), None, x + 1.0, by, ba, 203.0));
     }
     let report = local_comparison(&a, &b, true);
     assert_eq!(report["routeStatus"], "compatible");
     assert_eq!(report["matchedLocations"], 24);
     assert_eq!(report["matchedDrivingConditions"], 23);
-    assert!((report["segments"][0]["meanTemperatureChangeC"][0].as_f64().unwrap() - 10.0).abs() < 1e-9);
+    assert!(
+        (report["segments"][0]["meanTemperatureChangeC"][0]
+            .as_f64()
+            .unwrap()
+            - 10.0)
+            .abs()
+            < 1e-9
+    );
     assert!((report["meanNormalizedAngleChange"].as_f64().unwrap() - 0.0).abs() < 1e-9);
 }
