@@ -18,9 +18,13 @@ fn clamp_round(val: f64, min: f64, max: f64) -> f64 {
         return val;
     }
     let (min, max) = if min <= max { (min, max) } else { (max, min) };
-    if val.is_nan() {
-        return min * 0.5 + max * 0.5;
-    }
+    // Keep even underflowed midpoints within locked subnormal intervals, then
+    // apply the same decimal-grid policy as for ordinary inputs.
+    let val = if val.is_nan() {
+        clamp(min * 0.5 + max * 0.5, min, max)
+    } else {
+        val
+    };
     let clamped = clamp(val, min, max);
     let rounded = r1(clamped);
     if !rounded.is_finite() {
@@ -28,20 +32,35 @@ fn clamp_round(val: f64, min: f64, max: f64) -> f64 {
     }
     if rounded > max {
         let floored = (max * 10.0).floor() / 10.0;
-        if floored.is_finite() && floored >= min {
+        if floored.is_finite() && floored >= min && floored <= max {
             floored
         } else {
             clamped
         }
     } else if rounded < min {
         let ceiled = (min * 10.0).ceil() / 10.0;
-        if ceiled.is_finite() && ceiled <= max {
+        if ceiled.is_finite() && ceiled >= min && ceiled <= max {
             ceiled
         } else {
             clamped
         }
     } else {
         rounded
+    }
+}
+
+#[cfg(test)]
+mod clamp_round_tests {
+    use super::clamp_round;
+
+    #[test]
+    fn nan_fallback_obeys_locked_bounds_and_decimal_grid() {
+        let subnormal = f64::from_bits(1);
+        assert_eq!(clamp_round(f64::NAN, subnormal, subnormal), subnormal);
+        let rounded = clamp_round(f64::NAN, 0.11, 0.22);
+        assert!((0.11..=0.22).contains(&rounded));
+        assert_eq!(rounded, 0.2);
+        assert_eq!(clamp_round(f64::NAN, 0.22, 0.11), rounded);
     }
 }
 

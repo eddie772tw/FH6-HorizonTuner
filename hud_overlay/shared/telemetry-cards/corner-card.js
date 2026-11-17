@@ -37,6 +37,8 @@ function resolvePrimaryColor(domCache) {
 function drawSuspWaveform(wCtx, ww, wh, dpr, sHist, cTravel, primaryColor) {
     var padX = Math.min(ww * 0.1, 4.5 * dpr);
     var padY = Math.min(wh * 0.12, 4.5 * dpr);
+    // Scale the complete marker to the available inset on compact HUDs.
+    var markerScale = Math.min(dpr, padX / 4.5, padY / 4.5);
     var plotW = Math.max(1, ww - 2 * padX);
     var drawH = Math.max(1, wh - 2 * padY);
     var bottomY = wh - padY;
@@ -83,15 +85,15 @@ function drawSuspWaveform(wCtx, ww, wh, dpr, sHist, cTravel, primaryColor) {
         wCtx.strokeStyle = pulseColor;
         wCtx.fillStyle = pulseColor;
         wCtx.shadowColor = pulseColor;
-        wCtx.shadowBlur = 5 * dpr;
-        wCtx.lineWidth = 1.4 * dpr;
+        wCtx.shadowBlur = 5 * markerScale;
+        wCtx.lineWidth = 1.4 * markerScale;
         wCtx.beginPath();
-        wCtx.arc(lastX, lastY, 3.6 * dpr, 0, Math.PI * 2);
+        wCtx.arc(lastX, lastY, 3.6 * markerScale, 0, Math.PI * 2);
         wCtx.stroke();
 
         wCtx.shadowBlur = 0;
         wCtx.beginPath();
-        wCtx.arc(lastX, lastY, 1.8 * dpr, 0, Math.PI * 2);
+        wCtx.arc(lastX, lastY, 1.8 * markerScale, 0, Math.PI * 2);
         wCtx.fill();
     } finally {
         wCtx.restore();

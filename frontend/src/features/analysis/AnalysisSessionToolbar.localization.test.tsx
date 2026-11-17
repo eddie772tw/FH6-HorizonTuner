@@ -219,5 +219,19 @@ describe('AnalysisSessionToolbar localization & accessibility', () => {
     expect(sessionSelect?.textContent).not.toContain(`${t('Unknown')}s`);
     expect(primaryLapSelect?.textContent).not.toContain(`${t('Unknown')}s`);
     expect(primaryLapSelect?.textContent).not.toContain(`${t('Unknown')}km/h`);
+
+    for (const invalid of [0, -1, Number.NaN, Infinity, -Infinity]) {
+      await act(async () => root.render(
+        <AnalysisSessionToolbar {...defaultProps}
+          savedSessions={[{ ...defaultProps.savedSessions[0], best_lap_time: invalid }]}
+          lapsList={[{ ...defaultProps.lapsList[0], lap_time: invalid, max_speed_kmh: -1, is_estimated: true }]} />
+      ));
+      expect(sessionSelect?.textContent).toContain(t('Unknown'));
+      expect(primaryLapSelect?.textContent).toContain(t('Lap {lap} ({time} | Max: {maxSpeed})', {
+        lap: 1, time: t('Unknown'), maxSpeed: t('Unknown'),
+      }));
+      expect(compareLapSelect?.textContent).toContain(t('vs Lap {lap} ({time})', { lap: 1, time: t('Unknown') }));
+    }
+    await act(async () => root.unmount());
   });
 });

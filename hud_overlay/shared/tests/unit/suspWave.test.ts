@@ -35,6 +35,21 @@ const emptyMinMax = () => [{ min: null, max: null }, { min: null, max: null }, {
 afterEach(() => vi.unstubAllGlobals());
 
 describe('Corner suspension waveform renderer', () => {
+    it.each([1, 2, 3])('keeps the pulse inside compact canvases at DPR %s', dpr => {
+        vi.stubGlobal('window', { devicePixelRatio: dpr });
+        for (const [width, height] of [[10, 10], [24, 20], [130, 90]]) {
+            const s = createSurface(width, height);
+            const domCache = makeDomCache(s.canvas);
+            for (const travel of [0, 0.5, 1]) {
+                renderCorners({ susp_fl: travel }, true, false, false, [[], [], [], []], [[], [], [], []], emptyMinMax(), 0, domCache);
+            }
+            expect(s.bounds.minX).toBeGreaterThanOrEqual(0);
+            expect(s.bounds.maxX).toBeLessThanOrEqual(s.canvas.width);
+            expect(s.bounds.minY).toBeGreaterThanOrEqual(0);
+            expect(s.bounds.maxY).toBeLessThanOrEqual(s.canvas.height);
+        }
+    });
+
     it('scales by DPR, caches primary color, draws single-sample pulse, and restores state on fault', () => {
         vi.stubGlobal('window', { devicePixelRatio: 2 });
         const s = createSurface(130, 90);

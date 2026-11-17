@@ -666,6 +666,8 @@ fn chassis_clamp_round_preserves_sub_tenth_and_large_finite_bounds() {
         (3.11, 3.14),   // Lower-half non-tenth interval
         (3.16, 3.19),   // Upper-half non-tenth interval
         (1e308, 1e308), // Huge finite bounds must not overflow * 10.0 into INFINITY
+        // Multiplication/division rounding can overshoot even without overflow.
+        (7_974_024_817_625_809.0, 7_974_024_817_625_809.0),
     ] {
         let p = TuningCarParams {
             weight: Some(1400.0),

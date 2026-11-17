@@ -37,7 +37,7 @@ function formatBestLapTime(t: AnalysisSessionToolbarProps["t"], bestLapTime?: nu
 }
 
 function formatLapTime(t: AnalysisSessionToolbarProps["t"], lap: LapSummary): string {
-  if (lap.lap_time == null || !Number.isFinite(lap.lap_time)) {
+  if (lap.lap_time == null || !Number.isFinite(lap.lap_time) || lap.lap_time <= 0) {
     return t("Unknown");
   }
   const formatted = `${lap.lap_time.toFixed(2)}s`;
@@ -117,7 +117,7 @@ const AnalysisSessionToolbar: React.FC<AnalysisSessionToolbarProps> = ({
                   {t("Lap {lap} ({time} | Max: {maxSpeed})", {
                     lap: lap.lap_number,
                     time: formatLapTime(t, lap),
-                    maxSpeed: lap.max_speed_kmh != null && Number.isFinite(lap.max_speed_kmh)
+                    maxSpeed: lap.max_speed_kmh != null && Number.isFinite(lap.max_speed_kmh) && lap.max_speed_kmh >= 0
                       ? `${lap.max_speed_kmh.toFixed(0)} km/h`
                       : t("Unknown"),
                   })}

@@ -152,10 +152,11 @@ const OverlayViewContent: React.FC = () => {
     void refresh();
     if (mountedRef.current) metadata.refresh();
   };
-  const handleResetHudConfig = () => {
-    void replaceConfig({ ...DEFAULT_HUD_CONFIG, enabled: config.enabled });
+  const handleResetHudConfig = async () => {
+    const saved = await replaceConfig({ ...DEFAULT_HUD_CONFIG, enabled: config.enabled });
+    if (!saved) return false;
     sendHudCommand({ type: 'hud:reload' });
-    void refresh();
+    return true;
   };
   const handleElementChange = (key: keyof HudElements, checked: boolean) => {
     const elements: Partial<HudElements> = { [key]: checked };

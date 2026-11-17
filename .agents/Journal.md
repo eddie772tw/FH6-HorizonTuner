@@ -1,5 +1,12 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-11-17 / #678–#682 合併後邊界修復（Codex as Codex）
+
+- **範圍與技能**：依使用者要求直接修改 `main`；採用 `pr-review-evaluation`、`halfmoon-design-system`、`physics-tuning-math`、`portable-release-validation`、`huge-component-refactoring`。
+- **可重現學習點**：行內確認不可向整個 window 攔截 Escape，亦不可將 void 儲存呼叫當成完成；非同步完成時須確認焦點仍屬於面板。Windows 快取 executable 的內容驗證須與 spawn 透過禁止 write/delete 的 handle 連續保護，同時固定目錄避免路徑被替換。`floor(max * 10) / 10` 仍可能因浮點數尺度回捨入而超過 max，floor／ceil 候選均須檢查雙邊界。Canvas 脈衝的半徑與描邊須配合實際 padding 縮放，不能只隨 DPR 放大。
+- **驗證**：前端 228 檔案／1681 項通過與 Windows 目標前端建置通過；後端 314 項通過（4 項既有忽略）、no-default-features check 與 lib／tuning_contract 35 項通過；原 21 組 golden fixtures 未改。兩個 crate 的 fmt 與 diff check 通過。sidecar 的 std-only Linux harness 2 項通過，Windows 鎖／啟動測試完成交叉型別檢查；Tauri 完整測試受 Linux 缺少 GTK/WebKit 限制，Windows 執行驗收尚未完成。
+- **證據**：[修復與驗證紀錄](../docs/visual-review/main-678-682-followup/README.md)、[擷取版本與覆蓋矩陣](../docs/visual-review/main-678-682-followup/manifest.json)。未把瀏覽器 fixture 或交叉型別檢查當作 Windows／遊戲驗收。
+
 ## 2026-11-12 / AEGO 堆疊獨立審查：封存原資料保全（Codex as Codex）
 
 - **範圍**：PR #659，依序同步 #654～#657 的已驗證修正；採用 `pr-review-evaluation`、`pr-author-maintainer`、`physics-tuning-math`、`modular-refactoring`、`halfmoon-design-system`、`cross-agent-collaboration`、`ponytail`。不合併 PR。

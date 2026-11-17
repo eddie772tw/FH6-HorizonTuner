@@ -1,0 +1,74 @@
+[
+  {
+    "core": "default",
+    "mode": "light",
+    "language": "en-us",
+    "width": 1280,
+    "label": "Lap 1 (Unknown | Max: Unknown)",
+    "bounds": {
+      "width": 1280,
+      "scrollWidth": 1280
+    },
+    "errors": []
+  },
+  {
+    "core": "default",
+    "mode": "dark",
+    "language": "zh-tw",
+    "width": 320,
+    "label": "第 1 圈 (未知 | 最高: 未知)",
+    "bounds": {
+      "width": 320,
+      "scrollWidth": 320
+    },
+    "errors": []
+  },
+  {
+    "core": "swiss",
+    "mode": "light",
+    "language": "zh-tw",
+    "width": 1280,
+    "label": "第 1 圈 (未知 | 最高: 未知)",
+    "bounds": {
+      "width": 1280,
+      "scrollWidth": 1280
+    },
+    "errors": []
+  },
+  {
+    "core": "swiss",
+    "mode": "dark",
+    "language": "ja-jp",
+    "width": 1280,
+    "label": "ラップ 1 (未知 | 最高: 未知)",
+    "bounds": {
+      "width": 1280,
+      "scrollWidth": 1280
+    },
+    "errors": []
+  },
+  {
+    "core": "rhine-lab",
+    "mode": "light",
+    "language": "ja-jp",
+    "width": 1280,
+    "label": "ラップ 1 (未知 | 最高: 未知)",
+    "bounds": {
+      "width": 1280,
+      "scrollWidth": 1280
+    },
+    "errors": []
+  },
+  {
+    "core": "rhine-lab",
+    "mode": "dark",
+    "language": "en-us",
+    "width": 1280,
+    "label": "Lap 1 (Unknown | Max: Unknown)",
+    "bounds": {
+      "width": 1280,
+      "scrollWidth": 1280
+    },
+    "errors": []
+  }
+]

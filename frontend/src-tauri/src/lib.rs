@@ -133,6 +133,61 @@ fn extract_embedded_sidecar() -> Result<PathBuf, String> {
     ensure_extracted_sidecar(&root, env!("CARGO_PKG_VERSION"), EMBEDDED_SIDECAR)
 }
 
+#[cfg(windows)]
+fn pin_extracted_sidecar(path: &Path, embedded: &[u8]) -> Result<Vec<fs::File>, String> {
+    use std::os::windows::fs::{MetadataExt, OpenOptionsExt};
+
+    const FILE_SHARE_READ: u32 = 1;
+    const FILE_SHARE_WRITE: u32 = 2;
+    const FILE_FLAG_BACKUP_SEMANTICS: u32 = 0x02000000;
+    const FILE_FLAG_OPEN_REPARSE_POINT: u32 = 0x00200000;
+    const FILE_ATTRIBUTE_REPARSE_POINT: u32 = 0x400;
+
+    let directory = path.parent().ok_or("Missing sidecar directory")?;
+    let root = directory.parent().ok_or("Missing sidecar root")?;
+    let mut guards = Vec::with_capacity(3);
+    // Denying FILE_SHARE_DELETE pins both directories against rename/replacement.
+    // OPEN_REPARSE_POINT makes the metadata check apply to the opened link itself.
+    for directory in [root, directory] {
+        let guard = fs::OpenOptions::new()
+            .access_mode(0)
+            .share_mode(FILE_SHARE_READ | FILE_SHARE_WRITE)
+            .custom_flags(FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT)
+            .open(directory)
+            .map_err(|e| format!("Pin sidecar directory {directory:?}: {e}"))?;
+        let metadata = guard.metadata().map_err(|e| e.to_string())?;
+        if !metadata.is_dir() || metadata.file_attributes() & FILE_ATTRIBUTE_REPARSE_POINT != 0 {
+            return Err(format!("Refusing unsafe sidecar directory {directory:?}"));
+        }
+        guards.push(guard);
+    }
+
+    // Deny writes and deletion before verifying the exact handle kept through spawn.
+    let mut file = fs::OpenOptions::new()
+        .read(true)
+        .share_mode(FILE_SHARE_READ)
+        .custom_flags(FILE_FLAG_OPEN_REPARSE_POINT)
+        .open(path)
+        .map_err(|e| format!("Pin sidecar executable {path:?}: {e}"))?;
+    let metadata = file.metadata().map_err(|e| e.to_string())?;
+    if !metadata.is_file()
+        || metadata.file_attributes() & FILE_ATTRIBUTE_REPARSE_POINT != 0
+        || metadata.len() != embedded.len() as u64
+    {
+        return Err(format!("Refusing unsafe sidecar executable {path:?}"));
+    }
+    let mut bytes = Vec::with_capacity(embedded.len());
+    (&mut file)
+        .take(embedded.len() as u64 + 1)
+        .read_to_end(&mut bytes)
+        .map_err(|e| format!("Verify pinned sidecar {path:?}: {e}"))?;
+    if bytes != embedded {
+        return Err(format!("Sidecar changed before launch: {path:?}"));
+    }
+    guards.push(file);
+    Ok(guards)
+}
+
 fn resolve_portable_data_dir(app_handle: &tauri::AppHandle) -> Result<PathBuf, String> {
     let mut args = std::env::args().skip(1);
     while let Some(argument) = args.next() {
@@ -250,7 +305,7 @@ fn fail_backend(app_handle: &tauri::AppHandle, error: String) {
     );
 }
 
-fn backend_command(app_handle: &tauri::AppHandle) -> Result<Command, String> {
+fn backend_command(app_handle: &tauri::AppHandle) -> Result<(Command, Vec<fs::File>), String> {
     if cfg!(debug_assertions) {
         println!("Starting independent Rust development backend.");
         let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
@@ -275,13 +330,17 @@ fn backend_command(app_handle: &tauri::AppHandle) -> Result<Command, String> {
             .current_dir(&root)
             .args(["--dev", "--data-dir"])
             .arg(root.join("backend"));
-        Ok(command)
+        Ok((command, Vec::new()))
     } else {
         println!("Starting packaged release backend.");
         let data_dir = resolve_portable_data_dir(app_handle)?;
         fs::create_dir_all(&data_dir).map_err(|error| error.to_string())?;
         #[cfg(windows)]
         let backend = extract_embedded_sidecar()?;
+        #[cfg(windows)]
+        let guards = pin_extracted_sidecar(&backend, EMBEDDED_SIDECAR)?;
+        #[cfg(not(windows))]
+        let guards = Vec::new();
         #[cfg(not(windows))]
         let backend = app_handle
             .path()
@@ -290,12 +349,12 @@ fn backend_command(app_handle: &tauri::AppHandle) -> Result<Command, String> {
             .join("sidecar/server-sidecar");
         let mut command = Command::new(backend);
         command.arg("--data-dir").arg(data_dir);
-        Ok(command)
+        Ok((command, guards))
     }
 }
 
 fn start_owned_backend(app_handle: &tauri::AppHandle) -> Result<(), String> {
-    let mut command = backend_command(app_handle)?;
+    let (mut command, executable_guards) = backend_command(app_handle)?;
     #[cfg(windows)]
     {
         use std::os::windows::process::CommandExt;
@@ -309,6 +368,7 @@ fn start_owned_backend(app_handle: &tauri::AppHandle) -> Result<(), String> {
         .map_err(|error| {
             format!("Cannot start backend: {error}. Run setup_dev.bat if developing.")
         })?;
+    drop(executable_guards);
     let stdout = child.stdout.take();
     let stderr = child.stderr.take();
     let owned_id = child.id();
@@ -514,7 +574,7 @@ fn reload_hud_window(app_handle: tauri::AppHandle) -> Result<(), String> {
 //     // Ctrl+S: save window position
 //     // Ctrl+R: reset rev limiter learning
 // }
-*/
+ */
 
 #[derive(serde::Serialize)]
 struct MonitorInfo {
@@ -785,5 +845,104 @@ mod tests {
         assert!(ensure_extracted_sidecar(&root, "1.0.0", payload).is_err());
 
         fs::remove_dir_all(&root).unwrap();
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn pinned_sidecar_cannot_be_modified_or_redirected_before_spawn() {
+        let nonce = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let root = std::env::temp_dir().join(format!(
+            "fh6-sidecar-pinned-test-{}-{nonce}",
+            std::process::id()
+        ));
+        let payload = b"MZ-verified-sidecar-bytes";
+        let path = ensure_extracted_sidecar(&root, "1.0.0", payload).unwrap();
+        let guards = super::pin_extracted_sidecar(&path, payload).unwrap();
+        assert!(fs::write(&path, b"tampered").is_err());
+        assert!(fs::remove_file(&path).is_err());
+        assert!(fs::rename(&path, path.with_extension("old")).is_err());
+        assert!(fs::rename(path.parent().unwrap(), root.join("moved-version")).is_err());
+        assert!(fs::rename(&root, root.with_extension("moved")).is_err());
+        assert_eq!(fs::read(&path).unwrap(), payload);
+        drop(guards);
+
+        // A swap between extraction and pinning must fail the handle-based recheck.
+        fs::write(&path, b"MZ-TAMPERED-sidecar-bytes").unwrap();
+        assert!(super::pin_extracted_sidecar(&path, payload).is_err());
+        fs::remove_dir_all(&root).unwrap();
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn pinned_verified_executable_can_be_spawned() {
+        let nonce = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let root = std::env::temp_dir().join(format!(
+            "fh6-sidecar-launch-test-{}-{nonce}",
+            std::process::id()
+        ));
+        let system_root = std::env::var_os("SystemRoot").unwrap();
+        let payload =
+            fs::read(std::path::PathBuf::from(system_root).join("System32/cmd.exe")).unwrap();
+        let path = ensure_extracted_sidecar(&root, "1.0.0", &payload).unwrap();
+        let guards = super::pin_extracted_sidecar(&path, &payload).unwrap();
+        let mut child = std::process::Command::new(&path)
+            .args(["/D", "/C", "exit", "0"])
+            .spawn()
+            .unwrap();
+        drop(guards);
+        assert!(child.wait().unwrap().success());
+        fs::remove_dir_all(&root).unwrap();
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn sidecar_extraction_rejects_links_without_touching_their_targets() {
+        use std::os::unix::fs::symlink;
+
+        let nonce = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let base = std::env::temp_dir().join(format!(
+            "fh6-sidecar-links-test-{}-{nonce}",
+            std::process::id()
+        ));
+        let outside = base.join("outside");
+        fs::create_dir_all(&outside).unwrap();
+        let root = base.join("root");
+        let payload = b"MZ-verified-sidecar-bytes";
+        symlink(&outside, &root).unwrap();
+        assert!(ensure_extracted_sidecar(&root, "1.0.0", payload).is_err());
+        assert_eq!(fs::read_dir(&outside).unwrap().count(), 0);
+        fs::remove_file(&root).unwrap();
+
+        fs::create_dir(&root).unwrap();
+        let version_dir = root.join(format!("sidecar-1.0.0-{}", payload.len()));
+        symlink(&outside, &version_dir).unwrap();
+        assert!(ensure_extracted_sidecar(&root, "1.0.0", payload).is_err());
+        assert_eq!(fs::read_dir(&outside).unwrap().count(), 0);
+        fs::remove_file(&version_dir).unwrap();
+
+        fs::create_dir(&version_dir).unwrap();
+        let outside_file = outside.join("untouched.exe");
+        fs::write(&outside_file, payload).unwrap();
+        let executable = version_dir.join("server-sidecar.exe");
+        // Even a symlink to the exact trusted bytes must be refused.
+        symlink(&outside_file, &executable).unwrap();
+        assert!(ensure_extracted_sidecar(&root, "1.0.0", payload).is_err());
+        assert_eq!(fs::read(&outside_file).unwrap(), payload);
+        fs::remove_file(&executable).unwrap();
+
+        let missing_target = outside.join("missing.exe");
+        symlink(&missing_target, &executable).unwrap();
+        assert!(ensure_extracted_sidecar(&root, "1.0.0", payload).is_err());
+        assert!(!missing_target.exists());
+        fs::remove_dir_all(&base).unwrap();
     }
 }

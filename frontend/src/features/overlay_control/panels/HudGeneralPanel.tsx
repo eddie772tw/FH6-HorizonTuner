@@ -20,7 +20,7 @@ export interface HudGeneralPanelProps extends HudPanelActions {
   onAudioDeviceChange: (deviceId: string) => void;
   onRefreshAudioDevices: () => void;
   onReloadHud: () => void;
-  onResetHudConfig: () => void;
+  onResetHudConfig: () => Promise<boolean>;
 }
 
 export function HudGeneralPanel({ config, monitors, appUnits, busy, capabilities, audioDevices, loadingAudioDevices,
@@ -29,8 +29,12 @@ export function HudGeneralPanel({ config, monitors, appUnits, busy, capabilities
   const id = useId();
   const [confirmReset, setConfirmReset] = useState(false);
   const [resetStatus, setResetStatus] = useState('');
+  const [resetting, setResetting] = useState(false);
+  const resetInFlight = useRef(false);
+  const formRef = useRef<HTMLFieldSetElement>(null);
   const resetBtnRef = useRef<HTMLButtonElement>(null);
   const cancelResetBtnRef = useRef<HTMLButtonElement>(null);
+  const hadConfirmation = useRef(false);
   const nativeUnavailable = capabilities.nativeWindow.status !== 'available';
   const monitorUnavailable = capabilities.monitorSelection.status !== 'available';
   const monitorDescribedBy = [
@@ -39,28 +43,35 @@ export function HudGeneralPanel({ config, monitors, appUnits, busy, capabilities
   ].filter(Boolean).join(' ') || undefined;
   const cancelReset = () => {
     setConfirmReset(false);
-    requestAnimationFrame(() => resetBtnRef.current?.focus());
   };
   useEffect(() => { if (disabled) setConfirmReset(false); }, [disabled]);
   useEffect(() => {
-    if (!confirmReset) return;
-    cancelResetBtnRef.current?.focus();
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape') return;
-      event.preventDefault();
-      event.stopPropagation();
-      cancelReset();
-    };
-    window.addEventListener('keydown', onKeyDown, true);
-    return () => window.removeEventListener('keydown', onKeyDown, true);
-  }, [confirmReset]);
-  const confirmResetAction = () => {
-    onResetHudConfig();
-    setConfirmReset(false);
-    setResetStatus(t('Reset all HUD elements, scaling, colors, and positions to default values.'));
-    requestAnimationFrame(() => resetBtnRef.current?.focus());
+    const active = document.activeElement;
+    const ownsFocus = active === document.body || formRef.current?.contains(active);
+    if (!disabled && !resetting && ownsFocus) {
+      if (confirmReset) cancelResetBtnRef.current?.focus();
+      else if (hadConfirmation.current) resetBtnRef.current?.focus();
+    }
+    hadConfirmation.current = confirmReset;
+  }, [confirmReset, disabled, resetting]);
+  const confirmResetAction = async () => {
+    if (disabled || resetInFlight.current) return;
+    resetInFlight.current = true;
+    setResetting(true);
+    setResetStatus('');
+    try {
+      if (await onResetHudConfig()) {
+        setConfirmReset(false);
+        setResetStatus(t('HUD settings synchronized'));
+      }
+    } catch {
+      setResetStatus(t('Needs attention'));
+    } finally {
+      resetInFlight.current = false;
+      setResetting(false);
+    }
   };
-  return <fieldset disabled={disabled} className="hud-settings-form">
+  return <fieldset ref={formRef} disabled={disabled || resetting} className="hud-settings-form" aria-busy={resetting}>
     <legend className="visually-hidden">{t('General')}</legend>
     <div className="hud-settings-grid">
       <HudSettingsSection title={t('HUD Unit Settings')}>
@@ -114,7 +125,13 @@ export function HudGeneralPanel({ config, monitors, appUnits, busy, capabilities
         <div className="border-top pt-3">
           <div className="visually-hidden" role="status" aria-live="polite">{resetStatus}</div>
           {confirmReset ? (
-            <div className="d-flex flex-column gap-2" role="group" aria-labelledby={`${id}-reset-confirm-label`}>
+            <div className="d-flex flex-column gap-2" role="group" aria-labelledby={`${id}-reset-confirm-label`}
+              onKeyDownCapture={event => {
+                if (event.key !== 'Escape') return;
+                event.preventDefault();
+                event.stopPropagation();
+                if (!resetInFlight.current) cancelReset();
+              }}>
               <p id={`${id}-reset-confirm-label`} className="fs-7 fw-semibold mb-0" style={{ color: 'var(--bs-danger-text-emphasis)' }}>
                 {t('Are you sure you want to reset all HUD settings?')}
               </p>
