@@ -3,9 +3,12 @@ use serde::Serialize;
 use std::fs;
 use std::io::{BufRead, BufReader, Read, Write};
 use std::net::{SocketAddr, TcpStream};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
-use std::sync::Mutex;
+use std::sync::{
+    atomic::{AtomicU64, Ordering},
+    Mutex,
+};
 use std::time::{Duration, Instant};
 mod file_export;
 
@@ -73,38 +76,61 @@ fn stop_backend_process(app_handle: &tauri::AppHandle) -> Result<(), String> {
     Ok(())
 }
 
-#[cfg(windows)]
-fn extract_embedded_sidecar() -> Result<PathBuf, String> {
-    if EMBEDDED_SIDECAR.is_empty() {
+static SIDECAR_TMP_SEQ: AtomicU64 = AtomicU64::new(0);
+
+fn ensure_safe_dir(path: &Path) -> Result<PathBuf, String> {
+    if fs::symlink_metadata(path).is_ok_and(|m| m.file_type().is_symlink() || !m.is_dir()) {
+        return Err(format!("Refusing unsafe sidecar directory {path:?}"));
+    }
+    fs::create_dir_all(path).map_err(|e| format!("Sidecar dir {path:?}: {e}"))?;
+    path.canonicalize()
+        .map_err(|e| format!("Sidecar path {path:?}: {e}"))
+}
+
+fn ensure_extracted_sidecar(root: &Path, ver: &str, embedded: &[u8]) -> Result<PathBuf, String> {
+    if embedded.is_empty() {
         return Err("No embedded Windows x64 sidecar is available for this build.".to_string());
     }
-
-    let sidecar_dir = std::env::temp_dir().join("FH6-HorizonTuner").join(format!(
-        "sidecar-{}-{}",
-        env!("CARGO_PKG_VERSION"),
-        EMBEDDED_SIDECAR.len()
-    ));
-    let sidecar_path = sidecar_dir.join("server-sidecar.exe");
-    fs::create_dir_all(&sidecar_dir).map_err(|e| {
-        format!(
-            "Failed to create sidecar extraction directory {:?}: {}",
-            sidecar_dir, e
-        )
-    })?;
-
-    let needs_write = fs::metadata(&sidecar_path)
-        .map(|metadata| metadata.len() != EMBEDDED_SIDECAR.len() as u64)
-        .unwrap_or(true);
-    if needs_write {
-        fs::write(&sidecar_path, EMBEDDED_SIDECAR).map_err(|e| {
-            format!(
-                "Failed to extract embedded sidecar to {:?}: {}",
-                sidecar_path, e
-            )
-        })?;
+    // Reject symlinks/junctions in shared %TEMP% and verify full binary content before executing.
+    let canonical_root = ensure_safe_dir(root)?;
+    let canonical_dir =
+        ensure_safe_dir(&canonical_root.join(format!("sidecar-{ver}-{}", embedded.len())))?;
+    if !canonical_dir.starts_with(&canonical_root) {
+        return Err(format!("Sidecar directory escaped root: {canonical_dir:?}"));
     }
-
+    let sidecar_path = canonical_dir.join("server-sidecar.exe");
+    if let Ok(meta) = fs::symlink_metadata(&sidecar_path) {
+        if meta.file_type().is_symlink() || !meta.is_file() {
+            return Err(format!(
+                "Refusing unsafe sidecar executable {sidecar_path:?}"
+            ));
+        }
+        if meta.len() == embedded.len() as u64
+            && fs::read(&sidecar_path).is_ok_and(|bytes| bytes == embedded)
+        {
+            return Ok(sidecar_path);
+        }
+    }
+    let seq = SIDECAR_TMP_SEQ.fetch_add(1, Ordering::Relaxed);
+    let temp_path = canonical_dir.join(format!(".server-sidecar-{}-{seq}.tmp", std::process::id()));
+    let mut file = fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(&temp_path)
+        .map_err(|e| format!("Stage sidecar {temp_path:?}: {e}"))?;
+    let result = file.write_all(embedded).and_then(|()| file.sync_all());
+    drop(file);
+    if let Err(error) = result.and_then(|()| fs::rename(&temp_path, &sidecar_path)) {
+        let _ = fs::remove_file(&temp_path);
+        return Err(format!("Extract sidecar {sidecar_path:?}: {error}"));
+    }
     Ok(sidecar_path)
+}
+
+#[cfg(windows)]
+fn extract_embedded_sidecar() -> Result<PathBuf, String> {
+    let root = std::env::temp_dir().join("FH6-HorizonTuner");
+    ensure_extracted_sidecar(&root, env!("CARGO_PKG_VERSION"), EMBEDDED_SIDECAR)
 }
 
 fn resolve_portable_data_dir(app_handle: &tauri::AppHandle) -> Result<PathBuf, String> {
@@ -691,10 +717,14 @@ pub fn run() {
 
 #[cfg(test)]
 mod tests {
-    use super::{backend_is_ready, backend_port_from_state, hud_url, BackendState};
+    use super::{
+        backend_is_ready, backend_port_from_state, ensure_extracted_sidecar, hud_url, BackendState,
+    };
+    use std::fs;
     use std::io::Write;
     use std::net::TcpListener;
     use std::thread;
+    use std::time::{SystemTime, UNIX_EPOCH};
 
     #[test]
     fn overlay_url_uses_the_published_backend_port() {
@@ -726,5 +756,34 @@ mod tests {
                 .expect("write readiness response");
         });
         assert!(backend_is_ready(port));
+    }
+
+    #[test]
+    fn sidecar_extraction_verifies_full_bytes_and_rejects_unsafe_targets() {
+        let nonce = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let root =
+            std::env::temp_dir().join(format!("fh6-sidecar-test-{}-{nonce}", std::process::id()));
+        let payload = b"MZ-verified-sidecar-bytes";
+        assert!(ensure_extracted_sidecar(&root, "1.0.0", b"").is_err());
+
+        let extracted = ensure_extracted_sidecar(&root, "1.0.0", payload).unwrap();
+        assert_eq!(fs::read(&extracted).unwrap(), payload);
+
+        // Same-length tampering must be detected and replaced rather than executed.
+        let tampered = b"MZ-TAMPERED-sidecar-bytes";
+        assert_eq!(tampered.len(), payload.len());
+        fs::write(&extracted, tampered).unwrap();
+        let re_extracted = ensure_extracted_sidecar(&root, "1.0.0", payload).unwrap();
+        assert_eq!(fs::read(&re_extracted).unwrap(), payload);
+
+        // Non-file target at executable path (directory collision) must fail securely.
+        fs::remove_file(&re_extracted).unwrap();
+        fs::create_dir(&re_extracted).unwrap();
+        assert!(ensure_extracted_sidecar(&root, "1.0.0", payload).is_err());
+
+        fs::remove_dir_all(&root).unwrap();
     }
 }
