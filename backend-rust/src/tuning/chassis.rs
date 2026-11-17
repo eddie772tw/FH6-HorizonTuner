@@ -10,25 +10,35 @@ fn r1(n: f64) -> f64 {
     (n * 10.0).round() / 10.0
 }
 
-/// Clamps a value and rounds to 1 decimal place, strictly guaranteeing that the rounded
-/// result never exceeds `max` or falls below `min`.
+/// Clamps a value to `[min, max]` and rounds to 1 decimal place when a 0.1-grid
+/// point exists inside `[min, max]`, strictly guaranteeing `min <= result <= max`.
 #[inline]
 fn clamp_round(val: f64, min: f64, max: f64) -> f64 {
+    if !min.is_finite() || !max.is_finite() {
+        return val;
+    }
+    let (min, max) = if min <= max { (min, max) } else { (max, min) };
+    if val.is_nan() {
+        return min * 0.5 + max * 0.5;
+    }
     let clamped = clamp(val, min, max);
     let rounded = r1(clamped);
+    if !rounded.is_finite() {
+        return clamped;
+    }
     if rounded > max {
         let floored = (max * 10.0).floor() / 10.0;
-        if floored >= min {
+        if floored.is_finite() && floored >= min {
             floored
         } else {
-            r1(max)
+            clamped
         }
     } else if rounded < min {
         let ceiled = (min * 10.0).ceil() / 10.0;
-        if ceiled <= max {
+        if ceiled.is_finite() && ceiled <= max {
             ceiled
         } else {
-            r1(min)
+            clamped
         }
     } else {
         rounded
