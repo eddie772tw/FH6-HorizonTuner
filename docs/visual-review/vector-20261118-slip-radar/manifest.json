@@ -1,0 +1,62 @@
+{
+  "target": "hud_overlay/shared/telemetry-cards/corner-card.js",
+  "renderer": "createTelemetryCardsManager() -> renderCorners() -> drawSlipRadar()",
+  "capturedAt": "2026-11-17T21:06:46.786830+00:00",
+  "browser": "Chromium headless (chromium 148.0.7778.96)",
+  "background": "#0b111b (composite dark backdrop for transparent HUD panel)",
+  "scopeNote": "Isolated #tcSlipBlockFL element clip with 16px margin (telemetryCornerOffsetY: 160 to center FL card within 1280x720); live game & native Windows overlay not tested here.",
+  "captures": [
+    {
+      "file": "slip-radar-dpr1-active.png",
+      "description": "DPR 1 · 輪胎滑移雷達 50%/100% 摩擦圓、十字基準線與正常抓地力同軸脈衝光環",
+      "viewport": "1280x720",
+      "dpr": 1,
+      "canvas": {
+        "width": 240,
+        "height": 76,
+        "clientWidth": 240,
+        "clientHeight": 76
+      },
+      "clipPaddingPx": 16
+    },
+    {
+      "file": "slip-radar-dpr1-traction-loss.png",
+      "description": "DPR 1 · 突破摩擦極限（mag > 1.0）自動鉗位防裁切與警戒紅光外環／脈衝標記",
+      "viewport": "1280x720",
+      "dpr": 1,
+      "canvas": {
+        "width": 240,
+        "height": 76,
+        "clientWidth": 240,
+        "clientHeight": 76
+      },
+      "clipPaddingPx": 16
+    },
+    {
+      "file": "slip-radar-dpr1-custom-theme.png",
+      "description": "DPR 1 · 自訂主題色（#ffaa00）與同軸脈衝光環配色連動",
+      "viewport": "1280x720",
+      "dpr": 1,
+      "canvas": {
+        "width": 240,
+        "height": 76,
+        "clientWidth": 240,
+        "clientHeight": 76
+      },
+      "clipPaddingPx": 16
+    },
+    {
+      "file": "slip-radar-dpr2-active.png",
+      "description": "DPR 2 · HiDPI 輪胎滑移雷達高解析圓潤抗鋸齒光環與同軸定位點",
+      "viewport": "1280x720",
+      "dpr": 2,
+      "canvas": {
+        "width": 480,
+        "height": 152,
+        "clientWidth": 240,
+        "clientHeight": 76
+      },
+      "clipPaddingPx": 16
+    }
+  ]
+}

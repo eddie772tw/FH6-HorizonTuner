@@ -100,6 +100,68 @@ function drawSuspWaveform(wCtx, ww, wh, dpr, sHist, cTravel, primaryColor) {
     }
 }
 
+function drawSlipRadar(rCtx, rw, rh, dpr, cAngle, cRatio, primaryColor) {
+    var rx0 = rw / 2;
+    var ry0 = rh / 2;
+    var rRad = Math.max(1, Math.min(rw, rh) * 0.44);
+    // Scale the coaxial grip marker cleanly to fit inside compact radar bounds.
+    var markerScale = Math.min(dpr, rRad / 9);
+    var haloRadius = 3.6 * markerScale;
+    var coreRadius = 1.8 * markerScale;
+    var haloLineW = 1.4 * markerScale;
+    var maxTRadius = Math.max(0, rRad - haloRadius - haloLineW * 0.5);
+    var dx = cAngle * rRad;
+    var dy = cRatio * rRad;
+    var tDistSq = dx * dx + dy * dy;
+    if (tDistSq > maxTRadius * maxTRadius && tDistSq > 0) {
+        var clampScale = maxTRadius / Math.sqrt(tDistSq);
+        dx *= clampScale;
+        dy *= clampScale;
+    }
+    var isLosingGrip = (cAngle * cAngle + cRatio * cRatio) > 1.0;
+    var pulseColor = isLosingGrip ? '#ff0055' : primaryColor;
+    var px = rx0 + dx;
+    var py = ry0 + dy;
+
+    rCtx.save();
+    try {
+        // Outer 1.0G traction limit ring
+        rCtx.beginPath();
+        rCtx.arc(rx0, ry0, rRad, 0, Math.PI * 2);
+        rCtx.strokeStyle = isLosingGrip ? 'rgba(255, 0, 85, 0.45)' : 'rgba(255, 255, 255, 0.30)';
+        rCtx.lineWidth = Math.min(1.5 * dpr, rRad * 0.25);
+        rCtx.stroke();
+
+        // 50% traction reference ring + crosshairs (batched single path)
+        rCtx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+        rCtx.lineWidth = Math.min(1 * dpr, rRad * 0.16);
+        rCtx.beginPath();
+        rCtx.arc(rx0, ry0, rRad * 0.5, 0, Math.PI * 2);
+        rCtx.moveTo(rx0, ry0 - rRad);
+        rCtx.lineTo(rx0, ry0 + rRad);
+        rCtx.moveTo(rx0 - rRad, ry0);
+        rCtx.lineTo(rx0 + rRad, ry0);
+        rCtx.stroke();
+
+        // Coaxial Active Grip Pulse Marker (Outer Halo Ring + Core Dot)
+        rCtx.strokeStyle = pulseColor;
+        rCtx.fillStyle = pulseColor;
+        rCtx.shadowColor = pulseColor;
+        rCtx.shadowBlur = 5 * markerScale;
+        rCtx.lineWidth = haloLineW;
+        rCtx.beginPath();
+        rCtx.arc(px, py, haloRadius, 0, Math.PI * 2);
+        rCtx.stroke();
+
+        rCtx.shadowBlur = 0;
+        rCtx.beginPath();
+        rCtx.arc(px, py, coreRadius, 0, Math.PI * 2);
+        rCtx.fill();
+    } finally {
+        rCtx.restore();
+    }
+}
+
 export function renderCorners(data, showSusp, showSlip, showTemp, tireHist, suspHist, suspMinMax, now, domCache) {
     var rawSlipRatios = data.TireSlipRatio || [];
     var rawSlipAngles = data.TireSlipAngle || [];
@@ -132,12 +194,14 @@ export function renderCorners(data, showSusp, showSlip, showTemp, tireHist, susp
 
     // Unit conversion preference (°C vs °F display)
     var isMetric = (data.isMetric !== undefined ? data.isMetric : (data.is_metric !== false));
-    var primaryColor = showSusp ? resolvePrimaryColor(domCache) : '#00f0ff';
+    var primaryColor = (showSusp || showSlip) ? resolvePrimaryColor(domCache) : '#00f0ff';
 
     for (var i = 0; i < 4; i++) {
         var tag = corners[i];
-        var cRatio = slipRatios[i] || 0;
-        var cAngle = slipAngles[i] || 0;
+        var rawRatio = Number(slipRatios[i]);
+        var rawAngle = Number(slipAngles[i]);
+        var cRatio = Number.isFinite(rawRatio) ? rawRatio : 0;
+        var cAngle = Number.isFinite(rawAngle) ? rawAngle : 0;
         var cTemp  = temps[i] || 0;
         var rawTravel = Number(travels[i]);
         var cTravel = clamp(Number.isFinite(rawTravel) ? rawTravel : 0, 0, 1);
@@ -161,45 +225,12 @@ export function renderCorners(data, showSusp, showSlip, showTemp, tireHist, susp
             var ratEl  = domCache ? domCache.corners[tag].ratEl : document.getElementById('tcTireRat' + tag);
             if (ratEl)  ratEl.textContent = cRatio.toFixed(2);
 
-            var rCanvas = domCache ? domCache.corners[tag].rCanvas : document.getElementById('tcTireRadar' + tag);
+            var rCanvas = domCache ? (domCache.corners[tag] && domCache.corners[tag].rCanvas) : document.getElementById('tcTireRadar' + tag);
             if (rCanvas) {
                 var cData = getCanvasContext(rCanvas);
                 if (cData && cData.ctx) {
-                    var rCtx = cData.ctx;
-                    var rw = cData.w, rh = cData.h, dpr = cData.dpr;
-                    rCtx.clearRect(0, 0, rw, rh);
-                    var rx0 = rw / 2, ry0 = rh / 2;
-                    var rRad = Math.min(rw, rh) * 0.44;
-
-                    // Outer circle
-                    rCtx.beginPath();
-                    rCtx.arc(rx0, ry0, rRad, 0, Math.PI * 2);
-                    rCtx.strokeStyle = 'rgba(255, 255, 255, 0.30)';
-                    rCtx.lineWidth = 1.5 * dpr;
-                    rCtx.stroke();
-
-                    // Crosshairs
-                    rCtx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
-                    rCtx.lineWidth = 1 * dpr;
-                    rCtx.beginPath(); rCtx.moveTo(rx0, ry0 - rRad); rCtx.lineTo(rx0, ry0 + rRad); rCtx.stroke();
-                    rCtx.beginPath(); rCtx.moveTo(rx0 - rRad, ry0); rCtx.lineTo(rx0 + rRad, ry0); rCtx.stroke();
-
-                    // Map slip angle → X, slip ratio → Y
-                    var maxTRadius = Math.max(0, rRad - 3 * dpr);
-                    var dx = (cAngle / 1.0) * rRad;
-                    var dy = (cRatio / 1.0) * rRad;
-                    var tDist = Math.sqrt(dx * dx + dy * dy);
-                    if (tDist > maxTRadius && tDist > 0) {
-                        dx = (dx / tDist) * maxTRadius;
-                        dy = (dy / tDist) * maxTRadius;
-                    }
-                    var mag = Math.sqrt(cAngle * cAngle + cRatio * cRatio);
-                    var px = rx0 + dx, py = ry0 + dy;
-
-                    rCtx.beginPath();
-                    rCtx.arc(px, py, Math.max(4 * dpr, rRad * 0.1), 0, Math.PI * 2);
-                    rCtx.fillStyle = mag > 1.0 ? 'rgba(255,0,85,0.90)' : 'rgba(0,240,255,0.90)';
-                    rCtx.fill();
+                    cData.ctx.clearRect(0, 0, cData.w, cData.h);
+                    drawSlipRadar(cData.ctx, cData.w, cData.h, cData.dpr, cAngle, cRatio, primaryColor);
                 }
             }
         }
