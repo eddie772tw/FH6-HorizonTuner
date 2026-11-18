@@ -232,6 +232,22 @@ describe('AnalysisSessionToolbar localization & accessibility', () => {
       }));
       expect(compareLapSelect?.textContent).toContain(t('vs Lap {lap} ({time})', { lap: 1, time: t('Unknown') }));
     }
+    // Exercise real dictionaries through the new asynchronous error/status UI.
+    let deleteOk = false;
+    await act(async () => root.render(<AnalysisSessionToolbar {...defaultProps} onDeleteSession={async () => deleteOk} />));
+    const deleteSession = async () => {
+      const trigger = container.querySelector<HTMLButtonElement>('button[aria-label="' + t('Delete selected session') + '"]')!;
+      await act(async () => trigger.click());
+      const confirm = container.querySelector<HTMLButtonElement>('[role="group"] button.btn-danger')!;
+      await act(async () => confirm.click());
+    };
+    await deleteSession();
+    expect(container.querySelector('[role="alert"]')?.textContent).toBe(t('Failed to delete session.'));
+    if (lang !== 'en-us') expect(container.querySelector('[role="alert"]')?.textContent).not.toContain('Failed to delete session.');
+    deleteOk = true;
+    await deleteSession();
+    expect(container.querySelector('.visually-hidden[role="status"]')?.textContent).toBe(t('Session deleted.'));
+    if (lang !== 'en-us') expect(container.querySelector('.visually-hidden[role="status"]')?.textContent).not.toBe('Session deleted.');
     await act(async () => root.unmount());
   });
 });

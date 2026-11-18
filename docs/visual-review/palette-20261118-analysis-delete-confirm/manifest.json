@@ -1,0 +1,205 @@
+{
+  "date": "2026-11-18",
+  "baseCommit": "aeabfcedebf2dd9394294e0453153c435837c615",
+  "productBlobs": {
+    "frontend/src/features/analysis/AnalysisView.tsx": "a5e3c0d3a73c6271d092e9300fa70c2931b2e878",
+    "frontend/src/features/analysis/AnalysisSessionToolbar.tsx": "140802fd1089f4196380723674017028e5e46182"
+  },
+  "browser": "148.0.7778.96",
+  "capture": "Chromium headless, full production AppShell/providers served from frontend/dist with mocked 127.0.0.1:8001 API responses and real lang/*.json dictionaries, DPR 1, zoom 100%.",
+  "reproduce": "Open Sessions tab in AppShell across Default/Swiss/Rhine-Lab light & dark themes, select a saved session, verify inline Delete confirmation, Escape cancellation, error alert, focus management, and zero overflow.",
+  "cases": [
+    {
+      "core": "default",
+      "mode": "light",
+      "lang": "en-us",
+      "width": 1280,
+      "height": 720,
+      "state": "idle",
+      "file": "default-light-en-us-1280-idle.png",
+      "dimensions": {
+        "width": 1280,
+        "scrollWidth": 1280
+      },
+      "errors": []
+    },
+    {
+      "core": "default",
+      "mode": "dark",
+      "lang": "zh-tw",
+      "width": 320,
+      "height": 800,
+      "state": "confirm",
+      "file": "default-dark-zh-tw-320-confirm.png",
+      "dimensions": {
+        "width": 320,
+        "scrollWidth": 320
+      },
+      "errors": []
+    },
+    {
+      "core": "swiss",
+      "mode": "light",
+      "lang": "zh-tw",
+      "width": 1280,
+      "height": 720,
+      "state": "confirm",
+      "file": "swiss-light-zh-tw-1280-confirm.png",
+      "dimensions": {
+        "width": 1280,
+        "scrollWidth": 1280
+      },
+      "errors": []
+    },
+    {
+      "core": "swiss",
+      "mode": "dark",
+      "lang": "ja-jp",
+      "width": 1280,
+      "height": 720,
+      "state": "idle",
+      "file": "swiss-dark-ja-jp-1280-idle.png",
+      "dimensions": {
+        "width": 1280,
+        "scrollWidth": 1280
+      },
+      "errors": []
+    },
+    {
+      "core": "rhine-lab",
+      "mode": "light",
+      "lang": "ja-jp",
+      "width": 1280,
+      "height": 720,
+      "state": "error",
+      "file": "rhine-lab-light-ja-jp-1280-error.png",
+      "dimensions": {
+        "width": 1280,
+        "scrollWidth": 1280
+      },
+      "errors": []
+    },
+    {
+      "core": "rhine-lab",
+      "mode": "dark",
+      "lang": "en-us",
+      "width": 1280,
+      "height": 720,
+      "state": "confirm",
+      "file": "rhine-lab-dark-en-us-1280-confirm.png",
+      "dimensions": {
+        "width": 1280,
+        "scrollWidth": 1280
+      },
+      "errors": []
+    }
+  ],
+  "reviewFix": {
+    "date": "2026-11-18",
+    "baseCommit": "f4ba989b1ef8c6b506abfdd2d2ebf461b2bea71a",
+    "changes": "此 base 加 lang/en-us.json、lang/zh-tw.json、lang/ja-jp.json 的刪除失敗／成功翻譯修正；產品 TSX 未更動。",
+    "browser": "Chromium 151.0.7922.173 built on Debian GNU/Linux 13 (trixie)",
+    "capture": "Linux Chromium headless，完整 production AppShell／providers，真實語系字典；mock HTTP 刪除失敗與成功，無原生 Rust 檔案刪除或讀屏實測。",
+    "reproduce": "pnpm -C frontend build；於 frontend 執行 vite preview --host 127.0.0.1 --port 1454，再於根目錄執行 node docs/visual-review/palette-20261118-analysis-delete-confirm/capture-fixed.mjs。FH6_PLAYWRIGHT_MODULE 與 FH6_CHROMIUM 可指定工具路徑。",
+    "skills": [
+      "pr-review-evaluation",
+      "pr-author-maintainer",
+      "halfmoon-design-system"
+    ],
+    "results": "fixed-browser-results.json",
+    "cases": [
+      {
+        "core": "default",
+        "mode": "light",
+        "language": "en-us",
+        "width": 1280,
+        "errorText": "Failed to delete session.",
+        "statusText": "Session deleted.",
+        "bounds": {
+          "width": 1280,
+          "scrollWidth": 1280
+        },
+        "errors": []
+      },
+      {
+        "core": "default",
+        "mode": "dark",
+        "language": "zh-tw",
+        "width": 320,
+        "errorText": "刪除遙測紀錄失敗。",
+        "statusText": "已刪除遙測紀錄。",
+        "bounds": {
+          "width": 320,
+          "scrollWidth": 320
+        },
+        "errors": []
+      },
+      {
+        "core": "swiss",
+        "mode": "light",
+        "language": "zh-tw",
+        "width": 1280,
+        "errorText": "刪除遙測紀錄失敗。",
+        "statusText": "已刪除遙測紀錄。",
+        "bounds": {
+          "width": 1280,
+          "scrollWidth": 1280
+        },
+        "errors": []
+      },
+      {
+        "core": "swiss",
+        "mode": "dark",
+        "language": "ja-jp",
+        "width": 1280,
+        "errorText": "セッションを削除できませんでした。",
+        "statusText": "セッションを削除しました。",
+        "bounds": {
+          "width": 1280,
+          "scrollWidth": 1280
+        },
+        "errors": []
+      },
+      {
+        "core": "rhine-lab",
+        "mode": "light",
+        "language": "ja-jp",
+        "width": 1280,
+        "errorText": "セッションを削除できませんでした。",
+        "statusText": "セッションを削除しました。",
+        "bounds": {
+          "width": 1280,
+          "scrollWidth": 1280
+        },
+        "errors": []
+      },
+      {
+        "core": "rhine-lab",
+        "mode": "dark",
+        "language": "en-us",
+        "width": 1280,
+        "errorText": "Failed to delete session.",
+        "statusText": "Session deleted.",
+        "bounds": {
+          "width": 1280,
+          "scrollWidth": 1280
+        },
+        "errors": []
+      }
+    ],
+    "images": {
+      "default-dark-zh-tw-320-confirm-fixed.png": "bb63e13504221d4ef9517e7eec62adeb476a6f6b",
+      "default-dark-zh-tw-320-error-fixed.png": "0007f4b7f87bc4d48bde862b85e83c32d1c52dd1",
+      "default-light-en-us-1280-confirm-fixed.png": "d75794679d8dbe7458ed68d8566d259ef3b2eb38",
+      "default-light-en-us-1280-error-fixed.png": "4ffec68eed0abd65f43b20c7cb1dad056b8908b4",
+      "rhine-lab-dark-en-us-1280-confirm-fixed.png": "d9164b5d0ce6abd33c57ae886173a9b532f1c38c",
+      "rhine-lab-dark-en-us-1280-error-fixed.png": "66e772892a8c83f0876f7d4e260f0d8397a11fa6",
+      "rhine-lab-light-ja-jp-1280-confirm-fixed.png": "39ef0ab9f74afb09af3754b783a3ac64fb3d07c8",
+      "rhine-lab-light-ja-jp-1280-error-fixed.png": "ef4f11b6d69ff27502aceb1714cb4e9b07617df1",
+      "swiss-dark-ja-jp-1280-confirm-fixed.png": "d87f248a382630c645acab39b2de83074b5d18f9",
+      "swiss-dark-ja-jp-1280-error-fixed.png": "38c3c35b903b0f12c9da4add4567baca40064a00",
+      "swiss-light-zh-tw-1280-confirm-fixed.png": "f82a8b2f51dc0baf07a3d3ef58717119e8157d2f",
+      "swiss-light-zh-tw-1280-error-fixed.png": "544d5a4fcb8e17d719d9b70a3289bedcf752941a"
+    }
+  }
+}

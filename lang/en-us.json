@@ -449,6 +449,7 @@
   "Export Theme JSON": "Export Theme JSON",
   "Failed to clear logs on server.": "Failed to clear logs on server.",
   "Failed to delete session.": "Failed to delete session.",
+  "Session deleted.": "Session deleted.",
   "Failed to load telemetry or file is empty.": "Failed to load telemetry or file is empty.",
   "Failed to parse JSON file.": "Failed to parse JSON file.",
   "Failed to save session.": "Failed to save session.",
