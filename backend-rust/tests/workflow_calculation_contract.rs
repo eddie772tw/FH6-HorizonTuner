@@ -77,6 +77,377 @@ fn saved_request() -> Value {
 }
 
 #[test]
+fn saved_ice_cache_requires_its_original_raw_capture() {
+    let temp = tempfile::tempdir().unwrap();
+    let app = App::new(temp.path()).unwrap();
+    app.tuning_evidence
+        .store
+        .append(
+            "tuning-evidence/v1",
+            "tuning-evidence",
+            &serde_json::to_value(proof("AWD")).unwrap(),
+            Some("qualified-engine-v4:real-beetle"),
+        )
+        .unwrap();
+    assert!(call(&app, "/api/tuning/workflow", saved_request()).is_err());
+}
+
+#[test]
+fn saved_ice_replays_raw_frames_instead_of_derived_cache_and_rejects_missing_or_invalid_raw() {
+    let temp = tempfile::tempdir().unwrap();
+    let app = App::new(temp.path()).unwrap();
+    save_engine(&app);
+    let original = call(&app, "/api/tuning/workflow", saved_request()).unwrap();
+    let store = &app.tuning_evidence.store;
+    let mut cached = store
+        .get("qualified-engine-v4:real-beetle", None, None)
+        .unwrap();
+    cached["engine"]["peakPowerRpm"] = json!(123.0);
+    cached["summary"]["peakPower"]["rpm"] = json!(123.0);
+    cached["tire_summary"] = json!({"status":"forged"});
+    let connection = rusqlite::Connection::open(&store.db_path).unwrap();
+    connection
+        .execute(
+            "UPDATE road_documents SET document=?1 WHERE id=?2",
+            rusqlite::params![cached.to_string(), "qualified-engine-v4:real-beetle"],
+        )
+        .unwrap();
+    let before = std::fs::read(&store.db_path).unwrap();
+    let replay = app
+        .tuning_evidence
+        .calculate_read_only(serde_json::from_value(saved_request()).unwrap())
+        .unwrap();
+    assert_eq!(serde_json::to_value(replay).unwrap(), original);
+    app.tuning_evidence
+        .verify_recommendation(&original["recommendation"], None)
+        .unwrap();
+    assert_eq!(std::fs::read(&store.db_path).unwrap(), before);
+
+    let raw = store.get("real-beetle", None, None).unwrap();
+    for field in ["schema", "id"] {
+        let mut changed = raw.clone();
+        changed[field] = json!("invalid");
+        connection
+            .execute(
+                "UPDATE road_documents SET document=?1 WHERE id='real-beetle'",
+                [changed.to_string()],
+            )
+            .unwrap();
+        let before = std::fs::read(&store.db_path).unwrap();
+        assert!(app
+            .tuning_evidence
+            .calculate_read_only(serde_json::from_value(saved_request()).unwrap())
+            .is_err());
+        assert!(app
+            .tuning_evidence
+            .verify_recommendation(&original["recommendation"], None)
+            .is_err());
+        assert_eq!(std::fs::read(&store.db_path).unwrap(), before);
+    }
+    connection
+        .execute("DELETE FROM road_documents WHERE id='real-beetle'", [])
+        .unwrap();
+    assert!(call(&app, "/api/tuning/workflow", saved_request()).is_err());
+    assert!(app
+        .tuning_evidence
+        .verify_recommendation(&original["recommendation"], None)
+        .is_err());
+}
+
+fn aego_request(goal: &str) -> Value {
+    let mut request = saved_request();
+    request["schemaVersion"] = json!("tuning-workflow-result/v2");
+    request["goal"] = json!(goal);
+    for (key, value) in [
+        ("frontTireWidth", 225.0),
+        ("frontTireAspect", 45.0),
+        ("frontTireRim", 17.0),
+        ("rearTireWidth", 245.0),
+        ("rearTireAspect", 40.0),
+        ("rearTireRim", 18.0),
+    ] {
+        request["profile"][key] = json!(value);
+    }
+    if goal == "Drift" {
+        request["profile"]["driftWorkingTarget"] = json!({"mainGear":3,"targetRpm":proof("AWD").engine().unwrap().peak_power_rpm,"wheelSpeedKmh":80.0,"source":"user-target"});
+    }
+    if goal == "Drag" {
+        request["profile"]["dragFinishSpeedKmh"] = json!(250.0);
+        request["profile"]["dragFinishSpeedProvenance"] = json!("manual");
+    }
+    request
+}
+
+#[test]
+fn independent_aego_composition_replays_all_goals_and_rejects_metadata_forgery() {
+    let temp = tempfile::tempdir().unwrap();
+    let app = App::new(temp.path()).unwrap();
+    save_engine(&app);
+    let mut records = vec![];
+    for schema in ["tuning-workflow-result/v1", "tuning-workflow-result/v2"] {
+        for (goal, version) in [
+            ("Road", "aego-road-launch-envelope/v3"),
+            ("Rally", "aego-rally-joint/v1"),
+            ("Drift", "aego-drift-working/v1"),
+            ("Drag", "aego-drag-joint/v1"),
+        ] {
+            let mut request = aego_request(goal);
+            request["schemaVersion"] = json!(schema);
+            let result = call(&app, "/api/tuning/workflow", request).unwrap();
+            assert_eq!(
+                result["readiness"]["gearingAvailable"], true,
+                "{goal}/{schema}: {result}"
+            );
+            let rec = result["recommendation"].clone();
+            assert_eq!(rec["formulaVersion"], "rust/ice-measured-workflow-v4");
+            assert_eq!(rec["inputSnapshot"]["gearingModelVersion"], version);
+            assert_eq!(
+                rec["inputSnapshot"]["gearingDiagnostics"],
+                result["gearingDiagnostics"]
+            );
+            app.tuning_evidence
+                .verify_recommendation(&rec, None)
+                .unwrap();
+            call(
+                &app,
+                "/api/road/compatibility",
+                json!({"discipline":"Drag","recommendation":rec}),
+            )
+            .unwrap();
+            records.push(rec.clone());
+            for (key, value) in [
+                ("gearingModelVersion", json!("unknown/v99")),
+                (
+                    "gearingModelVersion",
+                    json!(if goal == "Road" {
+                        "aego-drag-joint/v1"
+                    } else {
+                        "aego-road-launch-envelope/v3"
+                    }),
+                ),
+                ("gearingModelId", json!("forged-owner")),
+                ("gearingDiagnostics", json!({"status":"available"})),
+                ("gearingView", json!({"tireRadiusM":99})),
+                ("workflowSchemaVersion", json!("tuning-workflow-result/v99")),
+            ] {
+                let mut forged = rec.clone();
+                forged["inputSnapshot"][key] = value;
+                assert!(
+                    app.tuning_evidence
+                        .verify_recommendation(&forged, None)
+                        .is_err(),
+                    "{goal}/{schema}/{key}"
+                );
+            }
+            let mut missing = rec.clone();
+            missing["inputSnapshot"]
+                .as_object_mut()
+                .unwrap()
+                .remove("gearingModelVersion");
+            assert!(app
+                .tuning_evidence
+                .verify_recommendation(&missing, None)
+                .is_err());
+            let mut retired = rec.clone();
+            retired["inputSnapshot"]["gearingModelVersion"] = json!("aego-rally/v1");
+            assert_eq!(
+                app.tuning_evidence
+                    .verify_recommendation(&retired, None)
+                    .unwrap_err()
+                    .status,
+                410
+            );
+        }
+    }
+    drop(app);
+    let restarted = App::new(temp.path()).unwrap();
+    let before = std::fs::read(&restarted.tuning_evidence.store.db_path).unwrap();
+    for rec in records {
+        restarted
+            .tuning_evidence
+            .verify_recommendation(&rec, None)
+            .unwrap();
+    }
+    assert_eq!(
+        std::fs::read(&restarted.tuning_evidence.store.db_path).unwrap(),
+        before
+    );
+}
+
+#[test]
+fn ratio_balance_rechecks_each_model_and_updates_selected_output_diagnostics() {
+    use fh6_backend::tuning::{aego_model::AegoModel, gearing::models, GearingResult, RaceGoal};
+    let temp = tempfile::tempdir().unwrap();
+    let app = App::new(temp.path()).unwrap();
+    save_engine(&app);
+    let mut rejected_hard_target = false;
+    for goal in ["Road", "Rally", "Drift", "Drag"] {
+        let mut request = aego_request(goal);
+        let base = call(&app, "/api/tuning/workflow", request.clone()).unwrap();
+        let original: GearingResult = serde_json::from_value(base["gearing"].clone()).unwrap();
+        let parsed_goal: RaceGoal = serde_json::from_value(json!(goal)).unwrap();
+        let model = AegoModel::production(parsed_goal).unwrap();
+        let raw = json!({"schemaVersion":"ratio-balance/v1","bounds":{"source":"user-observed","finalDrive":{"min":1.0,"max":10.0,"step":0.01},"gears":vec![json!({"min":0.01,"max":20.0,"step":0.01});6]}});
+        request["inputSnapshot"]["ratioBalance"] = raw.clone();
+        let preview = call(&app, "/api/tuning/workflow", request.clone()).unwrap();
+        assert_eq!(
+            preview["readiness"]["gearingAvailable"], true,
+            "{goal}: {preview}"
+        );
+        let checked = &preview["ratioBalance"]["legalFinalDrives"];
+        let unchecked = fh6_backend::tuning::ratio_balance::calculate(
+            &request["profile"],
+            Some(&original),
+            &raw,
+        )
+        .1;
+        if let Some(fd) = unchecked
+            .legal_final_drives
+            .iter()
+            .find(|fd| !checked.as_array().unwrap().contains(&json!(fd)))
+        {
+            rejected_hard_target = true;
+            request["inputSnapshot"]["ratioBalance"]["candidateFinalDrive"] = json!(fd);
+            let denied = call(&app, "/api/tuning/workflow", request.clone()).unwrap();
+            assert_eq!(denied["readiness"]["gearingAvailable"], false);
+            assert!(denied["recommendation"].is_null());
+        }
+        let fd = checked
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|fd| **fd != base["gearing"]["finalDrive"])
+            .unwrap();
+        request["inputSnapshot"]["ratioBalance"]["candidateFinalDrive"] = fd.clone();
+        let adjusted = call(&app, "/api/tuning/workflow", request).unwrap();
+        let selected: GearingResult = serde_json::from_value(adjusted["gearing"].clone()).unwrap();
+        assert!(
+            models::respects_hard_targets(model, &selected, &adjusted["gearingDiagnostics"]),
+            "{goal}: {adjusted}"
+        );
+        assert_eq!(
+            adjusted["gearingDiagnostics"]["targetSpeedKmh"],
+            base["gearingDiagnostics"]["targetSpeedKmh"]
+        );
+        assert_eq!(
+            adjusted["gearingDiagnostics"]["targetWheelSpeedKmh"],
+            base["gearingDiagnostics"]["targetWheelSpeedKmh"]
+        );
+        app.tuning_evidence
+            .verify_recommendation(&adjusted["recommendation"], None)
+            .unwrap();
+    }
+    assert!(
+        rejected_hard_target,
+        "At least one equivalent rounded total must violate an original hard endpoint"
+    );
+    let mut missing = aego_request("Drift");
+    missing["profile"]
+        .as_object_mut()
+        .unwrap()
+        .remove("driftWorkingTarget");
+    let unavailable = call(&app, "/api/tuning/workflow", missing).unwrap();
+    assert_eq!(unavailable["readiness"]["gearingAvailable"], false);
+    assert!(unavailable["recommendation"].is_null());
+    assert!(unavailable["gearing"].is_null());
+    let reason = unavailable["gearingDiagnostics"]["reason"]
+        .as_str()
+        .unwrap();
+    assert!(reason.to_lowercase().contains("target"));
+    assert!(!reason.contains("ratio balance"));
+    let mut impossible = aego_request("Drag");
+    impossible["profile"]["dragFinishSpeedKmh"] = json!(40.0);
+    let unavailable = call(&app, "/api/tuning/workflow", impossible).unwrap();
+    assert_eq!(unavailable["readiness"]["gearingAvailable"], false);
+    assert!(unavailable["recommendation"].is_null());
+    assert!(unavailable["gearing"].is_null());
+    let reason = unavailable["gearingDiagnostics"]["reason"]
+        .as_str()
+        .unwrap();
+    assert!(reason.contains("Drag"));
+    assert!(!reason.contains("ratio balance"));
+}
+
+#[test]
+fn fwd_view_and_profile_roundtrip_keep_explicit_model_inputs() {
+    let mut request = input("FWD");
+    request["schemaVersion"] = json!("tuning-workflow-result/v2");
+    request["profile"]["frontTireWidth"] = json!(205.0);
+    request["profile"]["frontTireAspect"] = json!(50.0);
+    request["profile"]["frontTireRim"] = json!(16.0);
+    request["profile"]["rearTireWidth"] = json!(355.0);
+    request["profile"]["rearTireAspect"] = json!(25.0);
+    request["profile"]["rearTireRim"] = json!(22.0);
+    let result = calculate(request.clone(), "FWD");
+    assert_eq!(result["gearingView"]["drivenTireAxle"], "front");
+    let radius = (205.0 * 0.5 * 2.0 + 16.0 * 25.4) / 2000.0;
+    assert!((result["gearingView"]["tireRadiusM"].as_f64().unwrap() - radius).abs() < 1e-12);
+    let raw = json!({"driftWorkingTarget":{"mainGear":3,"targetRpm":4000,"wheelSpeedKmh":80,"source":"user-target"},
+        "rallyObservedBounds":{"source":"user-observed","finalDrive":{"min":2.0,"max":6.0,"step":0.01},"gears":[]}});
+    let normalized = fh6_backend::tuning::profile::normalize(&raw);
+    assert_eq!(normalized["driftWorkingTarget"], raw["driftWorkingTarget"]);
+    assert_eq!(
+        normalized["rallyObservedBounds"],
+        raw["rallyObservedBounds"]
+    );
+}
+
+#[test]
+fn cleared_optional_drag_inputs_survive_profile_merge_and_restart() {
+    let temp = tempfile::tempdir().unwrap();
+    let app = App::new(temp.path()).unwrap();
+    save_engine(&app);
+    let mut request = aego_request("Drag");
+    let mut profile = request["profile"].clone();
+    // The shipped car profile has induction; this capture's engine key explicitly has null.
+    profile["induction"] = Value::Null;
+    profile["driftWorkingTarget"] =
+        json!({"mainGear":3,"targetRpm":4000,"wheelSpeedKmh":80,"source":"user-target"});
+    call(&app, "/api/car_params/1435", profile).unwrap();
+    // Omitted optional keys deliberately preserve old values in the existing PATCH-like API.
+    call(&app, "/api/car_params/1435", json!({})).unwrap();
+    assert_eq!(
+        app.config.car_params("1435").unwrap()["dragFinishSpeedProvenance"],
+        "manual"
+    );
+    call(
+        &app,
+        "/api/car_params/1435",
+        json!({"dragFinishSpeedKmh":null,"dragFinishSpeedProvenance":null,
+        "driftWorkingTarget":{"mainGear":3,"source":"user-target"}}),
+    )
+    .unwrap();
+    drop(app);
+    let app = App::new(temp.path()).unwrap();
+    let saved = app.config.car_params("1435").unwrap();
+    assert!(saved["dragFinishSpeedKmh"].is_null());
+    assert!(saved["dragFinishSpeedProvenance"].is_null());
+    assert!(saved["driftWorkingTarget"]["targetRpm"].is_null());
+    assert!(saved["driftWorkingTarget"]["wheelSpeedKmh"].is_null());
+    let normalized = fh6_backend::tuning::profile::normalize(&saved);
+    assert!(normalized["dragFinishSpeedKmh"].is_null());
+    assert!(normalized["dragFinishSpeedProvenance"].is_null());
+    assert_eq!(
+        json!([
+            "1435",
+            saved["drivetrain"],
+            saved["induction"],
+            saved["maxHp"],
+            saved["maxTorque"]
+        ]),
+        json!(["1435", "AWD", null, 75, 1]),
+        "Saving and clearing finish targets must retain the capture's raw engine dependency tuple"
+    );
+    // Retain this capture's exact raw engine context; UI defaults select NA before capture.
+    request["profile"] = saved;
+    let result = call(&app, "/api/tuning/workflow", request).unwrap();
+    assert_eq!(
+        result["gearingDiagnostics"]["targetSource"],
+        "inherited-drag-engineering-prior"
+    );
+}
+
+#[test]
 fn current_chassis_recommendations_replay_and_reject_version_or_diagnostic_forgery() {
     let temp = tempfile::tempdir().unwrap();
     let app = App::new(temp.path()).unwrap();
@@ -104,7 +475,7 @@ fn current_chassis_recommendations_replay_and_reject_version_or_diagnostic_forge
     request["profile"]["aeroBalance"] = json!(0.4);
     let out = call(&app, "/api/tuning/workflow", request.clone()).unwrap();
     let rec = &out["recommendation"];
-    assert_eq!(rec["formulaVersion"], "rust/ice-measured-workflow-v3");
+    assert_eq!(rec["formulaVersion"], "rust/ice-measured-workflow-v4");
     assert_eq!(
         rec["inputSnapshot"]["chassisModelVersion"],
         "rust/chassis-load-baseline/v1"
@@ -261,7 +632,7 @@ fn qualified_capture_overrides_client_peaks_and_unsupported_gearing_is_not_ready
     assert_eq!(a["readiness"]["gearingAvailable"], true);
     assert_eq!(
         a["recommendation"]["formulaVersion"],
-        "rust/ice-measured-workflow-v2"
+        "rust/ice-measured-workflow-v4"
     );
     r["engine"] = json!({"engineMaxRpm":1,"peakPowerRpm":1,"peakTorqueRpm":1,"peakTorqueNm":1});
     let b = calculate(r.clone(), "AWD");
@@ -481,36 +852,39 @@ fn mcp_and_offline_cli_use_same_qualified_owner() {
         let temp = tempfile::tempdir().unwrap();
         let app = App::new(temp.path()).unwrap();
         save_engine(&app);
-        let mut request = saved_request();
-        request["schemaVersion"] = json!(schema);
-        let expected = call(&app, "/api/tuning/workflow", request.clone()).unwrap();
-        let mcp=McpServer::default().handle(&app,&json!({"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"calculate_tuning_workflow","arguments":request}})).unwrap().unwrap();
-        let out: Value =
-            serde_json::from_str(mcp["result"]["content"][0]["text"].as_str().unwrap()).unwrap();
-        assert_eq!(out, expected);
-        let output = Command::new(env!("CARGO_BIN_EXE_fh6-agent"))
-            .args([
-                "solve",
-                "workflow",
-                "--args",
-                &request.to_string(),
-                "--data-dir",
-                temp.path().to_str().unwrap(),
-                "--backend-url",
-                "http://127.0.0.1:1",
-                "--json",
-            ])
-            .output()
-            .unwrap();
-        assert!(
-            output.status.success(),
-            "{}",
-            String::from_utf8_lossy(&output.stdout)
-        );
-        assert_eq!(
-            serde_json::from_slice::<Value>(&output.stdout).unwrap(),
-            expected
-        );
+        for goal in ["Road", "Rally", "Drift", "Drag"] {
+            let mut request = aego_request(goal);
+            request["schemaVersion"] = json!(schema);
+            let expected = call(&app, "/api/tuning/workflow", request.clone()).unwrap();
+            let mcp=McpServer::default().handle(&app,&json!({"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"calculate_tuning_workflow","arguments":request}})).unwrap().unwrap();
+            let out: Value =
+                serde_json::from_str(mcp["result"]["content"][0]["text"].as_str().unwrap())
+                    .unwrap();
+            assert_eq!(out, expected);
+            let output = Command::new(env!("CARGO_BIN_EXE_fh6-agent"))
+                .args([
+                    "solve",
+                    "workflow",
+                    "--args",
+                    &request.to_string(),
+                    "--data-dir",
+                    temp.path().to_str().unwrap(),
+                    "--backend-url",
+                    "http://127.0.0.1:1",
+                    "--json",
+                ])
+                .output()
+                .unwrap();
+            assert!(
+                output.status.success(),
+                "{}",
+                String::from_utf8_lossy(&output.stdout)
+            );
+            assert_eq!(
+                serde_json::from_slice::<Value>(&output.stdout).unwrap(),
+                expected
+            );
+        }
     }
 }
 
@@ -637,128 +1011,6 @@ fn ev_desktop_projection_requires_observed_steering_for_qualification() {
 }
 
 #[test]
-fn road_model_versions_validate_with_their_own_owner_and_do_not_rewrite_history() {
-    use fh6_backend::tuning::{gearing::calculate_aego_gearing_v2, RaceGoal, TuningCarParams};
-    let temp = tempfile::tempdir().unwrap();
-    let app = App::new(temp.path()).unwrap();
-    save_engine(&app);
-    // Synthetic draft geometry isolates model versioning; the engine capture stays unchanged.
-    let mut request = saved_request();
-    request["profile"]["weight"] = json!(200);
-    request["inputSnapshot"]["gearingModelVersion"] = json!("caller-cannot-select-model");
-    let current =
-        call(&app, "/api/tuning/workflow", request.clone()).unwrap()["recommendation"].clone();
-    assert_eq!(current["formulaVersion"], "rust/ice-measured-workflow-v2");
-    assert_eq!(
-        current["inputSnapshot"]["gearingModelVersion"],
-        "aego-road-launch-envelope/v3"
-    );
-    assert!(current["inputSnapshot"]["roadLaunch"]["shiftLandingRpmsAtLimit"].is_array());
-    let mut p: TuningCarParams = serde_json::from_value(request["profile"].clone()).unwrap();
-    let engine = proof("AWD").engine().unwrap();
-    p.max_hp_rpm = Some(engine.peak_power_rpm);
-    p.max_torque_rpm = Some(engine.peak_torque_rpm);
-    p.max_torque = engine.peak_torque_nm;
-    let old_gearing = calculate_aego_gearing_v2(RaceGoal::Road, 6, &p, engine.engine_max_rpm, None);
-    assert_ne!(old_gearing.unsupported, Some(true));
-    let mut historical = current.clone();
-    historical["formulaVersion"] = json!("rust/ice-measured-workflow-v1");
-    historical["inputSnapshot"]["gearingModelVersion"] = json!("aego-road-joint/v2");
-    historical["inputSnapshot"]
-        .as_object_mut()
-        .unwrap()
-        .remove("roadLaunch");
-    historical["fields"]["gearing.finalDrive"]["value"] = json!(old_gearing.final_drive);
-    for (i, g) in old_gearing.gears.iter().enumerate() {
-        historical["fields"][format!("gearing.gear{}", i + 1)]["value"] = json!(g);
-    }
-    assert_ne!(historical["fields"], current["fields"]);
-    let mut forged_history = historical.clone();
-    forged_history["inputSnapshot"]["gearingModelVersion"] = json!("aego-road-launch-envelope/v3");
-    forged_history["inputSnapshot"]["roadLaunch"] = json!({"selectedTotalRatio":999});
-    assert!(
-        app.tuning_evidence
-            .verify_recommendation(&forged_history, None)
-            .is_err(),
-        "historical v1 must reject caller-supplied v3 model metadata"
-    );
-    forged_history["inputSnapshot"]["gearingModelVersion"] = json!("aego-road-joint/v2");
-    assert!(app
-        .tuning_evidence
-        .verify_recommendation(&forged_history, None)
-        .is_err());
-    forged_history["inputSnapshot"]
-        .as_object_mut()
-        .unwrap()
-        .remove("roadLaunch");
-    forged_history["inputSnapshot"]["gearingModelVersion"] = json!("unknown-model");
-    assert!(app
-        .tuning_evidence
-        .verify_recommendation(&forged_history, None)
-        .is_err());
-    let mut unlabeled_history = historical.clone();
-    unlabeled_history["inputSnapshot"]
-        .as_object_mut()
-        .unwrap()
-        .remove("gearingModelVersion");
-    app.tuning_evidence
-        .verify_recommendation(&unlabeled_history, None)
-        .unwrap();
-    let saved = call(
-        &app,
-        "/api/road/compatibility",
-        json!({"discipline":"Drag","recommendation":historical}),
-    )
-    .unwrap();
-    assert_eq!(saved["recommendation"], historical);
-    assert!(call(
-        &app,
-        "/api/road/compatibility",
-        json!({"discipline":"Drag","recommendation":current})
-    )
-    .is_ok());
-    let mut relabeled = historical.clone();
-    relabeled["formulaVersion"] = json!("rust/ice-measured-workflow-v2");
-    assert!(app
-        .tuning_evidence
-        .verify_recommendation(&relabeled, None)
-        .is_err());
-    let mut altered = current.clone();
-    altered["inputSnapshot"]["roadLaunch"]["selectedTotalRatio"] = json!(999);
-    assert!(app
-        .tuning_evidence
-        .verify_recommendation(&altered, None)
-        .is_err());
-    let mut other_request = request.clone();
-    other_request["goal"] = json!("Rally");
-    other_request["inputSnapshot"]["roadLaunch"] = json!({"selectedTotalRatio":999});
-    let other =
-        call(&app, "/api/tuning/workflow", other_request).unwrap()["recommendation"].clone();
-    assert!(other.is_object());
-    assert!(other["inputSnapshot"].get("gearingModelVersion").is_none());
-    assert!(other["inputSnapshot"].get("roadLaunch").is_none());
-    app.tuning_evidence
-        .verify_recommendation(&other, None)
-        .unwrap();
-    let mut forged_other = other.clone();
-    forged_other["inputSnapshot"]["roadLaunch"] = json!({"selectedTotalRatio":999});
-    assert!(app
-        .tuning_evidence
-        .verify_recommendation(&forged_other, None)
-        .is_err());
-    drop(app);
-    let restarted = App::new(temp.path()).unwrap();
-    restarted
-        .tuning_evidence
-        .verify_recommendation(&historical, None)
-        .unwrap();
-    restarted
-        .tuning_evidence
-        .verify_recommendation(&current, None)
-        .unwrap();
-}
-
-#[test]
 fn ratio_balance_replays_authoritative_base_and_rejects_tampering() {
     let temp = tempfile::tempdir().unwrap();
     let app = App::new(temp.path()).unwrap();
@@ -881,4 +1133,45 @@ fn ratio_balance_replays_authoritative_base_and_rejects_tampering() {
     let invalidated = call(&recovered, "/api/tuning/workflow", request).unwrap();
     assert!(invalidated["recommendation"].is_null());
     assert_eq!(invalidated["ratioBalance"]["status"], "unavailable");
+}
+
+#[test]
+fn drag_candidate_uses_qualified_workflow_profile_finish_even_without_secondary_correction() {
+    use fh6_backend::tuning::workflow::measured_drag_candidate;
+    let mut raw = input("AWD");
+    raw["goal"] = json!("Drag");
+    for (key, value) in [
+        ("rearTireWidth", 245.0),
+        ("rearTireAspect", 40.0),
+        ("rearTireRim", 18.0),
+    ] {
+        raw["profile"][key] = json!(value);
+    }
+    raw["profile"]["dragFinishSpeedKmh"] = json!(40.0);
+    raw["profile"]["dragFinishSpeedProvenance"] = json!("manual");
+    let request: WorkflowRequest = serde_json::from_value(raw.clone()).unwrap();
+    let candidate = measured_drag_candidate(&request, proof("AWD")).unwrap();
+    assert_eq!(candidate.gearing.unsupported, Some(true));
+    assert_eq!(candidate.diagnostics["targetSpeedKmh"], 40.0);
+    assert_eq!(candidate.diagnostics["finishInputEntry"], "profile");
+    raw["profile"]["dragFinishSpeedKmh"] = json!(250.0);
+    let request: WorkflowRequest = serde_json::from_value(raw.clone()).unwrap();
+    let candidate = measured_drag_candidate(&request, proof("AWD")).unwrap();
+    assert_ne!(
+        candidate.gearing.unsupported,
+        Some(true),
+        "{}",
+        candidate.diagnostics
+    );
+    raw["engine"] = json!({"engineMaxRpm":1,"peakPowerRpm":1,"peakTorqueRpm":1,"peakTorqueNm":1});
+    let forged: WorkflowRequest = serde_json::from_value(raw.clone()).unwrap();
+    assert_eq!(
+        measured_drag_candidate(&forged, proof("AWD"))
+            .unwrap()
+            .gearing,
+        candidate.gearing
+    );
+    raw["profile"]["maxHp"] = json!(9999);
+    let other_engine: WorkflowRequest = serde_json::from_value(raw).unwrap();
+    assert!(measured_drag_candidate(&other_engine, proof("AWD")).is_err());
 }

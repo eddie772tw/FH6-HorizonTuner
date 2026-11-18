@@ -1,0 +1,42 @@
+{
+  "date": "2026-11-12T09:42:26.726Z",
+  "baseCommit": "2c72bed878b84d40ba47ec5c41edaa16fa9157ce",
+  "command": "cargo test --locked --manifest-path backend-rust/Cargo.toml --test model_retirement_contract --test agent_cli_contract --test mcp_contract -j 2",
+  "passed": 10,
+  "failed": 0,
+  "existingDangerSignCases": 108,
+  "method": "Tests ran before deleting transitional suites; final surviving contracts and builds are reported in the PR. Hashes identify the product source at this proof stage, not a claim that later cleanup kept every file byte-identical.",
+  "checks": [
+    "test retired_commands_never_calculate_or_save_a_preset ... ok",
+    "test offline_metadata_and_unverified_presets_still_work ... ok",
+    "test tool_errors_and_retired_solvers_are_json_contracts ... ok",
+    "test initialize_and_tool_registry_match_json_rpc_contract ... ok",
+    "test python_golden_fixture_covers_every_registered_tool ... ok",
+    "test mcp_reads_real_car_names_and_api_written_presets_without_cross_car_fallback ... ok",
+    "test existing_danger_sign_values_are_unchanged_without_a_fifth_model ... ok",
+    "test archived_workflows_cannot_start_runs_and_experimental_endpoint_is_retired ... ok",
+    "test retired_identities_cannot_select_a_solver_or_qualify_saved_values ... ok",
+    "test archives_preserve_original_records_and_database_across_reads_and_restart ... ok"
+  ],
+  "productSourceHashes": {
+    "backend-rust/src/tuning/aego_model.rs": "a2e36eb29e4ee0ef547c3ee90cf0e82936545dbcb56af7153499a21db17a3230",
+    "backend-rust/src/tuning/archive.rs": "ebfaded9c6e1efa7bfcd3e27a354acd595a5f147ffe00f2cca3fcc6f0a74d5ad",
+    "backend-rust/src/tuning/gearing/mod.rs": "92eed4f7c50e96231d7fb6c17fd8490803af84bdbf671387691ad4feac6adc91",
+    "backend-rust/src/tuning/gearing/models.rs": "0b11649c5a24f71c2e5f37ac7b80819e2a4109b88188e4cd01373487294291c6",
+    "backend-rust/src/tuning/evidence.rs": "f68600b1207fd846f714788f30f0833b6259d50d80ca3829a66cf98288744650",
+    "backend-rust/src/tuning/workflow.rs": "47e65c8cb71377d0e63ad37315f6afe518b83799e241b794e28c647ad1e59eb2",
+    "backend-rust/src/tuning/api.rs": "1f4619a714e902564c320903cd77b40aa425d98a2fc40b6d879a9c526b9ede73",
+    "backend-rust/src/agent_cli.rs": "804bcf3037a5c1910f053d9f47fe8adfdd41e67e5f85bcf6236e8031404a1004",
+    "backend-rust/src/agent_cli/options.rs": "0e0a3c1c69c449e0e04a72890cbd03ee4e0b21a14cf3f2f240588472a93d4bc9",
+    "backend-rust/src/mcp/tools.rs": "340b2a24ded26271bf32d01962c060e141ae0e4867f115bbf2f17247f122025e",
+    "backend-rust/src/mcp/service.rs": "8f7ef09b4bb16e538f8154dd354d4bdb353adac6b0079973245905e379883589",
+    "backend-rust/src/road/service.rs": "ea2ba302b71de3b4ef214ae2d214e08cf10d413814acd7001cdc23d3fcd3dae9",
+    "backend-rust/src/app.rs": "97499288b9669f0be6c54cf1a31eb943b7090446d0b4a34b1fd49af751bf6d84"
+  },
+  "structuralEvidence": [
+    "Only four current AEGO enum variants; retired IDs are non-executable archive metadata",
+    "TS frozen directory and Rust legacy CLI/MCP/experimental/ICE solver implementations deleted",
+    "Legacy command and cached MCP calls return errors without calculation or preset writes",
+    "Archive reads and restart preserve original records and database bytes"
+  ]
+}

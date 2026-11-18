@@ -44,6 +44,6 @@ Race 與 Road 的錄製 writer 維持 create → points → finalize 順序，�
 
 後端、MCP 及 Agent CLI 均已改用 Rust；`backend/` 只保留車庫資源與既有資料目錄。Python requirements 僅供選用維護與發行工具，不含 FastAPI、SoundCard、WinRT、NumPy 或 PyInstaller。驗證與已修正差異詳見 [接替紀錄](parity-hardening.md)。
 
-CLI 的 `tuning-dev/v1` 相容輸出在 `src/tuning/legacy_cli.rs`，MCP 的快速底盤求解器在 `src/mcp/service.rs`；正式調校核心仍是 `src/tuning/chassis.rs`／`gearing.rs`。既有職責差異列於 [enhancement #423](https://github.com/eddie772tw/FH6-HorizonTuner/issues/423)，此次保留各自有效輸出，不靜默混用公式。
+正式調校入口為 `src/tuning/workflow.rs`，CLI／MCP 共用同一 Rust owner。舊 CLI／MCP／Developer Tuning 公式已依 #658 移除，歷史推薦改為[唯讀封存](../tuning/model-retirement.md)，不保留第二個 solver。
 
 建置使用 Cargo.lock，版本由 Tauri manifest 驗證，資源由 build.rs 嵌入。此變更移除 Python 打包步驟；沒有以這些測試宣稱特定百分比的效能提升。

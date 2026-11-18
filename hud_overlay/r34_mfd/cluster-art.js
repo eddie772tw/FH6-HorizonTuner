@@ -18,7 +18,7 @@
         } else {
             // SVG centers the complete visible row, rather than unequal fixed slots.
             s += '<text x="108" y="' + geometry.baseline + '" text-anchor="middle" xml:space="preserve" id="r34SpeedRow">';
-            s += '<tspan id="r34GearGroup"><tspan>G</tspan><tspan id="r34Gear">—</tspan></tspan>';
+            s += '<tspan id="r34GearGroup"><tspan id="r34GearPrefix">G</tspan><tspan id="r34Gear">—</tspan></tspan>';
             s += '<tspan id="r34LcdDivider"> </tspan><tspan id="r34DigitalSpeedGroup">';
             s += '<tspan id="r34DigitalSpeed">N/A</tspan><tspan> </tspan><tspan id="r34DigitalSpeedUnit">kmh</tspan></tspan></text>';
         }

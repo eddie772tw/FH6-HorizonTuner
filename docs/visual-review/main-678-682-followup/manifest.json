@@ -1,0 +1,166 @@
+{
+  "date": "2026-11-17",
+  "timezone": "Asia/Taipei",
+  "baseCommit": "8d36b5991e24983186fc1d5278764299c67c423a",
+  "revisionNote": "baseCommit 加上本次修復的未提交工作樹；畫面擷取後僅新增 sidecar 鎖與文件，介面程式碼未變。",
+  "productBlobs": {
+    "frontend/src/features/overlay_control/OverlayView.tsx": "6db07dd41bcd395d7d8e05fc96cffa2598e5f0b4",
+    "frontend/src/features/overlay_control/panels/HudGeneralPanel.tsx": "113c27ec3f2201820913659301fb9c7303a4730e",
+    "frontend/src/features/analysis/AnalysisSessionToolbar.tsx": "e4f59ad52988eed8131db87997c6517a5ad9c982",
+    "hud_overlay/shared/telemetry-cards/corner-card.js": "ea908715ba2bbfd144af1b8ab79301411806a5f2",
+    "frontend/src-tauri/src/lib.rs": "2c8a75a3eb1438e8ea4bebe238bc38fd49a4c96f",
+    "backend-rust/src/tuning/chassis.rs": "3108bf3ff5dc7a004769e7b651c34d8e2a951bc9"
+  },
+  "browser": "Chromium 151.0.7922.173 built on Debian GNU/Linux 13 (trixie)",
+  "app": {
+    "source": "FH6_PLATFORM=windows 的 frontend/dist，正式 AppShell/providers，真實 lang 字典；API 與 WS 使用無敏感資料 fixture。",
+    "captureScript": "capture-app.mjs",
+    "cases": [
+      {
+        "core": "default",
+        "mode": "light",
+        "language": "en-us",
+        "width": 1280,
+        "label": "Lap 1 (Unknown | Max: Unknown)",
+        "bounds": {
+          "width": 1280,
+          "scrollWidth": 1280
+        },
+        "errors": []
+      },
+      {
+        "core": "default",
+        "mode": "dark",
+        "language": "zh-tw",
+        "width": 320,
+        "label": "第 1 圈 (未知 | 最高: 未知)",
+        "bounds": {
+          "width": 320,
+          "scrollWidth": 320
+        },
+        "errors": []
+      },
+      {
+        "core": "swiss",
+        "mode": "light",
+        "language": "zh-tw",
+        "width": 1280,
+        "label": "第 1 圈 (未知 | 最高: 未知)",
+        "bounds": {
+          "width": 1280,
+          "scrollWidth": 1280
+        },
+        "errors": []
+      },
+      {
+        "core": "swiss",
+        "mode": "dark",
+        "language": "ja-jp",
+        "width": 1280,
+        "label": "ラップ 1 (未知 | 最高: 未知)",
+        "bounds": {
+          "width": 1280,
+          "scrollWidth": 1280
+        },
+        "errors": []
+      },
+      {
+        "core": "rhine-lab",
+        "mode": "light",
+        "language": "ja-jp",
+        "width": 1280,
+        "label": "ラップ 1 (未知 | 最高: 未知)",
+        "bounds": {
+          "width": 1280,
+          "scrollWidth": 1280
+        },
+        "errors": []
+      },
+      {
+        "core": "rhine-lab",
+        "mode": "dark",
+        "language": "en-us",
+        "width": 1280,
+        "label": "Lap 1 (Unknown | Max: Unknown)",
+        "bounds": {
+          "width": 1280,
+          "scrollWidth": 1280
+        },
+        "errors": []
+      }
+    ],
+    "checks": [
+      "確認群組外 Escape 不取消重設",
+      "取消後焦點回復",
+      "儲存中鎖定重複重設",
+      "POST 失敗保留確認，成功才完成",
+      "零圈時與負車速顯示 Unknown／未知",
+      "三套 core 日夜模式與三語系，包含 320px 視窗",
+      "六組均無 pageerror 或水平溢出"
+    ]
+  },
+  "hud": {
+    "source": "實際 createTelemetryCardsManager 與 renderCorners，人工 150 筆懸吊行程資料，深色中性背景 #0b111b。",
+    "captureScript": "capture-hud.mjs",
+    "cases": [
+      {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1,
+        "canvas": {
+          "width": 82,
+          "height": 76,
+          "clientWidth": 82,
+          "clientHeight": 76
+        },
+        "box": {
+          "x": 93.07247924804688,
+          "y": 140.390625,
+          "width": 97.1875,
+          "height": 120.78125
+        }
+      },
+      {
+        "width": 640,
+        "height": 180,
+        "dpr": 1,
+        "canvas": {
+          "width": 10,
+          "height": 19,
+          "clientWidth": 10,
+          "clientHeight": 19
+        },
+        "box": {
+          "x": 116.18467712402344,
+          "y": 53.328125,
+          "width": 24.296875,
+          "height": 64.078125
+        }
+      },
+      {
+        "width": 640,
+        "height": 180,
+        "dpr": 2,
+        "canvas": {
+          "width": 20,
+          "height": 38,
+          "clientWidth": 10,
+          "clientHeight": 19
+        },
+        "box": {
+          "x": 116.18467712402344,
+          "y": 53.328125,
+          "width": 24.296875,
+          "height": 64.078125
+        }
+      }
+    ],
+    "scope": "tcSuspBlockFL 元素裁切；640x180 為壓縮畫布的極端測試，保留原始小尺寸與文字裁切，不代表完整 HUD 小視窗排版驗收。"
+  },
+  "limitations": [
+    "未驗證 Windows 原生 overlay、遊戲、NVDA/Narrator",
+    "未覆蓋三個代表 core 以外的其他 core",
+    "Tauri 完整 Cargo 測試受缺少 GTK/WebKit 開發庫限制",
+    "Windows 鎖與啟動案例僅完成 x86_64-pc-windows-gnu metadata 型別檢查，未在 Windows 執行"
+  ]
+}

@@ -1,3 +1,5 @@
+import { RecommendationArchive } from './components/RecommendationArchive';
+import TuningTelemetryCaptureView from './components/TuningTelemetryCaptureView';
 import { RoadWorkflowView } from '../road/RoadWorkflowView';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useCarParams } from '../../context/CarParamsContext';
@@ -27,6 +29,7 @@ export function TuningViewContent({ unitPreference, onUnitPreferenceChange }: {
   const { t } = useSettings();
   const session = useTuneSession();
   const [showUnits, setShowUnits] = useState(false);
+  const [showCapture, setShowCapture] = useState(false);
   const [navigating, setNavigating] = useState(false);
   const navigationLock = useRef(false);
   const navigationSequence = useRef(0);
@@ -112,6 +115,9 @@ export function TuningViewContent({ unitPreference, onUnitPreferenceChange }: {
         {!reviewHistory && session.calculationStatus === 'ready' && <WorkflowGuide forwardBlocked={goalPending} busy={operationPending} readiness={readiness} currentStep={currentStep} openStep={openStep} />}
       </div>
     </header>
+    <RecommendationArchive />
+    {!reviewHistory && currentStep === 3 && !showCapture && <button className="btn btn-outline-secondary align-self-start" disabled={operationPending} onClick={() => setShowCapture(true)}>{t('Open telemetry capture')}</button>}
+    {!reviewHistory && currentStep === 3 && showCapture && <TuningTelemetryCaptureView t={t} onBack={() => setShowCapture(false)} />}
     {!reviewHistory && currentStep === 1 && <Step1GoalSetup measuredEngineInputs selectedRaceGoal={session.baseline.goal} setSelectedRaceGoal={session.baseline.setDraftGoal} season={season} setSeason={session.workflow.setSeason}
       carParams={profile} updateParam={(key, value) => {
         const updated = profile && updateWorkflowProfile(liveCarParams, key, value);
@@ -122,7 +128,7 @@ export function TuningViewContent({ unitPreference, onUnitPreferenceChange }: {
     {!reviewHistory && [2, 4].includes(currentStep) && session.calculationStatus !== 'ready' && <div className="alert alert-info" role="status">{t(session.calculationStatus === 'error' ? 'Tuning calculation is unavailable. Retrying…' : 'Calculating tuning results…')}</div>}
     {!reviewHistory && currentStep === 2 && session.calculationStatus === 'ready' && <Step2ChassisTuner selectedRaceGoal={goal} season={season} carParams={profile}
       chassis={chassis} alignment={alignment} saving={operationPending} saveCarParams={() => saveAndAct(undefined, true)} />}
-    {!reviewHistory && currentStep === 3 && (usesCvt(profile) ? <CvtFoundationPanel result={session.result?.cvt} t={t} evidenceSession={session.cvtEvidence} /> : profile?.isElectric
+    {!reviewHistory && currentStep === 3 && !showCapture && (usesCvt(profile) ? <CvtFoundationPanel result={session.result?.cvt} t={t} evidenceSession={session.cvtEvidence} /> : profile?.isElectric
       ? <EvPowertrainStep key={JSON.stringify([carId, selectionGeneration])} enabled={readiness.engineInputs} onBusyChange={reportBusy} />
       : <EngineDataStep key={JSON.stringify([carId, selectionGeneration, session.identityGeneration, profile])} carId={carId} profile={profile} engine={engine} gearing={gearing && !('model' in gearing) ? gearing : null} enabled={readiness.engineInputs} />)}
     {!reviewHistory && currentStep === 4 && session.calculationStatus === 'ready' && <SetupVerificationStep key={JSON.stringify([carId, selectionGeneration, goal])} goal={goal} carId={carId} recommendation={session.result?.recommendation ?? null} onBusyChange={reportBusy} />}

@@ -521,18 +521,6 @@ fn explicit_mode_and_capabilities_cannot_enter_ice_or_ev_models() {
     let old = tuning::calculate_aego_gearing(tuning::RaceGoal::Road, 6, &profile, 8000.0, None);
     assert_eq!(old.unsupported, Some(true));
     assert!(old.gears.is_empty());
-    let dev = tuning::developer::calculate(
-        &json!({"car":synthetic()["profile"],"raceGoal":"Road","surface":"tarmac"}),
-    )
-    .unwrap();
-    assert_eq!(dev["gearing"]["unsupported"], true);
-    let capability = tuning::capabilities::contract(&synthetic()["profile"]);
-    assert!(capability["controls"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .filter(|c| c["section"] == "gearing")
-        .all(|c| c["unlocked"] == false));
 }
 #[test]
 fn missing_unknown_sources_and_wrong_modes_are_diagnosed_without_defaults() {

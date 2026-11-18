@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useId, useRef, useState } from "react";
 import { getRuntimeCapabilities } from '../../services/runtimeCapabilities';
 import type { SavedSessionHeader, LapSummary } from "../../context/TelemetryRecorderContext";
 
@@ -25,9 +25,23 @@ export interface AnalysisSessionToolbarProps {
   readonly onOpenImport: () => void;
   readonly onDownloadTemplate: () => void;
   readonly onOpenChannelMapping?: () => void;
-  readonly onDeleteSession: () => void;
+  readonly onDeleteSession: () => Promise<boolean | void> | boolean | void;
   readonly onCloseMessage: () => void;
   readonly onLatestAnalysis: () => void;
+}
+
+function formatBestLapTime(t: AnalysisSessionToolbarProps["t"], bestLapTime?: number): string {
+  return bestLapTime && Number.isFinite(bestLapTime) && bestLapTime > 0
+    ? `${bestLapTime.toFixed(2)}s`
+    : t("Unknown");
+}
+
+function formatLapTime(t: AnalysisSessionToolbarProps["t"], lap: LapSummary): string {
+  if (lap.lap_time == null || !Number.isFinite(lap.lap_time) || lap.lap_time <= 0) {
+    return t("Unknown");
+  }
+  const formatted = `${lap.lap_time.toFixed(2)}s`;
+  return lap.is_estimated ? `${t("Estimated")} ${formatted}` : formatted;
 }
 
 const AnalysisSessionToolbar: React.FC<AnalysisSessionToolbarProps> = ({
@@ -56,9 +70,46 @@ const AnalysisSessionToolbar: React.FC<AnalysisSessionToolbarProps> = ({
   onDeleteSession,
   onCloseMessage,
   onLatestAnalysis,
-}) => (
-  <>
-    <div className="workspace-toolbar analysis-toolbar">
+}) => {
+  const deleteId = useId();
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [deleteStatus, setDeleteStatus] = useState("");
+  const deleteInFlight = useRef(false);
+  const toolbarRef = useRef<HTMLDivElement>(null);
+  const sessionSelectRef = useRef<HTMLSelectElement>(null);
+  const deleteBtnRef = useRef<HTMLButtonElement>(null);
+  const cancelDeleteBtnRef = useRef<HTMLButtonElement>(null);
+  const hadConfirmation = useRef(false);
+
+  useEffect(() => { setConfirmDelete(false); setDeleteError(null); }, [selectedFilename, isSavedSelection]);
+  useEffect(() => {
+    if (isDeleting) return;
+    const active = document.activeElement;
+    const ownsFocus = active === document.body || Boolean(toolbarRef.current?.contains(active));
+    if (ownsFocus) {
+      if (confirmDelete) cancelDeleteBtnRef.current?.focus();
+      else if (hadConfirmation.current) (deleteBtnRef.current ?? sessionSelectRef.current)?.focus();
+    }
+    hadConfirmation.current = confirmDelete;
+  }, [confirmDelete, isDeleting]);
+
+  const handleConfirmDelete = async () => {
+    if (deleteInFlight.current) return;
+    deleteInFlight.current = true; setIsDeleting(true); setDeleteStatus(""); setDeleteError(null);
+    try {
+      const ok = await onDeleteSession();
+      setConfirmDelete(false);
+      if (ok === false) setDeleteError(t("Failed to delete session.")); else setDeleteStatus(t("Session deleted."));
+    } catch {
+      setConfirmDelete(false); setDeleteError(t("Failed to delete session."));
+    } finally { deleteInFlight.current = false; setIsDeleting(false); }
+  };
+
+  return (<>
+    <div ref={toolbarRef} className="workspace-toolbar analysis-toolbar">
+      <div className="visually-hidden" role="status" aria-live="polite">{deleteStatus}</div>
       <div className="analysis-toolbar__status" role="status" aria-live="polite">
         <div style={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>
           {t("Status")}: {isRecording ? (
@@ -78,13 +129,16 @@ const AnalysisSessionToolbar: React.FC<AnalysisSessionToolbarProps> = ({
           <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>
             {t("Select Session")}:
           </span>
-          <select className="form-select" value={selectedFilename} onChange={event => onSelectSession(event.target.value)} aria-label={t("Select Session")}>
+          <select ref={sessionSelectRef} className="form-select" value={selectedFilename} onChange={event => onSelectSession(event.target.value)} aria-label={t("Select Session")}>
             {selectedFilename === "local" && <option value="local">{t("MoTeC CSV Import")}</option>}
             <option value="current">{t("Current / Latest Session")}</option>
             {savedSessions.map(session => (
               <option key={session.filename} value={session.filename}>
-                {session.car_name || session.filename} ({session.total_laps ?? 0} Laps | Best: {" "}
-                {session.best_lap_time && session.best_lap_time > 0 ? session.best_lap_time.toFixed(2) : t("Unknown")}s)
+                {t("{car} ({laps} Laps | Best: {best})", {
+                  car: session.car_name || session.filename,
+                  laps: session.total_laps ?? 0,
+                  best: formatBestLapTime(t, session.best_lap_time),
+                })}
               </option>
             ))}
           </select>
@@ -97,7 +151,13 @@ const AnalysisSessionToolbar: React.FC<AnalysisSessionToolbarProps> = ({
               <option value={0}>{t("All Laps")}</option>
               {lapsList.map(lap => (
                 <option key={lap.lap_number} value={lap.lap_number}>
-                  Lap {lap.lap_number} ({lap.is_estimated && `${t("Estimated")} `}{lap.lap_time?.toFixed(2) ?? t("Unknown")}s | Max: {lap.max_speed_kmh?.toFixed(0) ?? t("Unknown")}km/h)
+                  {t("Lap {lap} ({time} | Max: {maxSpeed})", {
+                    lap: lap.lap_number,
+                    time: formatLapTime(t, lap),
+                    maxSpeed: lap.max_speed_kmh != null && Number.isFinite(lap.max_speed_kmh) && lap.max_speed_kmh >= 0
+                      ? `${lap.max_speed_kmh.toFixed(0)} km/h`
+                      : t("Unknown"),
+                  })}
                 </option>
               ))}
             </select>
@@ -111,7 +171,10 @@ const AnalysisSessionToolbar: React.FC<AnalysisSessionToolbarProps> = ({
               <option value={-1}>{t("None")}</option>
               {lapsList.map(lap => (
                 <option key={lap.lap_number} value={lap.lap_number}>
-                  vs Lap {lap.lap_number} ({lap.is_estimated && `${t("Estimated")} `}{lap.lap_time?.toFixed(2) ?? t("Unknown")}s)
+                  {t("vs Lap {lap} ({time})", {
+                    lap: lap.lap_number,
+                    time: formatLapTime(t, lap),
+                  })}
                 </option>
               ))}
             </select>
@@ -175,8 +238,37 @@ const AnalysisSessionToolbar: React.FC<AnalysisSessionToolbarProps> = ({
             {t("Channel Mapping")}
           </button>
         )}
-        {isSavedSelection && <button onClick={onDeleteSession} className="btn btn-outline-danger" aria-label={t("Delete selected session")}>{t("Delete")}</button>}
+        {isSavedSelection && (
+          <button ref={deleteBtnRef} type="button" onClick={() => { setDeleteStatus(""); setDeleteError(null); setConfirmDelete(true); }}
+            disabled={confirmDelete || isDeleting} aria-expanded={confirmDelete} aria-controls={confirmDelete ? `${deleteId}-confirm` : undefined}
+            className="btn btn-outline-danger" aria-label={t("Delete selected session")}>{t("Delete")}</button>
+        )}
       </div>
+      {isSavedSelection && confirmDelete && (
+        <div id={`${deleteId}-confirm`} className="border-top pt-2 d-flex flex-wrap align-items-center justify-content-between gap-2"
+          role="group" aria-labelledby={`${deleteId}-confirm-label`}
+          onKeyDownCapture={event => {
+            if (event.key !== "Escape") return;
+            event.preventDefault(); event.stopPropagation();
+            if (!deleteInFlight.current) setConfirmDelete(false);
+          }}>
+          <p id={`${deleteId}-confirm-label`} className="fs-7 fw-semibold mb-0" style={{ color: "var(--bs-danger-text-emphasis)", overflowWrap: "anywhere" }}>
+            {`${t("Are you sure you want to delete this session?")} (${selectedFilename})`}
+          </p>
+          <div className="d-flex flex-wrap gap-2">
+            <button ref={cancelDeleteBtnRef} type="button" className="btn btn-outline-secondary btn-sm" disabled={isDeleting} onClick={() => setConfirmDelete(false)}>{t("Cancel")}</button>
+            <button type="button" className="btn btn-danger btn-sm fw-bold" disabled={isDeleting} aria-busy={isDeleting} onClick={() => void handleConfirmDelete()}>
+              {isDeleting && <span className="spinner-border spinner-border-sm me-1" aria-hidden="true" />}
+              {t("Delete")}
+            </button>
+          </div>
+        </div>
+      )}
+      {deleteError && (
+        <div className="glass-panel border-danger d-flex justify-content-between align-items-center gap-2" role="alert" style={{ padding: "0.6rem 1rem", fontSize: "0.85rem", color: "var(--bs-danger-text-emphasis)" }}>
+          <span>{deleteError}</span><button type="button" onClick={() => setDeleteError(null)} className="btn-close" aria-label={t("Close")} />
+        </div>
+      )}
     </div>
     {selectedFilename === "local" && <p className="text-muted small">{t("Imported CSV is previewed locally; use the original file in MoTeC.")}</p>}
 
@@ -189,7 +281,7 @@ const AnalysisSessionToolbar: React.FC<AnalysisSessionToolbarProps> = ({
         <button onClick={onCloseMessage} className="btn-close" aria-label={t("Close")} />
       </div>
     )}
-  </>
-);
+  </>);
+};
 
 export default AnalysisSessionToolbar;

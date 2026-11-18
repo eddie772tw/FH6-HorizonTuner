@@ -77,3 +77,23 @@
 **學習 (Learning):** 遙測分析視圖（SessionTrimSummaryCard）直接渲染協議原始字串（如 recording_mode 的 `circuit`、`time_trial`，以及 lap_time_source 的 `game`、`calculated`）並仰賴 CSS（`text-uppercase` / `text-capitalize`）呈現，會導致非英文語系（日文與中文）無法顯示合適賽事術語而暴露大寫英文 raw ID；同時，該卡片之 `Session Analysis & Trimming`、`Lead-in Trim` 等整組鍵值在日文字典（`ja-jp.json`）中完全缺失，使日文使用者面臨整卡英文穿透。此外，統計採樣比例（`trimmed / raw`）若僅以純文字斜線呈現，輔助科技無法獲取完整語意，且組件 Props 將 `t` 窄化為 `(text: string) => string` 會阻礙參數化無障礙標籤的傳入。
 **行動 (Action):** 將模式與計時來源對應為規範化字典鍵（如 `Circuit`, `Time Trial`, `In-Game Timing`, `Calculated Timing`）並移除裝飾性 CSS 大寫；擴展組件 Props `t` 簽名支援可選 params 物件，為有效採樣比例加上具備參數化句子之 `aria-label`（`t("{valid} of {total} samples valid", { valid, total })`）；為 switch 控制項補齊 `role="switch"` 與 `aria-checked`；並完整對齊 `en-us.json`、`zh-tw.json` 與 `ja-jp.json`，消除遙測分析卡片的跨語言不對稱。
 **署名:** Narrator as Antigravity
+
+## 2026-11-14 - Pure Chart Primitives Legend Localization & Memoized Corner Series
+**學習 (Learning):** 遙測詳細圖表元件（`TrendChart` in `TelemetryDetailPrimitives.tsx`）刻意維持與 `SettingsContext` 解耦，導致圖例容器硬編碼 `aria-label="Chart legend"`；同時 `TelemetryDetailPanels.tsx` 雖由父層傳入已在地化之 `corners` 陣列，圖表曲線卻仍使用模組層常數 `FL`/`FR`/`RL`/`RR` 標籤，且 `TrendChart` 的 `[data, lines]` effect 會在 `lines` 參考變更時重置懸停狀態與重繪。此外，`Pitch`、`Roll`、`Yaw` 及四項輪胎趨勢標題亦完全未收錄於三語系字典中。
+**行動 (Action):** 對維持純粹性而不直接訂閱 `SettingsContext` 的圖表基元，應以選擇性 prop（如 `legendLabel?: string`）傳入 `t('Chart legend')`；將傳入 `TrendChart` 的在地化四輪曲線標籤包裹於 `useMemo(..., [corners])`（如 `CornerTrendChart`）以維持高頻重繪時的參考穩定性；並以既有詞彙表（如日文 `スリップアングル` 對應 `Slip Angle`）對齊三語系字典。
+**署名:** Narrator as Antigravity
+
+## 2026-11-15 - Mixed Sentinel Enum Leakage in Debrief Status Badges
+**學習 (Learning):** 領域計算函式（如 `sessionDebriefMath.ts`）常在同一個 `status` / `tendency` 聯集型別中混用可讀標題字串（`Optimal`、`Occasional Bottoming`、`Understeer Biased`）與內部 snake_case 哨兵值（`no_data`）。當 UI 元件（`SessionHealthDebrief`）直接將該欄位傳入 `t(status)` 時，因字典中不存在 `no_data` 鍵值，會在包含英文在內的所有語系介面上直接洩漏原始字面 `no_data`。此外，`Valid Laps` 與 `Total Samples` 僅單邊存在於 `zh-tw.json` 而遺漏於 `en-us.json` / `ja-jp.json`，且四輪溫度網格仍硬編碼英文縮寫 `FL` / `FR` / `RL` / `RR`。
+**行動 (Action):** 審查直接將領域狀態欄位傳給 `t(...)` 的元件時，務必檢查聯集型別中的哨兵值（如 `no_data`）並於 UI 層映射至規範字典鍵（`No Data`）；四輪標籤一律復用既有三語系字典鍵 `Front Left` / `Front Right` / `Rear Left` / `Rear Right` 並以陣列映射消除重複區塊；同時檢查 `zh-tw.json` 已存在但 `en-us.json` 與 `ja-jp.json` 缺漏的單邊鍵值並完整對齊。
+**署名:** Narrator as Antigravity
+
+## 2026-11-17 - Parameterized Select Option Formatting & Unit Suffix Leakage
+**學習 (Learning):** `AnalysisSessionToolbar.tsx` 的賽段與單圈下拉選單（`<option>`）除了直接硬編碼英文標籤（`Laps | Best:`、`Lap ... | Max:`、`vs Lap`）之外，還將時間與車速單位直接拼接在空值回退表達式之後（例如 `${lap.lap_time?.toFixed(2) ?? t("Unknown")}s` 與 `${lap.max_speed_kmh?.toFixed(0) ?? t("Unknown")}km/h`），導致當 `best_lap_time`、`lap_time` 或 `max_speed_kmh` 缺失或為 0 時，各語系介面皆出現「未知s」、「未知km/h」或「Unknowns」等破損字串。
+**行動 (Action):** 抽取下拉選單文字時，應使用完整參數化鍵值（如 `"{car} ({laps} Laps | Best: {best})"`、`"Lap {lap} ({time} | Max: {maxSpeed})"`、`vs Lap {lap} ({time})`），並由純函式先判斷數值有效且有限後才附加單位（`s`、`km/h`），無效時直接回傳純淨的 `t("Unknown")`，防止單位後綴與未翻譯／缺值詞彙錯誤黏連。
+**署名:** Narrator as Antigravity
+
+## 2026-11-18 - Pure Telemetry Health Model Label Leakage in Header Status
+**學習 (Learning):** `telemetryHealth.ts` 的 `deriveTelemetryHealth()` 回傳的 `TelemetryHealth.label` 為純領域英文預設字串（例如 `'Waiting for Data Out'`、`'Data Out receiving'`）。雖然 `DataOutGuide.tsx` 已匯出 `localizeTelemetryHealth(health, t)` 統一依 `health.state` 映射三語系鍵值，但頂層導覽列元件 `AppStatus.tsx` 仍直接將 `health.label` 插入 `aria-label` 與 `title`，導致在 `zh-TW` 與 `ja-JP` 介面上所有頁面的 Data Out 狀態按鈕持續洩漏未翻譯英文；同時其動態連接埠 `MCP Endpoint Notice` 氣泡的四個鍵值僅單邊收錄於 `zh-tw.json` 而遺漏於 `en-us.json` 與 `ja-jp.json`。
+**行動 (Action):** 凡消費 `TelemetryHealth` 顯示狀態標籤或無障礙屬性的元件，應統一呼叫 `localizeTelemetryHealth(health, t).label` 作為單一本地化來源，禁止直接插值原始 `health.label`；並同步檢查單邊存在於 `zh-tw.json` 的動態提示鍵值，完整對齊至 `en-us.json` 與 `ja-jp.json`。
+**署名:** Narrator as Antigravity

@@ -55,6 +55,7 @@ export interface HudConfig extends Partial<StackSt8100Settings> {
   classicJdmDefiTheme?: ClassicJdmDefiTheme;
   r34MfdMode?: R34MfdMode;
   r34ShowCluster?: boolean;
+  r34ShowMfd?: boolean;
   r34Lighting?: R34Lighting;
   auxGaugeFaces?: ('aem' | 'greddy' | 'blitz' | 'defi' | 'speedhut')[];
   auxGaugeMaxPerRow?: number;
@@ -130,6 +131,7 @@ export const DEFAULT_HUD_CONFIG: HudConfig = {
   classicJdmDefiTheme: 'amber',
   r34MfdMode: 'single',
   r34ShowCluster: true,
+  r34ShowMfd: true,
   r34Lighting: 'night',
   auxGaugeFaces: ['aem', 'greddy', 'defi'],
   auxGaugeMaxPerRow: 3,

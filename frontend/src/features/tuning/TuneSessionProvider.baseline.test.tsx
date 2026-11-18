@@ -1,3 +1,5 @@
+// Navigation tests isolate unrelated archive loading/export; the archive has its own contract tests.
+vi.mock('./components/RecommendationArchive', () => ({ RecommendationArchive: () => null }));
 // @vitest-environment jsdom
 import { act, useState } from 'react';
 import { createRoot } from 'react-dom/client';
@@ -9,6 +11,7 @@ import { backendFetch } from '../../services/backend';
 import { TuneSessionProvider, useTuneSession } from './TuneSessionProvider';
 import { TuningViewContent } from './TuningView';
 import type { UnitPreferenceOverride } from '../../utils/gameUnitSettings';
+import { serializeWorkflowProfile } from './tuningWorkflow';
 
 const model = vi.hoisted(() => ({
   carId: '42', loadedCarId: '42', carName: 'Synthetic car', carParams: null as CarParams | null,
@@ -70,7 +73,8 @@ const select = async (selector: string, value: string) => act(async () => {
 });
 const editNumber = async (label: string, value: number) => act(async () => {
   const fieldLabel = [...host.querySelectorAll('label')].find(item => item.textContent?.startsWith(label))!;
-  const element = fieldLabel.closest('.d-flex.flex-column')!.querySelector('input')!;
+  const element = (fieldLabel.htmlFor ? host.querySelector<HTMLInputElement>('#' + fieldLabel.htmlFor)
+    : fieldLabel.closest('.d-flex.flex-column')!.querySelector('input'))!;
   Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(element, String(value));
   element.dispatchEvent(new Event('input', { bubbles: true }));
 });
@@ -232,6 +236,37 @@ it('keeps Drag through parameter edits and initial identity hydration, but reset
 });
 
 // Synthetic transport validates submission/navigation, not Rust numerical calibration.
+it('serializes cleared Drag finish inputs as explicit nulls for profile merge persistence', async () => {
+  await act(async () => root.render(<Harness />));
+  await select('#tuning-draft-goal', 'Drag');
+  await select('[aria-label="Drag finish speed source"]', 'manual');
+  await editNumber('Measured Drag finish speed', 250);
+  expect(model.carParams!.dragFinishSpeedKmh).toBe(250);
+  await act(async () => {
+    const element = host.querySelector<HTMLInputElement>('#step1-drag-finish-speed')!;
+    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(element, '');
+    element.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  await select('[aria-label="Drag finish speed source"]', '');
+  const saved = JSON.parse(serializeWorkflowProfile(model.carParams));
+  expect(saved.dragFinishSpeedKmh).toBeNull();
+  expect(saved.dragFinishSpeedProvenance).toBeNull();
+});
+
+// Synthetic transport validates submission/navigation, not Rust numerical calibration.
+it('retains an explicit Drift operating target through draft goal changes', async () => {
+  await act(async () => root.render(<Harness />));
+  await select('#tuning-draft-goal', 'Drift');
+  await select('#aego-drift-main-gear', '3');
+  await editNumber('Target operating RPM', 4000);
+  await editNumber('Target wheel speed (km/h)', 80);
+  expect(model.carParams!.driftWorkingTarget).toEqual({ source: 'user-target', mainGear: 3, targetRpm: 4000, wheelSpeedKmh: 80 });
+  await select('#tuning-draft-goal', 'Road');
+  await select('#tuning-draft-goal', 'Drift');
+  expect(host.querySelector<HTMLSelectElement>('#aego-drift-main-gear')!.value).toBe('3');
+  expect(model.carParams!.driftWorkingTarget?.wheelSpeedKmh).toBe(80);
+});
+
 const settleWorkflow = async (goal: string) => {
   const matches = pending.filter(item => item.input.goal === goal && item.input.inputSnapshot.baselineCurrent == null);
   const item = matches[matches.length - 1]!;

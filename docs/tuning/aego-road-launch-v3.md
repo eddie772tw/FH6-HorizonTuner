@@ -1,3 +1,5 @@
+> 版本說明：本文保留 #462 的推導與當時調查。現行組合版本為 ICE v4；#658 移除舊 v2 solver 與歷史重算，改為[封存](model-retirement.md)。歷史比較是當時證據，不是現行執行入口。
+
 # Road launch envelope v3：#462 因果與修正
 
 2026-10-01；PR #460。正式 owner 為 Rust `tuning/gearing.rs`。這是有版本的工程啟發式修正，不是已校準起步抓地、最佳換檔或全車款可駕駛性保證。#462 保持開放；合成案例不是回報者的實車資料。
@@ -48,7 +50,7 @@ v1.6 已對 FWD／**顯式** AWD split 套用 traction cap；照抄這兩個分�
 ## 版本、回歸與缺口
 
 - 正式 Road：`aego-road-launch-envelope/v3`、`rust/ice-measured-workflow-v2`。非Road ICE與EV版本／公式不變。
-- `calculate_aego_gearing_v2` 是明確凍結相容 owner；原21 tuning goldens不改值、不改容差，仍測v2。原10 EV goldens不變。v1持久化依凍結v2重組驗證，不用新公式重寫歷史。
+- 舊 v2 owner 已移除。原21 tuning／10 EV goldens不改值或容差；現行底盤與各獨立模型另驗證，舊齒比數字只留歷史資料，不執行回放。
 - `aego_road_launch_v3.json` 是獨立的新模型基線，每例說明變動理由；不是覆蓋舊goldens。新前端僅接受後端結果與版本，不新增TS模型。
 - 2016組合測試涵蓋FWD/RWD/AWD、4–10檔、500–2100kg、80–4000Nm、缺省/0/70/100% AWD分配：1869可行、147模型無解。這是數值壓力矩陣，部分獨立參數組合未必對應真實引擎。
 - Beetle兩個既有齒比goldens、弱引擎與不可行案例不變。Beetle/Pajero原始limiter captures的v4資格／上限不變；Beetle合格峰值帶入既有比較profile後齒比同v2。Pajero沒有完整profile，不補造其實車齒比或宣稱不變。
@@ -148,7 +150,7 @@ Rtop/Rfirst = Π(Gnext/Gcurrent) ≥ (nLow/nShift)^(N−1)
 
 Step1GoalSetup的顯示換算為`2434/2.20462=1104.0451415663472 kg`、`824/0.73756=1117.1972449699008 Nm`。精確物理換算則為1104.04382858 kg、1117.1939894250736 Nm；這點小差異不足以解釋FD差異。名義後輪半徑為0.3457 m，未宣稱是量測滾動半徑。舊CarParamsView殘留lb-ft內部單位註解，但目前沒有production import；本次重播採正式Step 1換算，不混用不可達舊頁面。
 
-已實際執行歷史`cd96d86`與`ca195c7`的原始TS，並用相同輸入驗證目前Rust v2/v3。獨立fixture為`tests/fixtures/aego_road_report_462.json`，唯讀重播命令為`node tests/manual/replay_issue_462.cjs`（Node24+，須有歷史Git物件）。正常測試不生成fixture。所有情境採Road、七速，未指定aero/split/secondary correction，因而使用模型缺省aero=.5、AWD後分配72%；這些不是回報的實際設定。
+已實際執行歷史`cd96d86`與`ca195c7`的原始TS，並用相同輸入驗證目前Rust v2/v3。獨立fixture為`tests/fixtures/aego_road_report_462.json`，當時重播腳本已移至Git歷史；需要考古時請在#657的獨立checkout執行，當前工作樹不保留舊公式執行工具。正常測試不生成fixture。所有情境採Road、七速，未指定aero/split/secondary correction，因而使用模型缺省aero=.5、AWD後分配72%；這些不是回報的實際設定。
 
 | 明示情境（均非量測） | v1.6 TS與目前v3 Rust | v1.7 TS與凍結v2 Rust |
 | --- | --- | --- |

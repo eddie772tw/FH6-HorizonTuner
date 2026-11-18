@@ -2,9 +2,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { createElement } from 'react';
 import { describe, expect, it } from 'vitest';
 import { EngineCalculationStatus } from './EngineCalculationStatus';
-import type { EngineCalculationSummary } from "../../../../test-reference/tuning/features/tuning/engineCalculation";
-import { createTuningMeasurement } from "../../../../test-reference/tuning/features/tuning/tuningMeasurement";
-import { engineCalculationSummary } from "../../../../test-reference/tuning/features/tuning/engineCalculation";
+import type { EngineCalculationSummary } from "../../../domain/tuning/types";
 
 const ready: EngineCalculationSummary = { analysisVersion: 'engine-loaded-sweep/v4',
   observationId: 'test', status: 'ready', reason: 'ready', acceptedMs: 7000,
@@ -16,7 +14,7 @@ const render = (calculation: EngineCalculationSummary | null, unsupported = fals
 describe('engine analysis status', () => {
   it('never labels a missing capture or legacy peak as calculation-ready', () => {
     expect(render(null)).toContain('loading or unavailable');
-    expect(render(engineCalculationSummary(createTuningMeasurement('1435'), 'old'))).toContain('history remains readable');
+    expect(render({ ...ready, status: 'unavailable', reason: 'capture-unavailable' })).toContain('history remains readable');
   });
   it('shows the actionable reason without hiding the original observation', () => {
     const highRpm = render({ ...ready, status: 'collecting', reason: 'rpm-coverage-high' });

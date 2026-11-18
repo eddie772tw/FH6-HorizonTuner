@@ -45,7 +45,7 @@ const OverlayViewContent: React.FC = () => {
   const [showWipHuds, setShowWipHuds] = useState(() => {
     try { return localStorage.getItem('fh6_show_wip_huds') === 'true'; } catch { return false; }
   });
-  const wipForced = Boolean(settings.developer_tuning_enabled || isWipHudQueryEnabled());
+  const wipForced = isWipHudQueryEnabled();
   const isWipActive = showWipHuds || wipForced;
   const handleToggleShowWipHuds = (checked: boolean) => {
     setShowWipHuds(checked);
@@ -152,11 +152,11 @@ const OverlayViewContent: React.FC = () => {
     void refresh();
     if (mountedRef.current) metadata.refresh();
   };
-  const handleResetHudConfig = () => {
-    if (!window.confirm(t('Are you sure you want to reset all HUD settings?'))) return;
-    void replaceConfig({ ...DEFAULT_HUD_CONFIG, enabled: config.enabled });
+  const handleResetHudConfig = async () => {
+    const saved = await replaceConfig({ ...DEFAULT_HUD_CONFIG, enabled: config.enabled });
+    if (!saved) return false;
     sendHudCommand({ type: 'hud:reload' });
-    void refresh();
+    return true;
   };
   const handleElementChange = (key: keyof HudElements, checked: boolean) => {
     const elements: Partial<HudElements> = { [key]: checked };

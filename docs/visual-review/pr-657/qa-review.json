@@ -1,0 +1,900 @@
+{
+  "manifestDate": "2026-11-12T08:08:29.136Z",
+  "manifestSha256": "9f85d537b6c072fb27027c0c08dc6465d2765522dbafcd7b78d4895a1fea5137",
+  "baseCommit": "cab5e23bdc6f54f7b74b60711b48d8ffc3890ed6",
+  "backendSha256": "56ca8f141513fd37773be527b97d8fedf141989c6fdc69f7b848661aaa933c75",
+  "reviewDate": "2026-11-12T08:12:29.165Z",
+  "cases": 29,
+  "companionCases": 10,
+  "imageCount": 84,
+  "sourceFilesVerified": 566,
+  "reviewers": [
+    {
+      "name": "Codex as Codex / pr654_rally",
+      "scope": "1280px desktop excluding Companion",
+      "images": 46,
+      "freshViews": 35,
+      "sameByteReuses": 11
+    },
+    {
+      "name": "Codex as Codex / pr655_drift",
+      "scope": "320px desktop and all Companion",
+      "images": 38,
+      "freshViews": 33,
+      "sameByteReuses": 5
+    }
+  ],
+  "conclusion": "No remaining visual blockers in the reviewed new UI. All images match the final manifest; unchanged byte-identical images reuse an earlier actual view. No game, native device, screen reader or performance acceptance is claimed.",
+  "records": [
+    {
+      "file": "default-dark-zh-tw-1280-drift-feasible-companion-panel.png",
+      "sha256": "a31bd468687a5bca722b78ff72f057503004f5bbd23cbff3ed74426649034725",
+      "reviewer": "Codex as Codex / pr655_drift",
+      "viewed": true,
+      "method": "tools.view_image: final original PNG",
+      "hashStable": true,
+      "issues": [],
+      "notes": [
+        "New model panel title/status/version/source and target/actual/error/RPM readable; neutral wheel-speed tolerance label in zh/ja; no missing glyphs or new-panel overflow."
+      ]
+    },
+    {
+      "file": "default-dark-zh-tw-1280-drift-feasible-companion.png",
+      "sha256": "e3db3a4c4a24de3431491eae57930f2d6e6efea1b964046e8be67e340c2aefe8",
+      "reviewer": "Codex as Codex / pr655_drift",
+      "viewed": true,
+      "method": "tools.view_image: final original PNG",
+      "hashStable": true,
+      "issues": [],
+      "notes": [
+        "New model panel title/status/version/source and target/actual/error/RPM readable; neutral wheel-speed tolerance label in zh/ja; no missing glyphs or new-panel overflow."
+      ]
+    },
+    {
+      "file": "default-dark-zh-tw-1280-drift-feasible-panel.png",
+      "sha256": "c250411d31e18e4cf4ce33a5be1a46af10153d63e9848cf0968cdcb150506d29",
+      "reviewer": "Codex as Codex / pr654_rally",
+      "viewed": true,
+      "method": "reuse-exact-sha256-previously-viewed",
+      "hashStable": true,
+      "issues": []
+    },
+    {
+      "file": "default-dark-zh-tw-1280-drift-feasible-result.png",
+      "sha256": "710d33559016cea775cedd457940cd4573e97fe80f21b2d2f4461cf7aaddb6e8",
+      "reviewer": "Codex as Codex / pr654_rally",
+      "viewed": true,
+      "method": "fresh-view-final-image",
+      "hashStable": true,
+      "issues": []
+    },
+    {
+      "file": "default-dark-zh-tw-1280-drift-feasible-setup.png",
+      "sha256": "c9cc26ef2456534770d1f23e6bdffda8c6c20920daa8fd5f8604a32c79e33415",
+      "reviewer": "Codex as Codex / pr654_rally",
+      "viewed": true,
+      "method": "fresh-view-final-image",
+      "hashStable": true,
+      "issues": []
+    },
+    {
+      "file": "default-dark-zh-tw-320-drift-feasible-panel.png",
+      "sha256": "20d6acf4035736692eb31194706bed44bccb1966b3f62d567f544eec0f6f098d",
+      "reviewer": "Codex as Codex / pr655_drift",
+      "viewed": true,
+      "method": "tools.view_image: final original PNG",
+      "hashStable": true,
+      "issues": [],
+      "notes": [
+        "Model title/status/version visible below sticky header; no app-header contamination in panel crop; neutral wheel-speed tolerance label correct for Drift main gear. Complete panel crop includes final RPM row; viewport context may naturally end before the table."
+      ]
+    },
+    {
+      "file": "default-dark-zh-tw-320-drift-feasible-result.png",
+      "sha256": "504e4dc2f6e4f9a5700ccaf51d095ac66fd3430b487d418424ec17f92b7fcaca",
+      "reviewer": "Codex as Codex / pr655_drift",
+      "viewed": true,
+      "method": "tools.view_image: final original PNG",
+      "hashStable": true,
+      "issues": [],
+      "notes": [
+        "Model title/status/version visible below sticky header; no app-header contamination in panel crop; neutral wheel-speed tolerance label correct for Drift main gear. Complete panel crop includes final RPM row; viewport context may naturally end before the table."
+      ]
+    },
+    {
+      "file": "default-dark-zh-tw-320-drift-feasible-setup.png",
+      "sha256": "c0447c1ec223639701e4252778c3d51b17cf4b5ba6aa39ac06e48d8577d985e2",
+      "reviewer": "Codex as Codex / pr655_drift",
+      "viewed": true,
+      "method": "tools.view_image: final original PNG",
+      "hashStable": true,
+      "issues": [],
+      "notes": [
+        "All three working-target controls and instructions readable; no new-panel clipping or missing Japanese glyphs."
+      ]
+    },
+    {
+      "file": "default-light-en-us-1280-drag-engineering-prior-panel.png",
+      "sha256": "d788e682b755485affb0c1829c5d8b4534866dc6ac1eb78058b56b23413eaeb0",
+      "reviewer": "Codex as Codex / pr654_rally",
+      "viewed": true,
+      "method": "fresh-view-final-image",
+      "hashStable": true,
+      "issues": []
+    },
+    {
+      "file": "default-light-en-us-1280-drag-engineering-prior-result.png",
+      "sha256": "61894affaf71458298899d57d17225fdb008da4fe573434762fbedc89971b3a4",
+      "reviewer": "Codex as Codex / pr654_rally",
+      "viewed": true,
+      "method": "fresh-view-final-image",
+      "hashStable": true,
+      "issues": []
+    },
+    {
+      "file": "default-light-en-us-1280-drag-engineering-prior-setup.png",
+      "sha256": "a0e87bed50ec3b21a51c4c471947b2c053881a3c322eee45a314897d1598f13b",
+      "reviewer": "Codex as Codex / pr654_rally",
+      "viewed": true,
+      "method": "fresh-view-final-image",
+      "hashStable": true,
+      "issues": []
+    },
+    {
+      "file": "default-light-en-us-1280-drag-feasible-panel.png",
+      "sha256": "a75b433eaf078be31cc7f5d200265a1e23eff14570b2b6575f0e0d335fb24046",
+      "reviewer": "Codex as Codex / pr654_rally",
+      "viewed": true,
+      "method": "fresh-view-final-image",
+      "hashStable": true,
+      "issues": []
+    },
+    {
+      "file": "default-light-en-us-1280-drag-feasible-result.png",
+      "sha256": "21449183ca92f547a9e30e06871d2b4ef4a5c52ab57e2f9acf8fa949487496f3",
+      "reviewer": "Codex as Codex / pr654_rally",
+      "viewed": true,
+      "method": "fresh-view-final-image",
+      "hashStable": true,
+      "issues": []
+    },
+    {
+      "file": "default-light-en-us-1280-drag-feasible-setup.png",
+      "sha256": "6153dab8a3919ac5d7b0dd73b1f1eff20a1aabc7e576cd456187acce99d102a8",
+      "reviewer": "Codex as Codex / pr654_rally",
+      "viewed": true,
+      "method": "fresh-view-final-image",
+      "hashStable": true,
+      "issues": []
+    },
+    {
+      "file": "default-light-en-us-1280-drag-infeasible-finish-companion-panel.png",
+      "sha256": "f2eb7fd705ef28b5989f11f72c0d26b442867b197ecef0fbc29524ccf480d10a",
+      "reviewer": "Codex as Codex / pr655_drift",
+      "viewed": true,
+      "method": "tools.view_image: final original PNG",
+      "hashStable": true,
+      "issues": [],
+      "notes": [
+        "Red Unavailable; caller-declared manual40km/h finish and110km/h launch engineering prior sources are distinct; conflict explicit; no applicable FD0/gear table."
+      ]
+    },
+    {
+      "file": "default-light-en-us-1280-drag-infeasible-finish-companion.png",
+      "sha256": "02a68f1d2494527472de7b7caae1ba5f3867f4f24ec4711b94fa73fd49d5a9e4",
+      "reviewer": "Codex as Codex / pr655_drift",
+      "viewed": true,
+      "method": "tools.view_image: final original PNG",
+      "hashStable": true,
+      "issues": [],
+      "notes": [
+        "Red Unavailable; caller-declared manual40km/h finish and110km/h launch engineering prior sources are distinct; conflict explicit; no applicable FD0/gear table."
+      ]
+    },
+    {
+      "file": "default-light-en-us-1280-drag-infeasible-finish-panel.png",
+      "sha256": "ca7f05547407c7736b5ddaac36821ada29d78f5b85cebed3fd93efe2645f0106",
+      "reviewer": "Codex as Codex / pr654_rally",
+      "viewed": true,
+      "method": "fresh-view-final-image",
+      "hashStable": true,
+      "issues": []
+    },
+    {
+      "file": "default-light-en-us-1280-drag-infeasible-finish-result.png",
+      "sha256": "355de9a3da08e0c686e7f76824697f2df55f2c8962f9c09a326a7053f14e2091",
+      "reviewer": "Codex as Codex / pr654_rally",
+      "viewed": true,
+      "method": "fresh-view-final-image",
+      "hashStable": true,
+      "issues": []
+    },
+    {
+      "file": "default-light-en-us-1280-drag-infeasible-finish-setup.png",
+      "sha256": "c3569224e31418c3c61cc3a9be9f72f1273c7af259c410ed37c33146b8ad569e",
+      "reviewer": "Codex as Codex / pr654_rally",
+      "viewed": true,
+      "method": "fresh-view-final-image",
+      "hashStable": true,
+      "issues": []
+    },
+    {
+      "file": "default-light-en-us-1280-drift-feasible-companion-panel.png",
+      "sha256": "a920cafb148db3997b39bd7c4d18f8577467fb615032cb05e535de699bee1d5c",
+      "reviewer": "Codex as Codex / pr655_drift",
+      "viewed": true,
+      "method": "same-byte reuse from pr657-visual-qa-smoke.json",
+      "hashStable": true,
+      "issues": [],
+      "notes": [
+        "New model panel title/status/version/source and target/actual/error/RPM readable; neutral wheel-speed tolerance label in zh/ja; no missing glyphs or new-panel overflow."
+      ]
+    },
+    {
+      "file": "default-light-en-us-1280-drift-feasible-companion.png",
+      "sha256": "510bcffe5fa82e1cd668dfe8287c9def844fbadea0c5f8aba25797fab317f43e",
+      "reviewer": "Codex as Codex / pr655_drift",
+      "viewed": true,
+      "method": "tools.view_image: final original PNG",
+      "hashStable": true,
+      "issues": [],
+      "notes": [
+        "New model panel title/status/version/source and target/actual/error/RPM readable; neutral wheel-speed tolerance label in zh/ja; no missing glyphs or new-panel overflow."
+      ]
+    },
+    {
+      "file": "default-light-en-us-1280-drift-feasible-panel.png",
+      "sha256": "08e14e92a48eb377ff4dd221db7932a2137a7ca627096643298f7dadfccc6fd3",
+      "reviewer": "Codex as Codex / pr654_rally",
+      "viewed": true,
+      "method": "reuse-exact-sha256-previously-viewed",
+      "hashStable": true,
+      "issues": []
+    },
+    {
+      "file": "default-light-en-us-1280-drift-feasible-result.png",
+      "sha256": "7ad2b3927a63bf0ff65bb50701040af30776bac1de4b4fc612629dc6ba8453cd",
+      "reviewer": "Codex as Codex / pr654_rally",
+      "viewed": true,
+      "method": "reuse-exact-sha256-previously-viewed",
+      "hashStable": true,
+      "issues": []
+    },
+    {
+      "file": "default-light-en-us-1280-drift-feasible-setup.png",
+      "sha256": "f70e151ae75b117d40e011d3143524dc1d433969cc37810256b02bba3d1d0498",
+      "reviewer": "Codex as Codex / pr654_rally",
+      "viewed": true,
+      "method": "fresh-view-final-image",
+      "hashStable": true,
+      "issues": []
+    },
+    {
+      "file": "default-light-en-us-1280-drift-missing-target-companion-panel.png",
+      "sha256": "0667f85ad763b722a046e7cac73304877d51719f886711793c28a3ae43de1f81",
+      "reviewer": "Codex as Codex / pr655_drift",
+      "viewed": true,
+      "method": "same-byte reuse from pr657-visual-qa-stage3.json",
+      "hashStable": true,
+      "issues": [],
+      "notes": [
+        "Red Unavailable with explicit missing-working-target reason; no FD0 or gear table falsely presented as applicable."
+      ]
+    },
+    {
+      "file": "default-light-en-us-1280-drift-missing-target-companion.png",
+      "sha256": "f38db465f9c021ce809ce1bc660701fc3039cc2fa57973a5f7d28964f3f37c2d",
+      "reviewer": "Codex as Codex / pr655_drift",
+      "viewed": true,
+      "method": "tools.view_image: final original PNG",
+      "hashStable": true,
+      "issues": [],
+      "notes": [
+        "Red Unavailable with explicit missing-working-target reason; no FD0 or gear table falsely presented as applicable."
+      ]
+    },
+    {
+      "file": "default-light-en-us-1280-drift-missing-target-panel.png",
+      "sha256": "8a01facd25bf964c18b68658ede917c76739ddea633338cd92b43a2d93fe0ec5",
+      "reviewer": "Codex as Codex / pr654_rally",
+      "viewed": true,
+      "method": "fresh-view-final-image",
+      "hashStable": true,
+      "issues": []
+    },
+    {
+      "file": "default-light-en-us-1280-drift-missing-target-result.png",
+      "sha256": "5e50bb118aed886f6facc2322494c55b94d25f0338ce10fa300b9301cf1bc199",
+      "reviewer": "Codex as Codex / pr654_rally",
+      "viewed": true,
+      "method": "fresh-view-final-image",
+      "hashStable": true,
+      "issues": []
+    },
+    {
+      "file": "default-light-en-us-1280-drift-missing-target-setup.png",
+      "sha256": "ffb20ea980834f2617bd12b2eacc145bdac81f69916311cfc287059f0e72dae7",
+      "reviewer": "Codex as Codex / pr654_rally",
+      "viewed": true,
+      "method": "reuse-exact-sha256-previously-viewed",
+      "hashStable": true,
+      "issues": []
+    },
+    {
+      "file": "default-light-en-us-1280-drift-saturated-companion-panel.png",
+      "sha256": "d5c17bee3348a571f687087832fd7a8b0dc1f9e025e8f3185206b57c40c0c3b2",
+      "reviewer": "Codex as Codex / pr655_drift",
+      "viewed": true,
+      "method": "tools.view_image: final original PNG",
+      "hashStable": true,
+      "issues": [],
+      "notes": [
+        "Yellow Limited with shape/final-drive-prior compromise explained; target200.00,actual199.88,error-0.12km/h and3002RPM readable and consistent; no ground-speed claim."
+      ]
+    },
+    {
+      "file": "default-light-en-us-1280-drift-saturated-companion.png",
+      "sha256": "a85eb2af5fec6efeb4d4e219793f930b5ac6249e8a9d0e52b956f8bacbdeba4e",
+      "reviewer": "Codex as Codex / pr655_drift",
+      "viewed": true,
+      "method": "tools.view_image: final original PNG",
+      "hashStable": true,
+      "issues": [],
+      "notes": [
+        "Yellow Limited with shape/final-drive-prior compromise explained; target200.00,actual199.88,error-0.12km/h and3002RPM readable and consistent; no ground-speed claim."
+      ]
+    },
+    {
+      "file": "default-light-en-us-1280-drift-saturated-panel.png",
+      "sha256": "578e491c1806f21d29135196aaec4dc291e9a827e4b0713537017337f98e506e",
+      "reviewer": "Codex as Codex / pr654_rally",
+      "viewed": true,
+      "method": "fresh-view-final-image",
+      "hashStable": true,
+      "issues": []
+    },
+    {
+      "file": "default-light-en-us-1280-drift-saturated-result.png",
+      "sha256": "5f98b3a917cac07c21b63d607ee1cfacc55708193a0cc9c970b724d7512f0bcc",
+      "reviewer": "Codex as Codex / pr654_rally",
+      "viewed": true,
+      "method": "fresh-view-final-image",
+      "hashStable": true,
+      "issues": []
+    },
+    {
+      "file": "default-light-en-us-1280-drift-saturated-setup.png",
+      "sha256": "5b156c8f074451c6df99d92b7a76bb0d96801a4b13ee35e296e7b88a15b0cc71",
+      "reviewer": "Codex as Codex / pr654_rally",
+      "viewed": true,
+      "method": "fresh-view-final-image",
+      "hashStable": true,
+      "issues": []
+    },
+    {
+      "file": "default-light-en-us-1280-rally-cross-country-panel.png",
+      "sha256": "1a648201e18d00a14fb3c78309f5e03d3bfd6f0766b629621acf9bc67da6a687",
+      "reviewer": "Codex as Codex / pr654_rally",
+      "viewed": true,
+      "method": "fresh-view-final-image",
+      "hashStable": true,
+      "issues": []
+    },
+    {
+      "file": "default-light-en-us-1280-rally-cross-country-result.png",
+      "sha256": "b9df1c284ba8de5a242b6d09662f48f83c3ce62937d6611c39dbe604ee945e33",
+      "reviewer": "Codex as Codex / pr654_rally",
+      "viewed": true,
+      "method": "fresh-view-final-image",
+      "hashStable": true,
+      "issues": []
+    },
+    {
+      "file": "default-light-en-us-1280-rally-cross-country-setup.png",
+      "sha256": "44c638722f0fdee03364091544d60957d5119c331b90f32e0c86caa9a0fb52ff",
+      "reviewer": "Codex as Codex / pr654_rally",
+      "viewed": true,
+      "method": "fresh-view-final-image",
+      "hashStable": true,
+      "issues": []
+    },
+    {
+      "file": "default-light-en-us-1280-rally-feasible-panel.png",
+      "sha256": "8746837d10140b9097931d9763eb377074c4f23db837832f72e3fe162b8bf642",
+      "reviewer": "Codex as Codex / pr654_rally",
+      "viewed": true,
+      "method": "fresh-view-final-image",
+      "hashStable": true,
+      "issues": []
+    },
+    {
+      "file": "default-light-en-us-1280-rally-feasible-result.png",
+      "sha256": "d0de16c7258ca3bd9e55692ed56c972361871fde5f05d6114356757cfe458580",
+      "reviewer": "Codex as Codex / pr654_rally",
+      "viewed": true,
+      "method": "fresh-view-final-image",
+      "hashStable": true,
+      "issues": []
+    },
+    {
+      "file": "default-light-en-us-1280-rally-feasible-setup.png",
+      "sha256": "61de208c0498b59fe461cc0729ecc0fb4a9c782e3b44ebcc56feeb4409884cc7",
+      "reviewer": "Codex as Codex / pr654_rally",
+      "viewed": true,
+      "method": "fresh-view-final-image",
+      "hashStable": true,
+      "issues": []
+    },
+    {
+      "file": "default-light-en-us-1280-road-feasible-panel.png",
+      "sha256": "36acc10e71b40ad8edca8c6bcb1e699575aa9a0f2fb642758dcab1f699130bcf",
+      "reviewer": "Codex as Codex / pr654_rally",
+      "viewed": true,
+      "method": "fresh-view-final-image",
+      "hashStable": true,
+      "issues": []
+    },
+    {
+      "file": "default-light-en-us-1280-road-feasible-result.png",
+      "sha256": "4ca603b83b4f797a5335e9668cc0c30ac8b0c8d58a75f4bf180a831f1466227f",
+      "reviewer": "Codex as Codex / pr654_rally",
+      "viewed": true,
+      "method": "fresh-view-final-image",
+      "hashStable": true,
+      "issues": []
+    },
+    {
+      "file": "default-light-en-us-1280-road-feasible-setup.png",
+      "sha256": "925337f25ebacd8c6d7cfabd8e01f097a2503d66e8f4237857d93cc343efdc5a",
+      "reviewer": "Codex as Codex / pr654_rally",
+      "viewed": true,
+      "method": "fresh-view-final-image",
+      "hashStable": true,
+      "issues": []
+    },
+    {
+      "file": "default-light-en-us-1280-road-fwd-chart.png",
+      "sha256": "0fd907b23c43bda30e8740291110f712c9849fa9399f39fc3803e00b50d07d65",
+      "reviewer": "Codex as Codex / pr654_rally",
+      "viewed": true,
+      "method": "fresh-view-final-image",
+      "hashStable": true,
+      "issues": []
+    },
+    {
+      "file": "default-light-en-us-1280-road-fwd-panel.png",
+      "sha256": "82667b29ec69028fe422289160caa9daaecd2d6a5186749e5265828a9f63a452",
+      "reviewer": "Codex as Codex / pr654_rally",
+      "viewed": true,
+      "method": "fresh-view-final-image",
+      "hashStable": true,
+      "issues": []
+    },
+    {
+      "file": "default-light-en-us-1280-road-fwd-result.png",
+      "sha256": "f2443397475b066511b1fe2be5e054ebe3dc5c53ac10402500300c453b68825f",
+      "reviewer": "Codex as Codex / pr654_rally",
+      "viewed": true,
+      "method": "fresh-view-final-image",
+      "hashStable": true,
+      "issues": []
+    },
+    {
+      "file": "default-light-en-us-1280-road-fwd-setup.png",
+      "sha256": "2334cdc6206da4fb92af2c195a2dd86c9a2175ebc38736b0d9bbe64611949d85",
+      "reviewer": "Codex as Codex / pr654_rally",
+      "viewed": true,
+      "method": "fresh-view-final-image",
+      "hashStable": true,
+      "issues": []
+    },
+    {
+      "file": "default-light-ja-jp-320-drift-feasible-companion-panel.png",
+      "sha256": "c5517e46484e40ab0c3a9c0220c40f963db8f4f5b6c8dd759f0d8c963ebb6649",
+      "reviewer": "Codex as Codex / pr655_drift",
+      "viewed": true,
+      "method": "tools.view_image: final original PNG",
+      "hashStable": true,
+      "issues": [],
+      "notes": [
+        "New model panel title/status/version/source and target/actual/error/RPM readable; neutral wheel-speed tolerance label in zh/ja; no missing glyphs or new-panel overflow."
+      ]
+    },
+    {
+      "file": "default-light-ja-jp-320-drift-feasible-companion.png",
+      "sha256": "ef875be38d30bb58593a3e2ce1c4fda0b74bb947c77cbbcc80b48a2b561e49e1",
+      "reviewer": "Codex as Codex / pr655_drift",
+      "viewed": true,
+      "method": "tools.view_image: final original PNG",
+      "hashStable": true,
+      "issues": [],
+      "notes": [
+        "New model panel title/status/version/source and target/actual/error/RPM readable; neutral wheel-speed tolerance label in zh/ja; no missing glyphs or new-panel overflow."
+      ]
+    },
+    {
+      "file": "default-light-ja-jp-320-drift-feasible-panel.png",
+      "sha256": "447f9a25703245f8cbe7fd2c708950e341bcce281db344e1b894ce69f57b7623",
+      "reviewer": "Codex as Codex / pr655_drift",
+      "viewed": true,
+      "method": "tools.view_image: final original PNG",
+      "hashStable": true,
+      "issues": [],
+      "notes": [
+        "Model title/status/version visible below sticky header; no app-header contamination in panel crop; neutral wheel-speed tolerance label correct for Drift main gear. Complete panel crop includes final RPM row; viewport context may naturally end before the table."
+      ]
+    },
+    {
+      "file": "default-light-ja-jp-320-drift-feasible-result.png",
+      "sha256": "4a5f6be59fd63e426d51733ced3d41ce34ef961128f4b407dc19815c9185396a",
+      "reviewer": "Codex as Codex / pr655_drift",
+      "viewed": true,
+      "method": "tools.view_image: final original PNG",
+      "hashStable": true,
+      "issues": [],
+      "notes": [
+        "Model title/status/version visible below sticky header; no app-header contamination in panel crop; neutral wheel-speed tolerance label correct for Drift main gear. Complete panel crop includes final RPM row; viewport context may naturally end before the table."
+      ]
+    },
+    {
+      "file": "default-light-ja-jp-320-drift-feasible-setup.png",
+      "sha256": "122d7fa603d2af0e1da9ee19125c521449645b3179c0c638af16b57270df58d0",
+      "reviewer": "Codex as Codex / pr655_drift",
+      "viewed": true,
+      "method": "tools.view_image: final original PNG",
+      "hashStable": true,
+      "issues": [],
+      "notes": [
+        "All three working-target controls and instructions readable; no new-panel clipping or missing Japanese glyphs."
+      ]
+    },
+    {
+      "file": "rhine-lab-dark-zh-tw-1280-drift-feasible-companion-panel.png",
+      "sha256": "473d2eb5c1bae1b3ca33e4aad827e60f7809a05eaa155e87dc17e99499a6e235",
+      "reviewer": "Codex as Codex / pr655_drift",
+      "viewed": true,
+      "method": "tools.view_image: final original PNG",
+      "hashStable": true,
+      "issues": [],
+      "notes": [
+        "New model panel title/status/version/source and target/actual/error/RPM readable; neutral wheel-speed tolerance label in zh/ja; no missing glyphs or new-panel overflow."
+      ]
+    },
+    {
+      "file": "rhine-lab-dark-zh-tw-1280-drift-feasible-companion.png",
+      "sha256": "deef5b7dbaa2f8cd7b556370f1632d720e1597813807a472f7c4668ed79af1d3",
+      "reviewer": "Codex as Codex / pr655_drift",
+      "viewed": true,
+      "method": "tools.view_image: final original PNG",
+      "hashStable": true,
+      "issues": [],
+      "notes": [
+        "New model panel title/status/version/source and target/actual/error/RPM readable; neutral wheel-speed tolerance label in zh/ja; no missing glyphs or new-panel overflow."
+      ]
+    },
+    {
+      "file": "rhine-lab-dark-zh-tw-1280-drift-feasible-panel.png",
+      "sha256": "1e300fa077a9be6539bf6449d621910564e54c2dc17ed7c834b8c3b173ec3f93",
+      "reviewer": "Codex as Codex / pr654_rally",
+      "viewed": true,
+      "method": "reuse-exact-sha256-previously-viewed",
+      "hashStable": true,
+      "issues": []
+    },
+    {
+      "file": "rhine-lab-dark-zh-tw-1280-drift-feasible-result.png",
+      "sha256": "b35d2cbc0d238c550792353e2fee3addec983cc2553fd3a247a90c818478bf63",
+      "reviewer": "Codex as Codex / pr654_rally",
+      "viewed": true,
+      "method": "fresh-view-final-image",
+      "hashStable": true,
+      "issues": []
+    },
+    {
+      "file": "rhine-lab-dark-zh-tw-1280-drift-feasible-setup.png",
+      "sha256": "85bec4c9db0221005186bac6243624e9ab6af251686d0b55d0bf14b4ed9b48c7",
+      "reviewer": "Codex as Codex / pr654_rally",
+      "viewed": true,
+      "method": "reuse-exact-sha256-previously-viewed",
+      "hashStable": true,
+      "issues": []
+    },
+    {
+      "file": "rhine-lab-dark-zh-tw-320-drift-feasible-panel.png",
+      "sha256": "d5dabcbaa1810272867bee06f6dbce44732a4851a66670a237a791430d9d77d8",
+      "reviewer": "Codex as Codex / pr655_drift",
+      "viewed": true,
+      "method": "tools.view_image: final original PNG",
+      "hashStable": true,
+      "issues": [],
+      "notes": [
+        "Model title/status/version visible below sticky header; no app-header contamination in panel crop; neutral wheel-speed tolerance label correct for Drift main gear. Complete panel crop includes final RPM row; viewport context may naturally end before the table."
+      ]
+    },
+    {
+      "file": "rhine-lab-dark-zh-tw-320-drift-feasible-result.png",
+      "sha256": "30b372c0d68319535bcfb9db214b5ebc0b05a7cba2224b56c005531621d53996",
+      "reviewer": "Codex as Codex / pr655_drift",
+      "viewed": true,
+      "method": "tools.view_image: final original PNG",
+      "hashStable": true,
+      "issues": [],
+      "notes": [
+        "Model title/status/version visible below sticky header; no app-header contamination in panel crop; neutral wheel-speed tolerance label correct for Drift main gear. Complete panel crop includes final RPM row; viewport context may naturally end before the table."
+      ]
+    },
+    {
+      "file": "rhine-lab-dark-zh-tw-320-drift-feasible-setup.png",
+      "sha256": "8118a79f1267af7153f121c4be271027bbe696d24d22d920232c10c8ae73d3c0",
+      "reviewer": "Codex as Codex / pr655_drift",
+      "viewed": true,
+      "method": "same-byte reuse from pr657-visual-qa-stage2.json",
+      "hashStable": true,
+      "issues": [],
+      "notes": [
+        "All three working-target controls and instructions readable; no new-panel clipping or missing Japanese glyphs."
+      ]
+    },
+    {
+      "file": "rhine-lab-light-en-us-1280-drift-feasible-companion-panel.png",
+      "sha256": "c38819107bcf86afb3f2329d6fcfab5afb422b8ff6a08084d6f10865946e009a",
+      "reviewer": "Codex as Codex / pr655_drift",
+      "viewed": true,
+      "method": "same-byte reuse from pr657-visual-qa-stage3.json",
+      "hashStable": true,
+      "issues": [],
+      "notes": [
+        "New model panel title/status/version/source and target/actual/error/RPM readable; neutral wheel-speed tolerance label in zh/ja; no missing glyphs or new-panel overflow."
+      ]
+    },
+    {
+      "file": "rhine-lab-light-en-us-1280-drift-feasible-companion.png",
+      "sha256": "10a633c9734dabd12aaf142b54d782464f724c08a244d6e7bb17eac86eb01cf7",
+      "reviewer": "Codex as Codex / pr655_drift",
+      "viewed": true,
+      "method": "same-byte reuse from pr657-visual-qa-stage3.json",
+      "hashStable": true,
+      "issues": [],
+      "notes": [
+        "New model panel title/status/version/source and target/actual/error/RPM readable; neutral wheel-speed tolerance label in zh/ja; no missing glyphs or new-panel overflow."
+      ]
+    },
+    {
+      "file": "rhine-lab-light-en-us-1280-drift-feasible-panel.png",
+      "sha256": "9ee971244c864ccb6306b180b11e39fcc7be6f0554a1cb99d38abe0b457d6788",
+      "reviewer": "Codex as Codex / pr654_rally",
+      "viewed": true,
+      "method": "reuse-exact-sha256-previously-viewed",
+      "hashStable": true,
+      "issues": []
+    },
+    {
+      "file": "rhine-lab-light-en-us-1280-drift-feasible-result.png",
+      "sha256": "e2302c3c496670b2bdcaebe7ae36af7b1cebd2fe34f9e1197f14adc69283b33d",
+      "reviewer": "Codex as Codex / pr654_rally",
+      "viewed": true,
+      "method": "reuse-exact-sha256-previously-viewed",
+      "hashStable": true,
+      "issues": []
+    },
+    {
+      "file": "rhine-lab-light-en-us-1280-drift-feasible-setup.png",
+      "sha256": "4dd60d9d1adfb1e45853ffc2a1b71494fe05a2d2a61a138d768841b72d0ca82b",
+      "reviewer": "Codex as Codex / pr654_rally",
+      "viewed": true,
+      "method": "fresh-view-final-image",
+      "hashStable": true,
+      "issues": []
+    },
+    {
+      "file": "rhine-lab-light-ja-jp-320-drift-feasible-panel.png",
+      "sha256": "dda023ccf828b05bebbf6fe8014782b90d554c6f5c48f0e95cd42bd07dd888f1",
+      "reviewer": "Codex as Codex / pr655_drift",
+      "viewed": true,
+      "method": "tools.view_image: final original PNG",
+      "hashStable": true,
+      "issues": [],
+      "notes": [
+        "Model title/status/version visible below sticky header; no app-header contamination in panel crop; neutral wheel-speed tolerance label correct for Drift main gear. Complete panel crop includes final RPM row; viewport context may naturally end before the table."
+      ]
+    },
+    {
+      "file": "rhine-lab-light-ja-jp-320-drift-feasible-result.png",
+      "sha256": "f5bb44602940de321a2195cf4199656fd1db300eb1792677e40ce70758c5bfee",
+      "reviewer": "Codex as Codex / pr655_drift",
+      "viewed": true,
+      "method": "tools.view_image: final original PNG",
+      "hashStable": true,
+      "issues": [],
+      "notes": [
+        "Model title/status/version visible below sticky header; no app-header contamination in panel crop; neutral wheel-speed tolerance label correct for Drift main gear. Complete panel crop includes final RPM row; viewport context may naturally end before the table."
+      ]
+    },
+    {
+      "file": "rhine-lab-light-ja-jp-320-drift-feasible-setup.png",
+      "sha256": "018c2466b802f5b4e8ea1bf47ca38014b791313cf76fd44f03f52715dcf64390",
+      "reviewer": "Codex as Codex / pr655_drift",
+      "viewed": true,
+      "method": "tools.view_image: final original PNG",
+      "hashStable": true,
+      "issues": [],
+      "notes": [
+        "All three working-target controls and instructions readable; no new-panel clipping or missing Japanese glyphs."
+      ]
+    },
+    {
+      "file": "swiss-dark-zh-tw-1280-drift-feasible-companion-panel.png",
+      "sha256": "e849f19953c573eda506ca89ee550e0471a28e85d0c284e23a00d75db8cdea36",
+      "reviewer": "Codex as Codex / pr655_drift",
+      "viewed": true,
+      "method": "tools.view_image: final original PNG",
+      "hashStable": true,
+      "issues": [],
+      "notes": [
+        "New model panel title/status/version/source and target/actual/error/RPM readable; neutral wheel-speed tolerance label in zh/ja; no missing glyphs or new-panel overflow."
+      ]
+    },
+    {
+      "file": "swiss-dark-zh-tw-1280-drift-feasible-companion.png",
+      "sha256": "2e30417756e7ef1db829698f7815e3ec74c8b0e38df6d5927227a6b1305243f0",
+      "reviewer": "Codex as Codex / pr655_drift",
+      "viewed": true,
+      "method": "tools.view_image: final original PNG",
+      "hashStable": true,
+      "issues": [],
+      "notes": [
+        "New model panel title/status/version/source and target/actual/error/RPM readable; neutral wheel-speed tolerance label in zh/ja; no missing glyphs or new-panel overflow."
+      ]
+    },
+    {
+      "file": "swiss-dark-zh-tw-1280-drift-feasible-panel.png",
+      "sha256": "f257c258a420e6e6975ccdb8e07f03d16064f695d711b43c42fb018539823e62",
+      "reviewer": "Codex as Codex / pr654_rally",
+      "viewed": true,
+      "method": "reuse-exact-sha256-previously-viewed",
+      "hashStable": true,
+      "issues": []
+    },
+    {
+      "file": "swiss-dark-zh-tw-1280-drift-feasible-result.png",
+      "sha256": "b5f178f787df0000340b53bbf8f351efcce3201a21a4c17646e0062ccb2934de",
+      "reviewer": "Codex as Codex / pr654_rally",
+      "viewed": true,
+      "method": "fresh-view-final-image",
+      "hashStable": true,
+      "issues": []
+    },
+    {
+      "file": "swiss-dark-zh-tw-1280-drift-feasible-setup.png",
+      "sha256": "7f028964a1f001c050c92269857947313acf02ca274f5d6448186954a2c19b29",
+      "reviewer": "Codex as Codex / pr654_rally",
+      "viewed": true,
+      "method": "fresh-view-final-image",
+      "hashStable": true,
+      "issues": []
+    },
+    {
+      "file": "swiss-dark-zh-tw-320-drift-feasible-panel.png",
+      "sha256": "6829eecbfd7ca7e5776e3b61d685ea7883e709d40f6da880539fc5ec2a2651d5",
+      "reviewer": "Codex as Codex / pr655_drift",
+      "viewed": true,
+      "method": "tools.view_image: final original PNG",
+      "hashStable": true,
+      "issues": [],
+      "notes": [
+        "Model title/status/version visible below sticky header; no app-header contamination in panel crop; neutral wheel-speed tolerance label correct for Drift main gear. Complete panel crop includes final RPM row; viewport context may naturally end before the table."
+      ]
+    },
+    {
+      "file": "swiss-dark-zh-tw-320-drift-feasible-result.png",
+      "sha256": "2077c2e797bde53004169eecb42e2d72b557f63bcc2807f125d1f3fefb419d70",
+      "reviewer": "Codex as Codex / pr655_drift",
+      "viewed": true,
+      "method": "tools.view_image: final original PNG",
+      "hashStable": true,
+      "issues": [],
+      "notes": [
+        "Model title/status/version visible below sticky header; no app-header contamination in panel crop; neutral wheel-speed tolerance label correct for Drift main gear. Complete panel crop includes final RPM row; viewport context may naturally end before the table."
+      ]
+    },
+    {
+      "file": "swiss-dark-zh-tw-320-drift-feasible-setup.png",
+      "sha256": "1d0bfe3460337f827cb3f90e228d11223a0b1c140878d8b19231578559a469bd",
+      "reviewer": "Codex as Codex / pr655_drift",
+      "viewed": true,
+      "method": "tools.view_image: final original PNG",
+      "hashStable": true,
+      "issues": [],
+      "notes": [
+        "All three working-target controls and instructions readable; no new-panel clipping or missing Japanese glyphs."
+      ]
+    },
+    {
+      "file": "swiss-light-en-us-1280-drift-feasible-companion-panel.png",
+      "sha256": "92ff8b51efde1023269c488bb13c2e6dfada29de212e42efb38bfe03c1df8650",
+      "reviewer": "Codex as Codex / pr655_drift",
+      "viewed": true,
+      "method": "tools.view_image: final original PNG",
+      "hashStable": true,
+      "issues": [],
+      "notes": [
+        "New model panel title/status/version/source and target/actual/error/RPM readable; neutral wheel-speed tolerance label in zh/ja; no missing glyphs or new-panel overflow."
+      ]
+    },
+    {
+      "file": "swiss-light-en-us-1280-drift-feasible-companion.png",
+      "sha256": "3127fd72bd306348a215f5834287132968789a1df347d71dab958d2d6f0ee18e",
+      "reviewer": "Codex as Codex / pr655_drift",
+      "viewed": true,
+      "method": "tools.view_image: final original PNG",
+      "hashStable": true,
+      "issues": [],
+      "notes": [
+        "New model panel title/status/version/source and target/actual/error/RPM readable; neutral wheel-speed tolerance label in zh/ja; no missing glyphs or new-panel overflow."
+      ]
+    },
+    {
+      "file": "swiss-light-en-us-1280-drift-feasible-panel.png",
+      "sha256": "6f925b4504ca22bcf778d44fe429186fc9d4765a65f2c0ab77e41be9e845a61e",
+      "reviewer": "Codex as Codex / pr654_rally",
+      "viewed": true,
+      "method": "reuse-exact-sha256-previously-viewed",
+      "hashStable": true,
+      "issues": []
+    },
+    {
+      "file": "swiss-light-en-us-1280-drift-feasible-result.png",
+      "sha256": "48aa29dac84e7f73ac92f7a5e9fb87196b4a265ddc4e5466b1bee1f0758a7a38",
+      "reviewer": "Codex as Codex / pr654_rally",
+      "viewed": true,
+      "method": "reuse-exact-sha256-previously-viewed",
+      "hashStable": true,
+      "issues": []
+    },
+    {
+      "file": "swiss-light-en-us-1280-drift-feasible-setup.png",
+      "sha256": "bc78a9c79b5e4cd99c1c0fdaa863e038ed5b625d1604a278bf109c92adf55b68",
+      "reviewer": "Codex as Codex / pr654_rally",
+      "viewed": true,
+      "method": "fresh-view-final-image",
+      "hashStable": true,
+      "issues": []
+    },
+    {
+      "file": "swiss-light-ja-jp-320-drift-feasible-panel.png",
+      "sha256": "c08f2b388cc2507b8bf47656e45d28e41511ebbf7d5ecdf03f3d8c73e5136059",
+      "reviewer": "Codex as Codex / pr655_drift",
+      "viewed": true,
+      "method": "tools.view_image: final original PNG",
+      "hashStable": true,
+      "issues": [],
+      "notes": [
+        "Model title/status/version visible below sticky header; no app-header contamination in panel crop; neutral wheel-speed tolerance label correct for Drift main gear. Complete panel crop includes final RPM row; viewport context may naturally end before the table."
+      ]
+    },
+    {
+      "file": "swiss-light-ja-jp-320-drift-feasible-result.png",
+      "sha256": "5c658d17858e86a02daeda30fbdf0115fb595c1fa5eb725d504c187cf2ab0c60",
+      "reviewer": "Codex as Codex / pr655_drift",
+      "viewed": true,
+      "method": "tools.view_image: final original PNG",
+      "hashStable": true,
+      "issues": [],
+      "notes": [
+        "Model title/status/version visible below sticky header; no app-header contamination in panel crop; neutral wheel-speed tolerance label correct for Drift main gear. Complete panel crop includes final RPM row; viewport context may naturally end before the table."
+      ]
+    },
+    {
+      "file": "swiss-light-ja-jp-320-drift-feasible-setup.png",
+      "sha256": "7c9df770b6e9e376773d5ee25f2ca23af4bf729d6945766d48d1703b132b410a",
+      "reviewer": "Codex as Codex / pr655_drift",
+      "viewed": true,
+      "method": "tools.view_image: final original PNG",
+      "hashStable": true,
+      "issues": [],
+      "notes": [
+        "All three working-target controls and instructions readable; no new-panel clipping or missing Japanese glyphs."
+      ]
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-export type SettingsSectionId = 'general' | 'telemetry' | 'integrations' | 'updates' | 'storage' | 'developer';
+export type SettingsSectionId = 'general' | 'telemetry' | 'integrations' | 'updates' | 'storage';
 
 export type SettingsSectionItem =
   | 'language'
@@ -6,7 +6,6 @@ export type SettingsSectionItem =
   | 'telemetry'
   | 'recording'
   | 'discord'
-  | 'developerTuning'
   | 'updates'
   | 'storage';
 
@@ -24,9 +23,4 @@ const BASE_SECTIONS: readonly SettingsSectionProjection[] = [
   { id: 'storage', title: 'Data & Storage', items: ['storage'] },
 ];
 
-export function projectSettingsSections(allowDeveloperTuning: boolean): readonly SettingsSectionProjection[] {
-  return allowDeveloperTuning
-    ? [...BASE_SECTIONS, { id: 'developer', title: 'Developer', items: ['developerTuning'] }]
-    : BASE_SECTIONS;
-}
-
+export function projectSettingsSections(): readonly SettingsSectionProjection[] { return BASE_SECTIONS; }

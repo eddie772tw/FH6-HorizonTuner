@@ -8,7 +8,6 @@ export interface AppCapabilities {
   readonly hudOverlay: boolean;
   readonly tuning: boolean;
   readonly sessions: boolean;
-  readonly developerTuning: boolean;
   readonly launchTest: boolean;
 }
 
@@ -26,8 +25,8 @@ export const WORKSPACES: readonly WorkspaceDefinition[] = [
 ];
 
 const VARIANTS: Readonly<Record<AppVariant, AppCapabilities>> = {
-  full: { tuning: true, sessions: true, developerTuning: true, launchTest: true, hudOverlay: true },
-  lite: { tuning: false, sessions: false, developerTuning: false, launchTest: false, hudOverlay: true },
+  full: { tuning: true, sessions: true, launchTest: true, hudOverlay: true },
+  lite: { tuning: false, sessions: false, launchTest: false, hudOverlay: true },
 };
 
 export function getAppCapabilities(variant: AppVariant, runtime: Pick<RuntimeCapabilities, 'hudOverlay'> = getRuntimeCapabilities()): AppCapabilities {

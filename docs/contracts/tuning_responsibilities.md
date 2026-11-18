@@ -15,32 +15,24 @@
 - `tuning::workflow` 是一般模式的推薦、能力過濾與 readiness owner；本機 `POST /api/tuning/workflow`、離線 `fh6-agent solve workflow --args JSON` 與 MCP `calculate_tuning_workflow` 呼叫相同 Rust library。
 - TuneSessionProvider 只送完整草稿／goal／season／量測證據；桌面與 Companion 消費同一結果。完整輸入 key、abort、sequence、render-time invalidation 防止切車／改稿／A→B→A 舊回覆；pending、error 與 ready 分開，失敗每兩秒重試，不使用 TS fallback。
 - `measurement` 擁有 loaded-sweep/v4、archive 資格與 capture replay；`ev_measurement`／`ev` 擁有 EV 觀測與求解；250ms 有界增量批次處理，非每一 telemetry frame 或 Companion 400ms exchange 重算。capture replay 在 receiver mutex 外執行。
-- `alignment`／`chassis_load`（Road／Rally 新基準）／`chassis`（歷史與其他模式）／`gearing` 擁有機械模型；`tire_evidence` 擁有輪胎證據診斷；`profile` 擁有既有桌面預設與 EV profile 資格；`capabilities` 擁有實驗模式能力契約。Road 量化診斷維持 `backend-rust/src/road/` owner。
+- `alignment`／`chassis_load`（Road／Rally 新基準）／`chassis`（現行 schema v1 與其他模式）／`gearing` 擁有機械模型；`tire_evidence` 擁有輪胎證據診斷；`profile` 擁有既有桌面預設與 EV profile 資格。Road 量化診斷維持 `backend-rust/src/road/` owner。
 - `dyno_guidance` 擁有舊 dyno wizard 的數值門檻、建議測試檔位與峰值匯入；guidance 隨既有 telemetry 推送，實際 dyno 採樣仍由 Rust `telemetry/dyno.rs` 的獨立品質契約控制。
 - 量測來源不接受客戶端峰值／聚合 moments 自行宣稱 measured。`evidence` 使用 `saved-engine` observationId 或 `saved-ev` evidenceId；Rust 從不可變原始 capture 重播、檢查車輛／PI／class／profile dependency，再產生有版本的 backend-only qualification cache。離線 CLI 可讀本機保存證據，或用 `--args-file PATH` 提供完整 capture 由同一 library 重播；裸峰值不會產生 measured readiness／推薦。外部 capture 明確標記 `imported-capture`，不等同硬體來源認證；正式保存仍必須有 backend-issued evidenceId。MCP 與 CLI 為唯讀：可重用現有資格 cache，cold-cache 則純重播並標記 imported-capture，不會新增資格紀錄；數值 owner 不因此分叉。
 - EV 原始 frames 與 backend-qualified evidence 都不可變保存；`ev-preview` 回傳明確 `unverified-preview`，正式 `ev-gearing` 必須提供 evidenceId。保存推薦時從 backend-owned qualification metadata 重新組合並比對欄位與來源；不相信 snapshot 的峰值／moments，也不在 receiver mutex 內 replay capture。
 - EV current workflow／recommendation v3 要求 `ev-context/v1` 獨立目前確認，`saved-ev` 每次從 raw 重算；v1/v2 保留歷史 request shape 與數值。Road raw replay 在鎖外，private exact-request token 避免鎖內重播。[#435 lifecycle 合約](../tuning/issue-435-ev-completeness.md)。
-- v2 API 新推薦使用 `rust/ice-measured-workflow-v3`／`rust/ev-measured-workflow-v2`；Road 齒比維持 `aego-road-launch-envelope/v3`。v1 API 保持 Road ICE v2、其他 ICE v1、EV v1；新舊 chassis 依 recommendation 版本重播。Road v1 歷史依凍結 v2 owner 驗證，詳見 [#462 修正](../tuning/aego-road-launch-v3.md)；EV 保存驗證後端資格來源與推薦一致性，未知／鎖定齒比不套用。歷史版本唯讀，不重寫。
+- 新 ICE 推薦使用 `rust/ice-measured-workflow-v4`，後端依 goal 選獨立模型並保存明確 model ID／版本、workflow schema 與重建診斷。Road 齒比維持 `aego-road-launch-envelope/v3`，Rally／Drift／Drag 使用各自的新版本；schema v1／v2 的底盤 owner 不變。ICE v1／v2／v3 歷史只供封存檢視與原資料匯出，不再執行舊 solver，詳見 [#462 修正](../tuning/aego-road-launch-v3.md)及 [AEGO v4 保存與回退](../tuning/aego-model-integration-v4.md)。EV v1／v2／v3 及其來源／鎖定齒比資格保持獨立。歷史版本不重寫，未知版本不落到最新模型。
 - 計算 API 不擴大 LAN allowlist；純函式共享 library 保留離線 CLI。Vite build 拒絕將凍結 TS tuning solver／readiness／diagnosis 參考模組帶入產品 bundle。
 - v2 Road／Rally 必須提供有限正值車重、0–100% 之間配重與合法正值 spring 範圍；缺值／反向範圍回報 unavailable，不補預設。合法窄／鎖定區間無一位小數刻度時保留界內精度；height 與其他模式保持原策略。v1 原 spring fallback 保留。靜態定位保留 JS 原運算順序與 toFixed 精確 binary rounding，不能以縮放 round 取代。
 
-模型版本與相容入口：
-| 模型 | 入口／用途 |
-| --- | --- |
-| `rust/ice-measured-workflow-v3`、`rust/ev-measured-workflow-v2` | v2 workflow；桌面、Companion、API、CLI、MCP 共用新 chassis 版本 |
-| ICE v1/v2、EV v1 | v1 workflow／歷史推薦；原 chassis 數值不改 |
-| `legacy-cli/v1` | 舊 `solve chassis/gearing/full`；保留歷史數值與 wire schema `tuning-dev/v1` |
-| `legacy-mcp/v1` | 舊 MCP quick chassis；Drift 公式不同於 CLI，獨立凍結 |
-| `legacy-desktop-experimental/v1` | 實驗 UI 呼叫 Rust developer model；保留既有 48 組 fixture 與 `tuning-dev/v1` output schema |
+現行版本與資料封存：
 
-TypeScript 舊純模型已隔離於 `frontend/test-reference/tuning/`；產品純型別位於 `frontend/src/domain/tuning/types.ts`，只描述資料形狀，不包含公式、數值預設、資格或 readiness 判定。未掛載的 Step5TelemetryCalibration／DiagnosisPanel 已移除。Vite 在 tree shaking 前阻擋直接、間接與動態 runtime dependency，錯誤包含 importer 與 target。圖表 RPM／速度軸幾何與真正顯示單位轉換屬顯示用途，不產生設定建議。
-
-PR #460 經使用者授權與全量驗證已合併入 main（v1.7.1）。
-
-相容性：原 21 組 tuning 與 10 組 EV golden fixtures 不可重寫，缺少 fixture 必須測試失敗。
-新增 `mechanical_desktop_v162.json` 鎖定 66 組 main ca195c7 桌面行為；正常測試不得產生它。
-CLI 與 MCP 雖曾同標 `tuning-dev/v1`，其 drift 數值不同，必須保留不同明確版本，不得以同名模型合併並改寫輸出。
-歷史推薦保持唯讀，未知／鎖定齒比維持 null/unapplied，EV 不可退回 ICE。
+- [AEGO 獨立版本契約](../tuning/aego-version-contract.md)分開 workflow、量測、四模型與底盤版本。
+- 新 ICE 推薦為 `rust/ice-measured-workflow-v4`；EV v1／v2／v3 的來源與鎖定資格不變。
+- TS 凍結目錄、Rust 舊 ICE solver、CLI／MCP quick 公式與 Developer Tuning 已移除。歷史資料不重算、不改標籤、不回填最新結果；新計算須完成現行證據並另存新記錄。
+- `GET /api/road/archives` 只讀取原始記錄，明示退役、唯讀與未依現行模型驗證。完整[封存說明](../tuning/model-retirement.md)。
+- 正式入口為 `solve workflow`／`calculate_tuning_workflow`。舊 quick 名稱僅拒絕，不產生數值或 preset。
+- 前端僅有資料型別與顯示邏輯；Vite 仍在 tree shaking 前阻擋舊公式路徑的直接、間接與動態引用。
+- 原21 tuning／10 EV golden不改值或容差；退役執行套件在充分確認不可接通後可移除，現行功能與封存資格邊界繼續驗證。
 
 ---
 

@@ -188,12 +188,11 @@ const AnalysisView: React.FC<{ onLatestAnalysis: () => void }> = ({ onLatestAnal
         onDownloadTemplate={downloadMoTecTemplate}
         onOpenChannelMapping={() => setIsChannelMappingOpen(true)}
         onDeleteSession={async () => {
-          if (!isSavedSelection || !selectedSessionId) return;
-          if (confirm(`${t("Are you sure you want to delete this session?")} (${selectedSessionId})`)) {
-            const op = beginSelectionOperation();
-            const ok = await createSessionsIo().deleteSavedSession(selectedSessionId);
-            if (ok) { await fetchSavedSessionsList(); if (op.isCurrent()) selectCurrent(); }
-          }
+          if (!isSavedSelection || !selectedSessionId) return false;
+          const op = beginSelectionOperation();
+          const ok = await createSessionsIo().deleteSavedSession(selectedSessionId);
+          if (ok) { await fetchSavedSessionsList(); if (op.isCurrent()) selectCurrent(); }
+          return ok;
         }}
         onCloseMessage={() => setMotecActionMsg(null)}
       />

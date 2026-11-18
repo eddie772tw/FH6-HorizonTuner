@@ -1,11 +1,10 @@
-import { getWorkflowReadiness } from "../../../test-reference/tuning/features/tuning/legacyWorkflowReadiness";
 import { describe, expect, it } from 'vitest';
 import { canOpenTuningStep, nextTuningStep, resolveTuningStep, restoreWorkflowStep, serializeWorkflowProfile, TUNING_WORKFLOW_STEPS, updateWorkflowProfile } from './tuningWorkflow';
 
 const profile = { weight: 1200, weight_distribution: 50, maxHp: 200 };
 describe('recommended workflow and independent data gates', () => {
   it('keeps engine readiness independent of an infeasible gearing model', () => {
-    const ready = getWorkflowReadiness(true, profile, true, false);
+    const ready = { mechanical: true, engineInputs: true, measuredEngine: true, gearingAvailable: false };
     expect(ready.measuredEngine).toBe(true);
     expect(ready.gearingAvailable).toBe(false);
     expect(canOpenTuningStep(3, ready)).toBe(true);
@@ -41,30 +40,30 @@ describe('recommended workflow and independent data gates', () => {
   });
   it('offers chassis platform & tires before powertrain, without visited-page dependencies', () => {
     expect(TUNING_WORKFLOW_STEPS.map(step => step.id)).toEqual(['setup', 'chassis', 'powertrain', 'validation']);
-    const ready = getWorkflowReadiness(true, { ...profile, maxHp: 0 }, false);
+    const ready = { mechanical: true, engineInputs: false, measuredEngine: false, gearingAvailable: false };
     expect([1, 2, 3, 4].map(step => canOpenTuningStep(step, ready))).toEqual([true, true, true, false]);
     expect(nextTuningStep(1, ready)).toBe(2);
     expect(nextTuningStep(3, ready)).toBeNull();
   });
   it('requires engine inputs and a current measurement only for full verification', () => {
-    expect(canOpenTuningStep(4, getWorkflowReadiness(true, profile, true))).toBe(true);
-    expect(canOpenTuningStep(4, getWorkflowReadiness(true, profile, false))).toBe(false);
-    expect(canOpenTuningStep(4, getWorkflowReadiness(true, { ...profile, maxHp: NaN }, true))).toBe(false);
+    expect(canOpenTuningStep(4, { mechanical: true, engineInputs: true, measuredEngine: true, gearingAvailable: true })).toBe(true);
+    expect(canOpenTuningStep(4, { mechanical: true, engineInputs: true, measuredEngine: false, gearingAvailable: false })).toBe(false);
+    expect(canOpenTuningStep(4, { mechanical: true, engineInputs: false, measuredEngine: false, gearingAvailable: false })).toBe(false);
   });
   it('keeps independent sections open when measurement is invalidated', () => {
-    const ready = getWorkflowReadiness(true, profile, false);
+    const ready = { mechanical: true, engineInputs: true, measuredEngine: false, gearingAvailable: false };
     for (const step of [2, 3]) expect(resolveTuningStep(step, ready)).toBe(step);
     expect(resolveTuningStep(4, ready)).toBe(3);
   });
   it.each([null, { ...profile, weight: 0 }, { ...profile, weight_distribution: 100 }, { ...profile, weight: NaN }])(
-    'requires a usable mechanical profile: %j', params => {
-      const ready = getWorkflowReadiness(true, params, true);
+    'requires backend mechanical readiness for profile: %j', () => {
+      const ready = { mechanical: false, engineInputs: true, measuredEngine: true, gearingAvailable: false };
       expect(resolveTuningStep(2, ready)).toBe(1);
       expect(canOpenTuningStep(4, ready)).toBe(false);
     });
   it('rejects loading profiles and invalid navigation numbers', () => {
-    expect(resolveTuningStep(4, getWorkflowReadiness(false, profile, true))).toBe(1);
-    const ready = getWorkflowReadiness(true, profile, true);
+    expect(resolveTuningStep(4, { mechanical: false, engineInputs: false, measuredEngine: false, gearingAvailable: false })).toBe(1);
+    const ready = { mechanical: true, engineInputs: true, measuredEngine: true, gearingAvailable: true };
     for (const step of [0, 5, 2.5, NaN]) expect(resolveTuningStep(step, ready)).toBe(1);
     expect(nextTuningStep(3, ready)).toBe(4);
     expect(nextTuningStep(4, ready)).toBeNull();

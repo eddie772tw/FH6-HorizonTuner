@@ -10,6 +10,7 @@
   <a href="https://github.com/eddie772tw/FH6-HorizonTuner/actions/workflows/ci.yml"><img src="https://github.com/eddie772tw/FH6-HorizonTuner/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI status on main"></a>
   <a href="https://github.com/eddie772tw/FH6-HorizonTuner/releases"><img src="https://img.shields.io/github/downloads/eddie772tw/FH6-HorizonTuner/total" alt="GitHub Release downloads"></a>
   <a href="LICENSE"><img src="https://img.shields.io/github/license/eddie772tw/FH6-HorizonTuner" alt="MIT license"></a>
+  <a href="https://hub.xerj.org/contributors/eddie772tw"><img src="https://hub.xerj.org/contributors/eddie772tw/badge.svg" alt="XERJ Corpus Hub contributor"></a>
 </p>
 
 <p align="center">
@@ -43,7 +44,7 @@ The dashboard and workspace screenshots show the [web interface on `main`](https
 | Four-step tuning | Post-race analysis |
 | --- | --- |
 | ![First step of a Road tune with the tuning goal, vehicle weight and front weight distribution](docs/assets/readme/en-us/tune.webp) | ![Track map colored by speed beside a comparison of speed and pedal inputs for laps two and one](docs/assets/readme/en-us/sessions.webp) |
-| Start with the car and tuning goal. After measuring the engine, check whether each upshift lands back in the power band. [Six-speed AEGO gearing chart](docs/frontend/assets/rhine-lab/gearing-rhine-light.png) | The heatmap shows the fast and slow sections of a lap. Overlay a second lap's speed trace to compare the same stretch of track. [Race analysis guide](docs/guides/race-analysis.md) |
+| Start with the car and tuning goal. After measuring the engine, inspect the backend-resolved wheel speeds and RPM markers. Peaks do not establish a full usable power band. [Six-speed AEGO gearing chart (historical capture)](docs/frontend/assets/rhine-lab/gearing-rhine-light.png) | The heatmap shows the fast and slow sections of a lap. Overlay a second lap's speed trace to compare the same stretch of track. [Race analysis guide](docs/guides/race-analysis.md) |
 
 | Drag test | Android Companion (Beta) |
 | --- | --- |
@@ -71,6 +72,10 @@ Browse the settings and original captures for the [NFSU2 faces](https://github.c
 <a id="readme-download"></a>
 
 ## Download
+
+**v1.8.4 · runtime `11.45.26`**: [Release notes](docs/releases/v1.8.4.md) · [Source tag](https://github.com/eddie772tw/FH6-HorizonTuner/tree/v1.8.4) · [Wiki](https://github.com/eddie772tw/FH6-HorizonTuner/wiki)
+
+This version adds NFS Underground 2, four Toyota clusters and six standalone tachometers, five HUD settings tabs, and independent audio heads and auxiliary gauges. It also fixes R34 MFD rendering, tuning boundaries and Companion USB/ADB lifecycle handling. USB is off by default and requires manual activation and scanning. Tags and downloadable assets are published separately; check the Release page for installers and OTA availability.
 
 **[Get the latest stable release →](https://github.com/eddie772tw/FH6-HorizonTuner/releases/latest)**
 
@@ -200,6 +205,10 @@ scripts/            Build, release and maintenance tools
 ```
 
 Production tuning decisions belong to `backend-rust/src/tuning/`. The frontend owns workflow, drafts and display conversions; historical TypeScript models remain test references. See the [responsibility contract](docs/contracts/tuning_responsibilities.md).
+
+Production AEGO recommendations select independent models by goal: Road launch envelope v3, Rally joint v1, Drift working v1 and Drag joint v1. Rust supplies qualification, driven-wheel geometry, model sources, target errors and limitations. Drift requires an explicit main gear, target RPM and wheel speed. Ratio balance rechecks the original targets and observed hardware bounds and refuses infeasible changes.
+
+New ICE recommendations use `rust/ice-measured-workflow-v4` and reconstruct their explicit model from original evidence after restart. Old v1/v2/v3 saves are read-only archives: their solvers are removed, and archived values cannot be applied or resaved as qualified recommendations. Developer Tuning is removed; the raw telemetry capture tool is available from the regular Step 3. See [archives and removed formulas](docs/tuning/model-retirement.md), the [integration contract](docs/tuning/aego-model-integration-v4.md) and [model isolation boundaries](docs/tuning/aego-model-isolation.md). These are engineering baselines: priors, synthetic contracts and browser captures do not establish in-game A/B results, a qualified Drift working band or launch/finish-speed performance.
 
 </details>
 

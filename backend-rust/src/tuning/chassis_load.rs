@@ -83,13 +83,27 @@ pub fn quantize(value: f64, min: f64, max: f64) -> f64 {
         return value;
     }
     let (min, max) = if min <= max { (min, max) } else { (max, min) };
-    let low = (min * 10.0).ceil() / 10.0;
-    let high = (max * 10.0).floor() / 10.0;
     let bounded = value.clamp(min, max);
-    if low.is_finite() && high.is_finite() && low <= high && (bounded * 10.0).is_finite() {
-        ((bounded * 10.0).round() / 10.0).clamp(low, high)
+    let rounded = (bounded * 10.0).round() / 10.0;
+    if !rounded.is_finite() {
+        return bounded;
+    }
+    if rounded > max {
+        let high = (max * 10.0).floor() / 10.0;
+        if high.is_finite() && high >= min && high <= max {
+            high
+        } else {
+            bounded
+        }
+    } else if rounded < min {
+        let low = (min * 10.0).ceil() / 10.0;
+        if low.is_finite() && low >= min && low <= max {
+            low
+        } else {
+            bounded
+        }
     } else {
-        bounded
+        rounded
     }
 }
 

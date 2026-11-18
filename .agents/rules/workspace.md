@@ -1,7 +1,7 @@
 # FH6-HorizonTuner - 工作區邊界與驗證規範 (Workspace Rules)
 
 ## 核心物理與數學運算規範
-1. **調校計算單一真理 (Source of Truth)**：正式純函數位於 `backend-rust/src/tuning/`，v1.7.1 取代雙端實作；前端透過 typed API 消費後端結果，既有 golden fixtures 保留不可變。`legacy_cli.rs` 僅保存舊版 CLI 相容數值，不作為新公式入口。
+1. **調校計算單一真理 (Source of Truth)**：正式純函數位於 `backend-rust/src/tuning/`，v1.7.1 取代雙端實作；前端透過 typed API 消費後端結果，既有 golden fixtures 保留不可變。舊 CLI／MCP 與 Developer Tuning 公式已移除；歷史版本只作封存分類，不作執行 fallback。
 2. **確定性輸入**：嚴禁在物理計算演算法中引入非確定性狀態或副作用。
 
 ## 架構隔離原則

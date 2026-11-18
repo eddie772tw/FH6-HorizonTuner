@@ -32,11 +32,15 @@ const SessionHealthDebrief: React.FC<SessionHealthDebriefProps> = ({ debrief, is
     value == null ? t("Unknown") : `${value.toFixed(1)}${suffix}`;
   const formatCount = (value: number | null | undefined) =>
     value == null ? t("Unknown") : value.toLocaleString();
+  const formatDebriefStatus = (status: string) =>
+    t(status === "no_data" ? "No Data" : status);
 
   if (isLoading) {
     return (
       <div
         className="glass-panel"
+        role="status"
+        aria-live="polite"
         style={{
           padding: "1.5rem",
           display: "flex",
@@ -81,6 +85,12 @@ const SessionHealthDebrief: React.FC<SessionHealthDebriefProps> = ({ debrief, is
 
   const understeerWidth = handling_balance.understeer_pct ?? 0;
   const oversteerWidth = handling_balance.oversteer_pct ?? 0;
+  const tireCorners = [
+    { key: "Front Left", avg: tire_thermals.fl_avg },
+    { key: "Front Right", avg: tire_thermals.fr_avg },
+    { key: "Rear Left", avg: tire_thermals.rl_avg },
+    { key: "Rear Right", avg: tire_thermals.rr_avg },
+  ] as const;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1rem", width: "100%" }}>
@@ -93,35 +103,19 @@ const SessionHealthDebrief: React.FC<SessionHealthDebriefProps> = ({ debrief, is
               {t("Tire Thermal Balance")}
             </span>
             <span className={thermalBadgeClass} style={{ fontSize: "0.75rem", padding: "0.3rem 0.6rem" }}>
-              {t(tire_thermals.status)}
+              {formatDebriefStatus(tire_thermals.status)}
             </span>
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.6rem", background: "var(--surface-1)", padding: "0.75rem", borderRadius: "var(--panel-radius)" }}>
-            <div style={{ textAlign: "center" }}>
-              <div style={{ fontSize: "0.7rem", color: "var(--text-secondary)" }}>FL</div>
-              <div style={{ fontSize: "1.1rem", fontWeight: "bold", color: "var(--text-primary)" }}>
-                {formatMetric(tire_thermals.fl_avg, "°C")}
+            {tireCorners.map(({ key, avg }) => (
+              <div key={key} style={{ textAlign: "center" }}>
+                <div style={{ fontSize: "0.7rem", color: "var(--text-secondary)" }}>{t(key)}</div>
+                <div style={{ fontSize: "1.1rem", fontWeight: "bold", color: "var(--text-primary)" }}>
+                  {formatMetric(avg, "°C")}
+                </div>
               </div>
-            </div>
-            <div style={{ textAlign: "center" }}>
-              <div style={{ fontSize: "0.7rem", color: "var(--text-secondary)" }}>FR</div>
-              <div style={{ fontSize: "1.1rem", fontWeight: "bold", color: "var(--text-primary)" }}>
-                {formatMetric(tire_thermals.fr_avg, "°C")}
-              </div>
-            </div>
-            <div style={{ textAlign: "center" }}>
-              <div style={{ fontSize: "0.7rem", color: "var(--text-secondary)" }}>RL</div>
-              <div style={{ fontSize: "1.1rem", fontWeight: "bold", color: "var(--text-primary)" }}>
-                {formatMetric(tire_thermals.rl_avg, "°C")}
-              </div>
-            </div>
-            <div style={{ textAlign: "center" }}>
-              <div style={{ fontSize: "0.7rem", color: "var(--text-secondary)" }}>RR</div>
-              <div style={{ fontSize: "1.1rem", fontWeight: "bold", color: "var(--text-primary)" }}>
-                {formatMetric(tire_thermals.rr_avg, "°C")}
-              </div>
-            </div>
+            ))}
           </div>
         </div>
 
@@ -132,7 +126,7 @@ const SessionHealthDebrief: React.FC<SessionHealthDebriefProps> = ({ debrief, is
               {t("Suspension Utilization")}
             </span>
             <span className={suspBadgeClass} style={{ fontSize: "0.75rem", padding: "0.3rem 0.6rem" }}>
-              {t(suspension.status)}
+              {formatDebriefStatus(suspension.status)}
             </span>
           </div>
 
@@ -169,7 +163,7 @@ const SessionHealthDebrief: React.FC<SessionHealthDebriefProps> = ({ debrief, is
               {t("Cornering Balance")}
             </span>
             <span className={handlingBadgeClass} style={{ fontSize: "0.75rem", padding: "0.3rem 0.6rem" }}>
-              {t(handling_balance.tendency)}
+              {formatDebriefStatus(handling_balance.tendency)}
             </span>
           </div>
 
@@ -179,7 +173,7 @@ const SessionHealthDebrief: React.FC<SessionHealthDebriefProps> = ({ debrief, is
               <span>{t("Oversteer")}: {formatMetric(handling_balance.oversteer_pct, "%")}</span>
             </div>
             {/* Dual Color Progress Bar */}
-            <div style={{ width: "100%", height: "8px", background: "var(--divider)", borderRadius: "4px", overflow: "hidden", display: "flex" }}>
+            <div aria-hidden="true" style={{ width: "100%", height: "8px", background: "var(--divider)", borderRadius: "4px", overflow: "hidden", display: "flex" }}>
               <div style={{ width: `${understeerWidth}%`, background: "var(--bs-info)", transition: "width 0.3s" }} />
               <div style={{ width: `${oversteerWidth}%`, background: "var(--bs-warning)", transition: "width 0.3s" }} />
             </div>

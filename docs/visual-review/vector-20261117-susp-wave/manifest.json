@@ -1,0 +1,66 @@
+{
+  "target": "hud_overlay/shared/telemetry-cards/corner-card.js",
+  "renderer": "createTelemetryCardsManager() -> renderCorners() -> drawSuspWaveform()",
+  "capturedAt": "2026-11-16T21:06:40.384514+00:00",
+  "browser": "Chromium headless (chromium 148.0.7778.96)",
+  "background": "#0b111b (composite dark backdrop for transparent HUD panel)",
+  "scopeNote": "Isolated #tcSuspBlockFL element clip with 16px margin (telemetryCornerOffsetY: 160 to center FL card within 1280x720); live game & native Windows overlay not tested here.",
+  "captures": [
+    {
+      "file": "susp-wave-dpr1-active.png",
+      "description": "DPR 1 · 150 筆懸吊行程波形、50% 基準線、上下 5% 極限警戒帶與同軸脈衝光環",
+      "viewport": "1280x720",
+      "dpr": 1,
+      "samples": 150,
+      "canvas": {
+        "width": 95,
+        "height": 76,
+        "clientWidth": 95,
+        "clientHeight": 76
+      },
+      "clipPaddingPx": 16
+    },
+    {
+      "file": "susp-wave-dpr1-extreme.png",
+      "description": "DPR 1 · 觸底極限壓縮（travel >= 0.95）觸發警戒紅光脈衝",
+      "viewport": "1280x720",
+      "dpr": 1,
+      "samples": 150,
+      "canvas": {
+        "width": 95,
+        "height": 76,
+        "clientWidth": 95,
+        "clientHeight": 76
+      },
+      "clipPaddingPx": 16
+    },
+    {
+      "file": "susp-wave-dpr2-active.png",
+      "description": "DPR 2 · HiDPI 150 筆懸吊行程波形與高解析圓潤抗鋸齒光環",
+      "viewport": "1280x720",
+      "dpr": 2,
+      "samples": 150,
+      "canvas": {
+        "width": 190,
+        "height": 152,
+        "clientWidth": 95,
+        "clientHeight": 76
+      },
+      "clipPaddingPx": 16
+    },
+    {
+      "file": "susp-wave-dpr1-single.png",
+      "description": "DPR 1 · 單一採樣（len === 1）即時同軸焦點顯示",
+      "viewport": "1280x720",
+      "dpr": 1,
+      "samples": 1,
+      "canvas": {
+        "width": 109,
+        "height": 76,
+        "clientWidth": 108,
+        "clientHeight": 76
+      },
+      "clipPaddingPx": 16
+    }
+  ]
+}

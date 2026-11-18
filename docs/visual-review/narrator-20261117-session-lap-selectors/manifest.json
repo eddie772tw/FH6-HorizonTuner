@@ -1,0 +1,232 @@
+{
+  "captureDate": "2026-11-17",
+  "baseUrl": "http://127.0.0.1:1453",
+  "component": "frontend/src/features/analysis/AnalysisSessionToolbar.tsx",
+  "mockedBackend": true,
+  "cases": [
+    {
+      "name": "default-light-en-us-1280-sessions.png",
+      "core": "default",
+      "mode": "light",
+      "lang": "en-us",
+      "width": 1280,
+      "height": 720,
+      "file": "default-light-en-us-1280-sessions.png",
+      "horizontalOverflow": false,
+      "hasSuffixLeak": false,
+      "optionTexts": [
+        [
+          "Current / Latest Session",
+          "Porsche 911 GT3 RS (5 Laps | Best: 84.32s)",
+          "Mazda MX-5 Miata (0 Laps | Best: Unknown)"
+        ],
+        [
+          "All Laps",
+          "Lap 1 (84.32s | Max: 268 km/h)",
+          "Lap 2 (Estimated 86.15s | Max: Unknown)"
+        ],
+        [
+          "None",
+          "vs Lap 1 (84.32s)",
+          "vs Lap 2 (Estimated 86.15s)"
+        ]
+      ]
+    },
+    {
+      "name": "default-dark-zh-tw-1280-sessions.png",
+      "core": "default",
+      "mode": "dark",
+      "lang": "zh-tw",
+      "width": 1280,
+      "height": 720,
+      "file": "default-dark-zh-tw-1280-sessions.png",
+      "horizontalOverflow": false,
+      "hasSuffixLeak": false,
+      "optionTexts": [
+        [
+          "當前 / 最新賽事",
+          "Porsche 911 GT3 RS (5 圈 | 最佳: 84.32s)",
+          "Mazda MX-5 Miata (0 圈 | 最佳: 未知)"
+        ],
+        [
+          "全單圈",
+          "第 1 圈 (84.32s | 最高: 268 km/h)",
+          "第 2 圈 (估算 86.15s | 最高: 未知)"
+        ],
+        [
+          "無",
+          "對比第 1 圈 (84.32s)",
+          "對比第 2 圈 (估算 86.15s)"
+        ]
+      ]
+    },
+    {
+      "name": "swiss-light-ja-jp-1280-sessions.png",
+      "core": "swiss",
+      "mode": "light",
+      "lang": "ja-jp",
+      "width": 1280,
+      "height": 720,
+      "file": "swiss-light-ja-jp-1280-sessions.png",
+      "horizontalOverflow": false,
+      "hasSuffixLeak": false,
+      "optionTexts": [
+        [
+          "現在 / 最新のセッション",
+          "Porsche 911 GT3 RS (5 ラップ | ベスト: 84.32s)",
+          "Mazda MX-5 Miata (0 ラップ | ベスト: 未知)"
+        ],
+        [
+          "全ラップ",
+          "ラップ 1 (84.32s | 最高: 268 km/h)",
+          "ラップ 2 (推定 86.15s | 最高: 未知)"
+        ],
+        [
+          "なし",
+          "vs ラップ 1 (84.32s)",
+          "vs ラップ 2 (推定 86.15s)"
+        ]
+      ]
+    },
+    {
+      "name": "swiss-dark-zh-tw-1280-sessions.png",
+      "core": "swiss",
+      "mode": "dark",
+      "lang": "zh-tw",
+      "width": 1280,
+      "height": 720,
+      "file": "swiss-dark-zh-tw-1280-sessions.png",
+      "horizontalOverflow": false,
+      "hasSuffixLeak": false,
+      "optionTexts": [
+        [
+          "當前 / 最新賽事",
+          "Porsche 911 GT3 RS (5 圈 | 最佳: 84.32s)",
+          "Mazda MX-5 Miata (0 圈 | 最佳: 未知)"
+        ],
+        [
+          "全單圈",
+          "第 1 圈 (84.32s | 最高: 268 km/h)",
+          "第 2 圈 (估算 86.15s | 最高: 未知)"
+        ],
+        [
+          "無",
+          "對比第 1 圈 (84.32s)",
+          "對比第 2 圈 (估算 86.15s)"
+        ]
+      ]
+    },
+    {
+      "name": "rhine-lab-light-en-us-1280-sessions.png",
+      "core": "rhine-lab",
+      "mode": "light",
+      "lang": "en-us",
+      "width": 1280,
+      "height": 720,
+      "file": "rhine-lab-light-en-us-1280-sessions.png",
+      "horizontalOverflow": false,
+      "hasSuffixLeak": false,
+      "optionTexts": [
+        [
+          "Current / Latest Session",
+          "Porsche 911 GT3 RS (5 Laps | Best: 84.32s)",
+          "Mazda MX-5 Miata (0 Laps | Best: Unknown)"
+        ],
+        [
+          "All Laps",
+          "Lap 1 (84.32s | Max: 268 km/h)",
+          "Lap 2 (Estimated 86.15s | Max: Unknown)"
+        ],
+        [
+          "None",
+          "vs Lap 1 (84.32s)",
+          "vs Lap 2 (Estimated 86.15s)"
+        ]
+      ]
+    },
+    {
+      "name": "rhine-lab-dark-ja-jp-1280-sessions.png",
+      "core": "rhine-lab",
+      "mode": "dark",
+      "lang": "ja-jp",
+      "width": 1280,
+      "height": 720,
+      "file": "rhine-lab-dark-ja-jp-1280-sessions.png",
+      "horizontalOverflow": false,
+      "hasSuffixLeak": false,
+      "optionTexts": [
+        [
+          "現在 / 最新のセッション",
+          "Porsche 911 GT3 RS (5 ラップ | ベスト: 84.32s)",
+          "Mazda MX-5 Miata (0 ラップ | ベスト: 未知)"
+        ],
+        [
+          "全ラップ",
+          "ラップ 1 (84.32s | 最高: 268 km/h)",
+          "ラップ 2 (推定 86.15s | 最高: 未知)"
+        ],
+        [
+          "なし",
+          "vs ラップ 1 (84.32s)",
+          "vs ラップ 2 (推定 86.15s)"
+        ]
+      ]
+    },
+    {
+      "name": "default-light-ja-jp-320-sessions.png",
+      "core": "default",
+      "mode": "light",
+      "lang": "ja-jp",
+      "width": 320,
+      "height": 800,
+      "file": "default-light-ja-jp-320-sessions.png",
+      "horizontalOverflow": false,
+      "hasSuffixLeak": false,
+      "optionTexts": [
+        [
+          "現在 / 最新のセッション",
+          "Porsche 911 GT3 RS (5 ラップ | ベスト: 84.32s)",
+          "Mazda MX-5 Miata (0 ラップ | ベスト: 未知)"
+        ],
+        [
+          "全ラップ",
+          "ラップ 1 (84.32s | 最高: 268 km/h)",
+          "ラップ 2 (推定 86.15s | 最高: 未知)"
+        ],
+        [
+          "なし",
+          "vs ラップ 1 (84.32s)",
+          "vs ラップ 2 (推定 86.15s)"
+        ]
+      ]
+    },
+    {
+      "name": "default-dark-zh-tw-320-sessions.png",
+      "core": "default",
+      "mode": "dark",
+      "lang": "zh-tw",
+      "width": 320,
+      "height": 800,
+      "file": "default-dark-zh-tw-320-sessions.png",
+      "horizontalOverflow": false,
+      "hasSuffixLeak": false,
+      "optionTexts": [
+        [
+          "當前 / 最新賽事",
+          "Porsche 911 GT3 RS (5 圈 | 最佳: 84.32s)",
+          "Mazda MX-5 Miata (0 圈 | 最佳: 未知)"
+        ],
+        [
+          "全單圈",
+          "第 1 圈 (84.32s | 最高: 268 km/h)",
+          "第 2 圈 (估算 86.15s | 最高: 未知)"
+        ],
+        [
+          "無",
+          "對比第 1 圈 (84.32s)",
+          "對比第 2 圈 (估算 86.15s)"
+        ]
+      ]
+    }
+  ]
+}

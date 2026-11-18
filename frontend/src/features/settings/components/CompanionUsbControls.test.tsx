@@ -52,7 +52,7 @@ it.each(locales)('translates disabled USB reasons through the real SettingsProvi
   const response = (value: unknown) => new Response(JSON.stringify(value), { status: 200 });
   vi.mocked(backendFetch).mockImplementation(async path => {
     if (path === '/api/languages') return response(locales.map(item => ({ code: item.language, name: item.language })));
-    if (path === '/api/settings') return response({ language });
+    if (path === '/api/settings') return response({ language, companion_usb_enabled: true });
     if (path.startsWith('/api/languages/')) return response(dictionaries[path.slice('/api/languages/'.length)]);
     if (path === '/api/companion/usb/devices') return scan;
     if (path === '/api/companion/usb/connect') return connect;
@@ -65,6 +65,13 @@ it.each(locales)('translates disabled USB reasons through the real SettingsProvi
   await render(false);
   expect([...host.querySelectorAll('output')].map(output => output.textContent)).toEqual(expected);
   await render(true);
+  await act(async () => { await new Promise(r => setTimeout(r, 20)); });
+
+  // Trigger manual refresh
+  const refreshButton = host.querySelector<HTMLButtonElement>('button.btn-outline-secondary')!;
+  expect(refreshButton).not.toBeNull();
+  await act(async () => refreshButton.click());
+
   const button = host.querySelector<HTMLButtonElement>('button.btn-primary')!;
   expect(button.disabled).toBe(true);
   expect(button.parentElement!.title).toBe(expected[1]);
@@ -102,4 +109,19 @@ it.each(locales)('translates disabled USB reasons through the real SettingsProvi
   })));
   expect(button.disabled).toBe(false);
   expect(button.parentElement!.title).toBe('');
+});
+
+it('does not probe USB devices on mount when companion_usb_enabled is false', async () => {
+  const response = (value: unknown) => new Response(JSON.stringify(value), { status: 200 });
+  vi.mocked(backendFetch).mockImplementation(async path => {
+    if (path === '/api/languages') return response([{ code: 'en-us', name: 'English' }]);
+    if (path === '/api/settings') return response({ language: 'en-us', companion_usb_enabled: false });
+    if (path.startsWith('/api/languages/')) return response(dictionaries['en-us']);
+    throw new Error('Unexpected request: ' + path);
+  });
+  await act(async () => root.render(
+    <ToastProvider><SettingsProvider><CompanionUsbControls /></SettingsProvider></ToastProvider>,
+  ));
+  expect(vi.mocked(backendFetch).mock.calls.some(([path]) => path === '/api/companion/usb/devices')).toBe(false);
+  expect(host.textContent).toContain('USB connection is disabled');
 });

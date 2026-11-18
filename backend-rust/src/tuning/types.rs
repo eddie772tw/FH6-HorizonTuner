@@ -132,6 +132,31 @@ pub struct TuningCarParams {
     pub rear_tire_rim: Option<f64>,
     #[serde(alias = "rallyProfile")]
     pub rally_profile: Option<RallyProfile>,
+    // Kept as strict model-owned JSON contracts to avoid model-to-model type dependencies.
+    #[serde(
+        default,
+        alias = "driftWorkingTarget",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub drift_working_target: Option<serde_json::Value>,
+    #[serde(
+        default,
+        alias = "rallyObservedBounds",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub rally_observed_bounds: Option<serde_json::Value>,
+    #[serde(
+        default,
+        alias = "driftObservedBounds",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub drift_observed_bounds: Option<serde_json::Value>,
+    #[serde(
+        default,
+        alias = "dragObservedBounds",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub drag_observed_bounds: Option<serde_json::Value>,
     pub spring_front_min: Option<f64>,
     pub spring_front_max: Option<f64>,
     pub spring_rear_min: Option<f64>,

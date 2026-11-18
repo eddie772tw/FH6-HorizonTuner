@@ -177,6 +177,25 @@ impl AdbClient {
         })
     }
 
+    /// Terminate any running ADB daemon server to free port 5037 and USB resources.
+    pub fn kill_server(&self) -> Result<(), AdbError> {
+        let output = self.run(&["kill-server"])?;
+        if !output.status.success() {
+            return Err(AdbError::Failed);
+        }
+        Ok(())
+    }
+
+    /// Remove all reverse socket connections for a device.
+    pub fn remove_all_reverse(&self, serial: &str) -> Result<(), AdbError> {
+        validate_serial(serial)?;
+        let output = self.run(&["-s", serial, "reverse", "--remove-all"])?;
+        if !output.status.success() {
+            return Err(AdbError::Failed);
+        }
+        Ok(())
+    }
+
     fn run(&self, args: &[&str]) -> Result<Output, AdbError> {
         let mut command = Command::new(&self.adb_path);
         command

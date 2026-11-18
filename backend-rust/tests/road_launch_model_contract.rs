@@ -1,7 +1,6 @@
 use fh6_backend::tuning::{
-    calc_gear_speed, calculate_aego_gearing,
-    gearing::{calculate_aego_gearing_v2, road_launch_diagnostics},
-    measurement, GearingSecondaryCorrection, RaceGoal, TuningCarParams,
+    calc_gear_speed, calculate_aego_gearing, gearing::road_launch_diagnostics, measurement,
+    GearingSecondaryCorrection, RaceGoal, TuningCarParams,
 };
 use serde_json::{json, Value};
 fn synthetic() -> TuningCarParams {
@@ -34,9 +33,6 @@ fn frozen_history_is_characterization_not_new_model_correctness() {
         ("alternate", 8804.031901079223),
     ] {
         p.max_hp_rpm = Some(rpm);
-        let old = calculate_aego_gearing_v2(RaceGoal::Road, 7, &p, 10000.0, None);
-        let final_history = history["cases"].as_array().unwrap().last().unwrap();
-        assert_gearing(&old, &final_history[field]);
         let current = calculate_aego_gearing(RaceGoal::Road, 7, &p, 10000.0, None);
         assert_ne!(current.unsupported, Some(true));
         // Only this characterized synthetic case agrees with v1.6; no blanket rollback claim.
@@ -236,10 +232,6 @@ fn existing_low_power_goldens_and_real_limiter_evidence_remain_unchanged() {
             p.max_hp_rpm = analysis["peakPower"]["rpm"].as_f64();
             p.max_torque_rpm = analysis["peakTorque"]["rpm"].as_f64();
             p.max_torque = analysis["peakTorque"]["value"].as_f64();
-            assert_eq!(
-                calculate_aego_gearing(RaceGoal::Road, 6, &p, limit, None),
-                calculate_aego_gearing_v2(RaceGoal::Road, 6, &p, limit, None)
-            );
         }
         println!("CAPTURE {car} {}", analysis);
     }
@@ -301,8 +293,6 @@ fn reported_pagani_static_profile_characterizes_defaults_and_explicit_rpm_scenar
         assert!((params.weight.unwrap() - 2434.0 / 2.20462).abs() < 1e-9);
         assert!((params.max_torque.unwrap() - 824.0 / 0.73756).abs() < 1e-9);
         assert!((radius(&params) - 0.3457).abs() < 1e-12);
-        let frozen = calculate_aego_gearing_v2(RaceGoal::Road, 7, &params, rpm, None);
-        assert_gearing(&frozen, &case["historical"]["ca195c7"]);
         let current = calculate_aego_gearing(RaceGoal::Road, 7, &params, rpm, None);
         assert_gearing(&current, &case["historical"]["cd96d86"]);
         assert_ne!(
@@ -333,7 +323,7 @@ fn reported_static_load_bound_cannot_round_to_reported_first_endpoint() {
     assert!(upper < 3.78 * (1.0 - 0.005));
     for split in 0..=100 {
         params.road_awd_rear_percent = Some(split as f64);
-        let result = calculate_aego_gearing_v2(RaceGoal::Road, 7, &params, 9000.0, None);
+        let result = calculate_aego_gearing(RaceGoal::Road, 7, &params, 9000.0, None);
         let diagnostics = road_launch_diagnostics(
             &params,
             9000.0,

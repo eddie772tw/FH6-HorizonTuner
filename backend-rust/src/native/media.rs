@@ -1,3 +1,5 @@
+#[cfg(any(windows, test))]
+use super::validate_thumbnail;
 #[cfg(windows)]
 use std::future::IntoFuture;
 use std::sync::{mpsc, Arc, Mutex};
@@ -564,14 +566,12 @@ fn extract_thumbnail(
         .map(|byte| format!("{byte:02x}"))
         .collect::<String>()[..16]
         .to_owned();
-    let content_type = stream
-        .ContentType()
-        .ok()
-        .map(|value| value.to_string())
-        .filter(|value| !value.is_empty())
-        .unwrap_or_else(|| "image/jpeg".into());
+    let raw_content_type = stream.ContentType().ok().map(|value| value.to_string());
+    let Some(content_type) = validate_thumbnail(raw_content_type.as_deref(), &bytes) else {
+        return Ok(None);
+    };
     Ok(Some(ThumbnailData {
-        content_type,
+        content_type: content_type.to_owned(),
         hash,
         bytes,
     }))
@@ -637,5 +637,36 @@ mod tests {
         assert_eq!(state.snapshot["has_media"], false);
         assert_eq!(state.snapshot["state"], "unavailable");
         assert!(state.thumbnail.is_none());
+    }
+
+    #[test]
+    fn thumbnail_validation_blocks_active_markup_and_normalizes_raster_types() {
+        assert_eq!(
+            validate_thumbnail(Some("image/jpg; charset=binary"), b"\xFF\xD8\xFF\xE0"),
+            Some("image/jpeg")
+        );
+        assert_eq!(
+            validate_thumbnail(Some("IMAGE/PNG"), b"\x89PNG\r\n\x1a\n"),
+            Some("image/png")
+        );
+        assert_eq!(
+            validate_thumbnail(None, b"RIFF\x00\x00\x00\x00WEBP"),
+            Some("image/webp")
+        );
+        assert_eq!(
+            validate_thumbnail(Some(""), b"\x89PNG\r\n\x1a\n"),
+            Some("image/png")
+        );
+        assert_eq!(validate_thumbnail(Some("image/svg+xml"), b"<svg/>"), None);
+        assert_eq!(validate_thumbnail(Some("text/html"), b"<html>"), None);
+        assert_eq!(
+            validate_thumbnail(Some("image/png"), b" \n\t<svg onload=alert(1)>"),
+            None
+        );
+        assert_eq!(
+            validate_thumbnail(Some("image/png\r\nX-Inject: 1"), b"\x89PNG\r\n\x1a\n"),
+            None
+        );
+        assert_eq!(validate_thumbnail(None, b"not-an-image"), None);
     }
 }

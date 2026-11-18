@@ -44,7 +44,7 @@ Rust 後端及 Agent CLI 的主驗證入口為 `cargo test --locked --manifest-p
 
 專案前端採用 **Vitest** 作為單元測試框架（整合於 Vite 工具鏈）。
 
-* **測試檔命名慣例**：測試檔與被測模組同目錄，命名為 `<模組名>.test.ts`（例如 `tuningMath.ts` → `tuningMath.test.ts`）。
+* **測試檔命名慣例**：測試檔與被測模組同目錄，命名為 `<模組名>.test.ts`（例如 `tuningWorkflow.ts` → `tuningWorkflow.test.ts`）。
 * **測試原則**：
   - 驗證**邊界值**（0%/100% 分佈、極端輸入）、**相對關係**（前 > 後、drift vs road）與 **clamp 限界**。
   - 對於由遙測逆向工程得出的校準常數（如 `CALIBRATION_CONST`），不硬編碼期望值，改以範圍與相對關係斷言。
@@ -55,5 +55,5 @@ Rust 後端及 Agent CLI 的主驗證入口為 `cargo test --locked --manifest-p
   cmd /c "pnpm -C frontend run test"
 
   # 單檔聚焦極速測試
-  cmd /c "pnpm -C frontend exec vitest run test-reference/tuning/utils/tuningMath.test.ts"
+  cmd /c "pnpm -C frontend exec vitest run src/features/tuning/tuningWorkflow.test.ts"
   ```

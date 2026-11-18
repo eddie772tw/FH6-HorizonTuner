@@ -1,3 +1,5 @@
+> 歷史記錄：本文保留當時的實作與驗證結果；舊公式、Developer Tuning 及其執行／退役期測試已由 #658 清理。現行行為與資料檢視見[封存與移除說明](../tuning/model-retirement.md)，不依本文啟用舊 solver。
+
 # EV 測量與 AEGO 基礎模型
 
 狀態：v1.7.1 基礎模型與正式 Rust owner 已落地。2026-10-05 以既有 Taycan 實機資料完成 Rust HTTP／瀏覽器回放與後端重啟持久化驗收；真實單速車款與新的遊戲內 UI 操作仍未追加驗收。Issue #435；CVT / #434 與新的 EV 最佳化暫不納入。

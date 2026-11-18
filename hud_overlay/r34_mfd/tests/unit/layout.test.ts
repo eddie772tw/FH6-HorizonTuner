@@ -38,4 +38,14 @@ describe('independent lower-center instruments and corner MFD', () => {
   it('sanitizes invalid viewport and scale inputs', () => {
     expect(L.layout(NaN, 0, -1)).toEqual(L.layout(1920, 1080, 1));
   });
+  it('guarantees natural cluster spacing without exaggerated void and generous MFD clearance', () => {
+    const g = L.layout(1920, 1080, 1);
+    const tachRight = g.tach.x + g.tach.width;
+    const speedLeft = g.speed.x;
+    const gap = speedLeft - tachRight;
+    expect(gap).toBeGreaterThan(20);
+    expect(gap).toBeLessThan(100);
+    expect(g.screen.x - (g.boost.x + g.boost.width)).toBeGreaterThan(100);
+    expect(g.screenMarginX).toBeLessThanOrEqual(14);
+  });
 });

@@ -413,7 +413,7 @@ fn mcp_http_uses_shared_persistence_and_honors_access_settings() {
         202
     );
     let tools = run.json("POST", "/mcp", rpc("tools/list", json!({})));
-    assert_eq!(tools["result"]["tools"].as_array().unwrap().len(), 27);
+    assert_eq!(tools["result"]["tools"].as_array().unwrap().len(), 24);
     let preset = json!({"schemaVersion":"tuning-preset/v1","parameters":{"arb_front":3.0}});
     run.json("POST", "/api/tunings/247/road-test", preset.clone());
     let response = run.json("POST", "/mcp", rpc("tools/call", json!({"name":"get_tuning_preset","arguments":{"car_id":"247","save_name":"road-test"}})));
@@ -526,12 +526,11 @@ fn rust_agent_cli_discovers_backend_and_reads_live_data() {
         cli(&["telemetry", "snapshot"])["source"],
         "udp_memory_stream"
     );
-    assert!(cli(&["telemetry", "diagnose"])
-        .get("front_avg_temp_c")
-        .is_some());
-    assert_eq!(
-        cli(&["solve", "full", "--car-id", "247", "--save", "cli-api"])["synced_to_backend"],
-        true
+    // Preset storage is independent of the retired quick solver.
+    run.json(
+        "POST",
+        "/api/tunings/247/cli-api",
+        json!({"schemaVersion":"tuning-preset/v1","parameters":{"arb_front":3.0}}),
     );
     let preset = run.json("GET", "/api/tunings/247/cli-api", Value::Null);
     assert_eq!(preset["schemaVersion"], "tuning-preset/v1");

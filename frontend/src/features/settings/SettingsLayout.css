@@ -11,7 +11,7 @@
 
 .offcanvas.app-menu-drawer.app-dialog--about { --app-drawer-cap: 38rem; }
 .offcanvas.app-menu-drawer.app-dialog--mcp { --app-drawer-cap: 50rem; }
-.offcanvas.app-menu-drawer.app-dialog--companion { --app-drawer-cap: 60rem; }
+.offcanvas.app-menu-drawer.app-dialog--companion { --app-drawer-cap: 60rem; width: min(66.6666667vw, 60rem); }
 .offcanvas.app-menu-drawer.app-dialog--settings { width: min(66.6666667vw, 65rem); }
 .offcanvas.app-menu-drawer.theme-sidebar { --app-drawer-cap: 54rem; }
 .offcanvas.app-menu-drawer.terminal-sidebar { --app-drawer-cap: 58rem; }
@@ -172,6 +172,7 @@
   .offcanvas.app-menu-drawer {
     --bs-offcanvas-width: 100vw;
     /* Compact screens need the full viewport for settings controls. */
+    width: 100vw !important;
     min-width: 100vw;
     max-width: 100vw;
   }

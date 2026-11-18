@@ -3,64 +3,33 @@ name: physics-tuning-math
 description: 當新增、修改車輛物理計算（懸吊、彈簧、防傾桿 ARB、阻尼 Critical Damping、AEGO 齒輪比）或診斷邏輯時觸發此技能。
 ---
 
-# 車輛物理與調校演算法規範指南 (Physics Tuning Math Skill)
+# 車輛物理與調校演算法規範
 
-## 核心原則
+## 單一 owner 與版本
 
-1. **單一真理 (Single Source of Truth)**：
-   - 正式調校與數值診斷純函數集中在 `backend-rust/src/tuning/`；v1.7.1 取代 #430 雙端 SSOT。既有 TS 模型隔離於 `frontend/test-reference/tuning/`，以凍結 fixtures 鎖定輸出；產品純型別位於 `frontend/src/domain/tuning/types.ts`，不能新增前端計算或 fallback；桌面、Companion、API 與離線 CLI 共用 Rust owner。
-   - **絕不**在 React UI 組件重複硬編碼物理計算公式。`legacy_cli.rs` 與 MCP quick solver 僅保留既有 `tuning-dev/v1` 相容輸出，不作為新公式入口。
+推薦數字、資格、預設、限制與診斷由 Rust `backend-rust/src/tuning/` 擁有；UI 只處理草稿、導覽、顯示與單位。TypeScript 凍結公式、舊 CLI／MCP quick solver 與 Developer Tuning 已移除，不得新增前端或舊版本 fallback。
 
-2. **純函數無副作用 (Pure Functions)**：
-   - 物理函數必須為「輸入無副作用、輸出確定」的純函數。
-   - 禁止依賴外部全域變數或 React Component State。
+- 現行 ICE：Road `aego-road-launch-envelope/v3`、Rally `aego-rally-joint/v1`、Drift `aego-drift-working/v1`、Drag `aego-drag-joint/v1`；各自保有目標與硬約束。
+- DangerSign 只保留現有必要路徑，不是第五個 AEGO 模型或獨立項目。
+- `chassis_load.rs` 是 Road／Rally 工程基準；`chassis.rs` 仍服務現行 schema v1 與其他模式。不可因歷史 wire ID 或舊命名誤刪仍使用的數值策略。
+- EV／CVT、底盤、workflow schema、量測 reducer 與齒比模型版本彼此獨立；不能只升級一個共用版本並改寫舊記錄。
+- 保存推薦必須從原始合格證據重建比對。已退役 ICE 只可封存檢視／匯出；版本字串不是可選 solver。未知或錯配 ID 不能選到 latest。
 
-3. **邊界防護與校準常數**：
-   - 逆向工程常數（如 `CALIBRATION_CONST`）需加上詳細註解說明物理依據。
-   - 新模型對非法輸入（如車重 0、配重 0% 或 100%）回報 unavailable；合法目標超出配件範圍才限界並附診斷。歷史 owner 的 fallback 保持版本相容，不得擴張為新模型的猜值來源。
+## 數值與證據原則
 
----
+1. 公式為確定性的純函式，無全域狀態或 I/O。60Hz 接收路徑不得做重播、同步檔案或高成本工作。
+2. 釐清遊戲原生、領域與顯示單位。逆向先驗需揭露來源、適用範圍與未驗證假設。
+3. 新模型對缺失、非有限及非法必要輸入回 unavailable。合法目標受限時保留目標與原因，不靜默改目標或補造量測。
+4. Drift 要求使用者主檔、工作 RPM 與輪速；輪速不是滑移中的地速，峰值不能宣稱完整合格工作帶。
+5. 等價重配須同時滿足原目標與既有 observed 硬體範圍，更新實際值／誤差，不得放寬原鎖定。
+6. 原21 tuning／10 EV fixtures不改值或容差；現行模型使用有來源的各自基準。退役 solver 或過渡測試在充分確認不能接通後可移除，不為維持 pass 數保留死套件，也不能更新舊數字偽裝相容。
 
-## 現行演算法架構速查
+## 正式入口與驗證
 
-現行 Road／Rally 公式與輸入資格：[底盤工程基準 v1](../../../docs/tuning/chassis-engineering-baseline-v1.md)。責任、API 與歷史重播：[調校責任契約](../../../docs/contracts/tuning_responsibilities.md)。
+`fh6-agent solve workflow --args-file workflow-request.json --data-dir <資料目錄> --json` 與 HTTP／桌面／Companion／MCP `calculate_tuning_workflow` 共用 Rust owner。量測推薦需合格 saved evidence 或可重播原始 capture，不能使用裸峰值。
 
-### 1. 歷史底盤模型速查（v1 API／凍結 owner）
+- Rust：`cargo test --locked --manifest-path backend-rust/Cargo.toml`；平台功能另驗證 `--no-default-features`。
+- 前端：`pnpm -C frontend test` 與影響範圍的 build；UI 截圖遵循 ui-visual-review。
+- 分開報告程式契約、瀏覽器、原生裝置與遊戲 A/B。有限數字、available 或 CI 成功不代表性能最佳。
 
-以下 Road／Rally 舊彈簧與阻尼僅適用歷史 owner，不得當作現行 v2 公式。新模型由 `chassis_load.rs` 擁有，其他模式沿用舊路徑。
-
-| 調校項目 | 公路/環道 (Road / Circuit) | 甩尾 (Drift) | 拉力/越野 (Rally / Off-Road) | 直線加速 (Drag) |
-| :--- | :--- | :--- | :--- | :--- |
-| **前防傾桿 ($ARB_f$)** | $64.0 \times W_f\% + 1.0$ (AWD: $\min(5, 1+4W_f\%)$) | $10.0$ | $(64.0 \times W_f\% + 1.0) \times 0.35$ | $1.0$ |
-| **後防傾桿 ($ARB_r$)** | $64.0 \times W_r\% + 1.0$ (AWD: $\max(50, 65 - 0.3(100-W_r))$) | $50.0$ | $(64.0 \times W_r\% + 1.0) \times 0.35$ | $65.0$ (抑制歪斜) |
-| **前彈簧 ($K_f$)** | $K_{base\_f} + \frac{Aero_f}{10} \times 0.5$ | $W \times W_f\% \times 0.035$ | $K_{base\_f} \times 0.65$ | $K_{min\_f} + 0.20 \Delta K_f$ |
-| **後彈簧 ($K_r$)** | $K_{base\_r} + \frac{Aero_r}{25} \times 0.5$ | $W \times W_r\% \times 0.035$ | $K_{base\_r} \times 0.65$ | $K_{min\_r} + 0.90 \Delta K_r$ |
-| **車身高度 ($H$)** | $H_{min} + 3$ Clicks | 前最低 $+ 1$ Click / 後最低 | $H_{max}$ (最高) | 前最低 ($H_{min\_f}$) / 後最高 ($H_{max\_r}$) (Forward Rake) |
-| **回彈阻尼 ($D_{reb}$)** | $19.0 \times W\% + 1.0$ | 前後拉平 $6.0$ | $14.0 \times W\% + 1.0$ | 前 $3.0$ / 後 $12.0$ |
-| **壓縮阻尼 ($D_{bmp}$)** | $D_{reb} \times 0.60$ | $D_{reb} \times 0.50$ | $D_{reb} \times 0.40$ | 前 $4.0$ / 後 $10.0$ |
-
-### 2. AEGO 齒比算牌與二次修正核心
-- 下列為凍結模型速查；Road 現行 owner 與版本以 [Launch v3](../../../docs/tuning/aego-road-launch-v3.md) 為準，不能依此表新增前端公式。
-- **`calculateAEGOGearing`** 支援 Road, Drift, Rally, Drag 四種 profile。
-- **Drag 4-Speed Meta**：極速採 $vDragTop = 410.0 \times (hp/kg)^{0.30} \times (1 + 0.12 \times aeroEfficiency)$。
-- **Secondary Correction**：支援 `simulatedTopSpeed` 與 `softMaxSpeed` 時速上限鎖定，動態計算頂檔與閉環重分佈中間檔位。
-
-### 3. Road／Rally 可選下壓力
-- v2：兩軸未填不補正；單軸需明確前空力占比反推；雙軸直接採用。明確 0 與未填分開，禁止猜測負載、沿用無來源預設 balance 或回填推導值。`optional/v1` 記錄輸入語意；舊 Auto 0 正規化為未提供。
-- `chassis_load.rs` 以 `K0 × (1+F/W)` 修正彈簧，阻尼依實際限界後剛性比例平方根縮放；缺值、不可解端點與限界由 Rust 回報。車重 20%／驅動偏置 Auto 僅保留於歷史／其他模式 owner。
-
-### 4. Agent CLI 調校算牌工具 (`fh6-agent`)
-
-正式入口是 `fh6-agent.bat solve workflow --args-file workflow-request.json --data-dir <資料目錄> --json`，與桌面及 MCP `calculate_tuning_workflow` 使用相同 Rust owner；量測推薦需 saved-engine／saved-ev 證據或可重播的原始 capture，不能用裸峰值代替。以下 chassis／gearing／full 指令僅為 `legacy-cli/v1` 相容契約，不能作為新模型或正式驗收入口。
-- Agent 可直接使用 `fh6-agent.bat solve chassis --weight <kg> --bias <%> --drive <AWD|RWD|FWD> --goal <road|drift|rally|drag> --json` 進行離線極速算牌。
-- 支援 `--export-applied-setup` 產出前端 Step 5 `AppliedSetupTable` 規格物件。
-- 支援 `fh6-agent.bat solve gearing --max-rpm <rpm> --peak-hp-rpm <rpm> --top-speed <kmh> --gears <count> --json` 進行 AEGO 齒比計算。
-- 支援 `fh6-agent.bat solve full --car-id <id> --goal <goal> --save <name> --json` 生成相容 Preset 並存檔。
-
----
-
-## 驗證 SOP
-
-- 修改正式公式後，必須於 `backend-rust/tests/` 補充對應 Rust 契約；歷史 TypeScript characterization tests 不得跟著新模型重寫預期值。新版本另建有來源的新基準。
-- 執行測試指令：`cmd /c "pnpm -C frontend run test"`。
-- Rust 後端與 CLI 驗證指令：`cargo test --locked --manifest-path backend-rust/Cargo.toml`；相關公式契約另確認 `tests/fixtures/tuning_golden_fixtures.json` 與前端 Vitest。
+參考：[調校責任契約](../../../docs/contracts/tuning_responsibilities.md)、[現行獨立版本](../../../docs/tuning/aego-version-contract.md)、[歷史封存與移除範圍](../../../docs/tuning/model-retirement.md)、[底盤基準](../../../docs/tuning/chassis-engineering-baseline-v1.md)。

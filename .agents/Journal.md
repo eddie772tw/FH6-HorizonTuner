@@ -1,5 +1,82 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-11-17 / #678–#682 合併後邊界修復（Codex as Codex）
+
+- **範圍與技能**：依使用者要求直接修改 `main`；採用 `pr-review-evaluation`、`halfmoon-design-system`、`physics-tuning-math`、`portable-release-validation`、`huge-component-refactoring`。
+- **可重現學習點**：行內確認不可向整個 window 攔截 Escape，亦不可將 void 儲存呼叫當成完成；非同步完成時須確認焦點仍屬於面板。Windows 快取 executable 的內容驗證須與 spawn 透過禁止 write/delete 的 handle 連續保護，同時固定目錄避免路徑被替換。`floor(max * 10) / 10` 仍可能因浮點數尺度回捨入而超過 max，floor／ceil 候選均須檢查雙邊界。Canvas 脈衝的半徑與描邊須配合實際 padding 縮放，不能只隨 DPR 放大。
+- **驗證**：前端 228 檔案／1681 項通過與 Windows 目標前端建置通過；後端 314 項通過（4 項既有忽略）、no-default-features check 與 lib／tuning_contract 35 項通過；原 21 組 golden fixtures 未改。兩個 crate 的 fmt 與 diff check 通過。sidecar 的 std-only Linux harness 2 項通過，Windows 鎖／啟動測試完成交叉型別檢查；Tauri 完整測試受 Linux 缺少 GTK/WebKit 限制，Windows 執行驗收尚未完成。
+- **證據**：[修復與驗證紀錄](../docs/visual-review/main-678-682-followup/README.md)、[擷取版本與覆蓋矩陣](../docs/visual-review/main-678-682-followup/manifest.json)。未把瀏覽器 fixture 或交叉型別檢查當作 Windows／遊戲驗收。
+
+## 2026-11-12 / AEGO 堆疊獨立審查：封存原資料保全（Codex as Codex）
+
+- **範圍**：PR #659，依序同步 #654～#657 的已驗證修正；採用 `pr-review-evaluation`、`pr-author-maintainer`、`physics-tuning-math`、`modular-refactoring`、`halfmoon-design-system`、`cross-agent-collaboration`、`ponytail`。不合併 PR。
+- **學習**：唯讀歷史的邊界包含啟動復原。退役 workflow 的中斷 run 必須在 finalize session／新增 summary 前略過，仍保留 active recovery。Road documents 只有 session 關聯；不可用 setup 內假 capture 宣稱已匯出實際試跑幀。
+- **修正**：封存 run 重啟不改原始 documents／session metadata；每筆 run 以既有 saved capture GET 匯出錄製幀，文件 JSON 與幀分開。ICE raw replay 修正歸位 #657、Rally 刻度修正歸位 #654，以一般 merge commit 同步。
+- **驗證**：完整 locked Cargo301 passed／3既有ignored、no-default-features291 passed／2既有ignored，含doc-tests；本機僅省略除錯符號，斷言／優化／容差不變。前端219 files／1649項、Windows與LAN構建、Cargo fmt及diff check通過；638個產品檔案同步後與測試來源一致。原21 tuning／10 EV fixture不變。
+- **畫面與資料**：22瀏覽器案例、三份實際JSON下載、50張新PNG逐張獨立看圖通過；558個LF正規化來源hash、50個raw image hash及固定擷取binary／下載檔hash核對。合成SQLite session與兩筆telemetry對應下載內容；沒有實車、原生對話框、手機或讀屏驗收。
+- **政策**：保留必要DangerSign內部行為，不新增第五模型；不恢復已刪除的舊solver或退役期間測試集。新回歸屬現行封存／原始證據行為。各新head CI與討論串收尾在PR Body／Review記錄。
+
+## 2026-11-12 / AEGO 整合獨立審查：保存證據回放（Codex as Codex）
+
+- **範圍**：PR #657；採用 `pr-review-evaluation`、`pr-author-maintainer`、`physics-tuning-math`、`modular-refactoring`、`cross-agent-collaboration`、`ponytail`。
+- **學習**：derived cache 不等於原始證據。ICE 的快取載入與 cold replay 共用原始 capture qualification，先核對 schema／外層與 nested ID／workflow namespace，再由原始幀重建 engine、summary、tire evidence；保存驗證不依 cached 數字取得資格。
+- **證據**：只有 cache 沒有 raw 的原 head 失敗案例，以及 cache 竄改、raw envelope 無效、raw 移除、read-only DB 不變等行為測試通過。完整 locked Cargo 306 passed／3 既有 ignored（本機僅省略除錯符號）、前端2033項通過；650個產品檔案同步後與測試來源一致。原21 tuning／10 EV fixture與容差不變。
+- **畫面沿用**：本輪未改 frontend／lang；圖集保留原擷取版本2c72，補記後端變更與舊manifest的證據界線。新head CI另於PR記錄；不合併PR。
+
+## 2026-11-12 / AEGO 堆疊獨立審查：Rally 刻度可行性（Codex as Codex）
+
+- **範圍**：PR #654；採用 `pr-review-evaluation`、`pr-author-maintainer`、`physics-tuning-math`、`modular-refactoring`、`ponytail`。修正沿 #655～#659 同步，不合併 PR。
+- **學習**：輪速是齒比的倒數；最近齒比刻度不一定是符合輪速容差的刻度。檢查 round／floor／ceil 經合法範圍限制後的候選，直接套用原運動學公式與原公差，可避免反推速度區間引入額外浮點餘裕。
+- **證據**：新增固定 FD 6.28、99.02 km/h 的相鄰刻度反例及 FD 3.50 的浮點邊界案例；原最近 tick 解法可重現失敗，修正後針對性測試通過。原 21 tuning／10 EV fixture 值與公差未改；完整測試與新 head CI 另記於 PR Body。
+
+## 2026-11-12 / v1.8.4 Tag、Release Note 與 Wiki 同步（Codex as Codex）
+
+- **範圍**：依使用者要求，以最新 main 發布 `v1.8.4` Tag，runtime 維持已備妥的 `11.45.26`。Release Note 對照 v1.8.3、v1.8.2、v1.8.1 的實際公開內容，沿用 What's New／What's Fixed／What's Changed 與 PR、Full Changelog 格式；同步中英文 README、安全版本映射及獨立 Wiki。未合併的 #648 不列入變更。
+- **驗證**：pnpm `11.27.0`／Node `24.19.0`；完整前端 2,028 passed，TypeScript／Vite production build 通過。Rust `1.99.1` 完整預設組態 267 passed／2 ignored，無預設功能 257 passed／2 ignored，含 doc-tests 通過；平台資產與發布工具 18 passed。五處版本契約均為 `11.45.26`，文件連結與 diff 檢查通過。
+- **本地 smoke**：無 HUD Linux debug sidecar 回報版本 `11.45.26`、零嵌入 HUD；占用首選 HTTP port 後成功使用動態 port，處理 10 個合成 UDP frames，stdin EOF 後正常退出且 UDP listener 可重新綁定。證據保留於任務 `work/v1.8.4-sidecar-smoke`，不是 AppImage／Windows 正式簽章產物或遊戲實機驗收。
+- **發布邊界**：Tag push 不觸發 `release.yml`，須另外發布 GitHub Release。使用者已要求一併發布 Release；GitHub API 的 `api.github.com` 目前遭此環境網路規則拒絕，需恢復存取後完成 Release 建立與打包狀態讀回。Git repository 與 Wiki 可透過 HTTPS Git 獨立推送。
+- **採用技能**：`portable-release-validation`、`agent-governance-audit`。技能目錄、frontmatter 與索引名稱一致。
+
+## 2026-11-11 / runtime 11.45.26 發行準備（Codex as Codex）
+
+- **Scope**：依使用者要求提升下一版 runtime，保留 `v1.8.4` 未建立 tag／Release 的狀態。採用 `portable-release-validation`、`pr-author-maintainer`。
+- **Changes**：Tauri 設定、前後端 Cargo manifest 與兩份 Cargo lockfile 同步為 `11.45.26`；`SECURITY.md` 中英文公開版本對照修正為 `v1.8.3`／`11.45.25`，明示 `v1.8.4`／`11.45.26` 僅為準備中的候選；跨平台發行指南同步記錄剩餘正式產物驗收與 #648 排除範圍。
+- **Evidence**：版本一致性檢查回報五處均為 `11.45.26`；18 項平台資產與發布工具測試通過；前端 2,028 項測試與 production build 通過。Rust 完整測試 267 passed／2 ignored，含 doc-tests 通過。Linux 本地 sidecar 的 build-info、health API 均回報 `11.45.26`，動態 HTTP readiness 與 stdin EOF 後程序退出／listener 釋放通過。`logs/web_port.txt` 是保留的診斷檔，不以刪除該檔案判定程序是否停止。
+- **Boundary**：本次不建立 tag、不建立 Release、不更新公開 OTA channel；Linux 本地 smoke 與 CI 測試不能代替正式 Windows 簽章產物及真實遊戲驗收。
+
+## 2026-11-11 / Companion 停用邊界審查修正（Codex as Codex）
+
+- **Scope**：PR #650；採用 `pr-review-evaluation`、`pr-author-maintainer`、`modular-refactoring`、`halfmoon-design-system`、`portable-release-validation`。
+- **Learning**：設定開關必須由後端封鎖既有 session 的 LAN HTTP／WebSocket，不能只關閉新配對與隱藏 UI。LAN stream 需在停用後終止；USB 探測、連線與停用清理共用 operation lock，避免先檢查開關後等待鎖而在停用完成後重啟 ADB。設定停用後由後端最佳努力清理 ADB，前端不再重複送出非序列化 kill。
+- **Evidence**：`backend-rust/tests/companion_lan.rs` 新增已配對裝置停用後 HTTP 拒絕、既有 WebSocket 中止與新握手拒絕測試。Windows bundled ADB 的實機清理仍須 Windows 驗收，Linux 測試不能證明硬體結果。
+- **Build ordering**：前端 build 會替換 `frontend/dist/assets` 的雜湊檔名；Rust build.rs 產生的 `include_bytes!` 清單與後續 rustdoc 必須使用同一份固定產物，不可與前端重建並行。曾重現產品測試全過但 rustdoc 找不到舊雜湊檔案；固定 dist 後重新執行 Cargo doc-test 與相關契約驗證。
+- **Release**：v1.8.3 已發行且使用 runtime `11.45.25`；main 沿用相同 runtime，下一版必須提高版本並同步五處版本契約。Release Packaging Test 的合成資產與測試簽章不能取代正式 Windows portable／sidecar smoke test。
+
+## 2026-11-10 / 連動 APP (Companion) ADB 常駐行程解耦、生命週期管控與雙層開關防護（Sentinel as Antigravity）
+
+- **Scope**：徹底解決連動 APP 缺乏有效開關導致 ADB 於啟動時自動常駐與搜尋裝置之問題。採用 `modular-refactoring`、`halfmoon-design-system`、`pr-author-maintainer`、`ui-visual-review`。
+- **Learning**：
+  1. **ADB 隱式背景伺服器喚醒與生命週期解耦 (ADB Daemon Lifecycle Decoupling)**：`CompanionUsbControls` 原先在 React `useEffect` mount 時無條件執行 `scan()` 呼叫後端 `GET /api/companion/usb/devices`。在 Windows/PC 環境下，`adb devices` 指令會自動於本機 `127.0.0.1:5037` 啟動背景常駐的 `adb.exe` 伺服器且不會自行退出。此生命週期必須與前端渲染嚴格解耦：取消 mount 自動 probe，改為使用者手動觸發；並建立 `companion_enabled`（預設 true，保持 Wi-Fi LAN 配對可用）與 `companion_usb_enabled`（預設 false，嚴格 opt-in）雙層設定防護。後端於端點層進行 403 權限防禦，並提供 `POST /api/companion/usb/kill` 端點主動呼叫 `adb kill-server`，在使用者關閉 USB 開關或點擊停用時徹底回收系統行程與連接埠。
+  2. **SettingsProvider 靜態合併遺漏防護 (Settings Hydration Deserialization Guard)**：`SettingsContext.tsx` 的 `fetchSettings` 原先以顯式屬性列舉方式合併後端設定，造成後端回傳之非列舉屬性（如 `companion_usb_enabled`、`telemetry_port`）在前端完成 `/api/settings` 同步後被靜默丟棄並重設為預設值。透過將 `defaultSettings` 與過濾後的 `data` 動態展開合併，消除了設定在網路來回傳遞時被截斷的隱蔽 bug。
+  3. **Offcanvas 抽屜在窄視窗與自適應 CSS Grid 佈局修復**：`.companion-settings-content` 原先寫死 2 欄 Grid，在 320px 窄視窗下會將控制項壓縮至 140px 直列排版。透過 `grid-column: 1 / -1` 讓主開關與提示橫跨全寬，並在 `@media (max-width: 767.98px)` 下轉為單欄，同時確保 `.offcanvas.app-menu-drawer` 在小螢幕下獲得完整 `100vw` 寬度。
+- **Evidence**：
+  - 後端單元測試與契約測試：`companion_lan`（含 403 路由防護測試 `companion_setting_gates_block_disabled_subsystems`）、`config_contract`（含 `companion_settings_defaults_and_merge_behave_as_expected`）及全部 100+ 個 Cargo 測試全數通過。
+  - 前端單元測試：`CompanionUsbControls.test.tsx`（4 測資）、`CompanionSettingsCard.localization.test.tsx`（6 測資）及全量前端 251 測試檔（2,025 測資）全數通過；`pnpm -C frontend run build` 與 TypeScript 編譯 0 錯誤。
+  - 視覺審查備查：建立 `scripts/capture_companion_review.cjs`，在 headless Chromium 擷取 10 組核心／語系／尺寸矩陣，覆蓋日夜模式、多語在地化（zh-tw, en-us, ja-jp）與 320px 響應式佈局，完整產出 6 張實作截圖與 `manifest.json` 於 `docs/visual-review/companion-adb-lifecycle/`。
+- **Skills**：`modular-refactoring`、`halfmoon-design-system`、`pr-author-maintainer`。
+## 2026-11-10 / R34 MFD 儀表版面黑洞消除、邊緣避讓、MFD 顯隱控制與 LCD 檔位格式化修復（Vector as Antigravity）
+
+- **Scope**：修復 Nissan Skyline GT-R R34 儀表風格（R34 MFD HUD Overlay）之 Tach/Speed 中央 ~350px 誇張黑洞、MFD 靠邊避讓間隙不足、專屬設定卡片缺乏 MFD 螢幕顯隱開關，以及時速表 LCD 顯示 `GN`、`GR`、`G—` 異常前綴等問題。採用 `halfmoon-design-system`、`pr-author-maintainer`、`ui-visual-review`。
+- **Learning**：
+  1. **HUD 複合儀表組幾何中心偏移收斂與動態避讓**：在包含主指針表、副儀表與附加多功能螢幕（MFD）的複合 HUD 中，儀表位置計算若將視窗寬度剩餘空間全數灌入中央偏移（`availableOffset`），在 1080p 等標準視窗下會使 Tachometer 與 Speedometer 之間拉開超過 350px 的不自然空洞。解法是建立自然的基礎表距偏移（`minOffsetBase = 136`, `preferredOffsetBase = 146`），並收斂右側外邊距（`screenMarginX = 8~14px`），使 MFD 在不超出螢幕空間的前提下自然靠邊，同時以夾限運算保證右側 Boost 增壓表與 MFD 螢幕之間擁有 >100px 的安全淨空。
+  2. **專屬 HUD 子模組開關與全域 elements 解耦**：原先 R34 MFD 螢幕借用全域 `elements.showCenterInfo` 作為顯隱判斷，導致若在其他通用介面關閉中央資訊，R34 MFD 螢幕會連帶遭到隱藏。經使用者指示，將 MFD 螢幕狀態與 `showCenterInfo` 完全解耦，引進專屬的 `r34ShowMfd` 配置鍵，並於 Rust 後端、前端 `HudConfig`、`normalizeR34MfdConfig` 及 overlay `renderer.configure` 中將 MFD 顯隱改由 `r34ShowMfd` 獨立控制，徹底杜絕 `showCenterInfo` 對 MFD 渲染的任何副作用。
+  3. **數位液晶檔位前綴之語義分離**：JDM 液晶時速表中的「G」字元代表 Gear，但空檔（`N`）、倒檔（`R`）以及未讀取狀態（`—`）具有全字語意，若直接固定拼裝會產生 `GN`、`GR`、`G—` 等混淆讀數。在 SVG 模板中將 prefix 拆為專屬 `<tspan id="r34GearPrefix">`，並在渲染邏輯中僅對正則匹配 `^[1-9][0-9]?$` 之數值前進檔給予 `G` 前綴，其餘狀態清空，達成兼顧 SVG 文字置中對齊與動態語義正確。
+- **Evidence**：
+  - PR `#649`：`fix(hud): resolve R34 MFD layout void and gauge rendering issues`。
+  - 前端測試全數通過：`pnpm -C frontend run test r34_mfd`（6 檔案 171 測試）、全倉 Vitest（251 檔案 2025 測試）。
+  - 生產環境構建通過：`pnpm -C frontend run build`。
+  - 視覺審查證據保存於 `docs/assets/r34-mfd/` 並於 PR Body 提供 commit-pinned 圖片展示與 320px 窄幅／多語系／模式覆蓋。
+
 ## 2026-11-08 / 18 筆開啟 PR 全量審查、問題修復、無效死碼淘汰與視覺審查收斂（Gemini as Antigravity）
 
 - **Scope**：審查並處理開啟中之全部 18 筆 PR（`#622`–`#639`），合入 16 筆有效 PR（含 7 筆直接審查合併、9 筆衝突消解／問題修復／視覺審查補齊後合併），並關閉 2 筆無實際產線價值之死碼 PR（`#629`、`#637`）。採用 `pr-review-evaluation`、`pr-author-maintainer`、`halfmoon-design-system`、`physics-tuning-math`、`telemetry-udp-protocol`、`github-security-audit`。
@@ -1378,14 +1455,54 @@
 `TrendChart` 的端點標記會暫時使用較細線寬；只在整個 chart 開頭設定折線線寬，會讓第二條以後曲線沿用標記線寬。每條有效曲線 stroke 前必須恢復折線線寬，並在繪圖開始清除繼承的陰影，最後以 try/finally 還原 caller 狀態。驗證以 caller 狀態與例外路徑契約、實際瀏覽器像素輸出為準，不斷言 Canvas API 呼叫次數。採用技能：pr-review-evaluation、pr-author-maintainer、huge-component-refactoring、halfmoon-design-system、ponytail。
 
 署名：Jonas as Codex
-## 2026-11-10 / Android 原生頁面與主程式供應儀表快取（Codex as Codex）
 
-- **需求與邊界**：Connection、Tuning、Telemetry 導覽／卡片／詳細頁改為 Compose，不載入共用 React 主介面。Telemetry 概覽要求橫向、單卡滑動，詳細頁可旋轉；儀表保留多款主儀表，停用手把與其他附加元件。使用者明確要求清單與資產由 PC 提供，因此 APK 不內建 HUD 清單或 artwork。
-- **清單與資產 ownership**：`hud_overlay/shared/companion-instruments.json` 同時供桌面選單及 Rust 供應器使用。PC 在既有 authenticated `/companion/` 前綴提供 catalog、各款 manifest、hash-addressed 資產；沒有擴大 LAN API allowlist。版本摘要由依序排列的 path、SHA-256、byte count 組成。Android 僅實作 `companion-hud/v1`，新增／更新樣式不需要改 APK。無 HUD 的 PC build 回傳空目錄。
-- **快取合約**：按 PC origin 隔離；下載在 IO dispatcher 執行，校驗完整 manifest 與所有檔案後才切換快取版本。共用內容 hash 去重；失敗或取消不破壞目前完整版本；損壞檔案不交給 renderer。每款保留目前與上一版，回收未引用的物件。WebView 只服務 manifest 中的本機檔案，沒有 network、file/content access 或 JavaScript interface。
-- **遠端調校存檔**：常駐 `CompanionHostBridge` 新增 `save` 指令，一份車輛檔案寫入參數與 `tuningTarget` 後才 acknowledgement；失敗回 rejected。異步寫入後不覆蓋已變更的桌面草稿／車輛。車輛載入會還原 goal／season，PC 不需切到 Tuning；調校公式仍由 Rust 擁有。
-- **驗證**：前端 1,856 passed／1 skipped，TypeScript／Vite build 通過；Rust default 功能測試 234 passed／2 ignored、無預設功能 224 passed／2 ignored。default doctest 曾因並行 Vite build 移除舊 hash 資產而失敗，待前端建置完成後重跑 `cargo test --doc` 通過；之後應先固定 frontend/dist，再執行 Rust gate。Android 35 項單元測試、Lint（0 errors）與 Debug APK 通過。實際 PC sidecar 下載 595 個去重資產共 9,808,371 bytes，18 款 cached renderer 的 Chromium 檢查通過；暖快取重跑下載 0 bytes。APK ZIP 檢查沒有 `assets/hud/`。
-- **驗收限制**：瀏覽器與 JVM／Rust 契約測試不代表 Android 實機、LAN／USB／QR、旋轉與遊戲連動驗收；這些仍為 NOT_RUN。Debug build 不是正式簽署發行。
-- **Skills**：`halfmoon-design-system`、`modular-refactoring`、`telemetry-udp-protocol`；雲端工具鏈使用 `cloud-environment-runtime`。
+## 2026-11-12 / #652 AEGO 歷史版本與 Rust characterization（Codex as Codex）
 
-- **PR 整合驗證補記**：整合 `c01bf0a8`，保留主線存檔併發保護／安全標頭測試，主儀表清單同步 26 款。前端 2030 passed、build 通過；Android scoped gate 通過（35 tests、Lint 0 errors、Debug APK）。Rust default 268 passed／2 ignored，no-default 258 passed／2 ignored，皆含 doctest 通過。兩組態共用 target 並行會覆寫 process contract 的 binary，因此必須依序完成整個測試命令，而非只依賴 Cargo build lock。PR 整理另採用 `pr-author-maintainer`；瀏覽器畫面與未完成原生截圖範圍記於 `docs/companion/native-hud-review/README.md`。
+- 四模型 ID 與 workflow／量測／底盤版本分開。缺 ID 的歷史推薦依 formula/schema/goal 明列凍結映射，不呼叫未來會變更的 production selector；保存先拒絕未知或錯配 ID，再用原 owner 與後端證據重建比對。新保留診斷不能由 inputSnapshot 冒充：新計算丟棄、歷史保存拒絕。
+- `1ddb092d` Rust 實跑 Rally Mixed 的末檔已是 0.36（5000 RPM 運動學 485.816 km/h），與 #266/#335 確切 TS 重播的 0.40 不同。Drag manual 40 的 profile／secondary 路徑與 TS 同齒比卻缺少最終 unsupported；正式 measured solver 對 secondary 仍傳 None。完整輸入、來源與差異保存在獨立 fixtures 與 `docs/tuning/aego-characterization-20261112.md`，不把合成運動學當實車能力。
+- Cargo 預設完整 270 passed／3 既有 ignored；Vitest 251 files／2028 tests passed（maxWorkers=2、未放寬 timeout），fmt／diff check 通過。原 21 tuning／10 EV golden 與所有齒比／底盤公式未改，模型候選及切換另由下游驗收。
+- Skills：physics-tuning-math、modular-refactoring、pr-author-maintainer、cross-agent-collaboration、ponytail。
+
+## 2026-11-12 / #653 AEGO 模型責任隔離（Codex as Codex）
+
+- 正式 `gearing/mod.rs` 只路由，Road v3 自己擁有 launch envelope、頂檔目標及取位；非 Road v1 與 DangerSign 暫固定委派凍結 legacy owner。歷史 Road v2 保有獨立配置，不能隨現行 Road 或候選公式一起更新。現有 Road v3 診斷 JSON 亦保持原樣，避免破壞既存推薦重建。
+- 共用配置只接受明確總減速比、範圍、網格精度、終傳偏好及誤差容差；取位後全組檢查，沒有賽事常數、遊戲滑桿預設或逐檔補救。模型必須自己提供目標／實際／誤差／來源語意與硬目標驗證；`RatioRange` 的存在不代表硬體已驗證。
+- 合入 #652 ba40a007 後完整 Cargo 273 passed／3 既有 ignored（-j 2），涵蓋新 characterization／版本／保存重播與全產品契約；完整前端 251 files／2028 tests 通過（maxWorkers=2），其來源 tree 與合入後相同。fmt／diff check 通過；原 21 tuning／10 EV golden 未改，無 UI 或實車性能驗收。
+- Skills：modular-refactoring、physics-tuning-math、pr-author-maintainer、cross-agent-collaboration、ponytail。
+
+## 2026-11-12 / #655 Drift 主工作點與取位後有效限轉（Codex as Codex）
+
+- 使用者主檔／RPM／等價輪速是明確目標，不是合格曲線或側滑地速。缺目標回 unavailable；四點形狀先驗只作未校準偏好，峰值不建立工作帶，裸曲線不當來源。FWD 採前輪尺寸，但只有運動學相容，不能升級為動力漂移驗收。
+- 齒比取位後，僅檢查輪速誤差不足以保護有效限轉。合成範例 FD3.35／G3=1.84 在5000 RPM 對應99.8745 km/h，在100 km/h 需5006.2822 RPM；若合格有效上限為5000，這一組取位值不能套用。模型須同時重驗主工作點與目標輪速下的實際 RPM，ratio balance 後亦由同一 owner 檢查並重算 actual／誤差診斷。
+- 合入 #654 `010579b5` 後，完整 Cargo 289 passed／3 既有 ignored（-j 2），含8組 Drift 候選契約及原歷史／四模型／保存重播；完整前端251 files／2028 tests passed（maxWorkers=2），與合入後相同 frontend tree。fmt／diff check通過；原21 tuning／10 EV golden、正式路由、底盤及量測資格未改。無 UI 或實車性能驗收。
+- Skills：physics-tuning-math、modular-refactoring、pr-author-maintainer、cross-agent-collaboration、ponytail。
+
+## 2026-11-12 / #656 Drag 聯合端點與有效限轉（Codex as Codex）
+
+- 正式 measured solver 的 secondary correction 為 None，不代表沒有 Drag 末速輸入；候選入口仍須從 profile 取完整末速／來源 pair。secondary 有任一末速欄位時必須在同一入口成對，不能借用 profile 的來源標籤。manual／telemetry 字串仍是 caller-declared，不是後端已驗證的末速能力。
+- 起步與末檔均在功率峰值 RPM 定義純滾動輪速工程目標，取位後固定 max(1km/h,2%) 容差；指定速度所需的 RPM 還須不超過合格有效限轉。速度誤差合格但 requiredRPM 超限的候選必須拒絕；先在端點刻度區間納入限轉，再由同一 owner 在 ratio balance 後重驗並重算 actual／error，不能沿用調整前的診斷。
+- 合入 #655 `7348c513` 後，最終完整 Cargo 298 passed／3 既有 ignored（-j 2），含8組 Drag 候選與新增 workflow profile 契約；完整前端251 files／2028 tests passed（maxWorkers=2），前後 frontend tree 同為 `dcdd7de5`。fmt／diff check 通過；原21 tuning／10 EV golden、正式路由、底盤與資格 reducer 未改。未執行 UI、native 或實車性能驗收。
+- Skills：physics-tuning-math、modular-refactoring、pr-author-maintainer、cross-agent-collaboration、ponytail。
+
+## 2026-11-12 / #657 AEGO 正式整合與保存版本（Codex as Codex）
+
+- 模型版本必須與組合版本分開。Road 保留 v3 數值 owner，但新增通用診斷與 schema 記錄須使用新 ICE composition v4；不能回填舊 formula v1／v2／v3 snapshot。歷史 driver 明確選 frozen owner，fixture、期望及容差不隨 production promotion 改寫。回退 selector 不刪除已保存模型的 parser／solver。
+- ratio balance 的數學等價不代表模型可行，也不能解除 profile 已接受的觀察硬體鎖。Rally 固定 FD3.52／六檔 [2.70,2.18,1.76,1.43,1.15,.93] 的反例可在 FD3.53 保持端點容差卻違反觀察；整合守衛需同時符合舊 profile 與新 request 範圍。Road 另對原始未取位首／末目標檢查，避免兩次取位誤差累積；各 owner 重算 selected actual/error。
+- unavailable 應輸出 gearing:null，並保留原模型原因；只有實際提出 ratio balance 且失敗才改用 balance 原因。Companion 同樣消費 readiness／diagnostics／view，不能把 truthy unsupported placeholder 顯示成 FD0。必要 Drift 目標由桌面編輯，不因顯示一致性擴張手機 command 或 LAN 信任邊界。
+- GearingTuner 只使用後端 resolved axle/radius/reference/effective RPM；FWD 語意與 solver 相同。引擎峰值只作標記，不是合格工作帶；輪速亦不等於側滑地速。SettingsContext 的英文 t() 直接回原文，因此 protocol source slug 需先映為人類可讀英文，再交三語翻譯。
+- Skills：physics-tuning-math、modular-refactoring、pr-author-maintainer、cross-agent-collaboration、halfmoon-design-system、huge-component-refactoring、ponytail。
+- 最終整合完整 Cargo `--locked -j 2` 303 passed／3 既有 ignored，含20組 workflow、全部四模型、歷史及原21 tuning／10 EV golden；完整前端252 files／2033 tests passed（maxWorkers=2），Windows TypeScript＋Vite與LAN Vite build、fmt／diff check通過。原golden、底盤、EV/CVT/DangerSign、legacy數值不改；瀏覽器視覺證據與遊戲／原生／手機實機驗收分開。
+
+- 選填 Drag 末速／來源清空須送 explicit null；undefined 被 JSON 省略後，既有 shallow-merge profile API 會保留舊 manual 值。真實 UI 清空→導航保存→API readback 與正式資格化 prior 結果，以及後端保存重啟回歸均通過。Drift partial target 是整個物件替換，不須改全域合併或放寬引擎資格。新增測試應先驗 capture raw engine tuple 與 profile 一致，再跑完整套件；normalize 的 NA 預設與 raw null 是不同 engine context。
+- 最終29桌面／10Companion案例、84PNG及566 source hashes核對通過；七core日夜、三語、1280／320與reduced motion均有紀錄，寬幅46／窄幅手機38檔完成逐圖QA。fixture relay及歷史引擎capture＋合成profile明列，非遊戲／原生／手機實機／讀屏驗收。
+
+## 2026-11-12 / #658 舊調校公式移除與封存（Codex as Codex）
+
+- 使用者授權本次直接移除TS凍結公式、Rust歷史ICE solver與Developer Tuning，並允許在充分斷路驗證後移除退役期專用契約。此決策取代#652／#657當時的永久歷史solver回放／回退規則；Git固定提交及靜態資料保留考古來源，現行四模型ID不變，DangerSign保留必要內部路徑，不另立第五模型。
+- `RoadStore::list`第三參數是`exclude_capture`。封存必須傳false；只比對推薦欄位會漏掉工作流程子記錄的原始capture。實際browser download與原始JSON逐項比對先抓到此錯誤，修正後原推薦與完整歷史（含capture）均相等，另由封存契約檢查資料庫不變／重啟與不可試跑。
+- 原滿高採集容器嵌入正式Step3後，`h-100`與flex shrink會使工具被壓縮，DOM存在不代表返回按鈕可點。改為一般頁面捲動、自然高度／不縮小，且採集與引擎面板一次顯示一個；實際AppShell操作能開啟與返回，流程不另存推薦。
+- 刪除過渡測試前的10項斷路通過結果與當時source hash另存`docs/tuning/model-retirement-proof.json`，不當成最終head證據。保留現行封存、資格、四模型／EV／CVT與原數值回歸；原21 tuning／10 EV fixtures不改值或容差。封存資料、舊設定中的未知欄位與可執行舊公式是不同責任，舊旗標不再有預設／更新分支或UI消費者。
+- 最終前端219 files／1648 tests通過，Windows TypeScript＋Vite及LAN build通過；22個真AppShell／隔離Rust案例、50張PNG逐圖檢視，558 source hashes與50 image hashes核對。僅靜態歷史JSON與瀏覽器下載，WebSocket靜默／原生host空commands；不宣稱遊戲、手機／原生檔案對話框、真60Hz採集或讀屏驗收。
+- Skills：modular-refactoring、physics-tuning-math、huge-component-refactoring、halfmoon-design-system、agent-governance-audit、pr-author-maintainer、ponytail。
+
+- 最終完整locked Cargo：預設297 passed／3既有ignored，no-default-features 287 passed／2既有ignored，兩者含doc-tests均exit0。前端dist必須固定後再串行跑Cargo：測試中並行Vite build會刪換已索引的hash資源名稱，使最後rustdoc的include_bytes找不到舊檔；停止並行、固定產物後完整重跑通過。fmt／diff、技能validator、24份Markdown相對連結及13個skill ID檢查通過，原主工作區保持乾淨。

@@ -384,3 +384,125 @@ fn road_service_observe_steady_state_identity_preservation_and_transition() {
     service.observe(&corrupted);
     assert_eq!(service.live()["identity"], updated_live["identity"]);
 }
+
+#[test]
+fn road_summary_single_pass_channels_preserve_order_missing_keys_and_zero_weight_gating() {
+    let points = vec![
+        // Zero-weight leading frame (dt == 0.0) must not affect active channel stats.
+        json!({
+            "TimestampMS": 250,
+            "IsRaceOn": 1,
+            "CurrentRaceTime": 0.25,
+            "SpeedMetersPerSecond": 999.0,
+            "CurrentEngineRpm": 9000.0,
+            "TireTemp": [122.0, 122.0, 122.0, 122.0]
+        }),
+        json!({
+            "TimestampMS": 250,
+            "IsRaceOn": 1,
+            "CurrentRaceTime": 0.25,
+            "LapNumber": 0,
+            "SpeedMetersPerSecond": 10.0,
+            "CurrentEngineRpm": 3000.0,
+            "PowerWatts": 100000.0,
+            "AccelInput": 50.0,
+            "TireTemp": [185.0, 185.0, 185.0, 185.0]
+        }),
+        // Missing PowerWatts & ClutchInput should remain absent without shifting other channels.
+        json!({
+            "TimestampMS": 500,
+            "IsRaceOn": 1,
+            "CurrentRaceTime": 0.5,
+            "LapNumber": 0,
+            "SpeedMetersPerSecond": 20.0,
+            "CurrentEngineRpm": 4000.0,
+            "AccelInput": 100.0,
+            "BrakeInput": null,
+            "TireTemp": [203.0, 203.0, 203.0, 203.0]
+        }),
+        // Trailing frame without a subsequent dt window must be ignored by channel distributions.
+        json!({
+            "TimestampMS": 750,
+            "IsRaceOn": 1,
+            "CurrentRaceTime": 0.75,
+            "SpeedMetersPerSecond": 500.0,
+            "BrakeInput": 100.0,
+            "TireTemp": [212.0, 212.0, 212.0, 212.0]
+        }),
+    ];
+
+    let summary = summarize_road_observations(&points);
+    let expected_keys = [
+        "SpeedMetersPerSecond",
+        "CurrentEngineRpm",
+        "PowerWatts",
+        "TorqueNewtons",
+        "AccelerationX",
+        "AccelerationY",
+        "AccelerationZ",
+        "AngularVelocityY",
+        "AccelInput",
+        "BrakeInput",
+        "SteerInput",
+        "ClutchInput",
+        "HandBrakeInput",
+    ];
+    let channels = summary["channels"].as_object().unwrap();
+    let actual_keys: Vec<_> = channels.keys().map(String::as_str).collect();
+    assert_eq!(actual_keys, expected_keys);
+
+    assert_eq!(channels["SpeedMetersPerSecond"]["mean"], json!(15.0));
+    assert_eq!(channels["CurrentEngineRpm"]["mean"], json!(3500.0));
+    assert_eq!(channels["PowerWatts"]["mean"], json!(100000.0));
+    assert_eq!(channels["AccelInput"]["mean"], json!(75.0));
+    assert_eq!(channels["BrakeInput"]["observedSeconds"], json!(0.0));
+    assert!(channels["BrakeInput"]["mean"].is_null());
+    assert!(channels["ClutchInput"]["mean"].is_null());
+    assert_eq!(summary["wheels"]["FL"]["startTemperatureC"], json!(85.0));
+}
+
+#[test]
+fn local_comparison_single_pass_preserves_time_fallback_uniqueness_and_gating() {
+    let make_pt = |ms: Option<i64>, t: Option<f64>, x: f64, y: f64, accel: i64, temp: f64| {
+        let mut p = json!({
+            "IsRaceOn": 1, "LapNumber": 0, "SpeedMetersPerSecond": 25.0,
+            "PositionX": x, "PositionY": y, "PositionZ": 0.0,
+            "AccelInput": accel, "BrakeInput": 0, "SteerInput": 0,
+            "TireSlipAngle": [0.1, 0.1, 0.1, 0.1], "TireTemp": [temp, temp, temp, temp]
+        });
+        if let Some(ms) = ms {
+            p["TimestampMS"] = json!(ms);
+        }
+        if let Some(t) = t {
+            p["time"] = json!(t);
+        }
+        p
+    };
+    let mut a = vec![
+        make_pt(Some(0), None, 0.0, 0.0, 100, 185.0),
+        make_pt(None, Some(0.1), 1.5, 0.0, 100, 185.0), // competes with x=0 for b[0], uses `time` fallback
+    ];
+    let mut b = Vec::new();
+    for i in 0..26 {
+        let x = i as f64 * 10.0;
+        if i > 0 {
+            a.push(make_pt(Some(i * 200 + 100), None, x, 0.0, 100, 185.0));
+        }
+        let by = if i == 5 { 4.5 } else { 0.0 }; // vertical delta > 3m
+        let ba = if i == 6 { 140 } else { 100 }; // pedal delta > 25
+        b.push(make_pt(Some(i * 200), None, x + 1.0, by, ba, 203.0));
+    }
+    let report = local_comparison(&a, &b, true);
+    assert_eq!(report["routeStatus"], "compatible");
+    assert_eq!(report["matchedLocations"], 24);
+    assert_eq!(report["matchedDrivingConditions"], 23);
+    assert!(
+        (report["segments"][0]["meanTemperatureChangeC"][0]
+            .as_f64()
+            .unwrap()
+            - 10.0)
+            .abs()
+            < 1e-9
+    );
+    assert!((report["meanNormalizedAngleChange"].as_f64().unwrap() - 0.0).abs() < 1e-9);
+}

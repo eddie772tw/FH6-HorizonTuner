@@ -1,20 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { projectSettingsSections } from './settingsSections';
-
-describe('settings section projection', () => {
-  it('keeps one-level sections and Developer Tuning for Full', () => {
-    const sections = projectSettingsSections(true);
-    expect(sections.map(section => section.id)).toEqual(['general', 'telemetry', 'integrations', 'updates', 'storage', 'developer']);
-    expect(sections.at(-1)?.items).toContain('developerTuning');
-  });
-
-  it('filters only Developer Tuning for Lite', () => {
-    const sections = projectSettingsSections(false);
-    expect(sections).toHaveLength(5);
-    expect(sections.flatMap(section => section.items)).not.toContain('developerTuning');
-    expect(sections.flatMap(section => section.items)).toEqual([
-      'language', 'units', 'telemetry', 'recording', 'discord', 'updates', 'storage',
-    ]);
+describe('current settings sections', () => {
+  it('keeps all supported settings without Developer Tuning', () => {
+    const sections = projectSettingsSections();
+    expect(sections.map(section => section.id)).toEqual(['general', 'telemetry', 'integrations', 'updates', 'storage']);
+    expect(sections.flatMap(section => section.items)).toEqual(['language', 'units', 'telemetry', 'recording', 'discord', 'updates', 'storage']);
   });
 });
-

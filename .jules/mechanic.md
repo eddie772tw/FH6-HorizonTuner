@@ -48,3 +48,24 @@
 **物理洞察 (Physics Learning):** 在變速箱次級修正（Secondary Correction）幾何閉環重分佈中，當引擎峰值馬力轉速相對於紅線轉速較低（如大排量或渦輪引擎 `rpm_hp / max_rpm < 0.68`）時，原演算法 `r_max = (0.92).min(r_redline_hp)` 會低於 `r_min`，引發 `r_min > r_max` 的步長比率倒置畸變，導致高檔位齒比間距比低檔位更疏的動力學倒置；且比例因子 `s = (new_gtop / (gears[0] * prod_raw)).powf(...)` 在底數非正或非有限時會觸發 `powf` 產生 IEEE 754 `NaN`，使中間檔位全數坍縮為 1.0。此外，多檔位變速箱單調性迴圈中 `max_step_ratio_rounded` 在非 Drift/Drag 模式下以 `(rpm_hp + 50.0) / max_rpm` 計算，在峰值馬力接近紅線時比率超過 1.0 導致步長約束失效，而在極低峰值轉速下又會過度縮小導致高檔位過早觸底至 0.10。
 **行動 (Action):** 次級重分佈強制實施 `r_max = (0.92).min(r_redline_hp).max(r_min)` 杜絕步長比率倒置，並落實底數正定性保護（非正或非有限時安全回退至 1.0）確保幾何動力學閉包；多檔位單調性步長比例全面施加 `0.65..=0.95` 邊界防護，消除檔位重疊與非正常觸底陷阱。
 **署名:** Mechanic as Antigravity
+
+
+## 2026-11-14 - Drift 齒比反比凸性對 0.01 格點捨入的影響
+**物理洞察 (Physics Learning):** 在固定轉速與終傳比下，輪速 $v(g) = \frac{\text{rpm} \cdot C \cdot 60}{1000 \cdot g \cdot \text{fd}}$ 對齒比 $g$ 為嚴格遞減且嚴格凸函式（$1/g$ 幾何）。當理想格點 $g_{\text{ideal}} = n + \delta$（$\delta < 0.5$）在低齒比或受限終傳比下（如 `drift.rs` 的 $n < \delta / (1 - 2\delta)$ 區間）僅以 `.round()` 取整為 $n$ 時，向左偏移會放大超速誤差並跨越 $\max(1\,\text{km/h}, 1\%)$ 容差，而向右相鄰格點 `.ceil()` ($n+1$) 因凸性斜率較緩反而能同時滿足輪速容差與有效轉速上限。
+**行動 (Action):** 所有在 0.01 離散齒比格點上反求終端輪速的 AEGO 求解器（包含 Drift）皆須以 `[ideal.round(), ideal.floor(), ideal.ceil()]` 順序檢索鉗位後的相鄰可行格點，並在確定 `main_tick` 可行後才配置其餘檔位，確保不破壞既有通過案例的同時消除凸性誤差假失敗。
+**署名:** Mechanic as Antigravity
+
+## 2026-11-15 - Drag Endpoint Tick-Space Slack Scale Mismatch & Exact Monotone Refinement
+**物理洞察 (Physics Learning):** 在 Drag 雙端點聯合求解器（`aego-drag-joint/v1`）中，`endpoint_ticks` 原先僅在 0.01 齒比格點空間（tick-space）加減 `1e-8` 估計可行區間 `[lo, hi]`，再以單點 `.round().clamp(lower, hi)` 選出端點後交由 `respects_hard_targets` 以實體單位（速度 `±1e-9 km/h`、轉速 `+1e-8 RPM`）驗證。由於速度與齒比呈反比而轉速與齒比呈正比，tick 空間 `1e-8` 誤差在高速（250+ km/h）或高轉速（5000+ RPM）與低齒比（如 `0.85`）下會被放大 $10^1\text{–}10^2$ 倍，遠超 `respects_hard_targets` 容差；當峰值馬力接近可用紅線（`usable_limit == reference_rpm`）且理想格點落在整數下方 `1e-8` 區間（如 `85.999999995`）時，會誤納入無效邊界格點並因單點命中而被整組拒絕，在存在合法內側格點（`0.85`）的情況下誤報 `unavailable`。
+**行動 (Action):** 以 `±1e-6` 作為外包圍初估後，利用速度隨 tick 嚴格遞減與轉速隨 tick 嚴格遞增的單調性，在 `endpoint_ticks` 內直接調用 `calc_gear_speed` / `calc_gear_rpm` 與 `respects_hard_targets` 一致之實體謂詞向內單調收緊 `[lo, hi]`，確保離散求解域滿足 Soundness 與 Completeness。
+**署名:** Mechanic as Antigravity
+
+## 2026-11-17 - Legacy Chassis `clamp_round` Sub-Tenth Bounds Violation & Overflow Closure
+**物理洞察 (Physics Learning):** `chassis.rs::clamp_round` 在將彈簧剛性與車高取整至 0.1 小數位時，當區間 `[min, max]` 未與 0.1 格點相交（例如鎖定或狹窄區間 `[3.11, 3.11]`、`[3.11, 3.14]`、`[3.16, 3.19]`，或單位換算後之次單位區間 `[0.01, 0.04]`），其 `floored >= min` 與 `ceiled <= max` 皆為偽，原演算法卻在 `else` 分支回退至 `r1(max)` 或 `r1(min)`，導致輸出跌出 `[min, max]` 邊界（如 `3.1` 或 `3.2`）甚至使正數彈簧退化為 `0.0`，直接觸發 `baseline::preview` 以 `"value-outside-range"` 拒絕 Drift / Drag / DangerSign / v1 底盤推薦。此外，當邊界接近 `f64::MAX / 10` 時，`(max * 10.0).floor() / 10.0` 會溢位成 `INFINITY` 並通過 `>= min` 檢查造成無限大數值外洩。
+**行動 (Action):** 令 `chassis.rs::clamp_round` 在無 0.1 格點落入 `[min, max]` 或縮放溢位時直接回傳已鉗位值 `clamped`，並補齊邊界排序與 `NaN`/有限性防護，與 `chassis_load::quantize` 達成嚴格包含性閉包（`min <= result <= max`）而不改變任何既有 21 個金標案例數值。
+**署名:** Mechanic as Antigravity
+
+## 2026-11-18 - `chassis_load::quantize` IEEE-754 乘法捨入溢位與部分上界溢位保護
+**物理洞察 (Physics Learning):** 現行 Road／Rally v2 工程基準 `chassis_load::quantize` 原先透過 `low = (min * 10.0).ceil() / 10.0` 與 `high = (max * 10.0).floor() / 10.0` 預先建構 0.1 格點區間再進行鉗位。然而在 IEEE-754 雙精度浮點數下，當邊界處於高精度捨入區間（如 `7_974_024_817_625_809.0`）時，`x * 10.0` 會發生捨入進位並使 `(min * 10.0).ceil() / 10.0` 與 `(max * 10.0).floor() / 10.0` 同時向上越過 `max`（得出 `7_974_024_817_625_810.0 > max`），因 `low <= high` 仍成立而違反 `min <= result <= max` 邊界閉包，進而導致 `baseline::preview` 以 `"value-outside-range"` 拒絕推薦。此外，當單側上界接近 `1e307` 使 `max * 10.0` 溢位為 `INFINITY` 時，原先會放棄對區間內有限常規數值（如 `10.14`）執行 0.1 取整。
+**行動 (Action):** 改由 `bounded = value.clamp(min, max)` 直接取整 `rounded = (bounded * 10.0).round() / 10.0`，先檢查 `rounded` 有限性，僅在 `rounded > max` 或 `rounded < min` 且向內取整格點（`high`/`low`）嚴格滿足 `min <= grid <= max` 時才採用格點，否則回退至 `bounded`，使現行 v2 `chassis_load::quantize` 與 `chassis::clamp_round` 在全有限浮點域達成等價的嚴格邊界閉包。
+**署名:** Mechanic as Antigravity

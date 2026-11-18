@@ -1,0 +1,3771 @@
+{
+  "sourceCommit": "2c72bed878b84d40ba47ec5c41edaa16fa9157ce",
+  "purpose": "Existing DangerSign numerical regression only; no fifth AEGO model",
+  "cases": [
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "AWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 0,
+      "rpm": 0,
+      "correction": null,
+      "expected": {
+        "finalDrive": 3.52,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81,
+          0.54,
+          0.36
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "AWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 0,
+      "rpm": 0,
+      "correction": {
+        "simulatedTopSpeed": 120,
+        "softMaxSpeed": 130,
+        "dragFinishSpeedKmh": null,
+        "dragFinishSpeedProvenance": null
+      },
+      "expected": {
+        "finalDrive": 6.1,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81,
+          0.54,
+          0.36
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "AWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 0,
+      "rpm": 0,
+      "correction": {
+        "simulatedTopSpeed": 90,
+        "softMaxSpeed": 100,
+        "dragFinishSpeedKmh": null,
+        "dragFinishSpeedProvenance": null
+      },
+      "expected": {
+        "finalDrive": 6.1,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81,
+          0.54,
+          0.36
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "AWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 0,
+      "rpm": 7500,
+      "correction": null,
+      "expected": {
+        "finalDrive": 3.52,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81,
+          0.54,
+          0.36
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "AWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 0,
+      "rpm": 7500,
+      "correction": {
+        "simulatedTopSpeed": 120,
+        "softMaxSpeed": 130,
+        "dragFinishSpeedKmh": null,
+        "dragFinishSpeedProvenance": null
+      },
+      "expected": {
+        "finalDrive": 6.1,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81,
+          0.54,
+          0.36
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "AWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 0,
+      "rpm": 7500,
+      "correction": {
+        "simulatedTopSpeed": 90,
+        "softMaxSpeed": 100,
+        "dragFinishSpeedKmh": null,
+        "dragFinishSpeedProvenance": null
+      },
+      "expected": {
+        "finalDrive": 6.1,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81,
+          0.54,
+          0.36
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "AWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 1,
+      "rpm": 0,
+      "correction": null,
+      "expected": {
+        "finalDrive": 2,
+        "gears": [
+          2.7
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "AWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 1,
+      "rpm": 0,
+      "correction": {
+        "simulatedTopSpeed": 120,
+        "softMaxSpeed": 130,
+        "dragFinishSpeedKmh": null,
+        "dragFinishSpeedProvenance": null
+      },
+      "expected": {
+        "finalDrive": 2.85,
+        "gears": [
+          2.7
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "AWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 1,
+      "rpm": 0,
+      "correction": {
+        "simulatedTopSpeed": 90,
+        "softMaxSpeed": 100,
+        "dragFinishSpeedKmh": null,
+        "dragFinishSpeedProvenance": null
+      },
+      "expected": {
+        "finalDrive": 3.8,
+        "gears": [
+          2.7
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "AWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 1,
+      "rpm": 7500,
+      "correction": null,
+      "expected": {
+        "finalDrive": 2,
+        "gears": [
+          2.7
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "AWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 1,
+      "rpm": 7500,
+      "correction": {
+        "simulatedTopSpeed": 120,
+        "softMaxSpeed": 130,
+        "dragFinishSpeedKmh": null,
+        "dragFinishSpeedProvenance": null
+      },
+      "expected": {
+        "finalDrive": 2.85,
+        "gears": [
+          2.7
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "AWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 1,
+      "rpm": 7500,
+      "correction": {
+        "simulatedTopSpeed": 90,
+        "softMaxSpeed": 100,
+        "dragFinishSpeedKmh": null,
+        "dragFinishSpeedProvenance": null
+      },
+      "expected": {
+        "finalDrive": 3.8,
+        "gears": [
+          2.7
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "AWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 4,
+      "rpm": 0,
+      "correction": null,
+      "expected": {
+        "finalDrive": 2.3,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "AWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 4,
+      "rpm": 0,
+      "correction": {
+        "simulatedTopSpeed": 120,
+        "softMaxSpeed": 130,
+        "dragFinishSpeedKmh": null,
+        "dragFinishSpeedProvenance": null
+      },
+      "expected": {
+        "finalDrive": 5.4,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "AWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 4,
+      "rpm": 0,
+      "correction": {
+        "simulatedTopSpeed": 90,
+        "softMaxSpeed": 100,
+        "dragFinishSpeedKmh": null,
+        "dragFinishSpeedProvenance": null
+      },
+      "expected": {
+        "finalDrive": 6.1,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "AWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 4,
+      "rpm": 7500,
+      "correction": null,
+      "expected": {
+        "finalDrive": 2.3,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "AWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 4,
+      "rpm": 7500,
+      "correction": {
+        "simulatedTopSpeed": 120,
+        "softMaxSpeed": 130,
+        "dragFinishSpeedKmh": null,
+        "dragFinishSpeedProvenance": null
+      },
+      "expected": {
+        "finalDrive": 5.4,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "AWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 4,
+      "rpm": 7500,
+      "correction": {
+        "simulatedTopSpeed": 90,
+        "softMaxSpeed": 100,
+        "dragFinishSpeedKmh": null,
+        "dragFinishSpeedProvenance": null
+      },
+      "expected": {
+        "finalDrive": 6.1,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "AWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 6,
+      "rpm": 0,
+      "correction": null,
+      "expected": {
+        "finalDrive": 3.52,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81,
+          0.54,
+          0.36
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "AWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 6,
+      "rpm": 0,
+      "correction": {
+        "simulatedTopSpeed": 120,
+        "softMaxSpeed": 130,
+        "dragFinishSpeedKmh": null,
+        "dragFinishSpeedProvenance": null
+      },
+      "expected": {
+        "finalDrive": 6.1,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81,
+          0.54,
+          0.36
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "AWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 6,
+      "rpm": 0,
+      "correction": {
+        "simulatedTopSpeed": 90,
+        "softMaxSpeed": 100,
+        "dragFinishSpeedKmh": null,
+        "dragFinishSpeedProvenance": null
+      },
+      "expected": {
+        "finalDrive": 6.1,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81,
+          0.54,
+          0.36
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "AWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 6,
+      "rpm": 7500,
+      "correction": null,
+      "expected": {
+        "finalDrive": 3.52,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81,
+          0.54,
+          0.36
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "AWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 6,
+      "rpm": 7500,
+      "correction": {
+        "simulatedTopSpeed": 120,
+        "softMaxSpeed": 130,
+        "dragFinishSpeedKmh": null,
+        "dragFinishSpeedProvenance": null
+      },
+      "expected": {
+        "finalDrive": 6.1,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81,
+          0.54,
+          0.36
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "AWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 6,
+      "rpm": 7500,
+      "correction": {
+        "simulatedTopSpeed": 90,
+        "softMaxSpeed": 100,
+        "dragFinishSpeedKmh": null,
+        "dragFinishSpeedProvenance": null
+      },
+      "expected": {
+        "finalDrive": 6.1,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81,
+          0.54,
+          0.36
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "AWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 10,
+      "rpm": 0,
+      "correction": null,
+      "expected": {
+        "finalDrive": 6.1,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81,
+          0.54,
+          0.36,
+          0.24,
+          0.16,
+          0.1,
+          0.1
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "AWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 10,
+      "rpm": 0,
+      "correction": {
+        "simulatedTopSpeed": 120,
+        "softMaxSpeed": 130,
+        "dragFinishSpeedKmh": null,
+        "dragFinishSpeedProvenance": null
+      },
+      "expected": {
+        "finalDrive": 6.1,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81,
+          0.54,
+          0.36,
+          0.24,
+          0.16,
+          0.1,
+          0.1
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "AWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 10,
+      "rpm": 0,
+      "correction": {
+        "simulatedTopSpeed": 90,
+        "softMaxSpeed": 100,
+        "dragFinishSpeedKmh": null,
+        "dragFinishSpeedProvenance": null
+      },
+      "expected": {
+        "finalDrive": 6.1,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81,
+          0.54,
+          0.36,
+          0.24,
+          0.16,
+          0.1,
+          0.1
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "AWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 10,
+      "rpm": 7500,
+      "correction": null,
+      "expected": {
+        "finalDrive": 6.1,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81,
+          0.54,
+          0.36,
+          0.24,
+          0.16,
+          0.1,
+          0.1
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "AWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 10,
+      "rpm": 7500,
+      "correction": {
+        "simulatedTopSpeed": 120,
+        "softMaxSpeed": 130,
+        "dragFinishSpeedKmh": null,
+        "dragFinishSpeedProvenance": null
+      },
+      "expected": {
+        "finalDrive": 6.1,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81,
+          0.54,
+          0.36,
+          0.24,
+          0.16,
+          0.1,
+          0.1
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "AWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 10,
+      "rpm": 7500,
+      "correction": {
+        "simulatedTopSpeed": 90,
+        "softMaxSpeed": 100,
+        "dragFinishSpeedKmh": null,
+        "dragFinishSpeedProvenance": null
+      },
+      "expected": {
+        "finalDrive": 6.1,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81,
+          0.54,
+          0.36,
+          0.24,
+          0.16,
+          0.1,
+          0.1
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "AWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 11,
+      "rpm": 0,
+      "correction": null,
+      "expected": {
+        "finalDrive": 3.52,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81,
+          0.54,
+          0.36
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "AWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 11,
+      "rpm": 0,
+      "correction": {
+        "simulatedTopSpeed": 120,
+        "softMaxSpeed": 130,
+        "dragFinishSpeedKmh": null,
+        "dragFinishSpeedProvenance": null
+      },
+      "expected": {
+        "finalDrive": 6.1,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81,
+          0.54,
+          0.36
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "AWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 11,
+      "rpm": 0,
+      "correction": {
+        "simulatedTopSpeed": 90,
+        "softMaxSpeed": 100,
+        "dragFinishSpeedKmh": null,
+        "dragFinishSpeedProvenance": null
+      },
+      "expected": {
+        "finalDrive": 6.1,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81,
+          0.54,
+          0.36
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "AWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 11,
+      "rpm": 7500,
+      "correction": null,
+      "expected": {
+        "finalDrive": 3.52,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81,
+          0.54,
+          0.36
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "AWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 11,
+      "rpm": 7500,
+      "correction": {
+        "simulatedTopSpeed": 120,
+        "softMaxSpeed": 130,
+        "dragFinishSpeedKmh": null,
+        "dragFinishSpeedProvenance": null
+      },
+      "expected": {
+        "finalDrive": 6.1,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81,
+          0.54,
+          0.36
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "AWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 11,
+      "rpm": 7500,
+      "correction": {
+        "simulatedTopSpeed": 90,
+        "softMaxSpeed": 100,
+        "dragFinishSpeedKmh": null,
+        "dragFinishSpeedProvenance": null
+      },
+      "expected": {
+        "finalDrive": 6.1,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81,
+          0.54,
+          0.36
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "FWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 0,
+      "rpm": 0,
+      "correction": null,
+      "expected": {
+        "finalDrive": 3.42,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81,
+          0.54,
+          0.36
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "FWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 0,
+      "rpm": 0,
+      "correction": {
+        "simulatedTopSpeed": 120,
+        "softMaxSpeed": 130,
+        "dragFinishSpeedKmh": null,
+        "dragFinishSpeedProvenance": null
+      },
+      "expected": {
+        "finalDrive": 6.1,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81,
+          0.54,
+          0.36
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "FWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 0,
+      "rpm": 0,
+      "correction": {
+        "simulatedTopSpeed": 90,
+        "softMaxSpeed": 100,
+        "dragFinishSpeedKmh": null,
+        "dragFinishSpeedProvenance": null
+      },
+      "expected": {
+        "finalDrive": 6.1,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81,
+          0.54,
+          0.36
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "FWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 0,
+      "rpm": 7500,
+      "correction": null,
+      "expected": {
+        "finalDrive": 3.42,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81,
+          0.54,
+          0.36
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "FWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 0,
+      "rpm": 7500,
+      "correction": {
+        "simulatedTopSpeed": 120,
+        "softMaxSpeed": 130,
+        "dragFinishSpeedKmh": null,
+        "dragFinishSpeedProvenance": null
+      },
+      "expected": {
+        "finalDrive": 6.1,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81,
+          0.54,
+          0.36
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "FWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 0,
+      "rpm": 7500,
+      "correction": {
+        "simulatedTopSpeed": 90,
+        "softMaxSpeed": 100,
+        "dragFinishSpeedKmh": null,
+        "dragFinishSpeedProvenance": null
+      },
+      "expected": {
+        "finalDrive": 6.1,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81,
+          0.54,
+          0.36
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "FWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 1,
+      "rpm": 0,
+      "correction": null,
+      "expected": {
+        "finalDrive": 2,
+        "gears": [
+          2.7
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "FWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 1,
+      "rpm": 0,
+      "correction": {
+        "simulatedTopSpeed": 120,
+        "softMaxSpeed": 130,
+        "dragFinishSpeedKmh": null,
+        "dragFinishSpeedProvenance": null
+      },
+      "expected": {
+        "finalDrive": 2.77,
+        "gears": [
+          2.7
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "FWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 1,
+      "rpm": 0,
+      "correction": {
+        "simulatedTopSpeed": 90,
+        "softMaxSpeed": 100,
+        "dragFinishSpeedKmh": null,
+        "dragFinishSpeedProvenance": null
+      },
+      "expected": {
+        "finalDrive": 3.69,
+        "gears": [
+          2.7
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "FWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 1,
+      "rpm": 7500,
+      "correction": null,
+      "expected": {
+        "finalDrive": 2,
+        "gears": [
+          2.7
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "FWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 1,
+      "rpm": 7500,
+      "correction": {
+        "simulatedTopSpeed": 120,
+        "softMaxSpeed": 130,
+        "dragFinishSpeedKmh": null,
+        "dragFinishSpeedProvenance": null
+      },
+      "expected": {
+        "finalDrive": 2.77,
+        "gears": [
+          2.7
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "FWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 1,
+      "rpm": 7500,
+      "correction": {
+        "simulatedTopSpeed": 90,
+        "softMaxSpeed": 100,
+        "dragFinishSpeedKmh": null,
+        "dragFinishSpeedProvenance": null
+      },
+      "expected": {
+        "finalDrive": 3.69,
+        "gears": [
+          2.7
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "FWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 4,
+      "rpm": 0,
+      "correction": null,
+      "expected": {
+        "finalDrive": 2.24,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "FWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 4,
+      "rpm": 0,
+      "correction": {
+        "simulatedTopSpeed": 120,
+        "softMaxSpeed": 130,
+        "dragFinishSpeedKmh": null,
+        "dragFinishSpeedProvenance": null
+      },
+      "expected": {
+        "finalDrive": 5.24,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "FWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 4,
+      "rpm": 0,
+      "correction": {
+        "simulatedTopSpeed": 90,
+        "softMaxSpeed": 100,
+        "dragFinishSpeedKmh": null,
+        "dragFinishSpeedProvenance": null
+      },
+      "expected": {
+        "finalDrive": 6.1,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "FWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 4,
+      "rpm": 7500,
+      "correction": null,
+      "expected": {
+        "finalDrive": 2.24,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "FWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 4,
+      "rpm": 7500,
+      "correction": {
+        "simulatedTopSpeed": 120,
+        "softMaxSpeed": 130,
+        "dragFinishSpeedKmh": null,
+        "dragFinishSpeedProvenance": null
+      },
+      "expected": {
+        "finalDrive": 5.24,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "FWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 4,
+      "rpm": 7500,
+      "correction": {
+        "simulatedTopSpeed": 90,
+        "softMaxSpeed": 100,
+        "dragFinishSpeedKmh": null,
+        "dragFinishSpeedProvenance": null
+      },
+      "expected": {
+        "finalDrive": 6.1,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "FWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 6,
+      "rpm": 0,
+      "correction": null,
+      "expected": {
+        "finalDrive": 3.42,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81,
+          0.54,
+          0.36
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "FWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 6,
+      "rpm": 0,
+      "correction": {
+        "simulatedTopSpeed": 120,
+        "softMaxSpeed": 130,
+        "dragFinishSpeedKmh": null,
+        "dragFinishSpeedProvenance": null
+      },
+      "expected": {
+        "finalDrive": 6.1,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81,
+          0.54,
+          0.36
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "FWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 6,
+      "rpm": 0,
+      "correction": {
+        "simulatedTopSpeed": 90,
+        "softMaxSpeed": 100,
+        "dragFinishSpeedKmh": null,
+        "dragFinishSpeedProvenance": null
+      },
+      "expected": {
+        "finalDrive": 6.1,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81,
+          0.54,
+          0.36
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "FWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 6,
+      "rpm": 7500,
+      "correction": null,
+      "expected": {
+        "finalDrive": 3.42,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81,
+          0.54,
+          0.36
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "FWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 6,
+      "rpm": 7500,
+      "correction": {
+        "simulatedTopSpeed": 120,
+        "softMaxSpeed": 130,
+        "dragFinishSpeedKmh": null,
+        "dragFinishSpeedProvenance": null
+      },
+      "expected": {
+        "finalDrive": 6.1,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81,
+          0.54,
+          0.36
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "FWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 6,
+      "rpm": 7500,
+      "correction": {
+        "simulatedTopSpeed": 90,
+        "softMaxSpeed": 100,
+        "dragFinishSpeedKmh": null,
+        "dragFinishSpeedProvenance": null
+      },
+      "expected": {
+        "finalDrive": 6.1,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81,
+          0.54,
+          0.36
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "FWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 10,
+      "rpm": 0,
+      "correction": null,
+      "expected": {
+        "finalDrive": 6.1,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81,
+          0.54,
+          0.36,
+          0.24,
+          0.16,
+          0.1,
+          0.1
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "FWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 10,
+      "rpm": 0,
+      "correction": {
+        "simulatedTopSpeed": 120,
+        "softMaxSpeed": 130,
+        "dragFinishSpeedKmh": null,
+        "dragFinishSpeedProvenance": null
+      },
+      "expected": {
+        "finalDrive": 6.1,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81,
+          0.54,
+          0.36,
+          0.24,
+          0.16,
+          0.1,
+          0.1
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "FWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 10,
+      "rpm": 0,
+      "correction": {
+        "simulatedTopSpeed": 90,
+        "softMaxSpeed": 100,
+        "dragFinishSpeedKmh": null,
+        "dragFinishSpeedProvenance": null
+      },
+      "expected": {
+        "finalDrive": 6.1,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81,
+          0.54,
+          0.36,
+          0.24,
+          0.16,
+          0.1,
+          0.1
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "FWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 10,
+      "rpm": 7500,
+      "correction": null,
+      "expected": {
+        "finalDrive": 6.1,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81,
+          0.54,
+          0.36,
+          0.24,
+          0.16,
+          0.1,
+          0.1
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "FWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 10,
+      "rpm": 7500,
+      "correction": {
+        "simulatedTopSpeed": 120,
+        "softMaxSpeed": 130,
+        "dragFinishSpeedKmh": null,
+        "dragFinishSpeedProvenance": null
+      },
+      "expected": {
+        "finalDrive": 6.1,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81,
+          0.54,
+          0.36,
+          0.24,
+          0.16,
+          0.1,
+          0.1
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "FWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 10,
+      "rpm": 7500,
+      "correction": {
+        "simulatedTopSpeed": 90,
+        "softMaxSpeed": 100,
+        "dragFinishSpeedKmh": null,
+        "dragFinishSpeedProvenance": null
+      },
+      "expected": {
+        "finalDrive": 6.1,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81,
+          0.54,
+          0.36,
+          0.24,
+          0.16,
+          0.1,
+          0.1
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "FWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 11,
+      "rpm": 0,
+      "correction": null,
+      "expected": {
+        "finalDrive": 3.42,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81,
+          0.54,
+          0.36
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "FWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 11,
+      "rpm": 0,
+      "correction": {
+        "simulatedTopSpeed": 120,
+        "softMaxSpeed": 130,
+        "dragFinishSpeedKmh": null,
+        "dragFinishSpeedProvenance": null
+      },
+      "expected": {
+        "finalDrive": 6.1,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81,
+          0.54,
+          0.36
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "FWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 11,
+      "rpm": 0,
+      "correction": {
+        "simulatedTopSpeed": 90,
+        "softMaxSpeed": 100,
+        "dragFinishSpeedKmh": null,
+        "dragFinishSpeedProvenance": null
+      },
+      "expected": {
+        "finalDrive": 6.1,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81,
+          0.54,
+          0.36
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "FWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 11,
+      "rpm": 7500,
+      "correction": null,
+      "expected": {
+        "finalDrive": 3.42,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81,
+          0.54,
+          0.36
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "FWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 11,
+      "rpm": 7500,
+      "correction": {
+        "simulatedTopSpeed": 120,
+        "softMaxSpeed": 130,
+        "dragFinishSpeedKmh": null,
+        "dragFinishSpeedProvenance": null
+      },
+      "expected": {
+        "finalDrive": 6.1,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81,
+          0.54,
+          0.36
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "FWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 11,
+      "rpm": 7500,
+      "correction": {
+        "simulatedTopSpeed": 90,
+        "softMaxSpeed": 100,
+        "dragFinishSpeedKmh": null,
+        "dragFinishSpeedProvenance": null
+      },
+      "expected": {
+        "finalDrive": 6.1,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81,
+          0.54,
+          0.36
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "RWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 0,
+      "rpm": 0,
+      "correction": null,
+      "expected": {
+        "finalDrive": 3.52,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81,
+          0.54,
+          0.36
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "RWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 0,
+      "rpm": 0,
+      "correction": {
+        "simulatedTopSpeed": 120,
+        "softMaxSpeed": 130,
+        "dragFinishSpeedKmh": null,
+        "dragFinishSpeedProvenance": null
+      },
+      "expected": {
+        "finalDrive": 6.1,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81,
+          0.54,
+          0.36
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "RWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 0,
+      "rpm": 0,
+      "correction": {
+        "simulatedTopSpeed": 90,
+        "softMaxSpeed": 100,
+        "dragFinishSpeedKmh": null,
+        "dragFinishSpeedProvenance": null
+      },
+      "expected": {
+        "finalDrive": 6.1,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81,
+          0.54,
+          0.36
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "RWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 0,
+      "rpm": 7500,
+      "correction": null,
+      "expected": {
+        "finalDrive": 3.52,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81,
+          0.54,
+          0.36
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "RWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 0,
+      "rpm": 7500,
+      "correction": {
+        "simulatedTopSpeed": 120,
+        "softMaxSpeed": 130,
+        "dragFinishSpeedKmh": null,
+        "dragFinishSpeedProvenance": null
+      },
+      "expected": {
+        "finalDrive": 6.1,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81,
+          0.54,
+          0.36
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "RWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 0,
+      "rpm": 7500,
+      "correction": {
+        "simulatedTopSpeed": 90,
+        "softMaxSpeed": 100,
+        "dragFinishSpeedKmh": null,
+        "dragFinishSpeedProvenance": null
+      },
+      "expected": {
+        "finalDrive": 6.1,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81,
+          0.54,
+          0.36
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "RWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 1,
+      "rpm": 0,
+      "correction": null,
+      "expected": {
+        "finalDrive": 2,
+        "gears": [
+          2.7
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "RWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 1,
+      "rpm": 0,
+      "correction": {
+        "simulatedTopSpeed": 120,
+        "softMaxSpeed": 130,
+        "dragFinishSpeedKmh": null,
+        "dragFinishSpeedProvenance": null
+      },
+      "expected": {
+        "finalDrive": 2.85,
+        "gears": [
+          2.7
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "RWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 1,
+      "rpm": 0,
+      "correction": {
+        "simulatedTopSpeed": 90,
+        "softMaxSpeed": 100,
+        "dragFinishSpeedKmh": null,
+        "dragFinishSpeedProvenance": null
+      },
+      "expected": {
+        "finalDrive": 3.8,
+        "gears": [
+          2.7
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "RWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 1,
+      "rpm": 7500,
+      "correction": null,
+      "expected": {
+        "finalDrive": 2,
+        "gears": [
+          2.7
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "RWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 1,
+      "rpm": 7500,
+      "correction": {
+        "simulatedTopSpeed": 120,
+        "softMaxSpeed": 130,
+        "dragFinishSpeedKmh": null,
+        "dragFinishSpeedProvenance": null
+      },
+      "expected": {
+        "finalDrive": 2.85,
+        "gears": [
+          2.7
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "RWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 1,
+      "rpm": 7500,
+      "correction": {
+        "simulatedTopSpeed": 90,
+        "softMaxSpeed": 100,
+        "dragFinishSpeedKmh": null,
+        "dragFinishSpeedProvenance": null
+      },
+      "expected": {
+        "finalDrive": 3.8,
+        "gears": [
+          2.7
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "RWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 4,
+      "rpm": 0,
+      "correction": null,
+      "expected": {
+        "finalDrive": 2.3,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "RWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 4,
+      "rpm": 0,
+      "correction": {
+        "simulatedTopSpeed": 120,
+        "softMaxSpeed": 130,
+        "dragFinishSpeedKmh": null,
+        "dragFinishSpeedProvenance": null
+      },
+      "expected": {
+        "finalDrive": 5.4,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "RWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 4,
+      "rpm": 0,
+      "correction": {
+        "simulatedTopSpeed": 90,
+        "softMaxSpeed": 100,
+        "dragFinishSpeedKmh": null,
+        "dragFinishSpeedProvenance": null
+      },
+      "expected": {
+        "finalDrive": 6.1,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "RWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 4,
+      "rpm": 7500,
+      "correction": null,
+      "expected": {
+        "finalDrive": 2.3,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "RWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 4,
+      "rpm": 7500,
+      "correction": {
+        "simulatedTopSpeed": 120,
+        "softMaxSpeed": 130,
+        "dragFinishSpeedKmh": null,
+        "dragFinishSpeedProvenance": null
+      },
+      "expected": {
+        "finalDrive": 5.4,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "RWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 4,
+      "rpm": 7500,
+      "correction": {
+        "simulatedTopSpeed": 90,
+        "softMaxSpeed": 100,
+        "dragFinishSpeedKmh": null,
+        "dragFinishSpeedProvenance": null
+      },
+      "expected": {
+        "finalDrive": 6.1,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "RWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 6,
+      "rpm": 0,
+      "correction": null,
+      "expected": {
+        "finalDrive": 3.52,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81,
+          0.54,
+          0.36
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "RWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 6,
+      "rpm": 0,
+      "correction": {
+        "simulatedTopSpeed": 120,
+        "softMaxSpeed": 130,
+        "dragFinishSpeedKmh": null,
+        "dragFinishSpeedProvenance": null
+      },
+      "expected": {
+        "finalDrive": 6.1,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81,
+          0.54,
+          0.36
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "RWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 6,
+      "rpm": 0,
+      "correction": {
+        "simulatedTopSpeed": 90,
+        "softMaxSpeed": 100,
+        "dragFinishSpeedKmh": null,
+        "dragFinishSpeedProvenance": null
+      },
+      "expected": {
+        "finalDrive": 6.1,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81,
+          0.54,
+          0.36
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "RWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 6,
+      "rpm": 7500,
+      "correction": null,
+      "expected": {
+        "finalDrive": 3.52,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81,
+          0.54,
+          0.36
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "RWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 6,
+      "rpm": 7500,
+      "correction": {
+        "simulatedTopSpeed": 120,
+        "softMaxSpeed": 130,
+        "dragFinishSpeedKmh": null,
+        "dragFinishSpeedProvenance": null
+      },
+      "expected": {
+        "finalDrive": 6.1,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81,
+          0.54,
+          0.36
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "RWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 6,
+      "rpm": 7500,
+      "correction": {
+        "simulatedTopSpeed": 90,
+        "softMaxSpeed": 100,
+        "dragFinishSpeedKmh": null,
+        "dragFinishSpeedProvenance": null
+      },
+      "expected": {
+        "finalDrive": 6.1,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81,
+          0.54,
+          0.36
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "RWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 10,
+      "rpm": 0,
+      "correction": null,
+      "expected": {
+        "finalDrive": 6.1,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81,
+          0.54,
+          0.36,
+          0.24,
+          0.16,
+          0.1,
+          0.1
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "RWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 10,
+      "rpm": 0,
+      "correction": {
+        "simulatedTopSpeed": 120,
+        "softMaxSpeed": 130,
+        "dragFinishSpeedKmh": null,
+        "dragFinishSpeedProvenance": null
+      },
+      "expected": {
+        "finalDrive": 6.1,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81,
+          0.54,
+          0.36,
+          0.24,
+          0.16,
+          0.1,
+          0.1
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "RWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 10,
+      "rpm": 0,
+      "correction": {
+        "simulatedTopSpeed": 90,
+        "softMaxSpeed": 100,
+        "dragFinishSpeedKmh": null,
+        "dragFinishSpeedProvenance": null
+      },
+      "expected": {
+        "finalDrive": 6.1,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81,
+          0.54,
+          0.36,
+          0.24,
+          0.16,
+          0.1,
+          0.1
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "RWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 10,
+      "rpm": 7500,
+      "correction": null,
+      "expected": {
+        "finalDrive": 6.1,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81,
+          0.54,
+          0.36,
+          0.24,
+          0.16,
+          0.1,
+          0.1
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "RWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 10,
+      "rpm": 7500,
+      "correction": {
+        "simulatedTopSpeed": 120,
+        "softMaxSpeed": 130,
+        "dragFinishSpeedKmh": null,
+        "dragFinishSpeedProvenance": null
+      },
+      "expected": {
+        "finalDrive": 6.1,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81,
+          0.54,
+          0.36,
+          0.24,
+          0.16,
+          0.1,
+          0.1
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "RWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 10,
+      "rpm": 7500,
+      "correction": {
+        "simulatedTopSpeed": 90,
+        "softMaxSpeed": 100,
+        "dragFinishSpeedKmh": null,
+        "dragFinishSpeedProvenance": null
+      },
+      "expected": {
+        "finalDrive": 6.1,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81,
+          0.54,
+          0.36,
+          0.24,
+          0.16,
+          0.1,
+          0.1
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "RWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 11,
+      "rpm": 0,
+      "correction": null,
+      "expected": {
+        "finalDrive": 3.52,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81,
+          0.54,
+          0.36
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "RWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 11,
+      "rpm": 0,
+      "correction": {
+        "simulatedTopSpeed": 120,
+        "softMaxSpeed": 130,
+        "dragFinishSpeedKmh": null,
+        "dragFinishSpeedProvenance": null
+      },
+      "expected": {
+        "finalDrive": 6.1,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81,
+          0.54,
+          0.36
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "RWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 11,
+      "rpm": 0,
+      "correction": {
+        "simulatedTopSpeed": 90,
+        "softMaxSpeed": 100,
+        "dragFinishSpeedKmh": null,
+        "dragFinishSpeedProvenance": null
+      },
+      "expected": {
+        "finalDrive": 6.1,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81,
+          0.54,
+          0.36
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "RWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 11,
+      "rpm": 7500,
+      "correction": null,
+      "expected": {
+        "finalDrive": 3.52,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81,
+          0.54,
+          0.36
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "RWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 11,
+      "rpm": 7500,
+      "correction": {
+        "simulatedTopSpeed": 120,
+        "softMaxSpeed": 130,
+        "dragFinishSpeedKmh": null,
+        "dragFinishSpeedProvenance": null
+      },
+      "expected": {
+        "finalDrive": 6.1,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81,
+          0.54,
+          0.36
+        ]
+      }
+    },
+    {
+      "profile": {
+        "weight": 1400,
+        "weight_distribution": 55,
+        "drivetrain": "RWD",
+        "maxHp": 300,
+        "maxTorque": 400,
+        "maxHpRpm": 5000,
+        "maxTorqueRpm": 3500,
+        "frontTireWidth": 225,
+        "frontTireAspect": 45,
+        "frontTireRim": 17,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "induction": "Turbo"
+      },
+      "count": 11,
+      "rpm": 7500,
+      "correction": {
+        "simulatedTopSpeed": 90,
+        "softMaxSpeed": 100,
+        "dragFinishSpeedKmh": null,
+        "dragFinishSpeedProvenance": null
+      },
+      "expected": {
+        "finalDrive": 6.1,
+        "gears": [
+          2.7,
+          1.81,
+          1.21,
+          0.81,
+          0.54,
+          0.36
+        ]
+      }
+    }
+  ],
+  "sourceFile": "backend-rust/src/tuning/gearing/legacy/mod.rs",
+  "sourceFileSha256": "fd813de0854c3941d9ee111975d804538d13eef9b00ffaef57aa7940d13b5486",
+  "captureMethod": "Direct calls through the compiled #657 Rust library from a temporary harness; the source checkout was clean. Only static inputs and outputs are retained."
+}

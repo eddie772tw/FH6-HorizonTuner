@@ -841,7 +841,25 @@ impl Backend for App {
     fn client_delta(&self, channel: &str, delta: i64) {
         lock(&self.metrics).client_delta(channel, delta);
     }
+    fn companion_enabled(&self) -> bool {
+        self.config.settings()["companion_enabled"] != false
+    }
     fn request(&self, request: ApiRequest) -> ApiResult<ApiResponse> {
+        if (request.path.starts_with("/companion/")
+            || (request.path.starts_with("/api/companion/")
+                && !matches!(
+                    request.path.as_str(),
+                    "/api/companion/status" | "/api/companion/usb/kill"
+                )))
+            && !self.companion_enabled()
+        {
+            return Err(ApiError::new(403, "Companion APP is disabled in settings."));
+        }
+        // Serialize setting transitions with ADB operations so an in-flight scan
+        // cannot restart the daemon after a disable has completed.
+        let _settings_operation = (request.method == "POST" && request.path == "/api/settings")
+            .then(|| lock(&self.companion_usb_operation));
+        let previous_companion = _settings_operation.as_ref().map(|_| self.config.settings());
         if request
             .path
             .strip_prefix("/api/road")
@@ -864,6 +882,7 @@ impl Backend for App {
         {
             let body = request.json()?;
             let rec = &body["recommendation"];
+            crate::tuning::archive::ensure_active(rec)?;
             if rec["formulaVersion"]
                 .as_str()
                 .is_some_and(|v| v.starts_with("rust/"))
@@ -925,6 +944,15 @@ impl Backend for App {
         match (request.method.as_str(), request.path.as_str()) {
             ("GET", "/api/companion/usb/devices") => {
                 let _operation = lock(&self.companion_usb_operation);
+                let settings = self.config.settings();
+                if settings["companion_enabled"] == false
+                    || settings["companion_usb_enabled"] == false
+                {
+                    return Err(ApiError::new(
+                        403,
+                        "USB companion feature is disabled in settings.",
+                    ));
+                }
                 let client = crate::companion_usb_runtime::packaged_client(&self.config.root)?;
                 let devices = client
                     .list_devices()
@@ -932,17 +960,34 @@ impl Backend for App {
                 return Ok(ApiResponse::json(json!({"devices": devices})));
             }
             ("POST", "/api/companion/usb/connect") => {
+                let _operation = lock(&self.companion_usb_operation);
+                let settings = self.config.settings();
+                if settings["companion_enabled"] == false
+                    || settings["companion_usb_enabled"] == false
+                {
+                    return Err(ApiError::new(
+                        403,
+                        "USB companion feature is disabled in settings.",
+                    ));
+                }
                 let body = request.json()?;
                 let serial = body["serial"]
                     .as_str()
                     .ok_or_else(|| ApiError::invalid("Choose a USB device first."))?;
-                let _operation = lock(&self.companion_usb_operation);
                 let client = crate::companion_usb_runtime::packaged_client(&self.config.root)?;
                 let port = self.companion.get_status(None).port;
                 let result = client
                     .connect(serial, port)
                     .map_err(|e| ApiError::unavailable("USB connect", e))?;
                 return Ok(ApiResponse::json(serde_json::to_value(result)?));
+            }
+            ("POST", "/api/companion/usb/kill") => {
+                let _operation = lock(&self.companion_usb_operation);
+                let client = crate::companion_usb_runtime::packaged_client(&self.config.root)?;
+                client
+                    .kill_server()
+                    .map_err(|e| ApiError::unavailable("USB kill server", e))?;
+                return Ok(ApiResponse::json(json!({"status": "killed"})));
             }
             ("GET", "/api/companion/workflow") => {
                 let mut workflow = lock(&self.companion_workflow);
@@ -969,6 +1014,9 @@ impl Backend for App {
         if (request.method == "POST" && request.path == "/api/companion/lan/pairing")
             || (request.method == "GET" && request.path == "/api/companion/qr")
         {
+            if self.config.settings()["companion_enabled"] == false {
+                return Err(ApiError::new(403, "Companion APP is disabled in settings."));
+            }
             let port = self
                 .companion
                 .get_lan_port()
@@ -985,6 +1033,9 @@ impl Backend for App {
             ));
         }
         if request.method == "POST" && request.path == "/api/companion/pair" {
+            if self.config.settings()["companion_enabled"] == false {
+                return Err(ApiError::new(403, "Companion APP is disabled in settings."));
+            }
             let body = request.json()?;
             let token = body["token"].as_str().unwrap_or_default();
             let device_name = body["device_name"].as_str().unwrap_or_default();
@@ -1010,8 +1061,14 @@ impl Backend for App {
             })));
         }
         if request.method == "GET" && request.path == "/api/companion/status" {
+            let enabled = self.config.settings()["companion_enabled"] != false;
             let mut status = self.companion.get_status(None);
-            status.active_connections = lock(&self.companion_workflow).client_count();
+            status.enabled = enabled;
+            status.active_connections = if enabled {
+                lock(&self.companion_workflow).client_count()
+            } else {
+                0
+            };
             return Ok(ApiResponse::json(
                 serde_json::to_value(&status).unwrap_or_default(),
             ));
@@ -1113,6 +1170,20 @@ impl Backend for App {
         };
         if let Some(result) = config_result {
             let value = result?;
+            if let Some(previous) = &previous_companion {
+                let current = self.config.settings();
+                let disabled = (previous["companion_enabled"] != false
+                    && current["companion_enabled"] == false)
+                    || (previous["companion_usb_enabled"] == true
+                        && current["companion_usb_enabled"] == false);
+                if disabled && previous["companion_usb_enabled"] == true {
+                    if let Ok(client) =
+                        crate::companion_usb_runtime::packaged_client(&self.config.root)
+                    {
+                        let _ = client.kill_server();
+                    }
+                }
+            }
             if matches!(
                 request.path.as_str(),
                 "/api/overlay/config" | "/api/overlay/layout" | "/api/overlay/reset"
@@ -1157,16 +1228,12 @@ impl Backend for App {
                 {
                     return Ok(ApiResponse::bytes(304, vec![], ""));
                 }
-                return Ok(ApiResponse::bytes(200, bytes, &content_type)
-                    .header("ETag", format!("\"{hash}\""))
-                    .header(
-                        "Cache-Control",
-                        if request.query.contains_key("v") {
-                            "public, max-age=3600, immutable"
-                        } else {
-                            "public, max-age=30"
-                        },
-                    ));
+                return thumbnail_response(
+                    &content_type,
+                    bytes,
+                    &hash,
+                    request.query.contains_key("v"),
+                );
             }
             ("GET", "/api/diagnostics/telemetry-pipeline") => self.pipeline_metrics(),
             ("GET", "/api/diagnostics/overlay") => {
@@ -1220,5 +1287,94 @@ impl Backend for App {
             _ => return Err(ApiError::new(404, "Not Found")),
         };
         Ok(ApiResponse::json(value))
+    }
+}
+
+fn thumbnail_response(
+    content_type: &str,
+    bytes: Vec<u8>,
+    hash: &str,
+    immutable: bool,
+) -> ApiResult<ApiResponse> {
+    let safe_type = crate::native::validate_thumbnail(Some(content_type), &bytes)
+        .ok_or_else(|| ApiError::new(415, "Unsupported media thumbnail type"))?;
+    Ok(ApiResponse::bytes(200, bytes, safe_type)
+        // Sandbox active content execution if the thumbnail URL is ever opened directly.
+        .header("Content-Security-Policy", "default-src 'none'; sandbox")
+        .header("ETag", format!("\"{hash}\""))
+        .header(
+            "Cache-Control",
+            if immutable {
+                "public, max-age=3600, immutable"
+            } else {
+                "public, max-age=30"
+            },
+        ))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::thumbnail_response;
+
+    #[test]
+    fn thumbnail_response_enforces_raster_mime_and_sandbox_csp() {
+        let ok = thumbnail_response(
+            "IMAGE/PNG; charset=binary",
+            b"\x89PNG\r\n\x1a\n".to_vec(),
+            "abc",
+            true,
+        )
+        .unwrap();
+        assert_eq!(ok.status, 200);
+        assert!(ok
+            .headers
+            .iter()
+            .any(|(k, v)| k == "content-type" && v == "image/png"));
+        assert!(ok
+            .headers
+            .iter()
+            .any(|(k, v)| k == "Content-Security-Policy" && v == "default-src 'none'; sandbox"));
+        assert!(ok
+            .headers
+            .iter()
+            .any(|(k, v)| k == "ETag" && v == "\"abc\""));
+        for rejected in [
+            "image/svg+xml",
+            "text/html",
+            "application/xhtml+xml",
+            "image/png\r\nX-Test: 1",
+            "",
+        ] {
+            assert_eq!(
+                thumbnail_response(rejected, vec![1], "abc", false)
+                    .err()
+                    .unwrap()
+                    .status,
+                415
+            );
+        }
+        let png = b"\x89PNG\r\n\x1a\n";
+        for (declared, bytes) in [
+            ("text/html", png.to_vec()),
+            ("image/jpeg", png.to_vec()),
+            ("image/png", b"not-an-image".to_vec()),
+            (
+                "image/png",
+                [b" ".repeat(64), b"<svg onload=alert(1)>".to_vec()].concat(),
+            ),
+        ] {
+            assert_eq!(
+                thumbnail_response(declared, bytes, "abc", false)
+                    .err()
+                    .unwrap()
+                    .status,
+                415
+            );
+        }
+        let uncached = thumbnail_response("image/png", png.to_vec(), "abc", false).unwrap();
+        assert!(uncached
+            .headers
+            .iter()
+            .any(|(key, value)| key == "Cache-Control" && value == "public, max-age=30"));
     }
 }

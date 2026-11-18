@@ -1,252 +1,51 @@
-import React, { memo, useMemo } from 'react';
-import { LineChart, Line, XAxis, YAxis, ReferenceLine, ReferenceArea, ResponsiveContainer, CartesianGrid } from 'recharts';
+import { memo, useMemo } from 'react';
+import { LineChart, Line, XAxis, YAxis, ReferenceLine, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { useSettings } from '../../../context/SettingsContext';
+import type { GearingResult } from '../../../domain/tuning/types';
+import type { GearingView } from '../aegoTypes';
 import { computeGearingChartData } from './gearingChartData';
+import { validGearingView } from './gearingView';
 
-interface GearingTunerProps {
-  tuning: any;
-  updateSection?: (section: any, field: string, value: any) => void;
-  numGears: number;
-  carParams?: any;
-  gearingMethod?: string;
-  showCorrections?: boolean;
-}
-
-const inputStyle: React.CSSProperties = {
-  background: 'var(--input-bg)',
-  border: '1px solid var(--glass-border)',
-  color: 'var(--input-text)',
-  borderRadius: '4px'
-};
-
-const formRowStyle: React.CSSProperties = {
-  display: 'flex',
-  justifyContent: 'space-between',
-  alignItems: 'center'
-};
-
-const GearingTunerComponent: React.FC<GearingTunerProps> = ({
-  tuning,
-  updateSection,
-  numGears,
-  carParams,
-  showCorrections = true
-}) => {
+/** Display geometry only. Rust resolves the driven tire and qualified RPM inputs. */
+export const GearingTuner = memo(function GearingTuner({ gearing, view }: { gearing: GearingResult; view?: GearingView | null }) {
   const { settings, convertSpeed, t } = useSettings();
+  const chart = useMemo(() => !validGearingView(view, gearing) ? null : computeGearingChartData({
+    numGears: gearing.gears.length, gears: gearing.gears, finalDrive: gearing.finalDrive,
+    maxRpm: view.maxRpm, effectiveRedline: view.effectiveRedline, maxHpRpm: view.powerPeakRpm,
+    tireRadiusM: view.tireRadiusM, speedUnit: settings.units.speed, convertSpeed,
+  }), [view, gearing, settings.units.speed, convertSpeed]);
+  if (!chart || !view) return <p role="status">{t('The gearing chart requires backend-resolved tire and RPM inputs.')}</p>;
   const speedLabel = settings.units.speed === 'mph' ? 'mph' : 'km/h';
-  const displaySpeed = (kmh: number) => settings.units.speed === 'mph' ? kmh * 0.621371 : kmh;
-  const speedToKmh = (value: number) => settings.units.speed === 'mph' ? value / 0.621371 : value;
-
-  // Compute speed-rpm chart data with shift-chained starting points (Gear N starts at Gear N-1 cutoffRpm speed)
-  const { chartData, xMax, yMax, cutoffRpm } = useMemo(() => {
-    // 1. Calculate Rear Tire Radius in meters
-    let tireRadiusM = 0.32;
-    if (carParams?.rearTireWidth && carParams?.rearTireAspect && carParams?.rearTireRim) {
-      const wallMm = (carParams.rearTireWidth * carParams.rearTireAspect) / 100;
-      const rimMm = carParams.rearTireRim * 25.4;
-      const diameterM = (wallMm * 2 + rimMm) / 1000;
-      tireRadiusM = diameterM / 2;
-    }
-
-    const effectiveRedline = tuning?.gearing?.effectiveRedline || carParams?.effectiveRedline;
-
-    return computeGearingChartData({
-      numGears,
-      gears: tuning?.gearing?.gears || [],
-      finalDrive: tuning?.gearing?.finalDrive || 3.40,
-      maxRpm: tuning?.gearing?.maxRpm,
-      effectiveRedline,
-      maxHpRpm: carParams?.maxHpRpm,
-      tireRadiusM,
-      speedUnit: settings.units.speed,
-      convertSpeed,
-      simulatedTopSpeed: tuning?.gearing?.simulatedTopSpeed,
-      softMaxSpeed: tuning?.gearing?.softMaxSpeed
-    });
-  }, [
-    tuning?.gearing?.finalDrive,
-    tuning?.gearing?.gears,
-    tuning?.gearing?.maxRpm,
-    tuning?.gearing?.effectiveRedline,
-    tuning?.gearing?.simulatedTopSpeed,
-    tuning?.gearing?.softMaxSpeed,
-    numGears,
-    carParams,
-    settings.units.speed,
-    convertSpeed
-  ]);
-
-  return (
-    <div style={{ borderTop: '1px solid var(--glass-border)', paddingTop: '1.2rem', marginTop: '0.5rem' }}>
-      <div style={{ marginBottom: '0.8rem' }}>
-        <h4 style={{ margin: 0, color: 'var(--text-primary)', fontSize: '0.95rem' }}>{t("AEGO Optimized Gear Ratios & Dynamic Curve")}</h4>
-      </div>
-
-      <div className="row g-3 align-items-start">
-
-        {/* Left Column: Final Drive & Gears Table */}
-        <div className="col-12 col-md-4 d-flex flex-column gap-3">
-          <div style={{ background: 'var(--surface-1)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--glass-border)' }}>
-            <div style={{ ...formRowStyle, marginBottom: '0.8rem', borderBottom: '1px solid var(--glass-border)', paddingBottom: '0.5rem' }}>
-              <span style={{ fontSize: '0.9rem', color: 'var(--text-primary)', fontWeight: 600 }}>{t("Final Drive Ratio (FD)")}</span>
-              <input
-                type="number" step="0.01" value={tuning.gearing.finalDrive}
-                readOnly
-                title={t("Auto-calculated by AEGO algorithm")}
-                style={{ ...inputStyle, width: '80px', padding: '0.3rem', fontSize: '0.9rem', textAlign: 'right', border: '1px solid var(--primary)', opacity: 0.85, cursor: 'not-allowed' }}
-              />
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              {Array.from({length: numGears}).map((_, i) => (
-                <div key={`gear-in-${i}`} style={{ ...formRowStyle, background: 'var(--surface-2)', padding: '0.4rem 0.6rem', borderRadius: '4px' }}>
-                  <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t("Gear")} {i + 1}</span>
-                  <input
-                    type="number" step="0.01" value={tuning.gearing.gears[i] || 0.0}
-                    readOnly
-                    title={t("Auto-calculated by AEGO algorithm")}
-                    style={{ ...inputStyle, width: '65px', padding: '0.25rem', fontSize: '0.85rem', textAlign: 'right', opacity: 0.85, cursor: 'not-allowed' }}
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Secondary Correction Mechanism Input Card */}
-          {showCorrections && <div style={{ background: 'var(--surface-1)', padding: '0.9rem', borderRadius: '8px', border: '1px solid var(--glass-border)' }}>
-            <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.6rem' }}>
-              {t("Secondary Correction Mechanism")}
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.2rem' }}>
-                  {t("Simulated Top Speed")} ({speedLabel})
-                </label>
-                <input
-                  type="number"
-                  placeholder="e.g. 280"
-                  value={tuning?.gearing?.simulatedTopSpeed ? displaySpeed(tuning.gearing.simulatedTopSpeed).toFixed(1) : ''}
-                  onChange={e => updateSection && updateSection('gearing', 'simulatedTopSpeed', e.target.value ? speedToKmh(parseFloat(e.target.value)) : undefined)}
-                  style={{ ...inputStyle, width: '100%', padding: '0.3rem 0.5rem', fontSize: '0.85rem' }}
-                  title={t("In-game simulated or actual top speed under baseline gearing to correct aero & grip drag")}
-                />
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.2rem' }}>
-                  {t("Soft Max Speed Cap")} ({speedLabel})
-                </label>
-                <input
-                  type="number"
-                  placeholder="e.g. 310"
-                  value={tuning?.gearing?.softMaxSpeed ? displaySpeed(tuning.gearing.softMaxSpeed).toFixed(1) : ''}
-                  onChange={e => updateSection && updateSection('gearing', 'softMaxSpeed', e.target.value ? speedToKmh(parseFloat(e.target.value)) : undefined)}
-                  style={{ ...inputStyle, width: '100%', padding: '0.3rem 0.5rem', fontSize: '0.85rem' }}
-                  title={t("Speed limits on the X-axis right end of the in-game transmission preview chart")}
-                />
-              </div>
-            </div>
-          </div>}
-
+  return <section id="aego-gearing-chart" aria-labelledby="aego-chart-title">
+    <h4 id="aego-chart-title" className="fs-6">{t('AEGO gear ratios & wheel-speed curve')}</h4>
+    <p className="small text-body-secondary">{t('Driven tire axle')}: {t(view.drivenTireAxle === 'front' ? 'Front' : 'Rear')} · {t('Reference RPM')}: {Math.round(view.referenceRpm)} RPM</p>
+    <p className="small text-body-secondary">{t('Peak markers are not a measured usable power band. This is wheel-speed geometry, not verified ground speed or performance.')}</p>
+    <div className="row g-3 align-items-start">
+      <div className="col-12 col-md-4"><div className="table-responsive"><table className="table table-sm">
+        <tbody><tr><th scope="row">{t('Final Drive Ratio (FD)')}</th><td className="text-end">{gearing.finalDrive.toFixed(2)}</td></tr>
+          {gearing.gears.map((gear, index) => <tr key={index}><th scope="row">{t('Gear')} {index + 1}</th><td className="text-end">{gear.toFixed(2)}</td></tr>)}
+        </tbody>
+      </table></div></div>
+      <div className="col-12 col-md-8" style={{ minWidth: 0 }}>
+        <div className="core-theme-chart" style={{ background: 'var(--surface-2)', borderRadius: 'var(--chart-radius)', padding: '0.8rem', border: '1px solid var(--glass-border)' }}>
+          <ResponsiveContainer width="100%" aspect={16 / 9} minWidth={0}>
+            <LineChart data={chart.chartData} margin={{ top: 15, right: 15, bottom: 5, left: -15 }}>
+              <CartesianGrid stroke="var(--chart-grid)" strokeDasharray="var(--chart-grid-dash)" />
+              <XAxis dataKey="speed" type="number" domain={[0, chart.xMax]} stroke="var(--text-secondary)" fontSize={10} unit={` ${speedLabel}`} />
+              <YAxis type="number" domain={[0, chart.yMax]} stroke="var(--text-secondary)" fontSize={10} tickFormatter={value => Math.round(value).toString()} unit=" RPM" />
+              <ReferenceLine y={chart.cutoffRpm} stroke="var(--bs-danger-text-emphasis)" strokeDasharray="4 2"
+                label={{ value: `${t('Rev Limiter')}: ${Math.round(chart.cutoffRpm)} RPM`, fill: 'var(--bs-danger-text-emphasis)', fontSize: 10, position: 'insideTopRight' }} />
+              <ReferenceLine y={view.powerPeakRpm} stroke="var(--bs-danger-text-emphasis)" strokeDasharray="3 3"
+                label={{ value: `${t('Peak power RPM')}: ${Math.round(view.powerPeakRpm)}`, fill: 'var(--bs-danger-text-emphasis)', fontSize: 10, position: 'top' }} />
+              <ReferenceLine y={view.torquePeakRpm} stroke="var(--bs-warning-text-emphasis)" strokeDasharray="3 3"
+                label={{ value: `${t('Peak torque RPM')}: ${Math.round(view.torquePeakRpm)}`, fill: 'var(--bs-warning-text-emphasis)', fontSize: 10, position: 'bottom' }} />
+              {gearing.gears.map((_, index) => <Line key={index} type="linear" dataKey={`gear${index + 1}`}
+                stroke={`color-mix(in srgb, hsl(${index * 45} var(--chart-series-saturation) var(--chart-series-lightness)) 65%, var(--text-primary))`}
+                strokeWidth={2} dot={false} isAnimationActive={false} connectNulls name={`${index + 1} Gear`} />)}
+            </LineChart>
+          </ResponsiveContainer>
         </div>
-
-        {/* Right Column: Speed-RPM LineChart Graph */}
-        <div className="col-12 col-md-8" style={{ minWidth: 0 }}>
-          <div className="core-theme-chart" style={{ background: 'var(--surface-2)', borderRadius: 'var(--chart-radius)', padding: '0.8rem', border: '1px solid var(--glass-border)' }}>
-            <ResponsiveContainer width="100%" aspect={16 / 9} minWidth={0}>
-              <LineChart data={chartData} margin={{ top: 15, right: 15, bottom: 5, left: -15 }}>
-                <CartesianGrid stroke="var(--chart-grid)" strokeDasharray="var(--chart-grid-dash)" />
-                <XAxis dataKey="speed" type="number" domain={[0, xMax || 400]} stroke="var(--text-secondary)" fontSize={10} unit={` ${speedLabel}`} />
-                <YAxis type="number" domain={[0, yMax || 9000]} stroke="var(--text-secondary)" fontSize={10} tickFormatter={value => Math.round(value).toString()} unit=" RPM" />
-                {/* 3. Effective Powerband Highlight Range (Semi-transparent background area) */}
-                {Boolean(carParams?.maxHpRpm && carParams?.maxTorqueRpm) && (
-                  <ReferenceArea
-                    y1={Math.min(carParams.maxTorqueRpm, carParams.maxHpRpm)}
-                    y2={Math.max(carParams.maxTorqueRpm, carParams.maxHpRpm)}
-                    fill="var(--bs-success-text-emphasis)"
-                    fillOpacity={0.08}
-                    stroke="var(--bs-success-text-emphasis)"
-                    strokeOpacity={0.25}
-                    strokeDasharray="2 2"
-                    label={{ value: t("Effective Powerband"), fill: 'var(--bs-success-text-emphasis)', fontSize: 10, position: 'insideTopLeft' }}
-                  />
-                )}
-
-                {/* 0. Rev Limiter / Cutoff RPM horizontal dashed line */}
-                {Boolean(cutoffRpm && cutoffRpm > 0) && (
-                  <ReferenceLine
-                    y={cutoffRpm}
-                    stroke="var(--bs-danger-text-emphasis)"
-                    strokeDasharray="4 2"
-                    label={{
-                      value: `${t("Rev Limiter")}: ${Math.round(cutoffRpm)} RPM`,
-                      fill: 'var(--bs-danger-text-emphasis)',
-                      fontSize: 10,
-                      position: 'insideTopRight'
-                    }}
-                  />
-                )}
-
-                {/* 1. Max HP horizontal dashed line */}
-                {carParams?.maxHpRpm && (
-                  <ReferenceLine
-                    y={carParams.maxHpRpm}
-                    stroke="var(--bs-danger-text-emphasis)"
-                    strokeDasharray="3 3"
-                    label={{ value: `${t("Max HP")}: ${Math.round(carParams.maxHpRpm)} RPM`, fill: 'var(--bs-danger-text-emphasis)', fontSize: 10, position: 'top' }}
-                  />
-                )}
-
-                {/* 2. Max Torque horizontal dashed line */}
-                {carParams?.maxTorqueRpm && (
-                  <ReferenceLine
-                    y={carParams.maxTorqueRpm}
-                    stroke="var(--bs-warning-text-emphasis)"
-                    strokeDasharray="3 3"
-                    label={{ value: `${t("Max Torque")}: ${Math.round(carParams.maxTorqueRpm)} RPM`, fill: 'var(--bs-warning-text-emphasis)', fontSize: 10, position: 'bottom' }}
-                  />
-                )}
-
-                {/* 4. Simulated Top Speed Vertical Reference Line */}
-                {Boolean(tuning?.gearing?.simulatedTopSpeed && tuning.gearing.simulatedTopSpeed > 0) && (
-                  <ReferenceLine
-                    x={displaySpeed(tuning.gearing.simulatedTopSpeed)}
-                    stroke="var(--bs-info-text-emphasis)"
-                    strokeDasharray="3 3"
-                    label={{ value: `${t("Simulated Top Speed")}: ${displaySpeed(tuning.gearing.simulatedTopSpeed).toFixed(1)} ${speedLabel}`, fill: 'var(--bs-info-text-emphasis)', fontSize: 10, position: 'insideTopLeft' }}
-                  />
-                )}
-
-                {/* 5. Soft Max Speed Cap Vertical Reference Line */}
-                {Boolean(tuning?.gearing?.softMaxSpeed && tuning.gearing.softMaxSpeed > 0) && (
-                  <ReferenceLine
-                    x={displaySpeed(tuning.gearing.softMaxSpeed)}
-                    stroke="var(--bs-primary-text-emphasis)"
-                    strokeDasharray="4 4"
-                    label={{ value: `${t("Soft Cap")}: ${displaySpeed(tuning.gearing.softMaxSpeed).toFixed(1)} ${speedLabel}`, fill: 'var(--bs-primary-text-emphasis)', fontSize: 10, position: 'insideTopRight' }}
-                  />
-                )}
-
-                {Array.from({length: numGears}).map((_, i) => (
-                  <Line
-                    key={`gear-graph-${i}`}
-                    type="linear"
-                    dataKey={`gear${i+1}`}
-                    stroke={`color-mix(in srgb, hsl(${i * 45} var(--chart-series-saturation) var(--chart-series-lightness)) 65%, var(--text-primary))`}
-                    strokeWidth={2}
-                    dot={false}
-                    isAnimationActive={false}
-                    connectNulls={true}
-                    name={`${i + 1} Gear`}
-                  />
-                ))}
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
       </div>
     </div>
-  );
-};
-
-export const GearingTuner = memo(GearingTunerComponent);
+  </section>;
+});

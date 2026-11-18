@@ -3,7 +3,9 @@ import type { HudConfig } from '../hudConfig';
 import type { HudConfigPatch } from '../overlayControlRuntime';
 import { R34_MFD_MODES, type R34MfdMode, type R34Lighting } from './config';
 export function R34MfdSettingsCard({ config, onChange, t }: {
-  config: Pick<HudConfig, 'r34MfdMode' | 'r34ShowCluster' | 'r34Lighting'>; onChange: (patch: HudConfigPatch) => void; t: (key: string) => string;
+  config: Pick<HudConfig, 'r34MfdMode' | 'r34ShowCluster' | 'r34ShowMfd' | 'r34Lighting'>;
+  onChange: (patch: HudConfigPatch) => void;
+  t: (key: string) => string;
 }) {
   const id = useId();
   return <div className="border-top pt-2 d-flex flex-column gap-2" role="group" aria-label={t('R34 MFD settings')}>
@@ -16,6 +18,11 @@ export function R34MfdSettingsCard({ config, onChange, t }: {
       <input type="checkbox" className="form-check-input" checked={config.r34ShowCluster !== false}
         onChange={event => onChange({ r34ShowCluster: event.target.checked })} />
       <span className="form-check-label fs-7">{t('R34 show instrument cluster')}</span>
+    </label>
+    <label className="form-check form-switch m-0">
+      <input type="checkbox" className="form-check-input" checked={config.r34ShowMfd !== false}
+        onChange={event => onChange({ r34ShowMfd: event.target.checked })} />
+      <span className="form-check-label fs-7">{t('R34 show MFD screen')}</span>
     </label>
     <label htmlFor={`${id}-lighting`} className="form-label fs-7 text-body-secondary mb-0">{t('R34 instrument lighting')}</label>
     <select id={`${id}-lighting`} className="form-select form-select-sm" value={config.r34Lighting ?? 'night'}

@@ -116,7 +116,7 @@
       "template": "/api/road/workflows/{workflow_id}/candidates",
       "path": "/api/road/workflows/missing/candidates",
       "body": {},
-      "status": 422,
+      "status": 409,
       "shape": "object",
       "keys": [
         "detail"
@@ -127,7 +127,7 @@
       "template": "/api/road/workflows/{workflow_id}/runs",
       "path": "/api/road/workflows/missing/runs",
       "body": {},
-      "status": 422,
+      "status": 409,
       "shape": "object",
       "keys": [
         "detail"
@@ -149,7 +149,7 @@
       "template": "/api/road/workflows/{workflow_id}/runs/{run_id}/finish",
       "path": "/api/road/workflows/missing/runs/missing/finish",
       "body": {},
-      "status": 422,
+      "status": 409,
       "shape": "object",
       "keys": [
         "detail"
@@ -160,7 +160,7 @@
       "template": "/api/road/workflows/{workflow_id}/comparisons",
       "path": "/api/road/workflows/missing/comparisons",
       "body": {},
-      "status": 422,
+      "status": 409,
       "shape": "object",
       "keys": [
         "detail"
@@ -171,7 +171,7 @@
       "template": "/api/road/workflows/{workflow_id}/decisions",
       "path": "/api/road/workflows/missing/decisions",
       "body": {},
-      "status": 422,
+      "status": 409,
       "shape": "object",
       "keys": [
         "detail"
@@ -918,7 +918,7 @@
       "template": "/api/car_params/{car_id}",
       "path": "/api/car_params/default",
       "body": {
-        "weight": 1400.0
+        "weight": 1400
       },
       "status": 200,
       "shape": "object",
@@ -931,7 +931,7 @@
       "template": "/api/car_params/{car_id}",
       "path": "/api/car_params/default",
       "body": {
-        "weight": 1400.0
+        "weight": 1400
       },
       "status": 200,
       "shape": "object",
@@ -960,7 +960,6 @@
       "status": 200,
       "shape": "object",
       "keys": [
-        "developer_tuning_enabled",
         "dyno_filter_slip",
         "dyno_filter_transients",
         "dyno_recording",
@@ -989,7 +988,6 @@
       "status": 200,
       "shape": "object",
       "keys": [
-        "developer_tuning_enabled",
         "dyno_filter_slip",
         "dyno_filter_transients",
         "dyno_recording",

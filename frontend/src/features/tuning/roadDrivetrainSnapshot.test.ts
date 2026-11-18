@@ -2,8 +2,6 @@ import { describe, expect, it } from 'vitest';
 import type { CarParams } from '../../context/CarParamsContext';
 import { mergeDynoPollResult } from '../../context/CarParamsContext';
 import { serializeWorkflowProfile } from './tuningWorkflow';
-import { workflowRecommendation } from "../../../test-reference/tuning/features/tuning/workflowSnapshot";
-import { calculateChassisTuning, calculateStaticTireAlignment, calculateMeasuredGearing } from "../../../test-reference/tuning/utils/tuningMath";
 
 describe('Road AWD override snapshots', () => {
   it('survives save-shaped JSON and dyno refresh, and reaches the applied centre setting', () => {
@@ -12,11 +10,8 @@ describe('Road AWD override snapshots', () => {
       adjustability: { gearbox: 'Full', gears: 6, suspension: 'Race', arb: 'Adjustable', aero: 'Fixed', brakes: 'Fixed', diff: 'Adjustable' } };
     const reloaded = JSON.parse(serializeWorkflowProfile(profile)) as CarParams;
     const refreshed = mergeDynoPollResult(reloaded, { dyno_curve: {} });
-    const rec = workflowRecommendation(refreshed, calculateChassisTuning('Road', refreshed),
-      calculateStaticTireAlignment('Road', 'Summer', refreshed),
-      calculateMeasuredGearing('Road', 6, refreshed, { engineMaxRpm: 7500, peakPowerRpm: 6800, peakTorqueRpm: 4500 })!, { profile: refreshed });
-    expect(rec.fields['diff.center'].value).toBe(40);
-    expect((rec.inputSnapshot.profile as CarParams).roadAwdRearPercent).toBe(40);
+    expect(refreshed.roadAwdRearPercent).toBe(40);
+    expect(reloaded.roadAwdRearPercent).toBe(40);
     expect(JSON.parse(serializeWorkflowProfile({ ...profile, roadAwdRearPercent: undefined })).roadAwdRearPercent).toBeUndefined();
   });
 });

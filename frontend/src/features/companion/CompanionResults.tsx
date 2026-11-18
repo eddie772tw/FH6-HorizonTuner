@@ -1,5 +1,6 @@
 import type { CompanionSnapshot } from './companionProtocol';
 import { useSettings } from '../../context/SettingsContext';
+import { AegoModelPanel } from '../tuning/components/AegoModelPanel';
 
 const n = (value: number | null | undefined, digits = 1) => value == null || !Number.isFinite(value) ? '—' : value.toFixed(digits);
 function Stat({ label, value, unit = '' }: { label: string; value: string; unit?: string }) { return <div><span className="companion-stat-label">{label}</span><strong>{value}{unit && ` ${unit}`}</strong></div>; }
@@ -14,7 +15,21 @@ export function AlignmentResults({ result }: { result: CompanionSnapshot['result
   return <article id="companion-alignment" className="companion-panel companion-result-card"><h3>{t('Alignment')}</h3>{result ? <div className="companion-result-list"><Stat label={t('Cold pressure F/R')} value={`${n(result.pcF)} / ${n(result.pcR)}`} unit="psi" /><Stat label={t('Target hot pressure')} value={n(result.targetPhot)} unit="psi" /><Stat label={t('Camber F/R')} value={`${n(result.camber.front)} / ${n(result.camber.rear)}`} unit="deg" /><Stat label={t('Toe F/R')} value={`${result.toe.front} / ${result.toe.rear}`} /><Stat label={t('Caster')} value={n(result.caster)} unit="deg" /></div> : <span className="text-body-secondary">{t('No result yet')}</span>}</article>;
 }
 
-export function GearingResults({ result, measurementPhase, unavailableMessage }: { result: CompanionSnapshot['results']['gearing']; measurementPhase: string; unavailableMessage?: string }) {
+export function GearingResults({ result, measurementPhase, unavailableMessage, available, diagnostic, view, goal }: {
+  result: CompanionSnapshot['results']['gearing']; measurementPhase: string; unavailableMessage?: string; available: boolean;
+  diagnostic?: CompanionSnapshot['results']['gearingDiagnostics']; view?: CompanionSnapshot['results']['gearingView']; goal: string;
+}) {
   const { t } = useSettings();
-  return <article id="companion-gearing" className="companion-panel companion-result-card"><h3>{t('Gearing')}</h3>{unavailableMessage ? <p className="text-body-secondary mb-0">{unavailableMessage}</p> : result ? <div className="companion-result-list"><Stat label={t('Final drive')} value={n(result.finalDrive, 3)} unit="ratio" />{result.gears.map((ratio, index) => <Stat key={index} label={t('Gear {index}', { index: index + 1 })} value={n(ratio, 3)} unit="ratio" />)}</div> : <p className="text-body-secondary mb-0">{t('Complete a valid engine measurement to calculate gear ratios. Current phase: {measurementPhase}.', { measurementPhase })}</p>}</article>;
+  const usable=available && result && !('unsupported' in result && result.unsupported)
+    && (result.finalDrive===null || (Number.isFinite(result.finalDrive) && result.finalDrive>0)) && result.gears.length>0
+    && result.gears.every(ratio=>ratio===null || (Number.isFinite(ratio)&&ratio>0));
+  const reason=unavailableMessage ?? (diagnostic?.status==='unavailable' ? diagnostic.reason : undefined)
+    ?? (result && 'unsupportedReason' in result ? result.unsupportedReason : undefined);
+  return <article id="companion-gearing" className="companion-panel companion-result-card"><h3>{t('Gearing')}</h3>
+    {unavailableMessage || !usable ? <p className="text-body-secondary mb-0">{reason ? t(reason) : t('Complete a valid engine measurement to calculate gear ratios. Current phase: {measurementPhase}.', { measurementPhase })}</p>
+      : <div className="companion-result-list"><Stat label={t('Final drive')} value={n(result!.finalDrive, 3)} unit="ratio" />{result!.gears.map((ratio, index) => <Stat key={index} label={t('Gear {index}', { index: index + 1 })} value={n(ratio, 3)} unit="ratio" />)}</div>}
+    {goal==='Drift' && <p className="small mt-2">{t('Set or edit the Drift main gear, operating RPM and wheel-speed target in desktop Step 1. Companion displays the same backend result.')}</p>}
+    {view && usable && <p className="small mt-2">{t('Driven tire axle')}: {t(view.drivenTireAxle==='front'?'Front':'Rear')} · {t('Reference RPM')}: {n(view.referenceRpm,0)} RPM</p>}
+    {!unavailableMessage && <AegoModelPanel diagnostic={diagnostic} className="mt-3" />}
+  </article>;
 }

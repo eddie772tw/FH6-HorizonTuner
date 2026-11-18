@@ -11,7 +11,7 @@ import { McpSettingsCard } from '../features/settings/components/McpSettingsCard
 import { AppAbout } from './AppAbout';
 import { AppHeader } from './AppHeader';
 import { AppDialog } from './AppDialog';
-import { getAppCapabilities, permitsIntent, resolveWorkspace, type AppSurface, type AppVariant, type SessionIntent, type WorkspaceId } from './workspaceManifest';
+import { permitsIntent, resolveWorkspace, type AppSurface, type AppVariant, type SessionIntent, type WorkspaceId } from './workspaceManifest';
 
 export interface WorkspaceProps {
   variant: AppVariant;
@@ -99,7 +99,7 @@ export function AppShell({ variant, workspaces, Runtime, prepareSession }: {
         <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => setFailedSessionRequest(null)}>{t('Close')}</button>
       </div>
     </div>}
-    {surface === 'settings' && <AppDialog className="app-dialog--settings" title="Settings" onClose={closeSurface}><SettingsView allowDeveloperTuning={getAppCapabilities(variant).developerTuning} /></AppDialog>}
+    {surface === 'settings' && <AppDialog className="app-dialog--settings" title="Settings" onClose={closeSurface}><SettingsView /></AppDialog>}
     {surface === 'companion' && <AppDialog className="app-dialog--companion" title="Companion App" onClose={closeSurface}><CompanionSettingsCard /></AppDialog>}
     {surface === 'mcp' && <AppDialog className="app-dialog--mcp" title="MCP" onClose={closeSurface}><McpSettingsCard /></AppDialog>}
     {surface === 'about' && <AppDialog className="app-dialog--about" title="About" onClose={closeSurface}><AppAbout variant={variant} /></AppDialog>}

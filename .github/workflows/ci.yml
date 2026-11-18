@@ -5,7 +5,7 @@ on:
     branches: [ "master", "main" ]
   pull_request:
     # Stacked feature PRs target their reviewed foundation before main.
-    branches: [ "master", "main", "codex/frontend-ia-*", "feat/issue-423-*", "feat/hud-audio-head" ]
+    branches: [ "master", "main", "codex/frontend-ia-*", "codex/aego-stack-*", "feat/issue-423-*", "feat/hud-audio-head" ]
 
 permissions:
   contents: read

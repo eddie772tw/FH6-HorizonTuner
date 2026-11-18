@@ -38,7 +38,11 @@ fn initialize_and_tool_registry_match_json_rpc_contract() {
         )
         .unwrap()
         .unwrap();
-    assert_eq!(list["result"]["tools"].as_array().unwrap().len(), 27);
+    assert!(list["result"]["tools"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|tool| tool["name"] == "calculate_tuning_workflow"));
     assert_eq!(
         server.status(&app.config.settings())["transport"],
         "streamable-http"
@@ -106,50 +110,13 @@ fn mcp_reads_real_car_names_and_api_written_presets_without_cross_car_fallback()
 }
 
 #[test]
-fn tool_errors_and_solver_are_json_contracts() {
+fn active_tool_errors_use_json_rpc_without_success_payloads() {
     let (app, _root) = app();
     let mut server = McpServer::default();
-    let missing = server.handle(&app, &json!({"jsonrpc":"2.0","id":"x","method":"tools/call","params":{"name":"get_session_summary","arguments":{}}})).unwrap().unwrap();
-    assert_eq!(missing["error"]["code"], -32602);
-    let solver = server.handle(&app, &json!({"jsonrpc":"2.0","id":"s","method":"tools/call","params":{"name":"run_gearing_solver","arguments":{"max_rpm":8000,"peak_hp_rpm":7200,"top_speed_kmh":320}}})).unwrap().unwrap();
-    let gearing: serde_json::Value =
-        serde_json::from_str(solver["result"]["content"][0]["text"].as_str().unwrap()).unwrap();
-    assert_eq!(gearing["gears_count"], 6);
-    assert_eq!(gearing["gears"][0]["ratio"], 3.2);
-    assert!(gearing["final_drive"].as_f64().unwrap() > 0.0);
-    let diagnosis = server
-        .handle(
-            &app,
-            &json!({"jsonrpc":"2.0","id":"d","method":"tools/call","params":{"name":"diagnose_telemetry_handling","arguments":{"tire_temps":[105.0,106.0,85.0,86.0],"symptom":"understeer_entry"}}}),
-        )
-        .unwrap()
-        .unwrap();
-    let diagnosis: serde_json::Value =
-        serde_json::from_str(diagnosis["result"]["content"][0]["text"].as_str().unwrap()).unwrap();
-    assert_eq!(diagnosis["convergence_status"], "adjustment_required");
-    assert!(diagnosis["actionable_directives"][0]
-        .as_str()
-        .unwrap()
-        .contains("Front axle overheat"));
-    let resource = server
-        .handle(
-            &app,
-            &json!({"jsonrpc":"2.0","id":"r","method":"resources/read","params":{"uri":"http://invalid/scheme"}}),
-        )
-        .unwrap()
-        .unwrap();
-    assert_eq!(resource["error"]["code"], -32602);
-    let note = server
-        .handle(
-            &app,
-            &json!({"jsonrpc":"2.0","method":"notifications/initialized"}),
-        )
-        .unwrap();
-    assert!(note.is_none());
     for params in [
         json!([]),
         json!({"name":"get_system_settings","arguments":[]}),
-        json!({"name":"diagnose_telemetry_handling","arguments":{"tire_temps":[90,null,"90",90]}}),
+        json!({"name":"get_session_summary","arguments":{}}),
     ] {
         let response = server
             .handle(
@@ -159,11 +126,15 @@ fn tool_errors_and_solver_are_json_contracts() {
             .unwrap()
             .unwrap();
         assert_eq!(response["error"]["code"], -32602);
+        assert!(response.get("result").is_none());
     }
-    let response=server.handle(&app,&json!({"jsonrpc":"2.0","id":100,"method":"tools/call","params":{"name":"run_gearing_solver","arguments":{"max_rpm":8000,"peak_hp_rpm":7200,"gears_count":1000000000}}})).unwrap().unwrap();
-    let result: serde_json::Value =
-        serde_json::from_str(response["result"]["content"][0]["text"].as_str().unwrap()).unwrap();
-    assert!(result.get("error").is_some());
+    assert!(server
+        .handle(
+            &app,
+            &json!({"jsonrpc":"2.0","method":"notifications/initialized"})
+        )
+        .unwrap()
+        .is_none());
 }
 
 fn assert_json_equivalent(actual: &serde_json::Value, expected: &serde_json::Value, path: &str) {
@@ -224,7 +195,7 @@ fn normalize_resource(value: &serde_json::Value) -> serde_json::Value {
 }
 
 #[test]
-fn python_golden_fixture_covers_every_registered_tool() {
+fn observation_and_storage_tools_preserve_their_original_wire_values() {
     let (app, root) = app();
     let golden: serde_json::Value = serde_json::from_str(include_str!("mcp_golden.json")).unwrap();
     let mut server = McpServer::default();
@@ -258,8 +229,8 @@ fn python_golden_fixture_covers_every_registered_tool() {
     app.process(live);
     let arguments = golden["arguments"].as_object().unwrap();
     let expected_tools = golden["tools"].as_object().unwrap();
-    assert_eq!(arguments.len(), 26);
-    assert_eq!(expected_tools.len(), 26);
+    assert_eq!(arguments.len(), 22);
+    assert_eq!(expected_tools.len(), 22);
     for (name, args) in arguments {
         let request = json!({"jsonrpc":"2.0","id":name,"method":"tools/call","params":{"name":name,"arguments":args}});
         let response = server.handle(&app, &request).unwrap().unwrap();
@@ -269,6 +240,14 @@ fn python_golden_fixture_covers_every_registered_tool() {
             serde_json::from_str(response["result"]["content"][0]["text"].as_str().unwrap())
                 .unwrap()
         };
+        if name == "get_tuning_constants_and_priors" {
+            assert_eq!(
+                actual["modelVersions"]["Road"],
+                "aego-road-launch-envelope/v3"
+            );
+            assert_eq!(actual["performanceValidated"], false);
+            continue;
+        }
         let actual = strip_file_paths(&actual);
         assert_json_equivalent(&actual, &expected_tools[name], name);
     }
@@ -301,4 +280,27 @@ fn python_golden_fixture_covers_every_registered_tool() {
         let expected = normalize_resource(expected);
         assert_json_equivalent(&actual, &expected, uri);
     }
+}
+
+#[test]
+fn current_model_metadata_uses_the_production_registry() {
+    let (app, _root) = app();
+    let mut server = McpServer::default();
+    let response=server.handle(&app,&json!({"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"get_tuning_constants_and_priors","arguments":{}}})).unwrap().unwrap();
+    let actual: serde_json::Value =
+        serde_json::from_str(response["result"]["content"][0]["text"].as_str().unwrap()).unwrap();
+    for goal in [
+        fh6_backend::tuning::RaceGoal::Road,
+        fh6_backend::tuning::RaceGoal::Rally,
+        fh6_backend::tuning::RaceGoal::Drift,
+        fh6_backend::tuning::RaceGoal::Drag,
+    ] {
+        assert_eq!(
+            actual["modelVersions"][format!("{goal:?}")],
+            fh6_backend::tuning::aego_model::AegoModel::production(goal)
+                .unwrap()
+                .id()
+        );
+    }
+    assert_eq!(actual["performanceValidated"], false);
 }

@@ -25,6 +25,143 @@ var _slipAngles = [0, 0, 0, 0];
 var _temps = [0, 0, 0, 0];
 var _travels = [0, 0, 0, 0];
 
+function resolvePrimaryColor(domCache) {
+    var wrapperEl = domCache ? domCache.wrapper : (typeof document !== 'undefined' ? document.getElementById('tcClusterWrapper') : null);
+    if (wrapperEl && wrapperEl._cachedPrimaryColor === undefined) {
+        var cssVal = wrapperEl.style && typeof wrapperEl.style.getPropertyValue === 'function' ? wrapperEl.style.getPropertyValue('--card-primary') : '';
+        wrapperEl._cachedPrimaryColor = (cssVal && cssVal.trim()) ? cssVal.trim() : null;
+    }
+    return (wrapperEl && wrapperEl._cachedPrimaryColor) || '#00f0ff';
+}
+
+function drawSuspWaveform(wCtx, ww, wh, dpr, sHist, cTravel, primaryColor) {
+    var padX = Math.min(ww * 0.1, 4.5 * dpr);
+    var padY = Math.min(wh * 0.12, 4.5 * dpr);
+    // Scale the complete marker to the available inset on compact HUDs.
+    var markerScale = Math.min(dpr, padX / 4.5, padY / 4.5);
+    var plotW = Math.max(1, ww - 2 * padX);
+    var drawH = Math.max(1, wh - 2 * padY);
+    var bottomY = wh - padY;
+    var stepX = plotW / (150 - 1);
+    var bandH = padY + drawH * 0.05;
+    var len = sHist.length;
+    var lastX = padX;
+    var lastY = bottomY - cTravel * drawH;
+
+    wCtx.save();
+    try {
+        // 5% top-out / bottoming-out danger bands & 50% ride-height centerline
+        wCtx.fillStyle = 'rgba(255, 0, 60, 0.18)';
+        wCtx.fillRect(0, 0, ww, bandH);
+        wCtx.fillRect(0, wh - bandH, ww, bandH);
+
+        wCtx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+        wCtx.lineWidth = 1 * dpr;
+        wCtx.beginPath();
+        wCtx.moveTo(0, bottomY - drawH * 0.5);
+        wCtx.lineTo(ww, bottomY - drawH * 0.5);
+        wCtx.stroke();
+
+        wCtx.lineCap = 'round';
+        wCtx.lineJoin = 'round';
+        wCtx.beginPath();
+        for (var j = 0; j < len; j++) {
+            var logicalIdx = (sHist._offset + j) % len;
+            var wx = padX + j * stepX;
+            var wy = bottomY - (sHist[logicalIdx].travel * drawH);
+            if (j === 0) wCtx.moveTo(wx, wy);
+            else         wCtx.lineTo(wx, wy);
+            lastX = wx;
+            lastY = wy;
+        }
+        wCtx.strokeStyle = primaryColor;
+        wCtx.lineWidth = 1.6 * dpr;
+        wCtx.shadowColor = primaryColor;
+        wCtx.shadowBlur = 4 * dpr;
+        if (len > 1) wCtx.stroke();
+
+        // Coaxial Leading Active Pulse Marker (Outer Halo Ring + Core Dot)
+        var pulseColor = (cTravel <= 0.05 || cTravel >= 0.95) ? '#ff0055' : primaryColor;
+        wCtx.strokeStyle = pulseColor;
+        wCtx.fillStyle = pulseColor;
+        wCtx.shadowColor = pulseColor;
+        wCtx.shadowBlur = 5 * markerScale;
+        wCtx.lineWidth = 1.4 * markerScale;
+        wCtx.beginPath();
+        wCtx.arc(lastX, lastY, 3.6 * markerScale, 0, Math.PI * 2);
+        wCtx.stroke();
+
+        wCtx.shadowBlur = 0;
+        wCtx.beginPath();
+        wCtx.arc(lastX, lastY, 1.8 * markerScale, 0, Math.PI * 2);
+        wCtx.fill();
+    } finally {
+        wCtx.restore();
+    }
+}
+
+function drawSlipRadar(rCtx, rw, rh, dpr, cAngle, cRatio, primaryColor) {
+    var rx0 = rw / 2;
+    var ry0 = rh / 2;
+    var rRad = Math.max(1, Math.min(rw, rh) * 0.44);
+    // Scale the coaxial grip marker cleanly to fit inside compact radar bounds.
+    var markerScale = Math.min(dpr, rRad / 9);
+    var haloRadius = 3.6 * markerScale;
+    var coreRadius = 1.8 * markerScale;
+    var haloLineW = 1.4 * markerScale;
+    var maxTRadius = Math.max(0, rRad - haloRadius - haloLineW * 0.5);
+    var dx = cAngle * rRad;
+    var dy = cRatio * rRad;
+    var tDistSq = dx * dx + dy * dy;
+    if (tDistSq > maxTRadius * maxTRadius && tDistSq > 0) {
+        var clampScale = maxTRadius / Math.sqrt(tDistSq);
+        dx *= clampScale;
+        dy *= clampScale;
+    }
+    var isLosingGrip = (cAngle * cAngle + cRatio * cRatio) > 1.0;
+    var pulseColor = isLosingGrip ? '#ff0055' : primaryColor;
+    var px = rx0 + dx;
+    var py = ry0 + dy;
+
+    rCtx.save();
+    try {
+        // Outer 1.0G traction limit ring
+        rCtx.beginPath();
+        rCtx.arc(rx0, ry0, rRad, 0, Math.PI * 2);
+        rCtx.strokeStyle = isLosingGrip ? 'rgba(255, 0, 85, 0.45)' : 'rgba(255, 255, 255, 0.30)';
+        rCtx.lineWidth = Math.min(1.5 * dpr, rRad * 0.25);
+        rCtx.stroke();
+
+        // 50% traction reference ring + crosshairs (batched single path)
+        rCtx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+        rCtx.lineWidth = Math.min(1 * dpr, rRad * 0.16);
+        rCtx.beginPath();
+        rCtx.arc(rx0, ry0, rRad * 0.5, 0, Math.PI * 2);
+        rCtx.moveTo(rx0, ry0 - rRad);
+        rCtx.lineTo(rx0, ry0 + rRad);
+        rCtx.moveTo(rx0 - rRad, ry0);
+        rCtx.lineTo(rx0 + rRad, ry0);
+        rCtx.stroke();
+
+        // Coaxial Active Grip Pulse Marker (Outer Halo Ring + Core Dot)
+        rCtx.strokeStyle = pulseColor;
+        rCtx.fillStyle = pulseColor;
+        rCtx.shadowColor = pulseColor;
+        rCtx.shadowBlur = 5 * markerScale;
+        rCtx.lineWidth = haloLineW;
+        rCtx.beginPath();
+        rCtx.arc(px, py, haloRadius, 0, Math.PI * 2);
+        rCtx.stroke();
+
+        rCtx.shadowBlur = 0;
+        rCtx.beginPath();
+        rCtx.arc(px, py, coreRadius, 0, Math.PI * 2);
+        rCtx.fill();
+    } finally {
+        rCtx.restore();
+    }
+}
+
 export function renderCorners(data, showSusp, showSlip, showTemp, tireHist, suspHist, suspMinMax, now, domCache) {
     var rawSlipRatios = data.TireSlipRatio || [];
     var rawSlipAngles = data.TireSlipAngle || [];
@@ -57,13 +194,17 @@ export function renderCorners(data, showSusp, showSlip, showTemp, tireHist, susp
 
     // Unit conversion preference (°C vs °F display)
     var isMetric = (data.isMetric !== undefined ? data.isMetric : (data.is_metric !== false));
+    var primaryColor = (showSusp || showSlip) ? resolvePrimaryColor(domCache) : '#00f0ff';
 
     for (var i = 0; i < 4; i++) {
         var tag = corners[i];
-        var cRatio = slipRatios[i] || 0;
-        var cAngle = slipAngles[i] || 0;
+        var rawRatio = Number(slipRatios[i]);
+        var rawAngle = Number(slipAngles[i]);
+        var cRatio = Number.isFinite(rawRatio) ? rawRatio : 0;
+        var cAngle = Number.isFinite(rawAngle) ? rawAngle : 0;
         var cTemp  = temps[i] || 0;
-        var cTravel = clamp(travels[i] || 0, 0, 1);
+        var rawTravel = Number(travels[i]);
+        var cTravel = clamp(Number.isFinite(rawTravel) ? rawTravel : 0, 0, 1);
 
         // Maintain 3-second Tire Temp History (180 points @ 60 Hz)
         var tHist = tireHist[i];
@@ -84,45 +225,12 @@ export function renderCorners(data, showSusp, showSlip, showTemp, tireHist, susp
             var ratEl  = domCache ? domCache.corners[tag].ratEl : document.getElementById('tcTireRat' + tag);
             if (ratEl)  ratEl.textContent = cRatio.toFixed(2);
 
-            var rCanvas = domCache ? domCache.corners[tag].rCanvas : document.getElementById('tcTireRadar' + tag);
+            var rCanvas = domCache ? (domCache.corners[tag] && domCache.corners[tag].rCanvas) : document.getElementById('tcTireRadar' + tag);
             if (rCanvas) {
                 var cData = getCanvasContext(rCanvas);
                 if (cData && cData.ctx) {
-                    var rCtx = cData.ctx;
-                    var rw = cData.w, rh = cData.h, dpr = cData.dpr;
-                    rCtx.clearRect(0, 0, rw, rh);
-                    var rx0 = rw / 2, ry0 = rh / 2;
-                    var rRad = Math.min(rw, rh) * 0.44;
-
-                    // Outer circle
-                    rCtx.beginPath();
-                    rCtx.arc(rx0, ry0, rRad, 0, Math.PI * 2);
-                    rCtx.strokeStyle = 'rgba(255, 255, 255, 0.30)';
-                    rCtx.lineWidth = 1.5 * dpr;
-                    rCtx.stroke();
-
-                    // Crosshairs
-                    rCtx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
-                    rCtx.lineWidth = 1 * dpr;
-                    rCtx.beginPath(); rCtx.moveTo(rx0, ry0 - rRad); rCtx.lineTo(rx0, ry0 + rRad); rCtx.stroke();
-                    rCtx.beginPath(); rCtx.moveTo(rx0 - rRad, ry0); rCtx.lineTo(rx0 + rRad, ry0); rCtx.stroke();
-
-                    // Map slip angle → X, slip ratio → Y
-                    var maxTRadius = Math.max(0, rRad - 3 * dpr);
-                    var dx = (cAngle / 1.0) * rRad;
-                    var dy = (cRatio / 1.0) * rRad;
-                    var tDist = Math.sqrt(dx * dx + dy * dy);
-                    if (tDist > maxTRadius && tDist > 0) {
-                        dx = (dx / tDist) * maxTRadius;
-                        dy = (dy / tDist) * maxTRadius;
-                    }
-                    var mag = Math.sqrt(cAngle * cAngle + cRatio * cRatio);
-                    var px = rx0 + dx, py = ry0 + dy;
-
-                    rCtx.beginPath();
-                    rCtx.arc(px, py, Math.max(4 * dpr, rRad * 0.1), 0, Math.PI * 2);
-                    rCtx.fillStyle = mag > 1.0 ? 'rgba(255,0,85,0.90)' : 'rgba(0,240,255,0.90)';
-                    rCtx.fill();
+                    cData.ctx.clearRect(0, 0, cData.w, cData.h);
+                    drawSlipRadar(cData.ctx, cData.w, cData.h, cData.dpr, cAngle, cRatio, primaryColor);
                 }
             }
         }
@@ -252,46 +360,12 @@ export function renderCorners(data, showSusp, showSlip, showTemp, tireHist, susp
                 sHist._offset = (sHist._offset + 1) % 150;
             }
 
-            var wCanvas = domCache ? domCache.corners[tag].wCanvas : document.getElementById('tcSuspWave' + tag);
+            var wCanvas = domCache ? (domCache.corners[tag] && domCache.corners[tag].wCanvas) : document.getElementById('tcSuspWave' + tag);
             if (wCanvas && sHist.length > 0) {
                 var wData = getCanvasContext(wCanvas);
                 if (wData && wData.ctx) {
-                    var wCtx = wData.ctx;
-                    var ww = wData.w, wh = wData.h, dpr = wData.dpr;
-                    wCtx.clearRect(0, 0, ww, wh);
-
-                    var warnH = wh * 0.05;
-                    wCtx.fillStyle = 'rgba(255, 0, 60, 0.18)';
-                    wCtx.fillRect(0, 0, ww, warnH);
-                    wCtx.fillRect(0, wh - warnH, ww, warnH);
-
-                    wCtx.beginPath();
-                    for (var j = 0; j < sHist.length; j++) {
-                        var logicalIdx = (sHist._offset + j) % sHist.length;
-                        var wx = (j / 150) * ww;
-                        var wy = wh - (sHist[logicalIdx].travel * wh);
-                        if (j === 0) wCtx.moveTo(wx, wy);
-                        else         wCtx.lineTo(wx, wy);
-                    }
-
-                    var wrapperEl = domCache ? domCache.wrapper : document.getElementById('tcClusterWrapper');
-                    var primaryColor = '#00f0ff';
-                    if (wrapperEl) {
-                        if (wrapperEl._cachedPrimaryColor === undefined) {
-                            if (typeof wrapperEl.style !== 'undefined' && typeof wrapperEl.style.getPropertyValue === 'function') {
-                                var cssVal = wrapperEl.style.getPropertyValue('--card-primary');
-                                wrapperEl._cachedPrimaryColor = (cssVal && cssVal.trim()) ? cssVal.trim() : null;
-                            } else {
-                                wrapperEl._cachedPrimaryColor = null;
-                            }
-                        }
-                        if (wrapperEl._cachedPrimaryColor) {
-                            primaryColor = wrapperEl._cachedPrimaryColor;
-                        }
-                    }
-                    wCtx.strokeStyle = primaryColor;
-                    wCtx.lineWidth = 1.5 * dpr;
-                    wCtx.stroke();
+                    wData.ctx.clearRect(0, 0, wData.w, wData.h);
+                    drawSuspWaveform(wData.ctx, wData.w, wData.h, wData.dpr, sHist, cTravel, primaryColor);
                 }
             }
         }

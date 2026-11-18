@@ -34,6 +34,18 @@ it('invalidates goal, mode and capture revisions and rejects their late replies'
   }
 });
 afterEach(async () => { await act(async () => root.unmount()); vi.useRealTimers(); });
+it('invalidates an edited Drift operating point and rejects the prior target response', async () => {
+  const pending: ((response: Response) => void)[] = [];
+  fetchMock.mockImplementation(() => new Promise(resolve => pending.push(resolve)));
+  const target = { source: 'user-target' as const, mainGear: 3, targetRpm: 5000, wheelSpeedKmh: 100 };
+  await act(async () => root.render(<Probe carId="1" goal="Drift" aero={{ driftWorkingTarget: target }} />));
+  await act(async () => root.render(<Probe carId="1" goal="Drift" aero={{ driftWorkingTarget: { ...target, wheelSpeedKmh: 120 } }} />));
+  expect(JSON.parse(fetchMock.mock.calls[1][1]!.body as string).profile.driftWorkingTarget.wheelSpeedKmh).toBe(120);
+  await act(async () => pending[0](good('stale-drift-target')));
+  expect(host.textContent).toBe('pending:null');
+  await act(async () => pending[1](good('current-drift-target')));
+  expect(host.textContent).toContain('current-drift-target');
+});
 it('invalidates changes and clears of loads and balance, rejecting late corrected results', async () => {
   const pending: ((response: Response) => void)[] = [];
   fetchMock.mockImplementation(() => new Promise(resolve => pending.push(resolve)));
@@ -99,4 +111,10 @@ it('consumes the Rust CVT diagnostics while keeping application unavailable', as
   await act(async () => root.render(<Probe carId="1" cvt />));
   expect(host.textContent).toContain('ready:');
   expect(host.textContent).toContain('raw-capture-required');
+});
+
+it('does not publish a recommendation with an unknown composition version', async () => {
+  fetchMock.mockResolvedValue({ ok: true, json: async () => ({ schemaVersion: "tuning-workflow-result/v2", recommendation: { formulaVersion: "future-composition/v99", fields: {} } }) } as Response);
+  await act(async () => root.render(<Probe carId="1" />));
+  expect(host.textContent).toBe('error:null');
 });

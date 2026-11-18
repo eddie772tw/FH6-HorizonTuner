@@ -13,7 +13,6 @@ describe('workspace capabilities', () => {
     expect(getWorkspaces('lite').map(item => item.id)).toEqual(['live', 'hud']);
     expect(getAppCapabilities('full').launchTest).toBe(true);
     expect(getAppCapabilities('lite').launchTest).toBe(false);
-    expect(getAppCapabilities('lite').developerTuning).toBe(false);
   });
 
   it('falls back safely for stale or disabled workspace choices', () => {

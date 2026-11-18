@@ -14,7 +14,7 @@ import { S650_HMI_STYLE_ID, S650_HMI_THEMES, S650_CENTER_WIDGETS, type S650HmiTh
 export type HudGaugeStyleConfig = Pick<HudConfig,
   'hudStyle' | 'followAppUnits' | 'units' | 's650Theme' | 's650CenterWidget' |
   'classicJdmTachStyle' | 'classicJdmShowTriple' | 'classicJdmAux1' | 'classicJdmAux2' | 'classicJdmDefiTheme' |
-  'r34MfdMode' | 'r34ShowCluster' | 'r34Lighting' | 'lfaManualExpand' | 'lfaAutoExpand' |
+  'r34MfdMode' | 'r34ShowCluster' | 'r34ShowMfd' | 'r34Lighting' | 'lfaManualExpand' | 'lfaAutoExpand' |
   'vfdVuOffset' | 'vfdAudioOffset' | 'nfsu2Face' | keyof import('../stack_st8100/config').StackSt8100Settings
 > & { elements: Pick<HudElements, 'showCenterInfo'> };
 interface HudGaugeStyleSettingsProps extends HudPanelActions {

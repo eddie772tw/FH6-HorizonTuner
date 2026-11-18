@@ -1,19 +1,18 @@
+pub mod aego_model;
 pub mod alignment;
 pub mod api;
+pub mod archive;
 pub mod baseline;
 pub mod calculation;
-pub mod capabilities;
 pub mod chassis;
 pub mod chassis_load;
 pub mod cvt;
-pub mod developer;
 pub mod dyno_guidance;
 pub mod ev;
 pub mod ev_archive;
 pub mod ev_measurement;
 pub mod evidence;
 pub mod gearing;
-pub mod legacy_cli;
 pub mod measurement;
 pub mod profile;
 pub mod ratio_balance;
@@ -25,5 +24,4 @@ pub use gearing::{
     calc_gear_rpm, calc_gear_speed, calculate_aego_gearing, get_target_top_gear_ratio,
 };
 pub use types::*;
-pub mod legacy_mcp;
 pub mod workflow;

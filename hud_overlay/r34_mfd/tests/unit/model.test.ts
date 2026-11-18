@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 // @ts-expect-error Standalone browser JS is tested through its runtime contract.
 import { FrameInterpolator } from '../../../shared/frame-interpolator.js';
 const sandbox: Record<string, any> = {};
-for (const file of ['model.js', 'instruments.js']) runInNewContext(readFileSync(resolve(import.meta.dirname, '../../', file), 'utf8'), sandbox);
+for (const file of ['model.js', 'instruments.js', 'lcd-format.js', 'renderer.js']) runInNewContext(readFileSync(resolve(import.meta.dirname, '../../', file), 'utf8'), sandbox);
 const M = sandbox.R34Model, I = sandbox.R34Instruments;
 const packet = (patch = {}) => ({ TimestampMS: 1000, CarOrdinal: 34, IsRaceOn: 1, CurrentEngineRpm: 6000, EngineMaxRpm: 9000,
   SpeedMetersPerSecond: 50, Gear: 4, Boost: 14.5038, AccelInput: 128, BrakeInput: 0, Fuel: .5,
@@ -428,5 +428,60 @@ describe('R34 dual-LCD unit and independent power channels', () => {
     expect(M.units({ unit: 'mph' }, {}).speed).toBe('mph');
     expect(M.units({ effectiveUnits: { speed: 'kmh' }, unit: 'mph' }, {}).speed).toBe('kmh');
     expect(M.units({ units: { speed: 'invalid' } }, {}).speed).toBe('kmh');
+  });
+});
+
+describe('R34 configuration normalization', () => {
+  it('normalizes r34ShowMfd independently and defaults to true', () => {
+    expect(M.normalizeConfig({})).toEqual({
+      r34MfdMode: 'single',
+      r34ShowCluster: true,
+      r34ShowMfd: true,
+      r34Lighting: 'night',
+    });
+    expect(M.normalizeConfig({ r34ShowMfd: false })).toEqual({
+      r34MfdMode: 'single',
+      r34ShowCluster: true,
+      r34ShowMfd: false,
+      r34Lighting: 'night',
+    });
+    expect(M.normalizeConfig({ r34ShowMfd: 'false' })).toEqual({
+      r34MfdMode: 'single',
+      r34ShowCluster: true,
+      r34ShowMfd: true,
+      r34Lighting: 'night',
+    });
+  });
+
+  it('decouples MFD visibility from elements.showCenterInfo', () => {
+    const r = Object.create(sandbox.R34Renderer.prototype);
+    r.nodes = {
+      r34Container: { dataset: {}, style: { setProperty() {} } },
+      r34Cluster: {},
+      r34Mfd: {},
+      r34ModeTitle: {},
+      r34ModeNote: {},
+      r34TachFace: { style: {} },
+      r34TachNeedle: { style: {} },
+      r34SpeedFace: { style: {} },
+      r34SpeedNeedle: { style: {} },
+      r34DigitalSpeedGroup: { style: {} },
+      r34GearGroup: { style: {} },
+      r34LcdDivider: { style: {} },
+    };
+    r.pages = [];
+    r.updatePalette = () => {};
+
+    // 1. showCenterInfo: false does NOT hide MFD
+    r.configure({ elements: { showCenterInfo: false } });
+    expect(r.nodes.r34Mfd.hidden).toBe(false);
+
+    // 2. r34ShowMfd: false hides MFD even when showCenterInfo is true
+    r.configure({ r34ShowMfd: false, elements: { showCenterInfo: true } });
+    expect(r.nodes.r34Mfd.hidden).toBe(true);
+
+    // 3. r34ShowMfd: true shows MFD even when showCenterInfo is false
+    r.configure({ r34ShowMfd: true, elements: { showCenterInfo: false } });
+    expect(r.nodes.r34Mfd.hidden).toBe(false);
   });
 });

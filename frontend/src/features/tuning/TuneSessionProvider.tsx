@@ -11,7 +11,6 @@ import { useCarParams } from '../../context/CarParamsContext';
 import type { TuningCaptureFile, TuningCaptureMetadata, TuningCaptureSample } from '../../domain/tuning/telemetryCapture';
 import { telemetryToCaptureSample } from '../../domain/tuning/telemetryCapture';
 import { subscribeToDecodedTelemetry, useTelemetry, type TelemetryData } from '../../hooks/useTelemetry';
-import type { DevRaceGoal, DevSurface } from '../../domain/tuning/types';
 import { engineDependencyKey } from './engineObservationIdentity';
 import { useEvMeasurementSession } from './useEvMeasurementSession';
 import type { TuningMeasurementState } from '../../domain/tuning/types';
@@ -71,26 +70,6 @@ export interface TuneSessionValue {
     setGoal: (goal: string) => void;
     setSeason: (season: 'Summer' | 'Autumn' | 'Winter' | 'Spring') => void;
     setReviewHistory: (value: boolean | ((previous: boolean) => boolean)) => void;
-  };
-  developer: {
-    step: number;
-    raceGoal: DevRaceGoal;
-    surface: DevSurface;
-    targetTopSpeedKmh: number;
-    targetRideFrequencyFrontHz: number;
-    targetRideFrequencyRearHz: number;
-    dampingRatioFront: number;
-    dampingRatioRear: number;
-    showCapture: boolean;
-    setStep: (step: number) => void;
-    setRaceGoal: (goal: DevRaceGoal) => void;
-    setSurface: (surface: DevSurface) => void;
-    setTargetTopSpeedKmh: (value: number) => void;
-    setTargetRideFrequencyFrontHz: (value: number) => void;
-    setTargetRideFrequencyRearHz: (value: number) => void;
-    setDampingRatioFront: (value: number) => void;
-    setDampingRatioRear: (value: number) => void;
-    setShowCapture: (show: boolean) => void;
   };
   engine: ReturnType<typeof useEngineMeasurementArchive>;
   evMeasurement: ReturnType<typeof useEvMeasurementSession>;
@@ -194,16 +173,6 @@ export function TuneSessionProvider({ children }: { children: ReactNode }) {
   setupContextRef.current = setupContext;
   const evMeasurement = useEvMeasurementSession(carId, profile, data, setupContext, isConnected, !offlineSelectionRef.current);
   const identityTokenRef = useRef<TuneAsyncToken>({ generation: 0, identity });
-
-  const [developerStep, setDeveloperStep] = useState(1);
-  const [developerRaceGoal, setDeveloperRaceGoal] = useState<DevRaceGoal>('Road');
-  const [developerSurface, setDeveloperSurface] = useState<DevSurface>('tarmac');
-  const [targetTopSpeedKmh, setTargetTopSpeedKmh] = useState(280);
-  const [targetRideFrequencyFrontHz, setTargetRideFrequencyFrontHz] = useState(2.2);
-  const [targetRideFrequencyRearHz, setTargetRideFrequencyRearHz] = useState(2.3);
-  const [dampingRatioFront, setDampingRatioFront] = useState(0.70);
-  const [dampingRatioRear, setDampingRatioRear] = useState(0.70);
-  const [showCapture, setShowCapture] = useState(false);
 
   const engine = useEngineMeasurementArchive(carId, profile, identityGeneration, setupContext);
   const engineRef = useRef(engine);
@@ -623,26 +592,6 @@ export function TuneSessionProvider({ children }: { children: ReactNode }) {
       setSeason,
       setReviewHistory,
     },
-    developer: {
-      step: developerStep,
-      raceGoal: developerRaceGoal,
-      surface: developerSurface,
-      targetTopSpeedKmh,
-      targetRideFrequencyFrontHz,
-      targetRideFrequencyRearHz,
-      dampingRatioFront,
-      dampingRatioRear,
-      showCapture,
-      setStep: setDeveloperStep,
-      setRaceGoal: setDeveloperRaceGoal,
-      setSurface: setDeveloperSurface,
-      setTargetTopSpeedKmh,
-      setTargetRideFrequencyFrontHz,
-      setTargetRideFrequencyRearHz,
-      setDampingRatioFront,
-      setDampingRatioRear,
-      setShowCapture,
-    },
     engine,
     evMeasurement,
     cvtEvidence,
@@ -674,11 +623,6 @@ export function TuneSessionProvider({ children }: { children: ReactNode }) {
     clearCapture,
     collectMoreMeasurement,
     completeMeasurement,
-    dampingRatioFront,
-    dampingRatioRear,
-    developerRaceGoal,
-    developerStep,
-    developerSurface,
     engine,
     evMeasurement,
     cvtEvidence,
@@ -695,12 +639,8 @@ export function TuneSessionProvider({ children }: { children: ReactNode }) {
     reviewHistory,
     season,
     setCaptureMetadata,
-    showCapture,
     startCapture,
     stopCapture,
-    targetRideFrequencyFrontHz,
-    targetRideFrequencyRearHz,
-    targetTopSpeedKmh,
     workflowStep,
   ]);
 
