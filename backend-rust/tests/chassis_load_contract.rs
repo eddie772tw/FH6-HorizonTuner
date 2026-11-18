@@ -393,3 +393,63 @@ fn chassis_load_quantize_closure_and_fwd_drivetrain_normalization() {
     assert_eq!(res_boundary.diagnostics["axles"][0]["baseLimited"], false);
     assert_eq!(res_boundary.diagnostics["axles"][1]["baseLimited"], false);
 }
+
+#[test]
+fn quantize_preserves_bounds_under_precision_overshoot_and_partial_overflow() {
+    let overshoot = 7_974_024_817_625_809.0;
+    for (value, min, max) in [
+        (overshoot, overshoot, overshoot),
+        (overshoot, 10.0, overshoot),
+        (1e308, 1e308, 1e308),
+        (0.1 + 0.2, 0.1 + 0.2, 0.1 + 0.2),
+        (0.02, 0.01, 0.04),
+        (3.12, 3.11, 3.14),
+        (3.18, 3.16, 3.19),
+    ] {
+        let q = chassis_load::quantize(value, min, max);
+        assert!(
+            q.is_finite() && q >= min && q <= max,
+            "[{min}, {max}] got {q}"
+        );
+    }
+    // Finite value inside a huge interval must still quantize to 0.1 instead of skipping
+    assert_eq!(chassis_load::quantize(10.14, 10.0, 1e307), 10.1);
+
+    // End-to-end Road/Rally v2 workflow must stay inside locked overshoot spring bounds
+    for goal in ["Road", "Rally"] {
+        let req: WorkflowRequest = serde_json::from_value(json!({
+            "schemaVersion": "tuning-workflow-result/v2",
+            "goal": goal,
+            "season": "Summer",
+            "profile": {
+                "weight": 1400.0,
+                "weight_distribution": 50.0,
+                "drivetrain": "RWD",
+                "spring_front_min": overshoot,
+                "spring_front_max": overshoot,
+                "spring_rear_min": 3.16,
+                "spring_rear_max": 3.19,
+                "height_front_min": 10.0,
+                "height_front_max": 20.0,
+                "height_rear_min": 10.0,
+                "height_rear_max": 20.0,
+                "adjustability": {"suspension": "Race", "arb": "Adjustable", "diff": "Adjustable"}
+            },
+            "engine": null,
+            "ev": null,
+            "inputSnapshot": {"carId": "1060"}
+        }))
+        .unwrap();
+        let out = serde_json::to_value(calculate_workflow(req).unwrap()).unwrap();
+        assert_eq!(out["chassis"]["springs"]["front"], overshoot);
+        for key in ["spring.front", "spring.rear"] {
+            let field = out["baselinePreview"]["fields"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .find(|f| f["key"] == key)
+                .unwrap();
+            assert_eq!(field["status"], "available", "{goal} {key}: {field}");
+        }
+    }
+}
