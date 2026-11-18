@@ -1205,16 +1205,12 @@ impl Backend for App {
                 {
                     return Ok(ApiResponse::bytes(304, vec![], ""));
                 }
-                return Ok(ApiResponse::bytes(200, bytes, &content_type)
-                    .header("ETag", format!("\"{hash}\""))
-                    .header(
-                        "Cache-Control",
-                        if request.query.contains_key("v") {
-                            "public, max-age=3600, immutable"
-                        } else {
-                            "public, max-age=30"
-                        },
-                    ));
+                return thumbnail_response(
+                    &content_type,
+                    bytes,
+                    &hash,
+                    request.query.contains_key("v"),
+                );
             }
             ("GET", "/api/diagnostics/telemetry-pipeline") => self.pipeline_metrics(),
             ("GET", "/api/diagnostics/overlay") => {
@@ -1268,5 +1264,94 @@ impl Backend for App {
             _ => return Err(ApiError::new(404, "Not Found")),
         };
         Ok(ApiResponse::json(value))
+    }
+}
+
+fn thumbnail_response(
+    content_type: &str,
+    bytes: Vec<u8>,
+    hash: &str,
+    immutable: bool,
+) -> ApiResult<ApiResponse> {
+    let safe_type = crate::native::validate_thumbnail(Some(content_type), &bytes)
+        .ok_or_else(|| ApiError::new(415, "Unsupported media thumbnail type"))?;
+    Ok(ApiResponse::bytes(200, bytes, safe_type)
+        // Sandbox active content execution if the thumbnail URL is ever opened directly.
+        .header("Content-Security-Policy", "default-src 'none'; sandbox")
+        .header("ETag", format!("\"{hash}\""))
+        .header(
+            "Cache-Control",
+            if immutable {
+                "public, max-age=3600, immutable"
+            } else {
+                "public, max-age=30"
+            },
+        ))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::thumbnail_response;
+
+    #[test]
+    fn thumbnail_response_enforces_raster_mime_and_sandbox_csp() {
+        let ok = thumbnail_response(
+            "IMAGE/PNG; charset=binary",
+            b"\x89PNG\r\n\x1a\n".to_vec(),
+            "abc",
+            true,
+        )
+        .unwrap();
+        assert_eq!(ok.status, 200);
+        assert!(ok
+            .headers
+            .iter()
+            .any(|(k, v)| k == "content-type" && v == "image/png"));
+        assert!(ok
+            .headers
+            .iter()
+            .any(|(k, v)| k == "Content-Security-Policy" && v == "default-src 'none'; sandbox"));
+        assert!(ok
+            .headers
+            .iter()
+            .any(|(k, v)| k == "ETag" && v == "\"abc\""));
+        for rejected in [
+            "image/svg+xml",
+            "text/html",
+            "application/xhtml+xml",
+            "image/png\r\nX-Test: 1",
+            "",
+        ] {
+            assert_eq!(
+                thumbnail_response(rejected, vec![1], "abc", false)
+                    .err()
+                    .unwrap()
+                    .status,
+                415
+            );
+        }
+        let png = b"\x89PNG\r\n\x1a\n";
+        for (declared, bytes) in [
+            ("text/html", png.to_vec()),
+            ("image/jpeg", png.to_vec()),
+            ("image/png", b"not-an-image".to_vec()),
+            (
+                "image/png",
+                [b" ".repeat(64), b"<svg onload=alert(1)>".to_vec()].concat(),
+            ),
+        ] {
+            assert_eq!(
+                thumbnail_response(declared, bytes, "abc", false)
+                    .err()
+                    .unwrap()
+                    .status,
+                415
+            );
+        }
+        let uncached = thumbnail_response("image/png", png.to_vec(), "abc", false).unwrap();
+        assert!(uncached
+            .headers
+            .iter()
+            .any(|(key, value)| key == "Cache-Control" && value == "public, max-age=30"));
     }
 }
