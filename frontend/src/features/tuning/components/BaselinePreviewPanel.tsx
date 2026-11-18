@@ -1,4 +1,5 @@
-import { useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import type { NavigationPreview } from '../useTuningNavigation';
 import type { CarParams } from '../../../context/CarParamsContext';
 import { useSettings } from '../../../context/SettingsContext';
 import type { Season } from '../../../domain/tuning/types';
@@ -6,8 +7,9 @@ import type { useBaselineDraft } from '../useBaselineDraft';
 import { useWorkflowCalculation } from '../useWorkflowCalculation';
 import { ChassisCalculationStatus, chassisReasonText } from './ChassisCalculationStatus';
 
-export function BaselinePreviewPanel({ carId, profile, season, draft, showTargetSelector = true, busy = false }: {
+export function BaselinePreviewPanel({ carId, profile, season, draft, showTargetSelector = true, busy = false, onPreview }: {
   carId: string; profile: CarParams | null; season: Season; draft: ReturnType<typeof useBaselineDraft>; showTargetSelector?: boolean; busy?: boolean;
+  onPreview?: (request: NavigationPreview | null) => void;
 }) {
   const { t, convertSpringRate, convertHeight, convertTirePressureFromPsi } = useSettings();
   const snapshot = useMemo(() => ({ carId, baselineCurrent: draft.fields, baselineContext: draft.context }), [carId, draft.fields, draft.context]);
@@ -18,6 +20,10 @@ export function BaselinePreviewPanel({ carId, profile, season, draft, showTarget
   const content = useRef<HTMLDivElement>(null);
   const [reserved, setReserved] = useState({ scope, height: 0 });
   const preview = request.result?.baselinePreview;
+  useEffect(() => {
+    onPreview?.({ context: draft.context, status: request.status, preview, retry: request.retry });
+    return () => onPreview?.(null);
+  }, [onPreview, draft.context, request.status, preview, request.retry]);
   const current = request.status === 'ready' && request.result !== null;
   useLayoutEffect(() => {
     if (!current || !content.current) return;

@@ -3,6 +3,7 @@ import type { BaselinePreview } from '../../domain/tuning/types';
 
 type Fields = Record<string, { value: number; unit: string }>;
 interface Draft { sessionContext: string; goal: string; fields: Fields; phase: 'draft' | 'cancelled' | 'applied' }
+export type BaselineApplyResult = 'applied' | 'stale' | 'unavailable';
 
 /** UI draft only. Rust owns proposed values, differences and application eligibility. */
 export function useBaselineDraft(sessionContext: string, goal: string, setGoal: (value: string) => void, inputContext = '') {
@@ -20,8 +21,9 @@ export function useBaselineDraft(sessionContext: string, goal: string, setGoal: 
     setDraftGoal: (value: string) => setState({ ...current, goal: value, phase: 'draft' }),
     begin: () => setState({ ...current, phase: 'draft' }),
     cancel: () => { live.current.phase = 'cancelled'; setState({ ...current, goal, phase: 'cancelled' }); },
-    apply: (preview: BaselinePreview, previewContext: string) => {
-      if (previewContext !== live.current.context || applied.current === preview || live.current.phase !== 'draft' || !preview.canApply || preview.goal !== live.current.goal) return;
+    apply: (preview: BaselinePreview, previewContext: string): BaselineApplyResult => {
+      if (previewContext !== live.current.context || applied.current === preview || live.current.phase !== 'draft' || preview.goal !== live.current.goal) return 'stale';
+      if (!preview.canApply) return 'unavailable';
       applied.current = preview;
       live.current.phase = 'applied';
       const fields: Fields = { ...current.fields };
@@ -30,6 +32,7 @@ export function useBaselineDraft(sessionContext: string, goal: string, setGoal: 
       }
       setState({ ...current, fields, phase: 'applied' });
       setGoal(current.goal);
+      return 'applied';
     },
   };
 }

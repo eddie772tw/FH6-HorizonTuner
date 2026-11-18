@@ -121,6 +121,8 @@ Start with the live dashboard, then use Full's tuning workspace to configure the
 - **CLI and AI integration**: The Rust `fh6-agent` CLI provides status, telemetry diagnostics and tuning commands. A localhost read-only MCP server exposes live and historical data, vehicle specifications and solvers. [CLI guide](docs/guides/agent-cli-guide.md) · [MCP setup](docs/guides/mcp-setup-guide.md).
 - **Themes, languages and updates**: Halfmoon, Swiss and Rhine Lab design systems; Traditional Chinese, English, Japanese and extensible translations; a diagnostic console and OTA updates with signature verification.
 
+The development branch applies draft targets and local baselines when moving forward, and automatically restarts ICE Step 3 measurement after a same-build clock reset. Unfinished progress is cleared; completed results retain their original frames. These fixes are not released yet. See [unreleased changes](docs/releases/unreleased.md).
+
 ### Models and experimental features
 
 | Feature | Current scope and limitations |

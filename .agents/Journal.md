@@ -1506,3 +1506,12 @@
 - Skills：modular-refactoring、physics-tuning-math、huge-component-refactoring、halfmoon-design-system、agent-governance-audit、pr-author-maintainer、ponytail。
 
 - 最終完整locked Cargo：預設297 passed／3既有ignored，no-default-features 287 passed／2既有ignored，兩者含doc-tests均exit0。前端dist必須固定後再串行跑Cargo：測試中並行Vite build會刪換已索引的hash資源名稱，使最後rustdoc的include_bytes找不到舊檔；停止並行、固定產物後完整重跑通過。fmt／diff、技能validator、24份Markdown相對連結及13個skill ID檢查通過，原主工作區保持乾淨。
+
+## 2026-11-18 / 草稿前進與內燃機量測自動分段恢復（Codex as Codex）
+
+- **導航一致性**：前進入口共用控制器，依目前預覽驗證、保存車輛參數、套用目標與本地基準，再等待相同輸入的新 Rust 結果。正式 snapshot 納入 appliedBaseline，避免同目標首次套用基準時誤用先前結果。初次身分補齊雖不增加量測 identityGeneration，仍須納入導航 scope，否則等待舊 preview context 可能永遠不完成。
+- **區段與完成結果**：engine-batch/v1 可選 same-build-new-segment/v1；Rust 確認同車／PI／車級／引擎上限後，時間戳倒退才開始新段。舊呼叫與離線 v4 分析維持嚴格規則。回傳批次中的區段起點與完成快照終點，前端保留請求期間新到的幀；完成狀態、readiness 與原始樣本必須一起保存及回復，不能只保留數值快照後改綁新段。
+- **失效邊界**：首次補齊身分僅在與已有量測身分相符時保留；真實 PI／車級、有效引擎上限或設定變更仍失效。手動暫停不自動解除。提示保留真正失效原因，沒有完成快照時不得宣稱已有可用結果。
+- **驗證**：完整前端 233 files／1706 tests 通過；完整 locked Cargo、最後快照 readiness 的新增 Rust 契約、fmt／diff check，以及 Windows／LAN TypeScript＋Vite 建置通過。既有實車 capture 證明兩次時間戳重設後可恢復，儲存單段再分析的資格一致。
+- **介面與發布界線**：正式 AppShell＋Rust API＋合成 WebSocket 遙測，8 組主題／尺寸／語系、18 張 PNG；來源雜湊與畫面見 docs/visual-review/tuning-navigation-recovery/。修正未發布，真實遊戲車庫／傳送、原生視窗及手機驗收仍待完成。開啟中的 PR #648 含 Companion 與同一 provider 檔案，未納入其未合併改動；後續整合需保留雙方新增接口。
+- **Skills**：halfmoon-design-system、huge-component-refactoring、modular-refactoring、telemetry-udp-protocol。

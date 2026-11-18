@@ -24,8 +24,7 @@ export function TuningMeasurementStep({ carId, enabled, offline = false }: { car
     && canFinishAdditionalMeasurement(measurement.phase, measurement.autoFinish, measurement.sampleCount,
       measurement.hasReadySnapshot, state.status)
     && !['car-mismatch', 'identity-incomplete'].includes(state.guidance);
-  const guidance = measurement.phase === 'invalidated' ? 'identity-changed'
-    : measurement.phase === 'complete' ? 'ready'
+  const guidance = measurement.phase === 'invalidated' ? state.guidance : measurement.phase === 'complete' ? 'ready'
       : ['timestamp-stalled', 'rpm-coverage-low', 'rpm-coverage-high', 'bins-insufficient'].includes(readiness?.guidance ?? '')
         ? readiness!.guidance : state.guidance;
 
@@ -36,9 +35,11 @@ export function TuningMeasurementStep({ carId, enabled, offline = false }: { car
         {offline ? t('Offline selection does not supply live telemetry. Follow Data Out to collect new data.') : !enabled ? t('Enter valid weight, front weight percentage and power in Step 1 first.') :
           canFinishExtra ? t('A usable result is retained. Continue driving to add data, or finish additional collection before calculating.') :
             measurement.phase === 'paused' ? t('Collection paused. Resume when you are ready to drive.') :
-              (guidance === 'ready' || guidance === 'timestamp-stalled' || guidance === 'telemetry-disconnected')
+              measurement.hasReadySnapshot && (guidance === 'ready' || guidance === 'timestamp-stalled' || guidance === 'telemetry-disconnected')
               ? t('A usable result is retained. Continue driving to add data, or finish additional collection before calculating.')
               : t(guidanceText[guidance])}
+        <div className="small text-body-secondary" style={{ minHeight: '1.5em' }}>{measurement.segmentRestarts > 0
+          ? t('The driving session restarted. Collection restarted automatically; unfinished progress was cleared.') : '\u00a0'}</div>
       </div>
       <div className="mb-3">
         <LiveDynoCurveCanvas state={state} height={180} />

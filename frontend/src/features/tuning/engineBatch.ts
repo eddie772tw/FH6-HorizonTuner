@@ -5,10 +5,18 @@ export interface EngineBatchResult {
   state: TuningMeasurementState;
   readiness: TuningMeasurementReadiness & { minimumAcceptedMs: number; minimumBins: number };
   readySnapshot: TuningMeasurementState | null;
+  readyReadiness?: EngineBatchResult['readiness'] | null;
+  continuity?: {
+    segmentStartIndex: number | null;
+    restartCount: number;
+    reason: 'timestamp-regressed' | null;
+    readySampleEndIndex: number | null;
+    retainedSnapshot: { state: TuningMeasurementState; readiness?: EngineBatchResult['readiness']; segmentStartIndex: number | null; sampleEndIndex: number } | null;
+  };
 }
 export async function requestEngineBatch(carId: string, state: TuningMeasurementState, samples: TuningCaptureSample[], connected: boolean, nowMs: number, signal: AbortSignal): Promise<EngineBatchResult> {
   const response = await backendFetch('/api/tuning/engine-batch', { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal,
-    body: JSON.stringify({ schemaVersion: 'engine-batch/v1', carId, state, samples, connected, nowMs }) });
+    body: JSON.stringify({ schemaVersion: 'engine-batch/v1', recoveryPolicy: 'same-build-new-segment/v1', carId, state, samples, connected, nowMs }) });
   if (!response.ok) throw new Error('Engine measurement unavailable');
   return response.json();
 }

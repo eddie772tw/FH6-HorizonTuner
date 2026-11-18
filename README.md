@@ -125,6 +125,8 @@ FH6-HorizonTuner 透過遊戲的 **Data Out UDP 遙測**接收車輛資料，整
 - **CLI 與 AI 工具整合**：Rust `fh6-agent` 提供狀態查詢、遙測診斷與調校命令；localhost 唯讀 MCP 提供即時與歷史資料、車輛規格及求解工具。[CLI 指南](docs/guides/agent-cli-guide.md) · [MCP 設定](docs/guides/mcp-setup-guide.md)。
 - **主題、多語言與更新**：Halfmoon、Swiss、Rhine Lab 三套設計系統，支援繁體中文、英文、日文及擴充語系；整合診斷主控台與具簽章驗證的 OTA 更新。
 
+開發分支已整合「前進時套用草稿目標與本地基準」及內燃機 Step3 同車時間戳重設後自動重新量測；尚未完成的進度會清除，完成結果與原始樣本分開保留。此修正尚未發布，詳見[待發行變更](docs/releases/unreleased.md)。
+
 ### 模型與實驗功能的範圍
 
 | 功能 | 目前範圍與限制 |

@@ -1,4 +1,11 @@
 {
+  "Continuing applies the draft target and local baseline.": "続行すると、現在の目標の下書きとローカル基準を適用します。",
+  "Applying the draft and preparing the next step…": "下書きを適用し、次のステップを準備しています…",
+  "Tuning calculation failed. Your applied target is retained. Retry continuing.": "調整の計算に失敗しました。適用済みの目標は保持されています。もう一度続行してください。",
+  "Navigation cancelled because the vehicle, setup or draft changed.": "車両、設定、または下書きが変更されたため、ページ移動を取り消しました。",
+  "Complete the missing baseline inputs before continuing.": "基準に必要な未入力項目を入力してから続行してください。",
+  "Complete the required inputs or engine measurement before opening this step.": "必要な入力またはエンジン測定を完了してから、このステップを開いてください。",
+  "The driving session restarted. Collection restarted automatically; unfinished progress was cleared.": "走行セッションが再開されました。収集を自動でやり直し、未完了の測定進捗を消去しました。",
   "Go to chassis & tires": "シャシーとタイヤへ",
   "Go to engine data & gearing": "エンジンデータとギア比へ",
   "Go to setup verification": "セットアップ検証へ",

@@ -1,4 +1,11 @@
 {
+  "Continuing applies the draft target and local baseline.": "Continuing applies the draft target and local baseline.",
+  "Applying the draft and preparing the next step…": "Applying the draft and preparing the next step…",
+  "Tuning calculation failed. Your applied target is retained. Retry continuing.": "Tuning calculation failed. Your applied target is retained. Retry continuing.",
+  "Navigation cancelled because the vehicle, setup or draft changed.": "Navigation cancelled because the vehicle, setup or draft changed.",
+  "Complete the missing baseline inputs before continuing.": "Complete the missing baseline inputs before continuing.",
+  "Complete the required inputs or engine measurement before opening this step.": "Complete the required inputs or engine measurement before opening this step.",
+  "The driving session restarted. Collection restarted automatically; unfinished progress was cleared.": "The driving session restarted. Collection restarted automatically; unfinished progress was cleared.",
   "Go to chassis & tires": "Go to chassis & tires",
   "Go to engine data & gearing": "Go to engine data & gearing",
   "Go to setup verification": "Go to setup verification",

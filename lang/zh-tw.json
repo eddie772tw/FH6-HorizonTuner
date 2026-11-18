@@ -1,4 +1,11 @@
 {
+  "Continuing applies the draft target and local baseline.": "繼續時會套用目前草稿目標與本地基準。",
+  "Applying the draft and preparing the next step…": "正在套用草稿並準備下一步…",
+  "Tuning calculation failed. Your applied target is retained. Retry continuing.": "調校計算失敗，已套用的目標仍保留。請重試繼續。",
+  "Navigation cancelled because the vehicle, setup or draft changed.": "車輛、設定或草稿已變更，本次換頁已取消。",
+  "Complete the missing baseline inputs before continuing.": "請先補齊基準所缺少的資料，再繼續。",
+  "Complete the required inputs or engine measurement before opening this step.": "請先完成必要資料或引擎量測，再開啟此步驟。",
+  "The driving session restarted. Collection restarted automatically; unfinished progress was cleared.": "駕駛場景已重啟，已自動重新收集；未完成的量測進度已清除。",
   "Go to chassis & tires": "前往底盤與輪胎",
   "Go to engine data & gearing": "前往引擎資料與齒比",
   "Go to setup verification": "前往設定驗證",

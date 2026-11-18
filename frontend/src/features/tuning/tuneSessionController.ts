@@ -25,7 +25,7 @@ export interface CaptureFrameIdentity {
   carClass: number | null;
 }
 
-export type EngineMeasurementPhase = 'idle' | 'collecting' | 'paused' | 'complete' | 'invalidated';
+export type EngineMeasurementPhase = 'idle' | 'preparing' | 'collecting' | 'paused' | 'complete' | 'invalidated';
 
 export const MAX_TUNING_CAPTURE_SAMPLES = 30000;
 
@@ -37,7 +37,7 @@ export const canFinishAdditionalMeasurement = (
   hasReadySnapshot: boolean,
   status: TuningMeasurementState['status'],
 ): boolean => !autoFinish
-  && (phase === 'collecting' || (phase === 'paused' && sampleCount >= MAX_TUNING_CAPTURE_SAMPLES))
+  && (phase === 'preparing' || phase === 'collecting' || (phase === 'paused' && sampleCount >= MAX_TUNING_CAPTURE_SAMPLES))
   && hasReadySnapshot
   && status !== 'blocked';
 
@@ -49,12 +49,12 @@ export const shouldForceMeasurementPublish = (
 ): boolean => status === 'blocked'
   || (previousPhase !== nextPhase && (nextPhase === 'complete' || nextPhase === 'invalidated'));
 
-/** Keep an idle archive selection while its first complete live identity hydrates. */
+/** First identity hydration is not a build change; Rust checks each decoded sample. */
 export const shouldPreserveIdleIdentityHydration = (
   previous: TuneSessionIdentity,
   next: TuneSessionIdentity,
   phase: EngineMeasurementPhase,
-): boolean => phase === 'idle'
+): boolean => phase !== 'invalidated'
   && previous.carId === next.carId
   && previous.profileKey === next.profileKey
   && previous.performanceIndex === null

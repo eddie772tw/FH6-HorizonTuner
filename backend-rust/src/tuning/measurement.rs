@@ -606,10 +606,22 @@ pub fn analyze(input: &Value) -> Value {
     summary(Some(result), id)
 }
 
+fn batch_readiness(state: &Value, now: f64) -> Value {
+    let mut result = readiness(state, now);
+    result["minimumAcceptedMs"] = json!(6000);
+    result["minimumBins"] = json!(if adaptive(state) { 6 } else { 8 });
+    result
+}
+
 pub fn batch(input: &Value) -> Result<Value, String> {
     if input["schemaVersion"] != "engine-batch/v1" {
         return Err("Unsupported measurement schema".into());
     }
+    let recover = match input["recoveryPolicy"].as_str() {
+        None if input["recoveryPolicy"].is_null() => false,
+        Some("same-build-new-segment/v1") => true,
+        _ => return Err("Unsupported engine recovery policy".into()),
+    };
     let samples = input["samples"]
         .as_array()
         .ok_or("samples must be an array")?;
@@ -634,22 +646,64 @@ pub fn batch(input: &Value) -> Result<Value, String> {
     }
     let now = n(input, "nowMs").ok_or("nowMs must be finite")?;
     let mut ready = None;
-    for sample in samples {
+    let mut ready_end = None;
+    let mut segment_start = None;
+    let mut retained = Value::Null;
+    let mut restarts = 0;
+    for (index, sample) in samples.iter().enumerate() {
         let frame = capture_frame(sample);
+        // Live recovery is opt-in. Immutable v4 replay remains strict and consumes
+        // only the selected segment, never evidence from both sides of a reset.
+        let same_build = [
+            ("ordinal", "CarOrdinal"),
+            ("carClass", "CarClass"),
+            ("performanceIndex", "CarPerformanceIndex"),
+        ]
+        .iter()
+        .all(|(key, channel)| {
+            n(&state["identity"], key).is_some() && n(&state["identity"], key) == n(&frame, channel)
+        }) && n(&state, "engineMaxRpm")
+            .is_some_and(|rpm| rpm > 0.0 && Some(rpm) == n(&frame, "EngineMaxRpm"));
+        if recover
+            && state["status"] != "blocked"
+            && same_build
+            && n(&state, "lastTimestampMs")
+                .zip(n(&frame, "TimestampMS"))
+                .is_some_and(|(old, next)| next >= 0.0 && next < old)
+        {
+            if let Some(snapshot) = ready.take() {
+                retained = json!({"readiness":batch_readiness(&snapshot, now),"state":snapshot,"segmentStartIndex":segment_start,"sampleEndIndex":ready_end});
+            }
+            state = initial(car);
+            ready_end = None;
+            segment_start = Some(index);
+            restarts += 1;
+        }
         state = advance(&state, &frame, true, now);
         if state["status"] == "blocked" {
             ready = None;
+            ready_end = None;
+            retained = Value::Null;
         } else if readiness(&state, now)["ready"] == true {
             ready = Some(state.clone());
+            ready_end = Some(index + 1);
         }
     }
     if input["connected"] == false {
         state = advance(&state, &Value::Null, false, now);
     }
-    let mut result = readiness(&state, now);
-    result["minimumAcceptedMs"] = json!(6000);
-    result["minimumBins"] = json!(if adaptive(&state) { 6 } else { 8 });
-    Ok(json!({"state":state,"readiness":result,"readySnapshot":ready}))
+    let mut output =
+        json!({"state":state,"readiness":batch_readiness(&state, now),"readySnapshot":ready});
+    if recover {
+        output["readyReadiness"] = ready
+            .as_ref()
+            .map(|snapshot| batch_readiness(snapshot, now))
+            .unwrap_or(Value::Null);
+        output["continuity"] = json!({"segmentStartIndex":segment_start,"restartCount":restarts,
+            "reason":if restarts > 0 { Some("timestamp-regressed") } else { None },
+            "readySampleEndIndex":ready_end,"retainedSnapshot":retained});
+    }
+    Ok(output)
 }
 
 /// Historical archive qualification is retained independently from v4 replay.

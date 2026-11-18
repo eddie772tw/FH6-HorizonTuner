@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { CarParams } from '../../context/CarParamsContext';
 import type { Season, MeasuredEngineInputs, ChassisTuningResult, StaticTireAlignResult } from '../../domain/tuning/types';
 import type { EvGearingInput } from '../../domain/tuning/ev/types';
@@ -38,6 +38,10 @@ export function useWorkflowCalculation(carId: string, goal: string, season: Seas
   const [state, setState] = useState<{ key: string; result: AuthoritativeWorkflow } | null>(null);
   const [status, setStatus] = useState<'pending' | 'ready' | 'error'>('pending');
   const [renderKey, setRenderKey] = useState(key);
+  const [retryRevision, setRetryRevision] = useState(0);
+  const retryCalculation = useCallback(() => {
+    setState(null); setStatus('pending'); setRetryRevision(value => value + 1);
+  }, []);
   // Clear retained data during render so A→B→A cannot briefly redisplay the first A result.
   if (renderKey !== key) { setRenderKey(key); setState(null); setStatus('pending'); }
   useEffect(() => {
@@ -66,6 +70,6 @@ export function useWorkflowCalculation(carId: string, goal: string, season: Seas
     };
     void run();
     return () => { stopped = true; controller.abort(); clearTimeout(retry); sequence.current.next(); };
-  }, [key]);
-  return { result: renderKey === key && state?.key === key ? state.result : null, status: renderKey === key ? status : 'pending' as const };
+  }, [key, retryRevision]);
+  return { result: renderKey === key && state?.key === key ? state.result : null, status: renderKey === key ? status : 'pending' as const, retry: retryCalculation };
 }

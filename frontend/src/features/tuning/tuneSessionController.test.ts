@@ -90,12 +90,12 @@ describe('Tune session controller', () => {
     expect(shouldForceMeasurementPublish('complete', 'complete', 'ready')).toBe(false);
   });
 
-  it('preserves idle reuse while the first complete live identity hydrates', () => {
+  it('preserves preparation and collection while the first complete live identity hydrates', () => {
     const unknownIdentity = { carId: '42', performanceIndex: null, carClass: null, profileKey: 'engine-key-a' };
     const confirmedIdentity = { ...unknownIdentity, performanceIndex: 700, carClass: 3 };
 
     expect(shouldPreserveIdleIdentityHydration(unknownIdentity, confirmedIdentity, 'idle')).toBe(true);
-    expect(shouldPreserveIdleIdentityHydration(unknownIdentity, confirmedIdentity, 'collecting')).toBe(false);
+    expect(shouldPreserveIdleIdentityHydration(unknownIdentity, confirmedIdentity, 'collecting')).toBe(true);
     expect(shouldPreserveIdleIdentityHydration(unknownIdentity, { ...confirmedIdentity, carId: '43' }, 'idle')).toBe(false);
     expect(shouldPreserveIdleIdentityHydration(unknownIdentity, { ...confirmedIdentity, profileKey: 'engine-key-b' }, 'idle')).toBe(false);
   });

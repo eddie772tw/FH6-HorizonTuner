@@ -20,6 +20,7 @@ import { usesCvt } from '../../domain/tuning/transmission';
 import { CvtFoundationPanel } from './components/CvtFoundationPanel';
 import { BaselinePreviewPanel } from './components/BaselinePreviewPanel';
 import { TuneVehicleSelector } from './components/TuneVehicleSelector';
+import { useTuningNavigation } from './useTuningNavigation';
 
 export function TuningViewContent({ unitPreference, onUnitPreferenceChange }: {
     unitPreference: UnitPreferenceOverride; onUnitPreferenceChange: (value: UnitPreferenceOverride) => void;
@@ -30,10 +31,6 @@ export function TuningViewContent({ unitPreference, onUnitPreferenceChange }: {
   const session = useTuneSession();
   const [showUnits, setShowUnits] = useState(false);
   const [showCapture, setShowCapture] = useState(false);
-  const [navigating, setNavigating] = useState(false);
-  const navigationLock = useRef(false);
-  const navigationSequence = useRef(0);
-  const [saveError, setSaveError] = useState(false);
   const [childBusy, setChildBusy] = useState(false);
   const childBusyRef = useRef(false);
   const reportBusy = useCallback((busy: boolean) => { childBusyRef.current = busy; setChildBusy(busy); }, []);
@@ -41,50 +38,29 @@ export function TuningViewContent({ unitPreference, onUnitPreferenceChange }: {
   const goal = session.workflow.goal;
   const season = session.workflow.season as Season;
   const goalPending = session.baseline.goal !== goal;
-  // Recheck after asynchronous saves; a new draft must not be bypassed by an older handler.
-  const goalPendingRef = useRef(goalPending);
-  goalPendingRef.current = goalPending;
-  const goalPendingMessage = t('Apply the draft target below or keep the applied target before continuing.');
+  const goalPendingMessage = t('Continuing applies the draft target and local baseline.');
   const profile = session.profile;
   const engine = session.engine;
-  const operationPending = navigating || isSavingCarParams || Boolean(engine.pendingSave) || childBusy || Boolean(session.cvtEvidence?.busy);
-  const latest = useRef('');
-  latest.current = JSON.stringify([selectionGeneration, session.identityGeneration, serializeWorkflowProfile(liveCarParams), goal]);
+  const saving = isSavingCarParams || Boolean(engine.pendingSave) || childBusy || Boolean(session.cvtEvidence?.busy);
+  const navigationKey = JSON.stringify([carId, selectionGeneration, session.identityGeneration, session.identity,
+    serializeWorkflowProfile(liveCarParams), season, session.baseline.goal]);
+  const { navigating, saveError, error: navigationError, openStep, saveAndAct, reportPreview } =
+    useTuningNavigation(session, navigationKey, saving, hasUnsavedParams, saveCarParams, () => childBusyRef.current);
+  const operationPending = navigating || saving;
   const readiness = session.result?.readiness ?? unavailableReadiness;
-  const latestReadiness = useRef(readiness); latestReadiness.current = readiness;
-  useEffect(() => { ++navigationSequence.current; navigationLock.current = false; setNavigating(false); setSaveError(false); }, [selectionGeneration]);
+  const canAttemptStep = (step: number) => canOpenTuningStep(step, readiness)
+    || (step > currentStep && (session.baseline.phase === 'draft' || session.calculationStatus === 'error'));
   const reviewHistory = session.workflow.reviewHistory;
-  const setCurrentStep = (next: number | ((previous: number) => number)) => {
-    const resolved = typeof next === 'function' ? next(currentStep) : next;
-    if (resolved > 1 && goalPendingRef.current) return;
-    if (!canOpenTuningStep(resolved, latestReadiness.current)) return;
-    session.workflow.setStep(resolved);
-  };
-  const saveAndAct = async (action?: () => void, forceSave = false, allowDraft = false) => {
-    if (navigationLock.current || operationPending || childBusyRef.current) return;
-    if (!hasUnsavedParams && !forceSave) { action?.(); return; }
-    navigationLock.current = true; setNavigating(true); setSaveError(false);
-    const sequence = ++navigationSequence.current;
-    const origin = latest.current;
-    try {
-      await saveCarParams();
-      if (sequence === navigationSequence.current && origin === latest.current && (allowDraft || !goalPendingRef.current)) action?.();
-    } catch { if (sequence === navigationSequence.current && origin === latest.current) setSaveError(true); }
-    finally { if (sequence === navigationSequence.current) { navigationLock.current = false; setNavigating(false); } }
-  };
-  const openStep = (step: number) => {
-    if ((step > 1 && goalPendingRef.current) || !canOpenTuningStep(step, readiness)) return;
-    void saveAndAct(() => { session.workflow.setReviewHistory(false); setCurrentStep(step); }, false, step === 1);
-  };
+  const setCurrentStep = (step: number) => session.workflow.setStep(step);
 
   const chassis = session.result?.chassis ?? null;
   const alignment = session.result?.alignment ?? null;
   const gearing = session.result?.gearing ?? null;
   useEffect(() => {
-    if (session.calculationStatus !== 'ready') return;
+    if (navigating || session.calculationStatus !== 'ready') return;
     const step = resolveTuningStep(currentStep, readiness);
     if (step !== currentStep) setCurrentStep(step);
-  }, [session.calculationStatus, currentStep, readiness.mechanical, readiness.engineInputs, readiness.measuredEngine, readiness.gearingAvailable]);
+  }, [navigating, session.calculationStatus, currentStep, readiness.mechanical, readiness.engineInputs, readiness.measuredEngine, readiness.gearingAvailable]);
   return <div className="tuning-workflow container-fluid h-100 d-flex flex-column gap-3 p-0 overflow-auto">
     <header>
       <TuneVehicleSelector />
@@ -93,7 +69,7 @@ export function TuningViewContent({ unitPreference, onUnitPreferenceChange }: {
         <div className="d-flex flex-wrap gap-2">
           <button className="btn btn-outline-secondary" disabled={operationPending || goalPending} onClick={() => void saveAndAct(() => session.workflow.setReviewHistory(value => !value))}>{t(reviewHistory ? 'Return to current setup' : 'Review saved runs')}</button>
           {currentStep > 1 && <button className="btn btn-outline-secondary" disabled={operationPending} onClick={() => openStep(currentStep - 1)}>{t('Previous')}</button>}
-          {currentStep < 4 && <button className="btn btn-primary" disabled={operationPending || goalPending || !canOpenTuningStep(currentStep + 1, readiness)} aria-describedby="tuning-save-status tuning-target-status" onClick={() => openStep(currentStep + 1)}>{t(currentStep === 1 ? 'Go to chassis & tires' : currentStep === 2 ? 'Go to engine data & gearing' : 'Go to setup verification')}</button>}
+          {currentStep < 4 && <button className="btn btn-primary" disabled={operationPending || !canAttemptStep(currentStep + 1)} aria-describedby="tuning-save-status tuning-target-status" onClick={() => openStep(currentStep + 1)}>{t(currentStep === 1 ? 'Go to chassis & tires' : currentStep === 2 ? 'Go to engine data & gearing' : 'Go to setup verification')}</button>}
         </div>
       </div>
       <div className="d-flex flex-wrap align-items-center gap-2 small" style={{ minHeight: '2.5rem' }}>
@@ -101,18 +77,18 @@ export function TuningViewContent({ unitPreference, onUnitPreferenceChange }: {
         <button type="button" className="btn btn-sm btn-outline-secondary" disabled={operationPending || !goalPending} onClick={session.baseline.cancel}>{t('Keep applied target')}</button>
       </div>
       <div id="tuning-save-status" role="status" aria-live="polite" className="small text-body-secondary" style={{ minHeight: '3em' }}>
-        {t(saveError || paramsSaveStatus === 'error' ? 'Vehicle parameters could not be saved. Your edits are retained. Retry Save vehicle parameters or navigation.' : operationPending ? 'Saving changes. Wait before navigating.' : hasUnsavedParams ? 'Unsaved vehicle parameters. Navigation saves them before leaving this step.' : paramsSaveStatus === 'saved' ? 'Vehicle parameters saved.' : 'Vehicle parameters are up to date.')}
+        {t(navigationError && !saveError ? navigationError : saveError || paramsSaveStatus === 'error' ? 'Vehicle parameters could not be saved. Your edits are retained. Retry Save vehicle parameters or navigation.' : navigating ? 'Applying the draft and preparing the next step…' : operationPending ? 'Saving changes. Wait before navigating.' : hasUnsavedParams ? 'Unsaved vehicle parameters. Navigation saves them before leaving this step.' : paramsSaveStatus === 'saved' ? 'Vehicle parameters saved.' : 'Vehicle parameters are up to date.')}
         <br />{t('Local baseline changes stay in this session. Save vehicle parameters does not save recommendations or apply values in game.')}
       </div>
       <nav className="workspace-tabs tuning-workflow__steps nav" aria-label={t('Tuning workflow steps')}>
         {TUNING_WORKFLOW_STEPS.map(step => <button key={step.id} className={'nav-link ' + (currentStep === step.number ? 'active' : '')}
-          aria-current={currentStep === step.number ? 'step' : undefined} disabled={operationPending || (step.number > 1 && goalPending) || !canOpenTuningStep(step.number, readiness)} aria-describedby="tuning-save-status tuning-target-status"
+          aria-current={currentStep === step.number ? 'step' : undefined} disabled={operationPending || !canAttemptStep(step.number)} aria-describedby="tuning-save-status tuning-target-status"
           title={step.number === 4 && !readiness.gearingAvailable ? t('Engine analysis and a feasible gearing result are required before setup verification.') : undefined}
           onClick={() => openStep(step.number)}><span className="workspace-tabs__number">{step.number}.</span> {t(step.label)}</button>)}
       </nav>
       <div className="small text-body-secondary mt-2" role="status" style={{ minHeight: '3em' }}>{t(session.calculationStatus === 'pending' ? 'Calculating tuning results…' : session.calculationStatus === 'error' ? 'Tuning calculation is unavailable. Retrying…' : usesCvt(profile) ? 'CVT recommendations are unavailable pending real capture and solver validation.' : !readiness.mechanical ? 'Complete the vehicle weight and distribution first.' : !readiness.measuredEngine ? 'Mechanical estimates are available. Engine data and gearing still require measurement.' : !readiness.gearingAvailable ? 'Engine analysis is ready, but the gearing model has no feasible result. Review Step 3.' : 'Engine measurement is ready. Confirm game settings before recording a validation run.')}</div>
       <div style={{ display: 'flow-root', minHeight: '2.5rem' }}>
-        {!reviewHistory && session.calculationStatus === 'ready' && <WorkflowGuide forwardBlocked={goalPending} busy={operationPending} readiness={readiness} currentStep={currentStep} openStep={openStep} />}
+        {!reviewHistory && session.calculationStatus === 'ready' && <WorkflowGuide busy={operationPending} readiness={readiness} currentStep={currentStep} openStep={openStep} />}
       </div>
     </header>
     <RecommendationArchive />
@@ -132,7 +108,7 @@ export function TuningViewContent({ unitPreference, onUnitPreferenceChange }: {
       ? <EvPowertrainStep key={JSON.stringify([carId, selectionGeneration])} enabled={readiness.engineInputs} onBusyChange={reportBusy} />
       : <EngineDataStep key={JSON.stringify([carId, selectionGeneration, session.identityGeneration, profile])} carId={carId} profile={profile} engine={engine} gearing={gearing && !('model' in gearing) ? gearing : null} enabled={readiness.engineInputs} />)}
     {!reviewHistory && currentStep === 4 && session.calculationStatus === 'ready' && <SetupVerificationStep key={JSON.stringify([carId, selectionGeneration, goal])} goal={goal} carId={carId} recommendation={session.result?.recommendation ?? null} onBusyChange={reportBusy} />}
-    {!reviewHistory && [1, 2].includes(currentStep) && <BaselinePreviewPanel busy={operationPending} carId={carId} profile={profile} season={season} draft={session.baseline} showTargetSelector={currentStep !== 1} />}
+    {!reviewHistory && [1, 2].includes(currentStep) && <BaselinePreviewPanel onPreview={reportPreview} busy={operationPending} carId={carId} profile={profile} season={season} draft={session.baseline} showTargetSelector={currentStep !== 1} />}
     {reviewHistory && <RoadWorkflowView recommendation={null} carId={carId} onBusyChange={reportBusy} />}
     <UnitSettingsSidebar idPrefix="tuning-units" show={showUnits} title={t('Tuning Workflow Unit Settings')}
       preference={unitPreference} onChange={onUnitPreferenceChange} onClose={() => setShowUnits(false)} />
