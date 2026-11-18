@@ -75,3 +75,59 @@ fn export_neutralizes_csv_formula_injection_in_metadata() {
     assert_eq!(benign_meta["session_id"], "'=already_escaped");
     assert_eq!(benign_meta["car_name"], "Porsche 911 - GT3");
 }
+
+#[test]
+fn export_preserves_alias_precedence_nulls_and_large_session_throughput() {
+    let meta = json!({"session_id": "perf-10k", "car_name": "Porsche 911 GT3"});
+    let edge_points = vec![
+        json!({
+            "time": 0.0, "lap_distance": 12.5, "LapNumber": 1, "SpeedMetersPerSecond": 45.0,
+            "CurrentEngineRpm": 7200, "Gear": 4, "AccelInput": 255, "BrakeInput": 0,
+            "ClutchInput": 0, "HandBrakeInput": 0, "steer_pct": null, "SteerInput": 63.5,
+            "AccelerationX": 9.81, "AccelerationZ": -4.905, "AccelerationY": 0.0,
+            "Boost": 68947.5729, "Fuel": 0.85, "PowerWatts": null, "Power": 372850.0,
+            "TorqueNewtons": 500.0, "Torque": 999.0,
+            "SuspTravel": [0.4, 0.45, 0.5, 0.55],
+            "SuspensionTravelMeters": [0.02, 0.021, 0.025, 0.026],
+            "TireSlipAngle": [0.05, -0.04, 0.02, -0.01],
+            "TireSlipRatio": [0.01, 0.02, 0.03, 0.04],
+            "TireTemp": [180.0, 185.0, 190.0, 195.0],
+            "PositionX": 100.0, "PositionY": 12.0, "PositionZ": -200.0
+        }),
+        json!({
+            "time": 0.1, "steer_pct": 15.0, "SteerInput": 127.0,
+            "Power": 223710.0, "Torque": 420.0, "TireTemp": [212.0]
+        }),
+        Value::Null,
+    ];
+    let edge_csv = String::from_utf8(motec::export(&meta, &edge_points).unwrap()).unwrap();
+    let lines: Vec<&str> = edge_csv.lines().collect();
+    // Row 1: PowerWatts=null blocks Power fallback; steer_pct=null falls back to SteerInput
+    assert!(lines[9].contains(",50.000,1.000,-0.500,0.000,10.000,85.000,,500.000,"));
+    // Row 2: steer_pct=15.0 wins over SteerInput; Power/Torque aliases apply when canonical absent
+    assert!(lines[10].contains(",15.000,,,,,,300.000,420.000,"));
+    assert!(lines[10].contains(",100.000,,,,"));
+    // Row 3: non-object point emits 40 commas (41 empty cells)
+    assert_eq!(lines[11], ",".repeat(40));
+
+    let template = &edge_points[0];
+    let points: Vec<Value> = (0..10_000)
+        .map(|i| {
+            let mut p = template.clone();
+            p["time"] = json!(i as f64 * 0.016);
+            p["lap_distance"] = json!(i as f64 * 0.75);
+            p
+        })
+        .collect();
+    let mut best_ms = f64::INFINITY;
+    let mut total_bytes = 0usize;
+    for _ in 0..5 {
+        let t0 = std::time::Instant::now();
+        let out = motec::export(&meta, &points).unwrap();
+        let elapsed_ms = t0.elapsed().as_secs_f64() * 1000.0;
+        total_bytes = out.len();
+        best_ms = best_ms.min(elapsed_ms);
+    }
+    assert!(total_bytes > 1_000_000);
+    println!("motec::export 10000 points best_ms={best_ms:.3} bytes={total_bytes}");
+}

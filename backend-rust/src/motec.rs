@@ -3,6 +3,7 @@ use crate::{
     error::{ApiError, ApiResult},
 };
 use serde_json::{json, Value};
+use std::io::Write;
 
 pub const WORKSPACE: &str = include_str!("../resources/motec-workspace.xml");
 const LAT: f64 = 19.432608;
@@ -96,11 +97,19 @@ fn sanitize_csv_cell(value: &str) -> String {
         value.to_string()
     }
 }
-fn fmt(value: Option<&Value>, scale: f64, offset: f64, digits: usize) -> String {
-    value
-        .and_then(number)
-        .map(|v| format!("{:.*}", digits, v * scale + offset))
-        .unwrap_or_default()
+#[rustfmt::skip]
+const CSV_SCALES: [f64; 41] = [
+    1.0, 1.0, 1.0, 3.6, 1.0, 1.0, 100.0 / 255.0, 100.0 / 255.0, 100.0 / 255.0, 100.0 / 255.0,
+    1.0, 1.0 / 9.81, 1.0 / 9.81, 1.0 / 9.81, 1.0 / 6894.75729, 100.0, 1.0 / 745.7, 1.0,
+    100.0, 100.0, 100.0, 100.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
+    5.0 / 9.0, 5.0 / 9.0, 5.0 / 9.0, 5.0 / 9.0, 1.0 / LAT_SCALE, 1.0 / LON_SCALE, 1.0,
+];
+fn fill_quad(dst: &mut [Option<f64>], v: &Value) {
+    if let Some(arr) = v.as_array() {
+        for (slot, elem) in dst.iter_mut().zip(arr.iter()) {
+            *slot = number(elem);
+        }
+    }
 }
 pub fn export(metadata: &Value, points: &[Value]) -> ApiResult<Vec<u8>> {
     let mut writer = csv::WriterBuilder::new()
@@ -162,89 +171,77 @@ pub fn export(metadata: &Value, points: &[Value]) -> ApiResult<Vec<u8>> {
         .into_inner()
         .map_err(|e| ApiError::internal("MoTeC CSV export", e))?;
     bytes.extend_from_slice(b"\r\n");
-    let mut writer = csv::WriterBuilder::new()
-        .flexible(true)
-        .terminator(csv::Terminator::CRLF)
-        .from_writer(bytes);
-    let mut record = |row: Vec<String>| {
-        writer
-            .write_record(row)
-            .map_err(|e| ApiError::internal("MoTeC CSV export", e))
-    };
-    let columns: Value =
-        serde_json::from_str(include_str!("../resources/motec-columns.json")).unwrap();
-    for key in ["headers", "units"] {
-        record(
-            columns[key]
-                .as_array()
-                .unwrap()
-                .iter()
-                .map(|v| v.as_str().unwrap().into())
-                .collect(),
-        )?;
+    bytes.reserve(points.len().saturating_mul(256) + 1024);
+    for get in [|c: &ChannelDef| c.name, |c: &ChannelDef| c.unit] {
+        for (i, c) in MOTEC_CHANNELS.iter().enumerate() {
+            if i > 0 {
+                bytes.push(b',');
+            }
+            bytes.extend_from_slice(get(c).as_bytes());
+        }
+        bytes.extend_from_slice(b"\r\n");
     }
+    // [PERF] Stream formatted CSV cells and scan each point once (0 per-point allocs/hashes).
     for p in points {
-        let mut row = Vec::new();
-        for (key, scale, digits) in [
-            ("time", 1.0, 3),
-            ("lap_distance", 1.0, 3),
-            ("LapNumber", 1.0, 0),
-            ("SpeedMetersPerSecond", 3.6, 3),
-            ("CurrentEngineRpm", 1.0, 0),
-            ("Gear", 1.0, 0),
-            ("AccelInput", 100.0 / 255.0, 3),
-            ("BrakeInput", 100.0 / 255.0, 3),
-            ("ClutchInput", 100.0 / 255.0, 3),
-            ("HandBrakeInput", 100.0 / 255.0, 3),
-        ] {
-            row.push(fmt(p.get(key), scale, 0.0, digits));
-        }
-        row.push(if !p["steer_pct"].is_null() {
-            fmt(p.get("steer_pct"), 1.0, 0.0, 3)
-        } else {
-            fmt(p.get("SteerInput"), 100.0 / 127.0, 0.0, 3)
-        });
-        for (key, scale) in [
-            ("AccelerationX", 1.0 / 9.81),
-            ("AccelerationZ", 1.0 / 9.81),
-            ("AccelerationY", 1.0 / 9.81),
-            ("Boost", 1.0 / 6894.75729),
-            ("Fuel", 100.0),
-        ] {
-            row.push(fmt(p.get(key), scale, 0.0, 3));
-        }
-        row.push(fmt(
-            p.get("PowerWatts").or_else(|| p.get("Power")),
-            1.0 / 745.7,
-            0.0,
-            3,
-        ));
-        row.push(fmt(
-            p.get("TorqueNewtons").or_else(|| p.get("Torque")),
-            1.0,
-            0.0,
-            3,
-        ));
-        for (key, scale, offset) in [
-            ("SuspTravel", 100.0, 0.0),
-            ("SuspensionTravelMeters", 1.0, 0.0),
-            ("TireSlipAngle", 1.0, 0.0),
-            ("TireSlipRatio", 1.0, 0.0),
-            ("TireTemp", 5.0 / 9.0, -32.0 * 5.0 / 9.0),
-        ] {
-            for i in 0..4 {
-                row.push(fmt(p[key].get(i), scale, offset, 3));
+        let mut vals = [None::<f64>; 41];
+        let (mut steer_pct, mut steer_raw) = (None, None);
+        let (mut pwr, mut pwr_a, mut tq, mut tq_a) = (None, None, None, None);
+        if let Some(obj) = p.as_object() {
+            for (k, v) in obj {
+                match k.as_str() {
+                    "time" => vals[0] = number(v),
+                    "lap_distance" => vals[1] = number(v),
+                    "LapNumber" => vals[2] = number(v),
+                    "SpeedMetersPerSecond" => vals[3] = number(v),
+                    "CurrentEngineRpm" => vals[4] = number(v),
+                    "Gear" => vals[5] = number(v),
+                    "AccelInput" => vals[6] = number(v),
+                    "BrakeInput" => vals[7] = number(v),
+                    "ClutchInput" => vals[8] = number(v),
+                    "HandBrakeInput" => vals[9] = number(v),
+                    "steer_pct" if !v.is_null() => steer_pct = Some(number(v)),
+                    "SteerInput" => steer_raw = number(v),
+                    "AccelerationX" => vals[11] = number(v),
+                    "AccelerationZ" => vals[12] = number(v),
+                    "AccelerationY" => vals[13] = number(v),
+                    "Boost" => vals[14] = number(v),
+                    "Fuel" => vals[15] = number(v),
+                    "PowerWatts" => pwr = Some(number(v)),
+                    "Power" => pwr_a = number(v),
+                    "TorqueNewtons" => tq = Some(number(v)),
+                    "Torque" => tq_a = number(v),
+                    "SuspTravel" => fill_quad(&mut vals[18..22], v),
+                    "SuspensionTravelMeters" => fill_quad(&mut vals[22..26], v),
+                    "TireSlipAngle" => fill_quad(&mut vals[26..30], v),
+                    "TireSlipRatio" => fill_quad(&mut vals[30..34], v),
+                    "TireTemp" => fill_quad(&mut vals[34..38], v),
+                    "PositionZ" => vals[38] = number(v),
+                    "PositionX" => vals[39] = number(v),
+                    "PositionY" => vals[40] = number(v),
+                    _ => {}
+                }
             }
         }
-        row.push(fmt(p.get("PositionZ"), 1.0 / LAT_SCALE, LAT, 7));
-        row.push(fmt(p.get("PositionX"), 1.0 / LON_SCALE, LON, 7));
-        row.push(fmt(p.get("PositionY"), 1.0, 0.0, 3));
-        record(row)?;
+        vals[10] = steer_pct.unwrap_or_else(|| steer_raw.map(|x| x * (100.0 / 127.0)));
+        vals[16] = pwr.unwrap_or(pwr_a);
+        vals[17] = tq.unwrap_or(tq_a);
+        for (idx, (val, &s)) in vals.iter().zip(&CSV_SCALES).enumerate() {
+            if idx > 0 {
+                bytes.push(b',');
+            }
+            if let Some(v) = val {
+                let _ = match idx {
+                    2 | 4 | 5 => write!(&mut bytes, "{:.0}", v * s + 0.0),
+                    34..=37 => write!(&mut bytes, "{:.3}", v * s - 32.0 * 5.0 / 9.0),
+                    38 => write!(&mut bytes, "{:.7}", v * s + LAT),
+                    39 => write!(&mut bytes, "{:.7}", v * s + LON),
+                    _ => write!(&mut bytes, "{:.3}", v * s + 0.0),
+                };
+            }
+        }
+        bytes.extend_from_slice(b"\r\n");
     }
-    drop(record);
-    writer
-        .into_inner()
-        .map_err(|e| ApiError::internal("MoTeC CSV export", e))
+    Ok(bytes)
 }
 pub fn import(bytes: &[u8]) -> ApiResult<(Value, Vec<Value>)> {
     let mut reader = csv::ReaderBuilder::new()
