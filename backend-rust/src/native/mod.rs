@@ -9,6 +9,8 @@ mod audio;
 mod discord;
 #[cfg(feature = "hud")]
 mod media;
+mod thumbnail;
+pub(crate) use thumbnail::validate_thumbnail;
 #[cfg(not(feature = "hud"))]
 mod unsupported;
 #[cfg(not(feature = "hud"))]
