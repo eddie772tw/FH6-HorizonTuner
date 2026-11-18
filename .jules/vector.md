@@ -65,3 +65,8 @@
 **渲染洞察 (Rendering Learning):** 在 `hud_overlay/shared/telemetry-cards/corner-card.js`（`drawSuspWaveform`）中，過去四輪懸吊波形直接以 `wy = wh - travel * wh` 與 `wx = (j / 150) * ww` 繪製且缺乏 `save()` / `try-finally restore()`、圓角端點與單點處理，導致極限行程（`0` / `1`）於畫布上下緣遭半徑裁切、單一採樣（`sHist.length === 1`）完全不可見，且 60Hz 樣式容易滲漏。透過導入 `padX` / `padY`（`4.5 * dpr`）預留光暈邊距、將上下 5% 危險帶對齊 `drawH` 實際 0.05/0.95 行程閾值並補入 50% 中立車高基準線，再於最新採樣端點繪製同軸脈衝標記（於 `cTravel <= 0.05 || cTravel >= 0.95` 時自動切換為 `#ff0055` 警戒光暈），即可在零每幀記憶體配置下兼顧單點可讀性與觸底警示辨識度。
 **行動 (Action):** 所有包含極限區間色帶的時序波形畫布應將警戒帶高度與含 `padY` 之繪圖比例空間對齊，並統一採用 `try/finally` 狀態隔離、`round` 端點與依閾值變色的同軸前緣脈衝標記。
 **署名:** Vector as Antigravity
+
+## 2026-11-18 - Telemetry Cards 四輪滑移雷達摩擦圓鉗位、同軸脈衝光環與主題連動
+**渲染洞察 (Rendering Learning):** 在 `hud_overlay/shared/telemetry-cards/corner-card.js`（`drawSlipRadar`）中，過去四輪滑移雷達（`tcTireRadar*`）以 `maxTRadius = Math.max(0, rRad - 3 * dpr)` 鉗位圓心卻繪製 `Math.max(4 * dpr, rRad * 0.1)` 半徑的實心點，導致在極限滑移或緊湊尺寸下焦點溢出外圓並遭裁切；同時缺少 `save()` / `try-finally restore()` 防護、`NaN`/`Infinity` 防禦、50% 抓地力參考圓與 `--card-primary` 主題連動。透過計算 `markerScale = Math.min(dpr, rRad / 9)` 並將鉗位半徑設為 `rRad - haloRadius - haloLineW * 0.5`，可確保同軸脈衝光環（Halo `3.6 * markerScale` + Core `1.8 * markerScale`）於任何 DPR 與緊湊尺寸下皆嚴格落於 1.0G 外圓內；將 50% 參考圓與十字基準線合併為單一批次路徑減少繪製呼叫，並在抓地力失衡（`cAngle^2 + cRatio^2 > 1.0`）時將外環與同軸光環同步切換為 `#ff0055` 警戒光暈，兼顧零每幀配置與高識別度。
+**行動 (Action):** 所有極座標摩擦圓與雷達型 HUD 畫布必須將最大夾限半徑扣除「脈衝光環半徑 + 線寬半徑」防止極值外溢，並統一落實單一批次基準網格、`Number.isFinite` 數值消毒與 `try/finally` Context 狀態隔離。
+**署名:** Vector as Antigravity
