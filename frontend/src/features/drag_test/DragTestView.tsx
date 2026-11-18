@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useId, useMemo, useRef } from 'react';
 import { useSettings } from '../../context/SettingsContext';
+import { useToast } from '../../context/ToastContext';
 import { backendFetch } from '../../services/backend';
 import './DragTestView.css';
 
@@ -50,6 +51,7 @@ interface DragAnalysis {
 
 const DragTestView: React.FC = () => {
   const { convertSpeed, t } = useSettings();
+  const { addToast } = useToast();
 
   const [status, setStatus] = useState<'idle' | 'waiting' | 'recording' | 'finished'>('idle');
   const [showDragPopover, setShowDragPopover] = useState<boolean>(false);
@@ -65,12 +67,31 @@ const DragTestView: React.FC = () => {
   const [compareData, setCompareData] = useState<DragPoint[]>([]);
   const [compareAnalysis, setCompareAnalysis] = useState<DragAnalysis | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [popoverAlignRight, setPopoverAlignRight] = useState(false);
   const dragId = useId();
   const dragTriggerRef = useRef<HTMLButtonElement>(null);
   const dragPopoverWrapRef = useRef<HTMLDivElement>(null);
+  const toolbarRef = useRef<HTMLDivElement>(null);
+  const compareSelectRef = useRef<HTMLSelectElement>(null);
+  const deleteBtnRef = useRef<HTMLButtonElement>(null);
+  const cancelDeleteBtnRef = useRef<HTMLButtonElement>(null);
+  const hadConfirmation = useRef(false);
+  const deleteInFlight = useRef(false);
   const chartTabsRef = useRef<Array<HTMLButtonElement | null>>([]);
   const chartTabs = ['speed_rpm', 'slip'] as const;
+
+  useEffect(() => { setConfirmDelete(false); }, [selectedCompareFilename, status]);
+  useEffect(() => {
+    if (isDeleting) return;
+    const active = document.activeElement;
+    if (active === document.body || toolbarRef.current?.contains(active)) {
+      if (confirmDelete) cancelDeleteBtnRef.current?.focus();
+      else if (hadConfirmation.current) (deleteBtnRef.current ?? compareSelectRef.current)?.focus();
+    }
+    hadConfirmation.current = confirmDelete;
+  }, [confirmDelete, isDeleting, selectedCompareFilename]);
 
   useEffect(() => {
     if (!showDragPopover) return;
@@ -183,22 +204,17 @@ const DragTestView: React.FC = () => {
     }
   };
 
+  const notify = (type: 'success' | 'danger', message: string) => addToast({ type, title: t('Drag Test Analysis'), message });
+
   const handleSaveSession = async () => {
     setIsSaving(true);
     try {
       const res = await backendFetch('/api/drag/sessions/save', { method: 'POST' });
-      const data = await res.json();
-      if (data.message) {
-        alert(t('Drag session saved successfully'));
-        fetchSessionsList();
-      } else if (data.error) {
-        alert(data.error);
-      }
-    } catch (e) {
-      console.error('Failed to save drag session:', e);
-    } finally {
-      setIsSaving(false);
-    }
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.message) { notify('success', t('Drag session saved successfully')); fetchSessionsList(); }
+      else notify('danger', data.error || t('Needs attention'));
+    } catch (e) { console.error('Failed to save drag session:', e); notify('danger', t('Needs attention')); }
+    finally { setIsSaving(false); }
   };
 
   const handleCompareSelect = async (filename: string) => {
@@ -220,25 +236,19 @@ const DragTestView: React.FC = () => {
     }
   };
 
-  const handleDeleteSession = async (filename: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!window.confirm(t('Are you sure you want to delete this record?'))) {
-      return;
-    }
+  const handleConfirmDelete = async () => {
+    if (!selectedCompareFilename || deleteInFlight.current) return;
+    deleteInFlight.current = true; setIsDeleting(true);
     try {
-      const res = await backendFetch(`/api/drag/sessions/${filename}`, { method: 'DELETE' });
-      const data = await res.json();
-      if (data.message) {
-        fetchSessionsList();
-        if (selectedCompareFilename === filename) {
-          setSelectedCompareFilename('');
-          setCompareData([]);
-          setCompareAnalysis(null);
-        }
-      }
-    } catch (e) {
-      console.error('Failed to delete session:', e);
-    }
+      const res = await backendFetch(`/api/drag/sessions/${selectedCompareFilename}`, { method: 'DELETE' });
+      const data = await res.json().catch(() => ({}));
+      setConfirmDelete(false);
+      if (res.ok && data.message) {
+        notify('success', t('Session deleted.'));
+        setSelectedCompareFilename(''); setCompareData([]); setCompareAnalysis(null); fetchSessionsList();
+      } else notify('danger', data.error || t('Failed to delete session.'));
+    } catch (e) { console.error('Failed to delete session:', e); setConfirmDelete(false); notify('danger', t('Failed to delete session.')); }
+    finally { deleteInFlight.current = false; setIsDeleting(false); }
   };
 
   // Process and align data for Recharts using dual-series connectNulls approach
@@ -318,7 +328,7 @@ const DragTestView: React.FC = () => {
     <div className="drag-test-workspace">
       
       {/* SECTION 1: Status & Controller */}
-      <div className="workspace-toolbar drag-test-toolbar">
+      <div ref={toolbarRef} className="workspace-toolbar drag-test-toolbar">
         <div className="drag-test-toolbar-label">{t("Drag Test Analysis")}</div>
         
         <div className="drag-test-actions">
@@ -326,7 +336,8 @@ const DragTestView: React.FC = () => {
           {(status === 'idle' || status === 'finished') && sessionsList.length > 0 && (
             <div className="drag-test-compare">
               <label htmlFor="drag-test-compare-session" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t("Compare with History")}:</label>
-              <select 
+              <select
+                ref={compareSelectRef}
                 id="drag-test-compare-session"
                 value={selectedCompareFilename} 
                 onChange={(e) => handleCompareSelect(e.target.value)}
@@ -344,19 +355,14 @@ const DragTestView: React.FC = () => {
               </select>
               {selectedCompareFilename && (
                 <button
+                  ref={deleteBtnRef}
                   type="button"
+                  className="btn btn-outline-danger btn-sm"
                   aria-label={t("Delete selected session")}
-                  onClick={(e) => handleDeleteSession(selectedCompareFilename, e)}
-                  style={{
-                    background: 'rgba(255,0,60,0.15)',
-                    border: '1px solid rgba(255,0,60,0.3)',
-                    color: '#ff3366',
-                    padding: '0.4rem 0.8rem',
-                    borderRadius: '6px',
-                    fontSize: '0.8rem',
-                    cursor: 'pointer',
-                    fontWeight: 600
-                  }}
+                  aria-expanded={confirmDelete}
+                  aria-controls={confirmDelete ? `${dragId}-delete-confirm` : undefined}
+                  disabled={confirmDelete || isDeleting}
+                  onClick={() => setConfirmDelete(true)}
                 >
                   {t("Delete")}
                 </button>
@@ -512,6 +518,21 @@ const DragTestView: React.FC = () => {
             </div>
           )}
         </div>
+        {selectedCompareFilename && confirmDelete && (status === 'idle' || status === 'finished') && (
+          <div id={`${dragId}-delete-confirm`} className="w-100 border-top pt-2 d-flex flex-wrap align-items-center justify-content-between gap-2"
+            role="group" aria-labelledby={`${dragId}-delete-confirm-label`}
+            onKeyDownCapture={e => { if (e.key !== 'Escape') return; e.preventDefault(); e.stopPropagation(); if (!deleteInFlight.current) setConfirmDelete(false); }}>
+            <p id={`${dragId}-delete-confirm-label`} className="fs-7 fw-semibold mb-0" style={{ color: 'var(--bs-danger-text-emphasis)', overflowWrap: 'anywhere' }}>
+              {`${t('Are you sure you want to delete this session?')} (${selectedCompareFilename})`}
+            </p>
+            <div className="d-flex flex-wrap gap-2">
+              <button ref={cancelDeleteBtnRef} type="button" className="btn btn-outline-secondary btn-sm" disabled={isDeleting} onClick={() => setConfirmDelete(false)}>{t('Cancel')}</button>
+              <button type="button" className="btn btn-danger btn-sm fw-bold" disabled={isDeleting} aria-busy={isDeleting} onClick={() => void handleConfirmDelete()}>
+                {isDeleting && <span className="spinner-border spinner-border-sm me-1" aria-hidden="true" />}{t('Delete')}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {analysis && !analysis.path_valid && (
