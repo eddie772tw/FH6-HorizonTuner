@@ -1,0 +1,66 @@
+{
+  "target": "hud_overlay/shared/telemetry-cards/corner-card.js",
+  "renderer": "createTelemetryCardsManager() -> renderCorners() -> drawTireTempHistogram()",
+  "capturedAt": "2026-11-18T21:05:39.018Z",
+  "browser": "Chromium headless (chromium 151.0.7922.34)",
+  "background": "#0b111b (composite dark backdrop for transparent HUD panel)",
+  "scopeNote": "Isolated #tcTempBlockFL element clip with 16px margin (telemetryCornerOffsetY: 160 to center FL card within 1280x720); live game & native Windows overlay not tested here.",
+  "captures": [
+    {
+      "file": "tire-temp-dpr1-optimal.png",
+      "description": "DPR 1 · 正常胎溫分布直方圖、三色基準軸與居中白線／同軸圓點指示器",
+      "viewport": "1280x720",
+      "dpr": 1,
+      "samples": 121,
+      "canvas": {
+        "width": 240,
+        "height": 36,
+        "clientWidth": 240,
+        "clientHeight": 36
+      },
+      "clipPaddingPx": 16
+    },
+    {
+      "file": "tire-temp-dpr1-cold-edge.png",
+      "description": "DPR 1 · 低溫極值邊界（100°F / 38°C）左緣防裁切與靠右對齊浮動讀數",
+      "viewport": "1280x720",
+      "dpr": 1,
+      "samples": 81,
+      "canvas": {
+        "width": 240,
+        "height": 36,
+        "clientWidth": 240,
+        "clientHeight": 36
+      },
+      "clipPaddingPx": 16
+    },
+    {
+      "file": "tire-temp-dpr1-hot-edge.png",
+      "description": "DPR 1 · 高溫極值警戒（258°F / 126°C）右緣防裁切、紅光指示與靠左對齊讀數",
+      "viewport": "1280x720",
+      "dpr": 1,
+      "samples": 181,
+      "canvas": {
+        "width": 240,
+        "height": 36,
+        "clientWidth": 240,
+        "clientHeight": 36
+      },
+      "clipPaddingPx": 16
+    },
+    {
+      "file": "tire-temp-dpr2-optimal.png",
+      "description": "DPR 2 · HiDPI 輪胎溫度直方圖與高解析同軸指示器／文字陰影",
+      "viewport": "1280x720",
+      "dpr": 2,
+      "samples": 121,
+      "canvas": {
+        "width": 480,
+        "height": 72,
+        "clientWidth": 240,
+        "clientHeight": 36
+      },
+      "clipPaddingPx": 16
+    }
+  ]
+}

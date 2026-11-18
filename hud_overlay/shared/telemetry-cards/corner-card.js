@@ -6,6 +6,7 @@
 import {
     corners,
     getTempColor,
+    fahrenheitToCelsius,
     radToDeg,
     clamp,
     getCanvasContext,
@@ -13,8 +14,6 @@ import {
     TEMP_HIST_MAX_F,
     TEMP_COLD_F,
     TEMP_HOT_F,
-    TEMP_NORMAL_MIN_F,
-    TEMP_NORMAL_MAX_F,
 } from './utils.js';
 
 // Performance optimization: Pre-allocate a shared array to eliminate
@@ -162,6 +161,78 @@ function drawSlipRadar(rCtx, rw, rh, dpr, cAngle, cRatio, primaryColor) {
     }
 }
 
+function drawTireTempHistogram(tCtx, tw, th, dpr, tHist, cTemp, isMetric) {
+    var padX = Math.min(tw * 0.08, 3 * dpr), plotW = Math.max(1, tw - 2 * padX);
+    var markerScale = Math.min(dpr, padX / 3, th / 10);
+    var numBins = Math.max(15, Math.floor(plotW / (3 * dpr))), barW = plotW / numBins;
+    var tempRange = TEMP_HIST_MAX_F - TEMP_HIST_MIN_F, tempPerBin = tempRange / numBins;
+
+    if (_sharedBins.length !== numBins) _sharedBins.length = numBins;
+    for (var _b = 0; _b < numBins; _b++) _sharedBins[_b] = 0;
+    var maxBinCount = 3;
+    for (var hi = 0; hi < tHist.length; hi++) {
+        // [PERF] Accumulating bins is order-independent; iterate linearly to skip modulo overhead.
+        var p = tHist[hi];
+        if (p.temp <= 0) continue;
+        var bIdx = Math.min(numBins - 1, Math.floor(clamp((p.temp - TEMP_HIST_MIN_F) / tempRange, 0, 1) * numBins));
+        if (++_sharedBins[bIdx] > maxBinCount) maxBinCount = _sharedBins[bIdx];
+    }
+
+    var fontSize = Math.max(10 * dpr, Math.round(th * 0.28));
+    var topPad = Math.min(th * 0.36, fontSize + 3 * dpr), bottomPad = Math.min(th * 0.22, 3.2 * dpr);
+    var maxBarH = Math.max(1, th - topPad - bottomPad), minBarH = Math.min(maxBarH, 2 * dpr);
+    var lineY = th - Math.min(th * 0.16, 2.2 * dpr), lineW = Math.min(1.5 * dpr, th * 0.15);
+    var coldX = padX + clamp((TEMP_COLD_F - TEMP_HIST_MIN_F) / tempRange, 0, 1) * plotW;
+    var hotX = padX + clamp((TEMP_HOT_F - TEMP_HIST_MIN_F) / tempRange, 0, 1) * plotW;
+    var drawBarW = barW > 1.5 * dpr ? barW - 0.5 * dpr : barW;
+
+    tCtx.save();
+    try {
+        tCtx.lineCap = 'butt';
+        tCtx.lineWidth = lineW;
+        tCtx.strokeStyle = '#0088ff'; tCtx.beginPath(); tCtx.moveTo(padX, lineY); tCtx.lineTo(coldX, lineY); tCtx.stroke();
+        tCtx.strokeStyle = '#00ff00'; tCtx.beginPath(); tCtx.moveTo(coldX, lineY); tCtx.lineTo(hotX, lineY); tCtx.stroke();
+        tCtx.strokeStyle = '#ff0000'; tCtx.beginPath(); tCtx.moveTo(hotX, lineY); tCtx.lineTo(padX + plotW, lineY); tCtx.stroke();
+
+        for (var b = 0; b < numBins; b++) {
+            var bH = Math.max(minBarH, (_sharedBins[b] / maxBinCount) * maxBarH);
+            tCtx.fillStyle = getTempColor(TEMP_HIST_MIN_F + (b + 0.5) * tempPerBin);
+            tCtx.fillRect(padX + b * barW, th - bottomPad - bH, drawBarW, bH);
+        }
+
+        if (cTemp > 0) {
+            var indicatorX = padX + clamp((cTemp - TEMP_HIST_MIN_F) / tempRange, 0, 1) * plotW;
+            tCtx.strokeStyle = '#ffffff';
+            tCtx.lineWidth = lineW;
+            tCtx.shadowColor = getTempColor(cTemp);
+            tCtx.shadowBlur = 4 * markerScale;
+            tCtx.beginPath();
+            tCtx.moveTo(indicatorX, topPad);
+            tCtx.lineTo(indicatorX, lineY);
+            tCtx.stroke();
+
+            tCtx.fillStyle = '#ffffff';
+            tCtx.beginPath();
+            tCtx.arc(indicatorX, lineY, 1.8 * markerScale, 0, Math.PI * 2);
+            tCtx.fill();
+
+            var displayT = isMetric ? Math.round(fahrenheitToCelsius(cTemp)) + '\u00b0C' : Math.round(cTemp) + '\u00b0F';
+            var edgeMargin = Math.min(plotW * 0.3, 36 * dpr);
+            tCtx.shadowColor = 'rgba(0, 0, 0, 0.9)';
+            tCtx.shadowBlur = 3 * markerScale;
+            tCtx.font = 'bold ' + fontSize + 'px monospace';
+            tCtx.textAlign = indicatorX > (tw - padX) - edgeMargin ? 'right' : (indicatorX < padX + edgeMargin ? 'left' : 'center');
+            tCtx.textBaseline = 'top';
+            if (typeof tCtx.fillText === 'function') {
+                var textX = tCtx.textAlign === 'left' ? indicatorX + 3 * markerScale : (tCtx.textAlign === 'right' ? indicatorX - 3 * markerScale : indicatorX);
+                tCtx.fillText(displayT, clamp(textX, padX, tw - padX), 2 * markerScale);
+            }
+        }
+    } finally {
+        tCtx.restore();
+    }
+}
+
 export function renderCorners(data, showSusp, showSlip, showTemp, tireHist, suspHist, suspMinMax, now, domCache) {
     var rawSlipRatios = data.TireSlipRatio || [];
     var rawSlipAngles = data.TireSlipAngle || [];
@@ -202,7 +273,8 @@ export function renderCorners(data, showSusp, showSlip, showTemp, tireHist, susp
         var rawAngle = Number(slipAngles[i]);
         var cRatio = Number.isFinite(rawRatio) ? rawRatio : 0;
         var cAngle = Number.isFinite(rawAngle) ? rawAngle : 0;
-        var cTemp  = temps[i] || 0;
+        var rawTemp = Number(temps[i]);
+        var cTemp = Number.isFinite(rawTemp) ? rawTemp : 0;
         var rawTravel = Number(travels[i]);
         var cTravel = clamp(Number.isFinite(rawTravel) ? rawTravel : 0, 0, 1);
 
@@ -238,100 +310,14 @@ export function renderCorners(data, showSusp, showSlip, showTemp, tireHist, susp
         // ---- Tire Temperature ----------------------------------------------
         if (showTemp) {
             var tempEl = domCache ? domCache.corners[tag].tempEl : document.getElementById('tcTireTemp' + tag);
-            if (tempEl) {
-                tempEl.style.display = 'none';
-            }
+            if (tempEl) tempEl.style.display = 'none';
 
             var tCanvas = domCache ? domCache.corners[tag].tCanvas : document.getElementById('tcTireHist' + tag);
             if (tCanvas && tHist.length > 0) {
                 var tData = getCanvasContext(tCanvas);
                 if (tData && tData.ctx) {
-                    var tCtx = tData.ctx;
-                    var tw = tData.w, th = tData.h, dpr = tData.dpr;
-                    tCtx.clearRect(0, 0, tw, th);
-
-                    var targetBarW = 3 * dpr;
-                    var numBins    = Math.max(15, Math.floor(tw / targetBarW));
-                    var barW       = tw / numBins;
-
-                    var tempRange  = TEMP_HIST_MAX_F - TEMP_HIST_MIN_F;
-                    var tempPerBin = tempRange / numBins;
-
-                    if (_sharedBins.length !== numBins) {
-                        _sharedBins.length = numBins;
-                    }
-                    for (var _b = 0; _b < numBins; _b++) {
-                        _sharedBins[_b] = 0;
-                    }
-                    var bins = _sharedBins;
-
-                    for (var hi = 0; hi < tHist.length; hi++) {
-                        // [PERF] Accumulating bins is order-independent, so we iterate the circular buffer linearly to avoid modulo arithmetic overhead.
-                        var p = tHist[hi];
-                        if (p.temp <= 0) continue;
-                        var normT = clamp((p.temp - TEMP_HIST_MIN_F) / tempRange, 0, 1);
-                        var bIdx  = Math.min(numBins - 1, Math.floor(normT * numBins));
-                        bins[bIdx]++;
-                    }
-
-                    var maxBinCount = 3;
-                    for (var i_bin = 0; i_bin < bins.length; i_bin++) {
-                        if (bins[i_bin] > maxBinCount) {
-                            maxBinCount = bins[i_bin];
-                        }
-                    }
-
-                    // Tri-Color Baseline (Cold: Blue, Normal: Green, Hot: Red)
-                    var coldX = Math.max(0, Math.min(tw, ((TEMP_COLD_F - TEMP_HIST_MIN_F) / tempRange) * tw));
-                    var hotX  = Math.max(0, Math.min(tw, ((TEMP_HOT_F  - TEMP_HIST_MIN_F) / tempRange) * tw));
-                    var lineY = th - 1 * dpr;
-
-                    tCtx.lineWidth = 1.5 * dpr;
-                    // Cold segment (Blue)
-                    tCtx.strokeStyle = '#0088ff';
-                    tCtx.beginPath(); tCtx.moveTo(0, lineY); tCtx.lineTo(coldX, lineY); tCtx.stroke();
-                    // Normal segment (Green)
-                    tCtx.strokeStyle = '#00ff00';
-                    tCtx.beginPath(); tCtx.moveTo(coldX, lineY); tCtx.lineTo(hotX, lineY); tCtx.stroke();
-                    // Hot segment (Red)
-                    tCtx.strokeStyle = '#ff0000';
-                    tCtx.beginPath(); tCtx.moveTo(hotX, lineY); tCtx.lineTo(tw, lineY); tCtx.stroke();
-
-                    for (var b = 0; b < numBins; b++) {
-                        var bH = (bins[b] / maxBinCount) * (th - 6 * dpr);
-                        if (bH < 2 * dpr) bH = 2 * dpr;
-                        var bTempMid = TEMP_HIST_MIN_F + (b + 0.5) * tempPerBin;
-                        tCtx.fillStyle = getTempColor(bTempMid);
-                        var drawBarW = barW > 1.5 * dpr ? barW - 0.5 * dpr : barW;
-                        tCtx.fillRect(b * barW, th - 2 * dpr - bH, drawBarW, bH);
-                    }
-
-                    // White Indicator Line & Floating Current Temp Display
-                    if (cTemp > 0) {
-                        var normTempFactor = clamp((cTemp - TEMP_HIST_MIN_F) / tempRange, 0, 1);
-                        var indicatorX     = normTempFactor * tw;
-
-                        // Draw White Line
-                        tCtx.strokeStyle = '#ffffff';
-                        tCtx.lineWidth   = 1.5 * dpr;
-                        tCtx.beginPath();
-                        tCtx.moveTo(indicatorX, 0);
-                        tCtx.lineTo(indicatorX, th);
-                        tCtx.stroke();
-
-                        // Draw Floating Temperature Text
-                        var cTempC   = (cTemp - 32) * 5 / 9;
-                        var displayT = (isMetric ? Math.round(cTempC) + '\u00b0C' : Math.round(cTemp) + '\u00b0F');
-
-                        var fontSize = Math.max(10 * dpr, Math.round(th * 0.28));
-                        tCtx.fillStyle  = '#ffffff';
-                        tCtx.font       = 'bold ' + fontSize + 'px monospace';
-                        tCtx.textAlign  = indicatorX > tw - (36 * dpr) ? 'right' : (indicatorX < (36 * dpr) ? 'left' : 'center');
-                        tCtx.textBaseline = 'top';
-                        if (typeof tCtx.fillText === 'function') {
-                            tCtx.fillText(displayT, indicatorX, 2 * dpr);
-                        }
-                    }
+                    tData.ctx.clearRect(0, 0, tData.w, tData.h);
+                    drawTireTempHistogram(tData.ctx, tData.w, tData.h, tData.dpr, tHist, cTemp, isMetric);
                 }
             }
         }
