@@ -2483,5 +2483,18 @@
   "No Data": "無資料",
   "{car} ({laps} Laps | Best: {best})": "{car} ({laps} 圈 | 最佳: {best})",
   "Lap {lap} ({time} | Max: {maxSpeed})": "第 {lap} 圈 ({time} | 最高: {maxSpeed})",
-  "vs Lap {lap} ({time})": "對比第 {lap} 圈 ({time})"
+  "vs Lap {lap} ({time})": "對比第 {lap} 圈 ({time})",
+  "Connected": "已連線",
+  "Desktop frontend offline": "桌面前端未連線",
+  "Companion backend offline": "Companion 後端未連線",
+  "Disconnected": "未連線",
+  "Desktop frontend and Companion backend connected": "桌面前端與 Companion 後端皆已連線",
+  "Companion backend connected, desktop frontend offline": "Companion 後端已連線，桌面前端未連線",
+  "Desktop frontend connected, Companion backend offline": "桌面前端已連線，Companion 後端未連線",
+  "Desktop frontend and Companion backend disconnected": "桌面前端與 Companion 後端皆未連線",
+  "Tuning": "調校",
+  "Online": "線上",
+  "Offline": "離線",
+  "CONNECTED": "已連線",
+  "LOADING": "載入中"
 }

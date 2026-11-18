@@ -139,7 +139,7 @@ export default function CompanionApp({ themeGeneration }: { themeGeneration?: st
                   {(['LAN', 'USB'] as const).map((mode) => <button key={mode} type="button" className={`btn ${nativeStatus.mode === mode || (!nativeStatus.mode && mode === 'LAN') ? 'btn-primary' : 'btn-outline-secondary'}`} aria-pressed={nativeStatus.mode === mode || (!nativeStatus.mode && mode === 'LAN')} onClick={() => { window.HorizonTunerCompanion?.setMode?.(mode); setNativeStatus((current) => ({ ...current, mode })); }}>{mode === 'LAN' ? t('Local network') : t('USB debugging')}</button>)}
                 </div>
                 <div className="companion-connection-status" role="status">
-                  <span className={`badge rounded-pill text-bg-${connectionStatus.color}`} aria-label={connectionStatus.accessibleLabel}>{t(connectionStatus.label)}</span>
+                  <span className={`badge rounded-pill text-bg-${connectionStatus.color}`} aria-label={t(connectionStatus.accessibleLabel)}>{t(connectionStatus.label)}</span>
                   <span>{diagnostics.address}</span>
                 </div>
                 {nativeStatus.mode === 'USB' ? <>
