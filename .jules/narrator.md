@@ -102,3 +102,8 @@
 **學習 (Learning):** `connectionStatus.ts` 的 `getAggregateConnectionStatus()` 直接回傳硬編碼的繁體中文字串（`已連線`、`桌面前端未連線`、`Companion 後端未連線`、`未連線` 與對應完整 `accessibleLabel`），而 `SettingsContext.t()` 在 `en-us` 語系會直接原樣回傳輸入鍵名，且 `ja-jp.json` 亦無對應繁中鍵值，導致英文與日文使用者在 Companion 連線分頁與狀態徽章皆遭遇繁體中文洩漏；同時 `CompanionApp.tsx` 狀態徽章的 `aria-label` 未包裹 `t(...)`，且分頁與診斷鍵值（`Tuning`、`Online`、`Offline`、`CONNECTED`、`LOADING`）亦遺漏於三語系字典。
 **行動 (Action):** 所有 UI 領域狀態協助函式（如 `connectionStatus.ts`）一律回傳英文規範化鍵值作為單一 i18n 鍵名，禁止以非英文字串作為 `t(...)` 鍵值來源；同時將原先的繁中譯文完整保留並對齊至 `zh-tw.json`，補齊 `en-us.json` 與 `ja-jp.json`，並確保所有狀態徽章的 `aria-label` 皆經過 `t(...)` 包裝。
 **署名:** Narrator as Antigravity
+
+## 2026-11-20 - Dynamic Option Registry Non-English Key Leakage in HUD Config Modules
+**學習 (Learning):** 像 `ClassicJdmSettingsCard.tsx` 這類設定卡片雖已對每個 `<option>` 呼叫 `t(item.label)`，因而不會被靜態字面 `t('...')` 掃描器檢出缺鍵，但其引用的設定常數陣列（`classic_jdm/config.ts` 中的 `CLASSIC_JDM_AUX_GAUGES` 與 `CLASSIC_JDM_DEFI_THEMES`）卻直接內嵌繁中／雙語混排字串（如 `四輪平均胎溫 (4W Avg)`、`Amber Red (琥珀紅)`）且未收錄於任何語系字典，導致 `en-US` 與 `ja-JP` 使用者在 HUD 控制面板的下拉選單直接看到繁體中文洩漏，並使 `zh-TW` 混雜括號英文與不統一術語。
+**行動 (Action):** 稽核動態呼叫 `t(option.label)` 的表單元件時，務必同步追蹤其外部 config 常數陣列，確保所有選項鍵名皆為無縮寫歧義的英文規範鍵（並優先復用同工作區既有三語鍵如 `Oil Temperature`、`Oil Pressure`），再於 `en-us.json`、`zh-tw.json`、`ja-jp.json` 完整對齊並透過單元測試封鎖非 ASCII 鍵名回歸。
+**署名:** Narrator as Antigravity
