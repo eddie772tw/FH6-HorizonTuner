@@ -2,6 +2,8 @@
 import { act, type ReactNode } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
+import { ToastProvider } from '../../context/ToastContext';
+import ToastContainer from '../../components/common/ToastContainer';
 import DragTestView from './DragTestView';
 import { backendFetch } from '../../services/backend';
 
@@ -28,10 +30,12 @@ beforeEach(() => {
   });
   host = document.createElement('div'); document.body.appendChild(host); root = createRoot(host);
 });
-afterEach(async () => { await act(async () => root.unmount()); host.remove(); });
+afterEach(async () => { await act(async () => root.unmount()); host.remove(); vi.restoreAllMocks(); });
+
+const renderDrag = () => act(async () => root.render(<ToastProvider><ToastContainer /><DragTestView /></ToastProvider>));
 
 it('exposes keyboard-accessible launch conditions dialog with Escape and close focus restoration', async () => {
-  await act(async () => root.render(<DragTestView />));
+  await renderDrag();
   const trigger = Array.from(host.querySelectorAll('button')).find(b => b.textContent === 'RUN CONDITIONS READY')!;
   expect(trigger.getAttribute('aria-haspopup')).toBe('dialog');
   expect(trigger.getAttribute('aria-expanded')).toBe('false');
@@ -51,7 +55,7 @@ it('exposes keyboard-accessible launch conditions dialog with Escape and close f
 
 it('exposes WAI-ARIA chart tabs with keyboard navigation and contextual Delete label', async () => {
   statusValue = 'finished';
-  await act(async () => root.render(<DragTestView />));
+  await renderDrag();
   await act(async () => {});
   const select = host.querySelector('#drag-test-compare-session') as HTMLSelectElement;
   await act(async () => { select.value = 'run1.json'; select.dispatchEvent(new Event('change', { bubbles: true })); });
@@ -65,4 +69,90 @@ it('exposes WAI-ARIA chart tabs with keyboard navigation and contextual Delete l
   expect(host.querySelector('[role="tabpanel"]')?.getAttribute('aria-labelledby')).toBe(tabs[1].id);
   await act(async () => tabs[1].dispatchEvent(new KeyboardEvent('keydown', { key: 'Home', bubbles: true })));
   expect(tabs[0].getAttribute('aria-selected')).toBe('true');
+});
+
+it('uses accessible inline delete confirmation and non-blocking save/delete toast feedback', async () => {
+  const confirmSpy = vi.spyOn(window, 'confirm');
+  const alertSpy = vi.spyOn(window, 'alert');
+  let resolveDelete!: (res: Response) => void;
+  let deleteCalls = 0;
+  vi.mocked(backendFetch).mockImplementation(async (path, init) => {
+    if (path === '/api/drag/status') return json({ status: 'finished', points_count: 1 });
+    if (path === '/api/drag/sessions') return json([{ filename: 'run1.json', timestamp: 1700000000, car_name: 'GT-R', max_speed_kmh: 220 }]);
+    if (path === '/api/drag/sessions/run1.json' && init?.method === 'DELETE') {
+      deleteCalls += 1;
+      return new Promise<Response>(r => { resolveDelete = r; });
+    }
+    if (path === '/api/drag/sessions/save' && init?.method === 'POST') return json({ message: 'Saved' });
+    if (path === '/api/drag/data' || path === '/api/drag/sessions/run1.json') return json(path === '/api/drag/data' ? sample : { data: sample, analysis });
+    return json(analysis);
+  });
+  await renderDrag();
+  await act(async () => {});
+  const select = host.querySelector('#drag-test-compare-session') as HTMLSelectElement;
+  await act(async () => { select.value = 'run1.json'; select.dispatchEvent(new Event('change', { bubbles: true })); });
+  const delBtn = () => host.querySelector<HTMLButtonElement>('button[aria-label="Delete selected session"]');
+  await act(async () => delBtn()!.click());
+  expect(confirmSpy).not.toHaveBeenCalled();
+  const group = host.querySelector('[role="group"]')!;
+  expect(delBtn()!.getAttribute('aria-expanded')).toBe('true');
+  expect(delBtn()!.getAttribute('aria-controls')).toBe(group.id);
+  const cancelBtn = Array.from(group.querySelectorAll('button')).find(b => b.textContent === 'Cancel')!;
+  expect(document.activeElement).toBe(cancelBtn);
+  await act(async () => cancelBtn.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })));
+  expect(host.querySelector('[role="group"]')).toBeNull();
+  expect(document.activeElement).toBe(delBtn());
+
+  await act(async () => delBtn()!.click());
+  const confirmDel = Array.from(host.querySelectorAll('[role="group"] button')).find(b => b.textContent === 'Delete') as HTMLButtonElement;
+  await act(async () => confirmDel.click());
+  expect(confirmDel.getAttribute('aria-busy')).toBe('true');
+  expect(confirmDel.disabled).toBe(true);
+  await act(async () => confirmDel.click());
+  expect(deleteCalls).toBe(1);
+  await act(async () => resolveDelete(json({ message: 'Deleted' })));
+  expect(document.activeElement).toBe(select);
+  expect(host.querySelector('[role="status"]')?.textContent).toContain('Session deleted.');
+
+  const saveBtn = Array.from(host.querySelectorAll('button')).find(b => b.textContent === 'Save Test')!;
+  await act(async () => saveBtn.click());
+  expect(alertSpy).not.toHaveBeenCalled();
+  expect(host.textContent).toContain('Drag session saved successfully');
+
+  vi.mocked(backendFetch).mockImplementation(async (path, init) => {
+    if (path === '/api/drag/sessions/save' && init?.method === 'POST') return new Response(JSON.stringify({ error: 'Disk full' }), { status: 500 });
+    return json(path === '/api/drag/status' ? { status: 'finished', points_count: 1 } : analysis);
+  });
+  await act(async () => saveBtn.click());
+  expect(host.querySelector('[role="alert"]')?.textContent).toContain('Disk full');
+});
+
+it('keeps the new comparison selection when a previous session finishes deleting', async () => {
+  let resolveDelete!: (res: Response) => void;
+  const sessions = ['run1.json', 'run2.json'].map(filename => ({
+    filename, timestamp: 1700000000, car_name: 'GT-R', max_speed_kmh: 220,
+  }));
+  vi.mocked(backendFetch).mockImplementation(async (path, init) => {
+    if (path === '/api/drag/status') return json({ status: 'idle', points_count: 0 });
+    if (path === '/api/drag/sessions') return json(sessions);
+    if (path === '/api/drag/sessions/run1.json' && init?.method === 'DELETE') {
+      return new Promise<Response>(resolve => { resolveDelete = resolve; });
+    }
+    return json({ data: sample, analysis });
+  });
+  await renderDrag();
+  const select = host.querySelector<HTMLSelectElement>('#drag-test-compare-session')!;
+  const selectSession = async (filename: string) => act(async () => {
+    select.value = filename;
+    select.dispatchEvent(new Event('change', { bubbles: true }));
+  });
+  await selectSession('run1.json');
+  await act(async () => host.querySelector<HTMLButtonElement>('[aria-label="Delete selected session"]')!.click());
+  await act(async () => host.querySelector<HTMLButtonElement>('[role="group"] .btn-danger')!.click());
+  select.focus();
+  await selectSession('run2.json');
+  await act(async () => resolveDelete(json({ message: 'Deleted' })));
+  expect(select.value).toBe('run2.json');
+  expect(document.activeElement).toBe(select);
+  expect(host.textContent).toContain('Session deleted.');
 });
