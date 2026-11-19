@@ -335,3 +335,65 @@ fn reported_static_load_bound_cannot_round_to_reported_first_endpoint() {
         assert!(diagnostics["loadPriorTotalRatio"].as_f64().unwrap() <= upper + 1e-12);
     }
 }
+
+#[test]
+fn road_diagnostics_match_solver_limit_rpm_and_tire_fallbacks() {
+    use fh6_backend::tuning::{aego_model::AegoModel, gearing::models};
+
+    let mut base = synthetic();
+    base.max_hp_rpm = None;
+    base.max_torque_rpm = None;
+    base.max_torque = None;
+    let correction = GearingSecondaryCorrection {
+        simulated_top_speed: Some(260.0),
+        soft_max_speed: None,
+        drag_finish_speed_kmh: None,
+        drag_finish_speed_provenance: None,
+    };
+    let reference = models::solve(AegoModel::RoadLaunchV3, 6, &base, 7500.0, Some(&correction));
+    assert_eq!(reference.diagnostics["status"], "available");
+    for bad_limit in [0.0, -500.0, f64::NAN, f64::INFINITY] {
+        let candidate = models::solve(
+            AegoModel::RoadLaunchV3,
+            6,
+            &base,
+            bad_limit,
+            Some(&correction),
+        );
+        assert_eq!(candidate.gearing, reference.gearing);
+        assert_eq!(candidate.diagnostics["status"], "available");
+        assert_eq!(candidate.diagnostics["maxRpm"], 7500.0);
+        assert_eq!(candidate.diagnostics, reference.diagnostics);
+        assert!(models::respects_hard_targets(
+            AegoModel::RoadLaunchV3,
+            &candidate.gearing,
+            &candidate.diagnostics
+        ));
+    }
+
+    // Sub-decimeter / non-finite tires in road_launch_diagnostics must match the 2.0m fallback.
+    let mut tiny_tire = synthetic();
+    tiny_tire.rear_tire_width = Some(0.01);
+    tiny_tire.rear_tire_aspect = Some(0.01);
+    tiny_tire.rear_tire_rim = Some(0.01);
+    let tiny_res = calculate_aego_gearing(RaceGoal::Road, 6, &tiny_tire, 0.0, None);
+    let launch_diag = road_launch_diagnostics(&tiny_tire, f64::NAN, 0.0, -1.0, 200.0, &tiny_res);
+    assert_eq!(launch_diag["effectiveLimitRpm"], 7500.0);
+    assert_eq!(launch_diag["powerPeakRpm"], 7500.0 * 0.85);
+    assert_eq!(launch_diag["torquePeakRpm"], 7500.0 * 0.60);
+    assert!(launch_diag["speedPriorTotalRatio"]
+        .as_f64()
+        .unwrap()
+        .is_finite());
+
+    // Unavailable Road solve preserves its model conflict reason in versioned diagnostics.
+    let mut infeasible = synthetic();
+    infeasible.max_torque = Some(1.0);
+    let conflict = models::solve(AegoModel::RoadLaunchV3, 6, &infeasible, 6000.0, None);
+    assert_eq!(conflict.gearing.unsupported, Some(true));
+    assert_eq!(conflict.diagnostics["status"], "unavailable");
+    assert_eq!(
+        conflict.diagnostics["reason"].as_str(),
+        conflict.gearing.unsupported_reason.as_deref()
+    );
+}

@@ -75,6 +75,23 @@ fn road_speed_total(drive: Drivetrain, power_rpm: f64, circumference: f64) -> f6
     power_rpm * circumference * 60.0 / (90.0 * modifier * 1000.0)
 }
 
+fn normalize_limit_rpm(limit_rpm: f64) -> f64 {
+    if limit_rpm.is_finite() && limit_rpm > 0.0 {
+        limit_rpm
+    } else {
+        7500.0
+    }
+}
+
+fn safe_tire_circumference(width: f64, aspect: f64, rim: f64) -> f64 {
+    let raw_c = ((((width * aspect) / 100.0) * 2.0 + rim * 25.4) * PI) / 1000.0;
+    if raw_c.is_finite() && raw_c > 0.1 {
+        raw_c
+    } else {
+        2.0
+    }
+}
+
 /// Inspectable model evidence, not optimal launch/shift predictions. The peak
 /// window is descriptive only: a torque peak is not the lower usable RPM limit.
 pub fn road_launch_diagnostics(
@@ -86,6 +103,17 @@ pub fn road_launch_diagnostics(
     result: &GearingResult,
 ) -> serde_json::Value {
     let p = normalize_road_gearing_inputs(params);
+    let limit_rpm = normalize_limit_rpm(limit_rpm);
+    let power_rpm = if power_rpm.is_finite() && power_rpm > 0.0 {
+        power_rpm
+    } else {
+        limit_rpm * 0.85
+    };
+    let torque_rpm = if torque_rpm.is_finite() && torque_rpm > 0.0 {
+        torque_rpm
+    } else {
+        limit_rpm * 0.60
+    };
     let drive = p
         .drivetrain
         .as_deref()
@@ -104,7 +132,7 @@ pub fn road_launch_diagnostics(
             p.rear_tire_rim.unwrap(),
         )
     };
-    let c = ((width * aspect / 100.0) * 2.0 + rim * 25.4) * PI / 1000.0;
+    let c = safe_tire_circumference(width, aspect, rim);
     let load = road_launch_total_ratio(&p, torque_nm, c / (2.0 * PI));
     let speed = road_speed_total(drive, power_rpm, c);
     let first = result.gears.first().copied();
@@ -268,6 +296,7 @@ pub fn versioned_diagnostics(
     result: &GearingResult,
 ) -> serde_json::Value {
     let p = normalize_road_gearing_inputs(params);
+    let limit_rpm = normalize_limit_rpm(limit_rpm);
     let drive = p
         .drivetrain
         .as_deref()
@@ -287,12 +316,7 @@ pub fn versioned_diagnostics(
             p.rear_tire_rim.unwrap(),
         )
     };
-    let raw_c = ((((w * a) / 100.0) * 2.0 + r * 25.4) * PI) / 1000.0;
-    let circumference = if raw_c.is_finite() && raw_c > 0.1 {
-        raw_c
-    } else {
-        2.0
-    };
+    let circumference = safe_tire_circumference(w, a, r);
     let power_rpm = p
         .max_hp_rpm
         .filter(|v| *v > 0.0)
@@ -327,7 +351,11 @@ pub fn versioned_diagnostics(
         "speedSemantics":"pure-rolling-wheel-speed-at-peak-power-rpm","tireRadiusM":circumference/(2.0*PI),
         "wheelCircumferenceM":circumference,"drivenTireAxle":if front{"front"}else{"rear"},"referenceRpm":power_rpm,"maxRpm":limit_rpm,
         "targetFirstTotalRatio":first,"targetTopTotalRatio":top,"targetSpeedKmh":target_speed,"performanceValidated":false});
-    adjusted_diagnostics(result, &original)
+    if result.unsupported == Some(true) {
+        original
+    } else {
+        adjusted_diagnostics(result, &original)
+    }
 }
 
 pub fn respects_hard_targets(result: &GearingResult, d: &serde_json::Value) -> bool {
@@ -403,11 +431,7 @@ pub(super) fn calculate(
     }
     let p = normalize_road_gearing_inputs(params);
     let count = if (1..=10).contains(&count) { count } else { 6 };
-    let limit_rpm = if limit_rpm.is_finite() && limit_rpm > 0.0 {
-        limit_rpm
-    } else {
-        7500.0
-    };
+    let limit_rpm = normalize_limit_rpm(limit_rpm);
     let drive = p
         .drivetrain
         .as_deref()
@@ -439,12 +463,7 @@ pub(super) fn calculate(
             p.rear_tire_rim.unwrap(),
         )
     };
-    let raw_c = ((((width * aspect) / 100.0) * 2.0 + rim * 25.4) * PI) / 1000.0;
-    let circumference = if raw_c.is_finite() && raw_c > 0.1 {
-        raw_c
-    } else {
-        2.0
-    };
+    let circumference = safe_tire_circumference(width, aspect, rim);
     // #462 envelope: both targets are engineering priors, not measured launch grip.
     let first_total = road_launch_total_ratio(&p, torque, circumference / (2.0 * PI))
         .max(road_speed_total(drive, power_rpm, circumference));
