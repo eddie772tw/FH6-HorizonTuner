@@ -19,7 +19,7 @@ We actively provide security patches and updates for the following versions of *
 
 If you are using an older build or development branch, please upgrade to the latest stable release (`1.8.x` or later) before reporting a vulnerability.
 
-Source tag mapping: v1.8.4 → runtime `11.45.26`; the preceding published Release v1.8.3 uses runtime `11.45.25`. Publishing a tag does not publish installers or update OTA channels; check GitHub Releases for downloadable assets and their validation status. Android debug-build success and CodeQL none-mode success do not establish production APK signing, full Kotlin coverage or device acceptance.
+Release version mapping: v1.8.5 → runtime `11.45.27`; v1.8.4 → runtime `11.45.26`. Publishing a tag does not publish installers or update OTA channels; check GitHub Releases for downloadable assets and their validation status. Android debug-build success and CodeQL none-mode success do not establish production APK signing, full Kotlin coverage or device acceptance.
 
 Platform scope for the expanded release pipeline:
 
@@ -99,7 +99,7 @@ FH6-HorizonTuner is designed as a local desktop companion app and overlay tool f
 
 若您目前使用的是舊版本或未標籤的開發分支，請在回報前先升級至最新的正式釋出版本（`1.8.x` 或以上）。
 
-原始碼 Tag 對應：v1.8.4 → runtime `11.45.26`；前一個已發布 Release v1.8.3 使用 runtime `11.45.25`。發布 Tag 不會發布安裝檔或更新 OTA 通道；可下載資產及驗證狀態以 GitHub Releases 為準。Android debug build 與 CodeQL none-mode 成功不代表正式 APK 簽章、完整 Kotlin 覆蓋或裝置驗收。
+發行版本對應：v1.8.5 → runtime `11.45.27`；v1.8.4 → runtime `11.45.26`。發布 Tag 不會發布安裝檔或更新 OTA 通道；可下載資產及驗證狀態以 GitHub Releases 為準。Android debug build 與 CodeQL none-mode 成功不代表正式 APK 簽章、完整 Kotlin 覆蓋或裝置驗收。
 
 新增發行流程的平台支援邊界如下：
 
