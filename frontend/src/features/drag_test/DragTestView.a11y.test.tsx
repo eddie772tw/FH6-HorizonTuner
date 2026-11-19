@@ -126,3 +126,33 @@ it('uses accessible inline delete confirmation and non-blocking save/delete toas
   await act(async () => saveBtn.click());
   expect(host.querySelector('[role="alert"]')?.textContent).toContain('Disk full');
 });
+
+it('keeps the new comparison selection when a previous session finishes deleting', async () => {
+  let resolveDelete!: (res: Response) => void;
+  const sessions = ['run1.json', 'run2.json'].map(filename => ({
+    filename, timestamp: 1700000000, car_name: 'GT-R', max_speed_kmh: 220,
+  }));
+  vi.mocked(backendFetch).mockImplementation(async (path, init) => {
+    if (path === '/api/drag/status') return json({ status: 'idle', points_count: 0 });
+    if (path === '/api/drag/sessions') return json(sessions);
+    if (path === '/api/drag/sessions/run1.json' && init?.method === 'DELETE') {
+      return new Promise<Response>(resolve => { resolveDelete = resolve; });
+    }
+    return json({ data: sample, analysis });
+  });
+  await renderDrag();
+  const select = host.querySelector<HTMLSelectElement>('#drag-test-compare-session')!;
+  const selectSession = async (filename: string) => act(async () => {
+    select.value = filename;
+    select.dispatchEvent(new Event('change', { bubbles: true }));
+  });
+  await selectSession('run1.json');
+  await act(async () => host.querySelector<HTMLButtonElement>('[aria-label="Delete selected session"]')!.click());
+  await act(async () => host.querySelector<HTMLButtonElement>('[role="group"] .btn-danger')!.click());
+  select.focus();
+  await selectSession('run2.json');
+  await act(async () => resolveDelete(json({ message: 'Deleted' })));
+  expect(select.value).toBe('run2.json');
+  expect(document.activeElement).toBe(select);
+  expect(host.textContent).toContain('Session deleted.');
+});

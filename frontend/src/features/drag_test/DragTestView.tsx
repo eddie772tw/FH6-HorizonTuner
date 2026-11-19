@@ -79,6 +79,7 @@ const DragTestView: React.FC = () => {
   const cancelDeleteBtnRef = useRef<HTMLButtonElement>(null);
   const hadConfirmation = useRef(false);
   const deleteInFlight = useRef(false);
+  const currentCompareFilename = useRef('');
   const chartTabsRef = useRef<Array<HTMLButtonElement | null>>([]);
   const chartTabs = ['speed_rpm', 'slip'] as const;
 
@@ -88,7 +89,7 @@ const DragTestView: React.FC = () => {
     const active = document.activeElement;
     if (active === document.body || toolbarRef.current?.contains(active)) {
       if (confirmDelete) cancelDeleteBtnRef.current?.focus();
-      else if (hadConfirmation.current) (deleteBtnRef.current ?? compareSelectRef.current)?.focus();
+      else if (hadConfirmation.current && active !== compareSelectRef.current) (deleteBtnRef.current ?? compareSelectRef.current)?.focus();
     }
     hadConfirmation.current = confirmDelete;
   }, [confirmDelete, isDeleting, selectedCompareFilename]);
@@ -218,6 +219,7 @@ const DragTestView: React.FC = () => {
   };
 
   const handleCompareSelect = async (filename: string) => {
+    currentCompareFilename.current = filename;
     setSelectedCompareFilename(filename);
     if (!filename) {
       setCompareData([]);
@@ -227,7 +229,7 @@ const DragTestView: React.FC = () => {
     try {
       const res = await backendFetch(`/api/drag/sessions/${filename}`);
       const data = await res.json();
-      if (data.data && data.analysis) {
+      if (currentCompareFilename.current === filename && data.data && data.analysis) {
         setCompareData(data.data);
         setCompareAnalysis(data.analysis);
       }
@@ -237,15 +239,22 @@ const DragTestView: React.FC = () => {
   };
 
   const handleConfirmDelete = async () => {
-    if (!selectedCompareFilename || deleteInFlight.current) return;
+    const filename = selectedCompareFilename;
+    if (!filename || deleteInFlight.current) return;
     deleteInFlight.current = true; setIsDeleting(true);
     try {
-      const res = await backendFetch(`/api/drag/sessions/${selectedCompareFilename}`, { method: 'DELETE' });
+      const res = await backendFetch(`/api/drag/sessions/${filename}`, { method: 'DELETE' });
       const data = await res.json().catch(() => ({}));
       setConfirmDelete(false);
       if (res.ok && data.message) {
         notify('success', t('Session deleted.'));
-        setSelectedCompareFilename(''); setCompareData([]); setCompareAnalysis(null); fetchSessionsList();
+        if (currentCompareFilename.current === filename) {
+          currentCompareFilename.current = '';
+          setSelectedCompareFilename('');
+          setCompareData([]);
+          setCompareAnalysis(null);
+        }
+        fetchSessionsList();
       } else notify('danger', data.error || t('Failed to delete session.'));
     } catch (e) { console.error('Failed to delete session:', e); setConfirmDelete(false); notify('danger', t('Failed to delete session.')); }
     finally { deleteInFlight.current = false; setIsDeleting(false); }
