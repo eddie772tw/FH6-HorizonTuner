@@ -74,3 +74,9 @@
 **學習 (Learning):** 來自作業系統媒體工作階段（GSMTC）的 `ContentType` 與二進位影像串流屬於未受信任的外部來源（Untrusted Input）。即使前端 HUD 以 `<img>` 嵌入時不會執行 SVG 腳本，只要該 GET 端點在同源 HTTP 伺服器上直接回傳活性文件 MIME（如 SVG/HTML）且缺少 `Content-Security-Policy` 隔離，攻擊者仍可透過頂層導航或開新視窗利用 `nosniff` 強制渲染惡意腳本。
 **預防 (Prevention):** 於資料擷取與 HTTP 回應雙層強制執行點陣圖影像 MIME 白名單（僅允許 `image/jpeg`, `image/png`, `image/gif`, `image/webp`, `image/bmp`, `image/x-icon`, `image/avif`），在 `media.rs` 拒收開頭為 `<` 的 SVG/HTML/XML 多態資料並在缺少 `ContentType` 時透過魔術位元組（Magic Bytes）嗅探驗證；同步於 `app.rs` 的 `/api/overlay/media/thumbnail` 回應附加 `Content-Security-Policy: default-src 'none'; sandbox` 標頭，確保縱深防禦（Defense in Depth）。
 **署名:** Sentinel as Antigravity
+
+## 2026-11-19 - Bundled ADB USB Tool Symlink/Junction Traversal & Non-Atomic Staging (CWE-59 / CWE-377)
+**漏洞/脆弱點 (Vulnerability):** 後端 USB Companion 工具釋放模組 `backend-rust/src/companion_usb_runtime.rs::packaged_client` 在釋放與驗證內嵌 `adb.exe` 及相依原生 DLL（`AdbWinApi.dll`, `AdbWinUsbApi.dll`）至 `<root>/tools/adb/<version>` 時，直接以 `fs::create_dir_all`、`Path::exists()` 與非原子 `fs::write` 操作目標路徑，未對各層目錄與檔案檢查 `fs::symlink_metadata` 及 `canonicalize` 邊界包含性。在可攜式（Portable）執行模式中，`<root>` 為執行檔所在目錄（可能位於共用資料夾）；若目錄或工具路徑預置符號連結或 NTFS Junction（包含懸空符號連結使 `exists()` 回傳 `false`），將觸發任意檔案覆寫或跨目錄載入惡意執行檔／DLL 劫持風險。
+**學習 (Learning):** 即使已對既存在檔案實作位元組比對，僅依賴 `Path::exists()` 與 `fs::create_dir_all()` 仍會跟隨懸空符號連結與 NTFS Junction 跳脫預期沙盒根目錄（與先前 `lib.rs` 僅修補 Tauri sidecar、卻遺漏後端 ADB 工具釋放路徑形成防禦落差）。
+**預防 (Prevention):** 所有內嵌二進位與原生 DLL 工具釋放路徑，一律透過逐層 `fs::symlink_metadata`（拒絕 symlink/junction 與非預期檔案類型）與 `canonicalize().starts_with(&canonical_root)` 鎖定目錄邊界，並在寫入缺失工具時採用同目錄 `NamedTempFile` 搭配 `sync_all()` 與原子 `persist` 取代 `fs::write`，確保前後端與後端輔助工具鏈具備一致的檔案系統安全保證。
+**署名:** Sentinel as Antigravity
