@@ -9,13 +9,29 @@ export function getAggregateConnectionStatus(
   companionBackendOnline: boolean,
 ): AggregateConnectionStatus {
   if (desktopOnline && companionBackendOnline) {
-    return { label: '已連線', color: 'success', accessibleLabel: '桌面前端與 Companion 後端皆已連線' };
+    return {
+      label: 'Connected',
+      color: 'success',
+      accessibleLabel: 'Desktop frontend and Companion backend connected',
+    };
   }
   if (companionBackendOnline) {
-    return { label: '桌面前端未連線', color: 'warning', accessibleLabel: 'Companion 後端已連線，桌面前端未連線' };
+    return {
+      label: 'Desktop frontend offline',
+      color: 'warning',
+      accessibleLabel: 'Companion backend connected, desktop frontend offline',
+    };
   }
   if (desktopOnline) {
-    return { label: 'Companion 後端未連線', color: 'warning', accessibleLabel: '桌面前端已連線，Companion 後端未連線' };
+    return {
+      label: 'Companion backend offline',
+      color: 'warning',
+      accessibleLabel: 'Desktop frontend connected, Companion backend offline',
+    };
   }
-  return { label: '未連線', color: 'danger', accessibleLabel: '桌面前端與 Companion 後端皆未連線' };
+  return {
+    label: 'Disconnected',
+    color: 'danger',
+    accessibleLabel: 'Desktop frontend and Companion backend disconnected',
+  };
 }

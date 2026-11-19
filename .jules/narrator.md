@@ -97,3 +97,8 @@
 **學習 (Learning):** `telemetryHealth.ts` 的 `deriveTelemetryHealth()` 回傳的 `TelemetryHealth.label` 為純領域英文預設字串（例如 `'Waiting for Data Out'`、`'Data Out receiving'`）。雖然 `DataOutGuide.tsx` 已匯出 `localizeTelemetryHealth(health, t)` 統一依 `health.state` 映射三語系鍵值，但頂層導覽列元件 `AppStatus.tsx` 仍直接將 `health.label` 插入 `aria-label` 與 `title`，導致在 `zh-TW` 與 `ja-JP` 介面上所有頁面的 Data Out 狀態按鈕持續洩漏未翻譯英文；同時其動態連接埠 `MCP Endpoint Notice` 氣泡的四個鍵值僅單邊收錄於 `zh-tw.json` 而遺漏於 `en-us.json` 與 `ja-jp.json`。
 **行動 (Action):** 凡消費 `TelemetryHealth` 顯示狀態標籤或無障礙屬性的元件，應統一呼叫 `localizeTelemetryHealth(health, t).label` 作為單一本地化來源，禁止直接插值原始 `health.label`；並同步檢查單邊存在於 `zh-tw.json` 的動態提示鍵值，完整對齊至 `en-us.json` 與 `ja-jp.json`。
 **署名:** Narrator as Antigravity
+
+## 2026-11-19 - Non-English Canonical Key Leakage in Companion Connection Status
+**學習 (Learning):** `connectionStatus.ts` 的 `getAggregateConnectionStatus()` 直接回傳硬編碼的繁體中文字串（`已連線`、`桌面前端未連線`、`Companion 後端未連線`、`未連線` 與對應完整 `accessibleLabel`），而 `SettingsContext.t()` 在 `en-us` 語系會直接原樣回傳輸入鍵名，且 `ja-jp.json` 亦無對應繁中鍵值，導致英文與日文使用者在 Companion 連線分頁與狀態徽章皆遭遇繁體中文洩漏；同時 `CompanionApp.tsx` 狀態徽章的 `aria-label` 未包裹 `t(...)`，且分頁與診斷鍵值（`Tuning`、`Online`、`Offline`、`CONNECTED`、`LOADING`）亦遺漏於三語系字典。
+**行動 (Action):** 所有 UI 領域狀態協助函式（如 `connectionStatus.ts`）一律回傳英文規範化鍵值作為單一 i18n 鍵名，禁止以非英文字串作為 `t(...)` 鍵值來源；同時將原先的繁中譯文完整保留並對齊至 `zh-tw.json`，補齊 `en-us.json` 與 `ja-jp.json`，並確保所有狀態徽章的 `aria-label` 皆經過 `t(...)` 包裝。
+**署名:** Narrator as Antigravity

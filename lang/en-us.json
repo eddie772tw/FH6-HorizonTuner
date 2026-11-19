@@ -2088,5 +2088,18 @@
   "MCP Endpoint Notice": "MCP Endpoint Notice",
   "Release Build could not use backend port 8001 and selected a dynamic port.": "Release Build could not use backend port 8001 and selected a dynamic port.",
   "Current backend port": "Current backend port",
-  "Open MCP Settings": "Open MCP Settings"
+  "Open MCP Settings": "Open MCP Settings",
+  "Connected": "Connected",
+  "Desktop frontend offline": "Desktop frontend offline",
+  "Companion backend offline": "Companion backend offline",
+  "Disconnected": "Disconnected",
+  "Desktop frontend and Companion backend connected": "Desktop frontend and Companion backend connected",
+  "Companion backend connected, desktop frontend offline": "Companion backend connected, desktop frontend offline",
+  "Desktop frontend connected, Companion backend offline": "Desktop frontend connected, Companion backend offline",
+  "Desktop frontend and Companion backend disconnected": "Desktop frontend and Companion backend disconnected",
+  "Tuning": "Tuning",
+  "Online": "Online",
+  "Offline": "Offline",
+  "CONNECTED": "CONNECTED",
+  "LOADING": "LOADING"
 }

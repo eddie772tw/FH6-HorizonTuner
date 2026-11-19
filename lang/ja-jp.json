@@ -1922,5 +1922,18 @@
   "MCP Endpoint Notice": "MCP エンドポイント通知",
   "Release Build could not use backend port 8001 and selected a dynamic port.": "Release Build はバックエンドポート 8001 を使用できず、動的ポートを選択しました。",
   "Current backend port": "現在のバックエンドポート",
-  "Open MCP Settings": "MCP 設定を開く"
+  "Open MCP Settings": "MCP 設定を開く",
+  "Connected": "接続済み",
+  "Desktop frontend offline": "デスクトップフロントエンド未接続",
+  "Companion backend offline": "Companion バックエンド未接続",
+  "Disconnected": "未接続",
+  "Desktop frontend and Companion backend connected": "デスクトップフロントエンドと Companion バックエンドの両方が接続されています",
+  "Companion backend connected, desktop frontend offline": "Companion バックエンドは接続済み、デスクトップフロントエンドは未接続です",
+  "Desktop frontend connected, Companion backend offline": "デスクトップフロントエンドは接続済み、Companion バックエンドは未接続です",
+  "Desktop frontend and Companion backend disconnected": "デスクトップフロントエンドと Companion バックエンドの両方が未接続です",
+  "Tuning": "チューニング",
+  "Online": "オンライン",
+  "Offline": "オフライン",
+  "CONNECTED": "接続済み",
+  "LOADING": "読み込み中"
 }
