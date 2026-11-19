@@ -23,11 +23,14 @@ fn empty() -> EvMoments {
 pub fn initial(car: &str) -> Value {
     json!({"schema":"ev-measurement/v1","carId":car,"status":"collecting","guidance":"waiting","frameCount":0,"gears":[]})
 }
+type Gears = Option<Vec<EvGearMeasurement>>;
 pub fn advance(state: &Value, f: &Value) -> Value {
     if state["status"] == "blocked" {
         return state.clone();
     }
-    let mut next = state.clone();
+    replay_into(state.clone(), &mut None, std::slice::from_ref(f))
+}
+fn advance_owned(mut next: Value, slot: &mut Gears, f: &Value, dirty: &mut u16) -> Value {
     let ordinal = n(f, "CarOrdinal");
     let pi = n(f, "CarPerformanceIndex");
     let class = n(f, "CarClass");
@@ -43,37 +46,39 @@ pub fn advance(state: &Value, f: &Value) -> Value {
             .remove("lastAcceptedTimestamp");
         return next;
     }
-    let identity = json!({"ordinal":ordinal,"performanceIndex":pi,"carClass":class});
-    if state["carId"] != ordinal.to_string()
-        || (!state["identity"].is_null()
-            && ["ordinal", "performanceIndex", "carClass"]
-                .iter()
-                .any(|k| n(&state["identity"], k) != n(&identity, k)))
-    {
+    let id_same = n(&next["identity"], "ordinal") == ordinal
+        && n(&next["identity"], "performanceIndex") == pi
+        && n(&next["identity"], "carClass") == class;
+    if next["carId"] != ordinal.to_string() || (!next["identity"].is_null() && !id_same) {
         next["status"] = json!("blocked");
         next["guidance"] = json!("identity-changed");
         return next;
     }
     let t = n(f, "TimestampMS");
-    if !t.is_finite() || t < 0.0 || n(state, "lastTimestamp") == t {
+    let (last_ts, frame_count) = (n(&next, "lastTimestamp"), n(&next, "frameCount"));
+    if !t.is_finite() || t < 0.0 || last_ts == t {
         return next;
     }
-    if t < n(state, "lastTimestamp") {
+    if t < last_ts {
         next["status"] = json!("blocked");
         next["guidance"] = json!("session-restarted");
         return next;
     }
-    if n(state, "frameCount") >= 30000.0 {
+    if frame_count >= 30000.0 {
         next["status"] = json!("blocked");
         next["guidance"] = json!("sample-limit");
         return next;
     }
     let gear = n(f, "Gear");
-    next["identity"] = identity;
-    next["frameCount"] = json!(n(state, "frameCount") + 1.0);
+    let (prev_gear, prev_accepted) = (n(&next, "lastGear"), n(&next, "lastAcceptedTimestamp"));
+    if (*dirty & 0x8000) == 0 {
+        next["identity"] = json!({"ordinal":ordinal,"performanceIndex":pi,"carClass":class});
+        *dirty |= 0x8000;
+    }
+    next["frameCount"] = json!(frame_count + 1.0);
     next["lastTimestamp"] = json!(t);
     next["lastGear"] = json!(gear);
-    if gear != n(state, "lastGear") {
+    if gear != prev_gear {
         next["gearSince"] = json!(t);
     }
     next.as_object_mut()
@@ -103,8 +108,8 @@ pub fn advance(state: &Value, f: &Value) -> Value {
     {
         return next;
     }
-    let mut gears: Vec<EvGearMeasurement> =
-        serde_json::from_value(state["gears"].clone()).unwrap_or_default();
+    let gears = slot
+        .get_or_insert_with(|| serde_json::from_value(next["gears"].clone()).unwrap_or_default());
     let existing = gears.iter().position(|g| g.gear == gear as usize);
     if existing.is_some_and(|i| (max / gears[i].reported_max_rpm - 1.0).abs() > 0.02) {
         next["status"] = json!("blocked");
@@ -114,9 +119,8 @@ pub fn advance(state: &Value, f: &Value) -> Value {
     if existing.is_none() && !(power > 0.0 && torque > 0.0) {
         return next;
     }
-    let mut g = existing
-        .map(|i| gears.remove(i))
-        .unwrap_or_else(|| EvGearMeasurement {
+    let idx = existing.unwrap_or_else(|| {
+        gears.push(EvGearMeasurement {
             gear: gear as usize,
             reported_max_rpm: max,
             accepted_ms: 0.0,
@@ -130,9 +134,15 @@ pub fn advance(state: &Value, f: &Value) -> Value {
             rear_ratio: empty(),
             curve: vec![],
         });
-    next["guidance"] = json!("collecting");
+        gears.len() - 1
+    });
+    let g = &mut gears[idx];
+    if (*dirty & 1) == 0 {
+        next["guidance"] = json!("collecting");
+        *dirty |= 1;
+    }
     if power > 0.0 && torque > 0.0 {
-        let delta = t - n(state, "lastAcceptedTimestamp");
+        let delta = t - prev_accepted;
         if delta > 0.0 && delta <= 100.0 {
             g.accepted_ms += delta;
         }
@@ -145,17 +155,22 @@ pub fn advance(state: &Value, f: &Value) -> Value {
             .curve
             .iter()
             .position(|b| (b.rpm / 500.0).floor() == index);
-        let bin = i.map(|i| g.curve.remove(i));
-        let count = bin.as_ref().map_or(1, |b| b.count + 1);
-        let old = (count - 1) as f64;
-        g.curve.push(EvCurveBin {
-            count,
-            rpm: (bin.as_ref().map_or(0.0, |b| b.rpm) * old + rpm) / count as f64,
-            power_watts: (bin.as_ref().map_or(0.0, |b| b.power_watts) * old + power) / count as f64,
-            torque_newtons: (bin.as_ref().map_or(0.0, |b| b.torque_newtons) * old + torque)
-                / count as f64,
-        });
-        g.curve.sort_by(|a, b| a.rpm.total_cmp(&b.rpm));
+        if let Some(i) = i {
+            let b = &mut g.curve[i];
+            let (old, c) = (b.count as f64, (b.count + 1) as f64);
+            b.count += 1;
+            b.rpm = (b.rpm * old + rpm) / c;
+            b.power_watts = (b.power_watts * old + power) / c;
+            b.torque_newtons = (b.torque_newtons * old + torque) / c;
+        } else {
+            g.curve.push(EvCurveBin {
+                count: 1,
+                rpm,
+                power_watts: power,
+                torque_newtons: torque,
+            });
+        }
+        *dirty |= 1u16 << g.gear;
     } else if power == 0.0 {
         g.zero_output_samples += 1;
         if g.positive_samples >= 90
@@ -190,10 +205,32 @@ pub fn advance(state: &Value, f: &Value) -> Value {
             rpm * std::f64::consts::PI / (15.0 * (w[2].as_f64().unwrap() + w[3].as_f64().unwrap())),
         );
     }
-    gears.push(g);
-    gears.sort_by_key(|g| g.gear);
-    next["gears"] = serde_json::to_value(gears).unwrap();
     next
+}
+// [PERF] Replay frames in-place with typed gears to eliminate per-frame JSON clones and serde churn.
+fn replay_into(mut state: Value, gears: &mut Gears, frames: &[Value]) -> Value {
+    let mut dirty = 0u16;
+    for frame in frames {
+        if state["status"] == "blocked" {
+            break;
+        }
+        state = advance_owned(state, gears, frame, &mut dirty);
+    }
+    if let (true, Some(gears)) = ((dirty & 1) != 0, gears.as_mut()) {
+        for g in gears.iter_mut() {
+            if g.gear <= 10 && (dirty & (1u16 << g.gear)) != 0 {
+                g.curve.sort_by(|a, b| a.rpm.total_cmp(&b.rpm));
+            }
+        }
+        gears.sort_by_key(|g| g.gear);
+        state["gears"] = serde_json::to_value(gears).unwrap();
+    }
+    state
+}
+pub(crate) fn replay_frames(car: &str, frames: &[Value]) -> (Value, Vec<EvGearMeasurement>) {
+    let mut gears = Some(Vec::new());
+    let state = replay_into(initial(car), &mut gears, frames);
+    (state, gears.unwrap_or_default())
 }
 pub fn batch(input: &Value) -> Result<Value, String> {
     if input["schemaVersion"] != "ev-batch/v1" {
@@ -209,11 +246,10 @@ pub fn batch(input: &Value) -> Result<Value, String> {
     {
         return Err("Invalid EV state".into());
     }
-    for frame in frames {
-        state = advance(&state, frame);
-    }
-    let gears: Vec<EvGearMeasurement> =
-        serde_json::from_value(state["gears"].clone()).map_err(|e| e.to_string())?;
+    let mut gears: Gears =
+        Some(serde_json::from_value(state["gears"].clone()).map_err(|e| e.to_string())?);
+    state = replay_into(state, &mut gears, frames);
+    let gears = gears.unwrap_or_default();
     let ready: Vec<usize> = gears
         .iter()
         .filter(|g| super::ev::ready(g))
