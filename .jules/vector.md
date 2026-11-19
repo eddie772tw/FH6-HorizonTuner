@@ -70,3 +70,8 @@
 **渲染洞察 (Rendering Learning):** 在 `hud_overlay/shared/telemetry-cards/corner-card.js`（`drawSlipRadar`）中，過去四輪滑移雷達（`tcTireRadar*`）以 `maxTRadius = Math.max(0, rRad - 3 * dpr)` 鉗位圓心卻繪製 `Math.max(4 * dpr, rRad * 0.1)` 半徑的實心點，導致在極限滑移或緊湊尺寸下焦點溢出外圓並遭裁切；同時缺少 `save()` / `try-finally restore()` 防護、`NaN`/`Infinity` 防禦、50% 抓地力參考圓與 `--card-primary` 主題連動。透過計算 `markerScale = Math.min(dpr, rRad / 9)` 並將鉗位半徑設為 `rRad - haloRadius - haloLineW * 0.5`，可確保同軸脈衝光環（Halo `3.6 * markerScale` + Core `1.8 * markerScale`）於任何 DPR 與緊湊尺寸下皆嚴格落於 1.0G 外圓內；將 50% 參考圓與十字基準線合併為單一批次路徑減少繪製呼叫，並在抓地力失衡（`cAngle^2 + cRatio^2 > 1.0`）時將外環與同軸光環同步切換為 `#ff0055` 警戒光暈，兼顧零每幀配置與高識別度。
 **行動 (Action):** 所有極座標摩擦圓與雷達型 HUD 畫布必須將最大夾限半徑扣除「脈衝光環半徑 + 線寬半徑」防止極值外溢，並統一落實單一批次基準網格、`Number.isFinite` 數值消毒與 `try/finally` Context 狀態隔離。
 **署名:** Vector as Antigravity
+
+## 2026-11-19 - Telemetry Cards 四輪胎溫直方圖頂部讀數避讓、邊界防裁切與熱區同軸指示
+**渲染洞察 (Rendering Learning):** 在 `hud_overlay/shared/telemetry-cards/corner-card.js`（`drawTireTempHistogram`）中，過去四輪胎溫直方圖（`tcTireHist*`）直接內聯於 `renderCorners` 且缺少 `save()` / `try-finally restore()` 與 `Number.isFinite` 消毒；在 `5vh`（`36px` at 720p）高度下，長條高度達 `th - 6*dpr` 會穿透頂部浮動溫度讀數，且 `indicatorX = normTempFactor * tw` 在極低/極高溫時會造成指示線與文字貼邊裁切或與垂直白線重疊。透過預留 `padX`（`Math.min(tw * 0.08, 3 * dpr)`）與頂部讀數保留區 `topPad`（`Math.min(th * 0.36, fontSize + 3 * dpr)`），將指示線起始點對齊 `topPad` 並於極端靠邊對齊時水平偏移 `3 * markerScale`、於基準軸補齊依 `getTempColor(cTemp)` 發光之同軸指示圓點，即可在沿用預分配 `_sharedBins` 零每幀配置下徹底消除文字穿刺與邊界裁切。
+**行動 (Action):** 所有含浮動數值標註的長條分布與時間軸 HUD 畫布應保留與 `fontSize` 比例聯動之頂部讀數淨空區，並在邊緣自動切換對齊方向時附加水平微調間距，同時落實 `try/finally` Context 隔離與 `Number.isFinite` 消毒。
+**署名:** Vector as Antigravity
