@@ -119,3 +119,44 @@ fn frozen_archive_qualification_retains_history_without_capture_payload() {
         serde_json::json!([])
     );
 }
+
+#[test]
+fn measurement_hotpath_preserves_early_rejections_and_peaks_edge_cases() {
+    use fh6_backend::tuning::measurement::{batch, capture_frame, peaks};
+    let edge_bins = json!([
+        {"index": -1.0, "sampleCount": 3, "averagePowerWatts": 100.0, "averageTorqueNewtons": 200.0, "averageRpm": 1000.0},
+        {"index": 0.0, "sampleCount": 4, "averagePowerWatts": 150.0, "averageTorqueNewtons": 250.0, "averageRpm": 1500.0},
+        {"index": 64.0, "sampleCount": 5, "averagePowerWatts": 300.0, "averageTorqueNewtons": 350.0, "averageRpm": 7000.0}
+    ]);
+    let edge_peaks = peaks(&edge_bins);
+    assert_eq!(edge_peaks["power"]["value"].as_f64(), Some(150.0));
+    assert_eq!(edge_peaks["power"]["rpm"].as_f64(), Some(1500.0));
+    let sample = |ts: f64, rl: f64| json!({"timestampMS":ts,"isRaceOn":1,"carOrdinal":1435,"carClass":0,"performanceIndex":400,"engineMaxRpm":rl,"rpm":3000.0,"speedMps":25.0,"gear":2,"powerWatts":100000.0,"torqueNewtons":300.0,"accelInput":255,"brakeInput":0,"clutchInput":0,"handBrakeInput":0,"tireSlipRatio":[0.0,0.0,0.0,0.0]});
+    let s1 = advance(
+        &initial("1435"),
+        &capture_frame(&sample(1000.0, 6000.0)),
+        true,
+        1000.0,
+    );
+    let stalled = advance(&s1, &capture_frame(&sample(1000.0, 6000.0)), true, 1016.0);
+    assert_eq!(
+        (&stalled["guidance"], &stalled["lastTimestampMs"]),
+        (&json!("timestamp-stalled"), &s1["lastTimestampMs"])
+    );
+    let regressed = advance(&s1, &capture_frame(&sample(500.0, 6000.0)), true, 1016.0);
+    assert_eq!(
+        (&regressed["status"], &regressed["guidance"]),
+        (&json!("blocked"), &json!("timestamp-regressed"))
+    );
+    let redline_changed = advance(&s1, &capture_frame(&sample(1016.0, 7000.0)), true, 1016.0);
+    assert_eq!(
+        (
+            &redline_changed["guidance"],
+            &redline_changed["engineMaxRpm"]
+        ),
+        (&json!("identity-changed"), &s1["engineMaxRpm"])
+    );
+    let b = batch(&json!({"schemaVersion":"engine-batch/v1","carId":"1435","state":initial("1435"),"samples":[sample(1000.0,6000.0),sample(1600.0,6000.0),sample(1616.0,6000.0)],"nowMs":1616.0,"connected":true})).unwrap();
+    assert_eq!(b["state"]["rpmEvidenceBins"].as_array().unwrap().len(), 1);
+    assert_eq!(b["state"]["bins"].as_array().unwrap().len(), 1);
+}

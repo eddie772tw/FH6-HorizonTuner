@@ -3,6 +3,7 @@ use fh6_backend::{
     config_service::ConfigService,
     road::{local_comparison, summarize_road_observations},
     telemetry::TelemetryStore,
+    tuning::measurement,
 };
 use serde_json::{json, Value};
 use std::{hint::black_box, time::Instant};
@@ -94,4 +95,32 @@ fn backend_performance_probe() {
         );
     }
     report("sqlite_insert_1000", samples);
+    let capture: Value = serde_json::from_str(include_str!(
+        "../../tests/fixtures/aego_beetle_engine_captures.json"
+    ))
+    .unwrap();
+    let engine_samples: Vec<Value> = capture["captures"][0]["samples"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|row| {
+            Value::Object(
+                capture["fields"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .zip(row.as_array().unwrap())
+                    .map(|(k, v)| (k.as_str().unwrap().to_owned(), v.clone()))
+                    .collect(),
+            )
+        })
+        .collect();
+    let analyze_input = json!({
+        "observationId": capture["captures"][0]["observationId"],
+        "carId": capture["captures"][0]["carId"],
+        "capture": { "samples": engine_samples }
+    });
+    measure("measurement_analyze_capture", || {
+        black_box(measurement::analyze(black_box(&analyze_input)));
+    });
 }

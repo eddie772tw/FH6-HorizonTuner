@@ -44,13 +44,25 @@ pub fn peaks(bins: &Value) -> Value {
     let mut power: Option<&Value> = None;
     let mut torque: Option<&Value> = None;
     if let Some(bins) = bins.as_array() {
+        // [PERF] Bitmask valid bins (0..64) once to replace O(B^2) neighbor scans with O(1) bit checks.
+        let (mut valid, mut all_idx) = (0u64, true);
         for b in bins {
-            if num(b, "sampleCount") < 3.0
-                || !bins.iter().any(|other| {
-                    (num(other, "index") - num(b, "index")).abs() == 1.0
-                        && num(other, "sampleCount") >= 3.0
-                })
-            {
+            let i = num(b, "index");
+            if i.fract() == 0.0 && (0.0..64.0).contains(&i) {
+                valid |= ((num(b, "sampleCount") >= 3.0) as u64) << (i as u32);
+            } else {
+                all_idx = false;
+            }
+        }
+        for b in bins {
+            let i = num(b, "index");
+            let adj = if all_idx {
+                (valid & (((1u64 << (i as u32)) >> 1) | ((1u64 << (i as u32)) << 1))) != 0
+            } else {
+                bins.iter()
+                    .any(|o| (num(o, "index") - i).abs() == 1.0 && num(o, "sampleCount") >= 3.0)
+            };
+            if num(b, "sampleCount") < 3.0 || !adj {
                 continue;
             }
             for (field, slot) in [
@@ -176,27 +188,30 @@ fn interrupt(mut s: Value, g: &str) -> Value {
     remove(&mut s, &["lastAcceptedTimestampMs"]);
     with_guidance(s, g)
 }
-fn add_bin(bins: &Value, rpm: f64, redline: f64, power: f64, torque: f64) -> Value {
+fn add_bin_in_place(bins: &mut Value, rpm: f64, redline: f64, power: f64, torque: f64) {
     let index = (rpm / redline * 64.0).floor().clamp(0.0, 63.0);
-    let mut bins = bins.as_array().cloned().unwrap_or_default();
-    let i = bins.iter().position(|b| num(b, "index") == index);
-    let mut b = i.map(|i| bins.remove(i)).unwrap_or_else(
-        || json!({"index":index,"sampleCount":0,"powerWattsSum":0,"torqueNewtonsSum":0,"rpmSum":0}),
-    );
-    let count = num(&b, "sampleCount") + 1.0;
-    set(&mut b, "sampleCount", count);
+    if !bins.is_array() {
+        *bins = json!([]);
+    }
+    let arr = bins.as_array_mut().unwrap();
+    // [PERF] Mutate matching RPM bin in-place to eliminate cloning/re-sorting 64 bin objects per sample.
+    let Some(i) = arr.iter().position(|b| num(b, "index") == index) else {
+        arr.push(json!({"index":index,"sampleCount":1.0,"powerWattsSum":power,"averagePowerWatts":power,"torqueNewtonsSum":torque,"averageTorqueNewtons":torque,"rpmSum":rpm,"averageRpm":rpm}));
+        arr.sort_by(|a, b| num(a, "index").total_cmp(&num(b, "index")));
+        return;
+    };
+    let b = &mut arr[i];
+    let count = num(b, "sampleCount") + 1.0;
+    set(b, "sampleCount", count);
     for (sum, avg, x) in [
         ("powerWattsSum", "averagePowerWatts", power),
         ("torqueNewtonsSum", "averageTorqueNewtons", torque),
         ("rpmSum", "averageRpm", rpm),
     ] {
-        let total = num(&b, sum) + x;
-        set(&mut b, sum, total);
-        set(&mut b, avg, total / count);
+        let total = num(b, sum) + x;
+        set(b, sum, total);
+        set(b, avg, total / count);
     }
-    bins.push(b);
-    bins.sort_by(|a, b| num(a, "index").total_cmp(&num(b, "index")));
-    json!(bins)
 }
 fn observation_bins(s: &Value) -> Value {
     let Some(bins) = s["rpmEvidenceBins"].as_array() else {
@@ -209,25 +224,18 @@ fn observation_bins(s: &Value) -> Value {
     } else {
         num(s, "engineMaxRpm")
     };
-    let mut grouped = std::collections::BTreeMap::<i64, Value>::new();
+    // [PERF] Accumulate 16 fixed-range RPM buckets on the stack without BTreeMap or per-bin JSON clones.
+    let (span, mut buckets) = (end - start, [None::<[f64; 4]>; 16]);
     for bin in bins {
-        let index = ((num(bin, "averageRpm") - start) / (end - start) * 16.0)
-            .floor()
-            .clamp(0.0, 15.0) as i64;
-        let b=grouped.entry(index).or_insert_with(||json!({"index":index,"sampleCount":0,"powerWattsSum":0,"torqueNewtonsSum":0,"rpmSum":0}));
-        let count = num(b, "sampleCount") + num(bin, "sampleCount");
-        set(b, "sampleCount", count);
-        for (sum, avg) in [
-            ("powerWattsSum", "averagePowerWatts"),
-            ("torqueNewtonsSum", "averageTorqueNewtons"),
-            ("rpmSum", "averageRpm"),
-        ] {
-            let total = num(b, sum) + num(bin, sum);
-            set(b, sum, total);
-            set(b, avg, total / count);
-        }
+        let pos = ((num(bin, "averageRpm") - start) / span * 16.0).floor();
+        let idx = (pos.clamp(0.0, 15.0) as i64).clamp(0, 15) as usize;
+        let slot = buckets[idx].get_or_insert([0.0; 4]);
+        slot[0] += num(bin, "sampleCount");
+        slot[1] += num(bin, "powerWattsSum");
+        slot[2] += num(bin, "torqueNewtonsSum");
+        slot[3] += num(bin, "rpmSum");
     }
-    json!(grouped.into_values().collect::<Vec<_>>())
+    Value::Array(buckets.iter().enumerate().filter_map(|(i, b)| b.map(|[c, p, t, r]| json!({"index":i,"sampleCount":c,"powerWattsSum":p,"averagePowerWatts":p/c,"torqueNewtonsSum":t,"averageTorqueNewtons":t/c,"rpmSum":r,"averageRpm":r/c}))).collect())
 }
 fn cutoff(
     previous: &Value,
@@ -285,7 +293,9 @@ fn cutoff(
     Some(c)
 }
 pub fn advance(state: &Value, frame: &Value, connected: bool, now: f64) -> Value {
-    let mut s = state.clone();
+    advance_owned(state.clone(), frame, connected, now)
+}
+fn advance_owned(mut s: Value, frame: &Value, connected: bool, now: f64) -> Value {
     if !connected {
         return interrupt(s, "telemetry-disconnected");
     }
@@ -309,17 +319,19 @@ pub fn advance(state: &Value, frame: &Value, connected: bool, now: f64) -> Value
     if ordinal.to_string() != s["carId"].as_str().unwrap_or("") {
         return interrupt(s, "car-mismatch");
     }
-    let identity = json!({"ordinal":ordinal,"carClass":class,"performanceIndex":pi});
-    if !s["identity"].is_null()
-        && ["ordinal", "carClass", "performanceIndex"]
-            .iter()
-            .any(|k| num(&s["identity"], k) != num(&identity, k))
+    let id = &s["identity"];
+    if !id.is_null()
+        && (num(id, "ordinal") != ordinal
+            || num(id, "carClass") != class
+            || num(id, "performanceIndex") != pi)
     {
         return with_guidance(s, "identity-changed");
     }
-    s["identity"] = identity;
-    let t = num(f, "TimestampMS");
+    let (prev_ts, t) = (n(&s, "lastTimestampMs"), num(f, "TimestampMS"));
     if !t.is_finite() || t < 0.0 {
+        if s["identity"].is_null() {
+            s["identity"] = json!({"ordinal":ordinal,"carClass":class,"performanceIndex":pi});
+        }
         remove(
             &mut s,
             &[
@@ -334,24 +346,28 @@ pub fn advance(state: &Value, frame: &Value, connected: bool, now: f64) -> Value
         s["plateauHadOutputCut"] = json!(false);
         return interrupt(s, "timestamp-stalled");
     }
-    if n(&s, "lastTimestampMs").is_some_and(|old| t < old) {
-        return with_guidance(state.clone(), "timestamp-regressed");
+    let (redline, rpm) = (num(f, "EngineMaxRpm"), num(f, "CurrentEngineRpm"));
+    let rpm_ok =
+        redline.is_finite() && redline > 0.0 && rpm.is_finite() && rpm > 0.0 && rpm <= redline;
+    if prev_ts.is_some_and(|old| t < old) {
+        return with_guidance(s, "timestamp-regressed");
     }
-    if n(&s, "lastTimestampMs") == Some(t) {
-        return with_guidance(state.clone(), "timestamp-stalled");
+    if prev_ts == Some(t) {
+        return with_guidance(s, "timestamp-stalled");
+    }
+    if rpm_ok && n(&s, "engineMaxRpm").is_some_and(|old| old != redline) {
+        return with_guidance(s, "identity-changed");
+    }
+    if s["identity"].is_null() {
+        s["identity"] = json!({"ordinal":ordinal,"carClass":class,"performanceIndex":pi});
     }
     set(&mut s, "lastTimestampMs", t);
     set(&mut s, "lastProgressedAtMs", now);
-    let redline = num(f, "EngineMaxRpm");
-    let rpm = num(f, "CurrentEngineRpm");
     let power = num(f, "PowerWatts");
     let torque = num(f, "TorqueNewtons");
     let gear = num(f, "Gear");
-    if !redline.is_finite() || redline <= 0.0 || !rpm.is_finite() || rpm <= 0.0 || rpm > redline {
+    if !rpm_ok {
         return interrupt(s, "engine-rpm-invalid");
-    }
-    if n(&s, "engineMaxRpm").is_some_and(|old| old != redline) {
-        return with_guidance(state.clone(), "identity-changed");
     }
     set(&mut s, "engineMaxRpm", redline);
     if !gear.is_finite() || gear.fract() != 0.0 || !(1.0..=10.0).contains(&gear) {
@@ -384,7 +400,7 @@ pub fn advance(state: &Value, frame: &Value, connected: bool, now: f64) -> Value
     if !num(f, "SpeedMetersPerSecond").is_finite() || num(f, "SpeedMetersPerSecond") < 5.0 / 3.6 {
         return interrupt(s, "vehicle-not-moving");
     }
-    if n(state, "lastTimestampMs").is_some_and(|old| t - old > 1000.0) {
+    if prev_ts.is_some_and(|old| t - old > 1000.0) {
         return interrupt(s, "sampling-gap");
     }
     let loaded = n(&s, "loadedSinceMs").unwrap_or(t);
@@ -411,7 +427,7 @@ pub fn advance(state: &Value, frame: &Value, connected: bool, now: f64) -> Value
     let accepted = num(&s, "acceptedMs") + if positive { delta.max(0.0) } else { 0.0 };
     set(&mut s, "acceptedMs", accepted);
     if positive {
-        s["rpmEvidenceBins"] = add_bin(&s["rpmEvidenceBins"], rpm, redline, power, torque);
+        add_bin_in_place(&mut s["rpmEvidenceBins"], rpm, redline, power, torque);
     }
     let calculated = peaks(&s["rpmEvidenceBins"]);
     let reference = &calculated["power"];
@@ -520,7 +536,7 @@ pub fn advance(state: &Value, frame: &Value, connected: bool, now: f64) -> Value
 }
 
 pub fn capture_frame(sample: &Value) -> Value {
-    let mut frame = json!({});
+    let mut frame = Value::Object(serde_json::Map::with_capacity(16));
     let missing = sample["missingChannels"].as_array();
     for (wire, key) in [
         ("TimestampMS", "timestampMS"),
@@ -581,13 +597,13 @@ pub fn analyze(input: &Value) -> Value {
     for sample in samples {
         let frame = capture_frame(sample);
         let now = num(&frame, "TimestampMS");
-        state = advance(&state, &frame, true, now);
+        state = advance_owned(state, &frame, true, now);
         if state["status"] == "blocked"
             || ["car-mismatch", "identity-incomplete"]
                 .contains(&state["guidance"].as_str().unwrap_or(""))
         {
             ready = None;
-        } else if readiness(&state, now)["ready"] == true {
+        } else if state["guidance"] == "ready" || guidance(&state, now) == "ready" {
             ready = Some(state.clone());
         }
     }
@@ -636,10 +652,10 @@ pub fn batch(input: &Value) -> Result<Value, String> {
     let mut ready = None;
     for sample in samples {
         let frame = capture_frame(sample);
-        state = advance(&state, &frame, true, now);
+        state = advance_owned(state, &frame, true, now);
         if state["status"] == "blocked" {
             ready = None;
-        } else if readiness(&state, now)["ready"] == true {
+        } else if state["guidance"] == "ready" || guidance(&state, now) == "ready" {
             ready = Some(state.clone());
         }
     }
