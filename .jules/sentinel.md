@@ -80,3 +80,9 @@
 **學習 (Learning):** 即使已對既存在檔案實作位元組比對，僅依賴 `Path::exists()` 與 `fs::create_dir_all()` 仍會跟隨懸空符號連結與 NTFS Junction 跳脫預期沙盒根目錄（與先前 `lib.rs` 僅修補 Tauri sidecar、卻遺漏後端 ADB 工具釋放路徑形成防禦落差）。
 **預防 (Prevention):** 所有內嵌二進位與原生 DLL 工具釋放路徑，一律透過逐層 `fs::symlink_metadata`（拒絕 symlink/junction 與非預期檔案類型）與 `canonicalize().starts_with(&canonical_root)` 鎖定目錄邊界，並在寫入缺失工具時採用同目錄 `NamedTempFile` 搭配 `sync_all()` 與原子 `persist` 取代 `fs::write`，確保前後端與後端輔助工具鏈具備一致的檔案系統安全保證。
 **署名:** Sentinel as Antigravity
+
+## 2026-11-21 - Tauri Overlay Window Over-Privileged Remote Capability & IPC Authorization (CWE-269 / CWE-862)
+**漏洞/脆弱點 (Vulnerability):** 桌面端設定檔 `frontend/src-tauri/tauri.conf.json` 的內聯 `main-capability` 將 `windows` 同時授權給 `["main", "overlay"]` 並開啟 `"remote": { "urls": ["http://127.0.0.1:*", "http://localhost:*"] }`；同時 `frontend/src-tauri/src/lib.rs` 中除 `file_export::save_export_file` 外的 11 個 Tauri IPC 命令均未驗證呼叫視窗必須為 `"main"`。由於 `overlay` 視窗載入 `http://127.0.0.1:<port>/hud/index.html` 並以同源無沙盒 `<iframe>` 嵌入使用者自訂 HUD（`/hud_user/*`），導致任何社群自訂 HUD 腳本都能透過 `window.top.__TAURI__` 越權觸發 `updater:default`、`process:default`、`core:window:*`（如關閉 click-through 進行桌面點擊劫持）及後端生命週期命令，而 `hud_overlay/` 實際上完全不依賴任何 Tauri IPC。
+**學習 (Learning):** 在 Tauri v2 中，一旦 `tauri.conf.json` 的 `app.security.capabilities` 非空，就會完全取代 `capabilities/default.json`；且 `devUrl`（`http://localhost:1420`）與 `frontendDist` 皆由 `is_local_url()` 原生歸類為 `Origin::Local`，根本無需為 `main` 開啟寬鬆的 `remote` loopback 萬用規則。此外，單獨依賴前端層或個別指令（如僅 `file_export.rs` 檢查 `window.label() == "main"`）容易造成其餘特權指令遺漏防護。
+**預防 (Prevention):** 將 `main-capability` 嚴格收斂至 `"windows": ["main"]` 並移除 `remote` 來源規則，徹底剝奪 `overlay` 視窗與未授權遠端 loopback 來源的一切 Tauri IPC 權限；同步在 `frontend/src-tauri/src/lib.rs` 透過 `require_main_app_handle`／`require_main_window` 於所有特權命令入口強制驗證 `caller.label() == "main"` 並移除未使用的樣板命令 `greet`，再以編譯期 `tauri::generate_context!()` 的 `RuntimeAuthority::resolve_access` 實測驗證 ACL 隔離，落實最小權限與深度防禦（Defense in Depth）。
+**署名:** Sentinel as Antigravity
