@@ -432,13 +432,29 @@ fn start_owned_backend(app_handle: &tauri::AppHandle) -> Result<(), String> {
     Ok(())
 }
 
-#[tauri::command]
-fn greet(name: &str) -> String {
-    format!("Hello, {}! You've been greeted from Rust!", name)
+/// Restrict desktop lifecycle, HUD, and updater IPC commands to `"main"`.
+fn require_main_window_label(label: &str) -> Result<(), String> {
+    if label != "main" {
+        return Err("This command requires the main application window.".into());
+    }
+    Ok(())
+}
+
+fn require_main_window(window: &tauri::WebviewWindow) -> Result<(), String> {
+    require_main_window_label(window.label())
+}
+
+fn require_main_app_handle(window: &tauri::WebviewWindow) -> Result<tauri::AppHandle, String> {
+    require_main_window(window)?;
+    Ok(window.app_handle().clone())
 }
 
 #[tauri::command]
-fn get_backend_port(state: tauri::State<'_, BackendState>) -> Result<u16, String> {
+fn get_backend_port(
+    caller: tauri::WebviewWindow,
+    state: tauri::State<'_, BackendState>,
+) -> Result<u16, String> {
+    require_main_window(&caller)?;
     backend_port_from_state(&state)
 }
 
@@ -503,7 +519,11 @@ fn now_millis() -> u128 {
 }
 
 #[tauri::command]
-fn get_backend_status(state: tauri::State<'_, BackendState>) -> Result<BackendStatus, String> {
+fn get_backend_status(
+    caller: tauri::WebviewWindow,
+    state: tauri::State<'_, BackendState>,
+) -> Result<BackendStatus, String> {
+    require_main_window(&caller)?;
     state
         .0
         .lock()
@@ -514,7 +534,8 @@ fn get_backend_status(state: tauri::State<'_, BackendState>) -> Result<BackendSt
 use tauri::Manager;
 
 #[tauri::command]
-fn set_hud_click_through(app_handle: tauri::AppHandle, ignore: bool) -> Result<(), String> {
+fn set_hud_click_through(caller: tauri::WebviewWindow, ignore: bool) -> Result<(), String> {
+    let app_handle = require_main_app_handle(&caller)?;
     if let Some(window) = app_handle.get_webview_window("overlay") {
         window
             .set_ignore_cursor_events(ignore)
@@ -525,7 +546,8 @@ fn set_hud_click_through(app_handle: tauri::AppHandle, ignore: bool) -> Result<(
 }
 
 #[tauri::command]
-fn get_hud_window_visible(app_handle: tauri::AppHandle) -> Result<bool, String> {
+fn get_hud_window_visible(caller: tauri::WebviewWindow) -> Result<bool, String> {
+    let app_handle = require_main_app_handle(&caller)?;
     match app_handle.get_webview_window("overlay") {
         Some(window) => window.is_visible().map_err(|error| error.to_string()),
         None => Ok(false),
@@ -533,7 +555,8 @@ fn get_hud_window_visible(app_handle: tauri::AppHandle) -> Result<bool, String> 
 }
 
 #[tauri::command]
-fn toggle_hud_window(app_handle: tauri::AppHandle, visible: bool) -> Result<(), String> {
+fn toggle_hud_window(caller: tauri::WebviewWindow, visible: bool) -> Result<(), String> {
+    let app_handle = require_main_app_handle(&caller)?;
     if let Some(window) = app_handle.get_webview_window("overlay") {
         if visible {
             let port = backend_port_from_app(&app_handle)?;
@@ -550,7 +573,8 @@ fn toggle_hud_window(app_handle: tauri::AppHandle, visible: bool) -> Result<(), 
 }
 
 #[tauri::command]
-fn reload_hud_window(app_handle: tauri::AppHandle) -> Result<(), String> {
+fn reload_hud_window(caller: tauri::WebviewWindow) -> Result<(), String> {
+    let app_handle = require_main_app_handle(&caller)?;
     if let Some(window) = app_handle.get_webview_window("overlay") {
         let port = backend_port_from_app(&app_handle)?;
         let url = format!("{}?t={}", hud_url(port), now_millis());
@@ -587,7 +611,8 @@ struct MonitorInfo {
 }
 
 #[tauri::command]
-fn get_available_monitors(app_handle: tauri::AppHandle) -> Result<Vec<MonitorInfo>, String> {
+fn get_available_monitors(caller: tauri::WebviewWindow) -> Result<Vec<MonitorInfo>, String> {
+    let app_handle = require_main_app_handle(&caller)?;
     let monitors = app_handle.available_monitors().map_err(|e| e.to_string())?;
     let primary = app_handle.primary_monitor().ok().flatten();
 
@@ -618,12 +643,13 @@ fn get_available_monitors(app_handle: tauri::AppHandle) -> Result<Vec<MonitorInf
 
 #[tauri::command]
 fn move_hud_to_monitor(
-    app_handle: tauri::AppHandle,
+    caller: tauri::WebviewWindow,
     monitor_x: i32,
     monitor_y: i32,
     width: u32,
     height: u32,
 ) -> Result<(), String> {
+    let app_handle = require_main_app_handle(&caller)?;
     if let Some(window) = app_handle.get_webview_window("overlay") {
         window
             .set_position(tauri::PhysicalPosition::new(monitor_x, monitor_y))
@@ -638,7 +664,8 @@ fn move_hud_to_monitor(
 }
 
 #[tauri::command]
-fn stop_backend_for_update(app_handle: tauri::AppHandle) -> Result<(), String> {
+fn stop_backend_for_update(caller: tauri::WebviewWindow) -> Result<(), String> {
+    let app_handle = require_main_app_handle(&caller)?;
     stop_backend_process(&app_handle)?;
     set_backend_status(
         &app_handle,
@@ -652,7 +679,8 @@ fn stop_backend_for_update(app_handle: tauri::AppHandle) -> Result<(), String> {
 }
 
 #[tauri::command]
-fn resume_backend_after_failed_update(app_handle: tauri::AppHandle) -> Result<(), String> {
+fn resume_backend_after_failed_update(caller: tauri::WebviewWindow) -> Result<(), String> {
+    let app_handle = require_main_app_handle(&caller)?;
     set_backend_status(
         &app_handle,
         BackendStatus {
@@ -672,7 +700,8 @@ fn resume_backend_after_failed_update(app_handle: tauri::AppHandle) -> Result<()
 }
 
 #[tauri::command]
-fn prepare_update_and_restart(app_handle: tauri::AppHandle) -> Result<(), String> {
+fn prepare_update_and_restart(caller: tauri::WebviewWindow) -> Result<(), String> {
+    let app_handle = require_main_app_handle(&caller)?;
     println!("Preparing for OTA update restart: stopping backend sidecar and terminating background processes.");
     stop_backend_process(&app_handle)?;
     std::thread::sleep(Duration::from_millis(300));
@@ -758,7 +787,6 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             file_export::save_export_file,
-            greet,
             get_backend_port,
             get_backend_status,
             set_hud_click_through,
@@ -778,7 +806,8 @@ pub fn run() {
 #[cfg(test)]
 mod tests {
     use super::{
-        backend_is_ready, backend_port_from_state, ensure_extracted_sidecar, hud_url, BackendState,
+        backend_is_ready, backend_port_from_state, ensure_extracted_sidecar, hud_url,
+        require_main_window_label, BackendState,
     };
     use std::fs;
     use std::io::Write;
@@ -789,6 +818,62 @@ mod tests {
     #[test]
     fn overlay_url_uses_the_published_backend_port() {
         assert_eq!(hud_url(8123), "http://127.0.0.1:8123/hud/index.html");
+    }
+
+    #[test]
+    fn main_window_guard_rejects_overlay_and_untrusted_labels() {
+        assert!(require_main_window_label("main").is_ok());
+        for label in ["overlay", "", "MAIN", "main-2"] {
+            assert!(require_main_window_label(label).is_err(), "{label:?}");
+        }
+    }
+
+    #[test]
+    fn compiled_acl_isolates_overlay_and_remote_origins_from_privileged_capabilities() {
+        let mut context: tauri::Context = tauri::generate_context!();
+        let authority = context.runtime_authority_mut();
+        let local = tauri::ipc::Origin::Local;
+        let remote_hud = tauri::ipc::Origin::Remote {
+            url: tauri::Url::parse("http://127.0.0.1:8001/hud/index.html").unwrap(),
+        };
+        let remote_custom = tauri::ipc::Origin::Remote {
+            url: tauri::Url::parse("http://localhost:8001/hud_user/custom/index.html").unwrap(),
+        };
+        for command in [
+            "plugin:updater|check",
+            "plugin:updater|download",
+            "plugin:updater|install",
+            "plugin:process|restart",
+            "plugin:process|exit",
+            "plugin:window|close",
+            "plugin:window|set_ignore_cursor_events",
+        ] {
+            for origin in [&local, &remote_hud, &remote_custom] {
+                assert!(
+                    authority
+                        .resolve_access(command, "overlay", "overlay", origin)
+                        .is_none(),
+                    "overlay must be denied {command} on {origin}"
+                );
+            }
+            for origin in [&remote_hud, &remote_custom] {
+                assert!(
+                    authority
+                        .resolve_access(command, "main", "main", origin)
+                        .is_none(),
+                    "main must be denied {command} on {origin}"
+                );
+            }
+        }
+        for command in [
+            "plugin:updater|check",
+            "plugin:process|restart",
+            "plugin:window|close",
+        ] {
+            assert!(authority
+                .resolve_access(command, "main", "main", &local)
+                .is_some());
+        }
     }
 
     #[test]
