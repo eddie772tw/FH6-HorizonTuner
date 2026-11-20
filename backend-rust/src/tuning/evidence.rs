@@ -147,15 +147,10 @@ pub fn qualify(raw: &EvidenceRequest) -> Result<QualifiedEvidence, String> {
             if frames.is_empty() || frames.len() > 30000 {
                 return Err("EV capture requires 1–30000 frames".into());
             }
-            let mut state = ev_measurement::initial(car_id);
-            for frame in frames {
-                state = ev_measurement::advance(&state, frame);
-            }
+            let (state, gears) = ev_measurement::replay_frames(car_id, frames);
             if state["status"] == "blocked" || !state["identity"].is_object() {
                 return Err("EV capture identity is unavailable or changed".into());
             }
-            let gears: Vec<EvGearMeasurement> =
-                serde_json::from_value(state["gears"].clone()).map_err(|e| e.to_string())?;
             let input = EvGearingInput {
                 setup: serde_json::from_value(setup.clone()).map_err(|e| e.to_string())?,
                 measurements: gears.clone(),

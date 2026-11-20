@@ -3,7 +3,7 @@ use fh6_backend::{
     config_service::ConfigService,
     road::{local_comparison, summarize_road_observations},
     telemetry::TelemetryStore,
-    tuning::measurement,
+    tuning::{ev_measurement, measurement},
 };
 use serde_json::{json, Value};
 use std::{hint::black_box, time::Instant};
@@ -122,5 +122,31 @@ fn backend_performance_probe() {
     });
     measure("measurement_analyze_capture", || {
         black_box(measurement::analyze(black_box(&analyze_input)));
+    });
+    let ev_replay: Value =
+        serde_json::from_str(include_str!("../../tests/fixtures/ev_taycan_replay.json")).unwrap();
+    let ev_frames: Vec<Value> = ev_replay["runs"][0]["rows"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|row| {
+            Value::Object(
+                ev_replay["columns"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .zip(row.as_array().unwrap())
+                    .map(|(k, v)| (k.as_str().unwrap().to_owned(), v.clone()))
+                    .collect(),
+            )
+        })
+        .collect();
+    let ev_batch_input = json!({
+        "schemaVersion": "ev-batch/v1",
+        "state": ev_measurement::initial("3445"),
+        "frames": ev_frames,
+    });
+    measure("ev_measurement_batch_taycan", || {
+        black_box(ev_measurement::batch(black_box(&ev_batch_input)).unwrap());
     });
 }
