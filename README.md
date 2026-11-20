@@ -1,5 +1,5 @@
 <h1 align="center">FH6-HorizonTuner</h1>
-
+<img width="1823" height="902" alt="image" src="https://github.com/user-attachments/assets/5714c589-2692-4156-b848-58bccdfa0bec" />
 <p align="center">
   <strong>《極限競速：地平線 6》的遙測、調校與 HUD 工作台</strong><br>
   觀察車輛動態、用實測資料調校，打造自己的賽車儀表。
