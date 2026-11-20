@@ -2496,5 +2496,19 @@
   "Online": "線上",
   "Offline": "離線",
   "CONNECTED": "已連線",
-  "LOADING": "載入中"
+  "LOADING": "載入中",
+  "Step 2: Chassis, suspension & tire recommendations": "步驟 2：底盤、懸吊與輪胎建議",
+  "Calculated for {goal} profile · {weight} {unit} ({frontPercent}% front) {drivetrain} · Season: {season}": "依據 {goal} 目標計算 · {weight} {unit}（前配重 {frontPercent}%）{drivetrain} · 季節：{season}",
+  "Tires & Wheel Alignment": "輪胎與定位設定",
+  "Tire Pressures": "輪胎胎壓",
+  "Wheel Alignment": "輪胎定位",
+  "Sidewall (Front / Rear)": "胎壁高度 (前 / 後)",
+  "Suspension Platform": "懸吊平台",
+  "ARB & Springs": "防傾桿與彈簧",
+  "Front Spring": "前彈簧",
+  "Rear Spring": "後彈簧",
+  "Damping & Differential": "阻尼與差速器",
+  "Differential & Power Split": "差速器與動力分配",
+  "Center Rear Split": "中央差速器後軸比例",
+  "{percent}% Rear": "後軸 {percent}%"
 }
