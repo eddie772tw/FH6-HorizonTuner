@@ -102,3 +102,8 @@
 **學習 (Learning):** `connectionStatus.ts` 的 `getAggregateConnectionStatus()` 直接回傳硬編碼的繁體中文字串（`已連線`、`桌面前端未連線`、`Companion 後端未連線`、`未連線` 與對應完整 `accessibleLabel`），而 `SettingsContext.t()` 在 `en-us` 語系會直接原樣回傳輸入鍵名，且 `ja-jp.json` 亦無對應繁中鍵值，導致英文與日文使用者在 Companion 連線分頁與狀態徽章皆遭遇繁體中文洩漏；同時 `CompanionApp.tsx` 狀態徽章的 `aria-label` 未包裹 `t(...)`，且分頁與診斷鍵值（`Tuning`、`Online`、`Offline`、`CONNECTED`、`LOADING`）亦遺漏於三語系字典。
 **行動 (Action):** 所有 UI 領域狀態協助函式（如 `connectionStatus.ts`）一律回傳英文規範化鍵值作為單一 i18n 鍵名，禁止以非英文字串作為 `t(...)` 鍵值來源；同時將原先的繁中譯文完整保留並對齊至 `zh-tw.json`，補齊 `en-us.json` 與 `ja-jp.json`，並確保所有狀態徽章的 `aria-label` 皆經過 `t(...)` 包裝。
 **署名:** Narrator as Antigravity
+
+## 2026-11-21 - Fragmented Tuning Summary & Chinese-Pivot Japanese Discipline Mistranslations
+**學習 (Learning):** `Step2ChassisTuner.tsx` 同時存在四類典型 i18n 缺陷：(1) 主標題硬編碼英文前綴 `Step 2:`；(2) 摘要副標題將 `Calculated based on`、`profile for` 與未經 `t()` 包裝之領域枚舉（`selectedRaceGoal`、`season`、`drivetrain`）及硬編碼縮寫 `% F` 拼接為碎片句子，導致日文與中文語序破碎且讀屏器將 `% F` 誤讀為華氏單位；(3) 20 個核心卡片標題與底盤參數鍵僅部分存在於 `zh-tw.json` 或完全缺失於三語系字典；(4) `lang/ja-jp.json` 中四個賽事類型鍵因歷史上從繁體中文直譯而出現嚴重語義錯譯（`甩尾`→`フリック`、`拉力`→`引く`、`公路`→`高速道路`、`直線加速`→`直線加速度`），連帶污染 `Step1GoalSetup` 與 `BaselinePreviewPanel`。
+**行動 (Action):** 步驟標題一律納入單一完整鍵值（如 `Step 2: Chassis, suspension & tire recommendations`）；含多變數之車輛摘要與 AWD 後軸比例改用具名參數內插（`Calculated for {goal} profile · {weight} {unit} ({frontPercent}% front) {drivetrain} · Season: {season}`、`{percent}% Rear`），將賽事目標、季節與驅動形式全數透過 `t()` 映射；並於審查 `ja-jp.json` 賽車領域術語時，主動排查由中文多義詞轉譯造成的誤譯並修正為標準日文賽車術語（`ロード`、`ラリー`、`ドリフト`、`ドラッグ`）。
+**署名:** Narrator as Antigravity
