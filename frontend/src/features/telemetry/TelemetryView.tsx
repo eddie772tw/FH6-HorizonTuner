@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useId, useRef } from 'react';
 import { useTelemetry } from '../../hooks/useTelemetry';
 import { ScopedUnitSettingsProvider, useSettings } from '../../context/SettingsContext';
 import { useCarParams } from '../../context/CarParamsContext';
@@ -115,90 +115,117 @@ const TelemetryViewContent: React.FC<TelemetryViewContentProps> = ({
   }, [isHudPaused]);
 
   const [showPopover, setShowPopover] = useState<boolean>(isHudPaused);
+  const [popoverAlignRight, setPopoverAlignRight] = useState(false);
+  const hudPopoverId = useId();
+  const hudPopoverWrapRef = useRef<HTMLDivElement>(null);
+  const hudTriggerRef = useRef<HTMLButtonElement>(null);
+  const updatePopoverAlignment = useCallback(() => {
+    const r = hudTriggerRef.current?.getBoundingClientRect();
+    if (r) setPopoverAlignRight(window.innerWidth - r.left < 320 && r.right >= 300);
+  }, []);
 
-  // Auto-pop popover whenever isHudPaused is active (e.g. switching tabs to telemetry or HUD paused state changes)
   useEffect(() => {
-    if (isHudPaused) {
-      setShowPopover(true);
-    }
-  }, [isHudPaused]);
+    setShowPopover(isHudPaused);
+    if (isHudPaused) updatePopoverAlignment();
+  }, [isHudPaused, updatePopoverAlignment]);
+
+  useEffect(() => {
+    if (!isHudPaused || !showPopover) return;
+    const onPointerDown = (e: PointerEvent) => { if (!hudPopoverWrapRef.current?.contains(e.target as Node)) setShowPopover(false); };
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape' || e.defaultPrevented || document.querySelector('[aria-modal="true"]:not([aria-hidden="true"])')) return;
+      const restoreFocus = Boolean(hudPopoverWrapRef.current?.contains(document.activeElement));
+      e.preventDefault();
+      setShowPopover(false);
+      if (restoreFocus) hudTriggerRef.current?.focus();
+    };
+    document.addEventListener('pointerdown', onPointerDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => { document.removeEventListener('pointerdown', onPointerDown); document.removeEventListener('keydown', onKeyDown); };
+  }, [isHudPaused, showPopover]);
 
   const isRacing = telemetryData?.IsRaceOn === 1;
   const classDisplay = getCarClassBadgeText(telemetryData?.CarClass, telemetryData?.CarPerformanceIndex);
   const displayCarName = carName || t("Unknown Car");
   const isEV = telemetryData?.EngineIdleRpm === 0;
+  const hudStatusContent = (<>
+    <span className="live-status-dot" aria-hidden="true" style={{ background: !isConnected ? 'var(--bs-secondary)' : isHudPaused ? 'var(--bs-warning)' : isRacing ? 'var(--bs-primary)' : 'var(--bs-secondary)' }} />
+    <span className={!isConnected ? 'fw-bold text-body-secondary fs-6 m-0' : isHudPaused ? 'fw-bold text-warning-emphasis fs-6 m-0' : isRacing ? 'fw-bold text-primary fs-6 m-0' : 'fw-bold text-secondary fs-6 m-0'}>
+      {!isConnected ? t('Game status unavailable') : isHudPaused ? t("RENDER PAUSED (OVERLAY ACTIVE)") : isRacing ? t("RACE DATA LIVE") : t("GAME IDLE / MENU")}
+    </span>
+  </>);
 
   return (
     <div className={`telemetry-view d-flex flex-column h-100 w-100${focusedCard ? ' telemetry-view--focused' : ''}`}>
       
       {/* Header bar */}
-      <div className="workspace-toolbar mb-2 flex-shrink-0">
+      <div className="workspace-toolbar pt-1 mb-2 flex-shrink-0">
         <div className="d-flex align-items-center flex-wrap gap-3">
           {!focusedCard && <span className="live-status-item" role="status" aria-atomic="true">
             <span className={`live-status-dot ${isConnected ? 'bg-success' : 'bg-danger'}`} aria-hidden="true" />
             <span>{t(isConnected ? 'Backend connected' : 'Backend disconnected')}</span>
           </span>}
-          <div 
-            className="position-relative d-inline-flex align-items-center gap-2"
-            onClick={() => { if (isHudPaused) setShowPopover(prev => !prev); }}
-            style={{ cursor: isHudPaused ? 'pointer' : 'default' }}
-          >
-            <div style={{
-              width: '12px',
-              height: '12px',
-              borderRadius: '50%',
-              background: !isConnected ? 'var(--bs-secondary)' : isHudPaused ? 'var(--bs-warning)' : isRacing ? 'var(--bs-primary)' : 'var(--bs-secondary)',
-            }} />
-            <span className={!isConnected ? 'fw-bold text-body-secondary fs-6 m-0' : isHudPaused ? "fw-bold text-warning fs-6 m-0" : isRacing ? "fw-bold text-primary fs-6 m-0" : "fw-bold text-secondary fs-6 m-0"}>
-              {!isConnected ? t('Game status unavailable') : isHudPaused ? t("RENDER PAUSED (OVERLAY ACTIVE)") : isRacing ? t("RACE DATA LIVE") : t("GAME IDLE / MENU")}
-            </span>
+          <div ref={hudPopoverWrapRef} className="position-relative d-inline-flex align-items-center gap-2" style={{ maxWidth: '100%' }}>
+            {isHudPaused ? (
+              <button
+                ref={hudTriggerRef}
+                type="button"
+                className="btn btn-link p-0 border-0 text-decoration-none d-inline-flex align-items-center gap-2 text-start"
+                aria-haspopup="dialog"
+                aria-expanded={showPopover}
+                aria-controls={showPopover ? `${hudPopoverId}-popover` : undefined}
+                onClick={() => { updatePopoverAlignment(); setShowPopover(prev => !prev); }}
+              >{hudStatusContent}</button>
+            ) : hudStatusContent}
 
             {/* Downward Popover */}
             {isHudPaused && showPopover && (
-              <div 
+              <div
+                id={`${hudPopoverId}-popover`}
                 className="popover bs-popover-bottom show glass-panel shadow-lg border"
                 style={{
                   position: 'absolute',
                   top: 'calc(100% + 8px)',
-                  left: 0,
+                  ...(popoverAlignRight ? { right: 0, left: 'auto' } : { left: 0 }),
                   zIndex: 1050,
-                  minWidth: '320px',
+                  width: 'min(320px, calc(100vw - 2rem))',
+                  maxWidth: 'calc(100vw - 2rem)',
                   backdropFilter: 'blur(16px)',
                   background: 'var(--glass-bg)',
                   borderColor: 'var(--bs-warning)',
                   cursor: 'default'
                 }}
-                role="tooltip"
+                role="dialog"
+                aria-labelledby={`${hudPopoverId}-title`}
+                aria-describedby={`${hudPopoverId}-body`}
                 onClick={(e) => e.stopPropagation()}
               >
-                <div 
+                <div
+                  aria-hidden="true"
                   style={{
                     position: 'absolute',
                     top: '-6px',
-                    left: '20px',
+                    ...(popoverAlignRight ? { right: '24px' } : { left: '20px' }),
                     width: 0,
                     height: 0,
                     borderLeft: '6px solid transparent',
                     borderRight: '6px solid transparent',
                     borderBottom: '6px solid var(--bs-warning)'
-                  }} 
+                  }}
                 />
-                <div className="popover-header bg-transparent border-bottom border-secondary border-opacity-25 px-3 py-2 text-warning fw-bold fs-7 d-flex align-items-center justify-content-between">
-                  <div className="d-flex align-items-center gap-2">
-                    <span>{t("HUD Overlay Active")}</span>
+                <div className="popover-header bg-transparent border-bottom border-secondary border-opacity-25 px-3 py-2 text-warning-emphasis fw-bold fs-7 d-flex align-items-center justify-content-between gap-2">
+                  <div className="d-flex align-items-center gap-2 flex-wrap">
+                    <span id={`${hudPopoverId}-title`}>{t("HUD Overlay Active")}</span>
                     <span className="badge text-bg-warning">{t("PAUSED")}</span>
                   </div>
                   <button
                     type="button"
-                    className="btn-close btn-sm"
+                    className="btn-close btn-sm flex-shrink-0"
                     aria-label={t("Close")}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setShowPopover(false);
-                    }}
-                  ></button>
+                    onClick={(e) => { e.stopPropagation(); setShowPopover(false); hudTriggerRef.current?.focus(); }}
+                  />
                 </div>
-                <div className="popover-body px-3 py-2 text-start">
+                <div id={`${hudPopoverId}-body`} className="popover-body px-3 py-2 text-start">
                   <div className="fs-7 text-body fw-medium">
                     {t("Telemetry rendering paused (HUD Overlay is active)")}
                   </div>
