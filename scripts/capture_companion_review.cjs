@@ -203,7 +203,7 @@ const server = http.createServer((req, res) => {
   for (let i = 0; i < cases.length; i++) {
     const c = cases[i];
     console.log(`Processing case ${i + 1}/${cases.length}: ${c.core}-${c.mode}-${c.lang}-${c.width} (save: ${c.save})`);
-    
+
     serverState.companion_enabled = c.companion_enabled;
     serverState.companion_usb_enabled = c.companion_usb_enabled;
     serverState.language = c.lang;
