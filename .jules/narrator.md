@@ -102,3 +102,8 @@
 **學習 (Learning):** `connectionStatus.ts` 的 `getAggregateConnectionStatus()` 直接回傳硬編碼的繁體中文字串（`已連線`、`桌面前端未連線`、`Companion 後端未連線`、`未連線` 與對應完整 `accessibleLabel`），而 `SettingsContext.t()` 在 `en-us` 語系會直接原樣回傳輸入鍵名，且 `ja-jp.json` 亦無對應繁中鍵值，導致英文與日文使用者在 Companion 連線分頁與狀態徽章皆遭遇繁體中文洩漏；同時 `CompanionApp.tsx` 狀態徽章的 `aria-label` 未包裹 `t(...)`，且分頁與診斷鍵值（`Tuning`、`Online`、`Offline`、`CONNECTED`、`LOADING`）亦遺漏於三語系字典。
 **行動 (Action):** 所有 UI 領域狀態協助函式（如 `connectionStatus.ts`）一律回傳英文規範化鍵值作為單一 i18n 鍵名，禁止以非英文字串作為 `t(...)` 鍵值來源；同時將原先的繁中譯文完整保留並對齊至 `zh-tw.json`，補齊 `en-us.json` 與 `ja-jp.json`，並確保所有狀態徽章的 `aria-label` 皆經過 `t(...)` 包裝。
 **署名:** Narrator as Antigravity
+
+## 2026-11-22 - Static aria-label Masking Dynamic Values & Protocol Enum Leakage in Companion Settings
+**學習 (Learning):** 在 `CompanionLanControls.tsx` 中對顯示動態配對碼的 `<strong>` 加上靜態 `aria-label={t('Pairing code')}`，會使螢幕閱讀器覆寫元素內容而完全隱藏實際配對碼數字，且倒數徽章以 `{t('Expires in')} {mm}:{ss}` 碎片拼接會破壞日文與中文語序；同時 `CompanionUsbControls.tsx` 直接在 `<option>` 內插原始 ADB 協定枚舉 `device.state`（`device` / `unauthorized` / `offline`），在英文介面暴露內部詞彙 `device`，並在 `zh-TW` / `ja-JP` 介面造成英文穿透。此外，實測截圖亦確認過長的日文卡片標題與按鈕（如 `ローカルネットワークペアリング` + `ペアリングコードを生成`）在雙欄與 320px 視窗容易產生單字元孤行折行。
+**行動 (Action):** 為動態代碼元素提供無障礙標籤時，應改用參數化鍵值（如 `aria-label={t('Pairing code: {code}', { code: pairing.token })}`）保留實際數值語義；倒數計時改為完整參數化鍵（`t('Expires in {time}', { time })`）；ADB 等底層協定狀態一律經顯式鍵值表映射（`Ready` / `Unauthorized` / `Offline`）再傳入 `t(...)`；並確保說明文案中引用的按鈕名稱（如 `Connect USB device`、`Refresh devices`）與對應按鈕譯文在三語系間完全一致，且在 320px 與雙欄視窗下保持精簡不產生孤字折行。
+**署名:** Narrator as Antigravity
