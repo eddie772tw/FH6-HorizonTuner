@@ -32,7 +32,7 @@ export function CompanionSettingsCard() {
 
   const count = error || !companionEnabled ? 0 : status?.active_connections ?? 0;
   return <SettingsSection title={t('Companion APP (Android)')} headerAside={
-    <span className={`badge ${!companionEnabled ? 'text-bg-secondary' : count ? 'text-bg-success' : 'text-bg-secondary'}`}>
+    <span className={`badge ${!companionEnabled ? 'text-bg-secondary' : count ? 'text-bg-success' : 'text-bg-secondary'}`} role="status" aria-live="polite">
       {error ? t('Status unavailable') : !companionEnabled ? t('Disabled') : t('{activeCount} Companion device(s) connected', { activeCount: count })}
     </span>
   }>

@@ -40,12 +40,14 @@ export default function CompanionLanControls() {
     finally { setBusy(false); }
   };
 
+  const remainingLabel = `${Math.floor(remaining / 60)}:${String(remaining % 60).padStart(2, '0')}`;
+
   return <div className="glass-panel p-3 d-flex flex-column gap-2 companion-lan-controls">
     <div className="d-flex justify-content-between align-items-center gap-2"><h4 className="h6 text-primary mb-0">{t('Local network pairing')}</h4><span className="d-inline-flex" title={busy ? t('Creating…') : undefined} style={busy ? { cursor: 'not-allowed' } : undefined}><button type="button" className="btn btn-sm btn-outline-secondary" disabled={busy} style={busy ? { pointerEvents: 'none' } : undefined} onClick={() => void generate()}>{busy ? t('Creating…') : t('Generate pairing code')}</button></span></div>
     <p className="small text-body-secondary mb-0">{t('Use the same trusted local network on the PC and Android device. Scan the QR code in the Companion app, or enter the address and pairing code manually.')}</p>
     {pairing && remaining > 0 && <div className="companion-lan-pairing" role="status">
-      <div className="companion-lan-pairing-heading"><span className="small text-body-secondary">{pairing.host_name}</span><span className="badge text-bg-secondary">{t('Expires in')} {Math.floor(remaining / 60)}:{String(remaining % 60).padStart(2, '0')}</span></div>
-      <strong className="companion-lan-token" aria-label={t('Pairing code')}>{pairing.token}</strong>
+      <div className="companion-lan-pairing-heading"><span className="small text-body-secondary">{pairing.host_name}</span><span className="badge text-bg-secondary">{t('Expires in {time}', { time: remainingLabel })}</span></div>
+      <strong className="companion-lan-token" aria-label={t('Pairing code: {code}', { code: pairing.token })}>{pairing.token}</strong>
       {qrDataUrl && <img className="companion-lan-qr" src={qrDataUrl} alt={t('Scan to pair the Companion app over the local network')} />}
       {qrError && <span className="small text-warning">{t('QR code could not be created. Enter the pairing code and address manually.')}</span>}
       <span className="small text-body-secondary">{pairing.lan_ips.map((ip) => `${ip}:${pairing.port}`).join(' · ')}</span>
