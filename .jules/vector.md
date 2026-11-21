@@ -75,3 +75,8 @@
 **渲染洞察 (Rendering Learning):** 在 `hud_overlay/shared/telemetry-cards/corner-card.js`（`drawTireTempHistogram`）中，過去四輪胎溫直方圖（`tcTireHist*`）直接內聯於 `renderCorners` 且缺少 `save()` / `try-finally restore()` 與 `Number.isFinite` 消毒；在 `5vh`（`36px` at 720p）高度下，長條高度達 `th - 6*dpr` 會穿透頂部浮動溫度讀數，且 `indicatorX = normTempFactor * tw` 在極低/極高溫時會造成指示線與文字貼邊裁切或與垂直白線重疊。透過預留 `padX`（`Math.min(tw * 0.08, 3 * dpr)`）與頂部讀數保留區 `topPad`（`Math.min(th * 0.36, fontSize + 3 * dpr)`），將指示線起始點對齊 `topPad` 並於極端靠邊對齊時水平偏移 `3 * markerScale`、於基準軸補齊依 `getTempColor(cTemp)` 發光之同軸指示圓點，即可在沿用預分配 `_sharedBins` 零每幀配置下徹底消除文字穿刺與邊界裁切。
 **行動 (Action):** 所有含浮動數值標註的長條分布與時間軸 HUD 畫布應保留與 `fontSize` 比例聯動之頂部讀數淨空區，並在邊緣自動切換對齊方向時附加水平微調間距，同時落實 `try/finally` Context 隔離與 `Number.isFinite` 消毒。
 **署名:** Vector as Antigravity
+
+## 2026-11-22 - R34 MFD 雙畫布統一內縮網格、軸標籤防碰撞與矩陣等比發光
+**渲染洞察 (Rendering Learning):** 在 `hud_overlay/r34_mfd/renderer.js` 中，若僅對增壓歷史波形（`drawHistory`）加上下邊距而維持全幅 `[0, h]` 網格，會使 `0 bar` 軌跡與 25 格網格第 20 列產生錯位雙線；改將 3×25 批次網格與波形共用 `[padX, w - padX] × [padY, h - padY]` 內縮座標系，可在消除極值線段半截裁切與外框淡化的同時，保持 `0 bar` 大氣基準線與網格列零誤差重合，並讓單點採樣透過同軸前緣光環即時可見。在矩形 G-Indication（`drawG`）中，硬編碼 `w - 29` 置於角落的 `+1.5` 會在極限過彎制動時與 G 點碰撞；將 `−1.5`/`+1.5` 依 `left`/`right` 錨定於橫軸上方 `h/2 - 7`、`BRAKE`/`ACCEL` 距縱軸右偏 `7px`，即可在四象限與純 `±1.5g` 極值下與同軸光環（外半徑 `5px`）完全淨空。此外，凡經 `setTransform(xScale, 0, 0, yScale, 0, 0)` 縮放之 HiDPI 畫布，`shadowBlur` 必須額外乘以 `Math.max(0.25, Math.min(xScale, yScale))` 以維持跨 HUD scale 與 DPR 的一致發光半徑；將 30＋34 次獨立網格描邊合併為單一批次路徑並以單層 `save()` / `try-finally restore()` 包裹，能兼顧 30Hz/60Hz 零配置與異常狀態隔離。
+**行動 (Action):** 所有具刻度網格與極值邊界之 MFD／示波器畫布，應採網格與軌跡共用內縮座標系防禦裁切與對齊偏移；矩形軸向標籤須扣除同軸光環最大外半徑避讓；經 `setTransform` 縮放之畫布一律按實際 `xScale`/`yScale` 等比縮放 `shadowBlur` 並維持單層 `try/finally` 狀態防護。
+**署名:** Vector as Antigravity
