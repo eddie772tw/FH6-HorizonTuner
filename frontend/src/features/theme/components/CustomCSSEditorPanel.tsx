@@ -85,11 +85,18 @@ const CustomCSSEditorPanel: React.FC = () => {
     if (!cssValidation.isValid) return;
     lastAppliedCSS.current = draftCSS;
     updateThemeSettings({ customCSS: draftCSS });
+    editorRef.current?.focus();
   };
 
   const handleDiscard = () => {
     setDraftCSS(themeSettings.customCSS);
     setFileError(null);
+    editorRef.current?.focus();
+  };
+
+  const handleClear = () => {
+    setDraftCSS('');
+    editorRef.current?.focus();
   };
 
   const handleInsertStarter = () => {
@@ -100,6 +107,7 @@ const CustomCSSEditorPanel: React.FC = () => {
     const suffix = draftCSS.slice(end);
     const separator = prefix && !prefix.endsWith('\n') ? '\n\n' : '';
     setDraftCSS(`${prefix}${separator}${STARTER_CSS}${suffix}`);
+    textarea?.focus();
   };
 
   const handleExport = () => {
@@ -136,10 +144,15 @@ const CustomCSSEditorPanel: React.FC = () => {
   return (
     <div>
       <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
-        <h3 className="text-primary fs-6 fw-bold m-0">
+        <h3 id="custom-css-heading" className="text-primary fs-6 fw-bold m-0">
           {t('Custom CSS & Style Editor')}
         </h3>
-        <span className={`badge ${!isDirty ? 'text-bg-success' : cssValidation.isValid ? 'text-bg-warning' : 'text-bg-danger'}`}>
+        <span
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+          className={`badge text-wrap text-start ${!isDirty ? 'text-bg-success' : cssValidation.isValid ? 'text-bg-warning' : 'text-bg-danger'}`}
+        >
           {statusLabel}
         </span>
       </div>
@@ -153,22 +166,27 @@ const CustomCSSEditorPanel: React.FC = () => {
         id="custom-css-editor"
         value={draftCSS}
         onChange={event => setDraftCSS(event.target.value)}
-        className="form-control font-monospace"
+        className={`form-control font-monospace${!cssValidation.isValid ? ' is-invalid' : ''}`}
+        aria-labelledby="custom-css-heading"
         aria-describedby="custom-css-help"
+        aria-invalid={!cssValidation.isValid}
         spellCheck={false}
+        autoCorrect="off"
+        autoCapitalize="none"
         wrap="off"
         style={{
           minHeight: '280px',
           resize: 'vertical',
           lineHeight: '1.55',
           tabSize: 2,
-          background: 'var(--surface-2)',
+          backgroundColor: 'var(--surface-2)',
+          boxShadow: !cssValidation.isValid ? 'inset 0 0 0 1px var(--bs-danger)' : undefined,
         }}
       />
 
       <div id="custom-css-help" className="text-body-secondary fs-8 mt-2">
         {cssValidation.error && (
-          <span className="text-danger">
+          <span className="fw-semibold" style={{ color: 'var(--bs-danger-text-emphasis)' }}>
             {cssValidation.error}
             {cssValidation.errorLine ? ` (${t('Line #')}${cssValidation.errorLine})` : ''}
           </span>
@@ -223,7 +241,7 @@ const CustomCSSEditorPanel: React.FC = () => {
             <button
               type="button"
               className="btn btn-outline-danger btn-sm"
-              onClick={() => setDraftCSS('')}
+              onClick={handleClear}
               disabled={!draftCSS}
               style={!draftCSS ? { pointerEvents: 'none' } : undefined}
             >
@@ -240,11 +258,13 @@ const CustomCSSEditorPanel: React.FC = () => {
           >
             <button
               type="button"
-              className="btn btn-outline-secondary btn-sm"
+              className="btn btn-outline-secondary btn-sm d-inline-flex align-items-center gap-1"
               onClick={handleExport}
               disabled={isSaving}
+              aria-busy={isSaving}
               style={isSaving ? { pointerEvents: 'none' } : undefined}
             >
+              {isSaving && <span className="spinner-border spinner-border-sm" aria-hidden="true" />}
               {t('Export Theme JSON')}
             </button>
           </span>
@@ -261,7 +281,7 @@ const CustomCSSEditorPanel: React.FC = () => {
         </div>
       </div>
 
-      {fileError && <div className="alert alert-danger mt-3 mb-0 py-2 fs-8">{fileError}</div>}
+      {fileError && <div className="alert alert-danger mt-3 mb-0 py-2 fs-8" role="alert">{fileError}</div>}
 
       <div className="glass-panel p-3 mt-4">
         <h4 className="text-primary fs-7 fw-bold mb-3">
