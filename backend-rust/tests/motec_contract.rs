@@ -131,3 +131,59 @@ fn export_preserves_alias_precedence_nulls_and_large_session_throughput() {
     assert!(total_bytes > 1_000_000);
     println!("motec::export 10000 points best_ms={best_ms:.3} bytes={total_bytes}");
 }
+
+#[test]
+fn ld_resampling_rejects_oversized_and_non_finite_spans_without_oom() {
+    let meta = json!({"session_id": "dos-guard", "car_name": "Test"});
+    let cases = [
+        // Two forged 32-bit UDP TimestampMS packets (0 ms -> u32::MAX ms ≈ 49.7 days).
+        vec![json!({"time": 0.0}), json!({"time": 4_294_967.30})],
+        // Just over the 2-hour 60 Hz ceiling (7,200.1 s -> 432,007 samples).
+        vec![json!({"time": 0.0}), json!({"time": 7200.1})],
+        // Extreme finite f64 timestamps whose difference overflows to +inf.
+        vec![json!({"time": -1.0e308}), json!({"time": 1.0e308})],
+    ];
+    for points in &cases {
+        let err = motec::export_ld(&meta, points, &[]).unwrap_err();
+        assert_eq!(err.status, 422);
+        assert!(motec::try_resample_to_grid(points, 60.0).is_err());
+        assert!(motec::resample_to_grid(points, 60.0).is_empty());
+    }
+    let normal = [json!({"time": 0.0}), json!({"time": 1.0})];
+    for bad_freq in [f64::NAN, f64::INFINITY, f64::NEG_INFINITY, 1.0e12] {
+        assert_eq!(
+            motec::try_resample_to_grid(&normal, bad_freq)
+                .unwrap_err()
+                .status,
+            422
+        );
+        assert!(motec::resample_to_grid(&normal, bad_freq).is_empty());
+    }
+    assert_eq!(motec::resample_to_grid(&normal, 0.0).len(), 1);
+    assert_eq!(motec::resample_to_grid(&normal, 60.0).len(), 61);
+    assert!(motec::export_ld(&meta, &normal, &[]).is_ok());
+}
+
+#[test]
+fn motec_import_and_ldx_handle_extreme_lap_numbers_without_overflow() {
+    let headers: Vec<&str> = motec::MOTEC_CHANNELS.iter().map(|c| c.name).collect();
+    let units: Vec<&str> = motec::MOTEC_CHANNELS.iter().map(|c| c.unit).collect();
+    let row0 = format!("0.0,0.0,0{}", ",0.0".repeat(38));
+    let row_max = format!("1.0,10.0,1e20{}", ",0.0".repeat(38));
+    let csv = format!(
+        "{}\r\n{}\r\n{row0}\r\n{row_max}\r\n",
+        headers.join(","),
+        units.join(",")
+    );
+    let (_, points) = motec::import(csv.as_bytes()).unwrap();
+    assert_eq!(points[0]["LapNumber"], 1);
+    assert_eq!(points[1]["LapNumber"], i64::MAX);
+
+    let laps = [json!({"lap_number": i64::MAX, "lap_time": 60.0, "complete": true})];
+    let pts = [
+        json!({"LapNumber": i64::MAX, "time": 0.0}),
+        json!({"LapNumber": i64::MAX, "time": 60.0}),
+    ];
+    let xml = motec::generate_ldx_xml(&laps, &pts);
+    assert!(xml.contains("Id=\"Total Laps\" Value=\"1\""));
+}
