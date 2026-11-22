@@ -374,3 +374,98 @@ fn endpoint_tick_bounds_refine_scale_mismatched_rounding_slack() {
         Some(&locked_invalid),
     ));
 }
+
+#[test]
+fn hard_target_closure_outer_bracket_completeness_and_preview_cap_overflow_guard() {
+    // 1. respects_hard_targets rejects wrong modelVersion, tampered tolerances,
+    //    inverted endpoints/RPM, and overflowing non-grid ratios (v * 100 -> INF -> NaN).
+    let baseline = solve_candidate(6, &target(params(), 250.0, "manual"), 7500.0, None, None);
+    available(&baseline, 6);
+    for (key, value) in [
+        ("modelVersion", json!("aego-rally-joint/v1")),
+        ("launchToleranceKmh", json!(1000.0)),
+        ("endpointToleranceKmh", json!(1000.0)),
+        ("referenceRpm", json!(8000.0)),
+    ] {
+        let mut bad = baseline.diagnostics.clone();
+        bad[key] = value;
+        assert!(!respects_hard_targets(&baseline.gearing, &bad), "{key}");
+    }
+    let mut inverted = baseline.diagnostics.clone();
+    inverted["targetSpeedKmh"] = json!(110.0);
+    inverted["endpointToleranceKmh"] = json!(2.2);
+    assert!(!respects_hard_targets(&baseline.gearing, &inverted));
+
+    let mut overflow_ratio = baseline.gearing.clone();
+    overflow_ratio.final_drive = 1e307;
+    assert!(!respects_hard_targets(
+        &overflow_ratio,
+        &baseline.diagnostics
+    ));
+    assert_eq!(
+        adjusted_diagnostics(&overflow_ratio, &json!(null))["status"],
+        "unavailable"
+    );
+
+    // 2. +/-1 tick outer bracket preserves a legal high-tick launch endpoint where
+    //    the physical 1e-9 km/h slack maps to >1e-6 ticks (220,000.0000015 -> 2200.00).
+    let circumference = (245.0 * 40.0 / 100.0 * 2.0 + 18.0 * 25.4) * std::f64::consts::PI / 1000.0;
+    let launch_limit_rpm = 220_000.0000015 * 0.01 * 112.2 / (100.0 * circumference * 0.06);
+    let mut high_tick = target(params(), 250.0, "manual");
+    high_tick.max_hp_rpm = Some(launch_limit_rpm);
+    let high_bounds = DragObservedBounds {
+        source: "user-observed".into(),
+        final_drive: range(0.01, 0.01),
+        gears: vec![
+            range(2200.0, 2200.0),
+            range(1840.0, 1920.0),
+            range(1560.0, 1640.0),
+            range(1320.0, 1400.0),
+            range(1120.0, 1200.0),
+            range(950.0, 1030.0),
+        ],
+    };
+    let high_res = solve_candidate(
+        6,
+        &high_tick,
+        launch_limit_rpm * 1.2,
+        None,
+        Some(&high_bounds),
+    );
+    available(&high_res, 6);
+    assert_eq!(high_res.gearing.gears[0], 2200.0);
+
+    // 3. Large preview cap scaled by (rpm / max_rpm) avoids intermediate cap * rpm overflow.
+    let huge_cap = GearingSecondaryCorrection {
+        simulated_top_speed: Some(1e306),
+        soft_max_speed: None,
+        drag_finish_speed_kmh: None,
+        drag_finish_speed_provenance: None,
+    };
+    let capped = solve_candidate(6, &params(), 7500.0, Some(&huge_cap), None);
+    available(&capped, 6);
+    let expected_cap = 1e306 * (5000.0 / 7500.0);
+    assert!(
+        (capped.diagnostics["previewConstraintSpeedKmh"]
+            .as_f64()
+            .unwrap()
+            - expected_cap)
+            .abs()
+            / expected_cap
+            < 1e-12
+    );
+    let conflicting = solve_candidate(
+        6,
+        &target(params(), 8e305, "manual"),
+        7500.0,
+        Some(&huge_cap),
+        None,
+    );
+    assert!(conflicting
+        .gearing
+        .unsupported_reason
+        .as_ref()
+        .unwrap()
+        .contains("preview constraint"));
+    unavailable(conflicting);
+}
