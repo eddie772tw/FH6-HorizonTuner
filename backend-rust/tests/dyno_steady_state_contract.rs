@@ -122,3 +122,58 @@ fn warmed_collection_and_unchanged_quality_do_not_allocate() {
     assert!(changed);
     assert_eq!(allocations, 0);
 }
+
+#[test]
+fn dyno_collection_bounds_extreme_rpm_bucket_capacity_and_malformed_profiles() {
+    let mut reg = DynoQualityGateRegistry::default();
+    let cfg = json!({"dyno_recording": true, "dyno_test_gear": 4, "dyno_filter_slip": true, "dyno_filter_transients": false});
+    let mut prof = json!({"drivetrain": "RWD", "dyno_curve": {}});
+    let q = reg.observe("42", &frame(0, 4000.0, 220_000.0, 380.0, 42));
+    assert!(q.can_collect);
+
+    // Reject extreme finite RPMs that previously overflowed i64 buckets or grew dyno_curve unboundedly.
+    for bad_rpm in [0.0, -500.0, 30_000.5, 1e20, f32::MAX as f64] {
+        let f = frame(1, bad_rpm, 220_000.0, 380.0, 42);
+        assert!(!collect_dyno_sample(&mut prof, &f, &q, &cfg, &reg, "42"));
+    }
+    assert!(prof["dyno_curve"].as_object().unwrap().is_empty());
+
+    // Boundary RPM 30_000.0 remains valid and does not overflow neighbor offsets.
+    let edge = frame(2, 30_000.0, 220_000.0, 380.0, 42);
+    assert!(collect_dyno_sample(&mut prof, &edge, &q, &cfg, &reg, "42"));
+    assert!(prof["dyno_curve"].get("30000").is_some());
+
+    // Enforce bucket capacity cap on pre-seeded profiles while still permitting existing bucket updates.
+    let mut full = serde_json::Map::new();
+    for i in 0..601 {
+        full.insert(format!("seeded_{i}"), json!({"hp": 100.0, "torque": 100.0}));
+    }
+    let mut capped = json!({"drivetrain": "RWD", "dyno_curve": full});
+    let valid = frame(3, 4000.0, 220_000.0, 380.0, 42);
+    assert!(!collect_dyno_sample(
+        &mut capped,
+        &valid,
+        &q,
+        &cfg,
+        &reg,
+        "42"
+    ));
+    assert_eq!(capped["dyno_curve"].as_object().unwrap().len(), 601);
+
+    // Malformed persisted/API profile shapes must never panic the telemetry worker thread.
+    for mut bad in [
+        json!({"drivetrain": "RWD", "dyno_curve": null}),
+        json!({"drivetrain": "RWD", "dyno_curve": [1, 2, 3]}),
+        json!({"drivetrain": "RWD", "dyno_curve": {"4000": "corrupted"}}),
+        json!({"drivetrain": "RWD", "dyno_curve": {"4000": {"hp_hist": 42, "torque_hist": null}}}),
+    ] {
+        assert!(collect_dyno_sample(&mut bad, &valid, &q, &cfg, &reg, "42"));
+        assert_eq!(
+            bad["dyno_curve"]["4000"]["hp_hist"]
+                .as_array()
+                .unwrap()
+                .len(),
+            1
+        );
+    }
+}
