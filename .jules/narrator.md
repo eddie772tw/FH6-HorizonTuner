@@ -102,3 +102,8 @@
 **學習 (Learning):** `connectionStatus.ts` 的 `getAggregateConnectionStatus()` 直接回傳硬編碼的繁體中文字串（`已連線`、`桌面前端未連線`、`Companion 後端未連線`、`未連線` 與對應完整 `accessibleLabel`），而 `SettingsContext.t()` 在 `en-us` 語系會直接原樣回傳輸入鍵名，且 `ja-jp.json` 亦無對應繁中鍵值，導致英文與日文使用者在 Companion 連線分頁與狀態徽章皆遭遇繁體中文洩漏；同時 `CompanionApp.tsx` 狀態徽章的 `aria-label` 未包裹 `t(...)`，且分頁與診斷鍵值（`Tuning`、`Online`、`Offline`、`CONNECTED`、`LOADING`）亦遺漏於三語系字典。
 **行動 (Action):** 所有 UI 領域狀態協助函式（如 `connectionStatus.ts`）一律回傳英文規範化鍵值作為單一 i18n 鍵名，禁止以非英文字串作為 `t(...)` 鍵值來源；同時將原先的繁中譯文完整保留並對齊至 `zh-tw.json`，補齊 `en-us.json` 與 `ja-jp.json`，並確保所有狀態徽章的 `aria-label` 皆經過 `t(...)` 包裝。
 **署名:** Narrator as Antigravity
+
+## 2026-11-23 - Cross-Domain Homonym Collision on "Metric" & Raw Storage Capability Enums
+**學習 (Learning):** 系統設定中的單位系統鍵 `"Metric"` 與遙測分析熱圖通道選擇器（`AnalysisSessionVisuals.tsx`）共用同一字面鍵，導致歷史上 `zh-tw.json` 與 `ja-jp.json` 保留原樣英文 `"Metric"` 未譯且漏收 `"Imperial"`；由於 `SettingsContext.t()` 在 `en-us` 直接回傳原始鍵名而不查表，若單獨修改 `"Metric"` 譯文為「公制 / メートル法」，會讓分析介面錯誤顯示單位制名稱。此外，`DataStorageOverview.tsx` 直接以 `.replace('_', ' ')` 渲染 Rust 後端能力枚舉（`not_available`、`not_planned`、`available`）與 `data_root`（`Application data directory`）而未經過 `t(...)` 映射，`DiscordPresenceStatusCard.tsx` 亦遺漏後端 `unavailable` 狀態且以通用鍵 `Updates` 拼接數值計數。
+**行動 (Action):** 修改任何高風險多義鍵（如 `Metric`、`Updates`）譯文前，必須先全域 grep 盤點所有呼叫端，並以明確英文區分鍵（如復用既有三語系鍵 `Analysis Metric` 或參數化 `Updates: {count}`）解除同形異義衝突；凡消費後端能力枚舉或描述字串的狀態卡片，一律建立顯式鍵名對應表經 `t(...)` 轉換，並為動態輪詢徽章與錯誤區塊補齊 `role="status" aria-live="polite"` 與 `role="alert"`。
+**署名:** Narrator as Antigravity

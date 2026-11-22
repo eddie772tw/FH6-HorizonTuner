@@ -61,7 +61,7 @@ const AnalysisSessionVisuals: React.FC<AnalysisSessionVisualsProps> = ({
           <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
             <span style={{ fontWeight: "bold", color: "var(--text-primary)", fontSize: "0.95rem" }}>{t("GPS Track Heatmap")}</span>
             <label className="d-flex align-items-center gap-2">
-              <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>{t("Metric")}:</span>
+              <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>{t("Analysis Metric")}:</span>
               <select className="form-select form-select-sm" value={selectedMetric} onChange={event => onSelectMetric(event.target.value as AnalysisMetric)}>
                 <option value="speed">{t("Speed")}</option>
                 <option value="throttle">{t("Throttle")}</option>
