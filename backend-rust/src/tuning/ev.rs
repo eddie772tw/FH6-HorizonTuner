@@ -80,6 +80,17 @@ pub struct EvAdjustability {
 fn positive(n: f64) -> bool {
     n.is_finite() && n > 0.0
 }
+/// Confirmed forward gear ratios must decrease strictly even across unconfirmed (`None`) gaps.
+pub(crate) fn confirmed_ratios_decreasing(ratios: impl IntoIterator<Item = f64>) -> bool {
+    let mut prev: Option<f64> = None;
+    for ratio in ratios {
+        if !positive(ratio) || prev.is_some_and(|p| !(ratio < p)) {
+            return false;
+        }
+        prev = Some(ratio);
+    }
+    true
+}
 fn stable(s: &EvMoments) -> bool {
     s.count >= 30
         && positive(s.mean)
@@ -139,9 +150,7 @@ pub fn calculate_ev_gearing(input: &EvGearingInput) -> Option<EvGearingResult> {
                 || input.candidate_final_drive.is_none()))
         || !(1..=10).contains(&ratios.len())
         || !ratios.iter().all(|r| valid_ratio(*r))
-        || ratios
-            .windows(2)
-            .any(|w| matches!((w[0], w[1]), (Some(a), Some(b)) if b >= a))
+        || !confirmed_ratios_decreasing(ratios.iter().flatten().copied())
         || setup.gear_adjustable.len() != ratios.len()
         || input.measurements.len() != ratios.len()
     {
@@ -161,7 +170,10 @@ pub fn calculate_ev_gearing(input: &EvGearingInput) -> Option<EvGearingResult> {
         .zip(ratios)
         .filter_map(|(g, r)| r.map(|r| g.rpm_per_kmh.mean / r))
         .collect();
-    if known.iter().any(|r| (r / known[0] - 1.0).abs() > 0.05) {
+    if known
+        .iter()
+        .any(|r| !positive(*r) || !((*r / known[0] - 1.0).abs() <= 0.05))
+    {
         return None;
     }
     let scale = if changed {
@@ -169,6 +181,9 @@ pub fn calculate_ev_gearing(input: &EvGearingInput) -> Option<EvGearingResult> {
     } else {
         1.0
     };
+    if !positive(scale) {
+        return None;
+    }
     let envelopes = ordered
         .iter()
         .map(|g| {
@@ -178,19 +193,30 @@ pub fn calculate_ev_gearing(input: &EvGearingInput) -> Option<EvGearingResult> {
                 .filter(|b| b.count >= 3)
                 .map(|b| b.power_watts)
                 .fold(0.0, f64::max);
-            let band: Vec<_> = g
+            let (power_band_start_rpm, power_band_end_rpm) = g
                 .curve
                 .iter()
                 .filter(|b| b.count >= 3 && b.power_watts >= peak * 0.95)
-                .collect();
+                .fold(None::<(f64, f64)>, |acc, b| {
+                    Some(match acc {
+                        Some((lo, hi)) => (lo.min(b.rpm), hi.max(b.rpm)),
+                        None => (b.rpm, b.rpm),
+                    })
+                })
+                .unwrap_or((g.highest_rpm, g.highest_rpm));
             let cut = g.cutoff.count >= 3 && positive(g.cutoff.mean);
             let bound_rpm = if cut { g.cutoff.mean } else { g.highest_rpm };
-            EvGearEnvelope {
+            let scaled_rpm_per_kmh = g.rpm_per_kmh.mean * scale;
+            let bound_speed_kmh = bound_rpm / scaled_rpm_per_kmh;
+            if !positive(scaled_rpm_per_kmh) || !positive(bound_speed_kmh) {
+                return None;
+            }
+            Some(EvGearEnvelope {
                 gear: g.gear,
                 lowest_rpm: g.lowest_rpm,
                 highest_rpm: g.highest_rpm,
-                power_band_start_rpm: band.first().map_or(g.highest_rpm, |b| b.rpm),
-                power_band_end_rpm: band.last().map_or(g.highest_rpm, |b| b.rpm),
+                power_band_start_rpm,
+                power_band_end_rpm,
                 peak_power_kw: peak / 1000.0,
                 bound_rpm,
                 bound_kind: if cut {
@@ -200,10 +226,10 @@ pub fn calculate_ev_gearing(input: &EvGearingInput) -> Option<EvGearingResult> {
                 }
                 .into(),
                 baseline_rpm_per_kmh: g.rpm_per_kmh.mean,
-                bound_speed_kmh: bound_rpm / (g.rpm_per_kmh.mean * scale),
-            }
+                bound_speed_kmh,
+            })
         })
-        .collect();
+        .collect::<Option<Vec<_>>>()?;
     Some(EvGearingResult {
         model: "ev/v1".into(),
         basis: if input.candidate_final_drive == setup.final_drive {

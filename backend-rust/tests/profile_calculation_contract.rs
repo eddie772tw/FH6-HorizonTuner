@@ -23,6 +23,14 @@ fn unknown_ev_ratios_remain_unknown_and_invalid_setup_is_unavailable() {
     assert!(ev_profile(&raw)["evGearbox"]["gearRatios"][1].is_null());
     raw["evGearbox"]["gearRatios"] = json!([1, 2]);
     assert!(!ev_ready(&raw));
+    raw["evGearbox"]["gearRatios"] = json!([1, null, 4]);
+    assert!(!ev_ready(&raw));
+    raw["evGearbox"]["gearRatios"] = json!([2, null, 2]);
+    assert!(!ev_ready(&raw));
+    raw["evGearbox"]["gearRatios"] = json!([4, 2, null, 2]);
+    assert!(!ev_ready(&raw));
+    raw["evGearbox"]["gearRatios"] = json!([null, null]);
+    assert!(ev_ready(&raw));
     raw["evGearbox"]["gearRatios"] = json!([0]);
     assert!(!ev_ready(&raw));
     raw["evGearbox"]["gearRatios"] = json!([]);
