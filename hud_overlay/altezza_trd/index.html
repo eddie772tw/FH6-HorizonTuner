@@ -8,6 +8,13 @@
     <style>
         #altezzaContainer { position: relative; width: 545px; height: 330px; pointer-events: none; }
         #altezzaPlate, #altezzaCanvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+        .lcd-units {
+            position: absolute; left: 477px; top: 209px; width: 24px; height: 10px;
+            color: #e8b46e; font: 600 8px/10px Arial, sans-serif; text-align: right;
+        }
+        .lcd-units span { display: none; }
+        #altezzaCanvas[data-speed-unit="kmh"] + .lcd-units .kmh,
+        #altezzaCanvas[data-speed-unit="mph"] + .lcd-units .mph { display: block; }
     </style>
 </head>
 <body>
@@ -15,7 +22,8 @@
     <div class="hud-root-wrapper">
         <div class="hud-gauge-container" id="altezzaContainer">
             <img id="altezzaPlate" src="assets/chronograph.svg" alt="">
-            <canvas id="altezzaCanvas" width="545" height="330" aria-label="Toyota Altezza chronograph"></canvas>
+            <canvas id="altezzaCanvas" width="545" height="330" aria-label="Toyota Altezza chronograph" data-speed-unit="kmh"></canvas>
+            <div class="lcd-units"><span class="kmh">km/h</span><span class="mph">mph</span></div>
         </div>
     </div>
     <script src="../shared/hud-core.js"></script>
@@ -118,35 +126,62 @@
                 ctx.restore();
             }
 
-            // The seven segments occupy a fixed-width cell, so the units never move.
-            const segments = [
-                [2, 1, 10, 1], [12, 3, 12, 10], [12, 14, 12, 21], [2, 23, 10, 23],
-                [0, 14, 0, 21], [0, 3, 0, 10], [2, 12, 10, 12]
+            // One 14 × 26 cell defines the electrode proportions at every size.
+            // The extra strokes allow full-height N and R in the same segmented display.
+            const electrodes = [
+                [[2, 0], [12, 0], [13, 1.5], [11, 3], [3, 3], [1, 1.5]],
+                [[12, 3], [14, 2], [14, 11], [12.5, 12.5], [11, 11], [11, 5]],
+                [[12.5, 13.5], [14, 15], [14, 24], [12, 23], [11, 21], [11, 15]],
+                [[3, 23], [11, 23], [13, 24.5], [12, 26], [2, 26], [1, 24.5]],
+                [[1.5, 13.5], [3, 15], [3, 21], [2, 23], [0, 24], [0, 15]],
+                [[0, 2], [2, 3], [3, 5], [3, 11], [1.5, 12.5], [0, 11]],
+                [[3, 11.5], [11, 11.5], [12.5, 13], [11, 14.5], [3, 14.5], [1.5, 13]],
+                [[3.5, 4], [5.5, 4.5], [10.5, 21], [8.5, 20.5]],
+                [[7, 15], [9, 15], [11, 21], [10, 23]]
             ];
-            const digits = ['012345', '12', '01643', '01623', '5612', '05623', '056423', '012', '0123456', '012356'];
-            function lcd(value, gear) {
-                const readout = value === null ? '---' : String(Math.round(value));
+            const glyphs = {
+                '0': '012345', '1': '12', '2': '01643', '3': '01623', '4': '5612',
+                '5': '05623', '6': '056423', '7': '012', '8': '0123456', '9': '012356',
+                R: '015648', N: '12457', H: '12456', I: '12', '-': '6'
+            };
+            function lcdCharacters(text, right, top, height) {
+                const scale = height / 26;
+                const advance = 19;
                 ctx.save();
-                ctx.strokeStyle = ctx.fillStyle = '#fff0a4';
-                ctx.lineWidth = 2.7;
-                ctx.lineCap = 'round';
-                ctx.textAlign = 'right';
-                ctx.font = 'bold 16px monospace';
-                ctx.fillText(gear, 496, 195);
-                ctx.font = 'bold 9px sans-serif';
-                ctx.fillText(unit === 'mph' ? 'mph' : 'km/h', 500, 216);
-                ctx.translate(474 - readout.length * 18, 211);
-                ctx.transform(1, 0, -.07, 1.36, 0, 0);
-                for (const char of readout) {
-                    for (const index of digits[char] || '6') {
-                        const [x1, y1, x2, y2] = segments[index];
+                ctx.translate(right - ((text.length - 1) * advance + 14) * scale, top);
+                ctx.scale(scale, scale);
+                for (const char of text) {
+                    const active = glyphs[char] || glyphs['-'];
+                    electrodes.forEach((polygon, index) => {
+                        // Faint unlit electrodes are visible through the tinted glass.
+                        if (index > 6 && !active.includes(String(index))) return;
+                        const lit = active.includes(String(index));
+                        ctx.fillStyle = lit ? '#ffe49b' : 'rgba(85, 31, 12, .035)';
+                        ctx.shadowColor = 'rgba(255, 165, 58, .55)';
+                        ctx.shadowBlur = lit ? 1.8 * scale : 0;
                         ctx.beginPath();
-                        ctx.moveTo(x1, y1);
-                        ctx.lineTo(x2, y2);
-                        ctx.stroke();
-                    }
-                    ctx.translate(18, 0);
+                        polygon.forEach(([x, y], point) => point ? ctx.lineTo(x, y) : ctx.moveTo(x, y));
+                        ctx.closePath();
+                        ctx.fill();
+                    });
+                    ctx.translate(advance, 0);
                 }
+                ctx.restore();
+            }
+
+            function lcd(value, gear) {
+                const speed = value === null ? '---' : value > 999 ? 'HI' : String(Math.round(value));
+                ctx.save();
+                // Clip all LCD contents to its glass and the right-hand circular aperture.
+                ctx.beginPath();
+                ctx.arc(408, 168, 108, 0, Math.PI * 2);
+                ctx.clip();
+                ctx.beginPath();
+                ctx.rect(397, 179, 117, 96);
+                ctx.clip();
+                lcdCharacters(gear, 495, 182, 15);
+                lcdCharacters(speed, 473, 211, 34);
+                canvas.setAttribute('data-speed-unit', unit === 'mph' ? 'mph' : 'kmh');
                 ctx.restore();
             }
 
@@ -155,13 +190,21 @@
                 const speedRatio = clamp(state.speed / 180);
                 const rpmRatio = clamp(state.rpm / state.ceiling);
                 drawTachScale(state);
+                // Side instruments sit behind the central bezel, including their hands and hubs.
+                ctx.save();
+                ctx.beginPath();
+                ctx.rect(0, 0, 545, 330);
+                ctx.moveTo(405, 165);
+                ctx.arc(269, 165, 136, 0, Math.PI * 2);
+                ctx.clip('evenodd');
                 needle(129, 168, 98, 132 + 147 * (speedCenter ? rpmRatio : speedRatio), 3);
                 needle(423, 148, 65, 4 - 106 * clamp(state.fuel), 3);
+                ctx.restore();
                 needle(269, 110, 25, 115 + 142 * clamp((state.oilTempC - 60) / 90), 2, true);
                 needle(322, 165, 25, 115 + 142 * clamp(state.voltage / 18), 2, true);
                 needle(269, 220, 25, 115 + 142 * clamp((state.coolantTempC - 55) / 75), 2, true);
-                needle(269, 165, 124, 140 + 234 * (speedCenter ? speedRatio : rpmRatio), 4.6);
-                const gear = state.gear === null ? '–' : state.gear === 0 ? 'R' : state.gear === 11 ? 'N' : String(state.gear);
+                needle(269, 165, 119, 140 + 234 * (speedCenter ? speedRatio : rpmRatio), 4.6);
+                const gear = state.gear === null ? '-' : state.gear === 0 ? 'R' : state.gear === 11 ? 'N' : String(state.gear);
                 lcd(state.speed === null ? null : state.speed / (unit === 'mph' ? 1.609344 : 1), gear);
             }
 
