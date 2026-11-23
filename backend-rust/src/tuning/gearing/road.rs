@@ -92,6 +92,24 @@ fn safe_tire_circumference(width: f64, aspect: f64, rim: f64) -> f64 {
     }
 }
 
+fn resolve_road_torque_nm(
+    params: &TuningCarParams,
+    torque_rpm: f64,
+    explicit_torque: Option<f64>,
+) -> f64 {
+    explicit_torque
+        .filter(|v| v.is_finite() && *v > 0.0)
+        .or_else(|| params.max_torque.filter(|v| v.is_finite() && *v > 0.0))
+        .unwrap_or_else(|| {
+            let hp = params
+                .max_hp
+                .filter(|v| v.is_finite() && *v > 0.0)
+                .unwrap_or(300.0)
+                .max(1.0);
+            hp * 7021.5 / torque_rpm.max(1.0)
+        })
+}
+
 /// Inspectable model evidence, not optimal launch/shift predictions. The peak
 /// window is descriptive only: a torque peak is not the lower usable RPM limit.
 pub fn road_launch_diagnostics(
@@ -133,6 +151,7 @@ pub fn road_launch_diagnostics(
         )
     };
     let c = safe_tire_circumference(width, aspect, rim);
+    let torque_nm = resolve_road_torque_nm(&p, torque_rpm, Some(torque_nm));
     let load = road_launch_total_ratio(&p, torque_nm, c / (2.0 * PI));
     let speed = road_speed_total(drive, power_rpm, c);
     let first = result.gears.first().copied();
@@ -161,7 +180,9 @@ fn allocate_road_gearing(first_total: f64, top_total: f64, count: usize) -> Gear
     {
         return unavailable;
     }
-    let preferred_fd = top_total / get_target_top_gear_ratio(count);
+    // Order-isomorphic projection onto [2.0, 6.1] avoids INFINITY - INFINITY sort panics
+    // and large-magnitude cancellation while preserving exact tie-breaks inside the grid.
+    let preferred_fd = (top_total / get_target_top_gear_ratio(count)).clamp(2.0, 6.1);
     let mut candidates: Vec<f64> = (200..=610).map(|n| n as f64 / 100.0).collect();
     candidates.sort_by(|a, b| {
         let distance = (a - preferred_fd).abs() - (b - preferred_fd).abs();
@@ -326,10 +347,7 @@ pub fn versioned_diagnostics(
         .filter(|v| *v > 0.0)
         .unwrap_or(limit_rpm * 0.60);
     let hp = p.max_hp.unwrap().max(1.0);
-    let torque = p
-        .max_torque
-        .filter(|v| *v > 0.0)
-        .unwrap_or_else(|| hp * 7021.5 / torque_rpm.max(1.0));
+    let torque = resolve_road_torque_nm(&p, torque_rpm, None);
     let first = road_launch_total_ratio(&p, torque, circumference / (2.0 * PI))
         .max(road_speed_total(drive, power_rpm, circumference));
     let mut target_speed =
@@ -361,9 +379,12 @@ pub fn versioned_diagnostics(
 pub fn respects_hard_targets(result: &GearingResult, d: &serde_json::Value) -> bool {
     let count = d["gearCount"].as_u64().unwrap_or(0) as usize;
     let number = |k: &str| d[k].as_f64().filter(|v| v.is_finite() && *v > 0.0);
-    let (Some(first), Some(top)) = (
+    let (Some(first), Some(top), Some(_rpm), Some(_radius), Some(_target_speed)) = (
         number("targetFirstTotalRatio"),
         number("targetTopTotalRatio"),
+        number("referenceRpm"),
+        number("tireRadiusM"),
+        number("targetSpeedKmh"),
     ) else {
         return false;
     };
@@ -392,6 +413,14 @@ pub fn adjusted_diagnostics(
         d["reason"] = serde_json::json!(
             "Road rounded ratios cannot preserve the original launch and top anchors"
         );
+        for key in [
+            "actualSpeedKmh",
+            "endpointErrorKmh",
+            "actualFirstTotalRatio",
+            "actualTopTotalRatio",
+        ] {
+            d[key] = serde_json::Value::Null;
+        }
         return d;
     }
     let actual = calc_gear_speed(
@@ -446,10 +475,7 @@ pub(super) fn calculate(
         .max_torque_rpm
         .filter(|v| *v > 0.0)
         .unwrap_or(limit_rpm * 0.60);
-    let torque = p
-        .max_torque
-        .filter(|v| *v > 0.0)
-        .unwrap_or_else(|| hp * 7021.5 / torque_rpm.max(1.0));
+    let torque = resolve_road_torque_nm(&p, torque_rpm, None);
     let (width, aspect, rim) = if drive == Drivetrain::FWD {
         (
             p.front_tire_width.unwrap(),
