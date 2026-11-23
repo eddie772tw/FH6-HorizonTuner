@@ -1,0 +1,113 @@
+{
+  "date": "2026-11-20",
+  "cases": [
+    {
+      "core": "default",
+      "mode": "light",
+      "language": "en-us",
+      "width": 1280,
+      "hasTooltipRole": false,
+      "popoverRect": {
+        "left": 193,
+        "right": 513,
+        "width": 320
+      },
+      "viewport": {
+        "width": 1280,
+        "scrollWidth": 1280
+      },
+      "telemetryViewOverflow": 0,
+      "errors": []
+    },
+    {
+      "core": "default",
+      "mode": "dark",
+      "language": "zh-tw",
+      "width": 320,
+      "hasTooltipRole": false,
+      "popoverRect": {
+        "left": 16,
+        "right": 304,
+        "width": 288
+      },
+      "viewport": {
+        "width": 320,
+        "scrollWidth": 320
+      },
+      "telemetryViewOverflow": 8,
+      "errors": []
+    },
+    {
+      "core": "swiss",
+      "mode": "light",
+      "language": "zh-tw",
+      "width": 1280,
+      "hasTooltipRole": false,
+      "popoverRect": {
+        "left": 132,
+        "right": 452,
+        "width": 320
+      },
+      "viewport": {
+        "width": 1280,
+        "scrollWidth": 1280
+      },
+      "telemetryViewOverflow": 0,
+      "errors": []
+    },
+    {
+      "core": "swiss",
+      "mode": "dark",
+      "language": "ja-jp",
+      "width": 1280,
+      "hasTooltipRole": false,
+      "popoverRect": {
+        "left": 214,
+        "right": 534,
+        "width": 320
+      },
+      "viewport": {
+        "width": 1280,
+        "scrollWidth": 1280
+      },
+      "telemetryViewOverflow": 0,
+      "errors": []
+    },
+    {
+      "core": "rhine-lab",
+      "mode": "light",
+      "language": "ja-jp",
+      "width": 1280,
+      "hasTooltipRole": false,
+      "popoverRect": {
+        "left": 212,
+        "right": 532,
+        "width": 320
+      },
+      "viewport": {
+        "width": 1280,
+        "scrollWidth": 1280
+      },
+      "telemetryViewOverflow": 0,
+      "errors": []
+    },
+    {
+      "core": "rhine-lab",
+      "mode": "dark",
+      "language": "en-us",
+      "width": 1280,
+      "hasTooltipRole": false,
+      "popoverRect": {
+        "left": 204,
+        "right": 524,
+        "width": 320
+      },
+      "viewport": {
+        "width": 1280,
+        "scrollWidth": 1280
+      },
+      "telemetryViewOverflow": 0,
+      "errors": []
+    }
+  ]
+}
