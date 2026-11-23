@@ -240,7 +240,9 @@ const TelemetryViewContent: React.FC<TelemetryViewContentProps> = ({
         </div>
 
         <div className="telemetry-vehicle-status d-flex align-items-center flex-wrap gap-2 fw-bold text-secondary fs-6">
-          <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => setShowUnitSettings(true)}>
+          <button type="button" className="btn btn-sm btn-outline-secondary"
+            aria-expanded={showUnitSettings} aria-controls="telemetry-units-dialog"
+            onClick={() => setShowUnitSettings(true)}>
             {t("Telemetry Units")}
           </button>
           {classDisplay && <span className="badge text-bg-info me-2">{classDisplay}</span>}
@@ -288,9 +290,9 @@ const TelemetryViewContent: React.FC<TelemetryViewContentProps> = ({
             expanded={expandedCard === 'traces'}
             onExpand={() => expandCard('traces')}
             onClose={closeExpandedCard}
-            expandLabel={t("Expand card")}
+            expandLabel={`${t("Expand card")}: ${t("Live Telemetry Traces")}`}
             closeLabel={t("Close")}
-            renderSwitch={<RenderSwitch checked={renderConfig.traces} onChange={() => toggleBlockRender('traces')} />}
+            renderSwitch={<RenderSwitch checked={renderConfig.traces} onChange={() => toggleBlockRender('traces')} sectionLabel={t("Live Telemetry Traces")} />}
             detail={<TelemetryDetailView cardId="traces" current={telemetryData} />}
           >
             <TelemetryCardLayout variant="stack" className="telemetry-card-layout--equal">
@@ -311,9 +313,9 @@ const TelemetryViewContent: React.FC<TelemetryViewContentProps> = ({
             expanded={expandedCard === 'dynamics'}
             onExpand={() => expandCard('dynamics')}
             onClose={closeExpandedCard}
-            expandLabel={t("Expand card")}
+            expandLabel={`${t("Expand card")}: ${t("Vehicle Dynamics Overview")}`}
             closeLabel={t("Close")}
-            renderSwitch={<RenderSwitch checked={renderConfig.dynamicsRadar} onChange={() => toggleBlockRender('dynamicsRadar')} />}
+            renderSwitch={<RenderSwitch checked={renderConfig.dynamicsRadar} onChange={() => toggleBlockRender('dynamicsRadar')} sectionLabel={t("Vehicle Dynamics Overview")} />}
             detail={<TelemetryDetailView cardId="dynamics" current={telemetryData} />}
           >
             <TelemetryCardLayout variant="split">
@@ -334,9 +336,9 @@ const TelemetryViewContent: React.FC<TelemetryViewContentProps> = ({
             expanded={expandedCard === 'tires'}
             onExpand={() => expandCard('tires')}
             onClose={closeExpandedCard}
-            expandLabel={t("Expand card")}
+            expandLabel={`${t("Expand card")}: ${t("Tire Grip & Status")}`}
             closeLabel={t("Close")}
-            renderSwitch={<RenderSwitch checked={renderConfig.tireRadar} onChange={() => toggleBlockRender('tireRadar')} />}
+            renderSwitch={<RenderSwitch checked={renderConfig.tireRadar} onChange={() => toggleBlockRender('tireRadar')} sectionLabel={t("Tire Grip & Status")} />}
             detail={<TelemetryDetailView cardId="tires" current={telemetryData} />}
           >
             <TelemetryCardLayout variant="grid">
@@ -355,15 +357,15 @@ const TelemetryViewContent: React.FC<TelemetryViewContentProps> = ({
             expanded={expandedCard === 'suspension'}
             onExpand={() => expandCard('suspension')}
             onClose={closeExpandedCard}
-            expandLabel={t("Expand card")}
+            expandLabel={`${t("Expand card")}: ${t("Suspension Travel")}`}
             closeLabel={t("Close")}
             renderSwitch={
               <div className="d-flex align-items-center gap-2">
                 <div className="btn-group btn-group-sm" role="group" aria-label={t("Suspension Travel Display Mode")}>
-                  <button type="button" className={`btn btn-outline-secondary ${suspensionTravelMode === 'relative' ? 'active' : ''}`} onClick={() => selectSuspensionTravelMode('relative')}>{t("Relative")}</button>
-                  <button type="button" className={`btn btn-outline-secondary ${suspensionTravelMode === 'absolute' ? 'active' : ''}`} onClick={() => selectSuspensionTravelMode('absolute')}>{t("Absolute")}</button>
+                  <button type="button" className={`btn btn-outline-secondary ${suspensionTravelMode === 'relative' ? 'active' : ''}`} aria-pressed={suspensionTravelMode === 'relative'} onClick={() => selectSuspensionTravelMode('relative')}>{t("Relative")}</button>
+                  <button type="button" className={`btn btn-outline-secondary ${suspensionTravelMode === 'absolute' ? 'active' : ''}`} aria-pressed={suspensionTravelMode === 'absolute'} onClick={() => selectSuspensionTravelMode('absolute')}>{t("Absolute")}</button>
                 </div>
-                <RenderSwitch checked={renderConfig.suspensionTrace} onChange={() => toggleBlockRender('suspensionTrace')} />
+                <RenderSwitch checked={renderConfig.suspensionTrace} onChange={() => toggleBlockRender('suspensionTrace')} sectionLabel={t("Suspension Travel")} />
               </div>
             }
             detail={<TelemetryDetailView cardId="suspension" current={telemetryData} />}
