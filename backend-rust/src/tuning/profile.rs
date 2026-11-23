@@ -43,6 +43,7 @@ pub fn normalize(raw: &Value) -> Value {
         result[key] = value.clone();
     }
     for key in [
+        "tuningTarget",
         "rallyProfile",
         "roadAwdRearPercent",
         "dragFinishSpeedKmh",

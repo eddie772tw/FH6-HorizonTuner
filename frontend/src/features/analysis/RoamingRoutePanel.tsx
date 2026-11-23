@@ -3,6 +3,7 @@ import type { CustomRoute } from "./routeTriggerMath";
 import { validateRoute } from "./routeTriggerMath";
 import type { TelemetryData } from "../../hooks/useTelemetry";
 import { useToast } from "../../context/ToastContext";
+import { RouteActionBar } from "./RouteActionBar";
 
 export interface RoamingRoutePanelProps {
   readonly routes: CustomRoute[];
@@ -50,6 +51,7 @@ export const RoamingRoutePanel: React.FC<RoamingRoutePanelProps> = ({
   const [endRadius, setEndRadius] = useState<number>(15);
   const id = useId();
   const importFileRef = React.useRef<HTMLInputElement>(null);
+  const selectRef = React.useRef<HTMLSelectElement>(null);
 
   const activeRoute = routes.find((r) => r.route_id === selectedRouteId) ?? null;
   const isCurrentArmed = isArmed && armedRouteId === selectedRouteId;
@@ -124,7 +126,7 @@ export const RoamingRoutePanel: React.FC<RoamingRoutePanelProps> = ({
 
   return (
     <div className="card mb-3 p-3 border">
-      <div className="d-flex justify-content-between align-items-center mb-3">
+      <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
         <h6 className="m-0 fw-bold">{t("Free Roam Point-to-Point Route Configuration")}</h6>
         <div className="d-flex gap-2">
           <input
@@ -152,7 +154,7 @@ export const RoamingRoutePanel: React.FC<RoamingRoutePanelProps> = ({
       <div className="row g-2 mb-2">
         <div className="col-md-6">
           <label htmlFor={`${id}-select`} className="form-label" style={{ fontSize: "0.75rem" }}>{t("Select Route")}</label>
-          <select id={`${id}-select`} className="form-select form-select-sm" value={selectedRouteId ?? ""} onChange={(e) => onSelectRoute(e.target.value || null)}>
+          <select ref={selectRef} id={`${id}-select`} className="form-select form-select-sm" value={selectedRouteId ?? ""} onChange={(e) => onSelectRoute(e.target.value || null)}>
             <option value="">{t("+ Create New Route")}</option>
             {routes.map((r) => (
               <option key={r.route_id} value={r.route_id}>{r.name}</option>
@@ -199,32 +201,8 @@ export const RoamingRoutePanel: React.FC<RoamingRoutePanelProps> = ({
         </div>
       </div>
 
-      <div className="d-flex justify-content-between align-items-center mt-1">
-        <div className="d-flex gap-2">
-          <button type="button" className="btn btn-sm btn-primary" onClick={handleSave}>{t("Save Route")}</button>
-          {selectedRouteId && (
-            <button
-              type="button"
-              className="btn btn-sm btn-outline-danger"
-              onClick={async () => {
-                if (confirm(t("Are you sure you want to delete this route?"))) await onDeleteRoute(selectedRouteId);
-              }}
-            >
-              {t("Delete")}
-            </button>
-          )}
-        </div>
-
-        {selectedRouteId && (
-          <div>
-            {isCurrentArmed ? (
-              <button type="button" className="btn btn-sm btn-warning text-dark" disabled={isRecording} onClick={onDisarmRoute}>{t("Disarm Route")}</button>
-            ) : (
-              <button type="button" className="btn btn-sm btn-success" disabled={isRecording} onClick={() => onArmRoute(selectedRouteId)}>{t("Arm Route for Timing")}</button>
-            )}
-          </div>
-        )}
-      </div>
+      <RouteActionBar id={id} selectedRouteId={selectedRouteId} routeName={activeRoute?.name} isCurrentArmed={isCurrentArmed} isRecording={isRecording}
+        selectRef={selectRef} onSave={handleSave} onDeleteRoute={onDeleteRoute} onArmRoute={onArmRoute} onDisarmRoute={onDisarmRoute} t={t} />
     </div>
   );
 };
