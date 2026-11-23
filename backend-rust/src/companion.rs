@@ -76,6 +76,7 @@ pub struct CompanionService {
     pending_tokens: Mutex<HashMap<String, Instant>>,
     pair_failures: Mutex<(u32, Option<Instant>)>,
     paired_devices: Mutex<Vec<PairedDevice>>,
+    session_revision: tokio::sync::watch::Sender<u64>,
     active_connections: AtomicUsize,
 }
 
@@ -103,6 +104,7 @@ impl CompanionService {
             pending_tokens: Mutex::new(HashMap::new()),
             pair_failures: Mutex::new((0, None)),
             paired_devices: Mutex::new(paired_devices),
+            session_revision: tokio::sync::watch::channel(0).0,
             active_connections: AtomicUsize::new(0),
         }
     }
@@ -257,6 +259,8 @@ impl CompanionService {
             devices.push(device.clone());
             self.persist_devices(&devices);
         }
+        self.session_revision
+            .send_modify(|r| *r = r.wrapping_add(1));
 
         Ok((device, session_token))
     }
@@ -276,25 +280,43 @@ impl CompanionService {
             devices.retain(|d| d.id != device_id);
             if devices.len() < initial_len {
                 self.persist_devices(&devices);
+                drop(devices);
+                self.session_revision
+                    .send_modify(|r| *r = r.wrapping_add(1));
                 return true;
             }
         }
         false
     }
 
+    /// Authenticate a session token, returning its SHA-256 hash without retaining plaintext.
+    pub fn authenticate_session(&self, session_token: &str) -> Option<String> {
+        let token_hash = (!session_token.is_empty()).then(|| hash_session(session_token))?;
+        let mut devices = self.paired_devices.lock().ok()?;
+        let device = devices
+            .iter_mut()
+            .find(|d| constant_time_eq(&d.session_token, &token_hash))?;
+        device.last_connected_at = Some(chrono::Utc::now().to_rfc3339());
+        Some(token_hash)
+    }
+
     /// Validate a session token.
     pub fn validate_session(&self, session_token: &str) -> bool {
-        if session_token.is_empty() {
-            return false;
-        }
-        let token_hash = hash_session(session_token);
-        if let Ok(mut devices) = self.paired_devices.lock() {
-            if let Some(device) = devices.iter_mut().find(|d| d.session_token == token_hash) {
-                device.last_connected_at = Some(chrono::Utc::now().to_rfc3339());
-                return true;
-            }
-        }
-        false
+        self.authenticate_session(session_token).is_some()
+    }
+
+    /// Read-only check whether an authenticated session hash remains paired.
+    pub fn is_session_hash_active(&self, hash: &str) -> bool {
+        !hash.is_empty()
+            && self
+                .paired_devices
+                .lock()
+                .is_ok_and(|d| d.iter().any(|x| constant_time_eq(&x.session_token, hash)))
+    }
+
+    /// Subscribe to paired-device revocation or token rotation notifications.
+    pub fn subscribe_session_changes(&self) -> tokio::sync::watch::Receiver<u64> {
+        self.session_revision.subscribe()
     }
 
     pub fn client_connected(&self) {
@@ -392,6 +414,10 @@ fn sanitize_device_id(raw: &str) -> String {
 fn hash_session(token: &str) -> String {
     let digest = Sha256::digest(token.as_bytes());
     digest.iter().map(|byte| format!("{byte:02x}")).collect()
+}
+
+fn constant_time_eq(a: &str, b: &str) -> bool {
+    a.len() == b.len() && a.bytes().zip(b.bytes()).fold(0, |x, (l, r)| x | (l ^ r)) == 0
 }
 
 fn hostname_fallback() -> String {

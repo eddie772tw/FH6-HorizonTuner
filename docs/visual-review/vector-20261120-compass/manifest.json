@@ -1,0 +1,87 @@
+{
+  "target": "hud_overlay/shared/telemetry-cards/compass.js",
+  "renderer": "createTelemetryCardsManager() -> renderCompass()",
+  "capturedAt": "2026-11-19T21:12:50.724Z",
+  "browser": "Chromium headless (Chrome/151.0.7922.34)",
+  "background": "#0b111b (composite dark backdrop for transparent HUD panel)",
+  "scopeNote": "Isolated #tcCompassContainer element clip with 16px margin at 1280x720 (50vw x 76px); live game & native Windows overlay not tested here.",
+  "captures": [
+    {
+      "file": "compass-dpr1-cardinal-north.png",
+      "description": "DPR 1 · 正北航向（000° N）指針與方位字元淨空分離、水平基準軌與中心游標指示",
+      "viewport": "1280x720",
+      "dpr": 1,
+      "input": {
+        "Yaw": 0
+      },
+      "config": {
+        "useDefaultColors": true
+      },
+      "canvas": {
+        "width": 640,
+        "height": 76,
+        "clientWidth": 640,
+        "clientHeight": 76
+      },
+      "clipPaddingPx": 16
+    },
+    {
+      "file": "compass-dpr1-intermediate-ne.png",
+      "description": "DPR 1 · 非正方位航向（042° NE）捲動刻度、15°/45° 階梯字級與左右漸層淡出遮罩",
+      "viewport": "1280x720",
+      "dpr": 1,
+      "input": {
+        "Yaw": 0.7330382858376184
+      },
+      "config": {
+        "useDefaultColors": true
+      },
+      "canvas": {
+        "width": 640,
+        "height": 76,
+        "clientWidth": 640,
+        "clientHeight": 76
+      },
+      "clipPaddingPx": 16
+    },
+    {
+      "file": "compass-dpr1-custom-theme.png",
+      "description": "DPR 1 · 自訂主題色（#ffaa00）與指針／方位刻度／中心游標連動發光",
+      "viewport": "1280x720",
+      "dpr": 1,
+      "input": {
+        "Yaw": 3.9269908169872414
+      },
+      "config": {
+        "useDefaultColors": false,
+        "customColor": "#ffaa00"
+      },
+      "canvas": {
+        "width": 640,
+        "height": 76,
+        "clientWidth": 640,
+        "clientHeight": 76
+      },
+      "clipPaddingPx": 16
+    },
+    {
+      "file": "compass-dpr2-cardinal-north.png",
+      "description": "DPR 2 · HiDPI 羅盤帶狀刻度抗鋸齒、圓角端點與正北（000° N）淨空對齊",
+      "viewport": "1280x720",
+      "dpr": 2,
+      "input": {
+        "Yaw": 0
+      },
+      "config": {
+        "useDefaultColors": true
+      },
+      "canvas": {
+        "width": 1280,
+        "height": 152,
+        "clientWidth": 640,
+        "clientHeight": 76
+      },
+      "clipPaddingPx": 16
+    }
+  ]
+}

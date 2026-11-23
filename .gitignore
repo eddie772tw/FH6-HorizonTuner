@@ -141,3 +141,6 @@ id_rsa*
 /backend/car_params
 # Task-local official Rust toolchain (never distributed).
 .toolchains/
+
+# Local task scratch and validation toolchains
+/work/

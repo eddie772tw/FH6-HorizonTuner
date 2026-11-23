@@ -3,6 +3,11 @@ package org.horizontuner.companion.theme
 import androidx.compose.ui.graphics.Color
 import kotlin.math.pow
 
+/** HUD artwork uses illuminated white lettering, including when the app uses a light theme. */
+object InstrumentColors {
+    val background = Color(0xFF101318)
+}
+
 /** Functional status colors are independent of the user palette (Halfmoon semantic colors). */
 object StatusColors {
     val success = Color(0xFF198754)
