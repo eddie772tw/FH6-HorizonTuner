@@ -3,6 +3,13 @@ import { useSettings } from '../../../context/SettingsContext';
 import { CarParams } from '../../../context/CarParamsContext';
 import type { ChassisTuningResult, StaticTireAlignResult, Season } from '../../../domain/tuning/types';
 
+const RACE_GOAL_LABELS: Readonly<Record<string, string>> = {
+  Road: 'Road / Circuit',
+  Drift: 'Drift',
+  Rally: 'Rally / Off-Road',
+  Drag: 'Drag',
+};
+
 interface Step2ChassisTunerProps {
   selectedRaceGoal: string;
   season: Season;
@@ -40,6 +47,12 @@ export const Step2ChassisTuner: React.FC<Step2ChassisTunerProps> = ({
 
   const { arb, springs, damping, diff } = chassis;
   const drivetrain = carParams.drivetrain || 'RWD';
+  const drivetrainLabel = t(drivetrain);
+  const goalLabel = t(RACE_GOAL_LABELS[selectedRaceGoal] ?? selectedRaceGoal);
+  const seasonLabel = t(season);
+  const weightValue = settings.units.weight === 'lbs'
+    ? Math.round(carParams.weight * 2.20462)
+    : Math.round(carParams.weight);
 
   // Tire Pressure Formatting
   const pcFFormatted = convertTirePressureFromPsi(alignment.pcF);
@@ -71,18 +84,17 @@ export const Step2ChassisTuner: React.FC<Step2ChassisTunerProps> = ({
       <div className="workspace-section d-flex justify-content-between align-items-center gap-2 flex-wrap">
         <div>
           <h3 className="workspace-section-heading mb-1">
-            Step 2: {t('Chassis, suspension & tire recommendations')}
+            {t('Step 2: Chassis, suspension & tire recommendations')}
           </h3>
           <span className="text-body-secondary fs-7">
-            {t('Calculated based on')}{' '}
-            <span className="text-primary fw-semibold">{selectedRaceGoal}</span> {t('profile for')}{' '}
-            <strong>
-              {settings.units.weight === 'lbs'
-                ? Math.round(carParams.weight * 2.20462)
-                : Math.round(carParams.weight)}{' '}
-              {settings.units.weight} ({carParams.weight_distribution}% F) {drivetrain}
-            </strong>{' '}
-            ({t('Season')}: {season})
+            {t('Calculated for {goal} profile · {weight} {unit} ({frontPercent}% front) {drivetrain} · Season: {season}', {
+              goal: goalLabel,
+              weight: weightValue,
+              unit: settings.units.weight,
+              frontPercent: carParams.weight_distribution,
+              drivetrain: drivetrainLabel,
+              season: seasonLabel,
+            })}
           </span>
         </div>
 
@@ -258,7 +270,7 @@ export const Step2ChassisTuner: React.FC<Step2ChassisTunerProps> = ({
         <div className="glass-panel p-3 d-flex flex-column gap-3">
           <div className="workspace-panel-header border-bottom pb-2 d-flex justify-content-between align-items-center gap-2 flex-wrap">
             <span className="workspace-section-heading fw-bold fs-6">{t('Damping & Differential')}</span>
-            <span className="badge text-bg-warning">{drivetrain}</span>
+            <span className="badge text-bg-warning">{drivetrainLabel}</span>
           </div>
 
           {/* Damping System */}
@@ -326,7 +338,7 @@ export const Step2ChassisTuner: React.FC<Step2ChassisTunerProps> = ({
               <div className="d-flex justify-content-between align-items-center pt-1">
                 <span className="text-primary fw-semibold fs-7">{t('Center Rear Split')}</span>
                 <span style={{ ...valueBadgeStyle, color: 'var(--primary)' }}>
-                  {diff.centerRear}% {t('Rear')}
+                  {t('{percent}% Rear', { percent: diff.centerRear })}
                 </span>
               </div>
             )}
