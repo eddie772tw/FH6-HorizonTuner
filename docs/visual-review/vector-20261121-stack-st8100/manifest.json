@@ -1,0 +1,102 @@
+{
+  "target": "hud_overlay/stack_st8100/stack-renderer.js",
+  "renderer": "StackRenderer (hud_overlay/stack_st8100/index.html + stack-controller.js)",
+  "capturedAt": "2026-11-20T21:16:41.230Z",
+  "browser": "Chromium headless (148.0.7778.96)",
+  "background": "#0b111b (composite dark backdrop for transparent HUD legibility)",
+  "reproduce": [
+    "PLAYWRIGHT_MODULE_PATH=<playwright> node hud_overlay/stack_st8100/tests/visual/render.mjs",
+    "PLAYWRIGHT_MODULE_PATH=<playwright> node hud_overlay/stack_st8100/tests/visual/launcher.cjs"
+  ],
+  "scopeNote": "Isolated #stackContainer element clip with 16px margin over #0b111b backdrop at 1280x720 (DPR 1 and DPR 2); synthetic telemetry via HUDCore.handleMessage; live game & native Windows overlay not tested here.",
+  "captures": [
+    {
+      "file": "stack-dpr1-black-live.png",
+      "description": "DPR 1 · 黑底表盤即時遙測（KM/H 180 | GEAR 4, TIME 1:10.00 | TYRE C 98）與批次刻度基準畫面",
+      "viewport": "1280x720",
+      "dpr": 1,
+      "scale": 1,
+      "clipPaddingPx": 16,
+      "canvas": {
+        "width": 640,
+        "height": 380,
+        "clientWidth": 661,
+        "clientHeight": 393
+      },
+      "lcdBackingPixels": "478x66",
+      "state": {
+        "face": "black",
+        "shift": "false",
+        "warning": "",
+        "lcd1": "KM/H 180 | GEAR 4",
+        "lcd2": "TIME 1:10.00 | TYRE C 98"
+      }
+    },
+    {
+      "file": "stack-dpr2-black-live.png",
+      "description": "DPR 2 · HiDPI 黑底表盤與原生 2x 點陣 LCD（956x132 實體像素）無雙線性模糊呈現",
+      "viewport": "1280x720",
+      "dpr": 2,
+      "scale": 1,
+      "clipPaddingPx": 16,
+      "canvas": {
+        "width": 1280,
+        "height": 760,
+        "clientWidth": 661,
+        "clientHeight": 393
+      },
+      "lcdBackingPixels": "956x132",
+      "state": {
+        "face": "black",
+        "shift": "false",
+        "warning": "",
+        "lcd1": "KM/H 180 | GEAR 4",
+        "lcd2": "TIME 1:10.00 | TYRE C 98"
+      }
+    },
+    {
+      "file": "stack-dpr2-white-live.png",
+      "description": "DPR 2 · HiDPI 白底表盤、2x 清晰點陣 LCD 與等比縮放指針發光",
+      "viewport": "1280x720",
+      "dpr": 2,
+      "scale": 1,
+      "clipPaddingPx": 16,
+      "canvas": {
+        "width": 1280,
+        "height": 760,
+        "clientWidth": 661,
+        "clientHeight": 393
+      },
+      "lcdBackingPixels": "956x132",
+      "state": {
+        "face": "white",
+        "shift": "false",
+        "warning": "",
+        "lcd1": "KM/H 180 | GEAR 4",
+        "lcd2": "TIME 1:10.00 | TYRE C 98"
+      }
+    },
+    {
+      "file": "stack-dpr2-alarm-shift.png",
+      "description": "DPR 2 · ALARM 與 SHIFT 燈同時亮起，展現 DPR 等比 shadowBlur 光暈與清晰高溫警報 LCD",
+      "viewport": "1280x720",
+      "dpr": 2,
+      "scale": 1,
+      "clipPaddingPx": 16,
+      "canvas": {
+        "width": 1280,
+        "height": 760,
+        "clientWidth": 661,
+        "clientHeight": 393
+      },
+      "lcdBackingPixels": "956x132",
+      "state": {
+        "face": "black",
+        "shift": "true",
+        "warning": "alarm",
+        "lcd1": "HIGH TYRE TEMP",
+        "lcd2": "105 C"
+      }
+    }
+  ]
+}
