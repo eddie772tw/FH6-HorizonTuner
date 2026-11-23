@@ -82,7 +82,7 @@ impl CompanionWorkflow {
         required_string(&body, "profileKey", 32_768)?;
         if !matches!(
             body["kind"].as_str(),
-            Some("profile" | "workflow" | "measurement")
+            Some("profile" | "workflow" | "measurement" | "save")
         ) {
             return Err(ApiError::invalid("Unsupported companion command"));
         }
@@ -213,6 +213,21 @@ mod tests {
             relay.state()["snapshot"]["results"]["chassis"]["frontSpring"],
             65
         );
+    }
+    #[test]
+    fn save_command_is_queued_until_desktop_confirms_persistence() {
+        let mut relay = CompanionWorkflow::default();
+        relay
+            .exchange(json!({"clientId":"desktop","snapshot":snapshot()}))
+            .unwrap();
+        let mut save = command();
+        save["kind"] = json!("save");
+        save["goal"] = json!("Rally");
+        save["season"] = json!("Winter");
+        relay.enqueue(save).unwrap();
+        assert_eq!(relay.state()["commands"][0]["status"], "pending");
+        relay.exchange(json!({"clientId":"desktop","snapshot":snapshot(),"acks":[{"id":"one","status":"rejected","error":"disk full"}]})).unwrap();
+        assert_eq!(relay.state()["commands"][0]["status"], "rejected");
     }
     #[test]
     fn stale_edits_and_competing_hosts_are_rejected() {

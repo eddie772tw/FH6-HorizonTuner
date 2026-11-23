@@ -25,6 +25,7 @@ class WebSocketTransport(
     private val port: Int,
     private val sessionToken: String? = null,
     private val useBinary: Boolean = true,
+    private val secure: Boolean = false,
     private val client: OkHttpClient = OkHttpClient.Builder()
         .connectTimeout(10, TimeUnit.SECONDS)
         .readTimeout(0, TimeUnit.MILLISECONDS) // Keep alive
@@ -52,15 +53,7 @@ class WebSocketTransport(
 
         _state.value = TransportState.CONNECTING
 
-        val path = if (useBinary) "/ws/telemetry/binary" else "/ws/telemetry"
-        val url = buildString {
-            append("ws://").append(host).append(":").append(port).append(path)
-            if (!sessionToken.isNullOrEmpty()) {
-                append("?token=").append(sessionToken)
-            }
-        }
-
-        val request = Request.Builder().url(url).build()
+        val request = telemetryRequest(host, port, sessionToken, useBinary, secure)
 
         webSocket = client.newWebSocket(request, object : WebSocketListener() {
             override fun onOpen(webSocket: WebSocket, response: Response) {
@@ -116,4 +109,13 @@ class WebSocketTransport(
         webSocket = null
         _state.value = TransportState.DISCONNECTED
     }
+}
+
+/** LAN and USB use the same authenticated endpoint; secrets never enter the URL. */
+internal fun telemetryRequest(host: String, port: Int, token: String?, binary: Boolean, secure: Boolean): Request {
+    val path = if (binary) "/ws/telemetry/binary" else "/ws/telemetry"
+    val scheme = if (secure) "wss" else "ws"
+    return Request.Builder().url("$scheme://$host:$port$path").apply {
+        if (!token.isNullOrBlank()) header("Cookie", "companion_session=$token")
+    }.build()
 }
