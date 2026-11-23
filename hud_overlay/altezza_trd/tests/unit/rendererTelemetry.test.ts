@@ -107,6 +107,25 @@ describe('Toyota native artwork telemetry contracts', () => {
       expect(h.state().speed).toBeCloseTo(100);
     }
   });
+  it('rescales the Altezza tachometer on vehicle changes and restores the reference scale without engine data', () => {
+    const h = renderer('altezza_trd');
+    for (const [maximum, ceiling] of [[6250, 7000], [12500, 14000], [3500, 3500]]) {
+      h.hooks.onFrame(coordinatorFrame('kmh', { EngineMaxRpm: maximum }), {});
+      expect(h.state().ceiling).toBe(ceiling);
+      expect(h.state().redline).toBe(maximum - 1000);
+    }
+    h.hooks.onFrame(coordinatorFrame('kmh', { EngineMaxRpm: undefined }), {});
+    expect(h.state()).toMatchObject({ ceiling: 9000, redline: 8000 });
+  });
+  it('keeps missing channels distinct from zero and consumes measured auxiliary channels independently', () => {
+    const h = renderer('altezza_trd');
+    h.hooks.onFrame(coordinatorFrame('mph', { Gear: 0, SpeedMetersPerSecond: 0,
+      oil_temp_c: 93, battery_voltage_v: 13.8, coolant_temp_c: 0 }), {});
+    expect(h.state()).toMatchObject({ gear: 0, speed: 0, oilTempC: 93, voltage: 13.8, coolantTempC: 0 });
+    h.hooks.onFrame(coordinatorFrame('mph', { Gear: undefined, SpeedMetersPerSecond: undefined,
+      oil_temp_c: NaN, battery_voltage_v: '14', coolant_temp_c: null }), {});
+    expect(h.state()).toMatchObject({ gear: null, speed: null, oilTempC: null, voltage: null, coolantTempC: null });
+  });
   it.each(['chaser_jzx100', 'soarer_z20'])('maps %s printed RPM scale independently of car maximum', style => {
     const h = renderer(style);
     for (const maximum of [6000, 8000, 10000]) {

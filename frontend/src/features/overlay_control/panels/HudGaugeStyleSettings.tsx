@@ -15,7 +15,7 @@ export type HudGaugeStyleConfig = Pick<HudConfig,
   'hudStyle' | 'followAppUnits' | 'units' | 's650Theme' | 's650CenterWidget' |
   'classicJdmTachStyle' | 'classicJdmShowTriple' | 'classicJdmAux1' | 'classicJdmAux2' | 'classicJdmDefiTheme' |
   'r34MfdMode' | 'r34ShowCluster' | 'r34ShowMfd' | 'r34Lighting' | 'lfaManualExpand' | 'lfaAutoExpand' |
-  'vfdVuOffset' | 'vfdAudioOffset' | 'nfsu2Face' | keyof import('../stack_st8100/config').StackSt8100Settings
+  'vfdVuOffset' | 'vfdAudioOffset' | 'nfsu2Face' | 'altezzaCenterDial' | keyof import('../stack_st8100/config').StackSt8100Settings
 > & { elements: Pick<HudElements, 'showCenterInfo'> };
 interface HudGaugeStyleSettingsProps extends HudPanelActions {
   config: HudGaugeStyleConfig;
@@ -28,7 +28,7 @@ export function HudGaugeStyleSettings({ config, appUnits, onConfigPatch, onS650C
   const centerEnabled = config.s650CenterWidget !== 'disable' && config.elements.showCenterInfo !== false;
   return (
     <div className="d-flex flex-column gap-3">
-      {![S650_HMI_STYLE_ID, STACK_ST8100_STYLE_ID, CLASSIC_JDM_STYLE_ID, LFA_CENTER_RING_STYLE_ID, 'r34_mfd', 'vfd', 'nfsu2'].includes(config.hudStyle) &&
+      {![S650_HMI_STYLE_ID, STACK_ST8100_STYLE_ID, CLASSIC_JDM_STYLE_ID, LFA_CENTER_RING_STYLE_ID, 'r34_mfd', 'vfd', 'altezza_trd', 'nfsu2'].includes(config.hudStyle) &&
         <p className="fs-7 text-body-secondary m-0">{t('This style has no additional settings.')}</p>}
       {config.hudStyle === S650_HMI_STYLE_ID && (
         <div>
@@ -52,6 +52,16 @@ export function HudGaugeStyleSettings({ config, appUnits, onConfigPatch, onS650C
       {config.hudStyle === CLASSIC_JDM_STYLE_ID && <ClassicJdmSettingsCard config={config} onChange={onConfigPatch} t={t} />}
       {config.hudStyle === LFA_CENTER_RING_STYLE_ID && <LfaExpansionSettingsCard config={config} onChange={onConfigPatch} t={t} />}
       {config.hudStyle === 'r34_mfd' && <R34MfdSettingsCard config={config} onChange={onConfigPatch} t={t} />}
+      {config.hudStyle === 'altezza_trd' && (
+        <div>
+          <label htmlFor={`${id}-altezza-center`} className="form-label fs-7 text-body-secondary mb-1">{t('Altezza dial layout')}</label>
+          <select id={`${id}-altezza-center`} className="form-select form-select-sm fw-bold" value={config.altezzaCenterDial ?? 'tach'}
+            onChange={event => onConfigPatch({ hudStyle: 'altezza_trd', altezzaCenterDial: event.target.value === 'speed' ? 'speed' : 'tach' })}>
+            <option value="tach">{t('Center tachometer · left speedometer')}</option>
+            <option value="speed">{t('Center speedometer · left tachometer')}</option>
+          </select>
+        </div>
+      )}
       {config.hudStyle === 'nfsu2' && (
         <div>
           <label htmlFor={`${id}-nfsu2-face`} className="form-label fs-7 text-body-secondary mb-1">{t('NFSU2 Custom Faceplate')}:</label>
