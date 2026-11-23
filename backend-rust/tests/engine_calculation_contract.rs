@@ -160,3 +160,71 @@ fn measurement_hotpath_preserves_early_rejections_and_peaks_edge_cases() {
     assert_eq!(b["state"]["rpmEvidenceBins"].as_array().unwrap().len(), 1);
     assert_eq!(b["state"]["bins"].as_array().unwrap().len(), 1);
 }
+
+#[test]
+fn lazy_replay_preserves_ready_snapshots_and_batch_parity() {
+    use fh6_backend::tuning::measurement::{batch, capture_frame};
+    let fixture: Value = serde_json::from_str(include_str!(
+        "../../tests/fixtures/aego_beetle_engine_captures.json"
+    ))
+    .unwrap();
+    let capture = &fixture["captures"][0];
+    let fields = fixture["fields"].as_array().unwrap();
+    let car_id = capture["carId"].as_str().unwrap();
+    let samples: Vec<Value> = capture["samples"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|row| {
+            Value::Object(
+                fields
+                    .iter()
+                    .zip(row.as_array().unwrap())
+                    .map(|(k, v)| (k.as_str().unwrap().to_owned(), v.clone()))
+                    .collect(),
+            )
+        })
+        .collect();
+    let base =
+        analyze(&json!({"observationId":"obs","carId":car_id,"capture":{"samples":&samples}}));
+    assert_eq!(base["status"], "ready");
+    let mut stalled = samples.clone();
+    let mut tail = stalled.last().unwrap().clone();
+    tail["timestampMS"] = json!(tail["timestampMS"].as_f64().unwrap() + 5000.0);
+    tail["accelInput"] = json!(0);
+    stalled.push(tail.clone());
+    assert_eq!(
+        analyze(&json!({"observationId":"obs","carId":car_id,"capture":{"samples":stalled}})),
+        base
+    );
+    let mut mismatch = samples.clone();
+    tail["carOrdinal"] = json!(999999);
+    mismatch.push(tail);
+    let blocked =
+        analyze(&json!({"observationId":"obs","carId":car_id,"capture":{"samples":mismatch}}));
+    assert_eq!(
+        (&blocked["status"], &blocked["reason"]),
+        (&json!("collecting"), &json!("car-mismatch"))
+    );
+    let wrong_expected = analyze(
+        &json!({"observationId":"obs","carId":car_id,"capture":{"samples":&samples},"expected":{"identity":{"ordinal":1435,"carClass":0,"performanceIndex":400},"engineMaxRpm":1.0}}),
+    );
+    assert_eq!(
+        (&wrong_expected["status"], &wrong_expected["reason"]),
+        (&json!("unavailable"), &json!("identity-changed"))
+    );
+
+    let mid = samples.len() / 2;
+    let now = samples.last().unwrap()["timestampMS"].as_f64().unwrap();
+    let mut direct = initial(car_id);
+    for s in &samples {
+        direct = advance(&direct, &capture_frame(s), true, now);
+    }
+    let b1 = batch(&json!({"schemaVersion":"engine-batch/v1","carId":car_id,"state":initial(car_id),"samples":&samples[..mid],"nowMs":now,"connected":true})).unwrap();
+    let b2 = batch(&json!({"schemaVersion":"engine-batch/v1","carId":car_id,"state":&b1["state"],"samples":&samples[mid..],"nowMs":now,"connected":true})).unwrap();
+    assert_eq!(b2["state"], direct);
+    assert!(b2["readySnapshot"]["bins"].as_array().unwrap().len() >= 6);
+    let b_idle = batch(&json!({"schemaVersion":"engine-batch/v1","carId":car_id,"state":&b2["state"],"samples":[],"nowMs":now,"connected":false})).unwrap();
+    assert_eq!(b_idle["state"]["bins"], b2["state"]["bins"]);
+    assert_eq!(b_idle["state"]["guidance"], "telemetry-disconnected");
+}
