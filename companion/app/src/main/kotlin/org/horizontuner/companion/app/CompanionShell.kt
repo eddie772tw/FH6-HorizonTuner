@@ -38,7 +38,6 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 import org.horizontuner.companion.theme.DesignSystem
 
@@ -56,7 +55,7 @@ internal data class CompanionShellState(
     val backendOnline: Boolean,
     val error: String?,
     val manualLanExpanded: Boolean,
-    val webConnected: Boolean,
+    val connected: Boolean,
     val isDevMode: Boolean = BuildConfig.DEBUG,
 )
 
@@ -74,23 +73,21 @@ internal data class CompanionShellActions(
     val toggleManualLan: () -> Unit,
 )
 
-/** The Android-owned shell stays mounted before and after WebView connects. */
+/** Native navigation and connection controls remain mounted across pages. */
 @Composable
 internal fun CompanionShell(
     state: CompanionShellState,
     actions: CompanionShellActions,
-    webContent: @Composable () -> Unit,
+    pageContent: @Composable () -> Unit,
 ) {
-    val showNativePage = state.page == OfflinePage.CONNECTION || !state.webConnected
+    val showConnectionOrOffline = state.page == OfflinePage.CONNECTION || !state.connected
     Column(
         modifier = Modifier.fillMaxSize().background(LocalCompanionTokens.current.backgroundBrush).windowInsetsPadding(WindowInsets.safeDrawing),
     ) {
         ShellTabs(state, actions.selectPage)
         Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
-            // Keep the WebView mounted, but hide its pixels behind a native page.
-            // Transparent native surfaces must see the shell background, not a stale Web document.
-            Box(Modifier.fillMaxSize().graphicsLayer { alpha = if (showNativePage) 0f else 1f }) { webContent() }
-            if (showNativePage) {
+            if (!showConnectionOrOffline) pageContent()
+            if (showConnectionOrOffline) {
                 if (state.page == OfflinePage.CONNECTION) ConnectionPage(state, actions)
                 else OfflinePageContent(state.page, actions.selectPage)
             }
@@ -169,7 +166,7 @@ private fun ConnectionPage(state: CompanionShellState, actions: CompanionShellAc
                     ShellButton("掃描 QR 並配對", onClick = actions.scanQr, primary = true, enabled = state.connection != WebConnectionState.LOADING, modifier = Modifier.fillMaxWidth(), tall = true)
                     Text("掃描桌面端產生的 QR 碼，會自動選擇可連線的 LAN 位址。", color = LocalCompanionTokens.current.textSecondary, style = LocalCompanionTypography.current.supporting)
                     if (state.paired) ShellButton("連接已配對的桌面端", onClick = actions.reconnectLan, primary = true, enabled = state.connection != WebConnectionState.LOADING)
-                    if (state.webConnected) ShellButton("中斷連線", onClick = actions.disconnect)
+                    if (state.connected) ShellButton("中斷連線", onClick = actions.disconnect)
                 }
                 ShellButton(
                     if (state.manualLanExpanded) "收起手動配對 ▴" else "進階選項 · 手動連線 ▾",
@@ -190,14 +187,14 @@ private fun ConnectionPage(state: CompanionShellState, actions: CompanionShellAc
                 ShellField("USB forwarded host", state.host, actions.setHost)
                 ShellField("Port", state.port, actions.setPort)
                 ShellButton(if (state.connection == WebConnectionState.ERROR) "重試 USB" else "連接 USB", onClick = actions.connectUsb, primary = true, enabled = state.connection != WebConnectionState.LOADING)
-                if (state.webConnected) ShellButton("中斷連線", onClick = actions.disconnect)
+                if (state.connected) ShellButton("中斷連線", onClick = actions.disconnect)
                 if (!state.isDevMode) {
                     Spacer(Modifier.size(4.dp))
                     ShellButton("返回區域網路 (LAN) 模式", onClick = { actions.selectMode(ConnectionMode.LAN) }, primary = true)
                 }
             }
             state.error?.let { Text(it, color = StatusColors.danger, style = LocalCompanionTypography.current.supporting) }
-            if (!state.webConnected) ShellButton("返回主畫面", onClick = { actions.selectPage(OfflinePage.TELEMETRY) })
+            if (!state.connected) ShellButton("返回主畫面", onClick = { actions.selectPage(OfflinePage.TELEMETRY) })
             Spacer(Modifier.heightIn(min = 24.dp))
             ConnectionDiagnostics(state)
             FontNoticesButton()
