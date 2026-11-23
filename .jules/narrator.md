@@ -103,6 +103,16 @@
 **行動 (Action):** 所有 UI 領域狀態協助函式（如 `connectionStatus.ts`）一律回傳英文規範化鍵值作為單一 i18n 鍵名，禁止以非英文字串作為 `t(...)` 鍵值來源；同時將原先的繁中譯文完整保留並對齊至 `zh-tw.json`，補齊 `en-us.json` 與 `ja-jp.json`，並確保所有狀態徽章的 `aria-label` 皆經過 `t(...)` 包裝。
 **署名:** Narrator as Antigravity
 
+## 2026-11-20 - Dynamic Option Registry Non-English Key Leakage in HUD Config Modules
+**學習 (Learning):** 像 `ClassicJdmSettingsCard.tsx` 這類設定卡片雖已對每個 `<option>` 呼叫 `t(item.label)`，因而不會被靜態字面 `t('...')` 掃描器檢出缺鍵，但其引用的設定常數陣列（`classic_jdm/config.ts` 中的 `CLASSIC_JDM_AUX_GAUGES` 與 `CLASSIC_JDM_DEFI_THEMES`）卻直接內嵌繁中／雙語混排字串（如 `四輪平均胎溫 (4W Avg)`、`Amber Red (琥珀紅)`）且未收錄於任何語系字典，導致 `en-US` 與 `ja-JP` 使用者在 HUD 控制面板的下拉選單直接看到繁體中文洩漏，並使 `zh-TW` 混雜括號英文與不統一術語。
+**行動 (Action):** 稽核動態呼叫 `t(option.label)` 的表單元件時，務必同步追蹤其外部 config 常數陣列，確保所有選項鍵名皆為無縮寫歧義的英文規範鍵（並優先復用同工作區既有三語鍵如 `Oil Temperature`、`Oil Pressure`），再於 `en-us.json`、`zh-tw.json`、`ja-jp.json` 完整對齊並透過單元測試封鎖非 ASCII 鍵名回歸。
+**署名:** Narrator as Antigravity
+
+## 2026-11-21 - Fragmented Tuning Summary & Chinese-Pivot Japanese Discipline Mistranslations
+**學習 (Learning):** `Step2ChassisTuner.tsx` 同時存在四類典型 i18n 缺陷：(1) 主標題硬編碼英文前綴 `Step 2:`；(2) 摘要副標題將 `Calculated based on`、`profile for` 與未經 `t()` 包裝之領域枚舉（`selectedRaceGoal`、`season`、`drivetrain`）及硬編碼縮寫 `% F` 拼接為碎片句子，導致日文與中文語序破碎且讀屏器將 `% F` 誤讀為華氏單位；(3) 20 個核心卡片標題與底盤參數鍵僅部分存在於 `zh-tw.json` 或完全缺失於三語系字典；(4) `lang/ja-jp.json` 中四個賽事類型鍵因歷史上從繁體中文直譯而出現嚴重語義錯譯（`甩尾`→`フリック`、`拉力`→`引く`、`公路`→`高速道路`、`直線加速`→`直線加速度`），連帶污染 `Step1GoalSetup` 與 `BaselinePreviewPanel`。
+**行動 (Action):** 步驟標題一律納入單一完整鍵值（如 `Step 2: Chassis, suspension & tire recommendations`）；含多變數之車輛摘要與 AWD 後軸比例改用具名參數內插（`Calculated for {goal} profile · {weight} {unit} ({frontPercent}% front) {drivetrain} · Season: {season}`、`{percent}% Rear`），將賽事目標、季節與驅動形式全數透過 `t()` 映射；並於審查 `ja-jp.json` 賽車領域術語時，主動排查由中文多義詞轉譯造成的誤譯並修正為標準日文賽車術語（`ロード`、`ラリー`、`ドリフト`、`ドラッグ`）。
+**署名:** Narrator as Antigravity
+
 ## 2026-11-22 - Static aria-label Masking Dynamic Values & Protocol Enum Leakage in Companion Settings
 **學習 (Learning):** 在 `CompanionLanControls.tsx` 中對顯示動態配對碼的 `<strong>` 加上靜態 `aria-label={t('Pairing code')}`，會使螢幕閱讀器覆寫元素內容而完全隱藏實際配對碼數字，且倒數徽章以 `{t('Expires in')} {mm}:{ss}` 碎片拼接會破壞日文與中文語序；同時 `CompanionUsbControls.tsx` 直接在 `<option>` 內插原始 ADB 協定枚舉 `device.state`（`device` / `unauthorized` / `offline`），在英文介面暴露內部詞彙 `device`，並在 `zh-TW` / `ja-JP` 介面造成英文穿透。此外，實測截圖亦確認過長的日文卡片標題與按鈕（如 `ローカルネットワークペアリング` + `ペアリングコードを生成`）在雙欄與 320px 視窗容易產生單字元孤行折行。
 **行動 (Action):** 為動態代碼元素提供無障礙標籤時，應改用參數化鍵值（如 `aria-label={t('Pairing code: {code}', { code: pairing.token })}`）保留實際數值語義；倒數計時改為完整參數化鍵（`t('Expires in {time}', { time })`）；ADB 等底層協定狀態一律經顯式鍵值表映射（`Ready` / `Unauthorized` / `Offline`）再傳入 `t(...)`；並確保說明文案中引用的按鈕名稱（如 `Connect USB device`、`Refresh devices`）與對應按鈕譯文在三語系間完全一致，且在 320px 與雙欄視窗下保持精簡不產生孤字折行。

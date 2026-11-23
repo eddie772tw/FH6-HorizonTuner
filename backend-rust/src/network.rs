@@ -149,14 +149,14 @@ fn lan_host_and_origin_allowed(headers: &HeaderMap, companion: &CompanionService
     }
 }
 
-fn lan_session(headers: &HeaderMap, companion: &CompanionService) -> bool {
+fn lan_session(headers: &HeaderMap, companion: &CompanionService) -> Option<String> {
     headers
         .get_all("cookie")
         .iter()
         .filter_map(|header| header.to_str().ok())
         .flat_map(|header| header.split(';'))
         .filter_map(|part| part.trim().strip_prefix("companion_session="))
-        .any(|token| companion.validate_session(token))
+        .find_map(|token| companion.authenticate_session(token))
 }
 
 fn lan_allowed_http(method: &Method, path: &str) -> bool {
@@ -221,7 +221,7 @@ async fn lan_http(
     if !lan_allowed_http(request.method(), path) {
         return StatusCode::NOT_FOUND.into_response();
     }
-    if path != "/api/companion/pair" && !lan_session(request.headers(), &companion) {
+    if path != "/api/companion/pair" && lan_session(request.headers(), &companion).is_none() {
         return StatusCode::UNAUTHORIZED.into_response();
     }
     let request = if path == "/api/companion/pair" {
@@ -244,17 +244,26 @@ async fn lan_ws(
     if !backend.companion_enabled() || !lan_host_and_origin_allowed(&headers, &companion) {
         return StatusCode::FORBIDDEN.into_response();
     }
-    if !lan_session(&headers, &companion) {
+    // Subscribe before authenticating so revocations during the upgrade handshake cannot be missed.
+    let mut session_changes = companion.subscribe_session_changes();
+    let Some(session_hash) = lan_session(&headers, &companion) else {
         return StatusCode::UNAUTHORIZED.into_response();
-    }
+    };
     upgrade.on_upgrade(move |socket| async move {
+        if !backend.companion_enabled() || !companion.is_session_hash_active(&session_hash) {
+            return;
+        }
         let stream = socket_loop(socket, backend.clone(), "json");
         tokio::pin!(stream);
         loop {
             tokio::select! {
                 _ = &mut stream => break,
+                // Immediately terminate active streams when a device is unpaired or its token rotates.
+                changed = session_changes.changed() => {
+                    if changed.is_err() || !companion.is_session_hash_active(&session_hash) { break; }
+                }
                 _ = tokio::time::sleep(Duration::from_millis(100)) => {
-                    if !backend.companion_enabled() { break; }
+                    if !backend.companion_enabled() || !companion.is_session_hash_active(&session_hash) { break; }
                 }
             }
         }

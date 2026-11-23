@@ -36,7 +36,6 @@ jobs:
       APPIMAGE_EXTRACT_AND_RUN: '1'
       TAURI_SIGNING_PRIVATE_KEY: ${{ inputs.release-signing && secrets.TAURI_SIGNING_PRIVATE_KEY || '' }}
       TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ inputs.release-signing && secrets.TAURI_SIGNING_KEY_PASSWORD || '' }}
-      DISCORD_APPLICATION_ID: ${{ secrets.DISCORD_APPLICATION_ID }}
       VITE_GIT_COMMIT: ${{ inputs.tag }}
       VITE_GIT_BRANCH: main
     defaults:
@@ -74,8 +73,14 @@ jobs:
           pnpm --prefix frontend install --frozen-lockfile
           uv pip install pytest
       - name: Validate versions and platform contracts
+        env:
+          # Contract tests must not inherit the release ID at build or runtime.
+          DISCORD_APPLICATION_ID: ''
         run: |
           uv run --no-project --active python scripts/validate_version_consistency.py
+          # Exercise configured startup with a public fixture, then rebuild without
+          # an ID for the full suite (build.rs tracks this environment variable).
+          DISCORD_APPLICATION_ID=123456789012345678 cargo test --locked --manifest-path backend-rust/Cargo.toml --no-default-features --test native_contract discord_accepts_local_configuration_and_reports_input_before_ipc -- --exact
           cargo test --locked --manifest-path backend-rust/Cargo.toml --no-default-features
           pnpm --prefix frontend run test
           uv run --no-project --active python -m pytest scripts/tests/test_platform_release.py scripts/tests/test_publish_release_assets.py scripts/tests/test_prepare_native_signing.py
@@ -83,16 +88,21 @@ jobs:
         run: pnpm --prefix frontend run build
       - name: Build native Rust backend
         env:
+          DISCORD_APPLICATION_ID: ${{ secrets.DISCORD_APPLICATION_ID }}
           PLATFORM: ${{ inputs.platform }}
         run: uv run --no-project --active python scripts/build_native_backend.py --platform "$PLATFORM"
       - name: Prepare build override and test-only signing key
         env:
           RELEASE_SIGNING: ${{ inputs.release-signing }}
         run: uv run --no-project --active python scripts/prepare_native_signing.py
-      - name: Test native host and build signed bundles
-        run: |
-          cargo test --locked --manifest-path frontend/src-tauri/Cargo.toml --lib
-          pnpm --prefix frontend exec tauri build --config "$RUNNER_TEMP/fh6-native-build.json"
+      - name: Test native host
+        env:
+          DISCORD_APPLICATION_ID: ''
+        run: cargo test --locked --manifest-path frontend/src-tauri/Cargo.toml --lib
+      - name: Build signed bundles
+        env:
+          DISCORD_APPLICATION_ID: ${{ secrets.DISCORD_APPLICATION_ID }}
+        run: pnpm --prefix frontend exec tauri build --config "$RUNNER_TEMP/fh6-native-build.json"
       - name: Verify production signature key identity
         if: inputs.release-signing
         run: |

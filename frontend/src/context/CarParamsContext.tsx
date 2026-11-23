@@ -7,6 +7,7 @@ import type { EvGearboxSetup } from '../domain/tuning/ev/types';
 import { serializeWorkflowProfile } from '../features/tuning/tuningWorkflow';
 
 export interface CarParams {
+  tuningTarget?: { goal: string; season: 'Summer' | 'Autumn' | 'Winter' | 'Spring' };
   transmission?: import('../domain/tuning/transmission').TransmissionSelection;
   isElectric?: boolean;
   evGearbox?: EvGearboxSetup;
