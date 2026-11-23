@@ -75,6 +75,16 @@
 **行動 (Action):** 將 `road::calculate` 與 `road::versioned_diagnostics` 之目標推導收斂至單一純函式 `road_envelope_targets`，並於 `road_launch_diagnostics` 共用 `normalize_limit_rpm` 與 `safe_tire_circumference`，同時在 `result.unsupported == Some(true)` 時保留模型衝突原因，確保求解結果、診斷目標與硬性目標驗證在全輸入域嚴格一致。
 **署名:** Mechanic as Antigravity
 
+## 2026-11-20 - Drift 主檔 RPM 上界格點空間與實體限轉容差尺度失配修正
+**物理洞察 (Physics Learning):** 在 Drift 主檔工作點求解器（`aego-drift-working/v1`）中，主檔齒比上限 `rpm_bound` 先前於 0.01 格點空間直接以固定常數 `+ 1e-9` 取整（`floor(t_0 + 1e-9)`），而 `respects_hard_targets` 實際係在實體轉速空間判定 `actual_rpm <= usable_limit_rpm + 1e-7`。因實際轉速隨格點線性縮放，實體 `+1e-7 RPM` 容差映射到格點空間為 $\Delta t = t_0 \cdot 10^{-7} / \text{usable\_limit\_rpm}$：在典型 Drift 主檔（如 $t_0 \in [100, 289]$、限轉 5000–7500 RPM）下 $\Delta t \in [1.3 \times 10^{-9}, 5.8 \times 10^{-9}] > 10^{-9}$，當 $t_0$ 落入 $(N - \Delta t, N - 10^{-9})$ 區間時 `rpm_bound` 會短估 1 格為 $N - 1$，造成鎖定觀測邊界或低齒比（相鄰格點跨越 1% 速度容差）時誤報 `unavailable`，即使未鎖定亦會捨棄近零誤差格點 $N$ 而退化至次佳相鄰格點；反之在高轉速低齒比（$t_0 / \text{limit} < 0.01$）則會高估 1 格。
+**行動 (Action):** 於 `drift.rs` 抽離純函式 `rpm_upper_tick`，以 `(usable_limit_rpm + 1e-7)` 計算外包圍並加 1 格（`saturating_add(1)`）確保覆蓋全 `i32::MAX` 格點域，再利用實際轉速對齒比格點的嚴格單調遞增性，直接以與 `respects_hard_targets` 一致的實體 `calc_gear_speed` / `actual_rpm <= usable_limit_rpm + 1e-7` 謂詞向下單調收緊上界，達成離散主檔求解域之 Soundness 與 Completeness。
+**署名:** Mechanic as Antigravity
+
+## 2026-11-21 - 多檔位 EV 稀疏齒比跨 `None` 單調性斷裂、動力帶順序相依與 `INF/INF` 奇異值繞過
+**物理洞察 (Physics Learning):** 在固定齒比 EV 模型（`ev/v1`）與設定檔就緒檢核（`profile::ev_ready`）中，齒比遞減檢查原先僅以 `.windows(2)` 比對相鄰兩檔；當多檔位 EV 中間存在未確認檔位（`None`／`null`，例如 `[Some(1.0), None, Some(4.0)]` 或 `[Some(2.0), None, Some(2.0)]`）時，相鄰比對會跨過缺口而完全放行非物理倒置或重複齒比。同時，實測運動學一致性檢查 `known = rpm_per_kmh / r` 在極小正數次正規（subnormal）齒比下會溢位成 `INFINITY`，使 `INFINITY / INFINITY = NaN` 導致 IEEE-754 條件 `(r / known[0] - 1.0).abs() > 0.05` 誤判為 `false` 而放行完全矛盾之齒比組；`band.first()`／`band.last()` 在未依 RPM 遞增排序之馬力曲線下會造成 `power_band_start_rpm > power_band_end_rpm` 倒置；終傳比縮放因子 `scale` 與極速邊界 `bound_speed_kmh` 亦缺少正有限數閉包。
+**行動 (Action):** 以單一純函式 `ev::confirmed_ratios_decreasing` 統一檢驗所有已確認齒比子序列的嚴格遞減性（`ev.rs` 與 `profile.rs` 共用 SSOT），改以順序無關之 `(min_rpm, max_rpm)` 折疊求取 95% 峰值馬力帶區間，並將運動學一致性、`scale` 與 `bound_speed_kmh` 全面納入正有限數閉包防護（`!positive(v)` 及 `!((...) <= 0.05)` 雙重杜絕 `NaN`/`INFINITY` 繞過）。
+**署名:** Mechanic as Antigravity
+
 ## 2026-11-22 - Road 終傳比排序溢位序等價投影與扭力推導 SSOT 閉包
 **物理洞察 (Physics Learning):** 在 Road `aego-road-launch-envelope/v3` 的 `allocate_road_gearing` 中，當 `first_total > top_total` 皆為正有限數但 `top_total > f64::MAX * get_target_top_gear_ratio(count)` 時，`preferred_fd` 會溢位為 `+∞`，使 `candidates.sort_by` 計算 `(a - p).abs() - (b - p).abs() = ∞ - ∞ = NaN`，`NaN.total_cmp(&0.0)` 恆回傳 `Greater` 而違反嚴格弱序並直接觸發 Rust Runtime Panic；於大數有限域亦會因尾數精度消失導致候選順序反轉。由於對任意 $a, b \in [2.0, 6.1]$ 與 $p \in (0, +\infty]$，區間投影 $\tilde{p} = \mathrm{clamp}(p, 2.0, 6.1)$ 精確保持 $|a - p| - |b - p|$ 之序關係，投影後即可在不改變任何格點排序與平手規則下徹底消除溢位與精度反轉。同時，`road_launch_diagnostics` 在 `torque_nm <= 0` 或非有限時未同步 `calculate`/`versioned_diagnostics` 的馬力推導扭力公式 $\tau = P_{\text{hp}} \cdot 7021.5 / \max(\text{RPM}_\tau, 1)$，導致缺省扭力的載荷主導車輛之 `loadPriorTotalRatio` 坍縮為 `0.0`；且 `adjusted_diagnostics` 拒絕不合法調整時未清除舊 `actual*` 欄位。
 **行動 (Action):** 以 `preferred_fd.clamp(2.0, 6.1)` 實作序等價投影，以單一純函式 `resolve_road_torque_nm` 統一三處 Road 扭力解析，並於 `respects_hard_targets`/`adjusted_diagnostics` 驗證運動學診斷必要欄位與在拒絕時清零過時實測值。

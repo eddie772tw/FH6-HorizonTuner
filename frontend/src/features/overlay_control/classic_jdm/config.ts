@@ -13,22 +13,22 @@ export const CLASSIC_JDM_TACH_STYLES = [
 export type ClassicJdmTachStyle = (typeof CLASSIC_JDM_TACH_STYLES)[number]['value'];
 
 export const CLASSIC_JDM_AUX_GAUGES = [
-  { value: 'tire_temp_4w', label: '四輪平均胎溫 (4W Avg)' },
-  { value: 'tire_temp_rear', label: '後輪平均胎溫 (Rear Avg)' },
-  { value: 'tire_temp_front', label: '前輪平均胎溫 (Front Avg)' },
-  { value: 'susp_travel_4w', label: '四輪平均懸吊行程 (4W Susp)' },
-  { value: 'susp_travel_front', label: '前輪平均懸吊行程 (Front Susp)' },
-  { value: 'susp_travel_rear', label: '後輪平均懸吊行程 (Rear Susp)' },
-  { value: 'slip_ratio_4w', label: '四輪平均滑移率 (Slip Ratio)' },
-  { value: 'oil_temp', label: '機油溫度 (Oil Temp)' },
-  { value: 'oil_press', label: '機油壓力 (Oil Press)' },
+  { value: 'tire_temp_4w', label: '4-Wheel Average Tire Temperature' },
+  { value: 'tire_temp_rear', label: 'Rear Average Tire Temperature' },
+  { value: 'tire_temp_front', label: 'Front Average Tire Temperature' },
+  { value: 'susp_travel_4w', label: '4-Wheel Average Suspension Travel' },
+  { value: 'susp_travel_front', label: 'Front Average Suspension Travel' },
+  { value: 'susp_travel_rear', label: 'Rear Average Suspension Travel' },
+  { value: 'slip_ratio_4w', label: '4-Wheel Average Slip Ratio' },
+  { value: 'oil_temp', label: 'Oil Temperature' },
+  { value: 'oil_press', label: 'Oil Pressure' },
 ] as const;
 
 export type ClassicJdmAuxGauge = (typeof CLASSIC_JDM_AUX_GAUGES)[number]['value'];
 
 export const CLASSIC_JDM_DEFI_THEMES = [
-  { value: 'amber', label: 'Amber Red (琥珀紅)' },
-  { value: 'white', label: 'White (冷冽白)' },
+  { value: 'amber', label: 'Amber Red' },
+  { value: 'white', label: 'Cool White' },
 ] as const;
 
 export type ClassicJdmDefiTheme = (typeof CLASSIC_JDM_DEFI_THEMES)[number]['value'];

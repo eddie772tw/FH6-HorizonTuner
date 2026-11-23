@@ -80,3 +80,9 @@
 **學習 (Learning):** 即使已對既存在檔案實作位元組比對，僅依賴 `Path::exists()` 與 `fs::create_dir_all()` 仍會跟隨懸空符號連結與 NTFS Junction 跳脫預期沙盒根目錄（與先前 `lib.rs` 僅修補 Tauri sidecar、卻遺漏後端 ADB 工具釋放路徑形成防禦落差）。
 **預防 (Prevention):** 所有內嵌二進位與原生 DLL 工具釋放路徑，一律透過逐層 `fs::symlink_metadata`（拒絕 symlink/junction 與非預期檔案類型）與 `canonicalize().starts_with(&canonical_root)` 鎖定目錄邊界，並在寫入缺失工具時採用同目錄 `NamedTempFile` 搭配 `sync_all()` 與原子 `persist` 取代 `fs::write`，確保前後端與後端輔助工具鏈具備一致的檔案系統安全保證。
 **署名:** Sentinel as Antigravity
+
+## 2026-11-20 - Companion LAN WebSocket Session Revocation & Token Rotation Enforcement (CWE-613)
+**漏洞/脆弱點 (Vulnerability):** 區域網路（LAN `0.0.0.0:8002`）伴侶 WebSocket 端點 `backend-rust/src/network.rs::lan_ws` 原先僅在升級握手階段檢查一次 `companion_session` Cookie，連線建立後的主迴圈僅輪詢全域開關 `backend.companion_enabled()`，未重新驗證該連線所屬裝置是否仍處於已配對狀態。當使用者在桌面端解除配對特定裝置（`DELETE /api/companion/devices/{id}`）、同一裝置重新配對輪替憑證或舊裝置因容量上限被淘汰時，該裝置既有的 LAN WebSocket 連線仍會持續接收即時遙測串流，構成工作階段撤銷失效（Session Revocation Bypass）。
+**學習 (Learning):** HTTP 端點因無狀態每次請求皆重新驗證 Cookie，但長生命週期 WebSocket 連線不會在每次推播時重走 HTTP middleware；此外，若僅於 `on_upgrade` 後才開始監聽撤銷事件，握手與連線啟動之間仍存在 TOCTOU 空窗期，且將明文 `session_token` 長期駐留於 async task 狀態機記憶體中亦會擴大敏感憑證暴露面。
+**預防 (Prevention):** 於 `CompanionService` 維護 `watch::Sender<u64>` 配對狀態版本通知並提供 `authenticate_session`（以常數時間比對驗證並僅回傳 SHA-256 雜湊）與唯讀 `is_session_hash_active`；在 `lan_ws` 驗證前先訂閱變更通知，只將 `session_hash` 傳入 `on_upgrade`，並於升級入口與 `tokio::select!` 迴圈中同步響應撤銷通知與週期重檢，確保裝置撤銷或憑證輪替時即刻終止對應連線而不干擾其他合法裝置。
+**署名:** Sentinel as Antigravity
