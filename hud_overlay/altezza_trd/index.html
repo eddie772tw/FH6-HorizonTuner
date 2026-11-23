@@ -161,8 +161,13 @@
                 }
             }
 
+            const TIRE_MIN_C = 70;
+            const TIRE_RANGE_C = 40;
+            function tireFraction(temperature) {
+                return temperature === null ? 0 : clamp((temperature - TIRE_MIN_C) / TIRE_RANGE_C);
+            }
             function tireGauge(x, y, temperature) {
-                const ratio = temperature === null ? 0 : clamp((temperature - 20) / 120);
+                const ratio = tireFraction(temperature);
                 needle(x, y, 25, 115 + ratio * 142, 2, true);
             }
 
@@ -318,7 +323,7 @@
                         }
                         const wave = Math.sin(progress * Math.PI);
                         render({ ...telemetry, speed: 180 * wave, rpm: telemetry.ceiling * wave, fuel: telemetry.fuel, gear: Math.ceil(wave * 6),
-                            boostBar: -1 + wave * 3, averageTireC: 20 + wave * 120, hottestTireC: 20 + wave * 120 });
+                            boostBar: -1 + wave * 3, averageTireC: TIRE_MIN_C + wave * TIRE_RANGE_C, hottestTireC: TIRE_MIN_C + wave * TIRE_RANGE_C });
                         sweepFrame = requestAnimationFrame(sweep);
                     }
                     sweepFrame = requestAnimationFrame(sweep);

@@ -67,10 +67,11 @@ function renderer(style: string) {
   const html = readFileSync(resolve(hud, style, 'index.html'), 'utf8');
   const source = inlineScriptSource(html)
     .replace(/(var rpmRatio = [^;]+;)/g, '$1 window.__rpmRatio = rpmRatio;')
-    .replace(/\}\)\(\);\s*$/, 'window.__telemetry = telemetry; })();');
+    .replace(/\}\)\(\);\s*$/, 'window.__telemetry = telemetry; window.__tireFraction = typeof tireFraction === "function" ? tireFraction : null; })();');
   runInNewContext(source, scope);
   return { hooks, attributes, classes, timers, rafs, state: () => scope.__telemetry,
     ratio: () => scope.__rpmRatio,
+    tireFraction: (temperature: number | null) => scope.__tireFraction(temperature),
     advance: (elapsed: number) => { now = elapsed; for (const callback of timers.values()) callback(); },
     emit: (type: string, event?: any) => { for (const callback of listeners.get(type) || []) callback(event); },
   };
@@ -116,6 +117,13 @@ describe('Toyota native artwork telemetry contracts', () => {
     }
     h.hooks.onFrame(coordinatorFrame('kmh', { EngineMaxRpm: undefined }), {});
     expect(h.state()).toMatchObject({ ceiling: 9000, redline: 8000 });
+  });
+  it('places cold and hot thresholds at the first and last eighth of the tire scale', () => {
+    const h = renderer('altezza_trd');
+    for (const [temperature, fraction] of [[20, 0], [70, 0], [75, .125], [90, .5], [105, .875], [110, 1], [140, 1]]) {
+      expect(h.tireFraction(temperature)).toBeCloseTo(fraction);
+    }
+    expect(h.tireFraction(null)).toBe(0);
   });
   it('maps boost and four-wheel average/maximum temperatures while preserving missing values', () => {
     const h = renderer('altezza_trd');

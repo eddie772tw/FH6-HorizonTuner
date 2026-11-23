@@ -127,45 +127,47 @@
 <text x="268" y="134" font-size="8" fill="#e2e3df">-1</text><text x="269" y="87" font-size="8" fill="#e2e3df">2</text>
 <g transform="translate(282 109)" fill="none" stroke="#d3d7d8" stroke-width="1.1"><path d="M-4 4a6 6 0 1 1 7-8L7-4v4H3a3 3 0 1 0-3 3"/><circle r="2"/></g><text x="282" y="122" font-size="6" fill="#d3d7d8">bar</text>
 <circle cx="322" cy="165" r="34" fill="url(#bezel)"/><circle cx="322" cy="165" r="32" fill="url(#well)" stroke="#11141a" stroke-width="1.7"/>
-<path d="M309.74 191.28 A29 29 0 0 1 293.00 164.96" fill="none" stroke="#7ca4bb" stroke-width="1.8"/>
-<path d="M298.42 148.13 A29 29 0 0 1 315.48 136.74" fill="none" stroke="#dc654b" stroke-width="1.8"/>
+<!-- Linear 70–110 C scale; fixed cold/hot sectors each occupy 12.5% of the 142-degree sweep. -->
+<path d="M309.74 191.28 A29 29 0 0 1 302.31 186.30" fill="none" stroke="#7ca4bb" stroke-width="1.8"/>
+<path d="M307.17 140.08 A29 29 0 0 1 315.48 136.74" fill="none" stroke="#dc654b" stroke-width="1.8"/>
 <path d="M310.59 189.47 L312.49 185.39" stroke="#7ca4bb" stroke-width="1.1"/>
 <path d="M306.95 187.42 L308.07 185.76" stroke="#7ca4bb" stroke-width="1.1"/>
-<path d="M303.67 184.83 L305.03 183.36" stroke="#7ca4bb" stroke-width="1.1"/>
-<path d="M300.83 181.76 L302.40 180.52" stroke="#7ca4bb" stroke-width="1.1"/>
-<path d="M298.50 178.30 L302.42 176.08" stroke="#7ca4bb" stroke-width="1.1"/>
-<path d="M296.73 174.51 L298.60 173.81" stroke="#7ca4bb" stroke-width="1.1"/>
-<path d="M295.57 170.50 L297.52 170.09" stroke="#7ca4bb" stroke-width="1.1"/>
-<path d="M295.03 166.35 L297.03 166.25" stroke="#7ca4bb" stroke-width="1.1"/>
+<path d="M303.67 184.83 L305.03 183.36" stroke="#c6cbd0" stroke-width="1.1"/>
+<path d="M300.83 181.76 L302.40 180.52" stroke="#c6cbd0" stroke-width="1.1"/>
+<path d="M298.50 178.30 L302.42 176.08" stroke="#c6cbd0" stroke-width="1.1"/>
+<path d="M296.73 174.51 L298.60 173.81" stroke="#c6cbd0" stroke-width="1.1"/>
+<path d="M295.57 170.50 L297.52 170.09" stroke="#c6cbd0" stroke-width="1.1"/>
+<path d="M295.03 166.35 L297.03 166.25" stroke="#c6cbd0" stroke-width="1.1"/>
 <path d="M295.15 162.18 L299.62 162.65" stroke="#c6cbd0" stroke-width="1.1"/>
 <path d="M295.90 158.07 L297.84 158.58" stroke="#c6cbd0" stroke-width="1.1"/>
 <path d="M297.29 154.13 L299.12 154.93" stroke="#c6cbd0" stroke-width="1.1"/>
 <path d="M299.26 150.44 L300.94 151.52" stroke="#c6cbd0" stroke-width="1.1"/>
-<path d="M301.78 147.11 L305.15 150.09" stroke="#dc654b" stroke-width="1.1"/>
-<path d="M304.78 144.20 L306.06 145.74" stroke="#dc654b" stroke-width="1.1"/>
-<path d="M308.20 141.80 L309.22 143.51" stroke="#dc654b" stroke-width="1.1"/>
+<path d="M301.78 147.11 L305.15 150.09" stroke="#c6cbd0" stroke-width="1.1"/>
+<path d="M304.78 144.20 L306.06 145.74" stroke="#c6cbd0" stroke-width="1.1"/>
+<path d="M308.20 141.80 L309.22 143.51" stroke="#c6cbd0" stroke-width="1.1"/>
 <path d="M311.94 139.94 L312.69 141.80" stroke="#dc654b" stroke-width="1.1"/>
 <path d="M315.93 138.69 L316.94 143.08" stroke="#dc654b" stroke-width="1.1"/>
 <text x="321" y="189" font-size="8" fill="#e2e3df">L</text><text x="322" y="142" font-size="8" fill="#e2e3df">H</text>
 <g transform="translate(335 163)" fill="none" stroke="#d3d7d8" stroke-width="1"><rect x="-4" y="-6" width="8" height="12" rx="3"/><path d="M-1-5v10m2-10v10"/></g><text x="335" y="177" font-size="6" fill="#d3d7d8">AVG</text>
 <circle cx="269" cy="220" r="34" fill="url(#bezel)"/><circle cx="269" cy="220" r="32" fill="url(#well)" stroke="#11141a" stroke-width="1.7"/>
-<path d="M256.74 246.28 A29 29 0 0 1 240.00 219.96" fill="none" stroke="#7ca4bb" stroke-width="1.8"/>
-<path d="M245.42 203.13 A29 29 0 0 1 262.48 191.74" fill="none" stroke="#dc654b" stroke-width="1.8"/>
+<!-- Linear 70–110 C scale; fixed cold/hot sectors each occupy 12.5% of the 142-degree sweep. -->
+<path d="M256.74 246.28 A29 29 0 0 1 249.31 241.30" fill="none" stroke="#7ca4bb" stroke-width="1.8"/>
+<path d="M254.17 195.08 A29 29 0 0 1 262.48 191.74" fill="none" stroke="#dc654b" stroke-width="1.8"/>
 <path d="M257.59 244.47 L259.49 240.39" stroke="#7ca4bb" stroke-width="1.1"/>
 <path d="M253.95 242.42 L255.07 240.76" stroke="#7ca4bb" stroke-width="1.1"/>
-<path d="M250.67 239.83 L252.03 238.36" stroke="#7ca4bb" stroke-width="1.1"/>
-<path d="M247.83 236.76 L249.40 235.52" stroke="#7ca4bb" stroke-width="1.1"/>
-<path d="M245.50 233.30 L249.42 231.08" stroke="#7ca4bb" stroke-width="1.1"/>
-<path d="M243.73 229.51 L245.60 228.81" stroke="#7ca4bb" stroke-width="1.1"/>
-<path d="M242.57 225.50 L244.52 225.09" stroke="#7ca4bb" stroke-width="1.1"/>
-<path d="M242.03 221.35 L244.03 221.25" stroke="#7ca4bb" stroke-width="1.1"/>
+<path d="M250.67 239.83 L252.03 238.36" stroke="#c6cbd0" stroke-width="1.1"/>
+<path d="M247.83 236.76 L249.40 235.52" stroke="#c6cbd0" stroke-width="1.1"/>
+<path d="M245.50 233.30 L249.42 231.08" stroke="#c6cbd0" stroke-width="1.1"/>
+<path d="M243.73 229.51 L245.60 228.81" stroke="#c6cbd0" stroke-width="1.1"/>
+<path d="M242.57 225.50 L244.52 225.09" stroke="#c6cbd0" stroke-width="1.1"/>
+<path d="M242.03 221.35 L244.03 221.25" stroke="#c6cbd0" stroke-width="1.1"/>
 <path d="M242.15 217.18 L246.62 217.65" stroke="#c6cbd0" stroke-width="1.1"/>
 <path d="M242.90 213.07 L244.84 213.58" stroke="#c6cbd0" stroke-width="1.1"/>
 <path d="M244.29 209.13 L246.12 209.93" stroke="#c6cbd0" stroke-width="1.1"/>
 <path d="M246.26 205.44 L247.94 206.52" stroke="#c6cbd0" stroke-width="1.1"/>
-<path d="M248.78 202.11 L252.15 205.09" stroke="#dc654b" stroke-width="1.1"/>
-<path d="M251.78 199.20 L253.06 200.74" stroke="#dc654b" stroke-width="1.1"/>
-<path d="M255.20 196.80 L256.22 198.51" stroke="#dc654b" stroke-width="1.1"/>
+<path d="M248.78 202.11 L252.15 205.09" stroke="#c6cbd0" stroke-width="1.1"/>
+<path d="M251.78 199.20 L253.06 200.74" stroke="#c6cbd0" stroke-width="1.1"/>
+<path d="M255.20 196.80 L256.22 198.51" stroke="#c6cbd0" stroke-width="1.1"/>
 <path d="M258.94 194.94 L259.69 196.80" stroke="#dc654b" stroke-width="1.1"/>
 <path d="M262.93 193.69 L263.94 198.08" stroke="#dc654b" stroke-width="1.1"/>
 <text x="268" y="244" font-size="8" fill="#e2e3df">L</text><text x="269" y="197" font-size="8" fill="#e2e3df">H</text>
