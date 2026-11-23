@@ -4,6 +4,33 @@
 
     function createPrimitives(ctx, contract) {
         var clamp = contract.clamp;
+        var dialGradients = [
+            { cx: NaN, cy: NaN, r: NaN, bezel: null, hub: null },
+            { cx: NaN, cy: NaN, r: NaN, bezel: null, hub: null }
+        ];
+        var dialGradientCursor = 0;
+
+        function blur(view, radius) {
+            var ratio = view && Number.isFinite(view.pixelRatio) && view.pixelRatio > 0 ? view.pixelRatio : 1;
+            return radius * ratio;
+        }
+
+        function getHeritageDialGradients(cx, cy, radius) {
+            for (var i = 0; i < dialGradients.length; i += 1) {
+                var c = dialGradients[i];
+                if (c.cx === cx && c.cy === cy && c.r === radius && c.bezel && c.hub) return c;
+            }
+            var slot = dialGradients[dialGradientCursor];
+            dialGradientCursor = (dialGradientCursor + 1) % dialGradients.length;
+            var bezel = ctx.createLinearGradient(cx - radius, cy - radius, cx + radius, cy + radius);
+            bezel.addColorStop(0, '#2B3034'); bezel.addColorStop(0.18, '#EDF6F7'); bezel.addColorStop(0.37, '#6C757D');
+            bezel.addColorStop(0.58, '#F6FFFF'); bezel.addColorStop(0.78, '#525A60'); bezel.addColorStop(1, '#DCE7E9');
+            var hub = ctx.createRadialGradient(cx - 3, cy - 4, 2, cx, cy, 20);
+            hub.addColorStop(0, '#F1F7F6'); hub.addColorStop(0.42, '#8D989A');
+            hub.addColorStop(0.76, '#2D3335'); hub.addColorStop(1, '#C6D0CF');
+            slot.cx = cx; slot.cy = cy; slot.r = radius; slot.bezel = bezel; slot.hub = hub;
+            return slot;
+        }
 
         function fontSize(view, role, fallback) {
             return view && view.typography && view.typography[role]
@@ -505,17 +532,11 @@
             var faceLabel = options.faceLabel || '';
             var needleColor = options.needleColor || '#F1373F';
             var needleAngle = startAngle + (endAngle - startAngle) * clamp(ratio, 0, 1);
-            var bezelGradient = ctx.createLinearGradient(cx - radius, cy - radius, cx + radius, cy + radius);
-            bezelGradient.addColorStop(0, '#2B3034');
-            bezelGradient.addColorStop(0.18, '#EDF6F7');
-            bezelGradient.addColorStop(0.37, '#6C757D');
-            bezelGradient.addColorStop(0.58, '#F6FFFF');
-            bezelGradient.addColorStop(0.78, '#525A60');
-            bezelGradient.addColorStop(1, '#DCE7E9');
+            var gradients = getHeritageDialGradients(cx, cy, radius);
 
             ctx.save();
             ctx.shadowColor = 'rgba(0, 0, 0, 0.95)';
-            ctx.shadowBlur = 14;
+            ctx.shadowBlur = blur(view, 14);
             ctx.beginPath();
             ctx.arc(cx, cy, radius + 7, 0, Math.PI * 2);
             ctx.fillStyle = '#090A0B';
@@ -523,7 +544,7 @@
             ctx.shadowBlur = 0;
             ctx.beginPath();
             ctx.arc(cx, cy, radius + 5, 0, Math.PI * 2);
-            ctx.strokeStyle = bezelGradient;
+            ctx.strokeStyle = gradients.bezel;
             ctx.lineWidth = 6;
             ctx.stroke();
             ctx.beginPath();
@@ -579,7 +600,7 @@
 
             ctx.save();
             ctx.shadowColor = 'rgba(255, 0, 0, 0.55)';
-            ctx.shadowBlur = 5;
+            ctx.shadowBlur = blur(view, 5);
             ctx.beginPath();
             ctx.moveTo(cx - Math.cos(needleAngle + Math.PI / 2) * 2.5, cy - Math.sin(needleAngle + Math.PI / 2) * 2.5);
             ctx.lineTo(cx + Math.cos(needleAngle) * (radius - 25), cy + Math.sin(needleAngle) * (radius - 25));
@@ -589,14 +610,9 @@
             ctx.fill();
             ctx.restore();
 
-            var hubGradient = ctx.createRadialGradient(cx - 3, cy - 4, 2, cx, cy, 20);
-            hubGradient.addColorStop(0, '#F1F7F6');
-            hubGradient.addColorStop(0.42, '#8D989A');
-            hubGradient.addColorStop(0.76, '#2D3335');
-            hubGradient.addColorStop(1, '#C6D0CF');
             ctx.beginPath();
             ctx.arc(cx, cy, 19, 0, Math.PI * 2);
-            ctx.fillStyle = hubGradient;
+            ctx.fillStyle = gradients.hub;
             ctx.fill();
             ctx.strokeStyle = '#EAF5F4';
             ctx.lineWidth = 1;
@@ -623,7 +639,7 @@
 
             ctx.save();
             ctx.shadowColor = 'rgba(0, 0, 0, 0.9)';
-            ctx.shadowBlur = 14;
+            ctx.shadowBlur = blur(view, 14);
             ctx.beginPath();
             ctx.arc(cx, cy, radius + 5, 0, Math.PI * 2);
             ctx.fillStyle = '#050605';
@@ -674,7 +690,7 @@
 
             ctx.save();
             ctx.shadowColor = palette.primary;
-            ctx.shadowBlur = view.foxbodyNightMode ? 7 : 0;
+            ctx.shadowBlur = view.foxbodyNightMode ? blur(view, 7) : 0;
             ctx.beginPath();
             ctx.moveTo(cx - Math.cos(needleAngle + Math.PI / 2) * 2.8, cy - Math.sin(needleAngle + Math.PI / 2) * 2.8);
             ctx.lineTo(cx + Math.cos(needleAngle) * (radius - 32), cy + Math.sin(needleAngle) * (radius - 32));

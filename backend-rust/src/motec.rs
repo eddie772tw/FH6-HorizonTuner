@@ -396,7 +396,7 @@ pub fn import(bytes: &[u8]) -> ApiResult<(Value, Vec<Value>)> {
             if offset != 0 {
                 point["gameLapNumber"] = json!(lap);
             }
-            point["LapNumber"] = json!(lap as i64 + offset);
+            point["LapNumber"] = json!((lap as i64).saturating_add(offset));
         }
     }
     Ok((metadata, points))
@@ -698,16 +698,25 @@ pub fn extract_point_channels(p: &Value) -> [f64; 41] {
     ch
 }
 
-pub fn resample_to_grid(points: &[Value], freq: f64) -> Vec<ResampledPoint> {
+/// Cap uniform 60 Hz MoTeC LD resampling to 2 hours (7,200 s * 60 Hz + 1 samples)
+/// so corrupted or forged UDP/CSV timestamp gaps cannot trigger OOM aborts or u32 offset overflow.
+pub const MAX_RESAMPLED_SAMPLES: usize = 432_001;
+
+/// Resamples session points onto a uniform grid while rejecting non-finite or oversized spans
+/// that would cause unbounded heap allocation (CWE-789 / CWE-400) or integer overflow.
+pub fn try_resample_to_grid(points: &[Value], freq: f64) -> ApiResult<Vec<ResampledPoint>> {
     if points.is_empty() {
-        return Vec::new();
+        return Ok(Vec::new());
+    }
+    if !freq.is_finite() {
+        return Err(ApiError::invalid("Invalid MoTeC resampling frequency"));
     }
     let mut raw: Vec<[f64; 41]> = points.iter().map(extract_point_channels).collect();
     raw.sort_by(|a, b| a[0].total_cmp(&b[0]));
     if raw.len() == 1 {
         let mut ch = raw[0];
         ch[0] = 0.0;
-        return vec![ResampledPoint { channels: ch }];
+        return Ok(vec![ResampledPoint { channels: ch }]);
     }
 
     let t_start = raw[0][0];
@@ -715,11 +724,23 @@ pub fn resample_to_grid(points: &[Value], freq: f64) -> Vec<ResampledPoint> {
     if t_end <= t_start || freq <= 0.0 {
         let mut ch = raw[0];
         ch[0] = 0.0;
-        return vec![ResampledPoint { channels: ch }];
+        return Ok(vec![ResampledPoint { channels: ch }]);
+    }
+
+    let span = t_end - t_start;
+    let steps_f = (span * freq).round();
+    if !span.is_finite()
+        || !steps_f.is_finite()
+        || steps_f < 0.0
+        || steps_f >= MAX_RESAMPLED_SAMPLES as f64
+    {
+        return Err(ApiError::invalid(
+            "Session duration exceeds the maximum supported MoTeC LD export limit",
+        ));
     }
 
     let dt = 1.0 / freq;
-    let total_steps = ((t_end - t_start) * freq).round() as usize;
+    let total_steps = steps_f as usize;
     let mut out = Vec::with_capacity(total_steps + 1);
 
     let mut idx = 0;
@@ -759,7 +780,11 @@ pub fn resample_to_grid(points: &[Value], freq: f64) -> Vec<ResampledPoint> {
         out.push(ResampledPoint { channels: ch });
     }
 
-    out
+    Ok(out)
+}
+
+pub fn resample_to_grid(points: &[Value], freq: f64) -> Vec<ResampledPoint> {
+    try_resample_to_grid(points, freq).unwrap_or_default()
 }
 
 const HEADER_TEMPLATE_SIZE: usize = 13384;
@@ -863,8 +888,9 @@ pub fn generate_ldx_xml(laps: &[Value], points: &[Value]) -> String {
             let (start, end) = if points.is_empty() {
                 (cursor, cursor + duration)
             } else if let Some(observed_start) = starts.get(&number) {
-                let end = starts
-                    .get(&(number + 1))
+                let end = number
+                    .checked_add(1)
+                    .and_then(|next| starts.get(&next))
                     .copied()
                     .unwrap_or(observed_start + duration);
                 (end - duration, end)
@@ -942,8 +968,17 @@ pub fn export_ld(
     points: &[Value],
     laps: &[Value],
 ) -> ApiResult<(Vec<u8>, Vec<u8>)> {
-    let resampled = resample_to_grid(points, 60.0);
+    let resampled = try_resample_to_grid(points, 60.0)?;
     let sample_count = resampled.len();
+    let data_bytes = CHANNEL_COUNT
+        .checked_mul(sample_count)
+        .and_then(|n| n.checked_mul(4))
+        .filter(|&len| {
+            DATA_BASE
+                .checked_add(len)
+                .is_some_and(|end| u32::try_from(end).is_ok())
+        })
+        .ok_or_else(|| ApiError::invalid("MoTeC LD export exceeds 32-bit binary offset limit"))?;
 
     let mut header_buf = vec![0u8; HEADER_TEMPLATE_SIZE];
     for &(offset, hex_str) in TEMPLATE_RUNS {
@@ -1052,7 +1087,7 @@ pub fn export_ld(
         meta_buf.extend_from_slice(&[0u8; 39]);
     }
 
-    let mut data_buf = Vec::with_capacity(CHANNEL_COUNT * sample_count * 4);
+    let mut data_buf = Vec::with_capacity(data_bytes);
     for i in 0..CHANNEL_COUNT {
         for pt in &resampled {
             let val = pt.channels[i] as f32;

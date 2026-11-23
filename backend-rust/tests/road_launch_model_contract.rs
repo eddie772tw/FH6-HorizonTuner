@@ -397,3 +397,83 @@ fn road_diagnostics_match_solver_limit_rpm_and_tire_fallbacks() {
         conflict.gearing.unsupported_reason.as_deref()
     );
 }
+
+#[test]
+fn road_envelope_preferred_fd_overflow_torque_fallback_and_adjusted_closure() {
+    use fh6_backend::tuning::{
+        aego_model::AegoModel,
+        gearing::{models, road},
+    };
+
+    // 1. Finite first_total > top_total with top_total / target_top_gear == +inf must not panic.
+    let extreme = TuningCarParams {
+        weight: Some(1400.0),
+        weight_distribution: Some(50.0),
+        drivetrain: Some("RWD".into()),
+        max_hp: Some(300.0),
+        max_torque: Some(1.8e-305),
+        max_hp_rpm: Some(7000.0),
+        max_torque_rpm: Some(4500.0),
+        ..synthetic()
+    };
+    let sc = GearingSecondaryCorrection {
+        simulated_top_speed: None,
+        soft_max_speed: Some(6.5e-306),
+        drag_finish_speed_kmh: None,
+        drag_finish_speed_provenance: None,
+    };
+    let res = models::solve(AegoModel::RoadLaunchV3, 6, &extreme, 7500.0, Some(&sc));
+    let first = res.diagnostics["targetFirstTotalRatio"].as_f64().unwrap();
+    let top = res.diagnostics["targetTopTotalRatio"].as_f64().unwrap();
+    assert!(first.is_finite() && top.is_finite() && first > top);
+    assert!((top / road::get_target_top_gear_ratio(6)).is_infinite());
+    assert_eq!(res.gearing.unsupported, Some(true));
+    assert!(res.gearing.gears.is_empty());
+
+    // 2. Missing/zero/non-finite torque derives identically across solver and road_launch_diagnostics.
+    let car = TuningCarParams {
+        weight: Some(1500.0),
+        weight_distribution: Some(50.0),
+        drivetrain: Some("RWD".into()),
+        max_hp: Some(150.0),
+        max_torque: None,
+        max_hp_rpm: Some(6000.0),
+        max_torque_rpm: Some(4500.0),
+        ..synthetic()
+    };
+    let solved = models::solve(AegoModel::RoadLaunchV3, 6, &car, 7000.0, None);
+    assert_eq!(solved.diagnostics["status"], "available");
+    let exp_first = solved.diagnostics["targetFirstTotalRatio"]
+        .as_f64()
+        .unwrap();
+    for bad in [0.0, -50.0, f64::NAN, f64::INFINITY] {
+        let d = road_launch_diagnostics(&car, 7000.0, 6000.0, 4500.0, bad, &solved.gearing);
+        let load = d["loadPriorTotalRatio"].as_f64().unwrap();
+        let speed = d["speedPriorTotalRatio"].as_f64().unwrap();
+        let selected = d["selectedTotalRatio"].as_f64().unwrap();
+        assert!(load > speed, "load prior must govern for {bad}");
+        assert!((load - exp_first).abs() < 1e-9 && (selected - exp_first).abs() < 1e-9);
+    }
+
+    // 3. Invalid Road adjustment clears stale actual* fields; malformed diagnostics never panic.
+    let mut broken = solved.gearing.clone();
+    broken.gears[0] = (broken.gears[0] - 0.5).max(1.0);
+    let rejected = road::adjusted_diagnostics(&broken, &solved.diagnostics);
+    assert_eq!(rejected["status"], "unavailable");
+    for key in [
+        "actualSpeedKmh",
+        "endpointErrorKmh",
+        "actualFirstTotalRatio",
+        "actualTopTotalRatio",
+    ] {
+        assert!(rejected[key].is_null(), "{key} should clear on rejection");
+    }
+    for key in ["referenceRpm", "tireRadiusM", "targetSpeedKmh"] {
+        let mut malformed = solved.diagnostics.clone();
+        malformed[key] = Value::Null;
+        assert!(!road::respects_hard_targets(&solved.gearing, &malformed));
+        let out = road::adjusted_diagnostics(&solved.gearing, &malformed);
+        assert_eq!(out["status"], "unavailable");
+        assert!(out["actualSpeedKmh"].is_null());
+    }
+}

@@ -40,7 +40,8 @@ fn high(s: &Value) -> bool {
                 max * 0.9
             }
 }
-pub fn peaks(bins: &Value) -> Value {
+type Peaks = (Option<(f64, f64)>, Option<(f64, f64)>);
+fn peak_pairs(bins: &Value) -> Peaks {
     let mut power: Option<&Value> = None;
     let mut torque: Option<&Value> = None;
     if let Some(bins) = bins.as_array() {
@@ -79,18 +80,22 @@ pub fn peaks(bins: &Value) -> Value {
             }
         }
     }
-    let mut result = json!({});
-    for (key, field, bin) in [
-        ("power", "averagePowerWatts", power),
-        ("torque", "averageTorqueNewtons", torque),
-    ] {
-        if let Some(bin) = bin {
-            result[key] = json!({"value":num(bin,field),"rpm":num(bin,"averageRpm")});
+    let p = power.map(|b| (num(b, "averagePowerWatts"), num(b, "averageRpm")));
+    let t = torque.map(|b| (num(b, "averageTorqueNewtons"), num(b, "averageRpm")));
+    (p, t)
+}
+fn put_peaks(mut out: Value, (p, t): Peaks, pk: &str, tk: &str) -> Value {
+    for (k, pair) in [(pk, p), (tk, t)] {
+        if let Some((v, r)) = pair {
+            out[k] = json!({"value":v,"rpm":r});
         }
     }
-    result
+    out
 }
-fn guidance(s: &Value, now: f64) -> String {
+pub fn peaks(bins: &Value) -> Value {
+    put_peaks(json!({}), peak_pairs(bins), "power", "torque")
+}
+fn guidance(s: &Value, now: f64, lazy: Option<&Lazy>) -> String {
     let g = s["guidance"].as_str().unwrap_or("collecting");
     if [
         "telemetry-disconnected",
@@ -120,15 +125,16 @@ fn guidance(s: &Value, now: f64) -> String {
     if !high(s) {
         return "rpm-coverage-high".into();
     }
-    if s["bins"].as_array().map_or(0, Vec::len) < if adaptive(s) { 6 } else { 8 }
-        || peaks(&s["rpmEvidenceBins"])["power"].is_null()
-    {
+    let (dirty, p) = lazy.map_or_else(|| (false, peak_pairs(&s["rpmEvidenceBins"])), |l| *l);
+    let bins = dirty.then(|| obs_bin_count(s));
+    let bins = bins.unwrap_or_else(|| s["bins"].as_array().map_or(0, Vec::len));
+    if bins < if adaptive(s) { 6 } else { 8 } || p.0.is_none() {
         return "bins-insufficient".into();
     }
     "ready".into()
 }
 pub fn readiness(s: &Value, now: f64) -> Value {
-    let g = guidance(s, now);
+    let g = guidance(s, now, None);
     let mut r = json!({"ready":g=="ready","status":if g=="ready"{"ready"}else if ["identity-changed","timestamp-regressed"].contains(&g.as_str()){"blocked"}else{"collecting"},"guidance":g,"acceptedMs":s["acceptedMs"],"binCount":s["bins"].as_array().map_or(0,Vec::len),"lowRpmCoverage":num(s,"engineMaxRpm")>0.0&&num(s,"lowestRpm")<=num(s,"engineMaxRpm")*0.4,"highRpmCoverage":high(s)});
     for key in [
         "effectiveRedline",
@@ -213,6 +219,25 @@ fn add_bin_in_place(bins: &mut Value, rpm: f64, redline: f64, power: f64, torque
         set(b, avg, total / count);
     }
 }
+type Lazy = (bool, Peaks);
+// [PERF] Defer 16-bin JSON materialization & stack-cache peaks in replay loops.
+fn obs_bin_count(s: &Value) -> usize {
+    let ad = adaptive(s) && num(s, "effectiveRedline") > num(s, "lowestRpm");
+    let lo = if ad { num(s, "lowestRpm") } else { 0.0 };
+    let span = num(s, ["engineMaxRpm", "effectiveRedline"][ad as usize]) - lo;
+    let mut mask = 0u16;
+    for b in s["rpmEvidenceBins"].as_array().into_iter().flatten() {
+        let p = ((num(b, "averageRpm") - lo) / span * 16.0).floor();
+        mask |= 1u16 << ((p.clamp(0.0, 15.0) as i64).clamp(0, 15) as u32);
+    }
+    mask.count_ones() as usize
+}
+fn flush_bins(mut s: Value, dirty: bool) -> Value {
+    if dirty {
+        s["bins"] = observation_bins(&s);
+    }
+    s
+}
 fn observation_bins(s: &Value) -> Value {
     let Some(bins) = s["rpmEvidenceBins"].as_array() else {
         return s["bins"].clone();
@@ -293,12 +318,12 @@ fn cutoff(
     Some(c)
 }
 pub fn advance(state: &Value, frame: &Value, connected: bool, now: f64) -> Value {
-    advance_owned(state.clone(), frame, connected, now)
-}
-fn advance_owned(mut s: Value, frame: &Value, connected: bool, now: f64) -> Value {
     if !connected {
-        return interrupt(s, "telemetry-disconnected");
+        return interrupt(state.clone(), "telemetry-disconnected");
     }
+    advance_owned(state.clone(), frame, now, None)
+}
+fn advance_owned(mut s: Value, frame: &Value, now: f64, lazy: Option<&mut Lazy>) -> Value {
     if frame.is_null() {
         return interrupt(s, "waiting-frame");
     }
@@ -429,8 +454,7 @@ fn advance_owned(mut s: Value, frame: &Value, connected: bool, now: f64) -> Valu
     if positive {
         add_bin_in_place(&mut s["rpmEvidenceBins"], rpm, redline, power, torque);
     }
-    let calculated = peaks(&s["rpmEvidenceBins"]);
-    let reference = &calculated["power"];
+    let (pwr, trq) = peak_pairs(&s["rpmEvidenceBins"]);
     if n(&s, "effectiveRedline").is_some_and(|v| rpm > v + 50.0) {
         s["cutoffDetected"] = json!(false);
         s["powerDropoffDetected"] = json!(false);
@@ -440,7 +464,7 @@ fn advance_owned(mut s: Value, frame: &Value, connected: bool, now: f64) -> Valu
     set(&mut s, "plateauDurationMs", 0.0);
     s["plateauHadOutputCut"] = json!(false);
     let eligible = (positive || (power <= 0.0 && torque <= 0.0))
-        && !reference.is_null()
+        && pwr.is_some()
         && n(&s, "highestRpm").is_some()
         && num(&s, "lowestRpm") <= redline * 0.4
         && s["rpmEvidenceBins"].as_array().map_or(0, Vec::len) >= 6;
@@ -470,11 +494,7 @@ fn advance_owned(mut s: Value, frame: &Value, connected: bool, now: f64) -> Valu
     } else {
         remove(&mut s, &["cutoffCycles"]);
     }
-    if positive
-        && !reference.is_null()
-        && rpm >= num(reference, "rpm") * 1.05
-        && power <= num(reference, "value") * 0.88
-    {
+    if positive && pwr.is_some_and(|(pv, pr)| rpm >= pr * 1.05 && power <= pv * 0.88) {
         s["powerDropoffDetected"] = json!(true);
         if n(&s, "effectiveRedline").is_none() {
             set(&mut s, "effectiveRedline", redline.min(rpm.round()));
@@ -501,12 +521,12 @@ fn advance_owned(mut s: Value, frame: &Value, connected: bool, now: f64) -> Valu
             &["lastLoadedPositiveRpm", "lastAcceptedTimestampMs"],
         );
     }
-    if let Some(rpm) = n(&calculated["torque"], "rpm") {
+    if let Some((_, rpm)) = trq.filter(|(_, r)| r.is_finite()) {
         set(&mut s, "powerbandStartRpm", rpm);
     } else {
         remove(&mut s, &["powerbandStartRpm"]);
     }
-    if let Some(rpm) = n(reference, "rpm") {
+    if let Some((_, rpm)) = pwr.filter(|(_, r)| r.is_finite()) {
         let end = rpm.max(n(&s, "effectiveRedline").unwrap_or(0.0));
         set(&mut s, "powerbandEndRpm", end);
     } else {
@@ -524,8 +544,16 @@ fn advance_owned(mut s: Value, frame: &Value, connected: bool, now: f64) -> Valu
             .fold(n(&s, "maxObservedNormalizedSlip").unwrap_or(0.0), f64::max);
         set(&mut s, "maxObservedNormalizedSlip", slip);
     }
-    s["bins"] = observation_bins(&s);
-    let g = guidance(&s, now);
+    let g = if let Some(l) = lazy {
+        l.1 = (pwr, trq);
+        if s["rpmEvidenceBins"].is_array() {
+            (l.0, s["bins"]) = (true, Value::Array(Vec::new()));
+        }
+        guidance(&s, now, Some(l))
+    } else {
+        s["bins"] = observation_bins(&s);
+        guidance(&s, now, Some(&(false, (pwr, trq))))
+    };
     if !positive && g != "ready" {
         s["status"] = json!("collecting");
         s["guidance"] = json!("output-unavailable");
@@ -593,21 +621,24 @@ pub fn analyze(input: &Value) -> Value {
         return summary(None, id);
     };
     let mut state = initial(car);
+    let mut lazy: Lazy = (false, (None, None));
     let mut ready = None;
     for sample in samples {
         let frame = capture_frame(sample);
         let now = num(&frame, "TimestampMS");
-        state = advance_owned(state, &frame, true, now);
+        state = advance_owned(state, &frame, now, Some(&mut lazy));
         if state["status"] == "blocked"
             || ["car-mismatch", "identity-incomplete"]
                 .contains(&state["guidance"].as_str().unwrap_or(""))
         {
             ready = None;
-        } else if state["guidance"] == "ready" || guidance(&state, now) == "ready" {
-            ready = Some(state.clone());
+        } else if state["guidance"] == "ready" || guidance(&state, now, Some(&lazy)) == "ready" {
+            // [PERF] Snapshot Copy scalars instead of deep-cloning 64-bin JSON state per frame.
+            let snap = (num(&state, "acceptedMs"), n(&state, "effectiveRedline"));
+            ready = Some((snap, lazy.1));
         }
     }
-    let result = ready.as_ref().unwrap_or(&state);
+    let result = &state;
     let expected = &input["expected"];
     if expected.is_object()
         && (["ordinal", "carClass", "performanceIndex"]
@@ -619,7 +650,14 @@ pub fn analyze(input: &Value) -> Value {
         out["reason"] = json!("identity-changed");
         return out;
     }
-    summary(Some(result), id)
+    if let Some(((ms, eff), p)) = ready {
+        let mut out = json!({"analysisVersion":VERSION,"observationId":id,"status":"ready","reason":"ready","acceptedMs":ms,"engineMaxRpm":state["engineMaxRpm"]});
+        if let Some(v) = eff {
+            out["effectiveRedline"] = json!(v);
+        }
+        return put_peaks(out, p, "peakPower", "peakTorque");
+    }
+    summary(Some(&flush_bins(state, lazy.0)), id)
 }
 
 pub fn batch(input: &Value) -> Result<Value, String> {
@@ -649,16 +687,19 @@ pub fn batch(input: &Value) -> Result<Value, String> {
         return Err("Invalid measurement state".into());
     }
     let now = n(input, "nowMs").ok_or("nowMs must be finite")?;
+    let mut lazy: Lazy = (false, peak_pairs(&state["rpmEvidenceBins"]));
     let mut ready = None;
     for sample in samples {
         let frame = capture_frame(sample);
-        state = advance_owned(state, &frame, true, now);
+        state = advance_owned(state, &frame, now, Some(&mut lazy));
         if state["status"] == "blocked" {
             ready = None;
-        } else if state["guidance"] == "ready" || guidance(&state, now) == "ready" {
-            ready = Some(state.clone());
+        } else if state["guidance"] == "ready" || guidance(&state, now, Some(&lazy)) == "ready" {
+            ready = Some((state.clone(), lazy.0));
         }
     }
+    state = flush_bins(state, lazy.0);
+    let ready = ready.map(|(s, d)| flush_bins(s, d));
     if input["connected"] == false {
         state = advance(&state, &Value::Null, false, now);
     }

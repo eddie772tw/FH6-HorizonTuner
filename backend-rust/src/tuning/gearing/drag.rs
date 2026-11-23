@@ -60,20 +60,22 @@ fn endpoint_ticks(
     speed: f64,
     tolerance: f64,
 ) -> Option<(i64, i64)> {
-    let usable_rpm_ratio = usable_limit / rpm;
-    let mut lo = range
-        .0
-        .max((k / (fd * (speed + tolerance)) * 100.0 - 1e-6).ceil() as i64);
+    let lo_est = k / (fd * (speed + tolerance)) * 100.0;
+    let mut lo = lo_est
+        .is_finite()
+        .then(|| range.0.max((lo_est.floor() as i64).saturating_sub(1)))?;
+    let cap = |est: f64| match est.is_finite() && est < range.1 as f64 {
+        true => range.1.min((est.ceil() as i64).saturating_add(1)),
+        false => range.1,
+    };
     let speed_hi = if speed > tolerance {
-        range
-            .1
-            .min((k / (fd * (speed - tolerance)) * 100.0 + 1e-6).floor() as i64)
+        cap(k / (fd * (speed - tolerance)) * 100.0)
     } else {
         range.1
     };
     // At the requested endpoint speed, rounding must not require RPM beyond the
     // qualified usable limit even when speed error alone remains within tolerance.
-    let rpm_hi = (k * usable_rpm_ratio / (fd * speed) * 100.0 + 1e-6).floor() as i64;
+    let rpm_hi = cap((usable_limit / speed) * (2.0 * PI * radius * 6.0 / fd));
     let mut hi = speed_hi.min(rpm_hi);
     let actual_speed = |tick: i64| calc_gear_speed(rpm, tick as f64 / 100.0, fd, radius) * 3.6;
     let actual_rpm = |tick: i64| calc_gear_rpm(speed / 3.6, tick as f64 / 100.0, fd, radius);
@@ -94,6 +96,7 @@ fn endpoint_ticks(
             && s > 0.0
             && (s - speed).abs() <= tolerance + 1e-9
             && r.is_finite()
+            && r > 0.0
             && r <= usable_limit + 1e-8
     };
     (lo <= hi && valid(lo) && valid(hi)).then_some((lo, hi))
@@ -105,16 +108,15 @@ pub fn respects_hard_targets(result: &GearingResult, diagnostics: &Value) -> boo
     let Some(count) = diagnostics["gearCount"].as_u64().map(|n| n as usize) else {
         return false;
     };
-    if result.unsupported == Some(true)
+    let on_grid =
+        |v: f64| v.is_finite() && v > 0.0 && (v * 100.0 - (v * 100.0).round()).abs() < 1e-7;
+    if diagnostics["modelVersion"] != MODEL_VERSION
+        || result.unsupported == Some(true)
         || result.gears.len() != count
         || !(4..=10).contains(&count)
-        || !result.final_drive.is_finite()
-        || result.final_drive <= 0.0
-        || result.gears.iter().any(|g| !g.is_finite() || *g <= 0.0)
+        || !on_grid(result.final_drive)
+        || !result.gears.iter().all(|g| on_grid(*g))
         || result.gears.windows(2).any(|g| g[0] <= g[1])
-        || std::iter::once(&result.final_drive)
-            .chain(&result.gears)
-            .any(|v| (v * 100.0 - (v * 100.0).round()).abs() > 1e-7)
     {
         return false;
     }
@@ -143,17 +145,25 @@ pub fn respects_hard_targets(result: &GearingResult, diagnostics: &Value) -> boo
     else {
         return false;
     };
-    let actual = |g| calc_gear_speed(rpm, g, result.final_drive, radius) * 3.6;
-    (actual(result.gears[0]) - launch).abs() <= launch_tolerance + 1e-9
-        && (actual(result.gears[count - 1]) - finish).abs() <= finish_tolerance + 1e-9
-        && calc_gear_rpm(launch / 3.6, result.gears[0], result.final_drive, radius)
-            <= usable_limit + 1e-8
-        && calc_gear_rpm(
-            finish / 3.6,
-            result.gears[count - 1],
-            result.final_drive,
-            radius,
-        ) <= usable_limit + 1e-8
+    if rpm > usable_limit
+        || finish <= launch
+        || (launch_tolerance - 1.0_f64.max(launch * 0.02)).abs() > 1e-9
+        || (finish_tolerance - 1.0_f64.max(finish * 0.02)).abs() > 1e-9
+    {
+        return false;
+    }
+    let end = |speed: f64, tol: f64, gear: f64| {
+        let v = calc_gear_speed(rpm, gear, result.final_drive, radius) * 3.6;
+        let r = calc_gear_rpm(speed / 3.6, gear, result.final_drive, radius);
+        v.is_finite()
+            && v > 0.0
+            && (v - speed).abs() <= tol + 1e-9
+            && r.is_finite()
+            && r > 0.0
+            && r <= usable_limit + 1e-8
+    };
+    end(launch, launch_tolerance, result.gears[0])
+        && end(finish, finish_tolerance, result.gears[count - 1])
 }
 
 /// Refresh all selected-result fields after equivalent ratio allocation. The
@@ -369,7 +379,7 @@ pub fn solve_candidate(
                     d,
                 );
             }
-            preview_cap = preview_cap.min(cap * rpm / max_rpm);
+            preview_cap = preview_cap.min(cap * (rpm / max_rpm));
         }
     }
     if preview_cap.is_finite() {
@@ -443,8 +453,12 @@ pub fn solve_candidate(
         };
         ranges.push(range);
     }
+    let ratio = top_total / first_total;
     let totals: Vec<f64> = (0..count)
-        .map(|i| first_total * (top_total / first_total).powf(i as f64 / (count - 1) as f64))
+        .map(|i| match i as f64 / (count - 1) as f64 {
+            a if ratio > 0.0 => first_total * ratio.powf(a),
+            a => ((1.0 - a) * first_total.ln() + a * top_total.ln()).exp(),
+        })
         .collect();
     let radius = circumference / (2.0 * PI);
     let launch_tolerance = 1.0_f64.max(launch * 0.02);
@@ -520,9 +534,10 @@ pub fn solve_candidate(
             .map(|(g, t)| (g * fd / t).ln().powi(2))
             .sum::<f64>()
             + 0.001 * (result.gears[count - 1] / top_anchor).ln().powi(2);
-        if best
-            .as_ref()
-            .is_none_or(|(previous, _)| score < *previous - 1e-12)
+        if score.is_finite()
+            && best
+                .as_ref()
+                .is_none_or(|(previous, _)| score < *previous - 1e-12)
         {
             best = Some((score, result));
         }

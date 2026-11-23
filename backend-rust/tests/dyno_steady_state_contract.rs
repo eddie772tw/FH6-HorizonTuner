@@ -145,7 +145,8 @@ fn dyno_collection_bounds_extreme_rpm_bucket_capacity_and_malformed_profiles() {
 
     // Enforce bucket capacity cap on pre-seeded profiles while still permitting existing bucket updates.
     let mut full = serde_json::Map::new();
-    for i in 0..601 {
+    full.insert("3500".into(), json!({"hp": 100.0, "torque": 100.0}));
+    for i in 1..601 {
         full.insert(format!("seeded_{i}"), json!({"hp": 100.0, "torque": 100.0}));
     }
     let mut capped = json!({"drivetrain": "RWD", "dyno_curve": full});
@@ -159,6 +160,23 @@ fn dyno_collection_bounds_extreme_rpm_bucket_capacity_and_malformed_profiles() {
         "42"
     ));
     assert_eq!(capped["dyno_curve"].as_object().unwrap().len(), 601);
+    let existing = frame(4, 3500.0, 220_000.0, 380.0, 42);
+    assert!(collect_dyno_sample(
+        &mut capped,
+        &existing,
+        &q,
+        &cfg,
+        &reg,
+        "42"
+    ));
+    assert_eq!(capped["dyno_curve"].as_object().unwrap().len(), 601);
+    assert_eq!(
+        capped["dyno_curve"]["3500"]["hp_hist"]
+            .as_array()
+            .unwrap()
+            .len(),
+        1
+    );
 
     // Malformed persisted/API profile shapes must never panic the telemetry worker thread.
     for mut bad in [

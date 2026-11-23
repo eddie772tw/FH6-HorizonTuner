@@ -1,0 +1,179 @@
+{
+  "captureDate": "2026-11-22",
+  "components": [
+    "frontend/src/features/settings/components/CompanionSettingsCard.tsx",
+    "frontend/src/features/settings/components/CompanionUsbControls.tsx",
+    "frontend/src/features/settings/components/CompanionLanControls.tsx"
+  ],
+  "mockedBackend": true,
+  "cases": [
+    {
+      "name": "default-light-en-us-1280-usb-lan.png",
+      "core": "default",
+      "mode": "light",
+      "language": "en-us",
+      "width": 1280,
+      "height": 720,
+      "focus": "usb",
+      "sectionHeading": "Companion APP (Android)",
+      "headerBadge": "1 Companion device(s) connected",
+      "usbOptions": [
+        "Choose a USB device",
+        "Pixel Tablet · PIXEL-01 · Ready",
+        "Galaxy Tab S9 · GALAXY-02 · Unauthorized",
+        "Android device · DEV-03 · Offline"
+      ],
+      "lanCountdownBadge": "Expires in 5:00",
+      "pairingTokenAriaLabel": "Pairing code: 842195",
+      "innerWidth": 1280,
+      "scrollWidth": 1280,
+      "dialogBodyOverflowX": false,
+      "horizontalOverflow": false,
+      "errors": []
+    },
+    {
+      "name": "swiss-light-zh-tw-1280-usb-lan.png",
+      "core": "swiss",
+      "mode": "light",
+      "language": "zh-tw",
+      "width": 1280,
+      "height": 720,
+      "focus": "usb",
+      "sectionHeading": "隨行應用程式 (Android)",
+      "headerBadge": "已連接 1 台 Companion 裝置",
+      "usbOptions": [
+        "選擇 USB 裝置",
+        "Pixel Tablet · PIXEL-01 · 就緒",
+        "Galaxy Tab S9 · GALAXY-02 · 未授權",
+        "Android 裝置 · DEV-03 · 離線"
+      ],
+      "lanCountdownBadge": "有效期限剩餘 5:00",
+      "pairingTokenAriaLabel": "配對碼：842195",
+      "innerWidth": 1280,
+      "scrollWidth": 1280,
+      "dialogBodyOverflowX": false,
+      "horizontalOverflow": false,
+      "errors": []
+    },
+    {
+      "name": "swiss-dark-ja-jp-1280-usb-lan.png",
+      "core": "swiss",
+      "mode": "dark",
+      "language": "ja-jp",
+      "width": 1280,
+      "height": 720,
+      "focus": "usb",
+      "sectionHeading": "コンパニオンアプリ (Android)",
+      "headerBadge": "1 台の Companion デバイスが接続されています",
+      "usbOptions": [
+        "USB デバイスを選択",
+        "Pixel Tablet · PIXEL-01 · 準備完了",
+        "Galaxy Tab S9 · GALAXY-02 · 未許可",
+        "Android デバイス · DEV-03 · オフライン"
+      ],
+      "lanCountdownBadge": "有効期限まで 5:00",
+      "pairingTokenAriaLabel": "ペアリングコード: 842195",
+      "innerWidth": 1280,
+      "scrollWidth": 1280,
+      "dialogBodyOverflowX": false,
+      "horizontalOverflow": false,
+      "errors": []
+    },
+    {
+      "name": "rhine-lab-light-ja-jp-1280-steps-preview.png",
+      "core": "rhine-lab",
+      "mode": "light",
+      "language": "ja-jp",
+      "width": 1280,
+      "height": 720,
+      "focus": "steps",
+      "sectionHeading": "コンパニオンアプリ (Android)",
+      "headerBadge": "1 台の Companion デバイスが接続されています",
+      "usbOptions": [
+        "USB デバイスを選択",
+        "Pixel Tablet · PIXEL-01 · 準備完了",
+        "Galaxy Tab S9 · GALAXY-02 · 未許可",
+        "Android デバイス · DEV-03 · オフライン"
+      ],
+      "lanCountdownBadge": "有効期限まで 5:00",
+      "pairingTokenAriaLabel": "ペアリングコード: 842195",
+      "innerWidth": 1280,
+      "scrollWidth": 1280,
+      "dialogBodyOverflowX": false,
+      "horizontalOverflow": false,
+      "errors": []
+    },
+    {
+      "name": "rhine-lab-dark-en-us-1280-steps-preview.png",
+      "core": "rhine-lab",
+      "mode": "dark",
+      "language": "en-us",
+      "width": 1280,
+      "height": 720,
+      "focus": "steps",
+      "sectionHeading": "Companion APP (Android)",
+      "headerBadge": "1 Companion device(s) connected",
+      "usbOptions": [
+        "Choose a USB device",
+        "Pixel Tablet · PIXEL-01 · Ready",
+        "Galaxy Tab S9 · GALAXY-02 · Unauthorized",
+        "Android device · DEV-03 · Offline"
+      ],
+      "lanCountdownBadge": "Expires in 5:00",
+      "pairingTokenAriaLabel": "Pairing code: 842195",
+      "innerWidth": 1280,
+      "scrollWidth": 1280,
+      "dialogBodyOverflowX": false,
+      "horizontalOverflow": false,
+      "errors": []
+    },
+    {
+      "name": "default-dark-zh-tw-320-usb-lan.png",
+      "core": "default",
+      "mode": "dark",
+      "language": "zh-tw",
+      "width": 320,
+      "height": 800,
+      "focus": "usb",
+      "sectionHeading": "隨行應用程式 (Android)",
+      "headerBadge": "已連接 1 台 Companion 裝置",
+      "usbOptions": [
+        "選擇 USB 裝置",
+        "Pixel Tablet · PIXEL-01 · 就緒",
+        "Galaxy Tab S9 · GALAXY-02 · 未授權",
+        "Android 裝置 · DEV-03 · 離線"
+      ],
+      "lanCountdownBadge": "有效期限剩餘 5:00",
+      "pairingTokenAriaLabel": "配對碼：842195",
+      "innerWidth": 320,
+      "scrollWidth": 320,
+      "dialogBodyOverflowX": false,
+      "horizontalOverflow": false,
+      "errors": []
+    },
+    {
+      "name": "default-dark-ja-jp-320-lan.png",
+      "core": "default",
+      "mode": "dark",
+      "language": "ja-jp",
+      "width": 320,
+      "height": 800,
+      "focus": "lan",
+      "sectionHeading": "コンパニオンアプリ (Android)",
+      "headerBadge": "1 台の Companion デバイスが接続されています",
+      "usbOptions": [
+        "USB デバイスを選択",
+        "Pixel Tablet · PIXEL-01 · 準備完了",
+        "Galaxy Tab S9 · GALAXY-02 · 未許可",
+        "Android デバイス · DEV-03 · オフライン"
+      ],
+      "lanCountdownBadge": "有効期限まで 5:00",
+      "pairingTokenAriaLabel": "ペアリングコード: 842195",
+      "innerWidth": 320,
+      "scrollWidth": 320,
+      "dialogBodyOverflowX": false,
+      "horizontalOverflow": false,
+      "errors": []
+    }
+  ]
+}

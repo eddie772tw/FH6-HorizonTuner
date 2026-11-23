@@ -23,6 +23,14 @@ fn unknown_ev_ratios_remain_unknown_and_invalid_setup_is_unavailable() {
     assert!(ev_profile(&raw)["evGearbox"]["gearRatios"][1].is_null());
     raw["evGearbox"]["gearRatios"] = json!([1, 2]);
     assert!(!ev_ready(&raw));
+    raw["evGearbox"]["gearRatios"] = json!([1, null, 4]);
+    assert!(!ev_ready(&raw));
+    raw["evGearbox"]["gearRatios"] = json!([2, null, 2]);
+    assert!(!ev_ready(&raw));
+    raw["evGearbox"]["gearRatios"] = json!([4, 2, null, 2]);
+    assert!(!ev_ready(&raw));
+    raw["evGearbox"]["gearRatios"] = json!([null, null]);
+    assert!(ev_ready(&raw));
     raw["evGearbox"]["gearRatios"] = json!([0]);
     assert!(!ev_ready(&raw));
     raw["evGearbox"]["gearRatios"] = json!([]);
@@ -60,4 +68,13 @@ fn dyno_guidance_peaks_and_gear_recommendations_have_backend_owners() {
         4
     );
     assert!(recommended_gear(&json!({"gearing":{"gears":[]}})).is_null());
+}
+
+#[test]
+fn saved_companion_target_survives_profile_normalization() {
+    let target = json!({"goal":"Rally","season":"Winter"});
+    let normalized = normalize(&json!({"weight":1420,"tuningTarget":target}));
+    assert_eq!(normalized["weight"], 1420);
+    assert_eq!(normalized["tuningTarget"], target);
+    assert_eq!(normalize(&normalized)["tuningTarget"], target);
 }

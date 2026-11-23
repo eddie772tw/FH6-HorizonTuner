@@ -1,0 +1,254 @@
+{
+  "captureDate": "2026-11-23",
+  "components": [
+    "frontend/src/features/settings/SettingsSurface.tsx",
+    "frontend/src/features/settings/components/DiscordPresenceStatusCard.tsx",
+    "frontend/src/features/settings/components/UpdateSettingsCard.tsx",
+    "frontend/src/features/settings/components/DataStorageOverview.tsx",
+    "frontend/src/features/analysis/AnalysisSessionVisuals.tsx"
+  ],
+  "mockedBackend": true,
+  "reducedMotion": "reduce",
+  "cases": [
+    {
+      "name": "default-light-en-us-1280-general-telemetry.png",
+      "core": "default",
+      "mode": "light",
+      "language": "en-us",
+      "width": 1280,
+      "height": 720,
+      "focus": "top",
+      "introText": "Adjust display language, UDP telemetry options, and unit conversions for the tuning tool. All changes are saved automatically.",
+      "unitOptions": [
+        "Metric",
+        "Imperial"
+      ],
+      "sectionTitles": [
+        "General",
+        "Telemetry",
+        "Discord Rich Presence",
+        "Software Updates (OTA)",
+        "Data & Storage"
+      ],
+      "statusBadges": [
+        "Waiting for telemetry",
+        "Not checked"
+      ],
+      "innerWidth": 1280,
+      "scrollWidth": 1280,
+      "dialogBodyOverflowX": false,
+      "horizontalOverflow": false,
+      "errors": []
+    },
+    {
+      "name": "default-dark-en-us-1280-discord-storage.png",
+      "core": "default",
+      "mode": "dark",
+      "language": "en-us",
+      "width": 1280,
+      "height": 720,
+      "focus": "bottom",
+      "introText": "Adjust display language, UDP telemetry options, and unit conversions for the tuning tool. All changes are saved automatically.",
+      "unitOptions": [
+        "Metric",
+        "Imperial"
+      ],
+      "sectionTitles": [
+        "General",
+        "Telemetry",
+        "Discord Rich Presence",
+        "Software Updates (OTA)",
+        "Data & Storage"
+      ],
+      "statusBadges": [
+        "Waiting for telemetry",
+        "Not checked"
+      ],
+      "innerWidth": 1280,
+      "scrollWidth": 1280,
+      "dialogBodyOverflowX": false,
+      "horizontalOverflow": false,
+      "errors": []
+    },
+    {
+      "name": "swiss-light-zh-tw-1280-general-telemetry.png",
+      "core": "swiss",
+      "mode": "light",
+      "language": "zh-tw",
+      "width": 1280,
+      "height": 720,
+      "focus": "top",
+      "introText": "調整調校工具的顯示語言、UDP 遙測選項與單位換算。所有變更都會自動儲存。",
+      "unitOptions": [
+        "公制",
+        "英制"
+      ],
+      "sectionTitles": [
+        "一般",
+        "遙測",
+        "Discord 動態狀態 (Rich Presence)",
+        "軟體更新 (OTA 自動更新)",
+        "資料與儲存空間"
+      ],
+      "statusBadges": [
+        "等待遙測數據",
+        "尚未檢查"
+      ],
+      "innerWidth": 1280,
+      "scrollWidth": 1280,
+      "dialogBodyOverflowX": false,
+      "horizontalOverflow": false,
+      "errors": []
+    },
+    {
+      "name": "swiss-dark-ja-jp-1280-discord-storage.png",
+      "core": "swiss",
+      "mode": "dark",
+      "language": "ja-jp",
+      "width": 1280,
+      "height": 720,
+      "focus": "bottom",
+      "introText": "チューニングツールの表示言語、UDP テレメトリ設定、単位変換を調整します。変更はすべて自動的に保存されます。",
+      "unitOptions": [
+        "メートル法",
+        "インペリアル"
+      ],
+      "sectionTitles": [
+        "全般",
+        "テレメトリー",
+        "Discord リッチプレゼンス",
+        "ソフトウェア更新 (OTA)",
+        "データとストレージ"
+      ],
+      "statusBadges": [
+        "テレメトリ待機中",
+        "未確認"
+      ],
+      "innerWidth": 1280,
+      "scrollWidth": 1280,
+      "dialogBodyOverflowX": false,
+      "horizontalOverflow": false,
+      "errors": []
+    },
+    {
+      "name": "rhine-lab-light-ja-jp-1280-general-telemetry.png",
+      "core": "rhine-lab",
+      "mode": "light",
+      "language": "ja-jp",
+      "width": 1280,
+      "height": 720,
+      "focus": "top",
+      "introText": "チューニングツールの表示言語、UDP テレメトリ設定、単位変換を調整します。変更はすべて自動的に保存されます。",
+      "unitOptions": [
+        "メートル法",
+        "インペリアル"
+      ],
+      "sectionTitles": [
+        "全般",
+        "テレメトリー",
+        "Discord リッチプレゼンス",
+        "ソフトウェア更新 (OTA)",
+        "データとストレージ"
+      ],
+      "statusBadges": [
+        "テレメトリ待機中",
+        "未確認"
+      ],
+      "innerWidth": 1280,
+      "scrollWidth": 1280,
+      "dialogBodyOverflowX": false,
+      "horizontalOverflow": false,
+      "errors": []
+    },
+    {
+      "name": "rhine-lab-dark-zh-tw-1280-discord-storage.png",
+      "core": "rhine-lab",
+      "mode": "dark",
+      "language": "zh-tw",
+      "width": 1280,
+      "height": 720,
+      "focus": "bottom",
+      "introText": "調整調校工具的顯示語言、UDP 遙測選項與單位換算。所有變更都會自動儲存。",
+      "unitOptions": [
+        "公制",
+        "英制"
+      ],
+      "sectionTitles": [
+        "一般",
+        "遙測",
+        "Discord 動態狀態 (Rich Presence)",
+        "軟體更新 (OTA 自動更新)",
+        "資料與儲存空間"
+      ],
+      "statusBadges": [
+        "等待遙測數據",
+        "尚未檢查"
+      ],
+      "innerWidth": 1280,
+      "scrollWidth": 1280,
+      "dialogBodyOverflowX": false,
+      "horizontalOverflow": false,
+      "errors": []
+    },
+    {
+      "name": "default-dark-zh-tw-320-general-telemetry.png",
+      "core": "default",
+      "mode": "dark",
+      "language": "zh-tw",
+      "width": 320,
+      "height": 800,
+      "focus": "top",
+      "introText": "調整調校工具的顯示語言、UDP 遙測選項與單位換算。所有變更都會自動儲存。",
+      "unitOptions": [
+        "公制",
+        "英制"
+      ],
+      "sectionTitles": [
+        "一般",
+        "遙測",
+        "Discord 動態狀態 (Rich Presence)",
+        "軟體更新 (OTA 自動更新)",
+        "資料與儲存空間"
+      ],
+      "statusBadges": [
+        "等待遙測數據",
+        "尚未檢查"
+      ],
+      "innerWidth": 320,
+      "scrollWidth": 320,
+      "dialogBodyOverflowX": false,
+      "horizontalOverflow": false,
+      "errors": []
+    },
+    {
+      "name": "default-dark-ja-jp-320-discord-storage.png",
+      "core": "default",
+      "mode": "dark",
+      "language": "ja-jp",
+      "width": 320,
+      "height": 800,
+      "focus": "bottom",
+      "introText": "チューニングツールの表示言語、UDP テレメトリ設定、単位変換を調整します。変更はすべて自動的に保存されます。",
+      "unitOptions": [
+        "メートル法",
+        "インペリアル"
+      ],
+      "sectionTitles": [
+        "全般",
+        "テレメトリー",
+        "Discord リッチプレゼンス",
+        "ソフトウェア更新 (OTA)",
+        "データとストレージ"
+      ],
+      "statusBadges": [
+        "テレメトリ待機中",
+        "未確認"
+      ],
+      "innerWidth": 320,
+      "scrollWidth": 320,
+      "dialogBodyOverflowX": false,
+      "horizontalOverflow": false,
+      "errors": []
+    }
+  ]
+}

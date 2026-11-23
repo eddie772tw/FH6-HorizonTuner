@@ -78,3 +78,77 @@ describe('Stack renderer semantic outputs, not Canvas call counts or pixels', ()
     expect(timers.size).toBe(0); expect(callbacks.get('message')).toEqual([]);
   });
 });
+
+function statefulCanvas() {
+  const attrs: Record<string, string> = {}, stack: Record<string, unknown>[] = [];
+  let maxBlur = 0, transform: number[] = [1, 0, 0, 1, 0, 0];
+  const keys = ['shadowBlur', 'shadowColor', 'fillStyle', 'strokeStyle', 'lineWidth', 'font', 'textAlign', 'textBaseline'] as const;
+  const snap = () => Object.fromEntries(keys.map(k => [k, ctx[k]])), noop = () => undefined;
+  const ctx: Record<string, any> = {
+    shadowBlur: 7, shadowColor: '#123456', fillStyle: '#abcdef', strokeStyle: '#654321',
+    lineWidth: 9, font: '11px serif', textAlign: 'end', textBaseline: 'bottom',
+    save() { stack.push(snap()); }, restore() { Object.assign(ctx, stack.pop() || {}); },
+    setTransform: (...m: number[]) => { transform = m; }, measureText: () => ({ width: 50 }),
+    fill() { if (ctx.shadowBlur > maxBlur) maxBlur = ctx.shadowBlur; },
+    clearRect: noop, beginPath: noop, closePath: noop, moveTo: noop, lineTo: noop, quadraticCurveTo: noop,
+    arc: noop, stroke: noop, fillRect: noop, strokeRect: noop, fillText: noop, drawImage: noop, translate: noop, scale: noop, rotate: noop,
+  };
+  return {
+    width: 0, height: 0, dataset: {} as Record<string, string>, ctx, snap,
+    stackDepth: () => stack.length, transform: () => transform, maxBlur: () => maxBlur, resetBlur: () => { maxBlur = 0; },
+    getContext: () => ctx, setAttribute: (k: string, v: string) => { attrs[k] = v; }, getAttribute: (k: string) => attrs[k],
+  };
+}
+
+describe('Stack renderer HiDPI LCD backing, DPR glow scaling, and state isolation', () => {
+  it('scales LCD and cached dot-matrix backing with DPR, caps at 3x, and restores on downward transition', () => {
+    const { StackMonitor: S, StackRenderer: R } = context(), target = statefulCanvas();
+    const renderer = R.create(target, { createElement: statefulCanvas }, R.palette(colors));
+    const state = S.create(); S.ingest(state, raw, {}, 100);
+    R.resize(renderer, 1); R.draw(renderer, state, 100, null);
+    const baseLcdW = renderer.lcd.width, baseLcdH = renderer.lcd.height;
+    expect(renderer.lcdBgReady).toBe(true);
+    expect([renderer.lcdBg.width, renderer.lcdBg.height]).toEqual([baseLcdW, baseLcdH]);
+    R.resize(renderer, 2);
+    expect(renderer.lcdBgReady).toBe(false);
+    expect([renderer.lcd.width, renderer.lcd.height, renderer.lcdBg.width, renderer.lcdBg.height]).toEqual([baseLcdW * 2, baseLcdH * 2, baseLcdW * 2, baseLcdH * 2]);
+    expect(renderer.lcd.transform()).toEqual([2, 0, 0, 2, 0, 0]);
+    R.draw(renderer, state, 120, null); expect(renderer.lcdBgReady).toBe(true);
+    R.resize(renderer, 5); expect([renderer.lcd.width, renderer.lcd.height]).toEqual([baseLcdW * 3, baseLcdH * 3]);
+    R.resize(renderer, 1); expect([renderer.lcd.width, renderer.lcd.height]).toEqual([baseLcdW, baseLcdH]);
+    expect(renderer.lcd.transform()).toEqual([1, 0, 0, 1, 0, 0]);
+  });
+
+  it('scales lamp and needle shadowBlur proportionally with DPR and suppresses glow at 0', () => {
+    const { StackMonitor: S, StackRenderer: R } = context(), target = statefulCanvas();
+    const renderer = R.create(target, { createElement: statefulCanvas }, R.palette(colors));
+    const state = S.create();
+    S.configure(state, { glowIntensity: 1, stackSt8100Alarms: [{ enabled: true, metric: 'rpm', threshold: 6000 }] });
+    for (let n = 0; n <= 600; n += 100) S.ingest(state, { ...raw, TimestampMS: 1000 + n, CurrentEngineRpm: 7600 }, {}, 100 + n);
+    R.resize(renderer, 1); target.resetBlur(); R.draw(renderer, state, 800, null);
+    const blur1x = target.maxBlur();
+    R.resize(renderer, 2); target.resetBlur(); R.draw(renderer, state, 900, null);
+    expect(blur1x).toBeGreaterThan(0); expect(target.maxBlur()).toBeCloseTo(blur1x * 2, 5);
+    S.configure(state, { glowIntensity: 0 }); target.resetBlur(); R.draw(renderer, state, 1000, null);
+    expect(target.maxBlur()).toBe(0);
+  });
+
+  it('isolates context state across all surfaces on normal render and mid-frame faults', () => {
+    const { StackMonitor: S, StackRenderer: R } = context(), target = statefulCanvas();
+    const renderer = R.create(target, { createElement: statefulCanvas }, R.palette(colors));
+    const surfaces = [renderer.canvas, renderer.backing, renderer.lcd, renderer.lcdBg];
+    const initial = surfaces.map(s => s.snap());
+    const state = S.create(); S.configure(state, { stackSt8100Dial: '0-3-10.5', stackSt8100Face: 'white' });
+    S.ingest(state, { ...raw, EngineMaxRpm: 10500, CurrentEngineRpm: 9800 }, {}, 100);
+    R.resize(renderer, 2); R.draw(renderer, state, 100, null);
+    surfaces.forEach((s, i) => { expect(s.snap()).toEqual(initial[i]); expect(s.stackDepth()).toBe(0); });
+    const origArc = renderer.canvas.ctx.arc;
+    renderer.canvas.ctx.arc = () => { throw new Error('simulated main fault'); };
+    expect(() => R.draw(renderer, state, 200, null)).toThrow('simulated main fault');
+    expect(renderer.canvas.snap()).toEqual(initial[0]); expect(renderer.canvas.stackDepth()).toBe(0);
+    renderer.canvas.ctx.arc = origArc;
+    renderer.lcd.ctx.drawImage = () => { throw new Error('simulated lcd fault'); };
+    expect(() => R.draw(renderer, state, 400, null)).toThrow('simulated lcd fault');
+    surfaces.forEach((s, i) => { expect(s.snap()).toEqual(initial[i]); expect(s.stackDepth()).toBe(0); });
+  });
+});

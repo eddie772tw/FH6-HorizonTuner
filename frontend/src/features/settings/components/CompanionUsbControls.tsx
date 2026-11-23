@@ -7,6 +7,12 @@ interface UsbDevice { serial: string; state: 'device' | 'unauthorized' | 'offlin
 interface UsbResponse { devices: UsbDevice[] }
 interface ConnectResponse { serial: string; backend_port: number; reverse_local: string; reverse_remote: string; launched: boolean }
 
+const USB_DEVICE_STATE_KEYS: Record<UsbDevice['state'], string> = {
+  device: 'Ready',
+  unauthorized: 'Unauthorized',
+  offline: 'Offline',
+};
+
 export default function CompanionUsbControls() {
   const { settings, updateSettings, t } = useSettings();
   const usbEnabled = !!settings.companion_usb_enabled;
@@ -99,10 +105,10 @@ export default function CompanionUsbControls() {
         {!devices.length && !scanning && <p className="small text-body-secondary mb-1">{t('No USB devices found. Connect the cable and try Refresh devices.')}</p>}
         {devices.length > 0 && <select className="form-select" value={selected} disabled={busy || scanning || stopping} onChange={(event) => { setSelected(event.target.value); setForwarded(null); }} aria-label={t('USB device')}>
           <option value="">{t('Choose a USB device')}</option>
-          {devices.map((device) => <option key={device.serial} value={device.serial}>{device.model || device.product || t('Android device')} · {device.serial} · {device.state}</option>)}
+          {devices.map((device) => <option key={device.serial} value={device.serial}>{device.model || device.product || t('Android device')} · {device.serial} · {t(USB_DEVICE_STATE_KEYS[device.state] ?? device.state)}</option>)}
         </select>}
-        {selectedDevice?.state === 'unauthorized' && <p className="small text-warning mb-0">{t('Unlock the Android device and allow USB debugging for this PC, then refresh devices.')}</p>}
-        {selectedDevice?.state === 'offline' && <p className="small text-warning mb-0">{t('Reconnect the USB cable or wake the Android device, then refresh devices.')}</p>}
+        {selectedDevice?.state === 'unauthorized' && <p className="small text-warning mb-0" role="status">{t('Unlock the Android device and allow USB debugging for this PC, then refresh devices.')}</p>}
+        {selectedDevice?.state === 'offline' && <p className="small text-warning mb-0" role="status">{t('Reconnect the USB cable or wake the Android device, then refresh devices.')}</p>}
         <span className="d-flex w-100" title={busy ? t('Connecting…') : scanning ? t('Scanning…') : !selectedDevice ? t('Choose a USB device') : selectedDevice.state !== 'device' ? t('Device not ready') : undefined} style={busy || scanning || stopping || selectedDevice?.state !== 'device' ? { cursor: 'not-allowed' } : undefined}>
           <button type="button" className="btn btn-primary w-100" disabled={busy || scanning || stopping || selectedDevice?.state !== 'device'} style={busy || scanning || stopping || selectedDevice?.state !== 'device' ? { pointerEvents: 'none' } : undefined} onClick={() => void connect()}>
             {busy ? t('Connecting…') : t('Connect USB device')}

@@ -1,3 +1,4 @@
+use std::cell::RefCell;
 use std::sync::{
     atomic::{AtomicBool, Ordering},
     mpsc, Arc, Mutex,
@@ -5,7 +6,7 @@ use std::sync::{
 use std::thread::{self, JoinHandle};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
-use rustfft::{num_complex::Complex, FftPlanner};
+use rustfft::{num_complex::Complex, Fft, FftPlanner};
 use serde_json::{json, Value};
 
 use super::NativeError;
@@ -343,38 +344,69 @@ fn unix_ms() -> u64 {
         .unwrap_or(0)
 }
 
+const MAX_CACHED_PLANS: usize = 4;
+type FftPlan = (usize, Arc<dyn Fft<f32>>, Vec<f32>);
+#[derive(Default)]
+struct SpectrumAnalyzer {
+    plans: Vec<FftPlan>,
+    buffer: Vec<Complex<f32>>,
+    scratch: Vec<Complex<f32>>,
+}
+fn cached_plan(plans: &mut Vec<FftPlan>, n: usize) -> &FftPlan {
+    if let Some(pos) = plans.iter().position(|p| p.0 == n) {
+        let last = plans.len() - 1;
+        plans[pos..].rotate_left(usize::from(pos != last));
+        return &plans[last];
+    }
+    if plans.len() >= MAX_CACHED_PLANS {
+        plans.remove(0);
+    }
+    let fft = FftPlanner::<f32>::new().plan_fft_forward(n);
+    let hann = (0..n)
+        .map(|i| 0.5 - 0.5 * (std::f32::consts::TAU * i as f32 / (n - 1) as f32).cos())
+        .collect();
+    plans.push((n, fft, hann));
+    plans.last().unwrap()
+}
+thread_local! {
+    static SPECTRUM_ANALYZER: RefCell<SpectrumAnalyzer> = RefCell::new(SpectrumAnalyzer::default());
+}
 fn compute_fft_bands(samples: &[f32], sample_rate: Option<u32>) -> ([f32; BAND_COUNT], f32, f32) {
+    SPECTRUM_ANALYZER.with(|a| compute_fft_bands_with(&mut a.borrow_mut(), samples, sample_rate))
+}
+// [PERF] Reuse bounded LRU FFT plans, Hann windows, and complex/scratch buffers across ~100Hz
+// audio packets to eliminate per-packet FftPlanner planning, cos() loops, and Vec allocations.
+fn compute_fft_bands_with(
+    analyzer: &mut SpectrumAnalyzer,
+    samples: &[f32],
+    sample_rate: Option<u32>,
+) -> ([f32; BAND_COUNT], f32, f32) {
     if samples.len() < 32 {
         return ([0.0; BAND_COUNT], 0.0, 0.0);
     }
-    let left: Vec<f32> = samples.iter().step_by(2).copied().collect();
-    let right: Vec<f32> = samples.iter().skip(1).step_by(2).copied().collect();
-    let rms = |channel: &[f32]| -> f32 {
-        if channel.is_empty() {
-            return 0.0;
-        }
-        (channel.iter().map(|x| x * x).sum::<f32>() / channel.len() as f32).sqrt() * 2.8
-    };
-    let vu_left = rms(&left).max(0.0);
-    let vu_right = rms(&right).max(0.0);
-    let n = left.len().min(right.len());
-    if n < 16 {
-        return ([0.0; BAND_COUNT], vu_left, vu_right);
+    let n = samples.len() / 2;
+    let plan = cached_plan(&mut analyzer.plans, n);
+    let scratch_len = plan.1.get_inplace_scratch_len();
+    analyzer
+        .buffer
+        .resize(analyzer.buffer.len().max(n), Complex::default());
+    analyzer
+        .scratch
+        .resize(analyzer.scratch.len().max(scratch_len), Complex::default());
+    let buffer = &mut analyzer.buffer[..n];
+    let (mut left_sq, mut right_sq, mut chunks) = (0.0_f32, 0.0_f32, samples.chunks_exact(2));
+    for ((pair, &hann), slot) in (&mut chunks).zip(&plan.2).zip(buffer.iter_mut()) {
+        left_sq += pair[0] * pair[0];
+        right_sq += pair[1] * pair[1];
+        *slot = Complex::new((pair[0] + pair[1]) * 0.5 * hann, 0.0);
     }
-    let mut planner = FftPlanner::<f32>::new();
-    let fft = planner.plan_fft_forward(n);
-    let mut buffer = (0..n)
-        .map(|i| {
-            let l = left.get(i).copied().unwrap_or(0.0);
-            let r = right.get(i).copied().unwrap_or(l);
-            let hann = 0.5 - 0.5 * (std::f32::consts::TAU * i as f32 / (n - 1) as f32).cos();
-            Complex {
-                re: (l + r) * 0.5 * hann,
-                im: 0.0,
-            }
-        })
-        .collect::<Vec<_>>();
-    fft.process(&mut buffer);
+    if let Some(&last) = chunks.remainder().first() {
+        left_sq += last * last;
+    }
+    let vu_left = ((left_sq / (samples.len() - n) as f32).sqrt() * 2.8).max(0.0);
+    let vu_right = ((right_sq / n as f32).sqrt() * 2.8).max(0.0);
+    plan.1
+        .process_with_scratch(buffer, &mut analyzer.scratch[..scratch_len]);
     // A high-rate endpoint can have most of its FFT above audible frequencies.
     // Keep all 32 display bands within 20 kHz (or Nyquist on low-rate devices),
     // rather than spending the right half of the display on ultrasonic bins.
@@ -509,6 +541,9 @@ fn wasapi_capture_once(
         state.sample_rate = Some(format_copy.nSamplesPerSec);
     }
     let mut endpoint_check = Instant::now();
+    // [PERF] Reuse a single decoded PCM buffer across WASAPI packets and bypass FFT on silent frames.
+    let mut samples = Vec::new();
+    let band_scale = (4.5_f32 / 6.0).powf(0.75);
     loop {
         if stopping.load(Ordering::Acquire)
             || state
@@ -534,14 +569,16 @@ fn wasapi_capture_once(
             unsafe { capture.GetBuffer(&mut data, &mut frames, &mut flags, None, None) }
                 .map_err(|e| e.to_string())?;
             let channels = format_copy.nChannels.max(1) as usize;
-            let samples = if flags & AUDCLNT_BUFFERFLAGS_SILENT.0 as u32 != 0 || data.is_null() {
-                vec![0.0; frames as usize * 2]
-            } else {
-                decode_wasapi_samples(data, frames as usize, channels, &format_copy)
-            };
+            let silent = flags & AUDCLNT_BUFFERFLAGS_SILENT.0 as u32 != 0 || data.is_null();
+            if !silent {
+                decode_wasapi_into(&mut samples, data, frames as usize, channels, &format_copy);
+            }
             unsafe { capture.ReleaseBuffer(frames) }.map_err(|e| e.to_string())?;
-            let (mut spectrum, left, right) =
-                compute_fft_bands(&samples, Some(format_copy.nSamplesPerSec));
+            let (mut spectrum, left, right) = if silent {
+                ([0.0; BAND_COUNT], 0.0, 0.0)
+            } else {
+                compute_fft_bands(&samples, Some(format_copy.nSamplesPerSec))
+            };
             // The historical WASAPI path uses a different meter response and
             // FFT gain from externally supplied PCM. Keep both wire contracts.
             let left = (left / 2.8 * 30.0).powf(0.65);
@@ -549,7 +586,7 @@ fn wasapi_capture_once(
             let has_audio = left > 0.005 || right > 0.005;
             for band in &mut spectrum {
                 *band = if has_audio && samples.len() > 64 {
-                    *band * (4.5_f32 / 6.0).powf(0.75)
+                    *band * band_scale
                 } else {
                     0.0
                 };
@@ -619,14 +656,15 @@ impl Drop for FormatGuard {
 }
 
 #[cfg(windows)]
-fn decode_wasapi_samples(
+fn decode_wasapi_into(
+    output: &mut Vec<f32>,
     data: *mut u8,
     frames: usize,
     channels: usize,
     format: &windows::Win32::Media::Audio::WAVEFORMATEX,
-) -> Vec<f32> {
-    let count = frames.saturating_mul(2);
-    let mut output = Vec::with_capacity(count);
+) {
+    output.clear();
+    output.reserve(frames.saturating_mul(2));
     let bytes_per_sample = (format.wBitsPerSample / 8).max(1) as usize;
     let stride = format
         .nBlockAlign
@@ -666,7 +704,6 @@ fn decode_wasapi_samples(
             }
         }
     }
-    output
 }
 
 #[cfg(not(windows))]
@@ -828,5 +865,74 @@ mod tests {
             .unwrap()
             .iter()
             .all(|n| n.as_f64() == Some(0.0)));
+    }
+
+    #[test]
+    fn cached_analyzer_preserves_even_odd_parity_and_lru_bound() {
+        let mut analyzer = SpectrumAnalyzer::default();
+        assert_eq!(
+            compute_fft_bands_with(&mut analyzer, &[0.5; 31], Some(48_000)),
+            ([0.0; BAND_COUNT], 0.0, 0.0)
+        );
+        assert!(analyzer.plans.is_empty());
+        let cases = [
+            (32, None),
+            (33, Some(48_000)),
+            (129, Some(44_100)),
+            (882, Some(44_100)),
+            (960, Some(48_000)),
+            (1920, Some(96_000)),
+            (960, Some(48_000)),
+            (3840, Some(192_000)),
+        ];
+        for (len, rate) in cases {
+            let pcm: Vec<f32> = (0..len).map(|i| ((i as f32) * 0.13).sin() * 0.4).collect();
+            let got = compute_fft_bands_with(&mut analyzer, &pcm, rate);
+            let mut fresh = SpectrumAnalyzer::default();
+            let exp = compute_fft_bands_with(&mut fresh, &pcm, rate);
+            let left_sq: f32 = pcm.iter().step_by(2).map(|x| x * x).sum();
+            let right_sq: f32 = pcm.iter().skip(1).step_by(2).map(|x| x * x).sum();
+            let ref_l = ((left_sq / pcm.len().div_ceil(2) as f32).sqrt() * 2.8).max(0.0);
+            let ref_r = ((right_sq / (pcm.len() / 2) as f32).sqrt() * 2.8).max(0.0);
+            assert_eq!(got.1.to_bits(), ref_l.to_bits());
+            assert_eq!(got.2.to_bits(), ref_r.to_bits());
+            assert_eq!(got.0.map(f32::to_bits), exp.0.map(f32::to_bits));
+            assert!(analyzer.plans.len() <= MAX_CACHED_PLANS);
+        }
+        assert!(analyzer.plans.iter().any(|p| p.0 == 480));
+    }
+
+    #[test]
+    #[ignore = "release-only microbenchmark; no timing pass threshold"]
+    fn bench_compute_fft_bands_release() {
+        assert!(!cfg!(debug_assertions), "Use cargo test --release");
+        for (rate, frames) in [(44_100, 441), (48_000, 480), (96_000, 960), (192_000, 1920)] {
+            let pcm: Vec<f32> = (0..frames)
+                .flat_map(|i| {
+                    let s = (std::f32::consts::TAU * 1_000.0 * i as f32 / rate as f32).sin() * 0.25;
+                    [s, s * 0.8]
+                })
+                .collect();
+            for _ in 0..200 {
+                std::hint::black_box(compute_fft_bands(std::hint::black_box(&pcm), Some(rate)));
+            }
+            let mut ms: Vec<f64> = (0..7)
+                .map(|_| {
+                    let start = Instant::now();
+                    for _ in 0..2_000 {
+                        std::hint::black_box(compute_fft_bands(
+                            std::hint::black_box(&pcm),
+                            Some(rate),
+                        ));
+                    }
+                    start.elapsed().as_secs_f64() * 1000.0
+                })
+                .collect();
+            ms.sort_by(f64::total_cmp);
+            println!(
+                "audio_fft_2000_rate_{rate}_frames_{frames}_median_ms={:.3} samples={ms:?}",
+                ms[ms.len() / 2]
+            );
+        }
     }
 }

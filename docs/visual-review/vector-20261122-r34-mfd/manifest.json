@@ -1,0 +1,133 @@
+{
+  "target": "hud_overlay/r34_mfd/renderer.js",
+  "renderer": "R34Renderer (hud_overlay/r34_mfd/index.html + renderer.js + controller.js)",
+  "capturedAt": "2026-11-21T21:11:26.306Z",
+  "browser": "Chromium headless (151.0.7922.34)",
+  "background": "#0b111b (composite dark backdrop for transparent HUD legibility)",
+  "reproduce": [
+    "Open hud_overlay/r34_mfd/tests/visual/fixture.html over local HTTP server and switch MFD between single and g modes across night/day lighting and DPR 1/2."
+  ],
+  "scopeNote": "Isolated #r34Mfd element clip with 12px margin over #0b111b backdrop at 1280x720 (DPR 1 and DPR 2, night and day lighting); synthetic telemetry injected via R34Model.ingest + R34Hud.render; live game & native Windows overlay not tested here.",
+  "captures": [
+    {
+      "file": "r34-single-dpr1-night.png",
+      "description": "DPR 1 · SINGLE 增壓 30s 歷史波形（夜間模式）：內縮批次網格、0 bar 大氣基準線、圓角折線與同軸即時前緣光環",
+      "viewport": "1280x720",
+      "dpr": 1,
+      "scale": 1,
+      "clipPaddingPx": 12,
+      "canvas": {
+        "width": 116,
+        "height": 125,
+        "clientWidth": 101,
+        "clientHeight": 109
+      },
+      "state": {
+        "mode": "single",
+        "lighting": "night",
+        "samples": 180,
+        "peakBoostBar": 2
+      }
+    },
+    {
+      "file": "r34-g-dpr1-extreme.png",
+      "description": "DPR 1 · G INDICATION 極限過彎制動（+1.50g / -1.50g，夜間模式）：批次網格、無碰撞軸標籤與內縮防裁切同軸光環",
+      "viewport": "1280x720",
+      "dpr": 1,
+      "scale": 1,
+      "clipPaddingPx": 12,
+      "canvas": {
+        "width": 294,
+        "height": 145,
+        "clientWidth": 256,
+        "clientHeight": 126
+      },
+      "state": {
+        "mode": "g",
+        "lighting": "night",
+        "lateralG": 1.5,
+        "longitudinalG": -1.5
+      }
+    },
+    {
+      "file": "r34-single-dpr2-night.png",
+      "description": "DPR 2 · SINGLE 增壓 30s 歷史波形（夜間模式）：內縮批次網格、0 bar 大氣基準線、圓角折線與同軸即時前緣光環",
+      "viewport": "1280x720",
+      "dpr": 2,
+      "scale": 1,
+      "clipPaddingPx": 12,
+      "canvas": {
+        "width": 232,
+        "height": 251,
+        "clientWidth": 101,
+        "clientHeight": 109
+      },
+      "state": {
+        "mode": "single",
+        "lighting": "night",
+        "samples": 180,
+        "peakBoostBar": 2
+      }
+    },
+    {
+      "file": "r34-single-dpr2-day-single-sample.png",
+      "description": "DPR 2 · SINGLE 日間模式單一採樣（1.00 bar）：確認單點進入即以同軸光環清晰可見且不裁切",
+      "viewport": "1280x720",
+      "dpr": 2,
+      "scale": 1,
+      "clipPaddingPx": 12,
+      "canvas": {
+        "width": 232,
+        "height": 251,
+        "clientWidth": 101,
+        "clientHeight": 109
+      },
+      "state": {
+        "mode": "single",
+        "lighting": "day",
+        "samples": 1,
+        "boostBar": 1
+      }
+    },
+    {
+      "file": "r34-g-dpr2-extreme.png",
+      "description": "DPR 2 · G INDICATION 極限過彎制動（+1.50g / -1.50g，夜間模式）：批次網格、無碰撞軸標籤與內縮防裁切同軸光環",
+      "viewport": "1280x720",
+      "dpr": 2,
+      "scale": 1,
+      "clipPaddingPx": 12,
+      "canvas": {
+        "width": 589,
+        "height": 290,
+        "clientWidth": 256,
+        "clientHeight": 126
+      },
+      "state": {
+        "mode": "g",
+        "lighting": "night",
+        "lateralG": 1.5,
+        "longitudinalG": -1.5
+      }
+    },
+    {
+      "file": "r34-g-dpr2-day-lateral.png",
+      "description": "DPR 2 · G INDICATION 極限純側向（-1.50g / 0.00g，日間模式）：確認 −1.5 軸標籤與滿載同軸光環完全淨空分離",
+      "viewport": "1280x720",
+      "dpr": 2,
+      "scale": 1,
+      "clipPaddingPx": 12,
+      "canvas": {
+        "width": 589,
+        "height": 290,
+        "clientWidth": 256,
+        "clientHeight": 126
+      },
+      "state": {
+        "mode": "g",
+        "lighting": "day",
+        "lateralG": -1.5,
+        "longitudinalG": 0
+      }
+    }
+  ]
+}

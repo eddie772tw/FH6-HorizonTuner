@@ -60,6 +60,43 @@ fn endpoint_tolerance(speed: f64) -> f64 {
     1.0_f64.max(speed * 0.01)
 }
 
+/// Refine the main-gear RPM upper tick monotonically against the exact physical
+/// `respects_hard_targets` predicate, avoiding tick-space vs RPM-space slack drift.
+fn rpm_upper_tick(
+    range: (i64, i64),
+    fd: f64,
+    circumference: f64,
+    target: &DriftWorkingTarget,
+    usable_limit_rpm: f64,
+) -> Option<i64> {
+    let raw_bound = (usable_limit_rpm + 1e-7) * circumference * 60.0
+        / (target.wheel_speed_kmh * 1000.0 * fd)
+        * 100.0;
+    if raw_bound.is_nan() || raw_bound <= 0.0 {
+        return None;
+    }
+    let radius = circumference / (2.0 * PI);
+    let mut hi = if raw_bound.is_infinite() {
+        range.1
+    } else {
+        range.1.min((raw_bound.floor() as i64).saturating_add(1))
+    };
+    while hi >= range.0 {
+        let actual = calc_gear_speed(target.target_rpm, hi as f64 / 100.0, fd, radius) * 3.6;
+        if !actual.is_finite() {
+            return None;
+        }
+        if actual > 0.0 {
+            let actual_rpm = target.target_rpm * (target.wheel_speed_kmh / actual);
+            if actual_rpm.is_finite() && actual_rpm <= usable_limit_rpm + 1e-7 {
+                return Some(hi);
+            }
+        }
+        hi -= 1;
+    }
+    None
+}
+
 /// Recheck a ratio-balance result against freshly backend-reconstructed model
 /// diagnostics. This is not an evidence qualification API for client metadata.
 pub fn respects_hard_targets(result: &GearingResult, diagnostic: &Value) -> bool {
@@ -376,20 +413,20 @@ pub fn solve_candidate(
         let fd = fd_tick as f64 / 100.0;
         // At the requested wheel speed, rounding may not push the operating
         // RPM above the qualified effective limiter, even if speed error fits.
-        let rpm_bound = (usable_limit_rpm * circumference * 60.0
-            / (target.wheel_speed_kmh * 1000.0 * fd)
-            * 100.0
-            + 1e-9)
-            .floor();
-        let anchor_upper = (upper[main] as f64).min(rpm_bound);
-        if anchor_upper < lower[main] as f64 {
+        let Some(anchor_upper) = rpm_upper_tick(
+            (lower[main], upper[main]),
+            fd,
+            circumference,
+            target,
+            usable_limit_rpm,
+        ) else {
             continue;
-        }
+        };
         let ideal_tick = target_total / fd * 100.0;
         let Some((main_tick, actual)) = [ideal_tick.round(), ideal_tick.floor(), ideal_tick.ceil()]
             .into_iter()
             .find_map(|candidate| {
-                let tick = candidate.clamp(lower[main] as f64, anchor_upper) as i64;
+                let tick = (candidate as i64).clamp(lower[main], anchor_upper);
                 let actual = calc_gear_speed(
                     target.target_rpm,
                     tick as f64 / 100.0,

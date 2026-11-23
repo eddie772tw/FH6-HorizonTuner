@@ -192,37 +192,73 @@
             row.bar.style.transform = 'scaleX(' + ((row.key === 'tireTemperature' ? v.tireTemperatureRatio : M.ratio(num, min, max)) || 0) + ')';
         }
     };
+    function blurScale(geometry) { return Math.max(0.25, Math.min(geometry.xScale || 1, geometry.yScale || 1)); }
+    function drawGrid(c, x0, y0, w, h, cols, rows, lineWidth, color) {
+        c.strokeStyle = color; c.lineWidth = lineWidth; c.beginPath();
+        for (var x = 0; x <= cols; x++) { var gx = x0 + x * w / cols; c.moveTo(gx, y0); c.lineTo(gx, y0 + h); }
+        for (var y = 0; y <= rows; y++) { var gy = y0 + y * h / rows; c.moveTo(x0, gy); c.lineTo(x0 + w, gy); }
+        c.stroke();
+    }
+    function drawMarker(c, x, y, haloR, lineW, ringColor, coreColor, pinColor, blur) {
+        c.beginPath(); c.arc(x, y, haloR, 0, Math.PI * 2);
+        c.lineWidth = lineW; c.strokeStyle = ringColor; c.shadowColor = ringColor; c.shadowBlur = blur; c.stroke();
+        c.shadowBlur = 0; c.beginPath(); c.arc(x, y, haloR * 0.52, 0, Math.PI * 2); c.fillStyle = coreColor; c.fill();
+        if (pinColor) { c.beginPath(); c.arc(x, y, Math.max(0.6, haloR * 0.2), 0, Math.PI * 2); c.fillStyle = pinColor; c.fill(); }
+    }
     Renderer.prototype.drawHistory = function (v, state, show) {
         var c = this.history; if (!c) return;
         var geometry = this.historyGeometry; if (!geometry.drawable) return;
-        var w = geometry.width, h = geometry.height, p = this.palette;
-        c.clearRect(0, 0, w, h); c.strokeStyle = p.grid; c.lineWidth = .5;
-        for (var x = 0; x <= 3; x++) { c.beginPath(); c.moveTo(x * w / 3, 0); c.lineTo(x * w / 3, h); c.stroke(); }
-        for (var y = 0; y <= 25; y++) { c.beginPath(); c.moveTo(0, y * h / 25); c.lineTo(w, y * h / 25); c.stroke(); }
-        if (!show) return;
-        c.strokeStyle = v.live ? p.green : p.dim; c.lineWidth = 1.5; c.beginPath(); var pen = false;
-        for (var i = 0; i < state.historyCount; i++) {
-            var at = (state.historyHead - state.historyCount + i + M.CAPACITY) % M.CAPACITY;
-            var age = state.elapsed - state.historyTime[at], raw = state.historyBoost[at];
-            if (age > M.WINDOW_MS || !Number.isFinite(raw)) { pen = false; continue; }
-            var px = w * (1 - age / M.WINDOW_MS), py = h * (1 - M.ratio(raw * v.boostSpec.factor, v.boostSpec.min, v.boostSpec.max));
-            if (i > 0) { var before = (at - 1 + M.CAPACITY) % M.CAPACITY; if (state.historyTime[at] - state.historyTime[before] > 1000) pen = false; }
-            if (pen) c.lineTo(px, py); else c.moveTo(px, py); pen = true;
-        }
-        c.stroke();
+        var w = geometry.width, h = geometry.height, p = this.palette, scale = blurScale(geometry);
+        var padX = Math.min(3, w * 0.08), padY = Math.min(3, h * 0.08), drawW = Math.max(1, w - padX * 2), drawH = Math.max(1, h - padY * 2);
+        c.save();
+        try {
+            c.clearRect(0, 0, w, h); c.shadowBlur = 0; c.globalAlpha = 1;
+            drawGrid(c, padX, padY, drawW, drawH, 3, 25, 0.5, p.grid);
+            if (v.boostSpec && v.boostSpec.min < 0 && v.boostSpec.max > 0) {
+                var zeroY = padY + (1 - M.ratio(0, v.boostSpec.min, v.boostSpec.max)) * drawH;
+                c.globalAlpha = 0.45; c.strokeStyle = p.ink; c.lineWidth = 0.7;
+                c.beginPath(); c.moveTo(padX, zeroY); c.lineTo(padX + drawW, zeroY); c.stroke(); c.globalAlpha = 1;
+            }
+            if (!show) return;
+            var traceColor = v.live ? p.green : p.dim;
+            c.strokeStyle = traceColor; c.lineWidth = 1.5; c.lineCap = 'round'; c.lineJoin = 'round';
+            c.shadowColor = traceColor; c.shadowBlur = v.live ? 2.5 * scale : 0; c.beginPath();
+            var pen = false, hasStroke = false, hasLast = false, lastX = 0, lastY = 0;
+            for (var i = 0; i < state.historyCount; i++) {
+                var at = (state.historyHead - state.historyCount + i + M.CAPACITY) % M.CAPACITY;
+                var age = state.elapsed - state.historyTime[at], raw = state.historyBoost[at];
+                if (!Number.isFinite(age) || age > M.WINDOW_MS || !Number.isFinite(raw)) { pen = false; continue; }
+                var ratio = M.ratio(raw * v.boostSpec.factor, v.boostSpec.min, v.boostSpec.max);
+                if (ratio === null) { pen = false; continue; }
+                var px = padX + M.clamp(1 - age / M.WINDOW_MS, 0, 1) * drawW, py = padY + (1 - ratio) * drawH;
+                if (i > 0) { var before = (at - 1 + M.CAPACITY) % M.CAPACITY; if (state.historyTime[at] - state.historyTime[before] > 1000) pen = false; }
+                if (pen) { c.lineTo(px, py); hasStroke = true; } else c.moveTo(px, py);
+                pen = true; hasLast = true; lastX = px; lastY = py;
+            }
+            if (hasStroke) c.stroke();
+            if (hasLast) drawMarker(c, lastX, lastY, Math.min(2.2, Math.max(0.5, Math.min(padX, padY) - 0.5)), 0.9, traceColor, v.live ? p.ink : p.dim, '', v.live ? 3.5 * scale : 0);
+        } finally { c.restore(); }
     };
     Renderer.prototype.drawG = function (v) {
         var c = this.g; if (!c) return;
         var geometry = this.gGeometry; if (!geometry.drawable) return;
-        var w = geometry.width, h = geometry.height, p = this.palette;
-        c.clearRect(0, 0, w, h); c.strokeStyle = p.grid; c.lineWidth = .4;
-        for (var i = 0; i <= 20; i++) { c.beginPath(); c.moveTo(i * w / 20, 0); c.lineTo(i * w / 20, h); c.stroke(); }
-        for (var j = 0; j <= 12; j++) { c.beginPath(); c.moveTo(0, j * h / 12); c.lineTo(w, j * h / 12); c.stroke(); }
-        c.strokeStyle = p.ink; c.lineWidth = 1; c.beginPath(); c.moveTo(w / 2, 0); c.lineTo(w / 2, h); c.moveTo(0, h / 2); c.lineTo(w, h / 2); c.stroke();
-        c.fillStyle = p.dim; c.font = 'italic 10px Arial'; c.fillText('−1.5', 3, 12); c.fillText('+1.5', w - 29, 12); c.fillText('BRAKE', w / 2 + 6, 12); c.fillText('ACCEL', w / 2 + 6, h - 6);
-        if (v.lateralG !== null && v.longitudinalG !== null) {
-            c.fillStyle = p.hot; c.beginPath(); c.arc(w / 2 + M.clamp(v.lateralG, -1.5, 1.5) / 3 * (w - 10), h / 2 + M.clamp(v.longitudinalG, -1.5, 1.5) / 3 * (h - 10), 5, 0, Math.PI * 2); c.fill();
-        }
+        var w = geometry.width, h = geometry.height, p = this.palette, scale = blurScale(geometry);
+        var inset = Math.min(0.5, w * 0.1, h * 0.1), pad = Math.min(7, w * 0.12, h * 0.12);
+        c.save();
+        try {
+            c.clearRect(0, 0, w, h); c.shadowBlur = 0; c.globalAlpha = 1;
+            drawGrid(c, inset, inset, Math.max(1, w - inset * 2), Math.max(1, h - inset * 2), 20, 12, 0.4, p.grid);
+            c.strokeStyle = p.ink; c.lineWidth = 1;
+            c.beginPath(); c.moveTo(w / 2, inset); c.lineTo(w / 2, h - inset); c.moveTo(inset, h / 2); c.lineTo(w - inset, h / 2); c.stroke();
+            c.fillStyle = p.dim; c.font = 'italic 10px Arial';
+            c.textBaseline = 'bottom'; c.textAlign = 'left'; c.fillText('−1.5', 4, h / 2 - 7); c.textAlign = 'right'; c.fillText('+1.5', w - 4, h / 2 - 7);
+            c.textAlign = 'left'; c.textBaseline = 'top'; c.fillText('BRAKE', w / 2 + 7, 3); c.textBaseline = 'bottom'; c.fillText('ACCEL', w / 2 + 7, h - 3);
+            if (Number.isFinite(v.lateralG) && Number.isFinite(v.longitudinalG)) {
+                var gx = w / 2 + M.clamp(v.lateralG, -1.5, 1.5) / 1.5 * Math.max(0, w / 2 - pad);
+                var gy = h / 2 + M.clamp(v.longitudinalG, -1.5, 1.5) / 1.5 * Math.max(0, h / 2 - pad);
+                drawMarker(c, gx, gy, Math.min(5, Math.max(1, pad - 1)), 1.4, p.hot, p.hot, p.ink, 4 * scale);
+            }
+        } finally { c.restore(); }
         this.text('r34Lateral', 'LAT ' + value(v.lateralG, 2) + ' g'); this.text('r34Longitudinal', 'LONG ' + value(v.longitudinalG, 2) + ' g');
     };
     Renderer.prototype.drawLap = function (v) {
