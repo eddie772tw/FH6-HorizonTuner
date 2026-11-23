@@ -43,6 +43,7 @@ pub fn normalize(raw: &Value) -> Value {
         result[key] = value.clone();
     }
     for key in [
+        "tuningTarget",
         "rallyProfile",
         "roadAwdRearPercent",
         "dragFinishSpeedKmh",
@@ -80,8 +81,7 @@ pub fn ev_ready(raw: &Value) -> bool {
     let s = &value["evGearbox"];
     s["allForwardGearsConfirmed"] == true
         && s["gearRatios"].as_array().is_some_and(|a| {
-            a.windows(2)
-                .all(|w| w[0].is_null() || w[1].is_null() || w[1].as_f64() < w[0].as_f64())
+            super::ev::confirmed_ratios_decreasing(a.iter().filter_map(Value::as_f64))
         })
 }
 pub fn exploration(input: &Value) -> Option<f64> {

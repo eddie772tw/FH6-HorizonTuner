@@ -80,3 +80,21 @@
 **學習 (Learning):** 即使已對既存在檔案實作位元組比對，僅依賴 `Path::exists()` 與 `fs::create_dir_all()` 仍會跟隨懸空符號連結與 NTFS Junction 跳脫預期沙盒根目錄（與先前 `lib.rs` 僅修補 Tauri sidecar、卻遺漏後端 ADB 工具釋放路徑形成防禦落差）。
 **預防 (Prevention):** 所有內嵌二進位與原生 DLL 工具釋放路徑，一律透過逐層 `fs::symlink_metadata`（拒絕 symlink/junction 與非預期檔案類型）與 `canonicalize().starts_with(&canonical_root)` 鎖定目錄邊界，並在寫入缺失工具時採用同目錄 `NamedTempFile` 搭配 `sync_all()` 與原子 `persist` 取代 `fs::write`，確保前後端與後端輔助工具鏈具備一致的檔案系統安全保證。
 **署名:** Sentinel as Antigravity
+
+## 2026-11-20 - Companion LAN WebSocket Session Revocation & Token Rotation Enforcement (CWE-613)
+**漏洞/脆弱點 (Vulnerability):** 區域網路（LAN `0.0.0.0:8002`）伴侶 WebSocket 端點 `backend-rust/src/network.rs::lan_ws` 原先僅在升級握手階段檢查一次 `companion_session` Cookie，連線建立後的主迴圈僅輪詢全域開關 `backend.companion_enabled()`，未重新驗證該連線所屬裝置是否仍處於已配對狀態。當使用者在桌面端解除配對特定裝置（`DELETE /api/companion/devices/{id}`）、同一裝置重新配對輪替憑證或舊裝置因容量上限被淘汰時，該裝置既有的 LAN WebSocket 連線仍會持續接收即時遙測串流，構成工作階段撤銷失效（Session Revocation Bypass）。
+**學習 (Learning):** HTTP 端點因無狀態每次請求皆重新驗證 Cookie，但長生命週期 WebSocket 連線不會在每次推播時重走 HTTP middleware；此外，若僅於 `on_upgrade` 後才開始監聽撤銷事件，握手與連線啟動之間仍存在 TOCTOU 空窗期，且將明文 `session_token` 長期駐留於 async task 狀態機記憶體中亦會擴大敏感憑證暴露面。
+**預防 (Prevention):** 於 `CompanionService` 維護 `watch::Sender<u64>` 配對狀態版本通知並提供 `authenticate_session`（以常數時間比對驗證並僅回傳 SHA-256 雜湊）與唯讀 `is_session_hash_active`；在 `lan_ws` 驗證前先訂閱變更通知，只將 `session_hash` 傳入 `on_upgrade`，並於升級入口與 `tokio::select!` 迴圈中同步響應撤銷通知與週期重檢，確保裝置撤銷或憑證輪替時即刻終止對應連線而不干擾其他合法裝置。
+**署名:** Sentinel as Antigravity
+
+## 2026-11-21 - Tauri Overlay Window Over-Privileged Remote Capability & IPC Authorization (CWE-269 / CWE-862)
+**漏洞/脆弱點 (Vulnerability):** 桌面端設定檔 `frontend/src-tauri/tauri.conf.json` 的內聯 `main-capability` 將 `windows` 同時授權給 `["main", "overlay"]` 並開啟 `"remote": { "urls": ["http://127.0.0.1:*", "http://localhost:*"] }`；同時 `frontend/src-tauri/src/lib.rs` 中除 `file_export::save_export_file` 外的 11 個 Tauri IPC 命令均未驗證呼叫視窗必須為 `"main"`。由於 `overlay` 視窗載入 `http://127.0.0.1:<port>/hud/index.html` 並以同源無沙盒 `<iframe>` 嵌入使用者自訂 HUD（`/hud_user/*`），導致任何社群自訂 HUD 腳本都能透過 `window.top.__TAURI__` 越權觸發 `updater:default`、`process:default`、`core:window:*`（如關閉 click-through 進行桌面點擊劫持）及後端生命週期命令，而 `hud_overlay/` 實際上完全不依賴任何 Tauri IPC。
+**學習 (Learning):** 在 Tauri v2 中，一旦 `tauri.conf.json` 的 `app.security.capabilities` 非空，就會完全取代 `capabilities/default.json`；且 `devUrl`（`http://localhost:1420`）與 `frontendDist` 皆由 `is_local_url()` 原生歸類為 `Origin::Local`，根本無需為 `main` 開啟寬鬆的 `remote` loopback 萬用規則。此外，單獨依賴前端層或個別指令（如僅 `file_export.rs` 檢查 `window.label() == "main"`）容易造成其餘特權指令遺漏防護。
+**預防 (Prevention):** 將 `main-capability` 嚴格收斂至 `"windows": ["main"]` 並移除 `remote` 來源規則，徹底剝奪 `overlay` 視窗與未授權遠端 loopback 來源的一切 Tauri IPC 權限；同步在 `frontend/src-tauri/src/lib.rs` 透過 `require_main_app_handle`／`require_main_window` 於所有特權命令入口強制驗證 `caller.label() == "main"` 並移除未使用的樣板命令 `greet`，再以編譯期 `tauri::generate_context!()` 的 `RuntimeAuthority::resolve_access` 實測驗證 ACL 隔離，落實最小權限與深度防禦（Defense in Depth）。
+**署名:** Sentinel as Antigravity
+
+## 2026-11-22 - MoTeC LD Uniform Resampling Memory Amplification & Overflow Defense (CWE-789 / CWE-400 / CWE-190)
+**漏洞/脆弱點 (Vulnerability):** 後端 MoTeC 二進位匯出模組 `backend-rust/src/motec.rs::resample_to_grid` 直接以首尾時間差計算重採樣步數 `((t_end - t_start) * freq).round() as usize` 並執行 `Vec::with_capacity(total_steps + 1)`，既未限制最大重採樣點數、亦未檢查 `freq` 與 `t_end - t_start` 的有限性（`is_finite()`）及 `.ld` 32-bit 通道偏移量上限。由於 UDP 8000 監聽於所有區域網路介面且依遊戲協定無認證，僅需兩個偽造的 324-byte UDP 封包（`TimestampMS = 0` 與 `u32::MAX` ≈ 49.7 天），即可在匯出 `.ld` 時觸發約 84.5 GB 的記憶體配置請求導致 Rust 配置器直接 `abort()` 崩潰整個後端程序；極端 `f64` 時間差或 `LapNumber` 亦會引發整數溢位 Panic。
+**學習 (Learning):** 遙測時間戳記（UDP `TimestampMS` 或外部匯入 CSV）與重採樣目標頻率之間存在嚴重的記憶體放大攻擊面（Memory Amplification）：即使僅儲存少數點位，均勻時間格（Uniform Grid）重採樣仍會依「時間跨度 × 頻率」呈線性膨脹，且在 Rust 中 OOM 配置失敗預設直接中止程序（無法被 `spawn_blocking` 的 panic 邊界攔截）。此外，二進位格式（如 MoTeC `.ld` 的 `u32` 指標）必須以 checked arithmetic 驗證總位元組長度不溢位。
+**預防 (Prevention):** 在 `motec.rs` 定義明確上限常數 `MAX_RESAMPLED_SAMPLES`（432,001 點，對應 60 Hz 兩小時）並由 `try_resample_to_grid` 在任何大型配置前驗證 `freq.is_finite()`、時間跨度有限性與步數邊界，超限時於 `export_ld` 優雅回傳 HTTP 422 錯誤、直接呼叫 `resample_to_grid` 則安全失敗回傳空集合；同步於 `export_ld` 以 `checked_mul`／`checked_add`／`u32::try_from` 鎖定二進位偏移量，並於 `import` 與 `generate_ldx_xml` 採用 `saturating_add`／`checked_add` 防止極端圈數溢位。
+**署名:** Sentinel as Antigravity

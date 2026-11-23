@@ -75,6 +75,8 @@ export const UpdateSettingsCard: React.FC = () => {
         headerAside={(
           <div className="d-flex align-items-center flex-wrap gap-2">
             <span
+              role="status"
+              aria-live="polite"
               className={`badge ${
                 checkState === 'available' ? 'text-bg-warning'
                   : checkState === 'current' ? 'text-bg-success'
