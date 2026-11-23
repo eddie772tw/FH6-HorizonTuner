@@ -1,0 +1,99 @@
+{
+  "date": "2026-11-21",
+  "viewport": "1280x720 and 320x800",
+  "reducedMotion": "reduce",
+  "dpr": 1,
+  "source": "frontend/dist via vite preview + mock /api/** routes + real lang/*.json dictionaries",
+  "cases": [
+    {
+      "core": "default",
+      "mode": "light",
+      "language": "en-us",
+      "width": 1280,
+      "panelMode": "time_trial",
+      "confirmFile": "default-light-en-us-1280-time_trial-confirm.png",
+      "deletedFile": "default-light-en-us-1280-time_trial-deleted.png",
+      "confirmBounds": {
+        "width": 1280,
+        "scrollWidth": 1280
+      },
+      "nativeDialogs": [],
+      "errors": []
+    },
+    {
+      "core": "default",
+      "mode": "dark",
+      "language": "zh-tw",
+      "width": 320,
+      "panelMode": "roaming",
+      "confirmFile": "default-dark-zh-tw-320-roaming-confirm.png",
+      "deletedFile": "default-dark-zh-tw-320-roaming-deleted.png",
+      "confirmBounds": {
+        "width": 320,
+        "scrollWidth": 320
+      },
+      "nativeDialogs": [],
+      "errors": []
+    },
+    {
+      "core": "swiss",
+      "mode": "light",
+      "language": "zh-tw",
+      "width": 1280,
+      "panelMode": "time_trial",
+      "confirmFile": "swiss-light-zh-tw-1280-time_trial-confirm.png",
+      "deletedFile": "swiss-light-zh-tw-1280-time_trial-deleted.png",
+      "confirmBounds": {
+        "width": 1280,
+        "scrollWidth": 1280
+      },
+      "nativeDialogs": [],
+      "errors": []
+    },
+    {
+      "core": "swiss",
+      "mode": "dark",
+      "language": "ja-jp",
+      "width": 1280,
+      "panelMode": "roaming",
+      "confirmFile": "swiss-dark-ja-jp-1280-roaming-confirm.png",
+      "deletedFile": "swiss-dark-ja-jp-1280-roaming-deleted.png",
+      "confirmBounds": {
+        "width": 1280,
+        "scrollWidth": 1280
+      },
+      "nativeDialogs": [],
+      "errors": []
+    },
+    {
+      "core": "rhine-lab",
+      "mode": "light",
+      "language": "ja-jp",
+      "width": 1280,
+      "panelMode": "time_trial",
+      "confirmFile": "rhine-lab-light-ja-jp-1280-time_trial-confirm.png",
+      "deletedFile": "rhine-lab-light-ja-jp-1280-time_trial-deleted.png",
+      "confirmBounds": {
+        "width": 1280,
+        "scrollWidth": 1280
+      },
+      "nativeDialogs": [],
+      "errors": []
+    },
+    {
+      "core": "rhine-lab",
+      "mode": "dark",
+      "language": "en-us",
+      "width": 1280,
+      "panelMode": "roaming",
+      "confirmFile": "rhine-lab-dark-en-us-1280-roaming-confirm.png",
+      "deletedFile": "rhine-lab-dark-en-us-1280-roaming-deleted.png",
+      "confirmBounds": {
+        "width": 1280,
+        "scrollWidth": 1280
+      },
+      "nativeDialogs": [],
+      "errors": []
+    }
+  ]
+}
