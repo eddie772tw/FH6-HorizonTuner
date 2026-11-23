@@ -247,7 +247,13 @@ impl TelemetryStore {
         Ok(out)
     }
     pub fn finalize_session(&self, id: &str, metadata: Value) -> Result<Value, String> {
-        let points = self.get_telemetry_points(id, None)?;
+        // [PERF] Reuse one connection and project only the 9 scalar fields needed
+        // for finalization instead of materializing full 66-key Value objects per row.
+        let mut c = self.conn()?;
+        let points: Vec<FinalizePoint> = c
+            .prepare("SELECT relative_time,lap_number,lap_distance,speed,accel_pct,raw_json FROM telemetry_channels WHERE session_id=? ORDER BY id ASC")
+            .and_then(|mut st| st.query_map(params![id], finalize_row)?.collect())
+            .map_err(|e| e.to_string())?;
         let (mut dist_min, mut dist_max) = (f64::INFINITY, f64::NEG_INFINITY);
         let mut complete = 0;
         let mut best = f64::INFINITY;
@@ -277,7 +283,7 @@ impl TelemetryStore {
         let invalid_laps = metadata.get("invalid_laps").and_then(Value::as_array);
 
         for p in &points {
-            let lap = i64v(p, "LapNumber", 0);
+            let lap = p.lap_number.unwrap_or(0);
             if let Some(previous) = previous_lap {
                 if lap < previous {
                     break;
@@ -289,33 +295,26 @@ impl TelemetryStore {
                 }
             }
             if let Some(pending) = pending_lap {
-                if let Some(last) = p.get("LastLap").and_then(Value::as_f64) {
+                if let Some(last) = p.last_lap {
                     if last > 0.0 && Some(last) != previous_last {
                         laps.entry(pending).or_default().lap_time = Some(last);
                         pending_lap = None;
                     }
                 }
             }
-            let last_value = p.get("LastLap").and_then(Value::as_f64);
-            if last_value.is_some() {
-                previous_last = last_value;
+            if p.last_lap.is_some() {
+                previous_last = p.last_lap;
             }
             previous_lap = Some(lap);
             let entry = laps.entry(lap).or_default();
-            entry
-                .first_point_time
-                .get_or_insert_with(|| p.get("time").and_then(Value::as_f64));
-            if let Some(current) = p.get("CurrentLap").and_then(Value::as_f64) {
+            entry.first_point_time.get_or_insert(p.time);
+            if let Some(current) = p.current_lap {
                 if (0.0..=5.0).contains(&current) {
                     entry.start_observed = true;
                 }
             }
             // Stream lap stats and bounds in one pass to avoid full-session Vec<f64> allocations.
-            let t_sec = p
-                .get("TimestampMS")
-                .and_then(Value::as_f64)
-                .map(|t| t / 1000.0)
-                .or_else(|| p.get("time").and_then(Value::as_f64));
+            let t_sec = p.timestamp_ms.map(|t| t / 1000.0).or(p.time);
             if let Some(t) = t_sec {
                 entry.time_first.get_or_insert(t);
                 entry.has_exposure |= entry.time_prev.is_some_and(|prev| t > prev);
@@ -325,13 +324,13 @@ impl TelemetryStore {
                     None => (t, t),
                 });
             }
-            if let Some(speed) = p.get("SpeedMetersPerSecond").and_then(Value::as_f64) {
+            if let Some(speed) = p.speed_meters_per_second {
                 let kmh = speed * 3.6;
                 entry.speed_sum += kmh;
                 entry.speed_count += 1;
                 entry.speed_max = Some(entry.speed_max.map_or(kmh, |m| m.max(kmh)));
             }
-            if let Some(d) = p.get("lap_distance").and_then(Value::as_f64) {
+            if let Some(d) = p.lap_distance {
                 dist_min = dist_min.min(d);
                 dist_max = dist_max.max(d);
             }
@@ -405,9 +404,7 @@ impl TelemetryStore {
         // Post-stop trimming analysis (non-destructive)
         let mut raw_windows = Vec::new();
         let valid_lap_windows: Vec<Value> = if is_time_trial || is_roaming {
-            let roaming_end = points
-                .last()
-                .and_then(|p| p.get("time").and_then(Value::as_f64));
+            let roaming_end = points.last().and_then(|p| p.time);
             lap_rows
                 .iter()
                 .filter(|(_, _, _, _, _, is_complete, _)| *is_complete)
@@ -440,42 +437,18 @@ impl TelemetryStore {
                 "trimmed_sample_count": 0
             })
         } else {
-            let first_time = points
-                .first()
-                .and_then(|p| p.get("time").and_then(Value::as_f64))
-                .unwrap_or(0.0);
-            let last_time = points
-                .last()
-                .and_then(|p| p.get("time").and_then(Value::as_f64))
-                .unwrap_or(0.0);
+            let first_time = points.first().and_then(|p| p.time).unwrap_or(0.0);
+            let last_time = points.last().and_then(|p| p.time).unwrap_or(0.0);
             let mut first_active_idx = points
                 .iter()
                 .position(|p| {
-                    let speed = p
-                        .get("SpeedMetersPerSecond")
-                        .and_then(Value::as_f64)
-                        .unwrap_or(0.0);
-                    let accel = p
-                        .get("accel_pct")
-                        .and_then(Value::as_f64)
-                        .or_else(|| {
-                            p.get("AccelInput")
-                                .and_then(Value::as_f64)
-                                .map(|x| x / 2.55)
-                        })
-                        .unwrap_or(0.0);
-                    speed >= 1.0 || accel >= 5.0
+                    let accel = p.accel_pct.or_else(|| p.accel_input.map(|x| x / 2.55));
+                    p.speed_meters_per_second.unwrap_or(0.0) >= 1.0 || accel.unwrap_or(0.0) >= 5.0
                 })
                 .unwrap_or(0);
             let mut last_active_idx = points
                 .iter()
-                .rposition(|p| {
-                    let speed = p
-                        .get("SpeedMetersPerSecond")
-                        .and_then(Value::as_f64)
-                        .unwrap_or(0.0);
-                    speed >= 1.0
-                })
+                .rposition(|p| p.speed_meters_per_second.unwrap_or(0.0) >= 1.0)
                 .unwrap_or(points.len().saturating_sub(1));
 
             if is_time_trial || is_roaming {
@@ -486,11 +459,11 @@ impl TelemetryStore {
                     let end = raw_windows.last().map_or(last_time, |w| w.1);
                     first_active_idx = points
                         .iter()
-                        .position(|p| p["time"].as_f64().is_some_and(|t| t >= start))
+                        .position(|p| p.time.is_some_and(|t| t >= start))
                         .unwrap_or(0);
                     last_active_idx = points
                         .iter()
-                        .rposition(|p| p["time"].as_f64().is_some_and(|t| t <= end))
+                        .rposition(|p| p.time.is_some_and(|t| t <= end))
                         .unwrap_or(first_active_idx);
                 } else {
                     last_active_idx = first_active_idx;
@@ -499,11 +472,11 @@ impl TelemetryStore {
 
             let valid_start_time = points
                 .get(first_active_idx)
-                .and_then(|p| p.get("time").and_then(Value::as_f64))
+                .and_then(|p| p.time)
                 .unwrap_or(first_time);
             let valid_end_time = points
                 .get(last_active_idx)
-                .and_then(|p| p.get("time").and_then(Value::as_f64))
+                .and_then(|p| p.time)
                 .unwrap_or(last_time);
             let head_trim_samples = first_active_idx;
             let head_trim_seconds = (valid_start_time - first_time).max(0.0);
@@ -520,7 +493,7 @@ impl TelemetryStore {
                 points
                     .iter()
                     .filter(|p| {
-                        p.get("time").and_then(Value::as_f64).is_some_and(|t| {
+                        p.time.is_some_and(|t| {
                             if sorted_disjoint {
                                 let idx = raw_windows.partition_point(|w| w.0 <= t);
                                 idx > 0 && t <= raw_windows[idx - 1].1
@@ -567,7 +540,6 @@ impl TelemetryStore {
         }
         let summary_json =
             serde_json::to_string(&Value::Object(summary)).map_err(|e| e.to_string())?;
-        let mut c = self.conn()?;
         let tx = c.transaction().map_err(|e| e.to_string())?;
         let mut insert = tx
             .prepare("INSERT OR REPLACE INTO laps(session_id,lap_number,lap_time,start_distance,end_distance,max_speed_kmh,avg_speed_kmh,lap_time_source,complete,observed_span) VALUES(?,?,?,?,?,?,?,?,?,?)")
@@ -843,6 +815,58 @@ impl TelemetryStore {
             .map_err(|e| e.to_string())?;
         Ok(affected > 0)
     }
+}
+#[derive(Clone, Copy, Default, serde::Deserialize)]
+#[serde(default, rename_all = "PascalCase")]
+struct FinalizePoint {
+    lap_number: Option<i64>,
+    last_lap: Option<f64>,
+    current_lap: Option<f64>,
+    #[serde(rename = "TimestampMS")]
+    timestamp_ms: Option<f64>,
+    #[serde(rename = "time")]
+    time: Option<f64>,
+    speed_meters_per_second: Option<f64>,
+    #[serde(rename = "lap_distance")]
+    lap_distance: Option<f64>,
+    #[serde(rename = "accel_pct")]
+    accel_pct: Option<f64>,
+    accel_input: Option<f64>,
+}
+fn finalize_row(r: &rusqlite::Row<'_>) -> rusqlite::Result<FinalizePoint> {
+    let raw = r.get_ref(5)?.as_str_or_null().map_err(|e| {
+        rusqlite::Error::FromSqlConversionFailure(5, rusqlite::types::Type::Text, Box::new(e))
+    })?;
+    if let Some(s) = raw {
+        if let Ok(p) = serde_json::from_str::<FinalizePoint>(s) {
+            return Ok(p);
+        }
+        if let Ok(v) = serde_json::from_str::<Value>(s) {
+            let f = |k| v.get(k).and_then(Value::as_f64);
+            return Ok(FinalizePoint {
+                lap_number: Some(i64v(&v, "LapNumber", 0)),
+                last_lap: f("LastLap"),
+                current_lap: f("CurrentLap"),
+                timestamp_ms: f("TimestampMS"),
+                time: f("time"),
+                speed_meters_per_second: f("SpeedMetersPerSecond"),
+                lap_distance: f("lap_distance"),
+                accel_pct: f("accel_pct"),
+                accel_input: f("AccelInput"),
+            });
+        }
+    }
+    let fin = |v: Option<f64>| v.filter(|x| x.is_finite());
+    let accel_pct = fin(r.get(4)?);
+    Ok(FinalizePoint {
+        lap_number: Some(r.get(1)?),
+        time: fin(Some(r.get(0)?)),
+        lap_distance: fin(r.get(2)?),
+        speed_meters_per_second: fin(r.get::<_, Option<f64>>(3)?.map(|x| x / 3.6)),
+        accel_pct,
+        accel_input: Some((((accel_pct.unwrap_or(0.0) / 100.0) * 255.0) as i64) as f64),
+        ..Default::default()
+    })
 }
 fn row_value(r: &rusqlite::Row<'_>) -> rusqlite::Result<Value> {
     let raw: Option<String> = r.get(41)?;

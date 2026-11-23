@@ -1582,3 +1582,81 @@ fn test_finalize_session_time_trial_and_roaming_windows_parity() {
     assert_eq!(trim_r["trimmed_sample_count"], 3);
     assert_eq!(trim_r["valid_lap_windows"][0]["end_time"], 3.0);
 }
+
+#[test]
+fn test_finalize_session_projection_legacy_and_edge_raw_json_parity() {
+    let dir = tempfile::tempdir().unwrap();
+    let db_path = dir.path().join("finalize_projection.db");
+    let store = TelemetryStore::new(&db_path).unwrap();
+    store
+        .create_session("mix", 1, "Car", 800, 800, 0.0)
+        .unwrap();
+    store
+        .insert_points_batch(
+            "mix",
+            &[
+                json!({"time": 0.0, "TimestampMS": 0.0, "LapNumber": 1, "CurrentLap": 0.0, "SpeedMetersPerSecond": 0.0, "accel_pct": 0.0, "lap_distance": 0.0}),
+                json!({"time": 1.0, "LapNumber": 1, "SpeedMetersPerSecond": 20.0, "accel_pct": 20.0, "lap_distance": 50.0}),
+                json!({"time": 2.0, "LapNumber": 1, "SpeedMetersPerSecond": 30.0, "lap_distance": 150.0}),
+                json!({"time": 42.5, "LapNumber": 2, "CurrentLap": 0.5, "LastLap": 42.5, "SpeedMetersPerSecond": 25.0, "lap_distance": 300.0}),
+                json!({"time": 44.0, "LapNumber": 2, "SpeedMetersPerSecond": 0.0, "lap_distance": 300.0}),
+            ],
+        )
+        .unwrap();
+    let conn = rusqlite::Connection::open(&db_path).unwrap();
+    // Row 2: legacy NULL raw_json; Row 3: malformed JSON falls back to SQLite columns.
+    conn.execute("UPDATE telemetry_channels SET raw_json=NULL WHERE id=2", [])
+        .unwrap();
+    conn.execute(
+        "UPDATE telemetry_channels SET raw_json='{broken' WHERE id=3",
+        [],
+    )
+    .unwrap();
+    // Row 4: float LapNumber + non-numeric accel_pct exercises cold Value fallback.
+    conn.execute(
+        r#"UPDATE telemetry_channels SET raw_json='{"time":42.5,"LapNumber":2.0,"CurrentLap":0.5,"LastLap":42.5,"SpeedMetersPerSecond":25.0,"lap_distance":300.0,"accel_pct":"n/a"}' WHERE id=4"#,
+        [],
+    )
+    .unwrap();
+    let out = store.finalize_session("mix", json!({})).unwrap();
+    assert_eq!(out["total_laps"], 1);
+    assert_eq!(out["best_lap_time"], 42.5);
+    assert_eq!(out["total_distance"], 300.0);
+    let laps = store.get_session_laps("mix").unwrap();
+    assert_eq!(laps.len(), 2);
+    assert!((laps[0]["max_speed_kmh"].as_f64().unwrap() - 108.0).abs() < 1e-6);
+    let trim = &store.get_session_metadata("mix").unwrap()["trim_analysis"];
+    assert_eq!(trim["head_trim_samples"], 1);
+    assert_eq!(trim["tail_trim_samples"], 1);
+    assert_eq!(trim["trimmed_sample_count"], 3);
+
+    // Valid non-object JSON ("17") must not fall back to legacy SQLite columns.
+    store
+        .create_session("scalar", 1, "Car", 800, 800, 0.0)
+        .unwrap();
+    store
+        .insert_points_batch(
+            "scalar",
+            &[json!({"time": 5.0, "LapNumber": 1, "SpeedMetersPerSecond": 50.0, "lap_distance": 500.0})],
+        )
+        .unwrap();
+    conn.execute(
+        "UPDATE telemetry_channels SET raw_json='17' WHERE session_id='scalar'",
+        [],
+    )
+    .unwrap();
+    let scalar_out = store.finalize_session("scalar", json!({})).unwrap();
+    assert_eq!(scalar_out["total_distance"], 0.0);
+    assert_eq!(
+        store.get_session_laps("scalar").unwrap()[0]["lap_number"],
+        0
+    );
+
+    // Type-corrupt BLOB raw_json must fail identically to get_telemetry_points.
+    conn.execute(
+        "UPDATE telemetry_channels SET raw_json=x'FF' WHERE session_id='scalar'",
+        [],
+    )
+    .unwrap();
+    assert!(store.finalize_session("scalar", json!({})).is_err());
+}
