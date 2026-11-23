@@ -98,3 +98,9 @@
 **學習 (Learning):** 遙測時間戳記（UDP `TimestampMS` 或外部匯入 CSV）與重採樣目標頻率之間存在嚴重的記憶體放大攻擊面（Memory Amplification）：即使僅儲存少數點位，均勻時間格（Uniform Grid）重採樣仍會依「時間跨度 × 頻率」呈線性膨脹，且在 Rust 中 OOM 配置失敗預設直接中止程序（無法被 `spawn_blocking` 的 panic 邊界攔截）。此外，二進位格式（如 MoTeC `.ld` 的 `u32` 指標）必須以 checked arithmetic 驗證總位元組長度不溢位。
 **預防 (Prevention):** 在 `motec.rs` 定義明確上限常數 `MAX_RESAMPLED_SAMPLES`（432,001 點，對應 60 Hz 兩小時）並由 `try_resample_to_grid` 在任何大型配置前驗證 `freq.is_finite()`、時間跨度有限性與步數邊界，超限時於 `export_ld` 優雅回傳 HTTP 422 錯誤、直接呼叫 `resample_to_grid` 則安全失敗回傳空集合；同步於 `export_ld` 以 `checked_mul`／`checked_add`／`u32::try_from` 鎖定二進位偏移量，並於 `import` 與 `generate_ldx_xml` 採用 `saturating_add`／`checked_add` 防止極端圈數溢位。
 **署名:** Sentinel as Antigravity
+
+## 2026-11-23 - Unauthenticated UDP Dyno Bucket Overflow, Unbounded Growth & Worker Panic (CWE-190 / CWE-400 / CWE-248)
+**漏洞/脆弱點 (Vulnerability):** 後端 UDP 遙測接收器（`backend-rust/src/runtime.rs::bind_udp`）預設綁定所有本機與 LAN IPv4 介面之 UDP 8000 埠，而封包解碼層（`packet.rs`）僅檢查浮點數為有限值（`is_finite()`）。未認證之區網主機可傳送任意有限高轉速（如 `CurrentEngineRpm = 1e20`）封包進入預設啟用之馬力機蒐集函式 `backend-rust/src/telemetry/dyno.rs::collect_dyno_sample`，觸發 `i64` 乘加溢位（`bucket * 50`、`bucket + offset`），或以遞增轉速持續建立無上限之 `dyno_curve` 鍵值造成記憶體與 `car_params/<id>.json` 磁碟耗盡；此外 `collect_dyno_sample` 直接對 `dyno_curve`、桶物件及 `hp_hist`/`torque_hist` 呼叫未檢查之 `.unwrap()`，一旦設定檔含有畸形 JSON 結構即會導致唯一之遙測處理執行緒永久崩潰（DoS）。
+**學習 (Learning):** 即使 `dyno_curve` 單桶歷史長度（50）、區段數（5）與快取車數（20）均有界，但只要鍵空間本身（RPM 桶數）無上限且直接由未認證網路封包驅動，仍會在高頻持久化路徑構成放大式資源耗盡；同時 60Hz 熱路徑上的無配置（Zero-allocation）效能契約必須透過先檢查型別與容量再寫入的方式與防禦性邊界檢查共存，不可依賴 `.unwrap()` 假設外部可合併之 JSON 結構永遠合法。
+**預防 (Prevention):** 在 `collect_dyno_sample` 入口嚴格限制 `CurrentEngineRpm` 為有限值且位於 `(0.0, 30_000.0]`（與 `config.rs` 轉速物理上限對齊）、以整數除法避免浮點轉整數溢位、限制 `dyno_curve` 總桶數上限為 `DYNO_MAX_BUCKETS`（601），並以零配置型別檢查取代所有 `.unwrap()` 以安全自癒畸形設定檔結構；同步在 `dyno_steady_state_contract.rs` 驗證零配置熱路徑不變量與異常輸入防護。
+**署名:** Sentinel as Antigravity

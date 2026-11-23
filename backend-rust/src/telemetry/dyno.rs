@@ -332,6 +332,10 @@ pub fn reconcile_dyno_profile_segment(
 
 pub const DYNO_BUCKET_SIZE: i64 = 50;
 pub const DYNO_MAX_HISTORY: usize = 50;
+// Bound unauthenticated UDP dyno buckets to physical engine RPMs to prevent
+// i64 bucket overflow and unbounded dyno_curve memory/disk exhaustion.
+pub const DYNO_MAX_RPM: f64 = 30_000.0;
+pub const DYNO_MAX_BUCKETS: usize = (DYNO_MAX_RPM as usize / DYNO_BUCKET_SIZE as usize) + 1;
 pub const DYNO_ANOMALY_THRESHOLD: f64 = 0.30;
 pub const DYNO_NEIGHBOR_OFFSETS: [i64; 8] = [-200, -150, -100, -50, 50, 100, 150, 200];
 
@@ -395,8 +399,11 @@ pub fn collect_dyno_sample(
     };
     let setting =
         |k: &str, default: bool| settings.get(k).and_then(Value::as_bool).unwrap_or(default);
+    let rpm_f = i(d, "CurrentEngineRpm", 0.0);
     if !setting("dyno_recording", true)
-        || i(d, "CurrentEngineRpm", 0.0) <= 0.0
+        || !rpm_f.is_finite()
+        || rpm_f <= 0.0
+        || rpm_f > DYNO_MAX_RPM
         || i(d, "AccelInput", 0.0) != 255.0
         || i(d, "Gear", 0.0) <= 0.0
         || i(d, "ClutchInput", 0.0) != 0.0
@@ -441,10 +448,16 @@ pub fn collect_dyno_sample(
             return false;
         }
     }
-    let rpm = i(d, "CurrentEngineRpm", 0.0) as i64;
-    let bucket = (rpm as f64 / DYNO_BUCKET_SIZE as f64).floor() as i64 * DYNO_BUCKET_SIZE;
-    let curve = ensure(p, "dyno_curve", || Value::Object(Map::new()));
-    let c = curve.as_object_mut().unwrap();
+    let rpm = rpm_f as i64;
+    let bucket = (rpm / DYNO_BUCKET_SIZE) * DYNO_BUCKET_SIZE;
+    // Guard against malformed API/disk profile shapes so bad JSON cannot panic
+    // the single telemetry processing worker thread.
+    if !p.get("dyno_curve").is_some_and(Value::is_object) {
+        p.insert("dyno_curve".into(), Value::Object(Map::new()));
+    }
+    let Some(c) = p.get_mut("dyno_curve").and_then(Value::as_object_mut) else {
+        return false;
+    };
     // [PERF] Format bucket/neighbor keys on stack and accumulate bounded samples without heap allocations.
     let (mut key_buf, mut hp_n, mut hp_len, mut tq_n, mut tq_len) =
         ([0u8; 24], [0.0_f64; 8], 0, [0.0_f64; 8], 0);
@@ -455,7 +468,15 @@ pub fn collect_dyno_sample(
         }
     }
     let key_str = i64_key(bucket, &mut key_buf);
-    let em = ensure(c, key_str, bucket_val).as_object_mut().unwrap();
+    if !c.contains_key(key_str) && c.len() >= DYNO_MAX_BUCKETS {
+        return false;
+    }
+    if !c.get(key_str).is_some_and(Value::is_object) {
+        c.insert(key_str.to_owned(), bucket_val());
+    }
+    let Some(em) = c.get_mut(key_str).and_then(Value::as_object_mut) else {
+        return false;
+    };
     let hp = i(d, "PowerWatts", 0.0) / 745.7;
     let torque = i(d, "TorqueNewtons", 0.0) * 0.73756;
     let mut changed = false;
@@ -464,10 +485,13 @@ pub fn collect_dyno_sample(
         ("hp", hp, &hp_n[..hp_len], "hp_hist"),
         ("torque", torque, &tq_n[..tq_len], "torque_hist"),
     ] {
-        if dyno_is_reasonable(value, neigh, DYNO_ANOMALY_THRESHOLD) {
-            let a = ensure(em, hist_key, || Value::Array(vec![]))
-                .as_array_mut()
-                .unwrap();
+        if value.is_finite() && dyno_is_reasonable(value, neigh, DYNO_ANOMALY_THRESHOLD) {
+            if !em.get(hist_key).is_some_and(Value::is_array) {
+                em.insert(hist_key.to_owned(), Value::Array(vec![]));
+            }
+            let Some(a) = em.get_mut(hist_key).and_then(Value::as_array_mut) else {
+                continue;
+            };
             a.push(Value::from(value));
             if a.len() > DYNO_MAX_HISTORY {
                 a.drain(0..a.len() - DYNO_MAX_HISTORY);
