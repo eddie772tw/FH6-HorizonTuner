@@ -112,3 +112,8 @@
 **學習 (Learning):** `Step2ChassisTuner.tsx` 同時存在四類典型 i18n 缺陷：(1) 主標題硬編碼英文前綴 `Step 2:`；(2) 摘要副標題將 `Calculated based on`、`profile for` 與未經 `t()` 包裝之領域枚舉（`selectedRaceGoal`、`season`、`drivetrain`）及硬編碼縮寫 `% F` 拼接為碎片句子，導致日文與中文語序破碎且讀屏器將 `% F` 誤讀為華氏單位；(3) 20 個核心卡片標題與底盤參數鍵僅部分存在於 `zh-tw.json` 或完全缺失於三語系字典；(4) `lang/ja-jp.json` 中四個賽事類型鍵因歷史上從繁體中文直譯而出現嚴重語義錯譯（`甩尾`→`フリック`、`拉力`→`引く`、`公路`→`高速道路`、`直線加速`→`直線加速度`），連帶污染 `Step1GoalSetup` 與 `BaselinePreviewPanel`。
 **行動 (Action):** 步驟標題一律納入單一完整鍵值（如 `Step 2: Chassis, suspension & tire recommendations`）；含多變數之車輛摘要與 AWD 後軸比例改用具名參數內插（`Calculated for {goal} profile · {weight} {unit} ({frontPercent}% front) {drivetrain} · Season: {season}`、`{percent}% Rear`），將賽事目標、季節與驅動形式全數透過 `t()` 映射；並於審查 `ja-jp.json` 賽車領域術語時，主動排查由中文多義詞轉譯造成的誤譯並修正為標準日文賽車術語（`ロード`、`ラリー`、`ドリフト`、`ドラッグ`）。
 **署名:** Narrator as Antigravity
+
+## 2026-11-22 - Static aria-label Masking Dynamic Values & Protocol Enum Leakage in Companion Settings
+**學習 (Learning):** 在 `CompanionLanControls.tsx` 中對顯示動態配對碼的 `<strong>` 加上靜態 `aria-label={t('Pairing code')}`，會使螢幕閱讀器覆寫元素內容而完全隱藏實際配對碼數字，且倒數徽章以 `{t('Expires in')} {mm}:{ss}` 碎片拼接會破壞日文與中文語序；同時 `CompanionUsbControls.tsx` 直接在 `<option>` 內插原始 ADB 協定枚舉 `device.state`（`device` / `unauthorized` / `offline`），在英文介面暴露內部詞彙 `device`，並在 `zh-TW` / `ja-JP` 介面造成英文穿透。此外，實測截圖亦確認過長的日文卡片標題與按鈕（如 `ローカルネットワークペアリング` + `ペアリングコードを生成`）在雙欄與 320px 視窗容易產生單字元孤行折行。
+**行動 (Action):** 為動態代碼元素提供無障礙標籤時，應改用參數化鍵值（如 `aria-label={t('Pairing code: {code}', { code: pairing.token })}`）保留實際數值語義；倒數計時改為完整參數化鍵（`t('Expires in {time}', { time })`）；ADB 等底層協定狀態一律經顯式鍵值表映射（`Ready` / `Unauthorized` / `Offline`）再傳入 `t(...)`；並確保說明文案中引用的按鈕名稱（如 `Connect USB device`、`Refresh devices`）與對應按鈕譯文在三語系間完全一致，且在 320px 與雙欄視窗下保持精簡不產生孤字折行。
+**署名:** Narrator as Antigravity
