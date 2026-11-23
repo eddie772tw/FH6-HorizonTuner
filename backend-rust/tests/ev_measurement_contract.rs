@@ -176,4 +176,53 @@ fn taycan_replay_preserves_gear_evidence_and_qualifies_two_gears() {
     assert_eq!(result["state"], state);
     assert_eq!(result["readyGears"], json!([1, 2]));
     assert!(batch(&json!({"schemaVersion":"future","state":state,"frames":[]})).is_err());
+    let mut chunked = initial("3445");
+    for chunk in frames.chunks(1200) {
+        chunked = batch(&json!({"schemaVersion":"ev-batch/v1","state":chunked,"frames":chunk}))
+            .unwrap()["state"]
+            .clone();
+    }
+    assert_eq!(chunked, state);
+}
+#[test]
+fn ev_batch_preserves_ordering_and_mid_batch_blocking_parity_with_advance() {
+    let make = |t: u64, gear: u64, rpm: f64| {
+        let mut f = frame(t);
+        f["Gear"] = json!(gear);
+        f["CurrentEngineRpm"] = json!(rpm);
+        f
+    };
+    // Reverse gear order (2 -> 1), descending RPM bins, then mid-batch clock regression + trailing frame.
+    let seq = vec![
+        make(0, 2, 12000.0),
+        make(350, 2, 12000.0),
+        make(400, 2, 8000.0),
+        make(450, 2, 12200.0),
+        make(500, 1, 9000.0),
+        make(850, 1, 9000.0),
+        make(900, 1, 4000.0),
+        make(880, 1, 5000.0),
+        make(1000, 1, 6000.0),
+    ];
+    let mut step_state = initial("3445");
+    for f in &seq {
+        step_state = advance(&step_state, f);
+    }
+    let batched =
+        batch(&json!({"schemaVersion":"ev-batch/v1","state":initial("3445"),"frames":seq}))
+            .unwrap();
+    assert_eq!(batched["state"], step_state);
+    assert_eq!(batched["state"]["status"], "blocked");
+    assert_eq!(batched["state"]["guidance"], "session-restarted");
+    let gears: Vec<EvGearMeasurement> =
+        serde_json::from_value(batched["state"]["gears"].clone()).unwrap();
+    assert_eq!(gears.iter().map(|g| g.gear).collect::<Vec<_>>(), vec![1, 2]);
+    assert!(gears
+        .iter()
+        .all(|g| g.curve.windows(2).all(|w| w[0].rpm < w[1].rpm)));
+    let already_blocked = batch(
+        &json!({"schemaVersion":"ev-batch/v1","state":batched["state"],"frames":[make(1500, 1, 7000.0)]}),
+    )
+    .unwrap();
+    assert_eq!(already_blocked["state"], batched["state"]);
 }
