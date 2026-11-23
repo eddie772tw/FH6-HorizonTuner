@@ -76,6 +76,16 @@
 **行動 (Action):** 所有含浮動數值標註的長條分布與時間軸 HUD 畫布應保留與 `fontSize` 比例聯動之頂部讀數淨空區，並在邊緣自動切換對齊方向時附加水平微調間距，同時落實 `try/finally` Context 隔離與 `Number.isFinite` 消毒。
 **署名:** Vector as Antigravity
 
+## 2026-11-20 - Telemetry Cards 羅盤帶狀刻度漸層快取、指針淨空對齊與複合遮罩狀態防護
+**渲染洞察 (Rendering Learning):** 在 `hud_overlay/shared/telemetry-cards/compass.js`（`renderCompass`）的 60Hz 帶狀羅盤畫布中，過去每幀呼叫兩次 `ctx.createLinearGradient()` 建立左右 15% `destination-out` 漸層遮罩（每秒 120 次堆配置），且未將 `destination-out` 遮罩與主繪製納入 `try/finally` `restore()` 防護，一旦中途拋錯會令外部 Context 永久殘留於擦除合成模式；幾何上於預設 `76px` 高度中，中心向下指針尖端（`y=30`）與 `12px` 粗體正方位字元（`baselineY-3=41` 上緣達 `y=29`）直接碰觸重疊，且正方位度數字級（`9px`）反小於 `15°` 次刻度（`10px`）、所有 Y 座標寫死導致緊湊高度裁切。透過以 `(ctx, w, pixelWidth)` 鍵值快取左右漸層物件消除每幀配置、以 `vScale = Math.min(1, h / 76)` 等比配置垂直槽位使指針（`y=18..24.5`）與方位字元（`y=30..42`）維持穩定淨空並補上水平基準軌與中心發光游標刻度、統一 `10px` 等級字體層次及 `Number.isFinite` 航向消毒，即可在嚴格單層 `save()/try-finally restore()` 隔離下兼顧零配置效能與高對比判讀性。
+**行動 (Action):** 所有含 `destination-out` 邊緣羽化遮罩的捲動帶狀 HUD 畫布，應以 `(ctx, width, pixelWidth)` 快取 `CanvasGradient` 實例避免每幀分配，並強制於外層 `try/finally` 保護 `globalCompositeOperation` 與陰影重置，同時依容器高度等比規劃指針與捲動字元的垂直淨空帶。
+**署名:** Vector as Antigravity
+
+## 2026-11-21 - Stack ST8100 點陣 LCD HiDPI 縮放、靜態矩陣快取與 DPR 發光等比補正
+**渲染洞察 (Rendering Learning):** 在 `hud_overlay/stack_st8100/stack-renderer.js` 中，主畫布與靜態表盤快取 `r.backing` 雖有隨 `dpr` 縮放，但離屏點陣 LCD（`r.lcd`，`478×66`）在 `resize()` 時漏未同步縮放並以無寬高參數之 `ctx.drawImage(r.lcd, 81, 275)` 貼上，導致在 DPR ≥ 2 螢幕上出現上層表盤銳利、下層 5×7 點陣 LCD 遭雙線性放大模糊的明顯畫質落差；且 `updateLCD()` 每次刷新皆以雙重迴圈重繪 4,966 個靜態背景矩陣方格。透過於 `resize()` 同步縮放 `r.lcd` 與快取靜態矩陣層 `r.lcdBg` 並以顯式邏輯尺寸 `drawImage(r.lcd, LCD_X, LCD_Y, LCD_W, LCD_H)` 1:1 貼圖，不僅在 DPR 2 下讓 `2.5px` 節距精準對齊整數實體像素消除模糊，亦將每次 LCD 刷新由 4,966 次 `fillRect` 降至單次 `drawImage`。此外，HTML Canvas 2D 的 `shadowBlur` 位於實體像素空間且不受 `setTransform(dpr, ...)` 影響，必須將指針與 ALARM/SHIFT 燈之 `shadowBlur` 顯式乘上 `dpr` 才能維持跨解析度一致的光暈半徑；並在 `save() / try-finally restore()` 內重置 `ctx.shadowBlur = 0`，同時將表盤刻度批次合併為粗／細兩條路徑，徹底阻斷內外狀態污染。
+**行動 (Action):** 凡採用多層離屏 Canvas 合成之儀表（如 Stack ST8100、R34 MFD、LFA），所有離屏子畫布（含靜態快取層）皆須隨 DPR 同步縮放並以顯式邏輯尺寸 `drawImage` 合成；所有 `setTransform(dpr, ...)` 畫布上的 `shadowBlur` 必須乘以 `dpr` 以維持物理光暈一致，並一律落實 `try/finally` Context 狀態隔離與零每幀配置。
+**署名:** Vector as Antigravity
+
 ## 2026-11-22 - R34 MFD 雙畫布統一內縮網格、軸標籤防碰撞與矩陣等比發光
 **渲染洞察 (Rendering Learning):** 在 `hud_overlay/r34_mfd/renderer.js` 中，若僅對增壓歷史波形（`drawHistory`）加上下邊距而維持全幅 `[0, h]` 網格，會使 `0 bar` 軌跡與 25 格網格第 20 列產生錯位雙線；改將 3×25 批次網格與波形共用 `[padX, w - padX] × [padY, h - padY]` 內縮座標系，可在消除極值線段半截裁切與外框淡化的同時，保持 `0 bar` 大氣基準線與網格列零誤差重合，並讓單點採樣透過同軸前緣光環即時可見。在矩形 G-Indication（`drawG`）中，硬編碼 `w - 29` 置於角落的 `+1.5` 會在極限過彎制動時與 G 點碰撞；將 `−1.5`/`+1.5` 依 `left`/`right` 錨定於橫軸上方 `h/2 - 7`、`BRAKE`/`ACCEL` 距縱軸右偏 `7px`，即可在四象限與純 `±1.5g` 極值下與同軸光環（外半徑 `5px`）完全淨空。此外，凡經 `setTransform(xScale, 0, 0, yScale, 0, 0)` 縮放之 HiDPI 畫布，`shadowBlur` 必須額外乘以 `Math.max(0.25, Math.min(xScale, yScale))` 以維持跨 HUD scale 與 DPR 的一致發光半徑；將 30＋34 次獨立網格描邊合併為單一批次路徑並以單層 `save()` / `try-finally restore()` 包裹，能兼顧 30Hz/60Hz 零配置與異常狀態隔離。
 **行動 (Action):** 所有具刻度網格與極值邊界之 MFD／示波器畫布，應採網格與軌跡共用內縮座標系防禦裁切與對齊偏移；矩形軸向標籤須扣除同軸光環最大外半徑避讓；經 `setTransform` 縮放之畫布一律按實際 `xScale`/`yScale` 等比縮放 `shadowBlur` 並維持單層 `try/finally` 狀態防護。
