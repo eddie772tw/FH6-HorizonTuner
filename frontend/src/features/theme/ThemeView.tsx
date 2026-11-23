@@ -23,6 +23,7 @@ const ThemeView: React.FC<ThemeViewProps> = ({ show, onClose }) => {
       {/* Backdrop */}
       <div
         className={`offcanvas-backdrop fade${shown ? ' show' : ''}`}
+        aria-hidden="true"
         style={{
           display: show ? 'block' : 'none',
           zIndex: 1040,
@@ -38,7 +39,8 @@ const ThemeView: React.FC<ThemeViewProps> = ({ show, onClose }) => {
         tabIndex={-1}
         aria-modal="true"
         aria-hidden={!show}
-        aria-label={t('Theme Customization')}
+        aria-labelledby="theme-drawer-title"
+        aria-describedby="theme-drawer-description"
         role="dialog"
         style={{
           zIndex: 1050,
@@ -47,10 +49,10 @@ const ThemeView: React.FC<ThemeViewProps> = ({ show, onClose }) => {
         {/* Header */}
         <div className="offcanvas-header border-bottom px-4 py-3 d-flex justify-content-between align-items-center">
           <div>
-            <h5 className="offcanvas-title text-primary fw-bold fs-6 m-0">
+            <h5 id="theme-drawer-title" className="offcanvas-title text-primary fw-bold fs-6 m-0">
               {t("Theme Customization")}
             </h5>
-            <p className="surface-intro text-body-secondary fs-8 mb-0 mt-1" style={{ lineHeight: '1.3' }}>
+            <p id="theme-drawer-description" className="surface-intro text-body-secondary fs-8 mb-0 mt-1" style={{ lineHeight: '1.3' }}>
               {t("Personalize skin, colors, and custom CSS")}
             </p>
           </div>

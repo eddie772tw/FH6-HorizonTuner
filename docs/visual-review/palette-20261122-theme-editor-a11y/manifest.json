@@ -1,0 +1,99 @@
+{
+  "date": "2026-11-22",
+  "viewport": "1280x720 and 320x800",
+  "reducedMotion": "reduce",
+  "dpr": 1,
+  "source": "frontend/dist via vite preview + mock /api/** routes + real lang/*.json dictionaries",
+  "cases": [
+    {
+      "core": "default",
+      "mode": "light",
+      "language": "en-us",
+      "width": 1280,
+      "hexInvalidFile": "default-light-en-us-1280-hex-invalid.png",
+      "cssInvalidFile": "default-light-en-us-1280-css-invalid.png",
+      "bounds": {
+        "width": 1280,
+        "docScrollWidth": 1280,
+        "drawerClientWidth": 851,
+        "drawerScrollWidth": 851
+      },
+      "errors": []
+    },
+    {
+      "core": "default",
+      "mode": "dark",
+      "language": "zh-tw",
+      "width": 320,
+      "hexInvalidFile": "default-dark-zh-tw-320-hex-invalid.png",
+      "cssInvalidFile": "default-dark-zh-tw-320-css-invalid.png",
+      "bounds": {
+        "width": 320,
+        "docScrollWidth": 320,
+        "drawerClientWidth": 318,
+        "drawerScrollWidth": 318
+      },
+      "errors": []
+    },
+    {
+      "core": "swiss",
+      "mode": "light",
+      "language": "zh-tw",
+      "width": 1280,
+      "hexInvalidFile": "swiss-light-zh-tw-1280-hex-invalid.png",
+      "cssInvalidFile": "swiss-light-zh-tw-1280-css-invalid.png",
+      "bounds": {
+        "width": 1280,
+        "docScrollWidth": 1280,
+        "drawerClientWidth": 851,
+        "drawerScrollWidth": 851
+      },
+      "errors": []
+    },
+    {
+      "core": "swiss",
+      "mode": "dark",
+      "language": "ja-jp",
+      "width": 1280,
+      "hexInvalidFile": "swiss-dark-ja-jp-1280-hex-invalid.png",
+      "cssInvalidFile": "swiss-dark-ja-jp-1280-css-invalid.png",
+      "bounds": {
+        "width": 1280,
+        "docScrollWidth": 1280,
+        "drawerClientWidth": 851,
+        "drawerScrollWidth": 851
+      },
+      "errors": []
+    },
+    {
+      "core": "rhine-lab",
+      "mode": "light",
+      "language": "ja-jp",
+      "width": 1280,
+      "hexInvalidFile": "rhine-lab-light-ja-jp-1280-hex-invalid.png",
+      "cssInvalidFile": "rhine-lab-light-ja-jp-1280-css-invalid.png",
+      "bounds": {
+        "width": 1280,
+        "docScrollWidth": 1280,
+        "drawerClientWidth": 862,
+        "drawerScrollWidth": 862
+      },
+      "errors": []
+    },
+    {
+      "core": "rhine-lab",
+      "mode": "dark",
+      "language": "en-us",
+      "width": 1280,
+      "hexInvalidFile": "rhine-lab-dark-en-us-1280-hex-invalid.png",
+      "cssInvalidFile": "rhine-lab-dark-en-us-1280-css-invalid.png",
+      "bounds": {
+        "width": 1280,
+        "docScrollWidth": 1280,
+        "drawerClientWidth": 862,
+        "drawerScrollWidth": 862
+      },
+      "errors": []
+    }
+  ]
+}
