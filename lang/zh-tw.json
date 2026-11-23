@@ -2496,5 +2496,16 @@
   "Online": "線上",
   "Offline": "離線",
   "CONNECTED": "已連線",
-  "LOADING": "載入中"
+  "LOADING": "載入中",
+  "TRD 11,000 RPM (AE86)": "TRD 11,000 RPM (AE86)",
+  "Defi Advance BF": "Defi Advance BF",
+  "4-Wheel Average Tire Temperature": "四輪平均胎溫",
+  "Rear Average Tire Temperature": "後輪平均胎溫",
+  "Front Average Tire Temperature": "前輪平均胎溫",
+  "4-Wheel Average Suspension Travel": "四輪平均懸吊行程",
+  "Front Average Suspension Travel": "前輪平均懸吊行程",
+  "Rear Average Suspension Travel": "後輪平均懸吊行程",
+  "4-Wheel Average Slip Ratio": "四輪平均滑移率",
+  "Amber Red": "琥珀紅",
+  "Cool White": "冷冽白"
 }

@@ -6,9 +6,9 @@
 
 Web 使用既有 session polling；command busy 時同樣處理等待 acknowledgement 的 workflow GET。POST command 回應可以缺省投影。接收不呼叫 settings POST、不變更 profileKey、revision、draft、measurement、readiness 或工作區 key。
 
-Native `HorizonTunerCompanionTheme` 僅提供 `themeBootstrap()` 與 `updateVisualTheme(json, generation)`。codec 上限 1024 bytes；只接受完整六欄位、version 1、七個 core、light/dark 與六位 HEX。解析失敗整份拒絕，主執行緒再次檢查 active lease/generation 及目前 WebView document，再更新 Compose／快取。原有 URL、Cookie、session 與 LAN origin 檢查繼續適用。
+Native 由 `NativeSession` 直接取得 workflow GET 的投影，透過 `ThemeSession` 的 endpoint lease/generation 更新 Compose 與快取；不再透過 JavaScript bridge 或載入共用 React 頁面。codec 上限 1024 bytes；只接受完整六欄位、version 1、七個 core、light/dark 與六位 HEX，解析失敗整份拒絕。HUD 的受限 WebView 只讀取已驗證的本機儀表快取，沒有 JavaScript interface，並保留原儀表 artwork。
 
-快取為 private preferences，key 是 canonical endpoint origin 的 SHA-256；不同 host／port／scheme 分離，沒有 credentials。Android 首次 Compose 繪製先讀已配對 endpoint 的快取；Web 首幀及 React 使用同一份同步 bootstrap。快取只由有效 backend 投影更新，不能回寫遠端。重連、離線與重開保留同一 endpoint 的最後有效值；新 endpoint 沒有有效快取時用安全的初始主題，不帶入其他 host 的主題。配對／Cookie 的過時回呼也受 connection attempt 檢查保護。
+快取為 private preferences，key 是 canonical endpoint origin 的 SHA-256；不同 host／port／scheme 分離，沒有 credentials。Android 首次 Compose 繪製先讀已配對 endpoint 的快取；獨立瀏覽器 Companion 頁面繼續使用自己的 Web 主題接收流程。快取只由有效 backend 投影更新，不能回寫遠端。重連、離線與重開保留同一 endpoint 的最後有效值；新 endpoint 沒有有效快取時用安全的初始主題，不帶入其他 host 的主題。配對的過時回呼也受 connection attempt 檢查保護。
 
 ## CSS 映射
 
