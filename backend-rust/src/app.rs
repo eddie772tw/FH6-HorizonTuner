@@ -710,6 +710,29 @@ impl App {
         }
     }
     fn static_asset(&self, path: &str) -> ApiResult<Option<ApiResponse>> {
+        if path == "/companion/hud/catalog.json" {
+            return Ok(Some(ApiResponse::json(serde_json::to_value(
+                crate::companion_hud::catalog(),
+            )?)));
+        }
+        if let Some(style) = path
+            .strip_prefix("/companion/hud/manifests/")
+            .and_then(|s| s.strip_suffix(".json"))
+        {
+            return Ok(Some(ApiResponse::json(serde_json::to_value(
+                crate::companion_hud::manifest(style)?,
+            )?)));
+        }
+        if let Some(relative) = path.strip_prefix("/companion/hud/assets/") {
+            let (hash, key) = relative
+                .split_once('/')
+                .ok_or_else(|| ApiError::new(404, "Unknown instrument asset"))?;
+            let bytes = crate::companion_hud::asset(hash, key)?;
+            let mime = mime_guess::from_path(key)
+                .first_or_octet_stream()
+                .to_string();
+            return Ok(Some(ApiResponse::bytes(200, bytes.to_vec(), &mime)));
+        }
         let (bytes, key) = if let Some(relative) = path.strip_prefix("/hud_user/") {
             let mut target = storage::safe_path(
                 &self.config.root.join("hud_overlay"),

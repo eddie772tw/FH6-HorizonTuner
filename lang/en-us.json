@@ -2101,5 +2101,16 @@
   "Online": "Online",
   "Offline": "Offline",
   "CONNECTED": "CONNECTED",
-  "LOADING": "LOADING"
+  "LOADING": "LOADING",
+  "TRD 11,000 RPM (AE86)": "TRD 11,000 RPM (AE86)",
+  "Defi Advance BF": "Defi Advance BF",
+  "4-Wheel Average Tire Temperature": "4-Wheel Average Tire Temperature",
+  "Rear Average Tire Temperature": "Rear Average Tire Temperature",
+  "Front Average Tire Temperature": "Front Average Tire Temperature",
+  "4-Wheel Average Suspension Travel": "4-Wheel Average Suspension Travel",
+  "Front Average Suspension Travel": "Front Average Suspension Travel",
+  "Rear Average Suspension Travel": "Rear Average Suspension Travel",
+  "4-Wheel Average Slip Ratio": "4-Wheel Average Slip Ratio",
+  "Amber Red": "Amber Red",
+  "Cool White": "Cool White"
 }

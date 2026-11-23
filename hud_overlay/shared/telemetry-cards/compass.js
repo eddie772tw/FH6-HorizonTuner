@@ -22,6 +22,7 @@ var CARDINAL_POINTS = {
  * @returns {number}
  */
 export function normalizeAngle(deg) {
+    if (!Number.isFinite(deg)) return 0;
     return ((deg % 360) + 360) % 360;
 }
 
@@ -31,8 +32,7 @@ export function normalizeAngle(deg) {
  * @returns {string}
  */
 export function formatHeadingDigits(deg) {
-    var rounded = Math.round(deg) % 360;
-    if (rounded < 0) rounded += 360;
+    var rounded = Math.round(normalizeAngle(deg)) % 360;
     if (rounded < 10) return '00' + rounded;
     if (rounded < 100) return '0' + rounded;
     return '' + rounded;
@@ -48,6 +48,75 @@ export function getNearestCardinal(deg) {
     var octant = Math.round(norm / 45) % 8;
     var octDeg = octant * 45;
     return CARDINAL_POINTS[octDeg] || 'N';
+}
+
+function strokeTickTier(ctx, startTick, endTick, headingDeg, centerX, ppd, w, baseY, len, tier, style, lineW) {
+    ctx.strokeStyle = style; ctx.lineWidth = lineW; ctx.beginPath();
+    for (var d = startTick; d <= endTick; d += 5) {
+        var x = centerX + (d - headingDeg) * ppd;
+        if (x < 0 || x > w) continue;
+        var n = normalizeAngle(d);
+        if (tier === 0 ? n % 45 === 0 : (tier === 1 ? n % 15 === 0 && n % 45 !== 0 : n % 15 !== 0)) {
+            ctx.moveTo(x, baseY); ctx.lineTo(x, baseY + len);
+        }
+    }
+    ctx.stroke();
+}
+
+function drawCompassTape(ctx, canvas, w, h, dpr, pixelWidth, headingDeg, primaryColor) {
+    var ppd = w / 120.0, centerX = w / 2, vScale = Math.min(1, h / 76), yOff = Math.max(0, (h - 76 * vScale) * 0.5);
+    var baselineY = yOff + 46 * vScale, majorLen = 13 * vScale, minorLen = 6.5 * vScale;
+    var cardinalY = baselineY - 4 * vScale, labelY = baselineY + majorLen + 3.5 * vScale;
+    var degPx = Math.max(1, Math.round(10 * vScale)), cardPx = Math.max(1, Math.round(12 * vScale));
+    var startTick = Math.floor((headingDeg - 60) / 5) * 5, endTick = Math.ceil((headingDeg + 60) / 5) * 5;
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.95)'; ctx.shadowBlur = 4 * dpr;
+    ctx.shadowOffsetX = 0; ctx.shadowOffsetY = dpr; ctx.lineCap = 'round';
+    // Horizontal tape baseline rail & 3 batched tick tiers (45° -> 15° -> 5°)
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.28)'; ctx.lineWidth = Math.max(0.75, 1 * vScale);
+    ctx.beginPath(); ctx.moveTo(0, baselineY); ctx.lineTo(w, baselineY); ctx.stroke();
+    strokeTickTier(ctx, startTick, endTick, headingDeg, centerX, ppd, w, baselineY, majorLen, 0, primaryColor, 2.4 * vScale);
+    strokeTickTier(ctx, startTick, endTick, headingDeg, centerX, ppd, w, baselineY, majorLen, 1, 'rgba(255, 255, 255, 0.9)', 1.8 * vScale);
+    strokeTickTier(ctx, startTick, endTick, headingDeg, centerX, ppd, w, baselineY, minorLen, 2, 'rgba(255, 255, 255, 0.45)', 1.0 * vScale);
+    ctx.textAlign = 'center';
+    for (var tickDeg = startTick; tickDeg <= endTick; tickDeg += 5) {
+        var x = centerX + (tickDeg - headingDeg) * ppd;
+        if (x < 0 || x > w) continue;
+        var norm = normalizeAngle(tickDeg);
+        if (norm % 15 !== 0) continue;
+        var isCard = norm % 45 === 0;
+        if (isCard) {
+            ctx.font = 'bold ' + cardPx + 'px "ForzaGear", Arial, sans-serif'; ctx.fillStyle = primaryColor;
+            ctx.textBaseline = 'bottom'; ctx.fillText(CARDINAL_POINTS[norm], x, cardinalY);
+        }
+        ctx.font = (isCard ? 'bold ' : '') + degPx + 'px monospace';
+        ctx.fillStyle = isCard ? 'rgba(255, 255, 255, 0.95)' : 'rgba(255, 255, 255, 0.72)';
+        ctx.textBaseline = 'top'; ctx.fillText(String(norm), x, labelY);
+    }
+    // Center Lubber Index Tick & Pointer Triangle with theme glow
+    ctx.shadowColor = primaryColor; ctx.shadowBlur = 6 * dpr; ctx.shadowOffsetY = 0;
+    ctx.strokeStyle = primaryColor; ctx.lineWidth = 2.2 * vScale;
+    ctx.beginPath(); ctx.moveTo(centerX, baselineY - 1 * vScale); ctx.lineTo(centerX, baselineY + majorLen + 1 * vScale); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(centerX, yOff + 24.5 * vScale);
+    ctx.lineTo(centerX - 5.5 * vScale, yOff + 18 * vScale); ctx.lineTo(centerX + 5.5 * vScale, yOff + 18 * vScale);
+    ctx.closePath(); ctx.fillStyle = primaryColor; ctx.fill();
+    // Fixed Center Heading Readout (e.g. "042° NE")
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.95)'; ctx.shadowBlur = 4 * dpr; ctx.shadowOffsetY = dpr;
+    ctx.font = 'bold ' + Math.max(1, Math.round(13 * vScale)) + 'px "ForzaGear", monospace';
+    ctx.fillStyle = primaryColor; ctx.textBaseline = 'bottom';
+    ctx.fillText(formatHeadingDigits(headingDeg) + '° ' + getNearestCardinal(headingDeg), centerX, yOff + 15 * vScale);
+    // Cached left/right 15% edge fade mask (zero per-frame gradient allocations)
+    var edgeW = w * 0.15;
+    if (canvas._fadeGradCtx !== ctx || canvas._fadeGradW !== w || canvas._fadeGradPW !== pixelWidth) {
+        var lg = ctx.createLinearGradient(0, 0, edgeW, 0), rg = ctx.createLinearGradient(w - edgeW, 0, w, 0);
+        lg.addColorStop(0, 'rgba(0, 0, 0, 1)'); lg.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        rg.addColorStop(0, 'rgba(0, 0, 0, 0)'); rg.addColorStop(1, 'rgba(0, 0, 0, 1)');
+        canvas._fadeGradCtx = ctx; canvas._fadeGradW = w; canvas._fadeGradPW = pixelWidth;
+        canvas._leftFadeGrad = lg; canvas._rightFadeGrad = rg;
+    }
+    ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.fillStyle = canvas._leftFadeGrad; ctx.fillRect(0, 0, edgeW, h);
+    ctx.fillStyle = canvas._rightFadeGrad; ctx.fillRect(w - edgeW, 0, edgeW, h);
 }
 
 /**
@@ -88,9 +157,10 @@ export function renderCompass(canvas, data, config, domCache) {
     } else if (data && data.NormalizedYaw !== undefined && data.NormalizedYaw !== null) {
         yawAngle = data.NormalizedYaw * Math.PI;
     }
+    yawAngle = Number.isFinite(Number(yawAngle)) ? Number(yawAngle) : 0;
 
     // DEMO mode simulated rotation if no data
-    if ((!data || (data.Yaw === undefined && data.yaw === undefined)) && (typeof window !== 'undefined' && window.demoActive)) {
+    if ((!data || (data.Yaw === undefined && data.yaw === undefined && data.NormalizedYaw === undefined)) && (typeof window !== 'undefined' && window.demoActive)) {
         yawAngle = ((Date.now() / 3000) % (Math.PI * 2));
     }
 
@@ -117,145 +187,6 @@ export function renderCompass(canvas, data, config, domCache) {
     }
 
     ctx.save();
-
-    // Configure drop shadows for all lines and text for maximum readability
-    ctx.shadowColor = 'rgba(0, 0, 0, 0.95)';
-    ctx.shadowBlur = 4 * dpr;
-    ctx.shadowOffsetX = 0;
-    ctx.shadowOffsetY = dpr;
-
-    // Visible span in degrees (FOV): 120 degrees across the canvas width
-    var visibleSpanDeg = 120.0;
-    var pixelsPerDegree = w / visibleSpanDeg;
-    var centerX = w / 2;
-
-    // Ticks baseline Y (ticks hang down from baseline)
-    // Keep the scrolling labels below the fixed heading readout.
-    var baselineY = 44;
-
-    // Find starting tick: round down to nearest 5 degrees
-    var minAngle = headingDeg - (visibleSpanDeg / 2);
-    var maxAngle = headingDeg + (visibleSpanDeg / 2);
-
-    var startTick = Math.floor(minAngle / 5) * 5;
-    var endTick = Math.ceil(maxAngle / 5) * 5;
-
-    // Draw ticks
-    ctx.beginPath();
-    for (var tickDeg = startTick; tickDeg <= endTick; tickDeg += 5) {
-        var diff = tickDeg - headingDeg;
-        var x = centerX + diff * pixelsPerDegree;
-        if (x < -20 || x > w + 20) continue;
-        if (normalizeAngle(tickDeg) % 45 === 0) {
-            ctx.moveTo(x, baselineY);
-            ctx.lineTo(x, baselineY + 14);
-        }
-    }
-    ctx.strokeStyle = primaryColor;
-    ctx.lineWidth = 2.5;
-    ctx.stroke();
-
-    ctx.beginPath();
-    for (var tickDeg = startTick; tickDeg <= endTick; tickDeg += 5) {
-        var diff = tickDeg - headingDeg;
-        var x = centerX + diff * pixelsPerDegree;
-        if (x < -20 || x > w + 20) continue;
-        var norm = normalizeAngle(tickDeg);
-        if (norm % 15 === 0 && norm % 45 !== 0) {
-            ctx.moveTo(x, baselineY);
-            ctx.lineTo(x, baselineY + 14);
-        }
-    }
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
-    ctx.lineWidth = 2.0;
-    ctx.stroke();
-
-    ctx.beginPath();
-    for (var tickDeg = startTick; tickDeg <= endTick; tickDeg += 5) {
-        var diff = tickDeg - headingDeg;
-        var x = centerX + diff * pixelsPerDegree;
-        if (x < -20 || x > w + 20) continue;
-        if (normalizeAngle(tickDeg) % 15 !== 0) {
-            ctx.moveTo(x, baselineY);
-            ctx.lineTo(x, baselineY + 7);
-        }
-    }
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
-    ctx.lineWidth = 1.0;
-    ctx.stroke();
-
-    // Draw labels
-    for (var tickDeg = startTick; tickDeg <= endTick; tickDeg += 5) {
-        var diff = tickDeg - headingDeg;
-        var x = centerX + diff * pixelsPerDegree;
-
-        if (x < -20 || x > w + 20) continue;
-
-        var normalizedTick = normalizeAngle(tickDeg);
-        var isCardinal = (normalizedTick % 45 === 0);
-        var isMajor = (normalizedTick % 15 === 0);
-        var tickLength = isMajor ? 14 : 7;
-
-        if (isCardinal) {
-            var cardinalName = CARDINAL_POINTS[normalizedTick];
-            ctx.font = 'bold 12px "ForzaGear", Arial, sans-serif';
-            ctx.fillStyle = primaryColor;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'bottom';
-            ctx.fillText(cardinalName, x, baselineY - 3);
-
-            ctx.font = '9px monospace';
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
-            ctx.textBaseline = 'top';
-            ctx.fillText(normalizedTick.toString(), x, baselineY + tickLength + 3);
-        } else if (isMajor) {
-            ctx.font = '10px monospace';
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'top';
-            ctx.fillText(normalizedTick.toString(), x, baselineY + tickLength + 3);
-        }
-    }
-
-    // Center Lubber Line / Pointer Triangle Indicator
-    ctx.beginPath();
-    ctx.moveTo(centerX, 30);
-    ctx.lineTo(centerX - 6, 22);
-    ctx.lineTo(centerX + 6, 22);
-    ctx.closePath();
-    ctx.fillStyle = primaryColor;
-    ctx.fill();
-
-    // Center Heading Readout (e.g. "042° NE")
-    var currentDigits = formatHeadingDigits(headingDeg);
-    var currentCardinal = getNearestCardinal(headingDeg);
-    var readoutText = currentDigits + '° ' + currentCardinal;
-
-    ctx.font = 'bold 13px "ForzaGear", monospace';
-    ctx.fillStyle = primaryColor;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'bottom';
-    ctx.fillText(readoutText, centerX, 18);
-
-    // Smooth edge fade-out gradient mask (left and right 15%)
-    ctx.restore();
-    ctx.save();
-    var edgeFadeWidth = w * 0.15;
-
-    // Left fade mask
-    var leftGrad = ctx.createLinearGradient(0, 0, edgeFadeWidth, 0);
-    leftGrad.addColorStop(0, 'rgba(0, 0, 0, 1)');
-    leftGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
-    ctx.globalCompositeOperation = 'destination-out';
-    ctx.fillStyle = leftGrad;
-    ctx.fillRect(0, 0, edgeFadeWidth, h);
-
-    // Right fade mask
-    var rightGrad = ctx.createLinearGradient(w - edgeFadeWidth, 0, w, 0);
-    rightGrad.addColorStop(0, 'rgba(0, 0, 0, 0)');
-    rightGrad.addColorStop(1, 'rgba(0, 0, 0, 1)');
-    ctx.fillStyle = rightGrad;
-    ctx.fillRect(w - edgeFadeWidth, 0, edgeFadeWidth, h);
-
-    ctx.restore();
+    try { drawCompassTape(ctx, canvas, w, h, dpr, pixelWidth, headingDeg, primaryColor); }
+    finally { ctx.restore(); }
 }
