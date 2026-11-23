@@ -3,6 +3,8 @@ use rusqlite::{params, Connection, OptionalExtension};
 use serde_json::{Map, Value};
 use std::path::{Path, PathBuf};
 
+const TELEMETRY_ROW_COLUMNS: &str = "relative_time,lap_number,lap_distance,speed,rpm,gear,accel_pct,brake_pct,steer_pct,accel_x,accel_y,accel_z,pos_x,pos_y,pos_z,susp_fl,susp_fr,susp_rl,susp_rr,slip_angle_fl,slip_angle_fr,slip_angle_rl,slip_angle_rr,slip_ratio_fl,slip_ratio_fr,slip_ratio_rl,slip_ratio_rr,temp_fl,temp_fr,temp_rl,temp_rr,clutch_pct,handbrake_pct,susp_meters_fl,susp_meters_fr,susp_meters_rl,susp_meters_rr,power_watts,torque_newtons,boost,fuel,raw_json";
+
 pub struct TelemetryStore {
     path: PathBuf,
 }
@@ -199,9 +201,41 @@ impl TelemetryStore {
     pub fn get_telemetry_points(&self, id: &str, lap: Option<i64>) -> Result<Vec<Value>, String> {
         self.get_telemetry_points_filtered(id, lap, 1, None)
     }
+    /// [PERF] Stream validated `raw_json` rows directly into a JSON array byte buffer,
+    /// avoiding 10k+ per-row `IndexMap` deserialization/re-serialization round-trips.
+    pub fn get_telemetry_points_json(&self, id: &str, lap: Option<i64>) -> Result<Vec<u8>, String> {
+        let c = self.conn()?;
+        (|| -> rusqlite::Result<Vec<u8>> {
+            let lap_filter = if lap.is_some() { " AND lap_number=?" } else { "" };
+            let mut st = c.prepare(&format!("SELECT id, raw_json FROM telemetry_channels WHERE session_id=?{lap_filter} ORDER BY id ASC"))?;
+            let mut rows = match lap {
+                Some(l) => st.query(params![id, l])?,
+                None => st.query(params![id])?,
+            };
+            let (mut fb, mut out) = (None, Vec::with_capacity(64 * 1024));
+            out.push(b'[');
+            while let Some(row) = rows.next()? {
+                if out.len() > 1 {
+                    out.push(b',');
+                }
+                if let Some(s) = str_col(&row, 1)?.filter(|s| serde_json::from_str::<serde::de::IgnoredAny>(s).is_ok()) {
+                    out.extend_from_slice(s.trim().as_bytes());
+                } else {
+                    if fb.is_none() {
+                        fb = Some(c.prepare(&format!("SELECT {TELEMETRY_ROW_COLUMNS} FROM telemetry_channels WHERE id=?"))?);
+                    }
+                    let val = fb.as_mut().unwrap().query_row(params![row.get::<_, i64>(0)?], row_value)?;
+                    serde_json::to_writer(&mut out, &val).map_err(|e| rusqlite::Error::ToSqlConversionFailure(Box::new(e)))?;
+                }
+            }
+            out.push(b']');
+            Ok(out)
+        })()
+        .map_err(|e| e.to_string())
+    }
     pub fn get_latest_telemetry_point(&self, id: &str) -> Result<Option<Value>, String> {
         let c = self.conn()?;
-        let mut st = c.prepare("SELECT relative_time,lap_number,lap_distance,speed,rpm,gear,accel_pct,brake_pct,steer_pct,accel_x,accel_y,accel_z,pos_x,pos_y,pos_z,susp_fl,susp_fr,susp_rl,susp_rr,slip_angle_fl,slip_angle_fr,slip_angle_rl,slip_angle_rr,slip_ratio_fl,slip_ratio_fr,slip_ratio_rl,slip_ratio_rr,temp_fl,temp_fr,temp_rl,temp_rr,clutch_pct,handbrake_pct,susp_meters_fl,susp_meters_fr,susp_meters_rl,susp_meters_rr,power_watts,torque_newtons,boost,fuel,raw_json FROM telemetry_channels WHERE session_id=? ORDER BY id DESC LIMIT 1").map_err(|e| e.to_string())?;
+        let mut st = c.prepare(&format!("SELECT {TELEMETRY_ROW_COLUMNS} FROM telemetry_channels WHERE session_id=? ORDER BY id DESC LIMIT 1")).map_err(|e| e.to_string())?;
         st.query_row(params![id], row_value)
             .optional()
             .map_err(|e| e.to_string())
@@ -214,7 +248,8 @@ impl TelemetryStore {
         channels: Option<&std::collections::HashSet<String>>,
     ) -> Result<Vec<Value>, String> {
         let c = self.conn()?;
-        let mut q="SELECT relative_time,lap_number,lap_distance,speed,rpm,gear,accel_pct,brake_pct,steer_pct,accel_x,accel_y,accel_z,pos_x,pos_y,pos_z,susp_fl,susp_fr,susp_rl,susp_rr,slip_angle_fl,slip_angle_fr,slip_angle_rl,slip_angle_rr,slip_ratio_fl,slip_ratio_fr,slip_ratio_rl,slip_ratio_rr,temp_fl,temp_fr,temp_rl,temp_rr,clutch_pct,handbrake_pct,susp_meters_fl,susp_meters_fr,susp_meters_rl,susp_meters_rr,power_watts,torque_newtons,boost,fuel,raw_json FROM telemetry_channels WHERE session_id=?".to_string();
+        let mut q =
+            format!("SELECT {TELEMETRY_ROW_COLUMNS} FROM telemetry_channels WHERE session_id=?");
         if lap.is_some() {
             q.push_str(" AND lap_number=?")
         }
@@ -834,9 +869,7 @@ struct FinalizePoint {
     accel_input: Option<f64>,
 }
 fn finalize_row(r: &rusqlite::Row<'_>) -> rusqlite::Result<FinalizePoint> {
-    let raw = r.get_ref(5)?.as_str_or_null().map_err(|e| {
-        rusqlite::Error::FromSqlConversionFailure(5, rusqlite::types::Type::Text, Box::new(e))
-    })?;
+    let raw = str_col(r, 5)?;
     if let Some(s) = raw {
         if let Ok(p) = serde_json::from_str::<FinalizePoint>(s) {
             return Ok(p);
@@ -868,10 +901,14 @@ fn finalize_row(r: &rusqlite::Row<'_>) -> rusqlite::Result<FinalizePoint> {
         ..Default::default()
     })
 }
+fn str_col<'a>(r: &'a rusqlite::Row<'_>, idx: usize) -> rusqlite::Result<Option<&'a str>> {
+    r.get_ref(idx)?.as_str_or_null().map_err(|e| {
+        rusqlite::Error::FromSqlConversionFailure(idx, rusqlite::types::Type::Text, Box::new(e))
+    })
+}
 fn row_value(r: &rusqlite::Row<'_>) -> rusqlite::Result<Value> {
-    let raw: Option<String> = r.get(41)?;
-    if let Some(s) = raw {
-        if let Ok(v) = serde_json::from_str(&s) {
+    if let Some(s) = str_col(r, 41)? {
+        if let Ok(v) = serde_json::from_str(s) {
             return Ok(v);
         }
     }

@@ -149,4 +149,25 @@ fn backend_performance_probe() {
     measure("ev_measurement_batch_taycan", || {
         black_box(ev_measurement::batch(black_box(&ev_batch_input)).unwrap());
     });
+    let app = fh6_backend::app::App::new(root.path()).unwrap();
+    app.database
+        .create_session("api_probe", 42, "Probe", 3, 700, 0.0)
+        .unwrap();
+    app.database
+        .insert_points_batch("api_probe", &points)
+        .unwrap();
+    measure("api_analysis_session_10000", || {
+        use fh6_backend::network::Backend;
+        let resp = app
+            .request(fh6_backend::network::ApiRequest {
+                method: "GET".into(),
+                path: "/api/analysis/sessions/api_probe".into(),
+                query: Default::default(),
+                headers: Default::default(),
+                body: vec![],
+                upload_filename: None,
+            })
+            .unwrap();
+        black_box(resp.body);
+    });
 }
