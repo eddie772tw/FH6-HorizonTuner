@@ -1,0 +1,322 @@
+{
+  "captureDate": "2026-11-20",
+  "baseUrl": "http://127.0.0.1:54640/",
+  "component": "frontend/src/features/overlay_control/classic_jdm/ClassicJdmSettingsCard.tsx",
+  "configModule": "frontend/src/features/overlay_control/classic_jdm/config.ts",
+  "mockedBackend": true,
+  "reducedMotion": true,
+  "cases": [
+    {
+      "name": "default-light-en-us-1280-trd-amber.png",
+      "core": "default",
+      "mode": "light",
+      "lang": "en-us",
+      "width": 1280,
+      "height": 720,
+      "hudConfig": {
+        "classicJdmTachStyle": "trd",
+        "classicJdmShowTriple": true,
+        "classicJdmAux1": "tire_temp_4w",
+        "classicJdmAux2": "tire_temp_rear",
+        "classicJdmDefiTheme": "amber"
+      },
+      "scrollWidth": 1280,
+      "innerWidth": 1280,
+      "horizontalOverflow": false,
+      "selectedTach": "TRD 11,000 RPM (AE86)",
+      "selectedAux1": "4-Wheel Average Tire Temperature",
+      "selectedAux2": "Rear Average Tire Temperature",
+      "selectedDefiTheme": "Amber Red",
+      "aux1Options": [
+        "4-Wheel Average Tire Temperature",
+        "Rear Average Tire Temperature",
+        "Front Average Tire Temperature",
+        "4-Wheel Average Suspension Travel",
+        "Front Average Suspension Travel",
+        "Rear Average Suspension Travel",
+        "4-Wheel Average Slip Ratio",
+        "Oil Temperature",
+        "Oil Pressure"
+      ],
+      "defiThemeOptions": [
+        "Amber Red",
+        "Cool White"
+      ],
+      "tripleToggleLabel": "Triple Aux Gauges",
+      "tripleToggleText": "Enabled"
+    },
+    {
+      "name": "default-dark-zh-tw-1280-trd-amber.png",
+      "core": "default",
+      "mode": "dark",
+      "lang": "zh-tw",
+      "width": 1280,
+      "height": 720,
+      "hudConfig": {
+        "classicJdmTachStyle": "trd",
+        "classicJdmShowTriple": true,
+        "classicJdmAux1": "tire_temp_4w",
+        "classicJdmAux2": "tire_temp_rear",
+        "classicJdmDefiTheme": "amber"
+      },
+      "scrollWidth": 1280,
+      "innerWidth": 1280,
+      "horizontalOverflow": false,
+      "selectedTach": "TRD 11,000 RPM (AE86)",
+      "selectedAux1": "四輪平均胎溫",
+      "selectedAux2": "後輪平均胎溫",
+      "selectedDefiTheme": "琥珀紅",
+      "aux1Options": [
+        "四輪平均胎溫",
+        "後輪平均胎溫",
+        "前輪平均胎溫",
+        "四輪平均懸吊行程",
+        "前輪平均懸吊行程",
+        "後輪平均懸吊行程",
+        "四輪平均滑移率",
+        "油溫",
+        "油壓"
+      ],
+      "defiThemeOptions": [
+        "琥珀紅",
+        "冷冽白"
+      ],
+      "tripleToggleLabel": "三連輔助儀表",
+      "tripleToggleText": "啟用"
+    },
+    {
+      "name": "swiss-light-ja-jp-1280-defi-white.png",
+      "core": "swiss",
+      "mode": "light",
+      "lang": "ja-jp",
+      "width": 1280,
+      "height": 720,
+      "hudConfig": {
+        "classicJdmTachStyle": "defi",
+        "classicJdmShowTriple": true,
+        "classicJdmAux1": "susp_travel_front",
+        "classicJdmAux2": "oil_temp",
+        "classicJdmDefiTheme": "white"
+      },
+      "scrollWidth": 1280,
+      "innerWidth": 1280,
+      "horizontalOverflow": false,
+      "selectedTach": "Defi Advance BF",
+      "selectedAux1": "フロント平均サスペンショントラベル",
+      "selectedAux2": "油温",
+      "selectedDefiTheme": "クールホワイト",
+      "aux1Options": [
+        "4輪平均タイヤ温度",
+        "リア平均タイヤ温度",
+        "フロント平均タイヤ温度",
+        "4輪平均サスペンショントラベル",
+        "フロント平均サスペンショントラベル",
+        "リア平均サスペンショントラベル",
+        "4輪平均スリップ率",
+        "油温",
+        "油圧"
+      ],
+      "defiThemeOptions": [
+        "アンバーレッド",
+        "クールホワイト"
+      ],
+      "tripleToggleLabel": "3 連補助メーター",
+      "tripleToggleText": "有効"
+    },
+    {
+      "name": "swiss-dark-en-us-1280-defi-white.png",
+      "core": "swiss",
+      "mode": "dark",
+      "lang": "en-us",
+      "width": 1280,
+      "height": 720,
+      "hudConfig": {
+        "classicJdmTachStyle": "defi",
+        "classicJdmShowTriple": true,
+        "classicJdmAux1": "susp_travel_front",
+        "classicJdmAux2": "oil_temp",
+        "classicJdmDefiTheme": "white"
+      },
+      "scrollWidth": 1280,
+      "innerWidth": 1280,
+      "horizontalOverflow": false,
+      "selectedTach": "Defi Advance BF",
+      "selectedAux1": "Front Average Suspension Travel",
+      "selectedAux2": "Oil Temperature",
+      "selectedDefiTheme": "Cool White",
+      "aux1Options": [
+        "4-Wheel Average Tire Temperature",
+        "Rear Average Tire Temperature",
+        "Front Average Tire Temperature",
+        "4-Wheel Average Suspension Travel",
+        "Front Average Suspension Travel",
+        "Rear Average Suspension Travel",
+        "4-Wheel Average Slip Ratio",
+        "Oil Temperature",
+        "Oil Pressure"
+      ],
+      "defiThemeOptions": [
+        "Amber Red",
+        "Cool White"
+      ],
+      "tripleToggleLabel": "Triple Aux Gauges",
+      "tripleToggleText": "Enabled"
+    },
+    {
+      "name": "rhine-lab-light-zh-tw-1280-defi-white.png",
+      "core": "rhine-lab",
+      "mode": "light",
+      "lang": "zh-tw",
+      "width": 1280,
+      "height": 720,
+      "hudConfig": {
+        "classicJdmTachStyle": "defi",
+        "classicJdmShowTriple": true,
+        "classicJdmAux1": "slip_ratio_4w",
+        "classicJdmAux2": "oil_press",
+        "classicJdmDefiTheme": "white"
+      },
+      "scrollWidth": 1280,
+      "innerWidth": 1280,
+      "horizontalOverflow": false,
+      "selectedTach": "Defi Advance BF",
+      "selectedAux1": "四輪平均滑移率",
+      "selectedAux2": "油壓",
+      "selectedDefiTheme": "冷冽白",
+      "aux1Options": [
+        "四輪平均胎溫",
+        "後輪平均胎溫",
+        "前輪平均胎溫",
+        "四輪平均懸吊行程",
+        "前輪平均懸吊行程",
+        "後輪平均懸吊行程",
+        "四輪平均滑移率",
+        "油溫",
+        "油壓"
+      ],
+      "defiThemeOptions": [
+        "琥珀紅",
+        "冷冽白"
+      ],
+      "tripleToggleLabel": "三連輔助儀表",
+      "tripleToggleText": "啟用"
+    },
+    {
+      "name": "rhine-lab-dark-ja-jp-1280-trd-amber.png",
+      "core": "rhine-lab",
+      "mode": "dark",
+      "lang": "ja-jp",
+      "width": 1280,
+      "height": 720,
+      "hudConfig": {
+        "classicJdmTachStyle": "trd",
+        "classicJdmShowTriple": true,
+        "classicJdmAux1": "tire_temp_4w",
+        "classicJdmAux2": "tire_temp_rear",
+        "classicJdmDefiTheme": "amber"
+      },
+      "scrollWidth": 1280,
+      "innerWidth": 1280,
+      "horizontalOverflow": false,
+      "selectedTach": "TRD 11,000 RPM (AE86)",
+      "selectedAux1": "4輪平均タイヤ温度",
+      "selectedAux2": "リア平均タイヤ温度",
+      "selectedDefiTheme": "アンバーレッド",
+      "aux1Options": [
+        "4輪平均タイヤ温度",
+        "リア平均タイヤ温度",
+        "フロント平均タイヤ温度",
+        "4輪平均サスペンショントラベル",
+        "フロント平均サスペンショントラベル",
+        "リア平均サスペンショントラベル",
+        "4輪平均スリップ率",
+        "油温",
+        "油圧"
+      ],
+      "defiThemeOptions": [
+        "アンバーレッド",
+        "クールホワイト"
+      ],
+      "tripleToggleLabel": "3 連補助メーター",
+      "tripleToggleText": "有効"
+    },
+    {
+      "name": "default-light-ja-jp-320-trd-amber.png",
+      "core": "default",
+      "mode": "light",
+      "lang": "ja-jp",
+      "width": 320,
+      "height": 800,
+      "hudConfig": {
+        "classicJdmTachStyle": "trd",
+        "classicJdmShowTriple": true,
+        "classicJdmAux1": "susp_travel_4w",
+        "classicJdmAux2": "tire_temp_front",
+        "classicJdmDefiTheme": "amber"
+      },
+      "scrollWidth": 329,
+      "innerWidth": 329,
+      "horizontalOverflow": false,
+      "selectedTach": "TRD 11,000 RPM (AE86)",
+      "selectedAux1": "4輪平均サスペンショントラベル",
+      "selectedAux2": "フロント平均タイヤ温度",
+      "selectedDefiTheme": "アンバーレッド",
+      "aux1Options": [
+        "4輪平均タイヤ温度",
+        "リア平均タイヤ温度",
+        "フロント平均タイヤ温度",
+        "4輪平均サスペンショントラベル",
+        "フロント平均サスペンショントラベル",
+        "リア平均サスペンショントラベル",
+        "4輪平均スリップ率",
+        "油温",
+        "油圧"
+      ],
+      "defiThemeOptions": [
+        "アンバーレッド",
+        "クールホワイト"
+      ],
+      "tripleToggleLabel": "3 連補助メーター",
+      "tripleToggleText": "有効"
+    },
+    {
+      "name": "default-dark-en-us-320-defi-white.png",
+      "core": "default",
+      "mode": "dark",
+      "lang": "en-us",
+      "width": 320,
+      "height": 800,
+      "hudConfig": {
+        "classicJdmTachStyle": "defi",
+        "classicJdmShowTriple": true,
+        "classicJdmAux1": "susp_travel_front",
+        "classicJdmAux2": "oil_temp",
+        "classicJdmDefiTheme": "white"
+      },
+      "scrollWidth": 329,
+      "innerWidth": 329,
+      "horizontalOverflow": false,
+      "selectedTach": "Defi Advance BF",
+      "selectedAux1": "Front Average Suspension Travel",
+      "selectedAux2": "Oil Temperature",
+      "selectedDefiTheme": "Cool White",
+      "aux1Options": [
+        "4-Wheel Average Tire Temperature",
+        "Rear Average Tire Temperature",
+        "Front Average Tire Temperature",
+        "4-Wheel Average Suspension Travel",
+        "Front Average Suspension Travel",
+        "Rear Average Suspension Travel",
+        "4-Wheel Average Slip Ratio",
+        "Oil Temperature",
+        "Oil Pressure"
+      ],
+      "defiThemeOptions": [
+        "Amber Red",
+        "Cool White"
+      ],
+      "tripleToggleLabel": "Triple Aux Gauges",
+      "tripleToggleText": "Enabled"
+    }
+  ]
+}

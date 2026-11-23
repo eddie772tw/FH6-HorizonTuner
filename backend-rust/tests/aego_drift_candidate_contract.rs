@@ -369,3 +369,88 @@ fn adjacent_ceil_main_gear_tick_rescues_convex_wheel_speed_overshoot() {
     let err = c.diagnostics["wheelSpeedErrorKmh"].as_f64().unwrap();
     assert!(err < 0.0 && err.abs() <= 1.0);
 }
+
+#[test]
+fn rpm_upper_bound_refines_against_physical_limiter_predicate() {
+    let p = profile();
+    let radius = (245.0 * 0.4 * 2.0 + 18.0 * 25.4) * std::f64::consts::PI
+        / 1000.0
+        / (2.0 * std::f64::consts::PI);
+
+    // Case 1 & 3: At 5000 RPM and gear 1.50 (tick 150), physical +1e-7 RPM slack is 3e-9 ticks (> 1e-9).
+    // A 1.5e-11 relative speed perturbation puts t_0 = 150 - 2.25e-9: actual_rpm <= 5000 + 1e-7 is valid,
+    // but tick-space +1e-9 floors rpm_bound to 149 (false unavailable when locked, +0.79 km/h drift when free).
+    let speed_3rd = calc_gear_speed(5000.0, 1.50, 3.50, radius) * 3.6 * (1.0 + 1.5e-11);
+    let target_3rd = DriftWorkingTarget {
+        main_gear: 3,
+        target_rpm: 5000.0,
+        wheel_speed_kmh: speed_3rd,
+        source: "user-target".into(),
+    };
+    let locked_3rd = DriftObservedBounds {
+        source: "user-observed".into(),
+        final_drive: range(3.50, 3.50),
+        gears: [3.0, 2.0, 1.50, 1.0, 0.8, 0.6]
+            .into_iter()
+            .map(|g| range(g, g))
+            .collect(),
+    };
+    let res_locked = solve_candidate(6, &p, 5000.0, Some(&target_3rd), Some(&locked_3rd));
+    available(&res_locked, 6, 5000.0);
+    assert_eq!(res_locked.gearing.gears[2], 1.50);
+
+    let free_fd_3rd = DriftObservedBounds {
+        source: "user-observed".into(),
+        final_drive: range(3.50, 3.50),
+        gears: vec![range(0.1, 6.0); 6],
+    };
+    let res_free = solve_candidate(6, &p, 5000.0, Some(&target_3rd), Some(&free_fd_3rd));
+    available(&res_free, 6, 5000.0);
+    assert_eq!(res_free.gearing.gears[2], 1.50);
+    assert!(
+        res_free.diagnostics["wheelSpeedErrorKmh"]
+            .as_f64()
+            .unwrap()
+            .abs()
+            < 1e-6
+    );
+
+    // Case 2: Unlocked gears at 2500 RPM, gear 0.50 (tick 50), t_0 = 50 - 1.7e-9.
+    // Tick 49 fails 1% speed tolerance (+2.04%); tick 50 is valid (actual_rpm <= 2500 + 1e-7).
+    let speed_6th = calc_gear_speed(2500.0, 0.50, 6.00, radius) * 3.6 * (1.0 + 3.4e-11);
+    let target_6th = DriftWorkingTarget {
+        main_gear: 6,
+        target_rpm: 2500.0,
+        wheel_speed_kmh: speed_6th,
+        source: "user-target".into(),
+    };
+    let free_fd_6th = DriftObservedBounds {
+        source: "user-observed".into(),
+        final_drive: range(6.00, 6.00),
+        gears: vec![range(0.1, 6.0); 6],
+    };
+    let res_6th = solve_candidate(6, &p, 2500.0, Some(&target_6th), Some(&free_fd_6th));
+    available(&res_6th, 6, 2500.0);
+    assert_eq!(res_6th.gearing.gears[5], 0.50);
+
+    // Case 4 (Soundness): At 9000 RPM, gear 0.50, t_0 = 50 - 9e-10 is inside tick +1e-9 slack,
+    // yet actual_rpm = 9000 + 1.62e-7 > 9000 + 1e-7 and must remain unavailable when locked.
+    let speed_over = calc_gear_speed(9000.0, 0.50, 6.00, radius) * 3.6 * (1.0 + 1.8e-11);
+    let target_over = DriftWorkingTarget {
+        main_gear: 6,
+        target_rpm: 9000.0,
+        wheel_speed_kmh: speed_over,
+        source: "user-target".into(),
+    };
+    let locked_over = DriftObservedBounds {
+        source: "user-observed".into(),
+        final_drive: range(6.00, 6.00),
+        gears: [3.0, 2.0, 1.5, 1.0, 0.8, 0.50]
+            .into_iter()
+            .map(|g| range(g, g))
+            .collect(),
+    };
+    let res_over = solve_candidate(6, &p, 9000.0, Some(&target_over), Some(&locked_over));
+    assert_eq!(res_over.gearing.unsupported, Some(true));
+    assert!(res_over.gearing.gears.is_empty());
+}
