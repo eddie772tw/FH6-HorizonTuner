@@ -52,22 +52,24 @@ export const DiscordPresenceStatusCard: React.FC = () => {
             ? t('Connecting to Discord')
             : status.state === 'error'
               ? t('Discord unavailable')
-              : t('Waiting for Discord');
+              : status.state === 'unavailable'
+                ? t('Unavailable')
+                : t('Waiting for Discord');
 
   return (
     <div className="d-flex flex-column gap-2">
       <SettingsItem label={t('Presence Status')} description={t('Shows your current FH6 car and race status in Discord when Discord Desktop is running.')}>
-        <span className="badge text-bg-secondary">{stateLabel}</span>
+        <span className="badge text-bg-secondary" role="status" aria-live="polite">{stateLabel}</span>
       </SettingsItem>
       {status && (
         <div className="d-flex justify-content-end flex-wrap gap-3 text-body-secondary fs-7">
-          <span>{t('Updates')}: {status.updatesSent}</span>
-          <span>{t('Attempts')}: {status.connectionAttempts}</span>
-          <span>{t('Reconnects')}: {status.reconnects}</span>
+          <span>{t('Updates: {count}', { count: status.updatesSent })}</span>
+          <span>{t('Attempts: {count}', { count: status.connectionAttempts })}</span>
+          <span>{t('Reconnects: {count}', { count: status.reconnects })}</span>
         </div>
       )}
       {status?.lastError && (
-        <div className="form-text fs-7 text-warning">
+        <div className="form-text fs-7 text-warning" role="alert">
           {t('Last IPC error')}: <code>{status.lastError}</code>
         </div>
       )}

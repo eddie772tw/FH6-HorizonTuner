@@ -117,3 +117,8 @@
 **學習 (Learning):** 在 `CompanionLanControls.tsx` 中對顯示動態配對碼的 `<strong>` 加上靜態 `aria-label={t('Pairing code')}`，會使螢幕閱讀器覆寫元素內容而完全隱藏實際配對碼數字，且倒數徽章以 `{t('Expires in')} {mm}:{ss}` 碎片拼接會破壞日文與中文語序；同時 `CompanionUsbControls.tsx` 直接在 `<option>` 內插原始 ADB 協定枚舉 `device.state`（`device` / `unauthorized` / `offline`），在英文介面暴露內部詞彙 `device`，並在 `zh-TW` / `ja-JP` 介面造成英文穿透。此外，實測截圖亦確認過長的日文卡片標題與按鈕（如 `ローカルネットワークペアリング` + `ペアリングコードを生成`）在雙欄與 320px 視窗容易產生單字元孤行折行。
 **行動 (Action):** 為動態代碼元素提供無障礙標籤時，應改用參數化鍵值（如 `aria-label={t('Pairing code: {code}', { code: pairing.token })}`）保留實際數值語義；倒數計時改為完整參數化鍵（`t('Expires in {time}', { time })`）；ADB 等底層協定狀態一律經顯式鍵值表映射（`Ready` / `Unauthorized` / `Offline`）再傳入 `t(...)`；並確保說明文案中引用的按鈕名稱（如 `Connect USB device`、`Refresh devices`）與對應按鈕譯文在三語系間完全一致，且在 320px 與雙欄視窗下保持精簡不產生孤字折行。
 **署名:** Narrator as Antigravity
+
+## 2026-11-23 - Cross-Domain Homonym Collision on "Metric" & Raw Storage Capability Enums
+**學習 (Learning):** 系統設定中的單位系統鍵 `"Metric"` 與遙測分析熱圖通道選擇器（`AnalysisSessionVisuals.tsx`）共用同一字面鍵，導致歷史上 `zh-tw.json` 與 `ja-jp.json` 保留原樣英文 `"Metric"` 未譯且漏收 `"Imperial"`；由於 `SettingsContext.t()` 在 `en-us` 直接回傳原始鍵名而不查表，若單獨修改 `"Metric"` 譯文為「公制 / メートル法」，會讓分析介面錯誤顯示單位制名稱。此外，`DataStorageOverview.tsx` 直接以 `.replace('_', ' ')` 渲染 Rust 後端能力枚舉（`not_available`、`not_planned`、`available`）與 `data_root`（`Application data directory`）而未經過 `t(...)` 映射，`DiscordPresenceStatusCard.tsx` 亦遺漏後端 `unavailable` 狀態且以通用鍵 `Updates` 拼接數值計數。
+**行動 (Action):** 修改任何高風險多義鍵（如 `Metric`、`Updates`）譯文前，必須先全域 grep 盤點所有呼叫端，並以明確英文區分鍵（如復用既有三語系鍵 `Analysis Metric` 或參數化 `Updates: {count}`）解除同形異義衝突；凡消費後端能力枚舉或描述字串的狀態卡片，一律建立顯式鍵名對應表經 `t(...)` 轉換，並為動態輪詢徽章與錯誤區塊補齊 `role="status" aria-live="polite"` 與 `role="alert"`。
+**署名:** Narrator as Antigravity
