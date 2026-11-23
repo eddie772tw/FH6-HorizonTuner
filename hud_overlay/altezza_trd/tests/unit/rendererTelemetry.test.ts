@@ -46,7 +46,7 @@ function renderer(style: string) {
   const scope: any = {
     console, Uint8ClampedArray,
     document: { getElementById: (name: string) => name.endsWith('Canvas') ? canvas : container, createElement: () => canvas },
-    HUDCore: { registerStyle: (_name: string, value: any) => { hooks = value; }, init: () => {}, getAverageTireTemperatureC: () => 100 },
+    HUDCore: { registerStyle: (_name: string, value: any) => { hooks = value; }, init: () => {}, getAverageTireTemperatureC: (data: any) => (data.tire_temp_f.reduce((a: number, b: number) => a + b, 0) / 4 - 32) * 5 / 9 },
     HUDArtwork: { loadImage: () => ({ complete: true, naturalWidth: 800, naturalHeight: 300 }), watchCanvas: () => () => {} },
     Image: class { complete = false; naturalWidth = 0; naturalHeight = 0; },
     Path2D: class { arc() {} closePath() {} },
@@ -117,14 +117,61 @@ describe('Toyota native artwork telemetry contracts', () => {
     h.hooks.onFrame(coordinatorFrame('kmh', { EngineMaxRpm: undefined }), {});
     expect(h.state()).toMatchObject({ ceiling: 9000, redline: 8000 });
   });
-  it('keeps missing channels distinct from zero and consumes measured auxiliary channels independently', () => {
+  it('maps boost and four-wheel average/maximum temperatures while preserving missing values', () => {
     const h = renderer('altezza_trd');
     h.hooks.onFrame(coordinatorFrame('mph', { Gear: 0, SpeedMetersPerSecond: 0,
-      oil_temp_c: 93, battery_voltage_v: 13.8, coolant_temp_c: 0 }), {});
-    expect(h.state()).toMatchObject({ gear: 0, speed: 0, oilTempC: 93, voltage: 13.8, coolantTempC: 0 });
+      Boost: 14.5038, TireTemp: [176, 194, 212, 230] }), {});
+    expect(h.state()).toMatchObject({ gear: 0, speed: 0, boostBar: 1, averageTireC: 95, hottestTireC: 110 });
     h.hooks.onFrame(coordinatorFrame('mph', { Gear: undefined, SpeedMetersPerSecond: undefined,
-      oil_temp_c: NaN, battery_voltage_v: '14', coolant_temp_c: null }), {});
-    expect(h.state()).toMatchObject({ gear: null, speed: null, oilTempC: null, voltage: null, coolantTempC: null });
+      Boost: undefined, TireTemp: [176, null, 212, 230] }), {});
+    expect(h.state()).toMatchObject({ gear: null, speed: null, boostBar: null, averageTireC: null, hottestTireC: null });
+    h.hooks.onFrame({ boost_psi: -14.5038, tire_temp_f: [32, 32, 32, 32] }, {});
+    expect(h.state()).toMatchObject({ boostBar: -1, averageTireC: 0, hottestTireC: 0 });
+  });
+  it('consumes raw distance once, recovers only after stale packets, and starts each instance full', () => {
+    const h = renderer('altezza_trd');
+    const frame = (time: number, distance: number, overrides = {}) => coordinatorFrame('kmh',
+      { TimestampMS: time, DistanceTraveled: distance, CarOrdinal: 1, ...overrides });
+    expect(h.state().fuel).toBe(1);
+    h.hooks.onFrame(frame(1000, 50000));
+    h.hooks.onFrame({ ...frame(2000, 75000), distance_m: 99000 });
+    expect(h.state().fuel).toBeCloseTo(.75);
+    h.advance(1000);
+    h.hooks.onFrame(frame(2000, 99999)); // replay cannot consume or keep it fresh
+    expect(h.state().fuel).toBeCloseTo(.75);
+    h.advance(16500);
+    expect(h.state().fuel).toBeCloseTo(1);
+    h.hooks.onFrame(frame(3000, 150000)); // reconnect gap establishes a baseline
+    expect(h.state().fuel).toBe(1);
+    h.hooks.onFrame(frame(4000, 200000));
+    expect(h.state().fuel).toBeCloseTo(.5);
+    h.hooks.onFrame(frame(5000, 0)); // distance reset
+    h.hooks.onFrame(frame(6000, 1000, { CarOrdinal: 2 })); // car change
+    expect(h.state().fuel).toBeCloseTo(.5);
+    h.advance(17000);
+    h.hooks.onFrame(frame(7000, 1000, { CarOrdinal: 2 }));
+    h.advance(18000);
+    h.hooks.onFrame(frame(8000, 1000, { CarOrdinal: 2 }));
+    expect(h.state().fuel).toBeCloseTo(.5); // stationary live stream does not refill
+    h.emit('message', { data: { type: 'hud:destroy' } });
+    expect(h.timers.size).toBe(0);
+    expect(renderer('altezza_trd').state().fuel).toBe(1);
+  });
+  it('handles packet counter wrap and clamps the independent reserve at empty and full', () => {
+    const h = renderer('altezza_trd');
+    const frame = (time: number, distance: number) => coordinatorFrame('kmh',
+      { TimestampMS: time, DistanceTraveled: distance, CarOrdinal: 1 });
+    h.hooks.onFrame(frame(4294967200, 0));
+    h.hooks.onFrame(frame(100, 100000));
+    expect(h.state().fuel).toBe(0);
+    h.hooks.onFrame(frame(200, 200000));
+    expect(h.state().fuel).toBe(0);
+    h.advance(31500);
+    expect(h.state().fuel).toBeCloseTo(.5);
+    h.advance(61500);
+    expect(h.state().fuel).toBe(1);
+    h.emit('pagehide');
+    expect(h.timers.size).toBe(0);
   });
   it.each(['chaser_jzx100', 'soarer_z20'])('maps %s printed RPM scale independently of car maximum', style => {
     const h = renderer(style);

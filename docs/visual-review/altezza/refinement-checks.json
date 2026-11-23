@@ -18,7 +18,11 @@
     "missing",
     "two-digit-gear",
     "overflow",
-    "full-scale"
+    "full-scale",
+    "cold",
+    "hot",
+    "reserve-half",
+    "reserve-recovered"
   ],
   "unitExclusivity": "passed",
   "errors": []

@@ -53,13 +53,13 @@ export function HudGaugeStyleSettings({ config, appUnits, onConfigPatch, onS650C
       {config.hudStyle === LFA_CENTER_RING_STYLE_ID && <LfaExpansionSettingsCard config={config} onChange={onConfigPatch} t={t} />}
       {config.hudStyle === 'r34_mfd' && <R34MfdSettingsCard config={config} onChange={onConfigPatch} t={t} />}
       {config.hudStyle === 'altezza_trd' && (
-        <div>
-          <label htmlFor={`${id}-altezza-center`} className="form-label fs-7 text-body-secondary mb-1">{t('Altezza dial layout')}</label>
-          <select id={`${id}-altezza-center`} className="form-select form-select-sm fw-bold" value={config.altezzaCenterDial ?? 'tach'}
-            onChange={event => onConfigPatch({ hudStyle: 'altezza_trd', altezzaCenterDial: event.target.value === 'speed' ? 'speed' : 'tach' })}>
-            <option value="tach">{t('Center tachometer · left speedometer')}</option>
-            <option value="speed">{t('Center speedometer · left tachometer')}</option>
-          </select>
+        <div className="form-check form-switch">
+          <input id={`${id}-altezza-center`} type="checkbox" role="switch" className="form-check-input"
+            checked={config.altezzaCenterDial !== 'speed'}
+            onChange={event => onConfigPatch({ hudStyle: 'altezza_trd', altezzaCenterDial: event.target.checked ? 'tach' : 'speed' })} />
+          <label htmlFor={`${id}-altezza-center`} className="form-check-label fs-7">{t('Center tachometer')}</label>
+          <p className="text-body-secondary fs-8 mt-1 mb-0">{t(config.altezzaCenterDial === 'speed'
+            ? 'Center speedometer · left tachometer' : 'Center tachometer · left speedometer')}</p>
         </div>
       )}
       {config.hudStyle === 'nfsu2' && (

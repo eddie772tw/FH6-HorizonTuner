@@ -36,7 +36,7 @@
             let speedCenter = false;
             let unit = 'kmh';
             let sweepFrame = null;
-            const telemetry = { speed: null, rpm: 0, gear: null, fuel: null, oilTempC: null, voltage: null, coolantTempC: null, ceiling: 9000, redline: 8000 };
+            const telemetry = { speed: null, rpm: 0, gear: null, fuel: 1, boostBar: null, averageTireC: null, hottestTireC: null, ceiling: 9000, redline: 8000 };
 
             function clamp(value) {
                 return Math.max(0, Math.min(1, value));
@@ -97,6 +97,73 @@
                 if (maximum <= 4000) return 500;
                 if (maximum <= 10000) return 1000;
                 return Math.ceil(maximum / 10000) * 1000;
+            }
+
+            // This independent display reservoir starts full for every loaded HUD instance.
+            // Raw packet distance avoids consuming extrapolated/interpolated frames twice.
+            const reserve = { timestamp: null, distance: null, car: null, fingerprint: null,
+                lastFresh: null, lastTick: performance.now() };
+            const EMPTY_AFTER_METERS = 100000;
+            const REFILL_MS = 60000;
+            const STALE_MS = 1500;
+            function recoverReserve(now) {
+                if (reserve.lastFresh !== null) {
+                    const elapsed = Math.max(0, now - Math.max(reserve.lastTick, reserve.lastFresh + STALE_MS));
+                    telemetry.fuel = clamp(telemetry.fuel + elapsed / REFILL_MS);
+                }
+                reserve.lastTick = now;
+            }
+            function updateReserve(data) {
+                const now = performance.now();
+                recoverReserve(now);
+                const source = data.sourceTelemetry || data;
+                const timestamp = source.TimestampMS ?? source.timestamp_ms;
+                const car = source.CarOrdinal ?? source.car_ordinal ?? null;
+                const distance = data.sourceTelemetry ? source.DistanceTraveled : source.DistanceTraveled ?? data.distance_m;
+                const validDistance = Number.isFinite(distance) && distance >= 0;
+                const hasTimestamp = Number.isInteger(timestamp) && timestamp >= 0 && timestamp < 4294967296;
+                const stale = reserve.lastFresh !== null && now - reserve.lastFresh > STALE_MS;
+                const changedCar = car !== reserve.car;
+                if (hasTimestamp) {
+                    const delta = reserve.timestamp === null ? 1 : (timestamp - reserve.timestamp + 4294967296) % 4294967296;
+                    if (delta === 0) return;
+                    if (delta >= 2147483648 && !stale && !changedCar) return;
+                    // A restarted source establishes a new baseline before it can consume distance.
+                    if (delta >= 2147483648) reserve.distance = null;
+                    reserve.timestamp = timestamp;
+                } else {
+                    // Canonical-only clients may omit packet time. Identical frames cannot keep the meter alive.
+                    const fingerprint = JSON.stringify([distance, data.rpm, data.speed_kmh, data.gear, car]);
+                    if (fingerprint === reserve.fingerprint) return;
+                    reserve.fingerprint = fingerprint;
+                }
+                if (!stale && !changedCar && validDistance && reserve.distance !== null && distance >= reserve.distance) {
+                    telemetry.fuel = clamp(telemetry.fuel - (distance - reserve.distance) / EMPTY_AFTER_METERS);
+                }
+                reserve.distance = validDistance ? distance : null;
+                reserve.car = car;
+                reserve.lastFresh = now;
+            }
+
+            function readAuxiliary(data) {
+                const tires = data.tire_temp_f ?? data.TireTemp;
+                const complete = Array.isArray(tires) && tires.length === 4 && tires.every(Number.isFinite);
+                telemetry.averageTireC = complete ? HUDCore.getAverageTireTemperatureC(data) : null;
+                telemetry.hottestTireC = complete ? (Math.max(...tires) - 32) * 5 / 9 : null;
+                const source = data.sourceTelemetry;
+                const rawBoost = source ? source.Boost : data.Boost;
+                if (source || Object.prototype.hasOwnProperty.call(data, 'Boost')) {
+                    telemetry.boostBar = Number.isFinite(rawBoost) ? rawBoost / 14.5038 : null;
+                } else {
+                    const value = data.boost_bar ?? (Number.isFinite(data.boost_psi) ? data.boost_psi / 14.5038
+                        : Number.isFinite(data.boost_kpa) ? data.boost_kpa / 100 : null);
+                    telemetry.boostBar = Number.isFinite(value) ? value : null;
+                }
+            }
+
+            function tireGauge(x, y, temperature) {
+                const ratio = temperature === null ? 0 : clamp((temperature - 20) / 120);
+                needle(x, y, 25, 115 + ratio * 142, 2, true);
             }
 
             function needle(x, y, length, degrees, width, small = false) {
@@ -200,9 +267,9 @@
                 needle(129, 168, 98, 132 + 147 * (speedCenter ? rpmRatio : speedRatio), 3);
                 needle(423, 148, 65, 4 - 106 * clamp(state.fuel), 3);
                 ctx.restore();
-                needle(269, 110, 25, 115 + 142 * clamp((state.oilTempC - 60) / 90), 2, true);
-                needle(322, 165, 25, 115 + 142 * clamp(state.voltage / 18), 2, true);
-                needle(269, 220, 25, 115 + 142 * clamp((state.coolantTempC - 55) / 75), 2, true);
+                needle(269, 110, 25, 115 + 142 * (state.boostBar === null ? 0 : clamp((state.boostBar + 1) / 3)), 2, true);
+                tireGauge(322, 165, state.averageTireC);
+                tireGauge(269, 220, state.hottestTireC);
                 needle(269, 165, 119, 140 + 234 * (speedCenter ? speedRatio : rpmRatio), 4.6);
                 const gear = state.gear === null ? '-' : state.gear === 0 ? 'R' : state.gear === 11 ? 'N' : String(state.gear);
                 lcd(state.speed === null ? null : state.speed / (unit === 'mph' ? 1.609344 : 1), gear);
@@ -227,11 +294,8 @@
                     const gear = source ? source.Gear : data.gear;
                     telemetry.gear = Number.isInteger(gear) && gear >= 0 && gear <= 11 ? gear : null;
                     telemetry.rpm = Number.isFinite(data.rpm) ? data.rpm : 0;
-                    telemetry.fuel = data.fuel_ratio ?? data.fuel_level ?? null;
-                    // Optional measured channels. Unsupported or missing sensors park at the low stop.
-                    telemetry.oilTempC = Number.isFinite(data.oil_temp_c) ? data.oil_temp_c : null;
-                    telemetry.voltage = Number.isFinite(data.battery_voltage_v) ? data.battery_voltage_v : null;
-                    telemetry.coolantTempC = Number.isFinite(data.coolant_temp_c) ? data.coolant_temp_c : null;
+                    updateReserve(data);
+                    readAuxiliary(data);
                     const maximum = source ? source.EngineMaxRpm : data.max_rpm ?? data.maxRpm;
                     const validMaximum = Number.isFinite(maximum) && maximum >= 1000 && maximum <= 100000;
                     const limit = validMaximum ? maximum : 9000;
@@ -253,13 +317,28 @@
                             return;
                         }
                         const wave = Math.sin(progress * Math.PI);
-                        render({ ...telemetry, speed: 180 * wave, rpm: telemetry.ceiling * wave, fuel: wave, gear: Math.ceil(wave * 6),
-                            oilTempC: 60 + wave * 90, voltage: wave * 18, coolantTempC: 55 + wave * 75 });
+                        render({ ...telemetry, speed: 180 * wave, rpm: telemetry.ceiling * wave, fuel: telemetry.fuel, gear: Math.ceil(wave * 6),
+                            boostBar: -1 + wave * 3, averageTireC: 20 + wave * 120, hottestTireC: 20 + wave * 120 });
                         sweepFrame = requestAnimationFrame(sweep);
                     }
                     sweepFrame = requestAnimationFrame(sweep);
                 }
             });
+            const reserveTimer = setInterval(() => {
+                recoverReserve(performance.now());
+                if (sweepFrame === null) render();
+            }, 100);
+            function cleanup() {
+                clearInterval(reserveTimer);
+                if (sweepFrame !== null) cancelAnimationFrame(sweepFrame);
+                window.removeEventListener('message', handleDestroy);
+                window.removeEventListener('pagehide', cleanup);
+            }
+            function handleDestroy(event) {
+                if (event.data?.type === 'hud:destroy') cleanup();
+            }
+            window.addEventListener('message', handleDestroy);
+            window.addEventListener('pagehide', cleanup);
             HUDCore.init('altezza_trd');
             render();
         })();
