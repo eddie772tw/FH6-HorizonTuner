@@ -75,3 +75,8 @@
 **渲染洞察 (Rendering Learning):** 在 `hud_overlay/shared/telemetry-cards/corner-card.js`（`drawTireTempHistogram`）中，過去四輪胎溫直方圖（`tcTireHist*`）直接內聯於 `renderCorners` 且缺少 `save()` / `try-finally restore()` 與 `Number.isFinite` 消毒；在 `5vh`（`36px` at 720p）高度下，長條高度達 `th - 6*dpr` 會穿透頂部浮動溫度讀數，且 `indicatorX = normTempFactor * tw` 在極低/極高溫時會造成指示線與文字貼邊裁切或與垂直白線重疊。透過預留 `padX`（`Math.min(tw * 0.08, 3 * dpr)`）與頂部讀數保留區 `topPad`（`Math.min(th * 0.36, fontSize + 3 * dpr)`），將指示線起始點對齊 `topPad` 並於極端靠邊對齊時水平偏移 `3 * markerScale`、於基準軸補齊依 `getTempColor(cTemp)` 發光之同軸指示圓點，即可在沿用預分配 `_sharedBins` 零每幀配置下徹底消除文字穿刺與邊界裁切。
 **行動 (Action):** 所有含浮動數值標註的長條分布與時間軸 HUD 畫布應保留與 `fontSize` 比例聯動之頂部讀數淨空區，並在邊緣自動切換對齊方向時附加水平微調間距，同時落實 `try/finally` Context 隔離與 `Number.isFinite` 消毒。
 **署名:** Vector as Antigravity
+
+## 2026-11-20 - Telemetry Cards 羅盤帶狀刻度漸層快取、指針淨空對齊與複合遮罩狀態防護
+**渲染洞察 (Rendering Learning):** 在 `hud_overlay/shared/telemetry-cards/compass.js`（`renderCompass`）的 60Hz 帶狀羅盤畫布中，過去每幀呼叫兩次 `ctx.createLinearGradient()` 建立左右 15% `destination-out` 漸層遮罩（每秒 120 次堆配置），且未將 `destination-out` 遮罩與主繪製納入 `try/finally` `restore()` 防護，一旦中途拋錯會令外部 Context 永久殘留於擦除合成模式；幾何上於預設 `76px` 高度中，中心向下指針尖端（`y=30`）與 `12px` 粗體正方位字元（`baselineY-3=41` 上緣達 `y=29`）直接碰觸重疊，且正方位度數字級（`9px`）反小於 `15°` 次刻度（`10px`）、所有 Y 座標寫死導致緊湊高度裁切。透過以 `(ctx, w, pixelWidth)` 鍵值快取左右漸層物件消除每幀配置、以 `vScale = Math.min(1, h / 76)` 等比配置垂直槽位使指針（`y=18..24.5`）與方位字元（`y=30..42`）維持穩定淨空並補上水平基準軌與中心發光游標刻度、統一 `10px` 等級字體層次及 `Number.isFinite` 航向消毒，即可在嚴格單層 `save()/try-finally restore()` 隔離下兼顧零配置效能與高對比判讀性。
+**行動 (Action):** 所有含 `destination-out` 邊緣羽化遮罩的捲動帶狀 HUD 畫布，應以 `(ctx, width, pixelWidth)` 快取 `CanvasGradient` 實例避免每幀分配，並強制於外層 `try/finally` 保護 `globalCompositeOperation` 與陰影重置，同時依容器高度等比規劃指針與捲動字元的垂直淨空帶。
+**署名:** Vector as Antigravity
