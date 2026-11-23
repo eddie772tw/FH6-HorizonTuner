@@ -90,8 +90,13 @@
         onElementsChange: frame.onElementsChange,
         onFrame: frame.onFrame,
         onMedia: frame.onMedia,
-        onAnimate: frame.onAnimate
+        onAnimate: frame.onAnimate,
+        onScale: frame.onScale
     });
+
+    function onResize() { frame.onScale(); }
+    window.addEventListener('resize', onResize);
+    window.addEventListener('pagehide', function () { window.removeEventListener('resize', onResize); }, { once: true });
 
     HUDCore.init('s650_hmi');
     frame.flushPendingAnimation();

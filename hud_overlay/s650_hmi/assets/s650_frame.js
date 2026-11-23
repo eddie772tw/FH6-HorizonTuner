@@ -36,6 +36,8 @@
             gearCarouselStartedAt: 0,
             heritageGaugeMaximums: { power: 1000, boost: 30 },
             lastRenderTime: 0,
+            hudScale: 1,
+            pixelRatio: 1,
             lastFrame: Object.assign({}, contract.defaultFrame),
             palette: null
         };
@@ -265,6 +267,7 @@
             colors: tokens.colors,
             ergonomics: tokens.ergonomics,
             get theme() { return state.theme; },
+            get pixelRatio() { return state.pixelRatio; },
             get isMetric() { return state.isMetric; },
             get centerWidget() { return state.centerWidget; },
             getMediaInfo: function () { return state.media; },
@@ -293,6 +296,17 @@
             unitLabel: function () { return state.isMetric ? 'KM/H' : 'MPH'; }
         };
 
+        function syncBackingStore() {
+            var dpr = Number(window.devicePixelRatio);
+            var scale = Number(state.hudScale);
+            var ratio = contract.clamp((Number.isFinite(dpr) && dpr > 0 ? dpr : 1) * (Number.isFinite(scale) && scale > 0 ? scale : 1), 1, 3);
+            var pixelWidth = Math.max(1, Math.round(width * ratio));
+            var pixelHeight = Math.max(1, Math.round(height * ratio));
+            if (canvas.width !== pixelWidth || canvas.height !== pixelHeight) { canvas.width = pixelWidth; canvas.height = pixelHeight; }
+            state.pixelRatio = pixelWidth / width;
+            if (typeof ctx.setTransform === 'function') ctx.setTransform(state.pixelRatio, 0, 0, pixelHeight / height, 0, 0);
+        }
+
         function render(data, renderTime) {
             if (!isReady || !state.showGauge) return;
 
@@ -301,7 +315,11 @@
             var redlineRatio = contract.clamp(frame.redlineRpm / maxRpm, 0, 1);
             state.lastRenderTime = renderTime || 0;
             if (!state.palette) refreshPalette();
-            layouts.render(state.theme, frame, state.palette, redlineRatio);
+            syncBackingStore();
+            var canIsolate = typeof ctx.save === 'function' && typeof ctx.restore === 'function';
+            if (canIsolate) { ctx.save(); ctx.shadowBlur = 0; ctx.globalAlpha = 1; }
+            try { layouts.render(state.theme, frame, state.palette, redlineRatio); }
+            finally { if (canIsolate) ctx.restore(); }
         }
 
         function triggerSweep() {
@@ -368,6 +386,11 @@
                 updateStateFromPayload(payload);
                 state.lastFrame = contract.normalizeFrame(data);
                 if (!state.sweepActive && state.showGauge) render(state.lastFrame, 0);
+            },
+            onScale: function (scale) {
+                var parsed = Number(scale);
+                if (Number.isFinite(parsed) && parsed > 0) state.hudScale = parsed;
+                if (isReady && state.showGauge && !state.sweepActive) render(state.lastFrame, 0);
             },
             onAnimate: function () {
                 if (isReady) {

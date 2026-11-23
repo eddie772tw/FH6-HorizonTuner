@@ -1,0 +1,117 @@
+{
+  "target": "hud_overlay/s650_hmi/assets/s650_frame.js, s650_primitives.js, s650_renderer.js",
+  "renderer": "hud_overlay/s650_hmi/index.html -> S650HmiFrame + S650HmiPrimitives + HUDCore",
+  "capturedAt": "2026-11-22T21:14:21.578Z",
+  "browser": "Chrome/151.0.7922.34",
+  "platform": "win32",
+  "background": "#0b111b (neutral dark composite backdrop for transparent HUD canvas)",
+  "telemetrySource": "Synthetic canonical frames dispatched via HUDCore.handleMessage",
+  "scopeNote": "Element clip of #s650Canvas with 16px margin in 1600x720 fixture viewport (scale=1.0 -> finalScale=1.18125); live game & native Windows overlay not tested here.",
+  "captures": [
+    {
+      "file": "s650-heritage67-dpr1.png",
+      "description": "DPR 1 · Heritage '67 雙環儀表（基準解析度、快取漸層表圈與軸心）",
+      "viewport": "1600x720",
+      "dpr": 1,
+      "theme": "heritage67",
+      "centerWidget": "drive",
+      "guiThemeMode": "dark",
+      "hudScale": 1.18125,
+      "canvas": {
+        "width": 1512,
+        "height": 567,
+        "cssRect": {
+          "x": 44,
+          "y": 143,
+          "width": 1512,
+          "height": 567
+        }
+      },
+      "clipPaddingPx": 16
+    },
+    {
+      "file": "s650-heritage67-dpr2.png",
+      "description": "DPR 2 · Heritage '67 HiDPI 原生緩衝（3024×1134）、等比陰影與指針紅光",
+      "viewport": "1600x720",
+      "dpr": 2,
+      "theme": "heritage67",
+      "centerWidget": "drive",
+      "guiThemeMode": "dark",
+      "hudScale": 1.18125,
+      "canvas": {
+        "width": 3024,
+        "height": 1134,
+        "cssRect": {
+          "x": 44,
+          "y": 143,
+          "width": 1512,
+          "height": 567
+        }
+      },
+      "clipPaddingPx": 16
+    },
+    {
+      "file": "s650-foxbody-dpr2-night.png",
+      "description": "DPR 2 · Fox Body '87–'93 夜間模式、HiDPI 刻度與等比指針綠光",
+      "viewport": "1600x720",
+      "dpr": 2,
+      "theme": "foxbody",
+      "centerWidget": "tire_temp",
+      "guiThemeMode": "dark",
+      "hudScale": 1.18125,
+      "canvas": {
+        "width": 3024,
+        "height": 1134,
+        "cssRect": {
+          "x": 44,
+          "y": 143,
+          "width": 1512,
+          "height": 567
+        }
+      },
+      "clipPaddingPx": 16
+    },
+    {
+      "file": "s650-normal-dpr2.png",
+      "description": "DPR 2 · Normal 能量雙環、紅線區與中央檔位/車速字體銳利呈現",
+      "viewport": "1600x720",
+      "dpr": 2,
+      "theme": "normal",
+      "centerWidget": "drive",
+      "guiThemeMode": "dark",
+      "hudScale": 1.18125,
+      "canvas": {
+        "width": 3024,
+        "height": 1134,
+        "cssRect": {
+          "x": 44,
+          "y": 143,
+          "width": 1512,
+          "height": 567
+        }
+      },
+      "clipPaddingPx": 16
+    },
+    {
+      "file": "s650-track-dpr2.png",
+      "description": "DPR 2 · Track 賽道水平斜切轉速條、側欄讀數與左右輔助刻度",
+      "viewport": "1600x720",
+      "dpr": 2,
+      "theme": "track",
+      "centerWidget": "tire_temp",
+      "guiThemeMode": "dark",
+      "hudScale": 1.18125,
+      "canvas": {
+        "width": 3024,
+        "height": 1134,
+        "cssRect": {
+          "x": 44,
+          "y": 143,
+          "width": 1512,
+          "height": 567
+        }
+      },
+      "clipPaddingPx": 16
+    }
+  ]
+}
