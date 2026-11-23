@@ -1,6 +1,14 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 545 330">
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 545 330">
 <title>Altezza chronograph dial plate</title>
 <defs>
+  <!-- Instrument badge, redrawn from the supplied dial photograph. -->
+  <g id="altezza-badge" transform="translate(190 161) scale(.58) skewX(-16)" fill-rule="evenodd">
+    <path d="M0 14 5 0h8l5 14h-6l-1-3H7l-1 3Zm8-6h3L9 3Z"/>
+    <path d="M19 0h5v10h10v4H19z M29 0h18v4h-6v10h-6V4h-6z"/>
+    <path d="M48 0h15v4H53v1.5h8v3.2h-8V10h10v4H48z"/>
+    <path d="M64 0h16v4l-9 6h9v4H63v-4l10-6h-9z M81 0h16v4l-9 6h9v4H80v-4l10-6h-9z"/>
+    <path d="m96 14 5-14h8l5 14h-6l-1-3h-4l-1 3Zm8-6h3l-2-5Z"/>
+  </g>
   <linearGradient id="bezel" x2=".88" y2="1" gradientUnits="objectBoundingBox"><stop stop-color="#faf7e5"/><stop offset=".18" stop-color="#7b7b73"/><stop offset=".40" stop-color="#c7c6ba"/><stop offset=".56" stop-color="#504d48"/><stop offset=".76" stop-color="#bcb9ae"/><stop offset="1" stop-color="#777673"/></linearGradient>
   <linearGradient id="silver" x2=".67" y2="1"><stop stop-color="#f2efe2"/><stop offset=".34" stop-color="#b5b4ac"/><stop offset=".59" stop-color="#e0dfd5"/><stop offset="1" stop-color="#968e80"/></linearGradient>
   <radialGradient id="face" cx="42%" cy="38%" r="72%"><stop stop-color="#35383b"/><stop offset=".75" stop-color="#23252a"/><stop offset="1" stop-color="#101216"/></radialGradient>
@@ -96,9 +104,9 @@
 <text x="269.0" y="197.0" font-size="8" fill="#e2e3df" >H</text>
 <path d="M-1-6v9m1-7h3m-3 3h3m-9 6q2-2 4 0t4 0t4 0" transform="translate(282 221)" stroke="#d3d7d8" fill="none" stroke-width="1.1"/>
 <g class="tach">
-<text x="219.0" y="165.0" font-size="13" fill="#322f2c" font-style="italic" textLength="60" lengthAdjust="spacingAndGlyphs">ALTEZZA</text>
+<use xlink:href="#altezza-badge" fill="#322f2c"/>
 </g>
 <g class="speed">
-<text x="219.0" y="165.0" font-size="13" fill="#ebece6" font-style="italic" textLength="60" lengthAdjust="spacingAndGlyphs">ALTEZZA</text>
+<use xlink:href="#altezza-badge" fill="#ebece6"/>
 </g>
 </svg>
