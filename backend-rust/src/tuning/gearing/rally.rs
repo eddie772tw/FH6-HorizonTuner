@@ -8,8 +8,15 @@ use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::f64::consts::PI;
 
+fn is_shape_limited(gears: &[f64], step: f64) -> bool {
+    (gears[0] - 2.7).abs() > 0.005 || gears.windows(2).any(|g| (g[1] / g[0] - step).abs() > 0.01)
+}
+
 /// Refresh only selected-output diagnostics; targets come from the canonical solve.
 pub fn adjusted_diagnostics(result: &GearingResult, original: &Value) -> Value {
+    if !original.is_object() {
+        return json!({"modelId": "aego-rally-joint", "modelVersion": "aego-rally-joint/v1", "status": "unavailable", "reason": "Adjusted Rally ratios require backend model diagnostics"});
+    }
     let mut d = original.clone();
     if !respects_hard_targets(result, original) {
         d["status"] = json!("unavailable");
@@ -28,14 +35,19 @@ pub fn adjusted_diagnostics(result: &GearingResult, original: &Value) -> Value {
     d["actualSpeedKmh"] = json!(actual);
     d["endpointErrorKmh"] = json!(actual - d["targetSpeedKmh"].as_f64().unwrap());
     d["actualTotalRatio"] = json!(result.final_drive * result.gears.last().unwrap());
-    let step = d["preferredStepRatio"].as_f64().unwrap();
-    let limited = (result.gears[0] - 2.7).abs() > 0.005
-        || result
-            .gears
-            .windows(2)
-            .any(|g| (g[1] / g[0] - step).abs() > 0.01);
-    d["shapePreferenceLimited"] = json!(limited);
-    d["status"] = json!(if limited { "limited" } else { "available" });
+    d.as_object_mut().map(|map| map.remove("reason"));
+    let limited = original["preferredStepRatio"]
+        .as_f64()
+        .filter(|v| v.is_finite() && *v > 0.0)
+        .map(|step| is_shape_limited(&result.gears, step));
+    if let Some(limited) = limited {
+        d["shapePreferenceLimited"] = json!(limited);
+    }
+    d["status"] = json!(if limited == Some(true) {
+        "limited"
+    } else {
+        "available"
+    });
     d["outsideModelFinalDrivePrior"] = json!(result.final_drive < 2.0 || result.final_drive > 6.5);
     d["finalDrive"] = json!(result.final_drive);
     d["gears"] = json!(result.gears);
@@ -58,6 +70,7 @@ fn ticks(range: &RatioRange) -> Option<(i64, i64)> {
         && range.max.is_finite()
         && range.min > 0.0
         && range.step == 0.01
+        && lo.round() >= 1.0
         && lo <= hi
         && hi <= i32::MAX as f64
         && hi - lo <= 10_000.0
@@ -83,7 +96,10 @@ fn unavailable(reason: &'static str, mut diagnostics: Value) -> CandidateGearing
 /// Revalidate an equivalent allocation using diagnostics rebuilt by this model.
 /// The caller must not pass client-supplied or previously saved diagnostics.
 pub fn respects_hard_targets(gearing: &GearingResult, diagnostics: &Value) -> bool {
-    let Some(count) = diagnostics["gearCount"].as_u64().map(|v| v as usize) else {
+    let Some(count) = diagnostics["gearCount"]
+        .as_u64()
+        .and_then(|v| usize::try_from(v).ok())
+    else {
         return false;
     };
     let positive = |key: &str| {
@@ -100,8 +116,10 @@ pub fn respects_hard_targets(gearing: &GearingResult, diagnostics: &Value) -> bo
     ) else {
         return false;
     };
-    let on_grid =
-        |v: f64| v.is_finite() && v > 0.0 && (v * 100.0 - (v * 100.0).round()).abs() < 1e-7;
+    let on_grid = |v: f64| {
+        let scaled = v * 100.0;
+        v.is_finite() && v > 0.0 && scaled.round() >= 1.0 && (scaled - scaled.round()).abs() < 1e-7
+    };
     if diagnostics["modelVersion"] != "aego-rally-joint/v1"
         || !["available", "limited"]
             .iter()
@@ -303,54 +321,51 @@ pub fn solve_candidate(
         upper.push(cap);
     }
     let mut best: Option<(f64, GearingResult, f64)> = None;
+    let radius = circumference / (2.0 * PI);
     for fd_tick in fd_min..=fd_max {
         let fd = fd_tick as f64 / 100.0;
         // Speed is inverse to the gear ratio: the nearest ratio tick can fail
-        // while its neighbour satisfies the unchanged speed tolerance.
+        // or score worse under 1/ratio convexity than its feasible neighbour.
         let ideal_tick = total / fd * 100.0;
-        let Some(top_tick) = [ideal_tick.round(), ideal_tick.floor(), ideal_tick.ceil()]
-            .into_iter()
-            .map(|tick| (tick as i64).clamp(ranges[count - 1].0, upper[count - 1]))
-            .find(|&tick| {
-                let speed =
-                    calc_gear_speed(rpm, tick as f64 / 100.0, fd, circumference / (2.0 * PI)) * 3.6;
-                speed.is_finite() && speed > 0.0 && (speed - target).abs() <= tolerance + 1e-9
-            })
-        else {
-            continue;
-        };
-        let mut gear_ticks = vec![0; count];
-        gear_ticks[count - 1] = top_tick;
-        for i in (0..count - 1).rev() {
-            let low = ranges[i].0.max(gear_ticks[i + 1] + 1);
-            let preferred = top_tick as f64 / step.powi((count - 1 - i) as i32);
-            gear_ticks[i] = (preferred.round() as i64).clamp(low, upper[i]);
-        }
-        let gears: Vec<f64> = gear_ticks.iter().map(|&v| v as f64 / 100.0).collect();
-        let actual = calc_gear_speed(rpm, gears[count - 1], fd, circumference / (2.0 * PI)) * 3.6;
-        if !actual.is_finite() || actual <= 0.0 || (actual - target).abs() > tolerance + 1e-9 {
-            continue;
-        }
-        let score = (gears[0] / 2.7).ln().powi(2)
-            + gears
-                .windows(2)
-                .map(|g| (g[1] / g[0] / step).ln().powi(2))
-                .sum::<f64>()
-            + ((actual - target) / target).powi(2);
-        if best
-            .as_ref()
-            .is_none_or(|(old_score, _, _)| score < *old_score)
+        let clamp_tick = |t: f64| (t as i64).clamp(ranges[count - 1].0, upper[count - 1]);
+        let primary = clamp_tick(ideal_tick.round());
+        let secondary = clamp_tick(if ideal_tick.round() == ideal_tick.floor() {
+            ideal_tick.ceil()
+        } else {
+            ideal_tick.floor()
+        });
+        for top_tick in std::iter::once(primary).chain((secondary != primary).then_some(secondary))
         {
-            best = Some((
-                score,
-                GearingResult {
-                    final_drive: fd,
-                    gears,
-                    unsupported: None,
-                    unsupported_reason: None,
-                },
-                actual,
-            ));
+            let mut gear_ticks = vec![0; count];
+            gear_ticks[count - 1] = top_tick;
+            for i in (0..count - 1).rev() {
+                let low = ranges[i].0.max(gear_ticks[i + 1] + 1);
+                let preferred = top_tick as f64 / step.powi((count - 1 - i) as i32);
+                gear_ticks[i] = (preferred.round() as i64).clamp(low, upper[i]);
+            }
+            let gears: Vec<f64> = gear_ticks.iter().map(|&v| v as f64 / 100.0).collect();
+            let actual = calc_gear_speed(rpm, gears[count - 1], fd, radius) * 3.6;
+            if !actual.is_finite() || actual <= 0.0 || (actual - target).abs() > tolerance + 1e-9 {
+                continue;
+            }
+            let score = (gears[0] / 2.7).ln().powi(2)
+                + gears
+                    .windows(2)
+                    .map(|g| (g[1] / g[0] / step).ln().powi(2))
+                    .sum::<f64>()
+                + ((actual - target) / target).powi(2);
+            if score.is_finite() && best.as_ref().is_none_or(|(old, _, _)| score < *old - 1e-12) {
+                best = Some((
+                    score,
+                    GearingResult {
+                        final_drive: fd,
+                        gears,
+                        unsupported: None,
+                        unsupported_reason: None,
+                    },
+                    actual,
+                ));
+            }
         }
     }
     let Some((_, gearing, actual)) = best else {
@@ -359,17 +374,16 @@ pub fn solve_candidate(
             diagnostic,
         );
     };
-    diagnostic["status"] = json!("available");
+    let shape_limited = is_shape_limited(&gearing.gears, step);
+    diagnostic["status"] = json!(if shape_limited {
+        "limited"
+    } else {
+        "available"
+    });
     diagnostic["actualSpeedKmh"] = json!(actual);
     diagnostic["endpointErrorKmh"] = json!(actual - target);
     diagnostic["actualTotalRatio"] = json!(gearing.final_drive * gearing.gears[count - 1]);
-    diagnostic["shapePreferenceLimited"] = json!(
-        (gearing.gears[0] - 2.7).abs() > 0.005
-            || gearing
-                .gears
-                .windows(2)
-                .any(|g| (g[1] / g[0] - step).abs() > 0.01)
-    );
+    diagnostic["shapePreferenceLimited"] = json!(shape_limited);
     diagnostic["outsideModelFinalDrivePrior"] =
         json!(gearing.final_drive < model_fd.min || gearing.final_drive > model_fd.max);
     diagnostic["finalDrive"] = json!(gearing.final_drive);
