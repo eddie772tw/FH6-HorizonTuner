@@ -93,6 +93,8 @@ def adjust_page(dev, tab, items, profile, verify_only=False):
                     continue
                 page["source"] = getattr(capture, "name", "")
                 validate(page, tab, items, profile)
+                for warning in page.get("warnings", []):
+                    dev.log(warning)
                 for key in items:
                     unit = page["units"].get(key)
                     if unit and key in observed_units and unit != observed_units[key]:

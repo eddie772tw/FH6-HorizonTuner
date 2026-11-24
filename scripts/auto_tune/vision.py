@@ -218,6 +218,15 @@ def _number(raw):
     return float(m[1]) if m else None
 
 
+def _majority_value(narrow, wide, glyph):
+    """Prefer agreeing OCR crops; the glyph is a third vote, never a veto."""
+    if narrow is not None and narrow == wide:
+        return narrow
+    if glyph is not None and glyph in (narrow, wide):
+        return glyph
+    return None
+
+
 def _rail(im, y):
     # A grey/pink uninterrupted horizontal track differentiates rows from the green headers.
     back = im.pixel(400, y)
@@ -338,6 +347,7 @@ def read_tuning_page(path):
     text = ocr_regions(path, requests, single_line=requests)
     car = identity(text["name"])
     fields, units, rows, selected = {}, {}, {}, None
+    warnings = []
     for i, key in layout:
         if ".axle" in key:
             n = i // 3 * 3
@@ -354,18 +364,13 @@ def read_tuning_page(path):
             continue
         narrow, wide = (_number(text[k]) for k in (f"r{i}", f"wide{i}"))
         glyph = _number(row.get("digits") or "")
-        candidates = {narrow, wide} - {None}
-        if glyph is not None and candidates and glyph not in candidates:
-            raise ValueError(f"字形與 OCR 回讀衝突 {key}: {glyph} / {narrow} / {wide}")
-        value = glyph
-        if narrow is not None and narrow == wide:
-            if glyph is not None and glyph != narrow:
-                raise ValueError(f"字形與兩次 OCR 回讀衝突 {key}: {glyph} / {narrow}")
-            value = narrow
-        elif glyph is None:
-            value = candidates.pop() if len(candidates) == 1 else None
+        value = _majority_value(narrow, wide, glyph)
         if value is None:
-            raise ValueError(f"Unreadable {key}: {row.get('digits')}, {narrow}, {wide}")
+            raise ValueError(f"回讀無多數決 {key}: OCR {narrow} / {wide}，字形 {glyph}")
+        if any(v is not None and v != value for v in (narrow, wide, glyph)):
+            warnings.append(
+                f"回讀多數決 {key}：採用 {value:g}（OCR {narrow} / {wide}，字形 {glyph}）"
+            )
         fields[key] = value
         crop = "heightunit" if key.startswith("height.") else "unit"
         candidates = {_unit(key, text[name]) for name in (crop, crop + "_alt")} - {None}
@@ -377,6 +382,7 @@ def read_tuning_page(path):
         rows=rows,
         selected=selected,
         units=units,
+        warnings=warnings,
         gearCount=len(rails) - 1 if tab == "gears" else None,
         mechBalance=_number(text["balance"]),
         aeroBalance=_number(text["aerobalance"]),
@@ -403,5 +409,7 @@ def select_tuning_tab(device, tab, car=None):
             raise ValueError(f"切換調校頁時車輛不同 {page['car']}")
         if page["page"] == "tuning." + tab:
             page["source"] = path.name
+            for warning in page["warnings"]:
+                device.log(warning)
             return page
     raise ValueError(f"切頁失敗 {page['page']}")

@@ -89,7 +89,10 @@ def run(args):
             parent_pid=args.parent_pid,
         )
         profile = collect_profile(device)
-        profile["carId"] = identify(device, profile["carName"])
+        car_id = identify(device, profile["carName"], profile)
+        if profile.get("carId") is not None and profile["carId"] != car_id:
+            raise ValueError("採集期間遙測車輛編號改變")
+        profile["carId"] = car_id
         device.car_id = profile["carId"]
         state.artifact("profile.json", profile)
         if (

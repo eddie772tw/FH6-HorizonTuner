@@ -101,9 +101,21 @@ fn create_run_dir(base: &Path) -> Result<PathBuf> {
         .duration_since(UNIX_EPOCH)
         .map_err(|e| e.to_string())?
         .as_micros();
-    let dir = base.join(format!("run-{stamp}-{}", std::process::id()));
-    fs::create_dir(&dir).map_err(|e| e.to_string())?;
-    Ok(dir)
+    create_run_dir_at(base, stamp)
+}
+
+fn create_run_dir_at(base: &Path, stamp: u128) -> Result<PathBuf> {
+    // Windows clock resolution can give concurrent runs the same timestamp.
+    // Claim each directory atomically and never reuse another run's files.
+    for attempt in 0..128 {
+        let dir = base.join(format!("run-{stamp}-{}-{attempt}", std::process::id()));
+        match fs::create_dir(&dir) {
+            Ok(()) => return Ok(dir),
+            Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => continue,
+            Err(e) => return Err(e.to_string()),
+        }
+    }
+    Err("Unable to allocate a unique auto-tuning run directory".into())
 }
 
 fn validate_goal(goal: &str, season: &str) -> Result<()> {
@@ -367,6 +379,22 @@ impl Drop for AutoTune {
 }
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn same_timestamp_runs_do_not_share_or_overwrite_files() {
+        use super::*;
+        let root = create_run_dir(&std::env::temp_dir()).unwrap();
+        let first = create_run_dir_at(&root, 42).unwrap();
+        fs::write(first.join("state.json"), "original").unwrap();
+        let second = create_run_dir_at(&root, 42).unwrap();
+        assert_ne!(first, second);
+        assert!(!second.join("state.json").exists());
+        assert_eq!(
+            fs::read_to_string(first.join("state.json")).unwrap(),
+            "original"
+        );
+        fs::remove_dir_all(root).unwrap();
+    }
+
     #[cfg(windows)]
     #[test]
     fn agent_run_shares_exclusion_and_cancellation_without_a_developer_gate() {

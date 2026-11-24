@@ -9,10 +9,32 @@ from unittest.mock import patch
 from scripts.auto_tune.collect import _read_card
 from scripts.auto_tune.shop import forced_induction, read_tire_size, tire_size
 from scripts.auto_tune.slider_digits import read_number
-from scripts.auto_tune.vision import _number, read_tuning_page
+from scripts.auto_tune.vision import _majority_value, _number, read_tuning_page
 
 
 class ShopReadings(unittest.TestCase):
+    def test_ocr_majority_resolves_glyph_conflicts_without_a_veto(self):
+        # Cadillac XTS AWD center differential: actual 65%, glyph incorrectly 85%.
+        for narrow, wide, glyph, expected in [
+            (65, 65, 85, 65),
+            (85, 85, 65, 85),
+            (65, 85, 65, 65),
+            (85, 65, 65, 65),
+            (65, None, 65, 65),
+            (None, 65, 65, 65),
+            (65, 65, None, 65),
+            (0, 0, 8, 0),
+            (-0.1, -0.1, 0.1, -0.1),
+            (65, 85, 55, None),
+            (65, 85, None, None),
+            (65, None, 85, None),
+            (None, None, 65, None),
+            (65, None, None, None),
+            (None, None, None, None),
+        ]:
+            with self.subTest(narrow=narrow, wide=wide, glyph=glyph):
+                self.assertEqual(_majority_value(narrow, wide, glyph), expected)
+
     def test_selected_five_and_six_in_real_game_font(self):
         # Normalized glyphs from the DB5's spring and anti-roll bar readbacks.
         # In the selected front ARB row, a filled-pixel nearest match picked 5 for 6.

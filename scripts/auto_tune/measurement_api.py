@@ -30,9 +30,65 @@ def request(device, path, body=None):
         raise RuntimeError(f"Rust {path} ({error.code}): {detail}") from error
 
 
-def identify(device, visible_name):
+def _live_car_id(device, profile):
+    """Use advancing packets, not a cached menu/previous-car snapshot."""
+    previous = None
+    deadline = time.monotonic() + 1.2
+    try:
+        with telemetry(device.port, timeout=0.4) as receive:
+            while time.monotonic() < deadline:
+                device.guard()
+                frame = receive()
+                ordinal, stamp = frame.get("CarOrdinal"), frame.get("TimestampMS")
+                if (
+                    type(ordinal) is not int
+                    or ordinal <= 0
+                    or type(stamp) is not int
+                    or not 0 <= stamp <= 0xFFFFFFFF
+                ):
+                    previous = None
+                    continue
+                if previous is not None and previous["CarOrdinal"] == ordinal:
+                    delta = (stamp - previous["TimestampMS"]) & 0xFFFFFFFF
+                    if 0 < delta < 0x80000000:
+                        for key, expected in (
+                            ("CarPerformanceIndex", profile.get("performanceIndex")),
+                            (
+                                "DrivetrainType",
+                                {"FWD": 0, "RWD": 1, "AWD": 2}.get(
+                                    profile.get("drivetrain")
+                                ),
+                            ),
+                        ):
+                            if expected is not None and any(
+                                item.get(key) != expected for item in (previous, frame)
+                            ):
+                                raise ValueError("遙測性能指數或驅動形式與目前車卡不符")
+                        device.log(
+                            f"採用即時遙測車輛編號 {ordinal}，不以資料庫車名限制執行"
+                        )
+                        return str(ordinal)
+                previous = frame
+    except (OSError, RuntimeError):
+        pass
+    device.log("未取得有效即時遙測車輛編號，改用車名查詢")
+    return None
+
+
+def identify(device, visible_name, profile=None):
+    live_id = _live_car_id(device, profile or {})
+    if live_id is not None:
+        return live_id
+    return _catalog_id(device, visible_name)
+
+
+def _catalog_id(device, visible_name):
     def name_key(value):
-        return re.sub(r"[^\w]", "", unicodedata.normalize("NFKC", value).casefold())
+        normalized = unicodedata.normalize("NFKC", value).casefold()
+        # The official database abbreviates XTS Limousine as XTS Limo.
+        # Normalize this word only; keep year, make and model identity intact.
+        normalized = re.sub(r"\blimo\b", "limousine", normalized)
+        return re.sub(r"[^\w]", "", normalized)
 
     query = name_key(visible_name)
     if len(query) < 7 or not query[:4].isdigit():
@@ -45,6 +101,22 @@ def identify(device, visible_name):
     if len(matches) != 1:
         raise ValueError(f"車庫車名無法唯一對應車輛編號：{visible_name}")
     return matches[0]
+
+
+def confirm_named_target(device, profile, expected):
+    """A differently spelled target must not veto an available live ordinal."""
+    live_id = _live_car_id(device, profile)
+    if live_id is None:
+        return False
+    try:
+        expected_id = _catalog_id(device, expected)
+    except (ValueError, RuntimeError, OSError):
+        expected_id = None
+    if expected_id is not None and expected_id != live_id:
+        return False
+    profile["carId"] = live_id
+    device.log(f"目標名稱與畫面不同；以遙測編號 {live_id} 確認目前車輛")
+    return True
 
 
 def workflow_input(device, profile):

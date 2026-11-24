@@ -1,10 +1,126 @@
 """Prevent binding a sweep to the wrong car, gear or engine profile."""
 
+from contextlib import nullcontext
 from types import SimpleNamespace
 
 import pytest
 
 from scripts.auto_tune import measurement, measurement_api
+
+
+def feed_identity(monkeypatch, frames):
+    frames = iter(frames)
+
+    def receive():
+        try:
+            return next(frames)
+        except StopIteration:
+            raise TimeoutError from None
+
+    monkeypatch.setattr(
+        measurement_api, "telemetry", lambda *_args, **_kwargs: nullcontext(receive)
+    )
+    return SimpleNamespace(port=8001, guard=lambda: None, log=lambda _: None)
+
+
+@pytest.mark.parametrize(
+    "name", ["2013 Cadillac XTS Limousine", "unlisted localized name", ""]
+)
+def test_live_ordinal_does_not_require_any_catalog_name(monkeypatch, name):
+    frame = dict(
+        CarOrdinal=2128, TimestampMS=100, CarPerformanceIndex=798, DrivetrainType=2
+    )
+    device = feed_identity(monkeypatch, [frame, {**frame, "TimestampMS": 116}])
+    monkeypatch.setattr(
+        measurement_api,
+        "request",
+        lambda *_: pytest.fail("catalog must not gate live identity"),
+    )
+    assert (
+        measurement_api.identify(
+            device, name, dict(performanceIndex=798, drivetrain="AWD")
+        )
+        == "2128"
+    )
+
+
+@pytest.mark.parametrize(
+    "frames",
+    [
+        [],
+        [dict(CarOrdinal=2128, TimestampMS=100)] * 3,
+        [dict(CarOrdinal=2128, TimestampMS=100), dict(CarOrdinal=11, TimestampMS=116)],
+        [dict(CarOrdinal=0, TimestampMS=100), dict(CarOrdinal=0, TimestampMS=116)],
+        [dict(CarOrdinal=2128, TimestampMS=100), dict(CarOrdinal=2128, TimestampMS=90)],
+    ],
+)
+def test_missing_stale_or_unstable_identity_falls_back_to_catalog(monkeypatch, frames):
+    device = feed_identity(monkeypatch, frames)
+    monkeypatch.setattr(
+        measurement_api,
+        "request",
+        lambda *_: {"11": {"display_name": "1964 Aston Martin DB5"}},
+    )
+    assert measurement_api.identify(device, "1964 Aston Martin DB5") == "11"
+
+
+def test_fresh_identity_wraparound_and_wrong_profile(monkeypatch):
+    frame = dict(
+        CarOrdinal=2128,
+        TimestampMS=0xFFFFFFF0,
+        CarPerformanceIndex=798,
+        DrivetrainType=2,
+    )
+    frames = [frame, {**frame, "TimestampMS": 8}]
+    assert (
+        measurement_api._live_car_id(feed_identity(monkeypatch, frames), {}) == "2128"
+    )
+    with pytest.raises(ValueError, match="車卡不符"):
+        measurement_api._live_car_id(
+            feed_identity(monkeypatch, frames), {"performanceIndex": 600}
+        )
+
+
+@pytest.mark.parametrize(
+    "expected, allowed",
+    [
+        ("2013 Cadillac XTS Limo", True),
+        ("another localized spelling", True),
+        ("1964 Aston Martin DB5", False),
+    ],
+)
+def test_target_spelling_is_advisory_but_known_different_ordinal_is_rejected(
+    monkeypatch, expected, allowed
+):
+    monkeypatch.setattr(measurement_api, "_live_car_id", lambda *_: "2128")
+    monkeypatch.setattr(
+        measurement_api,
+        "request",
+        lambda *_: {
+            "2128": {"display_name": "2013 Cadillac XTS Limo"},
+            "11": {"display_name": "1964 Aston Martin DB5"},
+        },
+    )
+    device = SimpleNamespace(log=lambda _: None)
+    assert (
+        measurement_api.confirm_named_target(
+            device, {"carName": "2013 Cadillac XTS Limousine"}, expected
+        )
+        is allowed
+    )
+
+
+def test_identify_limo_alias_keeps_year_and_unique_vehicle_guard(monkeypatch):
+    monkeypatch.setattr(measurement_api, "_live_car_id", lambda *_: None)
+    cars = {"2128": {"display_name": "2013 Cadillac XTS Limo"}}
+    monkeypatch.setattr(measurement_api, "request", lambda *_: cars)
+    assert measurement_api.identify(None, "2013 Cadillac XTS Limousine") == "2128"
+    assert measurement_api.identify(None, "2013 Cadillac XTS Limo") == "2128"
+    with pytest.raises(ValueError, match="無法唯一"):
+        measurement_api.identify(None, "2014 Cadillac XTS Limousine")
+    cars["other"] = {"display_name": "2013 Cadillac XTS Limousine"}
+    with pytest.raises(ValueError, match="無法唯一"):
+        measurement_api.identify(None, "2013 Cadillac XTS Limousine")
 
 
 @pytest.mark.parametrize(
@@ -78,6 +194,7 @@ def test_repeated_udp_timestamp_cannot_keep_driving(monkeypatch):
 
 
 def test_agent_wrong_car_stops_before_upgrade_or_tuning_input(monkeypatch):
+    monkeypatch.setattr(measurement_api, "_live_car_id", lambda *_: None)
     from contextlib import nullcontext
 
     from scripts.auto_tune import collect
@@ -106,6 +223,7 @@ def test_parent_exit_stops_before_checking_or_sending_game_input():
 
 
 def test_catalog_short_name_requires_unique_match(monkeypatch):
+    monkeypatch.setattr(measurement_api, "_live_car_id", lambda *_: None)
     cars = {"11": {"display_name": "1964 Aston Martin DB5 Vantage"}}
     monkeypatch.setattr(measurement_api, "request", lambda *_: cars)
     assert measurement.identify(None, "1964 Aston Martin DB5") == "11"

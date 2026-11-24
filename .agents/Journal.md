@@ -1545,3 +1545,13 @@
 - 最終打包 EXE（SHA-256 6735ca29…）由 MCP 在 developerOptions=false 完成 DB5 Road／Circuit，全流程232.298秒，含三檔不足自動改二檔、15.201秒有效量測及26項最終值讀回；起始底盤已含前次建議值，不能當任意未知起始值的最差耗時。同一 EXE 清空 PATH／隔離環境下18張跨車原圖兩輪36/36通過，11.414秒；只代表此次樣本，不宣稱全車或乾淨VM驗收。詳細摘要保存在 docs/guides/auto-tune-acceptance.json。
 
 - 交付前同步 main 31daaa55 的 Altezza HUD，三份語系以鍵值聯集解衝突並逐鍵證明雙方值保留。同步後完整前端245 files／1759 tests、TypeScript／Vite build、Rust default 346 passed／6 ignored、no-default 334 passed／4 ignored、兩個Cargo fmt及全倉Ruff通過。實機／離線EXE證據仍固定48af554c，自動調校程式未變，不冒稱同步後重跑遊戲。
+
+## 2026-11-24 / 調校回讀改採 OCR 優先多數決（Codex as Codex）
+
+- Cadillac XTS Limousine 的兩張實際失敗畫面中，中央差速器顯示65%，兩個原生OCR裁切均讀65，12×16字形遮罩卻讀85。黑字閾值140使6的上半部形成假封閉孔洞，孔洞數硬篩選排除6；較低閾值60～130可讀6，但本次依使用者指示先改決策層，不調整字形模板或閾值。
+- 兩個OCR一致即採用；OCR不一致時字形作第三票，至少兩票相同。字形不再有否決權，異議降為操作履歷提示；只有一票／無多數仍停止。兩個裁切共用PP-OCRv6 small，不宣稱為獨立模型信心。參數單位、車輛、頁面及套用後讀回守衛保留。
+- Skills：portable-release-validation、pr-author-maintainer、computer-use。實際Cadillac兩張原圖及既有18張跨車原圖通過；八個工具模組59 passed、3 skipped、54 subtests passed。三個略過案例需未提供的舊DB5目錄，本次另以既有DB5完整工作流原圖驗證。
+- 隨後Cadillac實機跑次72.680秒已通過65%回讀，卻因資料庫`XTS Limo`與遊戲`XTS Limousine`不同而停在Step1。加入完整單字limo→limousine正規化，年份及唯一匹配仍保留；遙測CarOrdinal=2128與資料庫吻合。補錯年份／重複候選拒絕案例後60 passed、3 skipped、54 subtests passed。
+- 最終Cadillac S1 798 Road／Winter打包MCP全流程335.774秒成功，30項保存後讀回；三、四檔有效2.265／4.752秒不足，實際自動升五檔取得8.830秒及16個RPM區間。EXE 11a89781…，完整數值／hash保存在docs/guides/auto-tune-cadillac-acceptance.json。既有升檔分支至此取得實機證據；沒有人工介入成功跑次。
+- Windows CI並行測試揭露微秒時間戳加PID仍可能撞名（os183）；工作目錄改用原子create_dir及AlreadyExists有限重試，不重用既有資料。此修正發生在Cadillac實機驗收後，該EXE不含命名避碰修正，兩者證據分開。
+- 使用者進一步指出車名不保證與資料庫一致：現在以時間戳前進且編號穩定的即時CarOrdinal為主，名稱只在無有效遙測時回退；PI／驅動形式不符或明確指定另一個編號仍拒絕。Cadillac唯讀實測以不存在名稱取得2128；72 passed、3 skipped、54 subtests passed。335.774秒完整跑次先於此追加身分變更，另列證據，沒有因此再改動車輛。

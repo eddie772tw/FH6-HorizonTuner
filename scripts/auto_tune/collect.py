@@ -354,6 +354,8 @@ def _bounds(d, tab, profile, before):
         data = read_tuning_page(_frame(d, tab + "-" + end))
         if data["page"] != before["page"]:
             raise ValueError("量測範圍時頁面改變")
+        for warning in data.get("warnings", []):
+            d.log(warning)
         for key in available:
             row = data["rows"][key]
             if (
@@ -444,7 +446,12 @@ def collect_profile(d):
         expected
         and compact(profile["carName"]).casefold() != compact(expected).casefold()
     ):
-        raise ValueError(f"目標車輛不符：預期 {expected}，目前 {profile['carName']}")
+        from .measurement_api import confirm_named_target
+
+        if not confirm_named_target(d, profile, expected):
+            raise ValueError(
+                f"目標車輛不符：預期 {expected}，目前 {profile['carName']}"
+            )
     d.log(
         f"已確認目前車輛 {profile['carName']} {profile['carClass']}{profile['performanceIndex']}"
     )

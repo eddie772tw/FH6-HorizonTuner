@@ -478,7 +478,7 @@
           "type": "string",
           "minLength": 1,
           "maxLength": 160,
-          "description": "Exact current game vehicle name, e.g. 1964 Aston Martin DB5; mismatch stops before adjusting any values."
+          "description": "Current vehicle name, e.g. 1964 Aston Martin DB5. Fresh telemetry CarOrdinal is authoritative; spelling/catalog mismatches are advisory. A known different target ordinal is rejected. Without a valid live ordinal, the name must match uniquely."
         },
         "requestId": {
           "type": "string",

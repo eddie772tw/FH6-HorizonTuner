@@ -136,7 +136,7 @@ Start arguments:
 }
 ```
 
-Use the exact current game vehicle name. Keep FH6 in the foreground at the festival garage, Cars or Upgrades menu. The controller checks the name before probing or applying tuning parameters; a mismatch stops the run. Agent starts do not attempt to drive an unidentified car back from free roam. Road, Rally and Drag are accepted; Drift still needs manual targets and is rejected.
+Supply the current vehicle name and keep FH6 in the foreground at the festival garage, Cars or Upgrades menu. Fresh, advancing telemetry supplies the authoritative CarOrdinal; spelling, abbreviation and catalog-name mismatches are advisory. The controller still rejects a requested vehicle that resolves to a different ordinal, and cross-checks telemetry PI/drivetrain against the car card. Only when a valid live ordinal is unavailable does it require a unique name match. Agent starts do not attempt to drive an unidentified car back from free roam. Road, Rally and Drag are accepted; Drift still needs manual targets and is rejected.
 
 Measurement starts in manual third gear. A run that reaches the distance limit without high-RPM coverage retries one gear lower; a run with high-RPM coverage but insufficient valid acceleration time retries one gear higher. Each attempt starts from a verified road fast-travel position, uses fresh telemetry and is qualified independently by Rust. There are at most three attempts, without revisiting a gear. Combining brake/reacceleration segments within one pass is not implemented.
 
