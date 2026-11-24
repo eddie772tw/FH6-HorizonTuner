@@ -1,0 +1,100 @@
+{
+  "target": "hud_overlay/classic_jdm/index.html",
+  "renderer": "hud_overlay/classic_jdm/index.html -> ClassicJdmModel + HUDCore",
+  "capturedAt": "2026-11-24T21:07:32.000Z",
+  "browser": "151.0.7922.34",
+  "platform": "win32",
+  "background": "#0b111b (neutral dark composite backdrop for transparent HUD canvas)",
+  "telemetrySource": "Synthetic canonical frames dispatched via HUDCore.handleMessage",
+  "scopeNote": "Element clip of #classicJdmCanvas with 16px margin in 1280x720 fixture viewport; live game & native Windows overlay not tested here.",
+  "captures": [
+    {
+      "file": "classic-jdm-trd-dpr1.png",
+      "description": "DPR 1 · TRD 11,000 RPM 三聯錶基準解析度（9,200 RPM 換檔黃燈 + Gear 4）",
+      "viewport": "1280x720",
+      "dpr": 1,
+      "style": "trd",
+      "defiTheme": "amber",
+      "showTriple": true,
+      "hudScale": 0.7124999999999999,
+      "canvas": {
+        "width": 800,
+        "height": 440,
+        "cssRect": {
+          "x": 680,
+          "y": 376.5,
+          "width": 570,
+          "height": 313.5
+        },
+        "hudScale": 0.7124999999999999
+      },
+      "clipPaddingPx": 16
+    },
+    {
+      "file": "classic-jdm-trd-dpr2.png",
+      "description": "DPR 2 · TRD HiDPI 原生緩衝（雙位數 Gear 10 批次 7-Segment LED + 雙警示燈等比光暈）",
+      "viewport": "1280x720",
+      "dpr": 2,
+      "style": "trd",
+      "defiTheme": "amber",
+      "showTriple": true,
+      "hudScale": 0.7124999999999999,
+      "canvas": {
+        "width": 1600,
+        "height": 880,
+        "cssRect": {
+          "x": 680,
+          "y": 376.5,
+          "width": 570,
+          "height": 313.5
+        },
+        "hudScale": 0.7124999999999999
+      },
+      "clipPaddingPx": 16
+    },
+    {
+      "file": "classic-jdm-defi-amber-dpr2.png",
+      "description": "DPR 2 · Defi Advance BF Amber（Shift Pod 紅光光暈、7-Segment R 檔位與峰值楔形）",
+      "viewport": "1280x720",
+      "dpr": 2,
+      "style": "defi",
+      "defiTheme": "amber",
+      "showTriple": true,
+      "hudScale": 0.7124999999999999,
+      "canvas": {
+        "width": 1600,
+        "height": 880,
+        "cssRect": {
+          "x": 680,
+          "y": 376.5,
+          "width": 570,
+          "height": 313.5
+        },
+        "hudScale": 0.7124999999999999
+      },
+      "clipPaddingPx": 16
+    },
+    {
+      "file": "classic-jdm-defi-white-dpr2-dual.png",
+      "description": "DPR 2 · Defi White 緊湊雙大錶 + scale 2.0 聯合縮放對齊（540×300 邏輯 / 1539×855 實體）",
+      "viewport": "1280x720",
+      "dpr": 2,
+      "style": "defi",
+      "defiTheme": "white",
+      "showTriple": false,
+      "hudScale": 1.4249999999999998,
+      "canvas": {
+        "width": 1539,
+        "height": 855,
+        "cssRect": {
+          "x": 113.96875,
+          "y": 65.140625,
+          "width": 1136.03125,
+          "height": 624.859375
+        },
+        "hudScale": 1.4249999999999998
+      },
+      "clipPaddingPx": 16
+    }
+  ]
+}
