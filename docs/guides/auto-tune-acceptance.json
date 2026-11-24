@@ -431,6 +431,115 @@
     "bins": 16,
     "gear": 3,
     "tuningChanged": false,
-    "scope": "Production measurement with before/after readback; not full automatic tuning."
+    "scope": "Production measurement with before/after readback; not full automatic tuning.",
+    "readbackIdentical": true,
+    "verifiedPages": {
+      "tyres": {
+        "fields": {
+          "pressure.front": 34.0,
+          "pressure.rear": 36.0
+        },
+        "units": {
+          "pressure.front": "psi",
+          "pressure.rear": "psi"
+        },
+        "locked": []
+      },
+      "gears": {
+        "fields": {},
+        "units": {},
+        "locked": [
+          "gearing.finalDrive",
+          "gearing.gear1",
+          "gearing.gear2",
+          "gearing.gear3",
+          "gearing.gear4",
+          "gearing.gear5",
+          "gearing.gear6",
+          "gearing.gear7",
+          "gearing.gear8",
+          "gearing.gear9"
+        ]
+      },
+      "alignment": {
+        "fields": {},
+        "units": {},
+        "locked": [
+          "camber.front",
+          "camber.rear",
+          "toe.front",
+          "toe.rear",
+          "caster.front"
+        ]
+      },
+      "arb": {
+        "fields": {},
+        "units": {},
+        "locked": [
+          "arb.front",
+          "arb.rear"
+        ]
+      },
+      "springs": {
+        "fields": {},
+        "units": {},
+        "locked": [
+          "spring.front",
+          "spring.rear",
+          "height.front",
+          "height.rear"
+        ]
+      },
+      "damping": {
+        "fields": {},
+        "units": {},
+        "locked": [
+          "rebound.front",
+          "rebound.rear",
+          "bump.front",
+          "bump.rear"
+        ]
+      },
+      "aero": {
+        "fields": {
+          "aero_downforce_front": 334.0,
+          "aero_downforce_rear": 528.0
+        },
+        "units": {
+          "aero_downforce_front": "lb",
+          "aero_downforce_rear": "lb"
+        },
+        "locked": []
+      },
+      "brakes": {
+        "fields": {
+          "brake.balance": 50.0,
+          "brake.pressure": 100.0
+        },
+        "units": {
+          "brake.balance": "%",
+          "brake.pressure": "%"
+        },
+        "locked": []
+      },
+      "diff": {
+        "fields": {},
+        "units": {},
+        "locked": [
+          "diff.front.acceleration",
+          "diff.front.deceleration",
+          "diff.rear.acceleration",
+          "diff.rear.deceleration",
+          "diff.center"
+        ]
+      }
+    },
+    "artifactSha256": {
+      "before.json": "cc462e39ac49f81a25f6d39fa6a09a132c456a02312331567b1d9fe84d64ae25",
+      "after.json": "8cd04915a9f8e59425ae84eb85f4994a335aa409f1f433185518916ce844d1ae",
+      "engine-batch.json": "889a225e8ab92da467572b2754b2af07cad3d49e949bac12dfc694097a61b0dc",
+      "sweep-1.json": "9db6cca382d4556c4e5e23c7f346093f8ceefefe1d06280afc4f4950d80172b2",
+      "state.json": "2e3b452f14b4d717fd87b7c3c5eef0ea7d64c426c91580778abdfc1a04215765"
+    }
   }
 }

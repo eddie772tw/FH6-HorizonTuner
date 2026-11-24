@@ -1,6 +1,8 @@
 # 自動調校發行與驗證記錄
 
-日期：2026-11-24。來源為 `codex/auto-tune-native-release`，base `99c4e2dd` 加本功能分支變更；版本仍為 `11.45.27`，未發布新的 Release。
+日期：2026-11-24。來源為 `codex/auto-tune-native-release`，實機及離線驗收來源 commit `48af554c`（base `99c4e2dd`）；版本仍為 `11.45.27`，未發布新的 Release。
+
+交付前另合入 main `31daaa55` 的 Altezza HUD 更新，僅合併三份語系字串衝突，完整保留雙方鍵值；自動調校控制器、OCR 與打包程式未改。下列 EXE 和遊戲數據固定於 `48af554c`，不冒稱同步 main 後重跑遊戲。整合後另重跑前端 build／測試與 Rust 兩種 feature 測試。
 
 ## 本機建置與離線資產
 
@@ -19,7 +21,7 @@
 | Rust backend，locked default features | 346 passed、6 既有 ignored |
 | Rust backend，locked no-default-features | 334 passed、4 既有 ignored |
 | Tauri host | 11 passed |
-| Frontend Vitest，maxWorkers=2 | 245 files、1754 tests passed |
+| Frontend Vitest，maxWorkers=2 | 245 files、1759 tests passed（同步 main 後） |
 | Frontend TypeScript／Vite build | 通過 |
 | 八個 auto_tune 工具測試模組 | 60 passed、43 subtests passed，使用真實 DB5／跨車原圖與發行 DLL |
 | Ruff check／format check | 通過 |

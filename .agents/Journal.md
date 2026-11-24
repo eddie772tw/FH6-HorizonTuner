@@ -1543,3 +1543,5 @@
 - 量測從三檔開始，跑道不足且缺高轉覆蓋時降檔；高轉完整但加速時間不足時升檔。最多三趟且不重複檔位，每趟獨立交由 Rust 資格判斷，不能拼接不合格資料假造覆蓋。實際 DB5 已觸發三檔改二檔；NSX S1 728 三檔第一趟通過，87.674 秒含前後讀值，9.439 秒有效資料及16個轉速區間，所有調校數值前後一致。升檔分支目前只有測試，未在遊戲觸發；斷油後再加速累積方案尚未實作。
 
 - 最終打包 EXE（SHA-256 6735ca29…）由 MCP 在 developerOptions=false 完成 DB5 Road／Circuit，全流程232.298秒，含三檔不足自動改二檔、15.201秒有效量測及26項最終值讀回；起始底盤已含前次建議值，不能當任意未知起始值的最差耗時。同一 EXE 清空 PATH／隔離環境下18張跨車原圖兩輪36/36通過，11.414秒；只代表此次樣本，不宣稱全車或乾淨VM驗收。詳細摘要保存在 docs/guides/auto-tune-acceptance.json。
+
+- 交付前同步 main 31daaa55 的 Altezza HUD，三份語系以鍵值聯集解衝突並逐鍵證明雙方值保留。同步後完整前端245 files／1759 tests、TypeScript／Vite build、Rust default 346 passed／6 ignored、no-default 334 passed／4 ignored、兩個Cargo fmt及全倉Ruff通過。實機／離線EXE證據仍固定48af554c，自動調校程式未變，不冒稱同步後重跑遊戲。

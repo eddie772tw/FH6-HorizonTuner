@@ -3,284 +3,347 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Toyota Altezza TRD Chronograph Cluster</title>
+    <title>Toyota Altezza TRD Chronograph</title>
     <link rel="stylesheet" href="../shared/hud-base.css">
-    <!--
-        [設計決策紀錄 / Design Decision Note]
-        1. 水溫與油溫/油壓資料來源：
-           水溫 (Water / Coolant Temp) 直接採用遙測輪胎溫度 (Tire Temp FL/FR/RL/RR) 之平均值（依 raw °F 契約固定轉 °C；缺資料顯示冷端）；
-           油溫 (Oil Temp) 與油壓 (Oil Pressure) 因 Forza UDP 封包未提供原生感測器數值，暫依轉速比與節氣門/增壓負載驅動之確定性熱力學與油壓代理模型 (Deterministic Proxy Model) 模擬。
-    -->
     <style>
-        .altezza-container {
-            width: 545px;
-            height: 330px;
-            position: relative;
-            pointer-events: none;
+        #altezzaContainer { position: relative; width: 545px; height: 330px; pointer-events: none; }
+        #altezzaPlate, #altezzaCanvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+        .lcd-units {
+            position: absolute; left: 477px; top: 209px; width: 24px; height: 10px;
+            color: #e8b46e; font: 600 8px/10px Arial, sans-serif; text-align: right;
         }
-        #altezzaCanvas {
-            display: block;
-            width: 545px;
-            height: 330px;
-            filter: none;
-        }
+        .lcd-units span { display: none; }
+        #altezzaCanvas[data-speed-unit="kmh"] + .lcd-units .kmh,
+        #altezzaCanvas[data-speed-unit="mph"] + .lcd-units .mph { display: block; }
     </style>
 </head>
 <body>
     <div id="teleCardsMount"></div>
-
     <div class="hud-root-wrapper">
-        <div class="hud-gauge-container altezza-container" id="altezzaContainer">
-            <canvas id="altezzaCanvas" width="545" height="330"></canvas>
+        <div class="hud-gauge-container" id="altezzaContainer">
+            <img id="altezzaPlate" src="assets/chronograph.svg" alt="">
+            <canvas id="altezzaCanvas" width="545" height="330" aria-label="Toyota Altezza chronograph" data-speed-unit="kmh"></canvas>
+            <div class="lcd-units"><span class="kmh">km/h</span><span class="mph">mph</span></div>
         </div>
     </div>
-
     <script src="../shared/hud-core.js"></script>
     <script src="../shared/hud-artwork.js"></script>
     <script>
         (function() {
-            var canvas = document.getElementById('altezzaCanvas');
-            var ctx = canvas.getContext('2d');
-            var container = document.getElementById('altezzaContainer');
+            const canvas = document.getElementById('altezzaCanvas');
+            const ctx = canvas.getContext('2d');
+            const plate = document.getElementById('altezzaPlate');
+            let speedCenter = false;
+            let unit = 'kmh';
+            let sweepFrame = null;
+            const telemetry = { speed: null, rpm: 0, gear: null, fuel: 1, boostBar: null, averageTireC: null, hottestTireC: null, ceiling: 9000, redline: 8000 };
 
-            // The plate silhouette is geometry, never the brightness contour of its lettering.
-            var baseImg = HUDArtwork.loadImage('assets/altezza_clean_base.png', 0);
-            var basePlate = null;
-            var lcdGlyphs = null;
-            var lcdAtlas = new Image();
-            lcdAtlas.onload = function() {
-                lcdGlyphs = document.createElement('canvas');
-                lcdGlyphs.width = lcdAtlas.naturalWidth;
-                lcdGlyphs.height = lcdAtlas.naturalHeight;
-                var glyphContext = lcdGlyphs.getContext('2d');
-                glyphContext.drawImage(lcdAtlas, 0, 0);
-                var glyphPixels = glyphContext.getImageData(0, 0, lcdGlyphs.width, lcdGlyphs.height);
-                for (var i = 0; i < glyphPixels.data.length; i += 4) {
-                    glyphPixels.data[i + 3] *= glyphPixels.data[i] / 255;
-                    glyphPixels.data[i] = 32;
-                    glyphPixels.data[i + 1] = 26;
-                    glyphPixels.data[i + 2] = 23;
-                }
-                glyphContext.putImageData(glyphPixels, 0, 0);
-                render();
-            };
-            lcdAtlas.src = 'assets/res_256.png';
-
-            var isSweeping = false;
-            var sweepRafId = null;
-
-            var telemetry = {
-                speed: 0,
-                rpm: 0,
-                maxRpm: 10000,
-                gear: 1,
-                fuel: 0.75,
-                tempC: 70,
-                oilTempC: 60,
-                oilPressBar: 0
-            };
-
-            function formatGear(g) {
-                var gearNum = Number(g);
-                if (!Number.isFinite(gearNum) || gearNum < 0 || gearNum === 11) return 'N';
-                if (gearNum === 0) return 'R';
-                return String(Math.round(gearNum));
+            function clamp(value) {
+                return Math.max(0, Math.min(1, value));
             }
 
-            function drawNeedle(cx, cy, len, tailLen, angleDeg, color, width, hubR) {
-                var rad = angleDeg * (Math.PI / 180.0);
-                var nx = cx + Math.cos(rad) * len;
-                var ny = cy + Math.sin(rad) * len;
-                var tx = cx - Math.cos(rad) * (tailLen || 0);
-                var ty = cy - Math.sin(rad) * (tailLen || 0);
+            // Cache lettering and ticks at the actual backing resolution until a scale input changes.
+            const tachPlate = document.createElement('canvas');
+            let lastScale = '';
+            function drawTachScale(state) {
+                const key = [speedCenter, state.ceiling, state.redline, canvas.width, canvas.height].join('/');
+                if (key !== lastScale) {
+                    lastScale = key;
+                    tachPlate.width = canvas.width;
+                    tachPlate.height = canvas.height;
+                    const g = tachPlate.getContext('2d');
+                    g.scale(canvas.width / 545, canvas.height / 330);
+                    const x = speedCenter ? 129 : 269, y = speedCenter ? 168 : 165;
+                    const radius = speedCenter ? 104 : 128;
+                    const start = speedCenter ? 132 : 140, span = speedCenter ? 147 : 234;
+                    const angle = rpm => (start + span * rpm / state.ceiling) * Math.PI / 180;
+                    g.translate(x, y);
+                    g.strokeStyle = '#be3428';
+                    g.lineWidth = 6;
+                    g.beginPath();
+                    g.arc(0, 0, radius - 3, angle(state.redline), angle(state.ceiling));
+                    g.stroke();
+                    const major = rpmStep(state.ceiling);
+                    const minor = major / 10;
+                    g.strokeStyle = g.fillStyle = '#f0eadc';
+                    g.font = '600 ' + (speedCenter ? 12 : 16) + 'px sans-serif';
+                    g.textAlign = 'center';
+                    g.textBaseline = 'middle';
+                    for (let rpm = 0; rpm <= state.ceiling; rpm += minor) {
+                        const prominent = rpm % major === 0;
+                        const a = angle(rpm);
+                        const c = Math.cos(a), s = Math.sin(a);
+                        const inner = radius - (prominent ? 8 : 3);
+                        g.lineWidth = prominent ? 1.6 : .85;
+                        g.beginPath();
+                        g.moveTo(c * radius, s * radius);
+                        g.lineTo(c * inner, s * inner);
+                        g.stroke();
+                        if (prominent) {
+                            g.save();
+                            g.translate(c * (radius - 17), s * (radius - 17));
+                            if (!speedCenter) g.rotate(a + Math.PI / 2 + (a < Math.PI || a > 2 * Math.PI ? Math.PI : 0));
+                            g.fillText(String(rpm / 1000), 0, 0);
+                            g.restore();
+                        }
+                    }
+                    g.font = '600 9px sans-serif';
+                    g.fillText('×1000 r/min', speedCenter ? -18 : 48, speedCenter ? 76 : 101);
+                }
+                ctx.drawImage(tachPlate, 0, 0, 545, 330);
+            }
 
+            function rpmStep(maximum) {
+                if (maximum <= 4000) return 500;
+                if (maximum <= 10000) return 1000;
+                return Math.ceil(maximum / 10000) * 1000;
+            }
+
+            // This independent display reservoir starts full for every loaded HUD instance.
+            // Raw packet distance avoids consuming extrapolated/interpolated frames twice.
+            const reserve = { timestamp: null, distance: null, car: null, fingerprint: null,
+                lastFresh: null, lastTick: performance.now() };
+            const EMPTY_AFTER_METERS = 100000;
+            const REFILL_MS = 60000;
+            const STALE_MS = 1500;
+            function recoverReserve(now) {
+                if (reserve.lastFresh !== null) {
+                    const elapsed = Math.max(0, now - Math.max(reserve.lastTick, reserve.lastFresh + STALE_MS));
+                    telemetry.fuel = clamp(telemetry.fuel + elapsed / REFILL_MS);
+                }
+                reserve.lastTick = now;
+            }
+            function updateReserve(data) {
+                const now = performance.now();
+                recoverReserve(now);
+                const source = data.sourceTelemetry || data;
+                const timestamp = source.TimestampMS ?? source.timestamp_ms;
+                const car = source.CarOrdinal ?? source.car_ordinal ?? null;
+                const distance = data.sourceTelemetry ? source.DistanceTraveled : source.DistanceTraveled ?? data.distance_m;
+                const validDistance = Number.isFinite(distance) && distance >= 0;
+                const hasTimestamp = Number.isInteger(timestamp) && timestamp >= 0 && timestamp < 4294967296;
+                const stale = reserve.lastFresh !== null && now - reserve.lastFresh > STALE_MS;
+                const changedCar = car !== reserve.car;
+                if (hasTimestamp) {
+                    const delta = reserve.timestamp === null ? 1 : (timestamp - reserve.timestamp + 4294967296) % 4294967296;
+                    if (delta === 0) return;
+                    if (delta >= 2147483648 && !stale && !changedCar) return;
+                    // A restarted source establishes a new baseline before it can consume distance.
+                    if (delta >= 2147483648) reserve.distance = null;
+                    reserve.timestamp = timestamp;
+                } else {
+                    // Canonical-only clients may omit packet time. Identical frames cannot keep the meter alive.
+                    const fingerprint = JSON.stringify([distance, data.rpm, data.speed_kmh, data.gear, car]);
+                    if (fingerprint === reserve.fingerprint) return;
+                    reserve.fingerprint = fingerprint;
+                }
+                if (!stale && !changedCar && validDistance && reserve.distance !== null && distance >= reserve.distance) {
+                    telemetry.fuel = clamp(telemetry.fuel - (distance - reserve.distance) / EMPTY_AFTER_METERS);
+                }
+                reserve.distance = validDistance ? distance : null;
+                reserve.car = car;
+                reserve.lastFresh = now;
+            }
+
+            function readAuxiliary(data) {
+                const tires = data.tire_temp_f ?? data.TireTemp;
+                const complete = Array.isArray(tires) && tires.length === 4 && tires.every(Number.isFinite);
+                telemetry.averageTireC = complete ? HUDCore.getAverageTireTemperatureC(data) : null;
+                telemetry.hottestTireC = complete ? (Math.max(...tires) - 32) * 5 / 9 : null;
+                const source = data.sourceTelemetry;
+                const rawBoost = source ? source.Boost : data.Boost;
+                if (source || Object.prototype.hasOwnProperty.call(data, 'Boost')) {
+                    telemetry.boostBar = Number.isFinite(rawBoost) ? rawBoost / 14.5038 : null;
+                } else {
+                    const value = data.boost_bar ?? (Number.isFinite(data.boost_psi) ? data.boost_psi / 14.5038
+                        : Number.isFinite(data.boost_kpa) ? data.boost_kpa / 100 : null);
+                    telemetry.boostBar = Number.isFinite(value) ? value : null;
+                }
+            }
+
+            const TIRE_MIN_C = 70;
+            const TIRE_RANGE_C = 40;
+            function tireFraction(temperature) {
+                return temperature === null ? 0 : clamp((temperature - TIRE_MIN_C) / TIRE_RANGE_C);
+            }
+            function tireGauge(x, y, temperature) {
+                const ratio = tireFraction(temperature);
+                needle(x, y, 25, 115 + ratio * 142, 2, true);
+            }
+
+            function needle(x, y, length, degrees, width, small = false) {
                 ctx.save();
-                ctx.strokeStyle = color;
-                ctx.lineWidth = width;
-                ctx.lineCap = 'round';
-                ctx.shadowColor = color;
-                ctx.shadowBlur = 5;
-
+                ctx.translate(x, y);
+                ctx.rotate(degrees * Math.PI / 180);
+                ctx.fillStyle = small ? '#d5dce3' : '#cf382e';
+                ctx.strokeStyle = small ? '#363b40' : '#792a27';
+                ctx.lineWidth = .8;
                 ctx.beginPath();
-                ctx.moveTo(tx, ty);
-                ctx.lineTo(nx, ny);
+                ctx.moveTo(-6, -width / 2);
+                ctx.lineTo(length, -.6);
+                ctx.lineTo(length, .6);
+                ctx.lineTo(-6, width / 2);
+                ctx.closePath();
+                ctx.fill();
                 ctx.stroke();
-
-                if (hubR) {
-                    ctx.fillStyle = '#18191d';
-                    ctx.strokeStyle = '#3a3d45';
-                    ctx.lineWidth = 1.2;
-                    ctx.shadowBlur = 0;
-                    ctx.beginPath();
-                    ctx.arc(cx, cy, hubR, 0, Math.PI * 2);
-                    ctx.fill();
-                    ctx.stroke();
-                }
-
+                ctx.fillStyle = small ? '#272a2f' : '#222328';
+                ctx.beginPath();
+                ctx.arc(0, 0, small ? 3.5 : 8, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = small ? '#c2c5c7' : '#ffba99';
+                ctx.beginPath();
+                ctx.moveTo(-4, -.7);
+                ctx.lineTo(length - 1, -.7);
+                ctx.stroke();
                 ctx.restore();
             }
 
-            function drawLcdText(text, cx, cy, size, advance) {
-                if (!lcdGlyphs) return;
-                var x = cx - ((text.length - 1) * advance + size) / 2;
-                for (var i = 0; i < text.length; i++) {
-                    var code = text.charCodeAt(i);
-                    ctx.drawImage(lcdGlyphs, (code % 16) * 64, Math.floor(code / 16) * 64,
-                        64, 64, x + i * advance, cy - size / 2, size, size);
-                }
-            }
-
-            function render() {
-                ctx.clearRect(0, 0, 545, 330);
-
-                if (basePlate) {
-                    ctx.drawImage(basePlate, 0, 0);
-                }
-                // Keep the original artwork/needle coordinates inside a padded viewport.
-                ctx.save();
-                ctx.translate(20, 20);
-
-                // 1. Subdial 1: Water Temp (Pivot: 266, 91), left-half scale 70..130 C (125..235 deg)
-                var wtRatio = Math.min(1.0, Math.max(0.0, (telemetry.tempC - 55.0) / 75.0));
-                var wtAngle = 125.0 + wtRatio * 110.0;
-                drawNeedle(266, 91, 24, 4, wtAngle, '#ff6622', 1.8, 4.5);
-
-                // 2. Subdial 2: Oil Temp (Pivot: 325, 149), left-half scale 60..140 C (120..240 deg)
-                var otRatio = Math.min(1.0, Math.max(0.0, (telemetry.oilTempC - 55.0) / 90.0));
-                var otAngle = 120.0 + otRatio * 120.0;
-                drawNeedle(325, 149, 24, 4, otAngle, '#ff6622', 1.8, 4.5);
-
-                // 3. Subdial 3: Oil Press (Pivot: 266, 207), left-half scale 0..8 x100kPa (120..240 deg)
-                var opRatio = Math.min(1.0, Math.max(0.0, telemetry.oilPressBar / 9.0));
-                var opAngle = 120.0 + opRatio * 120.0;
-                drawNeedle(266, 207, 24, 4, opAngle, '#ff6622', 1.8, 4.5);
-
-                // 4. Main Center Tachometer (Pivot: 266, 148), 0..10,000 RPM (126..414 deg, 5 at 270 deg)
-                var rpmRatio = Math.min(1.0, Math.max(0.0, telemetry.rpm / 10000.0));
-                var tachAngle = 126.0 + rpmRatio * 288.0;
-                drawNeedle(266, 148, 92, 16, tachAngle, rpmRatio > 0.85 ? '#ff1e38' : '#ff5511', 3.0, 11);
-
-                // 5. Left Speedometer (Pivot: 105, 149), 0..260 km/h (90..270 deg)
-                var spdRatio = Math.min(1.0, Math.max(0.0, telemetry.speed / 260.0));
-                var spdAngle = 90.0 + spdRatio * 180.0;
-                drawNeedle(105, 149, 64, 12, spdAngle, '#ff5511', 2.5, 9);
-
-                // 6. Right Fuel Level (Pivot: 435, 215), E at 360 deg (3:00), F at 270 deg (12:00)
-                var fuelRatio = Math.min(1.0, Math.max(0.0, telemetry.fuel));
-                var fuelAngle = 360.0 - fuelRatio * 90.0;
-                drawNeedle(435, 215, 38, 6, fuelAngle, '#ff5511', 2.2, 7);
-
-                // 7. Original res_256 LCD glyphs, centered inside the two baked display windows.
-                drawLcdText(formatGear(telemetry.gear), 134, 232, 32, 20);
-
-                var now = new Date();
-                var hh = String(now.getHours()).padStart(2, '0');
-                var mm = String(now.getMinutes()).padStart(2, '0');
-                drawLcdText(hh + ':' + mm, 460, 248, 20, 12);
-                ctx.restore();
-            }
-
-            baseImg.onload = function() {
-                basePlate = document.createElement('canvas');
-                basePlate.width = 545;
-                basePlate.height = 330;
-                var plate = basePlate.getContext('2d');
-                plate.translate(20, 20);
-                var silhouette = new Path2D();
-                // Include the outer numerals, tick tips and labels, with breathing room.
-                silhouette.arc(105, 149, 108, 0, Math.PI * 2);
-                silhouette.moveTo(418, 149);
-                silhouette.arc(266, 149, 152, 0, Math.PI * 2);
-                silhouette.moveTo(510, 215);
-                silhouette.arc(435, 215, 75, 0, Math.PI * 2);
-                silhouette.rect(115, 215, 39, 40);
-                silhouette.rect(407, 239, 88, 34);
-                // One union fill avoids increasing opacity where circles overlap.
-                plate.fillStyle = 'rgba(8, 10, 15, 0.5)';
-                plate.fill(silhouette);
-                plate.drawImage(baseImg, 0, 0, 505, 276);
-                render();
+            // One 14 × 26 cell defines the electrode proportions at every size.
+            // The extra strokes allow full-height N and R in the same segmented display.
+            const electrodes = [
+                [[2, 0], [12, 0], [13, 1.5], [11, 3], [3, 3], [1, 1.5]],
+                [[12, 3], [14, 2], [14, 11], [12.5, 12.5], [11, 11], [11, 5]],
+                [[12.5, 13.5], [14, 15], [14, 24], [12, 23], [11, 21], [11, 15]],
+                [[3, 23], [11, 23], [13, 24.5], [12, 26], [2, 26], [1, 24.5]],
+                [[1.5, 13.5], [3, 15], [3, 21], [2, 23], [0, 24], [0, 15]],
+                [[0, 2], [2, 3], [3, 5], [3, 11], [1.5, 12.5], [0, 11]],
+                [[3, 11.5], [11, 11.5], [12.5, 13], [11, 14.5], [3, 14.5], [1.5, 13]],
+                [[3.5, 4], [5.5, 4.5], [10.5, 21], [8.5, 20.5]],
+                [[7, 15], [9, 15], [11, 21], [10, 23]]
+            ];
+            const glyphs = {
+                '0': '012345', '1': '12', '2': '01643', '3': '01623', '4': '5612',
+                '5': '05623', '6': '056423', '7': '012', '8': '0123456', '9': '012356',
+                R: '015648', N: '12457', H: '12456', I: '12', '-': '6'
             };
+            function lcdCharacters(text, right, top, height) {
+                const scale = height / 26;
+                const advance = 19;
+                ctx.save();
+                ctx.translate(right - ((text.length - 1) * advance + 14) * scale, top);
+                ctx.scale(scale, scale);
+                for (const char of text) {
+                    const active = glyphs[char] || glyphs['-'];
+                    electrodes.forEach((polygon, index) => {
+                        // Faint unlit electrodes are visible through the tinted glass.
+                        if (index > 6 && !active.includes(String(index))) return;
+                        const lit = active.includes(String(index));
+                        ctx.fillStyle = lit ? '#ffe49b' : 'rgba(85, 31, 12, .035)';
+                        ctx.shadowColor = 'rgba(255, 165, 58, .55)';
+                        ctx.shadowBlur = lit ? 1.8 * scale : 0;
+                        ctx.beginPath();
+                        polygon.forEach(([x, y], point) => point ? ctx.lineTo(x, y) : ctx.moveTo(x, y));
+                        ctx.closePath();
+                        ctx.fill();
+                    });
+                    ctx.translate(advance, 0);
+                }
+                ctx.restore();
+            }
+
+            function lcd(value, gear) {
+                const speed = value === null ? '---' : value > 999 ? 'HI' : String(Math.round(value));
+                ctx.save();
+                // Clip all LCD contents to its glass and the right-hand circular aperture.
+                ctx.beginPath();
+                ctx.arc(408, 168, 108, 0, Math.PI * 2);
+                ctx.clip();
+                ctx.beginPath();
+                ctx.rect(397, 179, 117, 96);
+                ctx.clip();
+                lcdCharacters(gear, 495, 182, 15);
+                lcdCharacters(speed, 473, 211, 34);
+                canvas.setAttribute('data-speed-unit', unit === 'mph' ? 'mph' : 'kmh');
+                ctx.restore();
+            }
+
+            function render(state = telemetry) {
+                ctx.clearRect(0, 0, 545, 330);
+                const speedRatio = clamp(state.speed / 180);
+                const rpmRatio = clamp(state.rpm / state.ceiling);
+                drawTachScale(state);
+                // Side instruments sit behind the central bezel, including their hands and hubs.
+                ctx.save();
+                ctx.beginPath();
+                ctx.rect(0, 0, 545, 330);
+                ctx.moveTo(405, 165);
+                ctx.arc(269, 165, 136, 0, Math.PI * 2);
+                ctx.clip('evenodd');
+                needle(129, 168, 98, 132 + 147 * (speedCenter ? rpmRatio : speedRatio), 3);
+                needle(423, 148, 65, 4 - 106 * clamp(state.fuel), 3);
+                ctx.restore();
+                needle(269, 110, 25, 115 + 142 * (state.boostBar === null ? 0 : clamp((state.boostBar + 1) / 3)), 2, true);
+                tireGauge(322, 165, state.averageTireC);
+                tireGauge(269, 220, state.hottestTireC);
+                needle(269, 165, 119, 140 + 234 * (speedCenter ? speedRatio : rpmRatio), 4.6);
+                const gear = state.gear === null ? '-' : state.gear === 0 ? 'R' : state.gear === 11 ? 'N' : String(state.gear);
+                lcd(state.speed === null ? null : state.speed / (unit === 'mph' ? 1.609344 : 1), gear);
+            }
 
             HUDCore.registerStyle('altezza_trd', {
                 containerId: 'altezzaContainer',
                 scaleBaseline: 2.1,
                 scaleMultiplier: 0.95,
-                onScale: HUDArtwork.watchCanvas(canvas, render),
-
-                onInit: function() {
+                onScale: HUDArtwork.watchCanvas(canvas, () => render()),
+                onInit: function(config = {}) {
+                    speedCenter = config.altezzaCenterDial === 'speed';
+                    plate.src = 'assets/chronograph.svg' + (speedCenter ? '#speed' : '');
+                    unit = config.effectiveUnits?.speed || config.unit || 'kmh';
                     render();
                 },
-
-                onElementsChange: function(elements) {
-                    if (container && elements && elements.showGauge !== undefined) {
-                        container.style.display = elements.showGauge === false ? 'none' : 'block';
-                    }
-                },
-
-                onFrame: function(data, payload) {
+                onFrame: function(data) {
                     if (!data) return;
-                    payload = payload || {};
-                    // The native artwork is permanently labelled km/h.
-                    telemetry.speed = Number(data.speed_kmh || 0);
-                    telemetry.rpm = Number(data.rpm || 0);
-                    telemetry.maxRpm = Number(data.max_rpm || data.maxRpm || payload.redlineRpm || 10000);
-                    telemetry.gear = data.gear !== undefined ? Number(data.gear) : 1;
-                    telemetry.fuel = data.fuel_ratio !== undefined && data.fuel_ratio !== null
-                        ? Number(data.fuel_ratio)
-                        : (data.fuel_level !== undefined ? Number(data.fuel_level) : 0.75);
-
-                    var rpmRatio = Math.min(1, Math.max(0, telemetry.rpm / Math.max(1000, telemetry.maxRpm)));
-                    var throttle = Number(data.throttle || 0);
-                    telemetry.tempC = HUDCore.getAverageTireTemperatureC(data) ?? 0;
-                    if (telemetry.rpm > 0) {
-                        telemetry.oilTempC = Math.min(140, Math.max(60, telemetry.tempC + 8 + rpmRatio * 18 + throttle * 6));
-                        telemetry.oilPressBar = Math.min(8.5, Math.max(1.2, 1.8 + rpmRatio * 5.2 + throttle * 0.8));
-                    } else {
-                        telemetry.oilTempC = 55;
-                        telemetry.oilPressBar = 0;
-                    }
-
-                    if (!isSweeping) {
-                        render();
-                    }
+                    const source = data.sourceTelemetry;
+                    telemetry.speed = Number.isFinite(data.speed_kmh) && (!source || Number.isFinite(source.SpeedMetersPerSecond))
+                        ? Math.max(0, data.speed_kmh) : null;
+                    const gear = source ? source.Gear : data.gear;
+                    telemetry.gear = Number.isInteger(gear) && gear >= 0 && gear <= 11 ? gear : null;
+                    telemetry.rpm = Number.isFinite(data.rpm) ? data.rpm : 0;
+                    updateReserve(data);
+                    readAuxiliary(data);
+                    const maximum = source ? source.EngineMaxRpm : data.max_rpm ?? data.maxRpm;
+                    const validMaximum = Number.isFinite(maximum) && maximum >= 1000 && maximum <= 100000;
+                    const limit = validMaximum ? maximum : 9000;
+                    const step = rpmStep(limit);
+                    telemetry.ceiling = Math.ceil(limit / step) * step;
+                    telemetry.redline = validMaximum && Number.isFinite(data.redlineRpm) && data.redlineRpm > 0
+                        ? Math.min(data.redlineRpm, limit) : Math.max(0, limit - 1000);
+                    unit = data.displayUnits?.speed || unit;
+                    if (sweepFrame === null) render();
                 },
-
                 onAnimate: function() {
-                    if (sweepRafId !== null) cancelAnimationFrame(sweepRafId);
-                    isSweeping = true;
-                    var start = performance.now();
-                    var duration = 1200;
-                    function sweep(t) {
-                        var progress = Math.min(1, (t - start) / duration);
-                        var wave = Math.sin(progress * Math.PI);
-                        telemetry.rpm = wave * 10000;
-                        telemetry.speed = wave * 260;
-                        telemetry.gear = progress < 0.98 ? Math.max(1, Math.min(6, Math.ceil(wave * 6))) : 1;
-                        telemetry.fuel = wave;
-                        telemetry.tempC = 55 + wave * 75;
-                        telemetry.oilTempC = 55 + wave * 85;
-                        telemetry.oilPressBar = wave * 8.5;
-                        render();
-                        if (progress < 1) {
-                            sweepRafId = requestAnimationFrame(sweep);
-                        } else {
-                            isSweeping = false;
-                            sweepRafId = null;
-                            telemetry.rpm = 0;
-                            telemetry.speed = 0;
-                            telemetry.gear = 1;
-                            telemetry.fuel = 0.75;
-                            telemetry.tempC = 55;
-                            telemetry.oilTempC = 55;
-                            telemetry.oilPressBar = 0;
+                    if (sweepFrame !== null) cancelAnimationFrame(sweepFrame);
+                    const start = performance.now();
+                    function sweep(now) {
+                        const progress = clamp((now - start) / 1200);
+                        if (progress === 1) {
+                            sweepFrame = null;
                             render();
+                            return;
                         }
+                        const wave = Math.sin(progress * Math.PI);
+                        render({ ...telemetry, speed: 180 * wave, rpm: telemetry.ceiling * wave, fuel: telemetry.fuel, gear: Math.ceil(wave * 6),
+                            boostBar: -1 + wave * 3, averageTireC: TIRE_MIN_C + wave * TIRE_RANGE_C, hottestTireC: TIRE_MIN_C + wave * TIRE_RANGE_C });
+                        sweepFrame = requestAnimationFrame(sweep);
                     }
-                    sweepRafId = requestAnimationFrame(sweep);
+                    sweepFrame = requestAnimationFrame(sweep);
                 }
             });
-
+            const reserveTimer = setInterval(() => {
+                recoverReserve(performance.now());
+                if (sweepFrame === null) render();
+            }, 100);
+            function cleanup() {
+                clearInterval(reserveTimer);
+                if (sweepFrame !== null) cancelAnimationFrame(sweepFrame);
+                window.removeEventListener('message', handleDestroy);
+                window.removeEventListener('pagehide', cleanup);
+            }
+            function handleDestroy(event) {
+                if (event.data?.type === 'hud:destroy') cleanup();
+            }
+            window.addEventListener('message', handleDestroy);
+            window.addEventListener('pagehide', cleanup);
             HUDCore.init('altezza_trd');
             render();
         })();

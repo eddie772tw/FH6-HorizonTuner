@@ -36,3 +36,5 @@ Halfmoon、Swiss、Rhine 的完成狀態：
 ![窄幅](rhine-lab-light-320-zh-tw-failed.png)
 
 ![窄幅操作履歷與最新截圖](rhine-lab-light-320-zh-tw-failed-history.png)
+
+交付前合入 main `31daaa55` 的 Altezza HUD，新增的語系鍵值及 HUD 設定來源與原擷取 hash 不同；自動調校／開發人員選項的元件、語系值及樣式未改。此圖集固定對應 `48af554c` 的介面來源，沒有將同步 main 後的 hash 回填成原擷取證據。
