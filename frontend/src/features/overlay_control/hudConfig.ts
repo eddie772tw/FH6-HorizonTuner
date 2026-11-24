@@ -76,6 +76,7 @@ export interface HudConfig extends Partial<StackSt8100Settings> {
   lfaManualExpand?: boolean;
   /** LFA only: expand while confirmed lap timing is present. */
   lfaAutoExpand?: boolean;
+  altezzaCenterDial?: 'tach' | 'speed';
   nfsu2Face?: number;
   gamepadLayout?: 'xbox' | 'dualsense';
   gamepadOffsetX?: number;
@@ -147,6 +148,7 @@ export const DEFAULT_HUD_CONFIG: HudConfig = {
   audioHeadCenterOffset: 0,
   lfaManualExpand: DEFAULT_LFA_MANUAL_EXPAND,
   lfaAutoExpand: DEFAULT_LFA_AUTO_EXPAND,
+  altezzaCenterDial: 'tach',
   nfsu2Face: 3,
   gamepadLayout: 'xbox',
   gamepadOffsetX: 0,
