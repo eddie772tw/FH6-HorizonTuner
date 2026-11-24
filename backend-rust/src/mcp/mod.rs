@@ -1,4 +1,4 @@
-//! Model Context Protocol server and read-only FH6 tools/resources.
+//! Model Context Protocol server, FH6 resources and explicit automation tools.
 mod protocol;
 mod resources;
 mod service;

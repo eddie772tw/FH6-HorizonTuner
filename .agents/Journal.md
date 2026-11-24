@@ -1,5 +1,21 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-11-24 / 原生 ONNX OCR 接入與實圖比較（Codex）
+
+- 後續發行／準確度研究採用 portable-release-validation。固定54個答案的開發集，排除驅動／鎖頭圖示，已知單行用rec但badge保留det，7輪由51/54、1510ms改善為53/54、1221ms。這組改了2個ROI，非同ROI只換模型的比較，仍需獨立驗證集。原始ROI隔離DLL測試：bicubic改bilinear＋PixelOffsetModeHalf為52/54（2輪）；不可宣稱等價OpenCV。stats錯讀4.001時confidence仍約.988，不能以高分取代單位／欄位證據。未修改正式OCR預設或發布資產。
+
+- 採用 modular-refactoring、cross-agent-collaboration。現行 OCR 介面新增可選的 C++ DLL／ONNX Runtime 1.32.0 CPU session，PP-OCRv6 small det／rec 常駐，Python 僅以 ctypes 呼叫。預設仍為 Windows OCR；缺少原生資產會明確失敗，不隱式回退。
+- 相同 17 張 DB5 真實截圖、54 個人工轉錄區域：Windows 原始辨識 37/54，原生偵測＋識別 51/54；兩者冷啟動第一張車卡中位數約 765／553 ms，暖機後整批約 481／1542 ms。單行略過偵測約 1243 ms、50/54；已安裝標誌被輸出為簡體是嚴格文字比較失分，不能把 alias 當作模型全對。原生在本批資料更準、暖機後更慢，不能只用冷啟動推論總流程更快。
+- 車卡 ROI 必須排除傳動圖示；扭力窄區域可避免多行 ft·lb 中 l/I 混淆。僅對已安裝狀態接受已安装，不改寫數字。正式調校讀值還有字形與雙區域核對，原始 Windows OCR 的 16/26 並非正式流程只有 16 個值正確。完整入口重播在兩種引擎下均讀回 26 值、車卡與前後胎規。
+- 原生程式的 GDI+ include 需在 windows.h／objidl.h 之後；clang-format 排序須保留這個依賴。實圖回歸與 DLL 建置不代表新一輪遊戲 Step 1～3 或乾淨 Windows 發行驗收；原生資產仍未整合正式發行包。
+
+## 2026-11-24 / Windows 實驗性自動調校（Codex）
+
+- Windows 遊戲換頁期間可能已出現標題卻仍未接受下一個按鍵。用同一張截圖批次辨識分頁、車輛、單位與數值，再決定是否重送切頁。DB5 在防傾桿選取列顯示的 33.60 曾被讀成 33.50，調整後以字形內圈、兩個 OCR 裁切與重新進入調校頁的讀值核對。
+- 檔案輪詢可能在 Windows 短暫阻擋以 rename 發布新截圖或狀態。控制器保留上一份完整檔案，遇到共享鎖後短暫退避；桌面以子程序狀態識別已退出的工作。
+- 車庫也可能持續回傳上一個道路位置的 Data Out。離庫先核對駕駛 HUD，傳送後核對座標與車速，再移至起跑位置。以遙測確認靜止三檔後開始量測，引擎資料與齒比資格沿用 Rust 工作流。
+- 實機盲測以 1964 DB5 B600、Road／Circuit、冬季完成。原生分頁從開始到最後核對共 206.562 秒。三檔採樣 1,190 筆，Rust 接受 13.603 秒，覆蓋 16 個轉速區間。重新開啟調校頁核對了 19 個底盤值與 7 個傳動比，實機證據限於本次車況、語言與顯示設定。
+
 ## 2026-11-17 / #678–#682 合併後邊界修復（Codex as Codex）
 
 - **範圍與技能**：依使用者要求直接修改 `main`；採用 `pr-review-evaluation`、`halfmoon-design-system`、`physics-tuning-math`、`portable-release-validation`、`huge-component-refactoring`。
@@ -1506,3 +1522,24 @@
 - Skills：modular-refactoring、physics-tuning-math、huge-component-refactoring、halfmoon-design-system、agent-governance-audit、pr-author-maintainer、ponytail。
 
 - 最終完整locked Cargo：預設297 passed／3既有ignored，no-default-features 287 passed／2既有ignored，兩者含doc-tests均exit0。前端dist必須固定後再串行跑Cargo：測試中並行Vite build會刪換已索引的hash資源名稱，使最後rustdoc的include_bytes找不到舊檔；停止並行、固定產物後完整重跑通過。fmt／diff、技能validator、24份Markdown相對連結及13個skill ID檢查通過，原主工作區保持乾淨。
+
+## 2026-11-24 / 原生 OCR 分離辨識與跨車驗證（Codex as Codex）
+
+- PP-OCRv6 small＋原生 ONNX Runtime CPU 成為自動調校預設；模型與字典在任何遊戲輸入前驗證並載入，缺資產明確停止。控制器仍為 Python；原生 OCR 接通不等於 installer／portable／OTA 已包含模型。
+- 車卡應於原始解析度依字距切開數字與單位，與整列辨識交叉核對。公升 l 與數字 1 的混淆須用孤立字距及直筆字形證據處理，不可默認補上單位。調校保留字形與獨立區域核對，鎖頭不能當數值。
+- DB5 確定策略後跨車採圖。Integra 首讀已正確讀出「前驅」，卻被只接受 FWD 的白名單拒絕；補精確標籤映射後凍結，再測 NSX。需保留首讀失敗，不能把修正後回歸稱為無調整盲測。Abarth／Integra／NSX 共18張原圖含15對規格、19個調校數值、22個鎖定欄位與3個錯車預覽；最終六輪108/108畫面案例吻合。人工只切車與瀏覽，未改值，結束切回DB5。
+- 跨車回歸 manifest 固定 PNG SHA-256，原圖由 FH6_CROSS_CAR_CAPTURE_DIR 指定。僅驗證1440p繁中英制畫面；未證明其他解析度、語言或全車自動調校。Skills：modular-refactoring、cross-agent-collaboration、portable-release-validation、computer-use。
+- 最終指定六個 auto_tune 測試模組（啟用 DB5／跨車原圖與原生 DLL）32 passed、43 subtests passed，12.07 秒；全倉 Ruff check、format check 與 git diff --check 通過。未修改 Rust 公式、前端畫面或本次重新執行三檔實測。
+
+## 2026-11-24 / 自動調校發行資產與 MCP 共用控制器（Codex as Codex）
+
+- 發行模型改採 Paddle 官方 ONNX archive 與固定版本字典，依 SHA-256 驗證；相同字典不代表模型二進位相同，須重跑跨車原圖。EXE 內附 CPython isolated runtime、原生 adapter、ONNX Runtime CPU、模型與字典，使用者不必設定環境變數。控制器尚未移植為 Rust，不能把原生 OCR 說成完全移除 Python。
+- Tauri 展開並鎖定資產，Rust 後端持有唯一工作、run ID、互斥與停止狀態；桌面與 MCP 共用 owner。開發人員選項獨立成設定段落，只控制實驗分頁；MCP 直接提供四個自動調校工具，不另加功能開關或確認欄位。Agent 使用說明要求先告知實驗性及可能不如原生電腦操作高效。
+- MCP 啟動要求預期車名，在零件／調校輸入前核對；停止要求目前 run ID，舊 ID 不得停止新工作。分頁開關關閉只停止桌面來源工作；MCP 來源不受影響。控制器監看父程序，後端結束時停止並釋放按鍵。
+- 車卡分離辨識必須連同整列的數字前綴核對，不能因單位不明就略過數字衝突；公升誤讀成 1 只能在精確字串及孤立直桿證據成立時修復。數字／單位第二裁切使用不同像素處理，但仍是同一模型，不當成獨立模型正確率證明。
+- 發行驗證 CLI 使用相同資產展開路徑，清空 PATH、移除外部 Python/OCR 設定並禁止驗證子程序連網。空白圖只證明 runtime 可載入，跨車原圖重播才提供辨識證據；兩者皆不能取代遊戲 Step 1～3 驗收。
+- Skills：portable-release-validation、modular-refactoring、halfmoon-design-system、telemetry-udp-protocol、pr-author-maintainer、computer-use。前端 245 files／1754 tests 通過；八個 auto_tune 工具測試模組在真實 DB5／跨車原圖與發行 DLL 下 60 passed、43 subtests passed。
+- 起跑位置改為放大地圖後選取賽事下方道路，傳送後以遙測核對位置、朝向及靜止狀態。游標移到道路也可能觸發地圖位移，因此按快速移動前必須再次核對同一張最後截圖上的道路寬度與唯一圖標；只在移動游標前驗證會留下時序漏洞。子代理離線重現水平移圖後仍發送傳送鍵的負例，補守衛後拒絕，既有 DB5／NSX 原圖仍通過。
+- 量測從三檔開始，跑道不足且缺高轉覆蓋時降檔；高轉完整但加速時間不足時升檔。最多三趟且不重複檔位，每趟獨立交由 Rust 資格判斷，不能拼接不合格資料假造覆蓋。實際 DB5 已觸發三檔改二檔；NSX S1 728 三檔第一趟通過，87.674 秒含前後讀值，9.439 秒有效資料及16個轉速區間，所有調校數值前後一致。升檔分支目前只有測試，未在遊戲觸發；斷油後再加速累積方案尚未實作。
+
+- 最終打包 EXE（SHA-256 6735ca29…）由 MCP 在 developerOptions=false 完成 DB5 Road／Circuit，全流程232.298秒，含三檔不足自動改二檔、15.201秒有效量測及26項最終值讀回；起始底盤已含前次建議值，不能當任意未知起始值的最差耗時。同一 EXE 清空 PATH／隔離環境下18張跨車原圖兩輪36/36通過，11.414秒；只代表此次樣本，不宣稱全車或乾淨VM驗收。詳細摘要保存在 docs/guides/auto-tune-acceptance.json。

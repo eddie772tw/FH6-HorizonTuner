@@ -2,6 +2,7 @@
 pub mod agent_cli;
 pub mod app;
 pub mod assets;
+pub mod auto_tune;
 pub mod companion;
 pub mod companion_hud;
 pub mod companion_theme;

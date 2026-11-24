@@ -4,7 +4,8 @@ import { AppBuildInfo } from './AppBuildInfo';
 import { AppMenu } from './AppMenu';
 import { getWorkspaces, type AppSurface, type AppVariant, type WorkspaceId } from './workspaceManifest';
 
-export function AppHeader({ variant, activeWorkspace, onSelect, onOpenSurface }: {
+export function AppHeader({ variant, activeWorkspace, onSelect, onOpenSurface, developerOptions = false }: {
+  developerOptions?: boolean;
   variant: AppVariant; activeWorkspace: WorkspaceId; onSelect: (workspace: WorkspaceId) => void;
   onOpenSurface: (surface: AppSurface) => void;
 }) {
@@ -15,7 +16,7 @@ export function AppHeader({ variant, activeWorkspace, onSelect, onOpenSurface }:
       <span className="navbar-brand text-primary fw-bold m-0">{t(variant === 'lite' ? 'FH6 HorizonTuner Lite' : 'FH6-Horizon Tuner')}</span>
       <AppBuildInfo />
       <nav className="workspace-tabs workspace-tabs--primary nav" aria-label={t('Workspaces')}>
-        {getWorkspaces(variant).map(workspace => <button key={workspace.id} type="button"
+        {getWorkspaces(variant, undefined, developerOptions).map(workspace => <button key={workspace.id} type="button"
           className={`nav-link ${workspace.id === activeWorkspace ? 'active' : ''}`}
           aria-current={workspace.id === activeWorkspace ? 'page' : undefined} onClick={() => onSelect(workspace.id)}>{t(workspace.label)}</button>)}
       </nav>

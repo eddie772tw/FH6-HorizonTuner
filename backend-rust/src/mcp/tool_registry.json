@@ -434,5 +434,117 @@
       "idempotentHint": true,
       "openWorldHint": false
     }
+  },
+  {
+    "name": "get_auto_tuning_status",
+    "description": "Read availability, the experimental usage notice, latest values, recommendations, operation history, run ID and elapsed time. Before starting, tell the user this feature is experimental and may be less efficient than the agent's native computer-use capability, if available. Developer options do NOT need to be enabled. Requires the packaged Windows desktop running with FH6 in its festival garage and foreground. This changes the selected car's tuning and starts measurement in third gear, retrying in a lower gear for insufficient runway or a higher gear for insufficient acceleration time. Do not use on other cars without user authorization. ",
+    "inputSchema": {
+      "type": "object",
+      "properties": {},
+      "required": [],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "start_auto_tuning",
+    "description": "Before starting, tell the user this feature is experimental and may be less efficient than the agent's native computer-use capability, if available. Developer options do NOT need to be enabled. Requires the packaged Windows desktop running with FH6 in its festival garage and foreground. This changes the selected car's tuning and starts measurement in third gear, retrying in a lower gear for insufficient runway or a higher gear for insufficient acceleration time. Do not use on other cars without user authorization. Explain the notice before use; no separate switch or acknowledgement flag is required. Supply the exact full vehicle name and a unique requestId. Repeating the most recent identical requestId returns its run; a conflicting active run is rejected. Returns immediately; poll status until completed/failed/stopped.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "goal": {
+          "type": "string",
+          "enum": [
+            "Road",
+            "Rally",
+            "Drag"
+          ]
+        },
+        "season": {
+          "type": "string",
+          "enum": [
+            "Spring",
+            "Summer",
+            "Autumn",
+            "Winter"
+          ]
+        },
+        "expectedCarName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160,
+          "description": "Exact current game vehicle name, e.g. 1964 Aston Martin DB5; mismatch stops before adjusting any values."
+        },
+        "requestId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        }
+      },
+      "required": [
+        "goal",
+        "season",
+        "expectedCarName",
+        "requestId"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "stop_auto_tuning",
+    "description": "Request cancellation of the named active run. Keys are released; changes already saved in-game are not rolled back. Poll status for stopped. A different runId is rejected.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "runId": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "runId"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "get_auto_tuning_screenshot",
+    "description": "Read the latest immutable game screenshot for the current run as MCP image content. Does not operate the game. A stale or unknown runId is rejected.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "runId": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "runId"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    }
   }
 ]

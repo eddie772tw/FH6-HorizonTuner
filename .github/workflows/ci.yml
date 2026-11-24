@@ -339,6 +339,9 @@ jobs:
         Copy-Item dist/server-sidecar-x86_64-pc-windows-msvc.exe `
           frontend/src-tauri/bin/server-sidecar-x86_64-pc-windows-msvc.exe -Force
 
+    - name: Prepare offline automated tuning payload
+      run: uv run --no-project --active python scripts/prepare_auto_tune_runtime.py
+
     - name: Build Full Portable Tauri Executable
       env:
         TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
@@ -354,6 +357,9 @@ jobs:
     - name: Preserve Full Portable Executable
       shell: pwsh
       run: Copy-Item frontend/src-tauri/target/release/FH6-HorizonTuner.exe dist/FH6-HorizonTuner.exe -Force
+
+    - name: Verify embedded OCR without external runtime or network
+      run: uv run --no-project --active python scripts/smoke_auto_tune_release.py --exe dist/FH6-HorizonTuner.exe --evidence smoke-evidence/auto-tune
 
     - name: Build Lite Portable Tauri Executable
       run: >

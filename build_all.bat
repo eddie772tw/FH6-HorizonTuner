@@ -14,6 +14,10 @@ echo [BUILD] Release Rust sidecar
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts\build_backend.ps1
 if errorlevel 1 goto :failure
 
+echo [BUILD] Offline automated tuning runtime
+call uv run --no-project --python .venv\Scripts\python.exe python scripts\prepare_auto_tune_runtime.py
+if errorlevel 1 goto :failure
+
 cd /D "%~dp0frontend"
 call :variant "src-tauri/tauri.full.conf.json" "%~dp0dist\FH6-HorizonTuner.exe"
 if errorlevel 1 goto :failure

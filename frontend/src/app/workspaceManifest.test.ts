@@ -2,6 +2,13 @@ import { describe, expect, it } from 'vitest';
 import { getAppCapabilities, getWorkspaces, permitsIntent, resolveWorkspace, type AppVariant } from './workspaceManifest';
 
 describe('workspace capabilities', () => {
+  it('projects automated tuning only in Full with developer options enabled', () => {
+    expect(getWorkspaces('full', undefined, true).map(item => item.id)).toContain('auto-tune');
+    expect(resolveWorkspace('full', 'auto-tune')).toBe('live');
+    expect(resolveWorkspace('full', 'auto-tune', undefined, true)).toBe('auto-tune');
+    expect(resolveWorkspace('lite', 'auto-tune', undefined, true)).toBe('live');
+    expect(resolveWorkspace('full', 'tune', undefined, true)).toBe('tune');
+  });
   it('keeps Full workflows while rejecting stale HUD navigation on LAN builds', () => {
     const runtime = { hudOverlay: false };
     expect(getWorkspaces('full', runtime).map(item => item.id)).toEqual(['live', 'tune', 'sessions']);
