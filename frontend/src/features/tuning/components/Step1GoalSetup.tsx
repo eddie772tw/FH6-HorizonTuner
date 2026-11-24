@@ -83,7 +83,7 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
       <div className="workspace-section d-flex justify-content-between align-items-center gap-2 flex-wrap">
         <div>
           <h3 className="workspace-section-heading mb-1">
-            Step 1: {t('Define tuning goals & check parameters')}
+            {t('Step 1: Define tuning goals & check parameters')}
           </h3>
         </div>
         <div className="d-flex gap-2 align-items-center">
@@ -203,7 +203,7 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
                   precision={0}
                   min={200}
                   max={10000}
-                  placeholder="e.g. 1350"
+                  placeholder={t('e.g. {value}', { value: '1350' })}
                 />
               </div>
             </div>
@@ -219,7 +219,7 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
                   precision={1}
                   min={1}
                   max={99}
-                  placeholder="e.g. 52.0"
+                  placeholder={t('e.g. {value}', { value: '52.0' })}
                 />
               </div>
             </div>
@@ -272,7 +272,7 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
                   className="form-select form-select-sm"
                   style={selectStyle}
                 >
-                  <option value="NA">{t('NA')}</option>
+                  <option value="NA">{t('Naturally Aspirated (NA)')}</option>
                   <option value="Supercharger">{t('Supercharger')}</option>
                   <option value="Turbo">{t('Single Turbo')}</option>
                   <option value="TwinTurbo">{t('Twin Turbo')}</option>
@@ -291,7 +291,7 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
                   precision={0}
                   min={10}
                   max={3000}
-                  placeholder="e.g. 450"
+                  placeholder={t('e.g. {value}', { value: '450' })}
                 />
               </div>
             </div>
@@ -307,7 +307,7 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
                   precision={0}
                   min={10}
                   max={3000}
-                  placeholder="e.g. 520"
+                  placeholder={t('e.g. {value}', { value: '520' })}
                 />
               </div>
             </div>

@@ -4,7 +4,7 @@ import { createRoot } from 'react-dom/client';
 import { it, expect, vi } from 'vitest';
 import { DecimalInput } from './components/common/DecimalInput';
 import { Step1GoalSetup } from './features/tuning/components/Step1GoalSetup';
-vi.mock('./context/SettingsContext',()=>({useSettings:()=>({settings:{units:{weight:'kg',power:'hp',torque:'nm'}},t:(x:string)=>x,convertSpringRate:(value:number)=>({value,label:'kgf/mm'}),convertSpringRateToKgfmm:(x:number)=>x,convertHeight:(value:number)=>({value,label:'cm'}),convertHeightToCm:(x:number)=>x,convertForce:(value:number)=>({value,label:'kgf'}),convertForceToKgf:(x:number)=>x,convertPower:(value:number)=>({value:value/745.7,label:'hp'}),convertTorque:(value:number)=>({value,label:'Nm'}),convertTirePressureFromPsi:(value:number)=>({value,label:'psi'})})}));
+vi.mock('./context/SettingsContext',()=>({useSettings:()=>({settings:{units:{weight:'kg',power:'hp',torque:'nm'}},t:(x:string,p?:Record<string,string|number>)=>p?x.replace(/\{(\w+)\}/g,(_,k)=>String(p[k]??'')):x,convertSpringRate:(value:number)=>({value,label:'kgf/mm'}),convertSpringRateToKgfmm:(x:number)=>x,convertHeight:(value:number)=>({value,label:'cm'}),convertHeightToCm:(x:number)=>x,convertForce:(value:number)=>({value,label:'kgf'}),convertForceToKgf:(x:number)=>x,convertPower:(value:number)=>({value:value/745.7,label:'hp'}),convertTorque:(value:number)=>({value,label:'Nm'}),convertTirePressureFromPsi:(value:number)=>({value,label:'psi'})})}));
 it('labels Step1 numeric fields and exposes configured bounds without inventing game steps',async()=>{
  Object.assign(globalThis,{IS_REACT_ACT_ENVIRONMENT:true});
  const host=document.createElement('div');document.body.append(host);const root=createRoot(host);

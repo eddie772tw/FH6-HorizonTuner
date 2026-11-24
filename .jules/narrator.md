@@ -122,3 +122,8 @@
 **學習 (Learning):** 系統設定中的單位系統鍵 `"Metric"` 與遙測分析熱圖通道選擇器（`AnalysisSessionVisuals.tsx`）共用同一字面鍵，導致歷史上 `zh-tw.json` 與 `ja-jp.json` 保留原樣英文 `"Metric"` 未譯且漏收 `"Imperial"`；由於 `SettingsContext.t()` 在 `en-us` 直接回傳原始鍵名而不查表，若單獨修改 `"Metric"` 譯文為「公制 / メートル法」，會讓分析介面錯誤顯示單位制名稱。此外，`DataStorageOverview.tsx` 直接以 `.replace('_', ' ')` 渲染 Rust 後端能力枚舉（`not_available`、`not_planned`、`available`）與 `data_root`（`Application data directory`）而未經過 `t(...)` 映射，`DiscordPresenceStatusCard.tsx` 亦遺漏後端 `unavailable` 狀態且以通用鍵 `Updates` 拼接數值計數。
 **行動 (Action):** 修改任何高風險多義鍵（如 `Metric`、`Updates`）譯文前，必須先全域 grep 盤點所有呼叫端，並以明確英文區分鍵（如復用既有三語系鍵 `Analysis Metric` 或參數化 `Updates: {count}`）解除同形異義衝突；凡消費後端能力枚舉或描述字串的狀態卡片，一律建立顯式鍵名對應表經 `t(...)` 轉換，並為動態輪詢徽章與錯誤區塊補齊 `role="status" aria-live="polite"` 與 `role="alert"`。
 **署名:** Narrator as Antigravity
+
+## 2026-11-25 - Chinese-Pivot Japanese Mistranslations, Short Acronym Keys & Parameterized Example Placeholders
+**學習 (Learning):** 稽核 `Step1GoalSetup.tsx` 時發現四項高發問題：(1) 歷史由繁體中文轉譯日文造成嚴重誤譯，例如「檔位數量」因中文「檔位／攤位」多義被翻成 `"Gears Count": "屋台の数"`（小吃攤數量），且「範圍」被直譯為 `"領域"`；(2) `zh-tw.json` 與 `ja-jp.json` 存在表面上鍵值存在但值仍原樣留作英文的假翻譯（如 `"Weight Distribution"`、`"Max Power"`），不會被缺鍵掃描器檢出；(3) 元件以短縮寫 `t('NA')` 導致全語系缺鍵，而字典早已收錄三語完整鍵 `"Naturally Aspirated (NA)"`；(4) 硬編碼英文範例佔位字（`placeholder="e.g. 1350"`）與主標題 `Step 1:` 前綴穿透至所有非英文介面。
+**行動 (Action):** 審查核心表單元件時，除缺鍵外須同步比對 `zh-tw.json` / `ja-jp.json` 中值與鍵完全相同的未譯條目與中文轉譯日文錯詞；優先復用字典既有完整無歧義鍵名（如 `Naturally Aspirated (NA)`）；範例佔位字統一以 `t('e.g. {value}', { value })` 參數化，並確保對應單元測試的 `useSettings` mock 支援 `params` 內插。
+**署名:** Narrator as Antigravity
