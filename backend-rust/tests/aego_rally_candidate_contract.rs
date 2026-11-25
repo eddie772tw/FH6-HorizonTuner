@@ -319,3 +319,83 @@ fn fwd_uses_explicit_front_dimensions_and_missing_or_illegal_inputs_are_unavaila
         );
     }
 }
+
+#[test]
+fn convexity_neighbor_scoring_zero_tick_closure_and_adjusted_diagnostics_hardening() {
+    use fh6_backend::tuning::gearing::rally::adjusted_diagnostics;
+
+    // 1. Both floor (0.20) and ceil (0.21) satisfy 1 km/h tolerance at 40 km/h,
+    //    but 1/ratio convexity gives 0.21 smaller speed error and lower joint score.
+    let circumference = (245.0 * 40.0 / 100.0 * 2.0 + 18.0 * 25.4) * std::f64::consts::PI / 1000.0;
+    let mut low_speed = profile();
+    let rpm = 20.49 * 3.50 / 100.0 * 40.0 * 1000.0 / (circumference * 60.0);
+    low_speed.max_hp_rpm = Some(rpm);
+    let cap = GearingSecondaryCorrection {
+        simulated_top_speed: None,
+        soft_max_speed: Some(40.0),
+        drag_finish_speed_kmh: None,
+        drag_finish_speed_provenance: None,
+    };
+    let observed = bounds(3.50, vec![range(0.1, 6.0); 6]);
+    let convex = solve_candidate(6, &low_speed, rpm, Some(&cap), Some(&observed));
+    available(&convex, 6);
+    assert_eq!(convex.gearing.gears[5], 0.21);
+
+    // 2. Sub-0.01 positive bounds (< 1e-9) must not truncate to 0.00 ticks,
+    //    and respects_hard_targets rejects sub-grid or overflowing ratios.
+    assert_eq!(
+        solve_candidate(
+            6,
+            &profile(),
+            7500.0,
+            None,
+            Some(&bounds(1e-10, vec![range(0.1, 6.0); 6]))
+        )
+        .gearing
+        .unsupported,
+        Some(true)
+    );
+    let base = solve_candidate(6, &profile(), 7500.0, None, None);
+    let mut bad = base.gearing.clone();
+    bad.final_drive = 1e-10;
+    assert!(!respects_hard_targets(&bad, &base.diagnostics));
+    bad.final_drive = f64::MAX / 50.0;
+    assert!(!respects_hard_targets(&bad, &base.diagnostics));
+
+    // 3. adjusted_diagnostics handles non-object/missing step without panicking,
+    //    clears actual* on rejection, removes stale reason, and aligns status.
+    assert_eq!(
+        adjusted_diagnostics(&base.gearing, &json!(null))["status"],
+        "unavailable"
+    );
+    let mut no_step = base.diagnostics.clone();
+    no_step
+        .as_object_mut()
+        .unwrap()
+        .remove("preferredStepRatio");
+    no_step["reason"] = json!("stale-reason");
+    let ok_no_step = adjusted_diagnostics(&base.gearing, &no_step);
+    assert_eq!(ok_no_step["status"], "available");
+    assert!(ok_no_step.get("reason").is_none());
+
+    let mut broken = base.gearing.clone();
+    broken.gears[5] *= 0.5;
+    let rejected = adjusted_diagnostics(&broken, &base.diagnostics);
+    assert_eq!(rejected["status"], "unavailable");
+    for key in ["actualSpeedKmh", "endpointErrorKmh", "actualTotalRatio"] {
+        assert!(rejected[key].is_null(), "{key} must clear on rejection");
+    }
+
+    let narrow = bounds(
+        3.5,
+        [1.0, 0.99, 0.98, 0.97, 0.96, 0.94]
+            .map(|g| range(g, g))
+            .to_vec(),
+    );
+    let limited = solve_candidate(6, &profile(), 7500.0, None, Some(&narrow));
+    assert_eq!(limited.diagnostics["status"], "limited");
+    assert_eq!(
+        adjusted_diagnostics(&limited.gearing, &limited.diagnostics)["status"],
+        "limited"
+    );
+}
