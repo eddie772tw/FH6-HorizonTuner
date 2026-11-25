@@ -2231,5 +2231,16 @@
   "Failed": "Failed",
   "Completed": "Completed",
   "Stop": "Stop",
-  "Show the experimental automated tuning tab. Turning this off stops runs started from the tab. MCP remains available.": "Show the experimental automated tuning tab. Turning this off stops runs started from the tab. MCP remains available."
+  "Show the experimental automated tuning tab. Turning this off stops runs started from the tab. MCP remains available.": "Show the experimental automated tuning tab. Turning this off stops runs started from the tab. MCP remains available.",
+  "Step 1: Define tuning goals & check parameters": "Step 1: Define tuning goals & check parameters",
+  "e.g. {value}": "e.g. {value}",
+  "Goal & Environment": "Goal & Environment",
+  "Setup Prior": "Setup Prior",
+  "Current Season:": "Current Season:",
+  "Core Physics & Drivetrain": "Core Physics & Drivetrain",
+  "Vehicle Specs": "Vehicle Specs",
+  "Induction Type": "Induction Type",
+  "Auto": "Auto",
+  "Front Tire (Width mm / % R in)": "Front Tire (Width mm / % R in)",
+  "Rear Tire (Width mm / % R in)": "Rear Tire (Width mm / % R in)"
 }

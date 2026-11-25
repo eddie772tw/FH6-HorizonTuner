@@ -630,7 +630,7 @@
   "Max HP (HP)": "最大馬力 (HP)",
   "Max HP RPM (rpm)": "最大馬力轉速 (rpm)",
   "Max Jump Height": "最大飛躍高度",
-  "Max Power": "Max Power",
+  "Max Power": "最大輸出",
   "Max RPM": "最大轉速",
   "Max Speed": "最大車速",
   "Max Speed:": "最大車速：",
@@ -1012,7 +1012,7 @@
   "Warning: Missing Suspension Limits. This profile lacks spring slider limits. Calculator will fallback to default ranges. Consider adding them in 'Car Parameters' for max calculator accuracy.": "警告：缺少避震極限設定。此設定檔未設定避震彈簧極限，計算將使用預設範圍。建議至「車輛參數」中補齊以提升極限數值精準度。",
   "Weight": "車重",
   "Weight (kg)": "Weight (kg)",
-  "Weight Distribution": "Weight Distribution",
+  "Weight Distribution": "前後配重",
   "Width": "Width",
   "Width:": "Width:",
   "will be used to scale rigidity.": "將做為底盤剛性插值的依據。",
@@ -2619,5 +2619,13 @@
   "Completed": "已完成",
   "Start": "開始",
   "Stop": "停止",
-  "Show the experimental automated tuning tab. Turning this off stops runs started from the tab. MCP remains available.": "顯示實驗性自動調校分頁。關閉會停止由分頁啟動的工作；MCP 仍可使用此功能。"
+  "Show the experimental automated tuning tab. Turning this off stops runs started from the tab. MCP remains available.": "顯示實驗性自動調校分頁。關閉會停止由分頁啟動的工作；MCP 仍可使用此功能。",
+  "Step 1: Define tuning goals & check parameters": "步驟 1：設定賽事目標與確認車輛參數",
+  "e.g. {value}": "例如：{value}",
+  "Goal & Environment": "目標與環境",
+  "Setup Prior": "調校先驗",
+  "Vehicle Specs": "車輛規格",
+  "Auto": "自動",
+  "Front Tire (Width mm / % R in)": "前輪規格（寬度 mm / 扁平比 % R 吋）",
+  "Rear Tire (Width mm / % R in)": "後輪規格（寬度 mm / 扁平比 % R 吋）"
 }
