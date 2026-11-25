@@ -166,7 +166,9 @@ fn lan_allowed_http(method: &Method, path: &str) -> bool {
     // Reject traversal dot-segments, backslashes, and control/NUL bytes across decoded LAN paths.
     if decoded.contains('\\')
         || decoded.bytes().any(|b| b < 0x20 || b == 0x7f)
-        || decoded.split('/').any(|segment| segment == "." || segment == "..")
+        || decoded
+            .split('/')
+            .any(|segment| segment == "." || segment == "..")
     {
         return false;
     }
