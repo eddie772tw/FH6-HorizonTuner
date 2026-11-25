@@ -1,0 +1,207 @@
+{
+  "date": "2026-11-24",
+  "viewport": "1280x720 and 320x800",
+  "reducedMotion": "reduce",
+  "dpr": 1,
+  "source": "frontend/dist via vite preview + mock /api/** routes + real lang/*.json dictionaries",
+  "cases": [
+    {
+      "core": "default",
+      "mode": "light",
+      "language": "en-us",
+      "width": 1280,
+      "tooltipFile": "default-light-en-us-1280-render-switch-tooltip.png",
+      "drawerFile": "default-light-en-us-1280-unit-settings-drawer.png",
+      "tooltipBounds": {
+        "width": 1280,
+        "docScrollWidth": 1280,
+        "tipText": "Toggle chart rendering for this section: Live Telemetry Traces",
+        "clippedLeft": false,
+        "clippedRight": false,
+        "tipRect": {
+          "left": 568,
+          "right": 792,
+          "width": 224
+        },
+        "cardRect": {
+          "left": 432,
+          "right": 840,
+          "width": 408
+        }
+      },
+      "drawerMetrics": {
+        "transitionProperty": "background, border-color, box-shadow",
+        "transitionDuration": "0.3s, 0.2s, 0.3s",
+        "inert": false,
+        "docScrollWidth": 1280,
+        "width": 1280
+      },
+      "errors": []
+    },
+    {
+      "core": "default",
+      "mode": "dark",
+      "language": "zh-tw",
+      "width": 320,
+      "tooltipFile": "default-dark-zh-tw-320-render-switch-tooltip.png",
+      "drawerFile": "default-dark-zh-tw-320-unit-settings-drawer.png",
+      "tooltipBounds": {
+        "width": 320,
+        "docScrollWidth": 320,
+        "tipText": "Toggle chart rendering for this section: 即時遙測軌跡",
+        "clippedLeft": false,
+        "clippedRight": false,
+        "tipRect": {
+          "left": 24,
+          "right": 248,
+          "width": 224
+        },
+        "cardRect": {
+          "left": 16,
+          "right": 296,
+          "width": 280
+        }
+      },
+      "drawerMetrics": {
+        "transitionProperty": "background, border-color, box-shadow",
+        "transitionDuration": "0.3s, 0.2s, 0.3s",
+        "inert": false,
+        "docScrollWidth": 320,
+        "width": 320
+      },
+      "errors": []
+    },
+    {
+      "core": "swiss",
+      "mode": "light",
+      "language": "zh-tw",
+      "width": 1280,
+      "tooltipFile": "swiss-light-zh-tw-1280-render-switch-tooltip.png",
+      "drawerFile": "swiss-light-zh-tw-1280-unit-settings-drawer.png",
+      "tooltipBounds": {
+        "width": 1280,
+        "docScrollWidth": 1280,
+        "tipText": "Toggle chart rendering for this section: 即時遙測軌跡",
+        "clippedLeft": false,
+        "clippedRight": false,
+        "tipRect": {
+          "left": 567,
+          "right": 791,
+          "width": 224
+        },
+        "cardRect": {
+          "left": 432,
+          "right": 840,
+          "width": 408
+        }
+      },
+      "drawerMetrics": {
+        "transitionProperty": "background, border-color, box-shadow",
+        "transitionDuration": "0.3s, 0.2s, 0.3s",
+        "inert": false,
+        "docScrollWidth": 1280,
+        "width": 1280
+      },
+      "errors": []
+    },
+    {
+      "core": "swiss",
+      "mode": "dark",
+      "language": "ja-jp",
+      "width": 1280,
+      "tooltipFile": "swiss-dark-ja-jp-1280-render-switch-tooltip.png",
+      "drawerFile": "swiss-dark-ja-jp-1280-unit-settings-drawer.png",
+      "tooltipBounds": {
+        "width": 1280,
+        "docScrollWidth": 1280,
+        "tipText": "Toggle chart rendering for this section: リアルタイムテレメトリトレース",
+        "clippedLeft": false,
+        "clippedRight": false,
+        "tipRect": {
+          "left": 567,
+          "right": 791,
+          "width": 224
+        },
+        "cardRect": {
+          "left": 432,
+          "right": 840,
+          "width": 408
+        }
+      },
+      "drawerMetrics": {
+        "transitionProperty": "background, border-color, box-shadow",
+        "transitionDuration": "0.3s, 0.2s, 0.3s",
+        "inert": false,
+        "docScrollWidth": 1280,
+        "width": 1280
+      },
+      "errors": []
+    },
+    {
+      "core": "rhine-lab",
+      "mode": "light",
+      "language": "ja-jp",
+      "width": 1280,
+      "tooltipFile": "rhine-lab-light-ja-jp-1280-render-switch-tooltip.png",
+      "drawerFile": "rhine-lab-light-ja-jp-1280-unit-settings-drawer.png",
+      "tooltipBounds": {
+        "width": 1280,
+        "docScrollWidth": 1280,
+        "tipText": "Toggle chart rendering for this section: リアルタイムテレメトリトレース",
+        "clippedLeft": false,
+        "clippedRight": false,
+        "tipRect": {
+          "left": 567,
+          "right": 791,
+          "width": 224
+        },
+        "cardRect": {
+          "left": 432,
+          "right": 840,
+          "width": 408
+        }
+      },
+      "drawerMetrics": {
+        "transitionProperty": "none",
+        "transitionDuration": "0s",
+        "inert": false,
+        "docScrollWidth": 1280,
+        "width": 1280
+      },
+      "errors": []
+    },
+    {
+      "core": "rhine-lab",
+      "mode": "dark",
+      "language": "en-us",
+      "width": 1280,
+      "tooltipFile": "rhine-lab-dark-en-us-1280-render-switch-tooltip.png",
+      "drawerFile": "rhine-lab-dark-en-us-1280-unit-settings-drawer.png",
+      "tooltipBounds": {
+        "width": 1280,
+        "docScrollWidth": 1280,
+        "tipText": "Toggle chart rendering for this section: Live Telemetry Traces",
+        "clippedLeft": false,
+        "clippedRight": false,
+        "tipRect": {
+          "left": 567,
+          "right": 791,
+          "width": 224
+        },
+        "cardRect": {
+          "left": 432,
+          "right": 840,
+          "width": 408
+        }
+      },
+      "drawerMetrics": {
+        "transitionProperty": "none",
+        "transitionDuration": "0s",
+        "inert": false,
+        "docScrollWidth": 1280,
+        "width": 1280
+      },
+      "errors": []
+    }
+  ]
+}
