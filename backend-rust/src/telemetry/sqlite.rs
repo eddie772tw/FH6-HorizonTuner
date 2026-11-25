@@ -1,5 +1,6 @@
 use super::contract::{decoded_point, LEGACY_POINT_SCHEMA};
 use rusqlite::{params, Connection, OptionalExtension};
+use serde::de::{Deserialize, Deserializer, MapAccess, SeqAccess, Visitor};
 use serde_json::{Map, Value};
 use std::path::{Path, PathBuf};
 
@@ -218,7 +219,7 @@ impl TelemetryStore {
                 if out.len() > 1 {
                     out.push(b',');
                 }
-                if let Some(s) = str_col(&row, 1)?.filter(|s| serde_json::from_str::<serde::de::IgnoredAny>(s).is_ok()) {
+                if let Some(s) = str_col(&row, 1)?.filter(|s| serde_json::from_str::<ValidatedJson>(s).is_ok()) {
                     out.extend_from_slice(s.trim().as_bytes());
                 } else {
                     if fb.is_none() {
@@ -906,6 +907,51 @@ fn str_col<'a>(r: &'a rusqlite::Row<'_>, idx: usize) -> rusqlite::Result<Option<
         rusqlite::Error::FromSqlConversionFailure(idx, rusqlite::types::Type::Text, Box::new(e))
     })
 }
+// IgnoredAny skips checks on values such as out-of-range floats and escaped
+// Unicode. Use the regular JSON parser without building a Value tree.
+struct ValidatedJson;
+
+impl<'de> Deserialize<'de> for ValidatedJson {
+    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        deserializer.deserialize_any(Self)
+    }
+}
+
+impl<'de> Visitor<'de> for ValidatedJson {
+    type Value = Self;
+
+    fn expecting(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter.write_str("a JSON value")
+    }
+
+    fn visit_unit<E>(self) -> Result<Self, E> {
+        Ok(self)
+    }
+    fn visit_bool<E>(self, _: bool) -> Result<Self, E> {
+        Ok(self)
+    }
+    fn visit_i64<E>(self, _: i64) -> Result<Self, E> {
+        Ok(self)
+    }
+    fn visit_u64<E>(self, _: u64) -> Result<Self, E> {
+        Ok(self)
+    }
+    fn visit_f64<E>(self, _: f64) -> Result<Self, E> {
+        Ok(self)
+    }
+    fn visit_str<E>(self, _: &str) -> Result<Self, E> {
+        Ok(self)
+    }
+    fn visit_seq<A: SeqAccess<'de>>(self, mut seq: A) -> Result<Self, A::Error> {
+        while seq.next_element::<Self>()?.is_some() {}
+        Ok(self)
+    }
+    fn visit_map<A: MapAccess<'de>>(self, mut map: A) -> Result<Self, A::Error> {
+        while map.next_entry::<Self, Self>()?.is_some() {}
+        Ok(self)
+    }
+}
+
 fn row_value(r: &rusqlite::Row<'_>) -> rusqlite::Result<Value> {
     if let Some(s) = str_col(r, 41)? {
         if let Ok(v) = serde_json::from_str(s) {

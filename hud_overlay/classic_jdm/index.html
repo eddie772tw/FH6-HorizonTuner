@@ -142,21 +142,24 @@
             }
 
             // ── 離屏盤面繪製 (Offscreen Buffer) ─────────────────────────
+            function targetPixelRatio() {
+                var dpr = Number(window.devicePixelRatio), scale = Number(window._currentHudScale);
+                return Math.max(1, Math.min(3, (Number.isFinite(dpr) && dpr > 0 ? dpr : 1) * (Number.isFinite(scale) && scale > 1 ? scale : 1)));
+            }
+
             function buildOffscreenDial() {
                 var geom = getGeometry();
                 var w = geom.width;
                 var h = geom.height;
 
-                pixelRatio = Math.max(1, Math.min(3, Number(window.devicePixelRatio) || 1));
+                pixelRatio = targetPixelRatio();
                 offscreenWidth = w;
                 offscreenHeight = h;
 
                 if (dom.canvas) {
-                    dom.canvas.width = Math.round(w * pixelRatio);
-                    dom.canvas.height = Math.round(h * pixelRatio);
-                    if (dom.ctx && dom.ctx.setTransform) {
-                        dom.ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
-                    }
+                    var targetW = Math.round(w * pixelRatio), targetH = Math.round(h * pixelRatio);
+                    if (dom.canvas.width !== targetW || dom.canvas.height !== targetH) { dom.canvas.width = targetW; dom.canvas.height = targetH; }
+                    if (dom.ctx && dom.ctx.setTransform) dom.ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
                 }
 
                 if (dom.container) {
@@ -544,106 +547,41 @@
                 '-': [0, 0, 0, 0, 0, 0, 1]
             };
 
+            function traceQuad(ctx, x0, y0, x1, y1, x2, y2, x3, y3) {
+                ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.lineTo(x2, y2); ctx.lineTo(x3, y3); ctx.closePath();
+            }
+
+            function trace7SegmentMask(ctx, x, y, w, h, pattern) {
+                var t = 3.6, gap = 0.7, halfT = t * 0.5, midY = y + h * 0.5, hg = gap * 0.5;
+                ctx.beginPath();
+                if (!pattern || pattern[0]) traceQuad(ctx, x + gap, y, x + w - gap, y, x + w - gap - t, y + t, x + gap + t, y + t);
+                if (!pattern || pattern[1]) traceQuad(ctx, x + w, y + gap, x + w, midY - hg, x + w - t, midY - hg - halfT, x + w - t, y + gap + t);
+                if (!pattern || pattern[2]) traceQuad(ctx, x + w, midY + hg, x + w, y + h - gap, x + w - t, y + h - gap - t, x + w - t, midY + hg + halfT);
+                if (!pattern || pattern[3]) traceQuad(ctx, x + gap + t, y + h - t, x + w - gap - t, y + h - t, x + w - gap, y + h, x + gap, y + h);
+                if (!pattern || pattern[4]) traceQuad(ctx, x, midY + hg, x + t, midY + hg + halfT, x + t, y + h - gap - t, x, y + h - gap);
+                if (!pattern || pattern[5]) traceQuad(ctx, x, y + gap, x + t, y + gap + t, x + t, midY - hg - halfT, x, midY - hg);
+                if (!pattern || pattern[6]) {
+                    ctx.moveTo(x + gap, midY); ctx.lineTo(x + gap + halfT, midY - halfT); ctx.lineTo(x + w - gap - halfT, midY - halfT);
+                    ctx.lineTo(x + w - gap, midY); ctx.lineTo(x + w - gap - halfT, midY + halfT); ctx.lineTo(x + gap + halfT, midY + halfT); ctx.closePath();
+                }
+            }
+
             function drawSingle7SegmentDigit(ctx, x, y, w, h, char) {
                 var pattern = SEGMENT_PATTERNS[char] || SEGMENT_PATTERNS['-'];
-                var t = 3.6;
-                var gap = 0.7;
-                var halfT = t * 0.5;
-
-                // 梯形/多邊形頂點
-                var segA = [
-                    [x + gap, y],
-                    [x + w - gap, y],
-                    [x + w - gap - t, y + t],
-                    [x + gap + t, y + t]
-                ];
-                var segB = [
-                    [x + w, y + gap],
-                    [x + w, y + h * 0.5 - gap * 0.5],
-                    [x + w - t, y + h * 0.5 - gap * 0.5 - halfT],
-                    [x + w - t, y + gap + t]
-                ];
-                var segC = [
-                    [x + w, y + h * 0.5 + gap * 0.5],
-                    [x + w, y + h - gap],
-                    [x + w - t, y + h - gap - t],
-                    [x + w - t, y + h * 0.5 + gap * 0.5 + halfT]
-                ];
-                var segD = [
-                    [x + gap + t, y + h - t],
-                    [x + w - gap - t, y + h - t],
-                    [x + w - gap, y + h],
-                    [x + gap, y + h]
-                ];
-                var segE = [
-                    [x, y + h * 0.5 + gap * 0.5],
-                    [x + t, y + h * 0.5 + gap * 0.5 + halfT],
-                    [x + t, y + h - gap - t],
-                    [x, y + h - gap]
-                ];
-                var segF = [
-                    [x, y + gap],
-                    [x + t, y + gap + t],
-                    [x + t, y + h * 0.5 - gap * 0.5 - halfT],
-                    [x, y + h * 0.5 - gap * 0.5]
-                ];
-                var segG = [
-                    [x + gap, y + h * 0.5],
-                    [x + gap + halfT, y + h * 0.5 - halfT],
-                    [x + w - gap - halfT, y + h * 0.5 - halfT],
-                    [x + w - gap, y + h * 0.5],
-                    [x + w - gap - halfT, y + h * 0.5 + halfT],
-                    [x + gap + halfT, y + h * 0.5 + halfT]
-                ];
-
-                var segments = [segA, segB, segC, segD, segE, segF, segG];
-
-                // 第一階段：暗態殘影 (Dark Silhouette)
+                // 1. 暗態殘影 (單一批次路徑)
                 ctx.fillStyle = 'rgba(55, 10, 10, 0.35)';
                 ctx.shadowBlur = 0;
-                for (var i = 0; i < segments.length; i++) {
-                    var poly = segments[i];
-                    ctx.beginPath();
-                    ctx.moveTo(poly[0][0], poly[0][1]);
-                    for (var p = 1; p < poly.length; p++) {
-                        ctx.lineTo(poly[p][0], poly[p][1]);
-                    }
-                    ctx.closePath();
-                    ctx.fill();
-                }
-
-                // 第二階段：高對比紅光輝光 (Active Crimson Glow)
+                trace7SegmentMask(ctx, x, y, w, h, null);
+                ctx.fill();
+                // 2. 高對比紅光輝光 + 3. 燈絲核心高光 (共用意義化批次路徑)
                 ctx.fillStyle = '#ff2828';
                 ctx.shadowColor = '#ff0000';
-                ctx.shadowBlur = 10;
-                for (var j = 0; j < segments.length; j++) {
-                    if (pattern[j]) {
-                        var activePoly = segments[j];
-                        ctx.beginPath();
-                        ctx.moveTo(activePoly[0][0], activePoly[0][1]);
-                        for (var ap = 1; ap < activePoly.length; ap++) {
-                            ctx.lineTo(activePoly[ap][0], activePoly[ap][1]);
-                        }
-                        ctx.closePath();
-                        ctx.fill();
-                    }
-                }
-
-                // 第三階段：燈絲核心高光
+                ctx.shadowBlur = 10 * pixelRatio;
+                trace7SegmentMask(ctx, x, y, w, h, pattern);
+                ctx.fill();
                 ctx.fillStyle = '#ffa0a0';
                 ctx.shadowBlur = 0;
-                for (var k = 0; k < segments.length; k++) {
-                    if (pattern[k]) {
-                        var hotPoly = segments[k];
-                        ctx.beginPath();
-                        ctx.moveTo(hotPoly[0][0], hotPoly[0][1]);
-                        for (var hp = 1; hp < hotPoly.length; hp++) {
-                            ctx.lineTo(hotPoly[hp][0], hotPoly[hp][1]);
-                        }
-                        ctx.closePath();
-                        ctx.fill();
-                    }
-                }
+                ctx.fill();
             }
 
             function draw7SegmentGearLED(ctx, cx, cy, gearChar) {
@@ -685,7 +623,7 @@
                     // TRD 經典紅白配重指針
                     var needleLen = r - 12;
                     ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
-                    ctx.shadowBlur = 4;
+                    ctx.shadowBlur = 4 * pixelRatio;
 
                     ctx.beginPath();
                     ctx.moveTo(-18, -2.2);
@@ -726,7 +664,7 @@
                     var needleCol = color || '#ff352e';
 
                     ctx.shadowColor = needleCol;
-                    ctx.shadowBlur = 4;
+                    ctx.shadowBlur = 4 * pixelRatio;
                     ctx.beginPath();
                     ctx.moveTo(-r * 0.15, -2);
                     ctx.lineTo(defiLen, -1);
@@ -760,7 +698,7 @@
                 var color = isTrd ? '#ff352e' : '#ff352e';
 
                 ctx.shadowColor = color;
-                ctx.shadowBlur = 2;
+                ctx.shadowBlur = 2 * pixelRatio;
                 ctx.beginPath();
                 ctx.moveTo(-8, -1.5);
                 ctx.lineTo(len, -0.6);
@@ -789,7 +727,7 @@
                 ctx.rotate(angle);
 
                 ctx.shadowColor = color;
-                ctx.shadowBlur = 3;
+                ctx.shadowBlur = 3 * pixelRatio;
                 ctx.beginPath();
                 ctx.moveTo(r - 10, -3);
                 ctx.lineTo(r - 3, 0);
@@ -811,7 +749,7 @@
                     if (isShiftWarn) {
                         ctx.fillStyle = '#ffd748';
                         ctx.shadowColor = '#ffd748';
-                        ctx.shadowBlur = 8;
+                        ctx.shadowBlur = 8 * pixelRatio;
                     } else {
                         ctx.fillStyle = '#2e2508';
                         ctx.shadowBlur = 0;
@@ -824,7 +762,7 @@
                     if (isOverRev) {
                         ctx.fillStyle = '#ff3030';
                         ctx.shadowColor = '#ff3030';
-                        ctx.shadowBlur = 8;
+                        ctx.shadowBlur = 8 * pixelRatio;
                     } else {
                         ctx.fillStyle = '#2e0808';
                         ctx.shadowBlur = 0;
@@ -839,7 +777,7 @@
                     if (isOverRev || isShiftWarn) {
                         ctx.fillStyle = '#ff0033';
                         ctx.shadowColor = '#ff0000';
-                        ctx.shadowBlur = 18;
+                        ctx.shadowBlur = 18 * pixelRatio;
                     } else {
                         ctx.fillStyle = '#330005';
                         ctx.shadowBlur = 0;
@@ -853,9 +791,16 @@
             function renderHUD() {
                 if (!dom.ctx) return;
                 var ctx = dom.ctx;
+                if (!offscreenDial || targetPixelRatio() !== pixelRatio) {
+                    buildOffscreenDial();
+                }
                 var geom = getGeometry();
                 var isTrd = config.tachStyle === 'trd';
 
+                ctx.save();
+                ctx.shadowBlur = 0;
+                ctx.globalAlpha = 1;
+                try {
                 ctx.clearRect(0, 0, geom.width, geom.height);
 
                 // 1. Blit 靜態盤面
@@ -951,6 +896,9 @@
 
                 // 4. 警示燈與 Shift Pod
                 drawLampsAndShiftPod(ctx, geom, showShift, showOver, isTrd);
+                } finally {
+                    ctx.restore();
+                }
             }
 
             // ── 掃表動畫迴圈 ───────────────────────────────────────────
@@ -1059,15 +1007,22 @@
                     sweepRafId = requestAnimationFrame(runSweep);
                 },
 
-                onScale: function () {
-                    // HUDCore handles container style.zoom automatically
-                }
+                onScale: syncBackingScale
             });
+
+            function syncBackingScale() {
+                if (targetPixelRatio() !== pixelRatio) {
+                    buildOffscreenDial();
+                    renderHUD();
+                }
+            }
+            window.addEventListener('resize', syncBackingScale);
 
             window.addEventListener('pagehide', function () {
                 isSweeping = false;
                 if (sweepRafId !== null) window.cancelAnimationFrame(sweepRafId);
                 sweepRafId = null;
+                window.removeEventListener('resize', syncBackingScale);
             });
 
             // 初始化 HUDCore

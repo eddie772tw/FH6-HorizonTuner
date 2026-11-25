@@ -1,0 +1,29 @@
+{
+  "browser": "151.0.7922.173",
+  "viewport": [
+    1920,
+    1080
+  ],
+  "dpr": 1,
+  "scale": 1,
+  "background": "#20242b",
+  "modes": [
+    "tach",
+    "speed"
+  ],
+  "states": [
+    "driving",
+    "reverse",
+    "neutral-mph",
+    "missing",
+    "two-digit-gear",
+    "overflow",
+    "full-scale",
+    "cold",
+    "hot",
+    "reserve-half",
+    "reserve-recovered"
+  ],
+  "unitExclusivity": "passed",
+  "errors": []
+}

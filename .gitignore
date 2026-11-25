@@ -144,3 +144,5 @@ id_rsa*
 
 # Local task scratch and validation toolchains
 /work/
+/frontend/src-tauri/auto-tune-runtime/
+/frontend/src-tauri/.auto-tune-previous-*/

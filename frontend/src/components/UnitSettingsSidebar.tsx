@@ -54,28 +54,27 @@ const UnitSettingsSidebarFrame: React.FC<UnitSettingsSidebarFrameProps> = ({
     <ModalPortal>
       <div
         className={`offcanvas-backdrop fade${show ? ' show' : ''}`}
+        aria-hidden="true"
         style={{ display: show ? 'block' : 'none', zIndex: 1040 }}
         onClick={onClose}
       />
       <div
+        id={`${idPrefix}-dialog`}
         className={`offcanvas offcanvas-bottom settings-drawer glass-panel shadow-lg${show ? ' show' : ''}`}
         tabIndex={-1}
         ref={panelRef}
         role="dialog"
         aria-modal="true"
         aria-hidden={!show}
+        inert={!show}
         aria-labelledby={`${idPrefix}-title`}
-        style={{
-          zIndex: 1050,
-          visibility: show ? 'visible' : 'hidden',
-          transition: 'transform 0.3s ease-in-out, visibility 0s linear 0s',
-          '--bs-offcanvas-height': 'min(30rem, 80dvh)'
-        } as React.CSSProperties}
+        aria-describedby={`${idPrefix}-description`}
+        style={{ zIndex: 1050, visibility: show ? 'visible' : 'hidden', '--bs-offcanvas-height': 'min(30rem, 80dvh)' } as React.CSSProperties}
       >
         <div className="offcanvas-header border-bottom px-4 py-3">
           <div>
             <h5 id={`${idPrefix}-title`} className="offcanvas-title text-primary fw-bold fs-6 mb-1">{title}</h5>
-            <p className="text-body-secondary fs-7 mb-0">{description}</p>
+            <p id={`${idPrefix}-description`} className="text-body-secondary fs-7 mb-0">{description}</p>
           </div>
           <button type="button" className="btn-close" onClick={onClose} aria-label={t("Close Unit Settings")} />
         </div>
@@ -85,12 +84,19 @@ const UnitSettingsSidebarFrame: React.FC<UnitSettingsSidebarFrameProps> = ({
               id={`${idPrefix}-follow-global`}
               className="form-check-input"
               type="checkbox"
+              role="switch"
+              aria-checked={followGlobal}
+              aria-describedby={`${idPrefix}-description`}
+              style={{ cursor: 'pointer' }}
               checked={followGlobal}
               onChange={event => onFollowGlobalChange(event.target.checked)}
             />
-            <label className="form-check-label fw-semibold" htmlFor={`${idPrefix}-follow-global`}>{t("Follow App Global Units")}</label>
+            <label className="form-check-label fw-semibold" style={{ cursor: 'pointer' }} htmlFor={`${idPrefix}-follow-global`}>{t("Follow App Global Units")}</label>
           </div>
-          {children}
+          <fieldset className="border-0 p-0 m-0" aria-describedby={followGlobal ? `${idPrefix}-description` : undefined} style={followGlobal ? { opacity: 0.65 } : undefined}>
+            <legend className="visually-hidden">{title}</legend>
+            {children}
+          </fieldset>
         </div>
       </div>
     </ModalPortal>

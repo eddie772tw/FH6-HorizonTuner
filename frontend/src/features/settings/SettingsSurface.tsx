@@ -6,8 +6,9 @@ import { DataStorageOverview } from './components/DataStorageOverview';
 import { SettingsItem, SettingsSection, SettingsSwitch } from './components/SettingsPrimitives';
 import { UpdateSettingsCard } from './components/UpdateSettingsCard';
 import { projectSettingsSections } from './settingsSections';
+import type { DeveloperOptions } from '../auto-tune/useDeveloperOptions';
 
-export const SettingsSurface: React.FC = () => {
+export const SettingsSurface: React.FC<{developer?: DeveloperOptions}> = ({ developer }) => {
   const { settings, updateSettings, isLoading, t, availableLanguages } = useSettings();
   const sections = projectSettingsSections();
 
@@ -48,6 +49,13 @@ export const SettingsSurface: React.FC = () => {
               <option value="kgfmm">{t('Metric (kgf/mm)')}</option><option value="lbsin">{t('Imperial (lbs/in)')}</option>
             </select>
           </SettingsItem>
+        </SettingsSection>}
+
+        {developer?.available && <SettingsSection title={t('Developer options')}>
+            <SettingsSwitch id="settings-developer-options" label={t('Automated tuning')}
+              description={t('Show the experimental automated tuning tab. Turning this off stops runs started from the tab. MCP remains available.')}
+              checked={developer.enabled} disabled={developer.busy} onChange={e => void developer.setEnabled(e.target.checked)} />
+            {developer.error && <p role="alert">{developer.error}</p>}
         </SettingsSection>}
 
         {has('telemetry', 'telemetry') && <SettingsSection title={t('Telemetry')}>

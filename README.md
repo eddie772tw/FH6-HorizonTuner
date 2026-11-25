@@ -122,7 +122,7 @@ FH6-HorizonTuner 透過遊戲的 **Data Out UDP 遙測**接收車輛資料，整
 - **四步調校流程**：從目標與車輛設定、底盤與輪胎、引擎量測與齒比，到設定驗證。支援 Road、Rally、Cross Country、Drift、Drag 等用途，依量測品質與可調能力提供結果。
 - **Windows HUD 設定**：主儀表、遙測卡片、一般、音響系統與輔助儀表五個分頁管理；各元素的顯示、大小與位置集中在同一區，隱藏時也能預先設定。提供 Classic JDM、S650、GT7、Retro VFD、R34 MFD 等風格與手把遙測卡片。音響系統可與主儀表並存，提供九款主機、獨立縮放、四邊對齊及隨對齊限制方向的 X／Y 位移拉桿。輔助儀表提供五款可複選表頭、橫直換排與共用遙測來源設定；音響與輔助儀表皆保留原素材底圖，清晰度改善另案處理。[操作與擴充分頁說明](docs/frontend/hud-settings-workspace.md) · [音響系統圖集](docs/hud/audio-head.md) · [輔助儀表與來源說明](docs/hud/auxiliary-gauges.md)。
 - **錄製、分析與加速測試**：保存 SQLite 遙測紀錄，比較單圈與歷史 session，設定計時賽／漫遊路線閘門，進行非破壞性修剪與 0–100、0–200 km/h、1/4 英里加速計時。
-- **CLI 與 AI 工具整合**：Rust `fh6-agent` 提供狀態查詢、遙測診斷與調校命令；localhost 唯讀 MCP 提供即時與歷史資料、車輛規格及求解工具。[CLI 指南](docs/guides/agent-cli-guide.md) · [MCP 設定](docs/guides/mcp-setup-guide.md)。
+- **CLI 與 AI 工具整合**：Rust `fh6-agent` 提供狀態查詢、遙測診斷與調校命令；localhost MCP 提供即時與歷史資料、車輛規格、求解工具與實驗性自動調校。[CLI 指南](docs/guides/agent-cli-guide.md) · [MCP 設定](docs/guides/mcp-setup-guide.md)。
 - **主題、多語言與更新**：Halfmoon、Swiss、Rhine Lab 三套設計系統，支援繁體中文、英文、日文及擴充語系；整合診斷主控台與具簽章驗證的 OTA 更新。
 
 ### 模型與實驗功能的範圍
@@ -211,6 +211,10 @@ scripts/            建置、發行與維護工具
 正式調校決策由 `backend-rust/src/tuning/` 擁有，前端只處理流程、草稿與顯示轉換；舊 TypeScript 模型保留為測試參考。詳見[責任契約](docs/contracts/tuning_responsibilities.md)。
 
 AEGO 正式推薦依賽事使用獨立模型：Road launch envelope v3、Rally joint v1、Drift working v1、Drag joint v1。量測資格、驅動輪徑、模型來源、目標偏差與限制由 Rust 統一提供；Drift 需明確設定主檔位、目標轉速與輪速。比例平衡會重新檢查原始目標與已觀察的硬體範圍，無解時不套用。
+
+Windows 完整版的「設定 → 開發人員選項」可開啟獨立的「自動調校」分頁。在 FH6 嘉年華車庫切換到目標車輛後選擇調校目標與季節，再按「開始」。實驗控制器使用內附的隔離 runtime、原生 PP-OCRv6 small／ONNX Runtime CPU、16:9 繁體中文遊戲畫面、鍵盤與滑鼠，以及已啟用的 Data Out。直線測量預設手排三檔與升檔鍵 E；跑道不足時降一檔，有效加速時間不足時升一檔，最多三趟。地圖放大後傳送至起跑道路，並以遙測核對位置、朝向與檔位。分頁顯示抓取值、Rust 建議、最新截圖、操作履歷與經過時間。套用後會重新進入遊戲調校頁核對數值。
+
+[原生 OCR 建置與驗證](native/auto_tune_ocr/README.md)說明預設引擎、數值與單位分離辨識，以及跨車輛實圖回歸。Windows 發行建置會把 DLL、官方模型、字典、授權及隔離的 Python 3.13 控制器一起嵌入 EXE；使用者不必安裝 Python、OCR 語言包或設定環境變數。流程控制仍使用 Python 標準庫，Rust 移植評估見該指南。Windows OCR 僅保留為開發比較引擎。MCP 直接提供啟動、進度／結果、截圖與停止工具，不需開發人員選項或額外開關；Agent 使用前須說明這是實驗功能，效率不一定優於其原生電腦操作能力。
 
 新 ICE 推薦保存為 `rust/ice-measured-workflow-v4`，重啟後依明確模型與原始證據重建；舊 v1／v2／v3 改為唯讀封存，不再執行舊公式、套用或重新保存為合格推薦。Developer Tuning 已移除，原始遙測採集工具可從正式 Step 3 開啟。詳見[封存與公式移除說明](docs/tuning/model-retirement.md)、[整合契約](docs/tuning/aego-model-integration-v4.md)及[模型隔離邊界](docs/tuning/aego-model-isolation.md)。目前為工程基線，工程先驗、合成契約與瀏覽器畫面不代表實車 A/B、漂移工作帶或起步／末速性能驗收。
 

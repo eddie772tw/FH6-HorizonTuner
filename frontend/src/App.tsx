@@ -15,6 +15,7 @@ import './App.css';
 const workspaces: WorkspaceRegistry = {
   ...commonWorkspaces,
   tune: lazy(() => import('./features/tuning/TuningWorkspace')),
+  'auto-tune': lazy(() => import('./features/auto-tune/AutoTuneWorkspace')),
   sessions: SessionsWorkspaceBridge,
 };
 

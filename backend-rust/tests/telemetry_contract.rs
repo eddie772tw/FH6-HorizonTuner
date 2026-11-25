@@ -1669,7 +1669,7 @@ fn telemetry_points_json_stream_matches_get_telemetry_points_and_http_routes() {
     app.database
         .create_session("mix", 1, "Car", 800, 800, 0.0)
         .unwrap();
-    let pts: Vec<_> = (0..5).map(|i| json!({"time": i as f64, "LapNumber": if i < 2 { 1 } else { 2 }, "SpeedMetersPerSecond": (i + 1) as f64 * 10.0})).collect();
+    let pts: Vec<_> = (0..8).map(|i| json!({"time": i as f64, "LapNumber": if i < 2 { 1 } else { 2 }, "SpeedMetersPerSecond": (i + 1) as f64 * 10.0})).collect();
     app.database.insert_points_batch("mix", &pts).unwrap();
     let conn = rusqlite::Connection::open(dir.path().join("telemetry_sessions.db")).unwrap();
     for sql in [
@@ -1677,6 +1677,9 @@ fn telemetry_points_json_stream_matches_get_telemetry_points_and_http_routes() {
         "UPDATE telemetry_channels SET raw_json='{broken' WHERE id=3",
         "UPDATE telemetry_channels SET raw_json=' 17 \n' WHERE id=4",
         "UPDATE telemetry_channels SET raw_json='\n{\"time\":4.0,\"LapNumber\":2}\n' WHERE id=5",
+        r#"UPDATE telemetry_channels SET raw_json='{"overflow":[1e400]}' WHERE id=6"#,
+        r#"UPDATE telemetry_channels SET raw_json='{"text":"\uD800"}' WHERE id=7"#,
+        r#"UPDATE telemetry_channels SET raw_json='{"\uD800":3}' WHERE id=8"#,
     ] {
         conn.execute(sql, []).unwrap();
     }

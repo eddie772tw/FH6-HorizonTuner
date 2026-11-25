@@ -1,0 +1,1 @@
+"""Desktop experimental game automation."""

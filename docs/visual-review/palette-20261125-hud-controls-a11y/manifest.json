@@ -1,0 +1,88 @@
+{
+  "date": "2026-11-25",
+  "browser": "151.0.7922.34",
+  "viewport": "1280x720 and 320x800",
+  "reducedMotion": "reduce",
+  "dpr": 1,
+  "source": "frontend/dist via vite preview + mock /api/** and /hud/** routes + real lang/*.json dictionaries",
+  "cases": [
+    {
+      "core": "default",
+      "mode": "light",
+      "language": "en-us",
+      "width": 1280,
+      "rangeInvalidFile": "default-light-en-us-1280-range-invalid.png",
+      "hudUnitsFile": "default-light-en-us-1280-hud-units.png",
+      "bounds": {
+        "width": 1280,
+        "docScrollWidth": 1280
+      },
+      "errors": []
+    },
+    {
+      "core": "default",
+      "mode": "dark",
+      "language": "zh-tw",
+      "width": 320,
+      "rangeInvalidFile": "default-dark-zh-tw-320-range-invalid.png",
+      "hudUnitsFile": "default-dark-zh-tw-320-hud-units.png",
+      "bounds": {
+        "width": 320,
+        "docScrollWidth": 320
+      },
+      "errors": []
+    },
+    {
+      "core": "swiss",
+      "mode": "light",
+      "language": "zh-tw",
+      "width": 1280,
+      "rangeInvalidFile": "swiss-light-zh-tw-1280-range-invalid.png",
+      "hudUnitsFile": "swiss-light-zh-tw-1280-hud-units.png",
+      "bounds": {
+        "width": 1280,
+        "docScrollWidth": 1280
+      },
+      "errors": []
+    },
+    {
+      "core": "swiss",
+      "mode": "dark",
+      "language": "ja-jp",
+      "width": 1280,
+      "rangeInvalidFile": "swiss-dark-ja-jp-1280-range-invalid.png",
+      "hudUnitsFile": "swiss-dark-ja-jp-1280-hud-units.png",
+      "bounds": {
+        "width": 1280,
+        "docScrollWidth": 1280
+      },
+      "errors": []
+    },
+    {
+      "core": "rhine-lab",
+      "mode": "light",
+      "language": "ja-jp",
+      "width": 1280,
+      "rangeInvalidFile": "rhine-lab-light-ja-jp-1280-range-invalid.png",
+      "hudUnitsFile": "rhine-lab-light-ja-jp-1280-hud-units.png",
+      "bounds": {
+        "width": 1280,
+        "docScrollWidth": 1280
+      },
+      "errors": []
+    },
+    {
+      "core": "rhine-lab",
+      "mode": "dark",
+      "language": "en-us",
+      "width": 1280,
+      "rangeInvalidFile": "rhine-lab-dark-en-us-1280-range-invalid.png",
+      "hudUnitsFile": "rhine-lab-dark-en-us-1280-hud-units.png",
+      "bounds": {
+        "width": 1280,
+        "docScrollWidth": 1280
+      },
+      "errors": []
+    }
+  ]
+}

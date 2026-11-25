@@ -15,6 +15,7 @@
 | 計時賽、漫遊路線、修剪與 MoTeC 格式限制 | [賽事分析指南](guides/race-analysis.md) |
 | 使用 Agent CLI | [CLI 操作指南](guides/agent-cli-guide.md) |
 | 連接 MCP | [MCP 設定指南](guides/mcp-setup-guide.md) |
+| 實驗性自動調校、離線 OCR 與實機驗收 | [自動調校驗證記錄](guides/auto-tune-validation.md)、[原生 OCR 與 Rust 遷移評估](../native/auto_tune_ocr/README.md) |
 | 安裝自訂 HUD | [可攜版 HUD 套件](guides/portable-custom-hud.md) |
 | 音響系統分頁、獨立縮放與九款樣式展示 | [Audio Head](hud/audio-head.md)（[English](hud/audio-head.en.md)） |
 | R34 原廠 V·spec 儀表、NISMO MFD Ver.II 適配與驗證 | [R34 MFD 原型契約](hud/r34-mfd.md) |
