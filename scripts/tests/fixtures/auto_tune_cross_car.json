@@ -1,0 +1,372 @@
+{
+  "description": "Manually transcribed Traditional Chinese 16:9 FH6 screenshots. Each SHA-256 identifies an original PNG.",
+  "cases": [
+    {
+      "file": "abarth-card.png",
+      "sha256": "e75bd57a716548e5c5abdc25332d4f6bc29248d5cd55ce52c8f77c867fc71781",
+      "kind": "card",
+      "expected": {
+        "car": "2017 Abarth 124 Spider",
+        "class": "C",
+        "pi": 450,
+        "drive": "RWD",
+        "stats": {
+          "maxHp": [
+            "165",
+            "hp"
+          ],
+          "maxTorque": [
+            "184",
+            "ft·lb"
+          ],
+          "weight": [
+            "2,477",
+            "lb"
+          ],
+          "weight_distribution": [
+            "54",
+            "%"
+          ],
+          "displacementLiters": [
+            "1.37",
+            "l"
+          ]
+        },
+        "canonical": {
+          "weight": 1123.5483,
+          "maxTorque": 249.470502,
+          "displacementLiters": 1.37
+        }
+      }
+    },
+    {
+      "file": "integra-card.png",
+      "sha256": "345d9c86457c3bc3fb361636af5c0226aa2081cb994a8bb8dbf26c9a1ec3d246",
+      "kind": "card",
+      "expected": {
+        "car": "2023 Acura Integra A-Spec",
+        "class": "A",
+        "pi": 700,
+        "drive": "FWD",
+        "stats": {
+          "maxHp": [
+            "373",
+            "hp"
+          ],
+          "maxTorque": [
+            "338",
+            "ft·lb"
+          ],
+          "weight": [
+            "2,913",
+            "lb"
+          ],
+          "weight_distribution": [
+            "57",
+            "%"
+          ],
+          "displacementLiters": [
+            "1.72",
+            "l"
+          ]
+        },
+        "canonical": {
+          "weight": 1321.314574,
+          "maxTorque": 458.266467,
+          "displacementLiters": 1.72
+        }
+      }
+    },
+    {
+      "file": "abarth-preview-negative.png",
+      "sha256": "18e0857e5206330973322bf2c12fa11f92500f03533da79a5840d44aeed240cb",
+      "kind": "preview",
+      "expected": "rejected: selected card is not the active car"
+    },
+    {
+      "file": "integra-preview-negative.png",
+      "sha256": "0586fd4c973f418983d39b8c1021d66edae330567a14e6ca1a2d4ff1b7adedcb",
+      "kind": "preview",
+      "expected": "rejected: selected card is not the active car"
+    },
+    {
+      "file": "abarth-upgrades.png",
+      "sha256": "19f53ab898abee3f0f9ee3ea4ba4d4fdbe4fbd93c390e7af02f70464fa6583b2",
+      "kind": "scene",
+      "expected": "upgrades"
+    },
+    {
+      "file": "abarth-front-width.png",
+      "sha256": "52861b0a444e49c9aaa8d431f04ce04ecc265ed6078a47b16d15164b1097dd95",
+      "kind": "tire",
+      "axle": "front",
+      "expected": [
+        205,
+        45,
+        17
+      ]
+    },
+    {
+      "file": "abarth-tyres.png",
+      "sha256": "84857c12fd17eb56eb6b066d88e312269bf80617d511626480a8e9392ac007ca",
+      "kind": "tuning",
+      "expected": {
+        "page": "tuning.tyres",
+        "car": "2017 Abarth 124 Spider",
+        "values": {
+          "pressure.front": [
+            31,
+            "psi"
+          ],
+          "pressure.rear": [
+            30,
+            "psi"
+          ]
+        },
+        "locked": []
+      }
+    },
+    {
+      "file": "integra-tyres.png",
+      "sha256": "d6ab29e40d89df1093903fff39af1f52c4cf2722fc9f70b1d4c39233f9a880d2",
+      "kind": "tuning",
+      "expected": {
+        "page": "tuning.tyres",
+        "car": "2023 Acura Integra A-Spec",
+        "values": {
+          "pressure.front": [
+            32,
+            "psi"
+          ],
+          "pressure.rear": [
+            29,
+            "psi"
+          ]
+        },
+        "locked": []
+      }
+    },
+    {
+      "file": "abarth-gears-locked.png",
+      "sha256": "cb645a0e485d1e9d0dc233350cb1ed477890b95b160d0016be451df2578f68c9",
+      "kind": "tuning",
+      "expected": {
+        "page": "tuning.gears",
+        "car": "2017 Abarth 124 Spider",
+        "values": {},
+        "locked": [
+          "gearing.finalDrive",
+          "gearing.gear1",
+          "gearing.gear2",
+          "gearing.gear3",
+          "gearing.gear4",
+          "gearing.gear5",
+          "gearing.gear6"
+        ]
+      }
+    },
+    {
+      "file": "integra-alignment.png",
+      "sha256": "bc7ce304fea51eb13228919aed91d3540b3bcce7dbbb896c78eb34c365cea57a",
+      "kind": "tuning",
+      "expected": {
+        "page": "tuning.alignment",
+        "car": "2023 Acura Integra A-Spec",
+        "values": {
+          "camber.front": [
+            -2,
+            "deg"
+          ],
+          "camber.rear": [
+            -1.5,
+            "deg"
+          ],
+          "toe.front": [
+            0,
+            "deg"
+          ],
+          "toe.rear": [
+            0,
+            "deg"
+          ],
+          "caster.front": [
+            5,
+            "deg"
+          ]
+        },
+        "locked": []
+      }
+    },
+    {
+      "file": "integra-springs.png",
+      "sha256": "ff4c1b1c8f0aba98621ff90fb7573b0a05433e4f5e7ec964383d9eb4534b05aa",
+      "kind": "tuning",
+      "expected": {
+        "page": "tuning.springs",
+        "car": "2023 Acura Integra A-Spec",
+        "values": {
+          "spring.front": [
+            660.9,
+            "lb/in"
+          ],
+          "spring.rear": [
+            609.6,
+            "lb/in"
+          ],
+          "height.front": [
+            6.8,
+            "in"
+          ],
+          "height.rear": [
+            7,
+            "in"
+          ]
+        },
+        "locked": []
+      }
+    },
+    {
+      "file": "integra-diff.png",
+      "sha256": "d3ba2e5909c06c773cb4d196aaab21859303057170f21b4ce60de22b09327ab6",
+      "kind": "tuning",
+      "expected": {
+        "page": "tuning.diff",
+        "car": "2023 Acura Integra A-Spec",
+        "values": {
+          "diff.front.acceleration": [
+            15,
+            "%"
+          ],
+          "diff.front.deceleration": [
+            5,
+            "%"
+          ]
+        },
+        "locked": []
+      }
+    },
+    {
+      "file": "nsx-card.png",
+      "sha256": "d54a097a53e2f3d526f7415adfc245b8d4134731e995e788163aa5165ca08f38",
+      "kind": "card",
+      "expected": {
+        "car": "2022 Acura NSX Type S",
+        "class": "S1",
+        "pi": 728,
+        "drive": "AWD",
+        "stats": {
+          "maxHp": [
+            "600",
+            "hp"
+          ],
+          "maxTorque": [
+            "492",
+            "ft·lb"
+          ],
+          "weight": [
+            "3,912",
+            "lb"
+          ],
+          "weight_distribution": [
+            "42",
+            "%"
+          ],
+          "displacementLiters": [
+            "3.49",
+            "l"
+          ]
+        },
+        "canonical": {
+          "weight": 1774.453351,
+          "maxTorque": 667.062431,
+          "displacementLiters": 3.49
+        }
+      }
+    },
+    {
+      "file": "nsx-preview-negative.png",
+      "sha256": "3f45bd7d125d61d74555a3b86f1070ad117324b3e976b810e4446f39684c1f04",
+      "kind": "preview",
+      "expected": "rejected: selected card is not the active car"
+    },
+    {
+      "file": "nsx-tyres.png",
+      "sha256": "83fd543c2f6a91148febc8a1f901988804201eab31279ae35c922d08750a9391",
+      "kind": "tuning",
+      "expected": {
+        "car": "2022 Acura NSX Type S",
+        "page": "tuning.tyres",
+        "values": {
+          "pressure.front": [
+            34.0,
+            "psi"
+          ],
+          "pressure.rear": [
+            36.0,
+            "psi"
+          ]
+        },
+        "locked": []
+      }
+    },
+    {
+      "file": "nsx-gears-locked.png",
+      "sha256": "ae51bbab046311fff4ad69a6c05c6e14012ddfe22871842e985cb26ced0fdb55",
+      "kind": "tuning",
+      "expected": {
+        "car": "2022 Acura NSX Type S",
+        "page": "tuning.gears",
+        "values": {},
+        "locked": [
+          "gearing.finalDrive",
+          "gearing.gear1",
+          "gearing.gear2",
+          "gearing.gear3",
+          "gearing.gear4",
+          "gearing.gear5",
+          "gearing.gear6",
+          "gearing.gear7",
+          "gearing.gear8",
+          "gearing.gear9"
+        ]
+      }
+    },
+    {
+      "file": "nsx-diff-locked.png",
+      "sha256": "1cdd4e2a517f884185038d39c2dd4eec9ba9d6f9a431300e0177ab11b89db1f4",
+      "kind": "tuning",
+      "expected": {
+        "car": "2022 Acura NSX Type S",
+        "page": "tuning.diff",
+        "values": {},
+        "locked": [
+          "diff.front.acceleration",
+          "diff.front.deceleration",
+          "diff.rear.acceleration",
+          "diff.rear.deceleration",
+          "diff.center"
+        ]
+      }
+    },
+    {
+      "file": "nsx-aero.png",
+      "sha256": "96f47799499e53c13fad6b68f0af6638d3b7a84e03913c447ce4bfa90762ecab",
+      "kind": "tuning",
+      "expected": {
+        "car": "2022 Acura NSX Type S",
+        "page": "tuning.aero",
+        "values": {
+          "aero_downforce_front": [
+            334.0,
+            "lb"
+          ],
+          "aero_downforce_rear": [
+            528.0,
+            "lb"
+          ]
+        },
+        "locked": []
+      }
+    }
+  ]
+}

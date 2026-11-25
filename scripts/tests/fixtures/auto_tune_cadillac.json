@@ -1,0 +1,69 @@
+{
+  "description": "Real failed run: center differential reads 65%, glyph reads 85%. Original frames retained locally; hashes lock the evidence.",
+  "cases": [
+    {
+      "file": "0043-diff.png",
+      "sha256": "de5bcad6af5293709eebcdb6b8a87fa3d754f7a626adddea90a9dde522144882",
+      "kind": "tuning",
+      "expected": {
+        "page": "tuning.diff",
+        "car": "2013 Cadillac XTS Limousine",
+        "values": {
+          "diff.front.acceleration": [
+            30,
+            "%"
+          ],
+          "diff.front.deceleration": [
+            10,
+            "%"
+          ],
+          "diff.rear.acceleration": [
+            55,
+            "%"
+          ],
+          "diff.rear.deceleration": [
+            13,
+            "%"
+          ],
+          "diff.center": [
+            65,
+            "%"
+          ]
+        },
+        "locked": []
+      }
+    },
+    {
+      "file": "0044-diff.png",
+      "sha256": "4144e1aa49e86b208d1b92a8cd739d61655e672f48beb781667d1e5de61a2b13",
+      "kind": "tuning",
+      "expected": {
+        "page": "tuning.diff",
+        "car": "2013 Cadillac XTS Limousine",
+        "values": {
+          "diff.front.acceleration": [
+            30,
+            "%"
+          ],
+          "diff.front.deceleration": [
+            10,
+            "%"
+          ],
+          "diff.rear.acceleration": [
+            55,
+            "%"
+          ],
+          "diff.rear.deceleration": [
+            13,
+            "%"
+          ],
+          "diff.center": [
+            65,
+            "%"
+          ]
+        },
+        "locked": []
+      }
+    }
+  ]
+}

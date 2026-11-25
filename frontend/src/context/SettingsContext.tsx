@@ -292,22 +292,24 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   // Fetch translation when language changes
   useEffect(() => {
+    const controller = new AbortController();
     const fetchTranslation = async () => {
       if (settings.language === 'en-us') {
         setTranslations({});
         return;
       }
       try {
-        const res = await backendFetch(`/api/languages/${settings.language}`);
+        const res = await backendFetch(`/api/languages/${settings.language}`, { signal: controller.signal });
         const data = await res.json();
-        if (data && !data.error) {
+        if (!controller.signal.aborted && res.ok && data && !data.error) {
           setTranslations(data);
         }
       } catch (e) {
-        console.error(`Failed to fetch translation for ${settings.language}`, e);
+        if (!controller.signal.aborted) console.error(`Failed to fetch translation for ${settings.language}`, e);
       }
     };
-    fetchTranslation();
+    void fetchTranslation();
+    return () => controller.abort();
   }, [settings.language]);
 
   const updateSettings = async (updates: SettingsUpdate) => {

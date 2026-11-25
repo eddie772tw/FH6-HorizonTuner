@@ -1,0 +1,545 @@
+{
+  "date": "2026-11-24",
+  "base": "99c4e2dd8e1b5a98f0aae612a95164f783c3e1cc",
+  "executableSha256": "6735ca2961dd459cc839bf3c7db8114746dd3e439044c3fe1e6313977f4ae84c",
+  "runId": "run-1795512538466790-84516",
+  "vehicle": "1964 Aston Martin DB5",
+  "goal": "Road",
+  "season": "Winter",
+  "source": "mcp",
+  "developerOptions": false,
+  "status": "completed",
+  "elapsedMs": 232298,
+  "logs": [
+    {
+      "elapsedMs": 133,
+      "message": "OCR 引擎：onnx"
+    },
+    {
+      "elapsedMs": 407,
+      "message": "讀取目前車輛及已安裝零件"
+    },
+    {
+      "elapsedMs": 5239,
+      "message": "已確認目前車輛 1964 Aston Martin DB5 B600"
+    },
+    {
+      "elapsedMs": 17128,
+      "message": "進氣方式 NA"
+    },
+    {
+      "elapsedMs": 64890,
+      "message": "以 Rust 工作流計算底盤與輪胎建議"
+    },
+    {
+      "elapsedMs": 64915,
+      "message": "調整 tyres，核對 2 項"
+    },
+    {
+      "elapsedMs": 65867,
+      "message": "調整 alignment，核對 5 項"
+    },
+    {
+      "elapsedMs": 66866,
+      "message": "調整 arb，核對 2 項"
+    },
+    {
+      "elapsedMs": 67793,
+      "message": "調整 springs，核對 4 項"
+    },
+    {
+      "elapsedMs": 68802,
+      "message": "調整 damping，核對 4 項"
+    },
+    {
+      "elapsedMs": 69814,
+      "message": "調整 diff，核對 2 項"
+    },
+    {
+      "elapsedMs": 79723,
+      "message": "底盤已讀回，前往直線測試場"
+    },
+    {
+      "elapsedMs": 79725,
+      "message": "前往嘉年華一公里，第 1 趟使用 3 檔"
+    },
+    {
+      "elapsedMs": 113333,
+      "message": "已直接到達起跑道路，正在以遙測核對位置與朝向"
+    },
+    {
+      "elapsedMs": 114084,
+      "message": "3 檔已確認，開始直線量測"
+    },
+    {
+      "elapsedMs": 137784,
+      "message": "rpm-coverage-high：distance，改用 2 檔重新量測"
+    },
+    {
+      "elapsedMs": 146460,
+      "message": "前往嘉年華一公里，第 2 趟使用 2 檔"
+    },
+    {
+      "elapsedMs": 180092,
+      "message": "已直接到達起跑道路，正在以遙測核對位置與朝向"
+    },
+    {
+      "elapsedMs": 180707,
+      "message": "2 檔已確認，開始直線量測"
+    },
+    {
+      "elapsedMs": 202629,
+      "message": "2 檔量測完成，有效 15.201 秒，涵蓋 16 個轉速區間"
+    },
+    {
+      "elapsedMs": 212895,
+      "message": "調整 tyres，核對 2 項"
+    },
+    {
+      "elapsedMs": 213784,
+      "message": "調整 alignment，核對 5 項"
+    },
+    {
+      "elapsedMs": 214827,
+      "message": "調整 arb，核對 2 項"
+    },
+    {
+      "elapsedMs": 215784,
+      "message": "調整 springs，核對 4 項"
+    },
+    {
+      "elapsedMs": 216809,
+      "message": "調整 damping，核對 4 項"
+    },
+    {
+      "elapsedMs": 217841,
+      "message": "調整 diff，核對 2 項"
+    },
+    {
+      "elapsedMs": 218803,
+      "message": "調整 gears，核對 7 項"
+    },
+    {
+      "elapsedMs": 232298,
+      "message": "Step 1～3 完成，已重新開啟調校頁並核對套用值"
+    }
+  ],
+  "sweeps": [
+    {
+      "gear": 3,
+      "stopReason": "distance",
+      "distanceMeters": 540.4524536132812,
+      "samples": 1268,
+      "readiness": {
+        "ready": false,
+        "status": "collecting",
+        "guidance": "rpm-coverage-high",
+        "acceptedMs": 19906.0,
+        "binCount": 11,
+        "lowRpmCoverage": true,
+        "highRpmCoverage": false,
+        "powerDropoffDetected": false,
+        "cutoffDetected": false,
+        "powerbandStartRpm": 4433.159307065217,
+        "powerbandEndRpm": 5821.67037109375,
+        "minimumAcceptedMs": 6000,
+        "minimumBins": 8
+      }
+    },
+    {
+      "gear": 2,
+      "stopReason": "distance",
+      "distanceMeters": 540.5014038085938,
+      "samples": 1181,
+      "readiness": {
+        "ready": true,
+        "status": "ready",
+        "guidance": "ready",
+        "acceptedMs": 15201.0,
+        "binCount": 16,
+        "lowRpmCoverage": true,
+        "highRpmCoverage": true,
+        "effectiveRedline": 7002.0,
+        "powerDropoffDetected": false,
+        "cutoffDetected": true,
+        "powerbandStartRpm": 4433.380784254808,
+        "powerbandEndRpm": 7002.0,
+        "minimumAcceptedMs": 6000,
+        "minimumBins": 6
+      }
+    }
+  ],
+  "verified": {
+    "pressure.front": {
+      "observed": 29.5,
+      "unit": "psi",
+      "recommended": {
+        "value": 29.3,
+        "unit": "psi"
+      },
+      "screenshot": "0134-tyres.png"
+    },
+    "pressure.rear": {
+      "observed": 28.0,
+      "unit": "psi",
+      "recommended": {
+        "value": 28.1,
+        "unit": "psi"
+      },
+      "screenshot": "0134-tyres.png"
+    },
+    "camber.front": {
+      "observed": -2.1,
+      "unit": "deg",
+      "recommended": {
+        "value": -2.1,
+        "unit": "deg"
+      },
+      "screenshot": "0135-alignment.png"
+    },
+    "toe.front": {
+      "observed": 0.1,
+      "unit": "deg",
+      "recommended": {
+        "value": 0.1,
+        "unit": "deg"
+      },
+      "screenshot": "0135-alignment.png"
+    },
+    "camber.rear": {
+      "observed": -1.3,
+      "unit": "deg",
+      "recommended": {
+        "value": -1.3,
+        "unit": "deg"
+      },
+      "screenshot": "0135-alignment.png"
+    },
+    "toe.rear": {
+      "observed": -0.1,
+      "unit": "deg",
+      "recommended": {
+        "value": -0.1,
+        "unit": "deg"
+      },
+      "screenshot": "0135-alignment.png"
+    },
+    "caster.front": {
+      "observed": 6.0,
+      "unit": "deg",
+      "recommended": {
+        "value": 6.0,
+        "unit": "deg"
+      },
+      "screenshot": "0135-alignment.png"
+    },
+    "arb.front": {
+      "observed": 33.6,
+      "unit": "slider",
+      "recommended": {
+        "value": 33.6,
+        "unit": "slider"
+      },
+      "screenshot": "0136-arb.png"
+    },
+    "arb.rear": {
+      "observed": 32.4,
+      "unit": "slider",
+      "recommended": {
+        "value": 32.4,
+        "unit": "slider"
+      },
+      "screenshot": "0136-arb.png"
+    },
+    "spring.front": {
+      "observed": 851.2,
+      "unit": "lb/in",
+      "recommended": {
+        "value": 15.2,
+        "unit": "kgf/mm"
+      },
+      "screenshot": "0137-springs.png"
+    },
+    "height.front": {
+      "observed": 5.7,
+      "unit": "in",
+      "recommended": {
+        "value": 14.5,
+        "unit": "cm"
+      },
+      "screenshot": "0137-springs.png"
+    },
+    "spring.rear": {
+      "observed": 829.0,
+      "unit": "lb/in",
+      "recommended": {
+        "value": 14.8,
+        "unit": "kgf/mm"
+      },
+      "screenshot": "0137-springs.png"
+    },
+    "height.rear": {
+      "observed": 7.0,
+      "unit": "in",
+      "recommended": {
+        "value": 17.8,
+        "unit": "cm"
+      },
+      "screenshot": "0137-springs.png"
+    },
+    "rebound.front": {
+      "observed": 10.7,
+      "unit": "slider",
+      "recommended": {
+        "value": 10.7,
+        "unit": "slider"
+      },
+      "screenshot": "0138-damping.png"
+    },
+    "bump.front": {
+      "observed": 6.4,
+      "unit": "slider",
+      "recommended": {
+        "value": 6.4,
+        "unit": "slider"
+      },
+      "screenshot": "0138-damping.png"
+    },
+    "rebound.rear": {
+      "observed": 10.3,
+      "unit": "slider",
+      "recommended": {
+        "value": 10.3,
+        "unit": "slider"
+      },
+      "screenshot": "0138-damping.png"
+    },
+    "bump.rear": {
+      "observed": 6.2,
+      "unit": "slider",
+      "recommended": {
+        "value": 6.2,
+        "unit": "slider"
+      },
+      "screenshot": "0138-damping.png"
+    },
+    "diff.rear.acceleration": {
+      "observed": 40.0,
+      "unit": "%",
+      "recommended": {
+        "value": 40.0,
+        "unit": "%"
+      },
+      "screenshot": "0139-diff.png"
+    },
+    "diff.rear.deceleration": {
+      "observed": 20.0,
+      "unit": "%",
+      "recommended": {
+        "value": 20.0,
+        "unit": "%"
+      },
+      "screenshot": "0139-diff.png"
+    },
+    "gearing.finalDrive": {
+      "observed": 4.07,
+      "unit": "ratio",
+      "recommended": {
+        "value": 4.07,
+        "unit": "ratio"
+      },
+      "screenshot": "0140-gears.png"
+    },
+    "gearing.gear1": {
+      "observed": 1.84,
+      "unit": "ratio",
+      "recommended": {
+        "value": 1.84,
+        "unit": "ratio"
+      },
+      "screenshot": "0140-gears.png"
+    },
+    "gearing.gear2": {
+      "observed": 1.43,
+      "unit": "ratio",
+      "recommended": {
+        "value": 1.43,
+        "unit": "ratio"
+      },
+      "screenshot": "0140-gears.png"
+    },
+    "gearing.gear3": {
+      "observed": 1.15,
+      "unit": "ratio",
+      "recommended": {
+        "value": 1.15,
+        "unit": "ratio"
+      },
+      "screenshot": "0140-gears.png"
+    },
+    "gearing.gear4": {
+      "observed": 0.96,
+      "unit": "ratio",
+      "recommended": {
+        "value": 0.96,
+        "unit": "ratio"
+      },
+      "screenshot": "0140-gears.png"
+    },
+    "gearing.gear5": {
+      "observed": 0.82,
+      "unit": "ratio",
+      "recommended": {
+        "value": 0.82,
+        "unit": "ratio"
+      },
+      "screenshot": "0140-gears.png"
+    },
+    "gearing.gear6": {
+      "observed": 0.72,
+      "unit": "ratio",
+      "recommended": {
+        "value": 0.72,
+        "unit": "ratio"
+      },
+      "screenshot": "0140-gears.png"
+    }
+  },
+  "artifactSha256": {
+    "state.json": "1884faac94e4c9b9b611859f40d0febd841f3e225938b6029a74e5e583649453",
+    "profile.json": "095f9979392eb550b515d4cf62140463f80e147f2a4767f2c1f752a58a13323e",
+    "workflow.json": "8c18b7c6c35af1c917641c06cd47826d465cc071c85ac7429727451fe3fa6a79",
+    "step3-verified.json": "45fcf62b8af9bfcf2134e31141c165ce695466a8808071e3a6a8a73ba2ba2588",
+    "sweep-1.json": "60318ce8aec4217c89837930c330b77e9f6d62287616b0270ee9bf9cdc7cdef1",
+    "sweep-2.json": "2c0c097502dbee57a71b62418502a01fb7dcc756f69d0eaa5c16359da7ae5a63",
+    "engine-batch-1.json": "5be482f911a8cb66fbef4cb8a24d70f046231c5ab34f93f38325ccd9f1d1b072",
+    "engine-batch-2.json": "71002ceaf7eda73db29b635e241a11ae1a5362323bbf67ea9e4b8255cec693ff",
+    "0134-tyres.png": "02106a5c6e8cdfb1272b62f8c36e628971787b31d683bdf9a66b092ee1f19675",
+    "0135-alignment.png": "b603cbbe3dd554403f5df3f258bf011f0043b230eabe4b8c2e6d1f003e2ab676",
+    "0136-arb.png": "04ac9f558423b4e9dbafc076850da204b89aa536b2bd2d848b4bd04804e68206",
+    "0137-springs.png": "5284308ca9c8f0a372324c2b564d00e3ddc14cca60117006ff5bf7af2f8df9a9",
+    "0138-damping.png": "fdacd8fa033bce2b16df72a21afd7f75522fbf226c1bb088821f32839b54a26b",
+    "0139-diff.png": "091e18b685995d151c0287d62f8a09105f47b35a66c238f88efbb0ddf55a95af",
+    "0140-gears.png": "60a2fbd3876dd980d0b7501f988753d35195d85402c861346b2aef5a6188c806"
+  },
+  "nsx": {
+    "vehicle": "2022 Acura NSX Type S",
+    "performanceClass": "S1",
+    "performanceIndex": 728,
+    "elapsedMs": 87674,
+    "acceptedMs": 9439,
+    "bins": 16,
+    "gear": 3,
+    "tuningChanged": false,
+    "scope": "Production measurement with before/after readback; not full automatic tuning.",
+    "readbackIdentical": true,
+    "verifiedPages": {
+      "tyres": {
+        "fields": {
+          "pressure.front": 34.0,
+          "pressure.rear": 36.0
+        },
+        "units": {
+          "pressure.front": "psi",
+          "pressure.rear": "psi"
+        },
+        "locked": []
+      },
+      "gears": {
+        "fields": {},
+        "units": {},
+        "locked": [
+          "gearing.finalDrive",
+          "gearing.gear1",
+          "gearing.gear2",
+          "gearing.gear3",
+          "gearing.gear4",
+          "gearing.gear5",
+          "gearing.gear6",
+          "gearing.gear7",
+          "gearing.gear8",
+          "gearing.gear9"
+        ]
+      },
+      "alignment": {
+        "fields": {},
+        "units": {},
+        "locked": [
+          "camber.front",
+          "camber.rear",
+          "toe.front",
+          "toe.rear",
+          "caster.front"
+        ]
+      },
+      "arb": {
+        "fields": {},
+        "units": {},
+        "locked": [
+          "arb.front",
+          "arb.rear"
+        ]
+      },
+      "springs": {
+        "fields": {},
+        "units": {},
+        "locked": [
+          "spring.front",
+          "spring.rear",
+          "height.front",
+          "height.rear"
+        ]
+      },
+      "damping": {
+        "fields": {},
+        "units": {},
+        "locked": [
+          "rebound.front",
+          "rebound.rear",
+          "bump.front",
+          "bump.rear"
+        ]
+      },
+      "aero": {
+        "fields": {
+          "aero_downforce_front": 334.0,
+          "aero_downforce_rear": 528.0
+        },
+        "units": {
+          "aero_downforce_front": "lb",
+          "aero_downforce_rear": "lb"
+        },
+        "locked": []
+      },
+      "brakes": {
+        "fields": {
+          "brake.balance": 50.0,
+          "brake.pressure": 100.0
+        },
+        "units": {
+          "brake.balance": "%",
+          "brake.pressure": "%"
+        },
+        "locked": []
+      },
+      "diff": {
+        "fields": {},
+        "units": {},
+        "locked": [
+          "diff.front.acceleration",
+          "diff.front.deceleration",
+          "diff.rear.acceleration",
+          "diff.rear.deceleration",
+          "diff.center"
+        ]
+      }
+    },
+    "artifactSha256": {
+      "before.json": "cc462e39ac49f81a25f6d39fa6a09a132c456a02312331567b1d9fe84d64ae25",
+      "after.json": "8cd04915a9f8e59425ae84eb85f4994a335aa409f1f433185518916ce844d1ae",
+      "engine-batch.json": "889a225e8ab92da467572b2754b2af07cad3d49e949bac12dfc694097a61b0dc",
+      "sweep-1.json": "9db6cca382d4556c4e5e23c7f346093f8ceefefe1d06280afc4f4950d80172b2",
+      "state.json": "2e3b452f14b4d717fd87b7c3c5eef0ea7d64c426c91580778abdfc1a04215765"
+    }
+  }
+}

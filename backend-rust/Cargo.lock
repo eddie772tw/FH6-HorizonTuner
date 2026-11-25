@@ -392,6 +392,7 @@ name = "fh6-backend"
 version = "11.45.27"
 dependencies = [
  "axum",
+ "base64 0.23.1",
  "chrono",
  "csv",
  "if-addrs",

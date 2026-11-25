@@ -10,6 +10,7 @@ use std::sync::{
     Mutex,
 };
 use std::time::{Duration, Instant};
+mod auto_tune_bundle;
 mod file_export;
 
 #[cfg(all(target_os = "windows", target_arch = "x86_64", not(debug_assertions)))]
@@ -330,6 +331,11 @@ fn backend_command(app_handle: &tauri::AppHandle) -> Result<(Command, Vec<fs::Fi
             .current_dir(&root)
             .args(["--dev", "--data-dir"])
             .arg(root.join("backend"));
+        auto_tune_bundle::configure_backend(
+            app_handle,
+            &root.join("backend/auto-tune"),
+            &mut command,
+        );
         Ok((command, Vec::new()))
     } else {
         println!("Starting packaged release backend.");
@@ -348,7 +354,8 @@ fn backend_command(app_handle: &tauri::AppHandle) -> Result<(Command, Vec<fs::Fi
             .map_err(|error| error.to_string())?
             .join("sidecar/server-sidecar");
         let mut command = Command::new(backend);
-        command.arg("--data-dir").arg(data_dir);
+        command.arg("--data-dir").arg(&data_dir);
+        auto_tune_bundle::configure_backend(app_handle, &data_dir.join("auto-tune"), &mut command);
         Ok((command, guards))
     }
 }
@@ -710,17 +717,21 @@ fn prepare_update_and_restart(caller: tauri::WebviewWindow) -> Result<(), String
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    if let Some(code) = auto_tune_bundle::verification_cli() {
+        std::process::exit(code);
+    }
     tauri::Builder::default()
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
         .manage(BackendState::new())
         .manage(BackendProcess::default())
+        .manage(auto_tune_bundle::RuntimeGuards::default())
         .on_window_event(|window, event| {
             if let tauri::WindowEvent::CloseRequested { .. } | tauri::WindowEvent::Destroyed = event {
                 let label = window.label();
                 let app_handle = window.app_handle();
                 if label == "main" {
-                    println!("Primary window [{label}] closed — terminating all windows and backend sidecar.");
+                                    println!("Primary window [{label}] closed — terminating all windows and backend sidecar.");
                     if let Err(error) = stop_backend_process(&app_handle) { eprintln!("{error}"); }
                     app_handle.exit(0);
                 }

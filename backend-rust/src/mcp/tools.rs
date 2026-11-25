@@ -40,6 +40,37 @@ pub fn call(
     args: &Map<String, Value>,
 ) -> Result<Value, ToolError> {
     let out = match name {
+        "get_auto_tuning_status" => service.app.auto_tune.status().map_err(auto_tune_error)?,
+        "start_auto_tuning" => {
+            let input =
+                serde_json::from_value(Value::Object(args.clone())).map_err(|e| ToolError {
+                    code: -32602,
+                    message: format!("Invalid auto tuning arguments: {e}"),
+                })?;
+            let id = service
+                .app
+                .auto_tune
+                .start(input, true)
+                .map_err(auto_tune_error)?;
+            json!({"runId":id,"status":"accepted","instructions":"Poll get_auto_tuning_status; acceptance is not completion. Use get_auto_tuning_screenshot for the latest game capture."})
+        }
+        "stop_auto_tuning" => {
+            let id = s(args, "runId").ok_or_else(|| ToolError::missing("runId"))?;
+            service
+                .app
+                .auto_tune
+                .stop(Some(id))
+                .map_err(auto_tune_error)?;
+            service.app.auto_tune.status().map_err(auto_tune_error)?
+        }
+        "get_auto_tuning_screenshot" => {
+            use base64::Engine;
+            let id = s(args, "runId").ok_or_else(|| ToolError::missing("runId"))?;
+            let image = service.app.auto_tune.image(id).map_err(auto_tune_error)?;
+            return Ok(
+                json!({"content":[{"type":"image","mimeType":"image/png","data":base64::engine::general_purpose::STANDARD.encode(image)}]}),
+            );
+        }
         "calculate_tuning_workflow" => {
             let input =
                 serde_json::from_value(Value::Object(args.clone())).map_err(|e| ToolError {
@@ -180,4 +211,11 @@ pub fn call(
     Ok(
         json!({"content":[{"type":"text","text":serde_json::to_string_pretty(&out).unwrap_or_else(|_|out.to_string())}]}),
     )
+}
+
+fn auto_tune_error(message: String) -> ToolError {
+    ToolError {
+        code: -32020,
+        message,
+    }
 }

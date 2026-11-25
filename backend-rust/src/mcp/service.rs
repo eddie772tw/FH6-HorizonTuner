@@ -1,4 +1,4 @@
-//! Read-only MCP service.  This module intentionally mirrors `backend/mcp/service.py`.
+//! MCP data access service shared by tools and resources.
 use crate::{app::App, config_service::json_files, storage};
 use serde_json::{json, Map, Value};
 use std::{
