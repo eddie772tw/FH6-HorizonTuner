@@ -44,9 +44,31 @@ def smoke(executable, evidence):
                     {
                         "name": "blank",
                         "bounds": {"x": 0, "y": 0, "width": 1, "height": 1},
-                    }
+                    },
+                    {
+                        "name": "empty_right",
+                        "bounds": {"x": 1, "y": 0, "width": 1e-6, "height": 1},
+                        "only_rec": True,
+                    },
+                    {
+                        "name": "empty_bottom",
+                        "bounds": {"x": 0, "y": 1, "width": 1, "height": 1e-6},
+                        "only_rec": True,
+                    },
                 ],
-                "expected": {"blank": {"status": "ok", "text": "", "confidence": 0.0}},
+                "expected": {
+                    "blank": {"status": "ok", "text": "", "confidence": 0.0},
+                    "empty_right": {
+                        "status": "unknown",
+                        "text": "",
+                        "error": "Empty normalized crop",
+                    },
+                    "empty_bottom": {
+                        "status": "unknown",
+                        "text": "",
+                        "error": "Empty normalized crop",
+                    },
+                },
             }
         ]
     }
@@ -67,7 +89,7 @@ def smoke(executable, evidence):
             "--auto-tune-verify",
             str(evidence),
             str(specification),
-            str(report),
+            report.name,
         ],
         cwd=evidence,
         env=env,

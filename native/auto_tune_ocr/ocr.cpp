@@ -154,6 +154,8 @@ public:
                          int(std::ceil((x + width) * frame_->GetWidth())));
     int bottom = std::min(int(frame_->GetHeight()),
                           int(std::ceil((y + height) * frame_->GetHeight())));
+    if (right <= left || bottom <= top)
+      throw std::runtime_error("Empty normalized crop");
     auto crop = resized(*frame_,
                         RectF(float(left), float(top), float(right - left),
                               float(bottom - top)),

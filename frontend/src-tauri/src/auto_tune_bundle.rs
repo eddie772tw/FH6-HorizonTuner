@@ -111,7 +111,11 @@ pub fn verification_cli() -> Option<i32> {
     }
     let output = PathBuf::from(&args[3]);
     let result = (|| -> Result<i32, String> {
-        let parent = output.parent().ok_or("Report needs a parent directory")?;
+        let parent = match output.parent() {
+            Some(path) if path.as_os_str().is_empty() => Path::new("."),
+            Some(path) => path,
+            None => return Err("Report needs a parent directory".into()),
+        };
         let bundle = prepare(&parent.join("auto-tune-verification"))?;
         let mut command = std::process::Command::new(&bundle.python);
         command
