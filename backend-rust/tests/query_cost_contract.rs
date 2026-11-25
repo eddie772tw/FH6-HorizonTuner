@@ -193,3 +193,63 @@ fn capture_summary_and_window_keep_defaults_and_projection_for_scalar_samples() 
         0
     );
 }
+
+#[test]
+fn filtered_json_projection_and_debrief_preserve_fallback_and_edge_semantics() {
+    use fh6_backend::network::{ApiRequest, Backend};
+    let (app, root) = app();
+    let db = &app.database;
+    db.create_session("e", 1, "C", 800, 800, 0.0).unwrap();
+    let pts: Vec<_> = (0..8)
+        .map(|i| json!({
+            "time": i as f64 * 0.1, "LapNumber": i / 4, "AccelerationX": 4.0,
+            "CurrentLap": if i == 0 { 0.1 } else { i as f64 }, "LastLap": if i == 4 { 42.5 } else { 0.0 },
+            "SpeedMetersPerSecond": 20.0 + i as f64, "TireSlipAngle": [0.2, 0.2, 0.05, 0.05],
+            "SuspTravel": [if i == 1 { 0.96 } else { 0.3 }, 0.3, 0.3, 0.3], "TireTemp": [185.0, 190.0, 175.0, 180.0],
+        }))
+        .collect();
+    db.insert_points_batch("e", &pts).unwrap();
+    let conn = Connection::open(root.path().join("telemetry_sessions.db")).unwrap();
+    conn.execute_batch(concat!(
+        "UPDATE telemetry_channels SET raw_json=NULL WHERE id=1;",
+        "UPDATE telemetry_channels SET raw_json='{broken' WHERE id=2;",
+        "UPDATE telemetry_channels SET raw_json=' 17 \n' WHERE id=3;",
+        r#"UPDATE telemetry_channels SET raw_json='{"\u0074ime":3.0,"SpeedMetersPerSecond":33.0,"extra":1}' WHERE id=4;"#,
+        r#"UPDATE telemetry_channels SET raw_json='{"time":4.0,"overflow":[1e400]}' WHERE id=5;"#,
+        r#"UPDATE telemetry_channels SET raw_json='{"time":5.0,"text":"\uD800"}' WHERE id=6;"#,
+        r#"UPDATE telemetry_channels SET raw_json='{"\uD800":6}' WHERE id=7;"#,
+        r#"UPDATE telemetry_channels SET raw_json='{"time":7.0} trailing' WHERE id=8;"#,
+    )).unwrap();
+    let ch = HashSet::from(["time".to_owned(), "SpeedMetersPerSecond".to_owned()]);
+    let full = db.get_telemetry_points("e", None).unwrap();
+    let mut expected = full.clone();
+    for p in &mut expected {
+        if let Some(m) = p.as_object_mut() {
+            m.retain(|k, _| ch.contains(k));
+        } else {
+            *p = Value::Null;
+        }
+    }
+    let got = db.get_telemetry_points_filtered("e", None, 1, Some(&ch));
+    assert_eq!(got.unwrap(), expected);
+    let debrief = || {
+        app.request(ApiRequest {
+            method: "GET".into(),
+            path: "/api/analysis/sessions/e/debrief".into(),
+            query: Default::default(),
+            headers: Default::default(),
+            body: vec![],
+            upload_filename: None,
+        })
+    };
+    let resp = debrief().unwrap();
+    let got: Value = serde_json::from_slice(&resp.body).unwrap();
+    assert_eq!(
+        (resp.status, got),
+        (200, fh6_backend::motec::debrief(&full))
+    );
+    conn.execute_batch("UPDATE telemetry_channels SET raw_json=x'FF' WHERE id=5;")
+        .unwrap();
+    let err = db.get_telemetry_points_filtered("e", None, 1, Some(&ch));
+    assert!(err.is_err() && debrief().is_err());
+}

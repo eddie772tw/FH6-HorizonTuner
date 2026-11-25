@@ -472,7 +472,19 @@ impl App {
             ("DELETE",["api","analysis","sessions",id])=>{self.database.delete_session(id).map_err(database_error)?;json!({"message":"Session deleted successfully"})},
             ("GET",["api","analysis","sessions",id,"laps"])=>Value::Array(match self.session_id(id)?{Some(id)=>self.database.get_session_laps(&id).map_err(database_error)?,None=>vec![]}),
             ("GET",["api","analysis","sessions",id,"metadata"])=>match self.session_id(id)?{Some(id)=>self.database.get_session_metadata(&id).map_err(database_error)?,None=>serde_json::Value::Null},
-            ("GET",["api","analysis","sessions",id,"debrief"])=>{let points=match self.session_id(id)?{Some(id)=>self.database.get_telemetry_points(&id,None).map_err(database_error)?,None=>vec![]};motec::debrief(&points)}
+            ("GET", ["api", "analysis", "sessions", id, "debrief"]) => {
+                // [PERF] Project only the 8 channels consumed by motec::debrief and complete-lap counting.
+                static DEBRIEF_CH: std::sync::LazyLock<std::collections::HashSet<String>> =
+                    std::sync::LazyLock::new(|| {
+                        "TireTemp SuspTravel TireSlipAngle AccelerationX SpeedMetersPerSecond LapNumber CurrentLap LastLap"
+                            .split_whitespace().map(str::to_owned).collect()
+                    });
+                let points = match self.session_id(id)? {
+                    Some(id) => self.database.get_telemetry_points_filtered(&id, None, 1, Some(&DEBRIEF_CH)).map_err(database_error)?,
+                    None => vec![],
+                };
+                motec::debrief(&points)
+            }
             ("POST",["api","drag","prepare"])=>{lock(&self.engine).drag.prepare();json!({"message":"Drag recorder prepared, waiting for launch."})}
             ("POST",["api","drag","clear"])=>{lock(&self.engine).drag.clear();json!({"message":"Drag recorder cleared."})}
             ("GET",["api","drag","status"])=>{let engine=lock(&self.engine);json!({"status":engine.drag.status(),"points_count":engine.drag.point_count()})}
