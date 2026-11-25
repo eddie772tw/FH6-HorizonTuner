@@ -34,6 +34,7 @@ fn ticks(range: &RatioRange) -> Option<(i64, i64)> {
         && range.max.is_finite()
         && range.min > 0.0
         && range.step == 0.01
+        && lo.round() >= 1.0
         && lo <= hi
         && hi <= i32::MAX as f64
         && hi - lo <= 10_000.0
@@ -69,9 +70,8 @@ fn rpm_upper_tick(
     target: &DriftWorkingTarget,
     usable_limit_rpm: f64,
 ) -> Option<i64> {
-    let raw_bound = (usable_limit_rpm + 1e-7) * circumference * 60.0
-        / (target.wheel_speed_kmh * 1000.0 * fd)
-        * 100.0;
+    let raw_bound =
+        ((usable_limit_rpm + 1e-7) / target.wheel_speed_kmh) * (circumference * 6.0 / fd);
     if raw_bound.is_nan() || raw_bound <= 0.0 {
         return None;
     }
@@ -101,8 +101,12 @@ fn rpm_upper_tick(
 /// diagnostics. This is not an evidence qualification API for client metadata.
 pub fn respects_hard_targets(result: &GearingResult, diagnostic: &Value) -> bool {
     let positive = |v: &Value| v.as_f64().filter(|v| v.is_finite() && *v > 0.0);
-    let grid = |v: f64| v.is_finite() && v > 0.0 && (v * 100.0 - (v * 100.0).round()).abs() < 1e-7;
+    let grid = |v: f64| {
+        let scaled = v * 100.0;
+        v.is_finite() && v > 0.0 && scaled.round() >= 1.0 && (scaled - scaled.round()).abs() < 1e-7
+    };
     if diagnostic["modelVersion"] != MODEL_VERSION
+        || !matches!(diagnostic["status"].as_str(), Some("available" | "limited"))
         || diagnostic["targetSource"] != "user-target"
         || result.unsupported == Some(true)
         || !(4..=10).contains(&result.gears.len())
@@ -182,22 +186,24 @@ pub fn adjusted_diagnostics(result: &GearingResult, original: &Value) -> Value {
     diagnostic["actualTotalRatio"] = json!(result.final_drive * result.gears[main]);
     diagnostic["actualRpmAtTargetWheelSpeed"] = json!(actual_rpm);
     diagnostic["targetRpmError"] = json!(actual_rpm - rpm);
+    diagnostic.as_object_mut().map(|map| map.remove("reason"));
+    let mut limited = false;
     if let Some(shape) = original["interpolatedShapePrior"]
         .as_array()
         .filter(|s| s.len() == result.gears.len())
     {
-        let limited = shape.iter().zip(&result.gears).any(|(prior, gear)| {
+        limited = shape.iter().zip(&result.gears).any(|(prior, gear)| {
             prior.as_f64().is_none_or(|prior| {
                 !prior.is_finite() || prior <= 0.0 || (gear / prior - 1.0).abs() > 0.01
             })
         });
         diagnostic["shapePreferenceLimited"] = json!(limited);
-        diagnostic["status"] = json!(if limited || original["finalDriveSaturated"] == true {
-            "limited"
-        } else {
-            "available"
-        });
     }
+    diagnostic["status"] = json!(if limited || original["finalDriveSaturated"] == true {
+        "limited"
+    } else {
+        "available"
+    });
     if let (Some(min), Some(max)) = (
         original["allocationFinalDriveBounds"]["min"].as_f64(),
         original["allocationFinalDriveBounds"]["max"].as_f64(),
@@ -422,60 +428,65 @@ pub fn solve_candidate(
         ) else {
             continue;
         };
+        // Speed is inverse to the gear ratio: the nearest ratio tick can fail or
+        // score worse under 1/ratio convexity and shape prior than its feasible neighbour.
         let ideal_tick = target_total / fd * 100.0;
-        let Some((main_tick, actual)) = [ideal_tick.round(), ideal_tick.floor(), ideal_tick.ceil()]
-            .into_iter()
-            .find_map(|candidate| {
-                let tick = (candidate as i64).clamp(lower[main], anchor_upper);
-                let actual = calc_gear_speed(
-                    target.target_rpm,
-                    tick as f64 / 100.0,
-                    fd,
-                    circumference / (2.0 * PI),
-                ) * 3.6;
-                if !actual.is_finite()
-                    || actual <= 0.0
-                    || (actual - target.wheel_speed_kmh).abs() > tolerance + 1e-9
-                {
-                    return None;
-                }
-                let actual_rpm = target.target_rpm * (target.wheel_speed_kmh / actual);
-                (actual_rpm.is_finite() && actual_rpm <= usable_limit_rpm + 1e-7)
-                    .then_some((tick, actual))
-            })
-        else {
-            continue;
-        };
-        let mut gear_ticks = vec![0_i64; count];
-        gear_ticks[main] = main_tick;
-        for i in (0..main).rev() {
-            let low = lower[i].max(gear_ticks[i + 1] + 1);
-            let desired = gear_ticks[main] as f64 * shape[i] / shape[main];
-            gear_ticks[i] = desired.round().clamp(low as f64, upper[i] as f64) as i64;
-        }
-        for i in main + 1..count {
-            let high = upper[i].min(gear_ticks[i - 1] - 1);
-            let desired = gear_ticks[main] as f64 * shape[i] / shape[main];
-            gear_ticks[i] = desired.round().clamp(lower[i] as f64, high as f64) as i64;
-        }
-        let gears: Vec<f64> = gear_ticks.iter().map(|g| *g as f64 / 100.0).collect();
-        let score = gears
-            .iter()
-            .zip(&shape)
-            .map(|(g, p)| (g / p).ln().powi(2))
-            .sum::<f64>()
-            + ((actual - target.wheel_speed_kmh) / target.wheel_speed_kmh).powi(2);
-        if best.as_ref().is_none_or(|(old, _, _)| score < *old - 1e-12) {
-            best = Some((
-                score,
-                GearingResult {
-                    final_drive: fd,
-                    gears,
-                    unsupported: None,
-                    unsupported_reason: None,
-                },
-                actual,
-            ));
+        let clamp_tick = |t: f64| (t as i64).clamp(lower[main], anchor_upper);
+        let primary = clamp_tick(ideal_tick.round());
+        let secondary = clamp_tick(if ideal_tick.round() == ideal_tick.floor() {
+            ideal_tick.ceil()
+        } else {
+            ideal_tick.floor()
+        });
+        for main_tick in std::iter::once(primary).chain((secondary != primary).then_some(secondary))
+        {
+            let actual = calc_gear_speed(
+                target.target_rpm,
+                main_tick as f64 / 100.0,
+                fd,
+                circumference / (2.0 * PI),
+            ) * 3.6;
+            if !actual.is_finite()
+                || actual <= 0.0
+                || (actual - target.wheel_speed_kmh).abs() > tolerance + 1e-9
+            {
+                continue;
+            }
+            let actual_rpm = target.target_rpm * (target.wheel_speed_kmh / actual);
+            if !actual_rpm.is_finite() || actual_rpm > usable_limit_rpm + 1e-7 {
+                continue;
+            }
+            let mut gear_ticks = vec![0_i64; count];
+            gear_ticks[main] = main_tick;
+            for i in (0..main).rev() {
+                let low = lower[i].max(gear_ticks[i + 1] + 1);
+                let desired = gear_ticks[main] as f64 * shape[i] / shape[main];
+                gear_ticks[i] = desired.round().clamp(low as f64, upper[i] as f64) as i64;
+            }
+            for i in main + 1..count {
+                let high = upper[i].min(gear_ticks[i - 1] - 1);
+                let desired = gear_ticks[main] as f64 * shape[i] / shape[main];
+                gear_ticks[i] = desired.round().clamp(lower[i] as f64, high as f64) as i64;
+            }
+            let gears: Vec<f64> = gear_ticks.iter().map(|g| *g as f64 / 100.0).collect();
+            let score = gears
+                .iter()
+                .zip(&shape)
+                .map(|(g, p)| (g / p).ln().powi(2))
+                .sum::<f64>()
+                + ((actual - target.wheel_speed_kmh) / target.wheel_speed_kmh).powi(2);
+            if score.is_finite() && best.as_ref().is_none_or(|(old, _, _)| score < *old - 1e-12) {
+                best = Some((
+                    score,
+                    GearingResult {
+                        final_drive: fd,
+                        gears,
+                        unsupported: None,
+                        unsupported_reason: None,
+                    },
+                    actual,
+                ));
+            }
         }
     }
     let Some((_, gearing, actual)) = best else {
