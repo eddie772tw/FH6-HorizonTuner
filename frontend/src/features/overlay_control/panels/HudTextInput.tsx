@@ -14,5 +14,8 @@ export function HudTextInput({ id, value, onCommit }: {
   };
   return <input id={id} className="form-control form-control-sm" maxLength={64} value={draft}
     onChange={event => setDraft(event.target.value)} onBlur={event => { if (!isHudSettingsTab(event.relatedTarget)) commit(); }}
-    onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); event.currentTarget.blur(); } }} />;
+    onKeyDown={event => {
+      if (event.key === 'Enter') { event.preventDefault(); event.currentTarget.blur(); }
+      else if (event.key === 'Escape' && draft !== value) { event.preventDefault(); setDraft(value); }
+    }} />;
 }

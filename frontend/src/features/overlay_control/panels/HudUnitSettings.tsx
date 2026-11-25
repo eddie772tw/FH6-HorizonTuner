@@ -11,20 +11,30 @@ export function HudUnitSettings({ followGlobal, units, globalUnits, onConfigPatc
   const update = <K extends keyof HudDisplayUnits>(key: K, value: HudDisplayUnits[K]) =>
     onConfigPatch({ units: { [key]: value }, ...(key === 'speed' ? { unit: value as HudDisplayUnits['speed'] } : {}) });
   return <div>
-    <p className="text-body-secondary fs-7">{t('Choose HUD display units independently or inherit every value from the app.')}</p>
+    <p id={`${id}-hud-units-description`} className="text-body-secondary fs-7">{t('Choose HUD display units independently or inherit every value from the app.')}</p>
           <div className="form-check form-switch mb-3">
             <input
               id={`${id}-hud-follow-global-units`}
               className="form-check-input"
               type="checkbox"
+              role="switch"
+              aria-checked={followGlobal}
+              aria-describedby={`${id}-hud-units-description`}
+              style={{ cursor: 'pointer' }}
               checked={followGlobal}
               onChange={event => onFollowGlobalChange(event.target.checked)}
             />
-            <label className="form-check-label fw-semibold" htmlFor={`${id}-hud-follow-global-units`}>
+            <label className="form-check-label fw-semibold" htmlFor={`${id}-hud-follow-global-units`} style={{ cursor: 'pointer' }}>
               {t("Follow App Global Units")}
             </label>
           </div>
-          <div className="row g-3">
+          <fieldset
+            className="border-0 p-0 m-0"
+            aria-describedby={followGlobal ? `${id}-hud-units-description` : undefined}
+            style={{ opacity: followGlobal ? 0.65 : 1 }}
+          >
+            <legend className="visually-hidden">{t('HUD Unit Settings')}</legend>
+            <div className="row g-3">
             <div className="col-6 col-lg-3">
               <label className="form-label fs-7" htmlFor={`${id}-hud-speed-unit`}>{t("Speed Unit")}</label>
               <select
@@ -93,5 +103,6 @@ export function HudUnitSettings({ followGlobal, units, globalUnits, onConfigPatc
               </select>
             </div>
           </div>
+          </fieldset>
   </div>;
 }
