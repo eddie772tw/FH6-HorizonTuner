@@ -10,7 +10,7 @@ export const MAX_CUSTOM_CSS_BYTES = 64 * 1024; // 64 KiB
 const DANGEROUS_CSS_PATTERNS = [
   { pattern: /<\/style/i, message: 'HTML style tag closing sequence </style> is forbidden' },
   { pattern: /@\s*import\b/i, message: '@import rules are forbidden in custom CSS' },
-  { pattern: /@(?:charset|namespace)\b/i, message: '@charset and @namespace rules are forbidden' },
+  { pattern: /@\s*(?:charset|namespace)\b/i, message: '@charset and @namespace rules are forbidden' },
   { pattern: /\b(?:url|image-set|image|src)\s*\(/i, message: 'External resource functions are forbidden in custom CSS' },
   { pattern: /\b(?:expression|behavior)\s*[:(]/i, message: 'Dynamic expressions and behaviors are forbidden' },
 ];
@@ -27,19 +27,28 @@ export function validateCSS(css: string): CSSValidationResult {
     return { isValid: true };
   }
 
-  const lines = css.split('\n');
+  const normalized = css.replace(/\r\n?|[\f]/g, '\n').replace(/\0/g, '\ufffd');
+  if (/<\/style/i.test(normalized)) {
+    return { isValid: false, error: 'HTML style tag closing sequence </style> is forbidden' };
+  }
+
+  const lines = normalized.split('\n');
   let braceCount = 0;
   let inMultiLineComment = false;
+  let activeQuote: '"' | "'" | null = null;
   let stripped = '';
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     let j = 0;
+    let escapedNewline = false;
 
     while (j < line.length) {
       if (inMultiLineComment) {
         if (line[j] === '*' && line[j + 1] === '/') {
           inMultiLineComment = false;
+          // Emit a space so comment elision (e.g. `red/**/url(...)`) cannot merge tokens.
+          stripped += ' ';
           j += 2;
           continue;
         }
@@ -47,13 +56,45 @@ export function validateCSS(css: string): CSSValidationResult {
         continue;
       }
 
-      if (line[j] === '/' && line[j + 1] === '*') {
+      const char = line[j];
+      if (activeQuote !== null) {
+        if (char === '\\') {
+          if (j + 1 < line.length) {
+            stripped += line.slice(j, j + 2);
+            j += 2;
+          } else {
+            stripped += char;
+            escapedNewline = true;
+            j++;
+          }
+          continue;
+        }
+        stripped += char;
+        if (char === activeQuote) activeQuote = null;
+        j++;
+        continue;
+      }
+
+      // Honor CSS escapes outside strings so `\/*` or `\"` cannot desynchronize lexer state.
+      if (char === '\\' && j + 1 < line.length) {
+        stripped += line.slice(j, j + 2);
+        j += 2;
+        continue;
+      }
+
+      if (char === '/' && line[j + 1] === '*') {
         inMultiLineComment = true;
         j += 2;
         continue;
       }
 
-      const char = line[j];
+      if (char === '"' || char === "'") {
+        activeQuote = char;
+        stripped += char;
+        j++;
+        continue;
+      }
+
       stripped += char;
 
       if (char === '{') {
@@ -70,6 +111,9 @@ export function validateCSS(css: string): CSSValidationResult {
       }
       j++;
     }
+    if (activeQuote !== null && !escapedNewline) {
+      return { isValid: false, error: `Unclosed string literal at line ${i + 1}`, errorLine: i + 1 };
+    }
     stripped += '\n';
   }
 
@@ -78,6 +122,10 @@ export function validateCSS(css: string): CSSValidationResult {
       isValid: false,
       error: 'Unclosed comment /* ... */ at end of CSS',
     };
+  }
+
+  if (activeQuote !== null) {
+    return { isValid: false, error: 'Unclosed string literal at end of CSS' };
   }
 
   if (braceCount > 0) {
