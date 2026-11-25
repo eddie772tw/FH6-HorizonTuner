@@ -55,6 +55,7 @@ struct Engine {
     last_profile_save: Instant,
 }
 pub struct App {
+    pub auto_tune: crate::auto_tune::AutoTune,
     pub config: Arc<ConfigService>,
     pub tuning_evidence: crate::tuning::evidence::EvidenceService,
     pub database: Arc<TelemetryStore>,
@@ -109,6 +110,7 @@ impl App {
         let companion = Arc::new(CompanionService::new(root, 8001));
         let persistence = Persistence::new(database.clone()).map_err(database_error)?;
         Ok(Arc::new(Self {
+            auto_tune: crate::auto_tune::AutoTune::new(root),
             config,
             tuning_evidence,
             database,
@@ -988,6 +990,59 @@ impl Backend for App {
                     .kill_server()
                     .map_err(|e| ApiError::unavailable("USB kill server", e))?;
                 return Ok(ApiResponse::json(json!({"status": "killed"})));
+            }
+            ("GET", "/api/auto-tune/status") => {
+                return Ok(ApiResponse::json(
+                    self.auto_tune.status().map_err(|e| ApiError::new(503, e))?,
+                ));
+            }
+            ("POST", "/api/auto-tune/enabled") => {
+                let body = request.json()?;
+                let value = body["value"]
+                    .as_bool()
+                    .ok_or_else(|| ApiError::invalid("Expected boolean value"))?;
+                self.auto_tune
+                    .set_enabled(value)
+                    .map_err(|e| ApiError::new(400, e))?;
+                return Ok(ApiResponse::json(
+                    json!({"enabled":self.auto_tune.enabled()}),
+                ));
+            }
+            ("POST", "/api/auto-tune/start") => {
+                let input = serde_json::from_value(request.json()?)
+                    .map_err(|e| ApiError::invalid(format!("Invalid auto tune request: {e}")))?;
+                let run_id = self
+                    .auto_tune
+                    .start(input, false)
+                    .map_err(|e| ApiError::new(409, e))?;
+                return Ok(ApiResponse::json(json!({"runId":run_id})));
+            }
+            ("POST", "/api/auto-tune/stop") => {
+                let body = request.json()?;
+                let id = body["runId"]
+                    .as_str()
+                    .filter(|s| !s.is_empty())
+                    .ok_or_else(|| ApiError::invalid("runId is required"))?;
+                self.auto_tune
+                    .stop(Some(id))
+                    .map_err(|e| ApiError::new(409, e))?;
+                return Ok(ApiResponse::json(
+                    self.auto_tune.status().map_err(|e| ApiError::new(503, e))?,
+                ));
+            }
+            ("GET", "/api/auto-tune/image") => {
+                let id = request
+                    .query
+                    .get("runId")
+                    .ok_or_else(|| ApiError::invalid("runId is required"))?;
+                return Ok(ApiResponse::bytes(
+                    200,
+                    self.auto_tune
+                        .image(id)
+                        .map_err(|e| ApiError::new(404, e))?,
+                    "image/png",
+                )
+                .header("cache-control", "no-store"));
             }
             ("GET", "/api/companion/workflow") => {
                 let mut workflow = lock(&self.companion_workflow);

@@ -326,6 +326,7 @@ pub async fn run(options: Options) -> Result<(), String> {
             .filter_map(|s| s.local_addr().ok())
             .collect(),
     );
+    app.auto_tune.set_port(port);
     let port_file = options.data_dir.join("logs/web_port.txt");
     let temporary = port_file.with_extension("txt.tmp");
     std::fs::write(&temporary, port.to_string()).map_err(|e| e.to_string())?;

@@ -1,0 +1,521 @@
+{
+  "date": "2026-11-24",
+  "base": "f3ee19a8ed6834487a17435183d07cee05814a37",
+  "executableSha256": "11a89781ae58627de2ab4c9e9118a6a0be91d5a1ef2687645944f60e69be4bc3",
+  "runId": "run-1795528583183682-83240",
+  "vehicle": "2013 Cadillac XTS Limousine",
+  "goal": "Road",
+  "season": "Winter",
+  "source": "mcp",
+  "developerOptions": true,
+  "status": "completed",
+  "elapsedMs": 335774,
+  "logs": [
+    {
+      "elapsedMs": 110,
+      "message": "OCR 引擎：onnx"
+    },
+    {
+      "elapsedMs": 345,
+      "message": "讀取目前車輛及已安裝零件"
+    },
+    {
+      "elapsedMs": 3888,
+      "message": "已確認目前車輛 2013 Cadillac XTS Limousine S1798"
+    },
+    {
+      "elapsedMs": 25349,
+      "message": "進氣方式 TwinTurbo"
+    },
+    {
+      "elapsedMs": 53562,
+      "message": "回讀多數決 diff.center：採用 65（OCR 65.0 / 65.0，字形 85.0）"
+    },
+    {
+      "elapsedMs": 73840,
+      "message": "以 Rust 工作流計算底盤與輪胎建議"
+    },
+    {
+      "elapsedMs": 73848,
+      "message": "調整 tyres，核對 2 項"
+    },
+    {
+      "elapsedMs": 76905,
+      "message": "調整 alignment，核對 5 項"
+    },
+    {
+      "elapsedMs": 79726,
+      "message": "調整 arb，核對 2 項"
+    },
+    {
+      "elapsedMs": 84357,
+      "message": "調整 springs，核對 4 項"
+    },
+    {
+      "elapsedMs": 90560,
+      "message": "調整 damping，核對 4 項"
+    },
+    {
+      "elapsedMs": 98305,
+      "message": "調整 diff，核對 5 項"
+    },
+    {
+      "elapsedMs": 99394,
+      "message": "回讀多數決 diff.center：採用 65（OCR 65.0 / 65.0，字形 85.0）"
+    },
+    {
+      "elapsedMs": 117849,
+      "message": "回讀多數決 diff.center：採用 62（OCR 62.0 / 62.0，字形 82.0）"
+    },
+    {
+      "elapsedMs": 118698,
+      "message": "底盤已讀回，前往直線測試場"
+    },
+    {
+      "elapsedMs": 118699,
+      "message": "前往嘉年華一公里，第 1 趟使用 3 檔"
+    },
+    {
+      "elapsedMs": 152618,
+      "message": "已直接到達起跑道路，正在以遙測核對位置與朝向"
+    },
+    {
+      "elapsedMs": 153435,
+      "message": "3 檔已確認，開始直線量測"
+    },
+    {
+      "elapsedMs": 173162,
+      "message": "duration-insufficient：distance，改用 4 檔重新量測"
+    },
+    {
+      "elapsedMs": 181688,
+      "message": "前往嘉年華一公里，第 2 趟使用 4 檔"
+    },
+    {
+      "elapsedMs": 215226,
+      "message": "已直接到達起跑道路，正在以遙測核對位置與朝向"
+    },
+    {
+      "elapsedMs": 216121,
+      "message": "4 檔已確認，開始直線量測"
+    },
+    {
+      "elapsedMs": 233236,
+      "message": "duration-insufficient：distance，改用 5 檔重新量測"
+    },
+    {
+      "elapsedMs": 242348,
+      "message": "前往嘉年華一公里，第 3 趟使用 5 檔"
+    },
+    {
+      "elapsedMs": 277656,
+      "message": "已直接到達起跑道路，正在以遙測核對位置與朝向"
+    },
+    {
+      "elapsedMs": 278709,
+      "message": "5 檔已確認，開始直線量測"
+    },
+    {
+      "elapsedMs": 295147,
+      "message": "5 檔量測完成，有效 8.830 秒，涵蓋 16 個轉速區間"
+    },
+    {
+      "elapsedMs": 305532,
+      "message": "調整 tyres，核對 2 項"
+    },
+    {
+      "elapsedMs": 306392,
+      "message": "調整 alignment，核對 5 項"
+    },
+    {
+      "elapsedMs": 307464,
+      "message": "調整 arb，核對 2 項"
+    },
+    {
+      "elapsedMs": 308389,
+      "message": "調整 springs，核對 4 項"
+    },
+    {
+      "elapsedMs": 309406,
+      "message": "調整 damping，核對 4 項"
+    },
+    {
+      "elapsedMs": 310425,
+      "message": "調整 diff，核對 5 項"
+    },
+    {
+      "elapsedMs": 311500,
+      "message": "回讀多數決 diff.center：採用 62（OCR 62.0 / 62.0，字形 82.0）"
+    },
+    {
+      "elapsedMs": 311503,
+      "message": "調整 gears，核對 8 項"
+    },
+    {
+      "elapsedMs": 333642,
+      "message": "回讀多數決 diff.center：採用 62（OCR 62.0 / 62.0，字形 82.0）"
+    },
+    {
+      "elapsedMs": 335624,
+      "message": "Step 1～3 完成，已重新開啟調校頁並核對套用值"
+    }
+  ],
+  "verified": {
+    "pressure.front": {
+      "observed": 30.5,
+      "unit": "psi",
+      "recommended": {
+        "value": 30.3,
+        "unit": "psi"
+      },
+      "screenshot": "0190-tyres.png"
+    },
+    "pressure.rear": {
+      "observed": 29.0,
+      "unit": "psi",
+      "recommended": {
+        "value": 28.8,
+        "unit": "psi"
+      },
+      "screenshot": "0190-tyres.png"
+    },
+    "camber.front": {
+      "observed": -2.2,
+      "unit": "deg",
+      "recommended": {
+        "value": -2.2,
+        "unit": "deg"
+      },
+      "screenshot": "0191-alignment.png"
+    },
+    "toe.front": {
+      "observed": 0.1,
+      "unit": "deg",
+      "recommended": {
+        "value": 0.1,
+        "unit": "deg"
+      },
+      "screenshot": "0191-alignment.png"
+    },
+    "camber.rear": {
+      "observed": -1.3,
+      "unit": "deg",
+      "recommended": {
+        "value": -1.3,
+        "unit": "deg"
+      },
+      "screenshot": "0191-alignment.png"
+    },
+    "toe.rear": {
+      "observed": -0.1,
+      "unit": "deg",
+      "recommended": {
+        "value": -0.1,
+        "unit": "deg"
+      },
+      "screenshot": "0191-alignment.png"
+    },
+    "caster.front": {
+      "observed": 6.2,
+      "unit": "deg",
+      "recommended": {
+        "value": 6.2,
+        "unit": "deg"
+      },
+      "screenshot": "0191-alignment.png"
+    },
+    "arb.front": {
+      "observed": 3.3,
+      "unit": "slider",
+      "recommended": {
+        "value": 3.3,
+        "unit": "slider"
+      },
+      "screenshot": "0192-arb.png"
+    },
+    "arb.rear": {
+      "observed": 50.0,
+      "unit": "slider",
+      "recommended": {
+        "value": 50.0,
+        "unit": "slider"
+      },
+      "screenshot": "0192-arb.png"
+    },
+    "spring.front": {
+      "observed": 1775.1,
+      "unit": "lb/in",
+      "recommended": {
+        "value": 31.7,
+        "unit": "kgf/mm"
+      },
+      "screenshot": "0193-springs.png"
+    },
+    "height.front": {
+      "observed": 5.1,
+      "unit": "in",
+      "recommended": {
+        "value": 12.9,
+        "unit": "cm"
+      },
+      "screenshot": "0193-springs.png"
+    },
+    "spring.rear": {
+      "observed": 1545.7,
+      "unit": "lb/in",
+      "recommended": {
+        "value": 27.6,
+        "unit": "kgf/mm"
+      },
+      "screenshot": "0193-springs.png"
+    },
+    "height.rear": {
+      "observed": 5.1,
+      "unit": "in",
+      "recommended": {
+        "value": 12.9,
+        "unit": "cm"
+      },
+      "screenshot": "0193-springs.png"
+    },
+    "rebound.front": {
+      "observed": 12.6,
+      "unit": "slider",
+      "recommended": {
+        "value": 12.6,
+        "unit": "slider"
+      },
+      "screenshot": "0194-damping.png"
+    },
+    "bump.front": {
+      "observed": 7.6,
+      "unit": "slider",
+      "recommended": {
+        "value": 7.6,
+        "unit": "slider"
+      },
+      "screenshot": "0194-damping.png"
+    },
+    "rebound.rear": {
+      "observed": 9.8,
+      "unit": "slider",
+      "recommended": {
+        "value": 9.8,
+        "unit": "slider"
+      },
+      "screenshot": "0194-damping.png"
+    },
+    "bump.rear": {
+      "observed": 5.9,
+      "unit": "slider",
+      "recommended": {
+        "value": 5.9,
+        "unit": "slider"
+      },
+      "screenshot": "0194-damping.png"
+    },
+    "diff.front.acceleration": {
+      "observed": 15.0,
+      "unit": "%",
+      "recommended": {
+        "value": 15.0,
+        "unit": "%"
+      },
+      "screenshot": "0195-diff.png"
+    },
+    "diff.front.deceleration": {
+      "observed": 0.0,
+      "unit": "%",
+      "recommended": {
+        "value": 0.0,
+        "unit": "%"
+      },
+      "screenshot": "0195-diff.png"
+    },
+    "diff.rear.acceleration": {
+      "observed": 75.0,
+      "unit": "%",
+      "recommended": {
+        "value": 75.0,
+        "unit": "%"
+      },
+      "screenshot": "0195-diff.png"
+    },
+    "diff.rear.deceleration": {
+      "observed": 15.0,
+      "unit": "%",
+      "recommended": {
+        "value": 15.0,
+        "unit": "%"
+      },
+      "screenshot": "0195-diff.png"
+    },
+    "diff.center": {
+      "observed": 62.0,
+      "unit": "%",
+      "recommended": {
+        "value": 62.0,
+        "unit": "%"
+      },
+      "screenshot": "0195-diff.png"
+    },
+    "gearing.finalDrive": {
+      "observed": 3.31,
+      "unit": "ratio",
+      "recommended": {
+        "value": 3.31,
+        "unit": "ratio"
+      },
+      "screenshot": "0196-gears.png"
+    },
+    "gearing.gear1": {
+      "observed": 3.6,
+      "unit": "ratio",
+      "recommended": {
+        "value": 3.6,
+        "unit": "ratio"
+      },
+      "screenshot": "0196-gears.png"
+    },
+    "gearing.gear2": {
+      "observed": 2.51,
+      "unit": "ratio",
+      "recommended": {
+        "value": 2.51,
+        "unit": "ratio"
+      },
+      "screenshot": "0196-gears.png"
+    },
+    "gearing.gear3": {
+      "observed": 1.81,
+      "unit": "ratio",
+      "recommended": {
+        "value": 1.81,
+        "unit": "ratio"
+      },
+      "screenshot": "0196-gears.png"
+    },
+    "gearing.gear4": {
+      "observed": 1.35,
+      "unit": "ratio",
+      "recommended": {
+        "value": 1.35,
+        "unit": "ratio"
+      },
+      "screenshot": "0196-gears.png"
+    },
+    "gearing.gear5": {
+      "observed": 1.03,
+      "unit": "ratio",
+      "recommended": {
+        "value": 1.03,
+        "unit": "ratio"
+      },
+      "screenshot": "0196-gears.png"
+    },
+    "gearing.gear6": {
+      "observed": 0.82,
+      "unit": "ratio",
+      "recommended": {
+        "value": 0.82,
+        "unit": "ratio"
+      },
+      "screenshot": "0196-gears.png"
+    },
+    "gearing.gear7": {
+      "observed": 0.67,
+      "unit": "ratio",
+      "recommended": {
+        "value": 0.67,
+        "unit": "ratio"
+      },
+      "screenshot": "0196-gears.png"
+    }
+  },
+  "measurementAttempts": [
+    {
+      "gear": 3,
+      "readiness": {
+        "ready": false,
+        "status": "collecting",
+        "guidance": "duration-insufficient",
+        "acceptedMs": 2265.0,
+        "binCount": 6,
+        "lowRpmCoverage": false,
+        "highRpmCoverage": true,
+        "powerDropoffDetected": false,
+        "cutoffDetected": false,
+        "powerbandStartRpm": 5296.711100260417,
+        "powerbandEndRpm": 6935.895751953125,
+        "minimumAcceptedMs": 6000,
+        "minimumBins": 8
+      }
+    },
+    {
+      "gear": 4,
+      "readiness": {
+        "ready": false,
+        "status": "collecting",
+        "guidance": "duration-insufficient",
+        "acceptedMs": 4752.0,
+        "binCount": 12,
+        "lowRpmCoverage": true,
+        "highRpmCoverage": true,
+        "powerDropoffDetected": false,
+        "cutoffDetected": false,
+        "powerbandStartRpm": 5316.337109375,
+        "powerbandEndRpm": 6946.930338541667,
+        "minimumAcceptedMs": 6000,
+        "minimumBins": 8
+      }
+    },
+    {
+      "gear": 5,
+      "readiness": {
+        "ready": true,
+        "status": "ready",
+        "guidance": "ready",
+        "acceptedMs": 8830.0,
+        "binCount": 16,
+        "lowRpmCoverage": true,
+        "highRpmCoverage": true,
+        "effectiveRedline": 7751.0,
+        "powerDropoffDetected": false,
+        "cutoffDetected": true,
+        "powerbandStartRpm": 5310.4798583984375,
+        "powerbandEndRpm": 7751.0,
+        "minimumAcceptedMs": 6000,
+        "minimumBins": 6
+      }
+    }
+  ],
+  "artifactSha256": {
+    "baseline.json": "b9bffbfddfb754d80047465a21300ea768034fe8081aabd872398834ea10463e",
+    "desktop-start.json": "93bd6732b9e7ecdf2d1412b08ed4e597c6795c0bbe4503e63cee32be61181f67",
+    "desktop-timing.json": "1eb48969b79512ad1cb4ccb2126d5feba781a069cf413eb5142c8a30736900f1",
+    "engine-batch-1.json": "148c5f88fe953e0afe5d046e28927a59876310b8e03e7c1c4ed6cafc98481549",
+    "engine-batch-2.json": "8f7470462d194a0ea1f28fb765098b1ab59ad0b52d6a02704984f66470ac23fe",
+    "engine-batch-3.json": "b64f69c58e3c88d2f54266e86230d0d7cc5b98f5c27e74269201ee2d6a7b79c6",
+    "engine-batch.json": "b64f69c58e3c88d2f54266e86230d0d7cc5b98f5c27e74269201ee2d6a7b79c6",
+    "launch-pose.json": "5003db3c0e8bb0ba7fd9179413296c040b0b28646aea820ac847cc3e3b39f547",
+    "profile.json": "2c371e5ca1e0e44d0d8977362ef97aad262f3ffdfa178e9bb98b454712caabea",
+    "samples.json": "8a25fc2fc92b4374e65b81113af9cd5c2457738678de91b21df6937908722e86",
+    "state.json": "d4bc54891156c441b9756ed9f3af0cbfebe66ffd4cda08ba42258f821214b3b5",
+    "step2-verified.json": "361c40e12144646eda6a2d870f1a9fedf4ea19103556159f0829e9784ef5adc6",
+    "step3-verified.json": "a8399cb7bea5973418fee2a5b9c88fadbaff77e65ff410963967c34649b25f67",
+    "sweep-1.json": "2a36448567cf005cf2bc14108db4f4605b7f04c7011674100c8070abf4852e47",
+    "sweep-2.json": "a3aec2996587d8b7345d939f35c33a9650bbd2ba33f6a016d1e0a1588bca6486",
+    "sweep-3.json": "8824d034e8c1b90a7859a41a51666ca54ae0e1211e7100fea217165198c3ab90",
+    "travel-target.json": "4c6bd21aebacdc3c5d01a3d520754191bfdc0aa0965a6480a3cb8dda156529d8",
+    "workflow.json": "aaa482c617ae834914c70e1118a739a0eea4010cbbd4b6c9931c33610f8741a8"
+  },
+  "screenshotSha256": {
+    "0190-tyres.png": "5b99f34a03c6c25c4c98998912630aeb2b8faccf1733b08e78d6d31e84d7ca8a",
+    "0191-alignment.png": "50b4686da9bb75e79a98d404e32a8e87eee7f09b478f731e969702e6e00221d1",
+    "0192-arb.png": "5f2ee0c0b4ed22d767d01dd5f1cb9c38a68eaaa48eec4b754d3327aa32f4b719",
+    "0193-springs.png": "907b0d2695f40840bc89e1edbeb42b15ec4b7b0070779f130c46374b9498ffe7",
+    "0194-damping.png": "c64720192278fde279f98aa7f7b277592ba1bbcec91c5f95f5e1d08ac983b668",
+    "0195-diff.png": "38c56929fdd0300b9c9858401110c79f36c82686e941a223b7c778146498fd6c",
+    "0196-gears.png": "03ac09980914682c97dd20a59a8270af4ae6e16a6fa94b33e9a44173be22c96d"
+  }
+}

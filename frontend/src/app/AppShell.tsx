@@ -10,6 +10,7 @@ import { CompanionSettingsCard } from '../features/settings/components/Companion
 import { McpSettingsCard } from '../features/settings/components/McpSettingsCard';
 import { AppAbout } from './AppAbout';
 import { AppHeader } from './AppHeader';
+import { useDeveloperOptions } from '../features/auto-tune/useDeveloperOptions';
 import { AppDialog } from './AppDialog';
 import { permitsIntent, resolveWorkspace, type AppSurface, type AppVariant, type SessionIntent, type WorkspaceId } from './workspaceManifest';
 
@@ -44,6 +45,7 @@ export function AppShell({ variant, workspaces, Runtime, prepareSession }: {
   prepareSession?: (intent: SessionIntent, isCurrent: () => boolean) => Promise<boolean>;
 }) {
   const { t } = useSettings();
+  const developer = useDeveloperOptions(variant);
   const [activeWorkspace, setActiveWorkspace] = useState<WorkspaceId>('live');
   const [surface, setSurface] = useState<AppSurface | null>(null);
   const [failedSessionRequest, setFailedSessionRequest] = useState<SessionOpenRequest | null>(null);
@@ -52,8 +54,8 @@ export function AppShell({ variant, workspaces, Runtime, prepareSession }: {
   const selectWorkspace = useCallback((requested: WorkspaceId) => {
     navigationGeneration.current += 1;
     setFailedSessionRequest(null);
-    setActiveWorkspace(resolveWorkspace(variant, requested));
-  }, [variant]);
+    setActiveWorkspace(resolveWorkspace(variant, requested, undefined, developer.enabled));
+  }, [variant, developer.enabled]);
   const openSessions = useCallback((intent?: SessionIntent, isRequestCurrent: () => boolean = () => true) => {
     if (!permitsIntent(variant, { kind: 'workspace', workspace: 'sessions' })) return;
     const generation = ++navigationGeneration.current;
@@ -79,14 +81,18 @@ export function AppShell({ variant, workspaces, Runtime, prepareSession }: {
     const main = document.getElementById('main-content');
     if (main) main.focus();
   };
-  const Workspace = workspaces[resolveWorkspace(variant, activeWorkspace)];
+  const visibleWorkspace = resolveWorkspace(variant, activeWorkspace, undefined, developer.enabled);
+  useEffect(() => {
+    if (activeWorkspace !== visibleWorkspace) setActiveWorkspace(visibleWorkspace);
+  }, [activeWorkspace, visibleWorkspace]);
+  const Workspace = workspaces[visibleWorkspace];
   return <div className="app-shell d-flex flex-column vh-100" style={{ background: 'var(--bg-gradient)', color: 'var(--text-primary)' }}>
     <a href="#main-content" className="skip-to-content visually-hidden-focusable btn btn-primary position-absolute top-0 start-0 m-2"
       style={{ zIndex: 2000 }} onClick={handleSkipToContent}>{t('Skip to main content')}</a>
-    <AppRuntime activeWorkspace={activeWorkspace} />
-    <AppHeader variant={variant} activeWorkspace={activeWorkspace} onSelect={selectWorkspace} onOpenSurface={openSurface} />
-    {Runtime && <Runtime activeWorkspace={activeWorkspace} onOpenSessions={openSessions} />}
-    <main id="main-content" tabIndex={-1} className="d-flex flex-column flex-grow-1 overflow-hidden p-3" style={{ minHeight: 0, outline: 'none' }} data-workspace={activeWorkspace}>
+    <AppRuntime activeWorkspace={visibleWorkspace} />
+    <AppHeader variant={variant} activeWorkspace={visibleWorkspace} developerOptions={developer.enabled} onSelect={selectWorkspace} onOpenSurface={openSurface} />
+    {Runtime && <Runtime activeWorkspace={visibleWorkspace} onOpenSessions={openSessions} />}
+    <main id="main-content" tabIndex={-1} className="d-flex flex-column flex-grow-1 overflow-hidden p-3" style={{ minHeight: 0, outline: 'none' }} data-workspace={visibleWorkspace}>
       <Suspense fallback={<div role="status" className="p-3">{t('Loading...')}</div>}>
         {Workspace && <Workspace variant={variant} onOpenSessions={openSessions} onOpenTune={() => selectWorkspace('tune')} />}
       </Suspense>
@@ -99,7 +105,7 @@ export function AppShell({ variant, workspaces, Runtime, prepareSession }: {
         <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => setFailedSessionRequest(null)}>{t('Close')}</button>
       </div>
     </div>}
-    {surface === 'settings' && <AppDialog className="app-dialog--settings" title="Settings" onClose={closeSurface}><SettingsView /></AppDialog>}
+    {surface === 'settings' && <AppDialog className="app-dialog--settings" title="Settings" onClose={closeSurface}><SettingsView developer={developer} /></AppDialog>}
     {surface === 'companion' && <AppDialog className="app-dialog--companion" title="Companion App" onClose={closeSurface}><CompanionSettingsCard /></AppDialog>}
     {surface === 'mcp' && <AppDialog className="app-dialog--mcp" title="MCP" onClose={closeSurface}><McpSettingsCard /></AppDialog>}
     {surface === 'about' && <AppDialog className="app-dialog--about" title="About" onClose={closeSurface}><AppAbout variant={variant} /></AppDialog>}

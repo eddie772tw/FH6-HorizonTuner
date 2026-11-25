@@ -149,6 +149,9 @@ jobs:
 
         ./scripts/build_backend.ps1
 
+    - name: Build offline automated tuning runtime
+      run: uv run --no-project --active python scripts/prepare_auto_tune_runtime.py
+
     - name: Stage Embedded Sidecar for Tauri Host
       shell: pwsh
       run: |
@@ -231,6 +234,9 @@ jobs:
             throw "Expected portable executable was not produced: $path"
           }
         }
+
+    - name: Verify embedded OCR without external runtime or network
+      run: uv run --no-project --active python scripts/smoke_auto_tune_release.py --exe dist/FH6-HorizonTuner.exe --evidence smoke-evidence/auto-tune
 
     - name: Locate signed Full and Lite Tauri updater artifacts
       id: updater_artifacts

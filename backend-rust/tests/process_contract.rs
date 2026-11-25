@@ -413,7 +413,7 @@ fn mcp_http_uses_shared_persistence_and_honors_access_settings() {
         202
     );
     let tools = run.json("POST", "/mcp", rpc("tools/list", json!({})));
-    assert_eq!(tools["result"]["tools"].as_array().unwrap().len(), 24);
+    assert_eq!(tools["result"]["tools"].as_array().unwrap().len(), 28);
     let preset = json!({"schemaVersion":"tuning-preset/v1","parameters":{"arb_front":3.0}});
     run.json("POST", "/api/tunings/247/road-test", preset.clone());
     let response = run.json("POST", "/mcp", rpc("tools/call", json!({"name":"get_tuning_preset","arguments":{"car_id":"247","save_name":"road-test"}})));
