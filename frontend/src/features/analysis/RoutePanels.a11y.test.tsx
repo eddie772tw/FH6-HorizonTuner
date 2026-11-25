@@ -7,7 +7,10 @@ import ToastContainer from '../../components/common/ToastContainer';
 import { TimeTrialRoutePanel } from './TimeTrialRoutePanel';
 import { RoamingRoutePanel } from './RoamingRoutePanel';
 
-vi.mock('../../context/SettingsContext', () => ({ useSettings: () => ({ t: (s: string) => s }) }));
+const interpolate = (text: string, params?: Record<string, string | number>) =>
+  params ? Object.entries(params).reduce((acc, [k, v]) => acc.replace(`{${k}}`, String(v)), text) : text;
+
+vi.mock('../../context/SettingsContext', () => ({ useSettings: () => ({ t: interpolate }) }));
 
 let host: HTMLDivElement, root: Root;
 const baseProps = {
@@ -24,7 +27,7 @@ const baseProps = {
   onDisarmRoute: vi.fn(async () => true),
   onImportRoutes: vi.fn(async () => undefined),
   onExportRoute: vi.fn(),
-  t: (text: string) => text,
+  t: interpolate,
 };
 
 beforeEach(() => {

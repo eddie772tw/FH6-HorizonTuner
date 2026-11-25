@@ -19,7 +19,7 @@ export interface TimeTrialRoutePanelProps {
   readonly onDisarmRoute: () => Promise<boolean>;
   readonly onImportRoutes: (file: File) => Promise<void>;
   readonly onExportRoute: (routeId: string) => void;
-  readonly t: (text: string) => string;
+  readonly t: (text: string, params?: Record<string, string | number>) => string;
 }
 
 export const TimeTrialRoutePanel: React.FC<TimeTrialRoutePanelProps> = ({
@@ -96,7 +96,7 @@ export const TimeTrialRoutePanel: React.FC<TimeTrialRoutePanelProps> = ({
     };
     const check = validateRoute(candidate);
     if (!check.valid) {
-      addToast({ message: check.error || t("Invalid route configuration"), type: "danger" });
+      addToast({ message: t(check.error || "Invalid route configuration"), type: "danger" });
       return;
     }
     await onSaveRoute(candidate);

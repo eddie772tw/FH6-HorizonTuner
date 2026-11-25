@@ -19,7 +19,7 @@ export interface AnalysisRouteSectionProps {
   readonly onDisarmRoute: () => Promise<boolean>;
   readonly onImportRoutes: (file: File) => Promise<void>;
   readonly onExportRoute: (routeId: string) => void;
-  readonly t: (text: string) => string;
+  readonly t: (text: string, params?: Record<string, string | number>) => string;
 }
 
 export const AnalysisRouteSection: React.FC<AnalysisRouteSectionProps> = ({
