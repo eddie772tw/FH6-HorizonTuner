@@ -1660,3 +1660,62 @@ fn test_finalize_session_projection_legacy_and_edge_raw_json_parity() {
     .unwrap();
     assert!(store.finalize_session("scalar", json!({})).is_err());
 }
+
+#[test]
+fn telemetry_points_json_stream_matches_get_telemetry_points_and_http_routes() {
+    use fh6_backend::network::{ApiRequest, Backend};
+    let dir = tempfile::tempdir().unwrap();
+    let app = fh6_backend::app::App::new(dir.path()).unwrap();
+    app.database
+        .create_session("mix", 1, "Car", 800, 800, 0.0)
+        .unwrap();
+    let pts: Vec<_> = (0..8).map(|i| json!({"time": i as f64, "LapNumber": if i < 2 { 1 } else { 2 }, "SpeedMetersPerSecond": (i + 1) as f64 * 10.0})).collect();
+    app.database.insert_points_batch("mix", &pts).unwrap();
+    let conn = rusqlite::Connection::open(dir.path().join("telemetry_sessions.db")).unwrap();
+    for sql in [
+        "UPDATE telemetry_channels SET raw_json=NULL WHERE id=2",
+        "UPDATE telemetry_channels SET raw_json='{broken' WHERE id=3",
+        "UPDATE telemetry_channels SET raw_json=' 17 \n' WHERE id=4",
+        "UPDATE telemetry_channels SET raw_json='\n{\"time\":4.0,\"LapNumber\":2}\n' WHERE id=5",
+        r#"UPDATE telemetry_channels SET raw_json='{"overflow":[1e400]}' WHERE id=6"#,
+        r#"UPDATE telemetry_channels SET raw_json='{"text":"\uD800"}' WHERE id=7"#,
+        r#"UPDATE telemetry_channels SET raw_json='{"\uD800":3}' WHERE id=8"#,
+    ] {
+        conn.execute(sql, []).unwrap();
+    }
+    let get = |path: &str, lap: Option<i64>| {
+        app.request(ApiRequest {
+            method: "GET".into(),
+            path: path.into(),
+            headers: Default::default(),
+            body: vec![],
+            upload_filename: None,
+            query: lap
+                .map(|l| [("lap".into(), l.to_string())].into())
+                .unwrap_or_default(),
+        })
+    };
+    let parse = |b: &[u8]| serde_json::from_slice::<Value>(b).unwrap();
+    for lap in [None, Some(2)] {
+        let expected = Value::Array(app.database.get_telemetry_points("mix", lap).unwrap());
+        assert_eq!(
+            parse(&app.database.get_telemetry_points_json("mix", lap).unwrap()),
+            expected
+        );
+        let resp = get("/api/analysis/sessions/mix", lap).unwrap();
+        assert_eq!((resp.status, parse(&resp.body)), (200, expected));
+    }
+    let all = Value::Array(app.database.get_telemetry_points("mix", None).unwrap());
+    assert_eq!(parse(&get("/api/analysis/data", None).unwrap().body), all);
+    assert_eq!(
+        get("/api/analysis/sessions/missing", None).unwrap().body,
+        b"[]"
+    );
+    conn.execute(
+        "UPDATE telemetry_channels SET raw_json=x'FF' WHERE id=5",
+        [],
+    )
+    .unwrap();
+    assert!(app.database.get_telemetry_points_json("mix", None).is_err());
+    assert!(get("/api/analysis/sessions/mix", None).is_err());
+}

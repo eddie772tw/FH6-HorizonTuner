@@ -468,9 +468,7 @@ impl App {
                 let r = self.database.get_route(id).map_err(database_error)?.ok_or_else(|| ApiError::new(404, "Route not found"))?;
                 json!({"schema": "fh6-custom-route/v1", "route": r})
             }
-            ("GET",["api","analysis","data"])=>{let lap=query_integer(request,"lap",0)?;Value::Array(match self.session_id("current")?{Some(id)=>self.database.get_telemetry_points(&id,(lap>0).then_some(lap)).map_err(database_error)?,None=>vec![]})}
             ("GET",["api","analysis","sessions"])=>Value::Array(self.database.list_all_sessions().map_err(database_error)?.iter().map(|s|json!({"filename":s["session_id"],"session_id":s["session_id"],"car_name":s["car_name"],"total_laps":s["total_laps"],"best_lap_time":s["best_lap_time"],"total_distance":s["total_distance"],"mtime":s["start_time"],"size":0})).collect()),
-            ("GET",["api","analysis","sessions",id])=>{let lap=query_integer(request,"lap",0)?;Value::Array(match self.session_id(id)?{Some(id)=>self.database.get_telemetry_points(&id,(lap>0).then_some(lap)).map_err(database_error)?,None=>vec![]})}
             ("DELETE",["api","analysis","sessions",id])=>{self.database.delete_session(id).map_err(database_error)?;json!({"message":"Session deleted successfully"})},
             ("GET",["api","analysis","sessions",id,"laps"])=>Value::Array(match self.session_id(id)?{Some(id)=>self.database.get_session_laps(&id).map_err(database_error)?,None=>vec![]}),
             ("GET",["api","analysis","sessions",id,"metadata"])=>match self.session_id(id)?{Some(id)=>self.database.get_session_metadata(&id).map_err(database_error)?,None=>serde_json::Value::Null},
@@ -502,6 +500,24 @@ impl App {
             });}return Ok(None);}
         };
         Ok(Some(value))
+    }
+    fn analysis_points_api(&self, request: &ApiRequest) -> ApiResult<Option<ApiResponse>> {
+        let parts: Vec<&str> = request.path.trim_matches('/').split('/').collect();
+        let target = match (request.method.as_str(), parts.as_slice()) {
+            ("GET", ["api", "analysis", "data"]) => "current",
+            ("GET", ["api", "analysis", "sessions", id]) => *id,
+            _ => return Ok(None),
+        };
+        let lap = query_integer(request, "lap", 0)?;
+        // [PERF] Stream pre-serialized raw_json rows directly instead of building/re-serializing Value trees.
+        let bytes = match self.session_id(target)? {
+            Some(id) => self
+                .database
+                .get_telemetry_points_json(&id, (lap > 0).then_some(lap))
+                .map_err(database_error)?,
+            None => b"[]".to_vec(),
+        };
+        Ok(Some(ApiResponse::bytes(200, bytes, "application/json")))
     }
     fn motec_api(&self, request: &ApiRequest) -> ApiResult<Option<ApiResponse>> {
         let (requested, open) = if request.method == "GET" {
@@ -1248,6 +1264,9 @@ impl Backend for App {
                 }
             }
             return Ok(ApiResponse::json(value));
+        }
+        if let Some(response) = self.analysis_points_api(&request)? {
+            return Ok(response);
         }
         if let Some(value) = self.recording_api(&request, &data)? {
             return Ok(ApiResponse::json(value));
