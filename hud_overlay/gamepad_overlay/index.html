@@ -61,8 +61,18 @@
             var canvas = document.getElementById('gamepadCanvas');
             var ctx = canvas.getContext('2d');
             var container = document.getElementById('gamepadContainer');
-            var lastDpr = 0;
-            var canvasScale = 1;
+            var LOGICAL_W = 480, LOGICAL_H = 380, pixelRatio = 1, lastPixelW = 0, lastPixelH = 0, canvasScale = 1, destroyed = false;
+            var stickGrad = null, stickGradRadius = -1, brakeGrad = null, throttleGrad = null, triggerGradY = NaN, triggerGradH = NaN, lightbarGrad = null, lightbarOx = NaN, lightbarOy = NaN;
+            function clamp(v, lo, hi) { return Math.min(hi, Math.max(lo, v)); }
+            function readFinite(v, fb) { var n = Number(v); return Number.isFinite(n) ? n : fb; }
+            function syncBackingStore() {
+                var d = readFinite(window.devicePixelRatio, 1), s = readFinite(canvasScale, 1), r = clamp((d > 0 ? d : 1) * Math.max(1, s > 0 ? s : 1), 1, 3);
+                var nextW = Math.max(1, Math.round(LOGICAL_W * r)), nextH = Math.max(1, Math.round(LOGICAL_H * r));
+                if (canvas.width !== nextW || canvas.height !== nextH) { canvas.width = nextW; canvas.height = nextH; }
+                lastPixelW = nextW; lastPixelH = nextH; pixelRatio = Math.min(nextW / LOGICAL_W, nextH / LOGICAL_H);
+            }
+            function resolveGlowRadius(b) { var g = window._currentGlowIntensity; return b > 0 ? b * pixelRatio * (typeof g === 'number' && Number.isFinite(g) ? clamp(g, 0, 2) : 1) : 0; }
+            function formatGear(g) { return (g === 0 || g === '0' || g === 'R') ? 'R' : (g === 11 || g === '11' || g === 'N') ? 'N' : (Number.isInteger(Number(g)) && Number(g) >= 1 && Number(g) <= 10 ? String(Number(g)) : 'N'); }
 
             var xboxImg = new Image();
             xboxImg.src = 'assets/controller_xbox.png';
@@ -81,88 +91,41 @@
             };
 
             function drawStick(cx, cy, radius, defX, defY, glowColor) {
+                ctx.strokeStyle = 'rgba(0, 240, 255, 0.25)'; ctx.lineWidth = 1.5;
+                ctx.beginPath(); ctx.arc(cx, cy, radius + 5, 0, Math.PI * 2); ctx.stroke();
+                var sx = cx + clamp(readFinite(defX, 0), -1, 1) * (radius * 0.85), sy = cy + clamp(readFinite(defY, 0), -1, 1) * (radius * 0.85);
+                if (!stickGrad || stickGradRadius !== radius) {
+                    stickGrad = ctx.createRadialGradient(0, 0, 2, 0, 0, radius); stickGrad.addColorStop(0, '#38bdf8'); stickGrad.addColorStop(0.65, '#0284c7'); stickGrad.addColorStop(1, '#0f172a'); stickGradRadius = radius;
+                }
                 ctx.save();
-                ctx.strokeStyle = 'rgba(0, 240, 255, 0.25)';
-                ctx.lineWidth = 1.5;
-                ctx.beginPath();
-                ctx.arc(cx, cy, radius + 5, 0, Math.PI * 2);
-                ctx.stroke();
-
-                var sx = cx + defX * (radius * 0.85);
-                var sy = cy + defY * (radius * 0.85);
-
-                var grad = ctx.createRadialGradient(sx, sy, 2, sx, sy, radius);
-                grad.addColorStop(0, '#38bdf8');
-                grad.addColorStop(0.65, '#0284c7');
-                grad.addColorStop(1, '#0f172a');
-
-                ctx.fillStyle = grad;
-                ctx.shadowColor = glowColor || '#00f0ff';
-                ctx.shadowBlur = 10;
-                ctx.beginPath();
-                ctx.arc(sx, sy, radius, 0, Math.PI * 2);
-                ctx.fill();
-
-                ctx.shadowBlur = 0;
-                ctx.fillStyle = '#ffffff';
-                ctx.beginPath();
-                ctx.arc(sx, sy, 2.8, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.restore();
+                try {
+                    ctx.translate(sx, sy); ctx.fillStyle = stickGrad; ctx.shadowColor = glowColor || '#00f0ff'; ctx.shadowBlur = resolveGlowRadius(10);
+                    ctx.beginPath(); ctx.arc(0, 0, radius, 0, Math.PI * 2); ctx.fill();
+                    ctx.shadowBlur = 0; ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(0, 0, 2.8, 0, Math.PI * 2); ctx.fill();
+                } finally { ctx.restore(); }
             }
 
             function drawTriggerBar(x, y, w, h, val, isBrake) {
+                var v = clamp(readFinite(val, 0), 0, 1), fillH = Math.max(0, Math.min(h - 4, (h - 4) * v));
                 ctx.save();
-                ctx.fillStyle = 'rgba(15, 23, 42, 0.35)';
-                ctx.strokeStyle = 'rgba(255, 255, 255, 0.22)';
-                ctx.lineWidth = 1;
-                ctx.beginPath();
-                ctx.roundRect(x, y, w, h, 4);
-                ctx.fill();
-                ctx.stroke();
-
-                var fillH = Math.max(0, Math.min(h - 4, (h - 4) * val));
-                var fillY = y + h - 2 - fillH;
-
-                if (fillH > 0.5) {
-                    var grad = ctx.createLinearGradient(x, fillY + fillH, x, fillY);
-                    if (isBrake) {
-                        grad.addColorStop(0, '#f87171');
-                        grad.addColorStop(1, '#ef4444');
-                        ctx.shadowColor = '#ef4444';
-                    } else {
-                        grad.addColorStop(0, '#4ade80');
-                        grad.addColorStop(1, '#22c55e');
-                        ctx.shadowColor = '#22c55e';
+                try {
+                    ctx.fillStyle = 'rgba(15, 23, 42, 0.35)'; ctx.strokeStyle = 'rgba(255, 255, 255, 0.22)'; ctx.lineWidth = 1;
+                    ctx.beginPath(); ctx.roundRect(x, y, w, h, 4); ctx.fill(); ctx.stroke();
+                    if (fillH > 0.5) {
+                        if (!brakeGrad || triggerGradY !== y || triggerGradH !== h) {
+                            brakeGrad = ctx.createLinearGradient(0, y + h - 2, 0, y + 2); brakeGrad.addColorStop(0, '#f87171'); brakeGrad.addColorStop(1, '#ef4444');
+                            throttleGrad = ctx.createLinearGradient(0, y + h - 2, 0, y + 2); throttleGrad.addColorStop(0, '#4ade80'); throttleGrad.addColorStop(1, '#22c55e');
+                            triggerGradY = y; triggerGradH = h;
+                        }
+                        ctx.shadowColor = isBrake ? '#ef4444' : '#22c55e'; ctx.shadowBlur = v > 0.1 ? resolveGlowRadius(8) : 0; ctx.fillStyle = isBrake ? brakeGrad : throttleGrad;
+                        ctx.beginPath(); ctx.roundRect(x + 2, y + h - 2 - fillH, w - 4, fillH, 2); ctx.fill();
                     }
-                    ctx.shadowBlur = val > 0.1 ? 8 : 0;
-                    ctx.fillStyle = grad;
-                    ctx.beginPath();
-                    ctx.roundRect(x + 2, fillY, w - 4, fillH, 2);
-                    ctx.fill();
-                }
-
-                ctx.shadowBlur = 0;
-                ctx.fillStyle = '#ffffff';
-                ctx.font = 'bold 10px Consolas, monospace';
-                ctx.textAlign = 'center';
-                ctx.fillText((val * 100).toFixed(0) + '%', x + w / 2, y + h + 14);
-
-                ctx.fillStyle = isBrake ? '#f87171' : '#4ade80';
-                ctx.fillText(isBrake ? 'BRAKE' : 'THROTTLE', x + w / 2, y - 6);
-                ctx.restore();
+                    ctx.shadowBlur = 0; ctx.fillStyle = '#ffffff'; ctx.font = 'bold 10px Consolas, monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+                    ctx.fillText((v * 100).toFixed(0) + '%', x + w / 2, y + h + 14); ctx.fillStyle = isBrake ? '#f87171' : '#4ade80'; ctx.fillText(isBrake ? 'BRAKE' : 'THROTTLE', x + w / 2, y - 6);
+                } finally { ctx.restore(); }
             }
 
-            function render() {
-                var dpr = (window.devicePixelRatio || 1) * canvasScale;
-                if (lastDpr !== dpr) {
-                    lastDpr = dpr;
-                    canvas.width = Math.round(480 * dpr);
-                    canvas.height = Math.round(380 * dpr);
-                    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-                }
-                var w = 480;
-                var h = 380;
+            function renderFrame(w, h) {
                 ctx.clearRect(0, 0, w, h);
 
                 var isDualSense = (currentLayout === 1);
@@ -180,16 +143,17 @@
                 drawTriggerBar(14, oy + 42, 24, 120, telemetryData.brake, true);
                 drawTriggerBar(w - 38, oy + 42, 24, 120, telemetryData.accel, false);
 
+                var safeSteer = clamp(readFinite(telemetryData.steer, 0), -1, 1);
                 if (!isDualSense) {
                     // XBOX CONTROLLER (scaled 370x297 from 435x349 -> factor 0.8505)
-                    drawStick(ox + 97, oy + 114, 18, telemetryData.steer, 0, '#00f0ff');
+                    drawStick(ox + 97, oy + 114, 18, safeSteer, 0, '#00f0ff');
                     drawStick(ox + 236, oy + 168, 18, 0, 0, 'rgba(0, 240, 255, 0.4)');
 
                     if (telemetryData.handbrake > 0.1) {
                         ctx.save();
                         ctx.fillStyle = 'rgba(34, 197, 94, 0.65)';
                         ctx.shadowColor = '#22c55e';
-                        ctx.shadowBlur = 12;
+                        ctx.shadowBlur = resolveGlowRadius(12);
                         ctx.beginPath();
                         ctx.arc(ox + 253, oy + 117, 11, 0, Math.PI * 2);
                         ctx.fill();
@@ -197,29 +161,22 @@
                     }
                 } else {
                     // PLAYSTATION 5 DUALSENSE (scaled 372x287 from 437x337 -> factor 0.8513)
-                    drawStick(ox + 132, oy + 165, 17, telemetryData.steer, 0, '#38bdf8');
+                    drawStick(ox + 132, oy + 165, 17, safeSteer, 0, '#38bdf8');
                     drawStick(ox + 247, oy + 165, 17, 0, 0, 'rgba(56, 189, 248, 0.4)');
 
+                    if (!lightbarGrad || lightbarOx !== ox || lightbarOy !== oy) {
+                        lightbarGrad = ctx.createLinearGradient(ox + 132, oy + 66, ox + 245, oy + 66); lightbarGrad.addColorStop(0, 'rgba(0, 240, 255, 0.15)'); lightbarGrad.addColorStop(0.5, 'rgba(0, 240, 255, 0.85)'); lightbarGrad.addColorStop(1, 'rgba(0, 240, 255, 0.15)'); lightbarOx = ox; lightbarOy = oy;
+                    }
                     ctx.save();
-                    var lightbarGrad = ctx.createLinearGradient(ox + 132, oy + 66, ox + 245, oy + 66);
-                    lightbarGrad.addColorStop(0, 'rgba(0, 240, 255, 0.15)');
-                    lightbarGrad.addColorStop(0.5, 'rgba(0, 240, 255, 0.85)');
-                    lightbarGrad.addColorStop(1, 'rgba(0, 240, 255, 0.15)');
-                    ctx.strokeStyle = lightbarGrad;
-                    ctx.shadowColor = '#00f0ff';
-                    ctx.shadowBlur = 8;
-                    ctx.lineWidth = 2.5;
-                    ctx.beginPath();
-                    ctx.moveTo(ox + 134, oy + 66);
-                    ctx.lineTo(ox + 243, oy + 66);
-                    ctx.stroke();
+                    ctx.strokeStyle = lightbarGrad; ctx.shadowColor = '#00f0ff'; ctx.shadowBlur = resolveGlowRadius(8); ctx.lineWidth = 2.5; ctx.lineCap = 'round';
+                    ctx.beginPath(); ctx.moveTo(ox + 134, oy + 66); ctx.lineTo(ox + 243, oy + 66); ctx.stroke();
                     ctx.restore();
 
                     if (telemetryData.handbrake > 0.1) {
                         ctx.save();
                         ctx.fillStyle = 'rgba(56, 189, 248, 0.65)';
                         ctx.shadowColor = '#38bdf8';
-                        ctx.shadowBlur = 12;
+                        ctx.shadowBlur = resolveGlowRadius(12);
                         ctx.beginPath();
                         ctx.arc(ox + 303, oy + 143, 10, 0, Math.PI * 2);
                         ctx.fill();
@@ -239,12 +196,23 @@
                 ctx.fillStyle = '#38bdf8';
                 ctx.font = 'bold 11px Consolas, monospace';
                 ctx.textAlign = 'center';
-                var steerPercent = (telemetryData.steer * 100).toFixed(1);
-                var sign = telemetryData.steer >= 0 ? '+' : '';
-                var gearTxt = telemetryData.gear === 0 ? 'R' : (telemetryData.gear === 'N' ? 'N' : telemetryData.gear);
-                ctx.fillText('STEER: ' + sign + steerPercent + '%  |  GEAR: ' + gearTxt, w / 2, h - 20);
+                var steerPercent = (safeSteer * 100).toFixed(1);
+                var sign = safeSteer >= 0 ? '+' : '';
+                ctx.fillText('STEER: ' + sign + steerPercent + '%  |  GEAR: ' + formatGear(telemetryData.gear), w / 2, h - 20);
                 ctx.restore();
             }
+
+            function render() {
+                if (destroyed || !ctx) return;
+                syncBackingStore(); ctx.save();
+                try {
+                    ctx.setTransform(lastPixelW / LOGICAL_W, 0, 0, lastPixelH / LOGICAL_H, 0, 0); ctx.shadowBlur = 0; ctx.shadowColor = 'transparent'; ctx.globalAlpha = 1; ctx.textBaseline = 'alphabetic'; renderFrame(LOGICAL_W, LOGICAL_H);
+                } finally { ctx.restore(); }
+            }
+            function onResize() { if (!destroyed) render(); }
+            function onMsg(e) { if (e.data && e.data.type === 'hud:destroy') destroy(); }
+            function destroy() { if (!destroyed) { destroyed = true; window.removeEventListener('resize', onResize); window.removeEventListener('pagehide', destroy); window.removeEventListener('message', onMsg); } }
+            window.addEventListener('resize', onResize); window.addEventListener('pagehide', destroy); window.addEventListener('message', onMsg);
 
             window._renderGamepad = render;
             xboxImg.onload = render;
@@ -254,9 +222,10 @@
                 containerId: 'gamepadContainer',
                 scaleBaseline: 1.4,
                 scaleMultiplier: 0.95,
-                onScale: function(scale) { canvasScale = scale; render(); },
+                onScale: function(scale) { if (destroyed) return; canvasScale = scale; render(); },
 
                 onInit: function(cfg) {
+                    if (destroyed) return;
                     var anchor = container.parentElement;
                     ['X', 'Y'].forEach(function(axis) {
                         var value = cfg?.['gamepadOffset' + axis];
@@ -266,41 +235,26 @@
                     if (cfg && cfg.gamepadLayout !== undefined) {
                         currentLayout = resolveGamepadLayout(cfg.gamepadLayout);
                         canvas.setAttribute('aria-label', 'Controller Telemetry Card: ' + (currentLayout === 1 ? 'PlayStation DualSense' : 'Xbox'));
-                        render();
                     }
                     container.style.display = cfg?.elements?.showTeleMaster !== false && cfg?.elements?.showTeleGamepad === true ? 'block' : 'none';
+                    render();
                 },
 
                 onFrame: function(data) {
-                    if (!data) return;
-                    if (data.steer !== undefined) {
-                        var st = (Number(data.steer) || 0) / 127;
-                        telemetryData.steer = Math.max(-1, Math.min(1, st));
-                    }
+                    if (destroyed || !data) return;
+                    if (data.steer !== undefined) telemetryData.steer = clamp(readFinite(data.steer, 0) / 127, -1, 1);
                     var rawAccel = data.throttle !== undefined ? data.throttle : data.accel;
-                    if (rawAccel !== undefined) {
-                        var ac = Number(rawAccel) || 0;
-                        telemetryData.accel = Math.max(0, Math.min(1, ac));
-                    }
-                    if (data.brake !== undefined) {
-                        var br = Number(data.brake) || 0;
-                        telemetryData.brake = Math.max(0, Math.min(1, br));
-                    }
-                    if (data.clutch !== undefined) {
-                        var cl = Number(data.clutch) || 0;
-                        telemetryData.clutch = Math.max(0, Math.min(1, cl));
-                    }
-                    if (data.hand_brake !== undefined) {
-                        var hb = (Number(data.hand_brake) || 0) / 255;
-                        telemetryData.handbrake = Math.max(0, Math.min(1, hb));
-                    }
+                    if (rawAccel !== undefined) telemetryData.accel = clamp(readFinite(rawAccel, 0), 0, 1);
+                    if (data.brake !== undefined) telemetryData.brake = clamp(readFinite(data.brake, 0), 0, 1);
+                    if (data.clutch !== undefined) telemetryData.clutch = clamp(readFinite(data.clutch, 0), 0, 1);
+                    if (data.hand_brake !== undefined) telemetryData.handbrake = clamp(readFinite(data.hand_brake, 0) / 255, 0, 1);
                     if (data.gear !== undefined) telemetryData.gear = data.gear;
-                    if (data.speed_kmh !== undefined) telemetryData.speed_kmh = Number(data.speed_kmh) || 0;
+                    if (data.speed_kmh !== undefined) telemetryData.speed_kmh = Math.max(0, readFinite(data.speed_kmh, 0));
                     render();
                 },
 
                 onElementsChange: function(elements) {
-                    if (container) {
+                    if (!destroyed && container) {
                         container.style.display = elements.showTeleMaster !== false && elements.showTeleGamepad === true ? 'block' : 'none';
                     }
                 },
