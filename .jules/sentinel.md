@@ -104,3 +104,9 @@
 **學習 (Learning):** 即使 `dyno_curve` 單桶歷史長度（50）、區段數（5）與快取車數（20）均有界，但只要鍵空間本身（RPM 桶數）無上限且直接由未認證網路封包驅動，仍會在高頻持久化路徑構成放大式資源耗盡；同時 60Hz 熱路徑上的無配置（Zero-allocation）效能契約必須透過先檢查型別與容量再寫入的方式與防禦性邊界檢查共存，不可依賴 `.unwrap()` 假設外部可合併之 JSON 結構永遠合法。
 **預防 (Prevention):** 在 `collect_dyno_sample` 入口嚴格限制 `CurrentEngineRpm` 為有限值且位於 `(0.0, 30_000.0]`（與 `config.rs` 轉速物理上限對齊）、以整數除法避免浮點轉整數溢位、限制 `dyno_curve` 總桶數上限為 `DYNO_MAX_BUCKETS`（601），並以零配置型別檢查取代所有 `.unwrap()` 以安全自癒畸形設定檔結構；同步在 `dyno_steady_state_contract.rs` 驗證零配置熱路徑不變量與異常輸入防護。
 **署名:** Sentinel as Antigravity
+
+## 2026-11-25 - LAN HTTP Gateway Path Normalization Mismatch & Unbounded Authenticated Request Body DoS (CWE-179 / CWE-22 / CWE-400)
+**漏洞/脆弱點 (Vulnerability):** `backend-rust/src/network.rs::lan_allowed_http` 先將 `request.uri().path()` 進行 percent-decode 再比對 `/api/companion/*` 與 `/companion/`、`/assets/` 前綴，但未阻擋 `.` / `..` 路徑段、反斜線 `\` 與控制字元（含 NUL）；同時 `lan_http` 卻以未解碼的原始 `path` 比對 `path != "/api/companion/pair"` 並僅針對該路徑實施 8 KiB 本文上限（`enforce_lan_pair_body_limit`）。這不僅造成編碼路徑（如 `/api/companion/%70air`）與前綴遍歷（`/companion/%2e%2e/...`）的判斷不一致，也讓已驗證之 LAN 用戶端在 `POST /api/companion/commands` 及所有 `GET` 端點繞過 LAN 本文限制，直接進入 `http_request` 觸發高達 64 MiB 的請求體記憶體緩衝（DoS）。
+**學習 (Learning):** 邊界閘道器的路由白名單（Allowlist）、認證豁免判斷與體積限制（Body limit）必須對同一規範化（Canonical）路徑語義運作；若白名單先 percent-decode 而後續安全控制使用原始字面比對，就會產生繞過或驗證落差。此外，共用本機與區域網路同一 `http_request` 處理器時，本機 64 MiB 上限絕不可被 LAN 認證端點繼承。
+**預防 (Prevention):** 在 `lan_allowed_http` 拒絕所有含 `.` / `..` 區段、`\` 及控制/NUL 位元組之解碼路徑，並規定 `/api/companion/*` 端點僅匹配標準字面路徑（阻斷 `%XX` 變體）；同時將 `enforce_lan_pair_body_limit` 推廣為通用的 `enforce_lan_body_limit`，於進入 `http_request` 前針對所有 LAN 請求強制套用分級上限（配對 8 KiB、指令 64 KiB、GET 請求 0 bytes），並於 `companion_lan.rs` 補齊路徑正規化與大本文阻擋回歸測試。
+**署名:** Sentinel as Antigravity

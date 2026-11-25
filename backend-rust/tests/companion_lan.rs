@@ -649,3 +649,55 @@ async fn instrument_catalog_and_assets_require_the_existing_paired_session() {
         assert_eq!(denied.status(), StatusCode::UNAUTHORIZED);
     }
 }
+
+#[tokio::test]
+async fn lan_router_rejects_traversal_encoded_api_paths_and_oversized_bodies() {
+    let root = tempfile::tempdir().unwrap();
+    let app = App::new(root.path()).unwrap();
+    app.companion.set_lan_port(Some(8002));
+    let router = network::lan_router(app.clone(), app.companion.clone());
+    let token = app.companion.generate_qr_payload(Some(8002)).token;
+    let (_, session) = app.companion.pair(&token, "tablet", "sec-tablet").unwrap();
+
+    for (method, path) in [
+        (Method::POST, "/api/companion/%70air"),
+        (Method::POST, "/api/companion/%63ommands"),
+        (Method::GET, "/companion/%2e%2e/api/settings"),
+        (Method::GET, "/companion/./index.html"),
+        (Method::GET, "/assets/%5csecret.js"),
+        (Method::GET, "/companion/index.html%00.js"),
+    ] {
+        let resp = router
+            .clone()
+            .oneshot(request(method, path, Some(&session), None, Body::empty()))
+            .await
+            .unwrap();
+        assert_eq!(resp.status(), StatusCode::NOT_FOUND, "path {path}");
+    }
+
+    let oversized_cmd = vec![b'a'; 64 * 1024 + 1];
+    let cmd_resp = router
+        .clone()
+        .oneshot(request(
+            Method::POST,
+            "/api/companion/commands",
+            Some(&session),
+            None,
+            Body::from(oversized_cmd),
+        ))
+        .await
+        .unwrap();
+    assert_eq!(cmd_resp.status(), StatusCode::PAYLOAD_TOO_LARGE);
+
+    let get_with_body = router
+        .oneshot(request(
+            Method::GET,
+            "/api/companion/workflow",
+            Some(&session),
+            None,
+            Body::from("unexpected-body"),
+        ))
+        .await
+        .unwrap();
+    assert_eq!(get_with_body.status(), StatusCode::PAYLOAD_TOO_LARGE);
+}

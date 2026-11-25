@@ -160,14 +160,24 @@ fn lan_session(headers: &HeaderMap, companion: &CompanionService) -> Option<Stri
 }
 
 fn lan_allowed_http(method: &Method, path: &str) -> bool {
-    let Ok(path) = percent_encoding::percent_decode_str(path).decode_utf8() else {
+    let Ok(decoded) = percent_encoding::percent_decode_str(path).decode_utf8() else {
         return false;
     };
-    match (method, path.as_ref()) {
+    // Reject traversal dot-segments, backslashes, and control/NUL bytes across decoded LAN paths.
+    if decoded.contains('\\')
+        || decoded.bytes().any(|b| b < 0x20 || b == 0x7f)
+        || decoded
+            .split('/')
+            .any(|segment| segment == "." || segment == "..")
+    {
+        return false;
+    }
+    // Match API routes on raw canonical path so allowlist and auth/body checks never diverge.
+    match (method, path) {
         (&Method::POST, "/api/companion/pair")
         | (&Method::GET, "/api/companion/workflow")
         | (&Method::POST, "/api/companion/commands") => true,
-        (&Method::GET, path) => path.starts_with("/companion/") || path.starts_with("/assets/"),
+        (&Method::GET, _) => decoded.starts_with("/companion/") || decoded.starts_with("/assets/"),
         _ => false,
     }
 }
@@ -190,23 +200,32 @@ async fn security_headers(request: Request<Body>, next: Next) -> Response {
 }
 
 const MAX_LAN_PAIR_BODY_BYTES: usize = 8 * 1024;
+const MAX_LAN_COMMAND_BODY_BYTES: usize = 64 * 1024;
 
-// Cap unauthenticated LAN pairing body before http_request buffers up to 64 MiB.
-async fn enforce_lan_pair_body_limit(request: Request<Body>) -> Result<Request<Body>, Response> {
+// Cap LAN request bodies before http_request buffers up to 64 MiB (prevents LAN memory DoS).
+async fn enforce_lan_body_limit(
+    request: Request<Body>,
+    max_bytes: usize,
+) -> Result<Request<Body>, Response> {
     let too_large = request
         .headers()
         .get(axum::http::header::CONTENT_LENGTH)
         .and_then(|v| v.to_str().ok())
         .and_then(|s| s.parse::<usize>().ok())
-        .is_some_and(|len| len > MAX_LAN_PAIR_BODY_BYTES);
+        .is_some_and(|len| len > max_bytes);
     if too_large {
         return Err(ApiError::new(413, "Request body too large").into_response());
     }
     let (parts, body) = request.into_parts();
-    let bytes = to_bytes(body, MAX_LAN_PAIR_BODY_BYTES)
+    let bytes = to_bytes(body, max_bytes)
         .await
         .map_err(|_| ApiError::new(413, "Request body too large").into_response())?;
     Ok(Request::from_parts(parts, Body::from(bytes)))
+}
+
+#[cfg(test)]
+async fn enforce_lan_pair_body_limit(request: Request<Body>) -> Result<Request<Body>, Response> {
+    enforce_lan_body_limit(request, MAX_LAN_PAIR_BODY_BYTES).await
 }
 
 async fn lan_http(
@@ -224,13 +243,14 @@ async fn lan_http(
     if path != "/api/companion/pair" && lan_session(request.headers(), &companion).is_none() {
         return StatusCode::UNAUTHORIZED.into_response();
     }
-    let request = if path == "/api/companion/pair" {
-        match enforce_lan_pair_body_limit(request).await {
-            Ok(bounded) => bounded,
-            Err(response) => return response,
-        }
-    } else {
-        request
+    let max_body_bytes = match (request.method(), path) {
+        (&Method::POST, "/api/companion/commands") => MAX_LAN_COMMAND_BODY_BYTES,
+        (&Method::POST, "/api/companion/pair") => MAX_LAN_PAIR_BODY_BYTES,
+        _ => 0,
+    };
+    let request = match enforce_lan_body_limit(request, max_body_bytes).await {
+        Ok(bounded) => bounded,
+        Err(response) => return response,
     };
     http_request(backend, request).await
 }
