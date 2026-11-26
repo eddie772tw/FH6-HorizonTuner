@@ -197,8 +197,8 @@ pub fn adjusted_diagnostics(result: &GearingResult, original: &Value) -> Value {
                 !prior.is_finite() || prior <= 0.0 || (gear / prior - 1.0).abs() > 0.01
             })
         });
-        diagnostic["shapePreferenceLimited"] = json!(limited);
     }
+    diagnostic["shapePreferenceLimited"] = json!(limited);
     diagnostic["status"] = json!(if limited || original["finalDriveSaturated"] == true {
         "limited"
     } else {

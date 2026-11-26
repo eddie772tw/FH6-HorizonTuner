@@ -532,8 +532,10 @@ fn neighbor_scoring_zero_tick_closure_limiter_overflow_and_adjusted_diagnostics_
         .unwrap()
         .remove("interpolatedShapePrior");
     no_shape["reason"] = json!("stale-reason");
+    no_shape["shapePreferenceLimited"] = json!(true);
     let ok_no_shape = adjusted_diagnostics(&base.gearing, &no_shape);
     assert_eq!(ok_no_shape["status"], "available");
+    assert_eq!(ok_no_shape["shapePreferenceLimited"], false);
     assert!(ok_no_shape.get("reason").is_none());
     no_shape["finalDriveSaturated"] = json!(true);
     let sat_no_shape = adjusted_diagnostics(&base.gearing, &no_shape);
