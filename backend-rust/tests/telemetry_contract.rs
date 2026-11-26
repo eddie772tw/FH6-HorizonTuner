@@ -1719,3 +1719,78 @@ fn telemetry_points_json_stream_matches_get_telemetry_points_and_http_routes() {
     assert!(app.database.get_telemetry_points_json("mix", None).is_err());
     assert!(get("/api/analysis/sessions/mix", None).is_err());
 }
+
+#[test]
+fn sqlite_insert_batch_matches_decoded_point_json_and_legacy_columns() {
+    let dir = tempfile::tempdir().unwrap();
+    let db = dir.path().join("parity.db");
+    let store = TelemetryStore::new(&db).unwrap();
+    store.create_session("p", 42, "Car", 700, 800, 1.0).unwrap();
+    let vars = fixture("contract.json")["variants"]
+        .as_array()
+        .unwrap()
+        .clone();
+    let mut cases: Vec<Value> = vars.iter().map(|v| v["input"].clone()).collect();
+    let base = cases.len();
+    cases.extend([
+        json!({
+            "IsRaceOn": 1, "time": 1.25, "LapNumber": 1, "Gear": 4, "AccelInput": 255,
+            "SpeedMetersPerSecond": 40.0, "CurrentEngineRpm": 6500.0, "DistanceTraveled": 120.5,
+            "AccelerationX": 9.81, "AccelerationY": -4.905, "AccelerationZ": 2.0,
+            "Yaw": 0.1, "Pitch": -0.02, "Roll": 0.03, "PositionX": 10.0, "PositionY": 2.0,
+            "PositionZ": -30.0, "NormalizedSuspensionTravel": [0.1, 0.2, 0.3, 0.4],
+            "SuspensionTravelMeters": [0.01, 0.02, 0.03, 0.04],
+            "TireSlipAngle": [0.1, -0.1, 0.05, -0.05], "TireSlipRatio": [0.02, 0.03, 0.04, 0.05],
+            "TireTemp": [180.0, 185.0, 190.0, 195.0], "PowerWatts": 250000.0,
+            "TorqueNewtons": 450.0, "Boost": 50000.0, "Fuel": 0.75
+        }),
+        json!({
+            "PowerWatts": null, "Power": 123, "TorqueNewtons": "bad", "Torque": 456,
+            "DistanceTraveled": true, "lap_distance": 7, "NormalizedSuspensionTravel": null,
+            "SuspTravel": [0.2, 0.3, 0.4, 0.5], "AccelInput": null, "accel_pct": 50,
+            "BrakeInput": "x", "brake_pct": 40
+        }),
+        json!({
+            "accel_pct": 1e308, "steer_pct": -50.0, "LapNumber": 2.9, "Gear": 4.0,
+            "sourceSchema": 123, "TelemetrySchema": null
+        }),
+        json!({
+            "sourceSchema": "custom/v2", "TelemetrySchema": 42, "Power": 745.7,
+            "Torque": 200.0, "lap_distance": 12.5, "SuspTravel": [0.1, 0.2]
+        }),
+        Value::Null,
+        json!(17),
+    ]);
+    store.insert_points_batch("p", &cases).unwrap();
+    let conn = rusqlite::Connection::open(&db).unwrap();
+    let sql = "SELECT raw_json FROM telemetry_channels WHERE session_id='p' ORDER BY id ASC";
+    let mut st = conn.prepare(sql).unwrap();
+    let raw: Vec<String> = st
+        .query_map([], |r| r.get(0))
+        .unwrap()
+        .map(Result::unwrap)
+        .collect();
+    assert_eq!(raw.len(), cases.len());
+    for (i, (got, input)) in raw.iter().zip(&cases).enumerate() {
+        assert_eq!(
+            got,
+            &serde_json::to_string(&decoded_point(input)).unwrap(),
+            "row {i}"
+        );
+    }
+    conn.execute(
+        "UPDATE telemetry_channels SET raw_json=NULL WHERE session_id='p'",
+        [],
+    )
+    .unwrap();
+    let leg = store.get_telemetry_points("p", None).unwrap();
+    let r = &leg[base..];
+    assert!(r[0]["Fuel"] == 0.75 && r[0]["PowerWatts"] == 250000.0);
+    assert!((r[0]["TireSlipAngle"][0].as_f64().unwrap() - 0.1).abs() < 1e-6);
+    assert!(r[1]["PowerWatts"].is_null() && r[1]["lap_distance"].is_null());
+    assert!(r[1]["SuspTravel"][0].is_null() && r[1]["accel_pct"].is_null());
+    assert!(r[2]["LapNumber"] == 2 && r[2]["Gear"] == 4);
+    assert!(r[2]["accel_pct"].is_null() && r[2]["steer_pct"] == -50.0);
+    assert!(r[3]["PowerWatts"] == 745.7 && r[3]["SuspTravel"] == json!([0.1, 0.2, null, null]));
+    assert!(r[4]["Fuel"] == 1.0 && r[4]["time"] == 0.0);
+}

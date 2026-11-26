@@ -1,4 +1,4 @@
-use super::contract::{decoded_point, LEGACY_POINT_SCHEMA};
+use super::contract::{DecodedRow, LEGACY_POINT_SCHEMA};
 use rusqlite::{params, Connection, OptionalExtension};
 use serde::de::{Deserialize, DeserializeSeed, Deserializer, MapAccess, SeqAccess, Visitor};
 use serde_json::{Map, Value};
@@ -97,24 +97,20 @@ impl TelemetryStore {
         let mut insert = tx
             .prepare("INSERT INTO telemetry_channels(session_id,lap_number,relative_time,lap_distance,speed,rpm,gear,accel_pct,brake_pct,steer_pct,clutch_pct,handbrake_pct,accel_x,accel_y,accel_z,yaw,pitch,roll,pos_x,pos_y,pos_z,susp_fl,susp_fr,susp_rl,susp_rr,slip_angle_fl,slip_angle_fr,slip_angle_rl,slip_angle_rr,slip_ratio_fl,slip_ratio_fr,slip_ratio_rl,slip_ratio_rr,temp_fl,temp_fr,temp_rl,temp_rr,susp_meters_fl,susp_meters_fr,susp_meters_rl,susp_meters_rr,power_watts,torque_newtons,boost,fuel,raw_json) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)")
             .map_err(|e| e.to_string())?;
+        // [PERF] Stream canonical raw_json into a reused buffer and read stack columns without 66-key IndexMap allocs.
+        let mut raw_buf = Vec::with_capacity(2048);
         for source in points {
-            let p = decoded_point(source);
-            let a = |k: &str| p.get(k).and_then(Value::as_f64);
-            let arr = |k: &str, i: usize| {
-                p.get(k)
-                    .and_then(Value::as_array)
-                    .and_then(|x| x.get(i))
-                    .and_then(Value::as_f64)
-            };
+            let p = DecodedRow::encode(source, &mut raw_buf).map_err(|e| e.to_string())?;
+            let (a, arr) = (|k| p.f64(k), |k, i| p.vec_f64(k, i));
             insert
                 .execute(params![
                     session_id,
-                    i64v(&p, "LapNumber", 0),
+                    p.i64("LapNumber"),
                     a("time").unwrap_or(0.0),
                     a("DistanceTraveled"),
                     a("SpeedMetersPerSecond").map(|x| x * 3.6),
                     a("CurrentEngineRpm"),
-                    i64v(&p, "Gear", 0),
+                    p.i64("Gear"),
                     a("accel_pct"),
                     a("brake_pct"),
                     a("steer_pct"),
@@ -153,7 +149,7 @@ impl TelemetryStore {
                     a("TorqueNewtons"),
                     a("Boost"),
                     a("Fuel").unwrap_or(1.0),
-                    serde_json::to_string(&p).map_err(|e| e.to_string())?
+                    std::str::from_utf8(&raw_buf).map_err(|e| e.to_string())?
                 ])
                 .map_err(|e| e.to_string())?;
         }
