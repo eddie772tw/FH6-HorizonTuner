@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useId, useState } from 'react';
 import { useSettings } from '../../../context/SettingsContext';
 import { backendFetch } from '../../../services/backend';
 import { SettingsSwitch } from './SettingsPrimitives';
@@ -52,7 +52,15 @@ export default function CompanionUsbControls() {
     }
   };
 
+  const id = useId();
+  const usbSelectId = `${id}-device`;
+  const usbNoticeId = `${id}-notice`;
+  const anyBusy = scanning || busy || stopping;
+  const busyReason = scanning ? t('Scanning…') : stopping ? t('Stopping…') : busy ? t('Connecting…') : undefined;
   const selectedDevice = devices.find((device) => device.serial === selected);
+  const usbNoticeVisible = selectedDevice?.state === 'unauthorized' || selectedDevice?.state === 'offline';
+  const connectDisabled = anyBusy || selectedDevice?.state !== 'device';
+  const connectReason = busyReason ?? (!selectedDevice ? t('Choose a USB device') : selectedDevice.state !== 'device' ? t('Device not ready') : undefined);
   const connect = async () => {
     if (!selectedDevice || selectedDevice.state !== 'device' || busy) return;
     setBusy(true); setError(null); setForwarded(null);
@@ -89,28 +97,33 @@ export default function CompanionUsbControls() {
       <p className="small text-body-secondary mb-0">{t('USB connection is disabled. Enable it above to scan for Android devices.')}</p>
     ) : (
       <>
-        <div className="d-flex justify-content-between align-items-center gap-2 mt-1">
+        <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-1">
           <span className="small text-body-secondary">{t('Manage USB devices and background daemon')}</span>
-          <div className="d-flex gap-2">
-            <span className="d-inline-flex" title={scanning ? t('Scanning…') : busy || stopping ? t('Connecting…') : undefined} style={scanning || busy || stopping ? { cursor: 'not-allowed' } : undefined}>
-              <button type="button" className="btn btn-sm btn-outline-secondary" disabled={scanning || busy || stopping} style={scanning || busy || stopping ? { pointerEvents: 'none' } : undefined} onClick={() => void scan()}>
+          <div className="d-flex flex-wrap gap-2">
+            <span className="d-inline-flex" title={busyReason} style={anyBusy ? { cursor: 'not-allowed' } : undefined}>
+              <button type="button" className="btn btn-sm btn-outline-secondary d-inline-flex align-items-center" disabled={anyBusy} aria-busy={scanning} style={anyBusy ? { pointerEvents: 'none' } : undefined} onClick={() => void scan()}>
+                {scanning && <span className="spinner-border spinner-border-sm me-1" aria-hidden="true" />}
                 {scanning ? t('Scanning…') : t('Refresh devices')}
               </button>
             </span>
-            <button type="button" className="btn btn-sm btn-outline-danger" disabled={scanning || busy || stopping} onClick={() => void stopAdb()} title={t('Terminate background ADB process to release ports and resources')}>
-              {stopping ? t('Stopping…') : t('Stop ADB daemon')}
-            </button>
+            <span className="d-inline-flex" title={busyReason ?? t('Terminate background ADB process to release ports and resources')} style={anyBusy ? { cursor: 'not-allowed' } : undefined}>
+              <button type="button" className="btn btn-sm btn-outline-danger d-inline-flex align-items-center" disabled={anyBusy} aria-busy={stopping} style={anyBusy ? { pointerEvents: 'none' } : undefined} onClick={() => void stopAdb()}>
+                {stopping && <span className="spinner-border spinner-border-sm me-1" aria-hidden="true" />}
+                {stopping ? t('Stopping…') : t('Stop ADB daemon')}
+              </button>
+            </span>
           </div>
         </div>
         {!devices.length && !scanning && <p className="small text-body-secondary mb-1">{t('No USB devices found. Connect the cable and try Refresh devices.')}</p>}
-        {devices.length > 0 && <select className="form-select" value={selected} disabled={busy || scanning || stopping} onChange={(event) => { setSelected(event.target.value); setForwarded(null); }} aria-label={t('USB device')}>
+        {devices.length > 0 && <><label htmlFor={usbSelectId} className="visually-hidden">{t('USB device')}</label><select id={usbSelectId} className="form-select" value={selected} disabled={anyBusy} onChange={(event) => { setSelected(event.target.value); setForwarded(null); }} aria-label={t('USB device')} aria-describedby={usbNoticeVisible ? usbNoticeId : undefined}>
           <option value="">{t('Choose a USB device')}</option>
           {devices.map((device) => <option key={device.serial} value={device.serial}>{device.model || device.product || t('Android device')} · {device.serial} · {t(USB_DEVICE_STATE_KEYS[device.state] ?? device.state)}</option>)}
-        </select>}
-        {selectedDevice?.state === 'unauthorized' && <p className="small text-warning mb-0" role="status">{t('Unlock the Android device and allow USB debugging for this PC, then refresh devices.')}</p>}
-        {selectedDevice?.state === 'offline' && <p className="small text-warning mb-0" role="status">{t('Reconnect the USB cable or wake the Android device, then refresh devices.')}</p>}
-        <span className="d-flex w-100" title={busy ? t('Connecting…') : scanning ? t('Scanning…') : !selectedDevice ? t('Choose a USB device') : selectedDevice.state !== 'device' ? t('Device not ready') : undefined} style={busy || scanning || stopping || selectedDevice?.state !== 'device' ? { cursor: 'not-allowed' } : undefined}>
-          <button type="button" className="btn btn-primary w-100" disabled={busy || scanning || stopping || selectedDevice?.state !== 'device'} style={busy || scanning || stopping || selectedDevice?.state !== 'device' ? { pointerEvents: 'none' } : undefined} onClick={() => void connect()}>
+        </select></>}
+        {selectedDevice?.state === 'unauthorized' && <p id={usbNoticeId} className="small text-warning-emphasis mb-0" role="status">{t('Unlock the Android device and allow USB debugging for this PC, then refresh devices.')}</p>}
+        {selectedDevice?.state === 'offline' && <p id={usbNoticeId} className="small text-warning-emphasis mb-0" role="status">{t('Reconnect the USB cable or wake the Android device, then refresh devices.')}</p>}
+        <span className="d-flex w-100" title={connectReason} style={connectDisabled ? { cursor: 'not-allowed' } : undefined}>
+          <button type="button" className="btn btn-primary w-100 d-inline-flex justify-content-center align-items-center" disabled={connectDisabled} aria-busy={busy} style={connectDisabled ? { pointerEvents: 'none' } : undefined} onClick={() => void connect()}>
+            {busy && <span className="spinner-border spinner-border-sm me-1" aria-hidden="true" />}
             {busy ? t('Connecting…') : t('Connect USB device')}
           </button>
         </span>

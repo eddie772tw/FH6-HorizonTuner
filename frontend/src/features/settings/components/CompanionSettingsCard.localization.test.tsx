@@ -221,7 +221,7 @@ describe('Companion localization & accessibility', () => {
         select!.value = 'SER-02';
         select!.dispatchEvent(new Event('change', { bubbles: true }));
       });
-      const usbWarning = host.querySelector('p.text-warning[role="status"]');
+      const usbWarning = host.querySelector('p.text-warning-emphasis[role="status"]');
       expect(usbWarning?.textContent).toBe(dict['Unlock the Android device and allow USB debugging for this PC, then refresh devices.']);
 
       const generateBtn = buttons.find((btn) => btn.textContent === dict['Generate pairing code']);
