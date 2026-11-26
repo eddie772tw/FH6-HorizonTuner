@@ -1,0 +1,101 @@
+{
+  "target": "hud_overlay/shift_tacho/index.html",
+  "renderer": "hud_overlay/shift_tacho/index.html -> HUDCore.handleMessage",
+  "capturedAt": "2026-11-26T21:15:21.147Z",
+  "baseCommit": "9df8018f",
+  "browser": "151.0.7922.34",
+  "platform": "win32",
+  "background": "#0b111b (neutral dark composite backdrop for transparent HUD canvas)",
+  "telemetrySource": "Synthetic canonical frames dispatched via HUDCore.handleMessage",
+  "scopeNote": "Element clip of #shiftCanvas with 20px margin in 1280x720 fixture viewport; live game & native Windows overlay not tested here.",
+  "captures": [
+    {
+      "file": "shift-tacho-dpr1-highspeed.png",
+      "description": "DPR 1 · 440×280 基準解析度（238 KM/H 三位數右對齊防碰撞、Gear 4、6400/8000 RPM 與置中徽章）",
+      "viewport": "1280x720",
+      "dpr": 1,
+      "scaleSetting": 1,
+      "glowIntensity": 1,
+      "isMetric": true,
+      "hudScale": 0.675,
+      "canvas": {
+        "width": 440,
+        "height": 280,
+        "hudScale": 0.675,
+        "cssRect": {
+          "x": 953,
+          "y": 501,
+          "width": 297,
+          "height": 189
+        }
+      },
+      "clipPaddingPx": 20
+    },
+    {
+      "file": "shift-tacho-dpr2-redline.png",
+      "description": "DPR 2 · 880×560 原生 HiDPI（312 KM/H、Gear 6 紅線警戒框、7 顆換檔 LED 等比發光與手煞車亮起）",
+      "viewport": "1280x720",
+      "dpr": 2,
+      "scaleSetting": 1,
+      "glowIntensity": 1,
+      "isMetric": true,
+      "hudScale": 0.675,
+      "canvas": {
+        "width": 880,
+        "height": 560,
+        "hudScale": 0.675,
+        "cssRect": {
+          "x": 953,
+          "y": 501,
+          "width": 297,
+          "height": 189
+        }
+      },
+      "clipPaddingPx": 20
+    },
+    {
+      "file": "shift-tacho-dpr2-mph-neutral.png",
+      "description": "DPR 2 · 880×560 MPH 與空檔（142 MPH、gear: 11 顯示 N、2400 RPM 熄燈態無光暈滲漏）",
+      "viewport": "1280x720",
+      "dpr": 2,
+      "scaleSetting": 1,
+      "glowIntensity": 1,
+      "isMetric": false,
+      "hudScale": 0.675,
+      "canvas": {
+        "width": 880,
+        "height": 560,
+        "hudScale": 0.675,
+        "cssRect": {
+          "x": 953,
+          "y": 501,
+          "width": 297,
+          "height": 189
+        }
+      },
+      "clipPaddingPx": 20
+    },
+    {
+      "file": "shift-tacho-dpr2-scale15-noglow.png",
+      "description": "DPR 2 · scale=1.5 聯合縮放 2.025×（891×567）與 glowIntensity=0 無光暈對照（38 KM/H、Gear R）",
+      "viewport": "1280x720",
+      "dpr": 2,
+      "scaleSetting": 1.5,
+      "glowIntensity": 0,
+      "isMetric": true,
+      "hudScale": 1.0125000000000002,
+      "canvas": {
+        "width": 891,
+        "height": 567,
+        "hudScale": 1.0125000000000002,
+        "cssRect": {
+          "x": 804.5,
+          "y": 406.5,
+          "width": 445.5,
+          "height": 283.5
+        }
+      },
+      "clipPaddingPx": 20
+    }
+  ]
+}
