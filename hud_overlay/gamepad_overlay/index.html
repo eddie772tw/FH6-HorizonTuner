@@ -211,8 +211,19 @@
             }
             function onResize() { if (!destroyed) render(); }
             function onMsg(e) { if (e.data && e.data.type === 'hud:destroy') destroy(); }
-            function destroy() { if (!destroyed) { destroyed = true; window.removeEventListener('resize', onResize); window.removeEventListener('pagehide', destroy); window.removeEventListener('message', onMsg); } }
-            window.addEventListener('resize', onResize); window.addEventListener('pagehide', destroy); window.addEventListener('message', onMsg);
+            function onPageHide(event) {
+                if (!event.persisted) destroy();
+            }
+            function destroy() {
+                if (destroyed) return;
+                destroyed = true;
+                window.removeEventListener('resize', onResize);
+                window.removeEventListener('pagehide', onPageHide);
+                window.removeEventListener('message', onMsg);
+            }
+            window.addEventListener('resize', onResize);
+            window.addEventListener('pagehide', onPageHide);
+            window.addEventListener('message', onMsg);
 
             window._renderGamepad = render;
             xboxImg.onload = render;

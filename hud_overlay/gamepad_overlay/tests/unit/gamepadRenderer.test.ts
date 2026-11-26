@@ -58,6 +58,16 @@ describe('Gamepad Overlay HiDPI, gradient caching, glow scaling, and state isola
     for (let i = 0; i < 5; i++) g.hooks.onFrame({ steer: 50 - i * 25, throttle: 0.9 - i * 0.1, brake: i * 0.15, hand_brake: 255, gear: 0 });
     expect(g.grads.size).toBe(dualGrads);
   });
+  it('keeps rendering after a page is cached and stops after a non-persisted pagehide', () => {
+    const gamepad = mountGamepad();
+    gamepad.listeners.get('pagehide')?.forEach((listener) => listener({ persisted: true }));
+    gamepad.hooks.onFrame({ gear: 4 });
+    expect(gamepad.texts.at(-1)).toContain('GEAR: 4');
+
+    gamepad.listeners.get('pagehide')?.forEach((listener) => listener({ persisted: false }));
+    gamepad.hooks.onFrame({ gear: 5 });
+    expect(gamepad.texts.at(-1)).toContain('GEAR: 4');
+  });
   it('scales shadowBlur proportionally with DPR * glowIntensity across Xbox and DualSense', () => {
     const g1 = mountGamepad(1, 1), g2 = mountGamepad(2, 1), g0 = mountGamepad(2, 0);
     for (const g of [g1, g2, g0]) { g.win.switchController(1); g.blurs.length = 0; g.hooks.onFrame({ steer: 64, throttle: 0.8, brake: 0.6, hand_brake: 255, gear: 4 }); }
