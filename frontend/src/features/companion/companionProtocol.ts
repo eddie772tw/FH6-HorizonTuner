@@ -74,7 +74,14 @@ export function validateCompanionCommand(command: CompanionCommand, snapshot: Co
   } else if (command.kind === 'workflow') {
     if (command.goal !== undefined && !['Road', 'Rally', 'Drift', 'Drag'].includes(command.goal)) throw new Error('Invalid tuning goal.');
     if (command.season !== undefined && !['Summer', 'Autumn', 'Winter', 'Spring'].includes(command.season)) throw new Error('Invalid season.');
-    if (command.step !== undefined && !canOpenTuningStep(command.step, snapshot.readiness)) throw new Error('Complete the required workflow inputs before opening this step.');
+    if (command.step !== undefined) {
+      const changesTarget = (command.goal !== undefined && command.goal !== snapshot.workflow.goal)
+        || (command.season !== undefined && command.season !== snapshot.workflow.season);
+      if (!Number.isInteger(command.step) || command.step < 1 || command.step > 4
+        || (!changesTarget && !canOpenTuningStep(command.step, snapshot.readiness))) {
+        throw new Error('Complete the required workflow inputs before opening this step.');
+      }
+    }
     if (command.goal === undefined && command.season === undefined && command.step === undefined) throw new Error('Empty workflow command.');
   } else if (command.kind === 'measurement') {
     if (usesCvt(snapshot.profile)) throw new Error('CVT requires its independent capture contract.');

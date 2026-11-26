@@ -64,7 +64,7 @@ Browse the settings and original captures for the [NFSU2 faces](https://github.c
 
 | Switch desktop themes | Connect an AI tool |
 | --- | --- |
-| ![Appearance settings with light and dark modes and core options for Halfmoon, Swiss and Rhine Lab](docs/assets/readme/en-us/appearance.webp) | ![MCP settings showing server status, live telemetry access, the sampling limit and the local endpoint](docs/assets/readme/en-us/mcp.webp) |
+| ![Appearance settings with light and dark modes and core options for Halfmoon, Swiss and Rhine Lab](docs/assets/readme/en-us/appearance.webp) | ![MCP settings showing server status, live telemetry access and the local endpoint (older interface)](docs/assets/readme/en-us/mcp.webp) |
 | Preview the type, colors and controls of each design system. [Design systems](docs/frontend/design-systems.md) | Get the local MCP address from the desktop app and choose which telemetry the client can read. [MCP setup guide](docs/guides/mcp-setup-guide.md) |
 
 </details>
@@ -87,7 +87,7 @@ This version adds NFS Underground 2, four Toyota clusters and six standalone tac
 
 - **Windows portable bundle**: [Download Full + Lite ZIP](https://github.com/eddie772tw/FH6-HorizonTuner/releases/latest/download/FH6-HorizonTuner-Portable-Bundle.zip). Extract and run the edition you need; no separate backend download is required.
 - **Runtime requirements**: Windows requires WebView2 Runtime. Linux requires compatible GTK/WebKitGTK libraries and an AppImage runtime environment. macOS is currently unsupported. See [platform requirements and limitations](docs/guides/cross-platform-release.md).
-- **Android Companion (Beta)**: Android 13+ with Windows Full kept running; supports LAN QR pairing and USB/ADB. Published releases currently have no APK. See the [Companion README](companion/README.md) for builds and acceptance status.
+- **Android Companion (Beta)**: Android 13+ with Windows Full kept running; enable it in Settings → Developer options to use LAN QR pairing or USB/ADB. Published releases currently have no APK. See the [Companion README](companion/README.md) for builds and acceptance status.
 
 > [!NOTE]
 > This page describes `main`. Available features and assets depend on the [release you download](https://github.com/eddie772tw/FH6-HorizonTuner/releases). A successful build does not establish acceptance across every platform or gameplay scenario.
@@ -226,7 +226,7 @@ New ICE recommendations use `rust/ice-measured-workflow-v4` and reconstruct thei
 | REST/WebSocket/MCP | HTTP/WebSocket | localhost `8001` |
 | Vite development server | HTTP | `1420` |
 
-Development uses HTTP `8001`. Release builds try `8001`, then fall back to an available dynamic port. Find the actual endpoint in Settings' MCP section or `logs/web_port.txt` under the data directory. `TELEMETRY_PORT` overrides the UDP port. HTTP and MCP remain localhost-only; Companion uses a separate authenticated pairing endpoint.
+Development uses HTTP `8001`. Release builds try `8001`, then fall back to an available dynamic port. Find the actual endpoint in Settings → Developer options → MCP or `logs/web_port.txt` under the data directory. `TELEMETRY_PORT` overrides the UDP port. HTTP and MCP remain localhost-only; Companion uses a separate authenticated pairing endpoint.
 
 Windows installers and portable builds embed the Rust backend. Portable builds prefer writable storage beside the executable, with an AppData fallback for protected directories. Full and Lite installers are independent; their OTA manifests are `latest.json` and `latest-lite.json`. Linux uses `latest-linux.json`. See the [release and data-path contract](docs/guides/cross-platform-release.md).
 

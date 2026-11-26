@@ -7,7 +7,7 @@ const surfaces: readonly { id: AppSurface; label: string }[] = [
   { id: 'settings', label: 'Settings' }, { id: 'appearance', label: 'Appearance' },
 ];
 
-export function AppMenu({ onOpen }: { onOpen: (surface: AppSurface) => void }) {
+export function AppMenu({ onOpen, showCompanion = false }: { onOpen: (surface: AppSurface) => void; showCompanion?: boolean }) {
   const { t } = useSettings();
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -51,9 +51,8 @@ export function AppMenu({ onOpen }: { onOpen: (surface: AppSurface) => void }) {
       {surfaces.map(surface => <button key={surface.id} type="button" role="menuitem" className="dropdown-item"
         onClick={() => openSurface(surface.id)}>{t(surface.label)}</button>)}
       <hr className="dropdown-divider" role="separator" />
-      <AppCompanionIndicator onOpen={() => openSurface('companion')} />
-      <button type="button" role="menuitem" className="dropdown-item" onClick={() => openSurface('mcp')}>{t('MCP')}</button>
-      <hr className="dropdown-divider" role="separator" />
+      {showCompanion && <><AppCompanionIndicator onOpen={() => openSurface('companion')} />
+        <hr className="dropdown-divider" role="separator" /></>}
       <button type="button" role="menuitem" className="dropdown-item" onClick={() => openSurface('diagnostics')}>{t('Diagnostics')}</button>
       <button type="button" role="menuitem" className="dropdown-item" onClick={() => openSurface('about')}>{t('About')}</button>
     </div>}

@@ -1,7 +1,6 @@
 import { usesCvt } from '../../domain/tuning/transmission';
 import { requestEngineBatch, type EngineBatchResult } from './engineBatch';
-import { useWorkflowCalculation } from './useWorkflowCalculation';
-import { useBaselineDraft } from './useBaselineDraft';
+import { requestWorkflowCalculation, useWorkflowCalculation, workflowCalculationInput } from './useWorkflowCalculation';
 import { useRatioBalanceDraft } from './useRatioBalanceDraft';
 import { useEvidenceContext } from './evidenceContext';
 import { useCvtEvidenceSession } from './useCvtEvidenceSession';
@@ -13,9 +12,9 @@ import { telemetryToCaptureSample } from '../../domain/tuning/telemetryCapture';
 import { subscribeToDecodedTelemetry, useTelemetry, type TelemetryData } from '../../hooks/useTelemetry';
 import { engineDependencyKey } from './engineObservationIdentity';
 import { useEvMeasurementSession } from './useEvMeasurementSession';
-import type { TuningMeasurementState } from '../../domain/tuning/types';
+import type { Season, TuningMeasurementState } from '../../domain/tuning/types';
 import { createEngineCalculation } from './measurementInitialState';
-import { restoreWorkflowStep, serializeWorkflowProfile } from './tuningWorkflow';
+import { canOpenTuningStep, restoreWorkflowStep, serializeWorkflowProfile } from './tuningWorkflow';
 import { useEngineMeasurementArchive } from './useEngineMeasurementArchive';
 import {
   captureFrameIdentity,
@@ -54,7 +53,6 @@ interface RawCaptureRuntime {
 }
 
 export interface TuneSessionValue {
-  baseline: ReturnType<typeof useBaselineDraft>;
   ratioBalance: ReturnType<typeof useRatioBalanceDraft>;
   result: ReturnType<typeof useWorkflowCalculation>['result'];
   calculationStatus: ReturnType<typeof useWorkflowCalculation>['status'];
@@ -67,6 +65,8 @@ export interface TuneSessionValue {
     season: 'Summer' | 'Autumn' | 'Winter' | 'Spring';
     reviewHistory: boolean;
     setStep: (step: number) => void;
+    navigateToStep: (step: number, isCurrent?: () => boolean, target?: Partial<{ goal: string; season: Season }>, signal?: AbortSignal) => Promise<void>;
+    isNavigating: boolean;
     setGoal: (goal: string) => void;
     setSeason: (season: 'Summer' | 'Autumn' | 'Winter' | 'Spring') => void;
     setReviewHistory: (value: boolean | ((previous: boolean) => boolean)) => void;
@@ -121,14 +121,20 @@ const isMeasurementIdentityCurrent = (state: TuningMeasurementState, identity: T
     && (identity.carClass === null || state.identity.carClass === identity.carClass)
   ));
 
-export function TuneSessionProvider({ children }: { children: ReactNode }) {
-  const { carId, carParams, loadedCarId, selectionSource, selectionGeneration = 0 } = useCarParams();
+export function TuneSessionProvider({ children, evGearingEnabled = true, cvtEvidenceEnabled = true }: {
+  children: ReactNode;
+  evGearingEnabled?: boolean;
+  cvtEvidenceEnabled?: boolean;
+}) {
+  const { carId, carParams, loadedCarId, selectionSource, selectionGeneration = 0, saveCarParams, setCarParams, hasUnsavedParams } = useCarParams();
   const { data: telemetryData, isConnected } = useTelemetry();
   // A saved profile is an explicit offline selection, never the cached live build.
   const data = selectionSource === 'saved' ? null : telemetryData;
   const offlineSelectionRef = useRef(false);
   offlineSelectionRef.current = selectionSource === 'saved';
-  const staticProfileJson = serializeWorkflowProfile(loadedCarId === carId ? carParams : null);
+  const selectedParams = loadedCarId === carId ? carParams : null;
+  // The target is sent separately to the solver and does not change measured vehicle identity.
+  const staticProfileJson = serializeWorkflowProfile(selectedParams && { ...selectedParams, tuningTarget: undefined } as CarParams);
   const profile = useMemo(() => JSON.parse(staticProfileJson) as CarParams | null, [staticProfileJson]);
   const profileKey = engineDependencyKey(carId, profile);
   const iceMeasurementDisabledRef = useRef(false);
@@ -148,30 +154,25 @@ export function TuneSessionProvider({ children }: { children: ReactNode }) {
   }), [carId, liveIdentity, profileKey, selectionSource]);
 
   const [workflowStep, setWorkflowStep] = useState(initialWorkflowStep);
-  const [goal, setGoal] = useState('Road');
-  const [season, setSeason] = useState<'Summer' | 'Autumn' | 'Winter' | 'Spring'>('Summer');
-
-  const restoredTarget = useRef<string | null>(null);
-  useEffect(() => {
-    if (loadedCarId !== carId || !carParams) return;
-    const key = JSON.stringify([carId, selectionGeneration]);
-    if (restoredTarget.current === key) return;
-    restoredTarget.current = key;
-    const target = carParams.tuningTarget;
-    setGoal(target && ['Road', 'Rally', 'Drift', 'Drag'].includes(target.goal) ? target.goal : 'Road');
-    setSeason(target && ['Summer', 'Autumn', 'Winter', 'Spring'].includes(target.season) ? target.season : 'Summer');
-  }, [carId, loadedCarId, selectionGeneration, carParams]);
+  const targetScope = JSON.stringify([carId, selectionGeneration]);
+  const savedTarget = selectedParams?.tuningTarget;
+  const [targetEdit, setTargetEdit] = useState<{ scope: string; goal?: string; season?: Season } | null>(null);
+  const currentEdit = targetEdit?.scope === targetScope ? targetEdit : null;
+  const goal = currentEdit?.goal ?? (savedTarget && ['Road', 'Rally', 'Drift', 'Drag'].includes(savedTarget.goal) ? savedTarget.goal : 'Road');
+  const season = currentEdit?.season ?? (savedTarget && ['Summer', 'Autumn', 'Winter', 'Spring'].includes(savedTarget.season) ? savedTarget.season : 'Summer');
+  const setGoal = useCallback((nextGoal: string) => {
+    setTargetEdit(previous => ({ ...(previous?.scope === targetScope ? previous : { scope: targetScope }), goal: nextGoal }));
+  }, [targetScope]);
+  const setSeason = useCallback((nextSeason: Season) => {
+    setTargetEdit(previous => ({ ...(previous?.scope === targetScope ? previous : { scope: targetScope }), season: nextSeason }));
+  }, [targetScope]);
 
   const [reviewHistory, setReviewHistory] = useState(false);
   const [identityGeneration, setIdentityGeneration] = useState(0);
-  const [baselineGeneration, setBaselineGeneration] = useState(0);
-  // Profile edits invalidate calculations/evidence, while keeping the user's draft target.
-  const baseline = useBaselineDraft(JSON.stringify([carId, baselineGeneration, selectionGeneration]), goal, setGoal,
-    JSON.stringify([staticProfileJson, season, identity, identityGeneration, selectionGeneration]));
-  const setupContext = JSON.stringify([staticProfileJson, baseline.fields, selectionGeneration]);
+  const setupContext = JSON.stringify([staticProfileJson, selectionGeneration]);
   const setupContextRef = useRef(setupContext);
   setupContextRef.current = setupContext;
-  const evMeasurement = useEvMeasurementSession(carId, profile, data, setupContext, isConnected, !offlineSelectionRef.current);
+  const evMeasurement = useEvMeasurementSession(carId, profile, data, setupContext, isConnected, evGearingEnabled && !offlineSelectionRef.current);
   const identityTokenRef = useRef<TuneAsyncToken>({ generation: 0, identity });
 
   const engine = useEngineMeasurementArchive(carId, profile, identityGeneration, setupContext);
@@ -335,7 +336,6 @@ export function TuneSessionProvider({ children }: { children: ReactNode }) {
   }, [workflowStep]);
 
   useEffect(() => {
-    const previousIdentity = identityTokenRef.current.identity;
     const nextToken = nextTuneAsyncToken(identityTokenRef.current, identity);
     if (nextToken.generation === identityTokenRef.current.generation) return;
     if (shouldPreserveIdleIdentityHydration(identityTokenRef.current.identity, identity, measurementPhaseRef.current)) {
@@ -344,11 +344,6 @@ export function TuneSessionProvider({ children }: { children: ReactNode }) {
     }
     identityTokenRef.current = nextToken;
     setIdentityGeneration(nextToken.generation);
-    if (previousIdentity.carId !== identity.carId
-      || previousIdentity.performanceIndex !== identity.performanceIndex
-      || previousIdentity.carClass !== identity.carClass) {
-      setBaselineGeneration(previous => previous + 1);
-    }
     engineRef.current.invalidate();
     if (shouldInvalidateMeasurementAttempt(measurementPhaseRef.current)) invalidateMeasurement();
     else resetUnstartedMeasurement();
@@ -547,7 +542,7 @@ export function TuneSessionProvider({ children }: { children: ReactNode }) {
 
   const prepared = (hasProducedGearing || selectedEngineObservationMatchesLiveTelemetry(carId, engine.current, data)) ? engine.current : null;
   const calculation = prepared && engine.calculation?.status === 'ready' ? engine.calculation : null;
-  const evidenceContext = JSON.stringify([carId, staticProfileJson, identityGeneration, baseline.fields, selectionGeneration]);
+  const evidenceContext = JSON.stringify([carId, staticProfileJson, identityGeneration, selectionGeneration]);
   const cvtLiveIdentity = isConnected ? telemetryIdentityFor(carId, data) : null;
   // Read fresh telemetry directly: the shared identity state updates in an effect.
   const cvtIdentity = cvtLiveIdentity ? { ...identity, ...cvtLiveIdentity } : identity;
@@ -558,24 +553,83 @@ export function TuneSessionProvider({ children }: { children: ReactNode }) {
     ? evMeasurement.evidenceId ? JSON.stringify([evMeasurement.evidenceId, evMeasurement.evidenceLifetime]) : null
     : engine.observation?.id ?? null);
   const ratioBalanceContext = evidenceCurrent && calculation && engine.observation && !profile?.isElectric && !usesCvt(profile)
-    ? JSON.stringify([carId, staticProfileJson, goal, season, baseline.fields, engine.observation.id, identity.performanceIndex, identity.carClass]) : null;
+    ? JSON.stringify([carId, staticProfileJson, goal, season, engine.observation.id, identity.performanceIndex, identity.carClass]) : null;
   const ratioBalance = useRatioBalanceDraft(ratioBalanceContext);
+  const evResult = evGearingEnabled ? evMeasurement.result : null;
   const inputSnapshot = useMemo(() => ({ carId, goal, season, profile,
     ...(ratioBalance.request ? { ratioBalance: ratioBalance.request } : {}),
-    ...(usesCvt(profile) ? { transmissionModel: 'cvt-foundation/v1', ...cvtEvidence.snapshot } : profile?.isElectric
-      ? { powertrainModel: 'ev/v1', evMeasurement: evMeasurement.state, evResult: evMeasurement.result, evEvidence: evidenceCurrent && evMeasurement.evidenceId ? { kind: 'saved-ev', evidenceId: evMeasurement.evidenceId } : null,
-        ...(evMeasurement.confirmation ? { evEvidenceConfirmation: evMeasurement.confirmation } : {}) }
+    ...(usesCvt(profile) ? { transmissionModel: 'cvt-foundation/v1', ...(cvtEvidenceEnabled ? cvtEvidence.snapshot : { identity: cvtIdentity }) } : profile?.isElectric
+      ? { powertrainModel: 'ev/v1', evMeasurement: evMeasurement.state, evResult, evEvidence: evGearingEnabled && evidenceCurrent && evMeasurement.evidenceId ? { kind: 'saved-ev', evidenceId: evMeasurement.evidenceId } : null,
+        ...(evGearingEnabled && evMeasurement.confirmation ? { evEvidenceConfirmation: evMeasurement.confirmation } : {}) }
       : { powertrainModel: 'ice', engineObservation: evidenceCurrent && engine.observation ? { ...engine.observation, capture: undefined } : null, engineCalculation: calculation }),
-  }), [carId, goal, season, profile, ratioBalance.request, engine.observation, calculation, evMeasurement.result, evMeasurement.evidenceId, evMeasurement.confirmation, evidenceCurrent, cvtEvidence.snapshot.identity, cvtEvidence.snapshot.cvtConfiguration, cvtEvidence.snapshot.cvtEvidence]);
-  const { result, status: calculationStatus } = useWorkflowCalculation(carId, goal, season, profile, calculation ? {
+  }), [carId, goal, season, profile, ratioBalance.request, engine.observation, calculation, evResult, evGearingEnabled, evMeasurement.evidenceId, evMeasurement.confirmation, evidenceCurrent, cvtEvidenceEnabled, cvtEvidence.snapshot.identity, cvtEvidence.snapshot.cvtConfiguration, cvtEvidence.snapshot.cvtEvidence]);
+  const workflowEngine = calculation ? {
     engineMaxRpm: calculation.engineMaxRpm!, peakPowerRpm: calculation.peakPower!.rpm,
     peakTorqueRpm: calculation.peakTorque!.rpm, peakTorqueNm: calculation.peakTorque!.value,
-  } : null, evMeasurement.result && profile?.evGearbox ? {
-    setup: profile.evGearbox, measurements: evMeasurement.state.gears, candidateFinalDrive: evMeasurement.result.finalDrive,
-  } : null, inputSnapshot);
+  } : null;
+  const workflowEv = evResult && profile?.evGearbox ? {
+    setup: profile.evGearbox, measurements: evMeasurement.state.gears, candidateFinalDrive: evResult.finalDrive,
+  } : null;
+  const { result, status: calculationStatus } = useWorkflowCalculation(carId, goal, season, profile, workflowEngine, workflowEv, inputSnapshot);
+
+  const [navigationSelection, setNavigationSelection] = useState<number | null>(null);
+  const navigationLock = useRef<{ generation: number } | null>(null);
+  const isNavigating = navigationSelection === selectionGeneration;
+  const navigationKey = JSON.stringify([carId, selectionGeneration, identityGeneration, workflowStep, staticProfileJson, goal, season]);
+  const latestNavigation = useRef({ key: navigationKey, result });
+  latestNavigation.current = { key: navigationKey, result };
+
+  const navigateToStep: TuneSessionValue['workflow']['navigateToStep'] = async (step, isCurrent = () => true, target, signal) => {
+    const nextGoal = target?.goal ?? goal;
+    const nextSeason = target?.season ?? season;
+    const targetChanged = nextGoal !== goal || nextSeason !== season;
+    if (step === workflowStep && !targetChanged) return;
+    if (navigationLock.current?.generation === selectionGeneration) throw new Error('Saving changes. Wait before navigating.');
+    if (step !== 1 && !targetChanged && (!result || !canOpenTuningStep(step, result.readiness))) {
+      throw new Error('The requested tuning step is not available for this setup.');
+    }
+    const request = { generation: selectionGeneration };
+    navigationLock.current = request;
+    setNavigationSelection(selectionGeneration);
+    try {
+      let recalculated: typeof result = null;
+      if (step > 1 && targetChanged) {
+        const nextSnapshot = { ...inputSnapshot, goal: nextGoal, season: nextSeason, ratioBalance: undefined };
+        recalculated = await requestWorkflowCalculation(workflowCalculationInput(nextGoal, nextSeason, profile, workflowEngine, workflowEv, nextSnapshot), signal);
+        if (!canOpenTuningStep(step, recalculated.readiness)) {
+          throw new Error('The requested tuning step is not available for this setup.');
+        }
+      }
+      if (!isCurrent() || latestNavigation.current.key !== navigationKey) {
+        throw new Error('Vehicle or setup changed. Review the current inputs and try again.');
+      }
+      if (selectedParams && (targetChanged || hasUnsavedParams || (workflowStep === 1 && step > 1))) {
+        const next = { ...selectedParams, tuningTarget: { goal: nextGoal, season: nextSeason } };
+        await saveCarParams(next);
+        if (!isCurrent() || latestNavigation.current.key !== navigationKey) {
+          throw new Error('Vehicle or setup changed. Review the current inputs and try again.');
+        }
+        setCarParams(next);
+      }
+      if (!isCurrent() || latestNavigation.current.key !== navigationKey) {
+        throw new Error('Vehicle or setup changed. Review the current inputs and try again.');
+      }
+      const latestResult = recalculated ?? latestNavigation.current.result;
+      if (step !== 1 && (!latestResult || !canOpenTuningStep(step, latestResult.readiness))) {
+        throw new Error('The requested tuning step is not available for this setup.');
+      }
+      if (targetChanged) { setGoal(nextGoal); setSeason(nextSeason); }
+      setReviewHistory(false);
+      setWorkflowStep(step);
+    } finally {
+      if (navigationLock.current === request) {
+        navigationLock.current = null;
+        setNavigationSelection(null);
+      }
+    }
+  };
 
   const value = useMemo<TuneSessionValue>(() => ({
-    baseline,
     ratioBalance,
     result,
     calculationStatus,
@@ -588,6 +642,8 @@ export function TuneSessionProvider({ children }: { children: ReactNode }) {
       season,
       reviewHistory,
       setStep: setWorkflowStep,
+      navigateToStep,
+      isNavigating,
       setGoal,
       setSeason,
       setReviewHistory,
@@ -614,7 +670,8 @@ export function TuneSessionProvider({ children }: { children: ReactNode }) {
       clear: clearCapture,
     },
   }), [
-    baseline,
+    navigateToStep,
+    isNavigating,
     ratioBalance,
     result,
     calculationStatus,
@@ -647,8 +704,12 @@ export function TuneSessionProvider({ children }: { children: ReactNode }) {
   return <TuneSessionContext.Provider value={value}>{children}</TuneSessionContext.Provider>;
 }
 
+export function useOptionalTuneSession() {
+  return useContext(TuneSessionContext);
+}
+
 export function useTuneSession(): TuneSessionValue {
-  const value = useContext(TuneSessionContext);
+  const value = useOptionalTuneSession();
   if (!value) throw new Error('useTuneSession must be rendered below TuneSessionProvider.');
   return value;
 }

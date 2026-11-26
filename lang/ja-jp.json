@@ -2120,5 +2120,20 @@
   "Are you sure you want to delete route \"{name}\"?": "ルート「{name}」を削除してもよろしいですか？",
   "Delete {name}": "{name} を削除",
   "Route deleted.": "ルートを削除しました。",
-  "Failed to delete route.": "ルートを削除できませんでした。"
+  "Failed to delete route.": "ルートを削除できませんでした。",
+  "Show tuning diagnostics": "チューニングの診断を表示",
+  "Experimental EV gearing": "試験的な EV ギア比",
+  "CVT evidence tools": "CVT 計測データツール",
+  "Experimental MoTeC native export": "試験的な MoTeC ネイティブ書き出し",
+  "Turning off Companion disconnects devices and keeps their pairing.": "Companion をオフにすると接続が切断されます。ペアリングは保持されます。",
+  "Automatic Dyno collection (legacy)": "Dyno カーブ自動計測（旧版）",
+  "Automatically record races": "レースを自動記録",
+  "EV gearing is available as an experiment in Developer options.": "開発者向けオプションで試験的な EV ギア比機能を有効にできます。",
+  "Pause EV collection before turning off experimental gearing.": "試験的なギア比機能をオフにする前に EV 計測を一時停止してください。",
+  "Companion APP is currently disabled. Enable it in Developer options.": "Companion はオフです。開発者向けオプションで有効にできます。",
+  "Tuning target": "チューニング目標",
+  "The requested tuning step is not available for this setup.": "現在の設定では、このチューニング手順に進めません。",
+  "Vehicle or setup changed. Review the current inputs and try again.": "車両または設定が変わりました。現在の入力を確認して再試行してください。",
+  "Vehicle parameters could not be saved. Your edits are retained. Try again.": "車両パラメーターを保存できませんでした。入力内容は保持されています。もう一度お試しください。",
+  "HorizonTuner exports 41 telemetry channels with documented unit mappings.": "HorizonTuner は、単位の対応が記載された 41 のテレメトリチャンネルをエクスポートします。"
 }

@@ -28,7 +28,7 @@ afterEach(async () => {
 
 it.each(['ArrowDown', 'Enter', ' '])('opens from a focused trigger with %s and supports menu navigation', async key => {
   const onOpen = vi.fn();
-  await act(async () => { root.render(<AppMenu onOpen={onOpen} />); });
+  await act(async () => { root.render(<AppMenu showCompanion onOpen={onOpen} />); });
 
   const trigger = host.querySelector<HTMLButtonElement>('button')!;
   trigger.focus();

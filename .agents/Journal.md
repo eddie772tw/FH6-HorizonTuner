@@ -1555,3 +1555,9 @@
 - 最終Cadillac S1 798 Road／Winter打包MCP全流程335.774秒成功，30項保存後讀回；三、四檔有效2.265／4.752秒不足，實際自動升五檔取得8.830秒及16個RPM區間。EXE 11a89781…，完整數值／hash保存在docs/guides/auto-tune-cadillac-acceptance.json。既有升檔分支至此取得實機證據；沒有人工介入成功跑次。
 - Windows CI並行測試揭露微秒時間戳加PID仍可能撞名（os183）；工作目錄改用原子create_dir及AlreadyExists有限重試，不重用既有資料。此修正發生在Cadillac實機驗收後，該EXE不含命名避碰修正，兩者證據分開。
 - 使用者進一步指出車名不保證與資料庫一致：現在以時間戳前進且編號穩定的即時CarOrdinal為主，名稱只在無有效遙測時回退；PI／驅動形式不符或明確指定另一個編號仍拒絕。Cadillac唯讀實測以不存在名稱取得2128；72 passed、3 skipped、54 subtests passed。335.774秒完整跑次先於此追加身分變更，另列證據，沒有因此再改動車輛。
+
+## 2026-11-26 / 調校目標提交與 Companion 生命週期（Codex as Codex）
+
+- Step 1 的目標與季節輸入綁定選車 generation。切車時直接讀取該設定檔的目標，避免延後執行的初始化覆寫使用者剛選的值。後續步驟共用車輛快照保存與 Rust readiness，唯讀中性基準使用同一份 Rust 結果。
+- Companion 的 USB 反向轉發指向獨立的 loopback listener。停用時中斷其 WebSocket，桌面／HUD 遙測保有自己的生命週期。LAN 配對憑證保留，待用 QR 與指令清除。雙通道測試涵蓋關閉 USB 之後桌面仍回應。
+- 採用 `halfmoon-design-system`、`modular-refactoring`、`pr-author-maintainer`。視覺與實機驗收邊界見 [開發人員選項視覺審查](../docs/visual-review/developer-options/README.md)。

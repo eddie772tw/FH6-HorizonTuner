@@ -247,9 +247,14 @@ fn controller_telemetry_card_migrates_and_stays_independent_after_restart() {
 fn python_settings_and_hud_outputs_are_preserved() {
     let cases: Value = serde_json::from_str(include_str!("fixtures/config.json")).unwrap();
     for case in cases["settings"].as_array().unwrap() {
+        let mut expected = case["expected"].clone();
+        expected
+            .as_object_mut()
+            .unwrap()
+            .remove("mcp_max_downsample");
         assert_eq!(
             config::merge_settings(&case["initial"], &case["patch"]).unwrap(),
-            case["expected"]
+            expected
         );
     }
     for case in cases["hud"].as_array().unwrap() {
@@ -729,17 +734,49 @@ fn companion_settings_defaults_and_merge_behave_as_expected() {
     let directory = tempfile::tempdir().unwrap();
     let service = ConfigService::new(directory.path()).unwrap();
     let defaults = service.settings();
-    assert_eq!(defaults["companion_enabled"], true);
+    assert_eq!(defaults["companion_enabled"], false);
     assert_eq!(defaults["companion_usb_enabled"], false);
 
     let patched = config::merge_settings(
         &defaults,
         &json!({
-            "companion_enabled": false,
+            "companion_enabled": true,
             "companion_usb_enabled": true,
         }),
     )
     .unwrap();
-    assert_eq!(patched["companion_enabled"], false);
+    assert_eq!(patched["companion_enabled"], true);
     assert_eq!(patched["companion_usb_enabled"], true);
+}
+
+#[test]
+fn developer_preferences_survive_restart_and_legacy_mcp_limit_is_ignored() {
+    let directory = tempfile::tempdir().unwrap();
+    let service = ConfigService::new(directory.path()).unwrap();
+    let requested = json!({
+        "auto_check_updates": false,
+        "mcp_enabled": false,
+        "mcp_allow_live": false,
+        "mcp_max_downsample": "obsolete input",
+        "telemetry_port": 8100,
+        "forward_telemetry_enabled": true,
+        "forward_telemetry_host": "127.0.0.7",
+        "forward_telemetry_port": 5432,
+        "wip_hud_enabled": false,
+        "tuning_diagnostics_enabled": true
+    });
+    let saved = service
+        .handle("POST", "/api/settings", &requested)
+        .unwrap()
+        .unwrap();
+    assert!(saved.get("mcp_max_downsample").is_none());
+    for (key, value) in requested.as_object().unwrap() {
+        if key != "mcp_max_downsample" {
+            assert_eq!(saved[key], *value, "{key}");
+        }
+    }
+    assert_eq!(
+        ConfigService::new(directory.path()).unwrap().settings(),
+        saved
+    );
 }

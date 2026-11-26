@@ -42,15 +42,7 @@ const OverlayViewContent: React.FC = () => {
   const pageGeneration = useRef(0);
   const audioReadGeneration = useRef(0);
   const audioWriteGeneration = useRef(0);
-  const [showWipHuds, setShowWipHuds] = useState(() => {
-    try { return localStorage.getItem('fh6_show_wip_huds') === 'true'; } catch { return false; }
-  });
-  const wipForced = isWipHudQueryEnabled();
-  const isWipActive = showWipHuds || wipForced;
-  const handleToggleShowWipHuds = (checked: boolean) => {
-    setShowWipHuds(checked);
-    try { localStorage.setItem('fh6_show_wip_huds', checked ? 'true' : 'false'); } catch { /* Optional page preference. */ }
-  };
+  const isWipActive = settings.wip_hud_enabled === true || isWipHudQueryEnabled();
 
   useEffect(() => {
     mountedRef.current = true;
@@ -177,8 +169,8 @@ const OverlayViewContent: React.FC = () => {
   const tabs: HudSettingsTabDefinition[] = [
     { id: 'gauge', labelKey: 'Main gauge', content: <HudGaugePanel {...actions} config={config}
       styles={metadata.styles} author={metadata.currentAuthor} metadataLoading={metadata.loading}
-      includeWip={isWipActive} wipForced={wipForced} appUnits={settings.units}
-      onShowWipChange={handleToggleShowWipHuds} onS650CenterInfoToggle={handleS650CenterInfoToggle} /> },
+      includeWip={isWipActive} appUnits={settings.units}
+      onS650CenterInfoToggle={handleS650CenterInfoToggle} /> },
     { id: 'telemetry', labelKey: 'Telemetry cards', content: <HudTelemetryPanel {...actions}
       config={config} onElementChange={handleElementChange} /> },
     { id: 'general', labelKey: 'General', content: <HudGeneralPanel {...actions} config={config}

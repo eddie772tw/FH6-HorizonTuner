@@ -8,11 +8,13 @@ let mockTranslations: Record<string, string> = {};
 
 vi.mock('../context/SettingsContext', () => ({
   useSettings: () => ({
+    confirmedCompanionEnabled: true,
     t: (text: string) => mockTranslations[text] ?? text
   })
 }));
 vi.mock('../context/CarParamsContext', () => ({ useCarParams: () => ({ carId: null, followLiveCar: vi.fn(), telemetryCarId: null, selectionSource: null }) }));
 vi.mock('../hooks/useTelemetry', () => ({ useTelemetry: () => ({}) }));
+vi.mock('../services/runtimeCapabilities', () => ({ getRuntimeCapabilities: () => ({ companion: true, hudOverlay: true }) }));
 vi.mock('@platform/hud', () => ({ HudRuntime: () => null }));
 vi.mock('./AppHeader', () => ({
   AppHeader: ({ onOpenSurface }: { onOpenSurface?: (s: string) => void }) => (

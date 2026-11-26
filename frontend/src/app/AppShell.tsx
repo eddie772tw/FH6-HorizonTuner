@@ -5,6 +5,7 @@ import { useTelemetry } from '../hooks/useTelemetry';
 import { HudRuntime } from '@platform/hud';
 import DiagnosticConsole from '../components/DiagnosticConsole';
 import ThemeView from '../features/theme/ThemeView';
+import { getRuntimeCapabilities } from '../services/runtimeCapabilities';
 import SettingsView from '../features/settings/SettingsView';
 import { CompanionSettingsCard } from '../features/settings/components/CompanionSettingsCard';
 import { McpSettingsCard } from '../features/settings/components/McpSettingsCard';
@@ -44,7 +45,9 @@ export function AppShell({ variant, workspaces, Runtime, prepareSession }: {
   variant: AppVariant; workspaces: WorkspaceRegistry; Runtime?: ComponentType<WorkspaceRuntimeProps>;
   prepareSession?: (intent: SessionIntent, isCurrent: () => boolean) => Promise<boolean>;
 }) {
-  const { t } = useSettings();
+  const { t, confirmedCompanionEnabled } = useSettings();
+  const companionSupported = variant === 'full' && getRuntimeCapabilities().companion === true;
+  const showCompanion = companionSupported && confirmedCompanionEnabled;
   const developer = useDeveloperOptions(variant);
   const [activeWorkspace, setActiveWorkspace] = useState<WorkspaceId>('live');
   const [surface, setSurface] = useState<AppSurface | null>(null);
@@ -90,7 +93,7 @@ export function AppShell({ variant, workspaces, Runtime, prepareSession }: {
     <a href="#main-content" className="skip-to-content visually-hidden-focusable btn btn-primary position-absolute top-0 start-0 m-2"
       style={{ zIndex: 2000 }} onClick={handleSkipToContent}>{t('Skip to main content')}</a>
     <AppRuntime activeWorkspace={visibleWorkspace} />
-    <AppHeader variant={variant} activeWorkspace={visibleWorkspace} developerOptions={developer.enabled} onSelect={selectWorkspace} onOpenSurface={openSurface} />
+    <AppHeader variant={variant} activeWorkspace={visibleWorkspace} developerOptions={developer.enabled} showCompanion={showCompanion} onSelect={selectWorkspace} onOpenSurface={openSurface} />
     {Runtime && <Runtime activeWorkspace={visibleWorkspace} onOpenSessions={openSessions} />}
     <main id="main-content" tabIndex={-1} className="d-flex flex-column flex-grow-1 overflow-hidden p-3" style={{ minHeight: 0, outline: 'none' }} data-workspace={visibleWorkspace}>
       <Suspense fallback={<div role="status" className="p-3">{t('Loading...')}</div>}>
@@ -105,8 +108,8 @@ export function AppShell({ variant, workspaces, Runtime, prepareSession }: {
         <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => setFailedSessionRequest(null)}>{t('Close')}</button>
       </div>
     </div>}
-    {surface === 'settings' && <AppDialog className="app-dialog--settings" title="Settings" onClose={closeSurface}><SettingsView developer={developer} /></AppDialog>}
-    {surface === 'companion' && <AppDialog className="app-dialog--companion" title="Companion App" onClose={closeSurface}><CompanionSettingsCard /></AppDialog>}
+    {surface === 'settings' && <AppDialog className="app-dialog--settings" title="Settings" onClose={closeSurface}><SettingsView developer={developer} variant={variant} companionSupported={companionSupported} /></AppDialog>}
+    {surface === 'companion' && showCompanion && <AppDialog className="app-dialog--companion" title="Companion App" onClose={closeSurface}><CompanionSettingsCard /></AppDialog>}
     {surface === 'mcp' && <AppDialog className="app-dialog--mcp" title="MCP" onClose={closeSurface}><McpSettingsCard /></AppDialog>}
     {surface === 'about' && <AppDialog className="app-dialog--about" title="About" onClose={closeSurface}><AppAbout variant={variant} /></AppDialog>}
     <DiagnosticConsole show={surface === 'diagnostics'} onClose={closeSurface} />

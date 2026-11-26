@@ -2647,5 +2647,20 @@
   "Are you sure you want to delete route \"{name}\"?": "確定要刪除路線「{name}」嗎？",
   "Delete {name}": "刪除 {name}",
   "Route deleted.": "已刪除路線。",
-  "Failed to delete route.": "刪除路線失敗。"
+  "Failed to delete route.": "刪除路線失敗。",
+  "Show tuning diagnostics": "顯示調校診斷",
+  "Experimental EV gearing": "實驗性 EV 齒比",
+  "CVT evidence tools": "CVT 量測證據工具",
+  "Experimental MoTeC native export": "實驗性 MoTeC 原生匯出",
+  "Turning off Companion disconnects devices and keeps their pairing.": "停用 Companion 會中斷裝置連線，並保留配對。",
+  "Automatic Dyno collection (legacy)": "自動採集 Dyno 曲線（舊版）",
+  "Automatically record races": "自動錄製賽事",
+  "EV gearing is available as an experiment in Developer options.": "可在開發人員選項啟用實驗性 EV 齒比。",
+  "Pause EV collection before turning off experimental gearing.": "請先暫停 EV 量測，再關閉實驗性齒比。",
+  "Companion APP is currently disabled. Enable it in Developer options.": "Companion 目前已停用，可在開發人員選項啟用。",
+  "Tuning target": "調校目標",
+  "The requested tuning step is not available for this setup.": "目前的設定尚未符合此調校步驟的條件。",
+  "Vehicle or setup changed. Review the current inputs and try again.": "車輛或設定已變更。請確認目前的輸入後再試一次。",
+  "Vehicle parameters could not be saved. Your edits are retained. Try again.": "無法儲存車輛參數。已保留你的變更，請再試一次。",
+  "HorizonTuner exports 41 telemetry channels with documented unit mappings.": "HorizonTuner 可匯出 41 個遙測通道，並提供對應的單位說明。"
 }

@@ -62,7 +62,7 @@ describe('SettingsSurface localization & accessibility', () => {
     async (language) => {
       vi.mocked(backendFetch).mockImplementation(async (path) => {
         if (path === '/api/languages') return jsonResponse(languages.map((code) => ({ code, name: code })));
-        if (path === '/api/settings') return jsonResponse({ language });
+        if (path === '/api/settings') return jsonResponse({ language, tuning_diagnostics_enabled: true });
         if (path.startsWith('/api/languages/')) {
           return jsonResponse(dictionaries[path.slice('/api/languages/'.length) as LocaleCode]);
         }
@@ -207,20 +207,19 @@ describe('SettingsSurface localization & accessibility', () => {
 
   it.each([
     ['unavailable', 'zh-tw', '無法取得'],
-    ['missing_application_id', 'ja-jp', 'アプリケーション ID 未設定'],
     ['error', 'zh-tw', '無法連線至 Discord'],
   ] as const)(
     'maps Discord status "%s" accurately in %s',
     async (state, language, expectedLabel) => {
       vi.mocked(backendFetch).mockImplementation(async (path) => {
         if (path === '/api/languages') return jsonResponse(languages.map((code) => ({ code, name: code })));
-        if (path === '/api/settings') return jsonResponse({ language });
+        if (path === '/api/settings') return jsonResponse({ language, tuning_diagnostics_enabled: true });
         if (path.startsWith('/api/languages/')) {
           return jsonResponse(dictionaries[path.slice('/api/languages/'.length) as LocaleCode]);
         }
         if (path === '/api/diagnostics/discord-presence') {
           return jsonResponse({
-            configured: false,
+            configured: true,
             state,
             lastError: null,
             lastTelemetryAt: null,

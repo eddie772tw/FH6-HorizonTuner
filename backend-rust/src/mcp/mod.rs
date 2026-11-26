@@ -130,7 +130,7 @@ impl McpServer {
         }
     }
     pub fn status(&self, settings: &Value) -> Value {
-        json!({"enabled":settings.get("mcp_enabled").and_then(Value::as_bool).unwrap_or(true),"allow_live":settings.get("mcp_allow_live").and_then(Value::as_bool).unwrap_or(true),"max_downsample":settings.get("mcp_max_downsample").and_then(Value::as_i64).unwrap_or(500),"total_requests_served":self.requests,"transport":"streamable-http","mcp_endpoint":"/mcp","continuous_streaming":false,"time_series_tools":["query_session_telemetry","query_capture_window"]})
+        json!({"enabled":settings.get("mcp_enabled").and_then(Value::as_bool).unwrap_or(true),"allow_live":settings.get("mcp_allow_live").and_then(Value::as_bool).unwrap_or(true),"total_requests_served":self.requests,"transport":"streamable-http","mcp_endpoint":"/mcp","continuous_streaming":false,"time_series_tools":["query_session_telemetry","query_capture_window"]})
     }
 }
 

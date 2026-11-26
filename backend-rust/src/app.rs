@@ -61,6 +61,7 @@ pub struct App {
     pub database: Arc<TelemetryStore>,
     pub native: NativeServices,
     pub companion: Arc<CompanionService>,
+    pub companion_supported: bool,
     companion_workflow: Mutex<crate::companion_workflow::CompanionWorkflow>,
     companion_usb_operation: Mutex<()>,
     pub metrics: Mutex<Metrics>,
@@ -73,6 +74,10 @@ pub struct App {
 }
 impl App {
     pub fn new(root: &Path) -> ApiResult<Arc<Self>> {
+        Self::with_companion_support(root, true)
+    }
+
+    pub fn with_companion_support(root: &Path, companion_supported: bool) -> ApiResult<Arc<Self>> {
         let config = Arc::new(ConfigService::new(root)?);
         let database = Arc::new(
             TelemetryStore::new(&root.join("telemetry_sessions.db")).map_err(database_error)?,
@@ -116,6 +121,7 @@ impl App {
             database,
             native,
             companion,
+            companion_supported,
             companion_workflow: Mutex::new(crate::companion_workflow::CompanionWorkflow::default()),
             companion_usb_operation: Mutex::new(()),
             metrics: Mutex::new(Metrics::default()),
@@ -871,8 +877,11 @@ impl Backend for App {
     fn client_delta(&self, channel: &str, delta: i64) {
         lock(&self.metrics).client_delta(channel, delta);
     }
+    fn companion_usb_enabled(&self) -> bool {
+        self.companion_enabled() && self.config.settings()["companion_usb_enabled"] == true
+    }
     fn companion_enabled(&self) -> bool {
-        self.config.settings()["companion_enabled"] != false
+        self.companion_supported && self.config.settings()["companion_enabled"] == true
     }
     fn request(&self, request: ApiRequest) -> ApiResult<ApiResponse> {
         if (request.path.starts_with("/companion/")
@@ -887,9 +896,25 @@ impl Backend for App {
         }
         // Serialize setting transitions with ADB operations so an in-flight scan
         // cannot restart the daemon after a disable has completed.
-        let _settings_operation = (request.method == "POST" && request.path == "/api/settings")
-            .then(|| lock(&self.companion_usb_operation));
-        let previous_companion = _settings_operation.as_ref().map(|_| self.config.settings());
+        let _settings_operation = ((request.method == "POST" && request.path == "/api/settings")
+            || matches!(
+                request.path.as_str(),
+                "/api/companion/lan/pairing"
+                    | "/api/companion/qr"
+                    | "/api/companion/pair"
+                    | "/api/companion/workflow"
+                    | "/api/companion/commands"
+                    | "/api/companion/host"
+            ))
+        .then(|| lock(&self.companion_usb_operation));
+        let previous_companion = (request.method == "POST" && request.path == "/api/settings")
+            .then(|| self.config.settings());
+        if _settings_operation.is_some()
+            && request.path.starts_with("/api/companion/")
+            && !self.companion_enabled()
+        {
+            return Err(ApiError::new(403, "Companion APP is disabled in settings."));
+        }
         if request
             .path
             .strip_prefix("/api/road")
@@ -947,9 +972,11 @@ impl Backend for App {
             ));
         }
         if request.method == "GET" && request.path == "/api/runtime" {
+            let mut capabilities = json!(crate::platform::capabilities());
+            capabilities["companion"] = json!(self.companion_supported);
             return Ok(ApiResponse::json(json!({
                 "platform": std::env::consts::OS,
-                "capabilities": crate::platform::capabilities(),
+                "capabilities": capabilities,
                 "telemetry": *lock(&self.telemetry_binding),
             })));
         }
@@ -975,9 +1002,7 @@ impl Backend for App {
             ("GET", "/api/companion/usb/devices") => {
                 let _operation = lock(&self.companion_usb_operation);
                 let settings = self.config.settings();
-                if settings["companion_enabled"] == false
-                    || settings["companion_usb_enabled"] == false
-                {
+                if !self.companion_enabled() || settings["companion_usb_enabled"] != true {
                     return Err(ApiError::new(
                         403,
                         "USB companion feature is disabled in settings.",
@@ -992,9 +1017,7 @@ impl Backend for App {
             ("POST", "/api/companion/usb/connect") => {
                 let _operation = lock(&self.companion_usb_operation);
                 let settings = self.config.settings();
-                if settings["companion_enabled"] == false
-                    || settings["companion_usb_enabled"] == false
-                {
+                if !self.companion_enabled() || settings["companion_usb_enabled"] != true {
                     return Err(ApiError::new(
                         403,
                         "USB companion feature is disabled in settings.",
@@ -1005,7 +1028,10 @@ impl Backend for App {
                     .as_str()
                     .ok_or_else(|| ApiError::invalid("Choose a USB device first."))?;
                 let client = crate::companion_usb_runtime::packaged_client(&self.config.root)?;
-                let port = self.companion.get_status(None).port;
+                let port = self
+                    .companion
+                    .get_usb_port()
+                    .ok_or_else(|| ApiError::new(503, "Companion USB listener is unavailable"))?;
                 let result = client
                     .connect(serial, port)
                     .map_err(|e| ApiError::unavailable("USB connect", e))?;
@@ -1071,6 +1097,12 @@ impl Backend for App {
                     "image/png",
                 )
                 .header("cache-control", "no-store"));
+            }
+            ("GET", "/api/companion/preferences") => {
+                let settings = self.config.settings();
+                return Ok(ApiResponse::json(
+                    json!({"language":settings["language"],"units":settings["units"]}),
+                ));
             }
             ("GET", "/api/companion/workflow") => {
                 let mut workflow = lock(&self.companion_workflow);
@@ -1144,7 +1176,7 @@ impl Backend for App {
             })));
         }
         if request.method == "GET" && request.path == "/api/companion/status" {
-            let enabled = self.config.settings()["companion_enabled"] != false;
+            let enabled = self.companion_enabled();
             let mut status = self.companion.get_status(None);
             status.enabled = enabled;
             status.active_connections = if enabled {
@@ -1255,11 +1287,18 @@ impl Backend for App {
             let value = result?;
             if let Some(previous) = &previous_companion {
                 let current = self.config.settings();
-                let disabled = (previous["companion_enabled"] != false
-                    && current["companion_enabled"] == false)
-                    || (previous["companion_usb_enabled"] == true
-                        && current["companion_usb_enabled"] == false);
-                if disabled && previous["companion_usb_enabled"] == true {
+                let disabled =
+                    previous["companion_enabled"] == true && current["companion_enabled"] != true;
+                let usb_disabled = previous["companion_usb_enabled"] == true
+                    && current["companion_usb_enabled"] != true;
+                if disabled {
+                    self.companion.close_transports();
+                    *lock(&self.companion_workflow) =
+                        crate::companion_workflow::CompanionWorkflow::default();
+                } else if usb_disabled {
+                    self.companion.close_usb_transport();
+                }
+                if usb_disabled {
                     if let Ok(client) =
                         crate::companion_usb_runtime::packaged_client(&self.config.root)
                     {

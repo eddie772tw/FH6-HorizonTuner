@@ -6,11 +6,16 @@ import { DataStorageOverview } from './components/DataStorageOverview';
 import { SettingsItem, SettingsSection, SettingsSwitch } from './components/SettingsPrimitives';
 import { UpdateSettingsCard } from './components/UpdateSettingsCard';
 import { projectSettingsSections } from './settingsSections';
+import { getRuntimeCapabilities } from '../../services/runtimeCapabilities';
+import { useOptionalTuneSession } from '../tuning/TuneSessionProvider';
+import type { AppVariant } from '../../app/workspaceManifest';
+import { McpSettingsCard } from './components/McpSettingsCard';
 import type { DeveloperOptions } from '../auto-tune/useDeveloperOptions';
 
-export const SettingsSurface: React.FC<{developer?: DeveloperOptions}> = ({ developer }) => {
+export const SettingsSurface: React.FC<{ developer?: DeveloperOptions; variant?: AppVariant; companionSupported?: boolean }> = ({ developer, variant = 'full', companionSupported = false }) => {
   const { settings, updateSettings, isLoading, t, availableLanguages } = useSettings();
   const sections = projectSettingsSections();
+  const evCollecting = useOptionalTuneSession()?.evMeasurement.phase === 'collecting';
 
   const handleGeneralUnitChange = (system: GeneralUnitSystem) => {
     void updateSettings({ units: applyGeneralUnitSystem(settings.units, system) });
@@ -51,12 +56,49 @@ export const SettingsSurface: React.FC<{developer?: DeveloperOptions}> = ({ deve
           </SettingsItem>
         </SettingsSection>}
 
-        {developer?.available && <SettingsSection title={t('Developer options')}>
+        <SettingsSection title={t('Developer options')}>
+          {developer?.available && <>
             <SettingsSwitch id="settings-developer-options" label={t('Automated tuning')}
               description={t('Show the experimental automated tuning tab. Turning this off stops runs started from the tab. MCP remains available.')}
               checked={developer.enabled} disabled={developer.busy} onChange={e => void developer.setEnabled(e.target.checked)} />
             {developer.error && <p role="alert">{developer.error}</p>}
-        </SettingsSection>}
+          </>}
+          {variant === 'full' && <>
+            <SettingsSwitch id="settings-tuning-diagnostics" label={t('Show tuning diagnostics')}
+              checked={settings.tuning_diagnostics_enabled === true} onChange={e => void updateSettings({ tuning_diagnostics_enabled: e.target.checked })} />
+            <SettingsSwitch id="settings-ev-experimental" label={t('Experimental EV gearing')}
+              description={evCollecting ? t('Pause EV collection before turning off experimental gearing.') : undefined}
+              checked={settings.ev_experimental_enabled === true} disabled={evCollecting} onChange={e => void updateSettings({ ev_experimental_enabled: e.target.checked })} />
+            <SettingsSwitch id="settings-cvt-evidence" label={t('CVT evidence tools')}
+              checked={settings.cvt_evidence_enabled === true} onChange={e => void updateSettings({ cvt_evidence_enabled: e.target.checked })} />
+            <SettingsSwitch id="settings-motec-native" label={t('Experimental MoTeC native export')}
+              checked={settings.motec_native_enabled === true} onChange={e => void updateSettings({ motec_native_enabled: e.target.checked })} />
+          </>}
+          {getRuntimeCapabilities().hudOverlay && <SettingsSwitch id="settings-wip-hud" label={t('Show WIP Gauges')}
+            checked={settings.wip_hud_enabled === true} onChange={e => void updateSettings({ wip_hud_enabled: e.target.checked })} />}
+          {companionSupported && <SettingsSwitch id="settings-companion" label={t('Enable Companion APP')}
+            description={t('Turning off Companion disconnects devices and keeps their pairing.')}
+            checked={settings.companion_enabled === true} onChange={e => void updateSettings({ companion_enabled: e.target.checked })} />}
+          <details>
+            <summary>{t('Automatic Dyno collection (legacy)')}</summary>
+            <SettingsSwitch id="chk-dyno-rec" label={t('Dyno Recording')} checked={settings.dyno_recording}
+              onChange={e => void updateSettings({ dyno_recording: e.target.checked })} />
+            {settings.dyno_recording && <>
+              <SettingsItem label={t('Test Gear')} htmlFor="settings-dyno-test-gear">
+                <select id="settings-dyno-test-gear" className="form-select form-select-sm" value={settings.dyno_test_gear}
+                  onChange={e => void updateSettings({ dyno_test_gear: Number(e.target.value) })}>
+                  <option value={0}>{t('Any Gear')}</option>
+                  {Array.from({ length: 10 }, (_, i) => i + 1).map(gear => <option key={gear} value={gear}>{gear}</option>)}
+                </select>
+              </SettingsItem>
+              <SettingsSwitch id="settings-dyno-slip" label={t('Filter Wheel Slip')} checked={settings.dyno_filter_slip}
+                onChange={e => void updateSettings({ dyno_filter_slip: e.target.checked })} />
+              <SettingsSwitch id="settings-dyno-transients" label={t('Filter Transients')} checked={settings.dyno_filter_transients}
+                onChange={e => void updateSettings({ dyno_filter_transients: e.target.checked })} />
+            </>}
+          </details>
+          <McpOptions />
+        </SettingsSection>
 
         {has('telemetry', 'telemetry') && <SettingsSection title={t('Telemetry')}>
           <SettingsItem label={t('Telemetry Port')} description={t('Port to listen for Forza UDP telemetry packets across all network adapters and loopback (Default: 8000).')} htmlFor="settings-telemetry-port">
@@ -71,20 +113,24 @@ export const SettingsSurface: React.FC<{developer?: DeveloperOptions}> = ({ deve
               <input id="settings-forward-port" type="number" value={settings.forward_telemetry_port ?? 5300} onChange={event => void updateSettings({ forward_telemetry_port: parseInt(event.target.value) || 5300 })} className="form-control form-control-sm" />
             </SettingsItem>
           </>}
-          <SettingsSwitch id="chk-dyno-rec" label={t('Dyno Recording')} description={t('Automatically collect and update engine output curves during full throttle acceleration.')} checked={settings.dyno_recording} onChange={event => void updateSettings({ dyno_recording: event.target.checked })} />
-          <SettingsSwitch id="chk-race-rec" label={t('Race Recording')} description={t('Record suspension and grip data during races or driving for post-race analysis.')} checked={settings.race_recording} onChange={event => void updateSettings({ race_recording: event.target.checked })} />
+          <SettingsSwitch id="chk-race-rec" label={t('Automatically record races')} description={t('Record suspension and grip data during races or driving for post-race analysis.')} checked={settings.race_recording} onChange={event => void updateSettings({ race_recording: event.target.checked })} />
         </SettingsSection>}
 
-        {has('integrations', 'discord') && <SettingsSection title={t('Discord Rich Presence')}>
-          <DiscordPresenceStatusCard />
-        </SettingsSection>}
+        {has('integrations', 'discord') && <DiscordPresenceStatusCard />}
 
         {has('updates', 'updates') && <UpdateSettingsCard />}
 
         {has('storage', 'storage') && <DataStorageOverview />}
-
-
     </div>
   );
 };
 
+
+function McpOptions() {
+  const { t } = useSettings();
+  const [open, setOpen] = React.useState(false);
+  return <details onToggle={event => setOpen(event.currentTarget.open)}>
+    <summary>{t('MCP')}</summary>
+    {open && <McpSettingsCard />}
+  </details>;
+}

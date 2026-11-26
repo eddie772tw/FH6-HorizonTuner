@@ -1,17 +1,17 @@
 import { useEffect, useState } from 'react';
 import { useSettings } from '../../../context/SettingsContext';
 import { backendFetch } from '../../../services/backend';
-import { SettingsSection, SettingsSwitch } from './SettingsPrimitives';
+import { SettingsSection } from './SettingsPrimitives';
 import CompanionUsbControls from './CompanionUsbControls';
 import CompanionLanControls from './CompanionLanControls';
 
 interface CompanionStatus { active_connections: number; port: number; enabled?: boolean }
 
 export function CompanionSettingsCard() {
-  const { settings, updateSettings, t } = useSettings();
+  const { confirmedCompanionEnabled, t } = useSettings();
   const [status, setStatus] = useState<CompanionStatus | null>(null);
   const [error, setError] = useState(false);
-  const companionEnabled = settings.companion_enabled !== false;
+  const companionEnabled = confirmedCompanionEnabled;
 
   useEffect(() => {
     const controller = new AbortController();
@@ -37,18 +37,9 @@ export function CompanionSettingsCard() {
     </span>
   }>
     <div className="companion-settings-content gap-3 w-100">
-      <div className="companion-settings-main-toggle glass-panel p-3">
-        <SettingsSwitch
-          id="chk-companion-enabled"
-          label={t('Enable Companion APP')}
-          description={t('Allow mobile devices to connect over LAN or USB to display telemetry and control tuning workflow.')}
-          checked={companionEnabled}
-          onChange={(event) => void updateSettings({ companion_enabled: event.target.checked })}
-        />
-      </div>
       {!companionEnabled ? (
         <div className="companion-settings-alert alert alert-secondary mb-0" role="status">
-          {t('Companion APP is currently disabled. Enable the switch above to connect mobile devices.')}
+          {t('Companion APP is currently disabled. Enable it in Developer options.')}
         </div>
       ) : (
         <>

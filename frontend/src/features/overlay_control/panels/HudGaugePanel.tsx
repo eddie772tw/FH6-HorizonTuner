@@ -16,14 +16,12 @@ export interface HudGaugePanelProps extends HudPanelActions {
   author: HudAuthorInfo | null;
   metadataLoading: boolean;
   includeWip: boolean;
-  wipForced: boolean;
   appUnits: HudDisplayUnits;
-  onShowWipChange: (checked: boolean) => void;
   onS650CenterInfoToggle: () => void;
 }
 
-export function HudGaugePanel({ config, styles, author, metadataLoading, includeWip, wipForced,
-  appUnits, onShowWipChange, onS650CenterInfoToggle, disabled, onConfigPatch, t }: HudGaugePanelProps) {
+export function HudGaugePanel({ config, styles, author, metadataLoading, includeWip,
+  appUnits, onS650CenterInfoToggle, disabled, onConfigPatch, t }: HudGaugePanelProps) {
   const id = useId();
   const description = metadataLoading ? t('Loading author metadata...')
     : !author ? t('Author metadata unavailable.')
@@ -45,8 +43,6 @@ export function HudGaugePanel({ config, styles, author, metadataLoading, include
             ))}
           </select>
         </div>
-        <HudSwitch label={`${t('Show WIP Gauges')}${wipForced ? ` (${t('Dev Mode')})` : ''}`}
-          checked={includeWip} disabled={wipForced} onChange={onShowWipChange} />
         <div className="hud-author-details p-2 rounded fs-7 text-body-secondary" aria-busy={metadataLoading}>
           <div className="mb-1">{t('Author')}: <strong>{!author || author.author === 'Author' ? t('Author') : author.author}</strong></div>
           <div>{description}</div>

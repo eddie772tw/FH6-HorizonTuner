@@ -6,7 +6,6 @@ import { SettingsItem, SettingsSwitch } from './SettingsPrimitives';
 interface McpStatus {
   enabled: boolean;
   allow_live: boolean;
-  max_downsample: number;
   total_requests_served: number;
   transport: string;
   mcp_endpoint: string;
@@ -18,7 +17,6 @@ export const McpSettingsCard: React.FC = () => {
 
   const mcpEnabled = settings.mcp_enabled !== false;
   const allowLive = settings.mcp_allow_live !== false;
-  const maxDownsample = settings.mcp_max_downsample || 500;
 
   useEffect(() => {
     let isMounted = true;
@@ -74,24 +72,6 @@ export const McpSettingsCard: React.FC = () => {
             checked={allowLive}
             onChange={(event) => updateSettings({ mcp_allow_live: event.target.checked })}
           />
-
-          <SettingsItem
-            label={t('Max Time-Series Samples Limit')}
-            description={t('Caps the number of data samples returned in capture and session queries to prevent AI context window token overflow.')}
-            htmlFor="select-mcp-downsample"
-          >
-            <select
-              id="select-mcp-downsample"
-              value={maxDownsample}
-              onChange={(e) => updateSettings({ mcp_max_downsample: parseInt(e.target.value) || 500 })}
-              className="form-select form-select-sm"
-            >
-              <option value="200">{t('200 samples (Fastest)')}</option>
-              <option value="500">{t('500 samples (Recommended)')}</option>
-              <option value="1000">{t('1,000 samples (Detailed)')}</option>
-              <option value="2000">{t('2,000 samples (High Density)')}</option>
-            </select>
-          </SettingsItem>
 
           {/* Connection details and standard initialization guidance */}
           <div className="d-flex flex-column gap-2 pt-1">

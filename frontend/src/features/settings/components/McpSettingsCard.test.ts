@@ -7,27 +7,22 @@ describe('McpSettingsCard logic and configuration contract', () => {
 
     const mcpEnabled = rawSettings.mcp_enabled !== false;
     const allowLive = rawSettings.mcp_allow_live !== false;
-    const maxDownsample = rawSettings.mcp_max_downsample || 500;
 
     expect(mcpEnabled).toBe(true);
     expect(allowLive).toBe(true);
-    expect(maxDownsample).toBe(500);
   });
 
   it('respects explicit false values for MCP toggles', () => {
     const rawSettings: Partial<AppSettings> = {
       mcp_enabled: false,
       mcp_allow_live: false,
-      mcp_max_downsample: 200,
     };
 
     const mcpEnabled = rawSettings.mcp_enabled !== false;
     const allowLive = rawSettings.mcp_allow_live !== false;
-    const maxDownsample = rawSettings.mcp_max_downsample || 500;
 
     expect(mcpEnabled).toBe(false);
     expect(allowLive).toBe(false);
-    expect(maxDownsample).toBe(200);
   });
 
   it('uses the standard MCP endpoint path with dynamic port settings', () => {

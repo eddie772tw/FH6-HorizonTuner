@@ -2,6 +2,7 @@ import { backendFetch } from './backend';
 
 export interface RuntimeCapabilities {
   hudOverlay: boolean;
+  companion?: boolean;
   audioSpectrum: boolean;
   systemMedia: boolean;
   localMotecLaunch: boolean;

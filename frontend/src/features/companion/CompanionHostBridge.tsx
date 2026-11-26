@@ -63,9 +63,13 @@ export function CompanionHostBridge() {
           // Applying synchronously avoids overwriting a concurrent desktop edit after I/O.
           current.setCarParams(next);
         } else if (command.kind === 'workflow') {
-          if (command.goal !== undefined) tune.workflow.setGoal(command.goal);
-          if (command.season !== undefined) tune.workflow.setSeason(command.season as CompanionSeason);
-          if (command.step !== undefined) tune.workflow.setStep(command.step);
+          if (command.step !== undefined) {
+            await tune.workflow.navigateToStep(command.step, () => !stopped,
+              { goal: command.goal, season: command.season as CompanionSeason | undefined }, controller.signal);
+          } else {
+            if (command.goal !== undefined) tune.workflow.setGoal(command.goal);
+            if (command.season !== undefined) tune.workflow.setSeason(command.season as CompanionSeason);
+          }
         } else {
           const measurement = tune.engineMeasurement;
           if (command.action === 'start') measurement.ensureStarted(true);

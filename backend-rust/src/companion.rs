@@ -73,6 +73,9 @@ pub struct CompanionService {
     root: PathBuf,
     default_port: Mutex<u16>,
     lan_port: Mutex<Option<u16>>,
+    usb_port: Mutex<Option<u16>>,
+    lan_generation: tokio::sync::watch::Sender<u64>,
+    usb_generation: tokio::sync::watch::Sender<u64>,
     pending_tokens: Mutex<HashMap<String, Instant>>,
     pair_failures: Mutex<(u32, Option<Instant>)>,
     paired_devices: Mutex<Vec<PairedDevice>>,
@@ -101,6 +104,9 @@ impl CompanionService {
             root: root.to_path_buf(),
             default_port: Mutex::new(default_port),
             lan_port: Mutex::new(None),
+            usb_port: Mutex::new(None),
+            lan_generation: tokio::sync::watch::channel(0).0,
+            usb_generation: tokio::sync::watch::channel(0).0,
             pending_tokens: Mutex::new(HashMap::new()),
             pair_failures: Mutex::new((0, None)),
             paired_devices: Mutex::new(paired_devices),
@@ -127,6 +133,34 @@ impl CompanionService {
 
     pub fn get_lan_port(&self) -> Option<u16> {
         self.lan_port.lock().map(|p| *p).unwrap_or(None)
+    }
+
+    pub fn set_usb_port(&self, port: Option<u16>) {
+        *crate::config_service::lock(&self.usb_port) = port;
+    }
+
+    pub fn get_usb_port(&self) -> Option<u16> {
+        *crate::config_service::lock(&self.usb_port)
+    }
+
+    pub fn subscribe_transport(&self, usb: bool) -> tokio::sync::watch::Receiver<u64> {
+        if usb {
+            self.usb_generation.subscribe()
+        } else {
+            self.lan_generation.subscribe()
+        }
+    }
+
+    pub fn close_usb_transport(&self) {
+        self.usb_generation
+            .send_modify(|generation| *generation = generation.wrapping_add(1));
+    }
+
+    pub fn close_transports(&self) {
+        crate::config_service::lock(&self.pending_tokens).clear();
+        self.lan_generation
+            .send_modify(|generation| *generation = generation.wrapping_add(1));
+        self.close_usb_transport();
     }
 
     /// Detect non-loopback IPv4 addresses across network interfaces.

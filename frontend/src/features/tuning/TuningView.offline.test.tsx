@@ -17,7 +17,7 @@ import type { UnitPreferenceOverride } from '../../utils/gameUnitSettings';
 const transport = vi.hoisted(() => ({ data: null as TelemetryData | null, isConnected: true }));
 vi.mock('../../hooks/useTelemetry', () => ({ useTelemetry: () => transport, subscribeToDecodedTelemetry: () => () => {} }));
 vi.mock('../../services/backend', () => ({ backendFetch: vi.fn() }));
-vi.mock('../../context/SettingsContext', () => ({ useSettings: () => ({ t: (s: string) => s, settings: {}, updateSettings: vi.fn(),
+vi.mock('../../context/SettingsContext', () => ({ useSettings: () => ({ t: (s: string) => s, settings: { tuning_diagnostics_enabled: true, ev_experimental_enabled: true, cvt_evidence_enabled: true }, updateSettings: vi.fn(),
   convertSpringRate: (value: number) => ({ value, label: 'kgf/mm' }),
   convertHeight: (value: number) => ({ value, label: 'cm' }),
   convertTirePressureFromPsi: (value: number) => ({ value, label: 'psi' }),
@@ -198,21 +198,16 @@ it('isolates a manual selection from cached live data, then invalidates it on ex
   expect(session.engine.observation).toBeNull();
 });
 
-it('rejects old Apply contexts and late previews across saved A→B→A, including the same-car live handoff', async () => {
+it('rejects late calculation diagnostics across saved A→B→A, including the same-car live handoff', async () => {
   await mount(); await choose('42');
-  const retained = workflow({ goal: 'Road' }).baselinePreview as any, context = session.baseline.context;
   deferWorkflow = true;
   await choose('43'); await choose('42');
-  await act(async () => session.baseline.apply(retained, context));
-  expect(session.baseline.fields).toEqual({});
   const late = pendingWorkflows[0];
   await act(async () => late.resolve(response(workflow(late.input, 'stale-preview'))));
   expect(host.textContent).not.toContain('stale-preview');
-  expect(button('Apply local baseline').disabled).toBe(true);
+  expect(host.querySelector('[aria-label="Neutral baseline preview"]')).toBeNull();
   transport.data = { CarOrdinal: 42, CarClass: 3, CarPerformanceIndex: 700 } as TelemetryData; await mount();
   expect(cars.selectionSource).toBe('live');
-  await act(async () => session.baseline.apply(retained, context));
-  expect(session.baseline.fields).toEqual({});
 });
 
 it('rejects a dyno poll from an earlier live selection after the same car is selected offline', async () => {

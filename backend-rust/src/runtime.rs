@@ -22,17 +22,20 @@ pub struct Options {
     pub data_dir: PathBuf,
     pub owned: bool,
     pub development: bool,
+    pub companion_supported: bool,
     pub port: u16,
 }
 impl Options {
     pub fn parse() -> Result<Self, String> {
         let mut arguments = std::env::args().skip(1);
         let mut development = false;
+        let mut companion_supported = false;
         let mut data_dir = None;
         let mut port = 8001;
         while let Some(argument) = arguments.next() {
             match argument.as_str() {
                 "--dev" => development = true,
+                "--companion-supported" => companion_supported = cfg!(windows),
                 "--data-dir" => {
                     data_dir = Some(PathBuf::from(
                         arguments.next().ok_or("--data-dir requires a path")?,
@@ -63,6 +66,7 @@ impl Options {
             data_dir,
             owned,
             development,
+            companion_supported,
             port: if development { 8001 } else { port },
         })
     }
@@ -283,28 +287,13 @@ pub async fn run(options: Options) -> Result<(), String> {
         .await
         .map_err(|e| format!("HTTP {} is unavailable: {e}", options.port))?;
     let port = listener.local_addr().map_err(|e| e.to_string())?.port();
-    let app = App::new(&options.data_dir).map_err(|e| e.to_string())?;
+    let app = App::with_companion_support(&options.data_dir, options.companion_supported)
+        .map_err(|e| e.to_string())?;
     app.companion.set_port(port);
     let companion_port = std::env::var("COMPANION_LAN_PORT")
         .ok()
         .and_then(|value| value.parse::<u16>().ok())
         .unwrap_or(8002);
-    let companion_listener = match bind_companion_lan(companion_port).await {
-        Ok(listener) => {
-            if let Ok(address) = listener.local_addr() {
-                app.companion.set_lan_port(Some(address.port()));
-            }
-            Some(listener)
-        }
-        Err(error) => {
-            crate::diagnostics::write_log(
-                &options.data_dir,
-                "ERROR",
-                &format!("Companion LAN listener unavailable: {error}"),
-            );
-            None
-        }
-    };
     let settings = app.config.settings();
     let environment_udp_port = std::env::var("TELEMETRY_PORT")
         .ok()
@@ -429,34 +418,23 @@ pub async fn run(options: Options) -> Result<(), String> {
         json!({"port":port,"port_fallback":port!=8001})
     );
     let mut shutdown = stop_rx;
-    let companion_server = companion_listener.map(|listener| {
-        let lan_app = app.clone();
-        let mut lan_shutdown = shutdown.clone();
-        tokio::spawn(async move {
-            axum::serve(
-                listener,
-                network::lan_router(lan_app.clone(), lan_app.companion.clone()),
-            )
-            .with_graceful_shutdown(async move {
-                let _ = lan_shutdown.changed().await;
-            })
-            .await
-        })
+    let companion_server = options.companion_supported.then(|| {
+        tokio::spawn(run_companion_listeners(
+            app.clone(),
+            companion_port,
+            shutdown.clone(),
+        ))
     });
     let stop = stop_signal.clone();
-    let server =
-        axum::serve(listener, network::router(app.clone())).with_graceful_shutdown(async move {
+    let server = axum::serve(listener, network::desktop_router(app.clone()))
+        .with_graceful_shutdown(async move {
             tokio::select! {_=tokio::signal::ctrl_c()=>{},_=shutdown.changed()=>{}}
             stop.send_replace(true);
         });
     let result = server.await.map_err(|e| e.to_string());
     stop_signal.send_replace(true);
     if let Some(companion_server) = companion_server {
-        match companion_server.await {
-            Ok(Ok(())) => {}
-            Ok(Err(error)) => eprintln!("Companion LAN server failed: {error}"),
-            Err(error) => eprintln!("Companion LAN task failed: {error}"),
-        }
+        let _ = companion_server.await;
     }
     let _ = udp.await;
     stopping.store(true, Ordering::Release);
@@ -470,4 +448,81 @@ pub async fn run(options: Options) -> Result<(), String> {
         "Backend stopped and recording state flushed",
     );
     result
+}
+
+async fn run_companion_listeners(
+    app: Arc<App>,
+    mut lan_port: u16,
+    mut stop: watch::Receiver<bool>,
+) {
+    let mut settings = app.config.settings_changed.subscribe();
+    let mut lan_server = None;
+    let mut usb_server = None;
+    let mut preferred_usb_port = 0;
+    loop {
+        let (enabled, usb_enabled) = {
+            let current = settings.borrow_and_update();
+            let enabled = current["companion_enabled"] == true && !*stop.borrow();
+            (enabled, enabled && current["companion_usb_enabled"] == true)
+        };
+        if !enabled {
+            app.companion.set_lan_port(None);
+            stop_companion_server(&mut lan_server).await;
+        } else if lan_server.is_none() {
+            match bind_companion_lan(lan_port).await {
+                Ok(listener) => {
+                    if let Ok(address) = listener.local_addr() {
+                        lan_port = address.port();
+                        app.companion.set_lan_port(Some(lan_port));
+                        lan_server = Some(serve_companion(
+                            listener,
+                            network::lan_router(app.clone(), app.companion.clone()),
+                        ));
+                    }
+                }
+                Err(error) => crate::diagnostics::write_log(
+                    &app.config.root,
+                    "ERROR",
+                    &format!("Companion LAN listener unavailable: {error}"),
+                ),
+            }
+        }
+        if !usb_enabled {
+            app.companion.set_usb_port(None);
+            stop_companion_server(&mut usb_server).await;
+        } else if usb_server.is_none() {
+            if let Ok(listener) = bind_http(preferred_usb_port, true).await {
+                if let Ok(address) = listener.local_addr() {
+                    preferred_usb_port = address.port();
+                    app.companion.set_usb_port(Some(preferred_usb_port));
+                    usb_server = Some(serve_companion(
+                        listener,
+                        network::usb_companion_router(app.clone(), app.companion.clone()),
+                    ));
+                }
+            }
+        }
+        if *stop.borrow() {
+            break;
+        }
+        tokio::select! {
+            _ = stop.changed() => { app.companion.close_transports(); }
+            changed = settings.changed() => { if changed.is_err() { break; } }
+        }
+    }
+}
+
+type CompanionListener = tokio::task::JoinHandle<()>;
+
+fn serve_companion(listener: TcpListener, router: axum::Router) -> CompanionListener {
+    tokio::spawn(async move {
+        let _ = axum::serve(listener, router).await;
+    })
+}
+
+async fn stop_companion_server(server: &mut Option<CompanionListener>) {
+    if let Some(server) = server.take() {
+        server.abort();
+        let _ = server.await;
+    }
 }

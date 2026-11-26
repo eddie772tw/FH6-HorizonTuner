@@ -362,6 +362,9 @@ fn backend_command(app_handle: &tauri::AppHandle) -> Result<(Command, Vec<fs::Fi
 
 fn start_owned_backend(app_handle: &tauri::AppHandle) -> Result<(), String> {
     let (mut command, executable_guards) = backend_command(app_handle)?;
+    if cfg!(windows) && app_handle.config().identifier == "com.eddie772tw.frontend" {
+        command.arg("--companion-supported");
+    }
     #[cfg(windows)]
     {
         use std::os::windows::process::CommandExt;

@@ -29,6 +29,7 @@ fn request(
 #[tokio::test]
 async fn lan_pairing_limits_routes_and_revokes_session() {
     let root = tempfile::tempdir().unwrap();
+    fh6_backend::storage::save_settings(root.path(), &json!({"companion_enabled": true})).unwrap();
     let app = App::new(root.path()).unwrap();
     app.companion.set_lan_port(Some(8002));
     let router = network::lan_router(app.clone(), app.companion.clone());
@@ -200,6 +201,7 @@ async fn lan_pairing_limits_routes_and_revokes_session() {
 #[tokio::test]
 async fn http_responses_enforce_defense_in_depth_security_headers() {
     let root = tempfile::tempdir().unwrap();
+    fh6_backend::storage::save_settings(root.path(), &json!({"companion_enabled": true})).unwrap();
     let app = App::new(root.path()).unwrap();
     app.companion.set_lan_port(Some(8002));
     let lan_router = network::lan_router(app.clone(), app.companion.clone());
@@ -296,6 +298,7 @@ async fn http_responses_enforce_defense_in_depth_security_headers() {
 #[tokio::test]
 async fn general_router_enforces_host_validation_against_dns_rebinding() {
     let root = tempfile::tempdir().unwrap();
+    fh6_backend::storage::save_settings(root.path(), &json!({"companion_enabled": true})).unwrap();
     let app = App::new(root.path()).unwrap();
     let router = network::router(app.clone());
 
@@ -360,6 +363,7 @@ async fn general_router_enforces_host_validation_against_dns_rebinding() {
 #[tokio::test]
 async fn companion_setting_gates_block_disabled_subsystems() {
     let root = tempfile::tempdir().unwrap();
+    fh6_backend::storage::save_settings(root.path(), &json!({"companion_enabled": true})).unwrap();
     let app = App::new(root.path()).unwrap();
     let router = network::router(app.clone());
 
@@ -423,6 +427,7 @@ async fn companion_setting_gates_block_disabled_subsystems() {
 #[tokio::test]
 async fn disabling_companion_blocks_previously_paired_lan_and_loopback_controls() {
     let root = tempfile::tempdir().unwrap();
+    fh6_backend::storage::save_settings(root.path(), &json!({"companion_enabled": true})).unwrap();
     let app = App::new(root.path()).unwrap();
     app.companion.set_lan_port(Some(8002));
     let token = app.companion.generate_qr_payload(Some(8002)).token;
@@ -481,6 +486,7 @@ async fn disabling_companion_blocks_previously_paired_lan_and_loopback_controls(
 async fn disabling_companion_closes_existing_lan_telemetry_and_rejects_new_streams() {
     use tungstenite::{client::IntoClientRequest, Message};
     let root = tempfile::tempdir().unwrap();
+    fh6_backend::storage::save_settings(root.path(), &json!({"companion_enabled": true})).unwrap();
     let app = App::new(root.path()).unwrap();
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
     let port = listener.local_addr().unwrap().port();
@@ -552,6 +558,7 @@ async fn disabling_companion_closes_existing_lan_telemetry_and_rejects_new_strea
 #[tokio::test]
 async fn instrument_catalog_and_assets_require_the_existing_paired_session() {
     let root = tempfile::tempdir().unwrap();
+    fh6_backend::storage::save_settings(root.path(), &json!({"companion_enabled": true})).unwrap();
     let app = App::new(root.path()).unwrap();
     app.companion.set_lan_port(Some(8002));
     let router = network::lan_router(app.clone(), app.companion.clone());
@@ -653,6 +660,7 @@ async fn instrument_catalog_and_assets_require_the_existing_paired_session() {
 #[tokio::test]
 async fn lan_router_rejects_traversal_encoded_api_paths_and_oversized_bodies() {
     let root = tempfile::tempdir().unwrap();
+    fh6_backend::storage::save_settings(root.path(), &json!({"companion_enabled": true})).unwrap();
     let app = App::new(root.path()).unwrap();
     app.companion.set_lan_port(Some(8002));
     let router = network::lan_router(app.clone(), app.companion.clone());
@@ -700,4 +708,67 @@ async fn lan_router_rejects_traversal_encoded_api_paths_and_oversized_bodies() {
         .await
         .unwrap();
     assert_eq!(get_with_body.status(), StatusCode::PAYLOAD_TOO_LARGE);
+}
+
+#[tokio::test]
+async fn companion_preferences_are_projected_and_pairing_survives_disabling() {
+    let root = tempfile::tempdir().unwrap();
+    fh6_backend::storage::save_settings(
+        root.path(),
+        &json!({
+            "companion_enabled": true,
+            "language": "ja-jp",
+            "mcp_enabled": false,
+        }),
+    )
+    .unwrap();
+    let app = App::new(root.path()).unwrap();
+    app.companion.set_lan_port(Some(8002));
+    let router = network::lan_router(app.clone(), app.companion.clone());
+    let first_qr = app.companion.generate_qr_payload(Some(8002)).token;
+    let (_, session) = app
+        .companion
+        .pair(&first_qr, "Tablet", "tablet-pref")
+        .unwrap();
+    let pending_qr = app.companion.generate_qr_payload(Some(8002)).token;
+    let preferences = || {
+        request(
+            Method::GET,
+            "/api/companion/preferences",
+            Some(&session),
+            None,
+            Body::empty(),
+        )
+    };
+    let settings = |enabled| network::ApiRequest {
+        method: "POST".into(),
+        path: "/api/settings".into(),
+        query: Default::default(),
+        headers: Default::default(),
+        upload_filename: None,
+        body: serde_json::to_vec(&json!({"companion_enabled": enabled})).unwrap(),
+    };
+    use network::Backend;
+    app.request(settings(false)).unwrap();
+    assert_eq!(
+        router
+            .clone()
+            .oneshot(preferences())
+            .await
+            .unwrap()
+            .status(),
+        StatusCode::FORBIDDEN
+    );
+    app.request(settings(true)).unwrap();
+    assert!(app
+        .companion
+        .pair(&pending_qr, "Late tablet", "tablet-late")
+        .is_err());
+    let reply = router.oneshot(preferences()).await.unwrap();
+    assert_eq!(reply.status(), StatusCode::OK);
+    let payload: Value =
+        serde_json::from_slice(&to_bytes(reply.into_body(), 8192).await.unwrap()).unwrap();
+    assert_eq!(payload["language"], "ja-jp");
+    assert!(payload.get("units").is_some());
+    assert_eq!(payload.as_object().unwrap().len(), 2);
 }

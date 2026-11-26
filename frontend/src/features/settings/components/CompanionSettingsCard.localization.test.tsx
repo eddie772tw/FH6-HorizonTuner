@@ -68,7 +68,7 @@ describe('Companion localization & accessibility', () => {
       const response = (value: unknown) => new Response(JSON.stringify(value), { status: 200 });
       vi.mocked(backendFetch).mockImplementation(async (path) => {
         if (path === '/api/languages') return response(languages.map((code) => ({ code, name: code })));
-        if (path === '/api/settings') return response({ language });
+        if (path === '/api/settings') return response({ language, companion_enabled: true });
         if (path.startsWith('/api/languages/')) return response(dictionaries[path.slice('/api/languages/'.length)]);
         if (path === '/api/companion/status') return response({ active_connections: 2, port: 5300 });
         if (path === '/api/companion/usb/devices') return response({ devices: [] });

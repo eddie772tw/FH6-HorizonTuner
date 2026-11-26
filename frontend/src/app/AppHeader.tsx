@@ -4,8 +4,9 @@ import { AppBuildInfo } from './AppBuildInfo';
 import { AppMenu } from './AppMenu';
 import { getWorkspaces, type AppSurface, type AppVariant, type WorkspaceId } from './workspaceManifest';
 
-export function AppHeader({ variant, activeWorkspace, onSelect, onOpenSurface, developerOptions = false }: {
+export function AppHeader({ variant, activeWorkspace, onSelect, onOpenSurface, developerOptions = false, showCompanion = false }: {
   developerOptions?: boolean;
+  showCompanion?: boolean;
   variant: AppVariant; activeWorkspace: WorkspaceId; onSelect: (workspace: WorkspaceId) => void;
   onOpenSurface: (surface: AppSurface) => void;
 }) {
@@ -21,6 +22,6 @@ export function AppHeader({ variant, activeWorkspace, onSelect, onOpenSurface, d
           aria-current={workspace.id === activeWorkspace ? 'page' : undefined} onClick={() => onSelect(workspace.id)}>{t(workspace.label)}</button>)}
       </nav>
     </div>
-    <div className="d-flex align-items-center gap-2"><AppStatus onOpenMcp={() => onOpenSurface('mcp')} /><AppMenu onOpen={onOpenSurface} /></div>
+    <div className="d-flex align-items-center gap-2"><AppStatus onOpenMcp={() => onOpenSurface('mcp')} /><AppMenu showCompanion={showCompanion} onOpen={onOpenSurface} /></div>
   </header>;
 }

@@ -80,6 +80,9 @@ pub trait Backend: Send + Sync + 'static {
         vec![self.initial_overlay()]
     }
     fn client_delta(&self, channel: &str, delta: i64);
+    fn companion_usb_enabled(&self) -> bool {
+        self.companion_enabled()
+    }
     fn companion_enabled(&self) -> bool {
         true
     }
@@ -108,6 +111,19 @@ pub fn router(backend: Arc<dyn Backend>) -> Router {
         .layer(middleware::from_fn(security_headers))
 }
 
+/// The desktop listener carries controls. Companion assets are served by its own listeners.
+pub fn desktop_router(backend: Arc<dyn Backend>) -> Router {
+    router(backend).layer(middleware::from_fn(
+        |request: Request<Body>, next: Next| async move {
+            if request.uri().path().starts_with("/companion/") {
+                StatusCode::NOT_FOUND.into_response()
+            } else {
+                next.run(request).await
+            }
+        },
+    ))
+}
+
 /// The LAN listener deliberately exposes only the Companion's data path.
 /// The normal loopback router also contains host controls and administrative APIs.
 pub fn lan_router(backend: Arc<dyn Backend>, companion: Arc<CompanionService>) -> Router {
@@ -122,6 +138,80 @@ pub fn lan_router(backend: Arc<dyn Backend>, companion: Arc<CompanionService>) -
         )
         .fallback(move |request| lan_http(backend.clone(), companion.clone(), request))
         .layer(middleware::from_fn(security_headers))
+}
+
+/// ADB places the Android port on this dedicated loopback-only server.
+pub fn usb_companion_router(backend: Arc<dyn Backend>, companion: Arc<CompanionService>) -> Router {
+    let json_backend = backend.clone();
+    let json_companion = companion.clone();
+    let binary_backend = backend.clone();
+    let binary_companion = companion.clone();
+    Router::new()
+        .route(
+            "/ws/telemetry",
+            get(move |upgrade| {
+                usb_ws(
+                    json_backend.clone(),
+                    json_companion.clone(),
+                    upgrade,
+                    "json",
+                )
+            }),
+        )
+        .route(
+            "/ws/telemetry/binary",
+            get(move |upgrade| {
+                usb_ws(
+                    binary_backend.clone(),
+                    binary_companion.clone(),
+                    upgrade,
+                    "binary",
+                )
+            }),
+        )
+        .fallback(move |request: Request<Body>| {
+            let backend = backend.clone();
+            let companion = companion.clone();
+            async move {
+                if !backend.companion_usb_enabled() || companion.get_usb_port().is_none() {
+                    return StatusCode::FORBIDDEN.into_response();
+                }
+                let path = request.uri().path();
+                if path == "/api/companion/pair" || !lan_allowed_http(request.method(), path) {
+                    return StatusCode::NOT_FOUND.into_response();
+                }
+                let max_body = if request.method() == Method::POST {
+                    MAX_LAN_COMMAND_BODY_BYTES
+                } else {
+                    0
+                };
+                match enforce_lan_body_limit(request, max_body).await {
+                    Ok(request) => http_request(backend, request).await,
+                    Err(response) => response,
+                }
+            }
+        })
+        .layer(middleware::from_fn(origin_security))
+        .layer(middleware::from_fn(security_headers))
+}
+
+async fn usb_ws(
+    backend: Arc<dyn Backend>,
+    companion: Arc<CompanionService>,
+    upgrade: WebSocketUpgrade,
+    channel: &'static str,
+) -> Response {
+    let mut shutdown = companion.subscribe_transport(true);
+    if !backend.companion_usb_enabled() || companion.get_usb_port().is_none() {
+        return StatusCode::FORBIDDEN.into_response();
+    }
+    upgrade.on_upgrade(move |socket| async move {
+        tokio::select! {
+            biased;
+            _ = shutdown.changed() => {},
+            _ = socket_loop(socket, backend.clone(), channel) => {},
+        }
+    })
 }
 
 fn lan_host_and_origin_allowed(headers: &HeaderMap, companion: &CompanionService) -> bool {
@@ -175,9 +265,18 @@ fn lan_allowed_http(method: &Method, path: &str) -> bool {
     // Match API routes on raw canonical path so allowlist and auth/body checks never diverge.
     match (method, path) {
         (&Method::POST, "/api/companion/pair")
-        | (&Method::GET, "/api/companion/workflow")
+        | (
+            &Method::GET,
+            "/api/companion/workflow" | "/api/companion/preferences" | "/api/languages",
+        )
         | (&Method::POST, "/api/companion/commands") => true,
-        (&Method::GET, _) => decoded.starts_with("/companion/") || decoded.starts_with("/assets/"),
+        (&Method::GET, _) => {
+            decoded.starts_with("/companion/")
+                || decoded.starts_with("/assets/")
+                || path
+                    .strip_prefix("/api/languages/")
+                    .is_some_and(|locale| !locale.is_empty() && !locale.contains('/'))
+        }
         _ => false,
     }
 }
@@ -266,6 +365,7 @@ async fn lan_ws(
     }
     // Subscribe before authenticating so revocations during the upgrade handshake cannot be missed.
     let mut session_changes = companion.subscribe_session_changes();
+    let mut shutdown = companion.subscribe_transport(false);
     let Some(session_hash) = lan_session(&headers, &companion) else {
         return StatusCode::UNAUTHORIZED.into_response();
     };
@@ -277,6 +377,8 @@ async fn lan_ws(
         tokio::pin!(stream);
         loop {
             tokio::select! {
+                biased;
+                _ = shutdown.changed() => break,
                 _ = &mut stream => break,
                 // Immediately terminate active streams when a device is unpaired or its token rotates.
                 changed = session_changes.changed() => {

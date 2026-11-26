@@ -15,10 +15,10 @@ interface AppProvidersProps {
 export const AppProviders: React.FC<AppProvidersProps> = ({ children, companionTheme }) => (
   <ThemeProvider receiveOnly={companionTheme !== undefined} initialTheme={companionTheme}>
     <ToastProvider>
-      <SettingsProvider>
-        <CarParamsProvider>
+      <SettingsProvider companion={companionTheme !== undefined}>
+        {companionTheme !== undefined ? children : <CarParamsProvider>
           <TelemetryRecorderProvider>{children}</TelemetryRecorderProvider>
-        </CarParamsProvider>
+        </CarParamsProvider>}
       </SettingsProvider>
     </ToastProvider>
   </ThemeProvider>

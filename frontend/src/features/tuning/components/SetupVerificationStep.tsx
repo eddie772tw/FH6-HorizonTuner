@@ -11,7 +11,7 @@ interface SavedCompatibility { id: string; discipline: string; createdAt: number
 export function SetupVerificationStep({ goal, carId, recommendation, onBusyChange }: {
   goal: string; carId: string; recommendation: WorkflowRecommendation | null; onBusyChange?: (busy: boolean) => void;
 }) {
-  const { t } = useSettings();
+  const { settings, t } = useSettings();
   const { save: exportFile, isSaving } = useFileSave();
   const [status, setStatus] = useState('');
   const [busy, setBusy] = useState(false);
@@ -51,7 +51,7 @@ export function SetupVerificationStep({ goal, carId, recommendation, onBusyChang
       {history.filter(item => item.discipline === goal && item.recommendation.inputSnapshot.carId === carId).map(item =>
         <div key={item.id} className="my-2"><span>{new Date(item.createdAt * 1000).toLocaleString()} · {item.discipline}</span>
           <button className="btn btn-sm btn-outline-secondary ms-2" disabled={isSaving} onClick={() => void exportFile(captureSaveRequest(item, 'compatibility-setup.json'))}>{t('Export setup')}</button>
-          <details><summary>{t('Observation data')}</summary><pre className="small overflow-auto" style={{ maxHeight: 260 }}>{JSON.stringify(item, null, 2)}</pre></details>
+          {settings?.tuning_diagnostics_enabled && <details><summary>{t('Observation data')}</summary><pre className="small overflow-auto" style={{ maxHeight: 260 }}>{JSON.stringify(item, null, 2)}</pre></details>}
         </div>)}
     </details>
   </section>;

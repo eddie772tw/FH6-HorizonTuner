@@ -15,7 +15,7 @@ MCP is available only when all of these conditions are true:
 
 1. Horizon Tuner is running.
 2. The backend is ready and listening on its local HTTP port.
-3. `Enable MCP Server` is enabled in Settings.
+3. `Enable MCP Server` is enabled under **Settings → Developer options → MCP**.
 
 When the app is stopped or MCP is disabled, the endpoint is intentionally
 unavailable. There is no separate stdio process and no second telemetry
@@ -32,7 +32,7 @@ http://127.0.0.1:8001/mcp
 The Release Build first attempts to use local HTTP port `8001`. If that port is
 occupied, it selects another local port and writes the actual bound port to
 `logs/web_port.txt`. The frontend uses that value directly. Use the endpoint
-shown by the Settings MCP card when configuring an Agent; a Settings/MCP
+shown by the MCP card under **Settings → Developer options** when configuring an Agent; a Settings/MCP
 popover also appears when the fallback port is active.
 
 The server exposes only this Streamable HTTP endpoint. Legacy HTTP+SSE routes
@@ -104,7 +104,7 @@ Most MCP tools expose read-only telemetry summaries, captures, car data and solv
 The four automated-tuning tools below additionally provide experimental game control.
 They do not expose arbitrary SQL/files or create a second UDP listener.
 
-The HTTP MCP contract returns request-scoped results. Historical and captured
+Each time-series request controls sampling through its tool arguments. The desktop sample-limit preference has been removed. The HTTP MCP contract returns request-scoped results. Historical and captured
 time-series data is available through `query_session_telemetry` and
 `query_capture_window`, including timestamp fields, window slicing, and
 downsampling. It does not provide a continuous server-push stream of future

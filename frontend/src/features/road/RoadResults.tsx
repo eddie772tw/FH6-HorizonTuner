@@ -21,7 +21,7 @@ interface Props {
   onDraft: (id: string, revisit: boolean) => void;
 }
 export function RoadResults({ documents, busy, selection, candidateDraft, finishDraftFor, onSelectionChange, onCandidateDraftChange, onFinishDraftChange, perform, prefix, onDraft }: Props) {
-  const { t } = useSettings();
+  const { settings, t } = useSettings();
   const { save, isSaving } = useFileSave();
   const summaries = documentsOf(documents, 'summary');
   const summary = summaries.find(s => s.runId === selection.selectedRunId) || summaries.slice(-1)[0];
@@ -43,6 +43,6 @@ export function RoadResults({ documents, busy, selection, candidateDraft, finish
     {isBaseline && <button className="btn btn-outline-primary align-self-start" onClick={() => onSelectionChange({ ...selection, showCandidate: !selection.showCandidate })}>{t(selection.showCandidate ? 'Close exploratory change' : 'Try one reversible change')}</button>}
     {selection.showCandidate && isBaseline && <RoadCandidate key={summary.runId} runId={summary.runId} basis={basis} busy={busy} draft={candidateDraft} onDraftChange={onCandidateDraftChange}
       create={body => perform<RoadSetup>(prefix + '/candidates', body)} onCreated={id => { onSelectionChange({ ...selection, showCandidate: false }); onCandidateDraftChange(null); onDraft(id, true); }} />}
-    <details><summary>{t('Saved snapshots and report history')}</summary><pre className="small p-3" style={{ maxHeight: 360, overflow: 'auto', background: 'var(--surface-1)' }}>{JSON.stringify(documents, null, 2)}</pre></details>
+    {settings?.tuning_diagnostics_enabled && <details><summary>{t('Saved snapshots and report history')}</summary><pre className="small p-3" style={{ maxHeight: 360, overflow: 'auto', background: 'var(--surface-1)' }}>{JSON.stringify(documents, null, 2)}</pre></details>}
   </>;
 }

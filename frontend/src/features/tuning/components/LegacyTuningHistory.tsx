@@ -6,7 +6,7 @@ import { useFileSave } from '../../../hooks/useFileSave';
 
 /** Legacy files stay readable without promoting unmeasured RPM to current inputs. */
 export function LegacyTuningHistory({ carId }: { carId: string }) {
-  const { t } = useSettings();
+  const { settings, t } = useSettings();
   const { save, isSaving } = useFileSave();
   const [names, setNames] = useState<string[]>([]);
   const [selected, setSelected] = useState('');
@@ -37,7 +37,7 @@ export function LegacyTuningHistory({ carId }: { carId: string }) {
       <option value="">{t('Select a saved setup')}</option>{names.map(name => <option key={name}>{name}</option>)}
     </select>
     {error && <p role="status">{t(error)}</p>}
-    {snapshot !== null && <><pre className="small overflow-auto mt-2" style={{ maxHeight: 280 }}>{JSON.stringify(snapshot, null, 2)}</pre>
+    {snapshot !== null && <>{settings?.tuning_diagnostics_enabled && <pre className="small overflow-auto mt-2" style={{ maxHeight: 280 }}>{JSON.stringify(snapshot, null, 2)}</pre>}
       <button className="btn btn-outline-secondary" disabled={isSaving} onClick={() => void save(captureSaveRequest(snapshot, 'legacy-setup.json'))}>{t('Export setup')}</button></>}
   </details>;
 }
