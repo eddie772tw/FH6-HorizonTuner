@@ -96,4 +96,27 @@ describe('cssValidator', () => {
     expect(res.isValid).toBe(false);
     expect(res.error).toContain('64 KiB size limit');
   });
+
+  it.each([
+    '.card { content: "/*"; background: url("https://example.invalid/probe"); content: "*/"; }',
+    ".card { content: '/*'; background: image-set(\"https://example.invalid/probe\" 1x); content: '*/'; }",
+    'a { content: "/*"; } @font-face { font-family: x; src: url("https://example.invalid/f.woff2"); } b { content: "*/"; }',
+    String.raw`.card { --a: \/*; background: url("https://example.invalid/probe"); /* */ }`,
+    String.raw`.card { --a: \"; --b: "/*"; background: url("https://example.invalid/probe"); --c: "*/"; }`,
+    '.card { background: red/**/url("https://example.invalid/probe"); }',
+    '.card { background: red/**/image-set("https://example.invalid/probe" 1x); }',
+    '@/*comment*/charset "UTF-8";',
+    '/* </style><script>alert(1)</script> */ .card { color: red; }',
+    '.card { content: "a\r/*"; background: url(https://example.invalid/p); content: "*/"; }',
+    '.card { content: "unterminated; }',
+    '.card { content: "eof\\',
+  ])('blocks string-comment, escape, and token-merge bypass vectors: %s', css => {
+    expect(validateCSS(css).isValid).toBe(false);
+  });
+
+  it('allows valid quoted braces, escaped backslashes, and multiline escaped strings', () => {
+    expect(validateCSS('.badge::before { content: "}"; }')).toEqual({ isValid: true });
+    expect(validateCSS(String.raw`.card::before { content: "\\"; /* url(https://example.invalid/in-comment) */ }`)).toEqual({ isValid: true });
+    expect(validateCSS('.card::before { content: "line1\\\nline2"; }')).toEqual({ isValid: true });
+  });
 });

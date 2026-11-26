@@ -110,3 +110,9 @@
 **學習 (Learning):** 邊界閘道器的路由白名單（Allowlist）、認證豁免判斷與體積限制（Body limit）必須對同一規範化（Canonical）路徑語義運作；若白名單先 percent-decode 而後續安全控制使用原始字面比對，就會產生繞過或驗證落差。此外，共用本機與區域網路同一 `http_request` 處理器時，本機 64 MiB 上限絕不可被 LAN 認證端點繼承。
 **預防 (Prevention):** 在 `lan_allowed_http` 拒絕所有含 `.` / `..` 區段、`\` 及控制/NUL 位元組之解碼路徑，並規定 `/api/companion/*` 端點僅匹配標準字面路徑（阻斷 `%XX` 變體）；同時將 `enforce_lan_pair_body_limit` 推廣為通用的 `enforce_lan_body_limit`，於進入 `http_request` 前針對所有 LAN 請求強制套用分級上限（配對 8 KiB、指令 64 KiB、GET 請求 0 bytes），並於 `companion_lan.rs` 補齊路徑正規化與大本文阻擋回歸測試。
 **署名:** Sentinel as Antigravity
+
+## 2026-11-26 - Custom CSS Validator Lexer Desynchronization & Comment-Elision Bypass
+**漏洞/脆弱點 (Vulnerability):** 前端自訂主題 CSS 驗證器 `frontend/src/utils/cssValidator.ts::validateCSS` 在掃描註解與括號時，未追蹤單／雙引號字串狀態、未處理反斜線跳脫（`\`），且將多行註解直接刪除為空字串而非詞元分隔空白，同時在剝離註解後才比對 `</style`。透過外部匯入之社群主題 JSON（`importThemeJSON`）或已儲存之 `customCSS`，攻擊者可利用 `"/*"... "*/"`、`\/*`、`\"` 使驗證器狀態與瀏覽器 CSS 解析器脫鉤，或以 `red/**/url(...)` 拼接詞元繞過 `\b` 單字邊界比對，導致 `url()`、`image-set()`、`@font-face { src: url(...) }` 等未授權外部網路請求或 `</style>` 標籤閉合檢查被繞過（CWE-184 / CWE-436）。
+**學習 (Learning):** 自製安全詞法掃描器一旦比真實瀏覽器 CSS Syntax Level 3 詞法狀態機少追蹤任何一種結構（如字串常值、跳脫字元或輸入換行正規化），就會形成解析器差異（Parser Differential），讓瀏覽器正常執行的規則在驗證器眼中被誤判為註解內部或不同詞元。此外，移除註解時若不輸出分隔空白，會意外將相鄰的識別字與函式名稱合併，破壞以單字邊界為基礎的規則防護。
+**預防 (Prevention):** 在 `validateCSS` 中先依 CSS Syntax Level 3 執行換行與 NUL 前置正規化並在剝離註解前先行阻斷 `</style`；於詞法掃描器同步維護字串（`"` / `'`）與反斜線跳脫狀態（含跨行 `\` 續行與未閉合字串拒絕），在結束 `/* ... */` 註解時一律輸出分隔空白 `' '` 防止詞元拼接，並對 `@\s*(?:charset|namespace)\b` 統一允許空白分隔，全面消弭解析器差異。
+**署名:** Sentinel as Antigravity
