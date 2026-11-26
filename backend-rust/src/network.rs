@@ -113,7 +113,9 @@ async fn desktop_companion_guard(request: Request<Body>, next: Next) -> Response
     // Decode percent-encoding so /%63ompanion/... cannot bypass desktop isolation.
     match percent_encoding::percent_decode_str(request.uri().path()).decode_utf8() {
         Err(_) => ApiError::new(400, "Invalid request path").into_response(),
-        Ok(p) if p == "/companion" || p.starts_with("/companion/") => StatusCode::NOT_FOUND.into_response(),
+        Ok(p) if p == "/companion" || p.starts_with("/companion/") => {
+            StatusCode::NOT_FOUND.into_response()
+        }
         Ok(_) => next.run(request).await,
     }
 }
@@ -434,8 +436,11 @@ pub fn allowed_origin(origin: Option<&str>) -> bool {
     let Ok(url) = url::Url::parse(origin) else {
         return false;
     };
-    if !url.username().is_empty() || url.password().is_some()
-        || !matches!(url.path(), "" | "/") || url.query().is_some() || url.fragment().is_some()
+    if !url.username().is_empty()
+        || url.password().is_some()
+        || !matches!(url.path(), "" | "/")
+        || url.query().is_some()
+        || url.fragment().is_some()
     {
         return false;
     }
@@ -454,7 +459,11 @@ fn request_origin_allowed(headers: &HeaderMap) -> bool {
     let mut origins = headers.get_all("origin").iter();
     match (origins.next(), origins.next()) {
         (None, _) => true,
-        (Some(first), None) => first.to_str().ok().filter(|s| !s.is_empty()).is_some_and(|o| allowed_origin(Some(o))),
+        (Some(first), None) => first
+            .to_str()
+            .ok()
+            .filter(|s| !s.is_empty())
+            .is_some_and(|o| allowed_origin(Some(o))),
         (Some(_), Some(_)) => false,
     }
 }
