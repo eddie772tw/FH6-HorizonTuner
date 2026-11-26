@@ -1,3 +1,4 @@
+use serde::ser::{SerializeMap, Serializer};
 use serde_json::{Map, Value};
 
 pub const DECODED_POINT_SCHEMA: &str = "decoded-fh6/v1";
@@ -80,7 +81,7 @@ fn number(v: Option<&Value>) -> Value {
 /// Preserve absent/invalid channels as null, including individual wheel values.
 pub fn decoded_point(point: &Value) -> Value {
     let src = point.as_object();
-    let mut out = Map::new();
+    let mut out = Map::with_capacity(66);
     for key in SCALARS {
         out.insert((*key).into(), number(src.and_then(|m| m.get(*key))));
     }
@@ -150,4 +151,72 @@ pub fn decoded_point(point: &Value) -> Value {
         out.insert(alias.into(), out.get(canon).cloned().unwrap_or(Value::Null));
     }
     Value::Object(out)
+}
+
+// [PERF] Stream canonical raw_json directly into a reused buffer and retain stack column refs.
+type V<'a> = Option<&'a Value>;
+pub(crate) struct DecodedRow<'a>([V<'a>; 41], [[V<'a>; 4]; 9], [Option<f64>; 5]);
+impl<'a> DecodedRow<'a> {
+    pub(crate) fn encode(point: &'a Value, buf: &mut Vec<u8>) -> serde_json::Result<Self> {
+        buf.clear();
+        let get = |k| point.as_object().and_then(|m| m.get(k));
+        let fv = |v: V<'a>| v.filter(|x| finite(Some(x)));
+        let fin = |x: f64| x.is_finite().then_some(x);
+        let mut ser = serde_json::Serializer::new(buf);
+        let mut m = ser.serialize_map(Some(66))?;
+        let alias = [(25, "Power"), (26, "Torque"), (29, "lap_distance")];
+        let mut scalars = [None; 41];
+        for (i, &k) in SCALARS.iter().enumerate() {
+            let v = get(k).or_else(|| alias.iter().find(|x| x.0 == i).and_then(|x| get(x.1)));
+            scalars[i] = fv(v);
+            m.serialize_entry(k, &scalars[i])?;
+        }
+        let mut vectors = [[None; 4]; 9];
+        for (i, &k) in VECTORS.iter().enumerate() {
+            let a = get(k).or_else(|| (i == 0).then(|| get("SuspTravel")).flatten());
+            vectors[i] = std::array::from_fn(|j| fv(a.and_then(|x| x.as_array()?.get(j))));
+            m.serialize_entry(k, &vectors[i])?;
+        }
+        let mut pcts = [None; 5];
+        for (i, &(raw, pct, scale)) in CONTROLS.iter().enumerate() {
+            let num = if let Some(v) = get(raw) {
+                let v = fv(Some(v));
+                m.serialize_entry(raw, &v)?;
+                v.and_then(Value::as_f64)
+            } else {
+                let n = fv(get(pct)).and_then(|x| fin(x.as_f64()? * scale / 100.0));
+                m.serialize_entry(raw, &n)?;
+                n
+            };
+            pcts[i] = num.and_then(|x| fin(x * 100.0 / scale));
+            m.serialize_entry(pct, &pcts[i])?;
+        }
+        let ss = get("sourceSchema").and_then(Value::as_str);
+        m.serialize_entry("sourceSchema", ss.unwrap_or(DECODED_POINT_SCHEMA))?;
+        match get("TelemetrySchema") {
+            Some(v) => m.serialize_entry("TelemetrySchema", v)?,
+            None => m.serialize_entry("TelemetrySchema", "unknown")?,
+        }
+        m.serialize_entry("lap_distance", &scalars[29])?;
+        m.serialize_entry("SuspTravel", &vectors[0])?;
+        m.serialize_entry("Power", &scalars[25])?;
+        m.serialize_entry("Torque", &scalars[26])?;
+        m.end()?;
+        Ok(Self(scalars, vectors, pcts))
+    }
+    pub(crate) fn f64(&self, k: &str) -> Option<f64> {
+        if let Some(i) = SCALARS.iter().position(|&x| x == k) {
+            return self.0[i]?.as_f64();
+        }
+        self.2[CONTROLS.iter().position(|c| c.1 == k)?]
+    }
+    pub(crate) fn vec_f64(&self, k: &str, j: usize) -> Option<f64> {
+        let i = VECTORS.iter().position(|&x| x == k)?;
+        self.1[i][j]?.as_f64()
+    }
+    pub(crate) fn i64(&self, k: &str) -> i64 {
+        let v = SCALARS.iter().position(|&x| x == k).and_then(|i| self.0[i]);
+        v.and_then(|x| x.as_i64().or_else(|| x.as_f64().map(|n| n as i64)))
+            .unwrap_or(0)
+    }
 }
