@@ -28,19 +28,7 @@ pub struct DriftObservedBounds {
 }
 
 fn ticks(range: &RatioRange) -> Option<(i64, i64)> {
-    let lo = range.min * 100.0;
-    let hi = range.max * 100.0;
-    (range.min.is_finite()
-        && range.max.is_finite()
-        && range.min > 0.0
-        && range.step == 0.01
-        && lo.round() >= 1.0
-        && lo <= hi
-        && hi <= i32::MAX as f64
-        && hi - lo <= 10_000.0
-        && (lo - lo.round()).abs() < 1e-7
-        && (hi - hi.round()).abs() < 1e-7)
-        .then_some((lo.round() as i64, hi.round() as i64))
+    crate::tuning::ratio_balance::range_ticks(range.min, range.max, range.step)
 }
 
 fn unavailable(reason: &'static str, mut diagnostics: Value) -> CandidateGearingResult {
@@ -101,20 +89,25 @@ fn rpm_upper_tick(
 /// diagnostics. This is not an evidence qualification API for client metadata.
 pub fn respects_hard_targets(result: &GearingResult, diagnostic: &Value) -> bool {
     let positive = |v: &Value| v.as_f64().filter(|v| v.is_finite() && *v > 0.0);
-    let grid = |v: f64| {
-        let scaled = v * 100.0;
-        v.is_finite() && v > 0.0 && scaled.round() >= 1.0 && (scaled - scaled.round()).abs() < 1e-7
-    };
     if diagnostic["modelVersion"] != MODEL_VERSION
         || !matches!(diagnostic["status"].as_str(), Some("available" | "limited"))
         || diagnostic["targetSource"] != "user-target"
         || result.unsupported == Some(true)
         || !(4..=10).contains(&result.gears.len())
         || diagnostic["gearCount"].as_u64() != Some(result.gears.len() as u64)
-        || !grid(result.final_drive)
-        || !result.gears.iter().all(|g| grid(*g))
-        || !result.gears.windows(2).all(|g| g[0] > g[1])
+        || crate::tuning::ratio_balance::ratio_tick(result.final_drive).is_none()
     {
+        return false;
+    }
+    let Some(gear_ticks) = result
+        .gears
+        .iter()
+        .map(|&g| crate::tuning::ratio_balance::ratio_tick(g))
+        .collect::<Option<Vec<_>>>()
+    else {
+        return false;
+    };
+    if !gear_ticks.windows(2).all(|g| g[0] > g[1]) {
         return false;
     }
     let Some(main) = diagnostic["mainGear"]

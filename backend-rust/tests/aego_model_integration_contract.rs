@@ -45,4 +45,211 @@ fn ratio_balance_cannot_relax_the_models_observed_hardware_locks() {
         .reason
         .unwrap()
         .contains("observed profile bounds"));
+
+    // 1. models::adjusted_diagnostics must match respects_hard_targets on Rally/Drag lock rejection
+    let r_rej = models::adjusted_diagnostics(AegoModel::RallyJointV1, &adjusted, &base.diagnostics);
+    assert_eq!(r_rej["status"], "unavailable");
+    assert!(r_rej["reason"]
+        .as_str()
+        .unwrap()
+        .contains("observed profile bounds"));
+    assert!([
+        "actualSpeedKmh",
+        "endpointErrorKmh",
+        "actualTotalRatio",
+        "finalDrive",
+        "gears"
+    ]
+    .iter()
+    .all(|k| r_rej[k].is_null()));
+
+    // 2. Drag lock rejection also clears finish availability & actual telemetry predictions
+    let drag_raw: Value =
+        serde_json::from_str(include_str!("../../tests/fixtures/aego_drag_joint_v1.json")).unwrap();
+    let mut dp = drag_raw["carParams"].clone();
+    dp["dragFinishSpeedKmh"] = json!(250.0);
+    dp["dragFinishSpeedProvenance"] = json!("manual");
+    let solve = |p: &Value| {
+        models::solve(
+            AegoModel::DragJointV1,
+            6,
+            &serde_json::from_value(p.clone()).unwrap(),
+            7500.0,
+            None,
+        )
+    };
+    let init = solve(&dp);
+    let fd = init.gearing.final_drive;
+    dp["dragObservedBounds"] = json!({"source":"user-observed","finalDrive":{"min":fd,"max":fd,"step":0.01},"gears":init.gearing.gears.iter().map(|g| json!({"min":g,"max":g,"step":0.01})).collect::<Vec<_>>()});
+    let drag_base = solve(&dp);
+    let mut drag_out = drag_base.gearing.clone();
+    drag_out.final_drive = ((fd + 0.01) * 100.0).round() / 100.0;
+    assert!(!models::respects_hard_targets(
+        AegoModel::DragJointV1,
+        &drag_out,
+        &drag_base.diagnostics
+    ));
+    let d_rej =
+        models::adjusted_diagnostics(AegoModel::DragJointV1, &drag_out, &drag_base.diagnostics);
+    assert_eq!(d_rej["status"], "unavailable");
+    assert_eq!(d_rej["dragFinishAvailability"]["status"], "unavailable");
+    assert!(d_rej["dragFinishAvailability"]["actualKmh"].is_null());
+    assert!([
+        "actualSpeedKmh",
+        "actualLaunchSpeedKmh",
+        "actualLaunchRpmAtTargetSpeed",
+        "actualFinishRpmAtTargetSpeed",
+        "endpointErrorKmh",
+        "finalDrive",
+        "gears"
+    ]
+    .iter()
+    .all(|k| d_rej[k].is_null()));
+
+    // 3. Reject malformed observedBounds (sub-0.01, non-grid, >10000 tick span)
+    for bad_fd in [
+        json!({"min":1e-10,"max":4.0,"step":0.01}),
+        json!({"min":3.511,"max":3.529,"step":0.01}),
+        json!({"min":0.01,"max":150.0,"step":0.01}),
+    ] {
+        let mut tampered = base.diagnostics.clone();
+        tampered["observedBounds"]["finalDrive"] = bad_fd;
+        assert!(!models::respects_hard_targets(
+            AegoModel::RallyJointV1,
+            &base.gearing,
+            &tampered
+        ));
+    }
+}
+
+#[test]
+fn subgrid_observed_bounds_and_ratios_are_consistently_rejected_across_models() {
+    use fh6_backend::tuning::gearing::{drag, road};
+
+    let subgrid_fd = json!({"min": 1e-10, "max": 4.0, "step": 0.01});
+    let wide_gears = vec![json!({"min": 0.01, "max": 20.0, "step": 0.01}); 6];
+    let bad_bounds = json!({
+        "source": "user-observed",
+        "finalDrive": subgrid_fd,
+        "gears": wide_gears,
+    });
+
+    // 1. Drag solve + respects_hard_targets closure on sub-0.01 dragObservedBounds
+    let drag_raw: Value =
+        serde_json::from_str(include_str!("../../tests/fixtures/aego_drag_joint_v1.json")).unwrap();
+    let mut dp = drag_raw["carParams"].clone();
+    dp["dragFinishSpeedKmh"] = json!(250.0);
+    dp["dragFinishSpeedProvenance"] = json!("manual");
+    let drag_valid = models::solve(
+        AegoModel::DragJointV1,
+        6,
+        &serde_json::from_value(dp.clone()).unwrap(),
+        7500.0,
+        None,
+    );
+    assert_ne!(drag_valid.gearing.unsupported, Some(true));
+
+    dp["dragObservedBounds"] = bad_bounds.clone();
+    let drag_bad = models::solve(
+        AegoModel::DragJointV1,
+        6,
+        &serde_json::from_value(dp).unwrap(),
+        7500.0,
+        None,
+    );
+    assert_eq!(drag_bad.gearing.unsupported, Some(true));
+    assert_eq!(drag_bad.diagnostics["status"], "unavailable");
+    assert_eq!(
+        drag_bad.diagnostics["dragFinishAvailability"]["status"],
+        "unavailable"
+    );
+    assert!(!models::respects_hard_targets(
+        AegoModel::DragJointV1,
+        &drag_bad.gearing,
+        &drag_bad.diagnostics
+    ));
+
+    // 2. Rally & Drift solve + respects_hard_targets closure on sub-0.01 observedBounds
+    let rally_raw: Value = serde_json::from_str(include_str!(
+        "../../tests/fixtures/aego_rally_joint_v1.json"
+    ))
+    .unwrap();
+    let mut rp = rally_raw["inputs"]["carParams"].clone();
+    let road_valid = models::solve(
+        AegoModel::RoadLaunchV3,
+        6,
+        &serde_json::from_value(rp.clone()).unwrap(),
+        7500.0,
+        None,
+    );
+    assert_ne!(road_valid.gearing.unsupported, Some(true));
+    rp["rallyObservedBounds"] = bad_bounds.clone();
+    let rally_bad = models::solve(
+        AegoModel::RallyJointV1,
+        6,
+        &serde_json::from_value(rp).unwrap(),
+        7500.0,
+        None,
+    );
+    assert_eq!(rally_bad.gearing.unsupported, Some(true));
+    assert_eq!(rally_bad.diagnostics["status"], "unavailable");
+    assert!(!models::respects_hard_targets(
+        AegoModel::RallyJointV1,
+        &rally_bad.gearing,
+        &rally_bad.diagnostics
+    ));
+
+    let drift_raw: Value = serde_json::from_str(include_str!(
+        "../../tests/fixtures/aego_drift_working_v1.json"
+    ))
+    .unwrap();
+    let mut drp = drift_raw["inputs"]["carParams"].clone();
+    drp["driftWorkingTarget"] = drift_raw["inputs"]["target"].clone();
+    drp["driftObservedBounds"] = bad_bounds;
+    let drift_bad = models::solve(
+        AegoModel::DriftWorkingV1,
+        6,
+        &serde_json::from_value(drp).unwrap(),
+        7500.0,
+        None,
+    );
+    assert_eq!(drift_bad.gearing.unsupported, Some(true));
+    assert_eq!(drift_bad.diagnostics["status"], "unavailable");
+    assert!(!models::respects_hard_targets(
+        AegoModel::DriftWorkingV1,
+        &drift_bad.gearing,
+        &drift_bad.diagnostics
+    ));
+
+    // 3. drag::respects_hard_targets & road::respects_hard_targets reject sub-0.01,
+    //    > i32::MAX tick overflow, and duplicate-tick floating-point perturbation.
+    for (label, base, check) in [
+        (
+            "drag",
+            &drag_valid,
+            drag::respects_hard_targets as fn(&_, &Value) -> bool,
+        ),
+        (
+            "road",
+            &road_valid,
+            road::respects_hard_targets as fn(&_, &Value) -> bool,
+        ),
+    ] {
+        assert!(check(&base.gearing, &base.diagnostics), "{label} baseline");
+
+        let mut subgrid = base.gearing.clone();
+        subgrid.gears[5] = 1e-10;
+        assert!(!check(&subgrid, &base.diagnostics), "{label} subgrid");
+
+        let mut huge = base.gearing.clone();
+        huge.final_drive = 1e15;
+        assert!(!check(&huge, &base.diagnostics), "{label} huge");
+
+        let mut duplicate_tick = base.gearing.clone();
+        duplicate_tick.gears[2] = duplicate_tick.gears[1] - 1e-10;
+        assert!(
+            !check(&duplicate_tick, &base.diagnostics),
+            "{label} duplicate_tick"
+        );
+    }
 }

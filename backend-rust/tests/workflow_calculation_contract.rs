@@ -369,6 +369,158 @@ fn ratio_balance_rechecks_each_model_and_updates_selected_output_diagnostics() {
 }
 
 #[test]
+fn workflow_ratio_balance_rejection_and_subgrid_bounds_clear_stale_diagnostics() {
+    let temp = tempfile::tempdir().unwrap();
+    let app = App::new(temp.path()).unwrap();
+    save_engine(&app);
+
+    let wide_bounds = json!({
+        "source": "user-observed",
+        "finalDrive": {"min": 1.0, "max": 10.0, "step": 0.01},
+        "gears": vec![json!({"min": 0.01, "max": 20.0, "step": 0.01}); 6]
+    });
+    let exact_bounds = |fd: f64, gears: &[Value]| {
+        json!({
+            "source": "user-observed",
+            "finalDrive": {"min": fd, "max": fd, "step": 0.01},
+            "gears": gears.iter().map(|g| json!({"min": g, "max": g, "step": 0.01})).collect::<Vec<_>>()
+        })
+    };
+
+    // 1. Drag ratioBalance rejection via /api/tuning/workflow must clear dragFinishAvailability & stale predictions
+    let mut drag_req = aego_request("Drag");
+    let drag_init = call(&app, "/api/tuning/workflow", drag_req.clone()).unwrap();
+    let drag_fd = drag_init["gearing"]["finalDrive"].as_f64().unwrap();
+    let drag_gears = drag_init["gearing"]["gears"].as_array().unwrap();
+    drag_req["profile"]["dragObservedBounds"] = exact_bounds(drag_fd, drag_gears);
+    drag_req["inputSnapshot"]["ratioBalance"] = json!({
+        "schemaVersion": "ratio-balance/v1",
+        "candidateFinalDrive": ((drag_fd + 0.01) * 100.0).round() / 100.0,
+        "bounds": wide_bounds
+    });
+    let drag_denied = call(&app, "/api/tuning/workflow", drag_req).unwrap();
+    assert_eq!(drag_denied["readiness"]["gearingAvailable"], false);
+    assert!(drag_denied["gearing"].is_null());
+    assert!(drag_denied["recommendation"].is_null());
+    assert_eq!(drag_denied["gearingDiagnostics"]["status"], "unavailable");
+    assert_eq!(
+        drag_denied["gearingDiagnostics"]["dragFinishAvailability"]["status"],
+        "unavailable"
+    );
+    assert!(drag_denied["gearingDiagnostics"]["dragFinishAvailability"]["actualKmh"].is_null());
+    for key in [
+        "actualSpeedKmh",
+        "actualLaunchSpeedKmh",
+        "actualLaunchRpmAtTargetSpeed",
+        "actualFinishRpmAtTargetSpeed",
+        "endpointErrorKmh",
+        "launchErrorKmh",
+        "finalDrive",
+        "gears",
+    ] {
+        assert!(
+            drag_denied["gearingDiagnostics"][key].is_null(),
+            "Drag rejected workflow diagnostics still retained {key}: {}",
+            drag_denied["gearingDiagnostics"]
+        );
+    }
+
+    // 2. Drag sub-0.01 observedBounds via /api/tuning/workflow must fail solve cleanly
+    let mut drag_subgrid = aego_request("Drag");
+    drag_subgrid["profile"]["dragObservedBounds"] = json!({
+        "source": "user-observed",
+        "finalDrive": {"min": 1e-10, "max": 4.0, "step": 0.01},
+        "gears": vec![json!({"min": 0.01, "max": 20.0, "step": 0.01}); 6]
+    });
+    let subgrid_out = call(&app, "/api/tuning/workflow", drag_subgrid).unwrap();
+    assert_eq!(subgrid_out["readiness"]["gearingAvailable"], false);
+    assert!(subgrid_out["gearing"].is_null());
+    assert!(subgrid_out["recommendation"].is_null());
+    assert_eq!(subgrid_out["gearingDiagnostics"]["status"], "unavailable");
+    assert_eq!(
+        subgrid_out["gearingDiagnostics"]["dragFinishAvailability"]["status"],
+        "unavailable"
+    );
+
+    // 3. Rally, Drift & Road ratioBalance rejection via /api/tuning/workflow must clear all stale actual* / ratio fields
+    for (goal, bounds_field, stale_keys) in [
+        (
+            "Rally",
+            Some("rallyObservedBounds"),
+            vec![
+                "actualSpeedKmh",
+                "endpointErrorKmh",
+                "actualTotalRatio",
+                "finalDrive",
+                "gears",
+            ],
+        ),
+        (
+            "Drift",
+            Some("driftObservedBounds"),
+            vec![
+                "actualWheelSpeedKmh",
+                "wheelSpeedErrorKmh",
+                "actualTotalRatio",
+                "actualRpmAtTargetWheelSpeed",
+                "targetRpmError",
+                "finalDrive",
+                "gears",
+            ],
+        ),
+        (
+            "Road",
+            None,
+            vec![
+                "actualSpeedKmh",
+                "endpointErrorKmh",
+                "actualFirstTotalRatio",
+                "actualTopTotalRatio",
+                "finalDrive",
+                "gears",
+            ],
+        ),
+    ] {
+        let mut req = aego_request(goal);
+        let init = call(&app, "/api/tuning/workflow", req.clone()).unwrap();
+        let fd = init["gearing"]["finalDrive"].as_f64().unwrap();
+        if let Some(field) = bounds_field {
+            req["profile"][field] = exact_bounds(fd, init["gearing"]["gears"].as_array().unwrap());
+            req["inputSnapshot"]["ratioBalance"] = json!({
+                "schemaVersion": "ratio-balance/v1",
+                "candidateFinalDrive": ((fd + 0.01) * 100.0).round() / 100.0,
+                "bounds": wide_bounds
+            });
+        } else {
+            req["inputSnapshot"]["ratioBalance"] = json!({
+                "schemaVersion": "ratio-balance/v1",
+                "candidateFinalDrive": 9.99,
+                "bounds": {
+                    "source": "user-observed",
+                    "finalDrive": {"min": 2.0, "max": 6.1, "step": 0.01},
+                    "gears": vec![json!({"min": 0.01, "max": 20.0, "step": 0.01}); 6]
+                }
+            });
+        }
+        let denied = call(&app, "/api/tuning/workflow", req).unwrap();
+        assert_eq!(denied["readiness"]["gearingAvailable"], false, "{goal}");
+        assert!(denied["gearing"].is_null(), "{goal}");
+        assert!(denied["recommendation"].is_null(), "{goal}");
+        assert_eq!(
+            denied["gearingDiagnostics"]["status"], "unavailable",
+            "{goal}"
+        );
+        for key in stale_keys {
+            assert!(
+                denied["gearingDiagnostics"][key].is_null(),
+                "{goal} rejected workflow diagnostics still retained {key}: {}",
+                denied["gearingDiagnostics"]
+            );
+        }
+    }
+}
+
+#[test]
 fn fwd_view_and_profile_roundtrip_keep_explicit_model_inputs() {
     let mut request = input("FWD");
     request["schemaVersion"] = json!("tuning-workflow-result/v2");

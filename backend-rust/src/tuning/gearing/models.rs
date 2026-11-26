@@ -20,13 +20,9 @@ fn observed_bounds_allow(result: &GearingResult, diagnostics: &Value) -> bool {
         return false;
     };
     let within = |value: f64, range: &contracts::RatioRange| {
-        range.min.is_finite()
-            && range.max.is_finite()
-            && range.min > 0.0
-            && range.min <= range.max
-            && range.step == 0.01
-            && value >= range.min - 1e-9
-            && value <= range.max + 1e-9
+        crate::tuning::ratio_balance::range_ticks(range.min, range.max, range.step)
+            .zip(crate::tuning::ratio_balance::ratio_tick(value))
+            .is_some_and(|((lo, hi), tick)| (lo..=hi).contains(&tick))
     };
     bounds.source == "user-observed"
         && bounds.gears.len() == result.gears.len()
@@ -138,7 +134,49 @@ pub fn respects_hard_targets(
     }
 }
 
+pub(crate) fn clear_unavailable_diagnostics(diagnostics: &mut Value, reason: impl Into<String>) {
+    if !diagnostics.is_object() {
+        *diagnostics = json!({});
+    }
+    let reason = reason.into();
+    diagnostics["status"] = json!("unavailable");
+    diagnostics["reason"] = json!(reason);
+    for (k, v) in diagnostics.as_object_mut().into_iter().flatten() {
+        if k.starts_with("actual")
+            || matches!(
+                k.as_str(),
+                "endpointErrorKmh"
+                    | "wheelSpeedErrorKmh"
+                    | "targetRpmError"
+                    | "launchErrorKmh"
+                    | "finalDrive"
+                    | "gears"
+            )
+        {
+            *v = Value::Null;
+        }
+    }
+    if let Some(finish) = diagnostics
+        .get_mut("dragFinishAvailability")
+        .and_then(Value::as_object_mut)
+    {
+        finish.insert("status".into(), json!("unavailable"));
+        finish.insert("reason".into(), json!(reason));
+        if finish.contains_key("actualKmh") {
+            finish.insert("actualKmh".into(), Value::Null);
+        }
+    }
+}
+
 pub fn adjusted_diagnostics(model: AegoModel, gearing: &GearingResult, original: &Value) -> Value {
+    if !observed_bounds_allow(gearing, original) {
+        let mut d = original.clone();
+        clear_unavailable_diagnostics(
+            &mut d,
+            "Adjusted ratios violate the model's observed profile bounds",
+        );
+        return d;
+    }
     match model {
         AegoModel::RoadLaunchV3 => road::adjusted_diagnostics(gearing, original),
         AegoModel::RallyJointV1 => rally::adjusted_diagnostics(gearing, original),

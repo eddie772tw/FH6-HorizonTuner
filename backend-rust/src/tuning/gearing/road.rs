@@ -388,16 +388,22 @@ pub fn respects_hard_targets(result: &GearingResult, d: &serde_json::Value) -> b
     ) else {
         return false;
     };
-    result.unsupported != Some(true)
-        && (4..=10).contains(&count)
-        && result.gears.len() == count
-        && result.final_drive.is_finite()
-        && result.final_drive > 0.0
-        && result.gears.iter().all(|g| g.is_finite() && *g > 0.0)
-        && result.gears.windows(2).all(|g| g[0] > g[1])
-        && std::iter::once(&result.final_drive)
-            .chain(&result.gears)
-            .all(|v| (v * 100.0 - (v * 100.0).round()).abs() < 1e-7)
+    if result.unsupported == Some(true)
+        || !(4..=10).contains(&count)
+        || result.gears.len() != count
+        || crate::tuning::ratio_balance::ratio_tick(result.final_drive).is_none()
+    {
+        return false;
+    }
+    let Some(gear_ticks) = result
+        .gears
+        .iter()
+        .map(|&g| crate::tuning::ratio_balance::ratio_tick(g))
+        .collect::<Option<Vec<_>>>()
+    else {
+        return false;
+    };
+    gear_ticks.windows(2).all(|g| g[0] > g[1])
         && (result.final_drive * result.gears[0] - first).abs() <= result.final_drive * 0.005 + 1e-9
         && (result.final_drive * result.gears[count - 1] - top).abs()
             <= result.final_drive * 0.005 + 1e-9

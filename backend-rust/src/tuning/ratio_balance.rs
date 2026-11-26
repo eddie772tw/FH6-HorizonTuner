@@ -53,22 +53,26 @@ impl Diagnostic {
     }
 }
 // Technical input/complexity limit, not a claimed game range. At most 10,001 FD candidates.
-fn tick(value: f64) -> Option<i64> {
+pub(crate) fn ratio_tick(value: f64) -> Option<i64> {
     let scaled = value * 100.0;
+    let rounded = scaled.round();
     (value.is_finite()
         && value > 0.0
-        && scaled <= i32::MAX as f64
-        && (scaled - scaled.round()).abs() < 1e-7)
-        .then(|| scaled.round() as i64)
+        && rounded >= 1.0
+        && rounded <= i32::MAX as f64
+        && (scaled - rounded).abs() < 1e-7)
+        .then_some(rounded as i64)
 }
-fn range_valid(range: &Range) -> bool {
-    range.step == 0.01
-        && tick(range.min)
-            .zip(tick(range.max))
-            .is_some_and(|(lo, hi)| lo <= hi && hi - lo <= 10_000)
+pub(crate) fn range_ticks(min: f64, max: f64, step: f64) -> Option<(i64, i64)> {
+    (step == 0.01)
+        .then(|| ratio_tick(min).zip(ratio_tick(max)))
+        .flatten()
+        .filter(|&(lo, hi)| lo <= hi && hi - lo <= 10_000)
 }
 fn in_range(value: f64, range: &Range) -> bool {
-    tick(value).is_some() && value >= range.min - 1e-9 && value <= range.max + 1e-9
+    range_ticks(range.min, range.max, range.step)
+        .zip(ratio_tick(value))
+        .is_some_and(|((lo, hi), tick)| (lo..=hi).contains(&tick))
 }
 fn allocate(base: &GearingResult, fd: f64, bounds: &Bounds) -> Option<Vec<f64>> {
     if !in_range(fd, &bounds.final_drive) {
@@ -120,26 +124,38 @@ pub fn calculate_checked<F: Fn(&GearingResult) -> bool>(
     let Some(base) = base.filter(|b| {
         b.unsupported != Some(true)
             && (4..=10).contains(&b.gears.len())
-            && tick(b.final_drive).is_some()
-            && b.gears.iter().all(|g| tick(*g).is_some())
-            && b.gears.windows(2).all(|g| g[0] > g[1])
+            && ratio_tick(b.final_drive).is_some()
+            && b.gears
+                .iter()
+                .map(|&g| ratio_tick(g))
+                .collect::<Option<Vec<_>>>()
+                .is_some_and(|ticks| ticks.windows(2).all(|t| t[0] > t[1]))
     }) else {
         return fail("Requires a current qualified gearing recommendation");
     };
     let Ok(request) = serde_json::from_value::<Request>(raw.clone()) else {
         return fail("Invalid ratio balance request");
     };
-    if request.schema_version != "ratio-balance/v1"
-        || request.bounds.source != "user-observed"
-        || request.bounds.gears.len() != base.gears.len()
-        || !range_valid(&request.bounds.final_drive)
-        || !request.bounds.gears.iter().all(range_valid)
-    {
+    let Some((fd_lo, fd_hi)) = (request.schema_version == "ratio-balance/v1"
+        && request.bounds.source == "user-observed"
+        && request.bounds.gears.len() == base.gears.len()
+        && request
+            .bounds
+            .gears
+            .iter()
+            .all(|r| range_ticks(r.min, r.max, r.step).is_some()))
+    .then(|| {
+        range_ticks(
+            request.bounds.final_drive.min,
+            request.bounds.final_drive.max,
+            request.bounds.final_drive.step,
+        )
+    })
+    .flatten() else {
         return fail("Enter observed bounds on a 0.01 grid for the final drive and every gear");
-    }
+    };
     let bounds = &request.bounds;
-    let legal_final_drives: Vec<f64> = (tick(bounds.final_drive.min).unwrap()
-        ..=tick(bounds.final_drive.max).unwrap())
+    let legal_final_drives: Vec<f64> = (fd_lo..=fd_hi)
         .map(|n| n as f64 / 100.0)
         .filter(|fd| {
             allocate(base, *fd, bounds).is_some_and(|gears| {
@@ -161,8 +177,12 @@ pub fn calculate_checked<F: Fn(&GearingResult) -> bool>(
         total_ratio_errors: vec![],
         total_ratio_tolerance: vec![],
     };
-    let fd = request.candidate_final_drive.unwrap_or(base.final_drive);
-    let Some(gears) = allocate(base, fd, bounds) else {
+    let fd_opt = match request.candidate_final_drive {
+        Some(raw_fd) => ratio_tick(raw_fd).map(|t| t as f64 / 100.0),
+        None => Some(base.final_drive),
+    };
+    let Some((fd, gears)) = fd_opt.and_then(|fd| allocate(base, fd, bounds).map(|g| (fd, g)))
+    else {
         diagnostic.reason =
             Some("Selected final drive cannot preserve ordered ratios within the observed bounds");
         return (None, diagnostic);
