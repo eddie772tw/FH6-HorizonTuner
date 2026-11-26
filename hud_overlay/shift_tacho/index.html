@@ -32,11 +32,12 @@
     <script src="../shared/hud-core.js"></script>
     <script>
         (function() {
+            var LOGICAL_W = 440, LOGICAL_H = 280, hudScale = 1, pixelRatio = 1, lastPixelW = LOGICAL_W, lastPixelH = LOGICAL_H;
             var canvas = document.getElementById('shiftCanvas');
             var ctx = canvas ? canvas.getContext('2d') : null;
             var images = {};
-            var isReady = false;
-            var sweepPending = false;
+            var isReady = false, sweepPending = false, destroyed = false;
+            var gearBoxGrad = null, gearBoxGradCtx = null, lastFrameData = null, sweepRafId = null;
 
             var assetMap = {
                 revlight: "./assets/img/revlight.png",
@@ -50,14 +51,12 @@
             keys.forEach(function(k) {
                 var img = new Image();
                 img.onload = img.onerror = function() {
+                    if (destroyed) return;
                     images[k] = img;
                     loaded++;
                     if (loaded >= keys.length) {
                         isReady = true;
-                        if (sweepPending) {
-                            sweepPending = false;
-                            triggerSweep();
-                        }
+                        if (sweepPending) { sweepPending = false; triggerSweep(); } else if (lastFrameData && !sweepActive) renderShiftTacho(lastFrameData);
                     }
                 };
                 img.src = assetMap[k];
@@ -65,6 +64,25 @@
 
             var isMetricUnit = true;
             var showLights = true;
+            function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
+            function finiteOr(v, fb) { var n = Number(v); return Number.isFinite(n) ? n : fb; }
+            function formatGear(g) { if (g === 'R' || g === 'N') return g; var n = (g === undefined || g === null || g === '') ? 1 : Number(g); return Number.isFinite(n) ? (n <= 0 ? 'R' : (n === 11 ? 'N' : String(Math.round(n)))) : '1'; }
+            function syncUnit(d, p) { isMetricUnit = d && d.displayUnits && d.displayUnits.speed ? d.displayUnits.speed !== 'mph' : (p && typeof p.isMetric === 'boolean' ? p.isMetric : (p && p.unit ? p.unit !== 'mph' : isMetricUnit)); }
+            function resolveGlowRadius(base) { return base * pixelRatio * clamp(finiteOr(window._currentGlowIntensity, 1), 0, 2); }
+            function syncBackingStore() {
+                if (!canvas || !ctx) return;
+                var dpr = finiteOr(window.devicePixelRatio, 1), r = clamp((dpr > 0 ? dpr : 1) * Math.max(1, finiteOr(hudScale, 1)), 1, 3);
+                var nextW = Math.round(LOGICAL_W * r), nextH = Math.round(LOGICAL_H * r);
+                if (canvas.width !== nextW || canvas.height !== nextH) { canvas.width = nextW; canvas.height = nextH; }
+                lastPixelW = canvas.width || nextW; lastPixelH = canvas.height || nextH; pixelRatio = lastPixelW / LOGICAL_W;
+            }
+            function getGearBoxGradient() {
+                if (!gearBoxGrad || gearBoxGradCtx !== ctx) {
+                    gearBoxGradCtx = ctx; gearBoxGrad = ctx.createLinearGradient(65, 110, 65, 170);
+                    gearBoxGrad.addColorStop(0, 'rgba(0, 0, 0, 0.5)'); gearBoxGrad.addColorStop(0.5, 'rgba(0, 0, 0, 0.25)'); gearBoxGrad.addColorStop(1, 'rgba(0, 0, 0, 0.5)');
+                }
+                return gearBoxGrad;
+            }
 
             // Pre-allocate helper function outside render loop to avoid creating closures every frame.
             function drawIndicatorBadge(img, cx, active) {
@@ -73,30 +91,27 @@
                 ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
                 ctx.fill();
 
-                if (img) {
-                    ctx.save();
-                    ctx.globalAlpha = active ? 1 : 0.4;
-                    ctx.drawImage(img, cx - 16, 155, 32, 32);
-                    ctx.restore();
-                }
+                if (img && img.naturalWidth > 0) { ctx.globalAlpha = active ? 1 : 0.4; ctx.drawImage(img, cx - 16, 158, 32, 32); ctx.globalAlpha = 1; }
             }
 
             function renderShiftTacho(data) {
-                if (!ctx || !isReady) return;
-                ctx.clearRect(0, 0, 440, 280);
-
-                var maxRpm = data.maxRpm || data.max_rpm || 8000;
-                var rpm = data.rpm || 0;
-                var mps = data.SpeedMetersPerSecond || 0;
-                var speed = isMetricUnit ? (data.speed_kmh || data.speed || mps * 3.6) : (data.speed_mph || mps * 2.23694);
-
-                var gearVal = data.gear;
-                var gearLabel = gearVal === 0 ? 'R' : (gearVal === 11 ? 'N' : (gearVal !== undefined ? String(gearVal) : '1'));
-
-                var rpmRatio = Math.max(0, Math.min(1, rpm / Math.max(1, maxRpm)));
-                var atRedline = rpmRatio >= 0.85;
-
+                if (!ctx || !isReady || destroyed) return;
+                syncBackingStore();
                 ctx.save();
+                try { drawShiftTacho(data || {}); } finally { ctx.restore(); }
+            }
+            function drawShiftTacho(data) {
+                ctx.setTransform(lastPixelW / LOGICAL_W, 0, 0, lastPixelH / LOGICAL_H, 0, 0);
+                ctx.clearRect(0, 0, LOGICAL_W, LOGICAL_H);
+                ctx.shadowBlur = 0; ctx.shadowColor = 'transparent'; ctx.globalAlpha = 1;
+
+                var rawMax = finiteOr(data.maxRpm !== undefined ? data.maxRpm : data.max_rpm, 8000), maxRpm = rawMax > 0 ? rawMax : 8000;
+                var rpm = Math.max(0, finiteOr(data.rpm, 0)), mps = finiteOr(data.SpeedMetersPerSecond, 0);
+                var speed = Math.max(0, finiteOr(isMetricUnit ? (data.speed_kmh !== undefined ? data.speed_kmh : (data.speed !== undefined ? data.speed : mps * 3.6)) : (data.speed_mph !== undefined ? data.speed_mph : mps * 2.23694), 0));
+                var gearLabel = formatGear(data.gear);
+
+                var rpmRatio = clamp(rpm / maxRpm, 0, 1);
+                var atRedline = rpmRatio >= 0.85;
 
                 // 1. Redline alert background boxes
                 if (atRedline) {
@@ -109,11 +124,7 @@
                 }
 
                 // 2. Gear display box background
-                var grad = ctx.createLinearGradient(65, 110, 65, 170);
-                grad.addColorStop(0, 'rgba(0, 0, 0, 0.5)');
-                grad.addColorStop(0.5, 'rgba(0, 0, 0, 0.25)');
-                grad.addColorStop(1, 'rgba(0, 0, 0, 0.5)');
-                ctx.fillStyle = grad;
+                ctx.fillStyle = getGearBoxGradient();
                 ctx.fillRect(65, 110, 80, 60);
 
                 ctx.strokeStyle = atRedline ? '#ffd438' : '#000000';
@@ -126,32 +137,28 @@
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
                 ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
-                ctx.shadowBlur = 4;
+                ctx.shadowBlur = resolveGlowRadius(4);
                 ctx.fillText(gearLabel, 105, 140);
 
                 // Speed Text & Unit
-                ctx.font = 'bold 86px ShiftDigits, sans-serif';
-                ctx.fillText(Math.round(speed).toString(), 258, 60);
+                ctx.font = 'bold 86px ShiftDigits, sans-serif'; ctx.textAlign = 'right';
+                ctx.fillText(Math.round(speed).toString(), 304, 60);
 
-                ctx.font = 'bold 18px ShiftLabels, sans-serif';
-                ctx.shadowBlur = 0;
-                ctx.fillText(isMetricUnit ? 'KM/H' : 'MPH', 324, 46);
+                ctx.font = 'bold 18px ShiftLabels, sans-serif'; ctx.textAlign = 'left'; ctx.shadowBlur = 0; ctx.shadowColor = 'transparent';
+                ctx.fillText(isMetricUnit ? 'KM/H' : 'MPH', 314, 46);
 
                 // 3. Shift Lights (7 circles)
                 if (showLights) {
                     for (var i = 0; i < 7; i++) {
                         var active = rpmRatio >= 0.65 + i * 0.05;
-                        var glow = "#1a1a1a";
-                        if (active) {
-                            if (i < 2) glow = "#00ff00";
-                            else if (i < 4) glow = "#ffff00";
-                            else glow = "#ff4500";
-                        }
+                        var glow = active ? (i < 2 ? "#00ff00" : (i < 4 ? "#ffff00" : "#ff4500")) : "#1a1a1a";
                         var cx = 174 + i * 20;
 
                         if (active) {
+                            ctx.shadowColor = glow; ctx.shadowBlur = resolveGlowRadius(8);
                             ctx.beginPath(); ctx.arc(cx, 127, 8, 0, Math.PI * 2);
                             ctx.fillStyle = glow; ctx.fill();
+                            ctx.shadowBlur = 0; ctx.shadowColor = 'transparent';
                             ctx.beginPath(); ctx.arc(cx, 127, 5, 0, Math.PI * 2);
                             ctx.fillStyle = '#ffff66'; ctx.fill();
                         } else {
@@ -159,35 +166,29 @@
                             ctx.fillStyle = 'rgba(255, 255, 255, 0.22)'; ctx.fill();
                         }
 
-                        if (images.revlight) {
-                            ctx.save();
-                            ctx.globalAlpha = active ? 1 : 0.25;
-                            ctx.drawImage(images.revlight, 167 + i * 20, 120, 14, 14);
-                            ctx.restore();
-                        }
+                        if (images.revlight && images.revlight.naturalWidth > 0) { ctx.globalAlpha = active ? 1 : 0.25; ctx.drawImage(images.revlight, 167 + i * 20, 120, 14, 14); ctx.globalAlpha = 1; }
                     }
                 }
 
                 // 4. Indicator badges (E-Brake, ABS, Traction)
-                var handbrakeActive = !!(data.handbrake || data.hand_brake);
+                var handbrakeActive = !!(data.handbrake || data.hand_brake || data.Handbrake || data.HandBrake);
 
                 // Manually unrolled badge drawing to avoid array allocation and .forEach closures at 60Hz.
                 drawIndicatorBadge(images.ebrake, 185, handbrakeActive);
                 drawIndicatorBadge(images.abs, 235, false);
                 drawIndicatorBadge(images.traction, 285, false);
-
-                ctx.restore();
             }
 
             var sweepActive = false;
             function triggerSweep() {
-                if (sweepActive) return;
+                if (destroyed || sweepActive) return;
                 sweepActive = true;
                 var startTime = performance.now();
                 var duration = 1200;
                 var maxRpm = 8000;
 
                 function animate(now) {
+                    if (destroyed) { sweepActive = false; sweepRafId = null; return; }
                     var elapsed = now - startTime;
                     var progress = Math.min(1.0, elapsed / duration);
                     var mockRpm = 0;
@@ -202,43 +203,47 @@
                     renderShiftTacho({
                         rpm: mockRpm,
                         maxRpm: maxRpm,
-                        speed: (mockRpm / maxRpm) * 230,
+                        speed_kmh: (mockRpm / maxRpm) * 230, speed_mph: (mockRpm / maxRpm) * 143,
                         gear: 4
                     });
 
                     if (progress < 1.0) {
-                        requestAnimationFrame(animate);
+                        sweepRafId = requestAnimationFrame(animate);
                     } else {
-                        sweepActive = false;
+                        sweepActive = false; sweepRafId = null;
+                        if (lastFrameData) renderShiftTacho(lastFrameData);
                     }
                 }
-                requestAnimationFrame(animate);
+                sweepRafId = requestAnimationFrame(animate);
             }
+
+            function onResize() { if (!destroyed) { syncBackingStore(); if (lastFrameData && !sweepActive) renderShiftTacho(lastFrameData); } }
+            function onPageHide(e) { if (!e || !e.persisted) destroy(); }
+            function onMsg(e) { if (e && e.data && e.data.type === 'hud:destroy') destroy(); }
+            function destroy() {
+                if (destroyed) return;
+                destroyed = true; sweepActive = false;
+                if (sweepRafId !== null && typeof cancelAnimationFrame === 'function') cancelAnimationFrame(sweepRafId);
+                sweepRafId = null;
+                window.removeEventListener('resize', onResize); window.removeEventListener('pagehide', onPageHide); window.removeEventListener('message', onMsg);
+            }
+            window.addEventListener('resize', onResize); window.addEventListener('pagehide', onPageHide); window.addEventListener('message', onMsg);
 
             HUDCore.registerStyle('shift_tacho', {
                 containerId: 'shiftTachoContainer',
                 scaleMultiplier: 0.9,
-                onInit: function(payload) {
-                    if (payload && payload.isMetric !== undefined) isMetricUnit = payload.isMetric !== false;
-                },
-                onElementsChange: function(elements) {
-                    var c = document.getElementById('shiftTachoContainer');
-                    if (c) c.style.display = elements.showGauge === false ? 'none' : 'block';
-                },
-                onFrame: function(data, payload) {
-                    if (payload && payload.isMetric !== undefined) isMetricUnit = payload.isMetric !== false;
-                    if (!sweepActive) renderShiftTacho(data);
-                },
-                onAnimate: function () {
-                    if (isReady) {
-                        triggerSweep();
-                    } else {
-                        sweepPending = true;
-                    }
-                }
+                onScale: function(scale) { if (!destroyed) { hudScale = finiteOr(scale, 1); syncBackingStore(); if (lastFrameData && !sweepActive) renderShiftTacho(lastFrameData); } },
+                onInit: function(payload) { syncUnit(null, payload); syncBackingStore(); if (lastFrameData && !sweepActive) renderShiftTacho(lastFrameData); },
+                onElementsChange: function(elements) { var c = document.getElementById('shiftTachoContainer'); if (c && elements) c.style.display = elements.showGauge === false ? 'none' : 'block'; },
+                onFrame: function(data, payload) { if (destroyed) return; syncUnit(data, payload); lastFrameData = data || {}; if (!sweepActive) renderShiftTacho(lastFrameData); },
+                onAnimate: function () { if (!destroyed) { if (isReady) triggerSweep(); else sweepPending = true; } }
             });
 
             HUDCore.init('shift_tacho');
+            syncBackingStore();
+            if (typeof document !== 'undefined' && document.fonts && document.fonts.load) {
+                Promise.all([document.fonts.load('bold 40px ShiftDigits'), document.fonts.load('bold 18px ShiftLabels')]).then(function() { if (!destroyed && !sweepActive && lastFrameData) renderShiftTacho(lastFrameData); }, function() {});
+            }
 
         })();
     </script>
