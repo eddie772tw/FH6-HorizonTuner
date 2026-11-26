@@ -93,7 +93,7 @@ describe('AnalysisSessionToolbar localization & accessibility', () => {
     };
 
     await act(async () => {
-      root.render(<AnalysisSessionToolbar {...defaultProps} />);
+      root.render(<AnalysisSessionToolbar nativeMotecEnabled {...defaultProps} />);
     });
 
     const statusContainer = container.querySelector('.analysis-toolbar__status');

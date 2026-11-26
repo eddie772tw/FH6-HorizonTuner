@@ -2262,5 +2262,20 @@
   "Are you sure you want to delete route \"{name}\"?": "Are you sure you want to delete route \"{name}\"?",
   "Delete {name}": "Delete {name}",
   "Route deleted.": "Route deleted.",
-  "Failed to delete route.": "Failed to delete route."
+  "Failed to delete route.": "Failed to delete route.",
+  "Show tuning diagnostics": "Show tuning diagnostics",
+  "Experimental EV gearing": "Experimental EV gearing",
+  "CVT evidence tools": "CVT evidence tools",
+  "Experimental MoTeC native export": "Experimental MoTeC native export",
+  "Turning off Companion disconnects devices and keeps their pairing.": "Turning off Companion disconnects devices and keeps their pairing.",
+  "Automatic Dyno collection (legacy)": "Automatic Dyno collection (legacy)",
+  "Automatically record races": "Automatically record races",
+  "EV gearing is available as an experiment in Developer options.": "EV gearing is available as an experiment in Developer options.",
+  "Pause EV collection before turning off experimental gearing.": "Pause EV collection before turning off experimental gearing.",
+  "Companion APP is currently disabled. Enable it in Developer options.": "Companion APP is currently disabled. Enable it in Developer options.",
+  "Tuning target": "Tuning target",
+  "The requested tuning step is not available for this setup.": "The requested tuning step is not available for this setup.",
+  "Vehicle or setup changed. Review the current inputs and try again.": "Vehicle or setup changed. Review the current inputs and try again.",
+  "Vehicle parameters could not be saved. Your edits are retained. Try again.": "Vehicle parameters could not be saved. Your edits are retained. Try again.",
+  "HorizonTuner exports 41 telemetry channels with documented unit mappings.": "HorizonTuner exports 41 telemetry channels with documented unit mappings."
 }

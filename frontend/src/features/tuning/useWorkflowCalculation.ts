@@ -29,11 +29,30 @@ export interface AuthoritativeWorkflow {
   tireEvidence: TireEvidenceResult | null;
 }
 export const unavailableReadiness: WorkflowReadiness = { mechanical: false, engineInputs: false, measuredEngine: false, gearingAvailable: false };
-export function useWorkflowCalculation(carId: string, goal: string, season: Season, profile: CarParams | null,
+export function workflowCalculationInput(goal: string, season: Season, profile: CarParams | null,
   engine: MeasuredEngineInputs | null, ev: EvGearingInput | null, inputSnapshot: Record<string, unknown>) {
   const evidence = usesCvt(profile) ? inputSnapshot.cvtEvidence ?? null : profile?.isElectric ? inputSnapshot.evEvidence ?? null : engine && inputSnapshot.engineObservation ? { kind: 'saved-engine', observationId: (inputSnapshot.engineObservation as { id: string }).id } : null;
   const schemaVersion = profile?.isElectric && !usesCvt(profile) ? 'tuning-workflow-result/v3' : 'tuning-workflow-result/v2';
-  const key = JSON.stringify({ carId, evidence, schemaVersion, goal, season, profile, engine, ev, inputSnapshot });
+  return { evidence, schemaVersion, goal, season, profile, engine, ev, inputSnapshot };
+}
+
+export async function requestWorkflowCalculation(input: ReturnType<typeof workflowCalculationInput>, signal?: AbortSignal) {
+  const response = await backendFetch('/api/tuning/workflow', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(input), signal });
+  if (!response.ok) throw new Error(`Calculation failed (${response.status})`);
+  const result = await response.json() as AuthoritativeWorkflow;
+  if (result.recommendation && !(ACTIVE_WORKFLOW_FORMULAS as readonly string[]).includes(result.recommendation.formulaVersion)) throw new Error('Retired or unknown recommendation version');
+  if (result.schemaVersion !== input.schemaVersion) throw new Error('Unsupported calculation result');
+  if (usesCvt(input.profile) && (result.cvt?.schemaVersion !== 'cvt-qualification/v1'
+    || result.cvt.status !== 'unsupported' || result.cvt.ratioPreview !== null || result.gearing !== null || result.recommendation !== null
+    || result.readiness?.measuredEngine !== false || result.readiness?.gearingAvailable !== false)) {
+    throw new Error('Unsupported CVT foundation result');
+  }
+  return result;
+}
+
+export function useWorkflowCalculation(carId: string, goal: string, season: Season, profile: CarParams | null,
+  engine: MeasuredEngineInputs | null, ev: EvGearingInput | null, inputSnapshot: Record<string, unknown>) {
+  const key = JSON.stringify({ carId, ...workflowCalculationInput(goal, season, profile, engine, ev, inputSnapshot) });
   const sequence = useRef(new CalculationSequence());
   const [state, setState] = useState<{ key: string; result: AuthoritativeWorkflow } | null>(null);
   const [status, setStatus] = useState<'pending' | 'ready' | 'error'>('pending');
@@ -49,16 +68,7 @@ export function useWorkflowCalculation(carId: string, goal: string, season: Seas
     if (!input.profile) return;
     const run = async () => {
       try {
-        const response = await backendFetch('/api/tuning/workflow', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(input), signal: controller.signal });
-        if (!response.ok) throw new Error(`Calculation failed (${response.status})`);
-        const result = await response.json() as AuthoritativeWorkflow;
-        if (result.recommendation && !(ACTIVE_WORKFLOW_FORMULAS as readonly string[]).includes(result.recommendation.formulaVersion)) throw new Error('Retired or unknown recommendation version');
-        if (result.schemaVersion !== input.schemaVersion) throw new Error('Unsupported calculation result');
-        if (usesCvt(input.profile) && (result.cvt?.schemaVersion !== 'cvt-qualification/v1'
-          || result.cvt.status !== 'unsupported' || result.cvt.ratioPreview !== null || result.gearing !== null || result.recommendation !== null
-          || result.readiness?.measuredEngine !== false || result.readiness?.gearingAvailable !== false)) {
-          throw new Error('Unsupported CVT foundation result');
-        }
+        const result = await requestWorkflowCalculation(input, controller.signal);
         if (!stopped && sequence.current.current(token)) { setState({ key, result }); setStatus('ready'); }
       } catch {
         if (!stopped && sequence.current.current(token)) { setState(null); setStatus('error'); retry = setTimeout(run, 2000); }

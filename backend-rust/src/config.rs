@@ -40,6 +40,9 @@ pub fn merge_settings(settings: &Value, patch: &Value) -> ApiResult<Value> {
         return Err(ApiError::invalid("Input should be a valid dictionary"));
     }
     let mut next = settings.clone();
+    if let Some(next) = next.as_object_mut() {
+        next.remove("mcp_max_downsample");
+    }
     for key in [
         "dyno_recording",
         "race_recording",
@@ -50,6 +53,12 @@ pub fn merge_settings(settings: &Value, patch: &Value) -> ApiResult<Value> {
         "forward_telemetry_enabled",
         "companion_enabled",
         "companion_usb_enabled",
+        "auto_check_updates",
+        "tuning_diagnostics_enabled",
+        "ev_experimental_enabled",
+        "cvt_evidence_enabled",
+        "motec_native_enabled",
+        "wip_hud_enabled",
     ] {
         if let Some(v) = patch.get(key) {
             next[key] = json!(truthy(v));
@@ -70,12 +79,7 @@ pub fn merge_settings(settings: &Value, patch: &Value) -> ApiResult<Value> {
             });
         }
     }
-    for key in [
-        "dyno_test_gear",
-        "mcp_max_downsample",
-        "telemetry_port",
-        "forward_telemetry_port",
-    ] {
+    for key in ["dyno_test_gear", "telemetry_port", "forward_telemetry_port"] {
         if let Some(v) = patch.get(key) {
             let integer = v
                 .as_i64()

@@ -4,6 +4,7 @@ import { useModalFocus } from "../../hooks/useModalFocus";
 
 export interface MotecFieldMappingModalProps {
   readonly isOpen: boolean;
+  readonly nativeMotecEnabled?: boolean;
   readonly onClose: () => void;
   readonly onDownloadTemplate: () => void;
   readonly t: (text: string) => string;
@@ -43,6 +44,7 @@ const CHANNELS: ChannelMapping[] = [
 
 export const MotecFieldMappingModal: React.FC<MotecFieldMappingModalProps> = ({
   isOpen,
+  nativeMotecEnabled = false,
   onClose,
   onDownloadTemplate,
   t,
@@ -98,7 +100,9 @@ export const MotecFieldMappingModal: React.FC<MotecFieldMappingModalProps> = ({
             </div>
             <div className="modal-body py-3">
               <p id="motec-mapping-desc" className="text-secondary small mb-3">
-                {t("HorizonTuner exports 41 telemetry channels with documented unit mappings. Native .ld export is experimental until verified in MoTeC i2.")}
+                {t(nativeMotecEnabled
+            ? "HorizonTuner exports 41 telemetry channels with documented unit mappings. Native .ld export is experimental until verified in MoTeC i2."
+            : "HorizonTuner exports 41 telemetry channels with documented unit mappings.")}
               </p>
               <div
                 className="table-responsive"

@@ -31,6 +31,7 @@ fn assert_closed(mut ws: Ws) {
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn unpairing_or_rotating_device_closes_only_revoked_lan_websocket() {
     let root = tempfile::tempdir().unwrap();
+    fh6_backend::storage::save_settings(root.path(), &json!({"companion_enabled": true})).unwrap();
     let app = App::new(root.path()).unwrap();
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
     let port = listener.local_addr().unwrap().port();
@@ -56,4 +57,57 @@ async fn unpairing_or_rotating_device_closes_only_revoked_lan_websocket() {
     .await
     .unwrap();
     srv.abort();
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn disabling_companion_closes_usb_without_stopping_desktop_telemetry() {
+    let root = tempfile::tempdir().unwrap();
+    fh6_backend::storage::save_settings(
+        root.path(),
+        &json!({
+            "companion_enabled": true,
+            "companion_usb_enabled": true
+        }),
+    )
+    .unwrap();
+    let app = App::new(root.path()).unwrap();
+    let desktop = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let usb = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let desktop_port = desktop.local_addr().unwrap().port();
+    let usb_port = usb.local_addr().unwrap().port();
+    app.companion.set_usb_port(Some(usb_port));
+    let desktop_router = network::desktop_router(app.clone());
+    let usb_router = network::usb_companion_router(app.clone(), app.companion.clone());
+    let desktop_task =
+        tokio::spawn(async move { axum::serve(desktop, desktop_router).await.unwrap() });
+    let usb_task = tokio::spawn(async move { axum::serve(usb, usb_router).await.unwrap() });
+
+    let (desktop_ws, usb_ws) = tokio::task::spawn_blocking(move || {
+        (dial(desktop_port, "").unwrap(), dial(usb_port, "").unwrap())
+    })
+    .await
+    .unwrap();
+    let app_requests = app.clone();
+    tokio::task::spawn_blocking(move || {
+        let backend = app_requests.as_ref() as &dyn network::Backend;
+        backend
+            .request(network::ApiRequest {
+                method: "POST".into(),
+                path: "/api/settings".into(),
+                query: Default::default(),
+                headers: Default::default(),
+                upload_filename: None,
+                body: serde_json::to_vec(&json!({ "companion_enabled": false })).unwrap(),
+            })
+            .unwrap();
+        assert_closed(usb_ws);
+        assert!(matches!(dial(usb_port, ""), Err(WsErr::Http(_))));
+        let mut desktop_ws = desktop_ws;
+        desktop_ws.send(Message::Ping(vec![1].into())).unwrap();
+        assert!(matches!(desktop_ws.read(), Ok(Message::Pong(_))));
+    })
+    .await
+    .unwrap();
+    desktop_task.abort();
+    usb_task.abort();
 }

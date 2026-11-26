@@ -22,7 +22,6 @@ export interface AppSettings {
   race_recording: boolean;
   mcp_enabled?: boolean;
   mcp_allow_live?: boolean;
-  mcp_max_downsample?: number;
   language: string;
   dyno_test_gear: number;
   dyno_filter_slip: boolean;
@@ -35,12 +34,19 @@ export interface AppSettings {
   companion_enabled?: boolean;
   companion_usb_enabled?: boolean;
   auto_check_updates?: boolean;
+  tuning_diagnostics_enabled?: boolean;
+  ev_experimental_enabled?: boolean;
+  cvt_evidence_enabled?: boolean;
+  motec_native_enabled?: boolean;
+  wip_hud_enabled?: boolean;
 }
 
 interface SettingsContextType {
   settings: AppSettings;
   updateSettings: (updates: Partial<AppSettings> | { units: Partial<UnitSettings> }) => Promise<void>;
   isLoading: boolean;
+  settingsLoaded: boolean;
+  confirmedCompanionEnabled: boolean;
   t: (text: string, params?: Record<string, string | number>) => string;
   availableLanguages: Array<{ code: string; name: string }>;
   // Speed conversions (input in m/s)
@@ -94,7 +100,6 @@ const defaultSettings: AppSettings = {
   race_recording: false,
   mcp_enabled: true,
   mcp_allow_live: true,
-  mcp_max_downsample: 500,
   language: 'zh-tw',
   dyno_test_gear: 4,
   dyno_filter_slip: true,
@@ -104,7 +109,8 @@ const defaultSettings: AppSettings = {
   forward_telemetry_enabled: false,
   forward_telemetry_host: '127.0.0.1',
   forward_telemetry_port: 5300,
-  companion_enabled: true,
+  companion_enabled: false,
+  auto_check_updates: true,
   companion_usb_enabled: false
 };
 
@@ -238,13 +244,32 @@ export const ScopedUnitSettingsProvider: React.FC<{ units: UnitSettings; childre
   <ScopedUnitsContext.Provider value={units}>{children}</ScopedUnitsContext.Provider>
 );
 
-export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+async function migrateWipHudPreference(data: Partial<AppSettings>, signal: AbortSignal) {
+  try {
+    const stored = localStorage.getItem('fh6_show_wip_huds');
+    if (stored !== 'true' && stored !== 'false') return;
+    if (data.wip_hud_enabled === undefined) {
+      const enabled = stored === 'true';
+      const response = await backendFetch('/api/settings', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, signal,
+        body: JSON.stringify({ wip_hud_enabled: enabled }),
+      });
+      if (!response.ok || signal.aborted) return;
+      data.wip_hud_enabled = enabled;
+    }
+    localStorage.removeItem('fh6_show_wip_huds');
+  } catch { /* Leave the previous preference available for a later retry. */ }
+}
+
+export const SettingsProvider: React.FC<{ children: React.ReactNode; companion?: boolean }> = ({ children, companion = false }) => {
   const { addToast } = useToast();
   const [settings, setSettings] = useState<AppSettings>(defaultSettings);
   const settingsQueueRef = useRef(createOptimisticSettingsQueue(defaultSettings));
   const nextSettingsRevisionRef = useRef(0);
   const settingsPersistTailRef = useRef<Promise<void>>(Promise.resolve());
   const [isLoading, setIsLoading] = useState(true);
+  const [settingsLoaded, setSettingsLoaded] = useState(false);
+  const [confirmedCompanionEnabled, setConfirmedCompanionEnabled] = useState(false);
   const [translations, setTranslations] = useState<Record<string, string>>({});
   const [availableLanguages, setAvailableLanguages] = useState<Array<{ code: string; name: string }>>([
     { code: 'en-us', name: 'English (US)' }
@@ -252,11 +277,12 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   // Fetch settings from backend
   useEffect(() => {
+    const controller = new AbortController();
     const fetchSettings = async () => {
       try {
         // Fetch languages first
         try {
-          const langRes = await backendFetch('/api/languages');
+          const langRes = await backendFetch('/api/languages', { signal: controller.signal });
           const langData = await langRes.json();
           if (Array.isArray(langData)) {
             setAvailableLanguages(langData);
@@ -265,9 +291,12 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           console.error('Failed to fetch available languages', e);
         }
 
-        const res = await backendFetch('/api/settings');
+        const res = await backendFetch(companion ? '/api/companion/preferences' : '/api/settings', { signal: controller.signal });
         const data = await res.json();
-        if (data && !data.error) {
+        if (controller.signal.aborted) return;
+        if (res.ok && data && typeof data === 'object' && !Array.isArray(data) && !data.error) {
+          if (!companion) await migrateWipHudPreference(data, controller.signal);
+          if (controller.signal.aborted) return;
           // Merge defaults to handle cases where units might be missing or partially set
           const merged: AppSettings = {
             ...defaultSettings,
@@ -280,15 +309,18 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             })
           };
           setSettings(settingsQueueRef.current.replaceConfirmed(merged));
+          setConfirmedCompanionEnabled(merged.companion_enabled === true);
+          setSettingsLoaded(true);
         }
       } catch (e) {
-        console.error('Failed to fetch settings from backend', e);
+        if (!controller.signal.aborted) console.error('Failed to fetch settings from backend', e);
       } finally {
-        setIsLoading(false);
+        if (!controller.signal.aborted) setIsLoading(false);
       }
     };
-    fetchSettings();
-  }, []);
+    void fetchSettings();
+    return () => controller.abort();
+  }, [companion]);
 
   // Fetch translation when language changes
   useEffect(() => {
@@ -313,6 +345,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, [settings.language]);
 
   const updateSettings = async (updates: SettingsUpdate) => {
+    if (companion) return;
     const revision = ++nextSettingsRevisionRef.current;
     setSettings(settingsQueueRef.current.enqueue(revision, updates));
 
@@ -329,6 +362,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         succeeded = false;
       }
 
+      if (succeeded && 'companion_enabled' in updates) setConfirmedCompanionEnabled(updates.companion_enabled === true);
       setSettings(settingsQueueRef.current.settle(revision, succeeded));
       if (!succeeded) {
         addToast({
@@ -522,6 +556,8 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       settings,
       updateSettings,
       isLoading,
+      settingsLoaded,
+      confirmedCompanionEnabled,
       t,
       availableLanguages,
       convertSpeed,

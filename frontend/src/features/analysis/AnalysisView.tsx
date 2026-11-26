@@ -29,7 +29,7 @@ const AnalysisView: React.FC<{ onLatestAnalysis: () => void }> = ({ onLatestAnal
     beginSelectionOperation, setImportedSession, loadPrimaryLap, cancelPrimaryLoad, refreshCurrent,
   } = useSessionsState();
   const { data: liveTelemetry } = useTelemetry();
-  const { t } = useSettings();
+  const { settings, t } = useSettings();
   const {
     routes, selectedRouteId, setSelectedRouteId,
     saveRoute, deleteRoute, importRoutes, exportRoute,
@@ -158,6 +158,7 @@ const AnalysisView: React.FC<{ onLatestAnalysis: () => void }> = ({ onLatestAnal
         t={t}
       />
       <AnalysisSessionToolbar
+        nativeMotecEnabled={settings?.motec_native_enabled}
         onLatestAnalysis={onLatestAnalysis}
         t={t}
         isRecording={isRecording}
@@ -212,6 +213,7 @@ const AnalysisView: React.FC<{ onLatestAnalysis: () => void }> = ({ onLatestAnal
         onSelectMetric={setMetric}
       />
       <MotecFieldMappingModal
+        nativeMotecEnabled={settings?.motec_native_enabled}
         isOpen={isChannelMappingOpen}
         onClose={() => setIsChannelMappingOpen(false)}
         onDownloadTemplate={downloadMoTecTemplate}

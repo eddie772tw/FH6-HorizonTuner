@@ -808,10 +808,8 @@ const DragTestView: React.FC = () => {
             </div>
 
             {/* Gearing Optimization Recommendations */}
-            <div className="glass-panel" style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem', flex: 1, minWidth: 0 }}>
-              <h4 className="workspace-section-heading workspace-panel-header">
-                {t("Gearing Tuning Assist")}
-              </h4>
+            <details className="glass-panel" style={{ padding: '1rem', flex: 1, minWidth: 0 }}>
+              <summary className="workspace-section-heading workspace-panel-header">{t("Gearing Tuning Assist")}</summary>
               
               {analysis ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem', fontSize: '0.85rem', lineHeight: '1.5' }}>
@@ -915,7 +913,7 @@ const DragTestView: React.FC = () => {
                   {t("No recommendations generated yet.")}
                 </div>
               )}
-            </div>
+            </details>
 
           </div>
           

@@ -15,6 +15,7 @@ export interface AnalysisSessionToolbarProps {
   readonly isSavedSelection: boolean;
   readonly motecActionMsg: string | null;
   readonly isExporting?: boolean;
+  readonly nativeMotecEnabled?: boolean;
   readonly fileInputRef: React.RefObject<HTMLInputElement | null>;
   readonly onSelectSession: (filename: string) => void;
   readonly onSelectPrimaryLap: (lap: number) => void;
@@ -57,6 +58,7 @@ const AnalysisSessionToolbar: React.FC<AnalysisSessionToolbarProps> = ({
   isSavedSelection,
   motecActionMsg,
   isExporting = false,
+  nativeMotecEnabled = false,
   fileInputRef,
   onSelectSession,
   onSelectPrimaryLap,
@@ -186,7 +188,7 @@ const AnalysisSessionToolbar: React.FC<AnalysisSessionToolbarProps> = ({
         </button>
       </div>
       <div className="analysis-toolbar__actions">
-        {getRuntimeCapabilities().localMotecLaunch && (
+        {nativeMotecEnabled && getRuntimeCapabilities().localMotecLaunch && (
           <span
             className="d-inline-flex"
             title={selectedFilename === "local" ? t("Imported CSV is previewed locally; use the original file in MoTeC.") : t("Launch session in local MoTeC i2 viewer")}
@@ -202,7 +204,7 @@ const AnalysisSessionToolbar: React.FC<AnalysisSessionToolbarProps> = ({
             </button>
           </span>
         )}
-        <span
+        {nativeMotecEnabled && <span
           className="d-inline-flex"
           title={isExporting ? t("Export is currently in progress") : t("Export native MoTeC .ld binary with .ldx lap beacons")}
           style={isExporting ? { cursor: 'not-allowed' } : undefined}
@@ -210,7 +212,7 @@ const AnalysisSessionToolbar: React.FC<AnalysisSessionToolbarProps> = ({
           <button onClick={() => onExportMoTec("ld")} disabled={isExporting || selectedFilename === "local"} className="btn btn-outline-secondary" style={isExporting ? { pointerEvents: 'none' } : undefined}>
             {t("MoTeC .ld Export (Experimental)")}
           </button>
-        </span>
+        </span>}
         <span
           className="d-inline-flex"
           title={isExporting ? t("Export is currently in progress") : t("Export legacy MoTeC CSV")}

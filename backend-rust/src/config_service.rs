@@ -39,6 +39,9 @@ impl ConfigService {
         });
         let mut settings = defaults;
         for (key, value) in loaded.as_object().into_iter().flatten() {
+            if key == "mcp_max_downsample" {
+                continue;
+            }
             if ["units", "theme"].contains(&key.as_str()) && value.is_object() {
                 config::merge_object(&mut settings[key], value);
             } else {

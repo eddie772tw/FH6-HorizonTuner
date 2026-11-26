@@ -18,7 +18,7 @@ export function EngineDataStep({ carId, profile, engine, gearing, enabled }: {
   carId: string; profile: CarParams | null; engine: ReturnType<typeof useEngineMeasurementArchive>;
   gearing: GearingResult | null; enabled: boolean;
 }) {
-  const { t } = useSettings();
+  const { settings, t } = useSettings();
   const offline = useCarParams().selectionSource === 'saved';
   const { engineMeasurement, result, calculationStatus, ratioBalance } = useTuneSession();
   const measured = engine.current;
@@ -39,7 +39,7 @@ export function EngineDataStep({ carId, profile, engine, gearing, enabled }: {
     <div role="status" aria-live="polite" className="small" style={{ minHeight: '3em' }}>{t(engine.storageError ? 'Engine data could not be saved. Collected frames are retained. Retry Save engine data & calculate.' : engine.pendingSave ? 'Saving engine data…' : measured ? 'Engine data saved. Calculation stays in this step; use Go to setup verification when ready.' : 'Save engine data & calculate stays in this step.')}</div>
     {measured ? <div className="glass-panel p-3">
       <p>{t('Measured engine limit')}: {measured.engineMaxRpm} RPM · {t('Peak power RPM')}: {Math.round(measured.observedPeakPower!.rpm)} · {t('Peak torque RPM')}: {Math.round(measured.observedPeakTorque!.rpm)}</p>
-      <TireEvidencePanel evidence={result?.tireEvidence ?? null} provenance={result?.evidenceProvenance ?? null} />
+      {settings?.tuning_diagnostics_enabled && <TireEvidencePanel evidence={result?.tireEvidence ?? null} provenance={result?.evidenceProvenance ?? null} />}
       <button className="btn btn-outline-secondary" disabled={offline || engine.pendingSave} onClick={() => engineMeasurement.restart(enabled)}>{t('Collect driving data again')}</button></div>
       : <TuningMeasurementStep carId={carId} enabled={enabled && !offline} offline={offline} />}
     <EngineObservationHistory entries={engine.archive} compatibleIds={engine.compatible.map(item => item.id)} reuse={engine.reuse} storageError={engine.storageError} busy={engine.pendingSave} />

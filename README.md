@@ -68,7 +68,7 @@ FH6-HorizonTuner 透過遊戲的 **Data Out UDP 遙測**接收車輛資料，整
 
 | 切換桌面主題 | 連接 AI 工具 |
 | --- | --- |
-| ![外觀設定中的日夜模式與 Halfmoon、Swiss、Rhine Lab 核心選項](docs/assets/readme/zh-tw/appearance.webp) | ![MCP 設定中的伺服器狀態、即時遙測權限、取樣上限與本機端點](docs/assets/readme/zh-tw/mcp.webp) |
+| ![外觀設定中的日夜模式與 Halfmoon、Swiss、Rhine Lab 核心選項](docs/assets/readme/zh-tw/appearance.webp) | ![MCP 設定中的伺服器狀態、即時遙測權限與本機端點（舊版畫面）](docs/assets/readme/zh-tw/mcp.webp) |
 | 預覽不同設計核心的字體、色彩與控制項。[設計系統](docs/frontend/design-systems.md) | 從桌面取得本機 MCP 位址，設定 AI 工具可讀取的遙測資料。[MCP 設定指南](docs/guides/mcp-setup-guide.md) |
 
 </details>
@@ -91,7 +91,7 @@ FH6-HorizonTuner 透過遊戲的 **Data Out UDP 遙測**接收車輛資料，整
 
 - **Windows 可攜版組合包**：[下載 Full + Lite ZIP](https://github.com/eddie772tw/FH6-HorizonTuner/releases/latest/download/FH6-HorizonTuner-Portable-Bundle.zip)。解壓縮後執行所需版本，無須另下載後端。
 - **執行環境**：Windows 需要 WebView2 Runtime；Linux 需要相容的 GTK／WebKitGTK 與 AppImage 執行環境。macOS 目前不支援，詳見[平台需求與限制](docs/guides/cross-platform-release.md)。
-- **Android Companion（Beta）**：Android 13+，搭配持續運行的 Windows Full，支援 LAN QR 配對與 USB／ADB。目前正式 Release 未附 APK；建置與驗收狀態見 [Companion README](companion/README.md)。
+- **Android Companion（Beta）**：Android 13+，搭配持續運行的 Windows Full，先在「設定 → 開發人員選項」啟用，再使用 LAN QR 配對或 USB／ADB。目前正式 Release 未附 APK；建置與驗收狀態見 [Companion README](companion/README.md)。
 
 > [!NOTE]
 > 本頁描述 `main` 的功能。下載版本的功能與可用資產以該 [Release 說明](https://github.com/eddie772tw/FH6-HorizonTuner/releases)為準；建置通過不代表所有平台與遊戲情境均已完成驗收。
@@ -230,7 +230,7 @@ Windows 完整版的「設定 → 開發人員選項」可開啟獨立的「自�
 | REST／WebSocket／MCP | HTTP／WebSocket | localhost `8001` |
 | Vite 開發伺服器 | HTTP | `1420` |
 
-開發模式固定使用 HTTP `8001`；Release 優先使用 `8001`，占用時改用可用的動態埠。實際端點見 Settings 的 MCP 區塊或資料目錄的 `logs/web_port.txt`。可透過 `TELEMETRY_PORT` 覆寫 UDP port；HTTP 與 MCP 保持 localhost，Companion 使用另外的授權配對入口。
+開發模式固定使用 HTTP `8001`；Release 優先使用 `8001`，占用時改用可用的動態埠。實際端點見 「設定 → 開發人員選項 → MCP」或資料目錄的 `logs/web_port.txt`。可透過 `TELEMETRY_PORT` 覆寫 UDP port；HTTP 與 MCP 保持 localhost，Companion 使用另外的授權配對入口。
 
 Windows 安裝版與可攜版均內嵌 Rust 後端。可攜版優先在可寫的執行檔旁保存資料，受保護目錄則回退至 AppData。Full／Lite 安裝版各自獨立，OTA 分別使用 `latest.json`／`latest-lite.json`；Linux 使用 `latest-linux.json`。詳見[發行與資料路徑契約](docs/guides/cross-platform-release.md)。
 

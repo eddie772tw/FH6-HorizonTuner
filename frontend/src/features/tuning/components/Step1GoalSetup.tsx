@@ -104,7 +104,7 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
               style={{ pointerEvents: !hasCoreParams || proceedBlockedReason ? 'none' : 'auto' }}
               onClick={() => void onProceed()}
             >
-              {t(saving ? 'Saving vehicle parameters…' : 'Save vehicle parameters')}
+              {t(saving ? 'Saving vehicle parameters…' : 'Save & Proceed')}
             </button>
           </span>
         </div>
@@ -128,9 +128,10 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
           </div>
 
           <div className="d-flex flex-column gap-2">
-            <label htmlFor="tuning-draft-goal" className="text-body-secondary fs-7 fw-semibold">{t('Select Race / Tuning Goal:')}</label>
+            <label htmlFor="tuning-goal" className="text-body-secondary fs-7 fw-semibold">{t('Select Race / Tuning Goal:')}</label>
             <select
-              id="tuning-draft-goal"
+              id="tuning-goal"
+              disabled={!carParams || saving}
               value={selectedRaceGoal}
               onChange={(e) => setSelectedRaceGoal(e.target.value)}
               className="form-select form-select-sm"
@@ -149,6 +150,7 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
             <label htmlFor="step1-season" className="text-body-secondary fs-7 fw-semibold">{t('Current Season:')}</label>
             <select
               id="step1-season"
+              disabled={!carParams || saving}
               value={season}
               onChange={(e) => setSeason(e.target.value as Season)}
               className="form-select form-select-sm"

@@ -42,7 +42,7 @@ function RoadReviewDocuments({ documents, busy, exporting, compare, decide, expo
   documents: RoadDocument[]; busy: boolean; exporting: boolean;
   compare: ReturnType<typeof useRoadReview>['compare']; decide: ReturnType<typeof useRoadReview>['decide']; exportCapture: (runId: string) => Promise<void>;
 }) {
-  const { t } = useSettings();
+  const { settings, t } = useSettings();
   const [selection, setSelection] = useState<RoadResultSelection>({ selectedRunId: '', showCandidate: false,
     comparison: { baselineRunId: '', candidateRunId: '', extraBaselineRunIds: [], extraCandidateRunIds: [] } });
   const summaries = documentsOf(documents, 'summary');
@@ -62,7 +62,7 @@ function RoadReviewDocuments({ documents, busy, exporting, compare, decide, expo
     {decisions.length > 0 && <section className="glass-panel p-4"><h3 className="h5">{t('Saved choices')}</h3>
       <ul className="mb-0">{decisions.map(decision => <li key={decision.id}>{t(decision.choice)} · {t(decision.status)} · {decision.setupId}</li>)}</ul>
     </section>}
-    <details><summary>{t('Saved snapshots and report history')}</summary><pre className="small p-3" style={{ maxHeight: 360, overflow: 'auto', background: 'var(--surface-1)' }}>{JSON.stringify(documents, null, 2)}</pre></details>
+    {settings?.tuning_diagnostics_enabled && <details><summary>{t('Saved snapshots and report history')}</summary><pre className="small p-3" style={{ maxHeight: 360, overflow: 'auto', background: 'var(--surface-1)' }}>{JSON.stringify(documents, null, 2)}</pre></details>}
   </>;
 }
 
