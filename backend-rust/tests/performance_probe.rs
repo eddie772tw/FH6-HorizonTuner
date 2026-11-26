@@ -156,12 +156,12 @@ fn backend_performance_probe() {
     app.database
         .insert_points_batch("api_probe", &points)
         .unwrap();
-    measure("api_analysis_session_10000", || {
+    let req = |path: &str| {
         use fh6_backend::network::Backend;
         let resp = app
             .request(fh6_backend::network::ApiRequest {
                 method: "GET".into(),
-                path: "/api/analysis/sessions/api_probe".into(),
+                path: path.into(),
                 query: Default::default(),
                 headers: Default::default(),
                 body: vec![],
@@ -169,5 +169,20 @@ fn backend_performance_probe() {
             })
             .unwrap();
         black_box(resp.body);
+    };
+    measure("api_analysis_session_10000", || {
+        req("/api/analysis/sessions/api_probe");
+    });
+    measure("api_analysis_debrief_10000", || {
+        req("/api/analysis/sessions/api_probe/debrief");
+    });
+    let filtered_channels: std::collections::HashSet<String> =
+        ["time".to_owned(), "SpeedMetersPerSecond".to_owned()].into();
+    measure("sqlite_filtered_2ch_10000", || {
+        black_box(
+            app.database
+                .get_telemetry_points_filtered("api_probe", None, 1, Some(&filtered_channels))
+                .unwrap(),
+        );
     });
 }

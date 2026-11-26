@@ -1,6 +1,6 @@
 use super::contract::{decoded_point, LEGACY_POINT_SCHEMA};
 use rusqlite::{params, Connection, OptionalExtension};
-use serde::de::{Deserialize, Deserializer, MapAccess, SeqAccess, Visitor};
+use serde::de::{Deserialize, DeserializeSeed, Deserializer, MapAccess, SeqAccess, Visitor};
 use serde_json::{Map, Value};
 use std::path::{Path, PathBuf};
 
@@ -249,8 +249,7 @@ impl TelemetryStore {
         channels: Option<&std::collections::HashSet<String>>,
     ) -> Result<Vec<Value>, String> {
         let c = self.conn()?;
-        let mut q =
-            format!("SELECT {TELEMETRY_ROW_COLUMNS} FROM telemetry_channels WHERE session_id=?");
+        let mut q = "SELECT id, raw_json FROM telemetry_channels WHERE session_id=?".to_owned();
         if lap.is_some() {
             q.push_str(" AND lap_number=?")
         }
@@ -261,7 +260,7 @@ impl TelemetryStore {
         } else {
             st.query(params![id]).map_err(|e| e.to_string())?
         };
-        let mut out = Vec::new();
+        let (mut fb, mut out) = (None, Vec::new());
         let step = downsample.max(1);
         let mut ordinal = 0usize;
         while let Some(row) = rows.next().map_err(|e| e.to_string())? {
@@ -269,15 +268,8 @@ impl TelemetryStore {
                 ordinal += 1;
                 continue;
             }
-            let mut point = row_value(&row).map_err(|e| e.to_string())?;
-            if let Some(channels) = channels {
-                if let Some(object) = point.as_object_mut() {
-                    object.retain(|key, _| channels.contains(key));
-                } else {
-                    point = Value::Null;
-                }
-            }
-            out.push(point);
+            // [PERF] Project only requested JSON channels via zero-alloc visitor; lazily read legacy columns on fallback.
+            out.push(read_filtered(&c, &mut fb, &row, channels).map_err(|e| e.to_string())?);
             ordinal += 1;
         }
         Ok(out)
@@ -949,6 +941,67 @@ impl<'de> Visitor<'de> for ValidatedJson {
     fn visit_map<A: MapAccess<'de>>(self, mut map: A) -> Result<Self, A::Error> {
         while map.next_entry::<Self, Self>()?.is_some() {}
         Ok(self)
+    }
+}
+
+fn read_filtered<'c>(
+    c: &'c Connection,
+    fb: &mut Option<rusqlite::Statement<'c>>,
+    row: &rusqlite::Row<'_>,
+    channels: Option<&std::collections::HashSet<String>>,
+) -> rusqlite::Result<Value> {
+    let raw = str_col(row, 1)?;
+    if let (Some(s), Some(set)) = (raw, channels) {
+        let mut de = serde_json::Deserializer::from_str(s);
+        let res = FilteredPoint(set)
+            .deserialize(&mut de)
+            .and_then(|v| de.end().map(|()| v));
+        if let Ok(v) = res {
+            return Ok(v);
+        }
+    }
+    let mut point = if let Some(v) = raw.and_then(|s| serde_json::from_str::<Value>(s).ok()) {
+        v
+    } else {
+        let sql = format!("SELECT {TELEMETRY_ROW_COLUMNS} FROM telemetry_channels WHERE id=?");
+        let st = match fb {
+            Some(st) => st,
+            None => fb.insert(c.prepare(&sql)?),
+        };
+        st.query_row(params![row.get::<_, i64>(0)?], row_value)?
+    };
+    if let Some(set) = channels {
+        match point.as_object_mut() {
+            Some(object) => object.retain(|key, _| set.contains(key)),
+            None => point = Value::Null,
+        }
+    }
+    Ok(point)
+}
+
+// [PERF] Deserialize only requested channels from raw_json while validating skipped fields with zero allocs.
+struct FilteredPoint<'a>(&'a std::collections::HashSet<String>);
+impl<'de> DeserializeSeed<'de> for FilteredPoint<'_> {
+    type Value = Value;
+    fn deserialize<D: Deserializer<'de>>(self, d: D) -> Result<Value, D::Error> {
+        d.deserialize_map(self)
+    }
+}
+impl<'de> Visitor<'de> for FilteredPoint<'_> {
+    type Value = Value;
+    fn expecting(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("a JSON object")
+    }
+    fn visit_map<A: MapAccess<'de>>(self, mut map: A) -> Result<Value, A::Error> {
+        let mut out = Map::with_capacity(self.0.len().min(64));
+        while let Some(key) = map.next_key::<&str>()? {
+            if self.0.contains(key) {
+                out.insert(key.to_owned(), map.next_value()?);
+            } else {
+                map.next_value::<ValidatedJson>()?;
+            }
+        }
+        Ok(Value::Object(out))
     }
 }
 
