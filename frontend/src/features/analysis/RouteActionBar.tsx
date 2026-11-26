@@ -52,12 +52,17 @@ export const RouteActionBar: React.FC<RouteActionBarProps> = ({
   };
 
   const confirmId = `${id}-delete-confirm`, confirmLabelId = `${confirmId}-label`, trimmedName = routeName?.trim();
-  const prompt = trimmedName ? t('Are you sure you want to delete route "{name}"?', { name: trimmedName }) : t("Are you sure you want to delete this route?");
+  const prompt = trimmedName
+    ? t('Are you sure you want to delete route "{name}"?').replace("{name}", () => trimmedName)
+    : t("Are you sure you want to delete this route?");
+  const deleteLabel = trimmedName
+    ? t("Delete {name}").replace("{name}", () => trimmedName)
+    : t("Delete");
   return <div ref={barRef}>
     <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-1">
       <div className="d-flex flex-wrap gap-2">
         <button type="button" className="btn btn-sm btn-primary" onClick={onSave}>{t("Save Route")}</button>
-        {selectedRouteId && <button ref={deleteBtnRef} type="button" className="btn btn-sm btn-outline-danger" disabled={confirmDelete || isDeleting} aria-expanded={confirmDelete} aria-controls={confirmDelete ? confirmId : undefined} aria-label={trimmedName ? t("Delete {name}", { name: trimmedName }) : t("Delete")} onClick={() => setConfirmDelete(true)}>{t("Delete")}</button>}
+        {selectedRouteId && <button ref={deleteBtnRef} type="button" className="btn btn-sm btn-outline-danger" disabled={confirmDelete || isDeleting} aria-expanded={confirmDelete} aria-controls={confirmDelete ? confirmId : undefined} aria-label={deleteLabel} onClick={() => setConfirmDelete(true)}>{t("Delete")}</button>}
       </div>
       {selectedRouteId && (isCurrentArmed
         ? <button type="button" className="btn btn-sm btn-warning text-dark" disabled={isRecording || isDeleting} onClick={onDisarmRoute}>{t("Disarm Route")}</button>

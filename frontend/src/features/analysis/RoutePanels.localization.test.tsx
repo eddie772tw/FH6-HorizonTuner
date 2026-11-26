@@ -20,7 +20,7 @@ const dictionaries: Record<string, Record<string, string>> = Object.fromEntries(
 function createTranslator(language: (typeof languages)[number]) {
   const dict = dictionaries[language];
   return (text: string, params?: Record<string, string | number>): string => {
-    let result = language === 'en-us' ? (dict[text] ?? text) : (dict[text] ?? text);
+    let result = dict[text] ?? text;
     if (params) {
       for (const [key, value] of Object.entries(params)) {
         result = result.replace(`{${key}}`, String(value));
@@ -124,7 +124,7 @@ describe('Analysis route panels localization', () => {
     };
     const timeTrialRoute: CustomRoute = {
       route_id: 'tt-1',
-      name: 'Goliath Sprint',
+      name: 'Goliath $& Sprint',
       mode: 'time_trial',
       start_x: 120,
       start_y: 8,
@@ -235,17 +235,16 @@ describe('Analysis route panels localization', () => {
     expect(host.textContent).toContain(t('Capture Current Car Position'));
     expect(host.textContent).toContain(t('Trigger Radius'));
 
-    const deleteTrigger = host.querySelector<HTMLButtonElement>(
-      `button[aria-label="${t('Delete {name}', { name: 'Goliath Sprint' })}"]`,
-    );
+    const deleteTrigger = host.querySelector<HTMLButtonElement>('button.btn-outline-danger[aria-expanded]');
     expect(deleteTrigger).not.toBeNull();
+    expect(deleteTrigger!.getAttribute('aria-label')).toContain(timeTrialRoute.name);
     await act(async () => deleteTrigger!.click());
 
-    const confirmText = t('Are you sure you want to delete route "{name}"?', { name: 'Goliath Sprint' });
+    const confirmText = t('Are you sure you want to delete route "{name}"?').replace('{name}', () => timeTrialRoute.name);
     expect(host.textContent).toContain(confirmText);
     if (language === 'ja-jp') {
-      expect(deleteTrigger!.getAttribute('aria-label')).toBe('Goliath Sprint を削除');
-      expect(confirmText).toBe('ルート「Goliath Sprint」を削除してもよろしいですか？');
+      expect(deleteTrigger!.getAttribute('aria-label')).toBe('Goliath $& Sprint を削除');
+      expect(confirmText).toBe('ルート「Goliath $& Sprint」を削除してもよろしいですか？');
     }
 
     const confirmButton = host.querySelector<HTMLButtonElement>('[role="group"] button.btn-danger')!;
@@ -264,9 +263,7 @@ describe('Analysis route panels localization', () => {
         />
       </ToastProvider>,
     ));
-    await act(async () => host.querySelector<HTMLButtonElement>(
-      `button[aria-label="${t('Delete {name}', { name: 'Goliath Sprint' })}"]`,
-    )!.click());
+    await act(async () => host.querySelector<HTMLButtonElement>('button.btn-outline-danger[aria-expanded]')!.click());
     await act(async () => host.querySelector<HTMLButtonElement>('[role="group"] button.btn-danger')!.click());
     expect(host.querySelector('[role="alert"]')?.textContent).toContain(t('Failed to delete route.'));
   });
