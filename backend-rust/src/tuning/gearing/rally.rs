@@ -64,19 +64,7 @@ pub struct RallyObservedBounds {
 }
 
 fn ticks(range: &RatioRange) -> Option<(i64, i64)> {
-    let lo = range.min * 100.0;
-    let hi = range.max * 100.0;
-    (range.min.is_finite()
-        && range.max.is_finite()
-        && range.min > 0.0
-        && range.step == 0.01
-        && lo.round() >= 1.0
-        && lo <= hi
-        && hi <= i32::MAX as f64
-        && hi - lo <= 10_000.0
-        && (lo - lo.round()).abs() < 1e-7
-        && (hi - hi.round()).abs() < 1e-7)
-        .then_some((lo.round() as i64, hi.round() as i64))
+    crate::tuning::ratio_balance::range_ticks(range.min, range.max, range.step)
 }
 
 fn unavailable(reason: &'static str, mut diagnostics: Value) -> CandidateGearingResult {
@@ -116,10 +104,6 @@ pub fn respects_hard_targets(gearing: &GearingResult, diagnostics: &Value) -> bo
     ) else {
         return false;
     };
-    let on_grid = |v: f64| {
-        let scaled = v * 100.0;
-        v.is_finite() && v > 0.0 && scaled.round() >= 1.0 && (scaled - scaled.round()).abs() < 1e-7
-    };
     if diagnostics["modelVersion"] != "aego-rally-joint/v1"
         || !["available", "limited"]
             .iter()
@@ -129,10 +113,19 @@ pub fn respects_hard_targets(gearing: &GearingResult, diagnostics: &Value) -> bo
         || (tolerance - 1.0_f64.max(target * 0.01)).abs() > 1e-9
         || gearing.unsupported == Some(true)
         || gearing.gears.len() != count
-        || !on_grid(gearing.final_drive)
-        || !gearing.gears.iter().all(|v| on_grid(*v))
-        || !gearing.gears.windows(2).all(|g| g[0] > g[1])
+        || crate::tuning::ratio_balance::ratio_tick(gearing.final_drive).is_none()
     {
+        return false;
+    }
+    let Some(gear_ticks) = gearing
+        .gears
+        .iter()
+        .map(|&v| crate::tuning::ratio_balance::ratio_tick(v))
+        .collect::<Option<Vec<_>>>()
+    else {
+        return false;
+    };
+    if !gear_ticks.windows(2).all(|g| g[0] > g[1]) {
         return false;
     }
     let speed = calc_gear_speed(rpm, gearing.gears[count - 1], gearing.final_drive, radius) * 3.6;

@@ -134,30 +134,47 @@ pub fn respects_hard_targets(
     }
 }
 
+pub(crate) fn clear_unavailable_diagnostics(diagnostics: &mut Value, reason: impl Into<String>) {
+    if !diagnostics.is_object() {
+        *diagnostics = json!({});
+    }
+    let reason = reason.into();
+    diagnostics["status"] = json!("unavailable");
+    diagnostics["reason"] = json!(reason);
+    for (k, v) in diagnostics.as_object_mut().into_iter().flatten() {
+        if k.starts_with("actual")
+            || matches!(
+                k.as_str(),
+                "endpointErrorKmh"
+                    | "wheelSpeedErrorKmh"
+                    | "targetRpmError"
+                    | "launchErrorKmh"
+                    | "finalDrive"
+                    | "gears"
+            )
+        {
+            *v = Value::Null;
+        }
+    }
+    if let Some(finish) = diagnostics
+        .get_mut("dragFinishAvailability")
+        .and_then(Value::as_object_mut)
+    {
+        finish.insert("status".into(), json!("unavailable"));
+        finish.insert("reason".into(), json!(reason));
+        if finish.contains_key("actualKmh") {
+            finish.insert("actualKmh".into(), Value::Null);
+        }
+    }
+}
+
 pub fn adjusted_diagnostics(model: AegoModel, gearing: &GearingResult, original: &Value) -> Value {
     if !observed_bounds_allow(gearing, original) {
         let mut d = original.clone();
-        d["status"] = json!("unavailable");
-        d["reason"] = json!("Adjusted ratios violate the model's observed profile bounds");
-        for (k, v) in d.as_object_mut().into_iter().flatten() {
-            if k.starts_with("actual")
-                || matches!(
-                    k.as_str(),
-                    "endpointErrorKmh" | "wheelSpeedErrorKmh" | "targetRpmError" | "launchErrorKmh"
-                )
-            {
-                *v = Value::Null;
-            }
-        }
-        if let Some(finish) = d
-            .get_mut("dragFinishAvailability")
-            .and_then(Value::as_object_mut)
-        {
-            finish.insert("status".into(), json!("unavailable"));
-            if finish.contains_key("actualKmh") {
-                finish.insert("actualKmh".into(), Value::Null);
-            }
-        }
+        clear_unavailable_diagnostics(
+            &mut d,
+            "Adjusted ratios violate the model's observed profile bounds",
+        );
         return d;
     }
     match model {

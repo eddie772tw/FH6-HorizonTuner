@@ -472,13 +472,14 @@ fn calculate_with_replay_policy(
                     diagnostic,
                 ));
             }
-        } else if ratio_balance.is_some() {
+        } else if let Some(rb) = &ratio_balance {
             if let Some(diagnostic) = &mut gearing_diagnostics {
-                diagnostic["status"] = json!("unavailable");
-                diagnostic["reason"] =
-                    json!(ratio_balance.as_ref().and_then(|d| d.reason).unwrap_or(
-                        "The requested ratio balance cannot preserve the model hard targets"
-                    ));
+                super::gearing::models::clear_unavailable_diagnostics(
+                    diagnostic,
+                    rb.reason.unwrap_or(
+                        "The requested ratio balance cannot preserve the model hard targets",
+                    ),
+                );
             }
         }
         if let (Some(engine), Some(d)) = (qualified_engine, &gearing_diagnostics) {

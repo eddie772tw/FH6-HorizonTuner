@@ -36,17 +36,7 @@ fn unavailable(reason: &'static str, mut diagnostics: Value) -> CandidateGearing
 }
 
 fn ticks(range: &RatioRange) -> Option<(i64, i64)> {
-    let (lo, hi) = (range.min * 100.0, range.max * 100.0);
-    (range.min.is_finite()
-        && range.max.is_finite()
-        && range.min > 0.0
-        && range.step == 0.01
-        && lo <= hi
-        && hi <= i32::MAX as f64
-        && hi - lo <= 10_000.0
-        && (lo - lo.round()).abs() < 1e-7
-        && (hi - hi.round()).abs() < 1e-7)
-        .then_some((lo.round() as i64, hi.round() as i64))
+    crate::tuning::ratio_balance::range_ticks(range.min, range.max, range.step)
 }
 
 /// Intersect a ratio grid with the predeclared *speed* tolerance and usable RPM limit.
@@ -108,16 +98,23 @@ pub fn respects_hard_targets(result: &GearingResult, diagnostics: &Value) -> boo
     let Some(count) = diagnostics["gearCount"].as_u64().map(|n| n as usize) else {
         return false;
     };
-    let on_grid =
-        |v: f64| v.is_finite() && v > 0.0 && (v * 100.0 - (v * 100.0).round()).abs() < 1e-7;
     if diagnostics["modelVersion"] != MODEL_VERSION
         || result.unsupported == Some(true)
         || result.gears.len() != count
         || !(4..=10).contains(&count)
-        || !on_grid(result.final_drive)
-        || !result.gears.iter().all(|g| on_grid(*g))
-        || result.gears.windows(2).any(|g| g[0] <= g[1])
+        || crate::tuning::ratio_balance::ratio_tick(result.final_drive).is_none()
     {
+        return false;
+    }
+    let Some(gear_ticks) = result
+        .gears
+        .iter()
+        .map(|&g| crate::tuning::ratio_balance::ratio_tick(g))
+        .collect::<Option<Vec<_>>>()
+    else {
+        return false;
+    };
+    if gear_ticks.windows(2).any(|g| g[0] <= g[1]) {
         return false;
     }
     let number = |key: &str| {
