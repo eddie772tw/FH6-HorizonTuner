@@ -87,7 +87,7 @@ pub trait Backend: Send + Sync + 'static {
         true
     }
 }
-pub fn router(backend: Arc<dyn Backend>) -> Router {
+fn base_router(backend: Arc<dyn Backend>) -> Router {
     // Capture the server-owned backend separately from request extractors. This
     // also keeps its data root out of CodeQL's all-handler-parameters source model.
     let json_backend = backend.clone();
@@ -107,21 +107,31 @@ pub fn router(backend: Arc<dyn Backend>) -> Router {
             get(move |headers, upgrade| ws_overlay(overlay_backend.clone(), headers, upgrade)),
         )
         .fallback(move |request| http_request(backend.clone(), request))
+}
+
+async fn desktop_companion_guard(request: Request<Body>, next: Next) -> Response {
+    // Decode percent-encoding so /%63ompanion/... cannot bypass desktop isolation.
+    match percent_encoding::percent_decode_str(request.uri().path()).decode_utf8() {
+        Err(_) => ApiError::new(400, "Invalid request path").into_response(),
+        Ok(p) if p == "/companion" || p.starts_with("/companion/") => {
+            StatusCode::NOT_FOUND.into_response()
+        }
+        Ok(_) => next.run(request).await,
+    }
+}
+
+pub fn router(backend: Arc<dyn Backend>) -> Router {
+    base_router(backend)
         .layer(middleware::from_fn(origin_security))
         .layer(middleware::from_fn(security_headers))
 }
 
 /// The desktop listener carries controls. Companion assets are served by its own listeners.
 pub fn desktop_router(backend: Arc<dyn Backend>) -> Router {
-    router(backend).layer(middleware::from_fn(
-        |request: Request<Body>, next: Next| async move {
-            if request.uri().path().starts_with("/companion/") {
-                StatusCode::NOT_FOUND.into_response()
-            } else {
-                next.run(request).await
-            }
-        },
-    ))
+    base_router(backend)
+        .layer(middleware::from_fn(desktop_companion_guard))
+        .layer(middleware::from_fn(origin_security))
+        .layer(middleware::from_fn(security_headers))
 }
 
 /// The LAN listener deliberately exposes only the Companion's data path.
@@ -149,10 +159,11 @@ pub fn usb_companion_router(backend: Arc<dyn Backend>, companion: Arc<CompanionS
     Router::new()
         .route(
             "/ws/telemetry",
-            get(move |upgrade| {
+            get(move |headers, upgrade| {
                 usb_ws(
                     json_backend.clone(),
                     json_companion.clone(),
+                    headers,
                     upgrade,
                     "json",
                 )
@@ -160,10 +171,11 @@ pub fn usb_companion_router(backend: Arc<dyn Backend>, companion: Arc<CompanionS
         )
         .route(
             "/ws/telemetry/binary",
-            get(move |upgrade| {
+            get(move |headers, upgrade| {
                 usb_ws(
                     binary_backend.clone(),
                     binary_companion.clone(),
+                    headers,
                     upgrade,
                     "binary",
                 )
@@ -198,11 +210,16 @@ pub fn usb_companion_router(backend: Arc<dyn Backend>, companion: Arc<CompanionS
 async fn usb_ws(
     backend: Arc<dyn Backend>,
     companion: Arc<CompanionService>,
+    headers: HeaderMap,
     upgrade: WebSocketUpgrade,
     channel: &'static str,
 ) -> Response {
     let mut shutdown = companion.subscribe_transport(true);
-    if !backend.companion_usb_enabled() || companion.get_usb_port().is_none() {
+    // Reject cross-site WebSocket upgrades (CSWSH) on the unauthenticated USB loopback listener.
+    if !request_origin_allowed(&headers)
+        || !backend.companion_usb_enabled()
+        || companion.get_usb_port().is_none()
+    {
         return StatusCode::FORBIDDEN.into_response();
     }
     upgrade.on_upgrade(move |socket| async move {
@@ -419,13 +436,35 @@ pub fn allowed_origin(origin: Option<&str>) -> bool {
     let Ok(url) = url::Url::parse(origin) else {
         return false;
     };
+    if !url.username().is_empty()
+        || url.password().is_some()
+        || !matches!(url.path(), "" | "/")
+        || url.query().is_some()
+        || url.fragment().is_some()
+    {
+        return false;
+    }
     match url.scheme() {
-        "tauri" | "app" => url.host_str().is_none_or(|h| h == "localhost"),
+        "tauri" | "app" => url.host_str() == Some("localhost"),
         "http" | "https" => matches!(
             url.host_str(),
             Some("localhost" | "127.0.0.1" | "tauri.localhost" | "testserver")
         ),
         _ => false,
+    }
+}
+
+// Fail closed on duplicate, empty, or non-UTF-8 Origin headers; allow absent Origin for native clients.
+fn request_origin_allowed(headers: &HeaderMap) -> bool {
+    let mut origins = headers.get_all("origin").iter();
+    match (origins.next(), origins.next()) {
+        (None, _) => true,
+        (Some(first), None) => first
+            .to_str()
+            .ok()
+            .filter(|s| !s.is_empty())
+            .is_some_and(|o| allowed_origin(Some(o))),
+        (Some(_), Some(_)) => false,
     }
 }
 fn cors_origin(origin: &str) -> bool {
@@ -452,15 +491,15 @@ async fn origin_security(request: Request<Body>, next: Next) -> Response {
         return ApiError::new(403, "Access denied: Invalid or untrusted Host header.")
             .into_response();
     }
-    let origin = request
-        .headers()
-        .get("origin")
-        .and_then(|v| v.to_str().ok())
-        .map(str::to_string);
+    let mut origins = request.headers().get_all("origin").iter();
+    let origin = match (origins.next(), origins.next()) {
+        (Some(first), None) => first.to_str().ok().map(str::to_string),
+        _ => None,
+    };
     if !matches!(
         *request.method(),
         Method::GET | Method::HEAD | Method::OPTIONS
-    ) && !allowed_origin(origin.as_deref())
+    ) && !request_origin_allowed(request.headers())
     {
         return ApiError::new(403, "CSRF protection blocked request: Invalid Origin.")
             .into_response();
@@ -596,7 +635,7 @@ async fn ws_overlay(
     upgrade: WebSocketUpgrade,
 ) -> Response {
     if !crate::platform::HUD_ENABLED {
-        if !allowed_origin(headers.get("origin").and_then(|v| v.to_str().ok())) {
+        if !request_origin_allowed(&headers) {
             return StatusCode::FORBIDDEN.into_response();
         }
         return ApiError::new(501, "unsupported: HUD is not included in this build")
@@ -610,7 +649,7 @@ fn ws_start(
     upgrade: WebSocketUpgrade,
     channel: &'static str,
 ) -> Response {
-    if !allowed_origin(headers.get("origin").and_then(|v| v.to_str().ok())) {
+    if !request_origin_allowed(&headers) {
         return StatusCode::FORBIDDEN.into_response();
     }
     upgrade.on_upgrade(move |socket| socket_loop(socket, backend, channel))

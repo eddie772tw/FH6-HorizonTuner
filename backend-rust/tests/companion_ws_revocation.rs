@@ -111,3 +111,124 @@ async fn disabling_companion_closes_usb_without_stopping_desktop_telemetry() {
     desktop_task.abort();
     usb_task.abort();
 }
+
+#[tokio::test(flavor = "multi_thread")]
+async fn usb_ws_rejects_foreign_malformed_and_duplicate_origins() {
+    let root = tempfile::tempdir().unwrap();
+    fh6_backend::storage::save_settings(
+        root.path(),
+        &json!({"companion_enabled": true, "companion_usb_enabled": true}),
+    )
+    .unwrap();
+    let app = App::new(root.path()).unwrap();
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let port = listener.local_addr().unwrap().port();
+    app.companion.set_usb_port(Some(port));
+    let router = network::usb_companion_router(app.clone(), app.companion.clone());
+    let srv = tokio::spawn(async move { axum::serve(listener, router).await.unwrap() });
+    tokio::task::spawn_blocking(move || {
+        for path in ["/ws/telemetry", "/ws/telemetry/binary"] {
+            for bad in ["https://evil.example", "null", "app:evil.example", ""] {
+                let mut req = format!("ws://127.0.0.1:{port}{path}").into_client_request().unwrap();
+                req.headers_mut().insert("origin", bad.parse().unwrap());
+                assert!(matches!(tungstenite::connect(req), Err(WsErr::Http(r)) if r.status().as_u16() == 403));
+            }
+            let mut dup = format!("ws://127.0.0.1:{port}{path}").into_client_request().unwrap();
+            dup.headers_mut().append("origin", "http://127.0.0.1:8001".parse().unwrap());
+            dup.headers_mut().append("origin", "https://evil.example".parse().unwrap());
+            assert!(matches!(tungstenite::connect(dup), Err(WsErr::Http(r)) if r.status().as_u16() == 403));
+            let mut local = format!("ws://127.0.0.1:{port}{path}").into_client_request().unwrap();
+            local.headers_mut().insert("origin", format!("http://127.0.0.1:{port}").parse().unwrap());
+            assert!(tungstenite::connect(local).is_ok());
+            assert!(tungstenite::connect(format!("ws://127.0.0.1:{port}{path}")).is_ok());
+        }
+    }).await.unwrap();
+    srv.abort();
+}
+
+#[tokio::test]
+async fn desktop_router_blocks_encoded_companion_paths_and_malformed_origins() {
+    use axum::{
+        body::Body,
+        http::{HeaderValue, Method, Request, StatusCode},
+    };
+    use tower::ServiceExt;
+    let root = tempfile::tempdir().unwrap();
+    fh6_backend::storage::save_settings(root.path(), &json!({"companion_enabled": true})).unwrap();
+    let router = network::desktop_router(App::new(root.path()).unwrap());
+    for path in [
+        "/companion/hud/catalog.json",
+        "/%63ompanion/hud/catalog.json",
+        "/companion%2findex.html",
+        "/%63ompanion",
+    ] {
+        let res = router
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .method(Method::GET)
+                    .uri(path)
+                    .header("host", "127.0.0.1:8001")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(res.status(), StatusCode::NOT_FOUND, "path {path}");
+        assert_eq!(res.headers()["x-content-type-options"], "nosniff");
+        assert_eq!(res.headers()["x-frame-options"], "SAMEORIGIN");
+        assert_eq!(
+            res.headers()["referrer-policy"],
+            "strict-origin-when-cross-origin"
+        );
+    }
+    let bad_host = router
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/companion/index.html")
+                .header("host", "attacker.example")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(bad_host.status(), StatusCode::FORBIDDEN);
+    assert_eq!(bad_host.headers()["x-content-type-options"], "nosniff");
+    for origin in [
+        HeaderValue::from_static(""),
+        HeaderValue::from_bytes(b"\xff").unwrap(),
+        HeaderValue::from_static("http://user@localhost"),
+        HeaderValue::from_static("app:evil.example"),
+    ] {
+        let res = router
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .method(Method::POST)
+                    .uri("/api/settings")
+                    .header("host", "127.0.0.1:8001")
+                    .header("origin", origin)
+                    .body(Body::from("{}"))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(res.status(), StatusCode::FORBIDDEN);
+    }
+    let dup = router
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/api/settings")
+                .header("host", "127.0.0.1:8001")
+                .header("origin", "http://127.0.0.1:8001")
+                .header("origin", "https://evil.example")
+                .body(Body::from("{}"))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(dup.status(), StatusCode::FORBIDDEN);
+}
