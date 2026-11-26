@@ -127,3 +127,8 @@
 **學習 (Learning):** 稽核 `Step1GoalSetup.tsx` 時發現四項高發問題：(1) 歷史由繁體中文轉譯日文造成嚴重誤譯，例如「檔位數量」因中文「檔位／攤位」多義被翻成 `"Gears Count": "屋台の数"`（小吃攤數量），且「範圍」被直譯為 `"領域"`；(2) `zh-tw.json` 與 `ja-jp.json` 存在表面上鍵值存在但值仍原樣留作英文的假翻譯（如 `"Weight Distribution"`、`"Max Power"`），不會被缺鍵掃描器檢出；(3) 元件以短縮寫 `t('NA')` 導致全語系缺鍵，而字典早已收錄三語完整鍵 `"Naturally Aspirated (NA)"`；(4) 硬編碼英文範例佔位字（`placeholder="e.g. 1350"`）與主標題 `Step 1:` 前綴穿透至所有非英文介面。
 **行動 (Action):** 審查核心表單元件時，除缺鍵外須同步比對 `zh-tw.json` / `ja-jp.json` 中值與鍵完全相同的未譯條目與中文轉譯日文錯詞；優先復用字典既有完整無歧義鍵名（如 `Naturally Aspirated (NA)`）；範例佔位字統一以 `t('e.g. {value}', { value })` 參數化，並確保對應單元測試的 `useSettings` mock 支援 `params` 內插。
 **署名:** Narrator as Antigravity
+
+## 2026-11-26 - Route Panel Validation Fallback Bypass & Narrowed t() Prop Concatenation
+**學習 (Learning):** 分析視圖自訂路線面板（`AnalysisRouteSection`、`RoamingRoutePanel`、`TimeTrialRoutePanel`、`RouteActionBar`）同時出現三項問題：(1) 儲存驗證呼叫 `check.error || t("Invalid route configuration")` 僅包裝 fallback，導致 `validateRoute()` 回傳的 6 筆原始英文錯誤完全繞過 `t(...)`；(2) 四個元件將 `t` prop 收窄為 `(text: string) => string`，迫使刪除按鈕 `aria-label`、刪除確認提示與閘門座標擷取標籤改採模板拼接（如 `${t("Delete")} ${name}`），在日文造成動賓倒裝錯誤；(3) 三語系字典嚴重不對稱，`ja-jp.json` 遺漏整組 35 筆鍵值，`en-us.json` 與 `zh-tw.json` 亦遺漏 20 筆。
+**行動 (Action):** 凡消費純函式驗證器回傳錯誤訊息的面板，一律改寫為 `t(check.error || "Fallback Key")` 並將所有驗證錯誤字串納入三語系字典；傳遞給子元件的 `t` prop 應保持支援選擇性 `params?: Record<string, string | number>`，以具名參數鍵（`Delete {name}`、`Capture Live - {gate}`、`Are you sure you want to delete route "{name}"?`）取代前後綴拼接。
+**署名:** Narrator as Antigravity

@@ -19,7 +19,7 @@ export interface RoamingRoutePanelProps {
   readonly onDisarmRoute: () => Promise<boolean>;
   readonly onImportRoutes: (file: File) => Promise<void>;
   readonly onExportRoute: (routeId: string) => void;
-  readonly t: (text: string) => string;
+  readonly t: (text: string, params?: Record<string, string | number>) => string;
 }
 
 export const RoamingRoutePanel: React.FC<RoamingRoutePanelProps> = ({
@@ -118,7 +118,7 @@ export const RoamingRoutePanel: React.FC<RoamingRoutePanelProps> = ({
     };
     const check = validateRoute(candidate);
     if (!check.valid) {
-      addToast({ message: check.error || t("Invalid route configuration"), type: "danger" });
+      addToast({ message: t(check.error || "Invalid route configuration"), type: "danger" });
       return;
     }
     await onSaveRoute(candidate);
@@ -172,7 +172,7 @@ export const RoamingRoutePanel: React.FC<RoamingRoutePanelProps> = ({
           <div className="card p-2 bg-dark-subtle border h-100" style={{ fontSize: "0.8rem" }} role="group" aria-labelledby={`${id}-start-heading`}>
             <div className="d-flex justify-content-between align-items-center mb-1">
               <span id={`${id}-start-heading`} className="fw-semibold">{t("Start Gate (Departure)")}</span>
-              <button type="button" className="btn btn-sm btn-outline-info py-0 px-2" aria-label={`${t("Capture Live")} - ${t("Start Gate (Departure)")}`} onClick={() => capturePos("start")}>{t("Capture Live")}</button>
+              <button type="button" className="btn btn-sm btn-outline-info py-0 px-2" aria-label={t("Capture Live - {gate}", { gate: t("Start Gate (Departure)") })} onClick={() => capturePos("start")}>{t("Capture Live")}</button>
             </div>
             <div className="row g-1 mb-1">
               <div className="col-4"><label htmlFor={`${id}-start-x`} className="form-label mb-0" style={{ fontSize: "0.65rem" }}>X</label><input id={`${id}-start-x`} type="number" step="0.1" className="form-control form-control-sm" value={startX} onChange={(e) => setStartX(parseFloat(e.target.value) || 0)} /></div>
@@ -188,7 +188,7 @@ export const RoamingRoutePanel: React.FC<RoamingRoutePanelProps> = ({
           <div className="card p-2 bg-dark-subtle border h-100" style={{ fontSize: "0.8rem" }} role="group" aria-labelledby={`${id}-end-heading`}>
             <div className="d-flex justify-content-between align-items-center mb-1">
               <span id={`${id}-end-heading`} className="fw-semibold">{t("Finish Gate (Arrival)")}</span>
-              <button type="button" className="btn btn-sm btn-outline-info py-0 px-2" aria-label={`${t("Capture Live")} - ${t("Finish Gate (Arrival)")}`} onClick={() => capturePos("end")}>{t("Capture Live")}</button>
+              <button type="button" className="btn btn-sm btn-outline-info py-0 px-2" aria-label={t("Capture Live - {gate}", { gate: t("Finish Gate (Arrival)") })} onClick={() => capturePos("end")}>{t("Capture Live")}</button>
             </div>
             <div className="row g-1 mb-1">
               <div className="col-4"><label htmlFor={`${id}-end-x`} className="form-label mb-0" style={{ fontSize: "0.65rem" }}>X</label><input id={`${id}-end-x`} type="number" step="0.1" className="form-control form-control-sm" value={endX} onChange={(e) => setEndX(parseFloat(e.target.value) || 0)} /></div>
