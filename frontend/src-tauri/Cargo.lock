@@ -4,7 +4,7 @@ version = 4
 
 [[package]]
 name = "FH6-HorizonTuner"
-version = "11.45.27"
+version = "11.45.28"
 dependencies = [
  "serde",
  "serde_json",
