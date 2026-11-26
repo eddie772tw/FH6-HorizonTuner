@@ -32,6 +32,7 @@ export default function CompanionLanControls() {
       const payload = await response.json() as PairingResponse | { detail?: string };
       if (!response.ok) throw new Error('detail' in payload ? payload.detail || t('LAN pairing code could not be created.') : t('LAN pairing code could not be created.'));
       const next = payload as PairingResponse;
+      setRemaining(next.expires_in_secs);
       setPairing(next);
       try {
         setQrDataUrl(await QRCode.toDataURL(pairingQrContent(next), { errorCorrectionLevel: 'M', margin: 2, width: 300 }));
