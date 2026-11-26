@@ -1,0 +1,101 @@
+{
+  "target": "hud_overlay/gamepad_overlay/index.html",
+  "renderer": "hud_overlay/gamepad_overlay/index.html -> HUDCore.handleMessage",
+  "capturedAt": "2026-11-25T21:14:51+00:00",
+  "baseCommit": "4bd18ba6",
+  "browser": "148.0.7778.96",
+  "platform": "nt",
+  "background": "#0b111b (neutral dark composite backdrop for transparent HUD canvas)",
+  "telemetrySource": "Synthetic canonical frames dispatched via HUDCore.handleMessage",
+  "scopeNote": "Element clip of #gamepadCanvas with 20px margin in 1280x720 fixture viewport; live game & native Windows overlay not tested here.",
+  "captures": [
+    {
+      "file": "gamepad-xbox-dpr1-live.png",
+      "description": "DPR 1 · Xbox 480×380 基準解析度（右轉 +59.8%、煞車 25%、油門 85%、手煞車與 Gear 4）",
+      "viewport": "1280x720",
+      "dpr": 1,
+      "scaleSetting": 1.0,
+      "glowIntensity": 1.0,
+      "layout": "xbox",
+      "hudScale": 0.9974999999999998,
+      "canvas": {
+        "width": 480,
+        "height": 380,
+        "hudScale": 0.9974999999999998,
+        "cssRect": {
+          "x": 400.6015625,
+          "y": 170.4765625,
+          "width": 478.796875,
+          "height": 379.046875
+        }
+      },
+      "clipPaddingPx": 20
+    },
+    {
+      "file": "gamepad-xbox-dpr2-neutral.png",
+      "description": "DPR 2 · Xbox 960×760 原生 HiDPI 等比光暈（左轉 -74.8%、重煞 92%、gear: 11 顯示 GEAR: N）",
+      "viewport": "1280x720",
+      "dpr": 2,
+      "scaleSetting": 1.0,
+      "glowIntensity": 1.0,
+      "layout": "xbox",
+      "hudScale": 0.9974999999999998,
+      "canvas": {
+        "width": 960,
+        "height": 760,
+        "hudScale": 0.9974999999999998,
+        "cssRect": {
+          "x": 400.6015625,
+          "y": 170.4765625,
+          "width": 478.796875,
+          "height": 379.046875
+        }
+      },
+      "clipPaddingPx": 20
+    },
+    {
+      "file": "gamepad-dualsense-dpr2-live.png",
+      "description": "DPR 2 · DualSense 960×760 圓端光條與手煞車等比發光（左轉 -50.4%、gear: 0 顯示 GEAR: R）",
+      "viewport": "1280x720",
+      "dpr": 2,
+      "scaleSetting": 1.0,
+      "glowIntensity": 1.0,
+      "layout": "dualsense",
+      "hudScale": 0.9974999999999998,
+      "canvas": {
+        "width": 960,
+        "height": 760,
+        "hudScale": 0.9974999999999998,
+        "cssRect": {
+          "x": 400.6015625,
+          "y": 170.4765625,
+          "width": 478.796875,
+          "height": 379.046875
+        }
+      },
+      "clipPaddingPx": 20
+    },
+    {
+      "file": "gamepad-dualsense-dpr2-scale15-noglow.png",
+      "description": "DPR 2 · DualSense scale=1.5 聯合縮放 2.99×（1436×1137）與 glowIntensity=0 無光暈對照（滿舵 +100.0%、Gear 6）",
+      "viewport": "1280x720",
+      "dpr": 2,
+      "scaleSetting": 1.5,
+      "glowIntensity": 0.0,
+      "layout": "dualsense",
+      "hudScale": 1.4962499999999999,
+      "canvas": {
+        "width": 1436,
+        "height": 1137,
+        "hudScale": 1.4962499999999999,
+        "cssRect": {
+          "x": 280.90625,
+          "y": 75.71875,
+          "width": 718.1875,
+          "height": 568.5625
+        }
+      },
+      "clipPaddingPx": 20
+    }
+  ]
+}
