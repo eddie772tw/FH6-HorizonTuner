@@ -18,6 +18,11 @@ export function StackSt8100ThresholdInput({ id, metric, value, units, disabled, 
   const displayed = String(display(value));
   const [draft, setDraft] = useState(displayed);
   useEffect(() => { setDraft(displayed); }, [displayed, metric, unit]);
+  const minDisplay = display(spec.min);
+  const maxDisplay = display(spec.max);
+  const trimmed = draft.trim();
+  const parsed = /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)$/.test(trimmed) ? Number(trimmed) : Number.NaN;
+  const isInvalid = !disabled && draft !== displayed && (!Number.isFinite(parsed) || parsed < minDisplay || parsed > maxDisplay);
   const commit = () => {
     // Unedited rounded display values must retain exact canonical thresholds.
     if (draft === displayed) return;
@@ -30,17 +35,21 @@ export function StackSt8100ThresholdInput({ id, metric, value, units, disabled, 
     <div>
       <label htmlFor={id} className="form-label fs-7 mb-1">{t('Threshold')} ({unit})</label>
       <div className="input-group input-group-sm">
-        <input id={id} type="text" inputMode="decimal" className="form-control" disabled={disabled}
+        <input id={id} type="text" inputMode="decimal"
+          className={`form-control${isInvalid ? ' border-danger text-danger-emphasis' : ''}`}
+          disabled={disabled} aria-invalid={isInvalid ? 'true' : 'false'}
           aria-describedby={`${id}-range`} value={draft}
           onChange={event => setDraft(event.currentTarget.value)}
           onBlur={event => { if (!isHudSettingsTab(event.relatedTarget)) commit(); }}
           onKeyDown={event => {
-            if (event.key === 'Enter') { event.preventDefault(); event.currentTarget.blur(); }
-            if (event.key === 'Escape') { event.preventDefault(); setDraft(displayed); }
+            if (event.key === 'Enter' && !event.nativeEvent.isComposing) { event.preventDefault(); event.currentTarget.blur(); }
+            else if (event.key === 'Escape' && draft !== displayed) { event.preventDefault(); event.stopPropagation(); setDraft(displayed); }
           }} />
-        <span className="input-group-text fs-8">{unit}</span>
+        <span className="input-group-text fs-8" aria-hidden="true">{unit}</span>
       </div>
-      <span id={`${id}-range`} className="visually-hidden">{t('Range')}: {display(spec.min)}–{display(spec.max)} {unit}</span>
+      <p id={`${id}-range`} className={isInvalid ? 'fs-8 text-danger-emphasis mb-0 mt-1' : 'visually-hidden'}>
+        {t('Range')}: {minDisplay}–{maxDisplay} {unit}
+      </p>
     </div>
   );
 }

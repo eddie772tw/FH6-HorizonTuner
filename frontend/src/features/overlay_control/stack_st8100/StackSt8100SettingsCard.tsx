@@ -45,14 +45,14 @@ export function StackSt8100SettingsCard({ config, appUnits, onChange, t }: Stack
               <option value="black">{t('Black')}</option><option value="white">{t('White')}</option>
             </select>
           </div>
-          <div className="col-6">
+          <div className="col-12 col-sm-6">
             <label htmlFor={`${id}-page`} className="form-label fs-7 mb-1">{t('LCD page')}</label>
             <select id={`${id}-page`} className="form-select form-select-sm" value={settings.stackSt8100Page}
               onChange={event => onChange({ stackSt8100Page: event.target.value as StackSt8100Page })}>
               <option value="live">{t('Live values')}</option><option value="peaks">{t('Peak values')}</option>
             </select>
           </div>
-          <div className="col-6">
+          <div className="col-12 col-sm-6">
             <label htmlFor={`${id}-temperature`} className="form-label fs-7 mb-1">{t('Tire temperature unit')}</label>
             <select id={`${id}-temperature`} className="form-select form-select-sm" value={settings.stackSt8100TemperatureUnit}
               onChange={event => onChange({ stackSt8100TemperatureUnit: event.target.value as StackSt8100TemperatureUnit })}>
@@ -61,11 +61,11 @@ export function StackSt8100SettingsCard({ config, appUnits, onChange, t }: Stack
           </div>
         </div>
       </fieldset>
-      <fieldset className="border-0 p-0 m-0">
+      <fieldset className="border-0 p-0 m-0" aria-describedby={`${id}-lcd-units-note`}>
         <legend className="fs-7 fw-semibold mb-2">{t('Live LCD fields')}</legend>
         <div className="row g-2">
           {FIELD_SLOTS.map(({ key, label }) => (
-            <div className="col-6" key={key}>
+            <div className="col-12 col-sm-6" key={key}>
               <label htmlFor={`${id}-${key}`} className="form-label fs-7 mb-1">{t(label)}</label>
               <select id={`${id}-${key}`} className="form-select form-select-sm" value={settings[key]}
                 onChange={event => onChange({ [key]: event.target.value as StackSt8100Field })}>
@@ -74,14 +74,15 @@ export function StackSt8100SettingsCard({ config, appUnits, onChange, t }: Stack
             </div>
           ))}
         </div>
-        <p className="text-body-secondary fs-8 mt-2 mb-0">{t('Speed, boost, power and torque units follow HUD Unit Settings.')}</p>
+        <p id={`${id}-lcd-units-note`} className="text-body-secondary fs-8 mt-2 mb-0">{t('Speed, boost, power and torque units follow HUD Unit Settings.')}</p>
       </fieldset>
       <fieldset className="border-0 p-0 m-0 d-flex flex-column gap-2">
         <legend className="fs-7 fw-semibold mb-1">{t('Shift light')}</legend>
-        <label className="form-check form-switch m-0">
-          <input type="checkbox" className="form-check-input" checked={settings.stackSt8100ShiftEnabled}
+        <label htmlFor={`${id}-shift-enabled`} className="form-check form-switch m-0" style={{ cursor: 'pointer' }}>
+          <input id={`${id}-shift-enabled`} type="checkbox" role="switch" aria-checked={settings.stackSt8100ShiftEnabled}
+            className="form-check-input" style={{ cursor: 'pointer' }} checked={settings.stackSt8100ShiftEnabled}
             onChange={event => onChange({ stackSt8100ShiftEnabled: event.target.checked })} />
-          <span className="form-check-label fs-7">{t('Enabled')}</span>
+          <span className="form-check-label fs-7">{t('Enabled')}<span className="visually-hidden"> ({t('Shift light')})</span></span>
         </label>
         <StackSt8100ThresholdInput id={`${id}-stackSt8100ShiftPercent`} metric="shift_percent" value={settings.stackSt8100ShiftPercent}
           units={units} onChange={stackSt8100ShiftPercent => onChange({ stackSt8100ShiftPercent })} t={t} />

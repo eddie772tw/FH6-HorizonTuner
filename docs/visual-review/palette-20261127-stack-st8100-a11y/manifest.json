@@ -1,0 +1,292 @@
+{
+  "date": "2026-11-27",
+  "browser": "151.0.7922.34",
+  "viewport": "1280x720 and 320x800",
+  "reducedMotion": "reduce",
+  "dpr": 1,
+  "source": "frontend/dist via vite preview + mock /api/** and /hud/** routes + real lang/*.json dictionaries",
+  "cases": [
+    {
+      "core": "default",
+      "mode": "light",
+      "language": "en-us",
+      "width": 1280,
+      "shiftFile": "default-light-en-us-1280-shift-invalid.png",
+      "alarmFile": "default-light-en-us-1280-alarms-layout.png",
+      "cardChecks": {
+        "switchCount": 4,
+        "switchLabels": [
+          "Enabled (Shift light)",
+          "Enabled (Alarm 1)",
+          "Enabled (Alarm 2)",
+          "Enabled (Alarm 3)"
+        ],
+        "uniqueSwitchLabels": true,
+        "allCursorPointer": true,
+        "lcdNoteLinked": true,
+        "metricResetLinked": true
+      },
+      "shiftInvalid": {
+        "ariaInvalid": "true",
+        "hasDangerClass": true,
+        "hintVisible": true,
+        "hintText": "Range: 50–100 % max RPM"
+      },
+      "shiftReverted": {
+        "value": "90",
+        "ariaInvalid": "false"
+      },
+      "shiftBounds": {
+        "width": 1280,
+        "docScrollWidth": 1280
+      },
+      "alarmCheck": {
+        "ariaInvalid": "true",
+        "hintVisible": true,
+        "hintText": "Range: -100–800 °C",
+        "stackedVerticallyOn320": null,
+        "sideBySideOn1280": true
+      },
+      "alarmBounds": {
+        "width": 1280,
+        "docScrollWidth": 1280
+      },
+      "errors": []
+    },
+    {
+      "core": "default",
+      "mode": "dark",
+      "language": "zh-tw",
+      "width": 320,
+      "shiftFile": "default-dark-zh-tw-320-shift-invalid.png",
+      "alarmFile": "default-dark-zh-tw-320-alarms-layout.png",
+      "cardChecks": {
+        "switchCount": 4,
+        "switchLabels": [
+          "啟用 (換檔燈)",
+          "啟用 (警報 1)",
+          "啟用 (警報 2)",
+          "啟用 (警報 3)"
+        ],
+        "uniqueSwitchLabels": true,
+        "allCursorPointer": true,
+        "lcdNoteLinked": true,
+        "metricResetLinked": true
+      },
+      "shiftInvalid": {
+        "ariaInvalid": "true",
+        "hasDangerClass": true,
+        "hintVisible": true,
+        "hintText": "範圍: 50–100 % 最高轉速"
+      },
+      "shiftReverted": {
+        "value": "90",
+        "ariaInvalid": "false"
+      },
+      "shiftBounds": {
+        "width": 320,
+        "docScrollWidth": 320
+      },
+      "alarmCheck": {
+        "ariaInvalid": "true",
+        "hintVisible": true,
+        "hintText": "範圍: -100–800 °C",
+        "stackedVerticallyOn320": true,
+        "sideBySideOn1280": null
+      },
+      "alarmBounds": {
+        "width": 320,
+        "docScrollWidth": 320
+      },
+      "errors": []
+    },
+    {
+      "core": "swiss",
+      "mode": "light",
+      "language": "zh-tw",
+      "width": 1280,
+      "shiftFile": "swiss-light-zh-tw-1280-shift-invalid.png",
+      "alarmFile": "swiss-light-zh-tw-1280-alarms-layout.png",
+      "cardChecks": {
+        "switchCount": 4,
+        "switchLabels": [
+          "啟用 (換檔燈)",
+          "啟用 (警報 1)",
+          "啟用 (警報 2)",
+          "啟用 (警報 3)"
+        ],
+        "uniqueSwitchLabels": true,
+        "allCursorPointer": true,
+        "lcdNoteLinked": true,
+        "metricResetLinked": true
+      },
+      "shiftInvalid": {
+        "ariaInvalid": "true",
+        "hasDangerClass": true,
+        "hintVisible": true,
+        "hintText": "範圍: 50–100 % 最高轉速"
+      },
+      "shiftReverted": {
+        "value": "90",
+        "ariaInvalid": "false"
+      },
+      "shiftBounds": {
+        "width": 1280,
+        "docScrollWidth": 1280
+      },
+      "alarmCheck": {
+        "ariaInvalid": "true",
+        "hintVisible": true,
+        "hintText": "範圍: -100–800 °C",
+        "stackedVerticallyOn320": null,
+        "sideBySideOn1280": true
+      },
+      "alarmBounds": {
+        "width": 1280,
+        "docScrollWidth": 1280
+      },
+      "errors": []
+    },
+    {
+      "core": "swiss",
+      "mode": "dark",
+      "language": "ja-jp",
+      "width": 1280,
+      "shiftFile": "swiss-dark-ja-jp-1280-shift-invalid.png",
+      "alarmFile": "swiss-dark-ja-jp-1280-alarms-layout.png",
+      "cardChecks": {
+        "switchCount": 4,
+        "switchLabels": [
+          "有効 (シフトランプ)",
+          "有効 (アラーム 1)",
+          "有効 (アラーム 2)",
+          "有効 (アラーム 3)"
+        ],
+        "uniqueSwitchLabels": true,
+        "allCursorPointer": true,
+        "lcdNoteLinked": true,
+        "metricResetLinked": true
+      },
+      "shiftInvalid": {
+        "ariaInvalid": "true",
+        "hasDangerClass": true,
+        "hintVisible": true,
+        "hintText": "範囲: 50–100 % 最高回転数"
+      },
+      "shiftReverted": {
+        "value": "90",
+        "ariaInvalid": "false"
+      },
+      "shiftBounds": {
+        "width": 1280,
+        "docScrollWidth": 1280
+      },
+      "alarmCheck": {
+        "ariaInvalid": "true",
+        "hintVisible": true,
+        "hintText": "範囲: -100–800 °C",
+        "stackedVerticallyOn320": null,
+        "sideBySideOn1280": true
+      },
+      "alarmBounds": {
+        "width": 1280,
+        "docScrollWidth": 1280
+      },
+      "errors": []
+    },
+    {
+      "core": "rhine-lab",
+      "mode": "light",
+      "language": "ja-jp",
+      "width": 1280,
+      "shiftFile": "rhine-lab-light-ja-jp-1280-shift-invalid.png",
+      "alarmFile": "rhine-lab-light-ja-jp-1280-alarms-layout.png",
+      "cardChecks": {
+        "switchCount": 4,
+        "switchLabels": [
+          "有効 (シフトランプ)",
+          "有効 (アラーム 1)",
+          "有効 (アラーム 2)",
+          "有効 (アラーム 3)"
+        ],
+        "uniqueSwitchLabels": true,
+        "allCursorPointer": true,
+        "lcdNoteLinked": true,
+        "metricResetLinked": true
+      },
+      "shiftInvalid": {
+        "ariaInvalid": "true",
+        "hasDangerClass": true,
+        "hintVisible": true,
+        "hintText": "範囲: 50–100 % 最高回転数"
+      },
+      "shiftReverted": {
+        "value": "90",
+        "ariaInvalid": "false"
+      },
+      "shiftBounds": {
+        "width": 1280,
+        "docScrollWidth": 1280
+      },
+      "alarmCheck": {
+        "ariaInvalid": "true",
+        "hintVisible": true,
+        "hintText": "範囲: -100–800 °C",
+        "stackedVerticallyOn320": null,
+        "sideBySideOn1280": true
+      },
+      "alarmBounds": {
+        "width": 1280,
+        "docScrollWidth": 1280
+      },
+      "errors": []
+    },
+    {
+      "core": "rhine-lab",
+      "mode": "dark",
+      "language": "en-us",
+      "width": 1280,
+      "shiftFile": "rhine-lab-dark-en-us-1280-shift-invalid.png",
+      "alarmFile": "rhine-lab-dark-en-us-1280-alarms-layout.png",
+      "cardChecks": {
+        "switchCount": 4,
+        "switchLabels": [
+          "Enabled (Shift light)",
+          "Enabled (Alarm 1)",
+          "Enabled (Alarm 2)",
+          "Enabled (Alarm 3)"
+        ],
+        "uniqueSwitchLabels": true,
+        "allCursorPointer": true,
+        "lcdNoteLinked": true,
+        "metricResetLinked": true
+      },
+      "shiftInvalid": {
+        "ariaInvalid": "true",
+        "hasDangerClass": true,
+        "hintVisible": true,
+        "hintText": "Range: 50–100 % max RPM"
+      },
+      "shiftReverted": {
+        "value": "90",
+        "ariaInvalid": "false"
+      },
+      "shiftBounds": {
+        "width": 1280,
+        "docScrollWidth": 1280
+      },
+      "alarmCheck": {
+        "ariaInvalid": "true",
+        "hintVisible": true,
+        "hintText": "Range: -100–800 °C",
+        "stackedVerticallyOn320": null,
+        "sideBySideOn1280": true
+      },
+      "alarmBounds": {
+        "width": 1280,
+        "docScrollWidth": 1280
+      },
+      "errors": []
+    }
+  ]
+}
