@@ -45,4 +45,67 @@ fn ratio_balance_cannot_relax_the_models_observed_hardware_locks() {
         .reason
         .unwrap()
         .contains("observed profile bounds"));
+
+    // 1. models::adjusted_diagnostics must match respects_hard_targets on Rally/Drag lock rejection
+    let r_rej = models::adjusted_diagnostics(AegoModel::RallyJointV1, &adjusted, &base.diagnostics);
+    assert_eq!(r_rej["status"], "unavailable");
+    assert!(r_rej["reason"]
+        .as_str()
+        .unwrap()
+        .contains("observed profile bounds"));
+    assert!(["actualSpeedKmh", "endpointErrorKmh", "actualTotalRatio"]
+        .iter()
+        .all(|k| r_rej[k].is_null()));
+
+    // 2. Drag lock rejection also clears finish availability & actual telemetry predictions
+    let drag_raw: Value =
+        serde_json::from_str(include_str!("../../tests/fixtures/aego_drag_joint_v1.json")).unwrap();
+    let mut dp = drag_raw["carParams"].clone();
+    dp["dragFinishSpeedKmh"] = json!(250.0);
+    dp["dragFinishSpeedProvenance"] = json!("manual");
+    let solve = |p: &Value| {
+        models::solve(
+            AegoModel::DragJointV1,
+            6,
+            &serde_json::from_value(p.clone()).unwrap(),
+            7500.0,
+            None,
+        )
+    };
+    let init = solve(&dp);
+    let fd = init.gearing.final_drive;
+    dp["dragObservedBounds"] = json!({"source":"user-observed","finalDrive":{"min":fd,"max":fd,"step":0.01},"gears":init.gearing.gears.iter().map(|g| json!({"min":g,"max":g,"step":0.01})).collect::<Vec<_>>()});
+    let drag_base = solve(&dp);
+    let mut drag_out = drag_base.gearing.clone();
+    drag_out.final_drive = ((fd + 0.01) * 100.0).round() / 100.0;
+    assert!(!models::respects_hard_targets(
+        AegoModel::DragJointV1,
+        &drag_out,
+        &drag_base.diagnostics
+    ));
+    let d_rej =
+        models::adjusted_diagnostics(AegoModel::DragJointV1, &drag_out, &drag_base.diagnostics);
+    assert_eq!(d_rej["status"], "unavailable");
+    assert_eq!(d_rej["dragFinishAvailability"]["status"], "unavailable");
+    assert!(d_rej["dragFinishAvailability"]["actualKmh"].is_null());
+    assert!(
+        ["actualSpeedKmh", "actualLaunchSpeedKmh", "endpointErrorKmh"]
+            .iter()
+            .all(|k| d_rej[k].is_null())
+    );
+
+    // 3. Reject malformed observedBounds (sub-0.01, non-grid, >10000 tick span)
+    for bad_fd in [
+        json!({"min":1e-10,"max":4.0,"step":0.01}),
+        json!({"min":3.511,"max":3.529,"step":0.01}),
+        json!({"min":0.01,"max":150.0,"step":0.01}),
+    ] {
+        let mut tampered = base.diagnostics.clone();
+        tampered["observedBounds"]["finalDrive"] = bad_fd;
+        assert!(!models::respects_hard_targets(
+            AegoModel::RallyJointV1,
+            &base.gearing,
+            &tampered
+        ));
+    }
 }

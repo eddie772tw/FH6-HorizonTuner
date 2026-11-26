@@ -96,3 +96,39 @@ fn explicit_capability_bounds_and_request_version_are_required() {
         .0
         .is_none());
 }
+#[test]
+fn zero_tick_subgrid_duplicate_tick_base_and_candidate_canonicalization_closure() {
+    let original = base(3.5, &[4.0, 3.0, 2.0, 1.0]);
+    for (path, value) in [
+        ("/bounds/finalDrive/min", json!(1e-10)),
+        ("/bounds/gears/3/min", json!(1e-10)),
+        ("/candidateFinalDrive", json!(1e-10)),
+    ] {
+        let mut r = request(4, Some(3.5));
+        *r.pointer_mut(path).unwrap() = value;
+        let (res, diag) = calculate(&profile(), Some(&original), &r);
+        assert!(res.is_none(), "{path}");
+        assert_eq!(diag.status, "unavailable", "{path}");
+    }
+    for bad_base in [
+        base(1e-10, &[4.0, 3.0, 2.0, 1.0]),
+        base(3.5, &[4.0, 3.0, 1.0 + 1e-10, 1.0]),
+    ] {
+        assert!(calculate(&profile(), Some(&bad_base), &request(4, None))
+            .0
+            .is_none());
+    }
+    for (min, max, candidate) in [(3.50, 4.00, 3.50 - 5e-10), (3.00, 3.50, 3.50 + 5e-10)] {
+        let mut r = request(4, Some(candidate));
+        r["bounds"]["finalDrive"] = json!({"min": min, "max": max, "step": 0.01});
+        let (selected, diag) = calculate(&profile(), Some(&original), &r);
+        let selected = selected.expect("drift within 1e-7 tick tolerance should canonicalize");
+        assert_eq!(selected.final_drive, 3.50);
+        assert_eq!(diag.selected_final_drive, Some(3.50));
+        assert!(diag.legal_final_drives.contains(&selected.final_drive));
+        assert!((min..=max).contains(&selected.final_drive));
+    }
+    let mut outside = request(4, Some(3.49));
+    outside["bounds"]["finalDrive"] = json!({"min": 3.50, "max": 4.00, "step": 0.01});
+    assert!(calculate(&profile(), Some(&original), &outside).0.is_none());
+}
