@@ -132,3 +132,8 @@
 **學習 (Learning):** 分析視圖自訂路線面板（`AnalysisRouteSection`、`RoamingRoutePanel`、`TimeTrialRoutePanel`、`RouteActionBar`）同時出現三項問題：(1) 儲存驗證呼叫 `check.error || t("Invalid route configuration")` 僅包裝 fallback，導致 `validateRoute()` 回傳的 6 筆原始英文錯誤完全繞過 `t(...)`；(2) 四個元件將 `t` prop 收窄為 `(text: string) => string`，迫使刪除按鈕 `aria-label`、刪除確認提示與閘門座標擷取標籤改採模板拼接（如 `${t("Delete")} ${name}`），在日文造成動賓倒裝錯誤；(3) 三語系字典嚴重不對稱，`ja-jp.json` 遺漏整組 35 筆鍵值，`en-us.json` 與 `zh-tw.json` 亦遺漏 20 筆。
 **行動 (Action):** 凡消費純函式驗證器回傳錯誤訊息的面板，一律改寫為 `t(check.error || "Fallback Key")` 並將所有驗證錯誤字串納入三語系字典；傳遞給子元件的 `t` prop 應保持支援選擇性 `params?: Record<string, string | number>`，以具名參數鍵（`Delete {name}`、`Capture Live - {gate}`、`Are you sure you want to delete route "{name}"?`）取代前後綴拼接。
 **署名:** Narrator as Antigravity
+
+## 2026-11-27 - Drag Test Chinese-Pivot RPM/Gearing Mistranslations & Chart Series Interpolation
+**學習 (Learning):** `DragTestView.tsx` 與其語系條目集中呈現四類隱性在地化缺陷：(1) `lang/ja-jp.json` 因中文「轉速／終傳比／錄製／直線加速」多義轉譯產生嚴重領域誤譯（`Final Drive Ratio`→`最終合格率`、`Before/After RPM` 與 `RPM Drop` / `Retention` / `Compare RPM` 皆誤譯為「速度／スピード」、`RECORDING`→`録音`、`How to perform a Drag Test:`→`線形加速テスト`、`Shift` 表頭譯為動詞「ギアを変える」）；(2) `Metrics`、`Car Model`、`Drag session saved successfully` 在 `zh-tw.json` 與 `ja-jp.json` 以英文原樣存在，會繞過單純缺鍵掃描；(3) 步驟說明引用過時按鈕名 `'Ready for Test'` 而與實際 `Start Test` 脫節；(4) Recharts `XAxis` `name="Time"` 與 `Compare RPM (${car})` 未包裝 `t()`，且檔名／車名含 `$&` 時須避免直接交由 `String.prototype.replace` 解析替換模式。
+**行動 (Action):** 稽核圖表與診斷視圖時，同步掃描 Recharts `Line`/`XAxis`/`Tooltip` 的 `name` 與 `labelFormatter` 屬性，並以 `.replace('{...}', () => value)` 安全替換檔名／車名；對非英文語系字典除檢出缺鍵外，必須比對「值等於英文鍵」之未譯殘留與中文轉譯日文之賽車術語歧義，同時核對教學文案引用的按鈕文字與實際控制項一致。
+**署名:** Narrator as Antigravity

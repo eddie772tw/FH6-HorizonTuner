@@ -7,7 +7,9 @@ import ToastContainer from '../../components/common/ToastContainer';
 import DragTestView from './DragTestView';
 import { backendFetch } from '../../services/backend';
 
-vi.mock('../../context/SettingsContext', () => ({ useSettings: () => ({ t: (s: string) => s, convertSpeed: (v: number) => ({ value: v * 3.6, label: 'km/h' }) }) }));
+const translate = (s: string, params?: Record<string, string | number>) =>
+  params ? Object.entries(params).reduce((acc, [k, v]) => acc.replace(`{${k}}`, () => String(v)), s) : s;
+vi.mock('../../context/SettingsContext', () => ({ useSettings: () => ({ t: translate, convertSpeed: (v: number) => ({ value: v * 3.6, label: 'km/h' }) }) }));
 vi.mock('../../services/backend', () => ({ backendFetch: vi.fn() }));
 vi.mock('recharts', () => {
   const Box = ({ children }: { children?: ReactNode }) => <div>{children}</div>;
