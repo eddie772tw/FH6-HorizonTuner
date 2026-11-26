@@ -454,3 +454,91 @@ fn rpm_upper_bound_refines_against_physical_limiter_predicate() {
     assert_eq!(res_over.gearing.unsupported, Some(true));
     assert!(res_over.gearing.gears.is_empty());
 }
+
+#[test]
+fn neighbor_scoring_zero_tick_closure_limiter_overflow_and_adjusted_diagnostics_hardening() {
+    let p = profile();
+    let circumference = (245.0 * 40.0 / 100.0 * 2.0 + 18.0 * 25.4) * std::f64::consts::PI / 1000.0;
+    let open_bounds = |fd: f64| DriftObservedBounds {
+        source: "user-observed".into(),
+        final_drive: range(fd, fd),
+        gears: vec![range(0.1, 6.0); 6],
+    };
+
+    // 1. Evaluate distinct primary/secondary main-gear ticks instead of stopping at round().
+    let convex_rpm = 20.49 * 3.50 / 100.0 * 40.0 * 1000.0 / (circumference * 60.0);
+    let convex_target = DriftWorkingTarget {
+        main_gear: 6,
+        target_rpm: convex_rpm,
+        wheel_speed_kmh: 40.0,
+        source: "user-target".into(),
+    };
+    let convex = solve_candidate(
+        6,
+        &p,
+        7500.0,
+        Some(&convex_target),
+        Some(&open_bounds(3.50)),
+    );
+    available(&convex, 6, 7500.0);
+    assert_eq!(convex.gearing.gears[5], 0.21);
+
+    let shaped = solve_candidate(6, &p, 7500.0, Some(&target()), Some(&open_bounds(3.36)));
+    available(&shaped, 6, 7500.0);
+    assert_eq!(shaped.gearing.gears[2], 1.84);
+
+    // 2. Reject sub-0.01 positive bounds (< 1e-9) that previously truncated to 0.00 ticks
+    //    and reject sub-grid, overflowing, or unavailable diagnostics in respects_hard_targets.
+    let mut sub_fd = open_bounds(3.50);
+    sub_fd.final_drive = range(1e-10, 1e-10);
+    let mut sub_gear = open_bounds(3.35);
+    sub_gear.gears[5] = range(1e-10, 1e-10);
+    for bad_bounds in [sub_fd, sub_gear] {
+        let res = solve_candidate(6, &p, 7500.0, Some(&target()), Some(&bad_bounds));
+        assert_eq!(res.gearing.unsupported, Some(true));
+        assert!(res.gearing.gears.is_empty());
+    }
+
+    let base = solve_candidate(6, &p, 7500.0, Some(&target()), None);
+    let mut bad = base.gearing.clone();
+    bad.gears[5] = 1e-10;
+    assert!(!respects_hard_targets(&bad, &base.diagnostics));
+    bad = base.gearing.clone();
+    bad.final_drive = f64::MAX / 50.0;
+    assert!(!respects_hard_targets(&bad, &base.diagnostics));
+    let mut bad_status = base.diagnostics.clone();
+    bad_status["status"] = json!("unavailable");
+    assert!(!respects_hard_targets(&base.gearing, &bad_status));
+
+    // 3. Avoid intermediate denominator overflow (speed * 1000 * fd) in rpm_upper_tick.
+    let huge_target = DriftWorkingTarget {
+        main_gear: 6,
+        target_rpm: 1e306,
+        wheel_speed_kmh: 1e305,
+        source: "user-target".into(),
+    };
+    let high_scale = solve_candidate(6, &p, 1e306, Some(&huge_target), Some(&open_bounds(3.50)));
+    available(&high_scale, 6, 1e306);
+    assert_eq!(high_scale.gearing.gears[5], 0.35);
+
+    // 4. adjusted_diagnostics clears stale reason and updates status even without shape prior.
+    assert_eq!(
+        adjusted_diagnostics(&base.gearing, &json!(null))["status"],
+        "unavailable"
+    );
+    let mut no_shape = base.diagnostics.clone();
+    no_shape
+        .as_object_mut()
+        .unwrap()
+        .remove("interpolatedShapePrior");
+    no_shape["reason"] = json!("stale-reason");
+    no_shape["shapePreferenceLimited"] = json!(true);
+    let ok_no_shape = adjusted_diagnostics(&base.gearing, &no_shape);
+    assert_eq!(ok_no_shape["status"], "available");
+    assert_eq!(ok_no_shape["shapePreferenceLimited"], false);
+    assert!(ok_no_shape.get("reason").is_none());
+    no_shape["finalDriveSaturated"] = json!(true);
+    let sat_no_shape = adjusted_diagnostics(&base.gearing, &no_shape);
+    assert_eq!(sat_no_shape["status"], "limited");
+    assert!(sat_no_shape.get("reason").is_none());
+}
