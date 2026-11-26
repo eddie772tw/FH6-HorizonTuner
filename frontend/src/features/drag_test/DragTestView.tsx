@@ -206,6 +206,8 @@ const DragTestView: React.FC = () => {
   };
 
   const notify = (type: 'success' | 'danger', message: string) => addToast({ type, title: t('Drag Test Analysis'), message });
+  const formatCompareSeries = (key: string, carName?: string) =>
+    t(key).replace('{car}', () => carName?.trim() || t('Unknown'));
 
   const handleSaveSession = async () => {
     setIsSaving(true);
@@ -472,7 +474,7 @@ const DragTestView: React.FC = () => {
           
           {status === 'waiting' && (
             <div className="drag-test-actions">
-              <span className="pulse-text" role="status" style={{ color: '#ffcc00', fontWeight: 700, fontSize: '0.9rem' }}>
+              <span className="pulse-text" role="status" aria-live="polite" style={{ color: '#ffcc00', fontWeight: 700, fontSize: '0.9rem' }}>
                 {t("Waiting for Launch...")}
               </span>
               <button type="button" className="btn btn-outline-secondary" onClick={handleClear}>
@@ -483,10 +485,10 @@ const DragTestView: React.FC = () => {
           
           {status === 'recording' && (
             <div className="drag-test-actions">
-              <div role="status" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <div role="status" aria-live="polite" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <span aria-hidden="true" style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#ff003c', boxShadow: '0 0 8px #ff003c' }} className="pulse-dot" />
                 <span style={{ color: '#ff003c', fontWeight: 700, fontSize: '0.9rem' }}>
-                  {t("RECORDING")} ({pointsCount} pts)
+                  {t("RECORDING ({count} pts)", { count: pointsCount })}
                 </span>
               </div>
               <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
@@ -532,7 +534,7 @@ const DragTestView: React.FC = () => {
             role="group" aria-labelledby={`${dragId}-delete-confirm-label`}
             onKeyDownCapture={e => { if (e.key !== 'Escape') return; e.preventDefault(); e.stopPropagation(); if (!deleteInFlight.current) setConfirmDelete(false); }}>
             <p id={`${dragId}-delete-confirm-label`} className="fs-7 fw-semibold mb-0" style={{ color: 'var(--bs-danger-text-emphasis)', overflowWrap: 'anywhere' }}>
-              {`${t('Are you sure you want to delete this session?')} (${selectedCompareFilename})`}
+              {t('Are you sure you want to delete session "{name}"?').replace('{name}', () => selectedCompareFilename)}
             </p>
             <div className="d-flex flex-wrap gap-2">
               <button ref={cancelDeleteBtnRef} type="button" className="btn btn-outline-secondary btn-sm" disabled={isDeleting} onClick={() => setConfirmDelete(false)}>{t('Cancel')}</button>
@@ -545,9 +547,9 @@ const DragTestView: React.FC = () => {
       </div>
 
       {analysis && !analysis.path_valid && (
-        <div style={{ padding: '0.8rem 1.2rem', background: 'rgba(255, 0, 60, 0.12)', border: '1px solid rgba(255, 0, 60, 0.25)', borderRadius: '8px', color: '#ff3366', fontWeight: 600, fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+        <div role="alert" style={{ padding: '0.8rem 1.2rem', background: 'rgba(255, 0, 60, 0.12)', border: '1px solid rgba(255, 0, 60, 0.25)', borderRadius: '8px', color: '#ff3366', fontWeight: 600, fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
           <div>
-            <strong>{t("Path Validity Warning")}:</strong> {t("Detected significant path deviation")} ({analysis.max_deviation_meters}m). {t("This test may contain turns or severe loss of control, which can distort gearing analysis. Please select a straight road and try again.")}
+            <strong>{t("Path Validity Warning")}:</strong> {t("Detected significant path deviation ({meters}m).", { meters: analysis.max_deviation_meters })} {t("This test may contain turns or severe loss of control, which can distort gearing analysis. Please select a straight road and try again.")}
           </div>
         </div>
       )}
@@ -558,7 +560,7 @@ const DragTestView: React.FC = () => {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxWidth: '500px' }}>
             <h4 className="workspace-section-heading workspace-panel-header">{t("How to perform a Drag Test:")}</h4>
             <ol style={{ textAlign: 'left', fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: '1.6', paddingLeft: '1.2rem' }}>
-              <li>{t("Click the 'Ready for Test' button above.")}</li>
+              <li>{t("Click the 'Start Test' button above.")}</li>
               <li>{t("Bring your car to a complete stop (0 km/h) in the game.")}</li>
               <li>{t("Floor the throttle (100% Accel) to launch. Recording starts automatically.")}</li>
               <li>{t("Keep accelerating through the gears to test your ratios.")}</li>
@@ -576,7 +578,7 @@ const DragTestView: React.FC = () => {
       {/* SECTION 3: Recording Status (If Recording) */}
       {status === 'recording' && (
         <div className="glass-panel" style={{ padding: '3rem 2rem', display: 'flex', flexDirection: 'column', gap: '1.5rem', flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-          <div className="pulse-ring" style={{ width: '80px', height: '80px', borderRadius: '50%', border: '4px solid #ff003c', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '1.8rem', color: '#ff003c', fontWeight: 'bold' }}>
+          <div className="pulse-ring" aria-hidden="true" style={{ width: '80px', height: '80px', borderRadius: '50%', border: '4px solid #ff003c', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '1.8rem', color: '#ff003c', fontWeight: 'bold' }}>
             REC
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'center' }}>
@@ -635,7 +637,7 @@ const DragTestView: React.FC = () => {
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={chartData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="var(--chart-grid-dash)" stroke="var(--chart-grid)" />
-                      <XAxis dataKey="time" type="number" name="Time" unit="s" stroke="var(--text-secondary)" tick={{fontSize: 11}} />
+                      <XAxis dataKey="time" type="number" name={t("Time")} unit="s" stroke="var(--text-secondary)" tick={{fontSize: 11}} />
                       
                       {/* Left YAxis for Speed */}
                       <YAxis yAxisId="left" stroke="var(--primary)" tick={{fontSize: 11}} label={{ value: `${t("Speed")} (${speedUnit})`, angle: -90, position: 'insideLeft', style: {textAnchor: 'middle', fill: 'var(--primary)', fontSize: 11, fontWeight: 600}, offset: 5 }} />
@@ -645,7 +647,7 @@ const DragTestView: React.FC = () => {
                       
                       <Tooltip 
                         contentStyle={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 'var(--panel-radius)' }}
-                        labelFormatter={(label) => `${t("Time")}: ${Number(label).toFixed(3)}s`}
+                        labelFormatter={(label) => t("Time: {seconds}s", { seconds: Number(label).toFixed(3) })}
                       />
                       <Legend verticalAlign="top" height={36} wrapperStyle={{fontSize: 12}} />
                       
@@ -657,8 +659,8 @@ const DragTestView: React.FC = () => {
                       
                       {compareAnalysis && (
                         <>
-                          <Line isAnimationActive={false} yAxisId="left" type="monotone" dataKey="compare_speed" name={`${t("Compare Speed")} (${compareAnalysis.car_name})`} stroke="var(--primary)" strokeWidth={1.5} strokeDasharray="4 4" connectNulls dot={false} />
-                          <Line isAnimationActive={false} yAxisId="right" type="monotone" dataKey="compare_rpm" name={`Compare RPM (${compareAnalysis.car_name})`} stroke="var(--secondary)" strokeWidth={1.2} strokeDasharray="4 4" connectNulls dot={false} />
+                          <Line isAnimationActive={false} yAxisId="left" type="monotone" dataKey="compare_speed" name={formatCompareSeries("Compare Speed ({car})", compareAnalysis.car_name)} stroke="var(--primary)" strokeWidth={1.5} strokeDasharray="4 4" connectNulls dot={false} />
+                          <Line isAnimationActive={false} yAxisId="right" type="monotone" dataKey="compare_rpm" name={formatCompareSeries("Compare RPM ({car})", compareAnalysis.car_name)} stroke="var(--secondary)" strokeWidth={1.2} strokeDasharray="4 4" connectNulls dot={false} />
                         </>
                       )}
                     </LineChart>
@@ -667,11 +669,11 @@ const DragTestView: React.FC = () => {
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={chartData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="var(--chart-grid-dash)" stroke="var(--chart-grid)" />
-                      <XAxis dataKey="time" type="number" name="Time" unit="s" stroke="var(--text-secondary)" tick={{fontSize: 11}} />
+                      <XAxis dataKey="time" type="number" name={t("Time")} unit="s" stroke="var(--text-secondary)" tick={{fontSize: 11}} />
                       <YAxis stroke="var(--text-secondary)" tick={{fontSize: 11}} label={{ value: `${t("Slip Ratio")} (%)`, angle: -90, position: 'insideLeft', style: {textAnchor: 'middle', fill: 'var(--text-secondary)', fontSize: 11, fontWeight: 600}, offset: 5 }} />
                       <Tooltip 
                         contentStyle={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 'var(--panel-radius)' }}
-                        labelFormatter={(label) => `${t("Time")}: ${Number(label).toFixed(3)}s`}
+                        labelFormatter={(label) => t("Time: {seconds}s", { seconds: Number(label).toFixed(3) })}
                       />
                       <Legend verticalAlign="top" height={36} wrapperStyle={{fontSize: 12}} />
                       
@@ -683,7 +685,7 @@ const DragTestView: React.FC = () => {
                       <Line isAnimationActive={false} type="monotone" dataKey="rr_slip" name={t("RR Slip")} stroke="var(--secondary)" strokeWidth={1.5} dot={false} />
                       <Line isAnimationActive={false} type="monotone" dataKey="slip_diff" name={t("Slip Difference")} stroke="var(--bs-warning-text-emphasis)" strokeWidth={2.5} strokeDasharray="3 3" dot={false} />
                       {compareAnalysis && (
-                        <Line isAnimationActive={false} type="monotone" dataKey="compare_slip_diff" name={`${t("Compare Slip Diff")} (${compareAnalysis.car_name})`} stroke="var(--bs-warning-text-emphasis)" strokeWidth={1.5} strokeDasharray="4 4" connectNulls dot={false} />
+                        <Line isAnimationActive={false} type="monotone" dataKey="compare_slip_diff" name={formatCompareSeries("Compare Slip Diff ({car})", compareAnalysis.car_name)} stroke="var(--bs-warning-text-emphasis)" strokeWidth={1.5} strokeDasharray="4 4" connectNulls dot={false} />
                       )}
                     </LineChart>
                   </ResponsiveContainer>
@@ -757,8 +759,8 @@ const DragTestView: React.FC = () => {
                         </tr>
                         <tr style={{ borderBottom: '1px solid var(--divider)' }}>
                           <td style={{ padding: '0.5rem 0.4rem', color: 'var(--text-secondary)' }}>{t("Drivetrain")}</td>
-                          <td style={{ padding: '0.5rem 0.4rem', fontWeight: 600, color: 'var(--text-primary)' }}>{analysis.drivetrain}</td>
-                          <td style={{ padding: '0.5rem 0.4rem', fontWeight: 600, color: 'var(--text-primary)' }}>{compareAnalysis.drivetrain}</td>
+                          <td style={{ padding: '0.5rem 0.4rem', fontWeight: 600, color: 'var(--text-primary)' }}>{t(analysis.drivetrain)}</td>
+                          <td style={{ padding: '0.5rem 0.4rem', fontWeight: 600, color: 'var(--text-primary)' }}>{t(compareAnalysis.drivetrain)}</td>
                         </tr>
                       </tbody>
                     </table>
@@ -781,7 +783,7 @@ const DragTestView: React.FC = () => {
                     <div style={{ background: 'var(--surface-1)', padding: '0.6rem', borderRadius: '6px', border: '1px solid var(--glass-border)' }}>
                       <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{t("Drivetrain")}</div>
                       <div style={{ fontSize: '1.2rem', fontWeight: 700, color: '#ffaa00' }}>
-                        {analysis.drivetrain}
+                        {t(analysis.drivetrain)}
                       </div>
                     </div>
                     <div style={{ background: 'var(--surface-1)', padding: '0.6rem', borderRadius: '6px', border: '1px solid var(--glass-border)' }}>

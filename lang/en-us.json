@@ -2277,5 +2277,18 @@
   "The requested tuning step is not available for this setup.": "The requested tuning step is not available for this setup.",
   "Vehicle or setup changed. Review the current inputs and try again.": "Vehicle or setup changed. Review the current inputs and try again.",
   "Vehicle parameters could not be saved. Your edits are retained. Try again.": "Vehicle parameters could not be saved. Your edits are retained. Try again.",
-  "HorizonTuner exports 41 telemetry channels with documented unit mappings.": "HorizonTuner exports 41 telemetry channels with documented unit mappings."
+  "HorizonTuner exports 41 telemetry channels with documented unit mappings.": "HorizonTuner exports 41 telemetry channels with documented unit mappings.",
+  "RUN CONDITIONS READY": "RUN CONDITIONS READY",
+  "Drag Launch Conditions": "Drag Launch Conditions",
+  "1. Bring car to a complete stop (0 km/h).": "1. Bring car to a complete stop (0 km/h).",
+  "2. Press throttle (> 5%) to automatically trigger run timing.": "2. Press throttle (> 5%) to automatically trigger run timing.",
+  "Saving data in progress...": "Saving data in progress...",
+  "RECORDING ({count} pts)": "RECORDING ({count} pts)",
+  "Are you sure you want to delete session \"{name}\"?": "Are you sure you want to delete session \"{name}\"?",
+  "Detected significant path deviation ({meters}m).": "Detected significant path deviation ({meters}m).",
+  "Click the 'Start Test' button above.": "Click the 'Start Test' button above.",
+  "Time: {seconds}s": "Time: {seconds}s",
+  "Compare Speed ({car})": "Compare Speed ({car})",
+  "Compare RPM ({car})": "Compare RPM ({car})",
+  "Compare Slip Diff ({car})": "Compare Slip Diff ({car})"
 }
