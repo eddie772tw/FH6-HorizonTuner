@@ -95,3 +95,101 @@ fn explicit_allocation_preserves_totals_on_the_callers_grid_or_refuses() {
     };
     assert!(allocate_total_ratios(&[12.0, 3.0], invalid, 3.52, 0.01).is_none());
 }
+
+#[test]
+fn allocation_enforces_grid_projection_total_order_and_overflow_closure() {
+    let r = |min, max, step| RatioRange { min, max, step };
+    let b = |final_drive, gears| RatioBounds { final_drive, gears };
+
+    let span_totals = [21.02, 14.0, 9.0, 5.0, 3.0, 2.78];
+    let span = allocate_total_ratios(
+        &span_totals,
+        b(r(2.0, 6.5, 0.01), r(0.80, 6.00, 0.01)),
+        3.50,
+        0.01,
+    )
+    .unwrap();
+    assert_eq!(
+        (span.final_drive, span.gears[0], span.gears[5]),
+        (3.50, 6.00, 0.80)
+    );
+    assert!(span.gears.windows(2).all(|w| w[0] > w[1]));
+    assert!(span
+        .gears
+        .iter()
+        .zip(span_totals)
+        .all(|(g, t)| (g * span.final_drive / t - 1.0).abs() <= 0.01));
+
+    let capped = allocate_total_ratios(
+        &[21.02, 5.0],
+        b(r(3.50, 3.50, 0.01), r(0.80, 6.005, 0.01)),
+        3.50,
+        0.01,
+    )
+    .unwrap();
+    assert_eq!(capped.gears[0], 6.00);
+
+    let top = allocate_total_ratios(
+        &[12.2, 6.1],
+        b(r(2.20, 6.10, 0.01), r(0.40, 6.00, 0.01)),
+        6.10,
+        0.001,
+    )
+    .unwrap();
+    assert_eq!(top.final_drive, 6.10);
+
+    let full = b(r(2.0, 6.5, 0.01), r(0.40, 6.00, 0.01));
+    assert_eq!(
+        allocate_total_ratios(&[8.0, 4.0], full, 1e20, 0.01)
+            .unwrap()
+            .final_drive,
+        6.50
+    );
+    assert_eq!(
+        allocate_total_ratios(&[8.0, 4.0], full, -f64::MAX, 0.01)
+            .unwrap()
+            .final_drive,
+        2.00
+    );
+    assert_eq!(
+        allocate_total_ratios(&[10.545, 5.2725], full, 3.515, 0.01)
+            .unwrap()
+            .final_drive,
+        3.51
+    );
+
+    let fine = allocate_total_ratios(
+        &[1.0 + 5e-10, 1.0 + 4e-10],
+        b(r(1.0, 1.0 + 1e-11, 1e-13), r(1.0, 1.0 + 1e-8, 1e-10)),
+        1.0 + 5e-12,
+        1e-9,
+    )
+    .unwrap();
+    assert!(fine.gears[0] > fine.gears[1]);
+
+    let overflow = allocate_total_ratios(
+        &[1.797e308, 1.2e308],
+        b(r(1e200, 1e200, 1e198), r(1.0e108, 2.0e108, 1e106)),
+        -f64::MAX,
+        0.01,
+    )
+    .unwrap();
+    assert_eq!(overflow.gears[0], 1.80e108);
+    assert!(overflow.gears[0] > overflow.gears[1]);
+
+    let subnormal = allocate_total_ratios(
+        &[2e-308, 1e-308],
+        b(r(1e-154, 1e-154, 1e-156), r(1e-154, 2e-154, 1e-156)),
+        1e-154,
+        1e-6,
+    )
+    .unwrap();
+    assert!(subnormal.gears[0] > subnormal.gears[1]);
+    assert!(allocate_total_ratios(
+        &[3.0, 2.0, 1.0],
+        b(r(2.0, 2.0, 0.01), r(1.0, 1.01, 0.01)),
+        2.0,
+        0.5
+    )
+    .is_none());
+}

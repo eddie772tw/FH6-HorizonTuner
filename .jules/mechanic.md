@@ -104,3 +104,8 @@
 **物理洞察 (Physics Learning):** 在 Drift 聯合求解器（`aego-drift-working/v1`）中，`solve_candidate` 原以 `.find_map()` 在 `round()` 落入輪速容差時提前截斷，未比較相異的相鄰 `floor()`/`ceil()` 主檔格點；於 $1/g$ 凸性低齒比區間（如 `40 km/h`、`ideal_tick = 20.49`）或鎖定終傳比齒形對齊（如 `fd = 3.36`、`ideal_tick = 183.222`）下，相鄰進位格點能同時滿足硬約束並取得更低速度誤差與齒形誤差。此外，`ticks` 與 `respects_hard_targets::grid` 未強制 `round(100v) >= 1`，使小於 `1e-9` 的正範圍被映射為 `0.00` 格點，在非主檔產出 `0.0` 齒比並因 `score = +INFINITY` 缺少 `score.is_finite()` 防護而獲 `best.is_none()` 接納；`rpm_upper_tick` 先乘 `wheel_speed_kmh * 1000.0 * fd` 亦會在極大有限速域先溢位為 `+INFINITY` 而誤報 `unavailable`。
 **行動 (Action):** `drift.rs` 於 `solve_candidate` 完整評估 `primary` 與相異 `secondary` 主檔格點並強制 `score.is_finite()`；`ticks` 與 `respects_hard_targets` 全面強制 `round(100v) >= 1` 及 `status` 閉包；`rpm_upper_tick` 改寫為 `((usable_limit_rpm + 1e-7) / target.wheel_speed_kmh) * (circumference * 6.0 / fd)` 消除中間分母溢位；並於 `adjusted_diagnostics` 清除殘留 `reason` 與補齊缺省 `interpolatedShapePrior` 時之狀態契約。
 **署名:** Mechanic as Antigravity
+
+## 2026-11-28 - 齒比網格分配器偏好排序非遞移、邊界投影與乘積溢位閉包
+**物理洞察 (Physics Learning):** 在 `gearing::allocation::allocate_total_ratios` 中，直接對 `(a - preferred_fd).abs() - (b - preferred_fd).abs()` 使用固定 `1e-12` 模糊門檻排序，會在 `step <= 1e-12` 時破壞遞移性或在 `preferred_fd = ±f64::MAX` 與大尺度下觸發 `∞ - ∞ = NaN` 造成 `sort_by` panic，且 `preferred_fd = 1e20` 時因 53-bit 尾數吸收誤選最小終傳比；此外 `rounded` 未鉗位至 `[0, gear_count]` 導致跨度臨界車型於端點誤差可接受時誤拒，`min + index * step` 亦會在如 `[2.20, 6.10, 0.01]` 處越界 `6.1000000000000005`，且 `gear * final_drive / target` 在乘積溢位或次正規數下會誤判或觸發 `NaN` 繞過。
+**行動 (Action):** 將 `preferred_fd` 序等價投影至 `[fd_range.min, fd_range.max]` 並於無因次格點空間（含半格點平手對齊）建立全序比較；透過 `grid_count`/`grid_value`/`nearest_grid_point` 強制輸出落於合法閉區間內；以整數索引與浮點雙重驗證遞減性，並透過 `product.is_normal()` 分流與正向有限閉包條件消除溢位與次正規誤差。
+**署名:** Mechanic as Antigravity
