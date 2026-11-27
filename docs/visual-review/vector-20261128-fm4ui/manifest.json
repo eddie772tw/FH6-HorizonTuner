@@ -1,0 +1,97 @@
+{
+  "target": "hud_overlay/fm4ui/index.html",
+  "renderer": "hud_overlay/fm4ui/index.html -> HUDCore.handleMessage",
+  "capturedAt": "2026-11-27T21:14:58.613Z",
+  "baseCommit": "9df8018f",
+  "browser": "151.0.7922.34",
+  "platform": "win32",
+  "background": "#0b111b (neutral dark composite backdrop for transparent HUD canvas)",
+  "telemetrySource": "Synthetic canonical frames dispatched via HUDCore.handleMessage",
+  "scopeNote": "Element clip of #fm4_reCanvas with 20px margin in 1280x720 fixture viewport; live game & native Windows overlay not tested here.",
+  "captures": [
+    {
+      "file": "fm4ui-dpr1-highspeed.png",
+      "description": "DPR 1 · 283×283 基準聯合縮放（8500 RPM 表盤、6400 RPM 連續掃掠弧與指針、214 KM/H、Gear 4）",
+      "viewport": "1280x720",
+      "dpr": 1,
+      "scaleSetting": 1,
+      "glowIntensity": 1,
+      "hudScale": 1.0499999999999998,
+      "canvas": {
+        "width": 283,
+        "height": 283,
+        "hudScale": 1.0499999999999998,
+        "cssRect": {
+          "x": 966.5,
+          "y": 406.5,
+          "width": 283.5,
+          "height": 283.5
+        }
+      },
+      "clipPaddingPx": 20
+    },
+    {
+      "file": "fm4ui-dpr2-redline.png",
+      "description": "DPR 2 · 567×567 HiDPI 紅線發光警示（9200 RPM 表盤、9150 RPM 紅線發光指針、298 KM/H、Gear 6）",
+      "viewport": "1280x720",
+      "dpr": 2,
+      "scaleSetting": 1,
+      "glowIntensity": 1,
+      "hudScale": 1.0499999999999998,
+      "canvas": {
+        "width": 567,
+        "height": 567,
+        "hudScale": 1.0499999999999998,
+        "cssRect": {
+          "x": 966.5,
+          "y": 406.5,
+          "width": 283.5,
+          "height": 283.5
+        }
+      },
+      "clipPaddingPx": 20
+    },
+    {
+      "file": "fm4ui-dpr2-mph-neutral.png",
+      "description": "DPR 2 · 567×567 高轉表盤與 MPH/空檔/零速（17500 RPM 表盤 0–18 刻度、3800 RPM、0 MPH、Gear N）",
+      "viewport": "1280x720",
+      "dpr": 2,
+      "scaleSetting": 1,
+      "glowIntensity": 1,
+      "hudScale": 1.0499999999999998,
+      "canvas": {
+        "width": 567,
+        "height": 567,
+        "hudScale": 1.0499999999999998,
+        "cssRect": {
+          "x": 966.5,
+          "y": 406.5,
+          "width": 283.5,
+          "height": 283.5
+        }
+      },
+      "clipPaddingPx": 20
+    },
+    {
+      "file": "fm4ui-dpr2-scale15-noglow.png",
+      "description": "DPR 2 · scale=1.5 聯合縮放 3.15× 鉗位至 3.0×（810×810）+ glowIntensity=0 無發光對照（7150 RPM 紅線、46 KM/H、Gear R）",
+      "viewport": "1280x720",
+      "dpr": 2,
+      "scaleSetting": 1.5,
+      "glowIntensity": 0,
+      "hudScale": 1.5749999999999997,
+      "canvas": {
+        "width": 810,
+        "height": 810,
+        "hudScale": 1.5749999999999997,
+        "cssRect": {
+          "x": 824.75,
+          "y": 264.75,
+          "width": 425.25,
+          "height": 425.25
+        }
+      },
+      "clipPaddingPx": 20
+    }
+  ]
+}

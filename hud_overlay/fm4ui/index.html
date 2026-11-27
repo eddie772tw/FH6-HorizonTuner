@@ -26,10 +26,10 @@
         (function() {
             var canvas = document.getElementById('fm4_reCanvas');
             var ctx = canvas ? canvas.getContext('2d') : null;
-            var images = {};
-            var loadedCount = 0;
-            var totalImages = 0;
-            var isReady = false;
+            var SIZE = 270, CX = 135, CY = 135, START_A = 91.4 * Math.PI / 180, SWEEP_A = 228.4 * Math.PI / 180;
+            var MAX_DRAW = { rpm_16500: 18000, rpm_14200: 16000, rpm_12100: 14000, rpm_10300: 12000, rpm_9400: 12000, rpm_8800: 10000, rpm_8000: 10000, rpm_6400: 8000, rpm_6200: 7000, rpm_4600: 6000, rpm_3300: 5000 };
+            var TICK_INNER = [111, 114, 117], TICK_WIDTH = [3, 2, 1.5], pixelRatio = 1, lastPixelSize = SIZE, hudScale = 1, destroyed = false, fontsReady = false;
+            var dialCanvas = null, dialCtx = null, cachedFace = '', cachedDialSize = 0, cachedBaseReady = false, cachedFontsReady = false, sweepRafId = null, sweepTimerId = null, liveData = null, lastDisplayData = { rpm: 0, maxRpm: 8000, speed: 0, gear: 11 };
 
             var rpm_bands = [
                 { minimum: 17000, face: "rpm_16500", frame_rate: 0.01285 },
@@ -57,207 +57,72 @@
                 return fallback_gauge;
             }
 
-            function gearAssetKey(label) {
-                if (label === 'R') return 'gear_R';
-                if (label === 'N') return 'gear_N';
-                var g = parseInt(label, 10);
-                if (!isNaN(g) && g >= 1 && g <= 9) return 'gear_' + g;
-                return null;
+            var isMetricUnit = true, baseImg = new Image();
+            baseImg.onload = function() { if (!destroyed) renderFM4RE(lastDisplayData); }; baseImg.src = './assets/img/background/background.png';
+            function finiteOr(v, fb) { var n = Number(v); return Number.isFinite(n) ? n : fb; }
+            function formatGear(g) { if (g === undefined) return '1'; if (g === 0 || g === '0' || g === 'R') return 'R'; if (g === 11 || g === '11' || g === 'N' || g === null) return 'N'; var n = Number(g); return Number.isInteger(n) && n >= 1 && n <= 10 ? String(n) : 'N'; }
+            function syncUnit(d, p) { isMetricUnit = d && d.displayUnits && d.displayUnits.speed ? d.displayUnits.speed !== 'mph' : (p && typeof p.isMetric === 'boolean' ? p.isMetric : (p && p.unit ? p.unit !== 'mph' : isMetricUnit)); }
+            function resolveGlowRadius(base) { return base > 0 ? base * pixelRatio * clamp(finiteOr(window._currentGlowIntensity, 1), 0, 2) : 0; }
+            function resolveSpeed(d) { var mps = finiteOr(d.SpeedMetersPerSecond, 0); return Math.max(0, finiteOr(isMetricUnit ? (d.speed_kmh !== undefined ? d.speed_kmh : (d.speed !== undefined ? d.speed : mps * 3.6)) : (d.speed_mph !== undefined ? d.speed_mph : (d.speed_kmh !== undefined ? Number(d.speed_kmh) * 0.621371 : (d.speed !== undefined ? Number(d.speed) * 0.621371 : mps * 2.23694))), 0)); }
+            function syncBackingStore() {
+                if (!canvas || !ctx) return;
+                var dpr = finiteOr(window.devicePixelRatio, 1), next = Math.max(1, Math.round(SIZE * clamp((dpr > 0 ? dpr : 1) * Math.max(1, finiteOr(hudScale, 1)), 1, 3)));
+                if (canvas.width !== next || canvas.height !== next) { canvas.width = next; canvas.height = next; } lastPixelSize = canvas.width || next; pixelRatio = lastPixelSize / SIZE;
             }
-
-            // Preload asset map
-            var assetMap = {
-                base: "./assets/img/background/background.png"
-            };
-
-
-
-
-
-            var keys = Object.keys(assetMap);
-            totalImages = keys.length;
-
-            keys.forEach(function(key) {
-                var img = new Image();
-                img.onload = function() {
-                    images[key] = img;
-                    loadedCount++;
-                    if (loadedCount >= totalImages) isReady = true;
-                };
-                img.onerror = function() {
-                    loadedCount++;
-                    if (loadedCount >= totalImages) isReady = true;
-                };
-                img.src = assetMap[key];
-            });
-
-            var showUnits = true;
-            var isMetricUnit = true;
-
-            window.renderFM4RE = function(data) {
-                if (!ctx || !isReady) return;
-                ctx.clearRect(0, 0, 270, 270);
-
-                var maxRpm = data.maxRpm || data.max_rpm || 8000;
-                var rpm = data.rpm || 0;
-                var mps = data.SpeedMetersPerSecond || 0;
-                var speed = isMetricUnit ? (data.speed_kmh || data.speed || mps * 3.6) : (data.speed_mph || mps * 2.23694);
-
-                var gearVal = data.gear;
-                var gearLabel = gearVal === 0 ? 'R' : (gearVal === 11 ? 'N' : (gearVal !== undefined ? String(gearVal) : '1'));
-
-                var gauge = selectGauge(Math.max(0, maxRpm));
-                var maxFrames = 269;
-
-                var startAngle = 91.4 * Math.PI / 180;
-                var sweepAngle = 228.4 * Math.PI / 180;
-                var cx = 135;
-                var cy = 135;
-
-                // 2. Draw base frame
-                if (images["base"]) ctx.drawImage(images["base"], 0, 0, 270, 270);
-
-                // 1. Draw gauge face (ticks, labels, redline)
-                ctx.save();
-                ctx.font = 'bold 15px ForzaFont, Arial, sans-serif';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
-                ctx.shadowBlur = 2;
-
-                var maxDrawRpm = 10000; // default for 8000
-                if (gauge.face === "rpm_16500") maxDrawRpm = 18000;
-                else if (gauge.face === "rpm_14200") maxDrawRpm = 16000;
-                else if (gauge.face === "rpm_12100") maxDrawRpm = 14000;
-                else if (gauge.face === "rpm_10300") maxDrawRpm = 12000;
-                else if (gauge.face === "rpm_9400") maxDrawRpm = 12000;
-                else if (gauge.face === "rpm_8800") maxDrawRpm = 10000;
-                else if (gauge.face === "rpm_8000") maxDrawRpm = 10000;
-                else if (gauge.face === "rpm_6400") maxDrawRpm = 8000;
-                else if (gauge.face === "rpm_6200") maxDrawRpm = 7000;
-                else if (gauge.face === "rpm_4600") maxDrawRpm = 6000;
-                else if (gauge.face === "rpm_3300") maxDrawRpm = 5000;
-
-                for (var r = 0; r <= maxDrawRpm; r += 250) {
-                    var frame = Math.round(r * gauge.frame_rate);
-                    if (frame > maxFrames) continue;
-
-                    var angle = startAngle + (frame / maxFrames) * sweepAngle;
-
-                    var isMajor = r % 1000 === 0;
-                    var isMedium = r % 500 === 0 && !isMajor;
-                    var isLabel = r % 2000 === 0;
-
-                    if (gauge.face === "rpm_16500" || gauge.face === "rpm_14200" || gauge.face === "rpm_12100") {
-                        isLabel = r % 3000 === 0;
+            function drawDialFace(target, gauge, baseReady) {
+                if (baseReady) target.drawImage(baseImg, 0, 0, SIZE, SIZE);
+                target.font = 'bold 15px ForzaFont, Arial, sans-serif'; target.textAlign = 'center'; target.textBaseline = 'middle'; target.shadowColor = 'rgba(0, 0, 0, 0.5)'; target.shadowBlur = 2 * pixelRatio;
+                var maxDrawRpm = MAX_DRAW[gauge.face] || 10000, maxFrames = 269, labelStep = (gauge.face === 'rpm_16500' || gauge.face === 'rpm_14200' || gauge.face === 'rpm_12100') ? 3000 : 2000;
+                for (var pass = 0; pass < 6; pass++) {
+                    var isRedPass = pass >= 3, tier = pass % 3, hasSeg = false; target.beginPath();
+                    for (var r = 0; r <= maxDrawRpm; r += 250) {
+                        var frame = r * gauge.frame_rate;
+                        if (frame > maxFrames || (r % 1000 === 0 ? 0 : (r % 500 === 0 ? 1 : 2)) !== tier || (r >= gauge.minimum) !== isRedPass) continue;
+                        var a = START_A + (frame / maxFrames) * SWEEP_A, cos = Math.cos(a), sin = Math.sin(a);
+                        target.moveTo(CX + TICK_INNER[tier] * cos, CY + TICK_INNER[tier] * sin); target.lineTo(CX + 120 * cos, CY + 120 * sin); hasSeg = true;
                     }
-
-                    var isRedline = r >= gauge.minimum;
-
-                    ctx.beginPath();
-                    var r1 = isMajor ? 111 : (isMedium ? 114 : 117);
-                    var r2 = 120;
-                    ctx.moveTo(cx + r1 * Math.cos(angle), cy + r1 * Math.sin(angle));
-                    ctx.lineTo(cx + r2 * Math.cos(angle), cy + r2 * Math.sin(angle));
-
-                    ctx.strokeStyle = isRedline ? '#c00' : 'rgba(255, 255, 255, 0.7)';
-                    ctx.lineWidth = isMajor ? 3 : (isMedium ? 2 : 1.5);
-                    ctx.stroke();
-
-                    if (isLabel) {
-                        var lr = 95;
-                        ctx.fillStyle = '#ffffff';
-                        ctx.fillText((r / 1000).toString(), cx + lr * Math.cos(angle), cy + lr * Math.sin(angle));
-                    }
+                    if (hasSeg) { target.strokeStyle = isRedPass ? '#c00' : 'rgba(255, 255, 255, 0.7)'; target.lineWidth = TICK_WIDTH[tier]; target.stroke(); }
                 }
-
-                var redlineStartF = Math.round(gauge.minimum * gauge.frame_rate);
-                var redlineStartA = startAngle + (redlineStartF / maxFrames) * sweepAngle;
-                var redlineEndA = startAngle + sweepAngle;
-
-                if (redlineStartF <= maxFrames) {
-                    ctx.beginPath();
-                    ctx.arc(cx, cy, 115, redlineStartA, redlineEndA);
-                    ctx.strokeStyle = '#c00';
-                    ctx.lineWidth = 6;
-                    ctx.stroke();
-                }
-                ctx.restore();
-
-                // 3. Draw gear
-                ctx.save();
-                ctx.font = 'bold 50px ForzaGear, Arial, sans-serif';
-                ctx.fillStyle = '#ffffff';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
-                ctx.shadowBlur = 4;
-                ctx.fillText(gearLabel, 139.5, 106);
-                ctx.restore();
-
-                // 4. Draw RPM rev needle and the sweeping arc
-                var rFrame = Math.round(Math.max(0, rpm) * gauge.frame_rate);
-                var nAngle = startAngle + (Math.min(rFrame, maxFrames) / maxFrames) * sweepAngle;
-
-                // Draw the sweeping arc that fills up to the needle
-                ctx.save();
-                ctx.beginPath();
-                ctx.arc(cx, cy, 115, startAngle, nAngle);
-                ctx.strokeStyle = '#cccccc';
-                ctx.lineWidth = 8;
-                ctx.stroke();
-                ctx.restore();
-
-                // Draw the needle head
-                ctx.save();
-                ctx.translate(cx, cy);
-                ctx.rotate(nAngle);
-                ctx.beginPath();
-                ctx.moveTo(106, -3.5);
-                ctx.lineTo(125, -2);
-                ctx.lineTo(125, 2);
-                ctx.lineTo(106, 3.5);
-                ctx.closePath();
-                ctx.fillStyle = '#d00';
-                ctx.fill();
-                ctx.restore();
-
-                // 5. Draw speed
-                ctx.save();
-                ctx.font = 'bold 42px ForzaFont, Arial, sans-serif';
-                ctx.fillStyle = '#ffffff';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
-                ctx.shadowBlur = 4;
-                ctx.fillText(Math.floor(Math.max(0, speed)).toString(), 141, 186);
-                ctx.restore();
-
-                // 6. Draw unit label
-                if (showUnits) {
-                    ctx.save();
-                    ctx.font = 'bold 11px ForzaGear, Arial, sans-serif';
-                    ctx.fillStyle = 'rgba(255, 255, 255, 0.72)';
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'middle';
-                    ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
-                    ctx.shadowBlur = 4;
-                    ctx.fillText(isMetricUnit ? 'KM/H' : 'MPH', 135, 213);
-                    ctx.restore();
-                }
+                target.fillStyle = '#ffffff';
+                for (var lr = 0; lr <= maxDrawRpm; lr += labelStep) { var lf = lr * gauge.frame_rate; if (lf <= maxFrames) target.fillText(String(lr / 1000), CX + 95 * Math.cos(START_A + (lf / maxFrames) * SWEEP_A), CY + 95 * Math.sin(START_A + (lf / maxFrames) * SWEEP_A)); }
+                var redStartF = gauge.minimum * gauge.frame_rate;
+                if (redStartF <= maxFrames) { target.beginPath(); target.arc(CX, CY, 115, START_A + (redStartF / maxFrames) * SWEEP_A, START_A + SWEEP_A); target.strokeStyle = '#c00'; target.lineWidth = 6; target.stroke(); }
+                target.shadowBlur = 0;
             }
+            function ensureDialCache(gauge) {
+                var baseReady = Boolean(baseImg.complete && baseImg.naturalWidth > 0);
+                if (!dialCanvas && typeof document.createElement === 'function') { dialCanvas = document.createElement('canvas'); dialCtx = dialCanvas && dialCanvas.getContext ? dialCanvas.getContext('2d') : null; }
+                if (!dialCtx) { drawDialFace(ctx, gauge, baseReady); return false; }
+                if (cachedFace !== gauge.face || cachedDialSize !== lastPixelSize || cachedBaseReady !== baseReady || cachedFontsReady !== fontsReady) {
+                    if (dialCanvas.width !== lastPixelSize || dialCanvas.height !== lastPixelSize) { dialCanvas.width = lastPixelSize; dialCanvas.height = lastPixelSize; }
+                    dialCtx.save(); try { dialCtx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0); dialCtx.clearRect(0, 0, SIZE, SIZE); drawDialFace(dialCtx, gauge, baseReady); cachedFace = gauge.face; cachedDialSize = lastPixelSize; cachedBaseReady = baseReady; cachedFontsReady = fontsReady; } finally { dialCtx.restore(); }
+                } return true;
+            }
+            function renderFM4RE(data) {
+                if (destroyed || !ctx) return;
+                lastDisplayData = data || {}; syncBackingStore(); ctx.save();
+                try {
+                    ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0); ctx.shadowBlur = 0; ctx.shadowColor = 'transparent'; ctx.globalAlpha = 1; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                    var maxRpm = Math.max(0, finiteOr(lastDisplayData.maxRpm !== undefined ? lastDisplayData.maxRpm : lastDisplayData.max_rpm, 8000)), rpm = Math.max(0, finiteOr(lastDisplayData.rpm, 0)), gauge = selectGauge(maxRpm), maxFrames = 269;
+                    ctx.clearRect(0, 0, SIZE, SIZE); if (ensureDialCache(gauge)) ctx.drawImage(dialCanvas, 0, 0, SIZE, SIZE);
+                    ctx.fillStyle = '#ffffff'; ctx.shadowColor = 'rgba(0, 0, 0, 0.8)'; ctx.shadowBlur = 4 * pixelRatio; ctx.font = 'bold 50px ForzaGear, Arial, sans-serif'; ctx.fillText(formatGear(lastDisplayData.gear), 139.5, 106);
+                    var rFrame = Math.min(maxFrames, rpm * gauge.frame_rate), nAngle = START_A + (rFrame / maxFrames) * SWEEP_A;
+                    if (rFrame > 0) { ctx.shadowBlur = 0; ctx.beginPath(); ctx.arc(CX, CY, 115, START_A, nAngle); ctx.strokeStyle = '#cccccc'; ctx.lineWidth = 8; ctx.stroke(); }
+                    ctx.save(); ctx.translate(CX, CY); ctx.rotate(nAngle); ctx.shadowColor = 'rgba(221, 0, 0, 0.85)'; ctx.shadowBlur = resolveGlowRadius(rpm >= gauge.minimum ? 8 : 3);
+                    ctx.beginPath(); ctx.moveTo(106, -3.5); ctx.lineTo(125, -2); ctx.lineTo(125, 2); ctx.lineTo(106, 3.5); ctx.closePath(); ctx.fillStyle = '#d00'; ctx.fill(); ctx.restore();
+                    ctx.fillStyle = '#ffffff'; ctx.shadowColor = 'rgba(0, 0, 0, 0.8)'; ctx.shadowBlur = 4 * pixelRatio; ctx.font = 'bold 42px ForzaFont, Arial, sans-serif'; ctx.fillText(String(Math.floor(resolveSpeed(lastDisplayData))), 141, 186);
+                    ctx.font = 'bold 11px ForzaGear, Arial, sans-serif'; ctx.fillStyle = 'rgba(255, 255, 255, 0.72)'; ctx.fillText(isMetricUnit ? 'KM/H' : 'MPH', 135, 213);
+                } finally { ctx.restore(); }
+            } window.renderFM4RE = renderFM4RE;
 
             var sweepActive = false;
+            function stopSweep() { if (sweepTimerId !== null) { clearTimeout(sweepTimerId); sweepTimerId = null; } if (sweepRafId !== null) { cancelAnimationFrame(sweepRafId); sweepRafId = null; } sweepActive = false; }
             function triggerSweep() {
-                if (sweepActive) return;
-                sweepActive = true;
-                var startTime = performance.now();
-                var duration = 1200;
-                var maxRpm = 8000;
-
+                if (destroyed || sweepActive) return;
+                stopSweep(); sweepActive = true; var startTime = performance.now(), duration = 1200, maxRpm = 8000;
                 function animate(now) {
-                    var elapsed = now - startTime;
-                    var progress = Math.min(1.0, elapsed / duration);
+                    if (destroyed) return;
+                    var progress = Math.min(1.0, Math.max(0, now - startTime) / duration);
                     var mockRpm = 0;
                     if (progress < 0.5) {
                         var p = progress / 0.5;
@@ -274,38 +139,25 @@
                         gear: 3
                     });
 
-                    if (progress < 1.0) {
-                        requestAnimationFrame(animate);
-                    } else {
-                        sweepActive = false;
-                    }
+                    if (progress < 1.0) sweepRafId = requestAnimationFrame(animate);
+                    else { sweepActive = false; sweepRafId = null; if (liveData) renderFM4RE(liveData); }
                 }
-                requestAnimationFrame(animate);
+                sweepRafId = requestAnimationFrame(animate);
             }
-
+            function onResize() { if (!destroyed) renderFM4RE(lastDisplayData); }
+            function onPageHide(e) { if (!e || !e.persisted) destroy(); } function onMsg(e) { if (e && e.data && e.data.type === 'hud:destroy') destroy(); }
+            function destroy() { if (destroyed) return; destroyed = true; stopSweep(); window.removeEventListener('resize', onResize); window.removeEventListener('pagehide', onPageHide); window.removeEventListener('message', onMsg); }
+            window.addEventListener('resize', onResize); window.addEventListener('pagehide', onPageHide); window.addEventListener('message', onMsg);
+            if (document.fonts && typeof document.fonts.load === 'function') Promise.all([document.fonts.load('bold 42px ForzaFont'), document.fonts.load('bold 50px ForzaGear')]).then(function() { fontsReady = true; if (!destroyed) renderFM4RE(lastDisplayData); }).catch(function() {});
             HUDCore.registerStyle('fm4_re', {
-                containerId: 'fm4_reContainer',
-                scaleMultiplier: 1.4,
-                onInit: function(payload) {
-                    if (payload) {
-                        if (payload.isMetric !== undefined) isMetricUnit = payload.isMetric !== false;
-                    }
-                },
-                onElementsChange: function(elements) {
-                    var c = document.getElementById('fm4_reContainer');
-                    if (c) c.style.display = elements.showGauge === false ? 'none' : 'block';
-                },
-                onFrame: function(data, payload) {
-                    if (payload && payload.isMetric !== undefined) isMetricUnit = payload.isMetric !== false;
-                    if (!sweepActive) renderFM4RE(data);
-                },
-                onAnimate: function() {
-                    triggerSweep();
-                }
+                containerId: 'fm4_reContainer', scaleMultiplier: 1.4,
+                onScale: function(scale) { if (!destroyed) { hudScale = scale; renderFM4RE(lastDisplayData); } },
+                onInit: function(payload) { if (!destroyed) syncUnit(null, payload); },
+                onElementsChange: function(elements) { var c = !destroyed && document.getElementById('fm4_reContainer'); if (c) c.style.display = elements && elements.showGauge === false ? 'none' : 'block'; },
+                onFrame: function(data, payload) { if (destroyed) return; if (sweepTimerId !== null) { clearTimeout(sweepTimerId); sweepTimerId = null; } syncUnit(data, payload); liveData = data || {}; if (!sweepActive) renderFM4RE(liveData); },
+                onAnimate: function() { triggerSweep(); }
             });
-
-            HUDCore.init('fm4_re');
-            setTimeout(triggerSweep, 100);
+            HUDCore.init('fm4_re'); renderFM4RE(lastDisplayData); sweepTimerId = setTimeout(function() { sweepTimerId = null; triggerSweep(); }, 100);
         })();
     </script>
 </body>
