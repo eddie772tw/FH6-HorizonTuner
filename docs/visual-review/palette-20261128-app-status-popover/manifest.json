@@ -1,0 +1,178 @@
+{
+  "date": "2026-11-28",
+  "browser": "151.0.7922.34",
+  "viewport": "1280x720 and 320x800",
+  "reducedMotion": "reduce",
+  "dpr": 1,
+  "source": "frontend/dist via vite preview + Tauri dynamic port 8002 stub + mock /api/** routes + real lang/*.json dictionaries",
+  "cases": [
+    {
+      "core": "default",
+      "mode": "light",
+      "language": "en-us",
+      "width": 1280,
+      "openFile": "default-light-en-us-1280-popover-open.png",
+      "dismissFile": "default-light-en-us-1280-popover-dismissed-focus.png",
+      "openChecks": {
+        "hasDialogRole": true,
+        "hasTriggerHaspopup": true,
+        "hasTriggerControls": true,
+        "hasLabelledBy": true,
+        "hasDescribedBy": true,
+        "liveRegionText": "MCP Endpoint Notice: Current backend port: 8002",
+        "left": 828,
+        "right": 1188,
+        "width": 360,
+        "viewportWidth": 1280,
+        "withinViewport": true,
+        "docOverflowX": false
+      },
+      "dismissChecks": {
+        "activeIsTrigger": true,
+        "expandedAfterClose": "false",
+        "focusVisible": true
+      },
+      "errors": []
+    },
+    {
+      "core": "default",
+      "mode": "dark",
+      "language": "zh-tw",
+      "width": 320,
+      "openFile": "default-dark-zh-tw-320-popover-open.png",
+      "dismissFile": "default-dark-zh-tw-320-popover-dismissed-focus.png",
+      "openChecks": {
+        "hasDialogRole": true,
+        "hasTriggerHaspopup": true,
+        "hasTriggerControls": true,
+        "hasLabelledBy": true,
+        "hasDescribedBy": true,
+        "liveRegionText": "MCP 端點提示: 目前後端連接埠: 8002",
+        "left": 8,
+        "right": 312,
+        "width": 304,
+        "viewportWidth": 320,
+        "withinViewport": true,
+        "docOverflowX": false
+      },
+      "dismissChecks": {
+        "activeIsTrigger": true,
+        "expandedAfterClose": "false",
+        "focusVisible": true
+      },
+      "errors": []
+    },
+    {
+      "core": "swiss",
+      "mode": "light",
+      "language": "zh-tw",
+      "width": 1280,
+      "openFile": "swiss-light-zh-tw-1280-popover-open.png",
+      "dismissFile": "swiss-light-zh-tw-1280-popover-dismissed-focus.png",
+      "openChecks": {
+        "hasDialogRole": true,
+        "hasTriggerHaspopup": true,
+        "hasTriggerControls": true,
+        "hasLabelledBy": true,
+        "hasDescribedBy": true,
+        "liveRegionText": "MCP 端點提示: 目前後端連接埠: 8002",
+        "left": 808,
+        "right": 1168,
+        "width": 360,
+        "viewportWidth": 1280,
+        "withinViewport": true,
+        "docOverflowX": false
+      },
+      "dismissChecks": {
+        "activeIsTrigger": true,
+        "expandedAfterClose": "false",
+        "focusVisible": true
+      },
+      "errors": []
+    },
+    {
+      "core": "swiss",
+      "mode": "dark",
+      "language": "ja-jp",
+      "width": 1280,
+      "openFile": "swiss-dark-ja-jp-1280-popover-open.png",
+      "dismissFile": "swiss-dark-ja-jp-1280-popover-dismissed-focus.png",
+      "openChecks": {
+        "hasDialogRole": true,
+        "hasTriggerHaspopup": true,
+        "hasTriggerControls": true,
+        "hasLabelledBy": true,
+        "hasDescribedBy": true,
+        "liveRegionText": "MCP エンドポイント通知: 現在のバックエンドポート: 8002",
+        "left": 796,
+        "right": 1156,
+        "width": 360,
+        "viewportWidth": 1280,
+        "withinViewport": true,
+        "docOverflowX": false
+      },
+      "dismissChecks": {
+        "activeIsTrigger": true,
+        "expandedAfterClose": "false",
+        "focusVisible": true
+      },
+      "errors": []
+    },
+    {
+      "core": "rhine-lab",
+      "mode": "light",
+      "language": "ja-jp",
+      "width": 1280,
+      "openFile": "rhine-lab-light-ja-jp-1280-popover-open.png",
+      "dismissFile": "rhine-lab-light-ja-jp-1280-popover-dismissed-focus.png",
+      "openChecks": {
+        "hasDialogRole": true,
+        "hasTriggerHaspopup": true,
+        "hasTriggerControls": true,
+        "hasLabelledBy": true,
+        "hasDescribedBy": true,
+        "liveRegionText": "MCP エンドポイント通知: 現在のバックエンドポート: 8002",
+        "left": 797,
+        "right": 1157,
+        "width": 360,
+        "viewportWidth": 1280,
+        "withinViewport": true,
+        "docOverflowX": false
+      },
+      "dismissChecks": {
+        "activeIsTrigger": true,
+        "expandedAfterClose": "false",
+        "focusVisible": true
+      },
+      "errors": []
+    },
+    {
+      "core": "rhine-lab",
+      "mode": "dark",
+      "language": "en-us",
+      "width": 1280,
+      "openFile": "rhine-lab-dark-en-us-1280-popover-open.png",
+      "dismissFile": "rhine-lab-dark-en-us-1280-popover-dismissed-focus.png",
+      "openChecks": {
+        "hasDialogRole": true,
+        "hasTriggerHaspopup": true,
+        "hasTriggerControls": true,
+        "hasLabelledBy": true,
+        "hasDescribedBy": true,
+        "liveRegionText": "MCP Endpoint Notice: Current backend port: 8002",
+        "left": 821,
+        "right": 1181,
+        "width": 360,
+        "viewportWidth": 1280,
+        "withinViewport": true,
+        "docOverflowX": false
+      },
+      "dismissChecks": {
+        "activeIsTrigger": true,
+        "expandedAfterClose": "false",
+        "focusVisible": true
+      },
+      "errors": []
+    }
+  ]
+}

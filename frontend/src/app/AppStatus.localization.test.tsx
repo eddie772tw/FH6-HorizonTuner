@@ -115,7 +115,7 @@ describe('AppStatus localization & accessibility', () => {
     expect(mcpBtn.getAttribute('title')).toBe(dict['MCP Endpoint Notice']);
     expect(mcpBtn.getAttribute('aria-label')).toBe(`${dict['MCP']} :8002 — ${dict['MCP Endpoint Notice']}`);
 
-    const popover = host.querySelector<HTMLDivElement>('.popover[role="status"]')!;
+    const popover = host.querySelector<HTMLDivElement>('.popover[role="dialog"]')!;
     expect(popover).not.toBeNull();
     expect(popover.textContent).toContain(dict['MCP Endpoint Notice']);
     expect(popover.textContent).toContain(dict['Release Build could not use backend port 8001 and selected a dynamic port.']);
@@ -133,7 +133,7 @@ describe('AppStatus localization & accessibility', () => {
       openSettingsBtn!.click();
     });
     expect(onOpenMcp).toHaveBeenCalledTimes(1);
-    expect(host.querySelector('.popover[role="status"]')).toBeNull();
+    expect(host.querySelector('.popover[role="dialog"]')).toBeNull();
   });
 
   it('localizes all health states in zh-tw and ja-jp without raw English label leakage', async () => {
