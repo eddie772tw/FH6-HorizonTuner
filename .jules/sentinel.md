@@ -116,3 +116,9 @@
 **學習 (Learning):** 自製安全詞法掃描器一旦比真實瀏覽器 CSS Syntax Level 3 詞法狀態機少追蹤任何一種結構（如字串常值、跳脫字元或輸入換行正規化），就會形成解析器差異（Parser Differential），讓瀏覽器正常執行的規則在驗證器眼中被誤判為註解內部或不同詞元。此外，移除註解時若不輸出分隔空白，會意外將相鄰的識別字與函式名稱合併，破壞以單字邊界為基礎的規則防護。
 **預防 (Prevention):** 在 `validateCSS` 中先依 CSS Syntax Level 3 執行換行與 NUL 前置正規化並在剝離註解前先行阻斷 `</style`；於詞法掃描器同步維護字串（`"` / `'`）與反斜線跳脫狀態（含跨行 `\` 續行與未閉合字串拒絕），在結束 `/* ... */` 註解時一律輸出分隔空白 `' '` 防止詞元拼接，並對 `@\s*(?:charset|namespace)\b` 統一允許空白分隔，全面消弭解析器差異。
 **署名:** Sentinel as Antigravity
+
+## 2026-11-28 - HUD Manifest Root Containment, Symlink/Junction Blocking & Streaming Hash Bounds (CWE-22 / CWE-59 / CWE-400)
+**漏洞/脆弱點 (Vulnerability):** 後端伴侶服務 `backend-rust/src/companion.rs::CompanionService::generate_hud_manifest` 與 `collect_assets_recursively`（經由 `GET /api/hud/manifest` 觸發）原先具備三層相連風險：一、`generate_hud_manifest` 當 `<root>/hud_overlay` 不存在時會回退掃描 `../hud_overlay` 與目前工作目錄 `hud_overlay`，脫離資料根目錄邊界；二、`collect_assets_recursively` 直接以 `path.is_dir()`、`path.is_file()` 與 `fs::metadata` 遞迴掃描，未過濾符號連結與 Windows NTFS Junction 且無遞迴深度與數量上限，可能觸發任意檔案路徑/雜湊探測（CWE-22 / CWE-59）或循環連結堆疊溢位（DoS）；三、直接使用 `fs::read(&path)` 一次將任意大小檔案完整讀入記憶體計算 SHA-256，且 `strip_prefix` 失敗時透過 `unwrap_or_else` 直接回傳伺服器本機絕對路徑（CWE-400 / Information Disclosure）。
+**學習 (Learning):** 即使端點僅回傳相對路徑、SHA-256 雜湊與檔案大小而不直接回傳檔案內容，未受控的目錄遍歷與回退邏輯仍會將主機檔案系統結構、絕對路徑及大型/無窮資源耗盡暴露給呼叫端；此外，僅依賴 `Path::is_dir()` 會透明跟隨符號連結與 NTFS Junction 跳脫預期的資產沙盒根目錄，與 `storage::safe_path` 及 `mcp::service::walk_json` 的防禦標準產生落差。
+**預防 (Prevention):** 嚴格將 `generate_hud_manifest` 限定於已 `canonicalize()` 的 `<root>/hud_overlay` 沙盒內，徹底移除上層目錄與工作目錄回退；透過共用 `safe_hud_path` 在每一步遞迴前以 `fs::symlink_metadata` 拒絕所有符號連結／NTFS Junction 並以 `canonicalize().starts_with(base)` 鎖定包含邊界；強制設定最大遞迴深度（16）、最大檔案數（2048）與單檔 32 MiB 上限，搭配 8 KiB 堆疊緩衝區串流雜湊（`file.take(max_bytes + 1)`），且僅在 `strip_prefix` 成功時輸出相對路徑，落實縱深防禦（Defense in Depth）。
+**署名:** Sentinel as Antigravity

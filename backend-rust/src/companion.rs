@@ -9,6 +9,7 @@ use sha2::{Digest, Sha256};
 use std::{
     collections::HashMap,
     fs,
+    io::Read,
     path::{Path, PathBuf},
     sync::{
         atomic::{AtomicUsize, Ordering},
@@ -24,6 +25,9 @@ const PAIR_LOCKOUT_DURATION: Duration = Duration::from_secs(60);
 pub const MAX_PAIRED_DEVICES: usize = 32;
 const MAX_DEVICE_NAME_LEN: usize = 64;
 const MAX_DEVICE_ID_LEN: usize = 64;
+const MAX_HUD_DEPTH: usize = 16;
+const MAX_HUD_FILES: usize = 2048;
+const MAX_HUD_BYTES: u64 = 32 * 1024 * 1024;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct QrPayload {
@@ -381,23 +385,16 @@ impl CompanionService {
         }
     }
 
-    /// Scan `hud_overlay/` or provided root to compute SHA-256 for all HUD assets.
+    /// Scan `<root>/hud_overlay` within root containment to compute SHA-256 for user HUD assets.
     pub fn generate_hud_manifest(&self) -> Vec<HudManifestItem> {
         let mut manifest = Vec::new();
-        // Check potential HUD directories: <root>/hud_overlay or current dir
-        let candidates = [
-            self.root.join("hud_overlay"),
-            self.root.join("../hud_overlay"),
-            PathBuf::from("hud_overlay"),
-        ];
-
-        for hud_dir in &candidates {
-            if hud_dir.is_dir() {
-                collect_assets_recursively(hud_dir, hud_dir, &mut manifest);
-                break;
+        if let Ok(root) = self.root.canonicalize() {
+            if let Some((base, meta)) = safe_hud_path(&root.join("hud_overlay"), &root) {
+                if meta.is_dir() {
+                    collect_hud(&base, &base, 0, &mut manifest);
+                }
             }
         }
-
         manifest
     }
 
@@ -460,38 +457,65 @@ fn hostname_fallback() -> String {
         .unwrap_or_else(|_| "HorizonTuner-Host".into())
 }
 
-fn collect_assets_recursively(base: &Path, current: &Path, manifest: &mut Vec<HudManifestItem>) {
+fn safe_hud_path(path: &Path, root: &Path) -> Option<(PathBuf, fs::Metadata)> {
+    // Reject symlinks/junctions and enforce root containment (CWE-22 / CWE-59).
+    let meta = fs::symlink_metadata(path)
+        .ok()
+        .filter(|m| !m.file_type().is_symlink())?;
+    let resolved = path.canonicalize().ok().filter(|p| p.starts_with(root))?;
+    Some((resolved, meta))
+}
+
+fn hash_bounded_file(path: &Path) -> Option<(String, u64)> {
+    let file = fs::File::open(path).ok()?;
+    if !file.metadata().ok()?.is_file() {
+        return None;
+    }
+    let (mut r, mut h, mut b, mut len) =
+        (file.take(MAX_HUD_BYTES + 1), Sha256::new(), [0; 8192], 0);
+    while let Ok(n) = r.read(&mut b) {
+        if n == 0 {
+            let hex: String = h.finalize().iter().map(|x| format!("{x:02x}")).collect();
+            return Some((hex, len));
+        }
+        len += n as u64;
+        if len > MAX_HUD_BYTES {
+            return None;
+        }
+        h.update(&b[..n]);
+    }
+    None
+}
+
+fn collect_hud(base: &Path, current: &Path, depth: usize, manifest: &mut Vec<HudManifestItem>) {
+    if depth > MAX_HUD_DEPTH || manifest.len() >= MAX_HUD_FILES {
+        return;
+    }
     let Ok(entries) = fs::read_dir(current) else {
         return;
     };
     for entry in entries.flatten() {
+        if manifest.len() >= MAX_HUD_FILES {
+            break;
+        }
         let path = entry.path();
-        if path.is_dir() {
+        let Some((resolved, meta)) = safe_hud_path(&path, base) else {
+            continue;
+        };
+        if meta.is_dir() {
             if path
                 .file_name()
                 .is_some_and(|name| name != "tests" && name != "node_modules")
             {
-                collect_assets_recursively(base, &path, manifest);
+                collect_hud(base, &resolved, depth + 1, manifest);
             }
-        } else if path.is_file() {
-            if let Ok(metadata) = fs::metadata(&path) {
-                if let Ok(content) = fs::read(&path) {
-                    let mut hasher = Sha256::new();
-                    hasher.update(&content);
-                    let hash = hasher
-                        .finalize()
-                        .iter()
-                        .map(|b| format!("{:02x}", b))
-                        .collect::<String>();
-                    let rel_path = path
-                        .strip_prefix(base)
-                        .map(|p| p.to_string_lossy().replace('\\', "/"))
-                        .unwrap_or_else(|_| path.to_string_lossy().replace('\\', "/"));
-
+        } else if meta.is_file() && meta.len() <= MAX_HUD_BYTES {
+            if let Ok(rel) = resolved.strip_prefix(base) {
+                if let Some((hash, size_bytes)) = hash_bounded_file(&resolved) {
                     manifest.push(HudManifestItem {
-                        path: rel_path,
+                        path: rel.to_string_lossy().replace('\\', "/"),
                         sha256: hash,
-                        size_bytes: metadata.len(),
+                        size_bytes,
                     });
                 }
             }
