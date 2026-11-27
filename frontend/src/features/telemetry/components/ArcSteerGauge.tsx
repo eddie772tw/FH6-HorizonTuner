@@ -31,8 +31,8 @@ const ArcSteerGauge: React.FC<{ size?: number }> = React.memo(() => {
         degTextRef.current.style.color = Math.abs(deg) > 30 ? 'var(--secondary)' : 'var(--text-primary)';
       }
       if (hasSample.current && dirTextRef.current) {
-        if (Math.abs(steerRatio) < 0.02) setTelemetryText(dirTextRef.current, 'CENTER');
-        else setTelemetryText(dirTextRef.current, steerRatio < 0 ? 'LEFT' : 'RIGHT');
+        if (Math.abs(steerRatio) < 0.02) setTelemetryText(dirTextRef.current, t('CENTER'));
+        else setTelemetryText(dirTextRef.current, steerRatio < 0 ? t('LEFT') : t('RIGHT'));
       }
       if (!surface.sync()) return;
       const ctx = canvas.getContext('2d');
@@ -145,6 +145,7 @@ const ArcSteerGauge: React.FC<{ size?: number }> = React.memo(() => {
     };
 
     const stopPaint = paint.subscribe(() => drawGauge(lastSteer.current));
+    if (hasSample.current) drawGauge(lastSteer.current);
     telemetryEmitter.addEventListener('update', handleUpdate);
     return () => {
       stopPaint();
@@ -152,7 +153,7 @@ const ArcSteerGauge: React.FC<{ size?: number }> = React.memo(() => {
       stopThemeObserver();
       telemetryEmitter.removeEventListener('update', handleUpdate);
     };
-  }, [paint]);
+  }, [paint, t]);
 
   return (
     <div ref={containerRef} className="w-100 h-100 position-relative d-flex align-items-center justify-content-center p-1 overflow-hidden">

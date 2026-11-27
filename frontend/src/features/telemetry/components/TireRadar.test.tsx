@@ -8,7 +8,7 @@ import { telemetryEmitter } from '../../../hooks/useTelemetry';
 const settings = vi.hoisted(() => ({ celsius: false }));
 vi.mock('../../../hooks/useTelemetry', () => ({ telemetryEmitter: new EventTarget() }));
 vi.mock('../../../context/SettingsContext', () => ({
-  useSettings: () => ({ convertTemp: (value: number) => ({ value: settings.celsius ? (value - 32) * 5 / 9 : value }) }),
+  useSettings: () => ({ t: (s: string) => s, convertTemp: (value: number) => ({ value: settings.celsius ? (value - 32) * 5 / 9 : value }) }),
 }));
 
 it('redraws the latest tire sample after chart toggles and unit changes without another packet', async () => {

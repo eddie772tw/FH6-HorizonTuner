@@ -43,8 +43,6 @@ const VehicleDynamicsDisplay: React.FC = React.memo(() => {
   const peakTorqueRpmRef = useRef<HTMLDivElement>(null);
   const thirdStatLabelRef = useRef<HTMLSpanElement>(null);
   const topSpeedLabelRef = useRef<HTMLSpanElement>(null);
-  // 策略 C：用 ref 追蹤 EV 狀態，避免 useState 觸發 re-render
-  const isEvRef = useRef(false);
   const peakOutputRef = useRef<QualifiedOutputPeaks>(emptyQualifiedOutputPeaks());
   const previousCarRef = useRef<number | undefined>(undefined);
   const previousRaceRef = useRef<number | undefined>(undefined);
@@ -107,13 +105,7 @@ const VehicleDynamicsDisplay: React.FC = React.memo(() => {
       setTelemetryText(bestLapRef.current, formatTime(bestLap));
       setTelemetryText(racePositionRef.current, formatRacePosition(data.RacePosition));
 
-      // 策略 C：合併 EV 狀態偵測，只在狀態改變時更新 DOM label
-      if (isEV !== isEvRef.current) {
-        isEvRef.current = isEV;
-        if (boostOrRegenLabelRef.current) {
-          setTelemetryText(boostOrRegenLabelRef.current, isEV ? t("Regen") : t("Boost"));
-        }
-      }
+      setTelemetryText(boostOrRegenLabelRef.current, isEV ? t("Regen") : t("Boost"));
     };
 
     const handleUpdate = (e: Event) => {

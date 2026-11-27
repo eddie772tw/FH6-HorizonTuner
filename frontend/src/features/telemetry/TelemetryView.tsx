@@ -146,7 +146,7 @@ const TelemetryViewContent: React.FC<TelemetryViewContentProps> = ({
 
   const isRacing = telemetryData?.IsRaceOn === 1;
   const classDisplay = getCarClassBadgeText(telemetryData?.CarClass, telemetryData?.CarPerformanceIndex);
-  const displayCarName = carName || t("Unknown Car");
+  const displayCarName = carName && carName !== 'Unknown Car' ? carName : t("Unknown Car");
   const isEV = telemetryData?.EngineIdleRpm === 0;
   const hudStatusContent = (<>
     <span className="live-status-dot" aria-hidden="true" style={{ background: !isConnected ? 'var(--bs-secondary)' : isHudPaused ? 'var(--bs-warning)' : isRacing ? 'var(--bs-primary)' : 'var(--bs-secondary)' }} />

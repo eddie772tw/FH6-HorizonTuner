@@ -51,7 +51,7 @@ const TireRadar: React.FC<TireRadarProps> = React.memo(({ title, isLeft, tireIdx
   
   // 保存 DOM 的實體邏輯尺寸 (CSS 像素)
   const tempSizeRef = useRef({ w: 90, h: 28 });
-  const { convertTemp } = useSettings();
+  const { convertTemp, t } = useSettings();
 
   useEffect(() => {
     if (!renderCharts) {
@@ -446,12 +446,12 @@ const TireRadar: React.FC<TireRadarProps> = React.memo(({ title, isLeft, tireIdx
         {/* ANG & RAT 數據大字體標頭 */}
         <div className="d-flex flex-row align-items-center gap-3 flex-shrink-0 pt-1">
           <div className="d-flex flex-column align-items-start">
-            <span style={{ fontSize: '0.6rem', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--bs-secondary-color, rgba(108,117,125,0.85))', fontWeight: 600 }}>ANG</span>
+            <span title={t("Slip Angle")} style={{ fontSize: '0.6rem', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--bs-secondary-color, rgba(108,117,125,0.85))', fontWeight: 600 }}>{t("ANG")}</span>
             <span className="fw-bold font-monospace" ref={angRef} style={{ color: 'var(--text-primary)', fontSize: '1.45rem', lineHeight: 1.0 }}>0.00</span>
           </div>
           <div style={{ width: '1px', height: '26px', background: 'var(--divider)', flexShrink: 0 }} />
           <div className="d-flex flex-column align-items-start">
-            <span style={{ fontSize: '0.6rem', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--bs-secondary-color, rgba(108,117,125,0.85))', fontWeight: 600 }}>RAT</span>
+            <span title={t("Slip Ratio")} style={{ fontSize: '0.6rem', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--bs-secondary-color, rgba(108,117,125,0.85))', fontWeight: 600 }}>{t("RAT")}</span>
             <span className="fw-bold font-monospace" ref={ratioRef} style={{ color: 'var(--text-primary)', fontSize: '1.45rem', lineHeight: 1.0 }}>0.00</span>
           </div>
         </div>
