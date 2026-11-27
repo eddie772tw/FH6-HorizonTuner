@@ -37,7 +37,16 @@ fn within_relative_error(gear: f64, final_drive: f64, target: f64, max_error: f6
     let ratio = if product.is_normal() {
         product / target
     } else {
-        gear / (target / final_drive)
+        let (small, large) = if gear <= final_drive {
+            (gear, final_drive)
+        } else {
+            (final_drive, gear)
+        };
+        if !product.is_finite() {
+            (large / target) * small
+        } else {
+            (small / target) * large
+        }
     };
     ratio.is_finite() && (ratio - 1.0).abs() <= max_error + 1e-12
 }

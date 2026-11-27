@@ -193,3 +193,55 @@ fn allocation_enforces_grid_projection_total_order_and_overflow_closure() {
     )
     .is_none());
 }
+
+#[test]
+fn subnormal_product_with_large_final_drive_rejects_out_of_tolerance_ratios() {
+    let r = |min, max, step| RatioRange { min, max, step };
+    let b = |final_drive, gears| RatioBounds { final_drive, gears };
+    let t1 = 2.0e-308_f64;
+    let t2 = 9.65e-309_f64;
+    // True relative errors for final_drive = 1e14, gears = [2e-322, 1e-322] are ~1.1869% and ~2.3970% (> 1%)
+    let res = allocate_total_ratios(
+        &[t1, t2],
+        b(r(1e14, 1e14, 1e12), r(1e-322, 2e-322, 1e-322)),
+        1e14,
+        0.01,
+    );
+    assert!(
+        res.is_none(),
+        "expected rejection when true relative error > 1%, got {res:?}"
+    );
+
+    // Symmetric case: subnormal final_drive with large gear (> 1.0)
+    let sym_reject = allocate_total_ratios(
+        &[t1, t2],
+        b(r(1e-322, 1e-322, 1e-322), r(1e14, 2e14, 1e14)),
+        1e-322,
+        0.01,
+    );
+    assert!(
+        sym_reject.is_none(),
+        "expected rejection in symmetric subnormal final_drive case, got {sym_reject:?}"
+    );
+
+    // Exact acceptance case in subnormal product regime with large final_drive:
+    // 40 * 2^-1074 * 1e14 ≈ 1.9762625833649862e-308, 20 * 2^-1074 * 1e14 ≈ 9.881312916824931e-309
+    let exact_accept = allocate_total_ratios(
+        &[1.9762625833649862e-308, 9.881312916824931e-309],
+        b(r(1e14, 1e14, 1e12), r(1e-322, 2e-322, 1e-322)),
+        1e14,
+        1e-6,
+    )
+    .unwrap();
+    assert_eq!(exact_accept.final_drive, 1e14);
+    assert!(exact_accept.gears[0] > exact_accept.gears[1]);
+
+    // Overflow product rejection when true relative error exceeds tighter tolerance
+    let overflow_reject = allocate_total_ratios(
+        &[1.797e308, 1.2e308],
+        b(r(1e200, 1e200, 1e198), r(1.0e108, 2.0e108, 1e106)),
+        1e200,
+        0.001,
+    );
+    assert!(overflow_reject.is_none());
+}
