@@ -10,7 +10,7 @@ import * as histogramApi from '../../../utils/tireTemperatureHistogram';
 vi.mock('../../../hooks/useTelemetry', () => ({ telemetryEmitter: new EventTarget() }));
 const settings = vi.hoisted(() => ({ celsius: false }));
 vi.mock('../../../context/SettingsContext', () => ({
-  useSettings: () => ({ convertTemp: (value: number) => ({ value: settings.celsius ? (value - 32) * 5 / 9 : value }) }),
+  useSettings: () => ({ t: (s: string) => s, convertTemp: (value: number) => ({ value: settings.celsius ? (value - 32) * 5 / 9 : value }) }),
 }));
 
 afterEach(() => {
