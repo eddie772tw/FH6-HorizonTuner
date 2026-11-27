@@ -506,3 +506,44 @@ fn local_comparison_single_pass_preserves_time_fallback_uniqueness_and_gating() 
     );
     assert!((report["meanNormalizedAngleChange"].as_f64().unwrap() - 0.0).abs() < 1e-9);
 }
+
+#[test]
+fn road_summary_and_comparison_projection_preserve_fallback_and_parity() {
+    let dir = tempfile::tempdir().unwrap();
+    let db = Arc::new(TelemetryStore::new(&dir.path().join("t.sqlite")).unwrap());
+    let rs = RoadStore::new(dir.path().join("r.sqlite").to_string_lossy()).unwrap();
+    let mut svc = RoadService::new(db.clone(), rs);
+    for (sid, dt) in [("a1", 0.0), ("a2", 0.0), ("b1", 18.0)] {
+        db.create_session(sid, 42, "C", 3, 700, 0.0).unwrap();
+        let pts: Vec<_> = (0..26).map(|i| json!({"TimestampMS":i*100,"IsRaceOn":1,"LapNumber":0,"CurrentLap":i as f64*0.1,"LastLap":0,"time":i as f64*0.1,"CurrentRaceTime":i as f64*0.1+0.1,"SpeedMetersPerSecond":20.0,"PositionX":i as f64*2.0,"PositionY":0.0,"PositionZ":0.0,"AccelInput":100,"BrakeInput":0,"SteerInput":0,"TireTemp":([185.0+dt;4]),"SuspTravel":([0.5;4]),"TireSlipAngle":([0.1;4]),"TireSlipRatio":([0.1;4])})).collect();
+        db.insert_points_batch(sid, &pts).unwrap();
+    }
+    let conn = rusqlite::Connection::open(dir.path().join("t.sqlite")).unwrap();
+    conn.execute_batch("UPDATE telemetry_channels SET raw_json=NULL WHERE id=1;UPDATE telemetry_channels SET raw_json='{broken' WHERE id=2;UPDATE telemetry_channels SET raw_json=' 17 \n' WHERE id=3;UPDATE telemetry_channels SET raw_json='{\"\\u0074ime\":0.3,\"SpeedMetersPerSecond\":20.0,\"PositionX\":6.0,\"PositionY\":0.0,\"PositionZ\":0.0,\"TireTemp\":[185,185,185,185]}' WHERE id=4;").unwrap();
+    let id = json!({"ordinal":42,"performanceIndex":700,"drivetrain":1});
+    let st = svc.store.clone();
+    let put = |k, v| st.append(k, "w", &v, None).unwrap();
+    let wv = json!({"identity":id,"event":{"format":"sprint"}});
+    st.append("workflow", "w", &wv, Some("w")).unwrap();
+    let sa = put("setup", json!({"label":"A"}));
+    let sb = put("setup", json!({"label":"B","baselineSetupId":sa["id"]}));
+    let mut r = Vec::new();
+    for (s, u) in [("a1", &sa), ("a2", &sa), ("b1", &sb)] {
+        let d = json!({"sessionId":s,"setupId":u["id"],"identity":id});
+        r.push(put("run", d)["id"].clone());
+    }
+    svc.recover().unwrap();
+    let pt = |s| db.get_telemetry_points(s, None).unwrap();
+    let (fa, fa2, fb) = (pt("a1"), pt("a2"), pt("b1"));
+    let sum = st.list(Some("w"), Some("summary"), false).unwrap();
+    assert_eq!(sum[0]["observations"], summarize_road_observations(&fa));
+    let path = "/api/road/workflows/w/comparisons";
+    let q = json!({"baselineRunIds":[r[0], r[1]],"candidateRunIds":[r[2]]});
+    let res = svc.handle("POST", path, Some(&q)).unwrap();
+    assert_eq!(res["local"], local_comparison(&fa, &fb, false));
+    let c2 = local_comparison(&fa, &fa2, false);
+    assert_eq!(res["repetitionChecks"][0]["local"], c2);
+    conn.execute_batch("UPDATE telemetry_channels SET raw_json=x'FF' WHERE id=5")
+        .unwrap();
+    assert!(svc.handle("POST", path, Some(&q)).is_err());
+}

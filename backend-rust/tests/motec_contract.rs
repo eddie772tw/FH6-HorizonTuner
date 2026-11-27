@@ -187,3 +187,42 @@ fn motec_import_and_ldx_handle_extreme_lap_numbers_without_overflow() {
     let xml = motec::generate_ldx_xml(&laps, &pts);
     assert!(xml.contains("Id=\"Total Laps\" Value=\"1\""));
 }
+
+#[test]
+fn motec_api_projection_preserves_csv_ld_trim_aliases_fallback_and_errors() {
+    use fh6_backend::network::{ApiRequest, Backend};
+    let dir = tempfile::tempdir().unwrap();
+    let app = fh6_backend::app::App::new(dir.path()).unwrap();
+    let db = &app.database;
+    db.create_session("m", 42, "C", 3, 700, 0.0).unwrap();
+    let pts: Vec<_> = (0..5).map(|i| json!({"time":i as f64*0.25,"LapNumber":1,"CurrentLap":i as f64*0.25,"SpeedMetersPerSecond":30.0+i as f64,"CurrentEngineRpm":5000.0,"Gear":3,"AccelInput":200,"SteerInput":63.5,"PowerWatts":200000.0,"TorqueNewtons":400.0,"NormalizedSuspensionTravel":[0.2,0.3,0.4,0.5],"TireTemp":([185.0;4]),"PositionX":i as f64*10.0,"PositionY":1.0,"PositionZ":0.0})).collect();
+    db.insert_points_batch("m", &pts).unwrap();
+    let trim = json!({"trim_analysis":{"valid_start_time":0.0,"valid_end_time":1.0,"valid_lap_windows":[{"lap_number":1,"start_time":0.0,"end_time":0.8}],"trimmed_sample_count":4}});
+    db.set_session_metadata("m", &trim).unwrap();
+    let conn = rusqlite::Connection::open(dir.path().join("telemetry_sessions.db")).unwrap();
+    conn.execute_batch("UPDATE telemetry_channels SET raw_json=NULL WHERE id=1;UPDATE telemetry_channels SET raw_json='{broken' WHERE id=2;UPDATE telemetry_channels SET raw_json='{\"\\u0074ime\":0.5,\"LapNumber\":1,\"PowerWatts\":null,\"Power\":372850.0,\"steer_pct\":null,\"SteerInput\":63.5,\"SuspTravel\":[0.4,0.5,0.6,0.7]}' WHERE id=3;UPDATE telemetry_channels SET raw_json=' 17 \n' WHERE id=4;").unwrap();
+    let session = db.get_session("m").unwrap().unwrap();
+    let full = db.get_telemetry_points("m", None).unwrap();
+    let req = |q: &[(&str, &str)]| {
+        app.request(ApiRequest {
+            method: "GET".into(),
+            path: "/api/analysis/export/motec/m".into(),
+            query: q.iter().map(|&(k, v)| (k.into(), v.into())).collect(),
+            headers: Default::default(),
+            body: vec![],
+            upload_filename: None,
+        })
+    };
+    for (q, pts) in [(&[][..], &full[..3]), (&[("raw", "true")][..], &full[..])] {
+        assert_eq!(req(q).unwrap().body, motec::export(&session, pts).unwrap());
+    }
+    let cur = std::io::Cursor::new(req(&[("format", "ld")]).unwrap().body);
+    let mut zip = zip::ZipArchive::new(cur).unwrap();
+    let exp_ld = motec::export_ld(&session, &full[..3], &[]).unwrap().0;
+    let mut got_ld = Vec::new();
+    std::io::Read::read_to_end(&mut zip.by_name("m.ld").unwrap(), &mut got_ld).unwrap();
+    assert_eq!(got_ld, exp_ld);
+    conn.execute_batch("UPDATE telemetry_channels SET raw_json=x'FF' WHERE id=5")
+        .unwrap();
+    assert!(req(&[]).is_err() && req(&[("format", "ld")]).is_err());
+}

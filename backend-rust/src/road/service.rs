@@ -645,8 +645,14 @@ impl RoadService {
         reason: &str,
     ) -> ApiResult<Value> {
         let sid = run["sessionId"].as_str().unwrap_or("");
+        // [PERF] Project only the 25 fields consumed by road summary, lap summary, and race coverage.
+        static SUMMARY_CH: std::sync::LazyLock<std::collections::HashSet<String>> =
+            std::sync::LazyLock::new(|| {
+                "CurrentRaceTime sourceSchema TimestampMS time SpeedMetersPerSecond CurrentEngineRpm PowerWatts TorqueNewtons AccelerationX AccelerationY AccelerationZ AngularVelocityY AccelInput BrakeInput SteerInput ClutchInput HandBrakeInput TireTemp NormalizedSuspensionTravel SuspTravel TireSlipRatio TireSlipAngle LapNumber LastLap CurrentLap"
+                    .split_whitespace().map(str::to_owned).collect()
+            });
         let points = database
-            .get_telemetry_points(sid, None)
+            .get_telemetry_points_filtered(sid, None, 1, Some(&SUMMARY_CH))
             .map_err(|e| ApiError::internal("Operation failed", e))?;
         let mut meta = database
             .get_session_metadata(sid)

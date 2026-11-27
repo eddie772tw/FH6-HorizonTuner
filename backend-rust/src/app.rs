@@ -573,11 +573,16 @@ impl App {
             .get("format")
             .map(|s| s.as_str())
             .unwrap_or("csv");
-        if !is_raw && format_param == "ld" {
-            let meta = self
-                .database
-                .get_session_metadata(&id)
-                .map_err(database_error)?;
+        let trim_meta = if !is_raw {
+            match self.database.get_session_metadata(&id) {
+                Ok(meta) => Some(meta),
+                Err(error) if format_param == "ld" => return Err(database_error(error)),
+                Err(_) => None,
+            }
+        } else {
+            None
+        };
+        if let (true, Some(meta)) = (format_param == "ld", &trim_meta) {
             if meta
                 .get("trim_analysis")
                 .and_then(|trim| trim.get("valid_lap_windows"))
@@ -594,51 +599,54 @@ impl App {
                 return Err(ApiError::invalid("Valid laps contain a telemetry gap; export CSV or select raw data instead of interpolating across the missing interval"));
             }
         }
+        // [PERF] Project only the 36 fields read by trim, MoTeC CSV/LD export, and LDX beacons.
+        static MOTEC_CH: std::sync::LazyLock<std::collections::HashSet<String>> =
+            std::sync::LazyLock::new(|| {
+                "time lap_distance DistanceTraveled LapNumber SpeedMetersPerSecond speed CurrentEngineRpm Gear AccelInput accel_pct BrakeInput brake_pct ClutchInput clutch_pct HandBrakeInput handbrake_pct steer_pct SteerInput AccelerationX AccelerationZ AccelerationY Boost Fuel PowerWatts Power TorqueNewtons Torque SuspTravel NormalizedSuspensionTravel SuspensionTravelMeters TireSlipAngle TireSlipRatio TireTemp PositionZ PositionX PositionY"
+                    .split_whitespace().map(str::to_owned).collect()
+            });
         let points = self
             .database
-            .get_telemetry_points(&id, None)
+            .get_telemetry_points_filtered(&id, None, 1, Some(&MOTEC_CH))
             .map_err(database_error)?;
         if points.is_empty() {
             return Ok(failure("No telemetry data points found in session"));
         }
-        let points = if !is_raw {
-            if let Ok(meta) = self.database.get_session_metadata(&id) {
-                if let Some(trim) = meta.get("trim_analysis") {
-                    let start = trim
-                        .get("valid_start_time")
-                        .and_then(Value::as_f64)
-                        .unwrap_or(0.0);
-                    let end = trim
-                        .get("valid_end_time")
-                        .and_then(Value::as_f64)
-                        .unwrap_or(f64::INFINITY);
-                    let filtered: Vec<Value> = points
-                        .into_iter()
-                        .filter(|p| {
-                            trim.get("trimmed_sample_count").and_then(Value::as_u64) != Some(0)
-                                && p.get("time").and_then(Value::as_f64).is_some_and(|t| {
-                                    t >= start
-                                        && t <= end
-                                        && trim
-                                            .get("valid_lap_windows")
-                                            .and_then(Value::as_array)
-                                            .is_none_or(|windows| {
-                                                windows.iter().any(|w| {
-                                                    w["start_time"]
-                                                        .as_f64()
-                                                        .zip(w["end_time"].as_f64())
-                                                        .is_some_and(|(s, e)| t >= s && t <= e)
-                                                })
-                                            })
-                                })
-                        })
-                        .collect();
-                    filtered
-                } else {
-                    points
-                }
+        let points = if let Some(trim) = trim_meta
+            .as_ref()
+            .and_then(|meta| meta.get("trim_analysis"))
+        {
+            if trim.get("trimmed_sample_count").and_then(Value::as_u64) == Some(0) {
+                Vec::new()
             } else {
+                let start = trim
+                    .get("valid_start_time")
+                    .and_then(Value::as_f64)
+                    .unwrap_or(0.0);
+                let end = trim
+                    .get("valid_end_time")
+                    .and_then(Value::as_f64)
+                    .unwrap_or(f64::INFINITY);
+                let windows: Option<Vec<(f64, f64)>> = trim
+                    .get("valid_lap_windows")
+                    .and_then(Value::as_array)
+                    .map(|ws| {
+                        ws.iter()
+                            .filter_map(|w| w["start_time"].as_f64().zip(w["end_time"].as_f64()))
+                            .collect()
+                    });
                 points
+                    .into_iter()
+                    .filter(|p| {
+                        p.get("time").and_then(Value::as_f64).is_some_and(|t| {
+                            t >= start
+                                && t <= end
+                                && windows
+                                    .as_ref()
+                                    .is_none_or(|ws| ws.iter().any(|&(s, e)| t >= s && t <= e))
+                        })
+                    })
+                    .collect()
             }
         } else {
             points

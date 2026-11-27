@@ -27,6 +27,17 @@ fn text_set(values: Vec<String>) -> Value {
     values.dedup();
     Value::Array(values.into_iter().map(Value::String).collect())
 }
+fn comparison_points(database: &TelemetryStore, session_id: &str) -> ApiResult<Vec<Value>> {
+    // [PERF] Project only the 12 fields read by local_comparison to skip unused V2 keys/arrays.
+    static CHANNELS: std::sync::LazyLock<std::collections::HashSet<String>> =
+        std::sync::LazyLock::new(|| {
+            "TimestampMS time SpeedMetersPerSecond PositionX PositionY PositionZ LapNumber AccelInput BrakeInput SteerInput TireSlipAngle TireTemp"
+                .split_whitespace().map(str::to_owned).collect()
+        });
+    database
+        .get_telemetry_points_filtered(session_id, None, 1, Some(&CHANNELS))
+        .map_err(|e| ApiError::internal("Operation failed", e))
+}
 
 pub fn compare_road_runs(
     store: &RoadStore,
@@ -196,12 +207,8 @@ pub fn compare_road_runs(
     }
     let first_a = &baseline_runs[0];
     let first_b = &candidate_runs[0];
-    let pa = database
-        .get_telemetry_points(first_a["sessionId"].as_str().unwrap_or(""), None)
-        .map_err(|e| ApiError::internal("Operation failed", e))?;
-    let pb = database
-        .get_telemetry_points(first_b["sessionId"].as_str().unwrap_or(""), None)
-        .map_err(|e| ApiError::internal("Operation failed", e))?;
+    let pa = comparison_points(database, first_a["sessionId"].as_str().unwrap_or(""))?;
+    let pb = comparison_points(database, first_b["sessionId"].as_str().unwrap_or(""))?;
     let circuit = workflow["event"]["format"] == "circuit";
     let spatial = local_comparison(&pa, &pb, circuit);
     if spatial["routeStatus"] != "compatible" {
@@ -242,9 +249,7 @@ pub fn compare_road_runs(
         .skip(1)
         .chain(candidate_runs.iter().skip(1))
     {
-        let points = database
-            .get_telemetry_points(run["sessionId"].as_str().unwrap_or(""), None)
-            .map_err(|e| ApiError::internal("Operation failed", e))?;
+        let points = comparison_points(database, run["sessionId"].as_str().unwrap_or(""))?;
         let local = local_comparison(&pa, &points, circuit);
         if local["routeStatus"] != "compatible" {
             reasons.push("repetition-route-incompatible".into())
