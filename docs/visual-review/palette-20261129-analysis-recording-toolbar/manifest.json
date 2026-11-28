@@ -1,0 +1,232 @@
+{
+  "date": "2026-11-29",
+  "browser": "151.0.7922.34",
+  "viewport": "1280x720 and 320x800",
+  "reducedMotion": "reduce",
+  "dpr": 1,
+  "source": "frontend/dist via vite preview + mock /api/analysis/* routes + real lang/*.json dictionaries",
+  "cases": [
+    {
+      "core": "default",
+      "mode": "light",
+      "language": "en-us",
+      "width": 1280,
+      "confirmFile": "default-light-en-us-1280-confirm-open.png",
+      "recordingFile": "default-light-en-us-1280-auto-recording.png",
+      "confirmChecks": {
+        "hasDarkSubtle": false,
+        "modePressedStates": [
+          "true",
+          "false",
+          "false"
+        ],
+        "expanded": "true",
+        "hasConfirmGroup": true,
+        "focusOnCancel": true,
+        "trimHasH3": true,
+        "trimHeaderWraps": true,
+        "docOverflowX": false
+      },
+      "dismissChecks": {
+        "expandedAfterEscape": "false",
+        "focusRestoredToClear": true,
+        "focusVisible": true
+      },
+      "recordingChecks": {
+        "badgeText": "Auto Recording (128 samples)",
+        "saveBtnWarning": true,
+        "clearWrappedTitle": "Cannot clear while capturing",
+        "clearPointerNone": true,
+        "modeGroupTitle": "Auto Recording",
+        "expectedLockedTitle": "Auto Recording",
+        "docOverflowX": false
+      },
+      "errors": []
+    },
+    {
+      "core": "default",
+      "mode": "dark",
+      "language": "zh-tw",
+      "width": 320,
+      "confirmFile": "default-dark-zh-tw-320-confirm-open.png",
+      "recordingFile": "default-dark-zh-tw-320-auto-recording.png",
+      "confirmChecks": {
+        "hasDarkSubtle": false,
+        "modePressedStates": [
+          "true",
+          "false",
+          "false"
+        ],
+        "expanded": "true",
+        "hasConfirmGroup": true,
+        "focusOnCancel": true,
+        "trimHasH3": true,
+        "trimHeaderWraps": true,
+        "docOverflowX": false
+      },
+      "dismissChecks": {
+        "expandedAfterEscape": "false",
+        "focusRestoredToClear": true,
+        "focusVisible": true
+      },
+      "recordingChecks": {
+        "badgeText": "自動錄製（128 個樣本）",
+        "saveBtnWarning": true,
+        "clearWrappedTitle": "取樣進行中無法清除",
+        "clearPointerNone": true,
+        "modeGroupTitle": "自動錄製",
+        "expectedLockedTitle": "自動錄製",
+        "docOverflowX": false
+      },
+      "errors": []
+    },
+    {
+      "core": "swiss",
+      "mode": "light",
+      "language": "zh-tw",
+      "width": 1280,
+      "confirmFile": "swiss-light-zh-tw-1280-confirm-open.png",
+      "recordingFile": "swiss-light-zh-tw-1280-auto-recording.png",
+      "confirmChecks": {
+        "hasDarkSubtle": false,
+        "modePressedStates": [
+          "true",
+          "false",
+          "false"
+        ],
+        "expanded": "true",
+        "hasConfirmGroup": true,
+        "focusOnCancel": true,
+        "trimHasH3": true,
+        "trimHeaderWraps": true,
+        "docOverflowX": false
+      },
+      "dismissChecks": {
+        "expandedAfterEscape": "false",
+        "focusRestoredToClear": true,
+        "focusVisible": true
+      },
+      "recordingChecks": {
+        "badgeText": "自動錄製（128 個樣本）",
+        "saveBtnWarning": true,
+        "clearWrappedTitle": "取樣進行中無法清除",
+        "clearPointerNone": true,
+        "modeGroupTitle": "自動錄製",
+        "expectedLockedTitle": "自動錄製",
+        "docOverflowX": false
+      },
+      "errors": []
+    },
+    {
+      "core": "swiss",
+      "mode": "dark",
+      "language": "ja-jp",
+      "width": 1280,
+      "confirmFile": "swiss-dark-ja-jp-1280-confirm-open.png",
+      "recordingFile": "swiss-dark-ja-jp-1280-auto-recording.png",
+      "confirmChecks": {
+        "hasDarkSubtle": false,
+        "modePressedStates": [
+          "true",
+          "false",
+          "false"
+        ],
+        "expanded": "true",
+        "hasConfirmGroup": true,
+        "focusOnCancel": true,
+        "trimHasH3": true,
+        "trimHeaderWraps": true,
+        "docOverflowX": false
+      },
+      "dismissChecks": {
+        "expandedAfterEscape": "false",
+        "focusRestoredToClear": true,
+        "focusVisible": true
+      },
+      "recordingChecks": {
+        "badgeText": "自動記録（128 サンプル）",
+        "saveBtnWarning": true,
+        "clearWrappedTitle": "キャプチャ中はクリアできません",
+        "clearPointerNone": true,
+        "modeGroupTitle": "自動記録",
+        "expectedLockedTitle": "自動記録",
+        "docOverflowX": false
+      },
+      "errors": []
+    },
+    {
+      "core": "rhine-lab",
+      "mode": "light",
+      "language": "ja-jp",
+      "width": 1280,
+      "confirmFile": "rhine-lab-light-ja-jp-1280-confirm-open.png",
+      "recordingFile": "rhine-lab-light-ja-jp-1280-auto-recording.png",
+      "confirmChecks": {
+        "hasDarkSubtle": false,
+        "modePressedStates": [
+          "true",
+          "false",
+          "false"
+        ],
+        "expanded": "true",
+        "hasConfirmGroup": true,
+        "focusOnCancel": true,
+        "trimHasH3": true,
+        "trimHeaderWraps": true,
+        "docOverflowX": false
+      },
+      "dismissChecks": {
+        "expandedAfterEscape": "false",
+        "focusRestoredToClear": true,
+        "focusVisible": true
+      },
+      "recordingChecks": {
+        "badgeText": "自動記録（128 サンプル）",
+        "saveBtnWarning": true,
+        "clearWrappedTitle": "キャプチャ中はクリアできません",
+        "clearPointerNone": true,
+        "modeGroupTitle": "自動記録",
+        "expectedLockedTitle": "自動記録",
+        "docOverflowX": false
+      },
+      "errors": []
+    },
+    {
+      "core": "rhine-lab",
+      "mode": "dark",
+      "language": "en-us",
+      "width": 1280,
+      "confirmFile": "rhine-lab-dark-en-us-1280-confirm-open.png",
+      "recordingFile": "rhine-lab-dark-en-us-1280-auto-recording.png",
+      "confirmChecks": {
+        "hasDarkSubtle": false,
+        "modePressedStates": [
+          "true",
+          "false",
+          "false"
+        ],
+        "expanded": "true",
+        "hasConfirmGroup": true,
+        "focusOnCancel": true,
+        "trimHasH3": true,
+        "trimHeaderWraps": true,
+        "docOverflowX": false
+      },
+      "dismissChecks": {
+        "expandedAfterEscape": "false",
+        "focusRestoredToClear": true,
+        "focusVisible": true
+      },
+      "recordingChecks": {
+        "badgeText": "Auto Recording (128 samples)",
+        "saveBtnWarning": true,
+        "clearWrappedTitle": "Cannot clear while capturing",
+        "clearPointerNone": true,
+        "modeGroupTitle": "Auto Recording",
+        "expectedLockedTitle": "Auto Recording",
+        "docOverflowX": false
+      },
+      "errors": []
+    }
+  ]
+}
