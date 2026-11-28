@@ -71,22 +71,22 @@ export const SessionTrimSummaryCard: React.FC<SessionTrimSummaryCardProps> = ({
 
   return (
     <div className="card mb-3 border">
-      <div className="card-header d-flex justify-content-between align-items-center py-2">
-        <div className="d-flex align-items-center gap-2">
-          <span className="fw-semibold" style={{ fontSize: "0.9rem" }}>
+      <div className="card-header d-flex flex-wrap justify-content-between align-items-center gap-2 py-2">
+        <div className="d-flex flex-wrap align-items-center gap-2">
+          <h3 className="fw-semibold m-0" style={{ fontSize: "0.9rem" }}>
             {t("Session Analysis & Trimming")}
-          </span>
-          <span className="badge bg-secondary" style={{ fontSize: "0.7rem" }}>
+          </h3>
+          <span className="badge text-bg-secondary text-wrap text-start" style={{ fontSize: "0.7rem" }}>
             {t(getRecordingModeLabel(recordingMode))}
           </span>
           {routeName && (
-            <span className="badge bg-info text-dark" style={{ fontSize: "0.7rem" }}>
+            <span className="badge text-bg-info text-wrap text-start" style={{ fontSize: "0.7rem" }}>
               {routeName}
             </span>
           )}
         </div>
 
-        <div className="d-flex align-items-center gap-3">
+        <div className="d-flex flex-wrap align-items-center gap-3">
           <div className="form-check form-switch m-0 d-flex align-items-center gap-2">
             <input
               type="checkbox"
@@ -95,9 +95,10 @@ export const SessionTrimSummaryCard: React.FC<SessionTrimSummaryCardProps> = ({
               role="switch"
               aria-checked={showRawData}
               checked={showRawData}
+              style={{ cursor: "pointer" }}
               onChange={(e) => onToggleRawData(e.target.checked)}
             />
-            <label className="form-check-label" htmlFor="rawViewToggle" style={{ fontSize: "0.8rem" }}>
+            <label className="form-check-label" htmlFor="rawViewToggle" style={{ fontSize: "0.8rem", cursor: "pointer" }}>
               {showRawData ? t("Raw View (Untrimmed)") : t("Trimmed View")}
             </label>
           </div>
@@ -108,9 +109,10 @@ export const SessionTrimSummaryCard: React.FC<SessionTrimSummaryCardProps> = ({
               className="form-check-input"
               id="exportRawCheckbox"
               checked={exportRawData}
+              style={{ cursor: "pointer" }}
               onChange={(e) => onToggleExportRawData(e.target.checked)}
             />
-            <label className="form-check-label" htmlFor="exportRawCheckbox" style={{ fontSize: "0.8rem" }}>
+            <label className="form-check-label" htmlFor="exportRawCheckbox" style={{ fontSize: "0.8rem", cursor: "pointer" }}>
               {t("Export Raw Data Without Trimming")}
             </label>
           </div>
