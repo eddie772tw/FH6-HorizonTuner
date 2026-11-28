@@ -13,46 +13,89 @@ const LON_SCALE: f64 = 104800.0;
 fn number(value: &Value) -> Option<f64> {
     value.as_f64().filter(|n| n.is_finite())
 }
-fn values(point: &Value, key: &str) -> [Option<f64>; 4] {
-    std::array::from_fn(|i| point[key].get(i).and_then(number))
-}
 pub fn debrief(points: &[Value]) -> Value {
-    let mut temps: [Vec<f64>; 4] = std::array::from_fn(|_| Vec::new());
-    let mut travel = Vec::new();
+    // [PERF] Single-pass zero-allocation debrief: scans each point once without IndexMap hashes,
+    // aggregates metrics in stack scalars, and counts complete laps via O(1)-memory state machine
+    // instead of road::summarize_laps (which grouped points and O(N log N)-sorted lap speeds).
+    let (mut temp_sum, mut temp_cnt) = ([0.0_f64; 4], [0_usize; 4]);
+    let mut max_travel: Option<f64> = None;
     let (mut bottom, mut under, mut over, mut corner) = (0, 0, 0, 0);
+    let (mut lap_active, mut curr_started, mut pending_complete) = (true, false, false);
+    let (mut prev_lap, mut prev_last, mut valid_laps) = (None::<i64>, None::<f64>, 0_usize);
     for p in points {
-        for (i, temp) in values(p, "TireTemp").into_iter().enumerate() {
-            if let Some(temp) = temp {
-                temps[i].push((temp - 32.0) * 5.0 / 9.0);
-            }
-        }
-        for value in values(p, "SuspTravel").into_iter().flatten() {
-            travel.push(value);
-            if value >= 0.95 {
-                bottom += 1;
-            }
-        }
-        if number(&p["AccelerationX"]).is_some_and(|n| n.abs() >= 2.94)
-            && number(&p["SpeedMetersPerSecond"]).is_some_and(|n| n >= 10.0)
-        {
-            let angles = values(p, "TireSlipAngle");
-            let front: Vec<f64> = angles[..2].iter().flatten().map(|n| n.abs()).collect();
-            let rear: Vec<f64> = angles[2..].iter().flatten().map(|n| n.abs()).collect();
-            if !front.is_empty() && !rear.is_empty() {
-                corner += 1;
-                let f = front.iter().sum::<f64>() / front.len() as f64;
-                let r = rear.iter().sum::<f64>() / rear.len() as f64;
-                if f > r * 1.15 {
-                    under += 1;
-                } else if r > f * 1.15 {
-                    over += 1;
+        let Some(obj) = p.as_object() else { continue };
+        let (mut ax, mut spd, mut slip) = (None, None, None);
+        let (mut lap_num, mut curr_lap, mut last_lap) = (None, None, None);
+        for (k, v) in obj {
+            match k.as_str() {
+                "TireTemp" => {
+                    for (i, e) in v.as_array().into_iter().flatten().take(4).enumerate() {
+                        if let Some(temp) = number(e) {
+                            temp_sum[i] += (temp - 32.0) * 5.0 / 9.0;
+                            temp_cnt[i] += 1;
+                        }
+                    }
                 }
+                "SuspTravel" => {
+                    for e in v.as_array().into_iter().flatten().take(4) {
+                        if let Some(val) = number(e) {
+                            max_travel = Some(max_travel.map_or(val, |m| m.max(val)));
+                            bottom += i32::from(val >= 0.95);
+                        }
+                    }
+                }
+                "AccelerationX" => ax = number(v),
+                "SpeedMetersPerSecond" => spd = number(v),
+                "TireSlipAngle" => slip = v.as_array().map(Vec::as_slice),
+                "LapNumber" if lap_active => lap_num = number(v),
+                "CurrentLap" if lap_active => curr_lap = number(v),
+                "LastLap" if lap_active => last_lap = number(v),
+                _ => {}
+            }
+        }
+        if ax.is_some_and(|n| n.abs() >= 2.94) && spd.is_some_and(|n| n >= 10.0) {
+            let (mut fs, mut fc, mut rs, mut rc) = (0.0, 0_u8, 0.0, 0_u8);
+            for (i, e) in slip.into_iter().flatten().take(4).enumerate() {
+                if let Some(n) = number(e).map(f64::abs) {
+                    if i < 2 {
+                        fs += n;
+                        fc += 1;
+                    } else {
+                        rs += n;
+                        rc += 1;
+                    }
+                }
+            }
+            if fc > 0 && rc > 0 {
+                corner += 1;
+                let (f, r) = (fs / fc as f64, rs / rc as f64);
+                under += i32::from(f > r * 1.15);
+                over += i32::from(r > f * 1.15);
+            }
+        }
+        if let Some(idx) = lap_num
+            .filter(|x| lap_active && *x >= 0.0 && x.fract() == 0.0)
+            .map(|x| x as i64)
+        {
+            if prev_lap.is_some_and(|x| idx < x) {
+                lap_active = false;
+            } else {
+                if let Some(prev) = prev_lap.filter(|&x| idx > x) {
+                    pending_complete = prev.checked_add(1) == Some(idx) && curr_started;
+                    curr_started = false;
+                }
+                if pending_complete && last_lap.is_some_and(|l| l > 0.0 && Some(l) != prev_last) {
+                    valid_laps += 1;
+                    pending_complete = false;
+                }
+                prev_last = last_lap.or(prev_last);
+                prev_lap = Some(idx);
+                curr_started |= curr_lap.is_some_and(|x| (0.0..=0.5).contains(&x));
             }
         }
     }
     let averages: [Option<f64>; 4] = std::array::from_fn(|i| {
-        (!temps[i].is_empty())
-            .then(|| round(temps[i].iter().sum::<f64>() / temps[i].len() as f64, 1))
+        (temp_cnt[i] > 0).then(|| round(temp_sum[i] / temp_cnt[i] as f64, 1))
     });
     let peak_temp = averages.iter().flatten().copied().reduce(f64::max);
     let thermal = match peak_temp {
@@ -61,7 +104,7 @@ pub fn debrief(points: &[Value]) -> Value {
         Some(t) if t < 65.0 => "Cold",
         _ => "Optimal",
     };
-    let suspension = if travel.is_empty() {
+    let suspension = if max_travel.is_none() {
         "no_data"
     } else if bottom > 10 {
         "Severe Bottoming"
@@ -81,11 +124,7 @@ pub fn debrief(points: &[Value]) -> Value {
     } else {
         "no_data"
     };
-    let valid_laps = crate::road::summarize_laps(points)
-        .iter()
-        .filter(|lap| lap["complete"] == true)
-        .count();
-    json!({"total_samples":points.len(),"valid_laps":valid_laps,"tire_thermals":{"fl_avg":averages[0],"fr_avg":averages[1],"rl_avg":averages[2],"rr_avg":averages[3],"status":thermal},"suspension":{"peak_travel_pct":travel.iter().copied().reduce(f64::max).map(|n|round(n*100.0,1)),"bottom_out_count":(!travel.is_empty()).then_some(bottom),"status":suspension},"handling_balance":{"understeer_pct":up.map(|v|round(v,1)),"oversteer_pct":op.map(|v|round(v,1)),"tendency":tendency}})
+    json!({"total_samples":points.len(),"valid_laps":valid_laps,"tire_thermals":{"fl_avg":averages[0],"fr_avg":averages[1],"rl_avg":averages[2],"rr_avg":averages[3],"status":thermal},"suspension":{"peak_travel_pct":max_travel.map(|n|round(n*100.0,1)),"bottom_out_count":max_travel.is_some().then_some(bottom),"status":suspension},"handling_balance":{"understeer_pct":up.map(|v|round(v,1)),"oversteer_pct":op.map(|v|round(v,1)),"tendency":tendency}})
 }
 /// Neutralizes spreadsheet formula triggers (OWASP CWE-1236) on freeform CSV metadata cells
 /// so caller-supplied or imported session/vehicle strings cannot evaluate as formulas in spreadsheets.
